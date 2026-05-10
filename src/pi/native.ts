@@ -6,6 +6,7 @@ import { readSettings } from "../core/store/settings.js";
 import { resolvePmRoot } from "../core/store/paths.js";
 import { normalizeStatusInput } from "../core/item/status.js";
 import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
+import { PM_TOOL_ACTIONS, isPmToolAction } from "../sdk/cli-contracts.js";
 import {
   runActivity,
   runAggregate,
@@ -72,6 +73,9 @@ const GLOBAL_KEYS = new Set([
   "timeoutMs",
   "options",
 ]);
+
+const NATIVE_PM_ACTION_ALIASES = ["files-discover"] as const;
+const NATIVE_PM_ACTIONS = new Set<string>([...PM_TOOL_ACTIONS, ...NATIVE_PM_ACTION_ALIASES]);
 
 function asRecord(value: unknown): Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? { ...(value as Record<string, unknown>) } : {};
@@ -200,6 +204,9 @@ async function runTodosExport(options: Record<string, unknown>, global: GlobalOp
 export async function runNativePmAction(args: NativePmArgs): Promise<unknown> {
   return withCwd(args.cwd, async () => {
     const action = requiredString(args, "action", "pm").trim().toLowerCase();
+    if (!NATIVE_PM_ACTIONS.has(action) && !isPmToolAction(action)) {
+      throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
+    }
     const global = nativeGlobalOptions(args);
     const options = nativeCommandOptions(args);
     const id = readString(args, "id") ?? readString(options, "id");
@@ -261,9 +268,18 @@ export async function runNativePmAction(args: NativePmArgs): Promise<unknown> {
       case "gc": return runGc(global, options);
       case "contracts": return runContracts(options, global);
       case "completion": return runCompletion(requiredString(args, "shell", action), undefined, undefined, options.eagerTags === true, options.runtime as never);
-      case "templates-save": return runTemplatesSave(readString(args, "template") ?? requiredString(options, "name", action), options, global);
+      case "templates-save":
+        return runTemplatesSave(
+          readString(args, "template") ?? readString(options, "template") ?? requiredString(options, "name", action),
+          options,
+          global,
+        );
       case "templates-list": return runTemplatesList(global);
-      case "templates-show": return runTemplatesShow(readString(args, "template") ?? requiredString(options, "name", action), global);
+      case "templates-show":
+        return runTemplatesShow(
+          readString(args, "template") ?? readString(options, "template") ?? requiredString(options, "name", action),
+          global,
+        );
       case "claim": return runClaim(id ?? requiredString(options, "id", action), force, global, options);
       case "release": return runRelease(id ?? requiredString(options, "id", action), force, global, options);
       case "start-task": return runStartTask(id ?? requiredString(options, "id", action), options, global);

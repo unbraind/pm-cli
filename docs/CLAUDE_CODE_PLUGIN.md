@@ -156,6 +156,20 @@ node scripts/smoke-codex-plugin-mcp.mjs
 pnpm smoke:codex-plugin
 ```
 
+### Contract-safe preflight (recommended for CI agents)
+
+```bash
+pm contracts --schema-only --json
+pm contracts --command extension --flags-only --json
+pm extension --doctor --project --detail summary --strict-exit
+```
+
+Why this matters:
+
+- `pm contracts` is extension-aware and reflects active runtime action/flag surfaces.
+- `extension --doctor` now includes policy diagnostics and deterministic warning codes.
+- `--strict-exit` turns warning states into CI-failing exits when governance gates require it.
+
 ### Validate manifests
 
 ```bash
@@ -184,3 +198,13 @@ After installing the plugin:
 | 2026.5.x+ | 1.0.0 | Any current |
 
 The MCP server uses JSON-RPC 2.0 over stdio with protocol version `2025-06-18`.
+
+## Extension Policy Diagnostics
+
+When extension governance policy is configured (`settings.extensions.policy`), plugin and MCP automation can surface:
+
+- `extension_policy_violation_*` warnings in warn mode
+- `extension_policy_blocked_*` warnings in enforce mode
+- policy summary counters under `extension doctor` details (`summary.policy` + `triage.policy_*`)
+
+This enables contract-safe and policy-safe automation without falling back to shell heuristics.

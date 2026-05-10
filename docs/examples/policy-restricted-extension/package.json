@@ -1,0 +1,8 @@
+{
+  "name": "policy-restricted-extension",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@unbrained/pm-cli": "latest"
+  }
+}

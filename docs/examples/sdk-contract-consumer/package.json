@@ -1,0 +1,9 @@
+{
+  "name": "pm-sdk-contract-consumer-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "inspect:create": "node inspect-contracts.mjs create",
+    "inspect:update": "node inspect-contracts.mjs update"
+  }
+}

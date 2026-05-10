@@ -24,6 +24,52 @@ export const EXTENSION_CAPABILITY_CONTRACT = Object.freeze({
   legacy_aliases: { ...EXTENSION_CAPABILITY_LEGACY_ALIASES },
 });
 
+export const KNOWN_EXTENSION_POLICY_MODES = ["off", "warn", "enforce"] as const;
+export type ExtensionPolicyMode = (typeof KNOWN_EXTENSION_POLICY_MODES)[number];
+
+export const KNOWN_EXTENSION_POLICY_SURFACES = [
+  "commands.override",
+  "commands.handler",
+  "hooks.beforecommand",
+  "hooks.aftercommand",
+  "hooks.onwrite",
+  "hooks.onread",
+  "hooks.onindex",
+  "schema.flags",
+  "schema.itemfields",
+  "schema.itemtypes",
+  "schema.migrations",
+  "parser.override",
+  "preflight.override",
+  "services.override",
+  "renderers.override",
+  "importers.importer",
+  "importers.exporter",
+  "search.provider",
+  "search.vectorstore",
+] as const;
+export type ExtensionPolicySurface = (typeof KNOWN_EXTENSION_POLICY_SURFACES)[number];
+
+export interface ExtensionPolicyOverride {
+  name: string;
+  disabled?: boolean;
+  allowed_capabilities?: string[];
+  blocked_capabilities?: string[];
+  allowed_surfaces?: string[];
+  blocked_surfaces?: string[];
+}
+
+export interface ExtensionGovernancePolicy {
+  mode: ExtensionPolicyMode;
+  allowed_extensions: string[];
+  blocked_extensions: string[];
+  allowed_capabilities: string[];
+  blocked_capabilities: string[];
+  allowed_surfaces: string[];
+  blocked_surfaces: string[];
+  extension_overrides: ExtensionPolicyOverride[];
+}
+
 export type ExtensionLayer = "global" | "project";
 export type ExtensionStatus = "ok" | "warn";
 
@@ -72,6 +118,7 @@ export interface ExtensionDiscoveryResult {
   discovered: ExtensionDiagnostic[];
   effective: EffectiveExtension[];
   warnings: string[];
+  policy: ExtensionGovernancePolicy;
 }
 
 export interface LoadedExtension extends EffectiveExtension {

@@ -3,6 +3,8 @@ import {
   EXTENSION_CAPABILITY_CONTRACT_VERSION,
   EXTENSION_CAPABILITY_LEGACY_ALIASES,
   KNOWN_EXTENSION_CAPABILITIES,
+  KNOWN_EXTENSION_POLICY_MODES,
+  KNOWN_EXTENSION_POLICY_SURFACES,
   type ExtensionApi,
   type ExtensionManifest,
 } from "../core/extensions/loader.js";
@@ -16,6 +18,14 @@ export * from "./cli-contracts.js";
  */
 export const EXTENSION_CAPABILITIES = KNOWN_EXTENSION_CAPABILITIES;
 export type ExtensionCapability = (typeof EXTENSION_CAPABILITIES)[number];
+
+/**
+ * Canonical extension governance policy modes and registration surfaces.
+ */
+export const EXTENSION_POLICY_MODES = KNOWN_EXTENSION_POLICY_MODES;
+export const EXTENSION_POLICY_SURFACES = KNOWN_EXTENSION_POLICY_SURFACES;
+export type ExtensionPolicyMode = (typeof EXTENSION_POLICY_MODES)[number];
+export type ExtensionPolicySurface = (typeof EXTENSION_POLICY_SURFACES)[number];
 
 /**
  * Versioned capability contract metadata emitted by runtime diagnostics.
@@ -63,6 +73,8 @@ export type {
   ExtensionDiscoveryResult,
   ExtensionLoadResult,
   ExtensionManifest,
+  ExtensionGovernancePolicy,
+  ExtensionPolicyOverride,
   ExtensionSearchMode,
   ExtensionParserRegistry,
   ExtensionPreflightRegistry,

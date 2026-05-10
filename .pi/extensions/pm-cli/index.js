@@ -1,40 +1,9 @@
-import { PM_TOOL_ACTIONS } from "../../../dist/sdk/cli-contracts.js";
+import { PM_PI_TOOL_PARAMETERS_SCHEMA, PM_TOOL_ACTIONS } from "../../../dist/sdk/cli-contracts.js";
 import { runNativePmAction } from "../../../dist/pi/native.js";
 
-const PM_PI_TOOL_PARAMETERS_SCHEMA = {
-  type: "object",
+const PM_PI_TOOL_PARAMETERS_SCHEMA_COMPAT = {
+  ...PM_PI_TOOL_PARAMETERS_SCHEMA,
   additionalProperties: true,
-  required: ["action"],
-  description: "Parameters for the native pm Pi tool. Extra properties are forwarded to the selected pm action.",
-  properties: {
-    action: {
-      type: "string",
-      description:
-        "pm action to execute, for example context, search, get, create, update, files, docs, test, validate, extension, templates, calendar, or close-task.",
-    },
-    id: { type: "string", description: "pm item id for item-scoped actions." },
-    text: { type: "string", description: "Text payload for comment-like actions, body appends, or close reasons." },
-    title: { type: "string", description: "Title for create actions." },
-    description: { type: "string", description: "Description for create/update actions." },
-    query: { type: "string", description: "Search query text." },
-    limit: { type: "string", description: "Result limit. Numeric strings are accepted." },
-    author: { type: "string", description: "Explicit pm author for mutations." },
-    path: { type: "string", description: "pm data path override or linked file/source path, depending on action." },
-    scope: { type: "string", description: "Link/config scope such as project or global." },
-    command: { type: "string", description: "Linked test command or shell completion target, depending on action." },
-    target: { type: "string", description: "Extension/template/restore/test-run target identifier, depending on action." },
-    shell: { type: "string", description: "Shell name for completion actions (bash, zsh, fish)." },
-    runId: { type: "string", description: "Managed linked-test run id for test-runs actions." },
-    cwd: { type: "string", description: "Working directory for the native action. Defaults to the current Pi workspace." },
-    json: { type: "boolean", description: "Return JSON-shaped pm results. Defaults to true for the native integration." },
-    quiet: { type: "boolean", description: "Suppress user-facing output where supported." },
-    force: { type: "boolean", description: "Force lifecycle or ownership operations where supported." },
-    options: {
-      type: "object",
-      additionalProperties: true,
-      description: "Advanced command options object forwarded to the selected pm action.",
-    },
-  },
 };
 
 function contentText(result) {
@@ -233,7 +202,7 @@ export function createPmToolDefinition() {
       "For mutations, set author explicitly and link changed files/tests/docs through pm actions before closing work.",
       "Use pm action=contracts or guide when you need exact action/flag support instead of guessing parameters.",
     ],
-    parameters: PM_PI_TOOL_PARAMETERS_SCHEMA,
+    parameters: PM_PI_TOOL_PARAMETERS_SCHEMA_COMPAT,
     async execute(_toolCallId, params, _signal, onUpdate, ctx) {
       onUpdate?.({ content: [{ type: "text", text: `Running native pm action: ${params.action}` }] });
       try {
@@ -360,14 +329,14 @@ function patchPmToolParametersInProviderPayload(payload) {
       const parameters = tool.parameters;
       if (!parameters || parameters.type !== "object") {
         changed = true;
-        return { ...tool, parameters: PM_PI_TOOL_PARAMETERS_SCHEMA };
+        return { ...tool, parameters: PM_PI_TOOL_PARAMETERS_SCHEMA_COMPAT };
       }
     }
     if (tool.function?.name === "pm") {
       const parameters = tool.function.parameters;
       if (!parameters || parameters.type !== "object") {
         changed = true;
-        return { ...tool, function: { ...tool.function, parameters: PM_PI_TOOL_PARAMETERS_SCHEMA } };
+        return { ...tool, function: { ...tool.function, parameters: PM_PI_TOOL_PARAMETERS_SCHEMA_COMPAT } };
       }
     }
     return tool;

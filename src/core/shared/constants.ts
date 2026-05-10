@@ -245,6 +245,16 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   extensions: {
     enabled: [],
     disabled: [],
+    policy: {
+      mode: "off",
+      allowed_extensions: [],
+      blocked_extensions: [],
+      allowed_capabilities: [],
+      blocked_capabilities: [],
+      allowed_surfaces: [],
+      blocked_surfaces: [],
+      extension_overrides: [],
+    },
   },
   search: {
     score_threshold: 0,

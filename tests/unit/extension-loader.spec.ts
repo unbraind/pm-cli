@@ -134,6 +134,96 @@ describe("extension loader", () => {
     });
   });
 
+  it("applies extension-level governance policy during discovery", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "policy-allowed",
+        {
+          name: "policy-allowed-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+        },
+        "export default { ok: true };\n",
+      );
+      await createExtension(
+        roots.project,
+        "policy-blocked",
+        {
+          name: "policy-blocked-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      settings.extensions.policy = {
+        mode: "enforce",
+        allowed_extensions: ["policy-allowed-ext"],
+        blocked_extensions: [],
+        allowed_capabilities: [],
+        blocked_capabilities: [],
+        allowed_surfaces: [],
+        blocked_surfaces: [],
+        extension_overrides: [],
+      };
+
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+      expect(discovery.effective.map((entry) => entry.name)).toEqual(["policy-allowed-ext"]);
+      expect(discovery.policy.mode).toBe("enforce");
+      expect(discovery.warnings).toEqual(
+        expect.arrayContaining([
+          "extension_policy_blocked_extension:project:policy-blocked-ext:reason=extension_not_allowlisted",
+        ]),
+      );
+    });
+  });
+
+  it("surfaces capability policy warnings without blocking in warn mode", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "policy-capability-warn",
+        {
+          name: "policy-capability-warn-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["hooks"],
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      settings.extensions.policy = {
+        mode: "warn",
+        allowed_extensions: [],
+        blocked_extensions: [],
+        allowed_capabilities: [],
+        blocked_capabilities: ["hooks"],
+        allowed_surfaces: [],
+        blocked_surfaces: [],
+        extension_overrides: [],
+      };
+
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+      expect(discovery.effective.map((entry) => entry.name)).toEqual(["policy-capability-warn-ext"]);
+      expect(discovery.warnings).toEqual(
+        expect.arrayContaining([
+          "extension_policy_violation_capability:project:policy-capability-warn-ext:reason=capability_blocked:capability=hooks",
+        ]),
+      );
+    });
+  });
+
   it("reports deterministic manifest and entry warnings", async () => {
     await withTempPmPath(async (context) => {
       const roots = resolveExtensionRoots(context.pmPath);
@@ -528,6 +618,74 @@ describe("extension loader", () => {
       expect(activation.hooks.beforeCommand.map((entry) => entry.name)).toEqual(["alpha-hook-ext", "beta-hook-ext"]);
       expect(activation.hooks.afterCommand.map((entry) => entry.name)).toEqual(["alpha-hook-ext", "beta-hook-ext"]);
     });
+  });
+
+  it("enforces registration-surface policy during activation", async () => {
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: {
+        global: "/tmp/global",
+        project: "/tmp/project",
+      },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      policy: {
+        mode: "enforce",
+        allowed_extensions: [],
+        blocked_extensions: [],
+        allowed_capabilities: [],
+        blocked_capabilities: [],
+        allowed_surfaces: [],
+        blocked_surfaces: ["commands.handler"],
+        extension_overrides: [],
+      },
+      loaded: [
+        {
+          layer: "project",
+          directory: "surface-policy-ext",
+          manifest_path: "/tmp/project/surface-policy-ext/manifest.json",
+          name: "surface-policy-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 10,
+          entry_path: "/tmp/project/surface-policy-ext/index.mjs",
+          capabilities: ["commands", "hooks"],
+          module: {
+            activate(api: {
+              registerCommand: (
+                definition: {
+                  name: string;
+                  run: (context: { command: string; options: Record<string, unknown> }) => unknown;
+                },
+              ) => void;
+              hooks: {
+                beforeCommand: (hook: (context: unknown) => void) => void;
+              };
+            }) {
+              api.registerCommand({
+                name: "surface policy command",
+                run: (context) => ({ command: context.command, source: "handler" }),
+              });
+              api.hooks.beforeCommand(() => {});
+            },
+          },
+        },
+      ],
+      failed: [],
+    });
+
+    expect(activation.failed).toEqual([]);
+    expect(activation.command_handler_count).toBe(0);
+    expect(activation.registration_counts.commands).toBe(0);
+    expect(activation.hook_counts.before_command).toBe(1);
+    expect(activation.warnings).toEqual(
+      expect.arrayContaining([
+        "extension_policy_blocked_registration:project:surface-policy-ext:reason=surface_blocked:capability=commands:method=registercommand:surface=commands.handler",
+      ]),
+    );
   });
 
   it("contains activation and runtime hook failures without stopping later hooks", async () => {

@@ -835,6 +835,12 @@ describe("extension command runtime", () => {
         mode: "summary",
         summary: {
           scope: "project",
+          policy: {
+            mode: "off",
+          },
+        },
+        policy: {
+          mode: "off",
         },
       });
       const warningCodes = (summaryDoctor.details.summary as { warning_codes?: unknown }).warning_codes;
@@ -848,6 +854,7 @@ describe("extension command runtime", () => {
         installed_extensions?: unknown;
         load?: {
           roots?: { project?: string };
+          policy?: { mode?: string };
           loaded?: Array<{ name: string }>;
         };
         activation?: {
@@ -859,6 +866,7 @@ describe("extension command runtime", () => {
       };
       expect(deep.installed_extensions).toBeDefined();
       expect(deep.load?.roots?.project).toBe(path.join(context.pmPath, "extensions"));
+      expect(deep.load?.policy?.mode).toBe("off");
       expect((deep.load?.loaded ?? []).some((entry) => entry.name === "doctor-ext")).toBe(true);
       expect(deep.activation?.registration_counts?.item_types ?? 0).toBeGreaterThan(0);
       expect(deep.consistency?.missing_active_project_names ?? []).toEqual([]);
@@ -918,6 +926,78 @@ describe("extension command runtime", () => {
         expect.arrayContaining([expect.stringContaining("pm extension --explore --project")]),
       );
       expect(Array.isArray(deep.warning_codes)).toBe(true);
+    });
+  });
+
+  it("reports extension governance policy diagnostics in doctor output", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "doctor-policy-source");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        path.join(sourceDir, "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "doctor-policy-ext",
+            version: "1.0.0",
+            entry: "./index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(sourceDir, "index.js"),
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'doctor policy run',",
+          "      run: () => ({ ok: true }),",
+          "    });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+
+      const settings = await readSettings(context.pmPath);
+      settings.extensions.policy = {
+        mode: "enforce",
+        allowed_extensions: [],
+        blocked_extensions: [],
+        allowed_capabilities: [],
+        blocked_capabilities: [],
+        allowed_surfaces: [],
+        blocked_surfaces: ["commands.handler"],
+        extension_overrides: [],
+      };
+      await writeSettings(context.pmPath, settings, "settings:write");
+
+      const doctor = await runExtension(undefined, { doctor: true, project: true, detail: "summary" }, { path: context.pmPath });
+      const summary = doctor.details.summary as {
+        warning_codes: string[];
+        policy?: { mode?: string; blocked_surfaces_count?: number };
+      };
+      const triage = doctor.details.triage as {
+        policy_warning_count: number;
+        policy_blocked_count: number;
+      };
+      const policy = doctor.details.policy as {
+        mode: string;
+        blocked_surfaces: string[];
+      };
+
+      expect(summary.warning_codes).toContain("extension_policy_blocked_registration");
+      expect(summary.policy?.mode).toBe("enforce");
+      expect(summary.policy?.blocked_surfaces_count).toBe(1);
+      expect(triage.policy_warning_count).toBeGreaterThanOrEqual(1);
+      expect(triage.policy_blocked_count).toBeGreaterThanOrEqual(1);
+      expect(policy.mode).toBe("enforce");
+      expect(policy.blocked_surfaces).toEqual(["commands.handler"]);
     });
   });
 

@@ -213,6 +213,9 @@ interface ExtensionTriageSummary {
   warning_count: number;
   warning_codes: string[];
   warnings: string[];
+  policy_warning_count: number;
+  policy_violation_count: number;
+  policy_blocked_count: number;
   total_extensions: number;
   managed_total: number;
   enabled_total: number;
@@ -245,6 +248,81 @@ function normalizeStringList(values: readonly string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].sort((left, right) =>
     left.localeCompare(right),
   );
+}
+
+function summarizePolicyWarnings(warnings: string[]): {
+  warning_count: number;
+  violation_count: number;
+  blocked_count: number;
+} {
+  let warningCount = 0;
+  let violationCount = 0;
+  let blockedCount = 0;
+  for (const warning of warnings) {
+    if (!warning.startsWith("extension_policy_")) {
+      continue;
+    }
+    warningCount += 1;
+    if (warning.startsWith("extension_policy_violation_")) {
+      violationCount += 1;
+      continue;
+    }
+    if (warning.startsWith("extension_policy_blocked_")) {
+      blockedCount += 1;
+    }
+  }
+  return {
+    warning_count: warningCount,
+    violation_count: violationCount,
+    blocked_count: blockedCount,
+  };
+}
+
+function buildExtensionPolicyDetails(policy: PmSettings["extensions"]["policy"]): {
+  mode: "off" | "warn" | "enforce";
+  allowed_extensions: string[];
+  blocked_extensions: string[];
+  allowed_capabilities: string[];
+  blocked_capabilities: string[];
+  allowed_surfaces: string[];
+  blocked_surfaces: string[];
+  extension_overrides: Array<{
+    name: string;
+    disabled?: boolean;
+    allowed_capabilities?: string[];
+    blocked_capabilities?: string[];
+    allowed_surfaces?: string[];
+    blocked_surfaces?: string[];
+  }>;
+} {
+  const overrides = (policy.extension_overrides ?? [])
+    .map((override) => ({
+      name: override.name.trim(),
+      disabled: override.disabled === true ? true : undefined,
+      allowed_capabilities: normalizeStringList(override.allowed_capabilities ?? []),
+      blocked_capabilities: normalizeStringList(override.blocked_capabilities ?? []),
+      allowed_surfaces: normalizeStringList(override.allowed_surfaces ?? []),
+      blocked_surfaces: normalizeStringList(override.blocked_surfaces ?? []),
+    }))
+    .filter((override) => override.name.length > 0)
+    .sort((left, right) => left.name.localeCompare(right.name));
+  return {
+    mode: policy.mode,
+    allowed_extensions: normalizeStringList(policy.allowed_extensions ?? []),
+    blocked_extensions: normalizeStringList(policy.blocked_extensions ?? []),
+    allowed_capabilities: normalizeStringList(policy.allowed_capabilities ?? []),
+    blocked_capabilities: normalizeStringList(policy.blocked_capabilities ?? []),
+    allowed_surfaces: normalizeStringList(policy.allowed_surfaces ?? []),
+    blocked_surfaces: normalizeStringList(policy.blocked_surfaces ?? []),
+    extension_overrides: overrides.map((override) => ({
+      name: override.name,
+      ...(override.disabled === true ? { disabled: true } : {}),
+      ...(override.allowed_capabilities.length > 0 ? { allowed_capabilities: override.allowed_capabilities } : {}),
+      ...(override.blocked_capabilities.length > 0 ? { blocked_capabilities: override.blocked_capabilities } : {}),
+      ...(override.allowed_surfaces.length > 0 ? { allowed_surfaces: override.allowed_surfaces } : {}),
+      ...(override.blocked_surfaces.length > 0 ? { blocked_surfaces: override.blocked_surfaces } : {}),
+    })),
+  };
 }
 
 function normalizeManagedDirectoryName(name: string): string {
@@ -1439,6 +1517,7 @@ function buildExtensionTriageSummary(
   const warningCodes = [...new Set(effectiveWarnings.map((value) => warningCode(value)))].sort((left, right) =>
     left.localeCompare(right),
   );
+  const policyWarnings = summarizePolicyWarnings(effectiveWarnings);
   const scopeFlag = scope === "global" ? "--global" : "--project";
   const remediation: string[] = [];
   if (normalizedWarnings.length > 0) {
@@ -1481,6 +1560,11 @@ function buildExtensionTriageSummary(
     if (normalizedWarnings.some((warning) => warning.startsWith("extension_manager_state_"))) {
       remediation.push(`Review and repair ${scope} managed extension state file if schema/read warnings persist.`);
     }
+    if (policyWarnings.warning_count > 0) {
+      remediation.push(
+        "Extension governance policy warnings detected. Review settings.extensions.policy mode and allow/block lists to confirm intended capabilities and registration surfaces.",
+      );
+    }
   }
   if (updateHealthPartial) {
     remediation.push(
@@ -1505,6 +1589,9 @@ function buildExtensionTriageSummary(
     warning_count: effectiveWarnings.length,
     warning_codes: warningCodes,
     warnings: effectiveWarnings,
+    policy_warning_count: policyWarnings.warning_count,
+    policy_violation_count: policyWarnings.violation_count,
+    policy_blocked_count: policyWarnings.blocked_count,
     total_extensions: extensions.length,
     managed_total: managedTotal,
     enabled_total: enabledTotal,
@@ -2094,6 +2181,16 @@ export async function runExtension(
     const triage = buildExtensionTriageSummary(scope, warnings, runtimeInstalledExtensions);
     warnings.push(...triage.warnings);
     const normalizedWarnings = [...triage.warnings];
+    const policySummary = {
+      mode: loadResult.policy.mode,
+      allowed_extensions_count: loadResult.policy.allowed_extensions.length,
+      blocked_extensions_count: loadResult.policy.blocked_extensions.length,
+      allowed_capabilities_count: loadResult.policy.allowed_capabilities.length,
+      blocked_capabilities_count: loadResult.policy.blocked_capabilities.length,
+      allowed_surfaces_count: loadResult.policy.allowed_surfaces.length,
+      blocked_surfaces_count: loadResult.policy.blocked_surfaces.length,
+      extension_override_count: loadResult.policy.extension_overrides.length,
+    };
     const capabilityGuidance = collectUnknownCapabilityGuidance(normalizedWarnings);
     const capabilityContract = buildCapabilityContractMetadata();
     const warningCodes = triage.warning_codes;
@@ -2145,6 +2242,7 @@ export async function runExtension(
       has_blocking_failures: loadResult.failed.length + activationResult.failed.length > 0,
       consistency_warning_count: doctorConsistency.warnings.length,
       trace_enabled: includeTrace,
+      policy: policySummary,
       remediation,
     };
 
@@ -2172,6 +2270,7 @@ export async function runExtension(
       capability_contract: capabilityContract,
       capability_guidance: capabilityGuidance,
       managed_state_fix: managedStateFixSummary,
+      policy: loadResult.policy,
     };
     if (detailMode === "deep") {
       const activationFailedDetails = includeTrace
@@ -2194,6 +2293,7 @@ export async function runExtension(
         installed_extensions: runtimeInstalledExtensions,
         load: {
           roots: loadResult.roots,
+          policy: loadResult.policy,
           warnings: loadResult.warnings,
           failed: loadResult.failed,
           loaded: loadResult.loaded.map((entry) => ({
@@ -2241,6 +2341,7 @@ export async function runExtension(
 
   if (action === "explore" || action === "manage") {
     const settings = await readSettings(resolvedRoots.settings_root);
+    const configuredPolicy = buildExtensionPolicyDetails(settings.extensions.policy);
     const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
     warnings.push(...managedStateRead.warnings);
     const installed = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedStateRead.state);
@@ -2313,6 +2414,7 @@ export async function runExtension(
         load_failure_count: loadResult.failed.length,
         activation_failure_count: activationResult.failed.length,
         warning_count: [...new Set([...loadResult.warnings, ...activationResult.warnings])].length,
+        policy: loadResult.policy,
       };
     } else if (action === "manage") {
       runtimeProbeSummary = {
@@ -2330,6 +2432,7 @@ export async function runExtension(
       active_total: runtimeInstalledExtensions.filter((entry) => entry.active).length,
       extensions: runtimeInstalledExtensions,
       triage,
+      policy: configuredPolicy,
     };
     if (action === "manage") {
       details.runtime_probe = runtimeProbeSummary;

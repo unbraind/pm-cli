@@ -1,5 +1,160 @@
 # SDK
 
+The stable integration surface is `@unbrained/pm-cli/sdk`. Use it for extension authoring, action/flag contract discovery, and deterministic app/CI automation.
+
+## Install
+
+```bash
+npm install @unbrained/pm-cli
+```
+
+```ts
+import {
+  defineExtension,
+  EXTENSION_CAPABILITIES,
+  EXTENSION_POLICY_MODES,
+  EXTENSION_POLICY_SURFACES,
+  PM_TOOL_ACTIONS,
+  PM_TOOL_PARAMETERS_SCHEMA,
+  PM_TOOL_ACTION_PARAMETER_CONTRACTS,
+  PM_EXTENSION_CAPABILITY_CONTRACTS,
+  PM_EXTENSION_SERVICE_NAME_CONTRACTS,
+  PM_EXTENSION_POLICY_MODE_CONTRACTS,
+  PM_EXTENSION_POLICY_SURFACE_CONTRACTS,
+  isPmToolAction,
+  isPmExtensionCapabilityContract,
+} from "@unbrained/pm-cli/sdk";
+```
+
+## What Is Exported
+
+Core authoring exports:
+
+- `defineExtension`
+- `EXTENSION_CAPABILITIES`
+- `EXTENSION_CAPABILITY_CONTRACT`
+- `EXTENSION_POLICY_MODES`
+- `EXTENSION_POLICY_SURFACES`
+
+Command/action contract exports:
+
+- `PM_CORE_COMMAND_NAMES`
+- `PM_TOOL_ACTIONS`
+- `PM_TOOL_PARAMETERS_SCHEMA`
+- `PM_PI_TOOL_PARAMETERS_SCHEMA`
+- `PM_TOOL_ACTION_PARAMETER_CONTRACTS`
+
+Extension runtime contract exports:
+
+- `PM_EXTENSION_CAPABILITY_CONTRACTS`
+- `PM_EXTENSION_SERVICE_NAME_CONTRACTS`
+- `PM_EXTENSION_POLICY_MODE_CONTRACTS`
+- `PM_EXTENSION_POLICY_SURFACE_CONTRACTS`
+
+Type guards:
+
+- `isPmToolAction(value)`
+- `isPmExtensionCapabilityContract(value)`
+- `isPmExtensionServiceNameContract(value)`
+- `isPmExtensionPolicyModeContract(value)`
+- `isPmExtensionPolicySurfaceContract(value)`
+
+## Capability Mapping
+
+- `commands` -> `registerCommand`
+- `schema` -> `registerFlags`, `registerItemFields`, `registerItemTypes`, `registerMigration`
+- `importers` -> `registerImporter`, `registerExporter`
+- `search` -> `registerSearchProvider`, `registerVectorStoreAdapter`
+- `hooks` -> `api.hooks.*`
+- `parser` -> `registerParser`
+- `preflight` -> `registerPreflight`
+- `services` -> `registerService`
+- `renderers` -> `registerRenderer`
+
+## Extension Authoring Example
+
+```ts
+import { defineExtension } from "@unbrained/pm-cli/sdk";
+
+export default defineExtension({
+  activate(api) {
+    api.registerCommand({
+      name: "release audit",
+      action: "release-audit",
+      description: "Collect release readiness diagnostics.",
+      intent: "provide deterministic audit payloads for CI gates",
+      examples: ["pm release audit --strict"],
+      failure_hints: ["Run pm extension --doctor --detail deep --trace on activation failures."],
+      flags: [{ long: "--strict", description: "Enable strict gate mode." }],
+      run: async (context) => ({
+        ok: true,
+        command: context.command,
+        strict: context.options.strict === true,
+      }),
+    });
+  },
+});
+```
+
+## Programmatic Contracts (App/Script)
+
+Use runtime `pm contracts` for extension-aware schemas:
+
+```bash
+pm contracts --json
+pm contracts --schema-only --json
+pm contracts --command extension --flags-only --json
+pm contracts --action create --schema-only --json
+```
+
+The result includes:
+
+- `actions`: runtime-invocable action list
+- `action_availability`: invocable/disabled reasons
+- `schema`: strict action-scoped JSON schema
+- `command_flags`: merged core + extension + runtime field flags
+- `extension_contracts`: capabilities/services/policy mode/surface contract metadata
+
+## Robust Script Pattern
+
+See runnable example: `docs/examples/sdk-contract-consumer/inspect-contracts.mjs`.
+
+Minimal pattern:
+
+1. Read contracts JSON.
+2. Validate action exists in `actions`.
+3. Validate required fields with `PM_TOOL_ACTION_PARAMETER_CONTRACTS`.
+4. Execute the action only after preflight passes.
+
+## CI/CD Pattern
+
+Recommended gate sequence:
+
+```bash
+pnpm build
+pm contracts --schema-only --json > /tmp/pm-contracts.json
+pm extension --doctor --project --detail summary --strict-exit
+node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts
+node scripts/run-tests.mjs coverage
+```
+
+Reference workflow file:
+
+- `docs/examples/ci/github-actions-pm-extension-gate.yml`
+
+## Pi / Tooling Compatibility
+
+For provider-safe schemas, use `PM_PI_TOOL_PARAMETERS_SCHEMA`. It is flat, non-`oneOf`, and designed for tool providers that reject advanced schema constructs.
+
+The bundled Pi wrapper (`.pi/extensions/pm-cli/index.js`) consumes this schema directly to reduce contract drift.
+
+## Related Docs
+
+- `docs/EXTENSIONS.md`
+- `docs/examples/starter-extension/README.md`
+- `docs/examples/sdk-contract-consumer/README.md`
+# SDK
+
 The public SDK is exported from `@unbrained/pm-cli/sdk`. Use it for extension authoring and command-contract introspection. Do not import internal `src/core/...` modules from extensions.
 
 ## Agent Quick Context

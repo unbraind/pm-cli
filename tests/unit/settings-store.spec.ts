@@ -172,7 +172,17 @@ describe("core/store/settings", () => {
       ]);
       expectOrderedObjectKeys(parsed.item_types, ["definitions"]);
       expectOrderedObjectKeys(parsed.schema, ["version", "files", "statuses", "fields", "workflow", "unknown_field_policy"]);
-      expectOrderedObjectKeys(parsed.extensions, ["enabled", "disabled"]);
+      expectOrderedObjectKeys(parsed.extensions, ["enabled", "disabled", "policy"]);
+      expectOrderedObjectKeys((parsed.extensions as Record<string, unknown>).policy, [
+        "mode",
+        "allowed_extensions",
+        "blocked_extensions",
+        "allowed_capabilities",
+        "blocked_capabilities",
+        "allowed_surfaces",
+        "blocked_surfaces",
+        "extension_overrides",
+      ]);
       expectOrderedObjectKeys(parsed.search, [
         "score_threshold",
         "hybrid_semantic_weight",

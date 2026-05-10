@@ -418,6 +418,28 @@ export interface GovernanceSettings {
   force_required_for_stale_lock: boolean;
 }
 
+export type ExtensionPolicyMode = "off" | "warn" | "enforce";
+
+export interface ExtensionPolicyOverrideSettings {
+  name: string;
+  disabled?: boolean;
+  allowed_capabilities?: string[];
+  blocked_capabilities?: string[];
+  allowed_surfaces?: string[];
+  blocked_surfaces?: string[];
+}
+
+export interface ExtensionPolicySettings {
+  mode: ExtensionPolicyMode;
+  allowed_extensions: string[];
+  blocked_extensions: string[];
+  allowed_capabilities: string[];
+  blocked_capabilities: string[];
+  allowed_surfaces: string[];
+  blocked_surfaces: string[];
+  extension_overrides: ExtensionPolicyOverrideSettings[];
+}
+
 export interface PmSettings {
   version: number;
   id_prefix: string;
@@ -464,6 +486,7 @@ export interface PmSettings {
   extensions: {
     enabled: string[];
     disabled: string[];
+    policy: ExtensionPolicySettings;
   };
   search: {
     score_threshold: number;

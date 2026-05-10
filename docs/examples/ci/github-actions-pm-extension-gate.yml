@@ -1,0 +1,45 @@
+name: pm-extension-gate
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  extension-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Export contracts (schema + flags)
+        run: |
+          pm contracts --schema-only --json > contracts-schema.json
+          pm contracts --command extension --flags-only --json > contracts-extension-flags.json
+
+      - name: Extension governance diagnostics gate
+        run: pm extension --doctor --project --detail summary --strict-exit
+
+      - name: Unit tests
+        run: node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extension-command.spec.ts
+
+      - name: Coverage
+        run: node scripts/run-tests.mjs coverage

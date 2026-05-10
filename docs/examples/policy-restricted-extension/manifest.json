@@ -1,0 +1,6 @@
+{
+  "name": "policy-restricted-extension",
+  "version": "0.1.0",
+  "entry": "./index.js",
+  "capabilities": ["commands", "hooks", "services"]
+}

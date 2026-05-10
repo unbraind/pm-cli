@@ -44,6 +44,32 @@ export const PM_EXTENSION_SERVICE_NAME_CONTRACTS = [
 
 export type PmExtensionServiceNameContract = (typeof PM_EXTENSION_SERVICE_NAME_CONTRACTS)[number];
 
+export const PM_EXTENSION_POLICY_MODE_CONTRACTS = ["off", "warn", "enforce"] as const;
+export type PmExtensionPolicyModeContract = (typeof PM_EXTENSION_POLICY_MODE_CONTRACTS)[number];
+
+export const PM_EXTENSION_POLICY_SURFACE_CONTRACTS = [
+  "commands.override",
+  "commands.handler",
+  "hooks.beforecommand",
+  "hooks.aftercommand",
+  "hooks.onwrite",
+  "hooks.onread",
+  "hooks.onindex",
+  "schema.flags",
+  "schema.itemfields",
+  "schema.itemtypes",
+  "schema.migrations",
+  "parser.override",
+  "preflight.override",
+  "services.override",
+  "renderers.override",
+  "importers.importer",
+  "importers.exporter",
+  "search.provider",
+  "search.vectorstore",
+] as const;
+export type PmExtensionPolicySurfaceContract = (typeof PM_EXTENSION_POLICY_SURFACE_CONTRACTS)[number];
+
 function normalizeUniqueStringList(values: Iterable<string>): string[] {
   return [...new Set(Array.from(values).filter((value) => value.trim().length > 0))];
 }
@@ -171,6 +197,7 @@ export const PM_TOOL_ACTIONS = [
   "list-canceled",
   "aggregate",
   "dedupe-audit",
+  "guide",
   "calendar",
   "cal",
   "context",
@@ -221,6 +248,26 @@ export const PM_TOOL_ACTIONS = [
 ] as const;
 
 export type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
+
+export function isPmToolAction(value: string): value is PmToolAction {
+  return PM_TOOL_ACTIONS.includes(value as PmToolAction);
+}
+
+export function isPmExtensionCapabilityContract(value: string): value is PmExtensionCapabilityContract {
+  return PM_EXTENSION_CAPABILITY_CONTRACTS.includes(value as PmExtensionCapabilityContract);
+}
+
+export function isPmExtensionServiceNameContract(value: string): value is PmExtensionServiceNameContract {
+  return PM_EXTENSION_SERVICE_NAME_CONTRACTS.includes(value as PmExtensionServiceNameContract);
+}
+
+export function isPmExtensionPolicyModeContract(value: string): value is PmExtensionPolicyModeContract {
+  return PM_EXTENSION_POLICY_MODE_CONTRACTS.includes(value as PmExtensionPolicyModeContract);
+}
+
+export function isPmExtensionPolicySurfaceContract(value: string): value is PmExtensionPolicySurfaceContract {
+  return PM_EXTENSION_POLICY_SURFACE_CONTRACTS.includes(value as PmExtensionPolicySurfaceContract);
+}
 
 export const PI_LIST_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "type", flag: "--type" },
@@ -1693,7 +1740,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
 
 const PM_TOOL_GLOBAL_PARAMETER_KEYS = ["json", "quiet", "profile", "noExtensions", "noPager", "path", "pmExecutable", "timeoutMs"] as const;
 
-interface PmActionSchemaContract {
+export interface PmActionSchemaContract {
   required?: string[];
   optional?: string[];
   anyOfRequired?: Array<string[]>;
@@ -1852,6 +1899,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "list-canceled": { optional: LIST_CONTRACT_PARAMETER_KEYS },
   aggregate: { optional: AGGREGATE_CONTRACT_PARAMETER_KEYS },
   "dedupe-audit": { optional: DEDUPE_AUDIT_CONTRACT_PARAMETER_KEYS },
+  guide: { optional: ["format", "depth"] },
   calendar: { optional: CALENDAR_CONTRACT_PARAMETER_KEYS },
   cal: { optional: CALENDAR_CONTRACT_PARAMETER_KEYS },
   context: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
@@ -2032,6 +2080,9 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "pause-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   "close-task": { required: ["id", "text"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
 };
+
+export const PM_TOOL_ACTION_PARAMETER_CONTRACTS: Readonly<Record<PmToolAction, PmActionSchemaContract>> =
+  PM_TOOL_ACTION_SCHEMA_CONTRACTS;
 
 const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples?: unknown[] }> = {
   action: {

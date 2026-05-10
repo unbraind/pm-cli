@@ -1,0 +1,50 @@
+id: pm-dhie
+title: Full-scope SDK and extension platform upgrade for app/CI integrations
+description: "Implement granular extension governance controls, stronger SDK contracts, Pi-inspired reliability hardening, comprehensive docs, and fully working real-life examples with end-to-end verification."
+type: Task
+status: in_progress
+priority: 0
+tags[6]: agent-ux,ci,docs,extensions,pm-cli,sdk
+created_at: "2026-05-10T09:48:16.405Z"
+updated_at: "2026-05-10T12:07:48.192Z"
+assignee: codex-agent
+author: codex-agent
+estimated_minutes: 360
+acceptance_criteria: Granular extension controls and diagnostics are implemented; SDK/contracts expose deterministic machine-friendly surfaces; docs/examples are comprehensive and runnable; automated and manual temp-project E2E verification pass; final checks are green on GitHub.
+parent: pm-rnpb
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,parent,"2026-05-10T09:48:16.405Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-05-10T09:48:16.405Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10 --depth standard,pm search full scope sdk extension capabilities docs examples ci --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Existing active items either cover plugin-specific work (pm-0c9q),docs-skills modernization (pm-4z9m),or unrelated issues,so this is net-new child scope under pm-rnpb."
+  "2026-05-10T12:07:48.192Z",codex-agent,"Evidence: implemented extension governance policy enforcement in loader/runtime and surfaced policy diagnostics in extension doctor/manage + contracts output; added SDK policy/action helpers and Pi/native schema alignment. Verified with node scripts/run-tests.mjs test -- --maxWorkers=2, node scripts/run-tests.mjs coverage -- --maxWorkers=2, targeted extension/contracts suites, and integration suite. Manual temp-project E2E passed using docs/examples/policy-restricted-extension (install + activate + enforce services.override block + doctor strict-exit) and docs/examples/sdk-contract-consumer (local package install + inspect-contracts.mjs create)."
+files[16]{path,scope,note}:
+  .pi/extensions/pm-cli/index.js,project,provider schema stability via sdk contract
+  docs/examples/ci/github-actions-pm-extension-gate.yml,project,ci gate workflow example
+  docs/examples/policy-restricted-extension/README.md,project,policy-restricted runnable example
+  docs/examples/sdk-contract-consumer/README.md,project,programmatic contract consumer example
+  docs/EXTENSIONS.md,project,governance and extension workflow docs
+  docs/SDK.md,project,sdk and contracts integration docs
+  src/cli/commands/contracts.ts,project,extension contract metadata output
+  src/cli/commands/extension.ts,project,doctor/manage policy diagnostics
+  src/core/extensions/loader.ts,project,policy enforcement and registration gating
+  src/pi/native.ts,project,native action contract alignment
+  src/sdk/cli-contracts.ts,project,new policy/action helper contracts
+  src/sdk/index.ts,project,sdk export surface updates
+  tests/unit/contracts-command.spec.ts,project,contracts policy metadata tests
+  tests/unit/extension-command.spec.ts,project,doctor policy diagnostics tests
+  tests/unit/extension-loader.spec.ts,project,policy discovery and activation tests
+  tests/unit/settings-store.spec.ts,project,settings policy serialization tests
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage -- --maxWorkers=2,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full sandboxed coverage suite
+  node scripts/run-tests.mjs test -- --maxWorkers=2,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full sandboxed suite stable worker profile
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,integration lifecycle verification
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,targeted extension and contracts verification
+docs[7]{path,scope,note}:
+  docs/CLAUDE_CODE_PLUGIN.md,project,claude plugin contract and policy guidance
+  docs/examples/ci/github-actions-pm-extension-gate.yml,project,ci workflow gate reference
+  docs/examples/policy-restricted-extension/README.md,project,policy enforcement runnable walkthrough
+  docs/examples/sdk-contract-consumer/README.md,project,programmatic contracts consumer walkthrough
+  docs/examples/starter-extension/README.md,project,starter extension runnable walkthrough
+  docs/EXTENSIONS.md,project,extension governance and lifecycle guide
+  docs/SDK.md,project,sdk exports and contract integration guide
+body: ""

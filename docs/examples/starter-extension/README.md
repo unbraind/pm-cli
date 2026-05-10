@@ -1,62 +1,70 @@
-# Starter Extension
+# Starter Extension (Runnable Example)
 
-This example demonstrates all extension capability categories through the public SDK import `@unbrained/pm-cli/sdk`.
+This example is a full capability reference extension. It intentionally demonstrates every extension capability surface, including parser/preflight/services/search/schema hooks.
 
-## Agent Quick Context
+Use it to learn APIs, then narrow capabilities for production extensions.
 
-- Copy this folder when you need a complete capability reference.
-- Use `pm extension init ./my-extension` when you need a smaller scaffold.
-- Keep production extensions narrower than this example.
+## Contents
 
-Related docs:
+- `manifest.json` -> extension metadata/capabilities
+- `package.json` -> local dependency metadata
+- `index.js` -> capability demonstrations
 
-- [Extensions](../../EXTENSIONS.md)
-- [SDK](../../SDK.md)
+## End-to-End Run
 
-## Files
-
-| File | Purpose |
-|------|---------|
-| `manifest.json` | declares extension metadata and capabilities |
-| `package.json` | declares local package metadata and SDK dependency |
-| `index.js` | registers examples for each capability category |
-
-## Capability Coverage
-
-| Capability | Example surface |
-|------------|-----------------|
-| `commands` | `api.registerCommand(...)` |
-| `parser` | `api.registerParser(...)` |
-| `preflight` | `api.registerPreflight(...)` |
-| `services` | `api.registerService(...)` |
-| `renderers` | `api.registerRenderer(...)` |
-| `hooks` | command, read, write, and index hooks |
-| `schema` | item fields, item types, migrations |
-| `importers` | importer and exporter registration |
-| `search` | search provider and vector adapter |
-
-## Quick Start
-
-Copy into an extension root:
+From repository root:
 
 ```bash
+# 1) Copy into project extension root
 mkdir -p .agents/pm/extensions
 cp -R docs/examples/starter-extension .agents/pm/extensions/starter-extension
+
+# 2) Install dependencies for the copied extension
 cd .agents/pm/extensions/starter-extension
 npm install
+cd -
+
+# 3) Install/activate in project scope
+pm extension --install --project .agents/pm/extensions/starter-extension
+
+# 4) Run a starter command
+pm starter ping --name "agent"
+
+# 5) Verify runtime health
+pm extension --doctor --project --detail summary
 ```
 
-Activate and test from the repository root:
+Expected outcomes:
+
+- `pm starter ping` returns deterministic output (plain text when starter service overrides output formatting).
+- `extension --doctor` shows `details.summary.status` as `ok` or `warn`.
+- If `warn`, inspect `details.summary.warning_codes` and `details.triage.remediation`.
+
+## Policy-Restricted Variant
+
+To test governance controls with this extension:
+
+1. Set `settings.extensions.policy.mode` to `warn` or `enforce`.
+2. Block one surface (for example `commands.override`).
+3. Re-run `pm extension --doctor --detail summary`.
+
+You should see `extension_policy_*` warnings and policy counters in `details.triage`.
+
+## CI-Friendly Verification Commands
 
 ```bash
-pm extension activate starter-extension --project
-pm starter ping --name "agent"
-pm extension doctor --detail summary
+pm contracts --command extension --flags-only --json
+pm extension --doctor --project --detail summary --strict-exit
+node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extension-command.spec.ts
 ```
 
 ## Notes
 
-- This starter is for learning and scaffold reference.
-- Real extensions should declare only the capabilities they need.
-- Keep service, parser, and preflight overrides narrow and well tested.
-- Return deterministic JSON-like objects from command handlers.
+- Keep production manifests minimal: only declare capabilities you need.
+- Prefer command metadata (`action`, `examples`, `failure_hints`) for machine+human diagnostics.
+- Keep parser/preflight/service overrides narrow and deterministic.
+
+## Related Examples
+
+- `docs/examples/policy-restricted-extension/README.md`
+- `docs/examples/sdk-contract-consumer/README.md`

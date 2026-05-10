@@ -7,10 +7,15 @@ import type { GlobalOptions } from "../shared/command-types.js";
 import type { PmSettings } from "../../types/index.js";
 import {
   KNOWN_EXTENSION_CAPABILITIES,
+  KNOWN_EXTENSION_POLICY_MODES,
+  KNOWN_EXTENSION_POLICY_SURFACES,
   EXTENSION_CAPABILITY_CONTRACT_VERSION,
   EXTENSION_CAPABILITY_LEGACY_ALIASES,
   EXTENSION_CAPABILITY_CONTRACT,
   type ExtensionCapability,
+  type ExtensionPolicyMode,
+  type ExtensionPolicySurface,
+  type ExtensionGovernancePolicy,
   type ExtensionLayer,
   type ExtensionStatus,
   type ExtensionManifest,
@@ -135,6 +140,384 @@ function isKnownExtensionCapability(value: string): value is ExtensionCapability
 
 function collectUnknownExtensionCapabilities(capabilities: readonly string[]): string[] {
   return capabilities.filter((capability) => !isKnownExtensionCapability(capability));
+}
+
+interface NormalizedExtensionPolicyOverride {
+  name: string;
+  disabled: boolean;
+  allowedCapabilities: Set<string>;
+  blockedCapabilities: Set<string>;
+  allowedSurfaces: Set<string>;
+  blockedSurfaces: Set<string>;
+}
+
+interface NormalizedExtensionPolicy {
+  mode: ExtensionPolicyMode;
+  allowedExtensions: Set<string>;
+  blockedExtensions: Set<string>;
+  allowedCapabilities: Set<string>;
+  blockedCapabilities: Set<string>;
+  allowedSurfaces: Set<string>;
+  blockedSurfaces: Set<string>;
+  overridesByName: Map<string, NormalizedExtensionPolicyOverride>;
+  warnings: string[];
+}
+
+const DEFAULT_EXTENSION_POLICY: ExtensionGovernancePolicy = Object.freeze({
+  mode: "off",
+  allowed_extensions: [],
+  blocked_extensions: [],
+  allowed_capabilities: [],
+  blocked_capabilities: [],
+  allowed_surfaces: [],
+  blocked_surfaces: [],
+  extension_overrides: [],
+});
+
+type PolicyExtensionRef = Pick<LoadedExtension, "layer" | "name">;
+
+function normalizePolicyName(value: string | undefined): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value.trim().toLowerCase();
+}
+
+function normalizePolicyStringSet(values: readonly string[] | undefined): Set<string> {
+  return new Set(
+    (values ?? [])
+      .map((value) => value.trim().toLowerCase())
+      .filter((value) => value.length > 0),
+  );
+}
+
+function normalizePolicySurfaceToken(value: string): string {
+  const normalized = value.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return "";
+  }
+  const segments = normalized
+    .split(/[.:/]/)
+    .map((segment) => segment.replace(/[\s_-]+/g, ""))
+    .filter((segment) => segment.length > 0);
+  if (segments.length === 0) {
+    return "";
+  }
+  if (segments.length === 1) {
+    return segments[0];
+  }
+  return `${segments[0]}.${segments.slice(1).join("")}`;
+}
+
+function normalizePolicySurfaceSet(values: readonly string[] | undefined): Set<string> {
+  return new Set(
+    (values ?? [])
+      .map((value) => normalizePolicySurfaceToken(value))
+      .filter((value) => value.length > 0),
+  );
+}
+
+function normalizePolicyMode(value: string | undefined): ExtensionPolicyMode {
+  const normalized = normalizePolicyName(value);
+  if ((KNOWN_EXTENSION_POLICY_MODES as readonly string[]).includes(normalized)) {
+    return normalized as ExtensionPolicyMode;
+  }
+  return "off";
+}
+
+function toSortedList(values: Iterable<string>): string[] {
+  return [...new Set(values)].sort((left, right) => left.localeCompare(right));
+}
+
+function normalizeExtensionPolicy(settings: PmSettings): NormalizedExtensionPolicy {
+  const policy = settings.extensions.policy;
+  const mode = normalizePolicyMode(policy?.mode);
+  const allowedExtensions = normalizePolicyStringSet(policy?.allowed_extensions);
+  const blockedExtensions = normalizePolicyStringSet(policy?.blocked_extensions);
+  const allowedCapabilities = normalizePolicyStringSet(policy?.allowed_capabilities);
+  const blockedCapabilities = normalizePolicyStringSet(policy?.blocked_capabilities);
+  const allowedSurfaces = normalizePolicySurfaceSet(policy?.allowed_surfaces);
+  const blockedSurfaces = normalizePolicySurfaceSet(policy?.blocked_surfaces);
+  const overridesByName = new Map<string, NormalizedExtensionPolicyOverride>();
+  for (const rawOverride of policy?.extension_overrides ?? []) {
+    const name = normalizePolicyName(rawOverride.name);
+    if (name.length === 0) {
+      continue;
+    }
+    overridesByName.set(name, {
+      name,
+      disabled: rawOverride.disabled === true,
+      allowedCapabilities: normalizePolicyStringSet(rawOverride.allowed_capabilities),
+      blockedCapabilities: normalizePolicyStringSet(rawOverride.blocked_capabilities),
+      allowedSurfaces: normalizePolicySurfaceSet(rawOverride.allowed_surfaces),
+      blockedSurfaces: normalizePolicySurfaceSet(rawOverride.blocked_surfaces),
+    });
+  }
+
+  const warnings: string[] = [];
+  for (const capability of toSortedList([...allowedCapabilities, ...blockedCapabilities])) {
+    if (!isKnownExtensionCapability(capability)) {
+      warnings.push(`extension_policy_unknown_capability:${capability}`);
+    }
+  }
+  for (const override of [...overridesByName.values()].sort((left, right) => left.name.localeCompare(right.name))) {
+    for (const capability of toSortedList([...override.allowedCapabilities, ...override.blockedCapabilities])) {
+      if (!isKnownExtensionCapability(capability)) {
+        warnings.push(`extension_policy_unknown_capability:${override.name}:${capability}`);
+      }
+    }
+  }
+  const knownSurfaces = new Set<string>(KNOWN_EXTENSION_POLICY_SURFACES);
+  for (const surface of toSortedList([...allowedSurfaces, ...blockedSurfaces])) {
+    if (!knownSurfaces.has(surface)) {
+      warnings.push(`extension_policy_unknown_surface:${surface}`);
+    }
+  }
+  for (const override of [...overridesByName.values()].sort((left, right) => left.name.localeCompare(right.name))) {
+    for (const surface of toSortedList([...override.allowedSurfaces, ...override.blockedSurfaces])) {
+      if (!knownSurfaces.has(surface)) {
+        warnings.push(`extension_policy_unknown_surface:${override.name}:${surface}`);
+      }
+    }
+  }
+
+  return {
+    mode,
+    allowedExtensions,
+    blockedExtensions,
+    allowedCapabilities,
+    blockedCapabilities,
+    allowedSurfaces,
+    blockedSurfaces,
+    overridesByName,
+    warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+  };
+}
+
+function serializeExtensionPolicy(policy: NormalizedExtensionPolicy): ExtensionGovernancePolicy {
+  const overrides = [...policy.overridesByName.values()]
+    .sort((left, right) => left.name.localeCompare(right.name))
+    .map((override) => ({
+      name: override.name,
+      ...(override.disabled ? { disabled: true } : {}),
+      ...(override.allowedCapabilities.size > 0 ? { allowed_capabilities: toSortedList(override.allowedCapabilities) } : {}),
+      ...(override.blockedCapabilities.size > 0 ? { blocked_capabilities: toSortedList(override.blockedCapabilities) } : {}),
+      ...(override.allowedSurfaces.size > 0 ? { allowed_surfaces: toSortedList(override.allowedSurfaces) } : {}),
+      ...(override.blockedSurfaces.size > 0 ? { blocked_surfaces: toSortedList(override.blockedSurfaces) } : {}),
+    }));
+  return {
+    mode: policy.mode,
+    allowed_extensions: toSortedList(policy.allowedExtensions),
+    blocked_extensions: toSortedList(policy.blockedExtensions),
+    allowed_capabilities: toSortedList(policy.allowedCapabilities),
+    blocked_capabilities: toSortedList(policy.blockedCapabilities),
+    allowed_surfaces: toSortedList(policy.allowedSurfaces),
+    blocked_surfaces: toSortedList(policy.blockedSurfaces),
+    extension_overrides: overrides,
+  };
+}
+
+function hydrateExtensionPolicy(policy: ExtensionGovernancePolicy): NormalizedExtensionPolicy {
+  const overridesByName = new Map<string, NormalizedExtensionPolicyOverride>();
+  for (const rawOverride of policy.extension_overrides ?? []) {
+    const name = normalizePolicyName(rawOverride.name);
+    if (name.length === 0) {
+      continue;
+    }
+    overridesByName.set(name, {
+      name,
+      disabled: rawOverride.disabled === true,
+      allowedCapabilities: normalizePolicyStringSet(rawOverride.allowed_capabilities),
+      blockedCapabilities: normalizePolicyStringSet(rawOverride.blocked_capabilities),
+      allowedSurfaces: normalizePolicySurfaceSet(rawOverride.allowed_surfaces),
+      blockedSurfaces: normalizePolicySurfaceSet(rawOverride.blocked_surfaces),
+    });
+  }
+  return {
+    mode: normalizePolicyMode(policy.mode),
+    allowedExtensions: normalizePolicyStringSet(policy.allowed_extensions),
+    blockedExtensions: normalizePolicyStringSet(policy.blocked_extensions),
+    allowedCapabilities: normalizePolicyStringSet(policy.allowed_capabilities),
+    blockedCapabilities: normalizePolicyStringSet(policy.blocked_capabilities),
+    allowedSurfaces: normalizePolicySurfaceSet(policy.allowed_surfaces),
+    blockedSurfaces: normalizePolicySurfaceSet(policy.blocked_surfaces),
+    overridesByName,
+    warnings: [],
+  };
+}
+
+function resolvePolicyOverride(
+  policy: NormalizedExtensionPolicy,
+  extensionName: string,
+): NormalizedExtensionPolicyOverride | null {
+  return policy.overridesByName.get(normalizePolicyName(extensionName)) ?? null;
+}
+
+function evaluatePolicySet(
+  allowed: Set<string>,
+  blocked: Set<string>,
+  value: string,
+  notAllowlistedReason: string,
+  blockedReason: string,
+): string | null {
+  if (blocked.has(value)) {
+    return blockedReason;
+  }
+  if (allowed.size > 0 && !allowed.has(value)) {
+    return notAllowlistedReason;
+  }
+  return null;
+}
+
+function resolvePolicyCapabilityReason(
+  policy: NormalizedExtensionPolicy,
+  extension: PolicyExtensionRef,
+  capability: string,
+): string | null {
+  const normalizedCapability = capability.trim().toLowerCase();
+  const override = resolvePolicyOverride(policy, extension.name);
+  const allowed = override && override.allowedCapabilities.size > 0 ? override.allowedCapabilities : policy.allowedCapabilities;
+  const blocked = new Set<string>([
+    ...policy.blockedCapabilities,
+    ...(override ? override.blockedCapabilities : []),
+  ]);
+  return evaluatePolicySet(
+    allowed,
+    blocked,
+    normalizedCapability,
+    "capability_not_allowlisted",
+    "capability_blocked",
+  );
+}
+
+function resolvePolicySurfaceReason(
+  policy: NormalizedExtensionPolicy,
+  extension: PolicyExtensionRef,
+  surface: ExtensionPolicySurface,
+): string | null {
+  const override = resolvePolicyOverride(policy, extension.name);
+  const allowed = override && override.allowedSurfaces.size > 0 ? override.allowedSurfaces : policy.allowedSurfaces;
+  const blocked = new Set<string>([
+    ...policy.blockedSurfaces,
+    ...(override ? override.blockedSurfaces : []),
+  ]);
+  return evaluatePolicySet(allowed, blocked, surface, "surface_not_allowlisted", "surface_blocked");
+}
+
+function resolvePolicyExtensionReason(policy: NormalizedExtensionPolicy, extension: PolicyExtensionRef): string | null {
+  const name = normalizePolicyName(extension.name);
+  const override = resolvePolicyOverride(policy, extension.name);
+  if (override?.disabled === true) {
+    return "extension_override_disabled";
+  }
+  return evaluatePolicySet(
+    policy.allowedExtensions,
+    policy.blockedExtensions,
+    name,
+    "extension_not_allowlisted",
+    "extension_blocked",
+  );
+}
+
+function buildPolicyWarning(
+  mode: "blocked" | "violation",
+  scope: "extension" | "capability" | "registration",
+  extension: PolicyExtensionRef,
+  reason: string,
+  details: Record<string, string> = {},
+): string {
+  const tokens = Object.entries(details)
+    .sort((left, right) => left[0].localeCompare(right[0]))
+    .map(([key, value]) => `${key}=${value}`)
+    .join(":");
+  const suffix = tokens.length > 0 ? `:${tokens}` : "";
+  return `extension_policy_${mode}_${scope}:${extension.layer}:${extension.name}:reason=${reason}${suffix}`;
+}
+
+function evaluateExtensionPolicyForExtension(
+  policy: NormalizedExtensionPolicy,
+  extension: PolicyExtensionRef,
+): { allowed: boolean; warning: string | null } {
+  if (policy.mode === "off") {
+    return { allowed: true, warning: null };
+  }
+  const reason = resolvePolicyExtensionReason(policy, extension);
+  if (!reason) {
+    return { allowed: true, warning: null };
+  }
+  if (policy.mode === "warn") {
+    return {
+      allowed: true,
+      warning: buildPolicyWarning("violation", "extension", extension, reason),
+    };
+  }
+  return {
+    allowed: false,
+    warning: buildPolicyWarning("blocked", "extension", extension, reason),
+  };
+}
+
+function evaluateExtensionPolicyForCapability(
+  policy: NormalizedExtensionPolicy,
+  extension: PolicyExtensionRef,
+  capability: string,
+): { allowed: boolean; warning: string | null } {
+  if (policy.mode === "off") {
+    return { allowed: true, warning: null };
+  }
+  const reason = resolvePolicyCapabilityReason(policy, extension, capability);
+  if (!reason) {
+    return { allowed: true, warning: null };
+  }
+  return {
+    allowed: policy.mode === "warn",
+    warning: buildPolicyWarning(
+    policy.mode === "warn" ? "violation" : "blocked",
+    "capability",
+    extension,
+    reason,
+    { capability: capability.trim().toLowerCase() },
+    ),
+  };
+}
+
+function evaluateExtensionPolicyForRegistration(
+  policy: NormalizedExtensionPolicy,
+  extension: PolicyExtensionRef,
+  surface: ExtensionPolicySurface,
+  method: string,
+  capability?: ExtensionCapability,
+): { allowed: boolean; warning: string | null } {
+  if (policy.mode === "off") {
+    return { allowed: true, warning: null };
+  }
+  const capabilityReason =
+    typeof capability === "string" ? resolvePolicyCapabilityReason(policy, extension, capability) : null;
+  const surfaceReason = resolvePolicySurfaceReason(policy, extension, surface);
+  const reason = capabilityReason ?? surfaceReason;
+  if (!reason) {
+    return { allowed: true, warning: null };
+  }
+  const warning = buildPolicyWarning(
+    policy.mode === "warn" ? "violation" : "blocked",
+    "registration",
+    extension,
+    reason,
+    capability
+      ? {
+          capability,
+          method: normalizePolicyName(method).replace(/\s+/g, "_"),
+          surface,
+        }
+      : {
+          method: normalizePolicyName(method).replace(/\s+/g, "_"),
+          surface,
+        },
+  );
+  return {
+    allowed: policy.mode === "warn",
+    warning,
+  };
 }
 
 function resolveLegacyExtensionCapabilityAlias(capability: string): ExtensionCapability | null {
@@ -633,6 +1016,8 @@ export async function discoverExtensions(options: DiscoverExtensionsOptions): Pr
   const roots = resolveExtensionRoots(options.pmRoot, options.cwd ?? process.cwd());
   const configured_enabled = normalizeNames(options.settings.extensions.enabled);
   const configured_disabled = normalizeNames(options.settings.extensions.disabled);
+  const policy = normalizeExtensionPolicy(options.settings);
+  const serializedPolicy = serializeExtensionPolicy(policy);
 
   if (options.noExtensions) {
     return {
@@ -642,7 +1027,8 @@ export async function discoverExtensions(options: DiscoverExtensionsOptions): Pr
       configured_disabled,
       discovered: [],
       effective: [],
-      warnings: [],
+      warnings: [...policy.warnings],
+      policy: serializedPolicy,
     };
   }
 
@@ -650,7 +1036,29 @@ export async function discoverExtensions(options: DiscoverExtensionsOptions): Pr
   const disabled = new Set(configured_disabled);
   const globalScan = await scanExtensionLayer("global", roots.global, enabled, disabled);
   const projectScan = await scanExtensionLayer("project", roots.project, enabled, disabled);
-  const effective = buildEffectiveExtensions(globalScan.candidates, projectScan.candidates).map(summarizeCandidate);
+  const policyWarnings: string[] = [...policy.warnings];
+  const effectiveCandidates = buildEffectiveExtensions(globalScan.candidates, projectScan.candidates);
+  const effective: EffectiveExtension[] = [];
+  for (const candidate of effectiveCandidates) {
+    const extensionRef = {
+      layer: candidate.layer,
+      name: candidate.manifest.name,
+    };
+    const extensionDecision = evaluateExtensionPolicyForExtension(policy, extensionRef);
+    if (extensionDecision.warning) {
+      policyWarnings.push(extensionDecision.warning);
+    }
+    if (!extensionDecision.allowed) {
+      continue;
+    }
+    for (const capability of candidate.manifest.capabilities) {
+      const capabilityDecision = evaluateExtensionPolicyForCapability(policy, extensionRef, capability);
+      if (capabilityDecision.warning) {
+        policyWarnings.push(capabilityDecision.warning);
+      }
+    }
+    effective.push(summarizeCandidate(candidate));
+  }
 
   return {
     disabled_by_flag: false,
@@ -659,7 +1067,8 @@ export async function discoverExtensions(options: DiscoverExtensionsOptions): Pr
     configured_disabled,
     discovered: [...globalScan.diagnostics, ...projectScan.diagnostics],
     effective,
-    warnings: [...globalScan.warnings, ...projectScan.warnings],
+    warnings: [...new Set([...globalScan.warnings, ...projectScan.warnings, ...policyWarnings])],
+    policy: serializedPolicy,
   };
 }
 
@@ -1206,7 +1615,26 @@ function createExtensionApi(
   renderers: ExtensionRendererRegistry,
   registrations: ExtensionRegistrationRegistry,
   activationWarnings: string[],
+  policy: NormalizedExtensionPolicy,
 ): ExtensionApi {
+  const extensionRef: PolicyExtensionRef = {
+    layer: extension.layer,
+    name: extension.name,
+  };
+  const pushPolicyWarning = (warning: string | null): void => {
+    if (warning) {
+      activationWarnings.push(warning);
+    }
+  };
+  const allowRegistration = (
+    surface: ExtensionPolicySurface,
+    method: string,
+    capability?: ExtensionCapability,
+  ): boolean => {
+    const decision = evaluateExtensionPolicyForRegistration(policy, extensionRef, surface, method, capability);
+    pushPolicyWarning(decision.warning);
+    return decision.allowed;
+  };
   const registerCommandTrace = (
     mode: "override" | "definition",
     command: string | undefined,
@@ -1225,6 +1653,9 @@ function createExtensionApi(
   const registerCommand = (commandOrDefinition: string | CommandDefinition, override?: CommandOverride): void => {
     assertExtensionCapability(extension, "commands", "registerCommand");
     if (typeof commandOrDefinition === "string") {
+      if (!allowRegistration("commands.override", "registerCommand", "commands")) {
+        return;
+      }
       const normalizedCommand = normalizeCommandName(commandOrDefinition);
       if (normalizedCommand.length === 0) {
         throw createRegistrationValidationError(
@@ -1260,6 +1691,9 @@ function createExtensionApi(
       return;
     }
 
+    if (!allowRegistration("commands.handler", "registerCommand", "commands")) {
+      return;
+    }
     if (typeof commandOrDefinition !== "object" || commandOrDefinition === null) {
       throw createRegistrationValidationError(
         "registerCommand requires a command definition object",
@@ -1383,6 +1817,9 @@ function createExtensionApi(
   };
   const registerParser = (command: string, override: ParserOverride): void => {
     assertExtensionCapability(extension, "parser", "registerParser");
+    if (!allowRegistration("parser.override", "registerParser", "parser")) {
+      return;
+    }
     const normalizedCommand = normalizeCommandName(assertNonEmptyString("registerParser command", command));
     assertFunctionHandler("registerParser override", override);
     parsers.overrides.push({
@@ -1394,6 +1831,9 @@ function createExtensionApi(
   };
   const registerPreflight = (override: PreflightOverride): void => {
     assertExtensionCapability(extension, "preflight", "registerPreflight");
+    if (!allowRegistration("preflight.override", "registerPreflight", "preflight")) {
+      return;
+    }
     assertFunctionHandler("registerPreflight override", override);
     preflight.overrides.push({
       layer: extension.layer,
@@ -1403,6 +1843,9 @@ function createExtensionApi(
   };
   const registerService = (service: ExtensionServiceName, override: ServiceOverride): void => {
     assertExtensionCapability(extension, "services", "registerService");
+    if (!allowRegistration("services.override", "registerService", "services")) {
+      return;
+    }
     const normalizedService = String(service).trim().toLowerCase();
     if (!isExtensionServiceName(normalizedService)) {
       throw new TypeError(`registerService service must be one of: ${EXTENSION_SERVICE_NAMES.join(", ")}`);
@@ -1417,6 +1860,9 @@ function createExtensionApi(
   };
   const registerRenderer = (format: OutputRendererFormat, renderer: RendererOverride): void => {
     assertExtensionCapability(extension, "renderers", "registerRenderer");
+    if (!allowRegistration("renderers.override", "registerRenderer", "renderers")) {
+      return;
+    }
     if (typeof renderer !== "function") {
       throw new TypeError("registerRenderer requires a renderer function");
     }
@@ -1433,6 +1879,9 @@ function createExtensionApi(
   };
   const registerFlags = (targetCommand: string, flags: FlagDefinition[]): void => {
     assertExtensionCapability(extension, "schema", "registerFlags");
+    if (!allowRegistration("schema.flags", "registerFlags", "schema")) {
+      return;
+    }
     const normalizedTargetCommand = normalizeCommandName(assertNonEmptyString("registerFlags targetCommand", targetCommand));
     validateFlagDefinitions(flags);
     const normalizedFlags = normalizeRegistrationRecordList("registerFlags flags", flags);
@@ -1448,6 +1897,9 @@ function createExtensionApi(
   };
   const registerItemFields = (fields: SchemaFieldDefinition[]): void => {
     assertExtensionCapability(extension, "schema", "registerItemFields");
+    if (!allowRegistration("schema.itemfields", "registerItemFields", "schema")) {
+      return;
+    }
     validateItemFieldDefinitions(fields);
     const normalizedFields = normalizeRegistrationRecordList(
       "registerItemFields fields",
@@ -1464,6 +1916,9 @@ function createExtensionApi(
   };
   const registerItemTypes = (types: SchemaItemTypeDefinition[]): void => {
     assertExtensionCapability(extension, "schema", "registerItemTypes");
+    if (!allowRegistration("schema.itemtypes", "registerItemTypes", "schema")) {
+      return;
+    }
     validateItemTypeDefinitions(types);
     const normalizedTypes = normalizeRegistrationRecordList(
       "registerItemTypes types",
@@ -1480,6 +1935,9 @@ function createExtensionApi(
   };
   const registerMigration = (definition: SchemaMigrationDefinition): void => {
     assertExtensionCapability(extension, "schema", "registerMigration");
+    if (!allowRegistration("schema.migrations", "registerMigration", "schema")) {
+      return;
+    }
     validateMigrationDefinition(definition);
     const runtimeDefinition = normalizeRuntimeRegistrationRecord("registerMigration definition", definition);
     registrations.migrations.push(
@@ -1495,6 +1953,9 @@ function createExtensionApi(
   };
   const registerImporter = (name: string, importer: Importer): void => {
     assertExtensionCapability(extension, "importers", "registerImporter");
+    if (!allowRegistration("importers.importer", "registerImporter", "importers")) {
+      return;
+    }
     const normalizedName = normalizeRegistrationName(assertNonEmptyString("registerImporter name", name));
     assertFunctionHandler("registerImporter importer", importer);
     const commandPath = toRegistrationCommandPath(normalizedName, "import");
@@ -1521,6 +1982,9 @@ function createExtensionApi(
   };
   const registerExporter = (name: string, exporter: Exporter): void => {
     assertExtensionCapability(extension, "importers", "registerExporter");
+    if (!allowRegistration("importers.exporter", "registerExporter", "importers")) {
+      return;
+    }
     const normalizedName = normalizeRegistrationName(assertNonEmptyString("registerExporter name", name));
     assertFunctionHandler("registerExporter exporter", exporter);
     const commandPath = toRegistrationCommandPath(normalizedName, "export");
@@ -1547,6 +2011,9 @@ function createExtensionApi(
   };
   const registerSearchProvider = (provider: SearchProviderDefinition): void => {
     assertExtensionCapability(extension, "search", "registerSearchProvider");
+    if (!allowRegistration("search.provider", "registerSearchProvider", "search")) {
+      return;
+    }
     const runtimeDefinition = normalizeRuntimeRegistrationRecord("registerSearchProvider provider", provider);
     registrations.search_providers.push(
       attachRuntimeDefinition(
@@ -1561,6 +2028,9 @@ function createExtensionApi(
   };
   const registerVectorStoreAdapter = (adapter: VectorStoreAdapterDefinition): void => {
     assertExtensionCapability(extension, "search", "registerVectorStoreAdapter");
+    if (!allowRegistration("search.vectorstore", "registerVectorStoreAdapter", "search")) {
+      return;
+    }
     const runtimeDefinition = normalizeRuntimeRegistrationRecord("registerVectorStoreAdapter adapter", adapter);
     registrations.vector_store_adapters.push(
       attachRuntimeDefinition(
@@ -1575,6 +2045,9 @@ function createExtensionApi(
   };
   const registerBeforeCommand = (hook: BeforeCommandHook): void => {
     assertExtensionCapability(extension, "hooks", "api.hooks.beforeCommand");
+    if (!allowRegistration("hooks.beforecommand", "api.hooks.beforeCommand", "hooks")) {
+      return;
+    }
     assertHookHandler("beforeCommand", hook);
     hooks.beforeCommand.push({
       layer: extension.layer,
@@ -1584,6 +2057,9 @@ function createExtensionApi(
   };
   const registerAfterCommand = (hook: AfterCommandHook): void => {
     assertExtensionCapability(extension, "hooks", "api.hooks.afterCommand");
+    if (!allowRegistration("hooks.aftercommand", "api.hooks.afterCommand", "hooks")) {
+      return;
+    }
     assertHookHandler("afterCommand", hook);
     hooks.afterCommand.push({
       layer: extension.layer,
@@ -1593,6 +2069,9 @@ function createExtensionApi(
   };
   const registerOnWrite = (hook: OnWriteHook): void => {
     assertExtensionCapability(extension, "hooks", "api.hooks.onWrite");
+    if (!allowRegistration("hooks.onwrite", "api.hooks.onWrite", "hooks")) {
+      return;
+    }
     assertHookHandler("onWrite", hook);
     hooks.onWrite.push({
       layer: extension.layer,
@@ -1602,6 +2081,9 @@ function createExtensionApi(
   };
   const registerOnRead = (hook: OnReadHook): void => {
     assertExtensionCapability(extension, "hooks", "api.hooks.onRead");
+    if (!allowRegistration("hooks.onread", "api.hooks.onRead", "hooks")) {
+      return;
+    }
     assertHookHandler("onRead", hook);
     hooks.onRead.push({
       layer: extension.layer,
@@ -1611,6 +2093,9 @@ function createExtensionApi(
   };
   const registerOnIndex = (hook: OnIndexHook): void => {
     assertExtensionCapability(extension, "hooks", "api.hooks.onIndex");
+    if (!allowRegistration("hooks.onindex", "api.hooks.onIndex", "hooks")) {
+      return;
+    }
     assertHookHandler("onIndex", hook);
     hooks.onIndex.push({
       layer: extension.layer,
@@ -1798,6 +2283,7 @@ function collectServiceCollisionWarnings(services: ExtensionServiceRegistry): st
 }
 
 export async function activateExtensions(loadResult: ExtensionLoadResult): Promise<ExtensionActivationResult> {
+  const policy = hydrateExtensionPolicy(loadResult.policy ?? DEFAULT_EXTENSION_POLICY);
   const hooks = createEmptyExtensionHookRegistry();
   const commands = createEmptyExtensionCommandRegistry();
   const parsers = createEmptyExtensionParserRegistry();
@@ -1816,7 +2302,18 @@ export async function activateExtensions(loadResult: ExtensionLoadResult): Promi
 
     try {
       await activatable.activate(
-        createExtensionApi(extension, hooks, commands, parsers, preflight, services, renderers, registrations, warnings),
+        createExtensionApi(
+          extension,
+          hooks,
+          commands,
+          parsers,
+          preflight,
+          services,
+          renderers,
+          registrations,
+          warnings,
+          policy,
+        ),
       );
     } catch (error: unknown) {
       warnings.push(`extension_activate_failed:${extension.layer}:${extension.name}`);

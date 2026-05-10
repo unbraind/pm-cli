@@ -37,6 +37,7 @@ describe("contracts command runtime", () => {
     expect(result.actions ?? []).toContain("aggregate");
     expect(result.actions ?? []).toContain("dedupe-audit");
     expect(result.actions ?? []).toContain("normalize");
+    expect(result.actions ?? []).toContain("guide");
     expect(result.commands).toContain("contracts");
     expect(result.commands).toContain("aggregate");
     expect(result.commands).toContain("dedupe-audit");
@@ -52,6 +53,12 @@ describe("contracts command runtime", () => {
     expect(result.commander_aliases?.list_string_options).toEqual(
       expect.arrayContaining([expect.objectContaining({ target: "fields" }), expect.objectContaining({ target: "sort" })]),
     );
+    expect(result.extension_contracts).toMatchObject({
+      capabilities: expect.arrayContaining(["commands", "schema", "services"]),
+      services: expect.arrayContaining(["output_format", "history_append"]),
+      policy_modes: expect.arrayContaining(["off", "warn", "enforce"]),
+      policy_surfaces: expect.arrayContaining(["commands.handler", "hooks.beforecommand", "search.provider"]),
+    });
   });
 
   it("supports schema-only mode with action filtering", async () => {

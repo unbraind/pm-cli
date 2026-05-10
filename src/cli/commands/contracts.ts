@@ -51,6 +51,10 @@ import {
   LIST_FILTER_FLAG_CONTRACTS,
   NORMALIZE_FLAG_CONTRACTS,
   NOTES_FLAG_CONTRACTS,
+  PM_EXTENSION_CAPABILITY_CONTRACTS,
+  PM_EXTENSION_POLICY_MODE_CONTRACTS,
+  PM_EXTENSION_POLICY_SURFACE_CONTRACTS,
+  PM_EXTENSION_SERVICE_NAME_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   PM_TOOL_ACTIONS,
   PM_TOOL_PARAMETERS_SCHEMA,
@@ -119,6 +123,12 @@ export interface ContractsResult {
     canceled_status: string;
     types: string[];
     fields_by_command: Record<string, string[]>;
+  };
+  extension_contracts?: {
+    capabilities: string[];
+    services: string[];
+    policy_modes: string[];
+    policy_surfaces: string[];
   };
 }
 
@@ -1172,6 +1182,12 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
           ),
         ]),
       ),
+    },
+    extension_contracts: {
+      capabilities: [...PM_EXTENSION_CAPABILITY_CONTRACTS],
+      services: [...PM_EXTENSION_SERVICE_NAME_CONTRACTS],
+      policy_modes: [...PM_EXTENSION_POLICY_MODE_CONTRACTS],
+      policy_surfaces: [...PM_EXTENSION_POLICY_SURFACE_CONTRACTS],
     },
   };
 

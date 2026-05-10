@@ -10,6 +10,9 @@ import {
 import { getSettingsPath } from "./paths.js";
 import { orderObject } from "../shared/serialization.js";
 import type {
+  ExtensionPolicyMode,
+  ExtensionPolicyOverrideSettings,
+  ExtensionPolicySettings,
   GovernanceSettings,
   ItemTypeCommandOptionPolicy,
   ItemTypeDefinition,
@@ -134,6 +137,28 @@ const governanceSettingsSchema = z
   })
   .optional();
 
+const extensionPolicyOverrideSchema = z.object({
+  name: z.string(),
+  disabled: z.boolean().optional(),
+  allowed_capabilities: z.array(z.string()).optional(),
+  blocked_capabilities: z.array(z.string()).optional(),
+  allowed_surfaces: z.array(z.string()).optional(),
+  blocked_surfaces: z.array(z.string()).optional(),
+});
+
+const extensionPolicySchema = z
+  .object({
+    mode: z.union([z.literal("off"), z.literal("warn"), z.literal("enforce")]).optional(),
+    allowed_extensions: z.array(z.string()).optional(),
+    blocked_extensions: z.array(z.string()).optional(),
+    allowed_capabilities: z.array(z.string()).optional(),
+    blocked_capabilities: z.array(z.string()).optional(),
+    allowed_surfaces: z.array(z.string()).optional(),
+    blocked_surfaces: z.array(z.string()).optional(),
+    extension_overrides: z.array(extensionPolicyOverrideSchema).optional(),
+  })
+  .optional();
+
 const settingsSchema = z.object({
   version: z.number().int(),
   id_prefix: z.string(),
@@ -211,6 +236,7 @@ const settingsSchema = z.object({
   extensions: z.object({
     enabled: z.array(z.string()),
     disabled: z.array(z.string()),
+    policy: extensionPolicySchema,
   }),
   search: z.object({
     score_threshold: z.number(),
@@ -333,6 +359,79 @@ function normalizeStringList(values: string[] | undefined): string[] {
   return [...new Set((values ?? []).map((value) => value.trim()).filter((value) => value.length > 0))].sort((left, right) =>
     left.localeCompare(right),
   );
+}
+
+function normalizeLowerStringList(values: string[] | undefined): string[] {
+  return [...new Set((values ?? []).map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0))].sort(
+    (left, right) => left.localeCompare(right),
+  );
+}
+
+function normalizeExtensionPolicyMode(value: ExtensionPolicyMode | undefined): ExtensionPolicyMode {
+  if (value === "off" || value === "warn" || value === "enforce") {
+    return value;
+  }
+  return SETTINGS_DEFAULTS.extensions.policy.mode;
+}
+
+function normalizeExtensionPolicyOverride(
+  override: ExtensionPolicyOverrideSettings,
+): ExtensionPolicyOverrideSettings | null {
+  const name = override.name.trim().toLowerCase();
+  if (name.length === 0) {
+    return null;
+  }
+  const normalized: ExtensionPolicyOverrideSettings = {
+    name,
+  };
+  if (override.disabled === true) {
+    normalized.disabled = true;
+  }
+  const allowedCapabilities = normalizeLowerStringList(override.allowed_capabilities);
+  const blockedCapabilities = normalizeLowerStringList(override.blocked_capabilities);
+  const allowedSurfaces = normalizeLowerStringList(override.allowed_surfaces);
+  const blockedSurfaces = normalizeLowerStringList(override.blocked_surfaces);
+  if (allowedCapabilities.length > 0) {
+    normalized.allowed_capabilities = allowedCapabilities;
+  }
+  if (blockedCapabilities.length > 0) {
+    normalized.blocked_capabilities = blockedCapabilities;
+  }
+  if (allowedSurfaces.length > 0) {
+    normalized.allowed_surfaces = allowedSurfaces;
+  }
+  if (blockedSurfaces.length > 0) {
+    normalized.blocked_surfaces = blockedSurfaces;
+  }
+  return normalized;
+}
+
+function normalizeExtensionPolicyOverrides(
+  overrides: ExtensionPolicyOverrideSettings[] | undefined,
+): ExtensionPolicyOverrideSettings[] {
+  const dedupedByName = new Map<string, ExtensionPolicyOverrideSettings>();
+  for (const override of overrides ?? []) {
+    const normalized = normalizeExtensionPolicyOverride(override);
+    if (!normalized) {
+      continue;
+    }
+    dedupedByName.set(normalized.name, normalized);
+  }
+  return [...dedupedByName.values()].sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function normalizeExtensionPolicySettings(policy: Partial<ExtensionPolicySettings> | undefined): ExtensionPolicySettings {
+  const defaults = SETTINGS_DEFAULTS.extensions.policy;
+  return {
+    mode: normalizeExtensionPolicyMode(policy?.mode),
+    allowed_extensions: normalizeLowerStringList(policy?.allowed_extensions ?? defaults.allowed_extensions),
+    blocked_extensions: normalizeLowerStringList(policy?.blocked_extensions ?? defaults.blocked_extensions),
+    allowed_capabilities: normalizeLowerStringList(policy?.allowed_capabilities ?? defaults.allowed_capabilities),
+    blocked_capabilities: normalizeLowerStringList(policy?.blocked_capabilities ?? defaults.blocked_capabilities),
+    allowed_surfaces: normalizeLowerStringList(policy?.allowed_surfaces ?? defaults.allowed_surfaces),
+    blocked_surfaces: normalizeLowerStringList(policy?.blocked_surfaces ?? defaults.blocked_surfaces),
+    extension_overrides: normalizeExtensionPolicyOverrides(policy?.extension_overrides ?? defaults.extension_overrides),
+  };
 }
 
 function normalizeValidationMetadataRequiredFields(values: string[] | undefined): ValidateMetadataRequiredField[] {
@@ -519,6 +618,7 @@ function mergeSettings(raw: unknown): PmSettings {
     extensions: {
       enabled: [...settings.extensions.enabled],
       disabled: [...settings.extensions.disabled],
+      policy: normalizeExtensionPolicySettings(settings.extensions.policy ?? defaults.extensions.policy),
     },
     search: { ...defaults.search, ...settings.search },
     providers: {
@@ -565,6 +665,20 @@ export function serializeSettings(settings: PmSettings): string {
       definitions: normalizeItemTypeDefinitions(settings.item_types?.definitions),
     },
     schema: normalizeRuntimeSchemaSettings(settings.schema),
+    context: {
+      default_depth: settings.context?.default_depth ?? SETTINGS_DEFAULTS.context.default_depth,
+      activity_limit: settings.context?.activity_limit ?? SETTINGS_DEFAULTS.context.activity_limit,
+      stale_threshold_days: settings.context?.stale_threshold_days ?? SETTINGS_DEFAULTS.context.stale_threshold_days,
+      sections: {
+        ...SETTINGS_DEFAULTS.context.sections,
+        ...(settings.context?.sections ?? {}),
+      },
+    },
+    extensions: {
+      enabled: normalizeStringList(settings.extensions?.enabled),
+      disabled: normalizeStringList(settings.extensions?.disabled),
+      policy: normalizeExtensionPolicySettings(settings.extensions?.policy),
+    },
   };
   const ordered = orderObject(
     {
@@ -653,7 +767,32 @@ export function serializeSettings(settings: PmSettings): string {
     ((ordered.context as Record<string, unknown>).sections ?? {}) as Record<string, unknown>,
     ["hierarchy", "activity", "progress", "blockers", "files", "workload", "staleness", "tests"],
   );
-  ordered.extensions = orderObject(ordered.extensions as Record<string, unknown>, ["enabled", "disabled"]);
+  ordered.extensions = orderObject(ordered.extensions as Record<string, unknown>, ["enabled", "disabled", "policy"]);
+  (ordered.extensions as Record<string, unknown>).policy = orderObject(
+    (((ordered.extensions as Record<string, unknown>).policy ?? {}) as Record<string, unknown>),
+    [
+      "mode",
+      "allowed_extensions",
+      "blocked_extensions",
+      "allowed_capabilities",
+      "blocked_capabilities",
+      "allowed_surfaces",
+      "blocked_surfaces",
+      "extension_overrides",
+    ],
+  );
+  ((ordered.extensions as Record<string, unknown>).policy as Record<string, unknown>).extension_overrides = (
+    (((ordered.extensions as Record<string, unknown>).policy as Record<string, unknown>).extension_overrides ?? []) as unknown[]
+  ).map((entry) =>
+    orderObject((entry ?? {}) as Record<string, unknown>, [
+      "name",
+      "disabled",
+      "allowed_capabilities",
+      "blocked_capabilities",
+      "allowed_surfaces",
+      "blocked_surfaces",
+    ]),
+  );
   ordered.search = orderObject(ordered.search as Record<string, unknown>, [
     "score_threshold",
     "hybrid_semantic_weight",

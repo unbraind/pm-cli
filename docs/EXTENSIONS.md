@@ -1,5 +1,217 @@
 # Extensions
 
+Extensions let you add or override `pm` runtime behavior without editing core `pm-cli` sources. They are loaded at runtime, gated by manifest capabilities, and now support granular governance policies for capability/surface allow/block controls.
+
+## Quick Start
+
+```bash
+# 1) Scaffold a new extension
+pm extension --init ./my-extension
+
+# 2) Install into project scope
+pm extension --install --project ./my-extension
+
+# 3) Run extension diagnostics
+pm extension --doctor --project --detail summary
+
+# 4) Deep diagnostics with traces
+pm extension --doctor --project --detail deep --trace
+```
+
+Expected summary signals from `extension --doctor`:
+
+- `details.summary.status`: `ok` or `warn`
+- `details.summary.warning_codes`: deterministic warning code list
+- `details.summary.policy`: active policy mode and configured counts
+- `details.triage.remediation`: actionable follow-up guidance
+
+## Extension Locations and Precedence
+
+- Project extensions: `.agents/pm/extensions/<name>/`
+- Global extensions: `~/.pm-cli/extensions/<name>/`
+- Project takes precedence when both scopes register the same command/surface.
+- Discovery and activation remain deterministic across runs.
+
+Environment overrides:
+
+- `PM_PATH`: project tracker root override
+- `PM_GLOBAL_PATH`: global profile root override
+
+## Manifest and Capabilities
+
+Minimal `manifest.json`:
+
+```json
+{
+  "name": "pm-ext-example",
+  "version": "0.1.0",
+  "entry": "./index.js",
+  "priority": 100,
+  "capabilities": ["commands"]
+}
+```
+
+Rules:
+
+- `entry` must resolve inside extension directory (symlink-safe canonical checks apply).
+- Declare only capabilities actually used.
+- Unknown capabilities produce deterministic warnings with guidance.
+- Legacy aliases (`migration`, `validation`) are remapped to `schema` with guidance warnings.
+
+Supported capabilities:
+
+- `commands`
+- `parser`
+- `preflight`
+- `services`
+- `renderers`
+- `hooks`
+- `schema`
+- `importers`
+- `search`
+
+## Governance Policy (Granular Controls)
+
+Extension governance policy is configured in `settings.json` under `extensions.policy`.
+
+Policy modes:
+
+- `off`: no policy enforcement/warnings
+- `warn`: allow registrations but emit policy violation warnings
+- `enforce`: block disallowed extensions/capabilities/surfaces
+
+Example policy:
+
+```json
+{
+  "extensions": {
+    "policy": {
+      "mode": "enforce",
+      "allowed_extensions": ["release-audit-ext"],
+      "blocked_extensions": [],
+      "allowed_capabilities": [],
+      "blocked_capabilities": ["services"],
+      "allowed_surfaces": [],
+      "blocked_surfaces": ["commands.override"],
+      "extension_overrides": [
+        {
+          "name": "release-audit-ext",
+          "allowed_surfaces": ["commands.handler", "hooks.beforecommand"],
+          "blocked_surfaces": ["services.override"]
+        }
+      ]
+    }
+  }
+}
+```
+
+### Surface Tokens
+
+Use these exact values for `allowed_surfaces` / `blocked_surfaces`:
+
+- `commands.override`
+- `commands.handler`
+- `hooks.beforecommand`
+- `hooks.aftercommand`
+- `hooks.onwrite`
+- `hooks.onread`
+- `hooks.onindex`
+- `schema.flags`
+- `schema.itemfields`
+- `schema.itemtypes`
+- `schema.migrations`
+- `parser.override`
+- `preflight.override`
+- `services.override`
+- `renderers.override`
+- `importers.importer`
+- `importers.exporter`
+- `search.provider`
+- `search.vectorstore`
+
+Policy diagnostics use deterministic warning codes:
+
+- `extension_policy_violation_extension`
+- `extension_policy_violation_capability`
+- `extension_policy_violation_registration`
+- `extension_policy_blocked_extension`
+- `extension_policy_blocked_capability`
+- `extension_policy_blocked_registration`
+
+## Runtime APIs (Public SDK)
+
+Use `@unbrained/pm-cli/sdk` only (no internal imports).
+
+- `api.registerCommand(def)` -> `commands`
+- `api.registerParser(command, fn)` -> `parser`
+- `api.registerPreflight(fn)` -> `preflight`
+- `api.registerService(name, fn)` -> `services`
+- `api.registerRenderer(format, fn)` -> `renderers`
+- `api.registerFlags(command, flags)` -> `schema`
+- `api.registerItemFields(fields)` -> `schema`
+- `api.registerItemTypes(types)` -> `schema`
+- `api.registerMigration(def)` -> `schema`
+- `api.registerImporter(name, fn)` -> `importers`
+- `api.registerExporter(name, fn)` -> `importers`
+- `api.registerSearchProvider(provider)` -> `search`
+- `api.registerVectorStoreAdapter(adapter)` -> `search`
+- `api.hooks.beforeCommand/afterCommand/onWrite/onRead/onIndex(fn)` -> `hooks`
+
+## Lifecycle Commands
+
+```bash
+# Explore
+pm extension --explore --project
+
+# Manage (update checks + managed state diagnostics)
+pm extension --manage --project
+
+# Optional runtime probe parity in manage mode
+pm extension --manage --project --runtime-probe
+
+# Auto-adopt unmanaged extensions into managed state
+pm extension --manage --project --fix-managed-state
+
+# Activation/deactivation
+pm extension --activate my-extension --project
+pm extension --deactivate my-extension --project
+
+# Uninstall
+pm extension --uninstall my-extension --project
+```
+
+## Non-Interactive Automation Patterns
+
+For CI/CD and agents:
+
+- Prefer `--json` outputs.
+- Use `pm contracts --schema-only --json` before invoking action payloads.
+- Run `pm extension --doctor --detail summary --strict-exit` as a gate.
+- Add `--detail deep --trace` on failure paths for remediation payloads.
+- Use `--no-extensions` as a deterministic fallback for core-only triage.
+
+## Runnable Examples
+
+- Full starter extension: `docs/examples/starter-extension/`
+- Capability-restricted policy example: `docs/examples/policy-restricted-extension/`
+- Programmatic contracts consumer: `docs/examples/sdk-contract-consumer/`
+- CI gating workflow: `docs/examples/ci/github-actions-pm-extension-gate.yml`
+
+## Troubleshooting
+
+- Manifest/entry failures: run `pm extension --explore --project`
+- Activation failures: run `pm extension --doctor --detail deep --trace`
+- Policy blocks: review `settings.extensions.policy` and `details.summary.policy`
+- Runtime drift suspicion: compare with `pm --no-extensions <command>`
+- Managed-state update-check gaps: run `pm extension --manage --fix-managed-state`
+
+## Related Docs
+
+- `docs/SDK.md`
+- `docs/examples/starter-extension/README.md`
+- `docs/CLAUDE_CODE_PLUGIN.md`
+# Extensions
+
 Extensions add commands, schema, renderers, importers/exporters, search adapters, lifecycle hooks, and selected runtime overrides without modifying core `pm-cli`.
 
 ## Agent Quick Context
