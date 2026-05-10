@@ -13,7 +13,8 @@ This example shows how to consume `pm` contracts programmatically in a script an
 cp -R docs/examples/sdk-contract-consumer /tmp/pm-sdk-contract-consumer
 cd /tmp/pm-sdk-contract-consumer
 # Local checkout (recommended while iterating on unreleased SDK changes):
-npm install /home/steve/GITHUB_RELEASE/pm-cli
+PM_CLI_REPO_ROOT=/absolute/path/to/pm-cli
+npm install "$PM_CLI_REPO_ROOT"
 
 # Or use a published release once available:
 # npm install @unbrained/pm-cli@latest
