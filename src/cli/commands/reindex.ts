@@ -7,6 +7,7 @@ import {
 } from "../../core/extensions/runtime-registrations.js";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { acquireLock } from "../../core/lock/lock.js";
 import { buildSearchCorpus, buildSemanticCorpusInput } from "../../core/search/corpus.js";
 import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
 import { writeVectorizationStatusLedger } from "../../core/search/cache.js";
@@ -24,6 +25,7 @@ import type { ItemDocument, PmSettings } from "../../types/index.js";
 
 const MANIFEST_PATH = "index/manifest.json";
 const EMBEDDINGS_PATH = "search/embeddings.jsonl";
+const REINDEX_LOCK_ID = "reindex";
 
 export interface ReindexOptions {
   mode?: string;
@@ -237,6 +239,36 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   }
 
   const settings = resolveSettingsWithSemanticRuntimeDefaults(await readSettings(pmRoot)).settings;
+  let releaseReindexLock: (() => Promise<void>) | null = null;
+  try {
+    releaseReindexLock = await acquireLock(
+      pmRoot,
+      REINDEX_LOCK_ID,
+      settings.locks.ttl_seconds,
+      process.env.PM_AUTHOR ?? "pm-reindex",
+      false,
+      settings.governance.force_required_for_stale_lock,
+    );
+  } catch (error: unknown) {
+    if (error instanceof PmCliError && error.exitCode === EXIT_CODE.CONFLICT) {
+      throw new PmCliError(
+        "Another pm reindex run is already active for this project. Wait for it to finish before starting a new keyword, semantic, or hybrid reindex.",
+        EXIT_CODE.CONFLICT,
+        {
+          code: "reindex_already_running",
+          type: "urn:pm-cli:error:reindex_already_running",
+          why: "Semantic reindex can be expensive and duplicate runs compete for the same local embedding model and vector store.",
+          nextSteps: [
+            "Check active pm reindex processes before starting another reindex.",
+            "Rerun with --progress when you need non-interactive visibility.",
+          ],
+        },
+      );
+    }
+    throw error;
+  }
+
+  try {
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const extensionEmbedding = resolveExtensionSearchEmbedding(settings);
   const extensionVectorUpsert = resolveExtensionVectorUpsert(settings);
@@ -416,4 +448,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
     warnings: [...semanticWarnings, ...vectorizationWarnings, ...hookWarnings],
     generated_at: generatedAt,
   };
+  } finally {
+    await releaseReindexLock?.();
+  }
 }

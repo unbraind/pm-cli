@@ -194,6 +194,7 @@ function checkOrphanSourceModules(files) {
   const entryAllowList = new Set([
     "src/cli.ts",
     "src/cli/main.ts",
+    "src/cli/telemetry-flush.ts",
     "src/mcp/server.ts",
     "src/pi/native.ts",
     "src/sdk/index.ts",

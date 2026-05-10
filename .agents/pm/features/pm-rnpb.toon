@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-10T21:52:06.697Z"
+updated_at: "2026-05-10T22:14:34.522Z"
 deadline: "2026-05-04T13:20:01.343Z"
 assignee: codex-agent
 author: codex-audit
@@ -15,7 +15,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[18]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -34,35 +34,38 @@ comments[18]{created_at,author,text}:
   "2026-05-10T21:15:14.302Z",codex-agent,"Workstreams completed 2026-05-10: (1) CLI dedup/perf hardening by introducing shared argv + levenshtein helpers and shared metadata normalizers used by create/update/bootstrap/commander/help/error/main; (2) search linked-corpus path optimized by resolving containment roots once and loading linked corpus entries concurrently; (3) observability hardening filters known starter-extension console-noise events/breadcrumbs in Sentry and release gate now reports ignored_noise counts/short IDs; (4) CI stability hardening adds npm-exec fallback for tarball smoke script; (5) docs dedup rewrote SDK and EXTENSIONS docs to one canonical section each; (6) remote validation executed over SSH on [redacted_ip]: Caddy + telemetry stacks healthy, rabbitmq queue depth 0 with consumer 1, telemetry event volumes present, public healthz 200 (redirect-follow), legacy /api/health still 404."
   "2026-05-10T21:46:55.601Z",opencode-agent,"Execution continuation 2026-05-10: reused existing in-progress audit feature after duplicate checks. Current pass is validating latest uncommitted agent-UX/calendar/init changes, dogfooding in an isolated temp project, checking GitHub/Sentry/telemetry/privacy surfaces, then committing and pushing only verified changes."
   "2026-05-10T21:52:06.697Z",codex-agent,"Evidence 2026-05-10 audit pass: sandbox dogfood temp project passed init/create/claim/update/comments/files/docs/tests/list/context/search/calendar/aggregate/dedupe/contracts/extension/health/validate. Fixed agent blockers: init --defaults --author now works, missing-option retry guidance normalizes combined long/short labels, create/update --event accepts date= as start alias, and CLI Sentry init is nonblocking. Verification passed: focused unit regressions 86 tests, focused init integration, full coverage 90 files/1274 tests with 100 percent statements/branches/functions/lines, static quality, docs-skills gate, tracked secret scan, git diff --check, pm health/validate with only pre-existing warnings. Telemetry stack report is stored in ignored scripts/prod/telemetry reports; current Sentry unresolved snapshot remains historical extension/import groups with scrubbed paths. Created follow-up pm-m4ov for remaining startup latency target."
-files[28]{path,scope,note}:
+  "2026-05-10T21:57:14.518Z",codex-agent,"Execution continuation 2026-05-10: duplicate checks reused pm-rnpb and pm-m4ov. GitHub snapshot: no open issues; dependabot PRs #24/#22 have failing checks; main CI for 212e677 is in progress. Proceeding with startup profiling, temp-project dogfood, privacy, telemetry, Sentry, and final CI verification."
+  "2026-05-10T22:14:34.522Z",opencode-agent,"Final audit evidence 2026-05-10: temp dogfood verified init --defaults --author, default author fallback without PM_AUTHOR, create/update calendar date= aliases, calendar JSON, contracts, keyword/hybrid search, and validation. Performance comparison: before Sentry startup fix default-on dogfood read/query commands were ~1.1-1.3s after background init and ~1.5-2.0s in the baseline; after lazy Sentry startup, default-on list/search/calendar measured ~703ms/610ms/643ms while telemetry stayed enabled. Sentry/telemetry gate passed with recent telemetry finish_error_rate_pct=5.38, Sentry access ok, critical=1/high=3 after filtering known console-noise issues. Verification passed: focused 201-test suite, release-readiness+sentry focused suite, full coverage 90 files/1276 tests at 100%, static quality, docs-skills, secret scan, npm pack dry-run, pm health, pm validate with only pre-existing warnings. Residual tracked as pm-6zqq: long hybrid semantic reindex needs deterministic progress/completion output for agents."
+files[29]{path,scope,note}:
   README.md,project,public README hygiene update
   scripts/check-secrets.mjs,project,detect absolute home-path and user@private-host leakage
   scripts/release/static-quality-gate.mjs,project,raise max source line threshold for expanded loader
+  src/cli.ts,project,nonblocking sentry startup for CLI responsiveness
+  src/cli/commander-usage.ts,project,required-option retry flag normalization
+  src/cli/commands/create.ts,project,event date alias for create
   src/cli/commands/extension.ts,project,fix extension reload/watch usage guidance
+  src/cli/commands/init.ts,project,agent-friendly init defaults and author_default
   src/cli/commands/reindex.ts,project,reindex uses shared calendar-aware corpus
   src/cli/commands/search.ts,project,keyword search scores reminder/event corpus and short phrase matches
+  src/cli/commands/update.ts,project,event date alias for update
+  src/cli/error-guidance.ts,project,required-option guidance normalization
+  src/cli/main.ts,project,error-path sentry initialization
+  src/cli/register-setup.ts,project,init flags for defaults and author
   src/core/search/cache.ts,project,semantic mutation refresh uses shared calendar-aware corpus
   src/core/search/corpus.ts,project,shared search corpus builder includes calendar reminders/events
   src/core/search/embedding-batches.ts,project,provider-aware semantic input bounding
   src/core/sentry/instrument.ts,project,recursive path scrub across nested sentry event payloads
+  tests/integration/cli.integration.spec.ts,project,init defaults author regression
+  tests/integration/release-readiness-runtime.spec.ts,project,release-readiness guard for nonblocking sentry startup
+  tests/unit/create-command.spec.ts,project,create event date alias regression
   tests/unit/embedding-batches.spec.ts,project,regression for oversized ollama embedding input truncation
+  tests/unit/error-guidance.spec.ts,project,retry guidance regression
   tests/unit/search-cache.spec.ts,project,regression for bounded semantic refresh corpus input
   tests/unit/search-command.spec.ts,project,regression for reminder/event search matches
   tests/unit/search-corpus.spec.ts,project,unit coverage for semantic corpus helper branches
   tests/unit/sentry-helpers.spec.ts,project,regression for nested sentry event scrub behavior
-  vitest.config.ts,project,coverage include list covers new search corpus helper
-  src/cli/commands/init.ts,project,agent-friendly init defaults and author_default
-  src/cli/register-setup.ts,project,init flags for defaults and author
-  src/cli/commander-usage.ts,project,required-option retry flag normalization
-  src/cli/error-guidance.ts,project,required-option guidance normalization
-  src/cli/commands/create.ts,project,event date alias for create
-  src/cli/commands/update.ts,project,event date alias for update
-  tests/unit/error-guidance.spec.ts,project,retry guidance regression
-  tests/unit/create-command.spec.ts,project,create event date alias regression
   tests/unit/update-command.spec.ts,project,update event date alias regression
-  tests/integration/cli.integration.spec.ts,project,init defaults author regression
-  src/cli.ts,project,nonblocking sentry startup for CLI responsiveness
-  tests/integration/release-readiness-runtime.spec.ts,project,release-readiness guard for nonblocking sentry startup
+  vitest.config.ts,project,coverage include list covers new search corpus helper
 tests[11]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret and path leak guardrail
   node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,full 100 percent coverage gate

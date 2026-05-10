@@ -1577,10 +1577,13 @@ describe("release readiness runtime coverage", () => {
   it("keeps Sentry startup lazy for fast CLI commands", async () => {
     const cliEntrypoint = await readRepoText("src/cli.ts");
     const mainSource = await readRepoText("src/cli/main.ts");
+    const telemetryRuntimeSource = await readRepoText("src/core/telemetry/runtime.ts");
 
     expect(cliEntrypoint).not.toContain("ensureSentryInit");
     expect(cliEntrypoint).not.toContain("await ensureSentryInit()");
     expect(mainSource).toContain("ensureSentryForErrorReporting");
+    expect(telemetryRuntimeSource).toContain("telemetryFlushRunnerPath");
+    expect(telemetryRuntimeSource).toContain("child.unref()");
   });
 
   it("keeps vitest coverage include list aligned with src ts modules", async () => {
@@ -1615,6 +1618,7 @@ describe("release readiness runtime coverage", () => {
       "src/cli/register-setup.ts",
       "src/cli/registration-helpers.ts",
       "src/cli/shared-parsers.ts",
+      "src/cli/telemetry-flush.ts",
       "src/core/extensions/extension-types.ts",
       "src/core/item/parent-reference-policy.ts",
       "src/core/item/type-registry.ts",

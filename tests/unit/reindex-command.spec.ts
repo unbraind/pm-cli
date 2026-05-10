@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -583,6 +583,36 @@ describe("runReindex", () => {
       expect(events.some((entry) => entry.startsWith("read:"))).toBe(true);
       expect(events).toContain("write:reindex:manifest:manifest.json");
       expect(events).toContain("write:reindex:embeddings:embeddings.jsonl");
+    });
+  });
+
+  it("fails fast when another reindex lock is active", async () => {
+    await withTempPmPath(async (context) => {
+      const lockDirectory = path.join(context.pmPath, "locks");
+      await mkdir(lockDirectory, { recursive: true });
+      await writeFile(
+        path.join(lockDirectory, "reindex.lock"),
+        `${JSON.stringify(
+          {
+            id: "reindex",
+            pid: 12345,
+            owner: "unit-test",
+            created_at: new Date().toISOString(),
+            ttl_seconds: 1800,
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      await expect(runReindex({ mode: "keyword" }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.CONFLICT,
+        message: expect.stringContaining("Another pm reindex run is already active"),
+        context: expect.objectContaining({
+          code: "reindex_already_running",
+        }),
+      });
     });
   });
 

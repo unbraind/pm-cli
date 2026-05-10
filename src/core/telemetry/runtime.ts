@@ -1,6 +1,9 @@
 import crypto from "node:crypto";
+import { spawn } from "node:child_process";
+import { mkdir, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { appendLineAtomic, readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import { resolveTelemetryErrorCategory, type TelemetryErrorCategory } from "../shared/constants.js";
@@ -30,6 +33,7 @@ const TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS = 20;
 const TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS = 15;
 const TELEMETRY_RESULT_PREVIEW_MAX_BYTES = 8_192;
 const TELEMETRY_QUEUE_REWRITE_RETRY_DELAYS_MS = [25, 50, 100, 200] as const;
+const TELEMETRY_FLUSH_LOCK_STALE_MS = 60_000;
 const OTEL_TRACES_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT";
 const OTEL_BASE_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_ENDPOINT";
 const OTEL_SERVICE_NAME_ENV = "OTEL_SERVICE_NAME";
@@ -37,6 +41,8 @@ const PM_TELEMETRY_DISABLED_ENV = "PM_TELEMETRY_DISABLED";
 const PM_TELEMETRY_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const PM_TELEMETRY_OTEL_DISABLED_ENV = "PM_TELEMETRY_OTEL_DISABLED";
 const PM_TELEMETRY_OTEL_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
+const PM_TELEMETRY_INLINE_FLUSH_ENV = "PM_TELEMETRY_INLINE_FLUSH";
+const PM_TELEMETRY_FLUSH_CHILD_ENV = "PM_TELEMETRY_FLUSH_CHILD";
 const PM_TELEMETRY_SOURCE_CONTEXT_ENV = "PM_TELEMETRY_SOURCE_CONTEXT";
 const PM_TELEMETRY_SOURCE_CONTEXT_VALUES = ["user", "automation", "test", "dogfood", "audit_smoke"] as const;
 
@@ -179,6 +185,26 @@ function queuePath(globalPmRoot: string): string {
 
 function runtimeStatePath(globalPmRoot: string): string {
   return path.join(globalPmRoot, TELEMETRY_STATE_RELATIVE_PATH);
+}
+
+function flushLockPath(globalPmRoot: string): string {
+  return path.join(globalPmRoot, "runtime", "telemetry", "flush.lock");
+}
+
+function telemetryFlushRunnerPath(): string {
+  const runtimePath = fileURLToPath(import.meta.url);
+  return path.resolve(path.dirname(runtimePath), "../../cli/telemetry-flush.js");
+}
+
+function shouldFlushInline(): boolean {
+  if (parseBooleanTrueLike(process.env[PM_TELEMETRY_INLINE_FLUSH_ENV])) {
+    return true;
+  }
+  if (parseBooleanTrueLike(process.env[PM_TELEMETRY_FLUSH_CHILD_ENV])) {
+    return true;
+  }
+  const nodeEnv = (process.env.NODE_ENV ?? "").trim().toLowerCase();
+  return typeof process.env.VITEST === "string" || typeof process.env.VITEST_WORKER_ID === "string" || nodeEnv === "test";
 }
 
 async function readRuntimeState(globalPmRoot: string): Promise<TelemetryRuntimeState> {
@@ -1218,6 +1244,83 @@ async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays:
   }
 }
 
+async function acquireTelemetryFlushLock(globalPmRoot: string): Promise<boolean> {
+  const lockPath = flushLockPath(globalPmRoot);
+  await mkdir(path.dirname(lockPath), { recursive: true });
+  try {
+    await mkdir(lockPath);
+    return true;
+  } catch (error: unknown) {
+    if (typeof error !== "object" || error === null || !("code" in error) || (error as { code?: unknown }).code !== "EEXIST") {
+      throw error;
+    }
+  }
+
+  try {
+    const lockStats = await stat(lockPath);
+    if (Date.now() - lockStats.mtimeMs < TELEMETRY_FLUSH_LOCK_STALE_MS) {
+      return false;
+    }
+    await rm(lockPath, { recursive: true, force: true });
+    await mkdir(lockPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function flushQueueWithProcessLock(globalPmRoot: string, endpoint: string, retentionDays: number): Promise<void> {
+  const acquired = await acquireTelemetryFlushLock(globalPmRoot);
+  if (!acquired) {
+    return;
+  }
+  try {
+    await flushQueue(globalPmRoot, endpoint, retentionDays);
+  } finally {
+    await rm(flushLockPath(globalPmRoot), { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+function scheduleTelemetryFlush(globalPmRoot: string, endpoint: string, retentionDays: number): void {
+  if (shouldFlushInline()) {
+    const previousFlush = _lastFlushPromise;
+    const nextFlush = flushQueue(globalPmRoot, endpoint, retentionDays).catch(() => {});
+    _lastFlushPromise = Promise.allSettled([previousFlush, nextFlush]).then(() => {});
+    return;
+  }
+
+  try {
+    const child = spawn(process.execPath, [telemetryFlushRunnerPath()], {
+      detached: true,
+      stdio: "ignore",
+      env: {
+        ...process.env,
+        PM_GLOBAL_PATH: globalPmRoot,
+        [PM_TELEMETRY_FLUSH_CHILD_ENV]: "1",
+      },
+    });
+    child.unref();
+  } catch {
+    // Flush scheduling is best effort and must not keep the CLI alive.
+  }
+}
+
+export async function flushTelemetryQueueNow(globalPmRoot = resolveGlobalPmRoot(process.cwd())): Promise<void> {
+  if (telemetryDisabledByEnvironment()) {
+    return;
+  }
+  try {
+    const settings = await readSettings(globalPmRoot);
+    if (!settings.telemetry.enabled) {
+      return;
+    }
+    const { endpoint, retentionDays } = await ensureInstallationId(globalPmRoot);
+    await flushQueueWithProcessLock(globalPmRoot, endpoint, retentionDays);
+  } catch {
+    // Telemetry workers are best effort and must never fail user commands.
+  }
+}
+
 export async function startTelemetryCommand(context: TelemetryCommandContext): Promise<ActiveTelemetryCommand | null> {
   if (telemetryDisabledByEnvironment()) {
     return null;
@@ -1255,7 +1358,7 @@ export async function startTelemetryCommand(context: TelemetryCommandContext): P
       }),
     };
     await enqueueTelemetryEvent(globalPmRoot, event);
-    _lastFlushPromise = flushQueue(globalPmRoot, endpoint, retentionDays).catch(() => {});
+    scheduleTelemetryFlush(globalPmRoot, endpoint, retentionDays);
     const commandTaxonomy = deriveTelemetryCommandTaxonomy(context.command);
     return {
       started_at: occurredAt,
@@ -1343,7 +1446,7 @@ export async function finishTelemetryCommand(
       }),
     };
     await enqueueTelemetryEvent(activeCommand.global_pm_root, event);
-    _lastFlushPromise = flushQueue(activeCommand.global_pm_root, activeCommand.endpoint, activeCommand.retention_days).catch(() => {});
+    scheduleTelemetryFlush(activeCommand.global_pm_root, activeCommand.endpoint, activeCommand.retention_days);
     void exportLocalOtelSpan(
       activeCommand,
       {
@@ -1428,7 +1531,7 @@ export async function emitTelemetryErrorEvent(context: TelemetryErrorEventContex
       }),
     };
     await enqueueTelemetryEvent(globalPmRoot, event);
-    _lastFlushPromise = flushQueue(globalPmRoot, endpoint, retentionDays).catch(() => {});
+    scheduleTelemetryFlush(globalPmRoot, endpoint, retentionDays);
   } catch {
     // Telemetry must never block command execution.
   }
