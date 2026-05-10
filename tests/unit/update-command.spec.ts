@@ -942,6 +942,57 @@ describe("runUpdate", () => {
     });
   });
 
+  it("reinterprets legacy none/null tokens as deterministic unset and clear actions", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-legacy-none-compat");
+
+      await runUpdate(
+        id,
+        {
+          tags: "alpha,beta",
+          deadline: "2026-03-15T00:00:00.000Z",
+          dep: ["id=dep-seed,kind=blocks,created_at=2026-03-01T00:00:00.000Z"],
+          comment: ["text=seed comment payload"],
+          file: ["path=README.md,scope=project"],
+          test: ["command=node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,scope=project"],
+          doc: ["path=README.md,scope=project"],
+          reminder: ["at=2026-03-20T09:00:00.000Z,text=seed reminder"],
+          event: ["start=2026-03-21T09:00:00.000Z,title=seed event"],
+          message: "seed mutable fields",
+        },
+        { path: context.pmPath },
+      );
+
+      const cleared = await runUpdate(
+        id,
+        {
+          tags: "none",
+          deadline: "null",
+          dep: ["none"],
+          comment: ["null"],
+          file: ["none"],
+          test: ["null"],
+          doc: ["none"],
+          reminder: ["none"],
+          event: ["null"],
+          message: "legacy none clear compatibility",
+        },
+        { path: context.pmPath },
+      );
+
+      const item = cleared.item as Record<string, unknown>;
+      expect(item.tags === undefined || (Array.isArray(item.tags) && item.tags.length === 0)).toBe(true);
+      expect(item.deadline).toBeUndefined();
+      expect(item.dependencies).toBeUndefined();
+      expect(item.comments).toBeUndefined();
+      expect(item.files).toBeUndefined();
+      expect(item.tests).toBeUndefined();
+      expect(item.docs).toBeUndefined();
+      expect(item.reminders).toBeUndefined();
+      expect(item.events).toBeUndefined();
+    });
+  });
+
   it("supports atomic dependency replacement with --replace-deps", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-replace-dependencies");

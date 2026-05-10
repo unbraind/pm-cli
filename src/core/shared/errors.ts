@@ -1,3 +1,11 @@
+export interface PmCliErrorRecoveryPayload {
+  attempted_command?: string;
+  normalized_args?: string[];
+  provided_fields?: string[];
+  missing?: string[];
+  suggested_retry?: string;
+}
+
 export interface PmCliErrorContext {
   code?: string;
   type?: string;
@@ -5,6 +13,7 @@ export interface PmCliErrorContext {
   why?: string;
   examples?: string[];
   nextSteps?: string[];
+  recovery?: PmCliErrorRecoveryPayload;
 }
 
 export class PmCliError extends Error {

@@ -172,6 +172,18 @@ Why this matters:
 - `extension --reload` provides cache-busted module reload for extension dev loops.
 - `--strict-exit` turns warning states into CI-failing exits when governance gates require it.
 
+### CLI simplification compatibility notes
+
+The conservative CLI simplification pass adds invocation normalization and replay metadata that plugin/tooling flows should consume:
+
+- long-option aliases/shape variants and high-confidence typos are normalized before parse
+- setup resolution can auto-discover initialized tracker roots from ancestor directories
+- structured error envelopes may include `recovery` with replay-ready guidance (`attempted_command`, `normalized_args`, `provided_fields`, `missing`, `suggested_retry`)
+
+For migration details and automation expectations, see:
+
+- [CLI Simplification Migration](MIGRATION_CLI_SIMPLIFICATION.md)
+
 ### Validate manifests
 
 ```bash

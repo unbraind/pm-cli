@@ -1235,6 +1235,42 @@ describe("runCreate", () => {
     });
   });
 
+  it("reinterprets legacy none/null tokens as deterministic unset and clear actions", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "create-legacy-none-compat",
+          template: "none",
+          tags: "none",
+          deadline: "null",
+          rank: "none",
+          dep: ["none"],
+          comment: ["null"],
+          file: ["none"],
+          test: ["null"],
+          doc: ["none"],
+          reminder: ["none"],
+          event: ["null"],
+          typeOption: ["none"],
+        }),
+        { path: context.pmPath },
+      );
+
+      const item = result.item as Record<string, unknown>;
+      expect(item.tags === undefined || (Array.isArray(item.tags) && item.tags.length === 0)).toBe(true);
+      expect(item.deadline).toBeUndefined();
+      expect(item.order).toBeUndefined();
+      expect(item.dependencies).toBeUndefined();
+      expect(item.comments).toBeUndefined();
+      expect(item.files).toBeUndefined();
+      expect(item.tests).toBeUndefined();
+      expect(item.docs).toBeUndefined();
+      expect(item.reminders).toBeUndefined();
+      expect(item.events).toBeUndefined();
+      expect(item.type_options).toBeUndefined();
+    });
+  });
+
   it("validates dependency seed input", async () => {
     await withTempPmPath(async (context) => {
       await expect(

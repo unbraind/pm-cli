@@ -87,7 +87,8 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(textHelp.code).toBe(2);
       expect(textHelp.stderr).toContain("Unknown command beads");
       expect(textHelp.stderr).toContain("pm --help");
-      expect(textHelp.stderr).not.toContain("pm beads --help");
+      expect(textHelp.stderr).toContain("Recovery bundle:");
+      expect(textHelp.stderr).toContain("attempted_command: pm beads --help");
       expect(textHelp.stderr).not.toContain("pm todos --help");
 
       const jsonHelp = context.runCli(["beads", "--help", "--json"]);
@@ -97,6 +98,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         title: string;
         exit_code: number;
         examples?: string[];
+        recovery?: { attempted_command?: string; normalized_args?: string[] };
       };
       expect(envelope.code).toBe("unknown_command");
       expect(envelope.title).toContain("Unknown command beads");
@@ -105,6 +107,8 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(envelope.examples?.[0]).toBe("pm --help");
       expect(envelope.examples?.some((example) => example.includes("beads"))).toBe(false);
       expect(envelope.examples?.some((example) => example.includes("todos"))).toBe(false);
+      expect(envelope.recovery?.attempted_command).toBe("pm beads --help --json");
+      expect(envelope.recovery?.normalized_args).toEqual(["beads", "--help", "--json"]);
     });
   });
 
@@ -316,6 +320,13 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         exit_code: number;
         examples?: string[];
         next_steps?: string[];
+        recovery?: {
+          attempted_command?: string;
+          normalized_args?: string[];
+          provided_fields?: string[];
+          missing?: string[];
+          suggested_retry?: string;
+        };
       };
       expect(envelope).toMatchObject({
         type: "urn:pm-cli:error:missing_required_option",
@@ -327,6 +338,22 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(envelope.required).toContain("Pass --type <value>");
       expect(envelope.examples?.length ?? 0).toBeGreaterThan(0);
       expect(envelope.next_steps?.length ?? 0).toBeGreaterThan(0);
+      expect(envelope.recovery?.attempted_command).toBe(
+        'pm create --title "Only title" --description "Only description" --json',
+      );
+      expect(envelope.recovery?.normalized_args).toEqual([
+        "create",
+        "--title",
+        "Only title",
+        "--description",
+        "Only description",
+        "--json",
+      ]);
+      expect(envelope.recovery?.provided_fields).toEqual(
+        expect.arrayContaining(["--description", "--json", "--title"]),
+      );
+      expect(envelope.recovery?.missing).toEqual(expect.arrayContaining(["--type"]));
+      expect(envelope.recovery?.suggested_retry).toContain("--type");
     });
   });
 

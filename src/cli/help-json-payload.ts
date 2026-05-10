@@ -102,6 +102,40 @@ export function buildOptionAliasMap(options: unknown[]): Map<string, string[]> {
   return aliasMap;
 }
 
+function normalizeLongOptionFlag(token: string): string | undefined {
+  if (!token.startsWith("--")) {
+    return undefined;
+  }
+  const key = token.includes("=") ? token.slice(0, token.indexOf("=")) : token;
+  return `--${key
+    .slice(2)
+    .replace(/_/g, "-")
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .toLowerCase()}`;
+}
+
+function extractProvidedOptionFlags(argv: string[]): string[] {
+  const provided = new Set<string>();
+  for (const token of argv) {
+    const normalized = normalizeLongOptionFlag(token);
+    if (normalized) {
+      provided.add(normalized);
+    }
+  }
+  return [...provided].sort((left, right) => left.localeCompare(right));
+}
+
+function quoteCommandArg(arg: string): string {
+  if (/^[A-Za-z0-9._:/@=-]+$/.test(arg)) {
+    return arg;
+  }
+  return `"${arg.replace(/(["\\$`])/g, "\\$1")}"`;
+}
+
+function renderAttemptedCommand(argv: string[]): string {
+  return `pm ${argv.map((token) => quoteCommandArg(token)).join(" ")}`;
+}
+
 export function buildHelpOptionSummaries(command: Command): HelpOptionSummary[] {
   const options = (command.options ?? []) as unknown[];
   const optionAliasMap = buildOptionAliasMap(options);
@@ -273,12 +307,18 @@ export async function maybeRenderBootstrapJsonHelp(
   if (!targetCommand) {
     if (!bootstrapGlobal.quiet) {
       const unknownMessage = `unknown command '${helpRequest.commandPathTokens.join(" ")}'`;
+      const runtimeContext = buildUnknownCommandGuidanceFromRuntime(unknownMessage, rootProgram, extensionDescriptors);
       const envelope = formatCommanderErrorForJson(
         unknownMessage,
         "help",
         BUILTIN_TYPE_HELP_VALUES,
         EXIT_CODE.USAGE,
-        buildUnknownCommandGuidanceFromRuntime(unknownMessage, rootProgram, extensionDescriptors),
+        {
+          ...(runtimeContext ?? {}),
+          attemptedCommand: renderAttemptedCommand(argv),
+          normalizedInvocationArgs: [...argv],
+          providedOptionFlags: extractProvidedOptionFlags(argv),
+        },
       );
       printError(JSON.stringify(envelope, null, 2));
     }

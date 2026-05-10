@@ -393,6 +393,77 @@ function assertNoLegacyNoneTokens(values: string[] | undefined, flag: string, re
   throw new PmCliError(`${flag} no longer accepts "none" or "null".${suffix}`.trim(), EXIT_CODE.USAGE);
 }
 
+interface LegacyNoneCollectionNormalizationDefinition {
+  optionKey: keyof CreateCommandOptions;
+  clearFlagKey: keyof CreateCommandOptions;
+  valueFlag: string;
+  clearFlag: string;
+}
+
+const CREATE_LEGACY_NONE_COLLECTION_NORMALIZERS: ReadonlyArray<LegacyNoneCollectionNormalizationDefinition> = [
+  { optionKey: "dep", clearFlagKey: "clearDeps", valueFlag: "--dep", clearFlag: "--clear-deps" },
+  { optionKey: "comment", clearFlagKey: "clearComments", valueFlag: "--comment", clearFlag: "--clear-comments" },
+  { optionKey: "note", clearFlagKey: "clearNotes", valueFlag: "--note", clearFlag: "--clear-notes" },
+  { optionKey: "learning", clearFlagKey: "clearLearnings", valueFlag: "--learning", clearFlag: "--clear-learnings" },
+  { optionKey: "file", clearFlagKey: "clearFiles", valueFlag: "--file", clearFlag: "--clear-files" },
+  { optionKey: "test", clearFlagKey: "clearTests", valueFlag: "--test", clearFlag: "--clear-tests" },
+  { optionKey: "doc", clearFlagKey: "clearDocs", valueFlag: "--doc", clearFlag: "--clear-docs" },
+  { optionKey: "reminder", clearFlagKey: "clearReminders", valueFlag: "--reminder", clearFlag: "--clear-reminders" },
+  { optionKey: "event", clearFlagKey: "clearEvents", valueFlag: "--event", clearFlag: "--clear-events" },
+  { optionKey: "typeOption", clearFlagKey: "clearTypeOptions", valueFlag: "--type-option", clearFlag: "--clear-type-options" },
+];
+
+function normalizeLegacyNoneCreateOptions(options: CreateCommandOptions): CreateCommandOptions {
+  const normalized: CreateCommandOptions = {
+    ...options,
+    unset: options.unset ? [...options.unset] : undefined,
+  };
+  const appendUnsetTarget = (value: string): void => {
+    const current = normalized.unset ? [...normalized.unset] : [];
+    if (!current.includes(value)) {
+      current.push(value);
+    }
+    normalized.unset = current;
+  };
+
+  if (isLegacyNoneToken(normalized.template)) {
+    normalized.template = undefined;
+  }
+
+  const scalarOptionKeys = new Set<string>([...CREATE_OPTION_KEY_TO_UNSET_CANONICAL.keys(), "rank"]);
+  for (const optionKey of scalarOptionKeys) {
+    const candidate = normalized[optionKey];
+    if (typeof candidate !== "string" || !isLegacyNoneToken(candidate)) {
+      continue;
+    }
+    const canonicalUnset = optionKey === "rank" ? "order" : (CREATE_OPTION_KEY_TO_UNSET_CANONICAL.get(optionKey) ?? optionKey);
+    appendUnsetTarget(canonicalUnset);
+    normalized[optionKey] = undefined;
+  }
+
+  for (const definition of CREATE_LEGACY_NONE_COLLECTION_NORMALIZERS) {
+    const entries = normalized[definition.optionKey];
+    if (!Array.isArray(entries) || entries.length === 0) {
+      continue;
+    }
+    const hasLegacy = entries.some((entry) => isLegacyNoneToken(entry));
+    if (!hasLegacy) {
+      continue;
+    }
+    const concreteEntries = entries.filter((entry) => !isLegacyNoneToken(entry));
+    if (concreteEntries.length > 0) {
+      throw new PmCliError(
+        `Cannot mix legacy clear token "none"/"null" with concrete ${definition.valueFlag} entries. Use ${definition.clearFlag} to clear or provide explicit entries.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    normalized[definition.optionKey] = undefined;
+    normalized[definition.clearFlagKey] = true;
+  }
+
+  return normalized;
+}
+
 function parseOptionalString(value: string | undefined): string | undefined {
   if (value === undefined) return undefined;
   return value;
@@ -1433,7 +1504,7 @@ function ensureInitHasRun(pmRoot: string): Promise<void> {
 }
 
 export async function runCreate(options: CreateCommandOptions, global: GlobalOptions): Promise<CreateResult> {
-  let resolvedOptions = await resolveCreateStdinInputs(options);
+  let resolvedOptions = normalizeLegacyNoneCreateOptions(await resolveCreateStdinInputs(options));
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureInitHasRun(pmRoot);
 
@@ -1441,14 +1512,13 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  assertNoLegacyNoneToken(resolvedOptions.template, "--template", "Omit --template to skip template usage.");
   if (resolvedOptions.template !== undefined) {
     const templateName = resolvedOptions.template.trim();
     if (templateName.length === 0) {
       throw new PmCliError("--template must not be empty. Omit --template to disable template usage.", EXIT_CODE.USAGE);
     }
     const templateOptions = await loadCreateTemplateOptions(pmRoot, templateName);
-    resolvedOptions = mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions);
+    resolvedOptions = normalizeLegacyNoneCreateOptions(mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions));
   }
   if (resolvedOptions.type === undefined) {
     throw new PmCliError("Missing required option --type <value>", EXIT_CODE.USAGE);

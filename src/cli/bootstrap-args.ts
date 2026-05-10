@@ -1,3 +1,5 @@
+import { resolveSubcommandFlagContractsForCommand, type CliFlagContract } from "../sdk/cli-contracts.js";
+
 function parseBootstrapPathToken(
   token: string,
   next: string | undefined,
@@ -263,6 +265,295 @@ export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
     return [...argv];
   }
   return [...argv.slice(0, extensionIndex + 1), forcedActionFlag, ...argv.slice(extensionIndex + 2)];
+}
+
+type BootstrapNormalizationReason = "legacy_extension_action" | "flag_alias" | "flag_typo" | "bare_key_value";
+type BootstrapNormalizationConfidence = "high" | "medium";
+
+export interface BootstrapNormalizationEvent {
+  from: string;
+  to: string[];
+  reason: BootstrapNormalizationReason;
+  confidence: BootstrapNormalizationConfidence;
+}
+
+export interface BootstrapInvocationNormalizationResult {
+  argv: string[];
+  commandName: string | undefined;
+  trace: BootstrapNormalizationEvent[];
+}
+
+interface FlagLookup {
+  canonicalByNormalized: Map<string, string | null>;
+  canonicalByCompact: Map<string, string | null>;
+  canonicalComparables: Array<{ canonicalFlag: string; comparable: string }>;
+}
+
+function normalizeFlagKeyToken(raw: string): string {
+  const withoutPrefix = raw.replace(/^--?/, "");
+  return withoutPrefix
+    .replace(/_/g, "-")
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .toLowerCase();
+}
+
+function toComparableFlagKey(raw: string): string {
+  return normalizeFlagKeyToken(raw).replace(/-/g, "");
+}
+
+function markUnambiguousFlag(
+  map: Map<string, string | null>,
+  key: string,
+  canonicalFlag: string,
+): void {
+  const existing = map.get(key);
+  if (existing === undefined) {
+    map.set(key, canonicalFlag);
+    return;
+  }
+  if (existing !== canonicalFlag) {
+    map.set(key, null);
+  }
+}
+
+function collectLongFlagCandidates(contract: CliFlagContract): string[] {
+  const candidates: string[] = [];
+  const pushLongFlag = (value: string | undefined): void => {
+    if (typeof value !== "string") {
+      return;
+    }
+    if (!value.startsWith("--")) {
+      return;
+    }
+    candidates.push(value);
+  };
+  pushLongFlag(contract.flag);
+  for (const alias of contract.aliases ?? []) {
+    pushLongFlag(alias);
+  }
+  return candidates;
+}
+
+function buildFlagLookup(commandName: string | undefined): FlagLookup {
+  const contracts = resolveSubcommandFlagContractsForCommand(commandName);
+  const canonicalByNormalized = new Map<string, string | null>();
+  const canonicalByCompact = new Map<string, string | null>();
+  const canonicalComparablesMap = new Map<string, string>();
+  for (const contract of contracts) {
+    const longCandidates = collectLongFlagCandidates(contract);
+    if (longCandidates.length === 0) {
+      continue;
+    }
+    const canonicalFlag = `--${normalizeFlagKeyToken(longCandidates[0])}`;
+    for (const candidate of longCandidates) {
+      markUnambiguousFlag(canonicalByNormalized, normalizeFlagKeyToken(candidate), canonicalFlag);
+      markUnambiguousFlag(canonicalByCompact, toComparableFlagKey(candidate), canonicalFlag);
+    }
+    const comparable = toComparableFlagKey(canonicalFlag);
+    if (!canonicalComparablesMap.has(canonicalFlag)) {
+      canonicalComparablesMap.set(canonicalFlag, comparable);
+    }
+  }
+  return {
+    canonicalByNormalized,
+    canonicalByCompact,
+    canonicalComparables: [...canonicalComparablesMap.entries()].map(([canonicalFlag, comparable]) => ({
+      canonicalFlag,
+      comparable,
+    })),
+  };
+}
+
+function levenshteinDistanceWithinLimit(left: string, right: string, limit: number): number | null {
+  if (left === right) {
+    return 0;
+  }
+  if (Math.abs(left.length - right.length) > limit) {
+    return null;
+  }
+  const previous = new Array<number>(right.length + 1);
+  const current = new Array<number>(right.length + 1);
+  for (let column = 0; column <= right.length; column += 1) {
+    previous[column] = column;
+  }
+  for (let row = 1; row <= left.length; row += 1) {
+    current[0] = row;
+    let rowMin = current[0];
+    for (let column = 1; column <= right.length; column += 1) {
+      const cost = left[row - 1] === right[column - 1] ? 0 : 1;
+      const substitution = previous[column - 1] + cost;
+      const insertion = current[column - 1] + 1;
+      const deletion = previous[column] + 1;
+      const candidate = Math.min(substitution, insertion, deletion);
+      current[column] = candidate;
+      if (candidate < rowMin) {
+        rowMin = candidate;
+      }
+    }
+    if (rowMin > limit) {
+      return null;
+    }
+    for (let column = 0; column <= right.length; column += 1) {
+      previous[column] = current[column];
+    }
+  }
+  const distance = previous[right.length];
+  return distance <= limit ? distance : null;
+}
+
+function resolveCanonicalFlag(
+  rawKey: string,
+  lookup: FlagLookup,
+): { flag: string; reason: "flag_alias" | "flag_typo"; confidence: BootstrapNormalizationConfidence } | null {
+  const normalizedKey = normalizeFlagKeyToken(rawKey);
+  const direct = lookup.canonicalByNormalized.get(normalizedKey);
+  if (typeof direct === "string") {
+    return {
+      flag: direct,
+      reason: "flag_alias",
+      confidence: "high",
+    };
+  }
+  const comparableKey = normalizedKey.replace(/-/g, "");
+  const compactMatch = lookup.canonicalByCompact.get(comparableKey);
+  if (typeof compactMatch === "string") {
+    return {
+      flag: compactMatch,
+      reason: "flag_alias",
+      confidence: "high",
+    };
+  }
+  const maxDistance = comparableKey.length >= 8 ? 2 : 1;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  let bestFlag: string | undefined;
+  let tied = false;
+  for (const candidate of lookup.canonicalComparables) {
+    const distance = levenshteinDistanceWithinLimit(comparableKey, candidate.comparable, maxDistance);
+    if (distance === null) {
+      continue;
+    }
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestFlag = candidate.canonicalFlag;
+      tied = false;
+      continue;
+    }
+    if (distance === bestDistance && bestFlag !== candidate.canonicalFlag) {
+      tied = true;
+    }
+  }
+  if (!bestFlag || tied || !Number.isFinite(bestDistance) || bestDistance <= 0) {
+    return null;
+  }
+  return {
+    flag: bestFlag,
+    reason: "flag_typo",
+    confidence: bestDistance >= 2 ? "medium" : "high",
+  };
+}
+
+function parseBareKeyValueToken(token: string): { key: string; value: string } | null {
+  if (token.includes("://")) {
+    return null;
+  }
+  const match = token.match(/^([A-Za-z][A-Za-z0-9_-]{1,63})([:=])(.*)$/);
+  if (!match) {
+    return null;
+  }
+  const key = match[1];
+  const value = match[3];
+  if (value.length === 0) {
+    return null;
+  }
+  return {
+    key,
+    value,
+  };
+}
+
+function normalizeLongOptionToken(
+  token: string,
+  lookup: FlagLookup,
+): { tokens: string[]; event?: BootstrapNormalizationEvent } {
+  if (!token.startsWith("--")) {
+    return { tokens: [token] };
+  }
+  const equalsIndex = token.indexOf("=");
+  const key = equalsIndex >= 0 ? token.slice(0, equalsIndex) : token;
+  const inlineValue = equalsIndex >= 0 ? token.slice(equalsIndex + 1) : undefined;
+  const resolution = resolveCanonicalFlag(key, lookup);
+  if (!resolution) {
+    return { tokens: [token] };
+  }
+  const normalizedToken = inlineValue === undefined ? resolution.flag : `${resolution.flag}=${inlineValue}`;
+  if (normalizedToken === token) {
+    return { tokens: [token] };
+  }
+  return {
+    tokens: [normalizedToken],
+    event: {
+      from: token,
+      to: [normalizedToken],
+      reason: resolution.reason,
+      confidence: resolution.confidence,
+    },
+  };
+}
+
+export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocationNormalizationResult {
+  const trace: BootstrapNormalizationEvent[] = [];
+  const legacyNormalized = normalizeLegacyExtensionActionSyntax(argv);
+  if (legacyNormalized.length !== argv.length || legacyNormalized.some((token, index) => token !== argv[index])) {
+    trace.push({
+      from: argv.join(" "),
+      to: [...legacyNormalized],
+      reason: "legacy_extension_action",
+      confidence: "high",
+    });
+  }
+  const commandName = parseBootstrapCommandName(legacyNormalized);
+  const lookup = buildFlagLookup(commandName);
+  const normalizedArgv: string[] = [];
+  for (let index = 0; index < legacyNormalized.length; index += 1) {
+    const token = legacyNormalized[index];
+    if (token === "--") {
+      normalizedArgv.push(...legacyNormalized.slice(index));
+      break;
+    }
+    const previous = normalizedArgv[normalizedArgv.length - 1];
+    if (token.startsWith("--")) {
+      const normalizedToken = normalizeLongOptionToken(token, lookup);
+      normalizedArgv.push(...normalizedToken.tokens);
+      if (normalizedToken.event) {
+        trace.push(normalizedToken.event);
+      }
+      continue;
+    }
+    const bareKeyValue = parseBareKeyValueToken(token);
+    if (
+      bareKeyValue &&
+      !(typeof previous === "string" && previous.startsWith("-"))
+    ) {
+      const resolution = resolveCanonicalFlag(bareKeyValue.key, lookup);
+      if (resolution) {
+        const replacement = [resolution.flag, bareKeyValue.value];
+        normalizedArgv.push(...replacement);
+        trace.push({
+          from: token,
+          to: replacement,
+          reason: "bare_key_value",
+          confidence: resolution.confidence,
+        });
+        continue;
+      }
+    }
+    normalizedArgv.push(token);
+  }
+  return {
+    argv: normalizedArgv,
+    commandName,
+    trace,
+  };
 }
 
 export function parseBootstrapTypeValue(argv: string[]): string | undefined {

@@ -688,6 +688,17 @@ export const CONFIG_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--clear-criteria" },
   { flag: "--format" },
   { flag: "--policy" },
+  { flag: "--default-depth" },
+  { flag: "--activity-limit" },
+  { flag: "--stale-threshold-days" },
+  { flag: "--section-hierarchy" },
+  { flag: "--section-activity" },
+  { flag: "--section-progress" },
+  { flag: "--section-blockers" },
+  { flag: "--section-files" },
+  { flag: "--section-workload" },
+  { flag: "--section-staleness" },
+  { flag: "--section-tests" },
 ];
 
 export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1222,6 +1233,10 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--release" },
   { flag: "--limit" },
   { flag: "--format" },
+  { flag: "--depth" },
+  { flag: "--section" },
+  { flag: "--activity-limit" },
+  { flag: "--stale-threshold" },
 ];
 
 export const GUIDE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1266,6 +1281,162 @@ export const CONTRACTS_FLAG_CONTRACTS: CliFlagContract[] = [
 export const COMPLETION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--eager-tags" },
 ];
+
+function toUniqueFlagContracts(contracts: CliFlagContract[]): CliFlagContract[] {
+  const seen = new Set<string>();
+  const unique: CliFlagContract[] = [];
+  for (const contract of contracts) {
+    const aliasKey = (contract.aliases ?? []).join(",");
+    const key = `${contract.flag}|${contract.short ?? ""}|${aliasKey}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    unique.push(contract);
+  }
+  return unique;
+}
+
+function withSubcommandGlobalFlags(contracts: CliFlagContract[]): CliFlagContract[] {
+  return withFlagAliasMetadata(toUniqueFlagContracts([...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS, ...contracts]));
+}
+
+const LIST_COMMAND_NAME_CONTRACTS = new Set([
+  "list",
+  "list-all",
+  "list-draft",
+  "list-open",
+  "list-in-progress",
+  "list-blocked",
+  "list-closed",
+  "list-canceled",
+]);
+
+const NO_SURFACE_COMMAND_NAME_CONTRACTS = new Set([
+  "get",
+  "stats",
+  "reindex",
+  "beads",
+  "todos",
+  "beads-import",
+  "todos-import",
+  "todos-export",
+  "help",
+]);
+
+function normalizeCommandNameForContracts(commandName: string | undefined): string {
+  if (typeof commandName !== "string") {
+    return "";
+  }
+  return commandName.trim().toLowerCase();
+}
+
+export function resolveSubcommandFlagContractsForCommand(commandName: string | undefined): CliFlagContract[] {
+  const normalized = normalizeCommandNameForContracts(commandName);
+  if (normalized.length === 0) {
+    return withSubcommandGlobalFlags([]);
+  }
+  if (LIST_COMMAND_NAME_CONTRACTS.has(normalized)) {
+    return withSubcommandGlobalFlags(LIST_FILTER_FLAG_CONTRACTS);
+  }
+  if (NO_SURFACE_COMMAND_NAME_CONTRACTS.has(normalized)) {
+    return withSubcommandGlobalFlags([]);
+  }
+  if (normalized === "templates") {
+    return withSubcommandGlobalFlags(CREATE_FLAG_CONTRACTS);
+  }
+  if (normalized === "cal") {
+    return withSubcommandGlobalFlags(CALENDAR_FLAG_CONTRACTS);
+  }
+  if (normalized === "ctx") {
+    return withSubcommandGlobalFlags(CONTEXT_FLAG_CONTRACTS);
+  }
+  if (normalized === "test-runs-worker") {
+    return withSubcommandGlobalFlags(TEST_RUNS_FLAG_CONTRACTS);
+  }
+  switch (normalized) {
+    case "init":
+      return withSubcommandGlobalFlags(INIT_FLAG_CONTRACTS);
+    case "config":
+      return withSubcommandGlobalFlags(CONFIG_FLAG_CONTRACTS);
+    case "extension":
+      return withSubcommandGlobalFlags(EXTENSION_FLAG_CONTRACTS);
+    case "create":
+      return withSubcommandGlobalFlags(CREATE_FLAG_CONTRACTS);
+    case "aggregate":
+      return withSubcommandGlobalFlags(AGGREGATE_FLAG_CONTRACTS);
+    case "dedupe-audit":
+      return withSubcommandGlobalFlags(DEDUPE_AUDIT_FLAG_CONTRACTS);
+    case "comments-audit":
+      return withSubcommandGlobalFlags(COMMENTS_AUDIT_FLAG_CONTRACTS);
+    case "calendar":
+      return withSubcommandGlobalFlags(CALENDAR_FLAG_CONTRACTS);
+    case "context":
+      return withSubcommandGlobalFlags(CONTEXT_FLAG_CONTRACTS);
+    case "search":
+      return withSubcommandGlobalFlags(SEARCH_FLAG_CONTRACTS);
+    case "history":
+      return withSubcommandGlobalFlags(HISTORY_FLAG_CONTRACTS);
+    case "activity":
+      return withSubcommandGlobalFlags(ACTIVITY_FLAG_CONTRACTS);
+    case "restore":
+      return withSubcommandGlobalFlags(RESTORE_FLAG_CONTRACTS);
+    case "update":
+      return withSubcommandGlobalFlags(UPDATE_FLAG_CONTRACTS);
+    case "update-many":
+      return withSubcommandGlobalFlags(UPDATE_MANY_FLAG_CONTRACTS);
+    case "normalize":
+      return withSubcommandGlobalFlags(NORMALIZE_FLAG_CONTRACTS);
+    case "close":
+      return withSubcommandGlobalFlags(CLOSE_FLAG_CONTRACTS);
+    case "delete":
+      return withSubcommandGlobalFlags(DELETE_FLAG_CONTRACTS);
+    case "append":
+      return withSubcommandGlobalFlags(APPEND_FLAG_CONTRACTS);
+    case "comments":
+      return withSubcommandGlobalFlags(COMMENTS_FLAG_CONTRACTS);
+    case "notes":
+      return withSubcommandGlobalFlags(NOTES_FLAG_CONTRACTS);
+    case "learnings":
+      return withSubcommandGlobalFlags(LEARNINGS_FLAG_CONTRACTS);
+    case "files":
+      return withSubcommandGlobalFlags(FILES_FLAG_CONTRACTS);
+    case "docs":
+      return withSubcommandGlobalFlags(DOCS_FLAG_CONTRACTS);
+    case "deps":
+      return withSubcommandGlobalFlags(DEPS_FLAG_CONTRACTS);
+    case "test":
+      return withSubcommandGlobalFlags(TEST_FLAG_CONTRACTS);
+    case "test-all":
+      return withSubcommandGlobalFlags(TEST_ALL_FLAG_CONTRACTS);
+    case "test-runs":
+      return withSubcommandGlobalFlags(TEST_RUNS_FLAG_CONTRACTS);
+    case "health":
+      return withSubcommandGlobalFlags(HEALTH_FLAG_CONTRACTS);
+    case "validate":
+      return withSubcommandGlobalFlags(VALIDATE_FLAG_CONTRACTS);
+    case "gc":
+      return withSubcommandGlobalFlags(GC_FLAG_CONTRACTS);
+    case "contracts":
+      return withSubcommandGlobalFlags(CONTRACTS_FLAG_CONTRACTS);
+    case "claim":
+      return withSubcommandGlobalFlags(CLAIM_FLAG_CONTRACTS);
+    case "release":
+      return withSubcommandGlobalFlags(RELEASE_FLAG_CONTRACTS);
+    case "start-task":
+      return withSubcommandGlobalFlags(START_TASK_FLAG_CONTRACTS);
+    case "pause-task":
+      return withSubcommandGlobalFlags(PAUSE_TASK_FLAG_CONTRACTS);
+    case "close-task":
+      return withSubcommandGlobalFlags(CLOSE_TASK_FLAG_CONTRACTS);
+    case "guide":
+      return withSubcommandGlobalFlags(GUIDE_FLAG_CONTRACTS);
+    case "completion":
+      return withSubcommandGlobalFlags(COMPLETION_FLAG_CONTRACTS);
+    default:
+      return withSubcommandGlobalFlags([]);
+  }
+}
 
 export function toCompletionFlagString(flagContracts: CliFlagContract[], includeGlobal = true): string {
   const aliasAwareContracts = withFlagAliasMetadata(flagContracts);

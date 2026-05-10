@@ -1,3 +1,4 @@
+import { statSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { PM_DIRNAME, SETTINGS_FILENAME, TYPE_TO_FOLDER } from "../shared/constants.js";
@@ -15,9 +16,42 @@ const ITEM_FORMAT_BY_EXTENSION = {
 
 export const ITEM_FILE_EXTENSIONS: Array<keyof typeof ITEM_FORMAT_BY_EXTENSION> = [".md", ".toon"];
 
+function pathExists(pathValue: string): boolean {
+  try {
+    statSync(pathValue);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function discoverPmRootFromAncestors(cwd: string): string | undefined {
+  let current = path.resolve(cwd);
+  while (true) {
+    const candidateRoot = path.join(current, PM_DIRNAME);
+    const candidateSettingsPath = path.join(candidateRoot, SETTINGS_FILENAME);
+    if (pathExists(candidateSettingsPath)) {
+      return candidateRoot;
+    }
+    const parent = path.dirname(current);
+    if (parent === current) {
+      return undefined;
+    }
+    current = parent;
+  }
+}
+
 export function resolvePmRoot(cwd: string, cliPath?: string): string {
   const envPath = process.env.PM_PATH;
-  const selected = cliPath?.trim() || envPath?.trim() || PM_DIRNAME;
+  const explicitPath = cliPath?.trim() || envPath?.trim();
+  if (explicitPath) {
+    return path.resolve(cwd, explicitPath);
+  }
+  const discoveredRoot = discoverPmRootFromAncestors(cwd);
+  if (discoveredRoot) {
+    return discoveredRoot;
+  }
+  const selected = PM_DIRNAME;
   return path.resolve(cwd, selected);
 }
 

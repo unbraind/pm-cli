@@ -2,11 +2,12 @@ id: pm-ej01
 title: Simplify command inputs for setup-agnostic agent workflows
 description: "Audit and harden pm CLI command input ergonomics so agents can provide rich metadata once, recover from validation failures with actionable guidance, and rely on intuitive inference instead of strict setup-specific schemas."
 type: Task
-status: closed
+status: in_progress
 priority: 0
 tags[5]: agent-ux,audit,commands,dogfood,pm-cli
 created_at: "2026-05-10T08:29:09.798Z"
-updated_at: "2026-05-10T08:48:34.830Z"
+updated_at: "2026-05-10T20:11:43.025Z"
+assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
 acceptance_criteria: Commands accept intuitive rich agent input without dropping metadata; validation failures preserve actionable recovery guidance; temp project end-to-end dogfood passes; changed files/tests/docs are linked; full coverage and GitHub checks are green.
@@ -17,20 +18,40 @@ actual_result: Create/update/files/docs/test workflows accept the intuitive form
 comments[2]{created_at,author,text}:
   "2026-05-10T08:29:09.798Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search simplify commands parameters schema strict agent input intuitive --limit 10,pm list-open --limit 20,pm list-in-progress --limit 20,and pm search create strict repeatable metadata shorthand command intuitive agents retry --limit 10. Existing agent UX items are closed or broad parent work; pm-rnpb is the canonical parent,so this dedicated child tracks the current command-simplification audit."
   "2026-05-10T08:47:54.924Z",codex-agent,"Evidence: implemented forgiving repeatable-entry parsing for create/update/files/docs/test so bare dependency IDs infer kind=related, bare file/doc paths infer path with project scope, bare linked test values infer command, and rich comment/note/learning seeds with extra key-like metadata are preserved as text instead of failing and causing lossy retries. Verification passed: temp project end-to-end dogfood with isolated PM_PATH/PM_GLOBAL_PATH; pm linked tests passed including coverage 90 files/1252 tests at 100%; focused command suite 129 tests passed; pnpm quality:static passed; scripts/check-secrets passed. pm validate and pm health still report only the pre-existing history drift warnings on pm-54d, pm-f3q4, pm-fdla, pm-mb4n, and pm-tq1."
-files[9]{path,scope,note}:
+files[20]{path,scope,note}:
+  src/cli/bootstrap-args.ts,project,bootstrap invocation normalization trace
+  src/cli/commander-usage.ts,project,usage context resolves normalized argv
   src/cli/commands/create.ts,project,intuitive create seed parsing
-  src/cli/commands/update.ts,project,bare dependency update parsing
-  src/cli/commands/files.ts,project,bare file add parsing
   src/cli/commands/docs.ts,project,bare doc add parsing
+  src/cli/commands/files.ts,project,bare file add parsing
   src/cli/commands/test.ts,project,bare linked test add parsing
+  src/cli/commands/update.ts,project,bare dependency update parsing
+  src/cli/error-guidance.ts,project,error envelopes include replay-ready recovery bundle
+  src/cli/help-json-payload.ts,project,bootstrap help json unknown-command recovery bundle
+  src/cli/main.ts,project,apply normalized invocation argv during parse
+  src/core/shared/errors.ts,project,recovery payload contract for cli errors
+  src/core/store/paths.ts,project,ancestor pm root discovery for setup-agnostic invocation
+  src/sdk/cli-contracts.ts,project,command-contract bootstrap normalization map
+  tests/integration/help-runtime.spec.ts,project,unknown command help json recovery regression
+  tests/unit/bootstrap-args.spec.ts,project,bootstrap normalization regressions
   tests/unit/create-command.spec.ts,project,create ergonomic regressions
-  tests/unit/update-command.spec.ts,project,update dependency ergonomic regression
   tests/unit/files-docs-command.spec.ts,project,bare path link regressions
+  tests/unit/store-paths.spec.ts,project,path discovery and initialization guard regressions
   tests/unit/test-command.spec.ts,project,bare test command regression
-tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/update-command.spec.ts,project,update dependency ergonomic regression
+tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,full coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/unit/contracts-command.spec.ts tests/unit/bootstrap-args.spec.ts tests/unit/store-paths.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,recovery bundle and bootstrap/path focused regressions
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/bootstrap-args.spec.ts tests/unit/store-paths.spec.ts tests/unit/contracts-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,full-surface simplification focused suite (normalization/path/recovery/none-null)
+  node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,bootstrap normalization focused regression
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,legacy none/null compatibility create+update regressions
   node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/files-docs-command.spec.ts tests/unit/test-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused command ergonomics regression
+  node scripts/run-tests.mjs test -- tests/unit/store-paths.spec.ts tests/unit/bootstrap-args.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,bootstrap + path discovery focused regression
+  "pnpm quality:docs-skills",null,project,240,null,null,null,null,null,null,null,null,null,null,null,docs migration and skills gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mozj4sya-ogilw0,test,passed,"2026-05-10T08:40:13.688Z","2026-05-10T08:47:19.186Z","2026-05-10T08:47:19.186Z",null,null,2,0,0,null,null,null
-close_reason: Intuitive command input parsing implemented and verified end to end; rich agent metadata is preserved across create/update/link/test workflows.
+docs[3]{path,scope,note}:
+  docs/CLAUDE_CODE_PLUGIN.md,project,plugin compatibility notes for simplified invocation flow
+  docs/MIGRATION_CLI_SIMPLIFICATION.md,project,dedicated migration guidance for parser and recovery changes
+  docs/SDK.md,project,sdk integration migration notes for recovery payloads
 body: ""

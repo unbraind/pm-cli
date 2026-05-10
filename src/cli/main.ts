@@ -42,7 +42,7 @@ import {
   type RuntimeFieldCommand,
 } from "../core/schema/runtime-schema.js";
 import { EXIT_CODE, resolveTelemetryErrorCategory, type TelemetryErrorCategory } from "../core/shared/constants.js";
-import { PmCliError } from "../core/shared/errors.js";
+import { PmCliError, type PmCliErrorContext, type PmCliErrorRecoveryPayload } from "../core/shared/errors.js";
 import { toNonEmptyStringOrUndefined } from "../core/shared/primitives.js";
 import { printError, printResult, writeStdout } from "../core/output/output.js";
 import { maybeRunFirstUseTelemetryPrompt } from "../core/telemetry/consent.js";
@@ -109,7 +109,7 @@ import {
   applyBootstrapPagerPolicy,
   parseBootstrapHelpRequest,
   parseBootstrapCommandName,
-  normalizeLegacyExtensionActionSyntax,
+  normalizeBootstrapInvocation,
 } from "./bootstrap-args.js";
 import {
   type MandatoryMigrationBlocker,
@@ -203,6 +203,85 @@ function describeUnknownError(error: unknown): string {
     return error.message;
   }
   return "Unknown failure";
+}
+
+function normalizeLongOptionFlag(token: string): string | undefined {
+  if (!token.startsWith("--")) {
+    return undefined;
+  }
+  const key = token.includes("=") ? token.slice(0, token.indexOf("=")) : token;
+  return `--${key
+    .slice(2)
+    .replace(/_/g, "-")
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .toLowerCase()}`;
+}
+
+function extractProvidedOptionFlags(argv: string[]): string[] {
+  const provided = new Set<string>();
+  for (const token of argv) {
+    const normalized = normalizeLongOptionFlag(token);
+    if (normalized) {
+      provided.add(normalized);
+    }
+  }
+  return [...provided].sort((left, right) => left.localeCompare(right));
+}
+
+function quoteCommandArg(arg: string): string {
+  if (/^[A-Za-z0-9._:/@=-]+$/.test(arg)) {
+    return arg;
+  }
+  return `"${arg.replace(/(["\\$`])/g, "\\$1")}"`;
+}
+
+function renderAttemptedCommand(argv: string[]): string {
+  return `pm ${argv.map((token) => quoteCommandArg(token)).join(" ")}`;
+}
+
+function inferMissingFieldsFromErrorMessage(message: string): string[] | undefined {
+  const matches = message.match(/--[a-zA-Z0-9][a-zA-Z0-9_-]*/g);
+  if (!matches || matches.length === 0) {
+    return undefined;
+  }
+  const normalized = [...new Set(matches.map((entry) => normalizeLongOptionFlag(entry) ?? entry))];
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function buildPmCliRecoveryContext(
+  context: PmCliErrorContext | undefined,
+  invocationArgv: string[],
+  rawMessage: string,
+): PmCliErrorContext {
+  const attemptedCommand = renderAttemptedCommand(invocationArgv);
+  const providedFields = extractProvidedOptionFlags(invocationArgv);
+  const inferredMissing = inferMissingFieldsFromErrorMessage(rawMessage);
+  const existingRecovery = context?.recovery;
+  let suggestedRetry = existingRecovery?.suggested_retry;
+  if (!suggestedRetry && inferredMissing && inferredMissing.length > 0) {
+    const missingFlag = inferredMissing[0];
+    const normalizedMissing = normalizeLongOptionFlag(missingFlag);
+    if (normalizedMissing) {
+      const alreadyProvided = invocationArgv.some((token) => normalizeLongOptionFlag(token) === normalizedMissing);
+      if (!alreadyProvided) {
+        suggestedRetry = renderAttemptedCommand([...invocationArgv, normalizedMissing, "<value>"]);
+      }
+    }
+  }
+  if (!suggestedRetry) {
+    suggestedRetry = attemptedCommand;
+  }
+  const recovery: PmCliErrorRecoveryPayload = {
+    attempted_command: existingRecovery?.attempted_command ?? attemptedCommand,
+    normalized_args: existingRecovery?.normalized_args ?? [...invocationArgv],
+    provided_fields: existingRecovery?.provided_fields ?? (providedFields.length > 0 ? providedFields : undefined),
+    missing: existingRecovery?.missing ?? inferredMissing,
+    suggested_retry: suggestedRetry,
+  };
+  return {
+    ...(context ?? {}),
+    recovery,
+  };
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -1196,10 +1275,12 @@ registerListQueryCommands(program);
 registerMutationCommands(program);
 registerOperationCommands(program);
 
-attachRichHelpText(program, normalizeLegacyExtensionActionSyntax(process.argv.slice(2)));
+const bootstrapInvocation = normalizeBootstrapInvocation(process.argv.slice(2));
+
+attachRichHelpText(program, bootstrapInvocation.argv);
 
 async function main(): Promise<void> {
-  const invocationArgv = normalizeLegacyExtensionActionSyntax(process.argv.slice(2));
+  const invocationArgv = bootstrapInvocation.argv;
   const invocationProcessArgv = [process.argv[0], process.argv[1], ...invocationArgv];
   try {
     applyBootstrapPagerPolicy(invocationArgv);
@@ -1257,7 +1338,8 @@ async function main(): Promise<void> {
     }
 
     if (error instanceof PmCliError) {
-      const classification = classifyPmCliError(error.message, error.context);
+      const enrichedContext = buildPmCliRecoveryContext(error.context, invocationArgv, error.message);
+      const classification = classifyPmCliError(error.message, enrichedContext);
       const { errorCategory, commandResolution } = await emitTelemetryCommandError({
         command: attemptedCommand,
         errorCode: classification.code,
@@ -1296,9 +1378,9 @@ async function main(): Promise<void> {
       });
       sentryCaptureCliError(error);
       if (jsonErrors) {
-        printError(JSON.stringify(formatPmCliErrorForJson(error.message, error.exitCode, error.context), null, 2));
+        printError(JSON.stringify(formatPmCliErrorForJson(error.message, error.exitCode, enrichedContext), null, 2));
       } else {
-        printError(formatPmCliErrorForDisplay(error.message, error.context));
+        printError(formatPmCliErrorForDisplay(error.message, enrichedContext));
       }
       await sentryFlush();
       process.exitCode = error.exitCode;
@@ -1327,6 +1409,11 @@ async function main(): Promise<void> {
             {
               unknownCommandExamples: usageContext.unknownCommandExamples,
               unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
+              attemptedCommand: usageContext.attemptedCommand,
+              normalizedInvocationArgs: usageContext.normalizedInvocationArgs,
+              providedOptionFlags: usageContext.providedOptionFlags,
+              unknownOptionSuggestions: usageContext.unknownOptionSuggestions,
+              suggestedRetryCommand: usageContext.suggestedRetryCommand,
             },
           );
           const { errorCategory, commandResolution } = await emitTelemetryCommandError({
@@ -1416,6 +1503,11 @@ async function main(): Promise<void> {
           {
             unknownCommandExamples: usageContext.unknownCommandExamples,
             unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
+            attemptedCommand: usageContext.attemptedCommand,
+            normalizedInvocationArgs: usageContext.normalizedInvocationArgs,
+            providedOptionFlags: usageContext.providedOptionFlags,
+            unknownOptionSuggestions: usageContext.unknownOptionSuggestions,
+            suggestedRetryCommand: usageContext.suggestedRetryCommand,
           },
         );
         const { errorCategory, commandResolution } = await emitTelemetryCommandError({

@@ -328,6 +328,77 @@ function assertNoLegacyNoneTokens(values: string[] | undefined, flag: string, re
   throw new PmCliError(`${flag} no longer accepts "none" or "null".${suffix}`.trim(), EXIT_CODE.USAGE);
 }
 
+interface LegacyNoneCollectionNormalizationDefinition {
+  optionKey: keyof UpdateCommandOptions;
+  clearFlagKey: keyof UpdateCommandOptions;
+  valueFlag: string;
+  clearFlag: string;
+  disableReplaceFlagKey?: "replaceDeps" | "replaceTests";
+}
+
+const UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS: ReadonlyArray<LegacyNoneCollectionNormalizationDefinition> = [
+  { optionKey: "dep", clearFlagKey: "clearDeps", valueFlag: "--dep", clearFlag: "--clear-deps", disableReplaceFlagKey: "replaceDeps" },
+  { optionKey: "comment", clearFlagKey: "clearComments", valueFlag: "--comment", clearFlag: "--clear-comments" },
+  { optionKey: "note", clearFlagKey: "clearNotes", valueFlag: "--note", clearFlag: "--clear-notes" },
+  { optionKey: "learning", clearFlagKey: "clearLearnings", valueFlag: "--learning", clearFlag: "--clear-learnings" },
+  { optionKey: "file", clearFlagKey: "clearFiles", valueFlag: "--file", clearFlag: "--clear-files" },
+  { optionKey: "test", clearFlagKey: "clearTests", valueFlag: "--test", clearFlag: "--clear-tests", disableReplaceFlagKey: "replaceTests" },
+  { optionKey: "doc", clearFlagKey: "clearDocs", valueFlag: "--doc", clearFlag: "--clear-docs" },
+  { optionKey: "reminder", clearFlagKey: "clearReminders", valueFlag: "--reminder", clearFlag: "--clear-reminders" },
+  { optionKey: "event", clearFlagKey: "clearEvents", valueFlag: "--event", clearFlag: "--clear-events" },
+  { optionKey: "typeOption", clearFlagKey: "clearTypeOptions", valueFlag: "--type-option", clearFlag: "--clear-type-options" },
+];
+
+function normalizeLegacyNoneUpdateOptions(options: UpdateCommandOptions): UpdateCommandOptions {
+  const normalized: UpdateCommandOptions = {
+    ...options,
+    unset: options.unset ? [...options.unset] : undefined,
+  };
+  const appendUnsetTarget = (value: string): void => {
+    const current = normalized.unset ? [...normalized.unset] : [];
+    if (!current.includes(value)) {
+      current.push(value);
+    }
+    normalized.unset = current;
+  };
+
+  const scalarOptionKeys = new Set<string>([...UPDATE_OPTION_KEY_TO_UNSET_CANONICAL.keys(), "rank"]);
+  for (const optionKey of scalarOptionKeys) {
+    const candidate = normalized[optionKey];
+    if (typeof candidate !== "string" || !isLegacyNoneToken(candidate)) {
+      continue;
+    }
+    const canonicalUnset = optionKey === "rank" ? "order" : (UPDATE_OPTION_KEY_TO_UNSET_CANONICAL.get(optionKey) ?? optionKey);
+    appendUnsetTarget(canonicalUnset);
+    normalized[optionKey] = undefined;
+  }
+
+  for (const definition of UPDATE_LEGACY_NONE_COLLECTION_NORMALIZERS) {
+    const entries = normalized[definition.optionKey];
+    if (!Array.isArray(entries) || entries.length === 0) {
+      continue;
+    }
+    const hasLegacy = entries.some((entry) => isLegacyNoneToken(entry));
+    if (!hasLegacy) {
+      continue;
+    }
+    const concreteEntries = entries.filter((entry) => !isLegacyNoneToken(entry));
+    if (concreteEntries.length > 0) {
+      throw new PmCliError(
+        `Cannot mix legacy clear token "none"/"null" with concrete ${definition.valueFlag} entries. Use ${definition.clearFlag} to clear or provide explicit entries.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    normalized[definition.optionKey] = undefined;
+    normalized[definition.clearFlagKey] = true;
+    if (definition.disableReplaceFlagKey) {
+      normalized[definition.disableReplaceFlagKey] = false;
+    }
+  }
+
+  return normalized;
+}
+
 function resolveRuntimeUnsetDefinition(
   token: string,
   runtimeFieldRegistry: RuntimeFieldRegistry | undefined,
@@ -1114,7 +1185,7 @@ function enforceUpdateOptionsByType(typeName: string, options: UpdateCommandOpti
 
 export async function runUpdate(id: string, options: UpdateCommandOptions, global: GlobalOptions): Promise<UpdateResult> {
   const stdinResolver = createStdinTokenResolver();
-  options = {
+  options = normalizeLegacyNoneUpdateOptions({
     ...options,
     body: await stdinResolver.resolveValue(options.body, "--body"),
     dep: await stdinResolver.resolveList(options.dep, "--dep"),
@@ -1128,7 +1199,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     reminder: await stdinResolver.resolveList(options.reminder, "--reminder"),
     event: await stdinResolver.resolveList(options.event, "--event"),
     typeOption: await stdinResolver.resolveList(options.typeOption, "--type-option"),
-  };
+  });
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);

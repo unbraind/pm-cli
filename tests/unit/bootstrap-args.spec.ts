@@ -5,6 +5,7 @@ import {
   parseBootstrapHelpRequest,
   parseBootstrapCommandName,
   normalizeLegacyExtensionActionSyntax,
+  normalizeBootstrapInvocation,
   parseBootstrapTypeValue,
 } from "../../src/cli/bootstrap-args.js";
 
@@ -174,6 +175,69 @@ describe("normalizeLegacyExtensionActionSyntax", () => {
       const result = normalizeLegacyExtensionActionSyntax(["extension", action]);
       expect(result).toEqual(["extension", `--${action}`]);
     }
+  });
+});
+
+describe("normalizeBootstrapInvocation", () => {
+  it("normalizes legacy extension action syntax before parse", () => {
+    const normalized = normalizeBootstrapInvocation(["extension", "install", "my-ext"]);
+    expect(normalized.argv).toEqual(["extension", "--install", "my-ext"]);
+    expect(normalized.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          reason: "legacy_extension_action",
+          confidence: "high",
+        }),
+      ]),
+    );
+  });
+
+  it("normalizes long-option aliases and camel/underscore variants", () => {
+    const normalized = normalizeBootstrapInvocation([
+      "create",
+      "--estimated_minutes",
+      "15",
+      "--acceptanceCriteria",
+      "Ship",
+      "--customer_impact",
+      "high",
+    ]);
+    expect(normalized.argv).toEqual([
+      "create",
+      "--estimated-minutes",
+      "15",
+      "--acceptance-criteria",
+      "Ship",
+      "--customer-impact",
+      "high",
+    ]);
+    expect(normalized.trace.some((entry) => entry.reason === "flag_alias")).toBe(true);
+  });
+
+  it("normalizes minor long-option typos when unambiguous", () => {
+    const normalized = normalizeBootstrapInvocation(["create", "--descriptin", "B", "--title", "A", "--type", "Task"]);
+    expect(normalized.argv).toEqual(["create", "--description", "B", "--title", "A", "--type", "Task"]);
+    expect(normalized.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          from: "--descriptin",
+          to: ["--description"],
+          reason: "flag_typo",
+        }),
+      ]),
+    );
+  });
+
+  it("promotes bare key=value and key:value tokens to canonical flags", () => {
+    const normalized = normalizeBootstrapInvocation(["create", "title=Hello", "description:World", "type=Task"]);
+    expect(normalized.argv).toEqual(["create", "--title", "Hello", "--description", "World", "--type", "Task"]);
+    expect(normalized.trace.filter((entry) => entry.reason === "bare_key_value")).toHaveLength(3);
+  });
+
+  it("does not reinterpret key=value tokens when they are values for an explicit option", () => {
+    const normalized = normalizeBootstrapInvocation(["comments", "pm-a1b2", "--add", "text=should stay literal"]);
+    expect(normalized.argv).toEqual(["comments", "pm-a1b2", "--add", "text=should stay literal"]);
+    expect(normalized.trace).toHaveLength(0);
   });
 });
 

@@ -1,3 +1,4 @@
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -60,6 +61,41 @@ describe("core/store/paths", () => {
     withEnvVar("PM_PATH", undefined, () => {
       expect(resolvePmRoot(cwd)).toBe(path.resolve(cwd, ".agents/pm"));
     });
+  });
+
+  it("resolvePmRoot discovers initialized pm root by walking ancestors", () => {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-discovery-"));
+    try {
+      const projectRoot = path.join(tempRoot, "project");
+      const discoveredPmRoot = path.join(projectRoot, ".agents", "pm");
+      const nestedCwd = path.join(projectRoot, "src", "feature", "module");
+      mkdirSync(discoveredPmRoot, { recursive: true });
+      mkdirSync(nestedCwd, { recursive: true });
+      writeFileSync(path.join(discoveredPmRoot, "settings.json"), "{\n  \"output\": { \"default_format\": \"toon\" }\n}\n", "utf8");
+
+      withEnvVar("PM_PATH", undefined, () => {
+        expect(resolvePmRoot(nestedCwd)).toBe(path.resolve(discoveredPmRoot));
+      });
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("resolvePmRoot ignores ancestor pm directories until initialized", () => {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-discovery-uninitialized-"));
+    try {
+      const projectRoot = path.join(tempRoot, "project");
+      const uninitializedPmRoot = path.join(projectRoot, ".agents", "pm");
+      const nestedCwd = path.join(projectRoot, "src");
+      mkdirSync(uninitializedPmRoot, { recursive: true });
+      mkdirSync(nestedCwd, { recursive: true });
+
+      withEnvVar("PM_PATH", undefined, () => {
+        expect(resolvePmRoot(nestedCwd)).toBe(path.resolve(nestedCwd, ".agents/pm"));
+      });
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
   });
 
   it("resolveGlobalPmRoot uses PM_GLOBAL_PATH when present or homedir fallback", () => {

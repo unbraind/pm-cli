@@ -453,6 +453,22 @@ pm contracts --action create --schema-only --json
 
 Use the runtime command because active extensions can add command/action metadata.
 
+## CLI Simplification Migration
+
+The conservative full-surface simplification pass updated invocation parsing and error envelopes. Integration details are documented in:
+
+- [CLI Simplification Migration](MIGRATION_CLI_SIMPLIFICATION.md)
+
+For SDK and automation consumers, the key runtime change is the optional `recovery` object in CLI usage/error JSON payloads:
+
+- `attempted_command`
+- `normalized_args`
+- `provided_fields`
+- `missing`
+- `suggested_retry`
+
+Treat `recovery.suggested_retry` as the first-choice deterministic replay command when present.
+
 ## Authoring Pattern
 
 - Keep handlers deterministic and JSON-like.
@@ -465,5 +481,6 @@ Use the runtime command because active extensions can add command/action metadat
 ## Related Docs
 
 - [Extensions](EXTENSIONS.md)
+- [CLI Simplification Migration](MIGRATION_CLI_SIMPLIFICATION.md)
 - [Architecture](ARCHITECTURE.md)
 - [starter extension](examples/starter-extension/README.md)

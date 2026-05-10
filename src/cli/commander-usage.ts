@@ -9,6 +9,7 @@ import {
   getActiveExtensionRegistrations,
   runActiveServiceOverride,
 } from "../core/extensions/index.js";
+import { resolveSubcommandFlagContractsForCommand } from "../sdk/cli-contracts.js";
 import {
   type CommanderGuidanceContext,
   formatCommanderErrorForDisplay,
@@ -17,7 +18,7 @@ import {
 import { normalizeHelpCommandPath } from "./help-content.js";
 import { getCommandPath } from "./registration-helpers.js";
 import {
-  normalizeLegacyExtensionActionSyntax,
+  normalizeBootstrapInvocation,
   parseBootstrapGlobalOptions,
   parseBootstrapCommandName,
 } from "./bootstrap-args.js";
@@ -79,6 +80,140 @@ export function scoreCommandPathMatch(commandPath: string, queryToken: string): 
     return 3;
   }
   return Number.POSITIVE_INFINITY;
+}
+
+function normalizeLongFlag(flag: string): string {
+  return `--${flag
+    .replace(/^--?/, "")
+    .replace(/_/g, "-")
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .toLowerCase()}`;
+}
+
+function toComparableFlag(flag: string): string {
+  return normalizeLongFlag(flag).slice(2).replace(/-/g, "");
+}
+
+function extractProvidedOptionFlags(argv: string[]): string[] {
+  const provided = new Set<string>();
+  for (const token of argv) {
+    if (!token.startsWith("--")) {
+      continue;
+    }
+    const key = token.includes("=") ? token.slice(0, token.indexOf("=")) : token;
+    provided.add(normalizeLongFlag(key));
+  }
+  return [...provided].sort((left, right) => left.localeCompare(right));
+}
+
+function quoteCommandArg(arg: string): string {
+  if (/^[A-Za-z0-9._:/@=-]+$/.test(arg)) {
+    return arg;
+  }
+  return `"${arg.replace(/(["\\$`])/g, "\\$1")}"`;
+}
+
+function renderAttemptedCommand(argv: string[]): string {
+  return `pm ${argv.map((token) => quoteCommandArg(token)).join(" ")}`;
+}
+
+function collectKnownLongFlags(commandName: string | undefined): string[] {
+  const flags = new Set<string>();
+  const contracts = resolveSubcommandFlagContractsForCommand(commandName);
+  for (const contract of contracts) {
+    if (contract.flag.startsWith("--")) {
+      flags.add(normalizeLongFlag(contract.flag));
+    }
+    for (const alias of contract.aliases ?? []) {
+      if (alias.startsWith("--")) {
+        flags.add(normalizeLongFlag(alias));
+      }
+    }
+  }
+  return [...flags].sort((left, right) => left.localeCompare(right));
+}
+
+function levenshteinDistanceWithinLimit(left: string, right: string, limit: number): number | null {
+  if (left === right) {
+    return 0;
+  }
+  if (Math.abs(left.length - right.length) > limit) {
+    return null;
+  }
+  const previous = new Array<number>(right.length + 1);
+  const current = new Array<number>(right.length + 1);
+  for (let column = 0; column <= right.length; column += 1) {
+    previous[column] = column;
+  }
+  for (let row = 1; row <= left.length; row += 1) {
+    current[0] = row;
+    let rowMin = current[0];
+    for (let column = 1; column <= right.length; column += 1) {
+      const cost = left[row - 1] === right[column - 1] ? 0 : 1;
+      const substitution = previous[column - 1] + cost;
+      const insertion = current[column - 1] + 1;
+      const deletion = previous[column] + 1;
+      const candidate = Math.min(substitution, insertion, deletion);
+      current[column] = candidate;
+      if (candidate < rowMin) {
+        rowMin = candidate;
+      }
+    }
+    if (rowMin > limit) {
+      return null;
+    }
+    for (let column = 0; column <= right.length; column += 1) {
+      previous[column] = current[column];
+    }
+  }
+  const result = previous[right.length];
+  return result <= limit ? result : null;
+}
+
+function suggestNearestLongFlags(unknownOption: string, knownFlags: string[]): string[] {
+  if (!unknownOption.startsWith("--")) {
+    return [];
+  }
+  const unknownComparable = toComparableFlag(unknownOption);
+  const maxDistance = unknownComparable.length >= 8 ? 2 : 1;
+  const candidates: Array<{ flag: string; distance: number }> = [];
+  for (const flag of knownFlags) {
+    const distance = levenshteinDistanceWithinLimit(unknownComparable, toComparableFlag(flag), maxDistance);
+    if (distance === null) {
+      continue;
+    }
+    if (distance <= 0) {
+      continue;
+    }
+    candidates.push({ flag, distance });
+  }
+  return candidates
+    .sort((left, right) => {
+      if (left.distance !== right.distance) {
+        return left.distance - right.distance;
+      }
+      return left.flag.localeCompare(right.flag);
+    })
+    .map((entry) => entry.flag)
+    .slice(0, 3);
+}
+
+function rewriteUnknownOptionArgv(argv: string[], unknownOption: string, replacementFlag: string): string[] | undefined {
+  for (let index = 0; index < argv.length; index += 1) {
+    const token = argv[index];
+    if (!token.startsWith("--")) {
+      continue;
+    }
+    const equalsIndex = token.indexOf("=");
+    const key = equalsIndex >= 0 ? token.slice(0, equalsIndex) : token;
+    if (normalizeLongFlag(key) !== normalizeLongFlag(unknownOption)) {
+      continue;
+    }
+    const next = [...argv];
+    next[index] = equalsIndex >= 0 ? `${replacementFlag}${token.slice(equalsIndex)}` : replacementFlag;
+    return next;
+  }
+  return undefined;
 }
 
 export function buildUnknownCommandGuidanceFromRuntime(
@@ -166,9 +301,11 @@ export async function resolveCommanderUsageContext(
 ): Promise<CommanderUsageContext> {
   const rawMessage = typeof error === "object" && error !== null ? (error as { message?: string }).message : undefined;
   const message = rawMessage ?? "Invalid command usage";
-  const invocationArgv = normalizeLegacyExtensionActionSyntax(process.argv.slice(2));
+  const invocationArgv = normalizeBootstrapInvocation(process.argv.slice(2)).argv;
   const bootstrapGlobal = parseBootstrapGlobalOptions(invocationArgv);
   const commandName = parseBootstrapCommandName(invocationArgv);
+  const attemptedCommand = renderAttemptedCommand(invocationArgv);
+  const providedOptionFlags = extractProvidedOptionFlags(invocationArgv);
   let allowedTypes = BUILTIN_TYPE_HELP_VALUES;
   try {
     const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobal.path);
@@ -183,10 +320,37 @@ export async function resolveCommanderUsageContext(
     // Fall back to built-in type guidance when settings cannot be read.
   }
   const unknownCommandGuidance = buildUnknownCommandGuidanceFromRuntime(message, rootProgram, extensionDescriptors);
+  const unknownOptionMatch = message.match(/unknown option '([^']+)'/i);
+  const unknownOptionSuggestions =
+    unknownOptionMatch && commandName
+      ? suggestNearestLongFlags(unknownOptionMatch[1], collectKnownLongFlags(commandName))
+      : undefined;
+  let suggestedRetryCommand: string | undefined;
+  if (unknownOptionMatch && unknownOptionSuggestions && unknownOptionSuggestions.length > 0) {
+    const rewritten = rewriteUnknownOptionArgv(invocationArgv, unknownOptionMatch[1], unknownOptionSuggestions[0]);
+    if (rewritten) {
+      suggestedRetryCommand = renderAttemptedCommand(rewritten);
+    }
+  }
+  if (!suggestedRetryCommand) {
+    const missingRequiredOption = message.match(/required option '([^']+)' not specified/i);
+    const requiredOptionToken = missingRequiredOption?.[1]?.trim().split(/\s+/)[0];
+    if (requiredOptionToken?.startsWith("--")) {
+      const hasFlag = invocationArgv.some((token) => token.startsWith(requiredOptionToken));
+      if (!hasFlag) {
+        suggestedRetryCommand = renderAttemptedCommand([...invocationArgv, requiredOptionToken, "<value>"]);
+      }
+    }
+  }
   return {
     message,
     commandName,
     allowedTypes,
+    attemptedCommand,
+    normalizedInvocationArgs: [...invocationArgv],
+    providedOptionFlags,
+    unknownOptionSuggestions,
+    suggestedRetryCommand,
     ...(unknownCommandGuidance ?? {}),
   };
 }
@@ -197,10 +361,26 @@ export async function formatCommanderUsageMessage(
   extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
 ): Promise<string> {
   const usageContext = await resolveCommanderUsageContext(error, rootProgram, extensionDescriptors);
-  const { message, commandName, allowedTypes, unknownCommandExamples, unknownCommandNextSteps } = usageContext;
+  const {
+    message,
+    commandName,
+    allowedTypes,
+    unknownCommandExamples,
+    unknownCommandNextSteps,
+    attemptedCommand,
+    normalizedInvocationArgs,
+    providedOptionFlags,
+    unknownOptionSuggestions,
+    suggestedRetryCommand,
+  } = usageContext;
   const formatted = formatCommanderErrorForDisplay(message, commandName, allowedTypes, {
     unknownCommandExamples,
     unknownCommandNextSteps,
+    attemptedCommand,
+    normalizedInvocationArgs,
+    providedOptionFlags,
+    unknownOptionSuggestions,
+    suggestedRetryCommand,
   });
   const serviceOverride = await runActiveServiceOverride("help_format", {
     message: formatted,
@@ -227,6 +407,11 @@ export async function formatCommanderUsageJson(
     {
       unknownCommandExamples: usageContext.unknownCommandExamples,
       unknownCommandNextSteps: usageContext.unknownCommandNextSteps,
+      attemptedCommand: usageContext.attemptedCommand,
+      normalizedInvocationArgs: usageContext.normalizedInvocationArgs,
+      providedOptionFlags: usageContext.providedOptionFlags,
+      unknownOptionSuggestions: usageContext.unknownOptionSuggestions,
+      suggestedRetryCommand: usageContext.suggestedRetryCommand,
     },
   );
   return JSON.stringify(envelope, null, 2);
