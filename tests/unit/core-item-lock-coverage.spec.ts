@@ -385,13 +385,13 @@ describe("core/lock/lock additional branch coverage", () => {
     });
   });
 
-  it("returns generic failure when lock file cannot be created for non-EEXIST errors", async () => {
+  it("creates missing lock directories before acquiring locks", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const missingRoot = path.join(pmPath, "..", "missing-lock-root");
-      await expect(acquireLock(missingRoot, "pm-lock-missing", 60, "owner-a", false)).rejects.toMatchObject({
-        exitCode: EXIT_CODE.GENERIC_FAILURE,
-        message: expect.stringContaining("Failed to acquire lock"),
-      });
+      const id = "pm-lock-missing";
+      const release = await acquireLock(missingRoot, id, 60, "owner-a", false);
+      await expect(fs.access(getLockPath(missingRoot, id))).resolves.toBeUndefined();
+      await release();
     });
   });
 

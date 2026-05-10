@@ -10,7 +10,7 @@ import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { acquireLock } from "../../core/lock/lock.js";
 import { buildSearchCorpus, buildSemanticCorpusInput } from "../../core/search/corpus.js";
 import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
-import { writeVectorizationStatusLedger } from "../../core/search/cache.js";
+import { readVectorizationStatusLedger, writeVectorizationStatusLedger } from "../../core/search/cache.js";
 import { resolveEmbeddingProviders } from "../../core/search/providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
 import { executeVectorUpsert, resolveVectorStores } from "../../core/search/vector-stores.js";
@@ -319,90 +319,104 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   const semanticWarnings: string[] = [];
   const vectorizationLedgerEntries: Record<string, string> = {};
   if (mode !== "keyword" && documents.length > 0) {
-    emitReindexProgress(progressEnabled, `embedding_start items=${documents.length}`);
-    const semanticProviderName = activeEmbeddingProvider?.name ?? extensionEmbedding?.name;
-    const corpusInputs = documents.map((document) => buildSemanticCorpusInput(document, { providerName: semanticProviderName }));
-    let vectors: number[][] = [];
-    if (extensionEmbedding) {
-      try {
-        vectors = await executeExtensionEmbedding(extensionEmbedding, settings, corpusInputs);
-      } catch (error: unknown) {
-        if (!activeEmbeddingProvider) {
-          throw new PmCliError(
-            `Extension search provider "${extensionEmbedding.name}" failed to generate embeddings: ${error instanceof Error ? error.message : String(error)}`,
-            EXIT_CODE.GENERIC_FAILURE,
+    const ledger = await readVectorizationStatusLedger(pmRoot);
+    semanticWarnings.push(...ledger.warnings);
+    const staleDocuments = documents.filter(
+      (document) => ledger.entries[document.metadata.id] !== document.metadata.updated_at,
+    );
+    const freshDocuments = documents.length - staleDocuments.length;
+    for (const document of documents) {
+      vectorizationLedgerEntries[document.metadata.id] = document.metadata.updated_at;
+    }
+    if (staleDocuments.length === 0) {
+      emitReindexProgress(progressEnabled, `embedding_skipped unchanged_items=${freshDocuments}`);
+      semanticWarnings.push(`search_semantic_reindex_skipped_unchanged:count=${freshDocuments}`);
+    } else {
+      emitReindexProgress(progressEnabled, `embedding_start items=${staleDocuments.length} unchanged_items=${freshDocuments}`);
+      const semanticProviderName = activeEmbeddingProvider?.name ?? extensionEmbedding?.name;
+      const corpusInputs = staleDocuments.map((document) => buildSemanticCorpusInput(document, { providerName: semanticProviderName }));
+      let vectors: number[][] = [];
+      if (extensionEmbedding) {
+        try {
+          vectors = await executeExtensionEmbedding(extensionEmbedding, settings, corpusInputs);
+        } catch (error: unknown) {
+          if (!activeEmbeddingProvider) {
+            throw new PmCliError(
+              `Extension search provider "${extensionEmbedding.name}" failed to generate embeddings: ${error instanceof Error ? error.message : String(error)}`,
+              EXIT_CODE.GENERIC_FAILURE,
+            );
+          }
+          semanticWarnings.push(
+            `Extension search provider "${extensionEmbedding.name}" failed; falling back to built-in provider (${error instanceof Error ? error.message : String(error)})`,
           );
         }
-        semanticWarnings.push(
-          `Extension search provider "${extensionEmbedding.name}" failed; falling back to built-in provider (${error instanceof Error ? error.message : String(error)})`,
+      }
+      if (vectors.length === 0) {
+        if (!activeEmbeddingProvider) {
+          throw new PmCliError(
+            `No embedding executor available for reindex mode '${requestedMode}'`,
+            EXIT_CODE.USAGE,
+          );
+        }
+        const embeddingResult = await executeEmbeddingBatchesWithRetry(activeEmbeddingProvider, settings, corpusInputs);
+        semanticWarnings.push(...embeddingResult.warnings);
+        vectors = embeddingResult.vectors;
+      }
+      emitReindexProgress(progressEnabled, `embedding_complete vectors=${vectors.length}`);
+      if (vectors.length !== staleDocuments.length) {
+        throw new PmCliError(
+          `Embedding output size mismatch (expected ${staleDocuments.length}, received ${vectors.length})`,
+          EXIT_CODE.GENERIC_FAILURE,
         );
       }
-    }
-    if (vectors.length === 0) {
-      if (!activeEmbeddingProvider) {
+      const points = staleDocuments.map((document, index) => ({
+        id: document.metadata.id,
+        vector: assertVector(vectors[index], `reindex embeddings output at index ${index}`),
+        payload: {
+          id: document.metadata.id,
+          type: document.metadata.type,
+          status: document.metadata.status,
+          priority: document.metadata.priority,
+          updated_at: document.metadata.updated_at,
+        },
+      }));
+      if (extensionVectorUpsert) {
+        try {
+          emitReindexProgress(progressEnabled, `vector_upsert_start adapter=${extensionVectorUpsert.name} points=${points.length}`);
+          await Promise.resolve(
+            extensionVectorUpsert.upsert({
+              points,
+              settings,
+            }),
+          );
+          emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${extensionVectorUpsert.name}`);
+        } catch (error: unknown) {
+          if (!activeVectorStore) {
+            throw new PmCliError(
+              `Extension vector adapter "${extensionVectorUpsert.name}" failed to upsert vectors: ${error instanceof Error ? error.message : String(error)}`,
+              EXIT_CODE.GENERIC_FAILURE,
+            );
+          }
+          semanticWarnings.push(
+            `Extension vector adapter "${extensionVectorUpsert.name}" failed; falling back to built-in vector store (${error instanceof Error ? error.message : String(error)})`,
+          );
+          emitReindexProgress(progressEnabled, "vector_upsert_fallback built_in_store");
+          await executeVectorUpsert(activeVectorStore, points);
+          emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${activeVectorStore.name}`);
+        }
+      } else if (activeVectorStore) {
+        emitReindexProgress(progressEnabled, `vector_upsert_start adapter=${activeVectorStore.name} points=${points.length}`);
+        await executeVectorUpsert(activeVectorStore, points);
+        emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${activeVectorStore.name}`);
+      } else {
         throw new PmCliError(
-          `No embedding executor available for reindex mode '${requestedMode}'`,
+          `No vector upsert executor available for reindex mode '${requestedMode}'`,
           EXIT_CODE.USAGE,
         );
       }
-      const embeddingResult = await executeEmbeddingBatchesWithRetry(activeEmbeddingProvider, settings, corpusInputs);
-      semanticWarnings.push(...embeddingResult.warnings);
-      vectors = embeddingResult.vectors;
-    }
-    emitReindexProgress(progressEnabled, `embedding_complete vectors=${vectors.length}`);
-    if (vectors.length !== documents.length) {
-      throw new PmCliError(
-        `Embedding output size mismatch (expected ${documents.length}, received ${vectors.length})`,
-        EXIT_CODE.GENERIC_FAILURE,
-      );
-    }
-    const points = documents.map((document, index) => ({
-      id: document.metadata.id,
-      vector: assertVector(vectors[index], `reindex embeddings output at index ${index}`),
-      payload: {
-        id: document.metadata.id,
-        type: document.metadata.type,
-        status: document.metadata.status,
-        priority: document.metadata.priority,
-        updated_at: document.metadata.updated_at,
-      },
-    }));
-    if (extensionVectorUpsert) {
-      try {
-        emitReindexProgress(progressEnabled, `vector_upsert_start adapter=${extensionVectorUpsert.name} points=${points.length}`);
-        await Promise.resolve(
-          extensionVectorUpsert.upsert({
-            points,
-            settings,
-          }),
-        );
-        emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${extensionVectorUpsert.name}`);
-      } catch (error: unknown) {
-        if (!activeVectorStore) {
-          throw new PmCliError(
-            `Extension vector adapter "${extensionVectorUpsert.name}" failed to upsert vectors: ${error instanceof Error ? error.message : String(error)}`,
-            EXIT_CODE.GENERIC_FAILURE,
-          );
-        }
-        semanticWarnings.push(
-          `Extension vector adapter "${extensionVectorUpsert.name}" failed; falling back to built-in vector store (${error instanceof Error ? error.message : String(error)})`,
-        );
-        emitReindexProgress(progressEnabled, "vector_upsert_fallback built_in_store");
-        await executeVectorUpsert(activeVectorStore, points);
-        emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${activeVectorStore.name}`);
+      if (freshDocuments > 0) {
+        semanticWarnings.push(`search_semantic_reindex_skipped_unchanged:count=${freshDocuments}`);
       }
-    } else if (activeVectorStore) {
-      emitReindexProgress(progressEnabled, `vector_upsert_start adapter=${activeVectorStore.name} points=${points.length}`);
-      await executeVectorUpsert(activeVectorStore, points);
-      emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${activeVectorStore.name}`);
-    } else {
-      throw new PmCliError(
-        `No vector upsert executor available for reindex mode '${requestedMode}'`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    for (const document of documents) {
-      vectorizationLedgerEntries[document.metadata.id] = document.metadata.updated_at;
     }
   }
   emitReindexProgress(progressEnabled, "writing keyword artifacts");

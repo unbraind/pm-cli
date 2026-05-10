@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import path from "node:path";
 import { runActiveOnReadHooks, runActiveOnWriteHooks, runActiveServiceOverride } from "../extensions/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
@@ -114,6 +115,7 @@ function buildLockPayload(id: string, owner: string, ttlSeconds: number): LockIn
 }
 
 async function createLockFile(lockPath: string, id: string, owner: string, ttlSeconds: number): Promise<void> {
+  await fs.mkdir(path.dirname(lockPath), { recursive: true });
   const handle = await fs.open(lockPath, "wx");
   try {
     await handle.writeFile(`${JSON.stringify(buildLockPayload(id, owner, ttlSeconds), null, 2)}\n`, "utf8");

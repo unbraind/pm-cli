@@ -6,20 +6,28 @@ status: in_progress
 priority: 0
 tags[4]: agent-ux,dogfood,performance,pm-cli
 created_at: "2026-05-10T21:50:47.973Z"
-updated_at: "2026-05-10T22:11:20.061Z"
+updated_at: "2026-05-10T22:26:13.341Z"
 assignee: codex-agent
 author: codex-agent
 acceptance_criteria: A benchmark covers init/create/list/context/search/calendar/health; startup hot paths are profiled; read-only commands avoid nonessential extension/telemetry/vector work; representative local commands feel sub-second where feasible.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-10T21:50:47.973Z",codex-agent,"Duplicate-check evidence: ran pm search startup performance instant command benchmark lazy initialization --limit 10. Only closed historical performance/search items matched; no open item covers current command startup latency benchmark work."
+  "2026-05-10T22:26:13.341Z",codex-agent,"CI follow-up: GitHub run 25641271233 failed only on macOS Node 20 in tests/unit/comments-command.spec.ts with ENOTEMPTY while removing the temporary .agents/pm tree. Added a bounded ENOTEMPTY/EBUSY/EPERM retry to tests/helpers/withTempPmPath.ts and kept the in-progress incremental semantic reindex + lock-directory guard changes. Local focused verification passed: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/telemetry-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts (72 tests)."
 notes[1]{created_at,author,text}:
   "2026-05-10T21:50:47.973Z",codex-agent,"Dogfood final timings on 2026-05-10 still showed init 1387ms, create about 1.1s, list-open 1209ms, context 1051ms, keyword search 1015ms, calendar 1411ms, health 1754ms."
-files[6]{path,scope,note}:
+files[8]{path,scope,note}:
   scripts/release/static-quality-gate.mjs,project,allow telemetry flush entrypoint
   src/cli/commands/reindex.ts,project,project-scoped reindex lock guard
   src/cli/telemetry-flush.ts,project,one-shot telemetry flush worker
+  src/core/lock/lock.ts,project,lock directory creation guard
   src/core/telemetry/runtime.ts,project,detached telemetry flush keeps CLI responsive
   tests/integration/release-readiness-runtime.spec.ts,project,startup responsiveness guard
+  tests/unit/core-item-lock-coverage.spec.ts,project,lock directory regression update
   tests/unit/reindex-command.spec.ts,project,reindex lock regression
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret scan
+  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,full 100 percent coverage gate
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts tests/unit/telemetry-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused startup and reindex regressions
+  "pnpm quality:static",null,project,300,null,null,null,null,null,null,null,null,null,null,null,static quality gate
 body: ""

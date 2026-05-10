@@ -248,6 +248,7 @@ describe("runReindex", () => {
         expect(hybridResult.ok).toBe(true);
         expect(hybridResult.mode).toBe("hybrid");
         expect(hybridResult.total_items).toBe(2);
+        expect(hybridResult.warnings).toEqual(expect.arrayContaining(["search_semantic_reindex_skipped_unchanged:count=2"]));
 
         const manifestHybridRaw = await readFile(path.join(context.pmPath, "index", "manifest.json"), "utf8");
         const manifestHybrid = JSON.parse(manifestHybridRaw) as { mode: string };
@@ -275,8 +276,6 @@ describe("runReindex", () => {
         expect(vectorizationLedger.items.every((entry) => /^\d{4}-\d{2}-\d{2}T/.test(entry.updated_at))).toBe(true);
 
         expect(fetchCalls).toEqual([
-          "https://api.example.test/v1/embeddings",
-          "https://qdrant.example.test:6333/collections/pm_items/points?wait=true",
           "https://api.example.test/v1/embeddings",
           "https://qdrant.example.test:6333/collections/pm_items/points?wait=true",
         ]);

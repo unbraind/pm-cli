@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 export interface CliRunResult {
   code: number | null;
@@ -210,6 +211,24 @@ function runNodeCli(
   return result;
 }
 
+async function removeTempRoot(tempRoot: string): Promise<void> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      await rm(tempRoot, { recursive: true, force: true });
+      return;
+    } catch (error: unknown) {
+      lastError = error;
+      const code = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "";
+      if (!new Set(["ENOTEMPTY", "EBUSY", "EPERM"]).has(code)) {
+        throw error;
+      }
+      await delay(25 * (attempt + 1));
+    }
+  }
+  throw lastError;
+}
+
 export async function withTempPmPath<T>(callback: (context: TempPmContext) => Promise<T>): Promise<T> {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-cli-test-"));
   const pmPath = path.join(tempRoot, ".agents", "pm");
@@ -293,6 +312,6 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
     } else {
       process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = previousEnv.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
     }
-    await rm(tempRoot, { recursive: true, force: true });
+    await removeTempRoot(tempRoot);
   }
 }
