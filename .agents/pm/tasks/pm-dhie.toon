@@ -2,12 +2,11 @@ id: pm-dhie
 title: Full-scope SDK and extension platform upgrade for app/CI integrations
 description: "Implement granular extension governance controls, stronger SDK contracts, Pi-inspired reliability hardening, comprehensive docs, and fully working real-life examples with end-to-end verification."
 type: Task
-status: in_progress
+status: closed
 priority: 0
 tags[6]: agent-ux,ci,docs,extensions,pm-cli,sdk
 created_at: "2026-05-10T09:48:16.405Z"
-updated_at: "2026-05-10T12:07:48.192Z"
-assignee: codex-agent
+updated_at: "2026-05-10T12:31:04.816Z"
 author: codex-agent
 estimated_minutes: 360
 acceptance_criteria: Granular extension controls and diagnostics are implemented; SDK/contracts expose deterministic machine-friendly surfaces; docs/examples are comprehensive and runnable; automated and manual temp-project E2E verification pass; final checks are green on GitHub.
@@ -47,4 +46,5 @@ docs[7]{path,scope,note}:
   docs/examples/starter-extension/README.md,project,starter extension runnable walkthrough
   docs/EXTENSIONS.md,project,extension governance and lifecycle guide
   docs/SDK.md,project,sdk exports and contract integration guide
+close_reason: Full-scope SDK/extension upgrade delivered with passing verification and green CI.
 body: ""
