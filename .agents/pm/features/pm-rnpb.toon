@@ -1,12 +1,12 @@
 id: pm-rnpb
 title: "Latest CLI quality, SDK, telemetry, search, and calendar remediation"
-description: "Feature-level tracking for the latest dogfood audit implementation pass across CLI quality, SDK/extension ergonomics, agent-optimized output, semantic search/indexing, calendar workflows, telemetry/Sentry analysis, CI/CD, and sensitive-data hygiene."
+description: "Latest full manual audit and remediation pass for pm CLI speed, SDK/extensibility, agent UX, calendar, semantic search/indexing, telemetry/Sentry, CI/CD, privacy hygiene, and temporary-project dogfooding."
 type: Feature
 status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-10T21:15:14.302Z"
+updated_at: "2026-05-10T21:52:06.697Z"
 deadline: "2026-05-04T13:20:01.343Z"
 assignee: codex-agent
 author: codex-audit
@@ -15,7 +15,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[16]{created_at,author,text}:
+comments[18]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -31,8 +31,10 @@ comments[16]{created_at,author,text}:
   "2026-05-10T18:13:13.361Z",codex-agent,"Finalize delivery evidence: committed enterprise SDK/extension upgrade as a3a7150 and pushed to origin/main. GitHub Actions CI run 25635822130 completed successfully across ubuntu/macos/windows matrix (including ubuntu node20 full gates: coverage, static quality, compatibility, packaging, npx smoke, Claude plugin smoke)."
   "2026-05-10T20:48:16.016Z",codex-agent,"Execution start 2026-05-10: reran duplicate checks (context/search/list-open/list-in-progress), claimed pm-rnpb + pm-ej01 + pm-xk39 + pm-xz1p, and completed maintainer bootstrap (npm install -g ., pm --version 2026.5.10, node v25.9.0, pnpm 10.33.0, pnpm build). Proceeding with full audit optimization workstreams and single-commit delivery."
   "2026-05-10T20:49:21.486Z",codex-agent,"Baseline snapshot 2026-05-10 before edits: isolated temp dogfood run (PM_PATH/PM_GLOBAL_PATH sandbox) timings init=2161ms create=1417ms list-open=1446ms search(keyword)=1521ms calendar=1446ms contracts(create flags)=1312ms. Sentry unresolved snapshot still dominated by console-noise groups PM-CLI-M..D plus embedding timeout PM-CLI-A. Telemetry 7d query reports finish_error_rate_pct=5.45 with highest family error rate in diagnostics (50.47%) and top failing command update (390). GitHub open PR checks still show known Ubuntu Node20 tarball smoke and Windows docs-skills failures on dependabot branches."
-  "2026-05-10T21:15:14.302Z",codex-agent,"Workstreams completed 2026-05-10: (1) CLI dedup/perf hardening by introducing shared argv + levenshtein helpers and shared metadata normalizers used by create/update/bootstrap/commander/help/error/main; (2) search linked-corpus path optimized by resolving containment roots once and loading linked corpus entries concurrently; (3) observability hardening filters known starter-extension console-noise events/breadcrumbs in Sentry and release gate now reports ignored_noise counts/short IDs; (4) CI stability hardening adds npm-exec fallback for tarball smoke script; (5) docs dedup rewrote SDK and EXTENSIONS docs to one canonical section each; (6) remote validation executed over SSH on 192.168.1.183: Caddy + telemetry stacks healthy, rabbitmq queue depth 0 with consumer 1, telemetry event volumes present, public healthz 200 (redirect-follow), legacy /api/health still 404."
-files[16]{path,scope,note}:
+  "2026-05-10T21:15:14.302Z",codex-agent,"Workstreams completed 2026-05-10: (1) CLI dedup/perf hardening by introducing shared argv + levenshtein helpers and shared metadata normalizers used by create/update/bootstrap/commander/help/error/main; (2) search linked-corpus path optimized by resolving containment roots once and loading linked corpus entries concurrently; (3) observability hardening filters known starter-extension console-noise events/breadcrumbs in Sentry and release gate now reports ignored_noise counts/short IDs; (4) CI stability hardening adds npm-exec fallback for tarball smoke script; (5) docs dedup rewrote SDK and EXTENSIONS docs to one canonical section each; (6) remote validation executed over SSH on [redacted_ip]: Caddy + telemetry stacks healthy, rabbitmq queue depth 0 with consumer 1, telemetry event volumes present, public healthz 200 (redirect-follow), legacy /api/health still 404."
+  "2026-05-10T21:46:55.601Z",opencode-agent,"Execution continuation 2026-05-10: reused existing in-progress audit feature after duplicate checks. Current pass is validating latest uncommitted agent-UX/calendar/init changes, dogfooding in an isolated temp project, checking GitHub/Sentry/telemetry/privacy surfaces, then committing and pushing only verified changes."
+  "2026-05-10T21:52:06.697Z",codex-agent,"Evidence 2026-05-10 audit pass: sandbox dogfood temp project passed init/create/claim/update/comments/files/docs/tests/list/context/search/calendar/aggregate/dedupe/contracts/extension/health/validate. Fixed agent blockers: init --defaults --author now works, missing-option retry guidance normalizes combined long/short labels, create/update --event accepts date= as start alias, and CLI Sentry init is nonblocking. Verification passed: focused unit regressions 86 tests, focused init integration, full coverage 90 files/1274 tests with 100 percent statements/branches/functions/lines, static quality, docs-skills gate, tracked secret scan, git diff --check, pm health/validate with only pre-existing warnings. Telemetry stack report is stored in ignored scripts/prod/telemetry reports; current Sentry unresolved snapshot remains historical extension/import groups with scrubbed paths. Created follow-up pm-m4ov for remaining startup latency target."
+files[28]{path,scope,note}:
   README.md,project,public README hygiene update
   scripts/check-secrets.mjs,project,detect absolute home-path and user@private-host leakage
   scripts/release/static-quality-gate.mjs,project,raise max source line threshold for expanded loader
@@ -49,13 +51,30 @@ files[16]{path,scope,note}:
   tests/unit/search-corpus.spec.ts,project,unit coverage for semantic corpus helper branches
   tests/unit/sentry-helpers.spec.ts,project,regression for nested sentry event scrub behavior
   vitest.config.ts,project,coverage include list covers new search corpus helper
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  src/cli/commands/init.ts,project,agent-friendly init defaults and author_default
+  src/cli/register-setup.ts,project,init flags for defaults and author
+  src/cli/commander-usage.ts,project,required-option retry flag normalization
+  src/cli/error-guidance.ts,project,required-option guidance normalization
+  src/cli/commands/create.ts,project,event date alias for create
+  src/cli/commands/update.ts,project,event date alias for update
+  tests/unit/error-guidance.spec.ts,project,retry guidance regression
+  tests/unit/create-command.spec.ts,project,create event date alias regression
+  tests/unit/update-command.spec.ts,project,update event date alias regression
+  tests/integration/cli.integration.spec.ts,project,init defaults author regression
+  src/cli.ts,project,nonblocking sentry startup for CLI responsiveness
+  tests/integration/release-readiness-runtime.spec.ts,project,release-readiness guard for nonblocking sentry startup
+tests[11]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret and path leak guardrail
+  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,full 100 percent coverage gate
   node scripts/run-tests.mjs coverage -- --testTimeout 120000 --maxWorkers 1,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,stable serial full coverage verification
   node scripts/run-tests.mjs test -- tests/unit/embedding-batches.spec.ts tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/search-command.spec.ts tests/unit/sentry-helpers.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused remediation regressions
+  node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused init/recovery/event regressions
   node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/integration/cli.integration.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,flaky spec stabilization rerun
   node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,focused search and indexing regression
   "pnpm build && node scripts/run-tests.mjs coverage && pnpm quality:static && node scripts/check-secrets.mjs",null,project,1200,null,null,null,null,null,null,null,null,null,null,null,full remediation verification gate
+  pnpm exec vitest run tests/integration/cli.integration.spec.ts -t 'accepts agent-friendly non-interactive init defaults and author',null,project,120,null,null,null,null,null,null,null,null,null,null,null,focused init defaults integration regression
+  "pnpm quality:docs-skills",null,project,300,null,null,null,null,null,null,null,null,null,null,null,docs and skills gate
+  "pnpm quality:static",null,project,300,null,null,null,null,null,null,null,null,null,null,null,static quality gate
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-moy9xryz-os0kdg,test,passed,"2026-05-09T11:41:44.207Z","2026-05-09T11:42:08.603Z","2026-05-09T11:42:08.603Z",null,null,1,0,0,null,null,null
 docs[1]{path,scope,note}:

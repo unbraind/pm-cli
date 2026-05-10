@@ -99,4 +99,27 @@ describe("pm cli error guidance context plumbing", () => {
     expect(guidance).toContain("pm list-open --help");
     expect(guidance).not.toContain("pm todos --help");
   });
+
+  it("normalizes commander required-option labels before building retry guidance", () => {
+    const envelope = formatCommanderErrorForJson(
+      "error: required option '--description, -d <value>' not specified",
+      "create",
+      "Task|Issue",
+      2,
+      {
+        attemptedCommand: 'pm create --title "Agent fast command loop" --type Task',
+        normalizedInvocationArgs: ["create", "--title", "Agent fast command loop", "--type", "Task"],
+        providedOptionFlags: ["--title", "--type"],
+        suggestedRetryCommand: 'pm create --title "Agent fast command loop" --type Task --description <value>',
+      },
+    );
+
+    expect(envelope.title).toBe("Missing required option --description");
+    expect(envelope.required).toBe("Pass --description with a valid value before running the command.");
+    expect(envelope.recovery?.missing).toEqual(["--description"]);
+    expect(envelope.recovery?.suggested_retry).toBe(
+      'pm create --title "Agent fast command loop" --type Task --description <value>',
+    );
+    expect(envelope.recovery?.suggested_retry).not.toContain("--description,");
+  });
 });

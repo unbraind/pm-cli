@@ -798,9 +798,9 @@ function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowVal
 function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
   return raw.map((entry) => {
     const kv = parseCsvKv(entry, "--event");
-    const startRaw = kv.start?.trim();
+    const startRaw = (kv.start ?? kv.date)?.trim();
     if (!startRaw) {
-      throw new PmCliError("--event requires start=<iso|relative>", EXIT_CODE.USAGE);
+      throw new PmCliError("--event requires start=<iso|relative> or date=<iso|relative>", EXIT_CODE.USAGE);
     }
     const startAt = resolveIsoOrRelative(startRaw, nowValue, "event.start");
     const endRaw = kv.end?.trim();

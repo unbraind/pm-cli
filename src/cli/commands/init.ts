@@ -26,6 +26,8 @@ export interface InitResult {
 
 export interface InitCommandOptions {
   preset?: string;
+  defaults?: boolean;
+  author?: string;
 }
 
 function cloneDefaults(): PmSettings {
@@ -53,6 +55,17 @@ function normalizeInitGovernancePreset(rawValue: string | undefined): BuiltinGov
     `Invalid --preset value "${rawValue}". Allowed: ${BUILTIN_GOVERNANCE_PRESETS.join(", ")}`,
     EXIT_CODE.USAGE,
   );
+}
+
+function normalizeOptionalInitAuthor(rawValue: string | undefined): string | undefined {
+  if (rawValue === undefined) {
+    return undefined;
+  }
+  const normalized = rawValue.trim();
+  if (normalized.length === 0) {
+    throw new PmCliError("--author must not be empty", EXIT_CODE.USAGE);
+  }
+  return normalized;
 }
 
 function parseYesNoChoice(answer: string, currentDefault: boolean): boolean {
@@ -151,6 +164,8 @@ export async function runInit(
   const settingsExists = await pathExists(settingsPath);
   let normalizedPrefix = normalizePrefix(prefixArg);
   const presetFromOption = normalizeInitGovernancePreset(options.preset);
+  const useDefaults = options.defaults === true;
+  const authorFromOption = normalizeOptionalInitAuthor(options.author);
   let chosenPreset = presetFromOption;
   let chosenTelemetryEnabled: boolean | undefined;
 
@@ -169,11 +184,16 @@ export async function runInit(
       warnings.push(`updated:governance_preset:${presetFromOption}`);
       changed = true;
     }
+    if (authorFromOption !== undefined && settings.author_default !== authorFromOption) {
+      settings.author_default = authorFromOption;
+      warnings.push(`updated:author_default:${authorFromOption}`);
+      changed = true;
+    }
     if (changed) {
       await writeSettings(pmRoot, settings);
     }
   } else {
-    if (presetFromOption === undefined && process.stdin.isTTY === true && process.stdout.isTTY === true) {
+    if (presetFromOption === undefined && !useDefaults && process.stdin.isTTY === true && process.stdout.isTTY === true) {
       const wizardChoices = await runInitWizard(normalizedPrefix, SETTINGS_DEFAULTS.telemetry.enabled);
       normalizedPrefix = wizardChoices.prefix;
       chosenPreset = wizardChoices.preset;
@@ -184,6 +204,9 @@ export async function runInit(
     settings = cloneDefaults();
     settings.id_prefix = normalizedPrefix;
     applyGovernancePreset(settings, effectivePreset);
+    if (authorFromOption !== undefined) {
+      settings.author_default = authorFromOption;
+    }
     if (chosenTelemetryEnabled !== undefined) {
       settings.telemetry.enabled = chosenTelemetryEnabled;
       settings.telemetry.first_run_prompt_completed = true;

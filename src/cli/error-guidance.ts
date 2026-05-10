@@ -444,6 +444,12 @@ function commandExampleForRequiredOption(commandName: string | undefined, option
   return [`pm ${commandName ?? "<command>"} --help`];
 }
 
+function normalizeRequiredOptionLabel(rawValue: string): string {
+  const normalized = rawValue.trim();
+  const firstLongFlag = normalized.match(/--[A-Za-z0-9][A-Za-z0-9_-]*/)?.[0];
+  return firstLongFlag ?? normalized;
+}
+
 function renderPmCommandFromArgs(argv: string[] | undefined): string | undefined {
   if (!Array.isArray(argv) || argv.length === 0) {
     return undefined;
@@ -496,7 +502,7 @@ function buildCommanderErrorGuidance(
 
   const requiredOption = message.match(/required option '([^']+)' not specified/);
   if (requiredOption) {
-    const optionFlag = requiredOption[1];
+    const optionFlag = normalizeRequiredOptionLabel(requiredOption[1]);
     const isType = optionFlag.startsWith("--type");
     const retryCommand = context?.suggestedRetryCommand;
     const providedFlags = normalizeOptionFlags(context?.providedOptionFlags);

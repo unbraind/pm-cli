@@ -1383,6 +1383,16 @@ describe("runUpdate", () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-invalid-events");
 
+      const dateAliasResult = await runUpdate(
+        id,
+        { event: ["date=2026-03-03T12:00:00.000Z,title=date alias"], message: "set date alias event" },
+        { path: context.pmPath },
+      );
+      expect(dateAliasResult.item.events?.[0]).toMatchObject({
+        start_at: "2026-03-03T12:00:00.000Z",
+        title: "date alias",
+      });
+
       await expect(
         runUpdate(
           id,

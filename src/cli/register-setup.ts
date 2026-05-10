@@ -112,6 +112,8 @@ export function registerSetupCommands(program: Command): void {
     .command("init")
     .argument("[prefix]", "Optional id prefix")
     .option("--preset <value>", "Governance preset for new setups: minimal|default|strict")
+    .option("--defaults", "Use non-interactive setup defaults without opening the wizard")
+    .option("--author <value>", "Set the default mutation author for this project")
     .description("Initialize pm storage and defaults for the current workspace.")
     .action(async (prefix: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
@@ -121,6 +123,8 @@ export function registerSetupCommands(program: Command): void {
         globalOptions,
         {
           preset: typeof options.preset === "string" ? options.preset : undefined,
+          defaults: options.defaults === true,
+          author: typeof options.author === "string" ? options.author : undefined,
         },
       );
       printResult(result, globalOptions);

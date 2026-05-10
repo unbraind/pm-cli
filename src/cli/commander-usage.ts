@@ -276,7 +276,7 @@ export async function resolveCommanderUsageContext(
   }
   if (!suggestedRetryCommand) {
     const missingRequiredOption = message.match(/required option '([^']+)' not specified/i);
-    const requiredOptionToken = missingRequiredOption?.[1]?.trim().split(/\s+/)[0];
+    const requiredOptionToken = missingRequiredOption?.[1]?.trim().split(/\s+/)[0]?.replace(/[,:;]+$/g, "");
     if (requiredOptionToken?.startsWith("--")) {
       const hasFlag = invocationArgv.some((token) => token.startsWith(requiredOptionToken));
       if (!hasFlag) {

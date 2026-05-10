@@ -1019,9 +1019,9 @@ function parseEvents(raw: string[] | undefined, nowValue: string): { values: Cal
   const referenceDate = new Date(nowValue);
   const values = raw.map((entry) => {
     const kv = parseCsvKv(entry, "--event");
-    const startRaw = parseOptionalString(kv.start)?.trim();
+    const startRaw = parseOptionalString(kv.start ?? kv.date)?.trim();
     if (!startRaw) {
-      throw new PmCliError("--event requires start=<iso|relative>", EXIT_CODE.USAGE);
+      throw new PmCliError("--event requires start=<iso|relative> or date=<iso|relative>", EXIT_CODE.USAGE);
     }
     const startAt = resolveIsoOrRelative(startRaw, referenceDate, "event.start");
     const endRaw = parseOptionalString(kv.end)?.trim();

@@ -1577,6 +1577,17 @@ describe("runCreate", () => {
 
   it("validates event seed parsing", async () => {
     await withTempPmPath(async (context) => {
+      const dateAliasResult = await runCreate(
+        baseCreateOptions({
+          event: ["date=2026-03-04T10:00:00.000Z,title=date alias"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(dateAliasResult.item.events?.[0]).toMatchObject({
+        start_at: "2026-03-04T10:00:00.000Z",
+        title: "date alias",
+      });
+
       await expect(
         runCreate(
           baseCreateOptions({

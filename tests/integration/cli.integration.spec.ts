@@ -2805,6 +2805,55 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   }, 120_000);
 
+  it("accepts agent-friendly non-interactive init defaults and author", async () => {
+    await withTempPmPath(async (context) => {
+      const initResult = context.runCli(["init", "--defaults", "--author", "dogfood-agent", "--json"], { expectJson: true });
+      expect(initResult.code).toBe(0);
+      expect(initResult.json).toMatchObject({
+        ok: true,
+        governance_preset: "minimal",
+        wizard_used: false,
+      });
+      expect((initResult.json as { settings: { author_default: string } }).settings.author_default).toBe("dogfood-agent");
+
+      const previousAuthor = process.env.PM_AUTHOR;
+      delete context.env.PM_AUTHOR;
+      delete process.env.PM_AUTHOR;
+      let createResult: ReturnType<typeof context.runCli>;
+      try {
+        createResult = context.runCli(
+          [
+            "create",
+            "--json",
+            "--title",
+            "Init author default item",
+            "--description",
+            "Created without an explicit author after init configured author_default.",
+            "--type",
+            "Task",
+            "--status",
+            "open",
+            "--priority",
+            "1",
+            "--message",
+            "Create using default author",
+            "--create-mode",
+            "progressive",
+          ],
+          { expectJson: true },
+        );
+      } finally {
+        if (previousAuthor === undefined) {
+          delete process.env.PM_AUTHOR;
+        } else {
+          process.env.PM_AUTHOR = previousAuthor;
+        }
+      }
+      expect(createResult.code).toBe(0);
+      expect((createResult.json as { item: { author: string } }).item.author).toBe("dogfood-agent");
+    });
+  });
+
   it("discovers referenced file links through files discover in a temporary project", async () => {
     await withTempPmPath(async (context) => {
       const projectRoot = path.join(context.tempRoot, "discovery-project");
