@@ -9,6 +9,10 @@ import pmCliPiExtension, { createPmToolDefinition } from "../../.pi/extensions/p
 describe("Pi native pm package integration", () => {
   it("publishes a Pi-compatible action schema", () => {
     expect(PM_TOOL_ACTIONS).toContain("context");
+    expect(PM_TOOL_ACTIONS).toContain("ctx");
+    expect(PM_TOOL_ACTIONS).toContain("extension");
+    expect(PM_TOOL_ACTIONS).toContain("beads-import");
+    expect(PM_TOOL_ACTIONS).toContain("todos-export");
     expect(PM_TOOL_ACTIONS).toContain("start-task");
     expect(PM_TOOL_ACTIONS).toContain("close-task");
     expect(PM_TOOL_PARAMETERS_SCHEMA).toMatchObject({ type: "object", oneOf: expect.any(Array) });
@@ -36,6 +40,30 @@ describe("Pi native pm package integration", () => {
     });
     expect(JSON.stringify(tool.parameters)).not.toContain('"oneOf"');
     expect(JSON.stringify(tool.parameters)).not.toContain('"anyOf"');
+    expect(tool.description).toContain("beads");
+    expect(tool.promptGuidelines.join("\n")).toContain("contracts");
+    expect(tool.renderCall?.({ action: "context" }, { fg: (_name: string, text: string) => text, bold: (text: string) => text } as never, {} as never)).toMatchObject({
+      render: expect.any(Function),
+    });
+  });
+
+  it("registers pm TUI helper commands and session UI hooks", () => {
+    const commands: string[] = [];
+    const events: string[] = [];
+    const pi = {
+      registerTool(tool: { name: string }) {
+        expect(tool.name).toBe("pm");
+      },
+      registerCommand(name: string) {
+        commands.push(name);
+      },
+      on(event: string) {
+        events.push(event);
+      },
+    };
+    pmCliPiExtension(pi as never);
+    expect(commands).toEqual(expect.arrayContaining(["pm-board", "pm-item", "pm-history", "pm-actions", "pm-workflows"]));
+    expect(events).toEqual(expect.arrayContaining(["session_start", "session_shutdown", "before_provider_request"]));
   });
 
   it("patches provider payloads defensively if pm parameters are missing", () => {

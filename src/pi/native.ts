@@ -1,3 +1,5 @@
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { readSettings } from "../core/store/settings.js";
@@ -159,6 +161,42 @@ async function runCloseTask(id: string, reason: string, options: Record<string, 
   return { id, action: "close_task", close, release };
 }
 
+function resolvePackageRoot(): string {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+}
+
+async function loadBundledExtensionRuntime(name: "beads" | "todos"): Promise<Record<string, unknown>> {
+  const runtimePath = path.join(resolvePackageRoot(), ".agents", "pm", "extensions", name, "runtime.js");
+  return import(pathToFileURL(runtimePath).href) as Promise<Record<string, unknown>>;
+}
+
+async function runBeadsImport(options: Record<string, unknown>, global: GlobalOptions): Promise<unknown> {
+  const runtime = await loadBundledExtensionRuntime("beads");
+  const runner = runtime.runBeadsImport;
+  if (typeof runner !== "function") {
+    throw new PmCliError("Bundled beads runtime is missing runBeadsImport().", 1);
+  }
+  return runner(options, global) as Promise<unknown>;
+}
+
+async function runTodosImport(options: Record<string, unknown>, global: GlobalOptions): Promise<unknown> {
+  const runtime = await loadBundledExtensionRuntime("todos");
+  const runner = runtime.runTodosImport;
+  if (typeof runner !== "function") {
+    throw new PmCliError("Bundled todos runtime is missing runTodosImport().", 1);
+  }
+  return runner(options, global) as Promise<unknown>;
+}
+
+async function runTodosExport(options: Record<string, unknown>, global: GlobalOptions): Promise<unknown> {
+  const runtime = await loadBundledExtensionRuntime("todos");
+  const runner = runtime.runTodosExport;
+  if (typeof runner !== "function") {
+    throw new PmCliError("Bundled todos runtime is missing runTodosExport().", 1);
+  }
+  return runner(options, global) as Promise<unknown>;
+}
+
 export async function runNativePmAction(args: NativePmArgs): Promise<unknown> {
   return withCwd(args.cwd, async () => {
     const action = requiredString(args, "action", "pm").trim().toLowerCase();
@@ -181,12 +219,15 @@ export async function runNativePmAction(args: NativePmArgs): Promise<unknown> {
       case "extension-activate": return runExtension(requiredString(args, "target", action), { ...options, activate: true }, global);
       case "extension-deactivate": return runExtension(requiredString(args, "target", action), { ...options, deactivate: true }, global);
       case "extension": return runExtension(readString(args, "target") ?? readString(options, "target"), options, global);
+      case "beads-import": return runBeadsImport(options, global);
+      case "todos-import": return runTodosImport(options, global);
+      case "todos-export": return runTodosExport(options, global);
       case "create": return runCreate(options, global);
       case "list": case "list-all": case "list-draft": case "list-open": case "list-in-progress": case "list-blocked": case "list-closed": case "list-canceled": return runList(action === "list" ? readString(args, "status") : action === "list-all" ? undefined : action.replace("list-", "").replaceAll("-", "_"), options, global);
       case "aggregate": return runAggregate(options, global);
       case "dedupe-audit": return runDedupeAudit(options, global);
-      case "calendar": return runCalendar(options, global);
-      case "context": return runContext(options, global);
+      case "calendar": case "cal": return runCalendar(options, global);
+      case "context": case "ctx": return runContext(options, global);
       case "get": return runGet(id ?? requiredString(options, "id", action), global);
       case "search": return runSearch(readString(args, "query") ?? readString(args, "keywords") ?? requiredString(options, "query", action), options, global);
       case "reindex": return runReindex(options, global);

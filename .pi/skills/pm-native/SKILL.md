@@ -11,7 +11,7 @@ metadata:
 
 # pm Native for Pi
 
-Use the `pm` tool for project-management operations. Do not run `pm ...` through bash when the native tool is available.
+Use the `pm` tool for project-management operations. Do not run `pm ...` through bash when the native tool is available. In interactive Pi, use `/pm-board`, `/pm-item <id>`, `/pm-history <id>`, `/pm-actions`, and `/pm-workflows` when the user would benefit from seeing tracker state in the TUI.
 
 ## Required Loop
 
@@ -27,6 +27,7 @@ Use the `pm` tool for project-management operations. Do not run `pm ...` through
    - action `test` with sandbox-safe commands
 5. Verify with action `test`, `validate`, and project test commands when appropriate.
 6. Close with action `close-task` or `close`, then release if needed.
+7. For exact feature support, call `pm` action `contracts` or `guide` instead of guessing flags.
 
 ## Common Tool Calls
 
@@ -36,5 +37,8 @@ Use the `pm` tool for project-management operations. Do not run `pm ...` through
 - Link file: `{ "action": "files", "id": "pm-1234", "add": ["path=src/file.ts,scope=project,note=implementation"], "author": "pi-agent" }`
 - Add comment: `{ "action": "comments", "id": "pm-1234", "add": ["Evidence: build and tests passed"], "author": "pi-agent" }`
 - Close: `{ "action": "close-task", "id": "pm-1234", "text": "All acceptance criteria met", "author": "pi-agent", "validateClose": "warn" }`
+- Extension lifecycle: `{ "action": "extension", "install": true, "target": "todos", "scope": "project" }`
+- Templates: `{ "action": "templates-list" }`
+- Managed tests: `{ "action": "test-runs-list" }`
 
-Use `pm guide` topics through action `guide` for deeper command docs.
+Use `pm guide` topics through action `guide` for deeper command docs. The bundled Pi package also provides project subagent definitions (`pm-triage-agent`, `pm-verification-agent`) and a `pm-native-delivery` chain for installations that use pi-subagents.
