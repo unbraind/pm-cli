@@ -54,10 +54,13 @@ async function seedLegacyData(baseVersion, tempRoot, env, author) {
   const packageSpec = `@unbrained/pm-cli@${baseVersion}`;
   const projectRoot = path.join(tempRoot, "project");
   await mkdir(projectRoot, { recursive: true });
+  // Use --package= flag so npx resolves the `pm` binary explicitly instead of
+  // inferring the binary name from the scoped package name (@unbrained/pm-cli → pm-cli).
+  // npm ≥ 9 no longer falls back to binary-name inference for mismatched packages.
   const legacy = (...args) =>
     runJsonCommand(
       npx,
-      ["--yes", packageSpec, ...args, "--json"],
+      ["--yes", `--package=${packageSpec}`, "pm", ...args, "--json"],
       env,
       `legacy command: ${args.join(" ")}`,
       projectRoot,
