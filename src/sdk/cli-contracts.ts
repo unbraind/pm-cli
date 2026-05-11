@@ -2807,7 +2807,7 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
 
 export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
-  $id: "https://unbrained.dev/schemas/pm-cli/tool-parameters-v4.schema.json",
+  $id: "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
   title: "pm-cli Pi wrapper parameters (action-scoped strict schema)",
   "x-schema-version": "4.0.1",
   type: "object",

@@ -1,0 +1,30 @@
+id: pm-4det
+title: Stop tracking runtime metadata cache
+description: "Remove the runtime metadata cache from Git tracking, ignore it for future local runs, and commit the schema URL update with clean tracked evidence."
+type: Task
+status: closed
+priority: 0
+tags[4]: gitignore,pm-cli,privacy,schema
+created_at: "2026-05-11T17:15:35.823Z"
+updated_at: "2026-05-11T17:17:20.693Z"
+author: codex-agent
+acceptance_criteria: Runtime metadata cache is untracked and ignored; schema URL changes remain committed; tracked secret scan passes before push.
+parent: pm-0c9q
+resolution: Runtime metadata cache is no longer tracked and future cache writes are ignored; schema contract URL update remains included.
+expected_result: "Cache file is removed from the Git index, ignored for future local runs, and no credential-like or private host/path data is tracked in the final tree."
+actual_result: "git stages the cache path as deleted and ignored locally; the staged tree contains the schema URL update, contract regression, ignore rule, and sanitized pm evidence; linked secret scan and contract regression passed."
+comments[2]{created_at,author,text}:
+  "2026-05-11T17:15:35.823Z",codex-agent,"Duplicate check: pm search metadata cache git tracking ignore schema url --limit 10 found only this turn's closed schema task and older unrelated items; create a sanitized follow-up for cache untracking and publish verification."
+  "2026-05-11T17:17:13.534Z",codex-agent,"Evidence: removed runtime metadata cache from Git tracking, added an ignore rule for future cache writes, kept schema contract URL update, and verified tracked files with node scripts/check-secrets.mjs plus linked contract regression."
+files[4]{path,scope,note}:
+  .agents/pm/runtime/metadata-cache.json,project,removed from git tracking
+  .gitignore,project,ignore runtime metadata cache
+  src/sdk/cli-contracts.ts,project,schema id source
+  tests/unit/contracts-command.spec.ts,project,schema id regression
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts,tests/unit/contracts-command.spec.ts,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp1gs1kp-12temx,test,passed,"2026-05-11T17:16:48.151Z","2026-05-11T17:16:56.953Z","2026-05-11T17:16:56.953Z",null,null,2,0,0,null,null,null
+close_reason: Cache untracked and ignored; schema URL update retained; linked secret scan and contract regression passed.
+body: ""
