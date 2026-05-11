@@ -39,11 +39,16 @@ describe("contracts command runtime", () => {
     expect(result.actions ?? []).toContain("normalize");
     expect(result.actions ?? []).toContain("guide");
     expect(result.actions ?? []).toContain("extension-reload");
+    expect(result.actions ?? []).toContain("package-install");
+    expect(result.actions ?? []).toContain("install");
     expect(result.commands).toContain("contracts");
     expect(result.commands).toContain("aggregate");
     expect(result.commands).toContain("dedupe-audit");
     expect(result.commands).toContain("normalize");
     expect(result.commands).toContain("guide");
+    expect(result.commands).toContain("package");
+    expect(result.commands).toContain("packages");
+    expect(result.commands).toContain("install");
     expect((result.action_availability ?? []).some((entry) => entry.action === "create" && entry.invocable)).toBe(true);
     expect(result.command_flags?.some((entry) => entry.command === "contracts")).toBe(true);
     expect(result.command_flags?.find((entry) => entry.command === "aggregate")?.flags).toEqual(
@@ -297,6 +302,8 @@ describe("contracts command runtime", () => {
       },
       { command: "gc", flags: ["--dry-run", "--scope"] },
       { command: "extension", flags: ["--init", "--install", "--doctor", "--runtime-probe", "--strict-exit"] },
+      { command: "package", flags: ["--init", "--install", "--doctor", "--runtime-probe", "--strict-exit"] },
+      { command: "install", flags: ["--gh", "--github", "--ref", "--project", "--global"] },
       { command: "test-runs", flags: ["--status", "--limit", "--stream", "--tail", "--force", "--author"] },
       {
         command: "update-many",

@@ -31,7 +31,7 @@ Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 | Verification | `test`, `test-all`, `test-runs`, `validate`, `gc` | run linked tests and repository checks |
 | History | `history`, `activity`, `restore`, `stats` | inspect and recover item state |
 | Calendar | `calendar`, `cal` | project deadlines, reminders, and events |
-| Extensions | `extension`, extension command groups | install, manage, and run extension commands |
+| Packages | `install`, `package`, `packages`, `extension`, package/extension command groups | install, manage, and run package-backed extension commands |
 | Machines | `guide`, `contracts`, `completion`, `help` | local docs routing plus command contracts and shell helpers |
 
 ## Bootstrap

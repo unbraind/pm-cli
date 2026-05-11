@@ -1,0 +1,15 @@
+id: pm-su6i
+title: Add package resource loader for skills prompts themes docs
+description: "Extend package installation/discovery beyond extension manifests so pm packages can carry agent skills, prompts, themes, docs, commands, and other shareable resources."
+type: Feature
+status: open
+priority: 1
+tags[5]: packages,pm-cli,prompts,resources,skills
+created_at: "2026-05-11T17:59:04.698Z"
+updated_at: "2026-05-11T17:59:04.698Z"
+author: codex-agent
+acceptance_criteria: Installed package resources are discovered deterministically; project scope wins over global; unsupported resource kinds produce clear diagnostics; tests cover package resource precedence.
+parent: pm-59gj
+comments[1]{created_at,author,text}:
+  "2026-05-11T17:59:04.698Z",codex-agent,"Plan item created after initial install slice: runtime extension packages are supported first,while non-extension resource loading needs a separate implementation surface."
+body: ""

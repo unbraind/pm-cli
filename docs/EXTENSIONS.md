@@ -1,23 +1,34 @@
-# Extensions
+# Packages and Extensions
 
-Extensions let you add or override `pm` runtime behavior without modifying core `pm-cli` sources.
+Packages let you add or override `pm` runtime behavior without modifying core `pm-cli` sources. A package can currently contain one or more runtime extensions, and the package-first command surface is the preferred user-facing workflow.
 
-This document is the canonical extension reference for manifest contracts, governance policy, trust and sandbox controls, reload workflows, and diagnostics.
+`pm extension ...` remains supported for compatibility. New scripts and docs should prefer `pm install ...` and `pm package ...`.
+
+This document is the canonical package/extension reference for manifest contracts, governance policy, trust and sandbox controls, reload workflows, and diagnostics.
 
 ## Quick Start
 
 ```bash
-# 1) Scaffold an extension
-pm extension --init ./my-extension
+# 1) Scaffold a package
+pm package init ./my-package
 
 # 2) Install in project scope
-pm extension --install --project ./my-extension
+pm install ./my-package --project
 
 # 3) Run diagnostics
-pm extension --doctor --project --detail summary
+pm package doctor --project --detail summary
 
 # 4) Reload runtime modules after local edits
-pm extension --reload --project
+pm package reload --project
+```
+
+Compatibility equivalents:
+
+```bash
+pm extension init ./my-package
+pm extension install ./my-package --project
+pm extension doctor --project --detail summary
+pm extension reload --project
 ```
 
 ## Extension Locations
@@ -30,6 +41,40 @@ Runtime path overrides:
 
 - `PM_PATH`: project tracker root override
 - `PM_GLOBAL_PATH`: global profile root override
+
+## Package Sources
+
+`pm install` accepts these package sources:
+
+```bash
+pm install ./local-package
+pm install /absolute/path/to/package
+pm install npm:@scope/package
+pm install npm:package@1.2.3
+pm install https://github.com/org/repo
+pm install --github org/repo/path --ref main
+```
+
+Package roots can expose extension resources with a `pm` manifest in `package.json`:
+
+```json
+{
+  "name": "my-pm-package",
+  "keywords": ["pm-package"],
+  "pm": {
+    "extensions": ["extensions/my-extension"]
+  }
+}
+```
+
+For Pi compatibility, `pi.extensions` is also accepted. When no manifest is present, `pm` discovers conventional directories:
+
+- `.agents/pm/extensions/`
+- `extensions/`
+- `.custom/pm-extensions/`
+- `.custom/pm-extension/`
+
+If a package contains multiple extension manifests, install the exact extension path so the managed state has one deterministic package target.
 
 ## Manifest Contract
 
@@ -184,13 +229,13 @@ pm extension --doctor --project --detail deep --trace
 Management commands:
 
 ```bash
-pm extension --explore
-pm extension --manage --project
-pm extension --manage --project --probe-runtime
-pm extension --manage --project --adopt-unmanaged
-pm extension --activate my-extension --project
-pm extension --deactivate my-extension --project
-pm extension --uninstall my-extension --project
+pm package explore
+pm package manage --project
+pm package manage --project --runtime-probe
+pm package manage --project --fix-managed-state
+pm package activate my-extension --project
+pm package deactivate my-extension --project
+pm package uninstall my-extension --project
 ```
 
 Common warning prefixes:
@@ -214,7 +259,7 @@ Common warning prefixes:
 
 ```bash
 pm contracts --json
-pm extension --doctor --project --detail summary --strict-exit
+pm package doctor --project --detail summary --strict-exit
 ```
 
 6. Resolve warnings before enforcing `mode=enforce` and `trust_mode=enforce`.

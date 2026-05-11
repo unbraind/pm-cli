@@ -123,6 +123,9 @@ export const PM_CORE_COMMAND_NAMES = [
   "init",
   "config",
   "extension",
+  "package",
+  "packages",
+  "install",
   "create",
   "list",
   "list-all",
@@ -191,6 +194,19 @@ export const PM_TOOL_ACTIONS = [
   "extension-activate",
   "extension-deactivate",
   "extension",
+  "package-init",
+  "package-install",
+  "package-uninstall",
+  "package-explore",
+  "package-manage",
+  "package-reload",
+  "package-doctor",
+  "package-adopt",
+  "package-adopt-all",
+  "package-activate",
+  "package-deactivate",
+  "package",
+  "install",
   "create",
   "list",
   "list-all",
@@ -1360,6 +1376,9 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
     case "config":
       return withSubcommandGlobalFlags(CONFIG_FLAG_CONTRACTS);
     case "extension":
+    case "package":
+    case "packages":
+    case "install":
       return withSubcommandGlobalFlags(EXTENSION_FLAG_CONTRACTS);
     case "create":
       return withSubcommandGlobalFlags(CREATE_FLAG_CONTRACTS);
@@ -2068,6 +2087,50 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "failOnWarn",
     ],
   },
+  "package-init": { required: ["target"], optional: ["scope"] },
+  "package-install": {
+    optional: ["target", "github", "scope", "ref"],
+    anyOfRequired: [["target"], ["github"]],
+  },
+  "package-uninstall": { required: ["target"], optional: ["scope"] },
+  "package-explore": { optional: ["scope"] },
+  "package-manage": { optional: ["scope", "runtimeProbe", "fixManagedState"] },
+  "package-reload": { optional: ["scope", "watch"] },
+  "package-doctor": { optional: ["scope", "detail", "trace", "fixManagedState", "strictExit", "failOnWarn"] },
+  "package-adopt": { required: ["target"], optional: ["scope", "github", "ref"] },
+  "package-adopt-all": { optional: ["scope"] },
+  "package-activate": { required: ["target"], optional: ["scope"] },
+  "package-deactivate": { required: ["target"], optional: ["scope"] },
+  package: {
+    optional: [
+      "target",
+      "scope",
+      "github",
+      "ref",
+      "init",
+      "install",
+      "uninstall",
+      "explore",
+      "manage",
+      "reload",
+      "doctor",
+      "adopt",
+      "adoptAll",
+      "activate",
+      "deactivate",
+      "runtimeProbe",
+      "fixManagedState",
+      "detail",
+      "trace",
+      "watch",
+      "strictExit",
+      "failOnWarn",
+    ],
+  },
+  install: {
+    optional: ["target", "github", "scope", "ref"],
+    anyOfRequired: [["target"], ["github"]],
+  },
   create: {
     required: ["title", "description", "type", "status", "priority", "message"],
     optional: CREATE_CONTRACT_PARAMETER_KEYS,
@@ -2299,11 +2362,11 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
   },
   target: {
-    description: "Positional target argument for the selected action (ID, source, or extension name).",
+    description: "Positional target argument for the selected action (ID, source, package source, or extension name).",
     examples: ["pm-a1b2", ".agents/pm/extensions/sample", "sample-extension"],
   },
   github: {
-    description: "GitHub shorthand owner/repo[/path] source for extension install actions.",
+    description: "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
     examples: ["unbraind/pm-cli/pi"],
   },
   ref: {

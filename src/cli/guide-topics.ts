@@ -158,28 +158,28 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
   },
   {
     id: "extensions",
-    aliases: ["plugins", "extension-authoring"],
-    title: "Extensions",
-    summary: "Install, author, and diagnose extensions with deterministic lifecycle controls.",
-    intent: "Use this for extension management, capability registration, and runtime diagnostics.",
+    aliases: ["plugins", "extension-authoring", "packages", "package-authoring"],
+    title: "Packages and Extensions",
+    summary: "Install, author, and diagnose packages/extensions with deterministic lifecycle controls.",
+    intent: "Use this for package management, extension capability registration, and runtime diagnostics.",
     commands: [
-      "pm extension explore --project",
-      "pm extension install <target> --project",
-      "pm extension manage --detail summary",
-      "pm extension doctor --detail deep",
-      "pm extension activate <target> --project",
-      "pm extension deactivate <target> --project",
+      "pm install <target> --project",
+      "pm package explore --project",
+      "pm package manage --detail summary",
+      "pm package doctor --detail deep",
+      "pm package activate <target> --project",
+      "pm package deactivate <target> --project",
     ],
     workflows: [
       {
         name: "Lifecycle Triage",
         goal: "Diagnose extension state before forceful lifecycle actions.",
         prompt:
-          "You are debugging extension behavior. Inspect managed state first, then run doctor diagnostics, then apply install/adopt/activate actions.",
+          "You are debugging package behavior. Inspect managed state first, then run doctor diagnostics, then apply install/adopt/activate actions.",
         commands: [
-          "pm extension explore --project",
-          "pm extension manage --detail summary",
-          "pm extension doctor --detail deep",
+          "pm package explore --project",
+          "pm package manage --detail summary",
+          "pm package doctor --detail deep",
         ],
       },
     ],
@@ -318,4 +318,3 @@ export function resolveGuideTopic(rawTopic: string | undefined): GuideTopicDefin
   }
   return TOPIC_BY_TOKEN.get(normalized) ?? null;
 }
-

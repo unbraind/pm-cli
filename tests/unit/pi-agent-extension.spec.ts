@@ -11,6 +11,8 @@ describe("Pi native pm package integration", () => {
     expect(PM_TOOL_ACTIONS).toContain("context");
     expect(PM_TOOL_ACTIONS).toContain("ctx");
     expect(PM_TOOL_ACTIONS).toContain("extension");
+    expect(PM_TOOL_ACTIONS).toContain("package-install");
+    expect(PM_TOOL_ACTIONS).toContain("install");
     expect(PM_TOOL_ACTIONS).toContain("beads-import");
     expect(PM_TOOL_ACTIONS).toContain("todos-export");
     expect(PM_TOOL_ACTIONS).toContain("start-task");

@@ -728,7 +728,7 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   if (command === "config") {
     return CONFIG_FLAG_CONTRACTS;
   }
-  if (command === "extension") {
+  if (command === "extension" || command === "package" || command === "packages" || command === "install") {
     return EXTENSION_FLAG_CONTRACTS;
   }
   if (command === "create") {

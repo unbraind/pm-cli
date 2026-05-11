@@ -77,9 +77,11 @@ export interface ExtensionCommandOptions {
 }
 
 export interface ManagedExtensionSource {
-  kind: "local" | "github";
+  kind: "local" | "github" | "npm";
   input: string;
   location: string;
+  package?: string;
+  version?: string;
   repository?: string;
   owner?: string;
   repo?: string;
@@ -139,13 +141,21 @@ interface GithubInstallSource {
   subpath?: string;
 }
 
-type InstallSource = LocalInstallSource | GithubInstallSource;
+interface NpmInstallSource {
+  kind: "npm";
+  input: string;
+  spec: string;
+}
+
+type InstallSource = LocalInstallSource | GithubInstallSource | NpmInstallSource;
 
 interface ResolvedInstallSource {
   source: InstallSource;
   directory: string;
   resolved_subpath?: string;
   commit?: string;
+  npm_package?: string;
+  npm_version?: string;
   cleanup?: () => Promise<void>;
 }
 
@@ -546,7 +556,7 @@ function normalizeManagedState(raw: unknown): ManagedExtensionState | null {
     }
     const source = entry.source as Record<string, unknown>;
     if (
-      (source.kind !== "local" && source.kind !== "github") ||
+      (source.kind !== "local" && source.kind !== "github" && source.kind !== "npm") ||
       typeof source.input !== "string" ||
       typeof source.location !== "string"
     ) {
@@ -565,6 +575,8 @@ function normalizeManagedState(raw: unknown): ManagedExtensionState | null {
         kind: source.kind,
         input: source.input,
         location: source.location,
+        package: typeof source.package === "string" ? source.package : undefined,
+        version: typeof source.version === "string" ? source.version : undefined,
         repository: typeof source.repository === "string" ? source.repository : undefined,
         owner: typeof source.owner === "string" ? source.owner : undefined,
         repo: typeof source.repo === "string" ? source.repo : undefined,
@@ -826,6 +838,24 @@ export function parseExtensionInstallSource(input: string, options: { forceGithu
   }
   const refOverride = typeof options.ref === "string" && options.ref.trim().length > 0 ? options.ref.trim() : undefined;
 
+  if (normalizedInput.startsWith("npm:")) {
+    const spec = normalizedInput.slice("npm:".length).trim();
+    if (spec.length === 0) {
+      throw new PmCliError('npm package source must include a package spec after "npm:".', EXIT_CODE.USAGE);
+    }
+    if (options.forceGithub) {
+      throw new PmCliError('Options "--gh/--github" cannot be combined with npm: package sources.', EXIT_CODE.USAGE);
+    }
+    if (refOverride) {
+      throw new PmCliError('Option "--ref" cannot be combined with npm: package sources.', EXIT_CODE.USAGE);
+    }
+    return {
+      kind: "npm",
+      input: normalizedInput,
+      spec,
+    };
+  }
+
   const maybeGithubByUrl = (() => {
     try {
       const parsed = new URL(normalizedInput);
@@ -884,6 +914,76 @@ async function runGitCommand(args: string[]): Promise<string> {
   }
 }
 
+async function runNpmCommand(args: string[], cwd?: string): Promise<string> {
+  try {
+    const result = await execFileAsync("npm", args, { cwd, encoding: "utf8" });
+    return (result.stdout ?? "").trim();
+  } catch (error: unknown) {
+    const stderr = typeof error === "object" && error !== null && "stderr" in error ? String((error as { stderr: unknown }).stderr) : "";
+    const message = stderr.trim().length > 0 ? stderr.trim() : error instanceof Error ? error.message : String(error);
+    throw new PmCliError(`npm command failed: npm ${args.join(" ")}\n${message}`, EXIT_CODE.GENERIC_FAILURE);
+  }
+}
+
+function parsePackedNpmPackage(stdout: string, packDirectory: string): { tarball: string; package?: string; version?: string } {
+  try {
+    const parsed = JSON.parse(stdout) as Array<{ filename?: unknown; name?: unknown; version?: unknown }>;
+    const first = Array.isArray(parsed) ? parsed[0] : undefined;
+    if (first && typeof first.filename === "string" && first.filename.trim().length > 0) {
+      return {
+        tarball: path.resolve(packDirectory, first.filename),
+        package: typeof first.name === "string" ? first.name : undefined,
+        version: typeof first.version === "string" ? first.version : undefined,
+      };
+    }
+  } catch {
+    // Fall back to the last stdout line for older npm output.
+  }
+  const lastLine = stdout
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .at(-1);
+  if (!lastLine) {
+    throw new PmCliError("npm pack did not report a tarball filename.", EXIT_CODE.GENERIC_FAILURE);
+  }
+  return {
+    tarball: path.resolve(packDirectory, lastLine),
+  };
+}
+
+async function resolveNpmSourceDirectory(source: NpmInstallSource): Promise<{
+  directory: string;
+  package?: string;
+  version?: string;
+  cleanup: () => Promise<void>;
+}> {
+  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-npm-package-source-"));
+  const packDirectory = path.join(tempRoot, "pack");
+  const extractDirectory = path.join(tempRoot, "extract");
+  await fs.mkdir(packDirectory, { recursive: true });
+  await fs.mkdir(extractDirectory, { recursive: true });
+
+  try {
+    const packStdout = await runNpmCommand(["pack", source.spec, "--json", "--pack-destination", packDirectory]);
+    const packed = parsePackedNpmPackage(packStdout, packDirectory);
+    await execFileAsync("tar", ["-xzf", packed.tarball, "-C", extractDirectory], { encoding: "utf8" });
+    const packageRoot = path.join(extractDirectory, "package");
+    const directory = await resolvePackageExtensionDirectory(packageRoot, source.input);
+    return {
+      directory,
+      package: packed.package,
+      version: packed.version,
+      cleanup: async () => {
+        await fs.rm(tempRoot, { recursive: true, force: true });
+      },
+    };
+  } catch (error: unknown) {
+    await fs.rm(tempRoot, { recursive: true, force: true });
+    throw error;
+  }
+}
+
 async function listManifestDirectories(parentDirectory: string): Promise<string[]> {
   if (!(await pathExists(parentDirectory))) {
     return [];
@@ -900,6 +1000,97 @@ async function listManifestDirectories(parentDirectory: string): Promise<string[
     }
   }
   return candidates.sort((left, right) => left.localeCompare(right));
+}
+
+interface PackageJsonResourceManifest {
+  extensions?: unknown;
+}
+
+async function readPackageExtensionManifest(packageRoot: string): Promise<PackageJsonResourceManifest | null> {
+  const packageJsonPath = path.join(packageRoot, "package.json");
+  if (!(await pathExists(packageJsonPath))) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(await fs.readFile(packageJsonPath, "utf8")) as {
+      pm?: PackageJsonResourceManifest;
+      pi?: PackageJsonResourceManifest;
+    };
+    return parsed.pm ?? parsed.pi ?? null;
+  } catch (error: unknown) {
+    throw new PmCliError(
+      `Failed to parse package manifest at "${packageJsonPath}": ${error instanceof Error ? error.message : String(error)}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+}
+
+async function collectPackageExtensionDirectories(packageRoot: string): Promise<string[]> {
+  if (await pathExists(path.join(packageRoot, "manifest.json"))) {
+    return [packageRoot];
+  }
+
+  const manifest = await readPackageExtensionManifest(packageRoot);
+  const manifestEntries = Array.isArray(manifest?.extensions)
+    ? manifest.extensions.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0)
+    : [];
+  const discovered = new Set<string>();
+
+  for (const entry of manifestEntries) {
+    if (entry.includes("*") || entry.startsWith("!")) {
+      throw new PmCliError(
+        `Package extension entry "${entry}" uses a glob/exclusion pattern. pm package installs currently require concrete extension paths or directories.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    const absolute = path.resolve(packageRoot, entry);
+    if (!isPathWithinDirectory(packageRoot, absolute)) {
+      throw new PmCliError(`Package extension entry "${entry}" resolves outside package root.`, EXIT_CODE.USAGE);
+    }
+    if (await pathExists(path.join(absolute, "manifest.json"))) {
+      discovered.add(absolute);
+      continue;
+    }
+    for (const child of await listManifestDirectories(absolute)) {
+      discovered.add(child);
+    }
+  }
+
+  if (manifestEntries.length === 0) {
+    const conventionalRoots = [
+      path.join(packageRoot, ".agents", "pm", "extensions"),
+      path.join(packageRoot, "extensions"),
+      path.join(packageRoot, ".custom", "pm-extensions"),
+      path.join(packageRoot, ".custom", "pm-extension"),
+    ];
+    for (const root of conventionalRoots) {
+      for (const child of await listManifestDirectories(root)) {
+        discovered.add(child);
+      }
+    }
+  }
+
+  return [...discovered].sort((left, right) => left.localeCompare(right));
+}
+
+async function resolvePackageExtensionDirectory(packageRoot: string, sourceLabel: string): Promise<string> {
+  const discovered = await collectPackageExtensionDirectories(packageRoot);
+  if (discovered.length === 1) {
+    return discovered[0];
+  }
+  if (discovered.length > 1) {
+    const choices = discovered
+      .map((entry) => path.relative(packageRoot, entry).replaceAll(path.sep, "/"))
+      .sort((left, right) => left.localeCompare(right));
+    throw new PmCliError(
+      `Package source "${sourceLabel}" contains multiple extension manifests. Provide an explicit extension path. Candidates: ${choices.join(", ")}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  throw new PmCliError(
+    `Unable to locate a pm extension manifest in package source "${sourceLabel}". Add package.json pm.extensions/pi.extensions or an extensions/ directory.`,
+    EXIT_CODE.USAGE,
+  );
 }
 
 async function resolveGithubSourceDirectory(cloneDirectory: string, source: GithubInstallSource): Promise<{ directory: string; resolved_subpath?: string }> {
@@ -922,34 +1113,11 @@ async function resolveGithubSourceDirectory(cloneDirectory: string, source: Gith
     return { directory: cloneDirectory, resolved_subpath: "." };
   }
 
-  const defaultRoots = [
-    path.join(cloneDirectory, ".agents", "pm", "extensions"),
-    path.join(cloneDirectory, ".custom", "pm-extensions"),
-    path.join(cloneDirectory, ".custom", "pm-extension"),
-  ];
-  const discovered = (
-    await Promise.all(defaultRoots.map((defaultRoot) => listManifestDirectories(defaultRoot)))
-  ).flat();
-  if (discovered.length === 1) {
-    return {
-      directory: discovered[0],
-      resolved_subpath: path.relative(cloneDirectory, discovered[0]).replaceAll(path.sep, "/"),
-    };
-  }
-  if (discovered.length > 1) {
-    const choices = discovered
-      .map((entry) => path.relative(cloneDirectory, entry).replaceAll(path.sep, "/"))
-      .sort((left, right) => left.localeCompare(right));
-    throw new PmCliError(
-      `GitHub source "${source.input}" contains multiple extension manifests. Provide an explicit path. Candidates: ${choices.join(", ")}`,
-      EXIT_CODE.USAGE,
-    );
-  }
-
-  throw new PmCliError(
-    `Unable to locate extension manifest in GitHub source "${source.input}". Provide an explicit extension path.`,
-    EXIT_CODE.USAGE,
-  );
+  const discoveredDirectory = await resolvePackageExtensionDirectory(cloneDirectory, source.input);
+  return {
+    directory: discoveredDirectory,
+    resolved_subpath: path.relative(cloneDirectory, discoveredDirectory).replaceAll(path.sep, "/"),
+  };
 }
 
 async function resolveInstallSource(source: InstallSource): Promise<ResolvedInstallSource> {
@@ -961,9 +1129,22 @@ async function resolveInstallSource(source: InstallSource): Promise<ResolvedInst
     if (!stats.isDirectory()) {
       throw new PmCliError(`Local extension source must be a directory: "${source.absolute_path}".`, EXIT_CODE.USAGE);
     }
+    const directory = await resolvePackageExtensionDirectory(source.absolute_path, source.input);
     return {
       source,
-      directory: source.absolute_path,
+      directory,
+    };
+  }
+
+  if (source.kind === "npm") {
+    const resolved = await resolveNpmSourceDirectory(source);
+    return {
+      source,
+      directory: resolved.directory,
+      cleanup: resolved.cleanup,
+      resolved_subpath: path.relative(path.dirname(resolved.directory), resolved.directory).replaceAll(path.sep, "/"),
+      npm_package: resolved.package,
+      npm_version: resolved.version,
     };
   }
 
@@ -1963,7 +2144,15 @@ export async function runExtension(
               input: installSource.input,
               location: installSource.absolute_path,
             }
-          : {
+          : installSource.kind === "npm"
+            ? {
+                kind: "npm",
+                input: installSource.input,
+                location: resolvedSource.resolved_subpath ?? ".",
+                package: resolvedSource.npm_package,
+                version: resolvedSource.npm_version,
+              }
+            : {
               kind: "github",
               input: installSource.input,
               location: resolvedSource.resolved_subpath ?? installSource.subpath ?? ".",

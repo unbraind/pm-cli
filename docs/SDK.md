@@ -91,7 +91,7 @@ Use runtime contracts for extension-aware schemas:
 ```bash
 pm contracts --json
 pm contracts --schema-only --json
-pm contracts --command extension --flags-only --json
+pm contracts --command package --flags-only --json
 pm contracts --action create --schema-only --json
 ```
 
@@ -101,7 +101,7 @@ Minimal script pattern:
 import { PM_TOOL_ACTION_PARAMETER_CONTRACTS, isPmToolAction } from "@unbrained/pm-cli/sdk";
 import { spawnSync } from "node:child_process";
 
-const action = "extension-reload";
+const action = "package-reload";
 if (!isPmToolAction(action)) throw new Error("Unsupported action");
 const contract = PM_TOOL_ACTION_PARAMETER_CONTRACTS[action];
 console.log(contract.required, contract.optional);
@@ -353,7 +353,7 @@ export default defineExtension({
       description: "Collect release readiness diagnostics.",
       intent: "provide deterministic audit payloads for CI gates",
       examples: ["pm release audit --strict"],
-      failure_hints: ["Run pm extension --doctor --detail deep --trace on activation failures."],
+      failure_hints: ["Run pm package doctor --detail deep --trace on activation failures."],
       flags: [{ long: "--strict", description: "Enable strict gate mode." }],
       run: async (context) => ({
         ok: true,
@@ -372,7 +372,7 @@ Use runtime `pm contracts` for extension-aware schemas:
 ```bash
 pm contracts --json
 pm contracts --schema-only --json
-pm contracts --command extension --flags-only --json
+pm contracts --command package --flags-only --json
 pm contracts --action create --schema-only --json
 ```
 
@@ -402,7 +402,7 @@ Recommended gate sequence:
 ```bash
 pnpm build
 pm contracts --schema-only --json > /tmp/pm-contracts.json
-pm extension --doctor --project --detail summary --strict-exit
+pm package doctor --project --detail summary --strict-exit
 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts
 node scripts/run-tests.mjs coverage
 ```

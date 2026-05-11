@@ -237,6 +237,19 @@ export async function runNativePmAction(args: NativePmArgs): Promise<unknown> {
       case "extension-activate": return runExtension(requiredString(args, "target", action), { ...options, activate: true }, global);
       case "extension-deactivate": return runExtension(requiredString(args, "target", action), { ...options, deactivate: true }, global);
       case "extension": return runExtension(readString(args, "target") ?? readString(options, "target"), options, global);
+      case "package-init": return runExtension(requiredString(args, "target", action), { ...options, init: true }, global);
+      case "package-install":
+      case "install": return runExtension(readString(args, "target") ?? readString(options, "target"), { ...options, install: true }, global);
+      case "package-uninstall": return runExtension(requiredString(args, "target", action), { ...options, uninstall: true }, global);
+      case "package-explore": return runExtension(undefined, { ...options, explore: true }, global);
+      case "package-manage": return runExtension(undefined, { ...options, manage: true }, global);
+      case "package-reload": return runExtension(undefined, { ...options, reload: true }, global);
+      case "package-doctor": return runExtension(undefined, { ...options, doctor: true }, global);
+      case "package-adopt": return runExtension(requiredString(args, "target", action), { ...options, adopt: true }, global);
+      case "package-adopt-all": return runExtension(undefined, { ...options, adoptAll: true }, global);
+      case "package-activate": return runExtension(requiredString(args, "target", action), { ...options, activate: true }, global);
+      case "package-deactivate": return runExtension(requiredString(args, "target", action), { ...options, deactivate: true }, global);
+      case "package": return runExtension(readString(args, "target") ?? readString(options, "target"), options, global);
       case "beads-import": return runBeadsImport(options, global);
       case "todos-import": return runTodosImport(options, global);
       case "todos-export": return runTodosExport(options, global);

@@ -26,6 +26,129 @@ function parseJsonErrorEnvelope(stderr: string): JsonErrorEnvelope {
 }
 
 describe("CLI integration (sandboxed PM_PATH)", () => {
+  it("installs package sources through root install and package aliases", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "sample-package");
+      const extensionDir = path.join(sourceDir, "extensions", "sample-package");
+      await mkdir(extensionDir, { recursive: true });
+      await writeFile(
+        path.join(sourceDir, "package.json"),
+        JSON.stringify(
+          {
+            name: "sample-package-bundle",
+            version: "1.0.0",
+            pm: {
+              extensions: ["extensions"],
+            },
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(
+        path.join(extensionDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "sample-package",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(extensionDir, "index.js"), "export default { activate() {} };\n", "utf8");
+
+      const install = context.runCli(["install", sourceDir, "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+      expect((install.json as { action: string; details: { extension?: { name?: string }; activated?: boolean } })).toMatchObject({
+        action: "install",
+        details: {
+          extension: {
+            name: "sample-package",
+          },
+          activated: true,
+        },
+      });
+
+      const manage = context.runCli(["package", "manage", "--json"], { expectJson: true });
+      expect(manage.code).toBe(0);
+      const managed = ((manage.json as { details: { extensions?: Array<Record<string, unknown>> } }).details.extensions ?? []);
+      expect(managed).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "sample-package",
+            managed: true,
+            enabled: true,
+          }),
+        ]),
+      );
+
+      const packagesDoctor = context.runCli(["packages", "doctor", "--detail", "summary", "--json"], { expectJson: true });
+      expect(packagesDoctor.code).toBe(0);
+      expect((packagesDoctor.json as { action: string; ok: boolean })).toMatchObject({
+        action: "doctor",
+        ok: true,
+      });
+    });
+  });
+
+  it("installs npm package specs that expose pm extension resources", async () => {
+    await withTempPmPath(async (context) => {
+      const packageRoot = path.join(context.tempRoot, "npm-package-source");
+      const extensionDir = path.join(packageRoot, "extensions", "npm-package");
+      await mkdir(extensionDir, { recursive: true });
+      await writeFile(
+        path.join(packageRoot, "package.json"),
+        JSON.stringify(
+          {
+            name: "pm-test-npm-package-source",
+            version: "1.2.3",
+            pm: {
+              extensions: ["extensions/npm-package"],
+            },
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(
+        path.join(extensionDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "npm-package",
+            version: "1.2.3",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(extensionDir, "index.js"), "export default { activate() {} };\n", "utf8");
+
+      const install = context.runCli(["install", `npm:${packageRoot}`, "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+      expect((install.json as { details: { extension?: { name?: string }; source?: { kind?: string; package?: string; version?: string } } })).toMatchObject({
+        details: {
+          extension: {
+            name: "npm-package",
+          },
+          source: {
+            kind: "npm",
+            package: "pm-test-npm-package-source",
+            version: "1.2.3",
+          },
+        },
+      });
+    });
+  });
+
   it("accepts --ac as create alias for acceptance criteria", async () => {
     await withTempPmPath(async (context) => {
       const createResult = context.runCli(

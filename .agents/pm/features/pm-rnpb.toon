@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-10T22:14:34.522Z"
+updated_at: "2026-05-11T17:39:43.013Z"
 deadline: "2026-05-04T13:20:01.343Z"
 assignee: codex-agent
 author: codex-audit
@@ -15,7 +15,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[20]{created_at,author,text}:
+comments[21]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -36,6 +36,7 @@ comments[20]{created_at,author,text}:
   "2026-05-10T21:52:06.697Z",codex-agent,"Evidence 2026-05-10 audit pass: sandbox dogfood temp project passed init/create/claim/update/comments/files/docs/tests/list/context/search/calendar/aggregate/dedupe/contracts/extension/health/validate. Fixed agent blockers: init --defaults --author now works, missing-option retry guidance normalizes combined long/short labels, create/update --event accepts date= as start alias, and CLI Sentry init is nonblocking. Verification passed: focused unit regressions 86 tests, focused init integration, full coverage 90 files/1274 tests with 100 percent statements/branches/functions/lines, static quality, docs-skills gate, tracked secret scan, git diff --check, pm health/validate with only pre-existing warnings. Telemetry stack report is stored in ignored scripts/prod/telemetry reports; current Sentry unresolved snapshot remains historical extension/import groups with scrubbed paths. Created follow-up pm-m4ov for remaining startup latency target."
   "2026-05-10T21:57:14.518Z",codex-agent,"Execution continuation 2026-05-10: duplicate checks reused pm-rnpb and pm-m4ov. GitHub snapshot: no open issues; dependabot PRs #24/#22 have failing checks; main CI for 212e677 is in progress. Proceeding with startup profiling, temp-project dogfood, privacy, telemetry, Sentry, and final CI verification."
   "2026-05-10T22:14:34.522Z",opencode-agent,"Final audit evidence 2026-05-10: temp dogfood verified init --defaults --author, default author fallback without PM_AUTHOR, create/update calendar date= aliases, calendar JSON, contracts, keyword/hybrid search, and validation. Performance comparison: before Sentry startup fix default-on dogfood read/query commands were ~1.1-1.3s after background init and ~1.5-2.0s in the baseline; after lazy Sentry startup, default-on list/search/calendar measured ~703ms/610ms/643ms while telemetry stayed enabled. Sentry/telemetry gate passed with recent telemetry finish_error_rate_pct=5.38, Sentry access ok, critical=1/high=3 after filtering known console-noise issues. Verification passed: focused 201-test suite, release-readiness+sentry focused suite, full coverage 90 files/1276 tests at 100%, static quality, docs-skills, secret scan, npm pack dry-run, pm health, pm validate with only pre-existing warnings. Residual tracked as pm-6zqq: long hybrid semantic reindex needs deterministic progress/completion output for agents."
+  "2026-05-11T17:39:43.013Z",codex-agent,"Package ecosystem work started under pm-59gj: researching latest Pi package model, decomposing plan, then implementing pm install/package compatibility."
 files[29]{path,scope,note}:
   README.md,project,public README hygiene update
   scripts/check-secrets.mjs,project,detect absolute home-path and user@private-host leakage

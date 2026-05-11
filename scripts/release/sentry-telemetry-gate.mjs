@@ -101,7 +101,7 @@ function sentrySeverityTally(issues) {
 
 const KNOWN_IGNORED_CONSOLE_ISSUE_PATTERNS = [
   "[starter-extension] activating",
-  "[starter-extension] all 8 capabilities registered.",
+  "all 8 capabilities registered.",
   "[starter-extension] commands:",
   "[starter] preflight check for workspace",
   "[starter] output_format service override active",

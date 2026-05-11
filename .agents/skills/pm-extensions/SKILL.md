@@ -1,25 +1,25 @@
 ---
 name: pm-extensions
-description: Manages pm-cli extension lifecycle operations (explore, install, activate, diagnose, and release-safe validation). Use when building, integrating, or troubleshooting pm extensions and extension-provided commands.
+description: Manages pm-cli package/extension lifecycle operations (explore, install, activate, diagnose, and release-safe validation). Use when building, integrating, or troubleshooting pm packages, extensions, and extension-provided commands.
 license: MIT
-compatibility: Requires pm extension commands and local project/global extension directories.
+compatibility: Requires pm package/extension commands and local project/global extension directories.
 metadata:
   owner: unbrained
   domain: pm-cli
   scope: extension-workflow
 ---
 
-# pm Extensions Skill
+# pm Packages and Extensions Skill
 
-Use this skill when the request touches extension install, activation, command registration, diagnostics, or extension governance.
+Use this skill when the request touches package or extension install, activation, command registration, diagnostics, or extension governance.
 
 ## Quick Start
 
 ```bash
 pm guide extensions
-pm extension explore --project
-pm extension manage --detail summary
-pm extension doctor --detail deep
+pm package explore --project
+pm package manage --detail summary
+pm package doctor --detail deep
 ```
 
 ## Lifecycle Workflow
@@ -31,22 +31,22 @@ pm extension doctor --detail deep
 
 ## Workflow Prompts
 
-### Prompt: Diagnose Extension Failure
+### Prompt: Diagnose Package Failure
 
-`Diagnose extension activation issues using pm extension explore/manage/doctor before making lifecycle changes. Report root cause and minimal remediation commands.`
+`Diagnose package activation issues using pm package explore/manage/doctor before making lifecycle changes. Report root cause and minimal remediation commands.`
 
-### Prompt: Install and Validate Extension
+### Prompt: Install and Validate Package
 
-`Install <extension> in project scope, validate with doctor diagnostics, and confirm command/action availability using pm contracts runtime output.`
+`Install <package> in project scope, validate with doctor diagnostics, and confirm command/action availability using pm contracts runtime output.`
 
 ### Prompt: Safe Deactivation
 
-`Deactivate or uninstall <extension> with rollback-safe sequencing and explicit evidence of which commands/actions are removed.`
+`Deactivate or uninstall <package> with rollback-safe sequencing and explicit evidence of which commands/actions are removed.`
 
 ## Contract Verification
 
 ```bash
-pm contracts --command extension --flags-only
+pm contracts --command package --flags-only
 pm contracts --runtime-only --availability-only
 pm contracts --command <extension-command> --flags-only
 ```

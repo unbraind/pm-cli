@@ -16,7 +16,7 @@
 | Command families and examples | [Command Reference](docs/COMMANDS.md) |
 | Settings, storage, search, and output | [Configuration](docs/CONFIGURATION.md) |
 | Safe test execution and linked tests | [Testing](docs/TESTING.md) |
-| Extension authoring | [Extensions](docs/EXTENSIONS.md) and [SDK](docs/SDK.md) |
+| Package and extension authoring | [Packages and Extensions](docs/EXTENSIONS.md) and [SDK](docs/SDK.md) |
 | Pi native package | [Pi Package](docs/PI_PACKAGE.md) |
 | Codex native integration | [Codex Plugin](docs/CODEX_PLUGIN.md) |
 | Maintainer release process (daily auto-release + local parity) | [Releasing](docs/RELEASING.md) |
@@ -66,6 +66,16 @@ pi install npm:@unbrained/pm-cli
 ```
 
 This registers a native `pm` tool, custom TUI panels/renderers (`/pm-board`, `/pm-item`, `/pm-history`), Pi skills, prompt templates, and optional pi-subagents setup without requiring Pi to run the `pm` shell command.
+
+`pm` packages use the same package-first vocabulary:
+
+```bash
+pm install ./my-package
+pm package manage --project
+pm package doctor --detail summary
+```
+
+The legacy `pm extension ...` command remains available for existing automation.
 
 ## 60 Second Example
 

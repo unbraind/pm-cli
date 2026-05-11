@@ -1,0 +1,15 @@
+id: pm-lwun
+title: Migrate extension terminology to package-first docs and UX
+description: "Audit command help, docs, skills, examples, telemetry naming, and error guidance so users see packages first while legacy extension wording remains clear for compatibility."
+type: Chore
+status: open
+priority: 1
+tags[5]: docs,migration,packages,pm-cli,ux
+created_at: "2026-05-11T17:59:04.655Z"
+updated_at: "2026-05-11T17:59:04.655Z"
+author: codex-agent
+acceptance_criteria: Top-level help and docs consistently prefer packages; legacy extension command is documented as compatibility; docs-skills and static quality gates pass.
+parent: pm-59gj
+comments[1]{created_at,author,text}:
+  "2026-05-11T17:59:04.655Z",codex-agent,Plan item created because this implementation intentionally keeps internals/backward compatibility on extension terminology while exposing package-first user commands.
+body: ""

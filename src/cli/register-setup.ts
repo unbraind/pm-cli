@@ -29,6 +29,8 @@ type ExtensionSubcommandAction =
   | "activate"
   | "deactivate";
 
+type LifecycleCommandVocabulary = "extension" | "package";
+
 function normalizeExtensionOptions(
   options: Record<string, unknown>,
   forcedAction?: ExtensionSubcommandAction,
@@ -105,6 +107,172 @@ function addExtensionScopeOptions<T extends Command>(command: T): T {
     .option("--project", "Use project extension scope (default)")
     .option("--local", "Alias for --project")
     .option("--global", "Use global extension scope");
+}
+
+function addPackageScopeOptions<T extends Command>(command: T): T {
+  return command
+    .option("--project", "Use project package scope (default)")
+    .option("--local", "Alias for --project")
+    .option("--global", "Use global package scope");
+}
+
+function addLifecycleScopeOptions<T extends Command>(command: T, vocabulary: LifecycleCommandVocabulary): T {
+  return vocabulary === "package" ? addPackageScopeOptions(command) : addExtensionScopeOptions(command);
+}
+
+function registerLifecycleCommand(
+  program: Command,
+  vocabulary: LifecycleCommandVocabulary,
+): void {
+  const noun = vocabulary === "package" ? "package" : "extension";
+  const plural = vocabulary === "package" ? "packages" : "extensions";
+  const commandName = vocabulary;
+  const lifecycleCommand = program
+    .command(commandName)
+    .argument("[target]", `${noun[0]!.toUpperCase()}${noun.slice(1)} source/name or scaffold target path (for --init/--scaffold)`)
+    .option("--init", `Generate a starter ${noun} scaffold at target path`)
+    .option("--scaffold", "Alias for --init")
+    .option("--install", `Install ${noun} from local path or GitHub source`)
+    .option("--uninstall", `Uninstall an installed ${noun}`)
+    .option("--explore", `List discovered ${plural} in selected scope`)
+    .option("--manage", `List managed ${plural} with update-check metadata`)
+    .option("--reload", `Reload ${plural} with cache-busted module imports`)
+    .option("--watch", "Use watch mode with --reload")
+    .option("--doctor", `Run consolidated ${noun} diagnostics (summary/deep modes)`)
+    .option("--adopt", `Adopt an existing unmanaged ${noun} into managed metadata`)
+    .option("--adopt-all", `Adopt all unmanaged ${plural} into managed metadata`)
+    .option("--activate", `Activate a ${noun} in selected scope settings`)
+    .option("--deactivate", `Deactivate a ${noun} in selected scope settings`)
+    .option("--project", `Use project ${noun} scope (default)`)
+    .option("--local", "Alias for --project")
+    .option("--global", `Use global ${noun} scope`)
+    .option("--gh <owner/repo[/path]>", "Install from GitHub shorthand source")
+    .option("--github <owner/repo[/path]>", "Alias for --gh")
+    .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
+    .option("--detail <mode>", `${noun[0]!.toUpperCase()}${noun.slice(1)} diagnostics detail mode (summary|deep)`)
+    .option("--trace", "Include actionable registration traces in doctor deep diagnostics")
+    .option("--runtime-probe", "Opt-in runtime activation probe for manage output parity")
+    .option("--fix-managed-state", `Adopt unmanaged ${plural} before diagnostics/update checks`)
+    .option("--strict-exit", "Return non-zero exit when doctor warnings are present (ok=false)")
+    .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
+    .description(
+      vocabulary === "package"
+        ? "Manage package lifecycle operations for project or global scope. Backward-compatible with extension packages."
+        : "Manage extension lifecycle operations for project or global scope.",
+    )
+    .action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
+      await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command);
+    });
+
+  if (vocabulary === "package") {
+    lifecycleCommand.alias("packages");
+  }
+
+  addLifecycleScopeOptions(
+    lifecycleCommand
+      .command("init")
+      .alias("scaffold")
+      .argument("<target>", `Scaffold target directory path`)
+      .description(`Generate a starter ${noun} scaffold with manifest and entrypoint.`),
+    vocabulary,
+  ).action(async (target: string, _options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "init");
+  });
+
+  addLifecycleScopeOptions(
+    lifecycleCommand
+      .command("install")
+      .argument("[target]", `${noun[0]!.toUpperCase()}${noun.slice(1)} source (local path or GitHub source)`)
+      .option("--gh <owner/repo[/path]>", "Install from GitHub shorthand source")
+      .option("--github <owner/repo[/path]>", "Alias for --gh")
+      .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
+      .description(`Install ${noun} from local path or GitHub source.`),
+    vocabulary,
+  ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "install");
+  });
+
+  addLifecycleScopeOptions(
+    lifecycleCommand.command("uninstall").argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`).description(`Uninstall an installed ${noun}.`),
+    vocabulary,
+  ).action(async (target: string, _options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "uninstall");
+  });
+
+  addLifecycleScopeOptions(lifecycleCommand.command("explore").description(`List discovered ${plural} in selected scope.`), vocabulary).action(
+    async (_options: Record<string, unknown>, command) => {
+      await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "explore");
+    },
+  );
+
+  addLifecycleScopeOptions(
+    lifecycleCommand
+      .command("manage")
+      .option("--runtime-probe", "Opt-in runtime activation probe for manage output parity")
+      .option("--fix-managed-state", `Adopt unmanaged ${plural} before diagnostics/update checks`)
+      .description(`List managed ${plural} with update-check metadata.`),
+    vocabulary,
+  ).action(async (_options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "manage");
+  });
+
+  addLifecycleScopeOptions(
+    lifecycleCommand
+      .command("reload")
+      .option("--watch", "Use watch mode for repeated reload checks")
+      .description(`Reload ${plural} with cache-busted module imports.`),
+    vocabulary,
+  ).action(async (_options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "reload");
+  });
+
+  addLifecycleScopeOptions(
+    lifecycleCommand
+      .command("doctor")
+      .option("--detail <mode>", `Detail mode for ${noun} diagnostics (summary|deep)`)
+      .option("--trace", "Include actionable registration traces in doctor deep diagnostics")
+      .option("--fix-managed-state", `Adopt unmanaged ${plural} before diagnostics/update checks`)
+      .option("--strict-exit", "Return non-zero exit when doctor warnings are present (ok=false)")
+      .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
+      .description(`Run consolidated ${noun} diagnostics (summary/deep modes).`),
+    vocabulary,
+  ).action(async (_options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "doctor");
+  });
+
+  addLifecycleScopeOptions(
+    lifecycleCommand
+      .command("adopt")
+      .argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`)
+      .option("--gh <owner/repo[/path]>", `GitHub provenance shorthand for adopted ${noun}`)
+      .option("--github <owner/repo[/path]>", "Alias for --gh")
+      .option("--ref <ref>", "Git ref/branch/tag for GitHub shorthand source")
+      .description(`Adopt an existing unmanaged ${noun} into managed metadata.`),
+    vocabulary,
+  ).action(async (target: string, _options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "adopt");
+  });
+
+  addLifecycleScopeOptions(
+    lifecycleCommand.command("adopt-all").description(`Adopt all unmanaged ${plural} into managed metadata.`),
+    vocabulary,
+  ).action(async (_options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "adopt-all");
+  });
+
+  addLifecycleScopeOptions(
+    lifecycleCommand.command("activate").argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`).description(`Activate a ${noun} in selected scope settings.`),
+    vocabulary,
+  ).action(async (target: string, _options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "activate");
+  });
+
+  addLifecycleScopeOptions(
+    lifecycleCommand.command("deactivate").argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`).description(`Deactivate a ${noun} in selected scope settings.`),
+    vocabulary,
+  ).action(async (target: string, _options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "deactivate");
+  });
 }
 
 export function registerSetupCommands(program: Command): void {
@@ -197,133 +365,19 @@ export function registerSetupCommands(program: Command): void {
       }
     });
 
-  const extensionCommand = program
-    .command("extension")
-    .argument("[target]", "Extension source/name or scaffold target path (for --init/--scaffold)")
-    .option("--init", "Generate a starter extension scaffold at target path")
-    .option("--scaffold", "Alias for --init")
-    .option("--install", "Install extension from local path or GitHub source")
-    .option("--uninstall", "Uninstall an installed extension")
-    .option("--explore", "List discovered extensions in selected scope")
-    .option("--manage", "List managed extensions with update-check metadata")
-    .option("--reload", "Reload extensions with cache-busted module imports")
-    .option("--watch", "Use watch mode with --reload")
-    .option("--doctor", "Run consolidated extension diagnostics (summary/deep modes)")
-    .option("--adopt", "Adopt an existing unmanaged extension into managed metadata")
-    .option("--adopt-all", "Adopt all unmanaged extensions into managed metadata")
-    .option("--activate", "Activate an extension in selected scope settings")
-    .option("--deactivate", "Deactivate an extension in selected scope settings")
-    .option("--project", "Use project extension scope (default)")
-    .option("--local", "Alias for --project")
-    .option("--global", "Use global extension scope")
-    .option("--gh <owner/repo[/path]>", "Install from GitHub shorthand source")
-    .option("--github <owner/repo[/path]>", "Alias for --gh")
-    .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
-    .option("--detail <mode>", "Detail mode for extension diagnostics (summary|deep)")
-    .option("--trace", "Include actionable registration traces in doctor deep diagnostics")
-    .option("--runtime-probe", "Opt-in runtime activation probe for manage output parity")
-    .option("--fix-managed-state", "Adopt unmanaged extensions before diagnostics/update checks")
-    .option("--strict-exit", "Return non-zero exit when doctor warnings are present (ok=false)")
-    .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
-    .description("Manage extension lifecycle operations for project or global scope.")
-    .action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
-      await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command);
-    });
+  registerLifecycleCommand(program, "extension");
+  registerLifecycleCommand(program, "package");
 
-  addExtensionScopeOptions(
-    extensionCommand
-      .command("init")
-      .alias("scaffold")
-      .argument("<target>", "Scaffold target directory path")
-      .description("Generate a starter extension scaffold with manifest and entrypoint."),
-  ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "init");
-  });
-
-  addExtensionScopeOptions(
-    extensionCommand
+  addPackageScopeOptions(
+    program
       .command("install")
-      .argument("[target]", "Extension source (local path or GitHub source)")
+      .argument("[target]", "Package source (local path, bundled alias, or GitHub source)")
       .option("--gh <owner/repo[/path]>", "Install from GitHub shorthand source")
       .option("--github <owner/repo[/path]>", "Alias for --gh")
       .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
-      .description("Install extension from local path or GitHub source."),
+      .description("Install a pm package into the project package scope by default."),
   ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
     await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "install");
-  });
-
-  addExtensionScopeOptions(
-    extensionCommand.command("uninstall").argument("<target>", "Extension name").description("Uninstall an installed extension."),
-  ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "uninstall");
-  });
-
-  addExtensionScopeOptions(extensionCommand.command("explore").description("List discovered extensions in selected scope.")).action(
-    async (_options: Record<string, unknown>, command) => {
-      await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "explore");
-    },
-  );
-
-  addExtensionScopeOptions(
-    extensionCommand
-      .command("manage")
-      .option("--runtime-probe", "Opt-in runtime activation probe for manage output parity")
-      .option("--fix-managed-state", "Adopt unmanaged extensions before diagnostics/update checks")
-      .description("List managed extensions with update-check metadata."),
-  ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "manage");
-  });
-
-  addExtensionScopeOptions(
-    extensionCommand
-      .command("reload")
-      .option("--watch", "Use watch mode for repeated reload checks")
-      .description("Reload extensions with cache-busted module imports."),
-  ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "reload");
-  });
-
-  addExtensionScopeOptions(
-    extensionCommand
-      .command("doctor")
-      .option("--detail <mode>", "Detail mode for extension diagnostics (summary|deep)")
-      .option("--trace", "Include actionable registration traces in doctor deep diagnostics")
-      .option("--fix-managed-state", "Adopt unmanaged extensions before diagnostics/update checks")
-      .option("--strict-exit", "Return non-zero exit when doctor warnings are present (ok=false)")
-      .option("--fail-on-warn", "Alias for --strict-exit (doctor)")
-      .description("Run consolidated extension diagnostics (summary/deep modes)."),
-  ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "doctor");
-  });
-
-  addExtensionScopeOptions(
-    extensionCommand
-      .command("adopt")
-      .argument("<target>", "Extension name")
-      .option("--gh <owner/repo[/path]>", "GitHub provenance shorthand for adopted extension")
-      .option("--github <owner/repo[/path]>", "Alias for --gh")
-      .option("--ref <ref>", "Git ref/branch/tag for GitHub shorthand source")
-      .description("Adopt an existing unmanaged extension into managed metadata."),
-  ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "adopt");
-  });
-
-  addExtensionScopeOptions(
-    extensionCommand.command("adopt-all").description("Adopt all unmanaged extensions into managed metadata."),
-  ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "adopt-all");
-  });
-
-  addExtensionScopeOptions(
-    extensionCommand.command("activate").argument("<target>", "Extension name").description("Activate an extension in selected scope settings."),
-  ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "activate");
-  });
-
-  addExtensionScopeOptions(
-    extensionCommand.command("deactivate").argument("<target>", "Extension name").description("Deactivate an extension in selected scope settings."),
-  ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "deactivate");
   });
 
   const templatesCommand = program
