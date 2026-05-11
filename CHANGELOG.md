@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.11] - 2026-05-11
+
 ### Added
 - Claude Code plugin v1.3.0: added `pm-triage-agent`, `pm-verification-agent`, and `pm-delivery-chain` subagents for full end-to-end pm workflow orchestration without leaving Claude Code.
 - Claude Code plugin: registered `pm` as the canonical marketplace ID so the plugin installs via `/plugin install pm-cli@pm` (both `pm` and `pm-cli` marketplace IDs resolve to the same plugin).
