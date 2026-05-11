@@ -1,16 +1,6 @@
 # Harness Compatibility
 
-This repository supports the following harnesses through shared docs and `.agents/skills` workflows only (no harness-specific runtime code):
-
-- Pi coding agent
-- OpenClaw
-- Claude Code
-- Codex CLI
-- OpenCode
-- Amp
-- Droid
-- Hermes
-- Gemini CLI
+This repository supports external automation harnesses through shared docs and `.agents/skills` workflows only. Harness-specific runtime code belongs in separate adapter packages, not in the main `pm` CLI or SDK.
 
 ## Progressive-Disclosure Route
 
@@ -23,17 +13,12 @@ Use the same low-token route in every harness:
 
 ## Harness Mapping
 
-| Harness | Preferred prompt/doc entrypoint | Skill route |
-|---------|----------------------------------|-------------|
-| Pi coding agent | `AGENTS.md` + `pm guide workflows` | `.agents/skills/pm-developer/SKILL.md` |
-| OpenClaw | repository docs + `pm guide` | `.agents/skills/pm-user/SKILL.md` |
-| Claude Code | repository docs + `pm guide skills` | `.agents/skills/pm-developer/SKILL.md` |
-| Codex CLI | repository docs + `pm guide commands` | `.agents/skills/pm-developer/SKILL.md` |
-| OpenCode | repository docs + `pm guide quickstart` | `.agents/skills/pm-user/SKILL.md` |
-| Amp | repository docs + `pm guide workflows` | `.agents/skills/pm-user/SKILL.md` |
-| Droid | repository docs + `pm guide extensions` | `.agents/skills/pm-extensions/SKILL.md` |
-| Hermes | repository docs + `pm guide sdk` | `.agents/skills/pm-sdk/SKILL.md` |
-| Gemini CLI | repository docs + `pm guide commands` | `.agents/skills/pm-user/SKILL.md` |
+| Harness need | Preferred prompt/doc entrypoint | Skill route |
+|--------------|----------------------------------|-------------|
+| Development loop | `AGENTS.md` + `pm guide workflows` | `.agents/skills/pm-developer/SKILL.md` |
+| User/operator workflow | repository docs + `pm guide quickstart` | `.agents/skills/pm-user/SKILL.md` |
+| Package authoring | repository docs + `pm guide extensions` | `.agents/skills/pm-extensions/SKILL.md` |
+| SDK integration | repository docs + `pm guide sdk` | `.agents/skills/pm-sdk/SKILL.md` |
 
 ## Verification
 

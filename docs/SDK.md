@@ -29,7 +29,7 @@ npm install @unbrained/pm-cli
 - `PM_CORE_COMMAND_NAMES`
 - `PM_TOOL_ACTIONS`
 - `PM_TOOL_PARAMETERS_SCHEMA`
-- `PM_PI_TOOL_PARAMETERS_SCHEMA`
+- `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`
 - `PM_TOOL_ACTION_PARAMETER_CONTRACTS`
 
 ### Runtime contract constants
@@ -174,7 +174,7 @@ npm install @unbrained/pm-cli
 - `PM_CORE_COMMAND_NAMES`
 - `PM_TOOL_ACTIONS`
 - `PM_TOOL_PARAMETERS_SCHEMA`
-- `PM_PI_TOOL_PARAMETERS_SCHEMA`
+- `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`
 - `PM_TOOL_ACTION_PARAMETER_CONTRACTS`
 
 ### Extension Runtime Contract Constants
@@ -310,7 +310,7 @@ Command/action contract exports:
 - `PM_CORE_COMMAND_NAMES`
 - `PM_TOOL_ACTIONS`
 - `PM_TOOL_PARAMETERS_SCHEMA`
-- `PM_PI_TOOL_PARAMETERS_SCHEMA`
+- `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`
 - `PM_TOOL_ACTION_PARAMETER_CONTRACTS`
 
 Extension runtime contract exports:
@@ -411,11 +411,9 @@ Reference workflow file:
 
 - `docs/examples/ci/github-actions-pm-extension-gate.yml`
 
-## Pi / Tooling Compatibility
+## Tooling Compatibility
 
-For provider-safe schemas, use `PM_PI_TOOL_PARAMETERS_SCHEMA`. It is flat, non-`oneOf`, and designed for tool providers that reject advanced schema constructs.
-
-The bundled Pi wrapper (`.pi/extensions/pm-cli/index.js`) consumes this schema directly to reduce contract drift.
+For provider-safe schemas, use `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`. It is flat, non-`oneOf`, and designed for tool providers that reject advanced schema constructs. Agent-specific adapters should consume this SDK export from their own packages instead of adding agent runtime code to the main `pm` CLI.
 
 ## Related Docs
 
@@ -460,6 +458,10 @@ Common authoring exports:
 - `EXTENSION_CAPABILITY_CONTRACT`
 - `EXTENSION_CAPABILITY_CONTRACT_VERSION`
 - `EXTENSION_CAPABILITY_LEGACY_ALIASES`
+- `PM_PACKAGE_RESOURCE_KINDS`
+- `PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS`
+- `readPmPackageManifest`
+- `collectPackageExtensionDirectories`
 - `PM_CORE_COMMAND_NAMES`
 - `PM_TOOL_ACTIONS`
 - `PM_TOOL_PARAMETERS_SCHEMA`

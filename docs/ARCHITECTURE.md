@@ -193,7 +193,7 @@ Command/action metadata is centralized in `src/sdk/cli-contracts.ts` and used by
 - CLI option normalization
 - help output
 - completion generation
-- Pi wrapper schema
+- provider-safe tool schemas
 - `pm contracts`
 - extension command/action contract exposure
 

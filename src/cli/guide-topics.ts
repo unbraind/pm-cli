@@ -228,8 +228,8 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     id: "harnesses",
     aliases: ["compatibility", "agent-compatibility"],
     title: "Agent Harness Compatibility",
-    summary: "Cross-harness compatibility guidance for skill discovery, prompts, and docs routing.",
-    intent: "Use this when adapting pm skills/docs usage for Pi, OpenClaw, Claude Code, Codex CLI, OpenCode, Amp, Droid, Hermes, or Gemini CLI.",
+    summary: "Cross-harness compatibility guidance for docs routing.",
+    intent: "Use this when adapting pm docs and SDK contracts for an external automation harness.",
     commands: ["pm guide skills", "pm guide commands", "pm contracts --runtime-only --availability-only"],
     workflows: [
       {

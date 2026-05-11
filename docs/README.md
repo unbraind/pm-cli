@@ -22,7 +22,6 @@ pm guide release --json
 | Coding agent | [Agent Guide](AGENT_GUIDE.md) | [Configuration](CONFIGURATION.md), then command help |
 | Maintainer | [Contributing](../CONTRIBUTING.md) | [Testing](TESTING.md), [Releasing](RELEASING.md), [Architecture](ARCHITECTURE.md) |
 | Package author | [Packages and Extensions](EXTENSIONS.md) | [SDK](SDK.md), [starter extension](examples/starter-extension/README.md) |
-| Pi user | [Pi Package](PI_PACKAGE.md) | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md) |
 | Codex user | [Codex Plugin](CODEX_PLUGIN.md) | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md) |
 | Machine client | `pm guide commands` | [Command Reference](COMMANDS.md#machine-contracts), then `pm contracts --json` |
 
@@ -36,7 +35,6 @@ pm guide release --json
 - [Architecture](ARCHITECTURE.md) - contributor internals: storage, mutation flow, search, extensions, and command contracts.
 - [Packages and Extensions](EXTENSIONS.md) - package install workflows, runtime extension lifecycle, and API reference.
 - [SDK](SDK.md) - public import surfaces and typed authoring examples.
-- [Pi Package](PI_PACKAGE.md) - official Pi package install, native tool, skills, prompts, and workflows.
 - [Codex Plugin](CODEX_PLUGIN.md) - native MCP plugin install, tools, skills, and safety notes.
 - [Releasing](RELEASING.md) - maintainer release checklist and failure handling.
 - [starter extension](examples/starter-extension/README.md) - compact extension scaffold reference.

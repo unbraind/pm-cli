@@ -20,7 +20,7 @@ import { readSettings } from "../../../../src/core/store/settings.js";
 import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, RISK_VALUES } from "../../../../src/types/index.js";
 import type { ItemDocument, ItemMetadata, ItemStatus, ItemType, PmSettings } from "../../../../src/types/index.js";
 
-const DEFAULT_TODOS_FOLDER = ".pi/todos";
+const DEFAULT_TODOS_FOLDER = ".pm/todos";
 
 export interface TodosImportOptions {
   folder?: string;

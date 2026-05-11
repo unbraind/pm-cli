@@ -10,6 +10,15 @@ import {
   type ExtensionApi,
   type ExtensionManifest,
 } from "../core/extensions/loader.js";
+export {
+  PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS,
+  PM_PACKAGE_RESOURCE_KINDS,
+  collectPackageExtensionDirectories,
+  readPmPackageManifest,
+  type PmPackageManifest,
+  type PmPackageResourceKind,
+  type PmPackageResourceMap,
+} from "../core/packages/manifest.js";
 export * from "./cli-contracts.js";
 
 /**

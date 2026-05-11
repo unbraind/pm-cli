@@ -16,7 +16,7 @@ import { listAllFrontMatter, locateItem, readLocatedItem } from "../../../../dis
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../../../dist/core/store/paths.js";
 import { readSettings } from "../../../../dist/core/store/settings.js";
 import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, RISK_VALUES } from "../../../../dist/types/index.js";
-const DEFAULT_TODOS_FOLDER = ".pi/todos";
+const DEFAULT_TODOS_FOLDER = ".pm/todos";
 function isRecord(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }

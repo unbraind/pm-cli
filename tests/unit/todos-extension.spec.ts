@@ -597,7 +597,7 @@ describe("built-in todos extension import/export", () => {
     });
   });
 
-  it("uses settings author fallback and default .pi/todos source folder", async () => {
+  it("uses settings author fallback and default .pm/todos source folder", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");
       const settings = JSON.parse(await readFile(settingsPath, "utf8")) as { author_default?: string };
@@ -610,7 +610,7 @@ describe("built-in todos extension import/export", () => {
       try {
         delete process.env.PM_AUTHOR;
         process.chdir(context.tempRoot);
-        const defaultFolder = path.join(context.tempRoot, ".pi", "todos");
+        const defaultFolder = path.join(context.tempRoot, ".pm", "todos");
         await mkdir(defaultFolder, { recursive: true });
         await writeTodoMarkdown(defaultFolder, "default-source.md", {
           id: "default-source",
@@ -800,7 +800,7 @@ describe("built-in todos extension import/export", () => {
     });
   });
 
-  it("uses default .pi/todos export folder when folder option is blank", async () => {
+  it("uses default .pm/todos export folder when folder option is blank", async () => {
     await withTempPmPath(async (context) => {
       const created = context.runCli(
         [
@@ -856,10 +856,10 @@ describe("built-in todos extension import/export", () => {
       try {
         process.chdir(context.tempRoot);
         const exported = await runTodosExport({ folder: "   " }, {});
-        expect(exported.folder).toBe(".pi/todos");
+        expect(exported.folder).toBe(".pm/todos");
         expect(exported.ids).toContain(id);
 
-        const exportedRaw = await readFile(path.join(context.tempRoot, ".pi", "todos", `${id}.md`), "utf8");
+        const exportedRaw = await readFile(path.join(context.tempRoot, ".pm", "todos", `${id}.md`), "utf8");
         expect(exportedRaw).toContain(id);
       } finally {
         process.chdir(previousCwd);

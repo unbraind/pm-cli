@@ -32,31 +32,31 @@ describe("extension command runtime", () => {
     expect(local.absolute_path).toBe(path.resolve(process.cwd(), "./extensions/sample"));
 
     const githubTree = parseExtensionInstallSource(
-      "https://github.com/unbraind/pm-cli/tree/main/.agents/pm/extensions/pi",
+      "https://github.com/unbraind/pm-cli/tree/main/.agents/pm/extensions/sample",
     );
     expect(githubTree).toMatchObject({
       kind: "github",
       owner: "unbraind",
       repo: "pm-cli",
       ref: "main",
-      subpath: ".agents/pm/extensions/pi",
+      subpath: ".agents/pm/extensions/sample",
     });
 
-    const githubDomain = parseExtensionInstallSource("github.com/unbraind/pm-cli/pi");
+    const githubDomain = parseExtensionInstallSource("github.com/unbraind/pm-cli/sample");
     expect(githubDomain).toMatchObject({
       kind: "github",
       owner: "unbraind",
       repo: "pm-cli",
-      subpath: "pi",
+      subpath: "sample",
     });
 
-    const githubFlag = parseExtensionInstallSource("unbraind/pm-cli/pi", { forceGithub: true, ref: "main" });
+    const githubFlag = parseExtensionInstallSource("unbraind/pm-cli/sample", { forceGithub: true, ref: "main" });
     expect(githubFlag).toMatchObject({
       kind: "github",
       owner: "unbraind",
       repo: "pm-cli",
       ref: "main",
-      subpath: "pi",
+      subpath: "sample",
     });
   });
 

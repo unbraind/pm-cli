@@ -191,8 +191,7 @@ All skills and commands implement this pattern for every claimed item:
 ## Session Context Injection
 
 At session start, the hook runs natively (no `pm` CLI required):
-- Walks up directories to find `dist/pi/native.js` in the repo checkout
-- Falls back to `npx @unbrained/pm-cli` if no local dist is found
+- Uses `npx @unbrained/pm-cli` without requiring a global install
 - Injects a compact summary of in-progress/open/blocked items
 
 Example output:

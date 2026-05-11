@@ -57,7 +57,7 @@ async function seedRuntimeCommandStubs(packageRoot: string): Promise<void> {
   globalThis.${RUNTIME_CALLS_KEY} = calls;
   return {
     ok: true,
-    folder: typeof options?.folder === "string" ? options.folder : ".pi/todos",
+    folder: typeof options?.folder === "string" ? options.folder : ".pm/todos",
     imported: 2,
     skipped: 0,
     ids: ["pm-a", "pm-b"],
@@ -71,7 +71,7 @@ export async function runTodosExport(options, global) {
   globalThis.${RUNTIME_CALLS_KEY} = calls;
   return {
     ok: true,
-    folder: typeof options?.folder === "string" ? options.folder : ".pi/todos",
+    folder: typeof options?.folder === "string" ? options.folder : ".pm/todos",
     exported: 3,
     ids: ["pm-a", "pm-b", "pm-c"],
     warnings: [],
@@ -300,7 +300,7 @@ describe("built-in extension entrypoints", () => {
     });
     expect(exportResult).toEqual({
       ok: true,
-      folder: ".pi/todos",
+      folder: ".pm/todos",
       exported: 3,
       ids: ["pm-a", "pm-b", "pm-c"],
       warnings: [],

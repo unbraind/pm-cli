@@ -9,7 +9,7 @@ export interface CliFlagContract {
   aliases?: string[];
 }
 
-export interface PiOptionFlagContract {
+export interface ToolOptionFlagContract {
   param: string;
   flag: string;
   allowEmpty?: boolean;
@@ -290,7 +290,7 @@ export function isPmExtensionPolicySurfaceContract(value: string): value is PmEx
   return PM_EXTENSION_POLICY_SURFACE_CONTRACTS.includes(value as PmExtensionPolicySurfaceContract);
 }
 
-export const PI_LIST_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "type", flag: "--type" },
   { param: "tag", flag: "--tag" },
   { param: "priority", flag: "--priority" },
@@ -308,7 +308,7 @@ export const PI_LIST_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "order", flag: "--order" },
 ];
 
-export const PI_AGGREGATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+export const TOOL_AGGREGATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "groupBy", flag: "--group-by" },
   { param: "status", flag: "--status" },
   { param: "type", flag: "--type" },
@@ -323,7 +323,7 @@ export const PI_AGGREGATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "release", flag: "--release" },
 ];
 
-export const PI_DEDUPE_AUDIT_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+export const TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "mode", flag: "--mode" },
   { param: "limit", flag: "--limit" },
   { param: "threshold", flag: "--threshold" },
@@ -340,7 +340,7 @@ export const PI_DEDUPE_AUDIT_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "release", flag: "--release" },
 ];
 
-export const PI_SEARCH_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+export const TOOL_SEARCH_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "type", flag: "--type" },
   { param: "tag", flag: "--tag" },
   { param: "priority", flag: "--priority" },
@@ -350,7 +350,7 @@ export const PI_SEARCH_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "limit", flag: "--limit" },
 ];
 
-export const PI_SHARED_CREATE_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+export const TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "parent", flag: "--parent" },
   { param: "reviewer", flag: "--reviewer" },
   { param: "risk", flag: "--risk" },
@@ -382,7 +382,7 @@ export const PI_SHARED_CREATE_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = 
   { param: "whyNow", flag: "--why-now" },
 ];
 
-export const PI_CREATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+export const TOOL_CREATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "title", flag: "--title" },
   { param: "description", flag: "--description", allowEmpty: true },
   { param: "type", flag: "--type" },
@@ -423,7 +423,7 @@ export const PI_CREATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "allowAuditUpdate", flag: "--allow-audit-update" },
 ];
 
-export const PI_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+export const TOOL_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "title", flag: "--title" },
   { param: "description", flag: "--description", allowEmpty: true },
   { param: "body", flag: "--body", allowEmpty: true },
@@ -465,7 +465,7 @@ export const PI_UPDATE_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "allowAuditDepUpdate", flag: "--allow-audit-dep-update" },
 ];
 
-export const PI_UPDATE_MANY_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+export const TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "filterStatus", flag: "--filter-status" },
   { param: "filterType", flag: "--filter-type" },
   { param: "filterTag", flag: "--filter-tag" },
@@ -481,9 +481,9 @@ export const PI_UPDATE_MANY_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "offset", flag: "--offset" },
 ];
 
-export const PI_NORMALIZE_FILTER_OPTION_CONTRACTS: PiOptionFlagContract[] = [...PI_UPDATE_MANY_FILTER_OPTION_CONTRACTS];
+export const TOOL_NORMALIZE_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [...TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS];
 
-export const PI_CALENDAR_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+export const TOOL_CALENDAR_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "view", flag: "--view" },
   { param: "date", flag: "--date" },
   { param: "from", flag: "--from" },
@@ -504,7 +504,7 @@ export const PI_CALENDAR_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "format", flag: "--format" },
 ];
 
-export const PI_ACTIVITY_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+export const TOOL_ACTIVITY_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "id", flag: "--id" },
   { param: "op", flag: "--op" },
   { param: "author", flag: "--author" },
@@ -513,7 +513,7 @@ export const PI_ACTIVITY_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "limit", flag: "--limit" },
 ];
 
-export const PI_CONTEXT_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+export const TOOL_CONTEXT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "date", flag: "--date" },
   { param: "from", flag: "--from" },
   { param: "to", flag: "--to" },
@@ -532,7 +532,7 @@ export const PI_CONTEXT_OPTION_CONTRACTS: PiOptionFlagContract[] = [
   { param: "staleThreshold", flag: "--stale-threshold" },
 ];
 
-export const PI_DEPS_OPTION_CONTRACTS: PiOptionFlagContract[] = [
+export const TOOL_DEPS_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "format", flag: "--format" },
   { param: "maxDepth", flag: "--max-depth" },
   { param: "collapse", flag: "--collapse" },
@@ -1950,8 +1950,8 @@ function toSchemaKeyList(values: string[]): string[] {
 }
 
 const CREATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
-  ...PI_CREATE_OPTION_CONTRACTS.map((entry) => entry.param),
-  ...PI_SHARED_CREATE_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...TOOL_CREATE_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
   "assignee",
 ]);
 
@@ -1976,13 +1976,13 @@ const TEMPLATE_SAVE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList(
 );
 
 const UPDATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
-  ...PI_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
-  ...PI_SHARED_CREATE_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...TOOL_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
   "force",
 ]);
 
 const UPDATE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
-  ...PI_UPDATE_MANY_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
   ...UPDATE_CONTRACT_PARAMETER_KEYS,
   "dryRun",
   "rollback",
@@ -1990,7 +1990,7 @@ const UPDATE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 ]);
 
 const NORMALIZE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
-  ...PI_NORMALIZE_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...TOOL_NORMALIZE_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
   "dryRun",
   "apply",
   "author",
@@ -2000,33 +2000,33 @@ const NORMALIZE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 ]);
 
 const CALENDAR_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
-  ...PI_CALENDAR_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...TOOL_CALENDAR_OPTION_CONTRACTS.map((entry) => entry.param),
   "past",
   "fullPeriod",
 ]);
 
 const CONTEXT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
-  ...PI_CONTEXT_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...TOOL_CONTEXT_OPTION_CONTRACTS.map((entry) => entry.param),
   "past",
   "section",
 ]);
 
 const ACTIVITY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
-  ...PI_ACTIVITY_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...TOOL_ACTIVITY_OPTION_CONTRACTS.map((entry) => entry.param),
   "stream",
 ]);
 
 const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
-  ...PI_LIST_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...TOOL_LIST_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
   "includeBody",
   "compact",
 ]);
 const AGGREGATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
-  ...PI_AGGREGATE_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...TOOL_AGGREGATE_OPTION_CONTRACTS.map((entry) => entry.param),
   "count",
   "includeUnparented",
 ]);
-const DEDUPE_AUDIT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList(PI_DEDUPE_AUDIT_OPTION_CONTRACTS.map((entry) => entry.param));
+const DEDUPE_AUDIT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList(TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS.map((entry) => entry.param));
 const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "query",
   "keywords",
@@ -2036,7 +2036,7 @@ const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "phraseExact",
   "compact",
   "full",
-  ...PI_SEARCH_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
+  ...TOOL_SEARCH_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
 ]);
 
 const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
@@ -2367,7 +2367,7 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   github: {
     description: "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
-    examples: ["unbraind/pm-cli/pi"],
+    examples: ["org/repo/extensions/sample"],
   },
   ref: {
     description: "Git ref/branch/tag used when installing from GitHub shorthand/URL sources.",
@@ -2389,7 +2389,7 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Emit deterministic timing diagnostics to stderr.",
   },
   timeoutMs: {
-    description: "Pi wrapper execution timeout in milliseconds.",
+    description: "Tool execution timeout in milliseconds.",
     examples: [120000],
   },
   id: {
@@ -2871,7 +2871,7 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
 export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
   $id: "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  title: "pm-cli Pi wrapper parameters (action-scoped strict schema)",
+  title: "pm-cli tool parameters (action-scoped strict schema)",
   "x-schema-version": "4.0.1",
   type: "object",
   oneOf: PM_TOOL_ACTIONS.map((action) => buildActionScopedToolSchema(action)),
@@ -2898,7 +2898,7 @@ function toProviderCompatibleParameterDefinition(key: string, definition: unknow
   };
 }
 
-function buildProviderCompatiblePiToolSchema(): Record<string, unknown> {
+function buildProviderCompatibleToolSchema(): Record<string, unknown> {
   const properties: Record<string, unknown> = {
     action: {
       type: "string",
@@ -2914,7 +2914,7 @@ function buildProviderCompatiblePiToolSchema(): Record<string, unknown> {
     properties[key] = toProviderCompatibleParameterDefinition(key, PM_TOOL_PARAMETER_PROPERTIES[key]);
   }
   return {
-    title: "pm-cli Pi tool parameters (provider-compatible flat schema)",
+    title: "pm-cli tool parameters (provider-compatible flat schema)",
     "x-schema-version": "1.0.0",
     type: "object",
     additionalProperties: false,
@@ -2923,4 +2923,4 @@ function buildProviderCompatiblePiToolSchema(): Record<string, unknown> {
   };
 }
 
-export const PM_PI_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = buildProviderCompatiblePiToolSchema();
+export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = buildProviderCompatibleToolSchema();

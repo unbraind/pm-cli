@@ -159,12 +159,10 @@ describe("Claude Code plugin contract", () => {
     expect(exists, "dist/mcp/server.js must be built before testing").toBe(true);
   });
 
-  it("session-start hook uses native module resolution, not shell pm command", async () => {
+  it("session-start hook avoids direct agent runtime imports", async () => {
     const hookContent = await readFile(path.join(pluginRoot, "hooks", "session-start.mjs"), "utf8");
-    // Must find and import native module (path.join components)
-    expect(hookContent).toContain("native.js");
-    expect(hookContent).toContain("runNativePmAction");
-    // Must have npx fallback
+    expect(hookContent).not.toContain("native.js");
+    expect(hookContent).not.toContain("runNativePmAction");
     expect(hookContent).toContain("npx");
     // Must NOT invoke pm CLI directly via execSync with bare 'pm' command
     expect(hookContent).not.toContain('"pm context"');

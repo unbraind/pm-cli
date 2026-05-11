@@ -1,15 +1,39 @@
 id: pm-t5ud
 title: Design full pm package manifest and resource model
-description: "Define package.json pm manifest semantics for extensions, skills, prompts, themes, docs, commands, and SDK resources, including filtering, precedence, trust, and migration from extension-only terminology."
+description: Define the general pm package manifest contract without agent-specific resources. Package roots can declare pm.extensions only; direct Pi agent integration and prompt/skill/MCP resource semantics stay out of the main pm CLI/SDK.
 type: Task
-status: open
+status: in_progress
 priority: 0
 tags[5]: manifest,packages,planning,pm-cli,sdk
 created_at: "2026-05-11T17:58:43.930Z"
-updated_at: "2026-05-11T17:58:43.930Z"
+updated_at: "2026-05-11T20:07:15.515Z"
+assignee: codex-agent
 author: codex-agent
-acceptance_criteria: Package manifest schema is documented and represented in SDK/contracts; resource precedence and compatibility rules are explicit; follow-up implementation tasks are linked.
+acceptance_criteria: Package manifest schema is documented and represented in SDK/contracts; resource precedence is explicit for runtime extensions; direct Pi agent code and package metadata are removed from the main codebase; focused package/SDK/install tests pass.
 parent: pm-59gj
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-11T17:58:43.930Z",codex-agent,"Plan item created from Pi research: Pi packages bundle extensions,skills,prompts,and themes through package.json resource arrays and conventional directories. pm first slice supports extension resources; broader resource kinds need an explicit manifest design."
+  "2026-05-11T20:05:29.769Z",codex-agent,"Implementation update: package manifest contract now exposes only pm.extensions for general project-management extension packages. Removed direct Pi runtime/package assets from the main codebase, renamed provider-safe SDK schema exports to provider-neutral names, removed Pi package metadata and optional peer dependency from package.json, and changed the todos extension default folder from .pi/todos to .pm/todos."
+files[12]{path,scope,note}:
+  .agents/pm/extensions/todos/runtime.js,project,default todos package folder changed to .pm/todos
+  .agents/pm/extensions/todos/runtime.ts,project,default todos package folder changed to .pm/todos
+  package.json,project,removed Pi package metadata and peer
+  pnpm-lock.yaml,project,removed Pi optional peer lock entries
+  src/cli/commands/extension.ts,project,install diagnostics use pm.extensions only
+  src/core/packages/manifest.ts,project,general pm package manifest contract
+  src/pi/native.ts,project,removed direct Pi runtime from main source
+  src/sdk/cli-contracts.ts,project,provider-neutral tool schema names
+  src/sdk/index.ts,project,package manifest SDK exports
+  tests/unit/package-manifest.spec.ts,project,package manifest contract tests
+  tests/unit/pi-agent-extension.spec.ts,project,removed main-package Pi integration tests
+  vitest.config.ts,project,coverage includes package manifest module
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts tests/unit/extension-command-github.spec.ts tests/unit/todos-extension.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/main-loose-options.spec.ts tests/integration/claude-plugin-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused package and Pi-decoupling regression suite
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp1mv29j-sxon4r,test,passed,"2026-05-11T20:06:28.475Z","2026-05-11T20:07:15.511Z","2026-05-11T20:07:15.511Z",null,null,1,0,0,null,null,null
+docs[4]{path,scope,note}:
+  docs/EXTENSIONS.md,project,package manifest contract docs
+  docs/PI_PACKAGE.md,project,removed bundled Pi package docs
+  docs/README.md,project,removed Pi package public docs route
+  docs/SDK.md,project,provider-neutral SDK schema docs
 body: ""

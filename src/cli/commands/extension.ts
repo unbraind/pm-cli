@@ -15,6 +15,7 @@ import {
   type UnknownExtensionCapabilityWarningDetails,
 } from "../../core/extensions/loader.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { collectPackageExtensionDirectories } from "../../core/packages/manifest.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -1031,95 +1032,6 @@ async function resolveNpmSourceDirectory(source: NpmInstallSource): Promise<{
   }
 }
 
-async function listManifestDirectories(parentDirectory: string): Promise<string[]> {
-  if (!(await pathExists(parentDirectory))) {
-    return [];
-  }
-  const entries = await fs.readdir(parentDirectory, { withFileTypes: true });
-  const candidates: string[] = [];
-  for (const entry of entries) {
-    if (!entry.isDirectory()) {
-      continue;
-    }
-    const directory = path.join(parentDirectory, entry.name);
-    if (await pathExists(path.join(directory, "manifest.json"))) {
-      candidates.push(directory);
-    }
-  }
-  return candidates.sort((left, right) => left.localeCompare(right));
-}
-
-interface PackageJsonResourceManifest {
-  extensions?: unknown;
-}
-
-async function readPackageExtensionManifest(packageRoot: string): Promise<PackageJsonResourceManifest | null> {
-  const packageJsonPath = path.join(packageRoot, "package.json");
-  if (!(await pathExists(packageJsonPath))) {
-    return null;
-  }
-  try {
-    const parsed = JSON.parse(await fs.readFile(packageJsonPath, "utf8")) as {
-      pm?: PackageJsonResourceManifest;
-      pi?: PackageJsonResourceManifest;
-    };
-    return parsed.pm ?? parsed.pi ?? null;
-  } catch (error: unknown) {
-    throw new PmCliError(
-      `Failed to parse package manifest at "${packageJsonPath}": ${error instanceof Error ? error.message : String(error)}`,
-      EXIT_CODE.USAGE,
-    );
-  }
-}
-
-async function collectPackageExtensionDirectories(packageRoot: string): Promise<string[]> {
-  if (await pathExists(path.join(packageRoot, "manifest.json"))) {
-    return [packageRoot];
-  }
-
-  const manifest = await readPackageExtensionManifest(packageRoot);
-  const manifestEntries = Array.isArray(manifest?.extensions)
-    ? manifest.extensions.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0)
-    : [];
-  const discovered = new Set<string>();
-
-  for (const entry of manifestEntries) {
-    if (entry.includes("*") || entry.startsWith("!")) {
-      throw new PmCliError(
-        `Package extension entry "${entry}" uses a glob/exclusion pattern. pm package installs currently require concrete extension paths or directories.`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    const absolute = path.resolve(packageRoot, entry);
-    if (!isPathWithinDirectory(packageRoot, absolute)) {
-      throw new PmCliError(`Package extension entry "${entry}" resolves outside package root.`, EXIT_CODE.USAGE);
-    }
-    if (await pathExists(path.join(absolute, "manifest.json"))) {
-      discovered.add(absolute);
-      continue;
-    }
-    for (const child of await listManifestDirectories(absolute)) {
-      discovered.add(child);
-    }
-  }
-
-  if (manifestEntries.length === 0) {
-    const conventionalRoots = [
-      path.join(packageRoot, ".agents", "pm", "extensions"),
-      path.join(packageRoot, "extensions"),
-      path.join(packageRoot, ".custom", "pm-extensions"),
-      path.join(packageRoot, ".custom", "pm-extension"),
-    ];
-    for (const root of conventionalRoots) {
-      for (const child of await listManifestDirectories(root)) {
-        discovered.add(child);
-      }
-    }
-  }
-
-  return [...discovered].sort((left, right) => left.localeCompare(right));
-}
-
 async function resolvePackageExtensionDirectory(packageRoot: string, sourceLabel: string): Promise<string> {
   const discovered = await collectPackageExtensionDirectories(packageRoot);
   if (discovered.length === 1) {
@@ -1135,7 +1047,7 @@ async function resolvePackageExtensionDirectory(packageRoot: string, sourceLabel
     );
   }
   throw new PmCliError(
-    `Unable to locate a pm extension manifest in package source "${sourceLabel}". Add package.json pm.extensions/pi.extensions or an extensions/ directory.`,
+    `Unable to locate a pm extension manifest in package source "${sourceLabel}". Add package.json pm.extensions or an extensions/ directory.`,
     EXIT_CODE.USAGE,
   );
 }

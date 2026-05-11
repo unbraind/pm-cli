@@ -65,6 +65,7 @@ export default defineConfig({
         "src/core/lock/lock.ts",
         "src/core/lock/index.ts",
         "src/core/output/output.ts",
+        "src/core/packages/manifest.ts",
         "src/core/shared/command-types.ts",
         "src/core/search/cache.ts",
         "src/core/search/corpus.ts",

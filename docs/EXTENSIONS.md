@@ -55,7 +55,7 @@ pm install https://github.com/org/repo
 pm install --github org/repo/path --ref main
 ```
 
-Package roots can expose extension resources with a `pm` manifest in `package.json`:
+Package roots can expose resources with a `pm` manifest in `package.json`:
 
 ```json
 {
@@ -67,7 +67,9 @@ Package roots can expose extension resources with a `pm` manifest in `package.js
 }
 ```
 
-For Pi compatibility, `pi.extensions` is also accepted. When no manifest is present, `pm` discovers conventional directories:
+The SDK exposes this project-management package model through `PM_PACKAGE_RESOURCE_KINDS`, `PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS`, and `readPmPackageManifest`. Package installation activates runtime extension resources. Agent-specific bundles such as prompts, skills, and MCP servers should live in separate agent adapter packages rather than the core `pm` package contract.
+
+When no manifest is present, `pm` discovers conventional extension directories:
 
 - `.agents/pm/extensions/`
 - `extensions/`
@@ -960,9 +962,3 @@ pm extension --install --project todos
 ## Starter Extension
 
 See [examples/starter-extension](examples/starter-extension/README.md) for a compact extension that demonstrates all capability categories through the public SDK.
-
-## Pi Wrapper
-
-The Pi wrapper source is `.pi/extensions/pm-cli/index.ts`. It is an agent wrapper, not a runtime extension managed by `pm extension`.
-
-Use [AGENTS.md](../AGENTS.md) for repository-specific Pi wrapper operating rules.

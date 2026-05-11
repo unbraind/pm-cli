@@ -56,7 +56,7 @@ function installGitMock(): void {
       }
 
       if (repository.includes("/repo-direct.git")) {
-        writeMockExtension(path.join(cloneDir, "pi"), "github-direct-ext");
+        writeMockExtension(path.join(cloneDir, "sample"), "github-direct-ext");
       } else if (repository.includes("/repo-default.git")) {
         writeMockExtension(path.join(cloneDir, ".agents", "pm", "extensions", "default-ext"), "github-default-ext");
       } else if (repository.includes("/repo-multiple.git")) {
@@ -91,7 +91,7 @@ describe("extension command github source handling", () => {
     await withTempPmPath(async (context) => {
       const result = await runExtension(
         undefined,
-        { install: true, project: true, gh: "owner/repo-direct/pi", ref: "main" },
+        { install: true, project: true, gh: "owner/repo-direct/sample", ref: "main" },
         { path: context.pmPath },
       );
       expect(result.details).toMatchObject({
@@ -103,7 +103,7 @@ describe("extension command github source handling", () => {
           kind: "github",
           owner: "owner",
           repo: "repo-direct",
-          subpath: "pi",
+          subpath: "sample",
           ref: "main",
           commit: "deadbeefcafebabe",
         },
@@ -117,14 +117,14 @@ describe("extension command github source handling", () => {
     await withTempPmPath(async (context) => {
       const result = await runExtension(
         undefined,
-        { install: true, project: true, github: "owner/repo-direct/pi" },
+        { install: true, project: true, github: "owner/repo-direct/sample" },
         { path: context.pmPath },
       );
       expect(result.details).toMatchObject({
         source: {
           kind: "github",
           repo: "repo-direct",
-          subpath: "pi",
+          subpath: "sample",
         },
       });
     });

@@ -16,7 +16,7 @@ describe("cli extension loose option parser", () => {
       "--no-cache",
       "--dry-run",
       "--folder",
-      ".pi/todos",
+      ".pm/todos",
       "--estimated-minutes",
       "15",
       "--",
@@ -27,7 +27,7 @@ describe("cli extension loose option parser", () => {
       tag: ["alpha", "beta", "gamma"],
       cache: false,
       dryRun: true,
-      folder: ".pi/todos",
+      folder: ".pm/todos",
       estimatedMinutes: "15",
     });
   });

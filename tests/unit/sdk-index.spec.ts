@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EXTENSION_CAPABILITIES, defineExtension } from "../../src/sdk/index.js";
+import { EXTENSION_CAPABILITIES, PM_PACKAGE_RESOURCE_KINDS, defineExtension } from "../../src/sdk/index.js";
 
 describe("public sdk entrypoint", () => {
   it("exposes deterministic capability names", () => {
@@ -29,5 +29,11 @@ describe("public sdk entrypoint", () => {
     });
     expect(extensionModule.manifest?.name).toBe("test-ext");
     expect(typeof extensionModule.activate).toBe("function");
+  });
+
+  it("exposes package resource kind contracts", () => {
+    expect(PM_PACKAGE_RESOURCE_KINDS).toEqual([
+      "extensions",
+    ]);
   });
 });

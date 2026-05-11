@@ -1641,8 +1641,8 @@ describe("extension loader", () => {
 
     const handlerResult = await runCommandHandler(activation.commands, {
       command: "todos export",
-      args: ["--folder", ".pi/todos"],
-      options: { folder: ".pi/todos" },
+      args: ["--folder", ".pm/todos"],
+      options: { folder: ".pm/todos" },
       global: {
         json: false,
         quiet: false,
@@ -1656,7 +1656,7 @@ describe("extension loader", () => {
       result: {
         source: "handler",
         command: "todos export",
-        folder: ".pi/todos",
+        folder: ".pm/todos",
       },
       warnings: [],
     });
@@ -1893,8 +1893,8 @@ describe("extension loader", () => {
 
     const handlerResult = await runCommandHandler(activation.commands, {
       command: "todos export",
-      args: ["--folder", ".pi/todos"],
-      options: { folder: ".pi/todos" },
+      args: ["--folder", ".pm/todos"],
+      options: { folder: ".pm/todos" },
       global: {
         json: false,
         quiet: false,
@@ -1908,7 +1908,7 @@ describe("extension loader", () => {
       result: {
         source: "legacy-handler-alias",
         command: "todos export",
-        folder: ".pi/todos",
+        folder: ".pm/todos",
       },
       warnings: [],
     });
@@ -2110,8 +2110,8 @@ describe("extension loader", () => {
 
     const exporterResult = await runCommandHandler(activation.commands, {
       command: "todos markdown export",
-      args: ["--folder", ".pi/todos"],
-      options: { folder: ".pi/todos" },
+      args: ["--folder", ".pm/todos"],
+      options: { folder: ".pm/todos" },
       global: {
         json: false,
         quiet: false,
@@ -2126,7 +2126,7 @@ describe("extension loader", () => {
         registration: "todos markdown",
         action: "export",
         command: "todos markdown export",
-        folder: ".pi/todos",
+        folder: ".pm/todos",
         json: false,
       },
       warnings: [],
@@ -2929,9 +2929,9 @@ describe("extension loader", () => {
       ],
     };
 
-    const callerArgs = ["--folder", ".pi/todos"];
+    const callerArgs = ["--folder", ".pm/todos"];
     const callerOptions: Record<string, unknown> = {
-      folder: ".pi/todos",
+      folder: ".pm/todos",
       nested: {
         immutable: true,
       },
@@ -2954,7 +2954,7 @@ describe("extension loader", () => {
     expect(result).toEqual({
       handled: true,
       result: {
-        args: ["--folder", ".pi/todos", "--quiet"],
+        args: ["--folder", ".pm/todos", "--quiet"],
         options: {
           folder: "mutated-folder",
           nested: {
@@ -2970,9 +2970,9 @@ describe("extension loader", () => {
       },
       warnings: [],
     });
-    expect(callerArgs).toEqual(["--folder", ".pi/todos"]);
+    expect(callerArgs).toEqual(["--folder", ".pm/todos"]);
     expect(callerOptions).toEqual({
-      folder: ".pi/todos",
+      folder: ".pm/todos",
       nested: {
         immutable: true,
       },
