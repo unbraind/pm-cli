@@ -256,6 +256,20 @@ async function pathExistsAbsolute(targetPath) {
   }
 }
 
+async function removeTempRoot(tempRoot) {
+  let lastError = null;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      await rm(tempRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+      return;
+    } catch (error) {
+      lastError = error;
+      await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
 async function runCurrentChecks(seedState, env, author) {
   const distCli = path.join(repoRoot, "dist", "cli.js");
   const current = (...args) =>
@@ -364,6 +378,8 @@ then validates migration/read/write compatibility with the current local build.
     PM_PATH: pmPath,
     PM_GLOBAL_PATH: pmGlobalPath,
     PM_AUTHOR: author,
+    PM_TELEMETRY_DISABLED: "1",
+    PM_SENTRY_DISABLED: "1",
   };
 
   try {
@@ -392,7 +408,7 @@ then validates migration/read/write compatibility with the current local build.
     }
   } finally {
     if (!keepTemp) {
-      await rm(tempRoot, { recursive: true, force: true });
+      await removeTempRoot(tempRoot);
     }
   }
 }

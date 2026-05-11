@@ -925,12 +925,29 @@ async function runNpmCommand(args: string[], cwd?: string): Promise<string> {
   }
 }
 
-async function resolveNpmPackSpec(spec: string): Promise<string> {
+async function resolveLocalNpmPackagePath(spec: string): Promise<string | null> {
   if (path.isAbsolute(spec) || spec.startsWith(".") || spec.startsWith("..")) {
     const absolutePath = path.resolve(process.cwd(), spec);
-    if (await pathExists(absolutePath)) {
-      return pathToFileURL(absolutePath).href;
+    return (await pathExists(absolutePath)) ? absolutePath : null;
+  }
+
+  try {
+    const parsed = new URL(spec);
+    if (parsed.protocol === "file:") {
+      const absolutePath = fileURLToPath(parsed);
+      return (await pathExists(absolutePath)) ? absolutePath : null;
     }
+  } catch {
+    // Registry package specs are not URLs.
+  }
+
+  return null;
+}
+
+async function resolveNpmPackSpec(spec: string): Promise<string> {
+  const localPath = await resolveLocalNpmPackagePath(spec);
+  if (localPath) {
+    return pathToFileURL(localPath).href;
   }
 
   if (/^[a-z][a-z0-9+.-]*:/i.test(spec)) {
@@ -973,6 +990,20 @@ async function resolveNpmSourceDirectory(source: NpmInstallSource): Promise<{
   version?: string;
   cleanup: () => Promise<void>;
 }> {
+  const localPackageRoot = await resolveLocalNpmPackagePath(source.spec);
+  if (localPackageRoot) {
+    const packageJsonPath = path.join(localPackageRoot, "package.json");
+    const packageJson = (await pathExists(packageJsonPath))
+      ? JSON.parse(await fs.readFile(packageJsonPath, "utf8")) as { name?: unknown; version?: unknown }
+      : {};
+    return {
+      directory: await resolvePackageExtensionDirectory(localPackageRoot, source.input),
+      package: typeof packageJson.name === "string" ? packageJson.name : undefined,
+      version: typeof packageJson.version === "string" ? packageJson.version : undefined,
+      cleanup: async () => {},
+    };
+  }
+
   const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-npm-package-source-"));
   const packDirectory = path.join(tempRoot, "pack");
   const extractDirectory = path.join(tempRoot, "extract");

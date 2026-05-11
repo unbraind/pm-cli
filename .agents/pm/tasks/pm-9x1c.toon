@@ -6,21 +6,24 @@ status: closed
 priority: 0
 tags[4]: commands,install,packages,pm-cli
 created_at: "2026-05-11T17:41:31.580Z"
-updated_at: "2026-05-11T19:12:15.850Z"
+updated_at: "2026-05-11T19:32:15.955Z"
 author: codex-agent
 acceptance_criteria: pm install installs package/extension sources; pm package and pm packages expose lifecycle subcommands; contracts/native integrations include package actions; command tests cover aliases.
 parent: pm-59gj
 resolution: "Implemented package-first command aliases and install support while preserving extension compatibility. Added pm install, pm package, and pm packages command surfaces; expanded SDK/Pi/MCP contracts; package-root discovery supports pm.extensions, Pi-compatible pi.extensions, conventional extension directories, and npm:<spec> sources via npm pack; docs and skills now route users through package-first terminology."
 expected_result: "Users can install package sources through pm install and manage them through pm package/package aliases without breaking existing pm extension workflows; SDK, Pi wrapper, MCP, docs, and tests expose the package vocabulary."
 actual_result: "Manual temp-project dogfood installed local pm.extensions and npm pi.extensions packages, pm package manage listed both installed extensions, SDK package-install/install contracts were present, linked tests passed, full release gates passed with 100% coverage, and telemetry/Sentry gate returned fresh actionable data."
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-05-11T17:41:31.580Z",codex-agent,Child task created after Pi research showed install/package terminology is the user-facing model and existing pm extension manager can provide the first compatible implementation slice.
   "2026-05-11T18:02:29.269Z",codex-agent,"Progress: implemented package-first command surface (pm install, pm package, pm packages), SDK contract/native/MCP aliases, local package root discovery via pm.extensions/pi.extensions and conventional directories, npm:<spec> install through npm pack, docs/skills routing, and focused regression coverage. Verification so far: pnpm build passed; docs-skills gate passed; secret scan passed; focused package suite passed 4 files / 128 tests."
   "2026-05-11T18:40:36.879Z",codex-agent,"Observability check: patched Sentry gate console-noise filter for starter-extension success log. Live gate now passes with explicit historical thresholds (critical=1, high=2); telemetry required mode is fresh and ok with finish_error_rate_pct=4.2 and failures_without_error_code_rows=0. Remaining relevant Sentry issues are pre-existing PM-CLI-N (2026-05-10 extension import), PM-CLI-A and PM-CLI-9 (2026-05-08 embedding timeouts); PM-CLI-J is correctly counted as ignored starter console noise."
   "2026-05-11T18:51:07.768Z",codex-agent,"Final evidence: pm test pm-9x1c --run --progress passed all 3 linked checks; node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 1 --max-sentry-high 2 passed build, typecheck, docs/skills, static quality, coverage 90 files/1278 tests with 100% coverage, version policy, secret scan, npx smoke, and Sentry/telemetry gate. pm health and validate remain warn-only for pre-existing history drift items pm-54d/pm-f3q4/pm-fdla/pm-mb4n/pm-tq1 and pre-existing missing resolution metadata on pm-dhie."
   "2026-05-11T19:05:42.166Z",codex-agent,"CI follow-up: GitHub run 25690546478 failed only on Windows Node 20 in tests/integration/cli.integration.spec.ts npm:<local path> install. Root cause: npm pack received a raw Windows drive-letter path; fix normalizes local npm specs to file:// URLs before npm pack while leaving registry/git specs unchanged."
   "2026-05-11T19:12:11.284Z",codex-agent,"CI repair verification: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts passed 1 file/66 tests after npm local path normalization; pm test pm-9x1c --run --progress passed all 3 linked checks again (docs gate, focused package suite 4 files/128 tests, release automation contract 1 file/5 tests)."
-files[11]{path,scope,note}:
+  "2026-05-11T19:24:18.135Z",codex-agent,"Second CI follow-up: GitHub run 25691595256 showed the Windows failure still occurred and Ubuntu compatibility gate passed its checks but failed temp cleanup on telemetry runtime directory. Follow-up fix handles existing local npm package dirs directly (preserving package metadata without npm pack/tar) and disables observability writes plus adds cleanup retry for compatibility temp roots."
+  "2026-05-11T19:32:15.955Z",codex-agent,"Second CI repair verification: node scripts/release/compatibility-check.mjs --json passed; node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts passed 1 file/66 tests; pm test pm-9x1c --run --progress passed all 4 linked checks including compatibility, docs, focused package suite 4 files/128 tests, and release automation contract."
+files[12]{path,scope,note}:
+  scripts/release/compatibility-check.mjs,project,compatibility gate cleanup hardened after CI
   scripts/release/sentry-telemetry-gate.mjs,project,package work exposed starter-extension console-noise gate miss
   src/cli/commands/contracts.ts,project,contract flag surface package/install aliases
   src/cli/commands/extension.ts,project,npm and package-root install resolution
@@ -32,15 +35,17 @@ files[11]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,root install and package alias integration coverage
   tests/unit/contracts-command.spec.ts,project,contract package alias assertions
   tests/unit/pi-agent-extension.spec.ts,project,native tool package action assertions
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/compatibility-check.mjs --json,null,project,180,null,null,null,null,null,null,null,null,null,null,null,release compatibility gate cleanup regression
   node scripts/release/docs-skills-gate.mjs,null,project,180,null,null,null,null,null,null,null,null,null,null,null,docs and skill routing drift gate
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused package install aliases contracts native wrapper regressions
   node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,release Sentry gate contract
-test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+test_runs[5]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mp1iyaq9-lqox0n,test,failed,"2026-05-11T18:03:02.150Z","2026-05-11T18:17:47.985Z","2026-05-11T18:17:47.985Z",null,null,2,1,0,null,null,null
   test-local-mp1jlft1-2lr7h3,test,passed,"2026-05-11T18:32:48.719Z","2026-05-11T18:35:47.653Z","2026-05-11T18:35:47.653Z",null,null,2,0,0,null,null,null
   test-local-mp1jvzux-o0ftoo,test,passed,"2026-05-11T18:40:43.668Z","2026-05-11T18:44:00.201Z","2026-05-11T18:44:00.201Z",null,null,3,0,0,null,null,null
   test-local-mp1kw1wx-21f0p8,test,passed,"2026-05-11T19:08:18.267Z","2026-05-11T19:12:02.481Z","2026-05-11T19:12:02.482Z",null,null,3,0,0,null,null,null
+  test-local-mp1llpi9-i71pkk,test,passed,"2026-05-11T19:28:36.563Z","2026-05-11T19:31:59.457Z","2026-05-11T19:31:59.457Z",null,null,4,0,0,null,null,null
 docs[7]{path,scope,note}:
   .agents/skills/pm-extensions/references/LIFECYCLE.md,project,package lifecycle recipes
   .agents/skills/pm-extensions/SKILL.md,project,package skill workflow
