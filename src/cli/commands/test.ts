@@ -27,8 +27,8 @@ const LINKED_TEST_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const PM_CONTEXT_MODE_VALUES = ["schema", "tracker", "auto"] as const;
 type LinkedTestPmContextMode = (typeof PM_CONTEXT_MODE_VALUES)[number];
 type ResolvedLinkedTestPmContextMode = Exclude<LinkedTestPmContextMode, "auto">;
-const LINKED_TEST_TRACKER_DIRS_TO_SKIP = new Set(["locks", "extensions"]);
-const LINKED_TEST_ITEM_COUNT_DIRS_TO_SKIP = new Set(["history", "index", "search", "extensions", "locks"]);
+const LINKED_TEST_TRACKER_DIRS_TO_SKIP = new Set(["locks", "extensions", "runtime"]);
+const LINKED_TEST_ITEM_COUNT_DIRS_TO_SKIP = new Set(["history", "index", "search", "extensions", "locks", "runtime"]);
 const LINKED_TEST_INFRA_COLLISION_PATTERNS = [
   /eaddrinuse/i,
   /address already in use/i,

@@ -1,0 +1,56 @@
+id: pm-hxp2
+title: Extract bundled import/export customizations into installable pm packages
+description: "Move Beads and Todo import/export customizations into first-party package roots that can be installed with pm install, keeping the bare CLI focused on storage, item lifecycle, package loading, and extension primitives."
+type: Task
+status: closed
+priority: 0
+tags[5]: beads,extensions,packages,pm-cli,todos
+created_at: "2026-05-11T20:21:17.893Z"
+updated_at: "2026-05-11T21:18:28.776Z"
+author: codex-agent
+acceptance_criteria: Beads and Todo packages have package.json pm manifests; pm install works from their package roots in a sandbox project; legacy commands remain available after installation; package docs/tests cover migration and do not require these customizations in bare core.
+parent: pm-59gj
+resolution: Extracted Beads/Todos into installable first-party packages and fixed the linked-test runtime seeding race found during verification.
+expected_result: "Beads/Todos package roots install cleanly, legacy commands remain available after package install, docs/tests cover package-first usage, and full verification stays green."
+actual_result: "Package install/import/export E2E passed in an isolated temp project; focused linked pm test, full coverage, quality gates, compatibility, pack dry-run, and npx smoke passed."
+comments[8]{created_at,author,text}:
+  "2026-05-11T20:21:17.893Z",codex-agent,"Duplicate-check evidence: ran pm search beads todos packages installable first-party extension extraction --limit 10 and found only closed historical beads/todos extension work plus existing package-first feature pm-59gj; no open child covers extraction into installable first-party packages."
+  "2026-05-11T20:29:54.325Z",codex-agent,"Implementation update: added first-party package roots packages/pm-beads and packages/pm-todos with package.json pm.extensions manifests; pm install beads/todos aliases now resolve through package roots before legacy extension paths; extension entrypoints can load runtimes from package roots or installed local extension copies."
+  "2026-05-11T20:32:37.450Z",codex-agent,"Focused verification passed: node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts (122 tests)."
+  "2026-05-11T20:33:31.053Z",codex-agent,"Linked pm test orchestration note: first pm test --run attempt exited before execution with ENOENT on telemetry flush.lock; the linked command itself had already passed directly. Retrying pm test --run with PM_TELEMETRY_DISABLED=1 PM_SENTRY_DISABLED=1 for runner stability, with live telemetry checked separately."
+  "2026-05-11T20:36:25.108Z",codex-agent,"Manual temp-project E2E passed: isolated PM_PATH/PM_GLOBAL_PATH; node dist/cli.js init --defaults; pm install packages/pm-beads and packages/pm-todos; beads import imported 1 item; todos export exported 1 item; package doctor ok; contracts exposed beads import and todos export as installed commands; health and validate both ok in the temp project."
+  "2026-05-11T20:42:27.679Z",codex-agent,"Coverage remediation: added package-manifest branch tests for null pm manifests, unknown resource keys, root-level extension package sources, and mixed directory entries after full coverage identified uncovered manifest helper branches."
+  "2026-05-11T21:00:48.624Z",codex-agent,"Full coverage restored after manifest branch coverage additions: node scripts/run-tests.mjs coverage passed with 90 files / 1279 tests and 100% statements, branches, functions, and lines."
+  "2026-05-11T21:16:54.575Z",codex-agent,"Final evidence: focused linked pm test passed without telemetry disabled (123 tests); node scripts/run-tests.mjs coverage passed with 90 files / 1280 tests and 100% coverage; pnpm typecheck, docs-skills, static, security, version, compatibility, npm pack dry-run, smoke:npx, and isolated package install/import/export E2E all passed. Sentry PM-CLI-P root cause fixed by skipping transient runtime data in linked-test tracker sandboxes."
+learnings[1]{created_at,author,text}:
+  "2026-05-11T20:32:39.426Z",codex-agent,"Package aliases that resolve to package roots must still support activate/deactivate by deriving the installed extension manifest name from package.json pm.extensions, not by assuming the alias path itself contains manifest.json."
+files[20]{path,scope,note}:
+  .agents/pm/extensions/beads/index.js,project,repo-local compatibility entrypoint loads package runtimes
+  .agents/pm/extensions/todos/index.js,project,repo-local compatibility entrypoint loads package runtimes
+  package.json,project,npm package ships first-party package roots
+  packages/pm-beads/extensions/beads/index.js,project,beads packaged extension entrypoint
+  packages/pm-beads/extensions/beads/runtime.js,project,beads package runtime
+  packages/pm-beads/extensions/beads/runtime.ts,project,beads package runtime source
+  packages/pm-beads/package.json,project,first-party beads package manifest
+  packages/pm-beads/README.md,project,beads package docs
+  packages/pm-todos/extensions/todos/index.js,project,todos packaged extension entrypoint
+  packages/pm-todos/extensions/todos/runtime.js,project,todos package runtime
+  packages/pm-todos/extensions/todos/runtime.ts,project,todos package runtime source
+  packages/pm-todos/package.json,project,first-party todos package manifest
+  packages/pm-todos/README.md,project,todos package docs
+  src/cli/commands/extension.ts,project,alias resolution now prefers package roots
+  src/cli/commands/test.ts,project,linked-test sandbox skips transient runtime data
+  src/core/packages/manifest.ts,project,package manifest parser supports first-party package roots
+  tests/integration/release-readiness-runtime.spec.ts,project,npm package allowlist includes first-party package roots
+  tests/unit/extension-command.spec.ts,project,beads/todos aliases resolve to package roots
+  tests/unit/package-manifest.spec.ts,project,package manifest branch and package-root coverage
+  tests/unit/test-command.spec.ts,project,runtime skip regression for linked-test sandbox
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp1nuu76-7c8yk6,test,passed,"2026-05-11T20:33:31.023Z","2026-05-11T20:35:04.674Z","2026-05-11T20:35:04.674Z",null,null,1,0,0,null,null,null
+  test-local-mp1p2azo-hu2uo8,test,passed,"2026-05-11T21:08:00.138Z","2026-05-11T21:08:52.644Z","2026-05-11T21:08:52.644Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,first-party package install docs
+close_reason: "First-party Beads/Todos packages extracted, installed, documented, and verified end to end; linked-test runtime race fixed and coverage remains 100%."
+body: ""

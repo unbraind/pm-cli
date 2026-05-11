@@ -1,0 +1,27 @@
+id: pm-c933
+title: Classify barebone core boundary and package migration matrix
+description: "Audit every command/runtime surface and classify it as core project-management primitive, package-host infrastructure, or optional package candidate so the refactor can reduce core complexity without losing features."
+type: Task
+status: closed
+priority: 0
+tags[5]: architecture,audit,packages,pm-cli,sdk
+created_at: "2026-05-11T20:21:18.026Z"
+updated_at: "2026-05-11T21:18:38.358Z"
+author: codex-agent
+acceptance_criteria: Command and SDK surface matrix is recorded; migration candidates identify target package boundaries and compatibility risks; tracker links files/docs/tests for the selected first implementation slice.
+parent: pm-59gj
+resolution: "Recorded the package-first core boundary and migration matrix, then used it to select and complete the Beads/Todos extraction slice."
+expected_result: "The tracker captures core primitives, optional package candidates, compatibility risks, and a concrete first migration slice without duplicating existing package-first work."
+actual_result: pm-c933 records the matrix; pm-hxp2 delivered the first extraction slice; remaining candidates are left in the parent/package-first backlog.
+comments[2]{created_at,author,text}:
+  "2026-05-11T20:21:18.026Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10, pm search package architecture external packages SDK extension core complexity --limit 10, pm search core boundary barebone package externalize custom commands --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Existing active match is pm-59gj; no child item specifically tracks the core-boundary migration matrix."
+  "2026-05-11T21:16:54.699Z",codex-agent,"Boundary matrix completed for first implementation slice: core keeps item lifecycle/storage/history/locks/settings/contracts/package loader/output/minimal health; optional customizations start moving into installable packages, with Beads/Todos extracted first and telemetry/Sentry/search/calendar left as later package-boundary work because they cross broader runtime contracts."
+notes[1]{created_at,author,text}:
+  "2026-05-11T20:32:39.121Z",codex-agent,"Core boundary classification from codebase explorers: keep item lifecycle/storage, durable logs, package loader/governance, contracts, output, history, lock, settings, and minimal health in core. Move import/export bridges first, then templates and semantic providers/vector stores; split calendar only after context has a small agenda primitive; move telemetry/Sentry last because it crosses startup, parse errors, privacy, and release gates."
+files[4]{path,scope,note}:
+  src/cli/main.ts,project,CLI command boot boundary inspected
+  src/cli/register-setup.ts,project,package lifecycle command boundary inspected
+  src/core/packages/manifest.ts,project,package manifest boundary inspected
+  src/sdk/index.ts,project,SDK facade preserved
+close_reason: Core boundary and package migration matrix recorded; first implementation slice selected and linked to package extraction work.
+body: ""

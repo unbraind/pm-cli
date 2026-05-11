@@ -84,7 +84,7 @@ export async function readPmPackageManifest(packageRoot: string): Promise<PmPack
     parsed = JSON.parse(await fs.readFile(packageJsonPath, "utf8")) as unknown;
   } catch (error: unknown) {
     throw new PmCliError(
-      `Failed to parse package manifest at "${packageJsonPath}": ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to parse package manifest at "${packageJsonPath}": ${String(error)}`,
       EXIT_CODE.USAGE,
     );
   }

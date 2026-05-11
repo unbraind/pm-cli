@@ -1103,6 +1103,38 @@ describe("runTest", () => {
     });
   });
 
+  it("omits transient runtime data when seeding tracker-mode linked-test sandboxes", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-sandbox-runtime-skip");
+      const globalPmRoot = context.env.PM_GLOBAL_PATH;
+      expect(typeof globalPmRoot).toBe("string");
+      await mkdir(path.join(context.pmPath, "runtime", "telemetry", "flush.lock"), { recursive: true });
+      await mkdir(path.join(globalPmRoot as string, "runtime", "telemetry", "flush.lock"), { recursive: true });
+      await runTest(
+        id,
+        {
+          add: [
+            "command=node -e \"const fs=require('node:fs');const path=require('node:path');process.stdout.write(String(fs.existsSync(path.join(process.env.PM_GLOBAL_PATH,'runtime'))))\",scope=project,timeout_seconds=20",
+          ],
+          message: "seed runtime skip linked command",
+        },
+        { path: context.pmPath },
+      );
+
+      const run = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+          pmContext: "tracker",
+        },
+        { path: context.pmPath },
+      );
+      expect(run.run_results[0]?.status).toBe("passed");
+      expect(run.run_results[0]?.stdout).toBe("false");
+    });
+  });
+
   it("emits PM execution context metadata and supports mismatch guardrails", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "linked-test-pm-context-metadata");

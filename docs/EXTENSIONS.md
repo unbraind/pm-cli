@@ -9,8 +9,8 @@ This document is the canonical package/extension reference for manifest contract
 ## Quick Start
 
 ```bash
-# 1) Scaffold a package
-pm package init ./my-package
+# 1) Scaffold a package extension
+pm package init ./my-package-extension
 
 # 2) Install in project scope
 pm install ./my-package --project
@@ -77,6 +77,20 @@ When no manifest is present, `pm` discovers conventional extension directories:
 - `.custom/pm-extension/`
 
 If a package contains multiple extension manifests, install the exact extension path so the managed state has one deterministic package target.
+
+First-party optional packages are shipped as package roots under `packages/`:
+
+```bash
+pm install packages/pm-beads --project
+pm install packages/pm-todos --project
+```
+
+Compatibility aliases remain available:
+
+```bash
+pm install beads --project
+pm install todos --project
+```
 
 ## Manifest Contract
 
@@ -773,9 +787,9 @@ pm extension scaffold ./my-extension
 Install:
 
 ```bash
-pm extension install ./my-extension --project
-pm extension install github.com/unbraind/pm-cli/.agents/pm/extensions/todos --project
-pm extension --install --project todos
+pm package install ./my-package --project
+pm package install github.com/unbraind/pm-cli/packages/pm-todos --project
+pm install todos --project
 ```
 
 Inspect and manage:
@@ -945,7 +959,7 @@ pm health --check-only
 
 ## Bundled Managed Extensions
 
-`pm-cli` ships bundled extension sources that are not auto-installed:
+`pm-cli` ships optional first-party package roots that are not auto-installed:
 
 | Alias | Commands after install | Purpose |
 |-------|------------------------|---------|
@@ -955,8 +969,8 @@ pm health --check-only
 Install:
 
 ```bash
-pm extension --install --project beads
-pm extension --install --project todos
+pm install beads --project
+pm install todos --project
 ```
 
 ## Starter Extension

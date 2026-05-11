@@ -1507,7 +1507,8 @@ describe("release readiness runtime coverage", () => {
       "README.md",
       "LICENSE",
       "docs/**",
-      ".agents/pm/extensions/**",
+      "packages/pm-beads/**",
+      "packages/pm-todos/**",
       "scripts/install.sh",
       "scripts/install.ps1",
     ];

@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS,
@@ -8,6 +9,8 @@ import {
   readPmPackageManifest,
 } from "../../src/core/packages/manifest.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 async function createExtension(root: string, name: string): Promise<string> {
   const extensionRoot = path.join(root, name);
@@ -74,6 +77,98 @@ describe("pm package manifest model", () => {
     const conventionalExtensionsRoot = path.join(conventionalRoot, PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS.extensions[1]);
     const conventionalExtension = await createExtension(conventionalExtensionsRoot, "conventional-ext");
     await expect(collectPackageExtensionDirectories(conventionalRoot)).resolves.toEqual([conventionalExtension]);
+  });
+
+  it("handles package manifest edge branches deterministically", async () => {
+    const nullPmRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-null-"));
+    await writeFile(path.join(nullPmRoot, "package.json"), JSON.stringify({ name: "null-pm", pm: null }), "utf8");
+    await expect(readPmPackageManifest(nullPmRoot)).resolves.toMatchObject({
+      source: "convention",
+      package_name: "null-pm",
+      resources: {},
+    });
+
+    const unknownResourceRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-unknown-resource-"));
+    await writeFile(
+      path.join(unknownResourceRoot, "package.json"),
+      JSON.stringify({ pm: { extensions: null, unknown: ["ignored"] } }),
+      "utf8",
+    );
+    await expect(readPmPackageManifest(unknownResourceRoot)).resolves.toMatchObject({
+      resources: {},
+    });
+
+    const scalarResourceRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-scalar-resource-"));
+    await writeFile(
+      path.join(scalarResourceRoot, "package.json"),
+      JSON.stringify({ pm: { extensions: "extensions" } }),
+      "utf8",
+    );
+    await expect(readPmPackageManifest(scalarResourceRoot)).resolves.toMatchObject({
+      resources: {
+        extensions: ["extensions"],
+      },
+    });
+
+    const sortedResourceRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-sorted-resource-"));
+    await writeFile(
+      path.join(sortedResourceRoot, "package.json"),
+      JSON.stringify({ pm: { extensions: ["z-extension", "extensions", "extensions"] } }),
+      "utf8",
+    );
+    await expect(readPmPackageManifest(sortedResourceRoot)).resolves.toMatchObject({
+      resources: {
+        extensions: ["extensions", "z-extension"],
+      },
+    });
+
+    const rootExtension = await createExtension(await mkdtemp(path.join(os.tmpdir(), "pm-package-root-extension-")), "root-ext");
+    await expect(collectPackageExtensionDirectories(rootExtension)).resolves.toEqual([rootExtension]);
+
+    const explicitPackageRootExtension = await mkdtemp(path.join(os.tmpdir(), "pm-package-explicit-root-extension-"));
+    const nestedPackageRootExtension = await createExtension(explicitPackageRootExtension, "nested-placeholder");
+    await writeFile(
+      path.join(explicitPackageRootExtension, "package.json"),
+      JSON.stringify({ pm: { extensions: ["."] } }),
+      "utf8",
+    );
+    await expect(collectPackageExtensionDirectories(explicitPackageRootExtension)).resolves.toEqual([
+      nestedPackageRootExtension,
+    ]);
+
+    const mixedRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-mixed-"));
+    const mixedExtensionsRoot = path.join(mixedRoot, "extensions");
+    const mixedExtension = await createExtension(mixedExtensionsRoot, "mixed-ext");
+    await mkdir(path.join(mixedExtensionsRoot, "no-manifest"), { recursive: true });
+    await writeFile(path.join(mixedExtensionsRoot, "README.md"), "not an extension directory\n", "utf8");
+    await expect(collectPackageExtensionDirectories(mixedRoot)).resolves.toEqual([mixedExtension]);
+  });
+
+  it("recognizes first-party package roots as installable pm packages", async () => {
+    const beadsRoot = path.join(repoRoot, "packages", "pm-beads");
+    const todosRoot = path.join(repoRoot, "packages", "pm-todos");
+
+    await expect(readPmPackageManifest(beadsRoot)).resolves.toMatchObject({
+      source: "pm",
+      package_name: "@unbrained/pm-package-beads",
+      resources: {
+        extensions: ["extensions/beads"],
+      },
+    });
+    await expect(collectPackageExtensionDirectories(beadsRoot)).resolves.toEqual([
+      path.join(beadsRoot, "extensions", "beads"),
+    ]);
+
+    await expect(readPmPackageManifest(todosRoot)).resolves.toMatchObject({
+      source: "pm",
+      package_name: "@unbrained/pm-package-todos",
+      resources: {
+        extensions: ["extensions/todos"],
+      },
+    });
+    await expect(collectPackageExtensionDirectories(todosRoot)).resolves.toEqual([
+      path.join(todosRoot, "extensions", "todos"),
+    ]);
   });
 
   it("reports convention manifests and malformed package manifests", async () => {

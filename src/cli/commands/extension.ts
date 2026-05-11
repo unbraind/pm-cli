@@ -29,9 +29,15 @@ const DEFAULT_EXTENSION_PRIORITY = 100;
 const MANAGED_EXTENSION_STATE_FILENAME = ".managed-extensions.json";
 const MANAGED_EXTENSION_STATE_VERSION = 1;
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
-const BUNDLED_EXTENSION_ALIASES: Record<string, string> = {
-  beads: "beads",
-  todos: "todos",
+const BUNDLED_PACKAGE_ALIASES: Record<string, { package_directory: string; legacy_extension_directory: string }> = {
+  beads: {
+    package_directory: "pm-beads",
+    legacy_extension_directory: "beads",
+  },
+  todos: {
+    package_directory: "pm-todos",
+    legacy_extension_directory: "todos",
+  },
 };
 
 export type ExtensionCommandAction =
@@ -173,15 +179,20 @@ function resolvePackageRootCandidates(): string[] {
 
 async function resolveBundledExtensionAliasSource(input: string): Promise<string | null> {
   const normalized = input.trim().toLowerCase();
-  const alias = BUNDLED_EXTENSION_ALIASES[normalized];
+  const alias = BUNDLED_PACKAGE_ALIASES[normalized];
   if (!alias) {
     return null;
   }
 
   for (const packageRoot of resolvePackageRootCandidates()) {
-    const bundledPath = path.join(packageRoot, ".agents", "pm", "extensions", alias);
-    if (await pathExists(path.join(bundledPath, "manifest.json"))) {
-      return bundledPath;
+    const packagePath = path.join(packageRoot, "packages", alias.package_directory);
+    if (await pathExists(path.join(packagePath, "package.json"))) {
+      return packagePath;
+    }
+
+    const legacyExtensionPath = path.join(packageRoot, ".agents", "pm", "extensions", alias.legacy_extension_directory);
+    if (await pathExists(path.join(legacyExtensionPath, "manifest.json"))) {
+      return legacyExtensionPath;
     }
   }
   return null;
@@ -658,7 +669,11 @@ async function resolveBundledAliasManifestName(input: string): Promise<string | 
     return null;
   }
   try {
-    const validated = await validateExtensionDirectory(bundledAliasSource);
+    const extensionDirectories = await collectPackageExtensionDirectories(bundledAliasSource);
+    if (extensionDirectories.length !== 1) {
+      return null;
+    }
+    const validated = await validateExtensionDirectory(extensionDirectories[0]);
     return validated.manifest.name;
   } catch {
     return null;

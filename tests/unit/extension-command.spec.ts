@@ -188,6 +188,10 @@ describe("extension command runtime", () => {
         extension: {
           name: "builtin-beads-import",
         },
+        source: {
+          kind: "local",
+          location: path.resolve(process.cwd(), "packages", "pm-beads"),
+        },
         activated: true,
       });
 
@@ -195,6 +199,10 @@ describe("extension command runtime", () => {
       expect(todosInstall.details).toMatchObject({
         extension: {
           name: "builtin-todos-import-export",
+        },
+        source: {
+          kind: "local",
+          location: path.resolve(process.cwd(), "packages", "pm-todos"),
         },
         activated: true,
       });

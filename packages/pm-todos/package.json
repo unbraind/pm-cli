@@ -1,0 +1,16 @@
+{
+  "name": "@unbrained/pm-package-todos",
+  "version": "0.1.0",
+  "private": true,
+  "description": "First-party pm package for Todo markdown import and export.",
+  "keywords": [
+    "pm-package",
+    "project-management",
+    "todos"
+  ],
+  "pm": {
+    "extensions": [
+      "extensions/todos"
+    ]
+  }
+}

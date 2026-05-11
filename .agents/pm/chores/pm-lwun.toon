@@ -2,14 +2,20 @@ id: pm-lwun
 title: Migrate extension terminology to package-first docs and UX
 description: "Audit command help, docs, skills, examples, telemetry naming, and error guidance so users see packages first while legacy extension wording remains clear for compatibility."
 type: Chore
-status: open
+status: in_progress
 priority: 1
 tags[5]: docs,migration,packages,pm-cli,ux
 created_at: "2026-05-11T17:59:04.655Z"
-updated_at: "2026-05-11T17:59:04.655Z"
+updated_at: "2026-05-11T21:17:40.528Z"
 author: codex-agent
 acceptance_criteria: Top-level help and docs consistently prefer packages; legacy extension command is documented as compatibility; docs-skills and static quality gates pass.
 parent: pm-59gj
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-11T17:59:04.655Z",codex-agent,Plan item created because this implementation intentionally keeps internals/backward compatibility on extension terminology while exposing package-first user commands.
+  "2026-05-11T21:16:54.669Z",codex-agent,"Package-first docs slice completed for first-party Beads/Todos packages: docs/EXTENSIONS.md now describes pm install package roots and compatibility aliases; broader help/UX terminology migration remains open for follow-up."
+files[4]{path,scope,note}:
+  docs/EXTENSIONS.md,project,package-first install docs for optional first-party packages
+  tests/integration/release-readiness-runtime.spec.ts,project,package allowlist release readiness
+  tests/unit/extension-command.spec.ts,project,package-first alias expectations
+  tests/unit/package-manifest.spec.ts,project,first-party package root contract coverage
 body: ""
