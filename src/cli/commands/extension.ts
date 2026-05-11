@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { activateExtensions, loadExtensions, nextExtensionReloadToken } from "../../core/extensions/index.js";
 import {
@@ -925,6 +925,21 @@ async function runNpmCommand(args: string[], cwd?: string): Promise<string> {
   }
 }
 
+async function resolveNpmPackSpec(spec: string): Promise<string> {
+  if (path.isAbsolute(spec) || spec.startsWith(".") || spec.startsWith("..")) {
+    const absolutePath = path.resolve(process.cwd(), spec);
+    if (await pathExists(absolutePath)) {
+      return pathToFileURL(absolutePath).href;
+    }
+  }
+
+  if (/^[a-z][a-z0-9+.-]*:/i.test(spec)) {
+    return spec;
+  }
+
+  return spec;
+}
+
 function parsePackedNpmPackage(stdout: string, packDirectory: string): { tarball: string; package?: string; version?: string } {
   try {
     const parsed = JSON.parse(stdout) as Array<{ filename?: unknown; name?: unknown; version?: unknown }>;
@@ -965,7 +980,8 @@ async function resolveNpmSourceDirectory(source: NpmInstallSource): Promise<{
   await fs.mkdir(extractDirectory, { recursive: true });
 
   try {
-    const packStdout = await runNpmCommand(["pack", source.spec, "--json", "--pack-destination", packDirectory]);
+    const packSpec = await resolveNpmPackSpec(source.spec);
+    const packStdout = await runNpmCommand(["pack", packSpec, "--json", "--pack-destination", packDirectory]);
     const packed = parsePackedNpmPackage(packStdout, packDirectory);
     await execFileAsync("tar", ["-xzf", packed.tarball, "-C", extractDirectory], { encoding: "utf8" });
     const packageRoot = path.join(extractDirectory, "package");
