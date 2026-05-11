@@ -74,6 +74,7 @@ import {
   UPDATE_COMMANDER_STRING_OPTION_CONTRACTS,
   UPDATE_FLAG_CONTRACTS,
   UPDATE_MANY_FLAG_CONTRACTS,
+  UPGRADE_FLAG_CONTRACTS,
   VALIDATE_FLAG_CONTRACTS,
   withFlagAliasMetadata,
   type CliFlagContract,
@@ -219,6 +220,9 @@ function resolveActionCommandPath(action: PmToolAction): string | null {
   }
   if (action.startsWith("extension-")) {
     return normalizeCommandPath(`extension ${action.slice("extension-".length)}`);
+  }
+  if (action.startsWith("package-")) {
+    return normalizeCommandPath(`package ${action.slice("package-".length)}`);
   }
   if (action.startsWith("test-runs-")) {
     return normalizeCommandPath(`test-runs ${action.slice("test-runs-".length)}`);
@@ -739,6 +743,9 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   }
   if (command === "update-many") {
     return UPDATE_MANY_FLAG_CONTRACTS;
+  }
+  if (command === "upgrade") {
+    return UPGRADE_FLAG_CONTRACTS;
   }
   if (command === "normalize") {
     return NORMALIZE_FLAG_CONTRACTS;

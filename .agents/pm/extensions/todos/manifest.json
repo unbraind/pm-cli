@@ -1,7 +1,0 @@
-{
-  "name": "builtin-todos-import-export",
-  "version": "0.1.0",
-  "entry": "./index.js",
-  "priority": 0,
-  "capabilities": ["commands", "schema"]
-}

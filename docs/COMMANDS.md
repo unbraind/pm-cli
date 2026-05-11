@@ -31,7 +31,7 @@ Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 | Verification | `test`, `test-all`, `test-runs`, `validate`, `gc` | run linked tests and repository checks |
 | History | `history`, `activity`, `restore`, `stats` | inspect and recover item state |
 | Calendar | `calendar`, `cal` | project deadlines, reminders, and events |
-| Packages | `install`, `package`, `packages`, `extension`, package/extension command groups | install, manage, and run package-backed extension commands |
+| Packages | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups | install, upgrade, manage, and run package-backed extension commands |
 | Machines | `guide`, `contracts`, `completion`, `help` | local docs routing plus command contracts and shell helpers |
 
 ## Bootstrap
@@ -43,6 +43,18 @@ pm health --check-only
 ```
 
 `pm init` creates `.agents/pm`. `pm health --check-only` inspects without refreshing optional search artifacts.
+
+## Packages
+
+```bash
+pm install npm:@scope/pm-package --project
+pm package doctor --project --detail summary
+pm upgrade --dry-run
+pm upgrade --packages-only
+pm upgrade --cli-only --repair
+```
+
+`pm install` and `pm package` are the preferred package-first workflow. `pm extension` remains as a compatibility command for direct extension lifecycle operations.
 
 ## Triage
 

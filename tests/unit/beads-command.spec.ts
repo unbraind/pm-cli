@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runBeadsImport } from "../../.agents/pm/extensions/beads/runtime.js";
+import { runBeadsImport } from "../../packages/pm-beads/extensions/beads/runtime.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../dist/core/extensions/index.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";

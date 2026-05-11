@@ -1,0 +1,38 @@
+id: pm-bob2
+title: "Implement pm upgrade for CLI, SDK, and packages"
+description: Add a top-level pm upgrade workflow that can update the @unbrained/pm-cli CLI/SDK package and refresh installed pm packages from managed npm/git/local package sources.
+type: Task
+status: closed
+priority: 0
+tags[5]: install,packages,pm-cli,sdk,upgrade
+created_at: "2026-05-11T21:40:03.472Z"
+updated_at: "2026-05-11T22:31:48.261Z"
+author: codex-agent
+estimated_minutes: 120
+acceptance_criteria: pm upgrade supports dry-run and real execution; self upgrade plans npm install -g @unbrained/pm-cli@latest; managed package upgrades preserve install/source metadata and activation; SDK contracts and docs expose the command; focused and temp-project tests pass.
+parent: pm-59gj
+resolution: "Implemented pm upgrade for CLI/SDK self-upgrade planning and managed package refresh, plus SDK/MCP/action contracts and package-first docs."
+expected_result: Users and agents can run pm upgrade dry-runs or real upgrades for the CLI/SDK and installed pm packages without losing SDK functionality or package metadata.
+actual_result: "pm upgrade command, contracts, MCP action, docs/help, focused tests, manual temp-project E2E, package smokes, and full coverage all passed."
+comments[4]{created_at,author,text}:
+  "2026-05-11T21:40:03.472Z",codex-agent,"Duplicate check before create: pm search pm upgrade packages update install npm resolver --limit 10 found only closed installer/update work plus active parent pm-59gj; no open child item covered top-level pm upgrade for CLI/SDK plus managed packages."
+  "2026-05-11T21:57:29.948Z",codex-agent,"Implementation update: added pm upgrade with dry-run planning, CLI/SDK npm self-upgrade orchestration, managed package refresh from recorded sources, native MCP pm_run action, SDK/action/flag contracts, and package subaction availability mapping. Focused verification passed: pnpm build; PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- upgrade/contracts/package-manifest/sdk-index/release-readiness-runtime."
+  "2026-05-11T22:09:24.630Z",codex-agent,"Evidence update: tightened pm upgrade usage validation for --cli-only with package targets, rebuilt with pnpm build, verified upgrade contracts via node dist/cli.js contracts --command upgrade --flags-only --json, and reran focused suite: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/upgrade-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts (8 files, 100 tests passed)."
+  "2026-05-11T22:30:50.145Z",codex-agent,"Final evidence: pm upgrade is exposed in CLI, SDK contracts, MCP pm_run, help, guide, and docs; managed package upgrades dry-run against recorded sources and CLI self-upgrade plans npm install -g @unbrained/pm-cli@latest. Verification passed: pnpm build; pnpm typecheck; static quality gate; docs-skills gate; security scan; compatibility check; npm pack --dry-run; pnpm smoke:npx; Codex MCP smoke; Claude plugin smoke; full coverage 91 files/1284 tests at 100%; package doctor project ok with zero project-installed extensions."
+files[11]{path,scope,note}:
+  src/cli/commands/upgrade.ts,project,pm upgrade implementation
+  src/cli/register-setup.ts,project,upgrade command registration
+  src/mcp/server.ts,project,native pm_run upgrade action
+  src/sdk/cli-contracts.ts,project,upgrade action and flag contracts
+  tests/unit/upgrade-command.spec.ts,project,upgrade command coverage
+  src/cli/commands/contracts.ts,project,package subaction availability and upgrade flags
+  tests/unit/contracts-command.spec.ts,project,upgrade and package availability contracts
+  vitest.config.ts,project,coverage include alignment for upgrade command
+  tests/unit/builtin-extension-entrypoints.spec.ts,project,package-root builtin entrypoint tests
+  tests/unit/beads-command.spec.ts,project,beads package runtime import
+  tests/unit/todos-extension.spec.ts,project,todos package runtime import
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/upgrade-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused upgrade package contract tests
+  node scripts/run-tests.mjs test -- tests/unit/upgrade-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused upgrade and package-root externalization tests
+close_reason: "pm upgrade CLI/SDK/package workflow implemented with contracts, docs, focused tests, manual E2E, and release gates passed."
+body: ""

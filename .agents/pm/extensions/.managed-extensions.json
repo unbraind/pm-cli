@@ -1,42 +1,5 @@
 {
   "version": 1,
-  "updated_at": "2026-04-25T17:01:49.273Z",
-  "entries": [
-    {
-      "name": "builtin-beads-import",
-      "directory": "beads",
-      "scope": "project",
-      "manifest_version": "0.1.0",
-      "manifest_entry": "./index.js",
-      "capabilities": [
-        "commands",
-        "schema"
-      ],
-      "installed_at": "2026-04-25T17:01:49.268Z",
-      "updated_at": "2026-04-25T17:01:49.268Z",
-      "source": {
-        "kind": "local",
-        "input": "builtin-beads-import",
-        "location": ".agents/pm/extensions/beads"
-      }
-    },
-    {
-      "name": "builtin-todos-import-export",
-      "directory": "todos",
-      "scope": "project",
-      "manifest_version": "0.1.0",
-      "manifest_entry": "./index.js",
-      "capabilities": [
-        "commands",
-        "schema"
-      ],
-      "installed_at": "2026-04-25T17:01:49.268Z",
-      "updated_at": "2026-04-25T17:01:49.268Z",
-      "source": {
-        "kind": "local",
-        "input": "builtin-todos-import-export",
-        "location": ".agents/pm/extensions/todos"
-      }
-    }
-  ]
+  "updated_at": "2026-05-11T22:06:39.279Z",
+  "entries": []
 }

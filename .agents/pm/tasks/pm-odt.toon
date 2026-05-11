@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-beads",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:11.883Z"
-updated_at: "2026-04-05T22:45:48.830Z"
+updated_at: "2026-05-11T22:20:26.002Z"
 deadline: "2026-03-13T23:02:11.883Z"
 author: steve
 estimated_minutes: 120
@@ -68,10 +68,10 @@ notes[1]{created_at,author,text}:
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:33:55.416Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
 files[15]{path,scope,note}:
-  .agents/pm/extensions/beads/index.js,project,bundled beads extension entrypoint
-  .agents/pm/extensions/beads/manifest.json,project,bundled beads manifest
-  .agents/pm/extensions/beads/runtime.js,project,beads runtime execution module colocated with extension
-  .agents/pm/extensions/beads/runtime.ts,project,full beads TypeScript source moved under extension folder
+  packages/pm-beads/extensions/beads/index.js,project,bundled beads extension entrypoint
+  packages/pm-beads/extensions/beads/manifest.json,project,bundled beads manifest
+  packages/pm-beads/extensions/beads/runtime.js,project,beads runtime execution module colocated with extension
+  packages/pm-beads/extensions/beads/runtime.ts,project,full beads TypeScript source moved under extension folder
   PRD.md,project,milestone and command contract update
   README.md,project,docs-first command status update
   src/cli/commands/index.ts,project,export beads command handler

@@ -32,6 +32,8 @@ npm install @unbrained/pm-cli
 - `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`
 - `PM_TOOL_ACTION_PARAMETER_CONTRACTS`
 
+`PM_TOOL_ACTIONS` includes the package lifecycle actions and `upgrade`, so agents and apps can discover `pm upgrade` through `pm contracts` instead of hard-coding flags.
+
 ### Runtime contract constants
 
 - `PM_EXTENSION_CAPABILITY_CONTRACTS`

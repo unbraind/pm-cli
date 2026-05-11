@@ -7,6 +7,7 @@ import {
   runTemplatesList,
   runTemplatesSave,
   runTemplatesShow,
+  runUpgrade,
 } from "./commands/index.js";
 import {
   collect,
@@ -378,6 +379,30 @@ export function registerSetupCommands(program: Command): void {
       .description("Install a pm package into the project package scope by default."),
   ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
     await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "install");
+  });
+
+  addPackageScopeOptions(
+    program
+      .command("upgrade")
+      .argument("[target]", "Optional managed package name/source to upgrade; omit to upgrade pm CLI and all managed packages")
+      .option("--dry-run", "Plan CLI/package upgrades without running npm or reinstalling packages")
+      .option("--cli-only", "Upgrade only the pm CLI/SDK npm package")
+      .option("--packages-only", "Upgrade only managed pm packages")
+      .option("--repair", "Force npm global reinstall when upgrading the pm CLI/SDK")
+      .option("--tag <value>", "npm dist-tag/version for CLI and registry package upgrades")
+      .option("--package-name <value>", "Override the CLI package name for self-upgrade testing")
+      .description("Upgrade the pm CLI/SDK and refresh managed installable pm packages."),
+  ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const result = await runUpgrade(target, command.opts() as Record<string, unknown>, globalOptions);
+    printResult(result, globalOptions);
+    if (!result.ok) {
+      process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+    }
+    if (globalOptions.profile) {
+      printError(`profile:command=upgrade took_ms=${Date.now() - startedAt}`);
+    }
   });
 
   const templatesCommand = program

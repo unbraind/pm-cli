@@ -1,0 +1,27 @@
+id: pm-kk4t
+title: Suppress linked-test sandbox ENOENT seed races
+description: Handle stale or concurrently removed linked-test sandbox seed paths without reporting handled ENOENT errors to Sentry.
+type: Issue
+status: closed
+priority: 0
+tags[5]: linked-tests,observability,pm-cli,sentry,testing
+created_at: "2026-05-11T22:23:58.787Z"
+updated_at: "2026-05-11T22:31:37.721Z"
+author: codex-agent
+estimated_minutes: 30
+acceptance_criteria: Linked-test sandbox seeding skips ENOENT races; focused linked-test tests pass; Sentry/telemetry evidence is recorded.
+parent: pm-gy6w
+resolution: Handled the linked-test sandbox ENOENT race by ignoring ENOENT during optional seed copy after existence preflight.
+expected_result: Stale or concurrently removed sandbox seed paths should not create handled Sentry errors or fail linked-test execution.
+actual_result: "pnpm build, focused linked-test tests, pm linked-test run, and full coverage passed; Sentry PM-CLI-P root cause documented."
+comments[2]{created_at,author,text}:
+  "2026-05-11T22:23:58.787Z",codex-agent,"Duplicate check before create: pm search PM-CLI-P ENOENT copyIntoSandboxIfPresent linked test sandbox --limit 10 found older closed linked-test sandbox work but no open issue for the new Sentry PM-CLI-P regression."
+  "2026-05-11T22:30:40.812Z",codex-agent,"Evidence: fixed Sentry PM-CLI-P by treating ENOENT during linked-test sandbox seed copy as a benign missing-source race after the preflight; pnpm build passed; PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts passed (34 tests); pm test pm-kk4t --run --progress passed; full coverage passed at 100% statements/branches/functions/lines across 91 files and 1284 tests."
+files[1]{path,scope,note}:
+  src/cli/commands/test.ts,project,linked-test sandbox ENOENT race guard
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp1rssje-9c2mag,test,passed,"2026-05-11T22:24:57.842Z","2026-05-11T22:25:27.674Z","2026-05-11T22:25:27.674Z",null,null,1,0,0,null,null,null
+close_reason: Sentry PM-CLI-P sandbox ENOENT race handled; linked test and coverage gates passed.
+body: Sentry PM-CLI-P reported one handled ENOENT from copyIntoSandboxIfPresent while seeding linked-test sandbox data. Treat missing source paths during copy as a benign race after the existence preflight.

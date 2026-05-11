@@ -43,9 +43,9 @@ Existing trackers either rely on hosted backends, store state in non-diff-friend
 - Provide safe mutation under concurrent access (claim/release + lock + atomic writes).
 - Default stdout to TOON; support `--json` parity for every command.
 - Provide extension architecture for commands, schema, rendering, import/export, search adapters, and hooks.
-- Ship bundled managed extension sources:
-  - Beads import (`beads` alias, installed via `pm extension --install`)
-  - todos.ts import/export (`todos` alias, installed via `pm extension --install`)
+- Ship first-party installable package sources:
+  - Beads import (`packages/pm-beads`, installed via `pm install`)
+  - todos.ts import/export (`packages/pm-todos`, installed via `pm install`)
   - Pi agent extension wrapper source module
 - Provide optional semantic search with provider + vector-store adapters.
 
@@ -1327,7 +1327,7 @@ export interface ExtensionApi {
 - Mandatory migration resolution is deterministic: `status` equal to `"applied"` (case-insensitive) is treated as resolved; any other/missing status is unresolved.
 - Force-capable write commands may bypass the guard with explicit `--force`; write commands without `--force` remain blocked until blockers resolve.
 
-## 15) Bundled Managed Extensions Required in v1
+## 15) First-Party Installable Packages Required in v1
 
 ### A) Beads import
 
@@ -1337,8 +1337,8 @@ Command:
 
 Current baseline status (release-hardening):
 
-- Command is packaged in bundled managed extension source (`.agents/pm/extensions/beads`) using `activate(api)` and `api.registerCommand({ name, run })` for `beads import`.
-- Command path is available only after extension install/activation in selected scope (`pm extension --install beads` or explicit path install).
+- Command is packaged in the first-party package root (`packages/pm-beads`) using `activate(api)` and `api.registerCommand({ name, run })` for `beads import`.
+- Command path is available only after package install/activation in selected scope (`pm install packages/pm-beads`, package aliases, or explicit package source install).
 
 Behavior:
 
@@ -1359,8 +1359,8 @@ Commands:
 
 Current baseline status (release-hardening):
 
-- Commands are packaged in bundled managed extension source (`.agents/pm/extensions/todos`) using `activate(api)` and `api.registerCommand({ name, run })` for `todos import` and `todos export`.
-- Command paths are available only after extension install/activation in selected scope (`pm extension --install todos` or explicit path install).
+- Commands are packaged in the first-party package root (`packages/pm-todos`) using `activate(api)` and `api.registerCommand({ name, run })` for `todos import` and `todos export`.
+- Command paths are available only after package install/activation in selected scope (`pm install packages/pm-todos`, package aliases, or explicit package source install).
 
 Behavior:
 
@@ -1711,10 +1711,10 @@ Definition of Done:
 Checklist:
 
 - [x] extension manifest loader + sandboxed execution boundary (deterministic manifest discovery, precedence, failure-isolated runtime loading, realpath/symlink-resolved entry containment enforcement, command-handler context snapshot isolation for `args`/`options`/`global`, per-hook context snapshot isolation, and dynamic extension command loose-option parsing hardening (null-prototype option maps + prototype-pollution key rejection) are implemented; broader command sandbox API surface is post-v0.1 roadmap)
-- [x] hook lifecycle (extension `activate(api)` baseline with deterministic hook registration is implemented; registration now validates hook handlers as functions at activation time, per-hook context snapshot isolation prevents mutation leakage across hook callbacks and caller state, and `beforeCommand`/`afterCommand` command-lifecycle execution plus baseline read/write/index call-site wiring for core item-store reads/writes, create/restore item and history writes, settings read/write operations, history/activity history-directory scans and history-stream reads, health history-directory scans plus history-stream path dispatch, search item/linked reads, reindex flows, stats/health/gc command file-system paths (including `pm gc` onIndex dispatch with mode `gc` and deterministic cache-target totals), lock file read/write/unlink operations, init directory bootstrap ensure-write dispatch, and bundled managed beads/todos import-export source/item/history file operations are implemented)
+- [x] hook lifecycle (extension `activate(api)` baseline with deterministic hook registration is implemented; registration now validates hook handlers as functions at activation time, per-hook context snapshot isolation prevents mutation leakage across hook callbacks and caller state, and `beforeCommand`/`afterCommand` command-lifecycle execution plus baseline read/write/index call-site wiring for core item-store reads/writes, create/restore item and history writes, settings read/write operations, history/activity history-directory scans and history-stream reads, health history-directory scans plus history-stream path dispatch, search item/linked reads, reindex flows, stats/health/gc command file-system paths (including `pm gc` onIndex dispatch with mode `gc` and deterministic cache-target totals), lock file read/write/unlink operations, init directory bootstrap ensure-write dispatch, and first-party Beads/Todos package source/item/history file operations are implemented)
 - [x] renderer and command extension points (deterministic core-command override + renderer override registration/dispatch is implemented with failure containment, extension command handlers for declared command paths including dynamically surfaced non-core paths are implemented, dynamic command help now surfaces `registerFlags` metadata deterministically, deep snapshot isolation for override/renderer result contexts is implemented, and override/renderer execution now includes cloned command `args`/`options`/`global` snapshots plus `pm_root` metadata for contextual deterministic extension output behavior)
-- [x] bundled managed beads import extension (bundled source packaging in `.agents/pm/extensions/beads`, install-only command surfacing through `pm extension`, Beads JSONL field mapping, deterministic defaults, `op: "import"` history entries, and parity polish implemented)
-- [x] bundled managed todos import/export extension (bundled source packaging in `.agents/pm/extensions/todos`, install-only command surfacing through `pm extension`, todos markdown round-trip, canonical optional metadata preservation including planning/workflow and issue fields, hierarchical ID preservation, and `med` alias normalization implemented)
+- [x] first-party Beads import package (`packages/pm-beads`) with install-only command surfacing through `pm install`, Beads JSONL field mapping, deterministic defaults, `op: "import"` history entries, and parity polish implemented)
+- [x] first-party Todos import/export package (`packages/pm-todos`) with install-only command surfacing through `pm install`, todos markdown round-trip, canonical optional metadata preservation including planning/workflow and issue fields, hierarchical ID preservation, and `med` alias normalization implemented)
 - [x] Pi tool wrapper extension source module (Pi agent extension module at `.pi/extensions/pm-cli/index.ts` with full v0.1 action dispatch parity, including `completion` + `shell` mapping, camelCase parameter surface for all canonical scalar metadata, explicit empty-string passthrough, numeric-flag stringification, claim/release parity, packaged CLI fallback, and distribution packaging polish implemented)
 
 Definition of Done:

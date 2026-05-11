@@ -3,8 +3,8 @@ import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { CommandDefinition, CommandOverride, ExtensionApi, RendererOverride } from "../../src/core/extensions/loader.js";
-import beadsBuiltin, { activate as activateBeads, manifest as beadsManifest } from "../../.agents/pm/extensions/beads/index.js";
-import todosBuiltin, { activate as activateTodos, manifest as todosManifest } from "../../.agents/pm/extensions/todos/index.js";
+import beadsBuiltin, { activate as activateBeads, manifest as beadsManifest } from "../../packages/pm-beads/extensions/beads/index.js";
+import todosBuiltin, { activate as activateTodos, manifest as todosManifest } from "../../packages/pm-todos/extensions/todos/index.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 const RUNTIME_CALLS_KEY = "__PM_TEST_RUNTIME_CALLS";
@@ -27,8 +27,22 @@ function resetRuntimeCalls(): void {
 let testPackageRoot = "";
 
 async function seedRuntimeCommandStubs(packageRoot: string): Promise<void> {
-  const beadsRuntimeRoot = path.join(packageRoot, ".agents", "pm", "extensions", "beads");
-  const todosRuntimeRoot = path.join(packageRoot, ".agents", "pm", "extensions", "todos");
+  const beadsPackageRoot = path.join(packageRoot, "packages", "pm-beads");
+  const todosPackageRoot = path.join(packageRoot, "packages", "pm-todos");
+  const beadsRuntimeRoot = path.join(beadsPackageRoot, "extensions", "beads");
+  const todosRuntimeRoot = path.join(todosPackageRoot, "extensions", "todos");
+  await mkdir(beadsPackageRoot, { recursive: true });
+  await mkdir(todosPackageRoot, { recursive: true });
+  await writeFile(
+    path.join(beadsPackageRoot, "package.json"),
+    JSON.stringify({ name: "@example/pm-beads", version: "0.0.0", pm: { extensions: ["extensions/beads"] } }),
+    "utf8",
+  );
+  await writeFile(
+    path.join(todosPackageRoot, "package.json"),
+    JSON.stringify({ name: "@example/pm-todos", version: "0.0.0", pm: { extensions: ["extensions/todos"] } }),
+    "utf8",
+  );
   await mkdir(beadsRuntimeRoot, { recursive: true });
   await mkdir(todosRuntimeRoot, { recursive: true });
   await writeFile(

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Added `pm upgrade` for package-first maintenance, including dry-run planning, CLI/SDK npm self-upgrade, managed package refresh from recorded sources, SDK/MCP action contracts, and docs/help coverage.
+- Moved the Beads and Todo import/export bridges out of active project extension state so they are sourced from the first-party `packages/pm-beads` and `packages/pm-todos` package roots and installed on demand.
+
 ## [2026.5.11] - 2026-05-11
 
 ### Added

@@ -152,6 +152,47 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Use --doctor for consolidated diagnostics with warning codes, remediation hints, and optional deep detail payloads.",
     ],
   },
+  package: {
+    why:
+      "Installs, explores, manages, diagnoses, adopts, activates, deactivates, and refreshes package-backed pm runtime extensions.",
+    examples: [
+      "pm install npm:@scope/pm-package --project",
+      "pm package install ./my-package --project",
+      "pm package doctor --project --detail deep",
+      "pm package manage --project --runtime-probe",
+      "pm package activate sample-ext --project",
+      "pm upgrade --packages-only --dry-run",
+    ],
+    tips: [
+      "Prefer package vocabulary for user-facing workflows; extension vocabulary remains available for compatibility.",
+      "Use pm upgrade to refresh the CLI/SDK and managed packages from their recorded sources.",
+      "Use --dry-run before upgrade when automation needs a deterministic plan.",
+    ],
+  },
+  install: {
+    why: "Installs a pm package into project scope by default, using local, npm, GitHub, or bundled alias sources.",
+    examples: [
+      "pm install ./packages/pm-todos --project",
+      "pm install npm:@scope/pm-package --global",
+      "pm install --github org/repo/packages/my-pm-package --ref main",
+    ],
+    tips: ["Installed packages are recorded in managed state and can be inspected with pm package manage."],
+  },
+  upgrade: {
+    why: "Updates the global pm CLI/SDK and refreshes managed pm packages from recorded install sources.",
+    examples: [
+      "pm upgrade --dry-run",
+      "pm upgrade --packages-only --project",
+      "pm upgrade todos --dry-run",
+      "pm upgrade --cli-only --repair",
+      "pm upgrade --tag next --dry-run",
+    ],
+    tips: [
+      "Omit target to include the CLI/SDK plus all managed packages in the selected scope.",
+      "Pass a target to refresh one managed package by name, directory, package name, or source.",
+      "Use --packages-only in repository automation when the global CLI should not be changed.",
+    ],
+  },
   create: {
     why: "Creates a new planning item with deterministic metadata and history.",
     examples: [

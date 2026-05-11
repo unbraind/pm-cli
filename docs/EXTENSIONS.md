@@ -18,7 +18,10 @@ pm install ./my-package --project
 # 3) Run diagnostics
 pm package doctor --project --detail summary
 
-# 4) Reload runtime modules after local edits
+# 4) Plan CLI/SDK and package upgrades
+pm upgrade --dry-run
+
+# 5) Reload runtime modules after local edits
 pm package reload --project
 ```
 
@@ -30,6 +33,22 @@ pm extension install ./my-package --project
 pm extension doctor --project --detail summary
 pm extension reload --project
 ```
+
+## Upgrade Workflow
+
+`pm upgrade` is the package-first update entrypoint:
+
+```bash
+pm upgrade --dry-run              # plan CLI/SDK and project package updates
+pm upgrade                        # update the global pm CLI/SDK, then refresh project packages
+pm upgrade --packages-only        # refresh managed packages without changing the CLI
+pm upgrade todos --dry-run        # plan one managed package refresh
+pm upgrade --cli-only --repair    # force a global CLI/SDK reinstall through npm
+```
+
+CLI/SDK upgrades use `npm install -g @unbrained/pm-cli@<tag>`.
+Managed package upgrades reuse the source recorded at install time, including `npm:`, GitHub, local, and first-party package paths.
+Use `--tag <version-or-dist-tag>` to target a registry tag such as `latest` or `next`.
 
 ## Extension Locations
 
@@ -91,6 +110,8 @@ Compatibility aliases remain available:
 pm install beads --project
 pm install todos --project
 ```
+
+Those aliases install package-shipped extension sources. They are then tracked in managed package state and can be refreshed with `pm upgrade --packages-only`.
 
 ## Manifest Contract
 

@@ -1475,11 +1475,18 @@ async function copyIntoSandboxIfPresent(sourcePath: string, targetPath: string, 
     return;
   }
   await mkdir(path.dirname(targetPath), { recursive: true });
-  if (recursive) {
-    await cp(sourcePath, targetPath, { recursive: true, force: true });
-    return;
+  try {
+    if (recursive) {
+      await cp(sourcePath, targetPath, { recursive: true, force: true });
+      return;
+    }
+    await cp(sourcePath, targetPath, { force: true });
+  } catch (error: unknown) {
+    if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT") {
+      return;
+    }
+    throw error;
   }
-  await cp(sourcePath, targetPath, { force: true });
 }
 
 async function seedLinkedTestSandbox(

@@ -2,14 +2,16 @@ id: pm-su6i
 title: Generalize pm package resources for project-management extensions
 description: "Extend package discovery only where the resource is a pm project-management concern. Agent-harness resources such as prompts, skills, and MCP bundles stay in separate adapter packages; core pm packages should expose extension/runtime resources with explicit manifests, diagnostics, and precedence rules."
 type: Feature
-status: open
+status: in_progress
 priority: 1
 tags[5]: extensions,packages,pm-cli,provider-neutral,resources
 created_at: "2026-05-11T17:59:04.698Z"
-updated_at: "2026-05-11T20:21:17.827Z"
+updated_at: "2026-05-11T22:04:42.748Z"
+assignee: codex-agent
 author: codex-agent
 acceptance_criteria: Package resource kinds remain provider-neutral and pm-specific; unsupported agent-harness resources produce clear docs guidance; project scope precedence and install diagnostics are covered by tests.
 parent: pm-59gj
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-11T17:59:04.698Z",codex-agent,"Plan item created after initial install slice: runtime extension packages are supported first,while non-extension resource loading needs a separate implementation surface."
+  "2026-05-11T22:04:42.748Z",codex-agent,"Package externalization update: removed active tracked Beads/Todos extension copies from .agents/pm/extensions through package uninstall flows and switched unit imports/coverage to packages/pm-beads and packages/pm-todos package roots. pm package manage --project now reports zero installed project extensions in the repo; first-party optional commands remain installable via pm install packages/pm-beads and pm install packages/pm-todos."
 body: ""

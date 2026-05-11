@@ -235,9 +235,9 @@ describe("extension command runtime", () => {
     });
   });
 
-  it("installs bundled extension source via explicit local path", async () => {
+  it("installs first-party package source via explicit local path", async () => {
     await withTempPmPath(async (context) => {
-      const bundledTodosPath = path.resolve(process.cwd(), ".agents", "pm", "extensions", "todos");
+      const bundledTodosPath = path.resolve(process.cwd(), "packages", "pm-todos");
       const install = await runExtension(bundledTodosPath, { install: true, project: true }, { path: context.pmPath });
       expect(install.details).toMatchObject({
         extension: {
@@ -251,8 +251,24 @@ describe("extension command runtime", () => {
   it("prefers PM_CLI_PACKAGE_ROOT bundled alias source when provided", async () => {
     await withTempPmPath(async (context) => {
       const tempPackageRoot = await mkdtemp(path.join(context.tempRoot, "pm-bundled-root-"));
-      const bundledBeadsDir = path.join(tempPackageRoot, ".agents", "pm", "extensions", "beads");
+      const bundledBeadsPackage = path.join(tempPackageRoot, "packages", "pm-beads");
+      const bundledBeadsDir = path.join(bundledBeadsPackage, "extensions", "beads");
       await mkdir(bundledBeadsDir, { recursive: true });
+      await writeFile(
+        path.join(bundledBeadsPackage, "package.json"),
+        JSON.stringify(
+          {
+            name: "@example/env-beads-package",
+            version: "1.0.0",
+            pm: {
+              extensions: ["extensions/beads"],
+            },
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
       await writeFile(
         path.join(bundledBeadsDir, "manifest.json"),
         JSON.stringify(
@@ -279,7 +295,7 @@ describe("extension command runtime", () => {
           },
           source: {
             kind: "local",
-            location: bundledBeadsDir,
+            location: bundledBeadsPackage,
           },
         });
       } finally {

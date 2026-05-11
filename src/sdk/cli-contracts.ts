@@ -126,6 +126,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "package",
   "packages",
   "install",
+  "upgrade",
   "create",
   "list",
   "list-all",
@@ -207,6 +208,7 @@ export const PM_TOOL_ACTIONS = [
   "package-deactivate",
   "package",
   "install",
+  "upgrade",
   "create",
   "list",
   "list-all",
@@ -743,6 +745,18 @@ export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--fix-managed-state" },
   { flag: "--strict-exit" },
   { flag: "--fail-on-warn" },
+];
+
+export const UPGRADE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--dry-run" },
+  { flag: "--cli-only" },
+  { flag: "--packages-only" },
+  { flag: "--project" },
+  { flag: "--local" },
+  { flag: "--global" },
+  { flag: "--repair" },
+  { flag: "--tag" },
+  { flag: "--package-name" },
 ];
 
 export const REINDEX_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1380,6 +1394,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
     case "packages":
     case "install":
       return withSubcommandGlobalFlags(EXTENSION_FLAG_CONTRACTS);
+    case "upgrade":
+      return withSubcommandGlobalFlags(UPGRADE_FLAG_CONTRACTS);
     case "create":
       return withSubcommandGlobalFlags(CREATE_FLAG_CONTRACTS);
     case "aggregate":
@@ -1872,6 +1888,10 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   allowAuditDepUpdate: { type: "boolean" },
   allowAuditRelease: { type: "boolean" },
   dryRun: { type: "boolean" },
+  cliOnly: { type: "boolean" },
+  packagesOnly: { type: "boolean" },
+  repair: { type: "boolean" },
+  packageName: { type: "string" },
   rollback: { type: "string" },
   noCheckpoint: { type: "boolean" },
   force: { type: "boolean" },
@@ -2131,6 +2151,9 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
     optional: ["target", "github", "scope", "ref"],
     anyOfRequired: [["target"], ["github"]],
   },
+  upgrade: {
+    optional: ["target", "scope", "dryRun", "cliOnly", "packagesOnly", "repair", "tag", "packageName"],
+  },
   create: {
     required: ["title", "description", "type", "status", "priority", "message"],
     optional: CREATE_CONTRACT_PARAMETER_KEYS,
@@ -2372,6 +2395,23 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   ref: {
     description: "Git ref/branch/tag used when installing from GitHub shorthand/URL sources.",
     examples: ["main", "v1.0.0"],
+  },
+  cliOnly: {
+    description: "Restrict upgrade to the pm CLI/SDK npm package.",
+  },
+  packagesOnly: {
+    description: "Restrict upgrade to managed installable pm packages.",
+  },
+  repair: {
+    description: "Force npm global reinstall semantics when upgrading the pm CLI/SDK.",
+  },
+  tag: {
+    description: "npm version or dist-tag used for CLI and registry package upgrades.",
+    examples: ["latest", "next", "2026.5.11"],
+  },
+  packageName: {
+    description: "Override the pm CLI package name for self-upgrade automation and tests.",
+    examples: ["@unbrained/pm-cli"],
   },
   json: {
     description: "Emit machine-readable JSON output.",

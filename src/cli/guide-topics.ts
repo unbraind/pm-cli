@@ -164,6 +164,7 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
     intent: "Use this for package management, extension capability registration, and runtime diagnostics.",
     commands: [
       "pm install <target> --project",
+      "pm upgrade --dry-run",
       "pm package explore --project",
       "pm package manage --detail summary",
       "pm package doctor --detail deep",
@@ -180,6 +181,7 @@ const GUIDE_TOPICS: GuideTopicDefinition[] = [
           "pm package explore --project",
           "pm package manage --detail summary",
           "pm package doctor --detail deep",
+          "pm upgrade --packages-only --dry-run",
         ],
       },
     ],

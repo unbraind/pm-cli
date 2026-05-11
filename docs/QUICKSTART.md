@@ -23,10 +23,10 @@ pm --version
 For updates, use the registry package again:
 
 ```bash
-npm install -g @unbrained/pm-cli@latest
+pm upgrade --cli-only
 ```
 
-Do not use the GitHub git URL as the normal global update path. If a previous git-sourced install left a stale `pm` shim, run `bash scripts/install.sh --repair` from a checkout or uninstall the package before reinstalling from npm.
+`pm upgrade` uses `npm install -g @unbrained/pm-cli@latest` for the CLI/SDK and can also refresh installed pm packages. Do not use the GitHub git URL as the normal global update path. If a previous git-sourced install left a stale `pm` shim, run `pm upgrade --cli-only --repair`, run `bash scripts/install.sh --repair` from a checkout, or uninstall the package before reinstalling from npm.
 
 For one-off use:
 
