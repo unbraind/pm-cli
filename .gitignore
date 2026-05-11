@@ -2,6 +2,7 @@ node_modules/
 dist/
 coverage/
 .gemini/
+.codex/
 .env
 .sentryclirc
 # Local vector store and search index cache (optional, rebuilt on demand via pm reindex)

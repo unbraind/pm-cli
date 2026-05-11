@@ -321,120 +321,7 @@ Recover previous state:
 pm restore pm-a1b2 2026-02-17T11:15:03.120Z
 ```
 
-## 9) Pi Tool Wrapper Usage
-
-The built-in Pi wrapper exposes one tool: `pm`.
-Reference implementation source lives at `.pi/extensions/pm-cli/index.ts` as a Pi agent extension module.
-`pm install` has been removed; install bundled managed runtime extensions via `pm extension --install beads|todos` (or explicit `.agents/pm/extensions/<name>` paths) when needed.
-Load the Pi wrapper in Pi with `pi -e ./.pi/extensions/pm-cli/index.ts` (or copy it into your Pi extensions directory).
-Use `action: "completion"` with `shell: "bash"|"zsh"|"fish"` to forward to `pm completion <shell>`.
-Use `action: "calendar"` for date-centric event views (`view`, `date`, `from`, `to`, `past`, `fullPeriod`, `type`, `tag`, `priority`, `status`, `assignee`, `sprint`, `release`, `limit`, `format`).
-Use `action: "aggregate"` for grouped decomposition checks (`groupBy`, `count`, `includeUnparented`, list-style filters).
-Use `action: "dedupe-audit"` for duplicate corpus checks (`mode`, `threshold`, `limit`, list-style filters).
-Use `action: "normalize"` for lifecycle metadata hygiene scans (`dryRun`) and explicit apply mode (`apply`) with list-style filter targeting.
-Use `action: "validate"` with optional check toggles (`checkMetadata`, `checkResolution`, `checkFiles`, `checkHistoryDrift`) and optional `scanMode` (`default|tracked-all`) for standalone audit workflows.
-Use `action: "extension-doctor"` for consolidated extension diagnostics with optional `scope` and `detail` (`summary|deep`).
-For `list*` wrapper actions, use projection/sort controls (`compact`, `fields`, `sort`, `order`) plus `includeBody` when body projection is needed.
-For `comments-audit`, use governance filters (`parent`, `tag`, `sprint`, `release`, `priority`) in addition to status/type/assignee filters.
-For `health`, use vector refresh controls (`checkOnly`, `noRefresh`, `refreshVectors`) while keeping strict flags available (`strictDirectories`, `strictExit`, `failOnWarn`).
-For `create` and `update`, use camelCase wrapper parameters for the canonical CLI scalar fields such as `parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, and `customerImpact`; use `createMode` (`strict|progressive`) when staged creation is needed, `appendStable` for minimal-diff file-link appends, `allowAuditUpdate` for ownership-safe metadata-only non-owner updates, `allowAuditDepUpdate` for ownership-safe dependency-only non-owner updates, `allowAuditComment` for additive non-owner comment writes, repeatable `reminder` values for persistent reminders (`at=<iso|relative>,text=<text>`), and repeatable `typeOption` values for custom type metadata.
-For `contracts`, use projection controls (`flagsOnly`, `availabilityOnly`) when you need narrow machine-readable payloads; with `command` selected, contract output is command-scoped by default.
-For `completion`, use `eagerTags` only when embedding static tags in generated scripts is required; default generated scripts resolve tags lazily at runtime.
-For `activity`, use `id`, `op`, `author`, `from`, `to`, `limit`, and `stream` (`rows|ndjson|jsonl` or boolean true) for deterministic timeline filtering/export.
-For `test` and `test-all`, prefer explicit runtime parity/strictness parameters when needed: `pmContext` (`schema|tracker|auto`), `checkContext`, `autoPmContext`, `failOnContextMismatch`, `failOnSkipped`, and `requireAssertionsForPm`.
-For `gc`, use `dryRun` and repeatable `gcScope` (`index`, `embeddings`, `runtime`) for no-side-effect previews and targeted cleanup.
-
-### Example: list open tasks
-
-```json
-{
-  "action": "list-open",
-  "limit": 10
-}
-```
-
-### Example: create item
-
-```json
-{
-  "action": "create",
-  "title": "Implement extension loader",
-  "description": "Load global and project extensions with precedence.",
-  "type": "Feature",
-  "status": "open",
-  "priority": 1,
-  "tags": "extensions,core",
-  "body": "",
-  "deadline": "+14d",
-  "estimate": 120,
-  "acceptanceCriteria": "Loader applies deterministic precedence for core global and project extensions.",
-  "author": "maintainer-agent",
-  "message": "Create extension loader task",
-  "assignee": "maintainer-agent",
-  "parent": "pm-epic01",
-  "reviewer": "maintainer-reviewer",
-  "risk": "medium",
-  "confidence": "high",
-  "sprint": "maintainer-loop",
-  "release": "v0.1",
-  "blockedBy": "pm-arch-review",
-  "blockedReason": "Awaiting architecture sign-off",
-  "unblockNote": "Resume implementation once review notes are resolved",
-  "reporter": "maintainer-agent",
-  "severity": "medium",
-  "environment": "cli",
-  "reproSteps": "Create conflicting extension registrations across project/global scopes",
-  "resolution": "Apply deterministic precedence in extension loader bootstrap",
-  "expectedResult": "Loader applies project-over-global precedence deterministically",
-  "actualResult": "Registration order currently varies by load path",
-  "affectedVersion": "v0.1",
-  "fixedVersion": "v0.2",
-  "component": "extension-host",
-  "regression": "false",
-  "customerImpact": "Unpredictable extension behavior increases operator overhead",
-  "definitionOfReady": "Extension loading behavior is clarified in docs.",
-  "order": 1,
-  "goal": "Release-hardening",
-  "objective": "Ship deterministic extension loading",
-  "value": "Makes extension behavior predictable for agents and humans",
-  "impact": "Reduces configuration and precedence drift",
-  "outcome": "Extension loader applies deterministic precedence",
-  "whyNow": "Extension loading is foundational for the remaining roadmap",
-  "dep": ["id=pm-epic01,kind=parent,author=maintainer-agent,created_at=now"],
-  "comment": ["author=maintainer-agent,created_at=now,text=Why this task exists align extension load precedence behavior."],
-  "note": ["author=maintainer-agent,created_at=now,text=Initial implementation plan wire loader in runtime bootstrap."],
-  "learning": [],
-  "linkedFile": ["path=src/core/extensions/loader.ts,scope=project,note=planned implementation file"],
-  "linkedTest": ["command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=240,note=sandbox-safe regression"],
-  "doc": ["path=docs/ARCHITECTURE.md,scope=project,note=implementation reference"]
-}
-```
-
-### Example: append body update
-
-```json
-{
-  "action": "append",
-  "id": "pm-a1b2",
-  "body": "Implemented lock TTL and stale lock override."
-}
-```
-
-Expected wrapper return shape:
-
-```json
-{
-  "content": [
-    { "type": "text", "text": "..." }
-  ],
-  "details": {
-    "action": "create",
-    "item": {}
-  }
-}
-```
-
-## 10) Multi-Agent Etiquette
+## 9) Multi-Agent Etiquette
 
 - Claim before heavy edits.
 - Release when blocked or context-switching.
@@ -442,7 +329,7 @@ Expected wrapper return shape:
 - Avoid silent force-claim unless policy allows and conflict is stale.
 - Keep item descriptions stable; append details in body/notes/comments.
 
-## 11) Troubleshooting for Agents
+## 10) Troubleshooting for Agents
 
 Lock conflict:
 
@@ -467,7 +354,7 @@ Extension issues:
 - when debugging runtime behavior changes, inspect parser/preflight/service override collisions in health/profile diagnostics (last registration wins)
 - use SDK contracts from `@unbrained/pm-cli/sdk` (not internal `src/core/...` imports) for extension authoring and examples
 
-## 12) Dogfood Logging Protocol (Required)
+## 11) Dogfood Logging Protocol (Required)
 
 From now on in this repository, all implementation work must be tracked through `pm` items and `pm` mutations.
 
