@@ -204,17 +204,7 @@ const LIST_COMMAND_NAMES = new Set([
   "list-canceled",
 ]);
 
-const EXTENSION_ACTION_COMMAND_PATHS: Partial<Record<PmToolAction, string>> = {
-  "beads-import": "beads import",
-  "todos-import": "todos import",
-  "todos-export": "todos export",
-};
-
 function resolveActionCommandPath(action: PmToolAction): string | null {
-  const extensionCommandPath = EXTENSION_ACTION_COMMAND_PATHS[action];
-  if (extensionCommandPath) {
-    return normalizeCommandPath(extensionCommandPath);
-  }
   if (PM_CORE_COMMAND_NAMES.includes(action as (typeof PM_CORE_COMMAND_NAMES)[number])) {
     return normalizeCommandPath(action);
   }
@@ -668,12 +658,11 @@ interface ActionContractDescriptor {
 function collectActionContractDescriptors(extensionContracts: ExtensionCommandContract[]): ActionContractDescriptor[] {
   const descriptors = new Map<string, ActionContractDescriptor>();
   for (const action of PM_TOOL_ACTIONS) {
-    const extensionCommandPath = EXTENSION_ACTION_COMMAND_PATHS[action as PmToolAction];
     const commandPath = resolveActionCommandPath(action as PmToolAction);
     descriptors.set(action, {
       action,
-      provider: extensionCommandPath ? "extension" : "core",
-      requires_extension: extensionCommandPath !== undefined,
+      provider: "core",
+      requires_extension: false,
       command_path: commandPath,
     });
   }

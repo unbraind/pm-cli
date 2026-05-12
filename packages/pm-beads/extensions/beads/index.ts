@@ -1,7 +1,6 @@
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import type { CommandDefinition, ExtensionApi } from "../../../../src/core/extensions/loader.js";
-import type { GlobalOptions } from "../../../../src/core/shared/command-types.js";
+import type { CommandDefinition, ExtensionApi, GlobalOptions } from "../../../../src/sdk/index.js";
 import type { BeadsImportOptions, BeadsImportResult } from "./runtime.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";

@@ -156,7 +156,7 @@ describe("contracts command runtime", () => {
     });
   });
 
-  it("supports runtime-only filtering and reports extension-action availability", async () => {
+  it("supports runtime-only filtering without advertising optional package actions as static core actions", async () => {
     const result = await runContracts(
       {
         runtimeOnly: true,
@@ -178,17 +178,8 @@ describe("contracts command runtime", () => {
         noExtensions: true,
       },
     );
-    const beadsAvailability = (fullResult.action_availability ?? []).find((entry) => entry.action === "beads-import");
-    expect(beadsAvailability).toMatchObject({
-      action: "beads-import",
-      requires_extension: true,
-      provider: "extension",
-      invocable: false,
-      available: false,
-      disabled_reason: "extensions_disabled",
-      command_path: "beads import",
-      cli_exposed: false,
-    });
+    expect(fullResult.actions ?? []).not.toContain("beads-import");
+    expect((fullResult.action_availability ?? []).some((entry) => entry.action === "beads-import")).toBe(false);
   });
 
   it("narrows action and schema scope by command filter by default", async () => {
@@ -416,8 +407,51 @@ describe("contracts command runtime", () => {
     ]);
   });
 
-  it("keeps selected actions visible in runtime-only mode", async () => {
-    const result = await runContracts(
+  it("rejects optional package actions from the static SDK schema when the package command is not installed", async () => {
+    await expect(
+      runContracts(
+        {
+          action: "beads-import",
+          runtimeOnly: true,
+          schemaOnly: true,
+        },
+        {
+          ...GLOBAL_OPTIONS,
+          noExtensions: true,
+        },
+      ),
+    ).rejects.toMatchObject<PmCliError>({
+      exitCode: EXIT_CODE.USAGE,
+    });
+  });
+
+  it("keeps installed extension actions visible in runtime-only mode", async () => {
+    await withTempPmPath(async (context) => {
+      await createProjectExtension(
+        context.pmPath,
+        "beads-contract-action",
+        {
+          name: "beads-contract-action",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["commands", "schema"],
+        },
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'beads import',",
+          "      action: 'beads-import',",
+          "      flags: [{ long: '--file', value_name: 'path' }],",
+          "      run: () => ({ ok: true }),",
+          "    });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      );
+
+      const result = await runContracts(
       {
         action: "beads-import",
         runtimeOnly: true,
@@ -425,33 +459,34 @@ describe("contracts command runtime", () => {
       },
       {
         ...GLOBAL_OPTIONS,
-        noExtensions: true,
+        path: context.pmPath,
       },
-    );
-    expect(result.actions).toEqual(["beads-import"]);
-    expect(result.action_availability).toEqual([
-      {
-        action: "beads-import",
-        invocable: false,
-        available: false,
-        requires_extension: true,
-        provider: "extension",
-        disabled_reason: "extensions_disabled",
-        command_path: "beads import",
-        cli_exposed: false,
-        policy_state: {
-          mode: "off",
-          trust_mode: "off",
-          default_sandbox_profile: "none",
+      );
+      expect(result.actions).toEqual(["beads-import"]);
+      expect(result.action_availability).toEqual([
+        {
+          action: "beads-import",
+          invocable: true,
+          available: true,
+          requires_extension: true,
+          provider: "extension",
+          disabled_reason: null,
+          command_path: "beads import",
+          cli_exposed: true,
+          policy_state: {
+            mode: "off",
+            trust_mode: "off",
+            default_sandbox_profile: "none",
+          },
         },
-      },
-    ]);
-    const oneOf = (result.schema?.oneOf ?? []) as Array<{ properties?: { action?: { const?: string } } }>;
-    expect(oneOf).toHaveLength(1);
-    expect(oneOf[0]?.properties?.action?.const).toBe("beads-import");
+      ]);
+      const oneOf = (result.schema?.oneOf ?? []) as Array<{ properties?: { action?: { const?: string } } }>;
+      expect(oneOf).toHaveLength(1);
+      expect(oneOf[0]?.properties?.action?.const).toBe("beads-import");
+    });
   });
 
-  it("surfaces runtime probe failures for extension action availability", async () => {
+  it("does not synthesize optional package action availability when extension runtime probing fails before activation", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");
       await rm(settingsPath, { force: true });
@@ -465,17 +500,8 @@ describe("contracts command runtime", () => {
         },
       );
 
-      const beadsAvailability = (result.action_availability ?? []).find((entry) => entry.action === "beads-import");
-      expect(beadsAvailability).toMatchObject({
-        action: "beads-import",
-        invocable: false,
-        available: false,
-        requires_extension: true,
-        provider: "extension",
-        disabled_reason: "extension_runtime_probe_failed",
-        command_path: "beads import",
-        cli_exposed: false,
-      });
+      expect(result.actions ?? []).not.toContain("beads-import");
+      expect((result.action_availability ?? []).some((entry) => entry.action === "beads-import")).toBe(false);
     });
   });
 

@@ -262,9 +262,6 @@ export const PM_TOOL_ACTIONS = [
   "templates-show",
   "claim",
   "release",
-  "beads-import",
-  "todos-import",
-  "todos-export",
   "start-task",
   "pause-task",
   "close-task",
@@ -1346,11 +1343,6 @@ const NO_SURFACE_COMMAND_NAME_CONTRACTS = new Set([
   "get",
   "stats",
   "reindex",
-  "beads",
-  "todos",
-  "beads-import",
-  "todos-import",
-  "todos-export",
   "help",
 ]);
 
@@ -2342,9 +2334,6 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   "templates-show": { required: ["template"] },
   claim: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   release: { required: ["id"], optional: ["allowAuditRelease", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
-  "beads-import": { optional: ["file", "author", "message", "preserveSourceIds"] },
-  "todos-import": { optional: ["folder", "author", "message"] },
-  "todos-export": { optional: ["folder"] },
   "start-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   "pause-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   "close-task": { required: ["id", "text"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
@@ -2714,8 +2703,8 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "When true for comments action, read comment text from piped stdin (supports multiline markdown).",
   },
   file: {
-    description: "Path to input file for actions that read payload text (for example comments --file or beads-import --file).",
-    examples: ["notes/comment.md", "import.json"],
+    description: "Path to input file for actions that read payload text, such as comments --file.",
+    examples: ["notes/comment.md"],
   },
   allowAuditUpdate: {
     description: "Allow non-owner metadata-only update audits without requiring --force.",
