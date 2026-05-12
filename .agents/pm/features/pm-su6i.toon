@@ -2,16 +2,49 @@ id: pm-su6i
 title: Generalize pm package resources for project-management extensions
 description: "Extend package discovery only where the resource is a pm project-management concern. Agent-harness resources such as prompts, skills, and MCP bundles stay in separate adapter packages; core pm packages should expose extension/runtime resources with explicit manifests, diagnostics, and precedence rules."
 type: Feature
-status: in_progress
+status: closed
 priority: 1
 tags[5]: extensions,packages,pm-cli,provider-neutral,resources
 created_at: "2026-05-11T17:59:04.698Z"
-updated_at: "2026-05-11T22:04:42.748Z"
-assignee: codex-agent
+updated_at: "2026-05-12T05:34:33.991Z"
 author: codex-agent
 acceptance_criteria: Package resource kinds remain provider-neutral and pm-specific; unsupported agent-harness resources produce clear docs guidance; project scope precedence and install diagnostics are covered by tests.
 parent: pm-59gj
-comments[2]{created_at,author,text}:
+resolution: "Package resource externalization slice completed with install-all bundled packages, TypeScript package source typechecking, ESM-safe scaffolds, docs, and tests."
+expected_result: Users can install bundled first-party packages with pm install '*' or pm install all; first-party package sources are TypeScript-authored and typechecked; package workflow remains provider-neutral and pm-specific.
+actual_result: "pm install '*' and pm install all install Beads and Todos packages in deterministic order; package TS sources are checked by pnpm typecheck; docs, focused tests, linked tests, manual temp-project E2E, release gates, telemetry, and Sentry verification passed."
+comments[5]{created_at,author,text}:
   "2026-05-11T17:59:04.698Z",codex-agent,"Plan item created after initial install slice: runtime extension packages are supported first,while non-extension resource loading needs a separate implementation surface."
   "2026-05-11T22:04:42.748Z",codex-agent,"Package externalization update: removed active tracked Beads/Todos extension copies from .agents/pm/extensions through package uninstall flows and switched unit imports/coverage to packages/pm-beads and packages/pm-todos package roots. pm package manage --project now reports zero installed project extensions in the repo; first-party optional commands remain installable via pm install packages/pm-beads and pm install packages/pm-todos."
+  "2026-05-11T22:42:39.421Z",codex-agent,"Scope update: duplicate search for wildcard install and TypeScript package entrypoints found only closed package install/E2E tasks plus this active package-resource item. Implementing pm install '*'/'all' for bundled first-party packages and making package entrypoint sources TypeScript-authored while keeping runtime JS artifacts for current Node-compatible extension loading."
+  "2026-05-11T23:05:13.957Z",codex-agent,"Evidence: implemented pm install '*' / pm install all for bundled first-party packages, added TypeScript-authored package entrypoint sources, marked first-party package roots as ESM, made pnpm typecheck cover packages via tsconfig.packages.json, switched scaffold output to ESM-safe exports, and documented install-all in quickstart/commands/extensions/package READMEs. Verification passed: pnpm typecheck; focused 7-file package suite (130 tests); built CLI integration (67 tests); pm test pm-su6i --run (3/3 linked tests passed); static quality; full release gate with 91 files/1287 tests at 100% coverage; manual temp project /tmp/pm-package-e2e-OsuLRa; telemetry/Sentry live checks."
+  "2026-05-12T05:28:56.509Z",codex-agent,"Evidence: implemented package install-all support across runExtension/register-setup so quoted '*', all, and shell-expanded pm install * install the bundled first-party packages; added TypeScript package entrypoint/typecheck coverage; updated docs. Verified pnpm build, pnpm typecheck, focused 8-file package/CLI suite (197 tests), manual isolated unquoted shell pm install * smoke, full run-gates release pipeline (91 files/1287 tests/100% coverage), Sentry/telemetry gate, and live telemetry readback for fresh init/install events. Project validate/health still report only the pre-existing history drift blocker tracked on pm-xk39."
+files[14]{path,scope,note}:
+  package.json,project,typecheck includes package sources
+  packages/pm-beads/extensions/beads/index.ts,project,TypeScript-authored beads entrypoint
+  packages/pm-beads/package.json,project,ESM package root metadata
+  packages/pm-todos/extensions/todos/index.ts,project,TypeScript-authored todos entrypoint
+  packages/pm-todos/package.json,project,ESM package root metadata
+  scripts/release/static-quality-gate.mjs,project,static gate scans package TS
+  src/cli/commands/extension.ts,project,install-all package lifecycle and ESM scaffold
+  tests/integration/cli.integration.spec.ts,project,root install all CLI integration coverage
+  tests/integration/release-automation-contract.spec.ts,project,typecheck script contract
+  tests/integration/release-readiness-runtime.spec.ts,project,release readiness typecheck contract
+  tests/unit/extension-command.spec.ts,project,install-all and ESM scaffold regression coverage
+  tests/unit/package-manifest.spec.ts,project,first-party package TS source regression
+  tsconfig.packages.json,project,package source typecheck gate
+  src/cli/register-setup.ts,project,package install-all argument normalization
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-command.spec.ts tests/unit/todos-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp1t6bps-d41pra,test,passed,"2026-05-11T23:00:30.922Z","2026-05-11T23:03:58.672Z","2026-05-11T23:03:58.672Z",null,null,3,0,0,null,null,null
+  test-local-mp274mgq-3ek51g,test,passed,"2026-05-12T05:29:11.483Z","2026-05-12T05:34:33.915Z","2026-05-12T05:34:33.915Z",null,null,4,0,0,null,null,null
+docs[3]{path,scope,note}:
+  docs/COMMANDS.md,project,command reference for install-all wildcard behavior
+  docs/EXTENSIONS.md,project,package install-all docs including shell-expanded wildcard
+  docs/QUICKSTART.md,project,quickstart optional package install-all examples
+close_reason: Package install-all and TypeScript package source workflow verified
 body: ""

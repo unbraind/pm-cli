@@ -47,6 +47,7 @@ pm health --check-only
 ## Packages
 
 ```bash
+pm install '*' --project
 pm install npm:@scope/pm-package --project
 pm package doctor --project --detail summary
 pm upgrade --dry-run
@@ -54,7 +55,7 @@ pm upgrade --packages-only
 pm upgrade --cli-only --repair
 ```
 
-`pm install` and `pm package` are the preferred package-first workflow. `pm extension` remains as a compatibility command for direct extension lifecycle operations.
+`pm install` and `pm package` are the preferred package-first workflow. `pm install '*'`, shell-expanded `pm install *`, and `pm install all` install bundled first-party packages. `pm extension` remains as a compatibility command for direct extension lifecycle operations.
 
 ## Triage
 

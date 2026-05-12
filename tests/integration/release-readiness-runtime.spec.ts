@@ -567,7 +567,7 @@ describe("release readiness runtime coverage", () => {
     await withTempPmPath(async (context) => {
       const help = context.runCli(["extension", "--help"]);
       expect(help.code).toBe(0);
-      expect(help.stdout).toContain("install [options] [target]");
+      expect(help.stdout).toContain("install [options] [targets...]");
       expect(help.stdout).toContain("uninstall [options] <target>");
       expect(help.stdout).toContain("explore");
       expect(help.stdout).toContain("manage");
@@ -1522,6 +1522,7 @@ describe("release readiness runtime coverage", () => {
     }
 
     expect(packageJson.scripts?.prepublishOnly).toBe("pnpm build");
+    expect(packageJson.scripts?.typecheck).toBe("tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json");
     expect(packageJson.scripts?.["version:check"]).toBe("node scripts/release-version.mjs check");
     expect(packageJson.scripts?.["version:next"]).toBe("node scripts/release-version.mjs next");
     expect(packageJson.scripts?.["quality:static"]).toBe("node scripts/release/static-quality-gate.mjs");

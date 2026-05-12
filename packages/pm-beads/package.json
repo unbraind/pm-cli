@@ -2,6 +2,7 @@
   "name": "@unbrained/pm-package-beads",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "First-party pm package for importing Beads JSONL records.",
   "keywords": [
     "pm-package",

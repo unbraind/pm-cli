@@ -1,5 +1,8 @@
 import type { Command } from "commander";
+import fs from "node:fs/promises";
 import type { GlobalOptions } from "../core/shared/command-types.js";
+import { EXIT_CODE } from "../core/shared/constants.js";
+import { PmCliError } from "../core/shared/errors.js";
 import {
   runConfig,
   runExtension,
@@ -75,7 +78,35 @@ function normalizeExtensionOptions(
   };
 }
 
-import { EXIT_CODE } from "../core/shared/constants.js";
+async function looksLikeShellExpandedWildcard(targets: string[]): Promise<boolean> {
+  if (targets.length <= 1) {
+    return false;
+  }
+  const visibleEntries = (await fs.readdir(process.cwd()))
+    .filter((entry) => !entry.startsWith("."))
+    .sort((left, right) => left.localeCompare(right));
+  const normalizedTargets = [...targets].sort((left, right) => left.localeCompare(right));
+  return (
+    visibleEntries.length === normalizedTargets.length &&
+    visibleEntries.every((entry, index) => entry === normalizedTargets[index])
+  );
+}
+
+async function normalizeInstallTargets(targets: string[] | string | undefined): Promise<string | undefined> {
+  const normalizedTargets = (Array.isArray(targets) ? targets : typeof targets === "string" ? [targets] : [])
+    .map((target) => target.trim())
+    .filter((target) => target.length > 0);
+  if (normalizedTargets.length <= 1) {
+    return normalizedTargets[0];
+  }
+  if (await looksLikeShellExpandedWildcard(normalizedTargets)) {
+    return "*";
+  }
+  throw new PmCliError(
+    `Install accepts one package source at a time. To install bundled first-party packages, quote the wildcard: pm install '*'`,
+    EXIT_CODE.USAGE,
+  );
+}
 
 async function executeExtensionCommand(
   target: string | undefined,
@@ -183,13 +214,14 @@ function registerLifecycleCommand(
   addLifecycleScopeOptions(
     lifecycleCommand
       .command("install")
-      .argument("[target]", `${noun[0]!.toUpperCase()}${noun.slice(1)} source (local path or GitHub source)`)
+      .argument("[targets...]", `${noun[0]!.toUpperCase()}${noun.slice(1)} source (local path, bundled alias, wildcard, or GitHub source)`)
       .option("--gh <owner/repo[/path]>", "Install from GitHub shorthand source")
       .option("--github <owner/repo[/path]>", "Alias for --gh")
       .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
       .description(`Install ${noun} from local path or GitHub source.`),
     vocabulary,
-  ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
+  ).action(async (targets: string[] | undefined, _options: Record<string, unknown>, command) => {
+    const target = await normalizeInstallTargets(targets);
     await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "install");
   });
 
@@ -372,12 +404,13 @@ export function registerSetupCommands(program: Command): void {
   addPackageScopeOptions(
     program
       .command("install")
-      .argument("[target]", "Package source (local path, bundled alias, or GitHub source)")
+      .argument("[targets...]", "Package source (local path, bundled alias, wildcard, or GitHub source)")
       .option("--gh <owner/repo[/path]>", "Install from GitHub shorthand source")
       .option("--github <owner/repo[/path]>", "Alias for --gh")
       .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
       .description("Install a pm package into the project package scope by default."),
-  ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
+  ).action(async (targets: string[] | undefined, _options: Record<string, unknown>, command) => {
+    const target = await normalizeInstallTargets(targets);
     await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "install");
   });
 

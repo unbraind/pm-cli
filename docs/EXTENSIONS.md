@@ -15,6 +15,9 @@ pm package init ./my-package-extension
 # 2) Install in project scope
 pm install ./my-package --project
 
+# Or install all bundled first-party packages
+pm install '*' --project
+
 # 3) Run diagnostics
 pm package doctor --project --detail summary
 
@@ -100,9 +103,13 @@ If a package contains multiple extension manifests, install the exact extension 
 First-party optional packages are shipped as package roots under `packages/`:
 
 ```bash
+pm install '*' --project
+pm install all --project
 pm install packages/pm-beads --project
 pm install packages/pm-todos --project
 ```
+
+`pm install '*'` and `pm install all` install every bundled first-party package in deterministic alias order. If your shell expands `pm install *`, pm recognizes that expansion and treats it as the same bundled-package install-all request.
 
 Compatibility aliases remain available:
 

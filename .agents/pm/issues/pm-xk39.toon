@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: history,pm-cli,privacy,redaction,security
 created_at: "2026-05-03T13:34:41.813Z"
-updated_at: "2026-05-10T20:47:54.527Z"
+updated_at: "2026-05-12T05:29:03.212Z"
 assignee: codex-agent
 author: codex-audit
 acceptance_criteria: A supported pm command can redact configured literals/patterns from item files and history streams; history drift validation remains meaningful after redaction; redaction operations are themselves auditable; secret scans can include history streams without false failures from known private operations paths.
@@ -16,13 +16,15 @@ expected_result: Expected closure outcome normalized from closed status; existin
 actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-03T13:34:41.813Z",codex-audit,null
-comments[6]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-05-03T13:34:41.813Z",codex-audit,"Duplicate-check evidence: pm search history stream redaction command redact private path history drift --limit 10 found only closed history/security items; current audit discovered remaining private remote paths in historical JSONL streams after current item docs were sanitized."
   "2026-05-09T11:21:19.310Z",codex-agent,"2026-05-09 duplicate-check evidence: pm search tracker history privacy redaction private paths --limit 10 found this existing item as the canonical match. Current scan found no raw IP/password/token values in non-history tracked files; current pm item files only mention Sentry token variable names, but historical JSONL streams still include private remote paths from older telemetry operations. Do not hand-edit history; implement audited redaction support or migrate history safely."
   "2026-05-09T11:46:59.452Z",codex-agent,"Evidence 2026-05-09: privacy scan confirmed current tracked source/docs/workflows and current item files do not contain raw host/IP/password/token values from this request, but older append-only history streams still contain private infrastructure paths. This remains open because current pm policy forbids direct history rewrites; next work must add an audited redaction command or equivalent safe migration."
   "2026-05-09T13:30:10.115Z",codex-agent,"Scope decision recorded: executing direct one-off scrub for current tracked history/item artifacts now, with policy to redact all [redacted_path_prefix] path references in tracked pm artifacts for this run."
   "2026-05-09T13:42:44.553Z",codex-agent,"Direct one-off scrub complete for current tracked pm artifacts: redacted all [redacted_path_prefix] path literals plus lingering host-user literals across targeted .toon/history/managed-extension files. Verification scans now return zero matches in .agents/pm for [redacted_path_prefix], [redacted_user_at_host], and concrete private IP literals ([redacted_ip_pattern])."
   "2026-05-09T13:58:47.018Z",codex-agent,"Additional hardening completed in this remediation run: scripts/check-secrets now detects absolute home-path and user@private-host leakage patterns (with test/example exclusions), and Sentry scrub logic now redacts nested path-bearing payload fields so newly emitted events store [scrubbed_path] instead of local filesystem paths. This supports current-tree direct scrub governance while a first-class history redaction command remains open scope."
+  "2026-05-11T23:04:58.790Z",codex-agent,"Validation follow-up 2026-05-12: package-first run fixed the only missing closed-item resolution metadata (pm-dhie), but pm validate --check-history-drift still reports the known five hash mismatches: pm-54d, pm-f3q4, pm-fdla, pm-mb4n, pm-tq1. This remains the canonical open audited history-redaction/drift blocker; no direct history edits were made in this package slice."
+  "2026-05-12T05:29:03.212Z",codex-agent,"Audit update: post-package-refactor validate/health still show only the existing history hash mismatches for pm-54d, pm-f3q4, pm-fdla, pm-mb4n, and pm-tq1. Resolution metadata is clean; this remains the canonical blocker for history drift rather than a new package-refactor regression."
 files[18]{path,scope,note}:
   .agents/pm/chores/pm-tq1.toon,project,item-test-command-redaction-local-package-path
   .agents/pm/epics/pm-54d.toon,project,epic-comment-redaction-global-install-path

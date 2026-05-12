@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -151,6 +151,7 @@ describe("pm package manifest model", () => {
     await expect(readPmPackageManifest(beadsRoot)).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-package-beads",
+      package_version: "0.1.0",
       resources: {
         extensions: ["extensions/beads"],
       },
@@ -162,6 +163,7 @@ describe("pm package manifest model", () => {
     await expect(readPmPackageManifest(todosRoot)).resolves.toMatchObject({
       source: "pm",
       package_name: "@unbrained/pm-package-todos",
+      package_version: "0.1.0",
       resources: {
         extensions: ["extensions/todos"],
       },
@@ -169,6 +171,13 @@ describe("pm package manifest model", () => {
     await expect(collectPackageExtensionDirectories(todosRoot)).resolves.toEqual([
       path.join(todosRoot, "extensions", "todos"),
     ]);
+  });
+
+  it("ships TypeScript-authored sources for first-party package entrypoints", async () => {
+    await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.ts"))).resolves.toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.ts"))).resolves.toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.ts"))).resolves.toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime.ts"))).resolves.toBeUndefined();
   });
 
   it("reports convention manifests and malformed package manifests", async () => {

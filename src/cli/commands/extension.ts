@@ -39,6 +39,7 @@ const BUNDLED_PACKAGE_ALIASES: Record<string, { package_directory: string; legac
     legacy_extension_directory: "todos",
   },
 };
+const BUNDLED_PACKAGE_INSTALL_ALL_TARGETS = new Set(["*", "all"]);
 
 export type ExtensionCommandAction =
   | "install"
@@ -196,6 +197,14 @@ async function resolveBundledExtensionAliasSource(input: string): Promise<string
     }
   }
   return null;
+}
+
+function isBundledPackageInstallAllTarget(input: string): boolean {
+  return BUNDLED_PACKAGE_INSTALL_ALL_TARGETS.has(input.trim().toLowerCase());
+}
+
+function listBundledPackageAliases(): string[] {
+  return Object.keys(BUNDLED_PACKAGE_ALIASES).sort((left, right) => left.localeCompare(right));
 }
 
 export interface ManagedExtensionSummary {
@@ -1563,19 +1572,21 @@ function buildStarterExtensionScaffoldFiles(extensionName: string, commandName: 
     2,
   )}\n`;
   const entrypoint = [
-    "module.exports = {",
-    "  activate(api) {",
-    "    api.registerCommand({",
-    `      name: ${JSON.stringify(commandName)},`,
-    '      description: "Starter scaffold command. Replace with your own behavior.",',
-    "      run: async (context) => ({",
-    "        ok: true,",
-    `        source: ${JSON.stringify(extensionName)},`,
-    "        command: context.command,",
-    '        message: "Starter extension scaffold is active.",',
-    "      }),",
-    "    });",
-    "  },",
+    "export function activate(api) {",
+    "  api.registerCommand({",
+    `    name: ${JSON.stringify(commandName)},`,
+    '    description: "Starter scaffold command. Replace with your own behavior.",',
+    "    run: async (context) => ({",
+    "      ok: true,",
+    `      source: ${JSON.stringify(extensionName)},`,
+    "      command: context.command,",
+    '      message: "Starter extension scaffold is active.",',
+    "    }),",
+    "  });",
+    "}",
+    "",
+    "export default {",
+    "  activate,",
     "};",
     "",
   ].join("\n");
@@ -1596,7 +1607,7 @@ function buildStarterExtensionScaffoldFiles(extensionName: string, commandName: 
     "```",
     "",
     "## Notes",
-    "- This scaffold uses CommonJS (`module.exports`) for zero-config runtime compatibility.",
+    "- This scaffold uses ESM exports so it works in package scopes with `type: module`.",
     "- Update `manifest.json` capabilities and `index.js` command behavior as your extension evolves.",
     "",
   ].join("\n");
@@ -2085,6 +2096,36 @@ export async function runExtension(
   if (action === "install") {
     const githubOption = resolveGithubOption(options);
     const explicitSourceInput = githubOption ?? requireTarget(normalizedTarget, action);
+    if (typeof githubOption !== "string" && isBundledPackageInstallAllTarget(explicitSourceInput)) {
+      if (typeof options.ref === "string" && options.ref.trim().length > 0) {
+        throw new PmCliError('Action "install all" does not accept --ref.', EXIT_CODE.USAGE);
+      }
+      const aliases = listBundledPackageAliases();
+      const packages: Array<{ alias: string; result: ExtensionCommandResult }> = [];
+      for (const alias of aliases) {
+        packages.push({
+          alias,
+          result: await runExtension(alias, { ...options, install: true }, global),
+        });
+      }
+      for (const entry of packages) {
+        warnings.push(...entry.result.warnings);
+      }
+      return withResult({
+        installed_all: true,
+        installed_count: packages.length,
+        packages: packages.map((entry) => ({
+          alias: entry.alias,
+          ok: entry.result.ok,
+          extension: (entry.result.details as { extension?: unknown }).extension,
+          source: (entry.result.details as { source?: unknown }).source,
+          destination_path: (entry.result.details as { destination_path?: unknown }).destination_path,
+          activated: (entry.result.details as { activated?: unknown }).activated,
+          settings_changed: (entry.result.details as { settings_changed?: unknown }).settings_changed,
+          warnings: entry.result.warnings,
+        })),
+      });
+    }
     const bundledAliasSource =
       typeof githubOption === "string" ? null : await resolveBundledExtensionAliasSource(explicitSourceInput);
     const sourceInput = bundledAliasSource ?? explicitSourceInput;

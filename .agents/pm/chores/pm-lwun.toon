@@ -6,15 +6,17 @@ status: in_progress
 priority: 1
 tags[5]: docs,migration,packages,pm-cli,ux
 created_at: "2026-05-11T17:59:04.655Z"
-updated_at: "2026-05-11T22:09:30.029Z"
+updated_at: "2026-05-11T23:05:21.988Z"
 assignee: codex-agent
 author: codex-agent
 acceptance_criteria: Top-level help and docs consistently prefer packages; legacy extension command is documented as compatibility; docs-skills and static quality gates pass.
 parent: pm-59gj
-comments[3]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-05-11T17:59:04.655Z",codex-agent,Plan item created because this implementation intentionally keeps internals/backward compatibility on extension terminology while exposing package-first user commands.
   "2026-05-11T21:16:54.669Z",codex-agent,"Package-first docs slice completed for first-party Beads/Todos packages: docs/EXTENSIONS.md now describes pm install package roots and compatibility aliases; broader help/UX terminology migration remains open for follow-up."
   "2026-05-11T22:09:30.029Z",codex-agent,"Evidence update: PRD and changelog now describe first-party package roots and pm upgrade instead of active .agents/pm extension copies. Stale current-doc references to .agents/pm/extensions/beads or todos were eliminated; historical changelog entries remain historical."
+  "2026-05-11T22:42:39.455Z",codex-agent,"Docs update planned: document pm install '*' / pm install all as the package-first way to install bundled first-party packages, while keeping explicit pm install beads/todos and local package paths documented."
+  "2026-05-11T23:05:21.988Z",codex-agent,"Evidence: package-first docs now include pm install '*' / pm install all for bundled first-party packages in docs/EXTENSIONS.md, docs/COMMANDS.md, and docs/QUICKSTART.md, plus package README notes that first-party package sources are TypeScript-authored and shipped with JS runtime artifacts. Docs/skills gate passed as part of full release gates."
 files[6]{path,scope,note}:
   docs/EXTENSIONS.md,project,package-first install docs for optional first-party packages
   tests/integration/release-readiness-runtime.spec.ts,project,package allowlist release readiness
@@ -22,11 +24,13 @@ files[6]{path,scope,note}:
   tests/unit/package-manifest.spec.ts,project,first-party package root contract coverage
   src/cli/guide-topics.ts,project,guide package upgrade examples
   src/cli/help-content.ts,project,package and upgrade rich help
-docs[6]{path,scope,note}:
+docs[8]{path,scope,note}:
   CHANGELOG.md,project,Unreleased upgrade and package externalization notes
   docs/COMMANDS.md,project,upgrade command family reference
   docs/EXTENSIONS.md,project,upgrade workflow and package docs
   docs/QUICKSTART.md,project,pm upgrade update path
   docs/SDK.md,project,upgrade action contract note
+  packages/pm-beads/README.md,project,package TS source note
+  packages/pm-todos/README.md,project,package TS source note
   PRD.md,project,package-first PRD baseline
 body: ""

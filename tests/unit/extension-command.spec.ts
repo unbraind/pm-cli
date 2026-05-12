@@ -156,7 +156,8 @@ describe("extension command runtime", () => {
         capabilities: ["commands"],
       });
       const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
-      expect(entry).toContain("module.exports");
+      expect(entry).toContain("export function activate(api)");
+      expect(entry).toContain("export default");
       expect(entry).toContain('name: "starter-ext ping"');
 
       const rerun = await runExtension(scaffoldPath, { scaffold: true, project: true }, { path: context.pmPath });
@@ -205,6 +206,34 @@ describe("extension command runtime", () => {
           location: path.resolve(process.cwd(), "packages", "pm-todos"),
         },
         activated: true,
+      });
+    });
+  });
+
+  it("installs all bundled first-party packages via wildcard and all aliases", async () => {
+    await withTempPmPath(async (context) => {
+      const wildcardInstall = await runExtension("*", { install: true, project: true }, { path: context.pmPath });
+      expect(wildcardInstall.details).toMatchObject({
+        installed_all: true,
+        installed_count: 2,
+        packages: [
+          {
+            alias: "beads",
+            extension: { name: "builtin-beads-import" },
+            activated: true,
+          },
+          {
+            alias: "todos",
+            extension: { name: "builtin-todos-import-export" },
+            activated: true,
+          },
+        ],
+      });
+
+      const allInstall = await runExtension("all", { install: true, project: true }, { path: context.pmPath });
+      expect(allInstall.details).toMatchObject({
+        installed_all: true,
+        installed_count: 2,
       });
     });
   });

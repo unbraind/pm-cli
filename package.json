@@ -56,7 +56,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json",
     "start": "node dist/cli.js",
     "dev": "tsx src/cli.ts",
     "test": "node scripts/run-tests.mjs test",

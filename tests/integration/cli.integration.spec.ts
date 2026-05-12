@@ -96,6 +96,67 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("installs bundled first-party packages through root install all", async () => {
+    await withTempPmPath(async (context) => {
+      const installAll = context.runCli(["install", "*", "--json"], { expectJson: true });
+      expect(installAll.code).toBe(0);
+      expect((installAll.json as { action: string; details: { installed_all?: boolean; installed_count?: number } })).toMatchObject({
+        action: "install",
+        details: {
+          installed_all: true,
+          installed_count: 2,
+        },
+      });
+
+      const manage = context.runCli(["package", "manage", "--json"], { expectJson: true });
+      expect(manage.code).toBe(0);
+      const managed = ((manage.json as { details: { extensions?: Array<Record<string, unknown>> } }).details.extensions ?? []);
+      expect(managed).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "builtin-beads-import",
+            managed: true,
+            enabled: true,
+          }),
+          expect.objectContaining({
+            name: "builtin-todos-import-export",
+            managed: true,
+            enabled: true,
+          }),
+        ]),
+      );
+
+      if (process.platform !== "win32") {
+        const shellCwd = path.join(context.tempRoot, "shell-wildcard-cwd");
+        await mkdir(shellCwd, { recursive: true });
+        await writeFile(path.join(shellCwd, "alpha.txt"), "alpha\n", "utf8");
+        await writeFile(path.join(shellCwd, "omega.txt"), "omega\n", "utf8");
+
+        const shellCommand = [
+          JSON.stringify(process.execPath),
+          JSON.stringify(distCliPath()),
+          "install",
+          "*",
+          "--json",
+        ].join(" ");
+        const shellInstall = spawnSync("bash", ["-lc", shellCommand], {
+          cwd: shellCwd,
+          env: context.env,
+          encoding: "utf8",
+        });
+        expect(shellInstall.status).toBe(0);
+        const shellJson = JSON.parse(shellInstall.stdout) as { action: string; details: { installed_all?: boolean; installed_count?: number } };
+        expect(shellJson).toMatchObject({
+          action: "install",
+          details: {
+            installed_all: true,
+            installed_count: 2,
+          },
+        });
+      }
+    });
+  });
+
   it("installs npm package specs that expose pm extension resources", async () => {
     await withTempPmPath(async (context) => {
       const packageRoot = path.join(context.tempRoot, "npm-package-source");

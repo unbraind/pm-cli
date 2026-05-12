@@ -34,6 +34,14 @@ For one-off use:
 npx @unbrained/pm-cli --help
 ```
 
+Optional first-party packages are installable on demand:
+
+```bash
+pm install '*' --project
+pm install all --project
+pm package doctor --project --detail summary
+```
+
 ## Initialize a Repository
 
 ```bash

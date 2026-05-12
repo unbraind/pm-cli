@@ -31,7 +31,7 @@ function loadText(absolutePath) {
 }
 
 function collectTypeScriptFiles() {
-  const roots = ["src", "tests"].map((segment) => path.join(repoRoot, segment));
+  const roots = ["src", "tests", "packages"].map((segment) => path.join(repoRoot, segment));
   const matchesTs = (absolutePath) => absolutePath.endsWith(".ts") && !absolutePath.endsWith(".d.ts");
   const files = roots.flatMap((root) => walkFiles(root, matchesTs));
   return files.sort((left, right) => left.localeCompare(right));
