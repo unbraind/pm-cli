@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.12] - 2026-05-12
+
 ### Changed
 - Added `pm install '*'` / `pm install all` to install all bundled first-party pm packages, including shell-expanded `pm install *`, and added typechecking for TypeScript-authored package sources.
 - Added `pm upgrade` for package-first maintenance, including dry-run planning, CLI/SDK npm self-upgrade, managed package refresh from recorded sources, SDK/MCP action contracts, and docs/help coverage.
