@@ -6,16 +6,16 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-11T17:39:43.013Z"
+updated_at: "2026-05-12T22:08:35.791Z"
 deadline: "2026-05-04T13:20:01.343Z"
-assignee: codex-agent
+assignee: codex-audit
 author: codex-audit
 estimated_minutes: 300
 acceptance_criteria: Audit findings are actionable and deduplicated; changed files and verification commands are linked; temporary dogfood project validates core workflows; any discovered bugs with safe fixes are remediated and tested.
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[21]{created_at,author,text}:
+comments[23]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -37,6 +37,8 @@ comments[21]{created_at,author,text}:
   "2026-05-10T21:57:14.518Z",codex-agent,"Execution continuation 2026-05-10: duplicate checks reused pm-rnpb and pm-m4ov. GitHub snapshot: no open issues; dependabot PRs #24/#22 have failing checks; main CI for 212e677 is in progress. Proceeding with startup profiling, temp-project dogfood, privacy, telemetry, Sentry, and final CI verification."
   "2026-05-10T22:14:34.522Z",opencode-agent,"Final audit evidence 2026-05-10: temp dogfood verified init --defaults --author, default author fallback without PM_AUTHOR, create/update calendar date= aliases, calendar JSON, contracts, keyword/hybrid search, and validation. Performance comparison: before Sentry startup fix default-on dogfood read/query commands were ~1.1-1.3s after background init and ~1.5-2.0s in the baseline; after lazy Sentry startup, default-on list/search/calendar measured ~703ms/610ms/643ms while telemetry stayed enabled. Sentry/telemetry gate passed with recent telemetry finish_error_rate_pct=5.38, Sentry access ok, critical=1/high=3 after filtering known console-noise issues. Verification passed: focused 201-test suite, release-readiness+sentry focused suite, full coverage 90 files/1276 tests at 100%, static quality, docs-skills, secret scan, npm pack dry-run, pm health, pm validate with only pre-existing warnings. Residual tracked as pm-6zqq: long hybrid semantic reindex needs deterministic progress/completion output for agents."
   "2026-05-11T17:39:43.013Z",codex-agent,"Package ecosystem work started under pm-59gj: researching latest Pi package model, decomposing plan, then implementing pm install/package compatibility."
+  "2026-05-12T21:49:58.097Z",codex-audit,"Execution start 2026-05-12: duplicate check reused pm-rnpb after pm context, pm search, pm list-open, and pm list-in-progress. Bootstrap passed: npm install -g ., pm --version 2026.5.12, node v25.9.0, pnpm 10.33.0, pnpm build. Health only reports the known five history-drift warnings; proceeding single-agent with temp-project dogfood, code review, performance/search/calendar/SDK/telemetry/Sentry/GitHub audit, scoped fixes, and CI follow-through."
+  "2026-05-12T22:08:35.791Z",codex-audit,"Audit evidence 2026-05-12: GitHub snapshot found issue #27 and dependabot PRs #26/#24/#22 with known failing checks on dependency branches while main CI was green. Fixed #27 via extension explore runtime probing, added reusable temp-project package-first dogfood script, documented the progressive create/description strictness under pm-ej01, ran isolated dogfood successfully, checked telemetry stack health/recent events, and passed release gates with Sentry/telemetry required thresholds. Remaining known warnings: existing history drift on pm-54d/pm-f3q4/pm-fdla/pm-mb4n/pm-tq1."
 files[29]{path,scope,note}:
   README.md,project,public README hygiene update
   scripts/check-secrets.mjs,project,detect absolute home-path and user@private-host leakage

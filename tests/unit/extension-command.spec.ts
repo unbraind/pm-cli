@@ -424,8 +424,8 @@ describe("extension command runtime", () => {
             name: "sample-ext",
             active: true,
             enabled: true,
-            runtime_active: null,
-            activation_status: "unknown",
+            runtime_active: true,
+            activation_status: "ok",
             managed: true,
           }),
         ]),
@@ -491,6 +491,80 @@ describe("extension command runtime", () => {
       });
       const stateAfterUninstall = await readManagedExtensionState(path.join(context.pmPath, "extensions"));
       expect(stateAfterUninstall.state.entries).toEqual([]);
+    });
+  });
+
+  it("reports runtime command paths during explore and keeps them invocable", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "pm-graph-source");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        path.join(sourceDir, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "pm-graph",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(
+        path.join(sourceDir, "index.js"),
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'pm-graph export',",
+          "      description: 'Export graph data.',",
+          "      run: (context) => ({ ok: true, command: context.command, args: context.args })",
+          "    });",
+          "  }",
+          "};",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+
+      const explore = await runExtension(undefined, { explore: true, project: true }, { path: context.pmPath });
+      const extensions = (explore.details.extensions as Array<Record<string, unknown>>) ?? [];
+      expect(extensions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "pm-graph",
+            active: true,
+            enabled: true,
+            runtime_active: true,
+            activation_status: "ok",
+            command_paths: ["pm-graph export"],
+            action_paths: ["pm-graph-export"],
+          }),
+        ]),
+      );
+      expect(explore.details.runtime_probe).toMatchObject({
+        requested: true,
+        executed: true,
+        reason: "explore_defaults_to_runtime_probe",
+      });
+
+      const invoked = spawnSync(process.execPath, [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "pm-graph", "export", "--json"], {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PM_TELEMETRY_DISABLED: "1",
+          PM_SENTRY_DISABLED: "1",
+        },
+      });
+      expect(invoked.status).toBe(0);
+      expect(JSON.parse(invoked.stdout) as Record<string, unknown>).toMatchObject({
+        ok: true,
+        command: "pm-graph export",
+      });
     });
   });
 
@@ -1587,7 +1661,7 @@ describe("extension command runtime", () => {
     });
   });
 
-  it("runs opt-in runtime probe for manage parity without changing default manage semantics", async () => {
+  it("runs default explore and opt-in manage runtime probes without changing default manage semantics", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "runtime-probe-source");
       await mkdir(sourceDir, { recursive: true });
@@ -1646,8 +1720,26 @@ describe("extension command runtime", () => {
       expect(manageProbe.details.runtime_probe).toMatchObject({
         requested: true,
         executed: true,
+        reason: "runtime_probe_requested",
       });
       expect(manageProbe.warnings).toEqual(expect.arrayContaining(["extension_activate_failed:project:runtime-probe-ext"]));
+
+      const exploreProbe = await runExtension(undefined, { explore: true, project: true }, { path: context.pmPath });
+      const exploreExtensions = (exploreProbe.details.extensions as Array<Record<string, unknown>>) ?? [];
+      expect(exploreExtensions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "runtime-probe-ext",
+            runtime_active: false,
+            activation_status: "failed",
+          }),
+        ]),
+      );
+      expect(exploreProbe.details.runtime_probe).toMatchObject({
+        requested: true,
+        executed: true,
+        reason: "explore_defaults_to_runtime_probe",
+      });
     });
   });
 

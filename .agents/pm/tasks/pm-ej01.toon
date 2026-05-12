@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[5]: agent-ux,audit,commands,dogfood,pm-cli
 created_at: "2026-05-10T08:29:09.798Z"
-updated_at: "2026-05-10T21:15:56.859Z"
+updated_at: "2026-05-12T22:05:01.330Z"
 assignee: codex-agent
 author: codex-agent
 estimated_minutes: 240
@@ -15,12 +15,13 @@ parent: pm-rnpb
 resolution: Implemented forgiving repeatable-entry parsing while preserving all rich agent-provided metadata as text when it cannot fit a narrower log schema.
 expected_result: "Agents can pass intuitive bare IDs, paths, commands, and rich log text once without needing lossy retry simplification after a validation failure."
 actual_result: Create/update/files/docs/test workflows accept the intuitive forms in unit tests and an isolated temp-project dogfood run; rich key-like comment/note/learning payloads remain stored verbatim.
-comments[5]{created_at,author,text}:
+comments[6]{created_at,author,text}:
   "2026-05-10T08:29:09.798Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search simplify commands parameters schema strict agent input intuitive --limit 10,pm list-open --limit 20,pm list-in-progress --limit 20,and pm search create strict repeatable metadata shorthand command intuitive agents retry --limit 10. Existing agent UX items are closed or broad parent work; pm-rnpb is the canonical parent,so this dedicated child tracks the current command-simplification audit."
   "2026-05-10T08:47:54.924Z",codex-agent,"Evidence: implemented forgiving repeatable-entry parsing for create/update/files/docs/test so bare dependency IDs infer kind=related, bare file/doc paths infer path with project scope, bare linked test values infer command, and rich comment/note/learning seeds with extra key-like metadata are preserved as text instead of failing and causing lossy retries. Verification passed: temp project end-to-end dogfood with isolated PM_PATH/PM_GLOBAL_PATH; pm linked tests passed including coverage 90 files/1252 tests at 100%; focused command suite 129 tests passed; pnpm quality:static passed; scripts/check-secrets passed. pm validate and pm health still report only the pre-existing history drift warnings on pm-54d, pm-f3q4, pm-fdla, pm-mb4n, and pm-tq1."
   "2026-05-10T20:48:23.427Z",codex-agent,"Execution resumed under pm-rnpb lineage for full audit pass; implementing CLI/helper dedup, search/telemetry hardening, docs dedup, CI stabilization, and full verification in one delivery."
   "2026-05-10T21:15:28.039Z",codex-agent,"Verification evidence: targeted suites passed (186 tests + 43 tests focused on bootstrap/create/update/search/sentry/calendar/docs gate), full gate passed (90 files/1272 tests, 100% coverage statements/branches/functions/lines), static quality passed, docs/skills gate passed, secrets scan passed, tarball npx smoke passed. Coverage release-readiness allowlist updated for new modules src/cli/argv-utils.ts, src/cli/commands/metadata-normalizers.ts, and src/core/shared/levenshtein.ts."
   "2026-05-10T21:15:56.859Z",codex-agent,"Tracker checks after full verification: pm validate --check-resolution --check-history-drift and pm health --check-only both complete with only pre-existing warnings (resolution metadata gap on pm-dhie and history drift hash mismatches on pm-54d/pm-f3q4/pm-fdla/pm-mb4n/pm-tq1). No new validation regressions introduced by this change set."
+  "2026-05-12T22:05:01.330Z",codex-audit,"Audit finding 2026-05-12: temp dogfood confirmed pm create --create-mode progressive still hits a Commander-level missing --description error before runtime progressive policy can explain/backfill fields. Reuse this item as the canonical command-simplification follow-up; no duplicate item created."
 files[29]{path,scope,note}:
   scripts/release/sentry-telemetry-gate.mjs,project,release gate ignores known noisy console issue groups
   scripts/smoke-npx-from-pack.mjs,project,npx smoke now has npm exec fallback

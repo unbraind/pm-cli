@@ -219,6 +219,8 @@ export interface ManagedExtensionSummary {
   enabled: boolean;
   runtime_active: boolean | null;
   activation_status: ExtensionActivationStatus;
+  command_paths?: string[];
+  action_paths?: string[];
   managed: boolean;
   source?: ManagedExtensionSource;
   update_available?: boolean | null;
@@ -1333,22 +1335,73 @@ function applyDoctorRuntimeActivationState(
   const loadedNames = new Set(loadResult.loaded.map((entry) => normalizeExtensionNameForMatch(entry.name)));
   const loadFailedNames = new Set(loadResult.failed.map((entry) => normalizeExtensionNameForMatch(entry.name)));
   const activationFailedNames = new Set(activationResult.failed.map((entry) => normalizeExtensionNameForMatch(entry.name)));
+  const commandPathsByExtension = new Map<string, Set<string>>();
+  const actionPathsByExtension = new Map<string, Set<string>>();
+
+  const addCommandPath = (extensionName: string, commandPath: string): void => {
+    const normalizedName = normalizeExtensionNameForMatch(extensionName);
+    const normalizedCommandPath = commandPath.trim();
+    if (normalizedName.length === 0 || normalizedCommandPath.length === 0) {
+      return;
+    }
+    const existing = commandPathsByExtension.get(normalizedName) ?? new Set<string>();
+    existing.add(normalizedCommandPath);
+    commandPathsByExtension.set(normalizedName, existing);
+  };
+
+  const addActionPath = (extensionName: string, actionPath: string): void => {
+    const normalizedName = normalizeExtensionNameForMatch(extensionName);
+    const normalizedActionPath = actionPath.trim();
+    if (normalizedName.length === 0 || normalizedActionPath.length === 0) {
+      return;
+    }
+    const existing = actionPathsByExtension.get(normalizedName) ?? new Set<string>();
+    existing.add(normalizedActionPath);
+    actionPathsByExtension.set(normalizedName, existing);
+  };
+
+  for (const registration of activationResult.registrations.commands) {
+    addCommandPath(registration.name, registration.command);
+    addActionPath(registration.name, registration.action);
+  }
+  for (const handler of activationResult.commands.handlers) {
+    addCommandPath(handler.name, handler.command);
+  }
+  for (const override of activationResult.commands.overrides) {
+    addCommandPath(override.name, override.command);
+  }
+
+  const sortedPaths = (values: Set<string> | undefined): string[] | undefined => {
+    if (!values || values.size === 0) {
+      return undefined;
+    }
+    return [...values].sort((left, right) => left.localeCompare(right));
+  };
 
   return extensions.map((entry) => {
+    const normalizedName = normalizeExtensionNameForMatch(entry.name);
+    const commandPaths = sortedPaths(commandPathsByExtension.get(normalizedName));
+    const actionPaths = sortedPaths(actionPathsByExtension.get(normalizedName));
+    const runtimeMetadata = {
+      ...(commandPaths ? { command_paths: commandPaths } : {}),
+      ...(actionPaths ? { action_paths: actionPaths } : {}),
+    };
+
     if (!entry.enabled) {
       return {
         ...entry,
         runtime_active: false,
         activation_status: "not_loaded",
+        ...runtimeMetadata,
       };
     }
 
-    const normalizedName = normalizeExtensionNameForMatch(entry.name);
     if (loadFailedNames.has(normalizedName) || activationFailedNames.has(normalizedName)) {
       return {
         ...entry,
         runtime_active: false,
         activation_status: "failed",
+        ...runtimeMetadata,
       };
     }
 
@@ -1357,6 +1410,7 @@ function applyDoctorRuntimeActivationState(
         ...entry,
         runtime_active: true,
         activation_status: "ok",
+        ...runtimeMetadata,
       };
     }
 
@@ -1364,6 +1418,7 @@ function applyDoctorRuntimeActivationState(
       ...entry,
       runtime_active: false,
       activation_status: "not_loaded",
+      ...runtimeMetadata,
     };
   });
 }
@@ -2738,7 +2793,7 @@ export async function runExtension(
     }
     let runtimeProbeSummary: Record<string, unknown> | undefined;
     let runtimeInstalledExtensions = refreshedInstalled.extensions;
-    if (action === "manage" && options.runtimeProbe === true) {
+    if (action === "explore" || options.runtimeProbe === true) {
       const loadResult = await loadExtensions({
         pmRoot: resolvedRoots.pm_root,
         settings,
@@ -2755,6 +2810,7 @@ export async function runExtension(
       runtimeProbeSummary = {
         requested: true,
         executed: true,
+        reason: action === "explore" ? "explore_defaults_to_runtime_probe" : "runtime_probe_requested",
         load_failure_count: loadResult.failed.length,
         activation_failure_count: activationResult.failed.length,
         warning_count: [...new Set([...loadResult.warnings, ...activationResult.warnings])].length,
@@ -2762,7 +2818,7 @@ export async function runExtension(
       };
     } else if (action === "manage") {
       runtimeProbeSummary = {
-        requested: options.runtimeProbe === true,
+        requested: false,
         executed: false,
       };
     }
@@ -2778,6 +2834,9 @@ export async function runExtension(
       triage,
       policy: configuredPolicy,
     };
+    if (action === "explore") {
+      details.runtime_probe = runtimeProbeSummary;
+    }
     if (action === "manage") {
       details.runtime_probe = runtimeProbeSummary;
       details.managed_state_fix =

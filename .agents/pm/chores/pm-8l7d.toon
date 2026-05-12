@@ -2,14 +2,26 @@ id: pm-8l7d
 title: Add reusable package-first temp-project dogfood script
 description: "Codify the manual package-first E2E flow into a reusable sandbox script that initializes an isolated PM_PATH/PM_GLOBAL_PATH project, installs bundled packages, runs package doctor, upgrade dry-run, SDK import smoke, search/calendar/context checks, linked tests, validate, and health."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[4]: dogfood,packages,pm-cli,testing
 created_at: "2026-05-12T19:46:36.080Z"
-updated_at: "2026-05-12T19:46:36.080Z"
+updated_at: "2026-05-12T22:08:55.653Z"
 author: codex-agent
 acceptance_criteria: "A reusable sandbox dogfood script exists; it never touches the repository's real .agents/pm data; it covers install all, package doctor, upgrade dry-run, SDK import smoke, and core workflow checks; docs or release gates reference it where appropriate."
 parent: pm-59gj
-comments[1]{created_at,author,text}:
+resolution: Fixed
+expected_result: reusable sandbox dogfood script covers package-first and core workflows without touching real pm data
+actual_result: scripts/dogfood-package-first.mjs passed standalone and through linked pm test with isolated PM_PATH/PM_GLOBAL_PATH
+comments[2]{created_at,author,text}:
   "2026-05-12T19:46:36.080Z",codex-agent,"Duplicate check before create: ran pm search 'package-first dogfood script temp project install doctor upgrade SDK' --limit 10. Existing matches were closed dogfood evidence items including pm-gy6w, but no reusable script task remains open, so this follow-up is created under pm-59gj."
+  "2026-05-12T22:08:35.811Z",codex-audit,"Evidence: added scripts/dogfood-package-first.mjs plus npm script dogfood:package-first. The script creates isolated PM_PATH/PM_GLOBAL_PATH roots and validates init, lifecycle mutations, files/docs/logs, calendar, search/reindex, package install/explore/doctor, upgrade dry-run, SDK import, linked tests, validate, health, close, and release. Linked pm test passed."
+files[2]{path,scope,note}:
+  package.json,project,dogfood package script
+  scripts/dogfood-package-first.mjs,project,reusable isolated package-first dogfood harness
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/dogfood-package-first.mjs,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp36kffy-vkyw03,test,passed,"2026-05-12T22:06:18.081Z","2026-05-12T22:06:37.870Z","2026-05-12T22:06:37.870Z",null,null,1,0,0,null,null,null
+close_reason: Reusable isolated package-first dogfood script added and linked pm test passed
 body: ""
