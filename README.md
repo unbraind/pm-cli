@@ -17,7 +17,6 @@
 | Settings, storage, search, and output | [Configuration](docs/CONFIGURATION.md) |
 | Safe test execution and linked tests | [Testing](docs/TESTING.md) |
 | Package and extension authoring | [Packages and Extensions](docs/EXTENSIONS.md) and [SDK](docs/SDK.md) |
-| Pi native package | [Pi Package](docs/PI_PACKAGE.md) |
 | Codex native integration | [Codex Plugin](docs/CODEX_PLUGIN.md) |
 | Maintainer release process (daily auto-release + local parity) | [Releasing](docs/RELEASING.md) |
 | Contributor internals | [Architecture](docs/ARCHITECTURE.md) |
@@ -59,20 +58,14 @@ For Claude Code, install the native plugin (no `pm` CLI required):
 
 This registers 18 MCP tools, 5 workflow skills, 14 slash commands, 3 subagents, hybrid TUI tracking, and a session-start context hook — all without shelling out to the `pm` CLI.
 
-For Pi, install the native package integration after publish:
-
-```bash
-pi install npm:@unbrained/pm-cli
-```
-
-This registers a native `pm` tool, custom TUI panels/renderers (`/pm-board`, `/pm-item`, `/pm-history`), Pi skills, prompt templates, and optional pi-subagents setup without requiring Pi to run the `pm` shell command.
-
 `pm` packages use the same package-first vocabulary:
 
 ```bash
+pm install '*'
 pm install ./my-package
 pm package manage --project
 pm package doctor --detail summary
+pm upgrade --dry-run
 ```
 
 The legacy `pm extension ...` command remains available for existing automation.

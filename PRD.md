@@ -2,7 +2,7 @@
 
 Status: Draft v1 (planning reference; pm data and runtime behavior are authoritative)
 Project: `pm` / `pm-cli`  
-Last Updated: 2026-05-01
+Last Updated: 2026-05-12
 
 ## Navigation
 
@@ -46,7 +46,6 @@ Existing trackers either rely on hosted backends, store state in non-diff-friend
 - Ship first-party installable package sources:
   - Beads import (`packages/pm-beads`, installed via `pm install`)
   - todos.ts import/export (`packages/pm-todos`, installed via `pm install`)
-  - Pi agent extension wrapper source module
 - Provide optional semantic search with provider + vector-store adapters.
 
 ## 3) Explicit Non-Goals
@@ -1377,34 +1376,14 @@ Behavior:
   - `type = "Task"`
   - `updated_at = created_at (or now if missing)`
 
-### C) Pi tool wrapper
+### C) External tool wrappers and package integrations
 
-Current baseline status (release-hardening):
+Current package-first baseline:
 
-- Implemented as a Pi agent extension source module at `.pi/extensions/pm-cli/index.ts` (outside the `pm` CLI command surface).
-- Registers one Pi tool named `pm` via Pi's extension API (`registerTool`) and maps `action` + command-shaped fields to `pm` CLI invocations.
-- Tool action enums and parameter JSON Schema are sourced from the shared command contract registry (`src/sdk/cli-contracts.ts`) to avoid drift with core CLI/completion surfaces.
-- Action dispatch currently covers the full v0.1 command-aligned set (`init`, `config`, `create`, `list`, `list-all`, `list-draft`, `list-open`, `list-in-progress`, `list-blocked`, `list-closed`, `list-canceled`, `calendar`, `context`, `get`, `search`, `reindex`, `history`, `activity`, `restore`, `update`, `close`, `delete`, `append`, `comments`, `notes`, `learnings`, `files`, `docs`, `deps`, `test`, `test-all`, `stats`, `health`, `validate`, `gc`, `completion`, `templates-save`, `templates-list`, `templates-show`, `claim`, `release`) plus extension lifecycle actions (`extension-install`, `extension-uninstall`, `extension-explore`, `extension-manage`, `extension-doctor`, `extension-adopt`, `extension-adopt-all`, `extension-activate`, `extension-deactivate`), extension action aliases (`beads-import`, `todos-import`, `todos-export`), and workflow presets (`start-task`, `pause-task`, `close-task`).
-- Invocation fallback order is deterministic for distribution resilience: attempt `pm` first, then fallback to packaged `node <package-root>/dist/cli.js` when `pm` is unavailable.
-
-- Expose one tool `pm`.
-- Parameters include:
-  - `action` enum mapped to CLI commands and workflow presets
-  - common fields (`id`, `title`, `status`, `tags`, `body`, etc.)
-  - completion parity field `shell` (`action=completion` -> `pm completion <shell>`)
-  - search-specific parity fields including `mode` and `includeLinked` (`--include-linked`)
-  - list/runtime parity fields including `offset` and `progress` where command surfaces support those flags
-  - close/validate parity fields including `validateClose`, `checkMetadata`, `checkResolution`, `checkLifecycle`, `checkStaleBlockers`, `checkFiles`, `scanMode`, `includePmInternals`, `strictExit`, `failOnWarn`, `checkHistoryDrift`, and `checkCommandReferences`
-  - contracts parity fields including `schemaOnly`, `runtimeOnly`, and `activeOnly`
-  - claim/release metadata parity fields including `author`, `message`, and `force` (`--author`, `--message`, `--force`)
-  - create/update scalar parity fields using camelCase wrapper parameters that forward to the canonical CLI flags for planning/workflow metadata (`parent`, `reviewer`, `risk`, `confidence`, `sprint`, `release`, `blockedBy`, `blockedReason`, `unblockNote`, `definitionOfReady`, `order`, `goal`, `objective`, `value`, `impact`, `outcome`, `whyNow`, `closeReason`) and issue metadata (`reporter`, `severity`, `environment`, `reproSteps`, `resolution`, `expectedResult`, `actualResult`, `affectedVersion`, `fixedVersion`, `component`, `regression`, `customerImpact`)
-  - explicit empty-string passthrough for empty-allowed CLI flags (for example `--description ""` and `--body ""`)
-  - numeric scalar parity for numeric CLI flags: wrapper accepts either JSON numbers or strings for `priority`, `estimate`, `limit`, and `timeout`, then stringifies values for deterministic CLI argument emission
-- Return object:
-  - `content: [{ type: "text", text: <TOON or JSON string> }]`
-  - `details: <structured object>`
-
-Wrapper behavior must remain aligned with CLI semantics and exit conditions.
+- The bare CLI and SDK expose provider-neutral contracts through `pm contracts` and the SDK exports in `src/sdk/cli-contracts.ts`.
+- External agent/tool wrappers should consume those contracts instead of importing internal CLI modules or embedding provider-specific action schemas in core.
+- Optional workflow bridges belong in installable pm packages that declare `pm.extensions` resources and can be installed, diagnosed, and upgraded with `pm install`, `pm package`, and `pm upgrade`.
+- The main repository can include first-party package sources, but direct provider-specific wrappers are not part of the bare core.
 
 Schema-capability registrations are also validated deterministically at activation-time:
 

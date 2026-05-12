@@ -1,0 +1,15 @@
+id: pm-8l7d
+title: Add reusable package-first temp-project dogfood script
+description: "Codify the manual package-first E2E flow into a reusable sandbox script that initializes an isolated PM_PATH/PM_GLOBAL_PATH project, installs bundled packages, runs package doctor, upgrade dry-run, SDK import smoke, search/calendar/context checks, linked tests, validate, and health."
+type: Chore
+status: open
+priority: 2
+tags[4]: dogfood,packages,pm-cli,testing
+created_at: "2026-05-12T19:46:36.080Z"
+updated_at: "2026-05-12T19:46:36.080Z"
+author: codex-agent
+acceptance_criteria: "A reusable sandbox dogfood script exists; it never touches the repository's real .agents/pm data; it covers install all, package doctor, upgrade dry-run, SDK import smoke, and core workflow checks; docs or release gates reference it where appropriate."
+parent: pm-59gj
+comments[1]{created_at,author,text}:
+  "2026-05-12T19:46:36.080Z",codex-agent,"Duplicate check before create: ran pm search 'package-first dogfood script temp project install doctor upgrade SDK' --limit 10. Existing matches were closed dogfood evidence items including pm-gy6w, but no reusable script task remains open, so this follow-up is created under pm-59gj."
+body: ""

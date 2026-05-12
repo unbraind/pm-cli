@@ -2,28 +2,45 @@ id: pm-lwun
 title: Migrate extension terminology to package-first docs and UX
 description: "Audit command help, docs, skills, examples, telemetry naming, and error guidance so users see packages first while legacy extension wording remains clear for compatibility."
 type: Chore
-status: in_progress
+status: closed
 priority: 1
 tags[5]: docs,migration,packages,pm-cli,ux
 created_at: "2026-05-11T17:59:04.655Z"
-updated_at: "2026-05-11T23:05:21.988Z"
-assignee: codex-agent
+updated_at: "2026-05-12T19:55:50.658Z"
 author: codex-agent
 acceptance_criteria: Top-level help and docs consistently prefer packages; legacy extension command is documented as compatibility; docs-skills and static quality gates pass.
 parent: pm-59gj
-comments[5]{created_at,author,text}:
+resolution: "Package-first UX/docs slice completed; package lifecycle help and diagnostics now prefer pm package/pm install, with extension wording retained for compatibility/runtime internals."
+expected_result: "Users following top-level docs/help and package lifecycle diagnostics see package-first commands first, while legacy pm extension workflows remain available for existing automation."
+actual_result: README/PRD/help/docs and lifecycle next steps/remediation were updated; focused and linked package/docs tests passed; compatibility/manual E2E passed; broader gate is blocked only by pre-existing live Sentry threshold issues.
+comments[9]{created_at,author,text}:
   "2026-05-11T17:59:04.655Z",codex-agent,Plan item created because this implementation intentionally keeps internals/backward compatibility on extension terminology while exposing package-first user commands.
   "2026-05-11T21:16:54.669Z",codex-agent,"Package-first docs slice completed for first-party Beads/Todos packages: docs/EXTENSIONS.md now describes pm install package roots and compatibility aliases; broader help/UX terminology migration remains open for follow-up."
   "2026-05-11T22:09:30.029Z",codex-agent,"Evidence update: PRD and changelog now describe first-party package roots and pm upgrade instead of active .agents/pm extension copies. Stale current-doc references to .agents/pm/extensions/beads or todos were eliminated; historical changelog entries remain historical."
   "2026-05-11T22:42:39.455Z",codex-agent,"Docs update planned: document pm install '*' / pm install all as the package-first way to install bundled first-party packages, while keeping explicit pm install beads/todos and local package paths documented."
   "2026-05-11T23:05:21.988Z",codex-agent,"Evidence: package-first docs now include pm install '*' / pm install all for bundled first-party packages in docs/EXTENSIONS.md, docs/COMMANDS.md, and docs/QUICKSTART.md, plus package README notes that first-party package sources are TypeScript-authored and shipped with JS runtime artifacts. Docs/skills gate passed as part of full release gates."
-files[6]{path,scope,note}:
+  "2026-05-12T19:36:00.714Z",codex-agent,"Execution restart 2026-05-12: using this chore for the remaining package-first docs/help/UX audit. Focus is user-facing terminology and package-first consistency while preserving internal extension compatibility wording where it reflects runtime contracts."
+  "2026-05-12T19:48:28.293Z",codex-agent,"Implementation evidence: package lifecycle runner now receives package vs extension vocabulary so pm package init/doctor/manage emit package-first next steps and remediation; README/PRD no longer promote stale Pi-wrapper core scope; docs/EXTENSIONS repeated runtime sections now lead with pm package/pm install. Focused verification passed: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/guide-command.spec.ts tests/unit/docs-skills-gate.spec.ts (74 tests)."
+  "2026-05-12T19:53:49.607Z",codex-agent,"Release-gate evidence: node scripts/release/compatibility-check.mjs --json passed (base_version 2026.5.12; validation_ok true; health_ok true). node scripts/release/run-gates.mjs --json --telemetry-mode best-effort passed build/typecheck/docs-skills/static/coverage/security/npx smoke, then failed only at sentry-telemetry-gate because live Sentry threshold found 1 critical and 3 high unresolved issues. Telemetry was healthy: finish_error_rate_pct 3.44 and failures_without_error_code_rows 0."
+  "2026-05-12T19:54:11.017Z",codex-agent,"Manual temp-project E2E evidence: isolated PM_PATH/PM_GLOBAL_PATH project ran init --defaults, install all, package doctor --strict-exit, upgrade --packages-only --dry-run, contracts --command upgrade, create/search/calendar/context, health --check-only, validate --check-resolution --check-history-drift, and SDK import smoke. Results: install all installed 2 first-party packages; package doctor ok with 2 active/loaded managed extensions; upgrade dry-run planned 2 package refreshes; health and validate ok; SDK import exposed 100 exports and defineExtension."
+notes[1]{created_at,author,text}:
+  "2026-05-12T19:41:34.848Z",codex-agent,"Sub-agent findings 2026-05-12: package-first foundation is present, but remaining gaps include user-facing extension-first docs in docs/EXTENSIONS.md, lifecycle remediation text from package commands that still says pm extension, static SDK optional actions for beads/todos, and first-party package imports of internal core modules. This slice will fix UX/docs drift; SDK optional-action/package portability should be follow-up unless covered by small focused edits."
+files[10]{path,scope,note}:
   docs/EXTENSIONS.md,project,package-first install docs for optional first-party packages
   tests/integration/release-readiness-runtime.spec.ts,project,package allowlist release readiness
   tests/unit/extension-command.spec.ts,project,package-first alias expectations
   tests/unit/package-manifest.spec.ts,project,first-party package root contract coverage
   src/cli/guide-topics.ts,project,guide package upgrade examples
   src/cli/help-content.ts,project,package and upgrade rich help
+  README.md,project,remove stale Pi package route from package-first entrypoint
+  PRD.md,project,update package-first planning reference and remove core Pi wrapper target
+  src/cli/commands/extension.ts,project,package vocabulary in lifecycle scaffold and diagnostics
+  src/cli/register-setup.ts,project,pass package vocabulary into shared lifecycle runner
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/guide-command.spec.ts tests/unit/docs-skills-gate.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused package-first help/docs lifecycle regression
+  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/upgrade-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,package-first contracts and release-readiness suite
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp31viey-nflmyk,test,passed,"2026-05-12T19:54:11.013Z","2026-05-12T19:55:16.858Z","2026-05-12T19:55:16.858Z",null,null,2,0,0,null,null,null
 docs[8]{path,scope,note}:
   CHANGELOG.md,project,Unreleased upgrade and package externalization notes
   docs/COMMANDS.md,project,upgrade command family reference
@@ -33,4 +50,5 @@ docs[8]{path,scope,note}:
   packages/pm-beads/README.md,project,package TS source note
   packages/pm-todos/README.md,project,package TS source note
   PRD.md,project,package-first PRD baseline
+close_reason: "Package-first docs/help/UX migration complete; linked tests, compatibility check, manual temp-project E2E, coverage gate components, and telemetry evidence recorded; live Sentry threshold remains separate blocker."
 body: ""

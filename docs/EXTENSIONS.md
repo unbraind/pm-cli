@@ -31,11 +31,13 @@ pm package reload --project
 Compatibility equivalents:
 
 ```bash
-pm extension init ./my-package
+pm extension init ./my-package        # prefer: pm package init ./my-package
 pm extension install ./my-package --project
 pm extension doctor --project --detail summary
 pm extension reload --project
 ```
+
+Use compatibility equivalents only for existing automation or for debugging extension-runtime behavior directly.
 
 ## Upgrade Workflow
 
@@ -317,7 +319,7 @@ pm package doctor --project --detail summary --strict-exit
 - `docs/examples/ci/github-actions-pm-extension-gate.yml`
 - `docs/examples/ci/gitlab-ci-pm-extension-gate.yml`
 - `docs/examples/ci/jenkins-pm-extension-gate.Jenkinsfile`
-# Extensions
+# Extension Runtime Details
 
 Extensions let you add or override `pm` runtime behavior without modifying core `pm-cli`.
 
@@ -332,17 +334,17 @@ This guide is the authoritative reference for:
 ## Quick Start
 
 ```bash
-# 1) Scaffold an extension
-pm extension --init ./my-extension
+# 1) Scaffold a package-backed extension
+pm package init ./my-package
 
 # 2) Install in project scope
-pm extension --install --project ./my-extension
+pm install ./my-package --project
 
 # 3) Run diagnostics
-pm extension --doctor --project --detail summary
+pm package doctor --project --detail summary
 
 # 4) Reload runtime modules after local edits
-pm extension --reload --project
+pm package reload --project
 ```
 
 ## Delta From Previous Scope
@@ -352,7 +354,7 @@ Compared to the previous policy-only extension surface, this release adds:
 - **Manifest v2 metadata** for trust, provenance, sandbox profile, and runtime permission declarations.
 - **Policy v2 controls** for trust mode, provenance requirement, sandbox defaults, and command/action/service allow/block maps.
 - **Registration enforcement upgrades** so command/action/service restrictions are evaluated at registration boundaries.
-- **Hot reload controls** via cache-busted extension reload (`pm extension --reload`) with watch-mode semantics (`--watch`).
+- **Hot reload controls** via cache-busted package reload (`pm package reload`) with watch-mode semantics (`--watch`).
 - **Contracts metadata upgrades** for trust/sandbox compatibility information in `pm contracts`.
 
 ## Extension Locations
@@ -562,27 +564,27 @@ pm extension --doctor --project --detail summary --strict-exit
 - `docs/examples/ci/github-actions-pm-extension-gate.yml`
 - `docs/examples/ci/gitlab-ci-pm-extension-gate.yml`
 - `docs/examples/ci/jenkins-pm-extension-gate.Jenkinsfile`
-# Extensions
+# Extension Runtime Governance
 
 Extensions let you add or override `pm` runtime behavior without editing core `pm-cli` sources. They are loaded at runtime, gated by manifest capabilities, and now support granular governance policies for capability/surface allow/block controls.
 
 ## Quick Start
 
 ```bash
-# 1) Scaffold a new extension
-pm extension --init ./my-extension
+# 1) Scaffold a new package
+pm package init ./my-package
 
 # 2) Install into project scope
-pm extension --install --project ./my-extension
+pm install ./my-package --project
 
-# 3) Run extension diagnostics
-pm extension --doctor --project --detail summary
+# 3) Run package diagnostics
+pm package doctor --project --detail summary
 
 # 4) Deep diagnostics with traces
-pm extension --doctor --project --detail deep --trace
+pm package doctor --project --detail deep --trace
 ```
 
-Expected summary signals from `extension --doctor`:
+Expected summary signals from `pm package doctor`:
 
 - `details.summary.status`: `ok` or `warn`
 - `details.summary.warning_codes`: deterministic warning code list
@@ -763,27 +765,27 @@ For CI/CD and agents:
 
 ## Troubleshooting
 
-- Manifest/entry failures: run `pm extension --explore --project`
-- Activation failures: run `pm extension --doctor --detail deep --trace`
+- Manifest/entry failures: run `pm package explore --project`
+- Activation failures: run `pm package doctor --detail deep --trace`
 - Policy blocks: review `settings.extensions.policy` and `details.summary.policy`
 - Runtime drift suspicion: compare with `pm --no-extensions <command>`
-- Managed-state update-check gaps: run `pm extension --manage --fix-managed-state`
+- Managed-state update-check gaps: run `pm package manage --fix-managed-state`
 
 ## Related Docs
 
 - `docs/SDK.md`
 - `docs/examples/starter-extension/README.md`
 - `docs/CLAUDE_CODE_PLUGIN.md`
-# Extensions
+# Extension Runtime Reference
 
 Extensions add commands, schema, renderers, importers/exporters, search adapters, lifecycle hooks, and selected runtime overrides without modifying core `pm-cli`.
 
 ## Agent Quick Context
 
-- Use `pm extension init ./my-extension` for a starter scaffold.
+- Use `pm package init ./my-package` for a starter scaffold.
 - Use `@unbrained/pm-cli/sdk` for public extension APIs.
 - Declare only the capabilities your extension uses.
-- Run `pm extension doctor --detail deep --trace` for activation failures.
+- Run `pm package doctor --detail deep --trace` for activation failures.
 - Use `--no-extensions` to isolate core behavior during incident triage.
 - Use `pm guide extensions --depth standard` for local docs routing.
 
@@ -808,8 +810,8 @@ Load order is global, then project. Project extensions take precedence when keys
 Scaffold:
 
 ```bash
-pm extension init ./my-extension
-pm extension scaffold ./my-extension
+pm package init ./my-package
+pm package scaffold ./my-package
 ```
 
 Install:
@@ -823,29 +825,29 @@ pm install todos --project
 Inspect and manage:
 
 ```bash
-pm extension explore --project
-pm extension manage --project
-pm extension doctor --detail summary
-pm extension doctor --detail deep --trace
+pm package explore --project
+pm package manage --project
+pm package doctor --detail summary
+pm package doctor --detail deep --trace
 ```
 
 Activate and deactivate:
 
 ```bash
-pm extension activate my-extension --project
-pm extension deactivate my-extension --project
+pm package activate my-extension --project
+pm package deactivate my-extension --project
 ```
 
 Adopt unmanaged extensions:
 
 ```bash
-pm extension adopt my-extension --project
-pm extension adopt-all --project
+pm package adopt my-extension --project
+pm package adopt-all --project
 ```
 
 ## Install Sources
 
-`pm extension install` accepts:
+`pm install` and `pm package install` accept:
 
 - local directories
 - GitHub HTTPS URLs
