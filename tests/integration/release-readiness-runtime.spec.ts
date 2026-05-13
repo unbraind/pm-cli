@@ -1262,7 +1262,15 @@ describe("release readiness runtime coverage", () => {
 
       const reindexResult = context.runCli(["reindex", "--mode", "keyword", "--json"], { expectJson: true });
       expect(reindexResult.code).toBe(0);
-      expectTopLevelKeyOrder(reindexResult.json, ["ok", "mode", "total_items", "artifacts", "warnings", "generated_at"]);
+      expectTopLevelKeyOrder(reindexResult.json, [
+        "ok",
+        "mode",
+        "total_items",
+        "semantic",
+        "artifacts",
+        "warnings",
+        "generated_at",
+      ]);
 
       const historyResult = context.runCli(["history", createdId, "--limit", "20", "--json"], { expectJson: true });
       expect(historyResult.code).toBe(0);

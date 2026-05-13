@@ -13,6 +13,20 @@ export interface EmbeddingBatchExecutionResult {
   warnings: string[];
 }
 
+export interface EmbeddingBatchProgressEvent {
+  batch_index: number;
+  batch_total: number;
+  batch_size: number;
+  completed_inputs: number;
+  total_inputs: number;
+  attempt?: number;
+  phase: "start" | "complete";
+}
+
+export interface EmbeddingBatchExecutionOptions {
+  onProgress?: (event: EmbeddingBatchProgressEvent) => void;
+}
+
 interface EmbeddingBatchRuntime {
   batchSize: number;
   maxRetries: number;
@@ -123,6 +137,7 @@ export async function executeEmbeddingBatchesWithRetry(
   provider: EmbeddingProviderConfig,
   settings: PmSettings,
   inputs: string[],
+  options: EmbeddingBatchExecutionOptions = {},
 ): Promise<EmbeddingBatchExecutionResult> {
   if (inputs.length === 0) {
     return {
@@ -145,9 +160,27 @@ export async function executeEmbeddingBatchesWithRetry(
   }
   const batches = createBatches(normalizedInputs, runtime.batchSize, runtime.maxBatchInputCharacters);
   const vectors: number[][] = [];
+  let completedInputs = 0;
   for (let batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
     const batch = batches[batchIndex];
+    options.onProgress?.({
+      batch_index: batchIndex + 1,
+      batch_total: batches.length,
+      batch_size: batch.length,
+      completed_inputs: completedInputs,
+      total_inputs: normalizedInputs.length,
+      phase: "start",
+    });
     vectors.push(...(await executeBatchWithAdaptiveSplit(provider, batch, String(batchIndex + 1), runtime.maxRetries, warnings)));
+    completedInputs += batch.length;
+    options.onProgress?.({
+      batch_index: batchIndex + 1,
+      batch_total: batches.length,
+      batch_size: batch.length,
+      completed_inputs: completedInputs,
+      total_inputs: normalizedInputs.length,
+      phase: "complete",
+    });
   }
   return {
     vectors,

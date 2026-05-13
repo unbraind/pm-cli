@@ -376,7 +376,11 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   reindex: {
     why: "Rebuilds search artifacts after large changes to item corpus or provider/vector config.",
-    examples: ["pm reindex --mode keyword", "pm reindex --mode hybrid"],
+    examples: ["pm reindex --mode keyword", "pm reindex --mode hybrid --progress --json"],
+    tips: [
+      "Use --progress for non-interactive visibility during local embedding runs.",
+      "JSON output includes semantic stale/unchanged/embed/upsert counts so agents can gate long reindex work without parsing stderr.",
+    ],
   },
   get: {
     why: "Shows complete details for one item by ID.",

@@ -36,6 +36,14 @@ export interface ReindexResult {
   ok: boolean;
   mode: "keyword" | "semantic" | "hybrid";
   total_items: number;
+  semantic: {
+    enabled: boolean;
+    stale_items: number;
+    unchanged_items: number;
+    embedded_items: number;
+    vector_upserted: number;
+    batches_completed: number;
+  };
   artifacts: {
     manifest: string;
     embeddings: string;
@@ -318,6 +326,14 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   const embeddingsLines = documents.map((document) => JSON.stringify(buildKeywordRecord(document, mode))).join("\n");
   const semanticWarnings: string[] = [];
   const vectorizationLedgerEntries: Record<string, string> = {};
+  const semanticSummary = {
+    enabled: mode !== "keyword",
+    stale_items: 0,
+    unchanged_items: 0,
+    embedded_items: 0,
+    vector_upserted: 0,
+    batches_completed: 0,
+  };
   if (mode !== "keyword" && documents.length > 0) {
     const ledger = await readVectorizationStatusLedger(pmRoot);
     semanticWarnings.push(...ledger.warnings);
@@ -325,6 +341,8 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       (document) => ledger.entries[document.metadata.id] !== document.metadata.updated_at,
     );
     const freshDocuments = documents.length - staleDocuments.length;
+    semanticSummary.stale_items = staleDocuments.length;
+    semanticSummary.unchanged_items = freshDocuments;
     for (const document of documents) {
       vectorizationLedgerEntries[document.metadata.id] = document.metadata.updated_at;
     }
@@ -358,7 +376,17 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
             EXIT_CODE.USAGE,
           );
         }
-        const embeddingResult = await executeEmbeddingBatchesWithRetry(activeEmbeddingProvider, settings, corpusInputs);
+        const embeddingResult = await executeEmbeddingBatchesWithRetry(activeEmbeddingProvider, settings, corpusInputs, {
+          onProgress: (event) => {
+            if (event.phase === "complete") {
+              semanticSummary.batches_completed = event.batch_index;
+            }
+            emitReindexProgress(
+              progressEnabled,
+              `embedding_batch_${event.phase} batch=${event.batch_index}/${event.batch_total} size=${event.batch_size} completed_inputs=${event.completed_inputs}/${event.total_inputs}`,
+            );
+          },
+        });
         semanticWarnings.push(...embeddingResult.warnings);
         vectors = embeddingResult.vectors;
       }
@@ -380,6 +408,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
           updated_at: document.metadata.updated_at,
         },
       }));
+      semanticSummary.embedded_items = vectors.length;
       if (extensionVectorUpsert) {
         try {
           emitReindexProgress(progressEnabled, `vector_upsert_start adapter=${extensionVectorUpsert.name} points=${points.length}`);
@@ -389,6 +418,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
               settings,
             }),
           );
+          semanticSummary.vector_upserted = points.length;
           emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${extensionVectorUpsert.name}`);
         } catch (error: unknown) {
           if (!activeVectorStore) {
@@ -402,11 +432,13 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
           );
           emitReindexProgress(progressEnabled, "vector_upsert_fallback built_in_store");
           await executeVectorUpsert(activeVectorStore, points);
+          semanticSummary.vector_upserted = points.length;
           emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${activeVectorStore.name}`);
         }
       } else if (activeVectorStore) {
         emitReindexProgress(progressEnabled, `vector_upsert_start adapter=${activeVectorStore.name} points=${points.length}`);
         await executeVectorUpsert(activeVectorStore, points);
+        semanticSummary.vector_upserted = points.length;
         emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${activeVectorStore.name}`);
       } else {
         throw new PmCliError(
@@ -455,6 +487,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
     ok: true,
     mode,
     total_items: documents.length,
+    semantic: semanticSummary,
     artifacts: {
       manifest: MANIFEST_PATH,
       embeddings: EMBEDDINGS_PATH,

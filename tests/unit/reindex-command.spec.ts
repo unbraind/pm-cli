@@ -129,6 +129,14 @@ describe("runReindex", () => {
       expect(result.ok).toBe(true);
       expect(result.mode).toBe("keyword");
       expect(result.total_items).toBe(2);
+      expect(result.semantic).toEqual({
+        enabled: false,
+        stale_items: 0,
+        unchanged_items: 0,
+        embedded_items: 0,
+        vector_upserted: 0,
+        batches_completed: 0,
+      });
       expect(result.warnings).toEqual([]);
       expect(result.artifacts).toEqual({
         manifest: "index/manifest.json",
@@ -231,6 +239,14 @@ describe("runReindex", () => {
         expect(semanticResult.ok).toBe(true);
         expect(semanticResult.mode).toBe("semantic");
         expect(semanticResult.total_items).toBe(2);
+        expect(semanticResult.semantic).toMatchObject({
+          enabled: true,
+          stale_items: 2,
+          unchanged_items: 0,
+          embedded_items: 2,
+          vector_upserted: 2,
+          batches_completed: 1,
+        });
 
         const manifestSemanticRaw = await readFile(path.join(context.pmPath, "index", "manifest.json"), "utf8");
         const manifestSemantic = JSON.parse(manifestSemanticRaw) as { mode: string };
@@ -248,6 +264,13 @@ describe("runReindex", () => {
         expect(hybridResult.ok).toBe(true);
         expect(hybridResult.mode).toBe("hybrid");
         expect(hybridResult.total_items).toBe(2);
+        expect(hybridResult.semantic).toMatchObject({
+          enabled: true,
+          stale_items: 0,
+          unchanged_items: 2,
+          embedded_items: 0,
+          vector_upserted: 0,
+        });
         expect(hybridResult.warnings).toEqual(expect.arrayContaining(["search_semantic_reindex_skipped_unchanged:count=2"]));
 
         const manifestHybridRaw = await readFile(path.join(context.pmPath, "index", "manifest.json"), "utf8");
@@ -633,6 +656,80 @@ describe("runReindex", () => {
         expect(stderrOutput).toContain("[pm reindex] writing keyword artifacts");
         expect(stderrOutput).toContain("[pm reindex] done");
       } finally {
+        Object.defineProperty(process.stderr, "isTTY", {
+          value: originalIsTTY,
+          configurable: true,
+        });
+      }
+    });
+  });
+
+  it("emits batch progress and semantic summary for agent-visible semantic reindex runs", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context, "Progress Semantic Alpha", "alpha body", false);
+      createSeedItem(context, "Progress Semantic Beta", "beta body", false);
+      createSeedItem(context, "Progress Semantic Gamma", "gamma body", false);
+
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      settings.search.embedding_batch_size = 2;
+      await writeSettings(context.pmPath, settings);
+
+      const originalFetch = globalThis.fetch;
+      const originalIsTTY = process.stderr.isTTY;
+      Object.defineProperty(process.stderr, "isTTY", {
+        value: false,
+        configurable: true,
+      });
+      const stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+        const target = String(url);
+        if (target.endsWith("/v1/embeddings")) {
+          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string[] | string };
+          const inputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({
+              data: inputs.map((_input, index) => ({
+                index,
+                embedding: [index + 0.1, index + 0.2],
+              })),
+            }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        if (target.endsWith("/collections/pm_items/points?wait=true")) {
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({ result: { status: "acknowledged" } }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        throw new Error(`Unexpected fetch target: ${target}`);
+      }) as typeof globalThis.fetch;
+
+      try {
+        const result = await runReindex({ mode: "semantic", progress: true }, { path: context.pmPath });
+        expect(result.semantic).toMatchObject({
+          enabled: true,
+          stale_items: 3,
+          unchanged_items: 0,
+          embedded_items: 3,
+          vector_upserted: 3,
+          batches_completed: 2,
+        });
+        const stderrOutput = stderrWriteSpy.mock.calls.map((entry) => String(entry[0])).join("");
+        expect(stderrOutput).toContain("[pm reindex] embedding_batch_start batch=1/2 size=2 completed_inputs=0/3");
+        expect(stderrOutput).toContain("[pm reindex] embedding_batch_complete batch=1/2 size=2 completed_inputs=2/3");
+        expect(stderrOutput).toContain("[pm reindex] embedding_batch_complete batch=2/2 size=1 completed_inputs=3/3");
+      } finally {
+        globalThis.fetch = originalFetch;
         Object.defineProperty(process.stderr, "isTTY", {
           value: originalIsTTY,
           configurable: true,
