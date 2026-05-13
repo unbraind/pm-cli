@@ -12,12 +12,39 @@ export type PmPackageResourceKind = (typeof PM_PACKAGE_RESOURCE_KINDS)[number];
 
 export type PmPackageResourceMap = Partial<Record<PmPackageResourceKind, string[]>>;
 
+export interface PmPackageCatalogLinkMap {
+  docs?: string;
+  npm?: string;
+  repository?: string;
+  report?: string;
+}
+
+export interface PmPackageCatalogMediaMap {
+  image?: string;
+  video?: string;
+}
+
+export interface PmPackageCatalogMetadata {
+  display_name?: string;
+  category?: string;
+  summary?: string;
+  links?: PmPackageCatalogLinkMap;
+  media?: PmPackageCatalogMediaMap;
+  tags?: string[];
+}
+
 export interface PmPackageManifest {
   source: "pm" | "convention";
   package_json_path?: string;
   package_name?: string;
   package_version?: string;
+  package_description?: string;
+  package_keywords?: string[];
+  package_homepage?: string;
+  package_repository_url?: string;
+  package_bugs_url?: string;
   resources: PmPackageResourceMap;
+  catalog?: PmPackageCatalogMetadata;
 }
 
 export const PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS: Readonly<Record<PmPackageResourceKind, readonly string[]>> =
@@ -70,6 +97,74 @@ function normalizePackageResourceMap(raw: unknown): PmPackageResourceMap {
   return resources;
 }
 
+function readStringField(source: Record<string, unknown>, key: string): string | undefined {
+  const value = source[key];
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function normalizeStringArray(raw: unknown): string[] | undefined {
+  if (!Array.isArray(raw)) {
+    return undefined;
+  }
+  const values = raw
+    .map((value) => typeof value === "string" ? value.trim() : "")
+    .filter((value) => value.length > 0);
+  return values.length > 0 ? [...new Set(values)].sort((left, right) => left.localeCompare(right)) : undefined;
+}
+
+function readUrlLikeField(raw: unknown): string | undefined {
+  if (typeof raw === "string" && raw.trim().length > 0) {
+    return raw.trim();
+  }
+  if (typeof raw === "object" && raw !== null && !Array.isArray(raw)) {
+    const value = (raw as Record<string, unknown>).url;
+    return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  }
+  return undefined;
+}
+
+function normalizeCatalogLinks(raw: unknown): PmPackageCatalogLinkMap | undefined {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return undefined;
+  }
+  const source = raw as Record<string, unknown>;
+  const links: PmPackageCatalogLinkMap = {
+    docs: readStringField(source, "docs"),
+    npm: readStringField(source, "npm"),
+    repository: readStringField(source, "repository"),
+    report: readStringField(source, "report"),
+  };
+  return Object.values(links).some((value) => typeof value === "string") ? links : undefined;
+}
+
+function normalizeCatalogMedia(raw: unknown): PmPackageCatalogMediaMap | undefined {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return undefined;
+  }
+  const source = raw as Record<string, unknown>;
+  const media: PmPackageCatalogMediaMap = {
+    image: readStringField(source, "image"),
+    video: readStringField(source, "video"),
+  };
+  return Object.values(media).some((value) => typeof value === "string") ? media : undefined;
+}
+
+function normalizePackageCatalogMetadata(raw: unknown): PmPackageCatalogMetadata | undefined {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return undefined;
+  }
+  const source = raw as Record<string, unknown>;
+  const catalog: PmPackageCatalogMetadata = {
+    display_name: readStringField(source, "display_name") ?? readStringField(source, "displayName"),
+    category: readStringField(source, "category"),
+    summary: readStringField(source, "summary"),
+    links: normalizeCatalogLinks(source.links),
+    media: normalizeCatalogMedia(source.media),
+    tags: normalizeStringArray(source.tags),
+  };
+  return Object.values(catalog).some((value) => value !== undefined) ? catalog : undefined;
+}
+
 export async function readPmPackageManifest(packageRoot: string): Promise<PmPackageManifest> {
   const packageJsonPath = path.join(packageRoot, "package.json");
   if (!(await pathExists(packageJsonPath))) {
@@ -95,12 +190,21 @@ export async function readPmPackageManifest(packageRoot: string): Promise<PmPack
   const packageJson = parsed as Record<string, unknown>;
   const pmManifest = packageJson.pm;
   const hasPmManifest = pmManifest !== undefined && pmManifest !== null;
+  const pmManifestRecord = typeof pmManifest === "object" && pmManifest !== null && !Array.isArray(pmManifest)
+    ? pmManifest as Record<string, unknown>
+    : {};
   return {
     source: hasPmManifest ? "pm" : "convention",
     package_json_path: packageJsonPath,
     package_name: typeof packageJson.name === "string" ? packageJson.name : undefined,
     package_version: typeof packageJson.version === "string" ? packageJson.version : undefined,
+    package_description: typeof packageJson.description === "string" ? packageJson.description : undefined,
+    package_keywords: normalizeStringArray(packageJson.keywords),
+    package_homepage: typeof packageJson.homepage === "string" ? packageJson.homepage : undefined,
+    package_repository_url: readUrlLikeField(packageJson.repository),
+    package_bugs_url: readUrlLikeField(packageJson.bugs),
     resources: normalizePackageResourceMap(pmManifest),
+    catalog: normalizePackageCatalogMetadata(pmManifestRecord.catalog),
   };
 }
 

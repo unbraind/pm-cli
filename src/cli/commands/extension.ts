@@ -15,7 +15,7 @@ import {
   type UnknownExtensionCapabilityWarningDetails,
 } from "../../core/extensions/loader.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { collectPackageExtensionDirectories } from "../../core/packages/manifest.js";
+import { collectPackageExtensionDirectories, readPmPackageManifest } from "../../core/packages/manifest.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -48,6 +48,7 @@ export type ExtensionCommandAction =
   | "manage"
   | "reload"
   | "doctor"
+  | "catalog"
   | "adopt"
   | "adopt-all"
   | "activate"
@@ -63,6 +64,7 @@ export interface ExtensionCommandOptions {
   manage?: boolean;
   reload?: boolean;
   doctor?: boolean;
+  catalog?: boolean;
   init?: boolean;
   scaffold?: boolean;
   strictExit?: boolean;
@@ -206,6 +208,20 @@ function isBundledPackageInstallAllTarget(input: string): boolean {
 
 function listBundledPackageAliases(): string[] {
   return Object.keys(BUNDLED_PACKAGE_ALIASES).sort((left, right) => left.localeCompare(right));
+}
+
+async function resolveBundledPackageRoot(alias: string): Promise<string | null> {
+  const bundled = BUNDLED_PACKAGE_ALIASES[alias];
+  if (!bundled) {
+    return null;
+  }
+  for (const packageRoot of resolvePackageRootCandidates()) {
+    const packagePath = path.join(packageRoot, "packages", bundled.package_directory);
+    if (await pathExists(path.join(packagePath, "package.json"))) {
+      return packagePath;
+    }
+  }
+  return null;
 }
 
 export interface ManagedExtensionSummary {
@@ -786,6 +802,7 @@ function resolveAction(target: string | undefined, options: ExtensionCommandOpti
     options.manage ? "manage" : null,
     options.reload ? "reload" : null,
     options.doctor ? "doctor" : null,
+    options.catalog ? "catalog" : null,
     options.init ? "init" : null,
     options.scaffold ? "init" : null,
     options.adopt ? "adopt" : null,
@@ -800,11 +817,14 @@ function resolveAction(target: string | undefined, options: ExtensionCommandOpti
     if (typeof target === "string" && target.trim().toLowerCase() === "reload") {
       return "reload";
     }
+    if (typeof target === "string" && target.trim().toLowerCase() === "catalog") {
+      return "catalog";
+    }
     if (typeof target === "string" && (target.trim().toLowerCase() === "init" || target.trim().toLowerCase() === "scaffold")) {
       return "init";
     }
     throw new PmCliError(
-      "One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --reload, --doctor, --init/--scaffold, --adopt, --adopt-all, --activate, --deactivate.",
+      "One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --reload, --doctor, --catalog, --init/--scaffold, --adopt, --adopt-all, --activate, --deactivate.",
       EXIT_CODE.USAGE,
     );
   }
@@ -821,6 +841,77 @@ function resolveScope(options: ExtensionCommandOptions): ExtensionScope {
     throw new PmCliError('Options "--project/--local" and "--global" are mutually exclusive.', EXIT_CODE.USAGE);
   }
   return global ? "global" : "project";
+}
+
+async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalOptions): Promise<{
+  total: number;
+  scope: ExtensionScope;
+  packages: Array<Record<string, unknown>>;
+}> {
+  const roots = resolveExtensionRoots(resolvePmRoot(process.cwd(), global.path), process.cwd());
+  const selectedRoot = scope === "global" ? roots.global : roots.project;
+  const managedStateRead = await readManagedExtensionState(selectedRoot);
+  const installedLocations = new Set(
+    managedStateRead.state.entries
+      .filter((entry) => entry.scope === scope)
+      .map((entry) => path.resolve(entry.source.location)),
+  );
+  const packages: Array<Record<string, unknown>> = [];
+
+  for (const alias of listBundledPackageAliases()) {
+    const packageRoot = await resolveBundledPackageRoot(alias);
+    const installScopeFlag = scope === "global" ? "--global" : "--project";
+    if (!packageRoot) {
+      packages.push({
+        alias,
+        bundled: true,
+        available: false,
+        installed: false,
+        install_target: alias,
+        install_command: `pm install ${alias} ${installScopeFlag}`,
+      });
+      continue;
+    }
+
+    const manifest = await readPmPackageManifest(packageRoot);
+    const repository = manifest.catalog?.links?.repository ?? manifest.package_repository_url;
+    const report = manifest.catalog?.links?.report ?? manifest.package_bugs_url;
+    const docs = manifest.catalog?.links?.docs ?? manifest.package_homepage;
+    const npm = manifest.catalog?.links?.npm ??
+      (manifest.package_name ? `https://www.npmjs.com/package/${encodeURIComponent(manifest.package_name)}` : undefined);
+    packages.push({
+      alias,
+      bundled: true,
+      available: true,
+      installed: installedLocations.has(path.resolve(packageRoot)),
+      install_target: alias,
+      install_command: `pm install ${alias} ${installScopeFlag}`,
+      package_root: packageRoot,
+      package_name: manifest.package_name,
+      package_version: manifest.package_version,
+      description: manifest.catalog?.summary ?? manifest.package_description,
+      keywords: manifest.package_keywords ?? [],
+      resources: manifest.resources,
+      catalog: {
+        display_name: manifest.catalog?.display_name,
+        category: manifest.catalog?.category,
+        tags: manifest.catalog?.tags ?? manifest.package_keywords ?? [],
+        links: {
+          docs,
+          npm,
+          repository,
+          report,
+        },
+        media: manifest.catalog?.media,
+      },
+    });
+  }
+
+  return {
+    total: packages.length,
+    scope,
+    packages,
+  };
 }
 
 function parseGithubPathSpec(pathSpec: string, input: string, refOverride?: string): GithubInstallSource | null {
@@ -2059,6 +2150,9 @@ export async function runExtension(
     if (action === "reload" && normalizedInput === "reload") {
       return undefined;
     }
+    if (action === "catalog" && normalizedInput === "catalog") {
+      return undefined;
+    }
     const inferredInitAlias =
       action === "init" &&
       options.init !== true &&
@@ -2159,6 +2253,13 @@ export async function runExtension(
       warnings.push("extension_reload_watch_hint:watch_mode_requested_non_interactive_single_pass_only");
     }
     return withResult(details);
+  }
+
+  if (action === "catalog") {
+    if (typeof normalizedTarget === "string" && normalizedTarget.length > 0 && normalizedTarget !== "catalog") {
+      throw new PmCliError('Action "catalog" does not accept a package target.', EXIT_CODE.USAGE);
+    }
+    return withResult(await buildBundledPackageCatalog(scope, global));
   }
 
   if (action === "install") {

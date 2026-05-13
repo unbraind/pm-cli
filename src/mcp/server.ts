@@ -113,7 +113,7 @@ const TOOLS: ToolDefinition[] = [
         action: {
           type: "string",
           description:
-            "Operation name: init, context, list, get, search, create, update, delete, claim, release, close, comments, notes, learnings, files, files-discover, docs, deps, test, test-all, validate, health, contracts, completion, config, calendar, activity, aggregate, dedupe-audit, normalize, reindex, extension, extension-reload, package, package-install, install, upgrade, history, stats, append, update-many, comments-audit, gc, templates-list, templates-save, templates-show, test-runs-list, test-runs-status, test-runs-logs, test-runs-stop, test-runs-resume.",
+            "Operation name: init, context, list, get, search, create, update, delete, claim, release, close, comments, notes, learnings, files, files-discover, docs, deps, test, test-all, validate, health, contracts, completion, config, calendar, activity, aggregate, dedupe-audit, normalize, reindex, extension, extension-reload, package, package-install, package-catalog, install, upgrade, history, stats, append, update-many, comments-audit, gc, templates-list, templates-save, templates-show, test-runs-list, test-runs-status, test-runs-logs, test-runs-stop, test-runs-resume.",
         },
         id: idSchema,
         query: { type: "string", description: "Search query for action=search." },
@@ -343,6 +343,8 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
     case "package-install":
     case "install":
       return runExtension(readString(args, "target") ?? readString(options, "target"), { ...options, install: true }, global);
+    case "package-catalog":
+      return runExtension(undefined, { ...options, catalog: true, vocabulary: "package" }, global);
     case "upgrade":
       return runUpgrade(readString(args, "target") ?? readString(options, "target"), options, global);
     case "delete":

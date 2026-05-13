@@ -37,6 +37,7 @@ npx @unbrained/pm-cli --help
 Optional first-party packages are installable on demand:
 
 ```bash
+pm package catalog --project
 pm install '*' --project
 pm install all --project
 pm package doctor --project --detail summary

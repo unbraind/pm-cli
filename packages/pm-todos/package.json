@@ -4,6 +4,15 @@
   "private": true,
   "type": "module",
   "description": "First-party pm package for Todo markdown import and export.",
+  "homepage": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-todos#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unbraind/pm-cli.git",
+    "directory": "packages/pm-todos"
+  },
+  "bugs": {
+    "url": "https://github.com/unbraind/pm-cli/issues"
+  },
   "keywords": [
     "pm-package",
     "project-management",
@@ -12,6 +21,22 @@
   "pm": {
     "extensions": [
       "extensions/todos"
-    ]
+    ],
+    "catalog": {
+      "display_name": "Todos Import/Export",
+      "category": "migration",
+      "summary": "Import and export Todo markdown tasks through pm package commands.",
+      "tags": [
+        "migration",
+        "todos",
+        "import",
+        "export"
+      ],
+      "links": {
+        "docs": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-todos#readme",
+        "repository": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-todos",
+        "report": "https://github.com/unbraind/pm-cli/issues"
+      }
+    }
   }
 }

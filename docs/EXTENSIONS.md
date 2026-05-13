@@ -86,7 +86,21 @@ Package roots can expose resources with a `pm` manifest in `package.json`:
   "name": "my-pm-package",
   "keywords": ["pm-package"],
   "pm": {
-    "extensions": ["extensions/my-extension"]
+    "extensions": ["extensions/my-extension"],
+    "catalog": {
+      "display_name": "My pm Package",
+      "category": "workflow",
+      "summary": "Adds a custom workflow to pm.",
+      "tags": ["workflow"],
+      "links": {
+        "docs": "https://example.com/docs",
+        "repository": "https://github.com/org/my-pm-package",
+        "report": "https://github.com/org/my-pm-package/issues"
+      },
+      "media": {
+        "image": "https://example.com/preview.png"
+      }
+    }
   }
 }
 ```
@@ -105,6 +119,7 @@ If a package contains multiple extension manifests, install the exact extension 
 First-party optional packages are shipped as package roots under `packages/`:
 
 ```bash
+pm package catalog --project
 pm install '*' --project
 pm install all --project
 pm install packages/pm-beads --project
@@ -275,6 +290,7 @@ pm extension --doctor --project --detail deep --trace
 Management commands:
 
 ```bash
+pm package catalog --project
 pm package explore
 pm package manage --project
 pm package manage --project --runtime-probe

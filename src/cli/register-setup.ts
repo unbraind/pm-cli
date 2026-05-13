@@ -28,6 +28,7 @@ type ExtensionSubcommandAction =
   | "manage"
   | "reload"
   | "doctor"
+  | "catalog"
   | "adopt"
   | "adopt-all"
   | "activate"
@@ -59,6 +60,7 @@ function normalizeExtensionOptions(
     manage: isForcedAction("manage") || readBoolean("manage"),
     reload: isForcedAction("reload") || readBoolean("reload"),
     doctor: isForcedAction("doctor") || readBoolean("doctor"),
+    catalog: isForcedAction("catalog") || readBoolean("catalog"),
     adopt: isForcedAction("adopt") || readBoolean("adopt"),
     adoptAll: isForcedAction("adopt-all") || readBoolean("adoptAll", "adopt_all", "adopt-all"),
     activate: isForcedAction("activate") || readBoolean("activate"),
@@ -174,6 +176,7 @@ function registerLifecycleCommand(
     .option("--reload", `Reload ${plural} with cache-busted module imports`)
     .option("--watch", "Use watch mode with --reload")
     .option("--doctor", `Run consolidated ${noun} diagnostics (summary/deep modes)`)
+    .option("--catalog", `List bundled first-party ${noun} catalog metadata`)
     .option("--adopt", `Adopt an existing unmanaged ${noun} into managed metadata`)
     .option("--adopt-all", `Adopt all unmanaged ${plural} into managed metadata`)
     .option("--activate", `Activate a ${noun} in selected scope settings`)
@@ -274,6 +277,13 @@ function registerLifecycleCommand(
     vocabulary,
   ).action(async (_options: Record<string, unknown>, command) => {
     await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "doctor", vocabulary);
+  });
+
+  addLifecycleScopeOptions(
+    lifecycleCommand.command("catalog").alias("list").description(`List bundled first-party ${noun} catalog metadata.`),
+    vocabulary,
+  ).action(async (_options: Record<string, unknown>, command) => {
+    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "catalog", vocabulary);
   });
 
   addLifecycleScopeOptions(

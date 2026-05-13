@@ -4,6 +4,15 @@
   "private": true,
   "type": "module",
   "description": "First-party pm package for importing Beads JSONL records.",
+  "homepage": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-beads#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unbraind/pm-cli.git",
+    "directory": "packages/pm-beads"
+  },
+  "bugs": {
+    "url": "https://github.com/unbraind/pm-cli/issues"
+  },
   "keywords": [
     "pm-package",
     "project-management",
@@ -12,6 +21,21 @@
   "pm": {
     "extensions": [
       "extensions/beads"
-    ]
+    ],
+    "catalog": {
+      "display_name": "Beads Import",
+      "category": "migration",
+      "summary": "Import Beads JSONL records into pm while preserving source IDs.",
+      "tags": [
+        "migration",
+        "beads",
+        "import"
+      ],
+      "links": {
+        "docs": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-beads#readme",
+        "repository": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-beads",
+        "report": "https://github.com/unbraind/pm-cli/issues"
+      }
+    }
   }
 }

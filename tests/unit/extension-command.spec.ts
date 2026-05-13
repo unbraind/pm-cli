@@ -210,6 +210,48 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("lists bundled first-party package catalog metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const beforeInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });
+      expect(beforeInstall.action).toBe("catalog");
+      expect(beforeInstall.details).toMatchObject({
+        total: 2,
+        scope: "project",
+        packages: [
+          {
+            alias: "beads",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-package-beads",
+            catalog: {
+              display_name: "Beads Import",
+              category: "migration",
+            },
+          },
+          {
+            alias: "todos",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-package-todos",
+            catalog: {
+              display_name: "Todos Import/Export",
+              category: "migration",
+            },
+          },
+        ],
+      });
+
+      await runExtension("todos", { install: true, project: true }, { path: context.pmPath });
+      const afterInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });
+      const packages = (afterInstall.details as { packages?: Array<{ alias?: string; installed?: boolean }> }).packages ?? [];
+      expect(packages.find((entry) => entry.alias === "todos")?.installed).toBe(true);
+      expect(packages.find((entry) => entry.alias === "beads")?.installed).toBe(false);
+
+      const positionalCatalog = await runExtension("catalog", { project: true, vocabulary: "package" }, { path: context.pmPath });
+      expect(positionalCatalog.action).toBe("catalog");
+    });
+  });
+
   it("installs all bundled first-party packages via wildcard and all aliases", async () => {
     await withTempPmPath(async (context) => {
       const wildcardInstall = await runExtension("*", { install: true, project: true }, { path: context.pmPath });

@@ -572,6 +572,7 @@ describe("release readiness runtime coverage", () => {
       expect(help.stdout).toContain("explore");
       expect(help.stdout).toContain("manage");
       expect(help.stdout).toContain("doctor");
+      expect(help.stdout).toContain("catalog");
       expect(help.stdout).toContain("adopt [options] <target>");
       expect(help.stdout).toContain("adopt-all");
       expect(help.stdout).toContain("activate [options] <target>");
@@ -581,6 +582,7 @@ describe("release readiness runtime coverage", () => {
       expect(help.stdout).toContain("--explore");
       expect(help.stdout).toContain("--manage");
       expect(help.stdout).toContain("--doctor");
+      expect(help.stdout).toContain("--catalog");
       expect(help.stdout).toContain("--adopt");
       expect(help.stdout).toContain("--activate");
       expect(help.stdout).toContain("--deactivate");

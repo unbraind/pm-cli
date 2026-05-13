@@ -48,6 +48,7 @@ pm health --check-only
 
 ```bash
 pm install '*' --project
+pm package catalog --project
 pm install npm:@scope/pm-package --project
 pm package doctor --project --detail summary
 pm upgrade --dry-run

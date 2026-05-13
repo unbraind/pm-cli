@@ -2,14 +2,46 @@ id: pm-2b3l
 title: Publish package gallery and marketplace metadata
 description: "Define pm package discoverability metadata and marketplace/catalog generation, informed by Pi's pi-package keyword, gallery image/video fields, npm links, repo links, and report links."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: docs,marketplace,npm,packages,pm-cli
 created_at: "2026-05-11T17:59:04.701Z"
-updated_at: "2026-05-11T17:59:04.701Z"
+updated_at: "2026-05-13T18:09:58.694Z"
 author: codex-agent
 acceptance_criteria: Package metadata fields are documented; package list/catalog command or generated artifact exists; npm keywords and public docs support package discovery.
 parent: pm-59gj
-comments[1]{created_at,author,text}:
+resolution: "Implemented pm package catalog/package list with pm.catalog metadata, SDK/MCP contract mirroring, docs, tests, and dogfood coverage."
+expected_result: Users and agents can discover bundled first-party pm packages and metadata before installing them.
+actual_result: "pm package catalog --project returns Beads and Todos package metadata, install commands, resources, links, and installed state; release gates and linked tests passed."
+comments[3]{created_at,author,text}:
   "2026-05-11T17:59:04.701Z",codex-agent,"Plan item created from pi.dev/packages research: package discovery depends on npm keywords plus catalog metadata such as package type,media preview,repo,and report links."
+  "2026-05-13T17:47:16.332Z",codex-agent,"Implementation update: added pm package catalog/package list action with first-party package metadata from package.json pm.catalog, mirrored the surface through SDK contracts and MCP, documented catalog usage, and verified pnpm typecheck, pnpm build, focused package/SDK/runtime suite, direct package catalog JSON, and package contract flags."
+  "2026-05-13T18:09:15.235Z",codex-agent,"Verification evidence: linked pm test run passed both focused package/SDK/runtime suite and pnpm dogfood:package-first; full coverage passed 91 files / 1291 tests with 100% statements, branches, functions, and lines; release gate passed build/typecheck/docs-skills/static/coverage/version/secret scan/npx smoke/npm pack/compatibility and required Sentry+telemetry thresholds (Sentry critical=1 high=3 under thresholds, telemetry finish_error_rate_pct=2.99, missing error-code rows=0). pm health/validate still only report the known pre-existing five history drift items."
+files[16]{path,scope,note}:
+  docs/COMMANDS.md,project,package catalog command docs
+  docs/EXTENSIONS.md,project,catalog manifest docs
+  docs/QUICKSTART.md,project,package catalog quickstart
+  packages/pm-beads/package.json,project,first-party package catalog metadata
+  packages/pm-todos/package.json,project,first-party package catalog metadata
+  scripts/dogfood-package-first.mjs,project,package catalog dogfood coverage
+  src/cli/commands/extension.ts,project,package catalog lifecycle action
+  src/cli/register-setup.ts,project,package catalog command registration
+  src/core/packages/manifest.ts,project,package catalog metadata contract
+  src/mcp/server.ts,project,MCP package catalog routing
+  src/sdk/cli-contracts.ts,project,SDK package catalog action contract
+  src/sdk/index.ts,project,SDK package catalog metadata type exports
+  tests/integration/release-readiness-runtime.spec.ts,project,package help coverage
+  tests/unit/contracts-command.spec.ts,project,package catalog contract coverage
+  tests/unit/extension-command.spec.ts,project,package catalog runtime coverage
+  tests/unit/package-manifest.spec.ts,project,catalog metadata parser coverage
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/upgrade-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,"focused package catalog,SDK contract,and runtime coverage"
+  "pnpm dogfood:package-first",null,project,240,null,null,null,null,null,null,null,null,null,null,null,isolated temp-project package catalog and install-all dogfood
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp4dej30-l5ntrr,test,passed,"2026-05-13T18:03:51.864Z","2026-05-13T18:05:46.140Z","2026-05-13T18:05:46.140Z",null,null,2,0,0,null,null,null
+docs[3]{path,scope,note}:
+  docs/COMMANDS.md,project,package catalog command reference
+  docs/EXTENSIONS.md,project,package catalog manifest and command docs
+  docs/QUICKSTART.md,project,package catalog quickstart
+close_reason: "package catalog metadata and discoverability command implemented; linked tests, dogfood, full coverage, and release gate passed"
 body: ""

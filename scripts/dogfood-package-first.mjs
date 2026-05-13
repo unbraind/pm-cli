@@ -127,6 +127,8 @@ try {
 
   const installAll = run("package install all", ["install", "all", "--project"]);
   assert(installAll?.details?.installed_all === true, "install all did not report installed_all=true");
+  const packageCatalog = run("package catalog", ["package", "catalog", "--project"]);
+  assert(packageCatalog?.details?.total >= 2, "package catalog did not list bundled first-party packages");
   run("package explore", ["package", "explore", "--project"]);
   run("package doctor", ["package", "doctor", "--project", "--detail", "summary"]);
   run("upgrade dry-run", ["upgrade", "--dry-run"]);

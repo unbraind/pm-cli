@@ -42,8 +42,30 @@ describe("pm package manifest model", () => {
         {
           name: "pm-resource-package",
           version: "1.2.3",
+          description: "Package manifest test fixture.",
+          keywords: ["pm-package", "fixture"],
+          homepage: "https://example.com/package-docs",
+          repository: {
+            type: "git",
+            url: "https://github.com/example/pm-resource-package",
+          },
+          bugs: {
+            url: "https://github.com/example/pm-resource-package/issues",
+          },
           pm: {
             extensions: ["extensions"],
+            catalog: {
+              display_name: "Resource Package",
+              category: "workflow",
+              summary: "Fixture package for catalog metadata.",
+              tags: ["fixture", "workflow"],
+              links: {
+                docs: "https://example.com/catalog-docs",
+              },
+              media: {
+                image: "https://example.com/image.png",
+              },
+            },
           },
         },
         null,
@@ -57,8 +79,25 @@ describe("pm package manifest model", () => {
       source: "pm",
       package_name: "pm-resource-package",
       package_version: "1.2.3",
+      package_description: "Package manifest test fixture.",
+      package_keywords: ["fixture", "pm-package"],
+      package_homepage: "https://example.com/package-docs",
+      package_repository_url: "https://github.com/example/pm-resource-package",
+      package_bugs_url: "https://github.com/example/pm-resource-package/issues",
       resources: {
         extensions: ["extensions"],
+      },
+      catalog: {
+        display_name: "Resource Package",
+        category: "workflow",
+        summary: "Fixture package for catalog metadata.",
+        tags: ["fixture", "workflow"],
+        links: {
+          docs: "https://example.com/catalog-docs",
+        },
+        media: {
+          image: "https://example.com/image.png",
+        },
       },
     });
   });
@@ -122,6 +161,51 @@ describe("pm package manifest model", () => {
       },
     });
 
+    const stringRepositoryRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-string-repository-"));
+    await writeFile(
+      path.join(stringRepositoryRoot, "package.json"),
+      JSON.stringify({
+        repository: "https://github.com/example/string-repository",
+        pm: {
+          catalog: {
+            links: "ignored",
+          },
+        },
+      }),
+      "utf8",
+    );
+    await expect(readPmPackageManifest(stringRepositoryRoot)).resolves.toMatchObject({
+      package_repository_url: "https://github.com/example/string-repository",
+      catalog: undefined,
+    });
+
+    const emptyMetadataRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-empty-metadata-"));
+    await writeFile(
+      path.join(emptyMetadataRoot, "package.json"),
+      JSON.stringify({
+        keywords: [42],
+        repository: {
+          url: "",
+        },
+        bugs: {
+          url: "",
+        },
+        pm: {
+          catalog: {
+            links: {},
+            media: {},
+          },
+        },
+      }),
+      "utf8",
+    );
+    await expect(readPmPackageManifest(emptyMetadataRoot)).resolves.toMatchObject({
+      package_keywords: undefined,
+      package_repository_url: undefined,
+      package_bugs_url: undefined,
+      catalog: undefined,
+    });
+
     const rootExtension = await createExtension(await mkdtemp(path.join(os.tmpdir(), "pm-package-root-extension-")), "root-ext");
     await expect(collectPackageExtensionDirectories(rootExtension)).resolves.toEqual([rootExtension]);
 
@@ -152,6 +236,10 @@ describe("pm package manifest model", () => {
       source: "pm",
       package_name: "@unbrained/pm-package-beads",
       package_version: "0.1.0",
+      catalog: {
+        display_name: "Beads Import",
+        category: "migration",
+      },
       resources: {
         extensions: ["extensions/beads"],
       },
@@ -164,6 +252,10 @@ describe("pm package manifest model", () => {
       source: "pm",
       package_name: "@unbrained/pm-package-todos",
       package_version: "0.1.0",
+      catalog: {
+        display_name: "Todos Import/Export",
+        category: "migration",
+      },
       resources: {
         extensions: ["extensions/todos"],
       },
