@@ -224,10 +224,12 @@ describe("contracts command runtime", () => {
     const createFlags = await runContracts({ command: "create", flagsOnly: true }, GLOBAL_OPTIONS);
     const createAcceptanceFlag = createFlags.command_flags?.[0]?.flags.find((entry) => entry.flag === "--acceptance-criteria");
     expect(createAcceptanceFlag?.aliases).toEqual(expect.arrayContaining(["--acceptance_criteria"]));
+    expect(createFlags.command_flags?.[0]?.flags.some((entry) => entry.flag === "--acceptance_criteria")).toBe(false);
 
     const updateFlags = await runContracts({ command: "update", flagsOnly: true }, GLOBAL_OPTIONS);
     const updateWhyNowFlag = updateFlags.command_flags?.[0]?.flags.find((entry) => entry.flag === "--why-now");
     expect(updateWhyNowFlag?.aliases).toEqual(expect.arrayContaining(["--why_now"]));
+    expect(updateFlags.command_flags?.[0]?.flags.some((entry) => entry.flag === "--why_now")).toBe(false);
 
     const calendarFlags = await runContracts({ command: "calendar", flagsOnly: true }, GLOBAL_OPTIONS);
     expect(calendarFlags.command_flags?.[0]?.flags).toEqual(
@@ -249,15 +251,15 @@ describe("contracts command runtime", () => {
     const commandFlagParityChecks: Array<{ command: string; flags: string[] }> = [
       {
         command: "create",
-        flags: ["--acceptance_criteria", "--definition_of_ready", "--blocked_by", "--why_now", "--customer_impact"],
+        flags: ["--acceptance-criteria", "--definition-of-ready", "--blocked-by", "--why-now", "--customer-impact"],
       },
       {
         command: "update",
-        flags: ["--acceptance_criteria", "--definition_of_ready", "--blocked_by", "--why_now", "--customer_impact"],
+        flags: ["--acceptance-criteria", "--definition-of-ready", "--blocked-by", "--why-now", "--customer-impact"],
       },
       {
         command: "update-many",
-        flags: ["--acceptance_criteria", "--definition_of_ready", "--why_now", "--customer_impact"],
+        flags: ["--acceptance-criteria", "--definition-of-ready", "--why-now", "--customer-impact"],
       },
       { command: "comments", flags: ["--add", "--stdin", "--file", "--allow-audit-comment"] },
       { command: "comments-audit", flags: ["--assignee-filter", "--limit-items", "--limit", "--full-history", "--latest"] },

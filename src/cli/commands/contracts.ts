@@ -76,6 +76,7 @@ import {
   UPDATE_MANY_FLAG_CONTRACTS,
   UPGRADE_FLAG_CONTRACTS,
   VALIDATE_FLAG_CONTRACTS,
+  compactFlagAliasContracts,
   withFlagAliasMetadata,
   type CliFlagContract,
   type CommanderOptionAliasContract,
@@ -920,7 +921,7 @@ function buildRuntimeFieldFlagContracts(fieldRegistry: RuntimeFieldRegistry): Ma
   }
   const result = new Map<string, CliFlagContract[]>();
   for (const [command, bucket] of buckets.entries()) {
-    result.set(command, withFlagAliasMetadata(bucket.flags));
+    result.set(command, compactFlagAliasContracts(bucket.flags));
   }
   return result;
 }
@@ -936,7 +937,7 @@ function mergeFlagContracts(primary: CliFlagContract[], secondary: CliFlagContra
     seen.add(key);
     merged.push(contract);
   }
-  return withFlagAliasMetadata(merged);
+  return compactFlagAliasContracts(merged);
 }
 
 function buildCommandFlagSurface(

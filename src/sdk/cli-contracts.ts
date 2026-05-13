@@ -119,6 +119,15 @@ export function withFlagAliasMetadata(flagContracts: CliFlagContract[]): CliFlag
   });
 }
 
+export function compactFlagAliasContracts(flagContracts: CliFlagContract[]): CliFlagContract[] {
+  const withAliases = withFlagAliasMetadata(flagContracts);
+  const canonicalFlags = new Set(withAliases.map((contract) => contract.flag));
+  return withAliases.filter((contract) => {
+    const canonical = normalizeFlagAliasKey(contract.flag);
+    return contract.flag === canonical || !canonicalFlags.has(canonical);
+  });
+}
+
 export const PM_CORE_COMMAND_NAMES = [
   "init",
   "config",
