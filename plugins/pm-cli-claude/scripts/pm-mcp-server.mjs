@@ -39,11 +39,13 @@ async function findRepoServer() {
 
 const explicitServer = process.env.PM_CLI_MCP_SERVER;
 if (explicitServer && (await exists(explicitServer))) {
-  await import(pathToFileURL(explicitServer).href);
+  const server = await import(pathToFileURL(explicitServer).href);
+  server.startMcpServer();
 } else {
   const repoServer = await findRepoServer();
   if (repoServer) {
-    await import(pathToFileURL(repoServer).href);
+    const server = await import(pathToFileURL(repoServer).href);
+    server.startMcpServer();
   } else {
     const child = spawn("npx", ["-y", "--package=@unbrained/pm-cli@latest", "pm-mcp"], {
       stdio: "inherit",
