@@ -6,18 +6,19 @@ status: closed
 priority: 1
 tags[4]: package-first,packages,pm-cli,sdk
 created_at: "2026-05-13T19:52:42.446Z"
-updated_at: "2026-05-13T20:05:54.516Z"
+updated_at: "2026-05-13T20:21:05.469Z"
 author: codex-agent
 acceptance_criteria: First-party package runtimes import runtime primitives from the public SDK surface; SDK barrel tests cover the exported helpers; package typecheck and focused package tests pass; dogfood/observability/CI evidence is recorded.
 parent: pm-59gj
 resolution: Completed public SDK runtime helper exports and moved Beads/Todos package runtimes off internal core imports.
 expected_result: First-party TypeScript package runtimes use the public SDK barrel for runtime primitives and remain fully functional through installed packages.
 actual_result: "Beads/Todos runtimes now import from src/sdk/index.ts; SDK barrel regression, package tests, typecheck, dogfood, release gate, Sentry, and telemetry checks passed."
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-05-13T19:52:42.446Z",codex-agent,"Duplicate check before create: ran pm search 'public SDK runtime helpers package internal imports' --limit 10 and pm list-open --limit 20. Found closed prior issue pm-qfuq plus closed related pm-wxxv,but no open item for the current remaining package runtime deep-import cleanup,so this child task is created under pm-59gj."
   "2026-05-13T19:55:55.520Z",codex-agent,"Progress: exposed runtime primitives through src/sdk/runtime.ts and the SDK barrel, moved Beads/Todos package runtimes to import from src/sdk/index.ts, and added SDK barrel regression coverage. Verification so far passed: pnpm typecheck; focused package/runtime tests; pnpm dogfood:package-first; pm test pm-hkql --run --progress."
   "2026-05-13T20:04:34.975Z",codex-agent,"Release-gate evidence: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json passed after adding the SDK runtime coverage allowlist. Coverage passed 92 files / 1294 tests at 100%; Sentry access returned critical=1 high=3 total=4 under configured thresholds with 9 ignored known-noise groups; telemetry finish_error_rate_pct=2.95 and failures_without_error_code_rows=0."
   "2026-05-13T20:05:31.056Z",codex-agent,"Linked-test evidence: pm test pm-hkql --run --progress passed all 4 linked checks: coverage-alignment regression, SDK/package runtime regression slice, package-first temp-project dogfood, and pnpm typecheck."
+  "2026-05-13T20:21:05.469Z",codex-agent,"GitHub CI evidence: pushed commit 0856929 and GitHub Actions CI run 25823473249 completed successfully for that exact SHA. Ubuntu Node 20 ran the full coverage/static/compatibility/packaging/npx/Claude plugin gate set; macOS, Windows, Ubuntu Node 22, and Ubuntu Node 24 matrix jobs also passed."
 files[6]{path,scope,note}:
   packages/pm-beads/extensions/beads/runtime.ts,project,Beads package runtime imports from SDK barrel
   packages/pm-todos/extensions/todos/runtime.ts,project,Todos package runtime imports from SDK barrel
