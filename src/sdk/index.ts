@@ -23,6 +23,7 @@ export {
   type PmPackageResourceMap,
 } from "../core/packages/manifest.js";
 export * from "./cli-contracts.js";
+export * from "./runtime.js";
 
 /**
  * Canonical extension capability names accepted by pm.

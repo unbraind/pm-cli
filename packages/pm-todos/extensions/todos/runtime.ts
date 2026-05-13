@@ -1,24 +1,46 @@
 import fs from "node:fs/promises";
 import type { Dirent } from "node:fs";
 import path from "node:path";
-import { getActiveExtensionRegistrations, runActiveOnReadHooks, runActiveOnWriteHooks } from "../../../../src/core/extensions/index.js";
-import { pathExists, removeFileIfExists, writeFileAtomic } from "../../../../src/core/fs/fs-utils.js";
-import { appendHistoryEntry, createHistoryEntry } from "../../../../src/core/history/history.js";
-import { generateItemId, normalizeItemId } from "../../../../src/core/item/id.js";
-import { canonicalDocument, normalizeFrontMatter, serializeItemDocument, splitFrontMatter } from "../../../../src/core/item/item-format.js";
-import { normalizeStatusInput } from "../../../../src/core/item/status.js";
-import { resolveItemTypeRegistry } from "../../../../src/core/item/type-registry.js";
-import { parseTags } from "../../../../src/core/item/parse.js";
-import { acquireLock } from "../../../../src/core/lock/lock.js";
-import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
-import type { GlobalOptions } from "../../../../src/core/shared/command-types.js";
-import { PmCliError } from "../../../../src/core/shared/errors.js";
-import { nowIso } from "../../../../src/core/shared/time.js";
-import { listAllFrontMatter, locateItem, readLocatedItem } from "../../../../src/core/store/item-store.js";
-import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../../../src/core/store/paths.js";
-import { readSettings } from "../../../../src/core/store/settings.js";
-import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, RISK_VALUES } from "../../../../src/types/index.js";
-import type { ItemDocument, ItemMetadata, ItemStatus, ItemType, PmSettings } from "../../../../src/types/index.js";
+import {
+  CONFIDENCE_TEXT_VALUES,
+  EXIT_CODE,
+  ISSUE_SEVERITY_VALUES,
+  PmCliError,
+  RISK_VALUES,
+  acquireLock,
+  appendHistoryEntry,
+  canonicalDocument,
+  createHistoryEntry,
+  generateItemId,
+  getActiveExtensionRegistrations,
+  getHistoryPath,
+  getItemPath,
+  getSettingsPath,
+  listAllFrontMatter,
+  locateItem,
+  normalizeFrontMatter,
+  normalizeItemId,
+  normalizeStatusInput,
+  nowIso,
+  parseTags,
+  pathExists,
+  readLocatedItem,
+  readSettings,
+  removeFileIfExists,
+  resolveItemTypeRegistry,
+  resolvePmRoot,
+  runActiveOnReadHooks,
+  runActiveOnWriteHooks,
+  serializeItemDocument,
+  splitFrontMatter,
+  writeFileAtomic,
+  type GlobalOptions,
+  type ItemDocument,
+  type ItemMetadata,
+  type ItemStatus,
+  type ItemType,
+  type PmSettings,
+} from "../../../../src/sdk/index.js";
 
 const DEFAULT_TODOS_FOLDER = ".pm/todos";
 

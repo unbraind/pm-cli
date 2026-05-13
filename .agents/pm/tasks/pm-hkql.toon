@@ -1,0 +1,37 @@
+id: pm-hkql
+title: Expose package runtime helpers through public SDK
+description: "Move first-party package runtime imports off internal src/core paths by exporting the required runtime primitives through the public SDK barrel, preserving SDK functionality and package extensibility."
+type: Task
+status: closed
+priority: 1
+tags[4]: package-first,packages,pm-cli,sdk
+created_at: "2026-05-13T19:52:42.446Z"
+updated_at: "2026-05-13T20:05:54.516Z"
+author: codex-agent
+acceptance_criteria: First-party package runtimes import runtime primitives from the public SDK surface; SDK barrel tests cover the exported helpers; package typecheck and focused package tests pass; dogfood/observability/CI evidence is recorded.
+parent: pm-59gj
+resolution: Completed public SDK runtime helper exports and moved Beads/Todos package runtimes off internal core imports.
+expected_result: First-party TypeScript package runtimes use the public SDK barrel for runtime primitives and remain fully functional through installed packages.
+actual_result: "Beads/Todos runtimes now import from src/sdk/index.ts; SDK barrel regression, package tests, typecheck, dogfood, release gate, Sentry, and telemetry checks passed."
+comments[4]{created_at,author,text}:
+  "2026-05-13T19:52:42.446Z",codex-agent,"Duplicate check before create: ran pm search 'public SDK runtime helpers package internal imports' --limit 10 and pm list-open --limit 20. Found closed prior issue pm-qfuq plus closed related pm-wxxv,but no open item for the current remaining package runtime deep-import cleanup,so this child task is created under pm-59gj."
+  "2026-05-13T19:55:55.520Z",codex-agent,"Progress: exposed runtime primitives through src/sdk/runtime.ts and the SDK barrel, moved Beads/Todos package runtimes to import from src/sdk/index.ts, and added SDK barrel regression coverage. Verification so far passed: pnpm typecheck; focused package/runtime tests; pnpm dogfood:package-first; pm test pm-hkql --run --progress."
+  "2026-05-13T20:04:34.975Z",codex-agent,"Release-gate evidence: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json passed after adding the SDK runtime coverage allowlist. Coverage passed 92 files / 1294 tests at 100%; Sentry access returned critical=1 high=3 total=4 under configured thresholds with 9 ignored known-noise groups; telemetry finish_error_rate_pct=2.95 and failures_without_error_code_rows=0."
+  "2026-05-13T20:05:31.056Z",codex-agent,"Linked-test evidence: pm test pm-hkql --run --progress passed all 4 linked checks: coverage-alignment regression, SDK/package runtime regression slice, package-first temp-project dogfood, and pnpm typecheck."
+files[6]{path,scope,note}:
+  packages/pm-beads/extensions/beads/runtime.ts,project,Beads package runtime imports from SDK barrel
+  packages/pm-todos/extensions/todos/runtime.ts,project,Todos package runtime imports from SDK barrel
+  src/sdk/index.ts,project,SDK barrel exports runtime helpers
+  src/sdk/runtime.ts,project,public SDK runtime helper exports
+  tests/unit/sdk-index.spec.ts,project,SDK barrel runtime helper regression
+  tests/integration/release-readiness-runtime.spec.ts,project,coverage alignment allowlist for SDK runtime module
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts -t 'keeps vitest coverage include list aligned',null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/beads-extension.spec.ts tests/unit/todos-extension.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm dogfood:package-first",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp4hbxxr-rqvc17,test,passed,"2026-05-13T19:54:57.959Z","2026-05-13T19:55:43.887Z","2026-05-13T19:55:43.887Z",null,null,3,0,0,null,null,null
+  test-local-mp4hoctl-1g24ob,test,passed,"2026-05-13T20:04:34.931Z","2026-05-13T20:05:23.049Z","2026-05-13T20:05:23.049Z",null,null,4,0,0,null,null,null
+close_reason: "Public SDK runtime helpers exported; first-party package runtimes import from SDK barrel; typecheck, focused tests, dogfood, release gate, Sentry, and telemetry passed"
+body: ""

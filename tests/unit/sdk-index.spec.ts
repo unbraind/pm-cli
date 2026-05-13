@@ -6,7 +6,16 @@ import {
   PM_TOOL_ACTIONS,
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
   PM_TOOL_PARAMETERS_SCHEMA,
+  appendHistoryEntry,
+  createHistoryEntry,
   defineExtension,
+  generateItemId,
+  getItemPath,
+  normalizeItemId,
+  pathExists,
+  readSettings,
+  resolvePmRoot,
+  writeFileAtomic,
 } from "../../src/sdk/index.js";
 
 describe("public sdk entrypoint", () => {
@@ -70,5 +79,17 @@ describe("public sdk entrypoint", () => {
     });
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.create.required).toEqual(expect.arrayContaining(["title"]));
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.upgrade.optional).toEqual(expect.arrayContaining(["dryRun"]));
+  });
+
+  it("exposes runtime primitives used by TypeScript pm packages through the sdk barrel", () => {
+    expect(typeof pathExists).toBe("function");
+    expect(typeof writeFileAtomic).toBe("function");
+    expect(typeof appendHistoryEntry).toBe("function");
+    expect(typeof createHistoryEntry).toBe("function");
+    expect(typeof generateItemId).toBe("function");
+    expect(typeof normalizeItemId).toBe("function");
+    expect(typeof getItemPath).toBe("function");
+    expect(typeof readSettings).toBe("function");
+    expect(typeof resolvePmRoot).toBe("function");
   });
 });

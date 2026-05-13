@@ -1,23 +1,46 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { pathExists, removeFileIfExists, writeFileAtomic } from "../../../../src/core/fs/fs-utils.js";
-import { getActiveExtensionRegistrations, runActiveOnReadHooks, runActiveOnWriteHooks } from "../../../../src/core/extensions/index.js";
-import { appendHistoryEntry, createHistoryEntry } from "../../../../src/core/history/history.js";
-import { generateItemId, normalizeItemId, normalizeRawItemId } from "../../../../src/core/item/id.js";
-import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../../../src/core/item/item-format.js";
-import { normalizeStatusInput } from "../../../../src/core/item/status.js";
-import { resolveItemTypeRegistry } from "../../../../src/core/item/type-registry.js";
-import { parseTags } from "../../../../src/core/item/parse.js";
-import { acquireLock } from "../../../../src/core/lock/lock.js";
-import { EXIT_CODE } from "../../../../src/core/shared/constants.js";
-import type { GlobalOptions } from "../../../../src/core/shared/command-types.js";
-import { PmCliError } from "../../../../src/core/shared/errors.js";
-import { isTimestampLiteral, nowIso } from "../../../../src/core/shared/time.js";
-import { locateItem } from "../../../../src/core/store/item-store.js";
-import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../../../src/core/store/paths.js";
-import { readSettings } from "../../../../src/core/store/settings.js";
-import type { Dependency, ItemDocument, ItemMetadata, ItemStatus, ItemType, LogNote, LinkedFile, LinkedTest, LinkedDoc } from "../../../../src/types/index.js";
-import { DEPENDENCY_KIND_VALUES } from "../../../../src/types/index.js";
+import {
+  DEPENDENCY_KIND_VALUES,
+  EXIT_CODE,
+  PmCliError,
+  acquireLock,
+  appendHistoryEntry,
+  canonicalDocument,
+  createHistoryEntry,
+  generateItemId,
+  getActiveExtensionRegistrations,
+  getHistoryPath,
+  getItemPath,
+  getSettingsPath,
+  isTimestampLiteral,
+  locateItem,
+  normalizeFrontMatter,
+  normalizeItemId,
+  normalizeRawItemId,
+  normalizeStatusInput,
+  nowIso,
+  parseTags,
+  pathExists,
+  readSettings,
+  removeFileIfExists,
+  resolveItemTypeRegistry,
+  resolvePmRoot,
+  runActiveOnReadHooks,
+  runActiveOnWriteHooks,
+  serializeItemDocument,
+  writeFileAtomic,
+  type Dependency,
+  type GlobalOptions,
+  type ItemDocument,
+  type ItemMetadata,
+  type ItemStatus,
+  type ItemType,
+  type LinkedDoc,
+  type LinkedFile,
+  type LinkedTest,
+  type LogNote,
+} from "../../../../src/sdk/index.js";
 
 const PRIMARY_AUTO_DISCOVERY_FILES = [
   ".beads/issues.jsonl",
