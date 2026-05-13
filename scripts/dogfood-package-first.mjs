@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -125,12 +125,22 @@ try {
   run("search keyword", ["search", "Dogfood package-first workflow", "--mode", "keyword", "--limit", "5"]);
   run("reindex keyword", ["reindex", "--mode", "keyword"]);
 
+  run("package install beads alias", ["install", "beads", "--project"]);
+  run("package install todos alias", ["install", "todos", "--project"]);
+  run("package install quoted wildcard", ["install", "*", "--project"]);
+  const shellExpandedWildcardTargets = readdirSync(repoRoot)
+    .filter((entry) => !entry.startsWith("."))
+    .sort((left, right) => left.localeCompare(right));
+  run("package install shell-expanded wildcard", ["install", ...shellExpandedWildcardTargets, "--project"]);
+  run("package install local package root", ["install", path.join("packages", "pm-todos"), "--project"]);
+  run("package install npm local package root", ["install", `npm:${path.join(repoRoot, "packages", "pm-beads")}`, "--project"]);
   const installAll = run("package install all", ["install", "all", "--project"]);
   assert(installAll?.details?.installed_all === true, "install all did not report installed_all=true");
   const packageCatalog = run("package catalog", ["package", "catalog", "--project"]);
   assert(packageCatalog?.details?.total >= 2, "package catalog did not list bundled first-party packages");
   run("package explore", ["package", "explore", "--project"]);
   run("package doctor", ["package", "doctor", "--project", "--detail", "summary"]);
+  run("upgrade packages", ["upgrade", "--packages-only"]);
   run("upgrade dry-run", ["upgrade", "--dry-run"]);
 
   run("sdk import", ["contracts", "--availability-only", "--runtime-only"]);

@@ -1,7 +1,23 @@
 #!/usr/bin/env node
 import readline from "node:readline";
+import { fileURLToPath } from "node:url";
+import {
+  activateExtensions,
+  loadExtensions,
+  runActiveCommandHandler,
+  setActiveExtensionCommands,
+  setActiveExtensionHooks,
+  setActiveExtensionParsers,
+  setActiveExtensionPreflight,
+  setActiveExtensionRegistrations,
+  setActiveExtensionRenderers,
+  setActiveExtensionServices,
+} from "../core/extensions/index.js";
+import { pathExists } from "../core/fs/fs-utils.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import { readSettings } from "../core/store/settings.js";
 import {
   runActivity,
   runAggregate,
@@ -67,6 +83,16 @@ interface ToolDefinition {
 }
 
 type ToolHandler = (args: Record<string, unknown>) => Promise<unknown>;
+
+const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+
+function resolvePmPackageRoot(): string {
+  return fileURLToPath(new URL("../..", import.meta.url));
+}
+
+if (typeof process.env[PM_PACKAGE_ROOT_ENV] !== "string" || process.env[PM_PACKAGE_ROOT_ENV]?.trim().length === 0) {
+  process.env[PM_PACKAGE_ROOT_ENV] = resolvePmPackageRoot();
+}
 
 const TOOL_SCHEMA_BASE = {
   type: "object",
@@ -245,6 +271,92 @@ function optionsWithAuthor(args: Record<string, unknown>): Record<string, unknow
   return author && options.author === undefined ? { ...options, author } : options;
 }
 
+function normalizeActionName(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function normalizeCommandPath(value: string): string {
+  return value.trim().toLowerCase().split(/\s+/).filter(Boolean).join(" ");
+}
+
+function readStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.map((entry) => String(entry)).filter((entry) => entry.length > 0);
+}
+
+function extensionOptionsFromArgs(args: Record<string, unknown>, options: Record<string, unknown>): Record<string, unknown> {
+  const reserved = new Set(["action", "args", "author", "cwd", "id", "options", "path", "query", "reason", "target"]);
+  const passthrough: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(args)) {
+    if (!reserved.has(key)) {
+      passthrough[key] = value;
+    }
+  }
+  const normalizedOptions = { ...passthrough, ...options };
+  delete normalizedOptions.args;
+  return normalizedOptions;
+}
+
+async function runDynamicExtensionAction(
+  action: string,
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+  global: GlobalOptions,
+): Promise<unknown> {
+  if (global.noExtensions) {
+    throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
+  }
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
+  }
+
+  const settings = await readSettings(pmRoot);
+  const loadResult = await loadExtensions({
+    pmRoot,
+    settings,
+    cwd: process.cwd(),
+    noExtensions: false,
+  });
+  const activationResult = await activateExtensions({
+    ...loadResult,
+    loaded: loadResult.loaded,
+  });
+
+  const normalizedAction = normalizeActionName(action);
+  const definition = activationResult.registrations.commands.find((entry) =>
+    normalizeActionName(entry.action) === normalizedAction
+  );
+  const command = definition?.command ??
+    activationResult.commands.handlers.find((entry) => normalizeActionName(entry.command) === normalizedAction)?.command;
+  if (!command) {
+    throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
+  }
+
+  setActiveExtensionHooks(activationResult.hooks);
+  setActiveExtensionCommands(activationResult.commands);
+  setActiveExtensionParsers(activationResult.parsers);
+  setActiveExtensionPreflight(activationResult.preflight);
+  setActiveExtensionServices(activationResult.services);
+  setActiveExtensionRenderers(activationResult.renderers);
+  setActiveExtensionRegistrations(activationResult.registrations);
+
+  const handlerResult = await runActiveCommandHandler({
+    command: normalizeCommandPath(command),
+    args: readStringArray(options.args ?? args.args),
+    options: extensionOptionsFromArgs(args, options),
+    global,
+    pm_root: pmRoot,
+  });
+  if (!handlerResult.handled) {
+    const suffix = handlerResult.warnings.length > 0 ? ` (${handlerResult.warnings.join(", ")})` : "";
+    throw new PmCliError(`Unsupported native pm action: ${action}${suffix}`, 64);
+  }
+  return handlerResult.result;
+}
+
 async function withCwd<T>(cwd: unknown, run: () => Promise<T>): Promise<T> {
   if (typeof cwd !== "string" || cwd.trim().length === 0) {
     return run();
@@ -384,7 +496,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
     case "guide":
       return runGuide(options, global);
     default:
-      throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
+      return runDynamicExtensionAction(action, args, options, global);
   }
 }
 
@@ -436,7 +548,7 @@ function errorContent(error: unknown): Record<string, unknown> {
   };
 }
 
-async function handleRequest(request: JsonRpcRequest): Promise<Record<string, unknown> | undefined> {
+export async function handleRequest(request: JsonRpcRequest): Promise<Record<string, unknown> | undefined> {
   if (!request.id && request.method?.startsWith("notifications/")) {
     return undefined;
   }
@@ -511,4 +623,6 @@ export function startMcpServer(): void {
   });
 }
 
-startMcpServer();
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  startMcpServer();
+}

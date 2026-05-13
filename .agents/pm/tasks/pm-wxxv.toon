@@ -6,27 +6,40 @@ status: closed
 priority: 1
 tags[4]: contracts,packages,pm-cli,sdk
 created_at: "2026-05-12T19:46:36.014Z"
-updated_at: "2026-05-12T21:38:44.108Z"
+updated_at: "2026-05-13T19:10:42.593Z"
 author: codex-agent
 acceptance_criteria: Static SDK core actions no longer imply optional first-party package commands are always core; installed package commands remain discoverable through runtime contracts; MCP/action availability parity is documented or tested; focused SDK/contracts/package tests pass.
 parent: pm-59gj
 resolution: Completed optional package action decoupling and public SDK type-import cleanup.
 expected_result: Static SDK core actions exclude Beads/Todos optional package actions; installed package commands remain discoverable through runtime extension contracts.
 actual_result: "Verified static no-extensions contracts reject beads-import while installed package/runtime contracts expose Beads/Todos actions; focused, coverage, temp-project, release, Sentry, and telemetry gates passed."
-comments[2]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-05-12T19:46:36.014Z",codex-agent,"Duplicate check before create: ran pm search 'SDK optional package actions beads todos public contracts' --limit 10. Results were closed contract/history items plus active pm-59gj; no open child tracked optional package action decoupling, so this follow-up is created under pm-59gj."
   "2026-05-12T21:38:18.308Z",codex-agent,"Evidence: removed Beads/Todos optional package actions from the static SDK tool action schema; runtime contracts still surface installed package commands. First-party package entrypoints now use public SDK type imports. Verification passed: pnpm typecheck; pm test pm-wxxv --run --progress; isolated temp-project E2E for pm install '*', package doctor, Beads/Todos import/export, runtime contracts, SDK import, pm upgrade --dry-run, validate, health; node scripts/run-tests.mjs coverage at 100%; node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json."
-files[5]{path,scope,note}:
+  "2026-05-13T18:54:21.421Z",codex-agent,"Execution continuation 2026-05-13: duplicate search selected this existing optional package contract item. Scope is MCP pm_run execution for dynamically discovered package actions, SDK barrel contract export coverage, and package-first dogfood expansion for wildcard/package-source flows."
+  "2026-05-13T19:00:51.853Z",codex-agent,"Verification note: first coverage attempt ran concurrently with linked tests that rebuild dist and failed with a transient partial-build import error. Linked pm test completed green, so coverage is being rerun cleanly after a fresh build with no concurrent build process."
+  "2026-05-13T19:05:12.777Z",codex-agent,"Verification update: linked pm test run passed all 5 linked checks including focused contracts, MCP dynamic package action regression, expanded dogfood, and typecheck. Clean coverage rerun after fresh build passed 92 files / 1293 tests with 100% statements, branches, functions, and lines."
+  "2026-05-13T19:10:13.075Z",codex-agent,"Release-gate evidence: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json passed. Checks included build, typecheck, docs-skills, static quality, coverage, version policy, secret scan, npx smoke, npm pack dry-run, compatibility, and required Sentry/telemetry gate. Observability snapshot: Sentry critical=1 high=3 total=4 under thresholds with 9 ignored known-noise groups; telemetry finish_error_rate_pct=2.98 and failures_without_error_code_rows=0."
+  "2026-05-13T19:10:42.593Z",codex-agent,"Validation note: pm validate --check-resolution --check-history-drift reports resolution ok and the known pre-existing five history drift warnings on pm-54d, pm-f3q4, pm-fdla, pm-mb4n, and pm-tq1; no new resolution gap was introduced."
+files[9]{path,scope,note}:
   packages/pm-beads/extensions/beads/index.ts,project,use public SDK type imports in first-party package entrypoint
   packages/pm-todos/extensions/todos/index.ts,project,use public SDK type imports in first-party package entrypoint
   src/cli/commands/contracts.ts,project,derive optional actions only from active extension contracts
   src/sdk/cli-contracts.ts,project,remove optional package actions from static SDK schema
   tests/unit/contracts-command.spec.ts,project,regress static-vs-runtime optional action contracts
-tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  src/mcp/server.ts,project,MCP pm_run dispatches installed package actions
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP dynamic package action regression
+  tests/unit/sdk-index.spec.ts,project,SDK barrel contract export regression
+  scripts/dogfood-package-first.mjs,project,expanded package install/upgrade dogfood matrix
+tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,full 100 percent coverage gate
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused static/runtime contract regression
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts tests/unit/todos-extension.spec.ts tests/unit/beads-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused package/contracts regression slice
+  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/contracts-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused MCP dynamic package action and SDK contract regression
+  "pnpm dogfood:package-first",null,project,300,null,null,null,null,null,null,null,null,null,null,null,expanded isolated package-first dogfood
   pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,SDK and package TypeScript typecheck
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mp355ly8-4wzn71,test,passed,"2026-05-12T21:26:05.958Z","2026-05-12T21:27:06.848Z","2026-05-12T21:27:06.848Z",null,null,3,0,0,null,null,null
-close_reason: "Optional package actions removed from static SDK contracts; installed package commands remain runtime-discoverable; focused, coverage, temp-project, release, Sentry, and telemetry gates passed. Repo validate resolution is clean; known pre-existing history drift remains on pm-54d/pm-f3q4/pm-fdla/pm-mb4n/pm-tq1."
+  test-local-mp4fc5ms-zdtzdz,test,passed,"2026-05-13T18:56:54.745Z","2026-05-13T18:59:54.628Z","2026-05-13T18:59:54.628Z",null,null,5,0,0,null,null,null
+close_reason: "MCP dynamic package actions, SDK barrel contracts, expanded dogfood, coverage, release, Sentry, and telemetry gates passed"
 body: ""

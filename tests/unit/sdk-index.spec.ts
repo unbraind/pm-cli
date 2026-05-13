@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { EXTENSION_CAPABILITIES, PM_PACKAGE_RESOURCE_KINDS, defineExtension } from "../../src/sdk/index.js";
+import {
+  EXTENSION_CAPABILITIES,
+  PM_PACKAGE_RESOURCE_KINDS,
+  PM_PROVIDER_TOOL_PARAMETERS_SCHEMA,
+  PM_TOOL_ACTIONS,
+  PM_TOOL_ACTION_PARAMETER_CONTRACTS,
+  PM_TOOL_PARAMETERS_SCHEMA,
+  defineExtension,
+} from "../../src/sdk/index.js";
 
 describe("public sdk entrypoint", () => {
   it("exposes deterministic capability names", () => {
@@ -35,5 +43,32 @@ describe("public sdk entrypoint", () => {
     expect(PM_PACKAGE_RESOURCE_KINDS).toEqual([
       "extensions",
     ]);
+  });
+
+  it("exposes stable pm tool contract constants through the sdk barrel", () => {
+    expect(PM_TOOL_ACTIONS).toContain("create");
+    expect(PM_TOOL_ACTIONS).toContain("install");
+    expect(PM_TOOL_ACTIONS).toContain("upgrade");
+    expect(PM_TOOL_ACTIONS).not.toContain("beads-import");
+    expect(PM_TOOL_ACTIONS).not.toContain("todos-export");
+
+    expect(PM_TOOL_PARAMETERS_SCHEMA.type).toBe("object");
+    expect(PM_TOOL_PARAMETERS_SCHEMA.oneOf).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          properties: expect.objectContaining({
+            action: expect.objectContaining({ const: "create" }),
+          }),
+        }),
+      ]),
+    );
+    expect(PM_PROVIDER_TOOL_PARAMETERS_SCHEMA).toMatchObject({
+      type: "object",
+      properties: {
+        action: { type: "string" },
+      },
+    });
+    expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.create.required).toEqual(expect.arrayContaining(["title"]));
+    expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.upgrade.optional).toEqual(expect.arrayContaining(["dryRun"]));
   });
 });
