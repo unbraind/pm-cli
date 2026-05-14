@@ -1,21 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { getActiveExtensionRegistrations, runActiveOnReadHooks, runActiveOnWriteHooks } from "../../../../dist/core/extensions/index.js";
-import { pathExists, removeFileIfExists, writeFileAtomic } from "../../../../dist/core/fs/fs-utils.js";
-import { appendHistoryEntry, createHistoryEntry } from "../../../../dist/core/history/history.js";
-import { generateItemId, normalizeItemId } from "../../../../dist/core/item/id.js";
-import { canonicalDocument, normalizeFrontMatter, serializeItemDocument, splitFrontMatter } from "../../../../dist/core/item/item-format.js";
-import { normalizeStatusInput } from "../../../../dist/core/item/status.js";
-import { resolveItemTypeRegistry } from "../../../../dist/core/item/type-registry.js";
-import { parseTags } from "../../../../dist/core/item/parse.js";
-import { acquireLock } from "../../../../dist/core/lock/lock.js";
-import { EXIT_CODE } from "../../../../dist/core/shared/constants.js";
-import { PmCliError } from "../../../../dist/core/shared/errors.js";
-import { nowIso } from "../../../../dist/core/shared/time.js";
-import { listAllFrontMatter, locateItem, readLocatedItem } from "../../../../dist/core/store/item-store.js";
-import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../../../dist/core/store/paths.js";
-import { readSettings } from "../../../../dist/core/store/settings.js";
-import { CONFIDENCE_TEXT_VALUES, ISSUE_SEVERITY_VALUES, RISK_VALUES } from "../../../../dist/types/index.js";
+import { CONFIDENCE_TEXT_VALUES, EXIT_CODE, ISSUE_SEVERITY_VALUES, PmCliError, RISK_VALUES, acquireLock, appendHistoryEntry, canonicalDocument, createHistoryEntry, generateItemId, getActiveExtensionRegistrations, getHistoryPath, getItemPath, getSettingsPath, listAllFrontMatter, locateItem, normalizeFrontMatter, normalizeItemId, normalizeStatusInput, nowIso, parseTags, pathExists, readLocatedItem, readSettings, removeFileIfExists, resolveItemTypeRegistry, resolvePmRoot, runActiveOnReadHooks, runActiveOnWriteHooks, serializeItemDocument, splitFrontMatter, writeFileAtomic, } from "../../../../dist/sdk/index.js";
 const DEFAULT_TODOS_FOLDER = ".pm/todos";
 function isRecord(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);

@@ -19,6 +19,9 @@
     "todos"
   ],
   "pm": {
+    "aliases": [
+      "todos"
+    ],
     "extensions": [
       "extensions/todos"
     ],

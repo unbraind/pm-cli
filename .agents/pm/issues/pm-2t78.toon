@@ -1,0 +1,50 @@
+id: pm-2t78
+title: Sync package JS runtimes to public SDK surface
+description: "The first-party package TypeScript runtimes import runtime primitives from the public SDK barrel, but the shipped JavaScript runtime artifacts still deep-import dist/core modules. Align runtime artifacts and tests so installed packages exercise the public SDK surface without losing package functionality."
+type: Issue
+status: closed
+priority: 0
+tags[4]: package-first,packages,pm-cli,sdk
+created_at: "2026-05-14T05:20:21.502Z"
+updated_at: "2026-05-14T05:49:35.175Z"
+author: codex-agent
+estimated_minutes: 90
+acceptance_criteria: First-party package runtime JavaScript artifacts use the public SDK barrel instead of dist/core deep imports; tests fail on stale package runtime artifacts; package-first dogfood and focused package/MCP tests pass; progress and evidence are recorded in pm.
+parent: pm-59gj
+resolution: "Closed after aligning shipped package runtime JavaScript with the public SDK barrel, adding manifest-declared bundled package aliases, dynamic packages/pm-* discovery, stable extension action IDs, and installed package-command dogfood coverage."
+expected_result: "First-party packages remain fully TypeScript-authored, shipped JavaScript avoids private dist/core and dist/types imports, install/catalog/install-all discover package aliases from package manifests, and installed package commands keep working through the SDK surface."
+actual_result: "Package JS now imports ../../../../dist/sdk/index.js; runtime guard rejects private dist/core and dist/types imports; beads/todos declare aliases; package catalog/install discover manifest aliases including synthetic pm-custom test fixture; dogfood runs beads import and todos export after install; focused tests, coverage, release gate, Sentry, and telemetry passed."
+comments[4]{created_at,author,text}:
+  "2026-05-14T05:20:21.502Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10, pm search 'package-first SDK packages upgrade extensible' --limit 10, pm search 'MCP dynamic package action dogfood wildcard source refresh' --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Existing pm-hkql closed the TypeScript source cleanup but did not cover stale shipped runtime.js artifacts, so this focused child issue is needed under pm-59gj."
+  "2026-05-14T05:30:50.374Z",codex-agent,"Progress: fixed stale first-party package runtime artifacts to import the built public SDK barrel instead of private dist/core internals; added stable package action IDs; added manifest-declared aliases and dynamic bundled package discovery from packages/pm-* manifests; updated dogfood to execute installed beads import and todos export commands. Verification so far: pnpm build passed; pnpm typecheck passed; focused package/MCP suite passed 6 files / 99 tests; pnpm dogfood:package-first passed 37 isolated temp-project commands; pm test pm-2t78 --run --progress passed all 3 linked checks."
+  "2026-05-14T05:43:13.771Z",codex-agent,"Final verification: full coverage passed 92 files / 1296 tests with 100% statements/branches/functions/lines. Release gate passed build, typecheck, docs-skills, static quality, coverage, version-policy, secret scan, npx smoke, npm pack dry-run, compatibility check, and required Sentry/telemetry gate. Observability data: Sentry access ok with critical=1 high=3 total=4 under thresholds and 9 ignored known-noise groups; telemetry required mode ok with finish_error_rate_pct=2.46 and failures_without_error_code_rows=0."
+  "2026-05-14T05:49:35.175Z",codex-agent,"Post-doc final gate: docs/skills gate passed after documenting pm.aliases. Final release gate rerun passed with telemetry required: build, typecheck, docs-skills, static quality, coverage 92 files / 1296 tests at 100%, version-policy, secret scan, npx smoke, npm pack dry-run, compatibility check, and Sentry/telemetry. Observability final: Sentry critical=1 high=3 total=4 under thresholds with 9 ignored known-noise groups; telemetry finish_error_rate_pct=2.44 and failures_without_error_code_rows=0."
+files[17]{path,scope,note}:
+  docs/EXTENSIONS.md,project,package-alias-manifest-docs
+  package.json,project,publish-first-party-package-glob
+  packages/pm-beads/extensions/beads/index.js,project,shipped-package-action-id
+  packages/pm-beads/extensions/beads/index.ts,project,stable-package-action-id
+  packages/pm-beads/extensions/beads/runtime.js,project,runtime-public-sdk-barrel
+  packages/pm-beads/package.json,project,manifest-declared-alias
+  packages/pm-todos/extensions/todos/index.js,project,shipped-package-action-ids
+  packages/pm-todos/extensions/todos/index.ts,project,stable-package-action-ids
+  packages/pm-todos/extensions/todos/runtime.js,project,runtime-public-sdk-barrel
+  packages/pm-todos/package.json,project,manifest-declared-alias
+  scripts/dogfood-package-first.mjs,project,installed-package-command-dogfood
+  src/cli/commands/extension.ts,project,dynamic-bundled-package-discovery
+  src/core/packages/manifest.ts,project,package-alias-manifest-field
+  tests/integration/release-readiness-runtime.spec.ts,project,publish-glob-readiness-gate
+  tests/unit/builtin-extension-entrypoints.spec.ts,project,stable-action-id-regression
+  tests/unit/extension-command.spec.ts,project,manifest-alias-install-regression
+  tests/unit/package-manifest.spec.ts,project,runtime-js-public-sdk-guard
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts -t 'keeps npm packaging allowlist and prepublish guard aligned',null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/extension-command.spec.ts tests/unit/todos-extension.spec.ts tests/unit/beads-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm dogfood:package-first",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp51v8w6-cpolk8,test,passed,"2026-05-14T05:29:47.047Z","2026-05-14T05:30:36.870Z","2026-05-14T05:30:36.870Z",null,null,3,0,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,package-alias-manifest-docs
+close_reason: "Package runtime JS now uses public SDK barrel; manifest aliases drive bundled discovery; installed package commands are dogfooded; focused tests, coverage, release gate, Sentry, and telemetry passed"
+body: ""

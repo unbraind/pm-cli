@@ -1,4 +1,4 @@
-import { access, mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -53,6 +53,7 @@ describe("pm package manifest model", () => {
             url: "https://github.com/example/pm-resource-package/issues",
           },
           pm: {
+            aliases: ["resource-fixture"],
             extensions: ["extensions"],
             catalog: {
               display_name: "Resource Package",
@@ -84,6 +85,7 @@ describe("pm package manifest model", () => {
       package_homepage: "https://example.com/package-docs",
       package_repository_url: "https://github.com/example/pm-resource-package",
       package_bugs_url: "https://github.com/example/pm-resource-package/issues",
+      aliases: ["resource-fixture"],
       resources: {
         extensions: ["extensions"],
       },
@@ -236,6 +238,7 @@ describe("pm package manifest model", () => {
       source: "pm",
       package_name: "@unbrained/pm-package-beads",
       package_version: "0.1.0",
+      aliases: ["beads"],
       catalog: {
         display_name: "Beads Import",
         category: "migration",
@@ -252,6 +255,7 @@ describe("pm package manifest model", () => {
       source: "pm",
       package_name: "@unbrained/pm-package-todos",
       package_version: "0.1.0",
+      aliases: ["todos"],
       catalog: {
         display_name: "Todos Import/Export",
         category: "migration",
@@ -270,6 +274,19 @@ describe("pm package manifest model", () => {
     await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime.ts"))).resolves.toBeUndefined();
+  });
+
+  it("keeps shipped package JavaScript runtimes on the public SDK surface", async () => {
+    const packageRuntimeFiles = [
+      path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.js"),
+      path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime.js"),
+    ];
+
+    for (const runtimeFile of packageRuntimeFiles) {
+      const source = await readFile(runtimeFile, "utf8");
+      expect(source).toContain("../../../../dist/sdk/index.js");
+      expect(source).not.toMatch(/["']\.\.\/\.\.\/\.\.\/\.\.\/dist\/(?:core|types)\//);
+    }
   });
 
   it("reports convention manifests and malformed package manifests", async () => {

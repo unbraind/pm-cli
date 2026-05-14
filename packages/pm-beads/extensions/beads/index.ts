@@ -94,6 +94,7 @@ async function runBeadsImportFromRuntime(options: BeadsImportOptions, global: Gl
 export function activate(api: ExtensionApi): void {
   api.registerCommand({
     name: "beads import",
+    action: "beads-import",
     description: "Import Beads JSONL records into pm items.",
     flags: [
       {

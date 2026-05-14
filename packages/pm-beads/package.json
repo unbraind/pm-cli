@@ -19,6 +19,9 @@
     "beads"
   ],
   "pm": {
+    "aliases": [
+      "beads"
+    ],
     "extensions": [
       "extensions/beads"
     ],

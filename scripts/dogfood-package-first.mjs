@@ -140,6 +140,31 @@ try {
   assert(packageCatalog?.details?.total >= 2, "package catalog did not list bundled first-party packages");
   run("package explore", ["package", "explore", "--project"]);
   run("package doctor", ["package", "doctor", "--project", "--detail", "summary"]);
+  const beadsFixture = path.join(tempRoot, "beads-import.jsonl");
+  writeFileSync(
+    beadsFixture,
+    `${JSON.stringify({
+      id: "dogfood-beads-imported",
+      title: "Dogfood package beads import",
+      description: "Imported by the installed first-party Beads package.",
+      type: "task",
+      status: "open",
+      priority: 2,
+      tags: ["dogfood", "package-command"],
+    })}\n`,
+    "utf8",
+  );
+  const beadsImport = run("package command beads import", [
+    "beads",
+    "import",
+    "--file",
+    beadsFixture,
+    "--preserve-source-ids",
+  ]);
+  assert(beadsImport?.imported === 1, "beads import package command did not import one item");
+  const todosExportFolder = path.join(tempRoot, "todos-export");
+  const todosExport = run("package command todos export", ["todos", "export", "--folder", todosExportFolder]);
+  assert(todosExport?.exported >= 1, "todos export package command did not export any items");
   run("upgrade packages", ["upgrade", "--packages-only"]);
   run("upgrade dry-run", ["upgrade", "--dry-run"]);
 

@@ -379,6 +379,82 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("discovers bundled package aliases from package manifests", async () => {
+    await withTempPmPath(async (context) => {
+      const tempPackageRoot = await mkdtemp(path.join(context.tempRoot, "pm-bundled-root-"));
+      const bundledPackage = path.join(tempPackageRoot, "packages", "pm-custom");
+      const bundledExtension = path.join(bundledPackage, "extensions", "custom");
+      await mkdir(bundledExtension, { recursive: true });
+      await writeFile(
+        path.join(bundledPackage, "package.json"),
+        JSON.stringify(
+          {
+            name: "@example/pm-custom",
+            version: "1.0.0",
+            pm: {
+              aliases: ["custom"],
+              extensions: ["extensions/custom"],
+              catalog: {
+                display_name: "Custom Package",
+                category: "fixture",
+                summary: "Manifest-discovered package fixture.",
+              },
+            },
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(
+        path.join(bundledExtension, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "custom-package-ext",
+            version: "1.0.0",
+            entry: "index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(bundledExtension, "index.js"), "export default { activate() {} };", "utf8");
+
+      const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
+      process.env[PM_PACKAGE_ROOT_ENV] = tempPackageRoot;
+      try {
+        const catalog = await runExtension("catalog", { catalog: true, project: true }, { path: context.pmPath });
+        expect(catalog.details).toMatchObject({
+          packages: expect.arrayContaining([
+            expect.objectContaining({
+              alias: "custom",
+              package_name: "@example/pm-custom",
+            }),
+          ]),
+        });
+
+        const install = await runExtension("custom", { install: true, project: true }, { path: context.pmPath });
+        expect(install.details).toMatchObject({
+          extension: {
+            name: "custom-package-ext",
+          },
+          source: {
+            kind: "local",
+            location: bundledPackage,
+          },
+        });
+      } finally {
+        if (previousPackageRoot === undefined) {
+          delete process.env[PM_PACKAGE_ROOT_ENV];
+        } else {
+          process.env[PM_PACKAGE_ROOT_ENV] = previousPackageRoot;
+        }
+      }
+    });
+  });
+
   it("falls back from missing PM_CLI_PACKAGE_ROOT alias path to module-root bundle", async () => {
     await withTempPmPath(async (context) => {
       const missingRoot = path.join(context.tempRoot, "missing-bundle-root");

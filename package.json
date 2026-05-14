@@ -48,8 +48,7 @@
     "docs/**",
     ".claude-plugin/**",
     "plugins/**",
-    "packages/pm-beads/**",
-    "packages/pm-todos/**",
+    "packages/pm-*/**",
     "scripts/install.sh",
     "scripts/install.ps1",
     "marketplace.json"

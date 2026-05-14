@@ -174,6 +174,7 @@ describe("built-in extension entrypoints", () => {
 
     activateBeads(api);
     expect(commands.map((command) => command.name)).toEqual(["beads import"]);
+    expect(commands[0]?.action).toBe("beads-import");
     expect(commands[0]?.flags).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ long: "--file" }),
@@ -254,6 +255,7 @@ describe("built-in extension entrypoints", () => {
       "todos import",
       "todos export",
     ]);
+    expect(commands.map((command) => command.action)).toEqual(["todos-import", "todos-export"]);
     expect(commands[0]?.flags).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ long: "--folder" }),

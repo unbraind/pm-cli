@@ -104,6 +104,7 @@ async function runTodosExportFromRuntime(options: TodosExportOptions, global: Gl
 export function activate(api: ExtensionApi): void {
   api.registerCommand({
     name: "todos import",
+    action: "todos-import",
     description: "Import Todo markdown files into pm items.",
     flags: [
       {
@@ -129,6 +130,7 @@ export function activate(api: ExtensionApi): void {
   } satisfies CommandDefinition);
   api.registerCommand({
     name: "todos export",
+    action: "todos-export",
     description: "Export pm items into Todo markdown files.",
     flags: [
       {

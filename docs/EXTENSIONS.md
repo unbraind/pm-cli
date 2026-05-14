@@ -86,6 +86,7 @@ Package roots can expose resources with a `pm` manifest in `package.json`:
   "name": "my-pm-package",
   "keywords": ["pm-package"],
   "pm": {
+    "aliases": ["my-workflow"],
     "extensions": ["extensions/my-extension"],
     "catalog": {
       "display_name": "My pm Package",
@@ -105,7 +106,7 @@ Package roots can expose resources with a `pm` manifest in `package.json`:
 }
 ```
 
-The SDK exposes this project-management package model through `PM_PACKAGE_RESOURCE_KINDS`, `PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS`, and `readPmPackageManifest`. Package installation activates runtime extension resources. Agent-specific bundles such as prompts, skills, and MCP servers should live in separate agent adapter packages rather than the core `pm` package contract.
+`pm.aliases` declares short install targets for bundled first-party packages. If aliases are omitted, `pm` derives a default alias from the `packages/pm-*` directory name. The SDK exposes this project-management package model through `PM_PACKAGE_RESOURCE_KINDS`, `PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS`, and `readPmPackageManifest`. Package installation activates runtime extension resources. Agent-specific bundles such as prompts, skills, and MCP servers should live in separate agent adapter packages rather than the core `pm` package contract.
 
 When no manifest is present, `pm` discovers conventional extension directories:
 

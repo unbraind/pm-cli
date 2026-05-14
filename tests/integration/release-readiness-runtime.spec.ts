@@ -1520,8 +1520,7 @@ describe("release readiness runtime coverage", () => {
       "README.md",
       "LICENSE",
       "docs/**",
-      "packages/pm-beads/**",
-      "packages/pm-todos/**",
+      "packages/pm-*/**",
       "scripts/install.sh",
       "scripts/install.ps1",
     ];

@@ -43,6 +43,7 @@ export interface PmPackageManifest {
   package_homepage?: string;
   package_repository_url?: string;
   package_bugs_url?: string;
+  aliases?: string[];
   resources: PmPackageResourceMap;
   catalog?: PmPackageCatalogMetadata;
 }
@@ -203,6 +204,7 @@ export async function readPmPackageManifest(packageRoot: string): Promise<PmPack
     package_homepage: typeof packageJson.homepage === "string" ? packageJson.homepage : undefined,
     package_repository_url: readUrlLikeField(packageJson.repository),
     package_bugs_url: readUrlLikeField(packageJson.bugs),
+    aliases: normalizeStringArray(pmManifestRecord.aliases),
     resources: normalizePackageResourceMap(pmManifest),
     catalog: normalizePackageCatalogMetadata(pmManifestRecord.catalog),
   };

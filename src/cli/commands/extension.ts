@@ -29,7 +29,7 @@ const DEFAULT_EXTENSION_PRIORITY = 100;
 const MANAGED_EXTENSION_STATE_FILENAME = ".managed-extensions.json";
 const MANAGED_EXTENSION_STATE_VERSION = 1;
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
-const BUNDLED_PACKAGE_ALIASES: Record<string, { package_directory: string; legacy_extension_directory: string }> = {
+const LEGACY_BUNDLED_PACKAGE_ALIASES: Record<string, { package_directory: string; legacy_extension_directory: string }> = {
   beads: {
     package_directory: "pm-beads",
     legacy_extension_directory: "beads",
@@ -40,6 +40,12 @@ const BUNDLED_PACKAGE_ALIASES: Record<string, { package_directory: string; legac
   },
 };
 const BUNDLED_PACKAGE_INSTALL_ALL_TARGETS = new Set(["*", "all"]);
+
+interface BundledPackageEntry {
+  alias: string;
+  package_directory: string;
+  package_root: string;
+}
 
 export type ExtensionCommandAction =
   | "install"
@@ -183,17 +189,16 @@ function resolvePackageRootCandidates(): string[] {
 
 async function resolveBundledExtensionAliasSource(input: string): Promise<string | null> {
   const normalized = input.trim().toLowerCase();
-  const alias = BUNDLED_PACKAGE_ALIASES[normalized];
+  const packageRoot = await resolveBundledPackageRoot(normalized);
+  if (packageRoot) {
+    return packageRoot;
+  }
+
+  const alias = LEGACY_BUNDLED_PACKAGE_ALIASES[normalized];
   if (!alias) {
     return null;
   }
-
   for (const packageRoot of resolvePackageRootCandidates()) {
-    const packagePath = path.join(packageRoot, "packages", alias.package_directory);
-    if (await pathExists(path.join(packagePath, "package.json"))) {
-      return packagePath;
-    }
-
     const legacyExtensionPath = path.join(packageRoot, ".agents", "pm", "extensions", alias.legacy_extension_directory);
     if (await pathExists(path.join(legacyExtensionPath, "manifest.json"))) {
       return legacyExtensionPath;
@@ -206,22 +211,72 @@ function isBundledPackageInstallAllTarget(input: string): boolean {
   return BUNDLED_PACKAGE_INSTALL_ALL_TARGETS.has(input.trim().toLowerCase());
 }
 
-function listBundledPackageAliases(): string[] {
-  return Object.keys(BUNDLED_PACKAGE_ALIASES).sort((left, right) => left.localeCompare(right));
+function derivePackageAlias(packageDirectory: string): string {
+  return packageDirectory.replace(/^pm-/i, "").trim().toLowerCase();
+}
+
+async function collectBundledPackageEntries(): Promise<BundledPackageEntry[]> {
+  const entriesByAlias = new Map<string, BundledPackageEntry>();
+  for (const packageRoot of resolvePackageRootCandidates()) {
+    const packagesRoot = path.join(packageRoot, "packages");
+    if (!(await pathExists(packagesRoot))) {
+      continue;
+    }
+    const entries = await fs.readdir(packagesRoot, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory() || !entry.name.startsWith("pm-")) {
+        continue;
+      }
+      const candidateRoot = path.join(packagesRoot, entry.name);
+      if (!(await pathExists(path.join(candidateRoot, "package.json")))) {
+        continue;
+      }
+      const manifest = await readPmPackageManifest(candidateRoot);
+      const aliases = manifest.aliases && manifest.aliases.length > 0
+        ? manifest.aliases
+        : [derivePackageAlias(entry.name)];
+      for (const alias of aliases) {
+        const normalizedAlias = alias.trim().toLowerCase();
+        if (normalizedAlias.length === 0 || entriesByAlias.has(normalizedAlias)) {
+          continue;
+        }
+        entriesByAlias.set(normalizedAlias, {
+          alias: normalizedAlias,
+          package_directory: entry.name,
+          package_root: candidateRoot,
+        });
+      }
+    }
+  }
+
+  for (const [alias, legacy] of Object.entries(LEGACY_BUNDLED_PACKAGE_ALIASES)) {
+    if (entriesByAlias.has(alias)) {
+      continue;
+    }
+    for (const packageRoot of resolvePackageRootCandidates()) {
+      const packagePath = path.join(packageRoot, "packages", legacy.package_directory);
+      if (await pathExists(path.join(packagePath, "package.json"))) {
+        entriesByAlias.set(alias, {
+          alias,
+          package_directory: legacy.package_directory,
+          package_root: packagePath,
+        });
+        break;
+      }
+    }
+  }
+
+  return [...entriesByAlias.values()].sort((left, right) => left.alias.localeCompare(right.alias));
+}
+
+async function listBundledPackageAliases(): Promise<string[]> {
+  return (await collectBundledPackageEntries()).map((entry) => entry.alias);
 }
 
 async function resolveBundledPackageRoot(alias: string): Promise<string | null> {
-  const bundled = BUNDLED_PACKAGE_ALIASES[alias];
-  if (!bundled) {
-    return null;
-  }
-  for (const packageRoot of resolvePackageRootCandidates()) {
-    const packagePath = path.join(packageRoot, "packages", bundled.package_directory);
-    if (await pathExists(path.join(packagePath, "package.json"))) {
-      return packagePath;
-    }
-  }
-  return null;
+  const normalized = alias.trim().toLowerCase();
+  const entry = (await collectBundledPackageEntries()).find((candidate) => candidate.alias === normalized);
+  return entry?.package_root ?? null;
 }
 
 export interface ManagedExtensionSummary {
@@ -858,7 +913,7 @@ async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalO
   );
   const packages: Array<Record<string, unknown>> = [];
 
-  for (const alias of listBundledPackageAliases()) {
+  for (const alias of await listBundledPackageAliases()) {
     const packageRoot = await resolveBundledPackageRoot(alias);
     const installScopeFlag = scope === "global" ? "--global" : "--project";
     if (!packageRoot) {
@@ -2269,7 +2324,7 @@ export async function runExtension(
       if (typeof options.ref === "string" && options.ref.trim().length > 0) {
         throw new PmCliError('Action "install all" does not accept --ref.', EXIT_CODE.USAGE);
       }
-      const aliases = listBundledPackageAliases();
+      const aliases = await listBundledPackageAliases();
       const packages: Array<{ alias: string; result: ExtensionCommandResult }> = [];
       for (const alias of aliases) {
         packages.push({
