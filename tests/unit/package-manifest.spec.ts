@@ -55,6 +55,8 @@ describe("pm package manifest model", () => {
           pm: {
             aliases: ["resource-fixture"],
             extensions: ["extensions"],
+            docs: ["docs/README.md", "README.md", "README.md"],
+            examples: "examples",
             catalog: {
               display_name: "Resource Package",
               category: "workflow",
@@ -88,6 +90,8 @@ describe("pm package manifest model", () => {
       aliases: ["resource-fixture"],
       resources: {
         extensions: ["extensions"],
+        docs: ["docs/README.md", "README.md"],
+        examples: ["examples"],
       },
       catalog: {
         display_name: "Resource Package",
@@ -154,12 +158,20 @@ describe("pm package manifest model", () => {
     const sortedResourceRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-sorted-resource-"));
     await writeFile(
       path.join(sortedResourceRoot, "package.json"),
-      JSON.stringify({ pm: { extensions: ["z-extension", "extensions", "extensions"] } }),
+      JSON.stringify({
+        pm: {
+          extensions: ["z-extension", "extensions", "extensions"],
+          docs: ["docs/z", "docs/a", "docs/a"],
+          examples: "examples/sample",
+        },
+      }),
       "utf8",
     );
     await expect(readPmPackageManifest(sortedResourceRoot)).resolves.toMatchObject({
       resources: {
         extensions: ["extensions", "z-extension"],
+        docs: ["docs/a", "docs/z"],
+        examples: ["examples/sample"],
       },
     });
 
@@ -375,6 +387,21 @@ describe("pm package manifest model", () => {
     await expect(collectPackageExtensionDirectories(todosRoot)).resolves.toEqual([
       path.join(todosRoot, "extensions", "todos"),
     ]);
+
+    for (const packageRoot of [
+      beadsRoot,
+      calendarRoot,
+      governanceAuditRoot,
+      guideShellRoot,
+      linkedTestAdaptersRoot,
+      searchAdvancedRoot,
+      templatesRoot,
+      todosRoot,
+    ]) {
+      const manifest = await readPmPackageManifest(packageRoot);
+      expect(manifest.resources.docs).toEqual(["README.md"]);
+      expect(manifest.resources.examples).toEqual(["README.md"]);
+    }
   });
 
   it("ships TypeScript-authored sources for first-party package entrypoints", async () => {

@@ -15,7 +15,11 @@ import {
   type UnknownExtensionCapabilityWarningDetails,
 } from "../../core/extensions/loader.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { collectPackageExtensionDirectories, readPmPackageManifest } from "../../core/packages/manifest.js";
+import {
+  PM_PACKAGE_RESOURCE_KINDS,
+  collectPackageExtensionDirectories,
+  readPmPackageManifest,
+} from "../../core/packages/manifest.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -901,6 +905,8 @@ function resolveScope(options: ExtensionCommandOptions): ExtensionScope {
 async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalOptions): Promise<{
   total: number;
   scope: ExtensionScope;
+  installable_resource_kinds: string[];
+  metadata_only_resource_kinds: string[];
   packages: Array<Record<string, unknown>>;
 }> {
   const roots = resolveExtensionRoots(resolvePmRoot(process.cwd(), global.path), process.cwd());
@@ -934,6 +940,12 @@ async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalO
     const docs = manifest.catalog?.links?.docs ?? manifest.package_homepage;
     const npm = manifest.catalog?.links?.npm ??
       (manifest.package_name ? `https://www.npmjs.com/package/${encodeURIComponent(manifest.package_name)}` : undefined);
+    const metadataOnlyResources = Object.fromEntries(
+      PM_PACKAGE_RESOURCE_KINDS
+        .filter((resourceKind) => resourceKind !== "extensions")
+        .map((resourceKind) => [resourceKind, manifest.resources[resourceKind] ?? []])
+        .filter(([, entries]) => Array.isArray(entries) && entries.length > 0),
+    );
     packages.push({
       alias,
       bundled: true,
@@ -947,6 +959,10 @@ async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalO
       description: manifest.catalog?.summary ?? manifest.package_description,
       keywords: manifest.package_keywords ?? [],
       resources: manifest.resources,
+      installable_resources: {
+        extensions: manifest.resources.extensions ?? [],
+      },
+      metadata_only_resources: metadataOnlyResources,
       catalog: {
         display_name: manifest.catalog?.display_name,
         category: manifest.catalog?.category,
@@ -965,6 +981,8 @@ async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalO
   return {
     total: packages.length,
     scope,
+    installable_resource_kinds: ["extensions"],
+    metadata_only_resource_kinds: PM_PACKAGE_RESOURCE_KINDS.filter((resourceKind) => resourceKind !== "extensions"),
     packages,
   };
 }
@@ -1220,7 +1238,7 @@ async function resolvePackageExtensionDirectory(packageRoot: string, sourceLabel
     );
   }
   throw new PmCliError(
-    `Unable to locate a pm extension manifest in package source "${sourceLabel}". Add package.json pm.extensions or an extensions/ directory.`,
+    `Unable to locate a pm extension manifest in package source "${sourceLabel}". Package installs currently activate only extension resources, so add package.json pm.extensions or an extensions/ directory. Metadata-only resources like pm.docs/pm.examples are catalog metadata and do not activate commands.`,
     EXIT_CODE.USAGE,
   );
 }

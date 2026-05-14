@@ -41,6 +41,12 @@
         "repository": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-governance-audit",
         "report": "https://github.com/unbraind/pm-cli/issues"
       }
-    }
+    },
+    "docs": [
+      "README.md"
+    ],
+    "examples": [
+      "README.md"
+    ]
   }
 }

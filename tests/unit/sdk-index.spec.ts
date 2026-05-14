@@ -52,6 +52,8 @@ describe("public sdk entrypoint", () => {
   it("exposes package resource kind contracts", () => {
     expect(PM_PACKAGE_RESOURCE_KINDS).toEqual([
       "extensions",
+      "docs",
+      "examples",
     ]);
   });
 

@@ -43,7 +43,7 @@ Common authoring exports:
 
 Package manifest exports:
 
-- `PM_PACKAGE_RESOURCE_KINDS`
+- `PM_PACKAGE_RESOURCE_KINDS` (`extensions`, `docs`, `examples`)
 - `PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS`
 - `readPmPackageManifest`
 - `collectPackageExtensionDirectories`
@@ -93,6 +93,8 @@ pm contracts --command templates --runtime-only --flags-only --json
 ```
 
 Use static SDK contracts for baseline validation, then use `pm contracts --runtime-only` in the target project before invoking package-provided commands or actions.
+
+Package installs currently activate only extension resources. Additional package resource kinds (`docs`, `examples`) are metadata-first and available through package manifest/catalog inspection.
 
 For provider-safe schemas, use `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`. It is flat and avoids advanced schema constructs such as root `oneOf`.
 

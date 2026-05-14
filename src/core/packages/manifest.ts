@@ -6,6 +6,8 @@ import { PmCliError } from "../shared/errors.js";
 
 export const PM_PACKAGE_RESOURCE_KINDS = [
   "extensions",
+  "docs",
+  "examples",
 ] as const;
 
 export type PmPackageResourceKind = (typeof PM_PACKAGE_RESOURCE_KINDS)[number];
@@ -55,6 +57,14 @@ export const PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS: Readonly<Record<PmPackageRe
       "extensions",
       ".custom/pm-extensions",
       ".custom/pm-extension",
+    ]),
+    docs: Object.freeze([
+      "docs",
+      "documentation",
+    ]),
+    examples: Object.freeze([
+      "examples",
+      "docs/examples",
     ]),
   });
 

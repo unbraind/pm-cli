@@ -241,12 +241,21 @@ describe("extension command runtime", () => {
       expect(beforeInstall.details).toMatchObject({
         total: 8,
         scope: "project",
+        installable_resource_kinds: ["extensions"],
+        metadata_only_resource_kinds: ["docs", "examples"],
         packages: [
           {
             alias: "beads",
             available: true,
             installed: false,
             package_name: "@unbrained/pm-package-beads",
+            installable_resources: {
+              extensions: ["extensions/beads"],
+            },
+            metadata_only_resources: {
+              docs: ["README.md"],
+              examples: ["README.md"],
+            },
             catalog: {
               display_name: "Beads Import",
               category: "migration",
