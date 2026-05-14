@@ -24,6 +24,17 @@ export {
 } from "../core/packages/manifest.js";
 export * from "./cli-contracts.js";
 export * from "./runtime.js";
+export {
+  CALENDAR_OUTPUT_VALUES,
+  CALENDAR_VIEW_VALUES,
+  renderCalendarMarkdown,
+  resolveCalendarOutputFormat,
+  runCalendar,
+  type CalendarOptions,
+  type CalendarOutputFormat,
+  type CalendarResult,
+  type CalendarView,
+} from "../cli/commands/calendar.js";
 
 /**
  * Canonical extension capability names accepted by pm.

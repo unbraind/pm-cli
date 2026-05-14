@@ -134,6 +134,71 @@ describe("calendar command module", () => {
     });
   });
 
+  it("runs calendar through the installed first-party package handler", async () => {
+    await withTempPmPath(async (context) => {
+      const install = context.runCli(["install", "calendar", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+      expect(install.json).toMatchObject({
+        details: {
+          extension: {
+            name: "builtin-calendar",
+          },
+        },
+      });
+
+      createCalendarItem(context, {
+        title: "Package calendar seed",
+        deadline: "2026-04-02T12:00:00.000Z",
+        reminders: ["at=2026-04-02T09:30:00.000Z,text=package calendar reminder"],
+      });
+
+      const markdown = context.runCli(["calendar", "--view", "agenda", "--date", "2026-04-02T00:00:00.000Z", "--limit", "10"]);
+      expect(markdown.code).toBe(0);
+      expect(markdown.stdout).toContain("# pm calendar (agenda)");
+      expect(markdown.stdout).toContain("package calendar reminder");
+
+      const json = context.runCli(
+        ["calendar", "--json", "--view", "agenda", "--date", "2026-04-02T00:00:00.000Z", "--limit", "10"],
+        { expectJson: true },
+      );
+      expect(json.code).toBe(0);
+      expect(json.json).toMatchObject({
+        view: "agenda",
+        summary: {
+          reminders: 1,
+        },
+      });
+
+      const alias = context.runCli(
+        ["cal", "--json", "--view", "agenda", "--date", "2026-04-02T00:00:00.000Z", "--limit", "10"],
+        { expectJson: true },
+      );
+      expect(alias.code).toBe(0);
+      expect(alias.json).toMatchObject({
+        view: "agenda",
+        summary: {
+          events: 2,
+        },
+      });
+
+      const contracts = context.runCli(
+        ["contracts", "--action", "calendar", "--runtime-only", "--schema-only", "--json"],
+        { expectJson: true },
+      );
+      expect(contracts.code).toBe(0);
+      expect(contracts.json).toMatchObject({
+        actions: ["calendar"],
+        action_availability: [
+          expect.objectContaining({
+            action: "calendar",
+            provider: "extension",
+            invocable: true,
+          }),
+        ],
+      });
+    });
+  });
+
   it("expands one-off and recurring events in agenda output", async () => {
     await withTempPmPath(async (context) => {
       createCalendarItem(context, {

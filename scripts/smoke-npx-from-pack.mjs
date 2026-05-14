@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 function resolveCommand(base) {
   return process.platform === "win32" ? `${base}.cmd` : base;
@@ -16,16 +18,18 @@ function readCommandError(error) {
   return [error.message, stderr, stdout].filter((entry) => entry.length > 0).join("\n");
 }
 
-function runSmokeCommand(command, args) {
+function runSmokeCommand(command, args, options = {}) {
   return execFileSync(command, args, {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
+    ...options,
   }).trim();
 }
 
 function run() {
   const npm = resolveCommand("npm");
   const npx = resolveCommand("npx");
+  const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-pack-smoke-"));
 
   const packOutput = execFileSync(npm, ["pack", "--silent"], { encoding: "utf8" })
     .trim()
@@ -35,23 +39,95 @@ function run() {
   if (!tarball) {
     throw new Error("npm pack did not produce a tarball name.");
   }
+  const tarballPath = path.resolve(tarball);
+
+  function runPackedPm(args, options = {}) {
+    try {
+      return runSmokeCommand(npx, ["--yes", "--package", tarballPath, "pm", ...args], options);
+    } catch (npxError) {
+      const output = runSmokeCommand(npm, ["exec", "--yes", "--package", tarballPath, "--", "pm", ...args], options);
+      if (output.length === 0 && !args.includes("--version")) {
+        return output;
+      }
+      if (output.length === 0) {
+        throw new Error(`npx fallback produced empty output.\n${readCommandError(npxError)}`);
+      }
+      return output;
+    }
+  }
 
   try {
-    let version = "";
-    try {
-      version = runSmokeCommand(npx, ["--yes", "--package", `./${tarball}`, "pm", "--version"]);
-    } catch (npxError) {
-      version = runSmokeCommand(npm, ["exec", "--yes", "--package", `./${tarball}`, "--", "pm", "--version"]);
-      if (version.length === 0) {
-        throw new Error(`npx fallback produced empty version output.\n${readCommandError(npxError)}`);
-      }
-    }
+    const version = runPackedPm(["--version"]);
     if (version.length === 0) {
       throw new Error("npx smoke test returned empty version output.");
     }
-    console.log(`npx smoke check passed (${version}).`);
+
+    const projectRoot = path.join(tempRoot, "project");
+    mkdirSync(projectRoot, { recursive: true });
+    const pmPath = path.join(projectRoot, ".agents", "pm");
+    const globalPath = path.join(tempRoot, "global");
+    const commandEnv = {
+      ...process.env,
+      PM_PATH: pmPath,
+      PM_GLOBAL_PATH: globalPath,
+      PM_AUTHOR: "pack-smoke",
+    };
+    const commandOptions = {
+      cwd: projectRoot,
+      env: commandEnv,
+    };
+    runPackedPm(["init", "--defaults", "--author", "pack-smoke", "--json"], commandOptions);
+    const installAll = JSON.parse(runPackedPm(["install", "all", "--project", "--json"], commandOptions));
+    if (installAll?.details?.installed_all !== true || installAll?.details?.installed_count < 4) {
+      throw new Error(`Packed install-all smoke returned unexpected payload: ${JSON.stringify(installAll)}`);
+    }
+    const catalog = JSON.parse(runPackedPm(["package", "catalog", "--project", "--json"], commandOptions));
+    const packages = catalog?.details?.packages;
+    if (!Array.isArray(packages) || packages.length < 4) {
+      throw new Error(`Packed package catalog smoke returned unexpected payload: ${JSON.stringify(catalog)}`);
+    }
+    runPackedPm([
+      "create",
+      "--title",
+      "Packed calendar item",
+      "--description",
+      "Packed smoke item",
+      "--type",
+      "Task",
+      "--status",
+      "open",
+      "--priority",
+      "1",
+      "--deadline",
+      "2026-04-02T12:00:00.000Z",
+      "--reminder",
+      "at=2026-04-02T09:30:00.000Z,text=packed reminder",
+      "--message",
+      "Packed smoke create",
+      "--json",
+    ], commandOptions);
+    const calendar = JSON.parse(runPackedPm([
+      "calendar",
+      "--json",
+      "--view",
+      "agenda",
+      "--date",
+      "2026-04-02T00:00:00.000Z",
+      "--limit",
+      "10",
+    ], commandOptions));
+    if ((calendar?.summary?.events ?? 0) < 1) {
+      throw new Error(`Packed calendar smoke returned unexpected payload: ${JSON.stringify(calendar)}`);
+    }
+    const upgrade = JSON.parse(runPackedPm(["upgrade", "--packages-only", "--dry-run", "--json"], commandOptions));
+    if (upgrade?.summary?.requested_packages !== true || !Array.isArray(upgrade?.packages)) {
+      throw new Error(`Packed package upgrade smoke returned unexpected payload: ${JSON.stringify(upgrade)}`);
+    }
+
+    console.log(`npx packed package smoke passed (${version}, packages=${packages.length}).`);
   } finally {
     rmSync(tarball, { force: true });
+    rmSync(tempRoot, { recursive: true, force: true });
   }
 }
 

@@ -1,0 +1,45 @@
+{
+  "name": "@unbrained/pm-package-calendar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "First-party pm package for calendar and agenda views.",
+  "homepage": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-calendar#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unbraind/pm-cli.git",
+    "directory": "packages/pm-calendar"
+  },
+  "bugs": {
+    "url": "https://github.com/unbraind/pm-cli/issues"
+  },
+  "keywords": [
+    "pm-package",
+    "project-management",
+    "calendar",
+    "agenda"
+  ],
+  "pm": {
+    "aliases": [
+      "calendar"
+    ],
+    "extensions": [
+      "extensions/calendar"
+    ],
+    "catalog": {
+      "display_name": "Calendar Views",
+      "category": "workflow",
+      "summary": "Show agenda, day, week, and month views for deadlines, reminders, and scheduled events.",
+      "tags": [
+        "calendar",
+        "agenda",
+        "workflow"
+      ],
+      "links": {
+        "docs": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-calendar#readme",
+        "repository": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-calendar",
+        "report": "https://github.com/unbraind/pm-cli/issues"
+      }
+    }
+  }
+}

@@ -232,6 +232,7 @@ describe("pm package manifest model", () => {
 
   it("recognizes first-party package roots as installable pm packages", async () => {
     const beadsRoot = path.join(repoRoot, "packages", "pm-beads");
+    const calendarRoot = path.join(repoRoot, "packages", "pm-calendar");
     const templatesRoot = path.join(repoRoot, "packages", "pm-templates");
     const todosRoot = path.join(repoRoot, "packages", "pm-todos");
 
@@ -250,6 +251,23 @@ describe("pm package manifest model", () => {
     });
     await expect(collectPackageExtensionDirectories(beadsRoot)).resolves.toEqual([
       path.join(beadsRoot, "extensions", "beads"),
+    ]);
+
+    await expect(readPmPackageManifest(calendarRoot)).resolves.toMatchObject({
+      source: "pm",
+      package_name: "@unbrained/pm-package-calendar",
+      package_version: "0.1.0",
+      aliases: ["calendar"],
+      catalog: {
+        display_name: "Calendar Views",
+        category: "workflow",
+      },
+      resources: {
+        extensions: ["extensions/calendar"],
+      },
+    });
+    await expect(collectPackageExtensionDirectories(calendarRoot)).resolves.toEqual([
+      path.join(calendarRoot, "extensions", "calendar"),
     ]);
 
     await expect(readPmPackageManifest(templatesRoot)).resolves.toMatchObject({
@@ -290,6 +308,8 @@ describe("pm package manifest model", () => {
   it("ships TypeScript-authored sources for first-party package entrypoints", async () => {
     await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.ts"))).resolves.toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.ts"))).resolves.toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "runtime.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.ts"))).resolves.toBeUndefined();
@@ -302,6 +322,10 @@ describe("pm package manifest model", () => {
       path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.ts"),
       path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.js"),
       path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.js"),
+      path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.ts"),
+      path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.ts"),
+      path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.js"),
+      path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.js"),
       path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.ts"),
       path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "runtime.ts"),
       path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.js"),

@@ -231,11 +231,6 @@ describe("contracts command runtime", () => {
     expect(updateWhyNowFlag?.aliases).toEqual(expect.arrayContaining(["--why_now"]));
     expect(updateFlags.command_flags?.[0]?.flags.some((entry) => entry.flag === "--why_now")).toBe(false);
 
-    const calendarFlags = await runContracts({ command: "calendar", flagsOnly: true }, GLOBAL_OPTIONS);
-    expect(calendarFlags.command_flags?.[0]?.flags).toEqual(
-      expect.arrayContaining([expect.objectContaining({ flag: "--full-period" })]),
-    );
-
     const activityFlags = await runContracts({ command: "activity", flagsOnly: true }, GLOBAL_OPTIONS);
     expect(activityFlags.command_flags?.[0]?.flags).toEqual(
       expect.arrayContaining([
@@ -415,6 +410,38 @@ describe("contracts command runtime", () => {
       runContracts(
         {
           action: "beads-import",
+          runtimeOnly: true,
+          schemaOnly: true,
+        },
+        {
+          ...GLOBAL_OPTIONS,
+          noExtensions: true,
+        },
+      ),
+    ).rejects.toMatchObject<PmCliError>({
+      exitCode: EXIT_CODE.USAGE,
+    });
+
+    await expect(
+      runContracts(
+        {
+          action: "calendar",
+          runtimeOnly: true,
+          schemaOnly: true,
+        },
+        {
+          ...GLOBAL_OPTIONS,
+          noExtensions: true,
+        },
+      ),
+    ).rejects.toMatchObject<PmCliError>({
+      exitCode: EXIT_CODE.USAGE,
+    });
+
+    await expect(
+      runContracts(
+        {
+          action: "templates-save",
           runtimeOnly: true,
           schemaOnly: true,
         },

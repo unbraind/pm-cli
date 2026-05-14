@@ -6,10 +6,13 @@ status: closed
 priority: 0
 tags[5]: packages,pm-cli,refactor,sdk,templates
 created_at: "2026-05-14T06:05:23.576Z"
-updated_at: "2026-05-14T06:34:01.039Z"
+updated_at: "2026-05-14T07:24:05.685Z"
 author: codex-agent
 acceptance_criteria: pm-templates package is TypeScript-authored and installable; installed package handles templates commands through dynamic command registration; SDK exposes needed stable helpers without internal deep imports; core fallback remains compatible; focused tests and temp-project dogfood pass.
 parent: pm-59gj
+resolution: Extracted create-template functionality into the TypeScript-authored pm-templates package while preserving core compatibility fallback.
+expected_result: pm-templates installs and handles templates list/save/show through dynamic package command registration with public SDK helpers.
+actual_result: "Focused package tests, isolated dogfood, full coverage, release gates, Sentry/telemetry, health, and reindex evidence passed during the extraction run."
 comments[9]{created_at,author,text}:
   "2026-05-14T06:05:23.576Z",codex-agent,"Duplicate check 2026-05-14: pm search templates package extraction found only closed templates feature/issues plus parent pm-59gj; net-new extraction child under pm-59gj and selected as first implementation slice."
   "2026-05-14T06:06:27.299Z",codex-agent,"Implementation approach: adding a bundled pm-templates package that registers templates/list/save/show handlers via public SDK types and runtime helpers; keeping the current core templates command as a compatibility fallback while installed package contracts prove the extraction path."

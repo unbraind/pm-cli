@@ -15,6 +15,8 @@ import {
   pathExists,
   readFileIfExists,
   readSettings,
+  runCalendar,
+  renderCalendarMarkdown,
   resolvePmRoot,
   writeFileAtomic,
 } from "../../src/sdk/index.js";
@@ -61,6 +63,8 @@ describe("public sdk entrypoint", () => {
     expect(PM_TOOL_ACTIONS).toContain("upgrade");
     expect(PM_TOOL_ACTIONS).not.toContain("beads-import");
     expect(PM_TOOL_ACTIONS).not.toContain("todos-export");
+    expect(PM_TOOL_ACTIONS).not.toContain("calendar");
+    expect(PM_TOOL_ACTIONS).not.toContain("templates-save");
 
     expect(PM_TOOL_PARAMETERS_SCHEMA.type).toBe("object");
     expect(PM_TOOL_PARAMETERS_SCHEMA.oneOf).toEqual(
@@ -93,5 +97,7 @@ describe("public sdk entrypoint", () => {
     expect(typeof getItemPath).toBe("function");
     expect(typeof readSettings).toBe("function");
     expect(typeof resolvePmRoot).toBe("function");
+    expect(typeof runCalendar).toBe("function");
+    expect(typeof renderCalendarMarkdown).toBe("function");
   });
 });

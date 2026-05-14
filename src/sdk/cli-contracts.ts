@@ -148,8 +148,6 @@ export const PM_CORE_COMMAND_NAMES = [
   "aggregate",
   "dedupe-audit",
   "guide",
-  "calendar",
-  "cal",
   "context",
   "ctx",
   "get",
@@ -184,7 +182,6 @@ export const PM_CORE_COMMAND_NAMES = [
   "start-task",
   "pause-task",
   "close-task",
-  "templates",
   "completion",
   "help",
 ] as const;
@@ -232,8 +229,6 @@ export const PM_TOOL_ACTIONS = [
   "aggregate",
   "dedupe-audit",
   "guide",
-  "calendar",
-  "cal",
   "context",
   "ctx",
   "get",
@@ -268,9 +263,6 @@ export const PM_TOOL_ACTIONS = [
   "gc",
   "contracts",
   "completion",
-  "templates-save",
-  "templates-list",
-  "templates-show",
   "claim",
   "release",
   "start-task",
@@ -1979,26 +1971,6 @@ const CREATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "assignee",
 ]);
 
-const TEMPLATE_SAVE_UNSUPPORTED_PARAMETER_KEYS = new Set([
-  "createMode",
-  "schedulePreset",
-  "unset",
-  "clearDeps",
-  "clearComments",
-  "clearNotes",
-  "clearLearnings",
-  "clearFiles",
-  "clearTests",
-  "clearDocs",
-  "clearReminders",
-  "clearEvents",
-  "clearTypeOptions",
-]);
-
-const TEMPLATE_SAVE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList(
-  CREATE_CONTRACT_PARAMETER_KEYS.filter((key) => !TEMPLATE_SAVE_UNSUPPORTED_PARAMETER_KEYS.has(key)),
-);
-
 const UPDATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
   ...TOOL_SHARED_CREATE_UPDATE_OPTION_CONTRACTS.map((entry) => entry.param),
@@ -2021,12 +1993,6 @@ const NORMALIZE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "message",
   "allowAuditUpdate",
   "force",
-]);
-
-const CALENDAR_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
-  ...TOOL_CALENDAR_OPTION_CONTRACTS.map((entry) => entry.param),
-  "past",
-  "fullPeriod",
 ]);
 
 const CONTEXT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
@@ -2177,8 +2143,6 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   aggregate: { optional: AGGREGATE_CONTRACT_PARAMETER_KEYS },
   "dedupe-audit": { optional: DEDUPE_AUDIT_CONTRACT_PARAMETER_KEYS },
   guide: { optional: ["format", "depth"] },
-  calendar: { optional: CALENDAR_CONTRACT_PARAMETER_KEYS },
-  cal: { optional: CALENDAR_CONTRACT_PARAMETER_KEYS },
   context: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
   ctx: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
   get: { required: ["id"] },
@@ -2342,12 +2306,6 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   gc: { optional: ["dryRun", "gcScope"] },
   contracts: { optional: ["contractAction", "command", "schemaOnly", "flagsOnly", "availabilityOnly", "runtimeOnly", "activeOnly"] },
   completion: { required: ["shell"], optional: ["eagerTags"] },
-  "templates-save": {
-    required: ["template"],
-    optional: TEMPLATE_SAVE_CONTRACT_PARAMETER_KEYS,
-  },
-  "templates-list": {},
-  "templates-show": { required: ["template"] },
   claim: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   release: { required: ["id"], optional: ["allowAuditRelease", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   "start-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },

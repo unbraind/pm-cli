@@ -123,6 +123,7 @@ First-party optional packages are shipped as package roots under `packages/`:
 pm package catalog --project
 pm install '*' --project
 pm install all --project
+pm install packages/pm-calendar --project
 pm install packages/pm-beads --project
 pm install packages/pm-todos --project
 ```
@@ -133,6 +134,7 @@ Compatibility aliases remain available:
 
 ```bash
 pm install beads --project
+pm install calendar --project
 pm install todos --project
 ```
 

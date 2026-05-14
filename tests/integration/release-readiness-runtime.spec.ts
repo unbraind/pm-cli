@@ -1759,5 +1759,8 @@ describe("release readiness runtime coverage", () => {
     const npxSmokeScript = await readRepoText("scripts/smoke-npx-from-pack.mjs");
     expect(npxSmokeScript).toContain("npx");
     expect(npxSmokeScript).toContain("npm pack");
+    expect(npxSmokeScript).toContain("\"install\", \"all\"");
+    expect(npxSmokeScript).toContain("\"calendar\"");
+    expect(npxSmokeScript).toContain("\"upgrade\", \"--packages-only\", \"--dry-run\"");
   });
 });

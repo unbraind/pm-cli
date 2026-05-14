@@ -104,7 +104,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         action: "install",
         details: {
           installed_all: true,
-          installed_count: 3,
+          installed_count: 4,
         },
       });
 
@@ -115,6 +115,11 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         expect.arrayContaining([
           expect.objectContaining({
             name: "builtin-beads-import",
+            managed: true,
+            enabled: true,
+          }),
+          expect.objectContaining({
+            name: "builtin-calendar",
             managed: true,
             enabled: true,
           }),
@@ -150,7 +155,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           action: "install",
           details: {
             installed_all: true,
-            installed_count: 3,
+            installed_count: 4,
           },
         });
       }
