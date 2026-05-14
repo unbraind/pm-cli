@@ -1,0 +1,44 @@
+{
+  "name": "@unbrained/pm-package-templates",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "First-party pm package for reusable create templates.",
+  "homepage": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-templates#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unbraind/pm-cli.git",
+    "directory": "packages/pm-templates"
+  },
+  "bugs": {
+    "url": "https://github.com/unbraind/pm-cli/issues"
+  },
+  "keywords": [
+    "pm-package",
+    "project-management",
+    "templates"
+  ],
+  "pm": {
+    "aliases": [
+      "templates"
+    ],
+    "extensions": [
+      "extensions/templates"
+    ],
+    "catalog": {
+      "display_name": "Create Templates",
+      "category": "workflow",
+      "summary": "Save, list, show, and apply reusable pm create option templates.",
+      "tags": [
+        "templates",
+        "create",
+        "workflow"
+      ],
+      "links": {
+        "docs": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-templates#readme",
+        "repository": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-templates",
+        "report": "https://github.com/unbraind/pm-cli/issues"
+      }
+    }
+  }
+}

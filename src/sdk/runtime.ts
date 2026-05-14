@@ -3,7 +3,7 @@ export {
   runActiveOnReadHooks,
   runActiveOnWriteHooks,
 } from "../core/extensions/index.js";
-export { pathExists, removeFileIfExists, writeFileAtomic } from "../core/fs/fs-utils.js";
+export { pathExists, readFileIfExists, removeFileIfExists, writeFileAtomic } from "../core/fs/fs-utils.js";
 export { appendHistoryEntry, createHistoryEntry } from "../core/history/history.js";
 export { generateItemId, normalizeItemId, normalizeRawItemId } from "../core/item/id.js";
 export {

@@ -7,6 +7,35 @@ import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("templates command flows", () => {
+  it("runs templates through the installed first-party package command handlers", async () => {
+    await withTempPmPath(async (context) => {
+      const install = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+
+      const contracts = context.runCli(
+        ["contracts", "--command", "templates save", "--runtime-only", "--availability-only", "--json"],
+        { expectJson: true },
+      );
+      expect(contracts.code).toBe(0);
+      expect((contracts.json as { actions?: string[] }).actions).toEqual(["templates-save"]);
+
+      const save = context.runCli(
+        ["templates", "save", "package-defaults", "--type", "Task", "--priority", "1", "--tags", "package,templates", "--json"],
+        { expectJson: true },
+      );
+      expect(save.code).toBe(0);
+      expect((save.json as { options: Record<string, unknown> }).options).toMatchObject({
+        type: "Task",
+        priority: "1",
+        tags: "package,templates",
+      });
+
+      const show = context.runCli(["templates", "show", "package-defaults", "--json"], { expectJson: true });
+      expect(show.code).toBe(0);
+      expect((show.json as { name?: string }).name).toBe("package-defaults");
+    });
+  });
+
   it("saves, lists, and shows create templates", async () => {
     await withTempPmPath(async (context) => {
       const saved = await runTemplatesSave(

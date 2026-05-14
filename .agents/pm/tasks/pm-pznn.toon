@@ -1,0 +1,15 @@
+id: pm-pznn
+title: Extract calendar UX into installable pm package
+description: "Move calendar/cal presentation, reminders/events rendering, recurrence expansion, and schedule presets toward a pm-calendar package while keeping deadline metadata and item primitives in core."
+type: Task
+status: open
+priority: 0
+tags[5]: calendar,packages,pm-cli,refactor,sdk
+created_at: "2026-05-14T06:05:23.346Z"
+updated_at: "2026-05-14T06:05:23.346Z"
+author: codex-agent
+acceptance_criteria: pm-calendar package owns optional calendar UX; core keeps item deadline fields; contracts/MCP expose calendar commands only when package installed or during compatibility fallback; temp-project dogfood covers installed package behavior.
+parent: pm-59gj
+comments[1]{created_at,author,text}:
+  "2026-05-14T06:05:23.346Z",codex-agent,"Duplicate check 2026-05-14: pm search calendar package extraction found only closed calendar feature/issue work plus parent pm-59gj; net-new extraction child under pm-59gj."
+body: ""

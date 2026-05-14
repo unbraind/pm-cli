@@ -182,7 +182,7 @@ describe("extension command runtime", () => {
     });
   });
 
-  it("installs bundled beads and todos aliases via extension install", async () => {
+  it("installs bundled first-party package aliases via extension install", async () => {
     await withTempPmPath(async (context) => {
       const beadsInstall = await runExtension("beads", { install: true, project: true }, { path: context.pmPath });
       expect(beadsInstall.details).toMatchObject({
@@ -207,6 +207,18 @@ describe("extension command runtime", () => {
         },
         activated: true,
       });
+
+      const templatesInstall = await runExtension("templates", { install: true, project: true }, { path: context.pmPath });
+      expect(templatesInstall.details).toMatchObject({
+        extension: {
+          name: "builtin-templates",
+        },
+        source: {
+          kind: "local",
+          location: path.resolve(process.cwd(), "packages", "pm-templates"),
+        },
+        activated: true,
+      });
     });
   });
 
@@ -215,7 +227,7 @@ describe("extension command runtime", () => {
       const beforeInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });
       expect(beforeInstall.action).toBe("catalog");
       expect(beforeInstall.details).toMatchObject({
-        total: 2,
+        total: 3,
         scope: "project",
         packages: [
           {
@@ -226,6 +238,16 @@ describe("extension command runtime", () => {
             catalog: {
               display_name: "Beads Import",
               category: "migration",
+            },
+          },
+          {
+            alias: "templates",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-package-templates",
+            catalog: {
+              display_name: "Create Templates",
+              category: "workflow",
             },
           },
           {
@@ -246,6 +268,7 @@ describe("extension command runtime", () => {
       const packages = (afterInstall.details as { packages?: Array<{ alias?: string; installed?: boolean }> }).packages ?? [];
       expect(packages.find((entry) => entry.alias === "todos")?.installed).toBe(true);
       expect(packages.find((entry) => entry.alias === "beads")?.installed).toBe(false);
+      expect(packages.find((entry) => entry.alias === "templates")?.installed).toBe(false);
 
       const positionalCatalog = await runExtension("catalog", { project: true, vocabulary: "package" }, { path: context.pmPath });
       expect(positionalCatalog.action).toBe("catalog");
@@ -257,11 +280,16 @@ describe("extension command runtime", () => {
       const wildcardInstall = await runExtension("*", { install: true, project: true }, { path: context.pmPath });
       expect(wildcardInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 2,
+        installed_count: 3,
         packages: [
           {
             alias: "beads",
             extension: { name: "builtin-beads-import" },
+            activated: true,
+          },
+          {
+            alias: "templates",
+            extension: { name: "builtin-templates" },
             activated: true,
           },
           {
@@ -275,7 +303,7 @@ describe("extension command runtime", () => {
       const allInstall = await runExtension("all", { install: true, project: true }, { path: context.pmPath });
       expect(allInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 2,
+        installed_count: 3,
       });
     });
   });

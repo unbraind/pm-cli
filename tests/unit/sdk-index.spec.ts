@@ -13,6 +13,7 @@ import {
   getItemPath,
   normalizeItemId,
   pathExists,
+  readFileIfExists,
   readSettings,
   resolvePmRoot,
   writeFileAtomic,
@@ -83,6 +84,7 @@ describe("public sdk entrypoint", () => {
 
   it("exposes runtime primitives used by TypeScript pm packages through the sdk barrel", () => {
     expect(typeof pathExists).toBe("function");
+    expect(typeof readFileIfExists).toBe("function");
     expect(typeof writeFileAtomic).toBe("function");
     expect(typeof appendHistoryEntry).toBe("function");
     expect(typeof createHistoryEntry).toBe("function");

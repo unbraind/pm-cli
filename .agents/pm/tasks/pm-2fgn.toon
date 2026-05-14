@@ -1,0 +1,40 @@
+id: pm-2fgn
+title: Extract create templates into installable pm package
+description: "Move template save/list/show and create-template acceleration into a pm-templates package using public SDK helpers, with core retaining compatibility fallback during migration."
+type: Task
+status: closed
+priority: 0
+tags[5]: packages,pm-cli,refactor,sdk,templates
+created_at: "2026-05-14T06:05:23.576Z"
+updated_at: "2026-05-14T06:34:01.039Z"
+author: codex-agent
+acceptance_criteria: pm-templates package is TypeScript-authored and installable; installed package handles templates commands through dynamic command registration; SDK exposes needed stable helpers without internal deep imports; core fallback remains compatible; focused tests and temp-project dogfood pass.
+parent: pm-59gj
+comments[9]{created_at,author,text}:
+  "2026-05-14T06:05:23.576Z",codex-agent,"Duplicate check 2026-05-14: pm search templates package extraction found only closed templates feature/issues plus parent pm-59gj; net-new extraction child under pm-59gj and selected as first implementation slice."
+  "2026-05-14T06:06:27.299Z",codex-agent,"Implementation approach: adding a bundled pm-templates package that registers templates/list/save/show handlers via public SDK types and runtime helpers; keeping the current core templates command as a compatibility fallback while installed package contracts prove the extraction path."
+  "2026-05-14T06:12:20.947Z",codex-agent,"Focused verification passed: node scripts/run-tests.mjs test -- tests/unit/templates-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/sdk-index.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts (67 tests)."
+  "2026-05-14T06:14:03.781Z",codex-agent,"Dogfood verification passed: node scripts/dogfood-package-first.mjs completed 40 isolated temp-project commands, including install templates, templates save/show package commands, install all, package catalog/doctor, Beads/Todos package commands, upgrade, SDK import, linked test, health, validate, close, and release."
+  "2026-05-14T06:18:28.219Z",codex-agent,"Coverage sweep found one stale integration expectation: install-all now installs 3 bundled packages after adding pm-templates. Updated tests/integration/cli.integration.spec.ts and rerunning coverage."
+  "2026-05-14T06:20:34.650Z",codex-agent,Focused integration rerun found the shell-expanded wildcard assertion also expected 2 bundled packages; updated it to 3 and rerunning the integration file before coverage.
+  "2026-05-14T06:26:02.137Z",codex-agent,"Full coverage passed after updating install-all expectations: node scripts/run-tests.mjs coverage => 92 files, 1297 tests, 100% statements/branches/functions/lines."
+  "2026-05-14T06:31:15.050Z",codex-agent,"Release gate passed: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json. Checks passed: build, typecheck, docs/skills, static quality, coverage, version policy, secret scan, npx smoke, npm pack dry-run, compatibility, and Sentry/telemetry. Sentry current actionable counts stayed within threshold: critical=1, high=3, total=4; telemetry required mode ok with finish_error_rate_pct=2.4 and zero missing error-code rows."
+  "2026-05-14T06:33:09.539Z",codex-agent,"Post-gate health follow-up: pm validate --check-history-drift now reports only the five known historical hash mismatches (pm-54d, pm-f3q4, pm-fdla, pm-mb4n, pm-tq1). pm reindex --mode hybrid --progress refreshed search status with 707 unchanged items and stale_items=0."
+files[9]{path,scope,note}:
+  packages/pm-templates/package.json,project,first-party templates package manifest
+  packages/pm-templates/extensions/templates/index.ts,project,templates package command registration
+  packages/pm-templates/extensions/templates/runtime.ts,project,templates package runtime via public SDK
+  src/sdk/runtime.ts,project,export readFileIfExists for package runtimes
+  tests/unit/templates-command.spec.ts,project,installed package templates behavior
+  tests/unit/package-manifest.spec.ts,project,first-party package manifest and import hygiene coverage
+  tests/unit/extension-command.spec.ts,project,bundled package alias/catalog/install-all coverage
+  scripts/dogfood-package-first.mjs,project,package-first temp-project dogfood covers templates package commands
+  tests/integration/cli.integration.spec.ts,project,install-all expectation includes templates package
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/templates-command.spec.ts tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/sdk-index.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused templates package extraction and dynamic contract coverage
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp53dwjm-e6f2xx,test,passed,"2026-05-14T06:12:39.202Z","2026-05-14T06:13:06.946Z","2026-05-14T06:13:06.946Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  packages/pm-templates/README.md,project,templates package usage docs
+close_reason: "pm-templates package extracted and verified: TypeScript package added, installed package command handlers tested, SDK helper preserved, temp-project dogfood and full release gates passed"
+body: ""

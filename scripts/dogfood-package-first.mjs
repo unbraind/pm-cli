@@ -126,6 +126,7 @@ try {
   run("reindex keyword", ["reindex", "--mode", "keyword"]);
 
   run("package install beads alias", ["install", "beads", "--project"]);
+  run("package install templates alias", ["install", "templates", "--project"]);
   run("package install todos alias", ["install", "todos", "--project"]);
   run("package install quoted wildcard", ["install", "*", "--project"]);
   const shellExpandedWildcardTargets = readdirSync(repoRoot)
@@ -140,6 +141,20 @@ try {
   assert(packageCatalog?.details?.total >= 2, "package catalog did not list bundled first-party packages");
   run("package explore", ["package", "explore", "--project"]);
   run("package doctor", ["package", "doctor", "--project", "--detail", "summary"]);
+  const templatesSave = run("package command templates save", [
+    "templates",
+    "save",
+    "dogfood-defaults",
+    "--type",
+    "Task",
+    "--priority",
+    "1",
+    "--tags",
+    "dogfood,templates",
+  ]);
+  assert(templatesSave?.name === "dogfood-defaults", "templates save package command did not persist template");
+  const templatesShow = run("package command templates show", ["templates", "show", "dogfood-defaults"]);
+  assert(templatesShow?.options?.tags === "dogfood,templates", "templates show package command did not return saved defaults");
   const beadsFixture = path.join(tempRoot, "beads-import.jsonl");
   writeFileSync(
     beadsFixture,

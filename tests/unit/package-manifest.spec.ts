@@ -232,6 +232,7 @@ describe("pm package manifest model", () => {
 
   it("recognizes first-party package roots as installable pm packages", async () => {
     const beadsRoot = path.join(repoRoot, "packages", "pm-beads");
+    const templatesRoot = path.join(repoRoot, "packages", "pm-templates");
     const todosRoot = path.join(repoRoot, "packages", "pm-todos");
 
     await expect(readPmPackageManifest(beadsRoot)).resolves.toMatchObject({
@@ -249,6 +250,23 @@ describe("pm package manifest model", () => {
     });
     await expect(collectPackageExtensionDirectories(beadsRoot)).resolves.toEqual([
       path.join(beadsRoot, "extensions", "beads"),
+    ]);
+
+    await expect(readPmPackageManifest(templatesRoot)).resolves.toMatchObject({
+      source: "pm",
+      package_name: "@unbrained/pm-package-templates",
+      package_version: "0.1.0",
+      aliases: ["templates"],
+      catalog: {
+        display_name: "Create Templates",
+        category: "workflow",
+      },
+      resources: {
+        extensions: ["extensions/templates"],
+      },
+    });
+    await expect(collectPackageExtensionDirectories(templatesRoot)).resolves.toEqual([
+      path.join(templatesRoot, "extensions", "templates"),
     ]);
 
     await expect(readPmPackageManifest(todosRoot)).resolves.toMatchObject({
@@ -272,20 +290,37 @@ describe("pm package manifest model", () => {
   it("ships TypeScript-authored sources for first-party package entrypoints", async () => {
     await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.ts"))).resolves.toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.ts"))).resolves.toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "runtime.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime.ts"))).resolves.toBeUndefined();
   });
 
-  it("keeps shipped package JavaScript runtimes on the public SDK surface", async () => {
-    const packageRuntimeFiles = [
+  it("keeps shipped package sources on the public SDK surface", async () => {
+    const packageSourceFiles = [
+      path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.ts"),
+      path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.ts"),
+      path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.js"),
       path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.js"),
+      path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.ts"),
+      path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "runtime.ts"),
+      path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.js"),
+      path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "runtime.js"),
+      path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.ts"),
+      path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime.ts"),
+      path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.js"),
       path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime.js"),
     ];
 
-    for (const runtimeFile of packageRuntimeFiles) {
-      const source = await readFile(runtimeFile, "utf8");
-      expect(source).toContain("../../../../dist/sdk/index.js");
-      expect(source).not.toMatch(/["']\.\.\/\.\.\/\.\.\/\.\.\/dist\/(?:core|types)\//);
+    for (const sourceFile of packageSourceFiles) {
+      const source = await readFile(sourceFile, "utf8");
+      expect(source).not.toMatch(/["']\.\.\/\.\.\/\.\.\/\.\.\/(?:src|dist)\/(?:core|types)\//);
+      if (sourceFile.endsWith("runtime.js")) {
+        expect(source).toContain("../../../../dist/sdk/index.js");
+      }
+      if (sourceFile.endsWith(".ts")) {
+        expect(source).toContain("../../../../src/sdk/index.js");
+      }
     }
   });
 

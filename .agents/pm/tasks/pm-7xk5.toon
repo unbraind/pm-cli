@@ -1,0 +1,16 @@
+id: pm-7xk5
+title: Define linked test runner package boundary
+description: "Keep linked-test metadata and safety-critical orchestration in core while moving optional external test adapters, reporters, and specialized result-format packs into installable pm packages."
+type: Task
+status: open
+priority: 0
+tags[5]: packages,pm-cli,refactor,sdk,test-runner
+created_at: "2026-05-14T06:05:23.106Z"
+updated_at: "2026-05-14T06:36:04.724Z"
+author: codex-agent
+acceptance_criteria: Core linked-test safety and orchestration remain stable; package boundary for adapters/reporters is documented; future packages expose optional handlers/contracts without weakening sandbox safety; focused tests cover any extracted adapter surface.
+parent: pm-59gj
+comments[2]{created_at,author,text}:
+  "2026-05-14T06:05:23.106Z",codex-agent,"Duplicate check 2026-05-14: pm search linked-test-runner package extraction found only closed sandbox runner fixes plus parent pm-59gj; net-new extraction child under pm-59gj."
+  "2026-05-14T06:12:20.800Z",codex-agent,"Research correction 2026-05-14: CLI surface audit recommends keeping linked-test safety/orchestration in core for agent PM reliability, while extracting external test adapters/reporters and specialized output packs instead of moving the whole runner out of core."
+body: ""
