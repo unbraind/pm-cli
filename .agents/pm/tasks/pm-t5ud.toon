@@ -6,10 +6,13 @@ status: closed
 priority: 0
 tags[5]: manifest,packages,planning,pm-cli,sdk
 created_at: "2026-05-11T17:58:43.930Z"
-updated_at: "2026-05-14T15:49:59.228Z"
+updated_at: "2026-05-14T17:56:34.798Z"
 author: codex-agent
 acceptance_criteria: Package manifest schema is documented and represented in SDK/contracts; resource precedence is explicit for runtime extensions; direct Pi agent code and package metadata are removed from the main codebase; focused package/SDK/install tests pass.
 parent: pm-59gj
+resolution: Metadata-first package resource contract was delivered with extension-only activation semantics and no direct agent-specific resource model in core.
+expected_result: "Package manifest schema is documented, SDK-visible, and keeps direct Pi resource semantics out of pm core."
+actual_result: "Package manifest, SDK, extension, dogfood, coverage, release gate, and plugin smoke verification passed."
 comments[4]{created_at,author,text}:
   "2026-05-11T17:58:43.930Z",codex-agent,"Plan item created from Pi research: Pi packages bundle extensions,skills,prompts,and themes through package.json resource arrays and conventional directories. pm first slice supports extension resources; broader resource kinds need an explicit manifest design."
   "2026-05-11T20:05:29.769Z",codex-agent,"Implementation update: package manifest contract now exposes only pm.extensions for general project-management extension packages. Removed direct Pi runtime/package assets from the main codebase, renamed provider-safe SDK schema exports to provider-neutral names, removed Pi package metadata and optional peer dependency from package.json, and changed the todos extension default folder from .pi/todos to .pm/todos."

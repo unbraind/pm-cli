@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-13T18:32:51.623Z"
+updated_at: "2026-05-14T17:56:51.256Z"
 deadline: "2026-05-04T13:20:01.343Z"
 assignee: codex-agent
 author: codex-audit
@@ -15,7 +15,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[29]{created_at,author,text}:
+comments[34]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -45,12 +45,19 @@ comments[29]{created_at,author,text}:
   "2026-05-13T05:27:02.707Z",codex-audit,"GitHub CI evidence: pushed commit ca99275 and GitHub Actions CI run 25779777034 completed successfully across ubuntu Node 20/22/24, macOS Node 20, and Windows Node 20. Ubuntu Node 20 full gate included coverage, static quality, compatibility migration, package smoke, npx tarball smoke, and Claude Code plugin smoke."
   "2026-05-13T18:25:56.966Z",codex-agent,"Execution start 2026-05-13 evening audit: duplicate check reused pm-rnpb after pm context, pm search, pm list-open, and pm list-in-progress. Bootstrap passed: npm install -g ., pm --version 2026.5.12, node v25.9.0, pnpm 10.33.0, pnpm build. GitHub snapshot has no open issues and only Dependabot PRs #26/#24/#22. Proceeding with latest temp-project dogfood, performance/search/calendar/SDK/code-quality/privacy/telemetry/Sentry review and scoped fixes."
   "2026-05-13T18:32:51.623Z",codex-agent,"Audit evidence 2026-05-13 evening: isolated temp-project dogfood passed 28 commands across init/config/create/claim/update/files/docs/comments/notes/learnings/calendar/context/search/reindex/packages/SDK/linked-tests/validate/health/close/release; normal command timings were roughly 343-374ms with linked test run 6996ms. Code review fixed duplicated alias flag entries in contracts --flags-only: create flag surface dropped from 85 to 69 entries while keeping underscore compatibility in aliases. Real hybrid reindex skipped 701 unchanged vectors with deterministic semantic summary and zero stale items. GitHub snapshot had no open issues and only Dependabot PRs #26/#24/#22; gh notifications API was unavailable in this shell (404), so issue/PR/check data was used. Verification passed: focused contracts/runtime tests (45 tests), static quality, secret scan, required telemetry/Sentry release gate, compatibility, npx smoke, npm pack dry-run, and full coverage 91 files / 1291 tests at 100%."
-files[32]{path,scope,note}:
+  "2026-05-14T17:30:54.358Z",codex-agent,"Phase 2 start 2026-05-14: Phase 1 commit 3673d60 completed. Starting telemetry/Sentry/CI/remote hardening execution immediately; first slice is Auto Release reliability for empty CHANGELOG [Unreleased] paths and related CI guardrails."
+  "2026-05-14T17:33:32.061Z",codex-agent,"Phase 2 slice complete (Auto Release reliability): updated scripts/release/run-release-pipeline.mjs to detect empty CHANGELOG [Unreleased] and skip with reason changelog_unreleased_empty instead of failing the workflow. Added release-readiness contract assertion and verified with node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts (pass, 36 tests)."
+  "2026-05-14T17:37:02.894Z",codex-agent,"Execution continuation 2026-05-14: duplicate check reused pm-rnpb after pm context/search/list-open/list-in-progress. Bootstrap passed: npm install -g ., pm --version 2026.5.12, node v25.9.0, pnpm 10.33.0, pnpm build. Continuing latest temp-project dogfood, release/CI reliability, performance, search/calendar/SDK, GitHub, telemetry/Sentry, and privacy review without creating duplicate items."
+  "2026-05-14T17:55:47.748Z",codex-agent,"Audit evidence 2026-05-14: latest isolated temp-project dogfood passed 42 workflows across init/config/create/claim/update/files/docs/comments/notes/learnings/calendar/context/search/reindex/packages/SDK/linked-tests/validate/health/close/release; slowest normal operations were package/health/validate around 480-572ms and linked-test execution was 7316ms. GitHub snapshot: no open repo issues, no pm-cli notifications, and only existing Dependabot PRs #26/#24/#22 with dependency-branch failures. Live telemetry stack was healthy with queue depth 0/consumer 1 and 11780 events in the last 24h; 7d command-finish error rate was 2.21 percent with zero missing error-code rows. Sentry showed new PM-CLI-Q activity localeCompare crash; fixed by making pm activity tolerate malformed legacy history rows, and release Sentry gate now falls back to authenticated sentry CLI when API-token access fails. Verification passed: focused activity regression, release automation/readiness tests, static quality, secret scan, required Sentry/telemetry gate, and full release gate with 92 files / 1300 tests at 100 percent coverage plus npx/npm-pack/compatibility gates."
+  "2026-05-14T17:56:51.256Z",codex-agent,"Tracker hygiene follow-up 2026-05-14: pm validate initially found five closed package-refactor items missing resolution/expected/actual result metadata. Backfilled pm-2rj1, pm-7xk5, pm-ixt3, pm-t5ud, and pm-zjuv from their existing close evidence using pm update. Re-run pm validate --check-resolution --check-history-drift now has resolution ok; only the known historical hash drift on pm-54d, pm-f3q4, pm-fdla, pm-mb4n, and pm-tq1 remains under pm-xk39."
+files[35]{path,scope,note}:
   README.md,project,public README hygiene update
   scripts/check-secrets.mjs,project,detect absolute home-path and user@private-host leakage
+  scripts/release/run-release-pipeline.mjs,project,skip auto-release when CHANGELOG Unreleased has no promotable content
   scripts/release/static-quality-gate.mjs,project,raise max source line threshold for expanded loader
   src/cli.ts,project,nonblocking sentry startup for CLI responsiveness
   src/cli/commander-usage.ts,project,required-option retry flag normalization
+  src/cli/commands/contracts.ts,project,use compact flag contracts in command surface
   src/cli/commands/create.ts,project,event date alias for create
   src/cli/commands/extension.ts,project,fix extension reload/watch usage guidance
   src/cli/commands/init.ts,project,agent-friendly init defaults and author_default
@@ -64,8 +71,10 @@ files[32]{path,scope,note}:
   src/core/search/corpus.ts,project,shared search corpus builder includes calendar reminders/events
   src/core/search/embedding-batches.ts,project,provider-aware semantic input bounding
   src/core/sentry/instrument.ts,project,recursive path scrub across nested sentry event payloads
+  src/sdk/cli-contracts.ts,project,compact alias duplicate flag contracts for agent schema
   tests/integration/cli.integration.spec.ts,project,init defaults author regression
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness guard for nonblocking sentry startup
+  tests/unit/contracts-command.spec.ts,project,regression for canonical flag surface with aliases
   tests/unit/create-command.spec.ts,project,create event date alias regression
   tests/unit/embedding-batches.spec.ts,project,regression for oversized ollama embedding input truncation
   tests/unit/error-guidance.spec.ts,project,retry guidance regression
@@ -75,13 +84,15 @@ files[32]{path,scope,note}:
   tests/unit/sentry-helpers.spec.ts,project,regression for nested sentry event scrub behavior
   tests/unit/update-command.spec.ts,project,update event date alias regression
   vitest.config.ts,project,coverage include list covers new search corpus helper
-  src/sdk/cli-contracts.ts,project,compact alias duplicate flag contracts for agent schema
-  src/cli/commands/contracts.ts,project,use compact flag contracts in command surface
-  tests/unit/contracts-command.spec.ts,project,regression for canonical flag surface with aliases
-tests[12]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  scripts/release/sentry-telemetry-gate.mjs,project,fallback to authenticated Sentry CLI when release gate API token access fails
+  src/cli/commands/activity.ts,project,harden activity output for malformed legacy history rows
+tests[15]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret and path leak guardrail
+  node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full release gate with required sentry and telemetry
   node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,full 100 percent coverage gate
   node scripts/run-tests.mjs coverage -- --testTimeout 120000 --maxWorkers 1,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,stable serial full coverage verification
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'keeps activity readable|supports activity stream',null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused activity regression
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused contracts and runtime flag parity regression
   node scripts/run-tests.mjs test -- tests/unit/embedding-batches.spec.ts tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/search-command.spec.ts tests/unit/sentry-helpers.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused remediation regressions
   node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused init/recovery/event regressions

@@ -82,6 +82,19 @@ function isReleaseRelevantPath(filePath) {
   return !filePath.startsWith(".agents/pm/");
 }
 
+function readUnreleasedChangelogBody() {
+  const changelogPath = path.join(repoRoot, "CHANGELOG.md");
+  const changelogContent = readFileSync(changelogPath, "utf8").replaceAll("\r\n", "\n");
+  const lines = changelogContent.split("\n");
+  const unreleasedIndex = lines.findIndex((line) => line.startsWith("## [Unreleased]"));
+  if (unreleasedIndex === -1) {
+    fail('CHANGELOG.md is missing the "## [Unreleased]" section.');
+  }
+  const nextSectionIndex = lines.findIndex((line, index) => index > unreleasedIndex && line.startsWith("## ["));
+  const unreleasedBodyLines = lines.slice(unreleasedIndex + 1, nextSectionIndex === -1 ? undefined : nextSectionIndex);
+  return unreleasedBodyLines.join("\n").trim();
+}
+
 function listTodayTags(todayKey) {
   const result = git(["tag", "--list", `v${todayKey}*`]);
   return result.stdout
@@ -215,6 +228,24 @@ function runPipeline() {
       process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     } else {
       console.log("Only .agents/pm tracker changes exist since the last release tag. Skipping release pipeline.");
+    }
+    return;
+  }
+
+  const unreleasedBody = readUnreleasedChangelogBody();
+  if (unreleasedBody.length === 0) {
+    const result = {
+      ok: true,
+      skipped: true,
+      reason: "changelog_unreleased_empty",
+      last_tag: lastTag,
+      commits_since_last_tag: commitsSinceLastTag,
+      release_relevant_files: releaseRelevantFiles,
+    };
+    if (outputJson) {
+      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    } else {
+      console.log("CHANGELOG.md [Unreleased] has no promotable content. Skipping release pipeline.");
     }
     return;
   }

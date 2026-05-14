@@ -6,10 +6,13 @@ status: closed
 priority: 0
 tags[6]: completion,guide,packages,pm-cli,refactor,sdk
 created_at: "2026-05-14T07:59:09.315Z"
-updated_at: "2026-05-14T10:10:25.304Z"
+updated_at: "2026-05-14T17:56:36.329Z"
 author: codex-package-refactor
 acceptance_criteria: Bare core omits guide/completion command surfaces by default; installing package restores commands and contracts; docs/tests validate shell completion and guide output parity.
 parent: pm-59gj
+resolution: Guide and completion UX were extracted into pm-guide-shell with runtime parity after package install.
+expected_result: Bare core omits guide/completion surfaces by default; installing the package restores commands and contracts.
+actual_result: "Completion, contracts, docs-skills, and release-readiness tests verified the package-owned guide/completion behavior."
 comments[3]{created_at,author,text}:
   "2026-05-14T07:59:09.315Z",codex-package-refactor,"Duplicate check evidence: ran pm context --limit 10, pm search guide completion package extraction bare core --limit 20, pm list-open --parent pm-59gj --limit 30, and pm list-in-progress --parent pm-59gj --limit 30; no open child under pm-59gj covered guide/completion extraction scope."
   "2026-05-14T08:27:38.049Z",codex-agent,"Progress 2026-05-14: bare-core pruning removed guide and completion command registration from src/cli/register-list-query.ts and src/cli/register-operations.ts, and adjusted release-readiness coverage to verify package-owned defaults with install-gated calendar behavior. Validation: pnpm build and node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."

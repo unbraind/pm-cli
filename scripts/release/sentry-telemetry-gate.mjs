@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { fail, flagBool, flagString, parseFlags, runCommand } from "./utils.mjs";
+import { commandFor, fail, flagBool, flagString, parseFlags, runCommand } from "./utils.mjs";
 
 function parseIssuePayload(payload) {
   if (Array.isArray(payload)) {
@@ -172,9 +172,61 @@ function buildSentryIssuesUrl(project, query, limit) {
   return url;
 }
 
-async function fetchSentryIssues(project, query, limit) {
+function fetchSentryIssuesViaCli(project, query, limit, priorFailure) {
+  const result = runCommand(
+    commandFor("sentry"),
+    [
+      "issue",
+      "list",
+      project,
+      "--json",
+      "--fields",
+      "shortId,title,level,priority,status,culprit,metadata,logger",
+      "--query",
+      query,
+      "--limit",
+      String(limit),
+    ],
+    {
+      capture: true,
+      allowFailure: true,
+    },
+  );
+  if (result.status !== 0) {
+    const stderr = result.stderr.trim();
+    return {
+      ok: false,
+      reason: stderr.length > 0 ? `sentry_cli_query_failed:${stderr}` : priorFailure,
+      token_source: null,
+      issues: [],
+    };
+  }
+
+  try {
+    const payload = result.stdout.trim().length > 0 ? JSON.parse(result.stdout) : [];
+    return {
+      ok: true,
+      reason: null,
+      token_source: "sentry_cli",
+      issues: parseIssuePayload(payload),
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      ok: false,
+      reason: `sentry_cli_json_parse_failed:${message}`,
+      token_source: null,
+      issues: [],
+    };
+  }
+}
+
+async function fetchSentryIssues(project, query, limit, allowCliFallback) {
   const tokens = redactedTokenCandidates();
   if (tokens.length === 0) {
+    if (allowCliFallback) {
+      return fetchSentryIssuesViaCli(project, query, limit, "missing_sentry_auth_token");
+    }
     return {
       ok: false,
       reason: "missing_sentry_auth_token",
@@ -210,6 +262,10 @@ async function fetchSentryIssues(project, query, limit) {
       const message = error instanceof Error ? error.message : String(error);
       lastFailure = `sentry_query_error:${message}`;
     }
+  }
+
+  if (allowCliFallback) {
+    return fetchSentryIssuesViaCli(project, query, limit, lastFailure);
   }
 
   return {
@@ -280,6 +336,7 @@ async function main() {
     sentryProject,
     "is:unresolved level:[fatal,error]",
     sentryLimit,
+    telemetryMode === "required",
   );
   const sentryIssues = sentryFetch.ok ? sentryFetch.issues : [];
   const sentryPartition = partitionSentryIssuesForGate(sentryIssues);

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { splitFrontMatter } from "../../src/core/item/item-format.js";
@@ -544,6 +544,76 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const invalidStreamResult = context.runCli(["activity", "--stream"]);
       expect(invalidStreamResult.code).toBe(2);
       expect(invalidStreamResult.stderr).toContain("--stream requires --json output mode.");
+    });
+  });
+
+  it("keeps activity readable when a legacy history row is missing operation metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const createResult = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Legacy activity seed item",
+          "--description",
+          "Seed item for legacy activity row assertions",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "integration,activity-legacy",
+          "--body",
+          "",
+          "--deadline",
+          "none",
+          "--estimate",
+          "10",
+          "--ac",
+          "Activity tolerates legacy rows",
+          "--author",
+          "integration-test",
+          "--message",
+          "Seed for legacy activity assertions",
+          "--assignee",
+          "none",
+          "--dep",
+          "none",
+          "--comment",
+          "none",
+          "--note",
+          "none",
+          "--learning",
+          "none",
+          "--file",
+          "none",
+          "--test",
+          "none",
+          "--doc",
+          "none",
+        ],
+        { expectJson: true },
+      );
+      expect(createResult.code).toBe(0);
+      const id = (createResult.json as { item: { id: string } }).item.id;
+      await appendFile(
+        path.join(context.pmPath, "history", `${id}.jsonl`),
+        `${JSON.stringify({
+          ts: "2026-05-14T06:33:42.399Z",
+          author: "legacy-extension",
+          patch: [],
+          before_hash: "",
+          after_hash: "",
+        })}\n`,
+        "utf8",
+      );
+
+      const activityResult = context.runCli(["activity", "--json", "--id", id, "--limit", "5"], { expectJson: true });
+      expect(activityResult.code).toBe(0);
+      const activityJson = activityResult.json as { activity: Array<{ id: string; op: string }> };
+      expect(activityJson.activity.some((entry) => entry.id === id && entry.op === "unknown")).toBe(true);
     });
   });
 

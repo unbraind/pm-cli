@@ -6,10 +6,13 @@ status: closed
 priority: 0
 tags[6]: packages,pm-cli,refactor,sdk,search,vectorization
 created_at: "2026-05-14T06:05:23.591Z"
-updated_at: "2026-05-14T10:10:54.674Z"
+updated_at: "2026-05-14T17:56:30.177Z"
 author: codex-agent
 acceptance_criteria: "Keyword search remains core; semantic/hybrid/vector features are package-owned with dynamic contracts; SDK search provider APIs are preserved; package dogfood verifies install, reindex, search, health, and telemetry."
 parent: pm-59gj
+resolution: Advanced search and reindex were extracted into the pm-search-advanced package while keyword search stayed in core.
+expected_result: "Semantic/hybrid/vector search is package-owned, installable, and verified without breaking core keyword search."
+actual_result: "Package-first release gates, dogfood, package smoke, and full coverage verified the extraction."
 comments[5]{created_at,author,text}:
   "2026-05-14T06:05:23.591Z",codex-agent,"Duplicate check 2026-05-14: pm search semantic reindex vector extraction found closed search/vector implementation items plus parent pm-59gj; net-new extraction child under pm-59gj."
   "2026-05-14T08:27:36.484Z",codex-agent,"Progress 2026-05-14: bare-core pruning removed core reindex command registration and forced core search command dispatch to keyword mode in src/cli/register-list-query.ts; MCP pm_run static reindex dispatch removed from src/mcp/server.ts so package-owned advanced search actions route dynamically. Validation: pnpm build and node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."

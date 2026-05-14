@@ -1766,10 +1766,16 @@ describe("release readiness runtime coverage", () => {
     expect(staticQualityScript).toContain("orphan_modules");
     expect(staticQualityScript).toContain("duplicate_chunks");
 
+    const sentryTelemetryGateScript = await readRepoText("scripts/release/sentry-telemetry-gate.mjs");
+    expect(sentryTelemetryGateScript).toContain("sentry_cli");
+    expect(sentryTelemetryGateScript).toContain("issue");
+    expect(sentryTelemetryGateScript).toContain("list");
+
     const releasePipelineScript = await readRepoText("scripts/release/run-release-pipeline.mjs");
     expect(releasePipelineScript).toContain("allow-same-day-release");
     expect(releasePipelineScript).toContain("release_already_cut_today");
     expect(releasePipelineScript).toContain("tracker_only_changes_since_last_tag");
+    expect(releasePipelineScript).toContain("changelog_unreleased_empty");
     expect(releasePipelineScript).toContain(".agents/pm/");
     expect(releasePipelineScript).toContain("run-release-pipeline");
 

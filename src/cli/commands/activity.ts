@@ -64,6 +64,9 @@ function parseRangeBound(raw: string | undefined, nowValue: string, fieldLabel: 
 }
 
 function includeByTimeWindow(entry: ActivityEntry, from: string | undefined, to: string | undefined): boolean {
+  if (entry.ts.length === 0 && (from || to)) {
+    return false;
+  }
   if (from && compareTimestampStrings(entry.ts, from) < 0) {
     return false;
   }
@@ -76,6 +79,23 @@ function includeByTimeWindow(entry: ActivityEntry, from: string | undefined, to:
 function limitEntries<T>(values: T[], limit: number | undefined): T[] {
   if (limit === undefined) return values;
   return values.slice(0, limit);
+}
+
+function readActivityString(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function normalizeActivityEntry(id: string, entry: HistoryEntry): ActivityEntry {
+  return {
+    ...entry,
+    id,
+    ts: readActivityString(entry.ts),
+    author: readActivityString(entry.author, "unknown"),
+    op: readActivityString(entry.op, "unknown"),
+    patch: Array.isArray(entry.patch) ? entry.patch : [],
+    before_hash: readActivityString(entry.before_hash),
+    after_hash: readActivityString(entry.after_hash),
+  };
 }
 
 function sortActivity(entries: ActivityEntry[]): ActivityEntry[] {
@@ -148,10 +168,7 @@ export async function runActivity(options: ActivityCommandOptions, global: Globa
       if (authorFilter && entry.author !== authorFilter) {
         continue;
       }
-      const candidate: ActivityEntry = {
-        id,
-        ...entry,
-      };
+      const candidate = normalizeActivityEntry(id, entry);
       if (!includeByTimeWindow(candidate, fromBound, toBound)) {
         continue;
       }
