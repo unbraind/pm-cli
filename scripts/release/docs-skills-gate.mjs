@@ -1,4 +1,5 @@
-import { readdir, readFile, stat } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, rm, stat } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { commandFor, fail, flagBool, parseFlags, runCommand } from "./utils.mjs";
@@ -247,57 +248,85 @@ function validateGuideCommands(topicResult, availableCommands, failures) {
 }
 
 async function runGuideChecks(failures) {
-  const contractsResult = runCommand(process.execPath, ["dist/cli.js", "contracts", "--json"], {
-    cwd: REPO_ROOT,
-    capture: true,
-  });
-  const contractsPayload = parseJson(contractsResult.stdout, "pm contracts --json");
-  const availableCommands = new Set(Array.isArray(contractsPayload.commands) ? contractsPayload.commands : []);
+  const tempRoot = await mkdtemp(path.join(tmpdir(), "pm-docs-skills-gate-"));
+  const runtimeEnv = {
+    PM_PATH: path.join(tempRoot, "project", ".agents", "pm"),
+    PM_GLOBAL_PATH: path.join(tempRoot, "global"),
+    PM_AUTHOR: "docs-skills-gate",
+  };
+  try {
+    runCommand(process.execPath, ["dist/cli.js", "init", "--defaults", "--author", "docs-skills-gate", "--json"], {
+      cwd: REPO_ROOT,
+      capture: true,
+      env: runtimeEnv,
+    });
+    runCommand(process.execPath, ["dist/cli.js", "install", "all", "--project", "--json"], {
+      cwd: REPO_ROOT,
+      capture: true,
+      env: runtimeEnv,
+    });
 
-  const guideIndexResult = runCommand(process.execPath, ["dist/cli.js", "guide", "--json"], {
-    cwd: REPO_ROOT,
-    capture: true,
-  });
-  const guideIndex = parseJson(guideIndexResult.stdout, "pm guide --json");
-  if (!guideIndex || guideIndex.mode !== "index" || !Array.isArray(guideIndex.topics)) {
-    failures.push("pm guide --json did not return an index payload");
-    return;
-  }
-
-  for (const topic of guideIndex.topics) {
-    const topicId = typeof topic?.id === "string" ? topic.id : null;
-    if (!topicId) {
-      failures.push("pm guide index includes a topic without an id");
-      continue;
-    }
-    const topicResultRaw = runCommand(
+    const contractsResult = runCommand(
       process.execPath,
-      ["dist/cli.js", "guide", topicId, "--depth", "standard", "--json"],
+      ["dist/cli.js", "contracts", "--runtime-only", "--availability-only", "--json"],
       {
         cwd: REPO_ROOT,
         capture: true,
+        env: runtimeEnv,
       },
     );
-    const topicResult = parseJson(topicResultRaw.stdout, `pm guide ${topicId} --json`);
-    if (!topicResult || topicResult.mode !== "topic" || !topicResult.topic) {
-      failures.push(`pm guide ${topicId} did not return a topic payload`);
-      continue;
+    const contractsPayload = parseJson(contractsResult.stdout, "pm contracts --runtime-only --availability-only --json");
+    const availableCommands = new Set(Array.isArray(contractsPayload.commands) ? contractsPayload.commands : []);
+
+    const guideIndexResult = runCommand(process.execPath, ["dist/cli.js", "guide", "--json"], {
+      cwd: REPO_ROOT,
+      capture: true,
+      env: runtimeEnv,
+    });
+    const guideIndex = parseJson(guideIndexResult.stdout, "pm guide --json");
+    if (!guideIndex || guideIndex.mode !== "index" || !Array.isArray(guideIndex.topics)) {
+      failures.push("pm guide --json did not return an index payload");
+      return;
     }
-    if (Array.isArray(topicResult.warnings) && topicResult.warnings.length > 0) {
-      for (const warning of topicResult.warnings) {
-        failures.push(`Guide topic "${topicId}" warning: ${warning}`);
+
+    for (const topic of guideIndex.topics) {
+      const topicId = typeof topic?.id === "string" ? topic.id : null;
+      if (!topicId) {
+        failures.push("pm guide index includes a topic without an id");
+        continue;
       }
-    }
-    if (!Array.isArray(topicResult.docs)) {
-      failures.push(`Guide topic "${topicId}" is missing docs metadata`);
-      continue;
-    }
-    for (const doc of topicResult.docs) {
-      if (doc && doc.exists === false && doc.optional !== true) {
-        failures.push(`Guide topic "${topicId}" missing required document: ${doc.path}`);
+      const topicResultRaw = runCommand(
+        process.execPath,
+        ["dist/cli.js", "guide", topicId, "--depth", "standard", "--json"],
+        {
+          cwd: REPO_ROOT,
+          capture: true,
+          env: runtimeEnv,
+        },
+      );
+      const topicResult = parseJson(topicResultRaw.stdout, `pm guide ${topicId} --json`);
+      if (!topicResult || topicResult.mode !== "topic" || !topicResult.topic) {
+        failures.push(`pm guide ${topicId} did not return a topic payload`);
+        continue;
       }
+      if (Array.isArray(topicResult.warnings) && topicResult.warnings.length > 0) {
+        for (const warning of topicResult.warnings) {
+          failures.push(`Guide topic "${topicId}" warning: ${warning}`);
+        }
+      }
+      if (!Array.isArray(topicResult.docs)) {
+        failures.push(`Guide topic "${topicId}" is missing docs metadata`);
+        continue;
+      }
+      for (const doc of topicResult.docs) {
+        if (doc && doc.exists === false && doc.optional !== true) {
+          failures.push(`Guide topic "${topicId}" missing required document: ${doc.path}`);
+        }
+      }
+      validateGuideCommands(topicResult, availableCommands, failures);
     }
-    validateGuideCommands(topicResult, availableCommands, failures);
+  } finally {
+    await rm(tempRoot, { recursive: true, force: true });
   }
 }
 

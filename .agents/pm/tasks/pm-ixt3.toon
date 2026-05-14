@@ -1,0 +1,29 @@
+id: pm-ixt3
+title: Extract governance audit surfaces into installable package
+description: Move dedupe-audit/comments-audit/normalize governance convenience workflows out of bare core into an installable pm-governance-audit package while preserving runtime-contract availability when installed.
+type: Task
+status: closed
+priority: 0
+tags[5]: governance,packages,pm-cli,refactor,sdk
+created_at: "2026-05-14T07:59:02.132Z"
+updated_at: "2026-05-14T10:10:46.796Z"
+author: codex-package-refactor
+acceptance_criteria: Bare core excludes governance convenience commands by default; installed package restores command/action availability through runtime contracts; docs/tests/dogfood cover install and usage paths.
+parent: pm-59gj
+comments[3]{created_at,author,text}:
+  "2026-05-14T07:59:02.132Z",codex-package-refactor,"Duplicate check evidence: ran pm context --limit 10, pm search governance audit package extraction dedupe comments-audit normalize --limit 20, pm list-open --parent pm-59gj --limit 30, and pm list-in-progress --parent pm-59gj --limit 30; no open child under pm-59gj covered governance extraction scope."
+  "2026-05-14T08:27:37.254Z",codex-agent,"Progress 2026-05-14: bare-core pruning removed normalize/comments-audit core command registration from src/cli/register-mutation.ts and updated runtime tests to assert these governance commands are package-owned by default. Validation: pnpm build and node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."
+  "2026-05-14T10:10:45.345Z",codex-package-refactor,"Governance extraction finalized: dedupe-audit/comments-audit/normalize are package-owned by default, aggregate/dedupe integration installs governance-audit package explicitly, and MCP/contracts now keep governance actions runtime-only outside static core surfaces."
+files[7]{path,scope,note}:
+  packages/pm-governance-audit/extensions/governance-audit/index.ts,project,governance-audit package command surface
+  packages/pm-governance-audit/extensions/governance-audit/manifest.json,project,schema capability declared for flagged governance commands
+  packages/pm-governance-audit/extensions/governance-audit/runtime.ts,project,governance-audit runtime loads sdk runtime audit/normalize handlers
+  src/cli/commands/contracts.ts,project,static contracts exclude package-owned governance actions
+  src/cli/register-mutation.ts,project,removed normalize and comments-audit core command registration
+  src/mcp/server.ts,project,package-owned governance actions routed through dynamic dispatch
+  tests/integration/aggregate-dedupe.integration.spec.ts,project,dedupe-audit integration now installs governance package before command usage
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/aggregate-dedupe.integration.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: governance audit commands extracted to pm-governance-audit package
+body: ""

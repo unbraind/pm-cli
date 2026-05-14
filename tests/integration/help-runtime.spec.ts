@@ -34,7 +34,6 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(compactHelp.stdout).toContain("Need deeper rationale and more examples?");
       expect(compactHelp.stdout).toContain("Re-run with --explain.");
       expect(compactHelp.stdout).toContain("--no-pager");
-      expect(compactHelp.stdout).toContain("guide");
 
       const explicitNoPagerHelp = context.runCli(["--help", "--no-pager"]);
       expect(explicitNoPagerHelp.code).toBe(0);
@@ -48,22 +47,11 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
-  it("exposes guide command help and JSON payload routing", async () => {
+  it("reports guide command as optional package surface in bare core mode", async () => {
     await withTempPmPath(async (context) => {
       const help = context.runCli(["guide", "--help"]);
-      expect(help.code).toBe(0);
-      expect(help.stdout).toContain("Usage: pm guide [options] [topic]");
-      expect(help.stdout).toContain("--list");
-      expect(help.stdout).toContain("--depth");
-
-      const topic = context.runCli(["guide", "skills", "--json"], { expectJson: true });
-      expect(topic.code).toBe(0);
-      const payload = topic.json as {
-        mode: string;
-        topic?: { id: string };
-      };
-      expect(payload.mode).toBe("topic");
-      expect(payload.topic?.id).toBe("skills");
+      expect(help.code).toBe(2);
+      expect(help.stderr).toContain("Unknown command guide");
     });
   });
 
@@ -186,38 +174,52 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
-  it("describes reindex help text as keyword plus semantic and hybrid capable", async () => {
+  it("reports reindex as optional package-owned command in bare core mode", async () => {
     await withTempPmPath(async (context) => {
       const help = context.runCli(["reindex", "--help"]);
-      expect(help.code).toBe(0);
-      expect(help.stdout).toContain("Rebuild search artifacts for keyword, semantic, and hybrid modes.");
-      expect(help.stdout).toContain("Reindex mode: keyword|semantic|hybrid");
+      expect(help.code).toBe(2);
+      expect(help.stderr).toContain("Unknown command reindex");
     });
   });
 
-  it("describes include-linked help text as keyword and hybrid lexical scoring", async () => {
+  it("describes search help text as core keyword mode", async () => {
     await withTempPmPath(async (context) => {
       const help = context.runCli(["search", "--help"]);
       expect(help.code).toBe(0);
-      expect(help.stdout.replaceAll(/\s+/g, " ").trim()).toContain(
-        "Include readable linked docs/files/tests content in keyword and hybrid lexical scoring",
-      );
+      expect(help.stdout).toContain("Search items with core keyword mode.");
+      expect(help.stdout).not.toContain("--include-linked");
     });
   });
 
-  it("renders intent and example sections for templates, deps, update-many, and normalize help", async () => {
+  it("renders intent and example sections for installed templates plus core commands", async () => {
     await withTempPmPath(async (context) => {
-      for (const commandName of ["templates", "deps", "update-many", "normalize"] as const) {
+      const installTemplates = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
+      expect(installTemplates.code).toBe(0);
+
+      for (const commandName of ["templates", "deps", "update-many"] as const) {
         const compact = context.runCli([commandName, "--help"]);
         expect(compact.code).toBe(0);
-        expect(compact.stdout).toContain("Intent:");
-        expect(compact.stdout).toContain("Example:");
+        if (commandName === "templates") {
+          expect(compact.stdout).toContain("Extension command metadata:");
+          expect(compact.stdout).toContain("Action contract:");
+        } else {
+          expect(compact.stdout).toContain("Intent:");
+          expect(compact.stdout).toContain("Example:");
+        }
 
         const detailed = context.runCli([commandName, "--help", "--explain"]);
         expect(detailed.code).toBe(0);
-        expect(detailed.stdout).toContain("Why use this command:");
-        expect(detailed.stdout).toContain("Examples:");
+        if (commandName === "templates") {
+          expect(detailed.stdout).toContain("Extension command metadata:");
+        } else {
+          expect(detailed.stdout).toContain("Why use this command:");
+          expect(detailed.stdout).toContain("Examples:");
+        }
       }
+
+      const normalizeHelp = context.runCli(["normalize", "--help"]);
+      expect(normalizeHelp.code).toBe(2);
+      expect(normalizeHelp.stderr).toContain("Unknown command normalize");
     });
   });
 
@@ -359,6 +361,9 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("allows create templates to satisfy missing --type", async () => {
     await withTempPmPath(async (context) => {
+      const installTemplates = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
+      expect(installTemplates.code).toBe(0);
+
       const savedTemplate = context.runCli(
         ["templates", "save", "typed-task-default", "--type", "Task", "--priority", "1", "--json"],
         { expectJson: true },

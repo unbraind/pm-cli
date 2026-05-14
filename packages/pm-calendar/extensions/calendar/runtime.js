@@ -1,8 +1,45 @@
-import {
-  renderCalendarMarkdown,
-  resolveCalendarOutputFormat,
-  runCalendar,
-} from "../../../../dist/sdk/index.js";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+
+const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+let calendarCore = null;
+let calendarCoreLoadPromise = null;
+
+async function ensureCalendarCoreModule() {
+  if (calendarCore) {
+    return calendarCore;
+  }
+  if (!calendarCoreLoadPromise) {
+    calendarCoreLoadPromise = loadCalendarCoreModule();
+  }
+  calendarCore = await calendarCoreLoadPromise;
+  return calendarCore;
+}
+
+async function loadCalendarCoreModule() {
+  const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
+  if (typeof envRoot !== "string" || envRoot.trim().length === 0) {
+    throw new Error(
+      `builtin-calendar requires ${PM_PACKAGE_ROOT_ENV} to locate core SDK runtime exports.`,
+    );
+  }
+  const modulePath = path.join(path.resolve(envRoot.trim()), "dist", "sdk", "runtime.js");
+  try {
+    const loaded = await import(pathToFileURL(modulePath).href);
+    if (
+      typeof loaded.runCalendar === "function" &&
+      typeof loaded.renderCalendarMarkdown === "function" &&
+      typeof loaded.resolveCalendarOutputFormat === "function"
+    ) {
+      return loaded;
+    }
+  } catch {
+    // Fall through to deterministic failure message below.
+  }
+  throw new Error(
+    `builtin-calendar failed to load calendar SDK runtime exports from ${modulePath}.`,
+  );
+}
 
 function isCalendarResult(value) {
   return (
@@ -36,19 +73,20 @@ function readPayloadResult(payload) {
 }
 
 export async function runCalendarPackage(options, global) {
-  return runCalendar(options, global);
+  const loaded = await ensureCalendarCoreModule();
+  return loaded.runCalendar(options, global);
 }
 
 export function renderCalendarPackageOutput(context) {
   const result = readPayloadResult(context.payload);
-  if (!isCalendarCommand(context.command) || !isCalendarResult(result)) {
+  if (!calendarCore || !isCalendarCommand(context.command) || !isCalendarResult(result)) {
     return null;
   }
   const options = context.options ?? {};
   const global = context.global ?? {};
-  const outputFormat = resolveCalendarOutputFormat(options, global);
+  const outputFormat = calendarCore.resolveCalendarOutputFormat(options, global);
   if (outputFormat === "markdown") {
-    return `${renderCalendarMarkdown(result)}\n`;
+    return `${calendarCore.renderCalendarMarkdown(result)}\n`;
   }
   if (outputFormat === "json" || readPayloadFormat(context.payload) === "json") {
     return `${JSON.stringify(result, null, 2)}\n`;

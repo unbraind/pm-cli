@@ -30,7 +30,7 @@ describe("module boundaries export surface", () => {
     expect(typeof cliCommands.runDelete).toBe("function");
     expect(typeof cliCommands.runList).toBe("function");
     expect(typeof cliCommands.runSearch).toBe("function");
-    expect(typeof cliCommands.runReindex).toBe("function");
+    expect(typeof cliCommands.runReindex).toBe("undefined");
     expect(typeof cliCommands.runTestAll).toBe("function");
   });
 

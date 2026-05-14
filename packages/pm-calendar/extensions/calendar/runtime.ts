@@ -1,12 +1,54 @@
-import {
-  renderCalendarMarkdown,
-  resolveCalendarOutputFormat,
-  runCalendar,
-  type CalendarOptions,
-  type CalendarResult,
-  type GlobalOptions,
-  type ServiceOverrideContext,
-} from "../../../../src/sdk/index.js";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+import type { CalendarOptions, CalendarResult } from "../../../../src/sdk/runtime.js";
+import type { GlobalOptions, ServiceOverrideContext } from "../../../../src/sdk/index.js";
+
+const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+
+interface CalendarCoreModule {
+  runCalendar: (options: CalendarOptions, global: GlobalOptions) => Promise<CalendarResult>;
+  renderCalendarMarkdown: (result: CalendarResult) => string;
+  resolveCalendarOutputFormat: (options: CalendarOptions, global: GlobalOptions) => "markdown" | "toon" | "json";
+}
+
+let calendarCore: CalendarCoreModule | null = null;
+let calendarCoreLoadPromise: Promise<CalendarCoreModule> | null = null;
+
+async function ensureCalendarCoreModule(): Promise<CalendarCoreModule> {
+  if (calendarCore) {
+    return calendarCore;
+  }
+  if (!calendarCoreLoadPromise) {
+    calendarCoreLoadPromise = loadCalendarCoreModule();
+  }
+  calendarCore = await calendarCoreLoadPromise;
+  return calendarCore;
+}
+
+async function loadCalendarCoreModule(): Promise<CalendarCoreModule> {
+  const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
+  if (typeof envRoot !== "string" || envRoot.trim().length === 0) {
+    throw new Error(
+      `builtin-calendar requires ${PM_PACKAGE_ROOT_ENV} to locate core SDK runtime exports.`,
+    );
+  }
+  const modulePath = path.join(path.resolve(envRoot.trim()), "dist", "sdk", "runtime.js");
+  try {
+    const loaded = (await import(pathToFileURL(modulePath).href)) as Partial<CalendarCoreModule>;
+    if (
+      typeof loaded.runCalendar === "function" &&
+      typeof loaded.renderCalendarMarkdown === "function" &&
+      typeof loaded.resolveCalendarOutputFormat === "function"
+    ) {
+      return loaded as CalendarCoreModule;
+    }
+  } catch {
+    // Fall through to deterministic failure message below.
+  }
+  throw new Error(
+    `builtin-calendar failed to load calendar SDK runtime exports from ${modulePath}.`,
+  );
+}
 
 function isCalendarResult(value: unknown): value is CalendarResult {
   return (
@@ -40,19 +82,20 @@ function readPayloadResult(payload: unknown): unknown {
 }
 
 export async function runCalendarPackage(options: CalendarOptions, global: GlobalOptions): Promise<CalendarResult> {
-  return runCalendar(options, global);
+  const loaded = await ensureCalendarCoreModule();
+  return loaded.runCalendar(options, global);
 }
 
 export function renderCalendarPackageOutput(context: ServiceOverrideContext): string | null {
   const result = readPayloadResult(context.payload);
-  if (!isCalendarCommand(context.command) || !isCalendarResult(result)) {
+  if (!calendarCore || !isCalendarCommand(context.command) || !isCalendarResult(result)) {
     return null;
   }
   const options = (context.options ?? {}) as CalendarOptions;
   const global = (context.global ?? {}) as GlobalOptions;
-  const outputFormat = resolveCalendarOutputFormat(options, global);
+  const outputFormat = calendarCore.resolveCalendarOutputFormat(options, global);
   if (outputFormat === "markdown") {
-    return `${renderCalendarMarkdown(result)}\n`;
+    return `${calendarCore.renderCalendarMarkdown(result)}\n`;
   }
   if (outputFormat === "json" || readPayloadFormat(context.payload) === "json") {
     return `${JSON.stringify(result, null, 2)}\n`;

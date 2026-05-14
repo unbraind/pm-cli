@@ -1,18 +1,13 @@
 import type { Command } from "commander";
-import { pathExists } from "../core/fs/fs-utils.js";
-import { resolveItemTypeRegistry } from "../core/item/type-registry.js";
 import { normalizeStatusInput } from "../core/item/status.js";
-import { resolveRuntimeFieldRegistry, resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
+import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
-import { listAllFrontMatter } from "../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
+import { resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
-import { getActiveExtensionRegistrations } from "../core/extensions/index.js";
 import {
   runClaim,
   runClose,
-  runCompletion,
   runContracts,
   runGc,
   runHealth,
@@ -21,11 +16,6 @@ import {
   runStats,
   runTest,
   runTestAll,
-  runTestRunsList,
-  runTestRunsLogs,
-  runTestRunsResume,
-  runTestRunsStatus,
-  runTestRunsStop,
   runTestRunsWorker,
   runUpdate,
   runValidate,
@@ -38,7 +28,6 @@ import {
   invalidateSearchCachesForMutation,
   printError,
   printResult,
-  writeStdout,
 } from "./registration-helpers.js";
 
 export function registerOperationCommands(program: Command): void {
@@ -187,103 +176,6 @@ export function registerOperationCommands(program: Command): void {
       }
       if (globalOptions.profile) {
         printError(`profile:command=test-all took_ms=${Date.now() - startedAt}`);
-      }
-    });
-
-  const testRunsCommand = program
-    .command("test-runs")
-    .description("Manage background linked-test runs.")
-    .action(async (_options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const result = await runTestRunsList({}, globalOptions);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=test-runs took_ms=${Date.now() - startedAt}`);
-      }
-    });
-
-  testRunsCommand
-    .command("list")
-    .option("--status <value>", "Filter by background run status")
-    .option("--limit <value>", "Limit number of runs returned")
-    .description("List background test runs.")
-    .action(async (options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const result = await runTestRunsList({
-        status: typeof options.status === "string" ? options.status : undefined,
-        limit: typeof options.limit === "string" ? options.limit : undefined,
-      }, globalOptions);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=test-runs list took_ms=${Date.now() - startedAt}`);
-      }
-    });
-
-  testRunsCommand
-    .command("status")
-    .argument("<runId>", "Background run id")
-    .description("Show status, health, and resource snapshot for a background run.")
-    .action(async (runId: string, _options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const result = await runTestRunsStatus(runId, globalOptions);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=test-runs status took_ms=${Date.now() - startedAt}`);
-      }
-    });
-
-  testRunsCommand
-    .command("logs")
-    .argument("<runId>", "Background run id")
-    .option("--stream <value>", "Log stream selector: stdout|stderr|both")
-    .option("--tail <value>", "Tail number of lines per selected stream")
-    .description("Show tailed logs for a background run.")
-    .action(async (runId: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const result = await runTestRunsLogs(runId, {
-        stream: typeof options.stream === "string" ? options.stream : undefined,
-        tail: typeof options.tail === "string" ? options.tail : undefined,
-      }, globalOptions);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=test-runs logs took_ms=${Date.now() - startedAt}`);
-      }
-    });
-
-  testRunsCommand
-    .command("stop")
-    .argument("<runId>", "Background run id")
-    .option("--force", "Force-stop via SIGKILL")
-    .description("Stop a running background test run.")
-    .action(async (runId: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const result = await runTestRunsStop(runId, { force: options.force === true }, globalOptions);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=test-runs stop took_ms=${Date.now() - startedAt}`);
-      }
-    });
-
-  testRunsCommand
-    .command("resume")
-    .argument("<runId>", "Background run id")
-    .option("--author <value>", "Resume author (falls back to PM_AUTHOR/settings)")
-    .description("Resume a previously terminal background test run by starting a new attempt.")
-    .action(async (runId: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const result = await runTestRunsResume(runId, {
-        author: typeof options.author === "string" ? options.author : undefined,
-        noExtensions: globalOptions.noExtensions === true,
-      }, globalOptions);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=test-runs resume took_ms=${Date.now() - startedAt}`);
       }
     });
 
@@ -563,101 +455,4 @@ export function registerOperationCommands(program: Command): void {
       }
     });
 
-  program
-    .command("completion")
-    .argument("<shell>", "Shell type: bash, zsh, or fish")
-    .option("--eager-tags", "Embed current tracker tags directly in generated scripts (legacy eager mode)")
-    .description("Generate shell completion for pm.")
-    .action(async (shell: string, options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
-      let completionTypes: string[] | undefined;
-      let completionTags: string[] | undefined;
-      let completionStatuses: string[] | undefined;
-      const completionCommandFlags: Partial<
-        Record<"list" | "create" | "update" | "update-many" | "search" | "calendar" | "context", string[]>
-      > = {};
-      const eagerTags = Boolean(options.eagerTags);
-      if (await pathExists(getSettingsPath(pmRoot))) {
-        const settings = await readSettings(pmRoot);
-        const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-        const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
-        const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-        completionTypes = typeRegistry.types;
-        completionStatuses = statusRegistry.definitions.map((definition) => definition.id);
-        for (const [commandKey, definitions] of runtimeFieldRegistry.command_to_fields.entries()) {
-          if (
-            commandKey !== "list" &&
-            commandKey !== "create" &&
-            commandKey !== "update" &&
-            commandKey !== "search" &&
-            commandKey !== "calendar" &&
-            commandKey !== "context"
-          ) {
-            continue;
-          }
-          const runtimeFlags = new Set<string>();
-          for (const definition of definitions) {
-            runtimeFlags.add(`--${definition.cli_flag}`);
-            for (const alias of definition.cli_aliases) {
-              if (alias.startsWith("--") || (alias.startsWith("-") && !alias.startsWith("--"))) {
-                runtimeFlags.add(alias);
-              } else {
-                runtimeFlags.add(`--${alias}`);
-              }
-            }
-          }
-          completionCommandFlags[commandKey] = [...runtimeFlags].sort((left, right) => left.localeCompare(right));
-        }
-        if (completionCommandFlags.update) {
-          completionCommandFlags["update-many"] = [...completionCommandFlags.update];
-        }
-        if (eagerTags) {
-          const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
-          completionTags = [...new Set(items.flatMap((item) => item.tags ?? []).map((tag) => tag.trim()).filter((tag) => tag.length > 0))]
-            .sort((left, right) => left.localeCompare(right));
-        }
-      }
-      const result = runCompletion(shell, completionTypes, completionTags ?? [], eagerTags, {
-        statuses: completionStatuses,
-        command_flags: completionCommandFlags,
-      });
-      if (globalOptions.json) {
-        printResult(result, globalOptions);
-      } else if (!globalOptions.quiet) {
-        writeStdout(`${result.script}\n`);
-      }
-      if (globalOptions.profile) {
-        printError(`profile:command=completion took_ms=0`);
-      }
-    });
-
-  program
-    .command("completion-tags", { hidden: true })
-    .description("Internal dynamic completion tag source.")
-    .action(async (_options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
-      let tags: string[] = [];
-      if (await pathExists(getSettingsPath(pmRoot))) {
-        const settings = await readSettings(pmRoot);
-        const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-        const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
-        tags = [...new Set(items.flatMap((item) => item.tags ?? []).map((tag) => tag.trim()).filter((tag) => tag.length > 0))].sort((left, right) =>
-          left.localeCompare(right),
-        );
-      }
-      if (globalOptions.json) {
-        printResult({ tags, count: tags.length }, globalOptions);
-      } else if (!globalOptions.quiet) {
-        writeStdout(tags.join("\n"));
-        if (tags.length > 0) {
-          writeStdout("\n");
-        }
-      }
-      if (globalOptions.profile) {
-        printError(`profile:command=completion-tags took_ms=${Date.now() - startedAt}`);
-      }
-    });
 }

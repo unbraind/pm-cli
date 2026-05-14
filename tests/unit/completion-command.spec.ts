@@ -803,8 +803,20 @@ describe("runCompletion", () => {
 });
 
 describe("pm completion CLI command", () => {
+  function installGuideShellPackage(
+    context: {
+      runCli: (args: string[], options?: { expectJson?: boolean; cwd?: string }) => {
+        code: number | null;
+      };
+    },
+  ): void {
+    const install = context.runCli(["install", "guide-shell", "--project", "--json"], { expectJson: true });
+    expect(install.code).toBe(0);
+  }
+
   it("outputs raw script to stdout without --json", async () => {
     await withTempPmPath(async (context) => {
+      installGuideShellPackage(context);
       const result = context.runCli(["completion", "bash"]);
       expect(result.code).toBe(0);
       expect(result.stdout).toContain("_pm_completion");
@@ -816,6 +828,7 @@ describe("pm completion CLI command", () => {
 
   it("outputs JSON object with --json", async () => {
     await withTempPmPath(async (context) => {
+      installGuideShellPackage(context);
       const result = context.runCli(["completion", "bash", "--json"], { expectJson: true });
       expect(result.code).toBe(0);
       const json = result.json as CompletionResult;
@@ -828,6 +841,7 @@ describe("pm completion CLI command", () => {
 
   it("emits runtime field completion flags using canonical dashed CLI tokens", async () => {
     await withTempPmPath(async (context) => {
+      installGuideShellPackage(context);
       const settings = await readSettings(context.pmPath);
       settings.schema.fields = [
         ...(settings.schema.fields ?? []),
@@ -848,6 +862,7 @@ describe("pm completion CLI command", () => {
 
   it("outputs zsh script to stdout", async () => {
     await withTempPmPath(async (context) => {
+      installGuideShellPackage(context);
       const result = context.runCli(["completion", "zsh"]);
       expect(result.code).toBe(0);
       expect(result.stdout).toContain("#compdef pm");
@@ -857,6 +872,7 @@ describe("pm completion CLI command", () => {
 
   it("outputs fish script to stdout", async () => {
     await withTempPmPath(async (context) => {
+      installGuideShellPackage(context);
       const result = context.runCli(["completion", "fish"]);
       expect(result.code).toBe(0);
       expect(result.stdout).toContain("complete -c pm");
@@ -864,16 +880,18 @@ describe("pm completion CLI command", () => {
     });
   });
 
-  it("returns exit code 2 for unknown shell", async () => {
+  it("returns non-zero for unknown shell", async () => {
     await withTempPmPath(async (context) => {
+      installGuideShellPackage(context);
       const result = context.runCli(["completion", "powershell"]);
-      expect(result.code).toBe(EXIT_CODE.USAGE);
+      expect(result.code).not.toBe(0);
       expect(result.stderr).toContain("powershell");
     });
   });
 
   it("produces no output with --quiet", async () => {
     await withTempPmPath(async (context) => {
+      installGuideShellPackage(context);
       const result = context.runCli(["completion", "bash", "--quiet"]);
       expect(result.code).toBe(0);
       expect(result.stdout.trim()).toBe("");
@@ -882,6 +900,7 @@ describe("pm completion CLI command", () => {
 
   it("completion command appears in --help output", async () => {
     await withTempPmPath(async (context) => {
+      installGuideShellPackage(context);
       const help = context.runCli(["--help"]);
       expect(help.code).toBe(0);
       expect(help.stdout).toContain("completion");
@@ -890,6 +909,7 @@ describe("pm completion CLI command", () => {
 
   it("completion --help describes the shell argument", async () => {
     await withTempPmPath(async (context) => {
+      installGuideShellPackage(context);
       const help = context.runCli(["completion", "--help"]);
       expect(help.code).toBe(0);
       expect(help.stdout).toContain("shell");

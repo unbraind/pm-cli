@@ -205,6 +205,46 @@ const LIST_COMMAND_NAMES = new Set([
   "list-canceled",
 ]);
 
+const PACKAGE_OWNED_ACTIONS = new Set<string>([
+  "calendar",
+  "dedupe-audit",
+  "guide",
+  "reindex",
+  "normalize",
+  "comments-audit",
+  "completion",
+  "test-runs-list",
+  "test-runs-status",
+  "test-runs-logs",
+  "test-runs-stop",
+  "test-runs-resume",
+  "templates-list",
+  "templates-save",
+  "templates-show",
+]);
+
+const PACKAGE_OWNED_COMMANDS = new Set<string>([
+  "cal",
+  "calendar",
+  "comments-audit",
+  "completion",
+  "completion-tags",
+  "dedupe-audit",
+  "guide",
+  "normalize",
+  "reindex",
+  "templates",
+  "templates list",
+  "templates save",
+  "templates show",
+  "test-runs",
+  "test-runs list",
+  "test-runs status",
+  "test-runs logs",
+  "test-runs stop",
+  "test-runs resume",
+]);
+
 function resolveActionCommandPath(action: PmToolAction): string | null {
   if (PM_CORE_COMMAND_NAMES.includes(action as (typeof PM_CORE_COMMAND_NAMES)[number])) {
     return normalizeCommandPath(action);
@@ -659,6 +699,9 @@ interface ActionContractDescriptor {
 function collectActionContractDescriptors(extensionContracts: ExtensionCommandContract[]): ActionContractDescriptor[] {
   const descriptors = new Map<string, ActionContractDescriptor>();
   for (const action of PM_TOOL_ACTIONS) {
+    if (PACKAGE_OWNED_ACTIONS.has(action)) {
+      continue;
+    }
     const commandPath = resolveActionCommandPath(action as PmToolAction);
     descriptors.set(action, {
       action,
@@ -947,7 +990,9 @@ function buildCommandFlagSurface(
 ): CommandFlagSurface[] {
   return commands
     .map((command) => {
-      const isCoreCommand = PM_CORE_COMMAND_NAMES.includes(command as (typeof PM_CORE_COMMAND_NAMES)[number]);
+      const isCoreCommand =
+        PM_CORE_COMMAND_NAMES.includes(command as (typeof PM_CORE_COMMAND_NAMES)[number]) &&
+        !PACKAGE_OWNED_COMMANDS.has(command);
       const coreFlags = isCoreCommand ? resolveCoreCommandFlags(command) : [];
       const runtimeFlags = runtimeFieldFlagMap.get(normalizeCommandForRuntimeFieldFlags(command)) ?? [];
       const extensionFlags = extensionFlagMap.get(command);
@@ -1103,7 +1148,12 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
     throw new PmCliError(`Unknown action: "${options.action}".`, EXIT_CODE.USAGE);
   }
 
-  const commandCatalog = [...new Set([...PM_CORE_COMMAND_NAMES, ...extensionContracts.map((entry) => entry.command)])]
+  const commandCatalog = [
+    ...new Set([
+      ...PM_CORE_COMMAND_NAMES.filter((entry) => !PACKAGE_OWNED_COMMANDS.has(entry)),
+      ...extensionContracts.map((entry) => entry.command),
+    ]),
+  ]
     .map((entry) => normalizeCommandPath(entry))
     .filter((entry) => entry.length > 0)
     .sort((left, right) => left.localeCompare(right));
@@ -1163,6 +1213,7 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
   const actionAvailability =
     runtimeOnly && !selectedAction ? allActionAvailability.filter((entry) => entry.invocable) : allActionAvailability;
   const actions = actionAvailability.map((entry) => entry.action);
+  const descriptorActionSet = new Set(actionDescriptors.map((descriptor) => descriptor.action));
   let filteredSchema = selectedAction
     ? filterSchemaByAction(mergedSchema, selectedAction)
     : selectedCommand
@@ -1170,7 +1221,7 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
           mergedSchema,
           new Set(scopedActionDescriptors.map((descriptor) => descriptor.action)),
         )
-      : mergedSchema;
+      : filterSchemaByActions(mergedSchema, descriptorActionSet);
   if (runtimeOnly && !selectedAction) {
     filteredSchema = filterSchemaByActions(filteredSchema, new Set(actions));
   }

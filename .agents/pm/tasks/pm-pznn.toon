@@ -6,14 +6,14 @@ status: closed
 priority: 0
 tags[5]: calendar,packages,pm-cli,refactor,sdk
 created_at: "2026-05-14T06:05:23.346Z"
-updated_at: "2026-05-14T07:31:20.886Z"
+updated_at: "2026-05-14T10:11:11.608Z"
 author: codex-agent
 acceptance_criteria: pm-calendar package owns optional calendar UX; core keeps item deadline fields; contracts/MCP expose calendar commands only when package installed or during compatibility fallback; temp-project dogfood covers installed package behavior.
 parent: pm-59gj
 resolution: Extracted calendar presentation commands into the TypeScript-authored pm-calendar package and tightened static SDK contracts around package-owned actions.
 expected_result: "pm-calendar installs as a first-party package, calendar/cal run through dynamic package handlers, static SDK actions exclude package-owned calendar/templates actions, and packed CLI smoke proves install/run/upgrade paths."
 actual_result: "Focused tests, isolated dogfood, packed npx smoke, full coverage, required telemetry release gates, Sentry, and telemetry checks passed; validation has only the known pre-existing history drift warnings."
-comments[9]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-05-14T06:05:23.346Z",codex-agent,"Duplicate check 2026-05-14: pm search calendar package extraction found only closed calendar feature/issue work plus parent pm-59gj; net-new extraction child under pm-59gj."
   "2026-05-14T06:51:10.044Z",codex-package-refactor,"Implementation update: added packages/pm-calendar with TypeScript-authored extension entry/runtime plus checked-in JS artifacts, exposed calendar runtime helpers through the public SDK barrel, updated first-party package catalog/install-all tests, and fixed package output service handling so installed calendar preserves markdown default output. Verification passed: pnpm typecheck; node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/calendar-command.spec.ts (80 tests)."
   "2026-05-14T06:52:46.381Z",codex-package-refactor,"Manual temp-project evidence: isolated PM_PATH/PM_GLOBAL_PATH smoke passed with node dist/cli.js init, install calendar --project, package catalog (total 4 with calendar installed), create item with deadline/reminder, calendar markdown output, cal --json structured output with 2 events, contracts --command calendar --runtime-only --availability-only, and health --check-only clean in the sandbox."
@@ -23,21 +23,27 @@ comments[9]{created_at,author,text}:
   "2026-05-14T07:23:28.668Z",codex-package-refactor,"Release gate evidence: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json passed. Gate covered build, typecheck, docs-skills, static quality, 100% coverage, version policy, secret scan, packed npx package smoke, npm pack dry-run, compatibility, and Sentry/telemetry. Observability summary: Sentry access ok with 1 critical/4 high under thresholds; telemetry required mode ok with finish_error_rate_pct 2.4 and zero failures missing error codes."
   "2026-05-14T07:25:45.438Z",codex-package-refactor,"Docs cleanup: consolidated duplicated docs/SDK.md content and documented the static core action versus runtime package action contract split for package-owned actions such as calendar and templates. Verification passed: node scripts/release/docs-skills-gate.mjs."
   "2026-05-14T07:31:20.886Z",codex-package-refactor,"Final release gate rerun after SDK docs cleanup passed: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json. Sentry remained accessible and under thresholds (critical=1, high=4); telemetry required mode remained ok with finish_error_rate_pct=2.41 and zero missing error-code rows."
-files[9]{path,scope,note}:
+  "2026-05-14T08:47:20.595Z",codex-agent,"Hard-extraction progress 2026-05-14: removed calendar runtime root probing fallback (now deterministic PM_CLI_PACKAGE_ROOT resolution only), switched package runtime imports to public SDK runtime exports, and aligned integration coverage with bare-core default by explicitly installing calendar before calendar/cal usage. Validation passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/templates-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts; node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/cli.integration.spec.ts."
+  "2026-05-14T10:11:10.090Z",codex-package-refactor,"Final verification 2026-05-14: calendar extraction and bare-core behavior are validated end-to-end (calendar unknown before install, available after package install-all) in dogfood, plus full coverage and release gates including docs/static-quality/telemetry/sentry."
+files[11]{path,scope,note}:
   packages/pm-calendar/extensions/calendar/index.ts,project,calendar package extension entry
+  packages/pm-calendar/extensions/calendar/runtime.js,project,generated runtime parity for deterministic loader
   packages/pm-calendar/extensions/calendar/runtime.ts,project,calendar package runtime using public SDK
   packages/pm-calendar/package.json,project,first-party calendar package manifest
   scripts/smoke-npx-from-pack.mjs,project,packed CLI package install/run smoke
   src/sdk/cli-contracts.ts,project,remove package-owned calendar/templates from static SDK actions
   src/sdk/index.ts,project,public SDK calendar runtime exports
+  src/sdk/runtime.ts,project,export calendar runtime primitives for package consumers
   tests/integration/cli.integration.spec.ts,project,install-all integration count includes calendar package
   tests/integration/release-readiness-runtime.spec.ts,project,release readiness smoke script expectations
   tests/unit/contracts-command.spec.ts,project,optional package action contract regression
-tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[10]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/release/docs-skills-gate.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
   "node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"installs bundled first-party packages through root install all\"",null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  "node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t supports calendar views,markdown default output,and reminder events",null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/help-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/calendar-command.spec.ts tests/unit/templates-command.spec.ts tests/unit/completion-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/calendar-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
   "pnpm dogfood:package-first",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
@@ -49,5 +55,5 @@ docs[3]{path,scope,note}:
   docs/EXTENSIONS.md,project,first-party package docs include calendar
   docs/SDK.md,project,SDK static versus runtime package action docs
   packages/pm-calendar/README.md,project,calendar package docs
-close_reason: pm-calendar package extracted and verified; static SDK contracts no longer advertise package-owned calendar/templates actions; packed package smoke and release gates passed
+close_reason: calendar extraction validated with bare-core default and package install restore
 body: ""

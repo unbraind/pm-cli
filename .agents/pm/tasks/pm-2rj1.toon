@@ -2,14 +2,38 @@ id: pm-2rj1
 title: Extract advanced search and vectorization into installable pm package
 description: "Move semantic/hybrid search, reindex progress, embedding providers, vector stores, and search cache refresh into pm-search-advanced packages while keeping keyword item lookup core."
 type: Task
-status: open
+status: closed
 priority: 0
 tags[6]: packages,pm-cli,refactor,sdk,search,vectorization
 created_at: "2026-05-14T06:05:23.591Z"
-updated_at: "2026-05-14T06:05:23.591Z"
+updated_at: "2026-05-14T10:10:54.674Z"
 author: codex-agent
 acceptance_criteria: "Keyword search remains core; semantic/hybrid/vector features are package-owned with dynamic contracts; SDK search provider APIs are preserved; package dogfood verifies install, reindex, search, health, and telemetry."
 parent: pm-59gj
-comments[1]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-05-14T06:05:23.591Z",codex-agent,"Duplicate check 2026-05-14: pm search semantic reindex vector extraction found closed search/vector implementation items plus parent pm-59gj; net-new extraction child under pm-59gj."
+  "2026-05-14T08:27:36.484Z",codex-agent,"Progress 2026-05-14: bare-core pruning removed core reindex command registration and forced core search command dispatch to keyword mode in src/cli/register-list-query.ts; MCP pm_run static reindex dispatch removed from src/mcp/server.ts so package-owned advanced search actions route dynamically. Validation: pnpm build and node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."
+  "2026-05-14T09:05:57.913Z",codex-agent,"Progress 2026-05-14: added new TypeScript first-party package pm-search-advanced that provides package-owned advanced search and reindex surfaces ( and ) while core search remains keyword-only and bare core keeps reindex unavailable by default. Package runtimes load SDK primitives deterministically via PM_CLI_PACKAGE_ROOT. Updated bundled package catalog/install-all expectations and release-readiness coverage to verify bare-core unknown reindex plus restored package behavior after install. Validation passed: pnpm build and node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/sdk-index.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts."
+  "2026-05-14T09:06:04.287Z",codex-agent,"Correction: package-owned advanced surfaces are commands search-advanced and reindex (without core fallback)."
+  "2026-05-14T10:10:52.808Z",codex-package-refactor,"Final verification 2026-05-14: search-advanced extraction remains green under full coverage (1299/1299), package smoke, package-first dogfood (bare core unknown reindex before install + reindex after install all), and release gates with telemetry/sentry thresholds."
+files[15]{path,scope,note}:
+  packages/pm-search-advanced/extensions/search-advanced/index.js,project,null
+  packages/pm-search-advanced/extensions/search-advanced/index.ts,project,null
+  packages/pm-search-advanced/extensions/search-advanced/manifest.json,project,null
+  packages/pm-search-advanced/extensions/search-advanced/runtime.js,project,null
+  packages/pm-search-advanced/extensions/search-advanced/runtime.ts,project,null
+  packages/pm-search-advanced/package.json,project,null
+  packages/pm-search-advanced/README.md,project,null
+  src/cli/register-list-query.ts,project,restricted core search command to keyword-only and removed reindex registration
+  src/mcp/server.ts,project,removed static reindex routing and shifted package-owned actions to dynamic dispatch
+  src/sdk/runtime.ts,project,public runtime exports for search-advanced package command handlers
+  tests/integration/cli.integration.spec.ts,project,install-all package count updated for search-advanced
+  tests/integration/release-readiness-runtime.spec.ts,project,bare-core reindex unknown by default; install search-advanced restores reindex and search-advanced command
+  tests/unit/builtin-extension-entrypoints.spec.ts,project,calendar runtime stub now provides dist/sdk/runtime exports for deterministic loader
+  tests/unit/extension-command.spec.ts,project,bundled package catalog/install-all counts include search-advanced
+  tests/unit/package-manifest.spec.ts,project,first-party package source guardrails include pm-search-advanced
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/sdk-index.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: advanced search/reindex extraction verified through package-first release gates
 body: ""

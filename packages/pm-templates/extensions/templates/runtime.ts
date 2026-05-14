@@ -1,6 +1,28 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
+import { pathToFileURL } from "node:url";
+import type { GlobalOptions } from "../../../../src/sdk/index.js";
+
+const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+
+interface TemplatesSdkModule {
+  CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS: Array<{ target: string }>;
+  EXIT_CODE: {
+    USAGE: number;
+    NOT_FOUND: number;
+    GENERIC_FAILURE: number;
+  };
+  PmCliError: new (message: string, exitCode?: number) => Error;
+  getSettingsPath: (pmRoot: string) => string;
+  nowIso: () => string;
+  pathExists: (targetPath: string) => Promise<boolean>;
+  readFileIfExists: (targetPath: string) => Promise<string | null>;
+  resolvePmRoot: (cwd: string, overridePath?: string) => string;
+  writeFileAtomic: (targetPath: string, contents: string) => Promise<void>;
+}
+
+const sdk = await loadTemplatesSdkModule();
+const {
   CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   EXIT_CODE,
   PmCliError,
@@ -10,8 +32,33 @@ import {
   readFileIfExists,
   resolvePmRoot,
   writeFileAtomic,
-  type GlobalOptions,
-} from "../../../../src/sdk/index.js";
+} = sdk;
+
+async function loadTemplatesSdkModule(): Promise<TemplatesSdkModule> {
+  const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
+  if (typeof envRoot !== "string" || envRoot.trim().length === 0) {
+    throw new Error(
+      `builtin-templates requires ${PM_PACKAGE_ROOT_ENV} to locate core SDK runtime exports.`,
+    );
+  }
+  const modulePath = path.join(path.resolve(envRoot.trim()), "dist", "sdk", "index.js");
+  try {
+    const loaded = (await import(pathToFileURL(modulePath).href)) as Partial<TemplatesSdkModule>;
+    if (
+      typeof loaded.resolvePmRoot === "function" &&
+      typeof loaded.pathExists === "function" &&
+      typeof loaded.PmCliError === "function" &&
+      Array.isArray(loaded.CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS)
+    ) {
+      return loaded as TemplatesSdkModule;
+    }
+  } catch {
+    // Fall through to deterministic failure message below.
+  }
+  throw new Error(
+    `builtin-templates failed to load SDK runtime exports from ${modulePath}.`,
+  );
+}
 
 const TEMPLATE_DIRECTORY_NAME = "templates";
 const TEMPLATE_FILE_EXTENSION = ".json";
@@ -88,6 +135,10 @@ function extractTemplateOptions(rawOptions: Record<string, unknown>): CreateTemp
       continue;
     }
     if (TEMPLATE_OPTION_REPEATABLE_KEY_SET.has(key)) {
+      if (typeof value === "string") {
+        next[key] = [value];
+        continue;
+      }
       if (!Array.isArray(value)) {
         continue;
       }

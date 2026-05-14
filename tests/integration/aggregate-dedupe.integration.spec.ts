@@ -166,6 +166,11 @@ describe("aggregate and dedupe-audit CLI integration", () => {
 
   it("runs dedupe-audit exact mode from CLI", async () => {
     await withTempPmPath(async (context) => {
+      const installGovernance = context.runCli(["install", "governance-audit", "--project", "--json"], {
+        expectJson: true,
+      });
+      expect(installGovernance.code).toBe(0);
+
       createItem(context, { title: "Deduplicate this title", type: "Task" });
       createItem(context, { title: "deduplicate this title", type: "Task" });
       createItem(context, { title: "Different title", type: "Task" });

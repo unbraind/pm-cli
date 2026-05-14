@@ -233,6 +233,10 @@ describe("pm package manifest model", () => {
   it("recognizes first-party package roots as installable pm packages", async () => {
     const beadsRoot = path.join(repoRoot, "packages", "pm-beads");
     const calendarRoot = path.join(repoRoot, "packages", "pm-calendar");
+    const governanceAuditRoot = path.join(repoRoot, "packages", "pm-governance-audit");
+    const guideShellRoot = path.join(repoRoot, "packages", "pm-guide-shell");
+    const linkedTestAdaptersRoot = path.join(repoRoot, "packages", "pm-linked-test-adapters");
+    const searchAdvancedRoot = path.join(repoRoot, "packages", "pm-search-advanced");
     const templatesRoot = path.join(repoRoot, "packages", "pm-templates");
     const todosRoot = path.join(repoRoot, "packages", "pm-todos");
 
@@ -268,6 +272,74 @@ describe("pm package manifest model", () => {
     });
     await expect(collectPackageExtensionDirectories(calendarRoot)).resolves.toEqual([
       path.join(calendarRoot, "extensions", "calendar"),
+    ]);
+
+    await expect(readPmPackageManifest(governanceAuditRoot)).resolves.toMatchObject({
+      source: "pm",
+      package_name: "@unbrained/pm-package-governance-audit",
+      package_version: "0.1.0",
+      aliases: ["governance-audit"],
+      catalog: {
+        display_name: "Governance Audit",
+        category: "governance",
+      },
+      resources: {
+        extensions: ["extensions/governance-audit"],
+      },
+    });
+    await expect(collectPackageExtensionDirectories(governanceAuditRoot)).resolves.toEqual([
+      path.join(governanceAuditRoot, "extensions", "governance-audit"),
+    ]);
+
+    await expect(readPmPackageManifest(guideShellRoot)).resolves.toMatchObject({
+      source: "pm",
+      package_name: "@unbrained/pm-package-guide-shell",
+      package_version: "0.1.0",
+      aliases: ["guide-shell"],
+      catalog: {
+        display_name: "Guide + Shell UX",
+        category: "workflow",
+      },
+      resources: {
+        extensions: ["extensions/guide-shell"],
+      },
+    });
+    await expect(collectPackageExtensionDirectories(guideShellRoot)).resolves.toEqual([
+      path.join(guideShellRoot, "extensions", "guide-shell"),
+    ]);
+
+    await expect(readPmPackageManifest(linkedTestAdaptersRoot)).resolves.toMatchObject({
+      source: "pm",
+      package_name: "@unbrained/pm-package-linked-test-adapters",
+      package_version: "0.1.0",
+      aliases: ["linked-test-adapters"],
+      catalog: {
+        display_name: "Linked Test Adapters",
+        category: "testing",
+      },
+      resources: {
+        extensions: ["extensions/linked-test-adapters"],
+      },
+    });
+    await expect(collectPackageExtensionDirectories(linkedTestAdaptersRoot)).resolves.toEqual([
+      path.join(linkedTestAdaptersRoot, "extensions", "linked-test-adapters"),
+    ]);
+
+    await expect(readPmPackageManifest(searchAdvancedRoot)).resolves.toMatchObject({
+      source: "pm",
+      package_name: "@unbrained/pm-package-search-advanced",
+      package_version: "0.1.0",
+      aliases: ["search-advanced"],
+      catalog: {
+        display_name: "Advanced Search",
+        category: "search",
+      },
+      resources: {
+        extensions: ["extensions/search-advanced"],
+      },
+    });
+    await expect(collectPackageExtensionDirectories(searchAdvancedRoot)).resolves.toEqual([
+      path.join(searchAdvancedRoot, "extensions", "search-advanced"),
     ]);
 
     await expect(readPmPackageManifest(templatesRoot)).resolves.toMatchObject({
@@ -310,6 +382,26 @@ describe("pm package manifest model", () => {
     await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.ts"))).resolves.toBeUndefined();
+    await expect(
+      access(path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "index.ts")),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "runtime.ts")),
+    ).resolves.toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "index.ts"))).resolves
+      .toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "runtime.ts"))).resolves
+      .toBeUndefined();
+    await expect(
+      access(path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "index.ts")),
+    ).resolves.toBeUndefined();
+    await expect(
+      access(path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "runtime.ts")),
+    ).resolves.toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "index.ts"))).resolves
+      .toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "runtime.ts"))).resolves
+      .toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "runtime.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.ts"))).resolves.toBeUndefined();
@@ -326,6 +418,22 @@ describe("pm package manifest model", () => {
       path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.ts"),
       path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.js"),
       path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.js"),
+      path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "index.ts"),
+      path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "runtime.ts"),
+      path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "index.js"),
+      path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "runtime.js"),
+      path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "index.ts"),
+      path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "runtime.ts"),
+      path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "index.js"),
+      path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "runtime.js"),
+      path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "index.ts"),
+      path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "runtime.ts"),
+      path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "index.js"),
+      path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "runtime.js"),
+      path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "index.ts"),
+      path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "runtime.ts"),
+      path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "index.js"),
+      path.join(repoRoot, "packages", "pm-search-advanced", "extensions", "search-advanced", "runtime.js"),
       path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.ts"),
       path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "runtime.ts"),
       path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.js"),
@@ -340,10 +448,18 @@ describe("pm package manifest model", () => {
       const source = await readFile(sourceFile, "utf8");
       expect(source).not.toMatch(/["']\.\.\/\.\.\/\.\.\/\.\.\/(?:src|dist)\/(?:core|types)\//);
       if (sourceFile.endsWith("runtime.js")) {
-        expect(source).toContain("../../../../dist/sdk/index.js");
+        const referencesDistSdk =
+          source.includes("../../../../dist/sdk/index.js") ||
+          source.includes("../../../../dist/sdk/runtime.js") ||
+          source.includes('"dist", "sdk", "index.js"') ||
+          source.includes('"dist", "sdk", "runtime.js"');
+        expect(referencesDistSdk).toBe(true);
       }
       if (sourceFile.endsWith(".ts")) {
-        expect(source).toContain("../../../../src/sdk/index.js");
+        const referencesSrcSdk =
+          source.includes("../../../../src/sdk/index.js") ||
+          source.includes("../../../../src/sdk/runtime.js");
+        expect(referencesSrcSdk).toBe(true);
       }
     }
   });

@@ -15,8 +15,6 @@ import {
   pathExists,
   readFileIfExists,
   readSettings,
-  runCalendar,
-  renderCalendarMarkdown,
   resolvePmRoot,
   writeFileAtomic,
 } from "../../src/sdk/index.js";
@@ -97,7 +95,5 @@ describe("public sdk entrypoint", () => {
     expect(typeof getItemPath).toBe("function");
     expect(typeof readSettings).toBe("function");
     expect(typeof resolvePmRoot).toBe("function");
-    expect(typeof runCalendar).toBe("function");
-    expect(typeof renderCalendarMarkdown).toBe("function");
   });
 });

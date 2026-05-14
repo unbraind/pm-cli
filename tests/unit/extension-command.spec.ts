@@ -239,7 +239,7 @@ describe("extension command runtime", () => {
       const beforeInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });
       expect(beforeInstall.action).toBe("catalog");
       expect(beforeInstall.details).toMatchObject({
-        total: 4,
+        total: 8,
         scope: "project",
         packages: [
           {
@@ -260,6 +260,46 @@ describe("extension command runtime", () => {
             catalog: {
               display_name: "Calendar Views",
               category: "workflow",
+            },
+          },
+          {
+            alias: "governance-audit",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-package-governance-audit",
+            catalog: {
+              display_name: "Governance Audit",
+              category: "governance",
+            },
+          },
+          {
+            alias: "guide-shell",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-package-guide-shell",
+            catalog: {
+              display_name: "Guide + Shell UX",
+              category: "workflow",
+            },
+          },
+          {
+            alias: "linked-test-adapters",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-package-linked-test-adapters",
+            catalog: {
+              display_name: "Linked Test Adapters",
+              category: "testing",
+            },
+          },
+          {
+            alias: "search-advanced",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-package-search-advanced",
+            catalog: {
+              display_name: "Advanced Search",
+              category: "search",
             },
           },
           {
@@ -291,6 +331,10 @@ describe("extension command runtime", () => {
       expect(packages.find((entry) => entry.alias === "todos")?.installed).toBe(true);
       expect(packages.find((entry) => entry.alias === "beads")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "calendar")?.installed).toBe(false);
+      expect(packages.find((entry) => entry.alias === "governance-audit")?.installed).toBe(false);
+      expect(packages.find((entry) => entry.alias === "guide-shell")?.installed).toBe(false);
+      expect(packages.find((entry) => entry.alias === "linked-test-adapters")?.installed).toBe(false);
+      expect(packages.find((entry) => entry.alias === "search-advanced")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "templates")?.installed).toBe(false);
 
       const positionalCatalog = await runExtension("catalog", { project: true, vocabulary: "package" }, { path: context.pmPath });
@@ -303,7 +347,7 @@ describe("extension command runtime", () => {
       const wildcardInstall = await runExtension("*", { install: true, project: true }, { path: context.pmPath });
       expect(wildcardInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 4,
+        installed_count: 8,
         packages: [
           {
             alias: "beads",
@@ -313,6 +357,26 @@ describe("extension command runtime", () => {
           {
             alias: "calendar",
             extension: { name: "builtin-calendar" },
+            activated: true,
+          },
+          {
+            alias: "governance-audit",
+            extension: { name: "builtin-governance-audit" },
+            activated: true,
+          },
+          {
+            alias: "guide-shell",
+            extension: { name: "builtin-guide-shell" },
+            activated: true,
+          },
+          {
+            alias: "linked-test-adapters",
+            extension: { name: "builtin-linked-test-adapters" },
+            activated: true,
+          },
+          {
+            alias: "search-advanced",
+            extension: { name: "builtin-search-advanced" },
             activated: true,
           },
           {
@@ -331,7 +395,7 @@ describe("extension command runtime", () => {
       const allInstall = await runExtension("all", { install: true, project: true }, { path: context.pmPath });
       expect(allInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 4,
+        installed_count: 8,
       });
     });
   });

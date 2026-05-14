@@ -35,9 +35,6 @@ describe("contracts command runtime", () => {
     expect(result.selected.runtime_only).toBe(false);
     expect(result.actions ?? []).toContain("contracts");
     expect(result.actions ?? []).toContain("aggregate");
-    expect(result.actions ?? []).toContain("dedupe-audit");
-    expect(result.actions ?? []).toContain("normalize");
-    expect(result.actions ?? []).toContain("guide");
     expect(result.actions ?? []).toContain("extension-reload");
     expect(result.actions ?? []).toContain("package-install");
     expect(result.actions ?? []).toContain("package-catalog");
@@ -45,9 +42,6 @@ describe("contracts command runtime", () => {
     expect(result.actions ?? []).toContain("upgrade");
     expect(result.commands).toContain("contracts");
     expect(result.commands).toContain("aggregate");
-    expect(result.commands).toContain("dedupe-audit");
-    expect(result.commands).toContain("normalize");
-    expect(result.commands).toContain("guide");
     expect(result.commands).toContain("package");
     expect(result.commands).toContain("packages");
     expect(result.commands).toContain("install");
@@ -216,11 +210,6 @@ describe("contracts command runtime", () => {
       expect.arrayContaining([expect.objectContaining({ flag: "--body" })]),
     );
 
-    const completionFlags = await runContracts({ command: "completion", flagsOnly: true }, GLOBAL_OPTIONS);
-    expect(completionFlags.command_flags?.[0]?.flags).toEqual(
-      expect.arrayContaining([expect.objectContaining({ flag: "--eager-tags" })]),
-    );
-
     const createFlags = await runContracts({ command: "create", flagsOnly: true }, GLOBAL_OPTIONS);
     const createAcceptanceFlag = createFlags.command_flags?.[0]?.flags.find((entry) => entry.flag === "--acceptance-criteria");
     expect(createAcceptanceFlag?.aliases).toEqual(expect.arrayContaining(["--acceptance_criteria"]));
@@ -257,7 +246,6 @@ describe("contracts command runtime", () => {
         flags: ["--acceptance-criteria", "--definition-of-ready", "--why-now", "--customer-impact"],
       },
       { command: "comments", flags: ["--add", "--stdin", "--file", "--allow-audit-comment"] },
-      { command: "comments-audit", flags: ["--assignee-filter", "--limit-items", "--limit", "--full-history", "--latest"] },
       { command: "notes", flags: ["--add", "--limit", "--author", "--message", "--allow-audit-note", "--allow-audit-comment", "--force"] },
       {
         command: "learnings",
@@ -266,7 +254,6 @@ describe("contracts command runtime", () => {
       { command: "files", flags: ["--add", "--add-glob", "--list", "--append-stable", "--validate-paths", "--audit"] },
       { command: "docs", flags: ["--add", "--add-glob", "--validate-paths", "--audit"] },
       { command: "history", flags: ["--limit", "--diff", "--verify"] },
-      { command: "guide", flags: ["--list", "--format", "--depth"] },
       { command: "config", flags: ["--criterion", "--clear-criteria", "--format", "--policy"] },
       { command: "restore", flags: ["--author", "--message", "--force"] },
       { command: "delete", flags: ["--author", "--message", "--force"] },
@@ -301,7 +288,6 @@ describe("contracts command runtime", () => {
       { command: "package", flags: ["--init", "--install", "--doctor", "--catalog", "--runtime-probe", "--strict-exit"] },
       { command: "install", flags: ["--gh", "--github", "--ref", "--project", "--global"] },
       { command: "upgrade", flags: ["--dry-run", "--cli-only", "--packages-only", "--repair", "--tag"] },
-      { command: "test-runs", flags: ["--status", "--limit", "--stream", "--tail", "--force", "--author"] },
       {
         command: "update-many",
         flags: [
@@ -314,18 +300,6 @@ describe("contracts command runtime", () => {
           "--clear-docs",
           "--clear-events",
           "--allow-audit-update",
-        ],
-      },
-      {
-        command: "normalize",
-        flags: [
-          "--filter-status",
-          "--dry-run",
-          "--apply",
-          "--author",
-          "--message",
-          "--allow-audit-update",
-          "--force",
         ],
       },
       {
@@ -376,12 +350,6 @@ describe("contracts command runtime", () => {
       ]),
     );
 
-    const testRunsListAction = await runContracts({ action: "test-runs-list", flagsOnly: true }, GLOBAL_OPTIONS);
-    expect(testRunsListAction.commands).toEqual(["test-runs"]);
-    expect(testRunsListAction.command_flags?.map((entry) => entry.command)).toEqual(["test-runs"]);
-    expect(testRunsListAction.command_flags?.[0]?.flags).toEqual(
-      expect.arrayContaining([expect.objectContaining({ flag: "--status" }), expect.objectContaining({ flag: "--tail" })]),
-    );
   });
 
   it("rejects conflicting contracts projection flags", async () => {

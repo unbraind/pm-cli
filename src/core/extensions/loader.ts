@@ -2898,7 +2898,14 @@ export async function runCommandHandler(
       result,
       warnings: [],
     };
-  } catch {
+  } catch (error: unknown) {
+    const exitCode =
+      typeof error === "object" && error !== null && "exitCode" in error
+        ? (error as { exitCode?: unknown }).exitCode
+        : undefined;
+    if (typeof exitCode === "number" && Number.isFinite(exitCode)) {
+      throw error;
+    }
     return {
       handled: false,
       result: null,

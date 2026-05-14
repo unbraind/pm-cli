@@ -1,0 +1,29 @@
+id: pm-zjuv
+title: Extract guide and completion UX into installable package
+description: Move guide topic rendering and shell completion generation out of bare core into an installable pm-guide-shell package while keeping minimal core help and runtime extension discoverability.
+type: Task
+status: closed
+priority: 0
+tags[6]: completion,guide,packages,pm-cli,refactor,sdk
+created_at: "2026-05-14T07:59:09.315Z"
+updated_at: "2026-05-14T10:10:25.304Z"
+author: codex-package-refactor
+acceptance_criteria: Bare core omits guide/completion command surfaces by default; installing package restores commands and contracts; docs/tests validate shell completion and guide output parity.
+parent: pm-59gj
+comments[3]{created_at,author,text}:
+  "2026-05-14T07:59:09.315Z",codex-package-refactor,"Duplicate check evidence: ran pm context --limit 10, pm search guide completion package extraction bare core --limit 20, pm list-open --parent pm-59gj --limit 30, and pm list-in-progress --parent pm-59gj --limit 30; no open child under pm-59gj covered guide/completion extraction scope."
+  "2026-05-14T08:27:38.049Z",codex-agent,"Progress 2026-05-14: bare-core pruning removed guide and completion command registration from src/cli/register-list-query.ts and src/cli/register-operations.ts, and adjusted release-readiness coverage to verify package-owned defaults with install-gated calendar behavior. Validation: pnpm build and node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts passed."
+  "2026-05-14T10:10:23.858Z",codex-package-refactor,"Completion/guide extraction finalized: package-owned completion now merges runtime schema flags and statuses from settings, unknown-shell exits preserve usage semantics, and docs-skills release gate now validates guide topics against runtime package command contracts in an isolated temp project."
+files[7]{path,scope,note}:
+  packages/pm-guide-shell/extensions/guide-shell/index.ts,project,guide-shell package command registration
+  packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,guide-shell runtime resolves guide/completion via sdk runtime plus schema-derived completion flags
+  scripts/release/docs-skills-gate.mjs,project,release docs gate now validates guide topics via installed package runtime in isolated temp PM_PATH
+  src/cli/register-list-query.ts,project,removed guide core command registration
+  src/cli/register-operations.ts,project,removed completion/completion-tags core command registration
+  src/core/extensions/loader.ts,project,extension command handler rethrows typed usage/not-found errors
+  tests/unit/completion-command.spec.ts,project,completion package tests install guide-shell and validate runtime/custom-field flags
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/contracts-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: guide and completion UX extracted to pm-guide-shell package with runtime parity
+body: ""

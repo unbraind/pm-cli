@@ -38,6 +38,7 @@ async function seedRuntimeCommandStubs(packageRoot: string): Promise<void> {
   const beadsPackageRoot = path.join(packageRoot, "packages", "pm-beads");
   const calendarPackageRoot = path.join(packageRoot, "packages", "pm-calendar");
   const todosPackageRoot = path.join(packageRoot, "packages", "pm-todos");
+  const sdkRuntimeRoot = path.join(packageRoot, "dist", "sdk");
   const beadsRuntimeRoot = path.join(beadsPackageRoot, "extensions", "beads");
   const calendarRuntimeRoot = path.join(calendarPackageRoot, "extensions", "calendar");
   const todosRuntimeRoot = path.join(todosPackageRoot, "extensions", "todos");
@@ -62,6 +63,55 @@ async function seedRuntimeCommandStubs(packageRoot: string): Promise<void> {
   await mkdir(beadsRuntimeRoot, { recursive: true });
   await mkdir(calendarRuntimeRoot, { recursive: true });
   await mkdir(todosRuntimeRoot, { recursive: true });
+  await mkdir(sdkRuntimeRoot, { recursive: true });
+  await writeFile(
+    path.join(sdkRuntimeRoot, "runtime.js"),
+    `export async function runCalendar(options, global) {
+  const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
+  calls.push({ kind: "calendar", options, global });
+  globalThis.${RUNTIME_CALLS_KEY} = calls;
+  return {
+    view: options?.view ?? "agenda",
+    output_default: "markdown",
+    now: "2026-04-02T00:00:00.000Z",
+    anchor: "2026-04-02T00:00:00.000Z",
+    range: {
+      start: null,
+      end: null,
+      period_start: null,
+      period_end: null,
+      full_period: false,
+      past: false,
+      from: null,
+      to: null,
+    },
+    filters: {},
+    summary: {
+      events: 0,
+      items: 0,
+      deadlines: 0,
+      reminders: 0,
+      scheduled: 0,
+      by_kind: { deadline: 0, reminder: 0, event: 0 },
+      by_type: {},
+      by_status: {},
+      recurring_events: 0,
+    },
+    events: [],
+    days: [],
+  };
+}
+
+export function renderCalendarMarkdown() {
+  return "# package calendar";
+}
+
+export function resolveCalendarOutputFormat(options) {
+  return options?.format === "json" ? "json" : "markdown";
+}
+`,
+    "utf8",
+  );
   await writeFile(
     path.join(beadsRuntimeRoot, "runtime.js"),
     `export async function runBeadsImport(options, global) {

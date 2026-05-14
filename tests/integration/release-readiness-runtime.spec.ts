@@ -105,17 +105,14 @@ const CORE_COMMANDS = [
   "list-blocked",
   "list-closed",
   "list-canceled",
-  "calendar",
   "context",
   "search",
-  "reindex",
   "get",
   "history",
   "activity",
   "restore",
   "update",
   "update-many",
-  "normalize",
   "close",
   "delete",
   "append",
@@ -127,7 +124,6 @@ const CORE_COMMANDS = [
   "deps",
   "test",
   "test-all",
-  "test-runs",
   "stats",
   "health",
   "validate",
@@ -138,7 +134,6 @@ const CORE_COMMANDS = [
   "start-task",
   "pause-task",
   "close-task",
-  "completion",
 ];
 
 const REQUIRED_CREATE_FLAGS = [
@@ -345,7 +340,6 @@ const REQUIRED_CALENDAR_FLAGS = [
   "--to",
   "--past",
   "--full-period",
-  "--full_period",
   "--type",
   "--tag",
   "--priority",
@@ -699,21 +693,19 @@ describe("release readiness runtime coverage", () => {
     });
   });
 
-  it("keeps normalize help aligned with governance normalization flags and aliases", async () => {
+  it("keeps normalize package-owned by default", async () => {
     await withTempPmPath(async (context) => {
       const help = context.runCli(["normalize", "--help"]);
-      expect(help.code).toBe(0);
-      for (const flag of REQUIRED_NORMALIZE_FLAGS) {
-        expect(help.stdout).toContain(flag);
-      }
-      expect(help.stdout).toContain("--filter-assignee_filter");
-      expect(help.stdout).toContain("--allow_audit_update");
-      expect(help.stdout).toContain("dry-run plans");
+      expect(help.code).toBe(2);
+      expect(help.stderr).toContain("Unknown command normalize");
     });
   });
 
   it("keeps calendar help aligned with view/filter/output flags", async () => {
     await withTempPmPath(async (context) => {
+      const installCalendar = context.runCli(["install", "calendar", "--project", "--json"], { expectJson: true });
+      expect(installCalendar.code).toBe(0);
+
       const help = context.runCli(["calendar", "--help"]);
       expect(help.code).toBe(0);
       for (const flag of REQUIRED_CALENDAR_FLAGS) {
@@ -805,12 +797,8 @@ describe("release readiness runtime coverage", () => {
       expect(commentsHelp.stdout).not.toContain("Add one comment entry (default: [])");
 
       const commentsAuditHelp = context.runCli(["comments-audit", "--help"]);
-      expect(commentsAuditHelp.code).toBe(0);
-      for (const flag of REQUIRED_COMMENTS_AUDIT_FLAGS) {
-        expect(commentsAuditHelp.stdout).toContain(flag);
-      }
-      expect(commentsAuditHelp.stdout).toContain("Usage: pm comments-audit [options]");
-      expect(commentsAuditHelp.stdout).toContain("Audit latest comments or full comment history across filtered items.");
+      expect(commentsAuditHelp.code).toBe(2);
+      expect(commentsAuditHelp.stderr).toContain("Unknown command comments-audit");
 
       const notesHelp = context.runCli(["notes", "--help"]);
       expect(notesHelp.code).toBe(0);
@@ -897,13 +885,22 @@ describe("release readiness runtime coverage", () => {
     });
   });
 
-  it("defaults bare test-runs command to list output", async () => {
+  it("requires linked-test-adapters package for test-runs command surface", async () => {
     await withTempPmPath(async (context) => {
-      const result = context.runCli(["test-runs", "--json"], { expectJson: true });
-      expect(result.code).toBe(0);
-      expect(result.stdout.trim().length).toBeGreaterThan(0);
-      expect(result.stderr.trim()).toBe("");
-      expect(result.json).toMatchObject({
+      const bare = context.runCli(["test-runs", "--json"]);
+      expect(bare.code).toBe(2);
+      expect(bare.stderr).toContain("Unknown command test-runs");
+
+      const installLinkedAdapters = context.runCli(["install", "linked-test-adapters", "--project", "--json"], {
+        expectJson: true,
+      });
+      expect(installLinkedAdapters.code).toBe(0);
+
+      const packaged = context.runCli(["test-runs", "--json"], { expectJson: true });
+      expect(packaged.code).toBe(0);
+      expect(packaged.stdout.trim().length).toBeGreaterThan(0);
+      expect(packaged.stderr.trim()).toBe("");
+      expect(packaged.json).toMatchObject({
         runs: [],
         count: 0,
         filters: {},
@@ -1226,6 +1223,9 @@ describe("release readiness runtime coverage", () => {
       expect(listResult.code).toBe(0);
       expectTopLevelKeyOrder(listResult.json, ["items", "count", "filters", "projection", "sorting", "now"]);
 
+      const installCalendar = context.runCli(["install", "calendar", "--project", "--json"], { expectJson: true });
+      expect(installCalendar.code).toBe(0);
+
       const calendarResult = context.runCli(["calendar", "--json", "--view", "agenda", "--limit", "20"], { expectJson: true });
       expect(calendarResult.code).toBe(0);
       expectTopLevelKeyOrder(calendarResult.json, ["view", "output_default", "now", "anchor", "range", "filters", "summary", "events", "days"]);
@@ -1249,7 +1249,7 @@ describe("release readiness runtime coverage", () => {
         "agenda",
       ]);
 
-      const searchResult = context.runCli(["search", "--mode", "keyword", "--limit", "20", "runtime", "--json"], {
+      const searchResult = context.runCli(["search", "--limit", "20", "runtime", "--json"], {
         expectJson: true,
       });
       expect(searchResult.code).toBe(0);
@@ -1262,9 +1262,27 @@ describe("release readiness runtime coverage", () => {
       expect(typeof getJson.body).toBe("string");
       expect(getJson.item).not.toHaveProperty("body");
 
-      const reindexResult = context.runCli(["reindex", "--mode", "keyword", "--json"], { expectJson: true });
-      expect(reindexResult.code).toBe(0);
-      expectTopLevelKeyOrder(reindexResult.json, [
+      const reindexResult = context.runCli(["reindex", "--mode", "keyword", "--json"]);
+      expect(reindexResult.code).toBe(2);
+      expect(reindexResult.stderr).toContain("Unknown command reindex");
+
+      const installSearchAdvanced = context.runCli(["install", "search-advanced", "--project", "--json"], {
+        expectJson: true,
+      });
+      expect(installSearchAdvanced.code).toBe(0);
+
+      const searchAdvancedResult = context.runCli(
+        ["search-advanced", "--mode", "keyword", "--limit", "20", "runtime", "--json"],
+        {
+          expectJson: true,
+        },
+      );
+      expect(searchAdvancedResult.code).toBe(0);
+      expectTopLevelKeyOrder(searchAdvancedResult.json, ["query", "mode", "items", "count", "filters", "projection", "now"]);
+
+      const reindexPackageResult = context.runCli(["reindex", "--mode", "keyword", "--json"], { expectJson: true });
+      expect(reindexPackageResult.code).toBe(0);
+      expectTopLevelKeyOrder(reindexPackageResult.json, [
         "ok",
         "mode",
         "total_items",

@@ -1,0 +1,46 @@
+{
+  "name": "@unbrained/pm-package-governance-audit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "First-party pm package for governance audit and normalization workflows.",
+  "homepage": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-governance-audit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unbraind/pm-cli.git",
+    "directory": "packages/pm-governance-audit"
+  },
+  "bugs": {
+    "url": "https://github.com/unbraind/pm-cli/issues"
+  },
+  "keywords": [
+    "pm-package",
+    "project-management",
+    "governance",
+    "audit",
+    "normalize"
+  ],
+  "pm": {
+    "aliases": [
+      "governance-audit"
+    ],
+    "extensions": [
+      "extensions/governance-audit"
+    ],
+    "catalog": {
+      "display_name": "Governance Audit",
+      "category": "governance",
+      "summary": "Run dedupe audits, comments audits, and normalize sweeps as package-owned workflows.",
+      "tags": [
+        "governance",
+        "audit",
+        "normalize"
+      ],
+      "links": {
+        "docs": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-governance-audit#readme",
+        "repository": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-governance-audit",
+        "report": "https://github.com/unbraind/pm-cli/issues"
+      }
+    }
+  }
+}

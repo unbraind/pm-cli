@@ -22,18 +22,14 @@ import {
   runActivity,
   runAggregate,
   runAppend,
-  runCalendar,
   runClaim,
   runClose,
   runComments,
-  runCommentsAudit,
   runContracts,
   runContext,
   runCreate,
-  runCompletion,
   runConfig,
   runDelete,
-  runDedupeAudit,
   runDeps,
   runDocs,
   runExtension,
@@ -41,28 +37,17 @@ import {
   runFilesDiscover,
   runGc,
   runGet,
-  runGuide,
   runHealth,
   runHistory,
   runInit,
   runLearnings,
   runList,
-  runNormalize,
   runNotes,
-  runReindex,
   runRelease,
   runSearch,
   runStats,
-  runTemplatesList,
-  runTemplatesSave,
-  runTemplatesShow,
   runTest,
   runTestAll,
-  runTestRunsList,
-  runTestRunsLogs,
-  runTestRunsResume,
-  runTestRunsStatus,
-  runTestRunsStop,
   runUpdate,
   runUpdateMany,
   runUpgrade,
@@ -139,7 +124,7 @@ const TOOLS: ToolDefinition[] = [
         action: {
           type: "string",
           description:
-            "Operation name: init, context, list, get, search, create, update, delete, claim, release, close, comments, notes, learnings, files, files-discover, docs, deps, test, test-all, validate, health, contracts, completion, config, calendar, activity, aggregate, dedupe-audit, normalize, reindex, extension, extension-reload, package, package-install, package-catalog, install, upgrade, history, stats, append, update-many, comments-audit, gc, templates-list, templates-save, templates-show, test-runs-list, test-runs-status, test-runs-logs, test-runs-stop, test-runs-resume.",
+            "Operation name: init, context, list, get, search, create, update, delete, claim, release, close, comments, notes, learnings, files, files-discover, docs, deps, test, test-all, validate, health, contracts, config, activity, aggregate, extension, extension-reload, package, package-install, package-catalog, install, upgrade, history, stats, append, update-many, gc. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
         },
         id: idSchema,
         query: { type: "string", description: "Search query for action=search." },
@@ -230,11 +215,6 @@ const TOOLS: ToolDefinition[] = [
   {
     name: "pm_contracts",
     description: "Inspect pm command, flag, schema, and availability contracts.",
-    inputSchema: objectSchema({ options: { type: "object" } }),
-  },
-  {
-    name: "pm_guide",
-    description: "Read progressive-disclosure pm guide topics.",
     inputSchema: objectSchema({ options: { type: "object" } }),
   },
 ];
@@ -418,14 +398,6 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runHealth(global, options);
     case "contracts":
       return runContracts(options, global);
-    case "completion":
-      return runCompletion(
-        readRequiredString(args, "shell"),
-        Array.isArray(options.itemTypes) ? options.itemTypes.map(String) : undefined,
-        Array.isArray(options.tags) ? options.tags.map(String) : undefined,
-        options.eagerTags === true,
-        asRecord(options.runtime) as never,
-      );
     case "config":
       return runConfig(
         readString(args, "scope") ?? readString(options, "scope") ?? "project",
@@ -434,18 +406,10 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
         options,
         global,
       );
-    case "calendar":
-      return runCalendar(options, global);
     case "activity":
       return runActivity(options, global);
     case "aggregate":
       return runAggregate(options, global);
-    case "dedupe-audit":
-      return runDedupeAudit(options, global);
-    case "normalize":
-      return runNormalize(options as never, global);
-    case "reindex":
-      return runReindex(options, global);
     case "extension":
       return runExtension(readString(args, "target") ?? readString(options, "target"), options, global);
     case "extension-reload":
@@ -473,28 +437,8 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runAppend(id ?? readRequiredString(options, "id"), options as never, global);
     case "update-many":
       return runUpdateMany(options as never, global);
-    case "comments-audit":
-      return runCommentsAudit(options, global);
     case "gc":
       return runGc(global, options);
-    case "templates-list":
-      return runTemplatesList(global);
-    case "templates-save":
-      return runTemplatesSave(readRequiredString(options, "name"), options, global);
-    case "templates-show":
-      return runTemplatesShow(readRequiredString(options, "name"), global);
-    case "test-runs-list":
-      return runTestRunsList(options, global);
-    case "test-runs-status":
-      return runTestRunsStatus(readRequiredString(args, "runId"), global);
-    case "test-runs-logs":
-      return runTestRunsLogs(readRequiredString(args, "runId"), options, global);
-    case "test-runs-stop":
-      return runTestRunsStop(readRequiredString(args, "runId"), options, global);
-    case "test-runs-resume":
-      return runTestRunsResume(readRequiredString(args, "runId"), options, global);
-    case "guide":
-      return runGuide(options, global);
     default:
       return runDynamicExtensionAction(action, args, options, global);
   }
@@ -518,7 +462,6 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_validate: (args) => runAction({ ...args, action: "validate" }),
   pm_health: (args) => runAction({ ...args, action: "health" }),
   pm_contracts: (args) => runAction({ ...args, action: "contracts" }),
-  pm_guide: (args) => runAction({ ...args, action: "guide" }),
 };
 
 function resultContent(result: unknown): Record<string, unknown> {
@@ -560,8 +503,8 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
       instructions:
         "You have access to native pm CLI tools for git-based project management. " +
         "Use pm_context or pm_search before creating new work. " +
-        "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_update, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_test, pm_validate, pm_health, pm_contracts, pm_guide) over pm_run when they cover the operation. " +
-        "Use pm_run with an explicit action for calendar, activity, aggregate, dedupe-audit, normalize, reindex, history, stats, append, notes, learnings, test-all, gc, and template operations. " +
+        "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_update, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_test, pm_validate, pm_health, pm_contracts) over pm_run when they cover the operation. " +
+        "Use pm_run with an explicit action for package-owned operations (calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume), plus activity, aggregate, history, stats, append, notes, learnings, test-all, and gc. " +
         "Set author to 'claude-code-agent' on all mutations. " +
         "Do not pass path during real repository tracking — only pass path for sandbox or test runs.",
     };

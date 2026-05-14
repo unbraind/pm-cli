@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { runCreate } from "../../src/cli/commands/create.js";
 import { runTemplatesList, runTemplatesSave, runTemplatesShow } from "../../src/cli/commands/templates.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
-import { PmCliError } from "../../src/core/shared/errors.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -74,6 +72,9 @@ describe("templates command flows", () => {
 
   it("accepts runtime create field flags when saving templates via CLI", async () => {
     await withTempPmPath(async (context) => {
+      const install = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+
       const settings = await readSettings(context.pmPath);
       settings.schema.fields = [
         ...(settings.schema.fields ?? []),
@@ -100,93 +101,175 @@ describe("templates command flows", () => {
 
   it("applies template defaults and lets explicit create flags override deterministically", async () => {
     await withTempPmPath(async (context) => {
-      await runTemplatesSave(
-        "task-defaults",
-        {
-          type: "Task",
-          status: "blocked",
-          priority: "2",
-          tags: "templated,alpha",
-          body: "template body",
-          deadline: "2026-03-20T00:00:00.000Z",
-          estimatedMinutes: "30",
-          acceptanceCriteria: "template acceptance",
-          author: "template-author",
-          message: "template message",
-          assignee: "template-assignee",
-          comment: ["author=template-author,text=template comment"],
-          note: ["author=template-author,text=template note"],
-          learning: ["author=template-author,text=template learning"],
-          file: ["path=src/cli/main.ts,scope=project,note=template file"],
-          test: ["command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=120"],
-          doc: ["path=README.md,scope=project,note=template doc"],
-          dep: ["id=dep-alpha,kind=related,created_at=now"],
-          reminder: ["at=2026-03-10T10:00:00.000Z,text=template reminder"],
-        },
-        { path: context.pmPath },
-      );
+      const install = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
 
-      const created = await runCreate(
-        {
-          title: "templated item",
-          description: "templated description",
-          type: "Task",
-          template: "task-defaults",
-          status: "open",
-          tags: "explicit-tag",
-        },
-        { path: context.pmPath },
+      const save = context.runCli(
+        [
+          "templates",
+          "save",
+          "task-defaults",
+          "--type",
+          "Task",
+          "--status",
+          "blocked",
+          "--priority",
+          "2",
+          "--tags",
+          "templated,alpha",
+          "--body",
+          "template body",
+          "--deadline",
+          "2026-03-20T00:00:00.000Z",
+          "--estimate",
+          "30",
+          "--acceptance-criteria",
+          "template acceptance",
+          "--author",
+          "template-author",
+          "--message",
+          "template message",
+          "--assignee",
+          "template-assignee",
+          "--comment",
+          "author=template-author,text=template comment",
+          "--note",
+          "author=template-author,text=template note",
+          "--learning",
+          "author=template-author,text=template learning",
+          "--file",
+          "path=src/cli/main.ts,scope=project,note=template file",
+          "--test",
+          "command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=120",
+          "--doc",
+          "path=README.md,scope=project,note=template doc",
+          "--dep",
+          "id=dep-alpha,kind=related,created_at=now",
+          "--reminder",
+          "at=2026-03-10T10:00:00.000Z,text=template reminder",
+          "--json",
+        ],
+        { expectJson: true },
       );
+      expect(save.code).toBe(0);
 
-      expect(created.item.status).toBe("open");
-      expect(created.item.priority).toBe(2);
-      expect(created.item.tags).toEqual(["explicit-tag"]);
-      expect(created.item.dependencies).toEqual(
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "templated item",
+          "--description",
+          "templated description",
+          "--type",
+          "Task",
+          "--template",
+          "task-defaults",
+          "--create-mode",
+          "progressive",
+          "--status",
+          "open",
+          "--tags",
+          "explicit-tag",
+          "--author",
+          "template-test",
+          "--message",
+          "create from template",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const createdItem = (created.json as { item: Record<string, unknown> }).item;
+
+      expect(createdItem.status).toBe("open");
+      expect(createdItem.priority).toBe(2);
+      expect(createdItem.tags).toEqual(["explicit-tag"]);
+      expect(createdItem.dependencies).toEqual(
         expect.arrayContaining([expect.objectContaining({ id: "pm-dep-alpha", kind: "related" })]),
       );
-      expect(created.item.reminders).toEqual([{ at: "2026-03-10T10:00:00.000Z", text: "template reminder" }]);
+      expect(createdItem.reminders).toEqual([{ at: "2026-03-10T10:00:00.000Z", text: "template reminder" }]);
     });
   });
 
   it("supports explicit repeatable overrides when using templates", async () => {
     await withTempPmPath(async (context) => {
-      await runTemplatesSave(
-        "seeded-dependencies",
-        {
-          type: "Task",
-          status: "open",
-          priority: "1",
-          tags: "templated",
-          body: "template body",
-          deadline: "2026-03-20T00:00:00.000Z",
-          estimatedMinutes: "30",
-          acceptanceCriteria: "template acceptance",
-          author: "template-author",
-          message: "template message",
-          assignee: "template-assignee",
-          comment: ["author=template-author,text=template comment"],
-          note: ["author=template-author,text=template note"],
-          learning: ["author=template-author,text=template learning"],
-          file: ["path=src/cli/main.ts,scope=project,note=template file"],
-          test: ["command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=120"],
-          doc: ["path=README.md,scope=project,note=template doc"],
-          dep: ["id=dep-alpha,kind=related,created_at=now"],
-        },
-        { path: context.pmPath },
-      );
+      const install = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
 
-      const created = await runCreate(
-        {
-          title: "templated override item",
-          description: "templated override description",
-          type: "Task",
-          template: "seeded-dependencies",
-          dep: ["id=dep-override,kind=blocks,created_at=now"],
-        },
-        { path: context.pmPath },
+      const save = context.runCli(
+        [
+          "templates",
+          "save",
+          "seeded-dependencies",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "templated",
+          "--body",
+          "template body",
+          "--deadline",
+          "2026-03-20T00:00:00.000Z",
+          "--estimate",
+          "30",
+          "--acceptance-criteria",
+          "template acceptance",
+          "--author",
+          "template-author",
+          "--message",
+          "template message",
+          "--assignee",
+          "template-assignee",
+          "--comment",
+          "author=template-author,text=template comment",
+          "--note",
+          "author=template-author,text=template note",
+          "--learning",
+          "author=template-author,text=template learning",
+          "--file",
+          "path=src/cli/main.ts,scope=project,note=template file",
+          "--test",
+          "command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=120",
+          "--doc",
+          "path=README.md,scope=project,note=template doc",
+          "--dep",
+          "id=dep-alpha,kind=related,created_at=now",
+          "--json",
+        ],
+        { expectJson: true },
       );
+      expect(save.code).toBe(0);
 
-      expect(created.item.dependencies).toEqual(
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "templated override item",
+          "--description",
+          "templated override description",
+          "--type",
+          "Task",
+          "--template",
+          "seeded-dependencies",
+          "--create-mode",
+          "progressive",
+          "--dep",
+          "id=dep-override,kind=blocks,created_at=now",
+          "--author",
+          "template-test",
+          "--message",
+          "create with override deps",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const createdItem = (created.json as { item: Record<string, unknown> }).item;
+
+      expect(createdItem.dependencies).toEqual(
         expect.arrayContaining([expect.objectContaining({ id: "pm-dep-override", kind: "blocks" })]),
       );
     });
@@ -194,19 +277,30 @@ describe("templates command flows", () => {
 
   it("fails when template does not exist", async () => {
     await withTempPmPath(async (context) => {
-      await expect(
-        runCreate(
-          {
-            title: "missing template item",
-            description: "missing template description",
-            type: "Task",
-            template: "does-not-exist",
-          },
-          { path: context.pmPath },
-        ),
-      ).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.NOT_FOUND,
-      });
+      const install = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+
+      const missingTemplate = context.runCli([
+        "create",
+        "--title",
+        "missing template item",
+        "--description",
+        "missing template description",
+        "--type",
+        "Task",
+        "--template",
+        "does-not-exist",
+        "--create-mode",
+        "progressive",
+        "--author",
+        "template-test",
+        "--message",
+        "missing template",
+        "--json",
+      ]);
+      expect(missingTemplate.code).toBe(EXIT_CODE.NOT_FOUND);
+      const parsedError = JSON.parse(missingTemplate.stderr) as { detail?: string };
+      expect(parsedError.detail).toContain('Template "does-not-exist" not found');
     });
   });
 });

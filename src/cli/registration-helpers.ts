@@ -26,13 +26,12 @@ import {
   readStringArrayFromCommanderOptions,
 } from "../sdk/cli-contracts.js";
 import type {
-  CalendarOptions,
   ContextOptions,
   CreateCommandOptions,
   AggregateOptions,
-  DedupeAuditOptions,
   ListOptions,
 } from "./commands/index.js";
+import type { CalendarOptions } from "./commands/calendar.js";
 import type { runList, runActivity } from "./commands/index.js";
 
 export {
@@ -474,25 +473,6 @@ export function normalizeAggregateOptions(options: Record<string, unknown>): Agg
     parent: readListOptionString(options, "parent"),
     sprint: readListOptionString(options, "sprint"),
     release: readListOptionString(options, "release"),
-  };
-}
-
-export function normalizeDedupeAuditOptions(options: Record<string, unknown>): DedupeAuditOptions {
-  return {
-    mode: typeof options.mode === "string" ? options.mode : undefined,
-    status: typeof options.status === "string" ? options.status : undefined,
-    type: readListOptionString(options, "type"),
-    tag: readListOptionString(options, "tag"),
-    priority: readListOptionString(options, "priority"),
-    deadlineBefore: readListOptionString(options, "deadlineBefore"),
-    deadlineAfter: readListOptionString(options, "deadlineAfter"),
-    assignee: readListOptionString(options, "assignee"),
-    assigneeFilter: readListOptionString(options, "assigneeFilter"),
-    parent: readListOptionString(options, "parent"),
-    sprint: readListOptionString(options, "sprint"),
-    release: readListOptionString(options, "release"),
-    limit: readListOptionString(options, "limit"),
-    threshold: typeof options.threshold === "string" ? options.threshold : undefined,
   };
 }
 

@@ -1,0 +1,47 @@
+{
+  "name": "@unbrained/pm-package-linked-test-adapters",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "First-party pm package for optional linked-test run management adapters and reporters.",
+  "homepage": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-linked-test-adapters#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unbraind/pm-cli.git",
+    "directory": "packages/pm-linked-test-adapters"
+  },
+  "bugs": {
+    "url": "https://github.com/unbraind/pm-cli/issues"
+  },
+  "keywords": [
+    "pm-package",
+    "project-management",
+    "linked-tests",
+    "background-runs",
+    "test-runs"
+  ],
+  "pm": {
+    "aliases": [
+      "linked-test-adapters"
+    ],
+    "extensions": [
+      "extensions/linked-test-adapters"
+    ],
+    "catalog": {
+      "display_name": "Linked Test Adapters",
+      "category": "testing",
+      "summary": "Restore optional linked-test run management/reporting command surfaces.",
+      "tags": [
+        "tests",
+        "linked-tests",
+        "background",
+        "reporting"
+      ],
+      "links": {
+        "docs": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-linked-test-adapters#readme",
+        "repository": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-linked-test-adapters",
+        "report": "https://github.com/unbraind/pm-cli/issues"
+      }
+    }
+  }
+}

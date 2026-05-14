@@ -104,7 +104,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         action: "install",
         details: {
           installed_all: true,
-          installed_count: 4,
+          installed_count: 8,
         },
       });
 
@@ -155,7 +155,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           action: "install",
           details: {
             installed_all: true,
-            installed_count: 4,
+            installed_count: 8,
           },
         });
       }
@@ -1377,6 +1377,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
   it("supports calendar views, markdown default output, and reminder events", async () => {
     await withTempPmPath(async (context) => {
+      const installCalendar = context.runCli(["install", "calendar", "--project", "--json"], { expectJson: true });
+      expect(installCalendar.code).toBe(0);
+
       const createResult = context.runCli(
         [
           "create",
@@ -2568,31 +2571,12 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       });
       expect(fieldsProjectionJson.items.some((entry) => entry.id === id)).toBe(true);
 
-      const reindexResult = context.runCli(["reindex", "--json"], { expectJson: true });
-      expect(reindexResult.code).toBe(0);
-      const reindexJson = reindexResult.json as {
-        ok: boolean;
-        mode: string;
-        total_items: number;
-        artifacts: { manifest: string; embeddings: string };
-      };
-      expect(reindexJson.ok).toBe(true);
-      expect(reindexJson.mode).toBe("keyword");
-      expect(reindexJson.total_items).toBeGreaterThanOrEqual(1);
-      expect(reindexJson.artifacts).toEqual({
-        manifest: "index/manifest.json",
-        embeddings: "search/embeddings.jsonl",
-      });
-      const manifestPath = path.join(context.pmPath, "index", "manifest.json");
-      const embeddingsPath = path.join(context.pmPath, "search", "embeddings.jsonl");
-      const manifestContents = await readFile(manifestPath, "utf8");
-      expect(manifestContents).toContain('"mode": "keyword"');
-      expect(await readFile(embeddingsPath, "utf8")).toContain(id);
+      const reindexResult = context.runCli(["reindex", "--json"]);
+      expect(reindexResult.code).toBe(2);
+      expect(reindexResult.stderr).toContain("Unknown command reindex");
 
       const claimResult = context.runCli(["claim", id, "--json", "--author", "integration-test"], { expectJson: true });
       expect(claimResult.code).toBe(0);
-      await expect(readFile(manifestPath, "utf8")).rejects.toBeDefined();
-      await expect(readFile(embeddingsPath, "utf8")).rejects.toBeDefined();
 
       const updateResult = context.runCli(
         [
@@ -4544,8 +4528,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const activityResult = context.runCli(["activity", "--json"], { expectJson: true });
       expect(activityResult.code).toBe(0);
 
-      const reindexResult = context.runCli(["reindex", "--json"], { expectJson: true });
-      expect(reindexResult.code).toBe(0);
+      const reindexResult = context.runCli(["reindex", "--json"]);
+      expect(reindexResult.code).toBe(2);
+      expect(reindexResult.stderr).toContain("Unknown command reindex");
 
       const initRewriteResult = context.runCli(["init", "zz-", "--json"], { expectJson: true });
       expect(initRewriteResult.code).toBe(0);
@@ -4560,9 +4545,6 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(lines.filter((line) => line === `read:${id}.jsonl`).length).toBeGreaterThanOrEqual(2);
       expect(lines).toContain("read:settings.json");
       expect(lines).toContain("write:settings:write:settings.json");
-      expect(lines).toContain("write:reindex:manifest:manifest.json");
-      expect(lines).toContain("write:reindex:embeddings:embeddings.jsonl");
-      expect(lines.some((line) => /^index:keyword:\d+$/.test(line))).toBe(true);
     });
   });
 

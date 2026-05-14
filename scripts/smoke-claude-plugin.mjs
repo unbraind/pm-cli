@@ -170,7 +170,7 @@ try {
     "pm_run", "pm_context", "pm_search", "pm_list", "pm_get",
     "pm_create", "pm_update", "pm_claim", "pm_release", "pm_close",
     "pm_comments", "pm_files", "pm_docs", "pm_test",
-    "pm_validate", "pm_health", "pm_contracts", "pm_guide",
+    "pm_validate", "pm_health", "pm_contracts",
   ];
   for (const name of required) {
     if (!toolNames.has(name)) {

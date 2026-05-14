@@ -1,0 +1,48 @@
+{
+  "name": "@unbrained/pm-package-search-advanced",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "First-party pm package for semantic, hybrid, and reindex search workflows.",
+  "homepage": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-search-advanced#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unbraind/pm-cli.git",
+    "directory": "packages/pm-search-advanced"
+  },
+  "bugs": {
+    "url": "https://github.com/unbraind/pm-cli/issues"
+  },
+  "keywords": [
+    "pm-package",
+    "project-management",
+    "search",
+    "reindex",
+    "semantic",
+    "hybrid"
+  ],
+  "pm": {
+    "aliases": [
+      "search-advanced"
+    ],
+    "extensions": [
+      "extensions/search-advanced"
+    ],
+    "catalog": {
+      "display_name": "Advanced Search",
+      "category": "search",
+      "summary": "Enable semantic/hybrid search modes and reindex workflows.",
+      "tags": [
+        "search",
+        "semantic",
+        "hybrid",
+        "reindex"
+      ],
+      "links": {
+        "docs": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-search-advanced#readme",
+        "repository": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-search-advanced",
+        "report": "https://github.com/unbraind/pm-cli/issues"
+      }
+    }
+  }
+}

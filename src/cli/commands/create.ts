@@ -31,12 +31,15 @@ import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../../core/shared/constants.j
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
-import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import {
+  getActiveExtensionRegistrations,
+  runActiveCommandHandler,
+  runActiveOnWriteHooks,
+} from "../../core/extensions/index.js";
 import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extensions/item-fields.js";
 import { locateItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import { loadCreateTemplateOptions } from "./templates.js";
 import {
   normalizeRiskInput,
   normalizeSeverityInput,
@@ -1464,6 +1467,85 @@ function mergeCreateOptionsWithTemplate(
   return merged as CreateCommandOptions;
 }
 
+function normalizeExtensionCommandPath(command: string): string {
+  return command
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((part) => part.length > 0)
+    .join(" ");
+}
+
+function hasTemplatesShowHandler(): boolean {
+  const registrations = getActiveExtensionRegistrations();
+  if (!registrations) {
+    return false;
+  }
+  return registrations.commands.some((entry) => {
+    return entry.action === "templates-show" || normalizeExtensionCommandPath(entry.command) === "templates show";
+  });
+}
+
+function readTemplateOptionsFromRuntimeResult(result: unknown, templateName: string): Record<string, string | string[]> {
+  if (typeof result !== "object" || result === null || !("options" in result)) {
+    throw new PmCliError(
+      `Templates package returned invalid payload for template "${templateName}". Expected an options object.`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+  }
+  const options = (result as { options?: unknown }).options;
+  if (typeof options !== "object" || options === null || Array.isArray(options)) {
+    throw new PmCliError(
+      `Templates package returned invalid options for template "${templateName}".`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+  }
+  const normalized: Record<string, string | string[]> = {};
+  for (const [key, value] of Object.entries(options as Record<string, unknown>)) {
+    if (typeof value === "string") {
+      normalized[key] = value;
+      continue;
+    }
+    if (Array.isArray(value) && value.every((entry) => typeof entry === "string")) {
+      normalized[key] = [...value];
+      continue;
+    }
+    throw new PmCliError(
+      `Templates package returned unsupported option value for "${key}" in template "${templateName}".`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+  }
+  return normalized;
+}
+
+async function loadCreateTemplateOptionsFromRuntime(
+  templateName: string,
+  global: GlobalOptions,
+  pmRoot: string,
+): Promise<Record<string, string | string[]>> {
+  if (!hasTemplatesShowHandler()) {
+    throw new PmCliError(
+      `--template requires the templates package. Install it first (for example: pm install templates --project).`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const handlerResult = await runActiveCommandHandler({
+    command: "templates show",
+    args: [templateName],
+    options: {},
+    global,
+    pm_root: pmRoot,
+  });
+  if (!handlerResult.handled) {
+    const warningSuffix = handlerResult.warnings.length > 0 ? ` (${handlerResult.warnings.join(", ")})` : "";
+    throw new PmCliError(
+      `Unable to resolve template "${templateName}" via templates package. Run "pm templates show ${templateName}" for details.${warningSuffix}`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return readTemplateOptionsFromRuntimeResult(handlerResult.result, templateName);
+}
+
 function ensureInitHasRun(pmRoot: string): Promise<void> {
   return pathExists(getSettingsPath(pmRoot)).then((exists) => {
     if (!exists) {
@@ -1486,7 +1568,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     if (templateName.length === 0) {
       throw new PmCliError("--template must not be empty. Omit --template to disable template usage.", EXIT_CODE.USAGE);
     }
-    const templateOptions = await loadCreateTemplateOptions(pmRoot, templateName);
+    const templateOptions = await loadCreateTemplateOptionsFromRuntime(templateName, global, pmRoot);
     resolvedOptions = normalizeLegacyNoneCreateOptions(mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions));
   }
   if (resolvedOptions.type === undefined) {

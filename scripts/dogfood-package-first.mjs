@@ -52,6 +52,35 @@ function run(label, args, options = {}) {
   }
 }
 
+function runExpectFailure(label, args, expectedExitCode) {
+  const startedAt = Date.now();
+  const completed = spawnSync(process.execPath, [cliPath, "--json", ...args], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    env,
+    maxBuffer: 20 * 1024 * 1024,
+  });
+  const tookMs = Date.now() - startedAt;
+  timings.push({ label, took_ms: tookMs, code: completed.status ?? 1 });
+  if (completed.status !== expectedExitCode) {
+    throw new Error(
+      [
+        `${label} expected exit ${expectedExitCode} but got ${completed.status ?? "unknown"}`,
+        `command: pm --json ${args.join(" ")}`,
+        completed.stdout.trim() ? `stdout:\n${completed.stdout.trim()}` : "",
+        completed.stderr.trim() ? `stderr:\n${completed.stderr.trim()}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+  try {
+    return JSON.parse(completed.stderr);
+  } catch {
+    return null;
+  }
+}
+
 function idFrom(result, label) {
   const id = result?.item?.id ?? result?.id;
   if (typeof id !== "string" || id.length === 0) {
@@ -120,10 +149,22 @@ try {
     "--create-mode",
     "progressive",
   ]);
-  run("calendar", ["calendar", "--view", "week", "--date", "today", "--format", "json"]);
   run("context", ["context", "--limit", "5", "--depth", "standard"]);
-  run("search keyword", ["search", "Dogfood package-first workflow", "--mode", "keyword", "--limit", "5"]);
-  run("reindex keyword", ["reindex", "--mode", "keyword"]);
+  run("search keyword", ["search", "Dogfood package-first workflow", "--limit", "5"]);
+
+  const bareCoreCalendar = runExpectFailure("calendar unavailable before install", [
+    "calendar",
+    "--view",
+    "week",
+    "--date",
+    "today",
+    "--format",
+    "json",
+  ], 2);
+  assert(bareCoreCalendar?.code === "unknown_command", "bare-core calendar failure should be unknown_command");
+
+  const bareCoreReindex = runExpectFailure("reindex unavailable before install", ["reindex", "--mode", "keyword"], 2);
+  assert(bareCoreReindex?.code === "unknown_command", "bare-core reindex failure should be unknown_command");
 
   run("package install beads alias", ["install", "beads", "--project"]);
   run("package install templates alias", ["install", "templates", "--project"]);
@@ -141,6 +182,8 @@ try {
   assert(packageCatalog?.details?.total >= 2, "package catalog did not list bundled first-party packages");
   run("package explore", ["package", "explore", "--project"]);
   run("package doctor", ["package", "doctor", "--project", "--detail", "summary"]);
+  run("calendar after package install", ["calendar", "--view", "week", "--date", "today", "--format", "json"]);
+  run("reindex after package install", ["reindex", "--mode", "keyword"]);
   const templatesSave = run("package command templates save", [
     "templates",
     "save",

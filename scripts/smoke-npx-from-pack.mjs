@@ -78,7 +78,7 @@ function run() {
     };
     runPackedPm(["init", "--defaults", "--author", "pack-smoke", "--json"], commandOptions);
     const installAll = JSON.parse(runPackedPm(["install", "all", "--project", "--json"], commandOptions));
-    if (installAll?.details?.installed_all !== true || installAll?.details?.installed_count < 4) {
+    if (installAll?.details?.installed_all !== true || installAll?.details?.installed_count < 8) {
       throw new Error(`Packed install-all smoke returned unexpected payload: ${JSON.stringify(installAll)}`);
     }
     const catalog = JSON.parse(runPackedPm(["package", "catalog", "--project", "--json"], commandOptions));

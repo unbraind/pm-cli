@@ -1,6 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import {
+import { pathToFileURL } from "node:url";
+
+const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
+const sdk = await loadTemplatesSdkModule();
+const {
   CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   EXIT_CODE,
   PmCliError,
@@ -10,7 +14,33 @@ import {
   readFileIfExists,
   resolvePmRoot,
   writeFileAtomic,
-} from "../../../../dist/sdk/index.js";
+} = sdk;
+
+async function loadTemplatesSdkModule() {
+  const envRoot = process.env[PM_PACKAGE_ROOT_ENV];
+  if (typeof envRoot !== "string" || envRoot.trim().length === 0) {
+    throw new Error(
+      `builtin-templates requires ${PM_PACKAGE_ROOT_ENV} to locate core SDK runtime exports.`,
+    );
+  }
+  const modulePath = path.join(path.resolve(envRoot.trim()), "dist", "sdk", "index.js");
+  try {
+    const loaded = await import(pathToFileURL(modulePath).href);
+    if (
+      typeof loaded.resolvePmRoot === "function" &&
+      typeof loaded.pathExists === "function" &&
+      typeof loaded.PmCliError === "function" &&
+      Array.isArray(loaded.CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS)
+    ) {
+      return loaded;
+    }
+  } catch {
+    // Fall through to deterministic failure message below.
+  }
+  throw new Error(
+    `builtin-templates failed to load SDK runtime exports from ${modulePath}.`,
+  );
+}
 
 const TEMPLATE_DIRECTORY_NAME = "templates";
 const TEMPLATE_FILE_EXTENSION = ".json";
@@ -53,6 +83,10 @@ function extractTemplateOptions(rawOptions) {
       continue;
     }
     if (TEMPLATE_OPTION_REPEATABLE_KEY_SET.has(key)) {
+      if (typeof value === "string") {
+        next[key] = [value];
+        continue;
+      }
       if (!Array.isArray(value)) {
         continue;
       }

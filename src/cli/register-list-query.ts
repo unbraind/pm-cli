@@ -2,21 +2,13 @@ import type { Command } from "commander";
 import {
   runAggregate,
   runActivity,
-  runCalendar,
   runContext,
-  runDedupeAudit,
-  runGuide,
   runGet,
   runHistory,
   runList,
-  runReindex,
   runSearch,
-  renderCalendarMarkdown,
   renderContextMarkdown,
-  renderGuideMarkdown,
-  resolveCalendarOutputFormat,
   resolveContextOutputFormat,
-  resolveGuideOutputFormat,
 } from "./commands/index.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -25,9 +17,7 @@ import {
   getGlobalOptions,
   normalizeAggregateOptions,
   normalizeActivityOptions,
-  normalizeCalendarOptions,
   normalizeContextOptions,
-  normalizeDedupeAuditOptions,
   normalizeListOptions,
   normalizeSearchKeywordsInput,
   normalizeSearchOptions,
@@ -138,127 +128,6 @@ export function registerListQueryCommands(program: Command): void {
     });
 
   program
-    .command("dedupe-audit")
-    .description("Audit potential duplicate items with exact, fuzzy, or parent-scoped matching.")
-    .option("--mode <value>", "Dedupe mode: title_exact|title_fuzzy|parent_scope")
-    .option("--limit <n>", "Limit returned duplicate clusters")
-    .option("--threshold <value>", "Fuzzy mode token similarity threshold between 0 and 1")
-    .option("--status <value>", "Filter by item status")
-    .option("--type <value>", "Filter by item type")
-    .option("--tag <value>", "Filter by tag")
-    .option("--priority <value>", "Filter by priority")
-    .option("--deadline-before <value>", "Filter by deadline upper bound (ISO/date string or relative)")
-    .option("--deadline-after <value>", "Filter by deadline lower bound (ISO/date string or relative)")
-    .option("--assignee <value>", "Filter by assignee")
-    .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
-    .option("--assignee_filter <value>", "Alias for --assignee-filter")
-    .option("--parent <value>", "Filter by parent item ID")
-    .option("--sprint <value>", "Filter by sprint")
-    .option("--release <value>", "Filter by release")
-    .action(async (options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const result = await runDedupeAudit(normalizeDedupeAuditOptions(options), globalOptions);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=dedupe-audit took_ms=${Date.now() - startedAt}`);
-      }
-    });
-
-  program
-    .command("calendar")
-    .alias("cal")
-    .description("Show deadline/reminder calendar views (agenda/day/week/month).")
-    .option("--view <value>", "Calendar view: agenda|day|week|month (default: agenda)")
-    .option("--date <value>", "Anchor date/time for view calculations (ISO/date string or relative)")
-    .option("--from <value>", "Agenda lower bound (ISO/date string or relative)")
-    .option("--to <value>", "Agenda upper bound (ISO/date string or relative)")
-    .option("--past", "Include past entries in the selected view")
-    .option("--full-period", "For day/week/month views, include the full anchored period without now-clipping")
-    .option("--full_period", "Alias for --full-period")
-    .option("--type <value>", "Filter by item type")
-    .option("--tag <value>", "Filter by tag")
-    .option("--priority <value>", "Filter by priority")
-    .option("--status <value>", "Filter by status")
-    .option("--assignee <value>", "Filter by assignee")
-    .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
-    .option("--assignee_filter <value>", "Alias for --assignee-filter")
-    .option("--sprint <value>", "Filter by sprint")
-    .option("--release <value>", "Filter by release")
-    .option("--include <value>", "Include sources: deadlines|reminders|events|all (comma or | separated)")
-    .option("--recurrence-lookahead-days <n>", "Bound open-ended recurrence generation lookahead days")
-    .option("--recurrence_lookahead_days <n>", "Alias for --recurrence-lookahead-days")
-    .option("--recurrence-lookback-days <n>", "Bound open-ended recurrence generation lookback days")
-    .option("--recurrence_lookback_days <n>", "Alias for --recurrence-lookback-days")
-    .option("--occurrence-limit <n>", "Cap generated occurrences per recurring event")
-    .option("--occurrence_limit <n>", "Alias for --occurrence-limit")
-    .option("--limit <n>", "Limit returned event count")
-    .option("--format <value>", "Calendar output format override: markdown|toon|json")
-    .action(async (options: Record<string, unknown>, actionCommand) => {
-      const globalOptions = getGlobalOptions(actionCommand);
-      const startedAt = Date.now();
-      const normalized = normalizeCalendarOptions(options);
-      const result = await runCalendar(normalized, globalOptions);
-      const outputFormat = resolveCalendarOutputFormat(normalized, globalOptions);
-      if (outputFormat === "markdown") {
-        if (!globalOptions.quiet) {
-          writeStdout(`${renderCalendarMarkdown(result)}\n`);
-        }
-      } else {
-        printResult(result, {
-          ...globalOptions,
-          json: outputFormat === "json",
-        });
-      }
-      if (globalOptions.profile) {
-        printError(`profile:command=calendar took_ms=${Date.now() - startedAt}`);
-      }
-    });
-
-  program
-    .command("guide")
-    .argument("[topic]", "Guide topic ID (for example: quickstart, commands, workflows, sdk, extensions, skills)")
-    .description("Browse local progressive-disclosure guides without leaving the CLI.")
-    .option("--list", "Show guide topic index (default when topic is omitted)")
-    .option("--format <value>", "Guide output format override: markdown|toon|json")
-    .option("--depth <value>", "Guide detail depth: brief|standard|deep (default: brief)")
-    .action(async (topic: string | undefined, options: Record<string, unknown>, actionCommand) => {
-      const globalOptions = getGlobalOptions(actionCommand);
-      const startedAt = Date.now();
-      const result = await runGuide(
-        {
-          topic,
-          list: options.list === true,
-          format: typeof options.format === "string" ? options.format : undefined,
-          depth: typeof options.depth === "string" ? options.depth : undefined,
-        },
-        globalOptions,
-      );
-      const outputFormat = resolveGuideOutputFormat(
-        {
-          topic,
-          list: options.list === true,
-          format: typeof options.format === "string" ? options.format : undefined,
-          depth: typeof options.depth === "string" ? options.depth : undefined,
-        },
-        globalOptions,
-      );
-      if (outputFormat === "markdown") {
-        if (!globalOptions.quiet) {
-          writeStdout(`${renderGuideMarkdown(result)}\n`);
-        }
-      } else {
-        printResult(result, {
-          ...globalOptions,
-          json: outputFormat === "json",
-        });
-      }
-      if (globalOptions.profile) {
-        printError(`profile:command=guide took_ms=${Date.now() - startedAt}`);
-      }
-    });
-
-  program
     .command("context")
     .alias("ctx")
     .description("Show a token-efficient project context snapshot for next-work decisions.")
@@ -304,14 +173,7 @@ export function registerListQueryCommands(program: Command): void {
   program
     .command("search")
     .argument("<keywords...>", "Keyword query tokens")
-    .description("Search items with keyword, semantic, or hybrid modes.")
-    .option(
-      "--mode <value>",
-      "Search mode: keyword|semantic|hybrid (default: hybrid when semantic config or local Ollama auto-defaults are available, else keyword)",
-    )
-    .option("--include-linked", "Include readable linked docs/files/tests content in keyword and hybrid lexical scoring")
-    .option("--title-exact", "Require exact normalized title match against the full query")
-    .option("--phrase-exact", "Require exact normalized query phrase match in item text fields")
+    .description("Search items with core keyword mode.")
     .option("--type <value>", "Filter by item type")
     .option("--tag <value>", "Filter by tag")
     .option("--priority <value>", "Filter by priority")
@@ -327,31 +189,20 @@ export function registerListQueryCommands(program: Command): void {
     .action(async (keywords: string[], options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const result = await runSearch(normalizeSearchKeywordsInput(keywords), normalizeSearchOptions(options), globalOptions);
-      printResult(result, globalOptions);
-      if (globalOptions.profile) {
-        printError(`profile:command=search took_ms=${Date.now() - startedAt}`);
-      }
-    });
-
-  program
-    .command("reindex")
-    .description("Rebuild search artifacts for keyword, semantic, and hybrid modes.")
-    .option("--mode <value>", "Reindex mode: keyword|semantic|hybrid", "keyword")
-    .option("--progress", "Emit progress updates to stderr (always shown in TTY, opt-in for non-TTY)")
-    .action(async (options: Record<string, unknown>, command) => {
-      const globalOptions = getGlobalOptions(command);
-      const startedAt = Date.now();
-      const result = await runReindex(
+      const result = await runSearch(
+        normalizeSearchKeywordsInput(keywords),
         {
-          mode: typeof options.mode === "string" ? options.mode : undefined,
-          progress: Boolean(options.progress),
+          ...normalizeSearchOptions(options),
+          mode: "keyword",
+          includeLinked: false,
+          titleExact: false,
+          phraseExact: false,
         },
         globalOptions,
       );
       printResult(result, globalOptions);
       if (globalOptions.profile) {
-        printError(`profile:command=reindex took_ms=${Date.now() - startedAt}`);
+        printError(`profile:command=search took_ms=${Date.now() - startedAt}`);
       }
     });
 
