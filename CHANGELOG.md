@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.14] - 2026-05-14
+
 ### Added
 - Added shared `scripts/release/verify-published-release.mjs` and `pnpm release:verify-published` so maintainers and GitHub Actions run the same npm, `npx`, `bunx`, and GitHub Release verification logic.
 - Added installable first-party packages for calendar, templates, governance audit, guide shell, linked-test adapters, and advanced search workflows, with package catalog/list discovery and packed CLI smoke coverage.
