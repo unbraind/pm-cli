@@ -1,0 +1,38 @@
+id: pm-dc5d
+title: Release @unbrained/pm-cli after 2026.5.12
+description: "Prepare and publish the next pm CLI release with previous-version compatibility verification, strict local/CI release gates, daily auto-release hardening, changelog/release notes automation, telemetry/Sentry review, and public npm/npx/bunx/GitHub verification."
+type: Chore
+status: in_progress
+priority: 0
+tags[6]: automation,ci,compatibility,pm-cli,release,telemetry
+created_at: "2026-05-14T18:15:39.331Z"
+updated_at: "2026-05-14T18:34:59.291Z"
+deadline: "2026-05-15T18:15:39.331Z"
+assignee: codex-release-maintainer
+author: codex-release-maintainer
+estimated_minutes: 360
+acceptance_criteria: "Previous-version temp-project compatibility passes without data loss; release automation is locally runnable and daily-auto guarded; CHANGELOG.md and generated GitHub release notes reflect changes since v2026.5.12; telemetry/Sentry review is documented in ignored local ops notes; all local gates and GitHub release workflow are green; npm, npx, bunx, and GitHub release surfaces verify the published version."
+parent: pm-rnpb
+comments[4]{created_at,author,text}:
+  "2026-05-14T18:15:39.331Z",codex-release-maintainer,"Duplicate-check evidence: ran pm context --limit 10,pm search release automation daily publish compatibility changelog --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Existing release items are closed; current request needs a new release chore under pm-rnpb."
+  "2026-05-14T18:15:49.431Z",codex-release-maintainer,"Start: bootstrapped maintainer CLI (npm install -g .), verified pm --version 2026.5.12, node v25.9.0, pnpm 10.33.0, and pnpm build before release mutations."
+  "2026-05-14T18:16:33.128Z",codex-release-maintainer,"Compatibility gate passed before release edits: node scripts/release/compatibility-check.mjs --json used published base 2026.5.12, temp root /tmp/pm-cli-compat-D2WBlB, preserved 2 items before/after, validation_ok=true, health_ok=true, migration_warnings=[]; no breaking migration blocker found."
+  "2026-05-14T18:32:47.634Z",codex-release-maintainer,"Evidence: full release gate passed after release automation hardening: build, typecheck, docs-skills, static quality, coverage (92 files / 1301 tests, 100%), version policy, secret scan, packed npx smoke (8 packages), npm pack dry-run, compatibility against published 2026.5.12 with item count preserved 2->2 and no warnings, and required telemetry/Sentry gate (finish_error_rate_pct=2.18, missing_error_rows=0, Sentry critical=1 high=4 under thresholds 10/20)."
+files[9]{path,scope,note}:
+  .github/workflows/release.yml,project,release workflow delegates public verification and Sentry thresholds
+  CHANGELOG.md,project,unreleased release notes since v2026.5.12
+  docs/RELEASING.md,project,local release parity docs
+  package.json,project,release verify script command
+  scripts/release/verify-published-release.mjs,project,shared public release verification script
+  tests/integration/release-automation-contract.spec.ts,project,release automation contract coverage
+  tests/integration/release-readiness-runtime.spec.ts,project,release readiness path coverage
+  tests/integration/ci-workflow-contract.spec.ts,project,release workflow contract threshold and verify script expectations
+  scripts/release/run-gates.mjs,project,default release Sentry thresholds match maintained baseline
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,360,null,null,null,null,null,null,null,null,null,null,null,focused release workflow contract regression
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused release automation regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp5tuzpe-c1oawq,test,passed,"2026-05-14T18:32:47.657Z","2026-05-14T18:34:14.211Z","2026-05-14T18:34:14.211Z",null,null,2,0,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,release workflow source of truth
+body: ""

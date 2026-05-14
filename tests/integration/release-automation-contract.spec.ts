@@ -31,6 +31,9 @@ describe("release automation contract", () => {
     expect(packageJson.scripts?.["release:pipeline:dry-run"]).toBe(
       "node scripts/release/run-release-pipeline.mjs --dry-run",
     );
+    expect(packageJson.scripts?.["release:verify-published"]).toBe(
+      "node scripts/release/verify-published-release.mjs",
+    );
   });
 
   it("keeps auto-release workflow aligned with one-per-day and manual override controls", async () => {
@@ -133,5 +136,17 @@ describe("release automation contract", () => {
     const docsSkillsHelp = runNodeScript(["scripts/release/docs-skills-gate.mjs", "--help"]);
     expect(docsSkillsHelp.status).toBe(0);
     expect(docsSkillsHelp.stdout).toContain("docs and .agents/skills freshness");
+
+    const verifyPublishedHelp = runNodeScript(["scripts/release/verify-published-release.mjs", "--help"]);
+    expect(verifyPublishedHelp.status).toBe(0);
+    expect(verifyPublishedHelp.stdout).toContain("--skip-github-release");
+    expect(verifyPublishedHelp.stdout).toContain("npm registry metadata");
+  });
+
+  it("keeps release workflow public verification delegated to the local script", async () => {
+    const workflow = await readFile(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
+    expect(workflow).toContain("node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-github-release --json");
+    expect(workflow).toContain("node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-package --json");
+    expect(workflow).toContain("--max-critical 10 --max-high 20");
   });
 });

@@ -40,7 +40,7 @@ pnpm version:check
 - Keep any `release` environment compatible with free GitHub features. This repository is public, so environment secrets and tag/branch deployment rules are compatible with the free GitHub path; do not add paid-only release gates.
 - Ensure `GITHUB_TOKEN` has `contents: write` for GitHub Release creation.
 - Keep `package.json` repository, homepage, and bugs URLs aligned with `https://github.com/unbraind/pm-cli`.
-- Keep npm automation token settings compatible with provenance publishing. The release workflow must keep `id-token: write`, a GitHub-hosted runner, and `npm publish --access public --provenance`.
+- Keep npm automation token settings compatible with provenance publishing. The release workflow must keep `id-token: write`, a GitHub-hosted runner, and `npm publish --access public --provenance`. npm Trusted Publishing is preferred because it uses OIDC short-lived credentials; if the npm package is configured for Trusted Publishing, restrict traditional token publishing after verifying the workflow.
 
 ## Automated Daily Driver
 
@@ -134,8 +134,9 @@ git push origin v<version>
 - generated release notes from changelog plus sanitized tracker metadata
 - artifact uploads
 - `npm publish --access public --provenance`, skipped on retry when the exact version is already present on npm
-- post-publish npm/npx/bunx verification
+- post-publish npm/npx/bunx verification through `scripts/release/verify-published-release.mjs`
 - GitHub Release creation
+- GitHub Release metadata verification through the same local verification script
 
 Monitor:
 
@@ -151,6 +152,7 @@ npm view @unbrained/pm-cli@<version> version dist.integrity dist.unpackedSize --
 npx --yes --package @unbrained/pm-cli@<version> -- pm --version
 bunx --bun @unbrained/pm-cli@<version> pm --version
 gh release view v<version> --json tagName,name,isDraft,isPrerelease,url
+pnpm release:verify-published -- --version <version>
 ```
 
 The executable remains `pm` even though the npm package is scoped.

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added shared `scripts/release/verify-published-release.mjs` and `pnpm release:verify-published` so maintainers and GitHub Actions run the same npm, `npx`, `bunx`, and GitHub Release verification logic.
+- Added installable first-party packages for calendar, templates, governance audit, guide shell, linked-test adapters, and advanced search workflows, with package catalog/list discovery and packed CLI smoke coverage.
+
+### Changed
+- Hardened daily release automation so empty `[Unreleased]` changelog content skips cleanly, generated release notes stay sourced from changelog plus pm evidence, and hosted Sentry severity thresholds match the current maintained baseline instead of blocking on known historical noise.
+- Continued the package-first refactor by moving optional workflows into bundled packages while keeping the bare CLI/SDK smaller and exposing runtime package actions through installed extension contracts.
+- Improved agent-facing command contracts, release gates, activity/audit flows, plugin launchers, and package runtime helper exports for more deterministic automation.
+
 ## [2026.5.12] - 2026-05-12
 
 ### Changed

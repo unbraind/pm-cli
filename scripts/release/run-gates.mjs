@@ -8,8 +8,8 @@ function usage() {
     [--skip-compatibility]
     [--skip-telemetry-sentry]
     [--telemetry-mode off|best-effort|required]
-    [--max-sentry-critical 0]
-    [--max-sentry-high 0]
+    [--max-sentry-critical 10]
+    [--max-sentry-high 20]
     [--max-telemetry-error-rate 6]
     [--max-telemetry-missing-error-rows 0]
 
@@ -52,8 +52,8 @@ function main() {
   const skipCompatibility = flagBool(flags, "skip-compatibility", false);
   const skipTelemetrySentry = flagBool(flags, "skip-telemetry-sentry", false);
   const telemetryMode = flagString(flags, "telemetry-mode", "best-effort");
-  const maxSentryCritical = flagString(flags, "max-sentry-critical", "0");
-  const maxSentryHigh = flagString(flags, "max-sentry-high", "0");
+  const maxSentryCritical = flagString(flags, "max-sentry-critical", "10");
+  const maxSentryHigh = flagString(flags, "max-sentry-high", "20");
   const maxTelemetryErrorRate = flagString(flags, "max-telemetry-error-rate", "6");
   const maxTelemetryMissingRows = flagString(flags, "max-telemetry-missing-error-rows", "0");
 

@@ -1560,6 +1560,9 @@ describe("release readiness runtime coverage", () => {
     expect(packageJson.scripts?.["release:pipeline:dry-run"]).toBe(
       "node scripts/release/run-release-pipeline.mjs --dry-run",
     );
+    expect(packageJson.scripts?.["release:verify-published"]).toBe(
+      "node scripts/release/verify-published-release.mjs",
+    );
     expect(packageJson.scripts?.["security:scan"]).toBe("node scripts/check-secrets.mjs");
     expect(packageJson.scripts?.["smoke:npx"]).toBe("node scripts/smoke-npx-from-pack.mjs");
     expect(packageJson.types).toBe("dist/sdk/index.d.ts");
@@ -1711,6 +1714,7 @@ describe("release readiness runtime coverage", () => {
       "scripts/release/sentry-telemetry-gate.mjs",
       "scripts/release/run-gates.mjs",
       "scripts/release/run-release-pipeline.mjs",
+      "scripts/release/verify-published-release.mjs",
       "scripts/check-secrets.mjs",
       "scripts/smoke-npx-from-pack.mjs",
       ".github/workflows/auto-release.yml",
@@ -1778,6 +1782,11 @@ describe("release readiness runtime coverage", () => {
     expect(releasePipelineScript).toContain("changelog_unreleased_empty");
     expect(releasePipelineScript).toContain(".agents/pm/");
     expect(releasePipelineScript).toContain("run-release-pipeline");
+
+    const verifyPublishedScript = await readRepoText("scripts/release/verify-published-release.mjs");
+    expect(verifyPublishedScript).toContain("verify-published-release");
+    expect(verifyPublishedScript).toContain("npm registry metadata");
+    expect(verifyPublishedScript).toContain("bunx");
 
     const securityScanScript = await readRepoText("scripts/check-secrets.mjs");
     expect(securityScanScript).toContain("No credential-like secrets detected");
