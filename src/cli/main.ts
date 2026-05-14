@@ -617,8 +617,8 @@ async function collectRuntimeFieldLooseFlagDefinitionsForCommand(
   return definitions;
 }
 
-async function registerRuntimeSchemaFieldFlags(rootProgram: Command): Promise<void> {
-  const bootstrapGlobalOptions = parseBootstrapGlobalOptions(process.argv.slice(2));
+async function registerRuntimeSchemaFieldFlags(rootProgram: Command, invocationArgv: string[]): Promise<void> {
+  const bootstrapGlobalOptions = parseBootstrapGlobalOptions(invocationArgv);
   const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     return;
@@ -980,8 +980,8 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
   visit(rootProgram);
 }
 
-async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promise<void> {
-  const bootstrapGlobalOptions = parseBootstrapGlobalOptions(process.argv.slice(2));
+async function registerDynamicExtensionCommandPaths(rootProgram: Command, invocationArgv: string[]): Promise<void> {
+  const bootstrapGlobalOptions = parseBootstrapGlobalOptions(invocationArgv);
   if (bootstrapGlobalOptions.noExtensions) {
     activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
     setActiveExtensionServices({ overrides: [] });
@@ -1000,7 +1000,7 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command): Promi
   setActiveExtensionServices(snapshot.services);
   activeRuntimeExtensionCommandDescriptors = new Map(snapshot.commandDescriptors);
   const typeRegistry = resolveItemTypeRegistry(snapshot.settings, snapshot.registrations);
-  attachCreateUpdatePolicyHelpText(rootProgram, typeRegistry, process.argv.slice(2));
+  attachCreateUpdatePolicyHelpText(rootProgram, typeRegistry, invocationArgv);
 
   const commandPaths = [...new Set([...snapshot.commandHandlers, ...snapshot.commandDescriptors.keys()])].sort((left, right) =>
     left.localeCompare(right),
@@ -1255,6 +1255,68 @@ registerListQueryCommands(program);
 registerMutationCommands(program);
 registerOperationCommands(program);
 
+const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
+const RUNTIME_SCHEMA_FLAG_BOOTSTRAP_COMMANDS = new Set([
+  "create",
+  "update",
+  "update-many",
+  "list",
+  "list-all",
+  "list-draft",
+  "list-open",
+  "list-in-progress",
+  "list-blocked",
+  "list-closed",
+  "list-canceled",
+  "search",
+  "calendar",
+  "context",
+  "templates",
+]);
+
+function invocationRequestsVersion(invocationArgv: string[]): boolean {
+  return invocationArgv.some((token) => VERSION_FLAG_TOKENS.has(token));
+}
+
+function isKnownTopLevelCommandOrAlias(rootProgram: Command, commandName: string): boolean {
+  const normalized = commandName.trim().toLowerCase();
+  for (const command of rootProgram.commands) {
+    if (command.name().trim().toLowerCase() === normalized) {
+      return true;
+    }
+    if (command.aliases().some((alias) => alias.trim().toLowerCase() === normalized)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function shouldRegisterDynamicExtensionPaths(rootProgram: Command, invocationArgv: string[]): boolean {
+  if (invocationRequestsVersion(invocationArgv)) {
+    return false;
+  }
+  const helpRequest = parseBootstrapHelpRequest(invocationArgv);
+  if (helpRequest.requested) {
+    return true;
+  }
+  const commandName = parseBootstrapCommandName(invocationArgv);
+  if (!commandName) {
+    return false;
+  }
+  return !isKnownTopLevelCommandOrAlias(rootProgram, commandName);
+}
+
+function shouldRegisterRuntimeSchemaFlags(invocationArgv: string[]): boolean {
+  if (invocationRequestsVersion(invocationArgv)) {
+    return false;
+  }
+  const commandName = parseBootstrapCommandName(invocationArgv);
+  if (!commandName) {
+    return false;
+  }
+  return RUNTIME_SCHEMA_FLAG_BOOTSTRAP_COMMANDS.has(commandName);
+}
+
 const bootstrapInvocation = normalizeBootstrapInvocation(process.argv.slice(2));
 
 attachRichHelpText(program, bootstrapInvocation.argv);
@@ -1264,8 +1326,16 @@ async function main(): Promise<void> {
   const invocationProcessArgv = [process.argv[0], process.argv[1], ...invocationArgv];
   try {
     applyBootstrapPagerPolicy(invocationArgv);
-    await registerDynamicExtensionCommandPaths(program);
-    await registerRuntimeSchemaFieldFlags(program);
+    const registerDynamicCommands = shouldRegisterDynamicExtensionPaths(program, invocationArgv);
+    if (registerDynamicCommands) {
+      await registerDynamicExtensionCommandPaths(program, invocationArgv);
+    } else {
+      activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
+      setActiveExtensionServices({ overrides: [] });
+    }
+    if (shouldRegisterRuntimeSchemaFlags(invocationArgv)) {
+      await registerRuntimeSchemaFieldFlags(program, invocationArgv);
+    }
     wrapProgramActionsForExtensionHandlers(program);
     const renderedBootstrapJsonHelp = await maybeRenderBootstrapJsonHelp(program, invocationArgv, activeRuntimeExtensionCommandDescriptors);
     if (renderedBootstrapJsonHelp) {

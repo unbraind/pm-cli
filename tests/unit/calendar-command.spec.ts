@@ -524,6 +524,26 @@ describe("calendar command module", () => {
         { path: context.pmPath },
       );
       expect(boundedOccurrenceLimit.events).toHaveLength(2);
+
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date("2026-04-10T00:00:00.000Z"));
+      try {
+        const eventsOnlyDefaultCap = await runCalendar(
+          {
+            view: "agenda",
+            include: "events",
+            past: true,
+            tag: "recurrence-controls",
+          },
+          { path: context.pmPath },
+        );
+        expect(eventsOnlyDefaultCap.warnings).toContain(
+          "recurring_events_default_cap_applied:lookback=0d,lookahead=28d -- use --recurrence-lookback-days/--recurrence-lookahead-days or --to for wider range",
+        );
+        expect(eventsOnlyDefaultCap.events.map((event) => event.at)).toEqual(["2026-04-10T09:00:00.000Z"]);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

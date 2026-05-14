@@ -32,6 +32,21 @@ import type { ExtensionCommandHelpDescriptor } from "./extension-command-help.js
 
 export const BUILTIN_TYPE_HELP_VALUES = BUILTIN_ITEM_TYPE_VALUES.join("|");
 
+const OPTIONAL_PACKAGE_INSTALL_HINTS: Record<string, string> = {
+  calendar: "calendar",
+  cal: "calendar",
+  reindex: "search-advanced",
+  "dedupe-audit": "governance-audit",
+  "comments-audit": "governance-audit",
+  normalize: "governance-audit",
+  guide: "guide-shell",
+  completion: "guide-shell",
+  templates: "templates",
+  "test-runs": "linked-test-adapters",
+  beads: "beads",
+  todos: "todos",
+};
+
 export interface CommanderUsageContext extends CommanderGuidanceContext {
   message: string;
   commandName: string | undefined;
@@ -94,6 +109,18 @@ function toComparableFlag(flag: string): string {
 
 function renderAttemptedCommand(argv: string[]): string {
   return renderPmCommand(argv);
+}
+
+function resolveOptionalPackageInstallHint(commandPath: string): string | null {
+  const topLevel = commandPath.split(" ")[0]?.trim().toLowerCase();
+  if (!topLevel) {
+    return null;
+  }
+  const packageAlias = OPTIONAL_PACKAGE_INSTALL_HINTS[topLevel];
+  if (!packageAlias) {
+    return null;
+  }
+  return `If this command comes from an optional package, install it with: pm install ${packageAlias}`;
 }
 
 function collectKnownLongFlags(commandName: string | undefined): string[] {
@@ -198,12 +225,14 @@ export function buildUnknownCommandGuidanceFromRuntime(
   fallbackTopLevel.sort((left, right) => left.localeCompare(right));
   const suggestedPaths = (rankedCandidates.length > 0 ? rankedCandidates : fallbackTopLevel).slice(0, 3);
   const examples = [...new Set(["pm --help", ...suggestedPaths.map((path) => `pm ${path} --help`)])];
+  const optionalPackageHint = resolveOptionalPackageInstallHint(normalizedUnknown);
 
   return {
     unknownCommandExamples: examples,
     unknownCommandNextSteps: [
       'Run "pm --help" to list commands available in this runtime, including active extensions.',
       "Use one of the suggested command paths above with --help to inspect valid flags and usage.",
+      ...(optionalPackageHint ? [optionalPackageHint] : []),
     ],
   };
 }

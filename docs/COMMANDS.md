@@ -57,6 +57,7 @@ pm upgrade --cli-only --repair
 ```
 
 `pm install` and `pm package` are the preferred package-first workflow. `pm install '*'`, shell-expanded `pm install *`, and `pm install all` install bundled first-party packages. `pm extension` remains as a compatibility command for direct extension lifecycle operations.
+When package-owned commands are unavailable, usage guidance includes an install-ready retry (for example `pm install calendar`, `pm install search-advanced`, `pm install governance-audit`, or `pm install guide-shell`).
 
 ## Triage
 
@@ -182,6 +183,7 @@ pm context --from today --to +7d --limit 10
 ```
 
 `calendar` defaults to markdown for human and agent readability. Other commands default to TOON unless configured otherwise.
+For `--include events` without explicit `--to`, `--recurrence-lookahead-days`, or `--occurrence-limit`, recurring expansion is intentionally capped to a bounded default window and emits a warning with retry hints for broader windows.
 
 ## Validation and Maintenance
 

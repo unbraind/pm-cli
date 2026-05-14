@@ -4,17 +4,20 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import {
-  runConfig,
-  runExtension,
-  runInit,
-  runUpgrade,
-} from "./commands/index.js";
-import {
   collect,
   getGlobalOptions,
   printError,
   printResult,
 } from "./registration-helpers.js";
+
+type SetupCommandsModule = typeof import("./commands/index.js");
+
+let setupCommandsModulePromise: Promise<SetupCommandsModule> | null = null;
+
+async function loadSetupCommandsModule(): Promise<SetupCommandsModule> {
+  setupCommandsModulePromise ??= import("./commands/index.js");
+  return setupCommandsModulePromise;
+}
 
 type ExtensionSubcommandAction =
   | "init"
@@ -118,6 +121,7 @@ async function executeExtensionCommand(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const normalizedOptions = normalizeExtensionOptions(options, forcedAction, vocabulary);
+  const { runExtension } = await loadSetupCommandsModule();
   const result = await runExtension(target, normalizedOptions, globalOptions);
   printResult(result, globalOptions);
   const strictExit = Boolean(normalizedOptions.strictExit) || Boolean(normalizedOptions.failOnWarn);
@@ -328,6 +332,7 @@ export function registerSetupCommands(program: Command): void {
     .action(async (prefix: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const { runInit } = await loadSetupCommandsModule();
       const result = await runInit(
         prefix,
         globalOptions,
@@ -378,6 +383,7 @@ export function registerSetupCommands(program: Command): void {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const criteria = Array.isArray(options.criterion) ? (options.criterion as string[]) : [];
+      const { runConfig } = await loadSetupCommandsModule();
       const result = await runConfig(
         scope,
         action,
@@ -437,6 +443,7 @@ export function registerSetupCommands(program: Command): void {
   ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
+    const { runUpgrade } = await loadSetupCommandsModule();
     const result = await runUpgrade(target, command.opts() as Record<string, unknown>, globalOptions);
     printResult(result, globalOptions);
     if (!result.ok) {

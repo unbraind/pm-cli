@@ -1,7 +1,21 @@
-export interface CommanderOptionAliasContract {
-  target: string;
-  keys: string[];
-}
+export type { CommanderOptionAliasContract, CommanderOptionRegistrationContract } from "./cli-contracts/commander-types.js";
+export {
+  ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
+  CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
+  CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
+  LIST_COMMANDER_STRING_OPTION_CONTRACTS,
+  SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
+  readFirstStringFromCommanderOptions,
+  readStringArrayFromCommanderOptions,
+} from "./cli-contracts/commander-types.js";
+export {
+  CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
+  CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
+  CREATE_COMMANDER_STRING_OPTION_CONTRACTS,
+  UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
+  UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
+  UPDATE_COMMANDER_STRING_OPTION_CONTRACTS,
+} from "./cli-contracts/commander-mutation-options.js";
 
 export interface CliFlagContract {
   flag: string;
@@ -1483,234 +1497,6 @@ export function toCompletionFlagString(flagContracts: CliFlagContract[], include
   return normalizeUniqueStringList(all).join(" ");
 }
 
-export const CREATE_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
-  { target: "title", keys: ["title"] },
-  { target: "description", keys: ["description"] },
-  { target: "type", keys: ["type"] },
-  { target: "template", keys: ["template"] },
-  { target: "createMode", keys: ["createMode", "create_mode"] },
-  { target: "schedulePreset", keys: ["schedulePreset", "schedule_preset"] },
-  { target: "status", keys: ["status"] },
-  { target: "priority", keys: ["priority"] },
-  { target: "tags", keys: ["tags"] },
-  { target: "body", keys: ["body"] },
-  { target: "deadline", keys: ["deadline"] },
-  { target: "estimatedMinutes", keys: ["estimate", "estimatedMinutes", "estimated_minutes"] },
-  { target: "acceptanceCriteria", keys: ["acceptanceCriteria", "acceptance_criteria", "ac"] },
-  { target: "definitionOfReady", keys: ["definitionOfReady", "definition_of_ready"] },
-  { target: "order", keys: ["order"] },
-  { target: "rank", keys: ["rank"] },
-  { target: "goal", keys: ["goal"] },
-  { target: "objective", keys: ["objective"] },
-  { target: "value", keys: ["value"] },
-  { target: "impact", keys: ["impact"] },
-  { target: "outcome", keys: ["outcome"] },
-  { target: "whyNow", keys: ["whyNow", "why_now"] },
-  { target: "author", keys: ["author"] },
-  { target: "message", keys: ["message"] },
-  { target: "assignee", keys: ["assignee"] },
-  { target: "parent", keys: ["parent"] },
-  { target: "reviewer", keys: ["reviewer"] },
-  { target: "risk", keys: ["risk"] },
-  { target: "confidence", keys: ["confidence"] },
-  { target: "sprint", keys: ["sprint"] },
-  { target: "release", keys: ["release"] },
-  { target: "blockedBy", keys: ["blockedBy", "blocked_by"] },
-  { target: "blockedReason", keys: ["blockedReason", "blocked_reason"] },
-  { target: "unblockNote", keys: ["unblockNote", "unblock_note"] },
-  { target: "reporter", keys: ["reporter"] },
-  { target: "severity", keys: ["severity"] },
-  { target: "environment", keys: ["environment"] },
-  { target: "reproSteps", keys: ["reproSteps", "repro_steps"] },
-  { target: "resolution", keys: ["resolution"] },
-  { target: "expectedResult", keys: ["expectedResult", "expected_result"] },
-  { target: "actualResult", keys: ["actualResult", "actual_result"] },
-  { target: "affectedVersion", keys: ["affectedVersion", "affected_version"] },
-  { target: "fixedVersion", keys: ["fixedVersion", "fixed_version"] },
-  { target: "component", keys: ["component"] },
-  { target: "regression", keys: ["regression"] },
-  { target: "customerImpact", keys: ["customerImpact", "customer_impact"] },
-];
-
-export const CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
-  { target: "dep", keys: ["dep"] },
-  { target: "comment", keys: ["comment"] },
-  { target: "note", keys: ["note"] },
-  { target: "learning", keys: ["learning"] },
-  { target: "file", keys: ["file"] },
-  { target: "test", keys: ["test"] },
-  { target: "doc", keys: ["doc"] },
-  { target: "reminder", keys: ["reminder"] },
-  { target: "event", keys: ["event"] },
-  { target: "typeOption", keys: ["typeOption", "type_option"] },
-  { target: "unset", keys: ["unset"] },
-];
-
-export const UPDATE_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
-  { target: "title", keys: ["title"] },
-  { target: "description", keys: ["description"] },
-  { target: "body", keys: ["body"] },
-  { target: "status", keys: ["status"] },
-  { target: "closeReason", keys: ["closeReason", "close_reason"] },
-  { target: "priority", keys: ["priority"] },
-  { target: "type", keys: ["type"] },
-  { target: "tags", keys: ["tags"] },
-  { target: "deadline", keys: ["deadline"] },
-  { target: "estimatedMinutes", keys: ["estimate", "estimatedMinutes", "estimated_minutes"] },
-  { target: "acceptanceCriteria", keys: ["acceptanceCriteria", "acceptance_criteria", "ac"] },
-  { target: "definitionOfReady", keys: ["definitionOfReady", "definition_of_ready"] },
-  { target: "order", keys: ["order"] },
-  { target: "rank", keys: ["rank"] },
-  { target: "goal", keys: ["goal"] },
-  { target: "objective", keys: ["objective"] },
-  { target: "value", keys: ["value"] },
-  { target: "impact", keys: ["impact"] },
-  { target: "outcome", keys: ["outcome"] },
-  { target: "whyNow", keys: ["whyNow", "why_now"] },
-  { target: "author", keys: ["author"] },
-  { target: "message", keys: ["message"] },
-  { target: "assignee", keys: ["assignee"] },
-  { target: "parent", keys: ["parent"] },
-  { target: "reviewer", keys: ["reviewer"] },
-  { target: "risk", keys: ["risk"] },
-  { target: "confidence", keys: ["confidence"] },
-  { target: "sprint", keys: ["sprint"] },
-  { target: "release", keys: ["release"] },
-  { target: "blockedBy", keys: ["blockedBy", "blocked_by"] },
-  { target: "blockedReason", keys: ["blockedReason", "blocked_reason"] },
-  { target: "unblockNote", keys: ["unblockNote", "unblock_note"] },
-  { target: "reporter", keys: ["reporter"] },
-  { target: "severity", keys: ["severity"] },
-  { target: "environment", keys: ["environment"] },
-  { target: "reproSteps", keys: ["reproSteps", "repro_steps"] },
-  { target: "resolution", keys: ["resolution"] },
-  { target: "expectedResult", keys: ["expectedResult", "expected_result"] },
-  { target: "actualResult", keys: ["actualResult", "actual_result"] },
-  { target: "affectedVersion", keys: ["affectedVersion", "affected_version"] },
-  { target: "fixedVersion", keys: ["fixedVersion", "fixed_version"] },
-  { target: "component", keys: ["component"] },
-  { target: "regression", keys: ["regression"] },
-  { target: "customerImpact", keys: ["customerImpact", "customer_impact"] },
-];
-
-export const UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
-  { target: "dep", keys: ["dep"] },
-  { target: "depRemove", keys: ["depRemove", "dep_remove"] },
-  { target: "comment", keys: ["comment"] },
-  { target: "note", keys: ["note"] },
-  { target: "learning", keys: ["learning"] },
-  { target: "file", keys: ["file"] },
-  { target: "test", keys: ["test"] },
-  { target: "doc", keys: ["doc"] },
-  { target: "reminder", keys: ["reminder"] },
-  { target: "event", keys: ["event"] },
-  { target: "typeOption", keys: ["typeOption", "type_option"] },
-  { target: "unset", keys: ["unset"] },
-];
-
-export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
-  { target: "status", keys: ["status"] },
-  { target: "type", keys: ["type"] },
-  { target: "tag", keys: ["tag"] },
-  { target: "priority", keys: ["priority"] },
-  { target: "deadlineBefore", keys: ["deadlineBefore"] },
-  { target: "deadlineAfter", keys: ["deadlineAfter"] },
-  { target: "assignee", keys: ["assignee"] },
-  { target: "assigneeFilter", keys: ["assigneeFilter", "assignee_filter"] },
-  { target: "parent", keys: ["parent"] },
-  { target: "sprint", keys: ["sprint"] },
-  { target: "release", keys: ["release"] },
-  { target: "limit", keys: ["limit"] },
-  { target: "offset", keys: ["offset"] },
-  { target: "fields", keys: ["fields"] },
-  { target: "sort", keys: ["sort"] },
-  { target: "order", keys: ["order"] },
-];
-
-export const SEARCH_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
-  { target: "mode", keys: ["mode"] },
-  { target: "type", keys: ["type"] },
-  { target: "tag", keys: ["tag"] },
-  { target: "priority", keys: ["priority"] },
-  { target: "deadlineBefore", keys: ["deadlineBefore"] },
-  { target: "deadlineAfter", keys: ["deadlineAfter"] },
-  { target: "fields", keys: ["fields"] },
-  { target: "limit", keys: ["limit"] },
-];
-
-export const CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
-  { target: "view", keys: ["view"] },
-  { target: "date", keys: ["date"] },
-  { target: "from", keys: ["from"] },
-  { target: "to", keys: ["to"] },
-  { target: "limit", keys: ["limit"] },
-  { target: "type", keys: ["type"] },
-  { target: "tag", keys: ["tag"] },
-  { target: "priority", keys: ["priority"] },
-  { target: "status", keys: ["status"] },
-  { target: "assignee", keys: ["assignee"] },
-  { target: "assigneeFilter", keys: ["assigneeFilter", "assignee_filter"] },
-  { target: "sprint", keys: ["sprint"] },
-  { target: "release", keys: ["release"] },
-  { target: "include", keys: ["include"] },
-  { target: "recurrenceLookaheadDays", keys: ["recurrenceLookaheadDays", "recurrence_lookahead_days"] },
-  { target: "recurrenceLookbackDays", keys: ["recurrenceLookbackDays", "recurrence_lookback_days"] },
-  { target: "occurrenceLimit", keys: ["occurrenceLimit", "occurrence_limit"] },
-  { target: "format", keys: ["format"] },
-];
-
-export const CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
-  { target: "date", keys: ["date"] },
-  { target: "from", keys: ["from"] },
-  { target: "to", keys: ["to"] },
-  { target: "type", keys: ["type"] },
-  { target: "tag", keys: ["tag"] },
-  { target: "priority", keys: ["priority"] },
-  { target: "assignee", keys: ["assignee"] },
-  { target: "assigneeFilter", keys: ["assigneeFilter", "assignee_filter"] },
-  { target: "sprint", keys: ["sprint"] },
-  { target: "release", keys: ["release"] },
-  { target: "limit", keys: ["limit"] },
-  { target: "format", keys: ["format"] },
-  { target: "depth", keys: ["depth"] },
-  { target: "activityLimit", keys: ["activityLimit", "activity_limit"] },
-  { target: "staleThreshold", keys: ["staleThreshold", "stale_threshold"] },
-];
-
-export const ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
-  { target: "id", keys: ["id"] },
-  { target: "op", keys: ["op"] },
-  { target: "author", keys: ["author"] },
-  { target: "from", keys: ["from"] },
-  { target: "to", keys: ["to"] },
-  { target: "limit", keys: ["limit"] },
-];
-
-export function readFirstStringFromCommanderOptions(
-  options: Record<string, unknown>,
-  contract: CommanderOptionAliasContract,
-): string | undefined {
-  for (const key of contract.keys) {
-    const candidate = options[key];
-    if (typeof candidate === "string") {
-      return candidate;
-    }
-  }
-  return undefined;
-}
-
-export function readStringArrayFromCommanderOptions(
-  options: Record<string, unknown>,
-  contract: CommanderOptionAliasContract,
-): string[] | undefined {
-  for (const key of contract.keys) {
-    const candidate = options[key];
-    if (Array.isArray(candidate)) {
-      return candidate as string[];
-    }
-  }
-  return undefined;
-}
 
 const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   json: { type: "boolean", default: true },

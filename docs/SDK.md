@@ -28,6 +28,8 @@ Source of truth:
 - [`src/sdk/index.ts`](../src/sdk/index.ts)
 - [`src/sdk/runtime.ts`](../src/sdk/runtime.ts)
 - [`src/sdk/cli-contracts.ts`](../src/sdk/cli-contracts.ts)
+- [`src/sdk/cli-contracts/commander-types.ts`](../src/sdk/cli-contracts/commander-types.ts)
+- [`src/sdk/cli-contracts/commander-mutation-options.ts`](../src/sdk/cli-contracts/commander-mutation-options.ts)
 
 Common authoring exports:
 
@@ -55,6 +57,22 @@ Command/action contract exports:
 - `PM_TOOL_PARAMETERS_SCHEMA`
 - `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`
 - `PM_TOOL_ACTION_PARAMETER_CONTRACTS`
+
+Commander option contract exports:
+
+- `CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS`
+- `UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS`
+- `CREATE_COMMANDER_STRING_OPTION_CONTRACTS`
+- `CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS`
+- `UPDATE_COMMANDER_STRING_OPTION_CONTRACTS`
+- `UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS`
+- `LIST_COMMANDER_STRING_OPTION_CONTRACTS`
+- `SEARCH_COMMANDER_STRING_OPTION_CONTRACTS`
+- `CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS`
+- `CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS`
+- `ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS`
+- `readFirstStringFromCommanderOptions`
+- `readStringArrayFromCommanderOptions`
 
 Extension runtime contract exports:
 
@@ -93,6 +111,8 @@ pm contracts --command templates --runtime-only --flags-only --json
 ```
 
 Use static SDK contracts for baseline validation, then use `pm contracts --runtime-only` in the target project before invoking package-provided commands or actions.
+
+When a package-owned command is missing at runtime, CLI usage guidance now includes a deterministic install hint (for example `pm install calendar` or `pm install search-advanced`) so agents can recover in one retry.
 
 Package installs currently activate only extension resources. Additional package resource kinds (`docs`, `examples`) are metadata-first and available through package manifest/catalog inspection.
 

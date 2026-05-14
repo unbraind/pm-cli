@@ -142,6 +142,8 @@ pm install todos --project
 
 Those aliases install package-shipped extension sources. They are then tracked in managed package state and can be refreshed with `pm upgrade --packages-only`.
 
+If a package-owned command is invoked before installation (for example `pm calendar --help`, `pm reindex --help`, or `pm normalize --help` in bare core mode), runtime usage guidance now includes a direct recovery command such as `pm install calendar`, `pm install search-advanced`, or `pm install governance-audit`.
+
 ## Manifest Contract
 
 ### Manifest v1 (supported)

@@ -1,15 +1,4 @@
 import type { Command } from "commander";
-import {
-  runAggregate,
-  runActivity,
-  runContext,
-  runGet,
-  runHistory,
-  runList,
-  runSearch,
-  renderContextMarkdown,
-  resolveContextOutputFormat,
-} from "./commands/index.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import type { ItemStatus } from "../types/index.js";
@@ -28,6 +17,15 @@ import {
   resolveActivityStreamMode,
   writeStdout,
 } from "./registration-helpers.js";
+
+type ListQueryCommandsModule = typeof import("./commands/index.js");
+
+let listQueryCommandsModulePromise: Promise<ListQueryCommandsModule> | null = null;
+
+async function loadListQueryCommandsModule(): Promise<ListQueryCommandsModule> {
+  listQueryCommandsModulePromise ??= import("./commands/index.js");
+  return listQueryCommandsModulePromise;
+}
 
 export function registerListQueryCommands(program: Command): void {
   function registerListCommand(
@@ -70,6 +68,7 @@ export function registerListQueryCommands(program: Command): void {
         const startedAt = Date.now();
         const listOptions = normalizeListOptions(options);
         if (excludeTerminal) listOptions.excludeTerminal = true;
+        const { runList } = await loadListQueryCommandsModule();
         const result = await runList(status, listOptions, globalOptions);
         const streamMode = options.stream === true;
         if (streamMode && !globalOptions.json) {
@@ -120,6 +119,7 @@ export function registerListQueryCommands(program: Command): void {
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const { runAggregate } = await loadListQueryCommandsModule();
       const result = await runAggregate(normalizeAggregateOptions(options), globalOptions);
       printResult(result, globalOptions);
       if (globalOptions.profile) {
@@ -153,11 +153,12 @@ export function registerListQueryCommands(program: Command): void {
       const globalOptions = getGlobalOptions(actionCommand);
       const startedAt = Date.now();
       const normalized = normalizeContextOptions(options);
-      const result = await runContext(normalized, globalOptions);
-      const outputFormat = resolveContextOutputFormat(normalized, globalOptions);
+      const commands = await loadListQueryCommandsModule();
+      const result = await commands.runContext(normalized, globalOptions);
+      const outputFormat = commands.resolveContextOutputFormat(normalized, globalOptions);
       if (outputFormat === "markdown") {
         if (!globalOptions.quiet) {
-          writeStdout(`${renderContextMarkdown(result)}\n`);
+          writeStdout(`${commands.renderContextMarkdown(result)}\n`);
         }
       } else {
         printResult(result, {
@@ -189,6 +190,7 @@ export function registerListQueryCommands(program: Command): void {
     .action(async (keywords: string[], options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const { runSearch } = await loadListQueryCommandsModule();
       const result = await runSearch(
         normalizeSearchKeywordsInput(keywords),
         {
@@ -213,6 +215,7 @@ export function registerListQueryCommands(program: Command): void {
     .action(async (id: string, _options: unknown, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const { runGet } = await loadListQueryCommandsModule();
       const result = await runGet(id, globalOptions);
       printResult(result, globalOptions);
       if (globalOptions.profile) {
@@ -230,6 +233,7 @@ export function registerListQueryCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const { runHistory } = await loadListQueryCommandsModule();
       const result = await runHistory(
         id,
         {
@@ -260,6 +264,7 @@ export function registerListQueryCommands(program: Command): void {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const normalized = normalizeActivityOptions(options);
+      const { runActivity } = await loadListQueryCommandsModule();
       const result = await runActivity(normalized, globalOptions);
       const streamMode = resolveActivityStreamMode(options.stream);
       if (streamMode && !globalOptions.json) {

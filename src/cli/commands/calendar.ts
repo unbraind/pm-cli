@@ -943,6 +943,10 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
   const hasExplicitBounds = options.to !== undefined || explicitLookahead !== undefined || occurrenceLimit !== undefined;
   const eventsOnlyCapApplied = eventsOnly && !hasExplicitBounds;
   const recurrenceLookaheadDays = eventsOnlyCapApplied ? DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS : explicitLookahead;
+  const recurrenceLookbackWindowDays =
+    eventsOnlyCapApplied && recurrenceLookbackDays === undefined
+      ? 0
+      : recurrenceLookbackDays;
 
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
@@ -952,7 +956,7 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
   const listWarnings: string[] = [];
   if (eventsOnlyCapApplied) {
     listWarnings.push(
-      `recurring_events_default_cap_applied:${DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS}d -- use --recurrence-lookahead-days or --to for wider range`,
+      `recurring_events_default_cap_applied:lookback=0d,lookahead=${DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS}d -- use --recurrence-lookback-days/--recurrence-lookahead-days or --to for wider range`,
     );
   }
   const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
@@ -961,7 +965,7 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
     rangeBounds.start,
     rangeBounds.end,
     nowValue,
-    recurrenceLookbackDays,
+    recurrenceLookbackWindowDays,
     recurrenceLookaheadDays,
   );
   const seededEvents = buildEventSeed(filteredItems, recurringWindow, includeSources, occurrenceLimit);

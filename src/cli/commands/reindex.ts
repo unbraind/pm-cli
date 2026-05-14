@@ -1,3 +1,4 @@
+import fs from "node:fs/promises";
 import path from "node:path";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { getActiveExtensionRegistrations, runActiveOnIndexHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
@@ -7,6 +8,7 @@ import {
 } from "../../core/extensions/runtime-registrations.js";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { parseItemDocument } from "../../core/item/item-format.js";
 import { acquireLock } from "../../core/lock/lock.js";
 import { buildSearchCorpus, buildSemanticCorpusInput } from "../../core/search/corpus.js";
 import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
@@ -18,7 +20,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
+import { listAllDocumentCandidatesCached, type CachedDocumentCandidate } from "../../core/store/front-matter-cache.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemDocument, PmSettings } from "../../types/index.js";
@@ -78,20 +80,59 @@ function parseMode(raw: string | undefined): "keyword" | "semantic" | "hybrid" {
   throw new PmCliError("Reindex mode must be one of keyword|semantic|hybrid", EXIT_CODE.USAGE);
 }
 
-async function loadDocuments(
+async function loadDocumentCandidates(
   pmRoot: string,
   itemFormat: "toon" | "json_markdown",
   typeToFolder: Record<string, string>,
   schema: PmSettings["schema"],
+): Promise<{ candidates: CachedDocumentCandidate[]; warnings: string[] }> {
+  const warnings: string[] = [];
+  const candidates = await listAllDocumentCandidatesCached(pmRoot, itemFormat, typeToFolder, warnings, schema);
+  return {
+    candidates,
+    warnings,
+  };
+}
+
+async function hydrateDocuments(
+  pmRoot: string,
+  candidates: CachedDocumentCandidate[],
+  schema: PmSettings["schema"],
+  warnings: string[],
+  itemIds?: Set<string>,
 ): Promise<ItemDocument[]> {
-  const items = await listAllFrontMatterWithBody(pmRoot, itemFormat, typeToFolder, undefined, schema);
-  return items.map((item) => {
-    const { body, ...frontMatter } = item;
-    return {
-      metadata: frontMatter,
-      body,
-    };
-  });
+  const hydrated: ItemDocument[] = [];
+  for (const candidate of candidates) {
+    if (itemIds && !itemIds.has(candidate.metadata.id)) {
+      continue;
+    }
+    if (typeof candidate.body === "string") {
+      hydrated.push({
+        metadata: candidate.metadata,
+        body: candidate.body,
+      });
+      continue;
+    }
+    try {
+      const raw = await fs.readFile(candidate.item_path, "utf8");
+      const parsed = parseItemDocument(raw, {
+        format: candidate.item_format,
+        schema,
+        onWarning: (warning) => warnings.push(warning),
+      });
+      hydrated.push({
+        metadata: candidate.metadata,
+        body: parsed.body,
+      });
+    } catch {
+      warnings.push(`item_list_item_read_failed:${path.relative(pmRoot, candidate.item_path)}`);
+      hydrated.push({
+        metadata: candidate.metadata,
+        body: "",
+      });
+    }
+  }
+  return hydrated;
 }
 
 function buildKeywordRecord(document: ItemDocument, mode: "keyword" | "semantic" | "hybrid"): Record<string, unknown> {
@@ -302,16 +343,22 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   }
   const mode = requestedMode;
   emitReindexProgress(progressEnabled, "loading item corpus");
-  const documents = await loadDocuments(pmRoot, settings.item_format, typeRegistry.type_to_folder, settings.schema);
-  emitReindexProgress(progressEnabled, `loaded_items=${documents.length}`);
+  const loadedCandidates = await loadDocumentCandidates(pmRoot, settings.item_format, typeRegistry.type_to_folder, settings.schema);
+  const reindexWarnings = [...loadedCandidates.warnings];
+  const documentCandidates = loadedCandidates.candidates;
+  const metadataDocuments: ItemDocument[] = documentCandidates.map((candidate) => ({
+    metadata: candidate.metadata,
+    body: typeof candidate.body === "string" ? candidate.body : "",
+  }));
+  emitReindexProgress(progressEnabled, `loaded_items=${metadataDocuments.length}`);
   const generatedAt = nowIso();
 
   const manifest = {
     version: 1,
     mode,
     generated_at: generatedAt,
-    total_items: documents.length,
-    items: documents.map((document) => ({
+    total_items: metadataDocuments.length,
+    items: metadataDocuments.map((document) => ({
       id: document.metadata.id,
       type: document.metadata.type,
       status: document.metadata.status,
@@ -323,7 +370,10 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   const manifestPath = path.join(pmRoot, MANIFEST_PATH);
   const embeddingsPath = path.join(pmRoot, EMBEDDINGS_PATH);
 
-  const embeddingsLines = documents.map((document) => JSON.stringify(buildKeywordRecord(document, mode))).join("\n");
+  let documentsForKeywordArtifacts =
+    mode === "keyword"
+      ? await hydrateDocuments(pmRoot, documentCandidates, settings.schema, reindexWarnings)
+      : metadataDocuments;
   const semanticWarnings: string[] = [];
   const vectorizationLedgerEntries: Record<string, string> = {};
   const semanticSummary = {
@@ -334,16 +384,21 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
     vector_upserted: 0,
     batches_completed: 0,
   };
-  if (mode !== "keyword" && documents.length > 0) {
+  if (mode !== "keyword" && metadataDocuments.length > 0) {
     const ledger = await readVectorizationStatusLedger(pmRoot);
     semanticWarnings.push(...ledger.warnings);
-    const staleDocuments = documents.filter(
-      (document) => ledger.entries[document.metadata.id] !== document.metadata.updated_at,
+    const staleIds = new Set(
+      metadataDocuments
+        .filter((document) => ledger.entries[document.metadata.id] !== document.metadata.updated_at)
+        .map((document) => document.metadata.id),
     );
-    const freshDocuments = documents.length - staleDocuments.length;
+    const staleDocuments = staleIds.size > 0
+      ? await hydrateDocuments(pmRoot, documentCandidates, settings.schema, reindexWarnings, staleIds)
+      : [];
+    const freshDocuments = metadataDocuments.length - staleDocuments.length;
     semanticSummary.stale_items = staleDocuments.length;
     semanticSummary.unchanged_items = freshDocuments;
-    for (const document of documents) {
+    for (const document of metadataDocuments) {
       vectorizationLedgerEntries[document.metadata.id] = document.metadata.updated_at;
     }
     if (staleDocuments.length === 0) {
@@ -449,8 +504,13 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       if (freshDocuments > 0) {
         semanticWarnings.push(`search_semantic_reindex_skipped_unchanged:count=${freshDocuments}`);
       }
+      const staleDocumentsById = new Map(staleDocuments.map((document) => [document.metadata.id, document]));
+      documentsForKeywordArtifacts = metadataDocuments.map(
+        (document) => staleDocumentsById.get(document.metadata.id) ?? document,
+      );
     }
   }
+  const embeddingsLines = documentsForKeywordArtifacts.map((document) => JSON.stringify(buildKeywordRecord(document, mode))).join("\n");
   emitReindexProgress(progressEnabled, "writing keyword artifacts");
   await writeFileAtomic(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFileAtomic(embeddingsPath, `${embeddingsLines}\n`);
@@ -478,7 +538,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
     })),
     ...(await runActiveOnIndexHooks({
       mode,
-      total_items: documents.length,
+      total_items: metadataDocuments.length,
     })),
   ];
   emitReindexProgress(progressEnabled, "done");
@@ -486,13 +546,13 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   return {
     ok: true,
     mode,
-    total_items: documents.length,
+    total_items: metadataDocuments.length,
     semantic: semanticSummary,
     artifacts: {
       manifest: MANIFEST_PATH,
       embeddings: EMBEDDINGS_PATH,
     },
-    warnings: [...semanticWarnings, ...vectorizationWarnings, ...hookWarnings],
+    warnings: [...reindexWarnings, ...semanticWarnings, ...vectorizationWarnings, ...hookWarnings],
     generated_at: generatedAt,
   };
   } finally {

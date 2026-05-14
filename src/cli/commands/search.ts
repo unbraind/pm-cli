@@ -37,8 +37,9 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { tokenizeAlphaNumeric } from "../../core/shared/text-normalization.js";
 import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
+import { listAllDocumentCandidatesCached } from "../../core/store/front-matter-cache.js";
 import { listAllFrontMatter } from "../../core/store/item-store.js";
-import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot, getItemPath } from "../../core/store/paths.js";
+import { getItemPath, getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemStatus, ItemType, PmSettings } from "../../types/index.js";
 
@@ -946,45 +947,75 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
   return combineHybridHits(filteredById, semanticScores, context.keywordHits, context.hybridSemanticWeight);
 }
 
-function alternateFormat(itemFormat: ItemFormat): ItemFormat {
-  return itemFormat === "toon" ? "json_markdown" : "toon";
-}
-
 async function loadDocuments(
   pmRoot: string,
   itemFormat: ItemFormat,
   typeToFolder: Record<string, string>,
   schema: PmSettings["schema"],
 ): Promise<{ documents: ItemDocument[]; warnings: string[] }> {
-  const listWarnings: string[] = [];
-  const items = await listAllFrontMatter(pmRoot, itemFormat, typeToFolder, listWarnings, schema);
-  const warnings = [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right));
-  const documents: ItemDocument[] = [];
-  for (const item of items) {
-    const preferredPath = getItemPath(pmRoot, item.type, item.id, itemFormat, typeToFolder);
-    try {
-      const raw = await fs.readFile(preferredPath, "utf8");
-      await runActiveOnReadHooks({
-        path: preferredPath,
-        scope: "project",
+  const readDocumentBody = async (
+    metadata: ItemFrontMatter,
+    preferredPath: string,
+    preferredFormat: ItemFormat,
+  ): Promise<string> => {
+    const tryRead = async (targetPath: string, format: ItemFormat): Promise<string> => {
+      await runActiveOnReadHooks({ path: targetPath, scope: "project" });
+      const raw = await fs.readFile(targetPath, "utf8");
+      const parsed = parseItemDocument(raw, {
+        format,
+        schema,
+        onWarning: (warning) => listWarnings.push(warning),
       });
-      documents.push(parseItemDocument(raw, { format: itemFormat, schema, onWarning: (warning) => listWarnings.push(warning) }));
-      continue;
+      return parsed.body;
+    };
+
+    try {
+      return await tryRead(preferredPath, preferredFormat);
     } catch {
-      // Fallback to the alternate format when preferred format path is absent.
+      const alternateFormat: ItemFormat = preferredFormat === "toon" ? "json_markdown" : "toon";
+      const alternatePath = getItemPath(pmRoot, metadata.type as ItemType, metadata.id, alternateFormat, typeToFolder);
+      try {
+        return await tryRead(alternatePath, alternateFormat);
+      } catch {
+        listWarnings.push(`item_list_item_read_failed:${path.relative(pmRoot, alternatePath)}`);
+        return "";
+      }
     }
-    const fallbackFormat = alternateFormat(itemFormat);
-    const fallbackPath = getItemPath(pmRoot, item.type, item.id, fallbackFormat, typeToFolder);
-    const raw = await fs.readFile(fallbackPath, "utf8");
-    await runActiveOnReadHooks({
-      path: fallbackPath,
-      scope: "project",
+  };
+
+  const listWarnings: string[] = [];
+  const cachedDocuments = await listAllDocumentCandidatesCached(pmRoot, itemFormat, typeToFolder, listWarnings, schema);
+  const documents: ItemDocument[] = [];
+  if (cachedDocuments.length === 0) {
+    const frontMatterDocuments = await listAllFrontMatter(pmRoot, itemFormat, typeToFolder, listWarnings, schema);
+    for (const metadata of frontMatterDocuments) {
+      const preferredPath = getItemPath(pmRoot, metadata.type as ItemType, metadata.id, itemFormat, typeToFolder);
+      const body = await readDocumentBody(metadata, preferredPath, itemFormat);
+      documents.push({ metadata, body });
+    }
+    return {
+      documents,
+      warnings: [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right)),
+    };
+  }
+
+  for (const cachedDocument of cachedDocuments) {
+    if (typeof cachedDocument.body === "string") {
+      documents.push({
+        metadata: cachedDocument.metadata,
+        body: cachedDocument.body,
+      });
+      continue;
+    }
+    const body = await readDocumentBody(cachedDocument.metadata, cachedDocument.item_path, cachedDocument.item_format);
+    documents.push({
+      metadata: cachedDocument.metadata,
+      body,
     });
-    documents.push(parseItemDocument(raw, { format: fallbackFormat, schema, onWarning: (warning) => listWarnings.push(warning) }));
   }
   return {
     documents,
-    warnings,
+    warnings: [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right)),
   };
 }
 

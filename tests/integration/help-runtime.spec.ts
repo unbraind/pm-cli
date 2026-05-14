@@ -52,6 +52,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       const help = context.runCli(["guide", "--help"]);
       expect(help.code).toBe(2);
       expect(help.stderr).toContain("Unknown command guide");
+      expect(help.stderr).toContain("pm install guide-shell");
     });
   });
 
@@ -77,6 +78,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(textHelp.stderr).toContain("pm --help");
       expect(textHelp.stderr).toContain("Recovery bundle:");
       expect(textHelp.stderr).toContain("attempted_command: pm beads --help");
+      expect(textHelp.stderr).toContain("pm install beads");
       expect(textHelp.stderr).not.toContain("pm todos --help");
 
       const jsonHelp = context.runCli(["beads", "--help", "--json"]);
@@ -179,6 +181,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       const help = context.runCli(["reindex", "--help"]);
       expect(help.code).toBe(2);
       expect(help.stderr).toContain("Unknown command reindex");
+      expect(help.stderr).toContain("pm install search-advanced");
     });
   });
 
@@ -220,6 +223,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       const normalizeHelp = context.runCli(["normalize", "--help"]);
       expect(normalizeHelp.code).toBe(2);
       expect(normalizeHelp.stderr).toContain("Unknown command normalize");
+      expect(normalizeHelp.stderr).toContain("pm install governance-audit");
     });
   });
 

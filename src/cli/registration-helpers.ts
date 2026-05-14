@@ -203,7 +203,10 @@ export function normalizeCreateOptions(
 
   const type = readCreateString("type");
   if (options.requireType !== false && type === undefined) {
-    throw new PmCliError("Missing required option --type <value>", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Missing required option --type <value>. Why required: create resolves runtime schema fields/workflow from item type. Retry: add --type <built-in or configured custom type> (example: --type Task).",
+      EXIT_CODE.USAGE,
+    );
   }
 
   const normalized: Record<string, unknown> = {

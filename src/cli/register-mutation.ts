@@ -1,22 +1,11 @@
 import type { Command } from "commander";
-import {
-  runAppend,
-  runClose,
-  runComments,
-  runCreate,
-  runDelete,
-  runDeps,
-  runDocs,
-  runFiles,
-  runFilesDiscover,
-  runLearnings,
-  runNotes,
-  runRestore,
-  runUpdate,
-  runUpdateMany,
-} from "./commands/index.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import {
+  CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
+  UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
+  type CommanderOptionRegistrationContract,
+} from "../sdk/cli-contracts.js";
 import {
   collect,
   extractUpdateManyMutationOptionSource,
@@ -28,76 +17,40 @@ import {
   printResult,
 } from "./registration-helpers.js";
 
+type MutationCommandsModule = typeof import("./commands/index.js");
+
+let mutationCommandsModulePromise: Promise<MutationCommandsModule> | null = null;
+
+async function loadMutationCommandsModule(): Promise<MutationCommandsModule> {
+  mutationCommandsModulePromise ??= import("./commands/index.js");
+  return mutationCommandsModulePromise;
+}
+
+function registerCommanderOptionContracts(command: Command, contracts: CommanderOptionRegistrationContract[]): void {
+  for (const contract of contracts) {
+    if (contract.required) {
+      command.requiredOption(contract.option, contract.description);
+    } else if (contract.repeatable) {
+      command.option(contract.option, contract.description, collect);
+    } else {
+      command.option(contract.option, contract.description);
+    }
+    for (const aliasContract of contract.aliasOptions ?? []) {
+      if (contract.repeatable) {
+        command.option(aliasContract.option, aliasContract.description, collect);
+      } else {
+        command.option(aliasContract.option, aliasContract.description);
+      }
+    }
+  }
+}
+
 export function registerMutationCommands(program: Command): void {
-  program
+  const createCommand = program
     .command("create")
-    .description("Create a new project management item.")
-    .requiredOption("--title, -t <value>", "Item title")
-    .requiredOption("--description, -d <value>", "Item description (allow empty string)")
-    .option("--type <value>", "Item type (built-ins plus any configured custom types)")
-    .option("--template <value>", "Apply named create template defaults before explicit flags")
-    .option("--create-mode <value>", "Create required-option policy mode: strict|progressive")
-    .option("--create_mode <value>", "Alias for --create-mode")
-    .option("--schedule-preset <value>", "Scheduling preset for Reminder|Meeting|Event: lightweight")
-    .option("--schedule_preset <value>", "Alias for --schedule-preset")
-    .option("--status, -s <value>", "Item status")
-    .option("--priority, -p <value>", "Priority 0..4")
-    .option("--tags <value>", "Comma-separated tags")
-    .option("--body, -b <value>", "Item markdown body (allow empty string)")
-    .option("--deadline <value>", "Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)")
-    .option("--estimate, --estimated-minutes <value>", "Estimated minutes")
-    .option("--estimated_minutes <value>", "Alias for --estimated-minutes")
-    .option("--acceptance-criteria <value>", "Acceptance criteria (allow empty string)")
-    .option("--acceptance_criteria <value>", "Alias for --acceptance-criteria")
-    .option("--ac <value>", "Alias for --acceptance-criteria")
-    .option("--definition-of-ready <value>", "Definition of ready (allow empty string)")
-    .option("--definition_of_ready <value>", "Alias for --definition-of-ready")
-    .option("--order <value>", "Planning order/rank integer")
-    .option("--rank <value>", "Alias for --order")
-    .option("--goal <value>", "Goal identifier")
-    .option("--objective <value>", "Objective identifier")
-    .option("--value <value>", "Business value summary")
-    .option("--impact <value>", "Business impact summary")
-    .option("--outcome <value>", "Expected outcome summary")
-    .option("--why-now <value>", "Why-now rationale")
-    .option("--why_now <value>", "Alias for --why-now")
-    .option("--author <value>", "Mutation author")
-    .option("--message <value>", "History message (allow empty string)")
-    .option("--assignee <value>", "Item assignee")
-    .option("--parent <value>", "Parent item ID")
-    .option("--reviewer <value>", "Reviewer")
-    .option("--risk <value>", "Risk level: low|med|medium|high|critical (med persists as medium)")
-    .option("--confidence <value>", "Confidence level: 0..100|low|med|medium|high (med persists as medium)")
-    .option("--sprint <value>", "Sprint identifier")
-    .option("--release <value>", "Release identifier")
-    .option("--blocked-by <value>", "Blocked-by item ID or reason")
-    .option("--blocked_by <value>", "Alias for --blocked-by")
-    .option("--blocked-reason <value>", "Blocked reason")
-    .option("--blocked_reason <value>", "Alias for --blocked-reason")
-    .option("--unblock-note <value>", "Unblock rationale note")
-    .option("--unblock_note <value>", "Alias for --unblock-note")
-    .option("--reporter <value>", "Issue reporter")
-    .option("--severity <value>", "Issue severity: low|med|medium|high|critical (med persists as medium)")
-    .option("--environment <value>", "Issue environment context")
-    .option("--repro-steps <value>", "Issue reproduction steps")
-    .option("--repro_steps <value>", "Alias for --repro-steps")
-    .option("--resolution <value>", "Issue resolution summary")
-    .option("--expected-result <value>", "Issue expected behavior")
-    .option("--expected_result <value>", "Alias for --expected-result")
-    .option("--actual-result <value>", "Issue observed behavior")
-    .option("--actual_result <value>", "Alias for --actual-result")
-    .option("--affected-version <value>", "Affected version identifier")
-    .option("--affected_version <value>", "Alias for --affected-version")
-    .option("--fixed-version <value>", "Fixed version identifier")
-    .option("--fixed_version <value>", "Alias for --fixed-version")
-    .option("--component <value>", "Issue component ownership")
-    .option("--regression <value>", "Regression marker: true|false|1|0")
-    .option("--customer-impact <value>", "Customer impact summary")
-    .option("--customer_impact <value>", "Alias for --customer-impact")
-    .option("--dep <value>", "Seed dependency entry (key=value CSV, markdown key:value lines, or - for stdin; repeatable)", collect)
-    .option("--type-option <value>", "Type option key=value or key=<name>,value=<value> (also accepts key:value and markdown pairs; use - for stdin; repeatable)", collect)
-    .option("--type_option <value>", "Alias for --type-option", collect)
-    .option("--unset <field>", "Clear scalar metadata field by name (repeatable)", collect)
+    .description("Create a new project management item.");
+  registerCommanderOptionContracts(createCommand, CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS);
+  createCommand
     .option("--clear-deps", "Clear dependency entries")
     .option("--clear-comments", "Clear comments")
     .option("--clear-notes", "Clear notes")
@@ -108,18 +61,11 @@ export function registerMutationCommands(program: Command): void {
     .option("--clear-reminders", "Clear reminders")
     .option("--clear-events", "Clear events")
     .option("--clear-type-options", "Clear type options")
-    .option("--reminder <value>", "Seed reminder entry at=<iso|relative>,text=<text> (also accepts markdown pairs and - for stdin; repeatable)", collect)
-    .option("--event <value>", "Seed event entry start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (also accepts markdown pairs and - for stdin; repeatable)", collect)
-    .option("--comment <value>", "Seed comment entry (text=<value> CSV/markdown pairs or - for stdin; repeatable)", collect)
-    .option("--note <value>", "Seed note entry (text=<value> CSV/markdown pairs or - for stdin; repeatable)", collect)
-    .option("--learning <value>", "Seed learning entry (text=<value> CSV/markdown pairs or - for stdin; repeatable)", collect)
-    .option("--file <value>", "Seed linked file entry (CSV/markdown pairs or - for stdin; repeatable)", collect)
-    .option("--test <value>", "Seed linked test entry (CSV/markdown pairs or - for stdin; repeatable)", collect)
-    .option("--doc <value>", "Seed linked doc entry (CSV/markdown pairs or - for stdin; repeatable)", collect)
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const normalized = normalizeCreateOptions(options, { requireType: false });
+      const { runCreate } = await loadMutationCommandsModule();
       const result = await runCreate(normalized, globalOptions);
       await invalidateSearchCachesForMutation(globalOptions, result);
       printResult(result, globalOptions);
@@ -128,85 +74,14 @@ export function registerMutationCommands(program: Command): void {
       }
     });
 
-  program
+  const updateCommand = program
     .command("update")
     .argument("<id>", "Item id")
-    .description("Update item fields and metadata.")
-    .option("--title, -t <value>", "Set title")
-    .option("--description, -d <value>", "Set description")
-    .option("--body, -b <value>", "Set body (allow empty string)")
-    .option("--status, -s <value>", "Set status (use close command for closed)")
-    .option("--close-reason <value>", "Set close reason")
-    .option("--close_reason <value>", "Alias for --close-reason")
-    .option("--priority, -p <value>", "Set priority")
-    .option("--type <value>", "Set type")
-    .option("--tags <value>", "Set comma-separated tags")
-    .option("--deadline <value>", "Set deadline (ISO/date string or relative)")
-    .option("--estimate, --estimated-minutes <value>", "Set estimated minutes")
-    .option("--estimated_minutes <value>", "Alias for --estimated-minutes")
-    .option("--acceptance-criteria <value>", "Set acceptance criteria")
-    .option("--acceptance_criteria <value>", "Alias for --acceptance-criteria")
-    .option("--ac <value>", "Alias for --acceptance-criteria")
-    .option("--definition-of-ready <value>", "Set definition of ready")
-    .option("--definition_of_ready <value>", "Alias for --definition-of-ready")
-    .option("--order <value>", "Set planning order/rank integer")
-    .option("--rank <value>", "Alias for --order")
-    .option("--goal <value>", "Set goal identifier")
-    .option("--objective <value>", "Set objective identifier")
-    .option("--value <value>", "Set business value summary")
-    .option("--impact <value>", "Set business impact summary")
-    .option("--outcome <value>", "Set expected outcome summary")
-    .option("--why-now <value>", "Set why-now rationale")
-    .option("--why_now <value>", "Alias for --why-now")
-    .option("--author <value>", "Mutation author")
-    .option("--message <value>", "Mutation message")
-    .option("--assignee <value>", "Set assignee")
-    .option("--parent <value>", "Set parent item ID")
-    .option("--reviewer <value>", "Set reviewer")
-    .option("--risk <value>", "Set risk level: low|med|medium|high|critical (med persists as medium)")
-    .option("--confidence <value>", "Set confidence level: 0..100|low|med|medium|high (med persists as medium)")
-    .option("--sprint <value>", "Set sprint identifier")
-    .option("--release <value>", "Set release identifier")
-    .option("--blocked-by <value>", "Set blocked-by item ID or reason")
-    .option("--blocked_by <value>", "Alias for --blocked-by")
-    .option("--blocked-reason <value>", "Set blocked reason")
-    .option("--blocked_reason <value>", "Alias for --blocked-reason")
-    .option("--unblock-note <value>", "Set unblock rationale note")
-    .option("--unblock_note <value>", "Alias for --unblock-note")
-    .option("--reporter <value>", "Set issue reporter")
-    .option("--severity <value>", "Set issue severity: low|med|medium|high|critical (med persists as medium)")
-    .option("--environment <value>", "Set issue environment context")
-    .option("--repro-steps <value>", "Set issue reproduction steps")
-    .option("--repro_steps <value>", "Alias for --repro-steps")
-    .option("--resolution <value>", "Set issue resolution summary")
-    .option("--expected-result <value>", "Set issue expected behavior")
-    .option("--expected_result <value>", "Alias for --expected-result")
-    .option("--actual-result <value>", "Set issue observed behavior")
-    .option("--actual_result <value>", "Alias for --actual-result")
-    .option("--affected-version <value>", "Set affected version identifier")
-    .option("--affected_version <value>", "Alias for --affected-version")
-    .option("--fixed-version <value>", "Set fixed version identifier")
-    .option("--fixed_version <value>", "Alias for --fixed-version")
-    .option("--component <value>", "Set issue component ownership")
-    .option("--regression <value>", "Set regression marker: true|false|1|0")
-    .option("--customer-impact <value>", "Set customer impact summary")
-    .option("--customer_impact <value>", "Alias for --customer-impact")
-    .option("--dep <value>", "Add dependency entries id=<id>,kind=<value>,author=<value>,created_at=<iso|now>,source_kind=<value> (repeatable)", collect)
-    .option("--dep-remove <value>", "Remove dependencies by id or id=<id>,kind=<value>,source_kind=<value> selectors (repeatable)", collect)
-    .option("--dep_remove <value>", "Alias for --dep-remove", collect)
+    .description("Update item fields and metadata.");
+  registerCommanderOptionContracts(updateCommand, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS);
+  updateCommand
     .option("--replace-deps", "Atomically replace dependency entries with the provided --dep values")
     .option("--replace-tests", "Atomically replace linked test entries with the provided --test values")
-    .option("--comment <value>", "Append comment seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable)", collect)
-    .option("--note <value>", "Append note seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable)", collect)
-    .option("--learning <value>", "Append learning seed author=<value>,created_at=<iso|now>,text=<value> (also accepts markdown pairs and - for stdin; repeatable)", collect)
-    .option("--file <value>", "Append linked file path=<value>,scope=<project|global>,note=<text> (also accepts markdown pairs and - for stdin; repeatable)", collect)
-    .option("--test <value>", "Append linked test command=<value>,path=<value>,scope=<project|global>,timeout_seconds=<n>,pm_context_mode=<schema|tracker|auto> (also accepts markdown pairs and - for stdin; repeatable)", collect)
-    .option("--doc <value>", "Append linked doc path=<value>,scope=<project|global>,note=<text> (also accepts markdown pairs and - for stdin; repeatable)", collect)
-    .option("--reminder <value>", "Set reminders at=<iso|relative>,text=<text> (also accepts markdown pairs and - for stdin; repeatable)", collect)
-    .option("--event <value>", "Set events start=<iso|relative>,end=<iso|relative>,title=<text>,all_day=<true|false>,recur_* fields (also accepts markdown pairs and - for stdin; repeatable)", collect)
-    .option("--type-option <value>", "Set type options key=value or key=<name>,value=<value> (also accepts key:value and markdown pairs; use - for stdin; repeatable)", collect)
-    .option("--type_option <value>", "Alias for --type-option", collect)
-    .option("--unset <field>", "Clear scalar metadata field by name (repeatable)", collect)
     .option("--clear-deps", "Clear dependency entries")
     .option("--clear-comments", "Clear comments")
     .option("--clear-notes", "Clear notes")
@@ -225,6 +100,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const { runUpdate } = await loadMutationCommandsModule();
       const result = await runUpdate(id, normalizeUpdateOptions(options), globalOptions);
       await invalidateSearchCachesForMutation(globalOptions, result);
       printResult(result, globalOptions);
@@ -344,6 +220,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const { runUpdateMany } = await loadMutationCommandsModule();
       const result = await runUpdateMany(
         {
           status: typeof options.filterStatus === "string" ? options.filterStatus : undefined,
@@ -393,6 +270,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, text: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const { runClose } = await loadMutationCommandsModule();
       const result = await runClose(
         id,
         text,
@@ -426,6 +304,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const { runDelete } = await loadMutationCommandsModule();
       const result = await runDelete(id, {
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
@@ -449,6 +328,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const { runAppend } = await loadMutationCommandsModule();
       const result = await runAppend(id, {
         body: typeof options.body === "string" ? options.body : "",
         author: typeof options.author === "string" ? options.author : undefined,
@@ -473,6 +353,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, target: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const { runRestore } = await loadMutationCommandsModule();
       const result = await runRestore(id, target, {
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
@@ -520,6 +401,7 @@ export function registerMutationCommands(program: Command): void {
         );
       }
       const add = addFromOption ?? addFromPositional;
+      const { runComments } = await loadMutationCommandsModule();
       const result = await runComments(id, {
         add,
         stdin: readFromStdin,
@@ -560,6 +442,7 @@ export function registerMutationCommands(program: Command): void {
         throw new PmCliError("Specify note text either as positional [text] or with --add, not both", EXIT_CODE.USAGE);
       }
       const add = addFromOption ?? addFromPositional;
+      const { runNotes } = await loadMutationCommandsModule();
       const result = await runNotes(id, {
         add,
         limit: typeof options.limit === "string" ? options.limit : undefined,
@@ -598,6 +481,7 @@ export function registerMutationCommands(program: Command): void {
         throw new PmCliError("Specify learning text either as positional [text] or with --add, not both", EXIT_CODE.USAGE);
       }
       const add = addFromOption ?? addFromPositional;
+      const { runLearnings } = await loadMutationCommandsModule();
       const result = await runLearnings(id, {
         add,
         limit: typeof options.limit === "string" ? options.limit : undefined,
@@ -639,6 +523,7 @@ export function registerMutationCommands(program: Command): void {
       const addGlobValues = Array.isArray(options.addGlob) ? (options.addGlob as string[]) : [];
       const removeValues = Array.isArray(options.remove) ? (options.remove as string[]) : [];
       const migrateValues = Array.isArray(options.migrate) ? (options.migrate as string[]) : [];
+      const { runFiles } = await loadMutationCommandsModule();
       const result = await runFiles(id, {
         add: addValues,
         addGlob: addGlobValues,
@@ -674,6 +559,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const { runFilesDiscover } = await loadMutationCommandsModule();
       const result = await runFilesDiscover(id, {
         apply: Boolean(options.apply),
         note: typeof options.note === "string" ? options.note : undefined,
@@ -711,6 +597,7 @@ export function registerMutationCommands(program: Command): void {
       const addGlobValues = Array.isArray(options.addGlob) ? (options.addGlob as string[]) : [];
       const removeValues = Array.isArray(options.remove) ? (options.remove as string[]) : [];
       const migrateValues = Array.isArray(options.migrate) ? (options.migrate as string[]) : [];
+      const { runDocs } = await loadMutationCommandsModule();
       const result = await runDocs(id, {
         add: addValues,
         addGlob: addGlobValues,
@@ -742,6 +629,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const { runDeps } = await loadMutationCommandsModule();
       const result = await runDeps(id, {
         format: typeof options.format === "string" ? options.format : undefined,
         maxDepth: typeof options.maxDepth === "string" ? options.maxDepth : undefined,

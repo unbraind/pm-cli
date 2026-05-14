@@ -23,6 +23,13 @@ interface CacheEnvelope {
   entries: Record<string, CachedEntry>;
 }
 
+export interface CachedDocumentCandidate {
+  metadata: ItemMetadata;
+  body?: string;
+  item_format: ItemFormat;
+  item_path: string;
+}
+
 function computeContextFingerprint(
   preferredFormat: ItemFormat | undefined,
   typeToFolder: Record<string, string>,
@@ -74,13 +81,13 @@ function appendWarning(warnings: string[] | undefined, warning: string): void {
  * List all item documents using a persistent on-disk metadata cache.
  * Only parses files whose mtime/size have changed since the last cached run.
  */
-export async function listAllDocumentsCached(
+export async function listAllDocumentCandidatesCached(
   pmRoot: string,
   preferredFormat: ItemFormat | undefined,
   typeToFolder: Record<string, string>,
   warnings: string[] | undefined,
   schema: RuntimeSchemaSettings | undefined,
-): Promise<ItemDocument[]> {
+): Promise<CachedDocumentCandidate[]> {
   const contextFingerprint = computeContextFingerprint(preferredFormat, typeToFolder, schema);
   const existingCache = await loadCache(pmRoot);
 
@@ -107,7 +114,7 @@ export async function listAllDocumentsCached(
   );
 
   const newEntries: Record<string, CachedEntry> = {};
-  const documentsById = new Map<string, { document: ItemDocument; itemFormat: ItemFormat }>();
+  const documentsById = new Map<string, { candidate: CachedDocumentCandidate; itemFormat: ItemFormat }>();
 
   const parseTasks: Array<Promise<void>> = [];
 
@@ -130,6 +137,7 @@ export async function listAllDocumentsCached(
 
             let metadata: ItemMetadata;
             let bodyLength: number;
+            let body: string | undefined;
             const itemFormat = getItemFormatFromPath(filePath) as ItemFormat;
 
             // Preserve onRead hook semantics even when metadata is served from cache.
@@ -147,6 +155,7 @@ export async function listAllDocumentsCached(
               });
               metadata = parsed.metadata;
               bodyLength = parsed.body.length;
+              body = parsed.body;
             }
 
             newEntries[relativePath] = {
@@ -158,20 +167,20 @@ export async function listAllDocumentsCached(
             };
 
             const existing = documentsById.get(metadata.id);
+            const candidate: CachedDocumentCandidate = {
+              metadata,
+              body,
+              item_format: itemFormat,
+              item_path: filePath,
+            };
             if (!existing) {
-              documentsById.set(metadata.id, {
-                document: { metadata, body: "" },
-                itemFormat,
-              });
+              documentsById.set(metadata.id, { candidate, itemFormat });
             } else {
               const shouldReplace = preferredFormat
                 ? itemFormat === preferredFormat && existing.itemFormat !== preferredFormat
                 : itemFormat === "toon" && existing.itemFormat !== "toon";
               if (shouldReplace) {
-                documentsById.set(metadata.id, {
-                  document: { metadata, body: "" },
-                  itemFormat,
-                });
+                documentsById.set(metadata.id, { candidate, itemFormat });
               }
             }
           } catch {
@@ -191,6 +200,20 @@ export async function listAllDocumentsCached(
   }).catch(() => {});
 
   return [...documentsById.values()]
-    .sort((left, right) => left.document.metadata.id.localeCompare(right.document.metadata.id))
-    .map((entry) => entry.document);
+    .sort((left, right) => left.candidate.metadata.id.localeCompare(right.candidate.metadata.id))
+    .map((entry) => entry.candidate);
+}
+
+export async function listAllDocumentsCached(
+  pmRoot: string,
+  preferredFormat: ItemFormat | undefined,
+  typeToFolder: Record<string, string>,
+  warnings: string[] | undefined,
+  schema: RuntimeSchemaSettings | undefined,
+): Promise<ItemDocument[]> {
+  const candidates = await listAllDocumentCandidatesCached(pmRoot, preferredFormat, typeToFolder, warnings, schema);
+  return candidates.map((candidate) => ({
+    metadata: candidate.metadata,
+    body: candidate.body ?? "",
+  }));
 }
