@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-14T17:56:51.256Z"
+updated_at: "2026-05-14T18:10:53.759Z"
 deadline: "2026-05-04T13:20:01.343Z"
 assignee: codex-agent
 author: codex-audit
@@ -15,7 +15,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[34]{created_at,author,text}:
+comments[35]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -50,6 +50,7 @@ comments[34]{created_at,author,text}:
   "2026-05-14T17:37:02.894Z",codex-agent,"Execution continuation 2026-05-14: duplicate check reused pm-rnpb after pm context/search/list-open/list-in-progress. Bootstrap passed: npm install -g ., pm --version 2026.5.12, node v25.9.0, pnpm 10.33.0, pnpm build. Continuing latest temp-project dogfood, release/CI reliability, performance, search/calendar/SDK, GitHub, telemetry/Sentry, and privacy review without creating duplicate items."
   "2026-05-14T17:55:47.748Z",codex-agent,"Audit evidence 2026-05-14: latest isolated temp-project dogfood passed 42 workflows across init/config/create/claim/update/files/docs/comments/notes/learnings/calendar/context/search/reindex/packages/SDK/linked-tests/validate/health/close/release; slowest normal operations were package/health/validate around 480-572ms and linked-test execution was 7316ms. GitHub snapshot: no open repo issues, no pm-cli notifications, and only existing Dependabot PRs #26/#24/#22 with dependency-branch failures. Live telemetry stack was healthy with queue depth 0/consumer 1 and 11780 events in the last 24h; 7d command-finish error rate was 2.21 percent with zero missing error-code rows. Sentry showed new PM-CLI-Q activity localeCompare crash; fixed by making pm activity tolerate malformed legacy history rows, and release Sentry gate now falls back to authenticated sentry CLI when API-token access fails. Verification passed: focused activity regression, release automation/readiness tests, static quality, secret scan, required Sentry/telemetry gate, and full release gate with 92 files / 1300 tests at 100 percent coverage plus npx/npm-pack/compatibility gates."
   "2026-05-14T17:56:51.256Z",codex-agent,"Tracker hygiene follow-up 2026-05-14: pm validate initially found five closed package-refactor items missing resolution/expected/actual result metadata. Backfilled pm-2rj1, pm-7xk5, pm-ixt3, pm-t5ud, and pm-zjuv from their existing close evidence using pm update. Re-run pm validate --check-resolution --check-history-drift now has resolution ok; only the known historical hash drift on pm-54d, pm-f3q4, pm-fdla, pm-mb4n, and pm-tq1 remains under pm-xk39."
+  "2026-05-14T18:10:53.759Z",codex-agent,"GitHub CI evidence 2026-05-14: pushed bb4d7fd and watched GitHub Actions CI run 25876372278 to completion. All matrix jobs passed: ubuntu Node 20/22/24, macOS Node 20, and Windows Node 20. Ubuntu Node 20 completed the full coverage/release gate path; Windows emitted only the hosted-runner deprecation notice."
 files[35]{path,scope,note}:
   README.md,project,public README hygiene update
   scripts/check-secrets.mjs,project,detect absolute home-path and user@private-host leakage
