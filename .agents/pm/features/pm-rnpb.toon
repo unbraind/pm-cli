@@ -6,16 +6,15 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-15T22:02:18.087Z"
+updated_at: "2026-05-15T22:15:28.327Z"
 deadline: "2026-05-04T13:20:01.343Z"
-assignee: codex-agent
 author: codex-audit
 estimated_minutes: 300
 acceptance_criteria: Audit findings are actionable and deduplicated; changed files and verification commands are linked; temporary dogfood project validates core workflows; any discovered bugs with safe fixes are remediated and tested.
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[47]{created_at,author,text}:
+comments[48]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -63,6 +62,7 @@ comments[47]{created_at,author,text}:
   "2026-05-15T21:51:08.265Z",codex-agent,"Telemetry audit finding 2026-05-15: live stack health initially showed API/Grafana/Postgres/RabbitMQ healthy and recent POST /v1/events traffic, but RabbitMQ queue had 101 ready messages and 0 consumers because telemetry-worker was stopped (Exited 137). Restarting only the telemetry worker and verifying drain; private host/path details remain confined to ignored scripts/prod/telemetry reports."
   "2026-05-15T21:51:08.306Z",codex-agent,"GitHub/Sentry snapshot 2026-05-15: no open repo issues; open PRs are Dependabot #26/#24/#22 with pre-existing dependency-branch failures; latest main CI, Auto Release, and Nightly Validation runs are green. Notifications only showed older main CI/Auto Release failures from before the current green runs. Sentry unresolved top issues remain PM-CLI-Q/P/N/M/K/J/H/G/F/E; PM-CLI-Q was already addressed in current source, remaining high groups are historical extension/import/runtime noise to keep watching through release gates."
   "2026-05-15T22:02:18.087Z",codex-agent,"Final local evidence 2026-05-15: implemented pm get --depth brief|standard|deep for lower-token agent item reads while preserving default deep output. Updated contracts/help/SDK schema and dogfood harness; isolated dogfood now passes 43 workflows. Focused regression passed: node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/contracts-command.spec.ts (46 tests). Real hybrid reindex with search-advanced installed for the probe returned ok with semantic.enabled=true, 710 unchanged vectors, 0 stale items; the temporary project package runtime was then removed to avoid committing local source paths. Privacy scan passed. Release gate passed with required telemetry/Sentry: coverage 92 files/1303 tests at 100 percent, static/docs/typecheck/build/npx/npm-pack/compatibility ok, Sentry critical=1/high=4 within thresholds, telemetry finish_error_rate_pct=2.2 and zero missing error-code rows. Telemetry worker was restarted and queue verified drained to 0 with 1 consumer."
+  "2026-05-15T22:15:25.862Z",codex-agent,"Evidence: pushed CI run 25943570552 passed for commit 42727af64867fa03beaa33cab83e887b65a14841 across ubuntu Node 20/22/24, macOS Node 20, and Windows Node 20. Full-gate lane included coverage, static quality, compatibility migration, packaging smoke, npx tarball smoke, and Claude Code plugin smoke."
 files[40]{path,scope,note}:
   README.md,project,public README hygiene update
   scripts/check-secrets.mjs,project,detect absolute home-path and user@private-host leakage
