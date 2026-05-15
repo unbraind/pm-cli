@@ -1,13 +1,21 @@
 import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { activateExtensions, getActiveExtensionRegistrations, loadExtensions } from "../../core/extensions/index.js";
+import {
+  activateExtensions,
+  getActiveExtensionRegistrations,
+  loadExtensions,
+} from "../../core/extensions/index.js";
 import type {
   RegisteredExtensionCommandDefinition,
   RegisteredExtensionFlagDefinitions,
 } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { commandOptionFlagLabel, resolveCommandOptionPolicyState, resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import {
+  commandOptionFlagLabel,
+  resolveCommandOptionPolicyState,
+  resolveItemTypeRegistry,
+} from "../../core/item/type-registry.js";
 import {
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
@@ -101,6 +109,11 @@ interface CommandFlagSurface {
   }>;
 }
 
+interface CommandAliasSurface {
+  canonical: string;
+  aliases: string[];
+}
+
 export interface ContractsResult {
   schema_version: string | null;
   schema_id: string | null;
@@ -118,6 +131,7 @@ export interface ContractsResult {
   commands: string[];
   schema?: Record<string, unknown>;
   command_flags?: CommandFlagSurface[];
+  command_aliases?: CommandAliasSurface[];
   commander_aliases?: Record<string, CommanderOptionAliasContract[]>;
   extension_commands?: ExtensionCommandContract[];
   runtime_schema?: {
@@ -245,26 +259,56 @@ const PACKAGE_OWNED_COMMANDS = new Set<string>([
   "test-runs resume",
 ]);
 
+const CANONICAL_COMMAND_ALIASES: CommandAliasSurface[] = [
+  {
+    canonical: "context",
+    aliases: ["ctx"],
+  },
+  {
+    canonical: "package",
+    aliases: ["extension", "packages"],
+  },
+];
+
+const COMMAND_ALIAS_TO_CANONICAL = new Map(
+  CANONICAL_COMMAND_ALIASES.flatMap((entry) =>
+    entry.aliases.map((alias) => [alias, entry.canonical] as const),
+  ),
+);
+
 function resolveActionCommandPath(action: PmToolAction): string | null {
-  if (PM_CORE_COMMAND_NAMES.includes(action as (typeof PM_CORE_COMMAND_NAMES)[number])) {
+  if (
+    PM_CORE_COMMAND_NAMES.includes(
+      action as (typeof PM_CORE_COMMAND_NAMES)[number],
+    )
+  ) {
     return normalizeCommandPath(action);
   }
   if (action.startsWith("extension-")) {
-    return normalizeCommandPath(`extension ${action.slice("extension-".length)}`);
+    return normalizeCommandPath(
+      `extension ${action.slice("extension-".length)}`,
+    );
   }
   if (action.startsWith("package-")) {
     return normalizeCommandPath(`package ${action.slice("package-".length)}`);
   }
   if (action.startsWith("test-runs-")) {
-    return normalizeCommandPath(`test-runs ${action.slice("test-runs-".length)}`);
+    return normalizeCommandPath(
+      `test-runs ${action.slice("test-runs-".length)}`,
+    );
   }
   if (action.startsWith("templates-")) {
-    return normalizeCommandPath(`templates ${action.slice("templates-".length)}`);
+    return normalizeCommandPath(
+      `templates ${action.slice("templates-".length)}`,
+    );
   }
   return null;
 }
 
-function actionDescriptorMatchesSelectedCommand(descriptor: ActionContractDescriptor, selectedCommand: string): boolean {
+function actionDescriptorMatchesSelectedCommand(
+  descriptor: ActionContractDescriptor,
+  selectedCommand: string,
+): boolean {
   if (descriptor.command_path === null) {
     return false;
   }
@@ -310,15 +354,23 @@ function normalizeToken(value: string | undefined): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function extractActionBranches(schema: Record<string, unknown>): Record<string, unknown>[] {
+function extractActionBranches(
+  schema: Record<string, unknown>,
+): Record<string, unknown>[] {
   const oneOf = schema.oneOf;
   if (!Array.isArray(oneOf)) {
     return [];
   }
-  return oneOf.filter((entry): entry is Record<string, unknown> => typeof entry === "object" && entry !== null);
+  return oneOf.filter(
+    (entry): entry is Record<string, unknown> =>
+      typeof entry === "object" && entry !== null,
+  );
 }
 
-function filterSchemaByAction(schema: Record<string, unknown>, action: string | undefined): Record<string, unknown> {
+function filterSchemaByAction(
+  schema: Record<string, unknown>,
+  action: string | undefined,
+): Record<string, unknown> {
   if (!action) {
     return { ...schema };
   }
@@ -340,7 +392,10 @@ function filterSchemaByAction(schema: Record<string, unknown>, action: string | 
   };
 }
 
-function filterSchemaByActions(schema: Record<string, unknown>, actions: ReadonlySet<string>): Record<string, unknown> {
+function filterSchemaByActions(
+  schema: Record<string, unknown>,
+  actions: ReadonlySet<string>,
+): Record<string, unknown> {
   const branches = extractActionBranches(schema);
   const filtered = branches.filter((entry) => {
     const properties = entry.properties;
@@ -398,11 +453,19 @@ function normalizeStringList(values: string[] | undefined): string[] {
   return normalized;
 }
 
-function toExtensionFlagContract(definition: Record<string, unknown>): CliFlagContract | null {
+function toExtensionFlagContract(
+  definition: Record<string, unknown>,
+): CliFlagContract | null {
   const longName = toOptionalTrimmedString(definition.long);
   const shortName = toOptionalTrimmedString(definition.short);
-  const normalizedLong = longName && longName.startsWith("--") && longName.length > 2 ? longName : null;
-  const normalizedShort = shortName && shortName.startsWith("-") && !shortName.startsWith("--") ? shortName : null;
+  const normalizedLong =
+    longName && longName.startsWith("--") && longName.length > 2
+      ? longName
+      : null;
+  const normalizedShort =
+    shortName && shortName.startsWith("-") && !shortName.startsWith("--")
+      ? shortName
+      : null;
   const flag = normalizedLong ?? normalizedShort;
   if (!flag) {
     return null;
@@ -487,15 +550,21 @@ function collectExtensionFlagContractsByCommand(
   return normalized;
 }
 
-function collectExtensionCommandContracts(runtimeProbe: RuntimeExtensionActionProbe): ExtensionCommandContract[] {
-  const flagsByCommand = collectExtensionFlagContractsByCommand(runtimeProbe.flagRegistrations);
+function collectExtensionCommandContracts(
+  runtimeProbe: RuntimeExtensionActionProbe,
+): ExtensionCommandContract[] {
+  const flagsByCommand = collectExtensionFlagContractsByCommand(
+    runtimeProbe.flagRegistrations,
+  );
   const definitionsByCommand = new Map<string, ExtensionCommandContract>();
   for (const definition of runtimeProbe.commandDefinitions) {
     const command = normalizeCommandPath(definition.command);
     if (command.length === 0) {
       continue;
     }
-    const action = toOptionalTrimmedString(definition.action) ?? normalizeActionNameFromCommand(command);
+    const action =
+      toOptionalTrimmedString(definition.action) ??
+      normalizeActionNameFromCommand(command);
     const args = Array.isArray(definition.arguments)
       ? definition.arguments
           .map((argument) => {
@@ -511,8 +580,14 @@ function collectExtensionCommandContracts(runtimeProbe: RuntimeExtensionActionPr
             };
           })
           .filter(
-            (argument): argument is { name: string; required: boolean; variadic: boolean; description: string | null } =>
-              argument !== null,
+            (
+              argument,
+            ): argument is {
+              name: string;
+              required: boolean;
+              variadic: boolean;
+              description: string | null;
+            } => argument !== null,
           )
       : [];
     definitionsByCommand.set(command, {
@@ -543,12 +618,17 @@ function collectExtensionCommandContracts(runtimeProbe: RuntimeExtensionActionPr
   }
 
   const contracts: ExtensionCommandContract[] = [];
-  for (const command of [...extensionCommands].sort((left, right) => left.localeCompare(right))) {
+  for (const command of [...extensionCommands].sort((left, right) =>
+    left.localeCompare(right),
+  )) {
     const definition = definitionsByCommand.get(command);
     if (definition) {
       contracts.push({
         ...definition,
-        flags: definition.flags.length > 0 ? definition.flags : flagsByCommand.get(command)?.flags ?? [],
+        flags:
+          definition.flags.length > 0
+            ? definition.flags
+            : (flagsByCommand.get(command)?.flags ?? []),
       });
       continue;
     }
@@ -567,22 +647,32 @@ function collectExtensionCommandContracts(runtimeProbe: RuntimeExtensionActionPr
   return contracts;
 }
 
-function extensionSchemaPropertyNameFromFlag(flag: CliFlagContract): string | null {
+function extensionSchemaPropertyNameFromFlag(
+  flag: CliFlagContract,
+): string | null {
   const normalized = flag.flag.replace(/^-+/, "").trim();
   if (normalized.length === 0) {
     return null;
   }
-  const camelCased = normalized.replace(/-([a-z0-9])/g, (_match, char: string) => char.toUpperCase());
+  const camelCased = normalized.replace(
+    /-([a-z0-9])/g,
+    (_match, char: string) => char.toUpperCase(),
+  );
   const cleaned = camelCased.replace(/[^a-zA-Z0-9]/g, "");
   return cleaned.length > 0 ? cleaned : null;
 }
 
-function buildExtensionActionSchemaBranch(contract: ExtensionCommandContract): Record<string, unknown> {
+function buildExtensionActionSchemaBranch(
+  contract: ExtensionCommandContract,
+): Record<string, unknown> {
   const properties: Record<string, unknown> = {
     action: {
       type: "string",
       const: contract.action,
-      description: contract.intent ?? contract.description ?? `Invoke extension command '${contract.command}'.`,
+      description:
+        contract.intent ??
+        contract.description ??
+        `Invoke extension command '${contract.command}'.`,
     },
   };
   const required: string[] = ["action"];
@@ -591,12 +681,16 @@ function buildExtensionActionSchemaBranch(contract: ExtensionCommandContract): R
       properties[argument.name] = {
         type: "array",
         items: { type: "string" },
-        description: argument.description ?? `Variadic argument '${argument.name}' for extension action '${contract.action}'.`,
+        description:
+          argument.description ??
+          `Variadic argument '${argument.name}' for extension action '${contract.action}'.`,
       };
     } else {
       properties[argument.name] = {
         type: "string",
-        description: argument.description ?? `Argument '${argument.name}' for extension action '${contract.action}'.`,
+        description:
+          argument.description ??
+          `Argument '${argument.name}' for extension action '${contract.action}'.`,
       };
     }
     if (argument.required) {
@@ -625,11 +719,14 @@ function buildExtensionActionSchemaBranch(contract: ExtensionCommandContract): R
   };
 }
 
-async function resolveRuntimeExtensionActionProbe(global: GlobalOptions): Promise<RuntimeExtensionActionProbe> {
+async function resolveRuntimeExtensionActionProbe(
+  global: GlobalOptions,
+): Promise<RuntimeExtensionActionProbe> {
   const defaultPolicyState = {
     mode: SETTINGS_DEFAULTS.extensions.policy.mode,
     trust_mode: SETTINGS_DEFAULTS.extensions.policy.trust_mode,
-    default_sandbox_profile: SETTINGS_DEFAULTS.extensions.policy.default_sandbox_profile,
+    default_sandbox_profile:
+      SETTINGS_DEFAULTS.extensions.policy.default_sandbox_profile,
   };
   if (global.noExtensions) {
     return {
@@ -665,7 +762,9 @@ async function resolveRuntimeExtensionActionProbe(global: GlobalOptions): Promis
       loaded: loadResult.loaded,
     });
     const handlers = new Set<string>(
-      activationResult.commands.handlers.map((entry) => normalizeCommandPath(entry.command)),
+      activationResult.commands.handlers.map((entry) =>
+        normalizeCommandPath(entry.command),
+      ),
     );
     return {
       handlers,
@@ -696,7 +795,9 @@ interface ActionContractDescriptor {
   command_path: string | null;
 }
 
-function collectActionContractDescriptors(extensionContracts: ExtensionCommandContract[]): ActionContractDescriptor[] {
+function collectActionContractDescriptors(
+  extensionContracts: ExtensionCommandContract[],
+): ActionContractDescriptor[] {
   const descriptors = new Map<string, ActionContractDescriptor>();
   for (const action of PM_TOOL_ACTIONS) {
     if (PACKAGE_OWNED_ACTIONS.has(action)) {
@@ -721,7 +822,9 @@ function collectActionContractDescriptors(extensionContracts: ExtensionCommandCo
       command_path: normalizeCommandPath(contract.command),
     });
   }
-  return [...descriptors.values()].sort((left, right) => left.action.localeCompare(right.action));
+  return [...descriptors.values()].sort((left, right) =>
+    left.action.localeCompare(right.action),
+  );
 }
 
 function resolveActionAvailability(
@@ -741,16 +844,22 @@ function resolveActionAvailability(
     };
   }
 
-  const commandPath = descriptor.command_path ? normalizeCommandPath(descriptor.command_path) : "";
-  const extensionCommandAvailable = commandPath.length > 0 && runtimeProbe.handlers.has(commandPath);
-  const invocable = runtimeProbe.disabledReason === null && extensionCommandAvailable;
+  const commandPath = descriptor.command_path
+    ? normalizeCommandPath(descriptor.command_path)
+    : "";
+  const extensionCommandAvailable =
+    commandPath.length > 0 && runtimeProbe.handlers.has(commandPath);
+  const invocable =
+    runtimeProbe.disabledReason === null && extensionCommandAvailable;
   return {
     action: descriptor.action,
     invocable,
     available: invocable,
     requires_extension: true,
     provider: "extension",
-    disabled_reason: invocable ? null : runtimeProbe.disabledReason ?? "extension_command_not_registered",
+    disabled_reason: invocable
+      ? null
+      : (runtimeProbe.disabledReason ?? "extension_command_not_registered"),
     command_path: descriptor.command_path,
     cli_exposed: extensionCommandAvailable,
     policy_state: {
@@ -765,7 +874,12 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   if (command === "config") {
     return CONFIG_FLAG_CONTRACTS;
   }
-  if (command === "extension" || command === "package" || command === "packages" || command === "install") {
+  if (
+    command === "extension" ||
+    command === "package" ||
+    command === "packages" ||
+    command === "install"
+  ) {
     return EXTENSION_FLAG_CONTRACTS;
   }
   if (command === "create") {
@@ -932,20 +1046,34 @@ function toRuntimeShortFlagToken(token: string): string | null {
   return null;
 }
 
-function buildRuntimeFieldFlagContracts(fieldRegistry: RuntimeFieldRegistry): Map<string, CliFlagContract[]> {
-  const buckets = new Map<string, { flags: CliFlagContract[]; seen: Set<string> }>();
+function buildRuntimeFieldFlagContracts(
+  fieldRegistry: RuntimeFieldRegistry,
+): Map<string, CliFlagContract[]> {
+  const buckets = new Map<
+    string,
+    { flags: CliFlagContract[]; seen: Set<string> }
+  >();
   for (const definition of fieldRegistry.definitions) {
     const primaryFlag = toRuntimeLongFlagToken(definition.cli_flag);
     if (!primaryFlag) {
       continue;
     }
-    const shortAlias = definition.cli_aliases.map((alias) => toRuntimeShortFlagToken(alias)).find((alias) => alias !== null);
+    const shortAlias = definition.cli_aliases
+      .map((alias) => toRuntimeShortFlagToken(alias))
+      .find((alias) => alias !== null);
     const longAliases = definition.cli_aliases
       .map((alias) => toRuntimeLongFlagToken(alias))
-      .filter((alias): alias is string => alias !== null && alias !== primaryFlag);
+      .filter(
+        (alias): alias is string => alias !== null && alias !== primaryFlag,
+      );
     for (const command of definition.commands) {
-      const bucket = buckets.get(command) ?? { flags: [], seen: new Set<string>() };
-      const primaryContract: CliFlagContract = shortAlias ? { flag: primaryFlag, short: shortAlias } : { flag: primaryFlag };
+      const bucket = buckets.get(command) ?? {
+        flags: [],
+        seen: new Set<string>(),
+      };
+      const primaryContract: CliFlagContract = shortAlias
+        ? { flag: primaryFlag, short: shortAlias }
+        : { flag: primaryFlag };
       const primaryKey = `${primaryContract.flag}|${primaryContract.short ?? ""}`;
       if (!bucket.seen.has(primaryKey)) {
         bucket.seen.add(primaryKey);
@@ -969,7 +1097,10 @@ function buildRuntimeFieldFlagContracts(fieldRegistry: RuntimeFieldRegistry): Ma
   return result;
 }
 
-function mergeFlagContracts(primary: CliFlagContract[], secondary: CliFlagContract[]): CliFlagContract[] {
+function mergeFlagContracts(
+  primary: CliFlagContract[],
+  secondary: CliFlagContract[],
+): CliFlagContract[] {
   const merged: CliFlagContract[] = [];
   const seen = new Set<string>();
   for (const contract of [...primary, ...secondary]) {
@@ -991,13 +1122,20 @@ function buildCommandFlagSurface(
   return commands
     .map((command) => {
       const isCoreCommand =
-        PM_CORE_COMMAND_NAMES.includes(command as (typeof PM_CORE_COMMAND_NAMES)[number]) &&
-        !PACKAGE_OWNED_COMMANDS.has(command);
+        PM_CORE_COMMAND_NAMES.includes(
+          command as (typeof PM_CORE_COMMAND_NAMES)[number],
+        ) && !PACKAGE_OWNED_COMMANDS.has(command);
       const coreFlags = isCoreCommand ? resolveCoreCommandFlags(command) : [];
-      const runtimeFlags = runtimeFieldFlagMap.get(normalizeCommandForRuntimeFieldFlags(command)) ?? [];
+      const runtimeFlags =
+        runtimeFieldFlagMap.get(
+          normalizeCommandForRuntimeFieldFlags(command),
+        ) ?? [];
       const extensionFlags = extensionFlagMap.get(command);
       const coreWithRuntime = mergeFlagContracts(coreFlags, runtimeFlags);
-      const flags = mergeFlagContracts(coreWithRuntime, extensionFlags?.flags ?? []);
+      const flags = mergeFlagContracts(
+        coreWithRuntime,
+        extensionFlags?.flags ?? [],
+      );
       const provider: CommandFlagSurface["provider"] =
         coreFlags.length > 0 && (extensionFlags?.flags.length ?? 0) > 0
           ? "mixed"
@@ -1014,7 +1152,33 @@ function buildCommandFlagSurface(
     .sort((left, right) => left.command.localeCompare(right.command));
 }
 
-function buildCommanderAliasSurface(): Record<string, CommanderOptionAliasContract[]> {
+function compactCommandAliasSurface(commands: string[]): string[] {
+  const commandSet = new Set(commands);
+  const result: string[] = [];
+  for (const command of commands) {
+    const canonical = COMMAND_ALIAS_TO_CANONICAL.get(command);
+    if (canonical && commandSet.has(canonical)) {
+      continue;
+    }
+    result.push(command);
+  }
+  return result;
+}
+
+function buildCommandAliasSurface(commands: string[]): CommandAliasSurface[] {
+  const commandSet = new Set(commands);
+  return CANONICAL_COMMAND_ALIASES.map((entry) => ({
+    canonical: entry.canonical,
+    aliases: entry.aliases.filter((alias) => commandSet.has(alias)),
+  })).filter(
+    (entry) => commandSet.has(entry.canonical) && entry.aliases.length > 0,
+  );
+}
+
+function buildCommanderAliasSurface(): Record<
+  string,
+  CommanderOptionAliasContract[]
+> {
   return {
     create_string_options: CREATE_COMMANDER_STRING_OPTION_CONTRACTS,
     create_repeatable_options: CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
@@ -1046,29 +1210,55 @@ function resolveCreateRequiredOptionContract(
       baseRequiredOptions.add(field);
     }
   }
-  const policyState = resolveCommandOptionPolicyState(typeDefinition, "create", baseRequiredOptions);
-  const requiredOptionKeys = [...new Set(policyState.required)].sort((left, right) => left.localeCompare(right));
-  const requiredFlags = [...new Set(requiredOptionKeys.map((option) => commandOptionFlagLabel("create", option)))].sort((left, right) =>
-    left.localeCompare(right),
+  const policyState = resolveCommandOptionPolicyState(
+    typeDefinition,
+    "create",
+    baseRequiredOptions,
   );
-  const requiredTypeOptions = [...new Set(typeDefinition.options.filter((option) => option.required === true).map((option) => option.key))].sort(
+  const requiredOptionKeys = [...new Set(policyState.required)].sort(
     (left, right) => left.localeCompare(right),
   );
+  const requiredFlags = [
+    ...new Set(
+      requiredOptionKeys.map((option) =>
+        commandOptionFlagLabel("create", option),
+      ),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
+  const requiredTypeOptions = [
+    ...new Set(
+      typeDefinition.options
+        .filter((option) => option.required === true)
+        .map((option) => option.key),
+    ),
+  ].sort((left, right) => left.localeCompare(right));
   return {
     required_option_keys: requiredOptionKeys,
     required_flags: requiredFlags,
     required_type_options: requiredTypeOptions,
-    policy_errors: [...new Set(policyState.errors)].sort((left, right) => left.localeCompare(right)),
+    policy_errors: [...new Set(policyState.errors)].sort((left, right) =>
+      left.localeCompare(right),
+    ),
   };
 }
 
-function buildCreateRequiredOptionContracts(typeRegistry: ReturnType<typeof resolveItemTypeRegistry>): Record<string, unknown> {
+function buildCreateRequiredOptionContracts(
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>,
+): Record<string, unknown> {
   const byTypeStrict: Record<string, unknown> = {};
   const byTypeProgressive: Record<string, unknown> = {};
-  for (const typeName of [...typeRegistry.types].sort((left, right) => left.localeCompare(right))) {
+  for (const typeName of [...typeRegistry.types].sort((left, right) =>
+    left.localeCompare(right),
+  )) {
     const typeDefinition = typeRegistry.by_type[typeName];
-    byTypeStrict[typeName] = resolveCreateRequiredOptionContract(typeDefinition, "strict");
-    byTypeProgressive[typeName] = resolveCreateRequiredOptionContract(typeDefinition, "progressive");
+    byTypeStrict[typeName] = resolveCreateRequiredOptionContract(
+      typeDefinition,
+      "strict",
+    );
+    byTypeProgressive[typeName] = resolveCreateRequiredOptionContract(
+      typeDefinition,
+      "progressive",
+    );
   }
   return {
     default_create_mode: "strict",
@@ -1083,7 +1273,10 @@ function buildCreateRequiredOptionContracts(typeRegistry: ReturnType<typeof reso
   };
 }
 
-function attachCreateRequiredOptionContracts(schema: Record<string, unknown>, metadata: Record<string, unknown>): Record<string, unknown> {
+function attachCreateRequiredOptionContracts(
+  schema: Record<string, unknown>,
+  metadata: Record<string, unknown>,
+): Record<string, unknown> {
   const branches = extractActionBranches(schema);
   if (branches.length === 0) {
     return schema;
@@ -1116,16 +1309,26 @@ function attachCreateRequiredOptionContracts(schema: Record<string, unknown>, me
   };
 }
 
-export async function runContracts(options: ContractsCommandOptions, global: GlobalOptions): Promise<ContractsResult> {
+export async function runContracts(
+  options: ContractsCommandOptions,
+  global: GlobalOptions,
+): Promise<ContractsResult> {
   const selectedAction = normalizeToken(options.action);
   const selectedCommand = normalizeToken(options.command);
   const schemaOnly = options.schemaOnly === true;
   const flagsOnly = options.flagsOnly === true;
   const availabilityOnly = options.availabilityOnly === true;
   const runtimeOnly = options.runtimeOnly === true;
-  const projectionFlagsEnabled = [schemaOnly, flagsOnly, availabilityOnly].filter((value) => value).length;
+  const projectionFlagsEnabled = [
+    schemaOnly,
+    flagsOnly,
+    availabilityOnly,
+  ].filter((value) => value).length;
   if (projectionFlagsEnabled > 1) {
-    throw new PmCliError("Choose only one projection flag: --schema-only, --flags-only, or --availability-only.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "Choose only one projection flag: --schema-only, --flags-only, or --availability-only.",
+      EXIT_CODE.USAGE,
+    );
   }
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   let settings = structuredClone(SETTINGS_DEFAULTS);
@@ -1134,23 +1337,36 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
   } catch {
     settings = structuredClone(SETTINGS_DEFAULTS);
   }
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const typeRegistry = resolveItemTypeRegistry(
+    settings,
+    getActiveExtensionRegistrations(),
+  );
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
-  const runtimeFieldFlagMap = buildRuntimeFieldFlagContracts(runtimeFieldRegistry);
-  const createRequiredOptionContracts = buildCreateRequiredOptionContracts(typeRegistry);
+  const runtimeFieldFlagMap =
+    buildRuntimeFieldFlagContracts(runtimeFieldRegistry);
+  const createRequiredOptionContracts =
+    buildCreateRequiredOptionContracts(typeRegistry);
   const runtimeProbe = await resolveRuntimeExtensionActionProbe(global);
   const extensionContracts = collectExtensionCommandContracts(runtimeProbe);
-  const extensionFlagMap = collectExtensionFlagContractsByCommand(runtimeProbe.flagRegistrations);
-  const actionDescriptors = collectActionContractDescriptors(extensionContracts);
+  const extensionFlagMap = collectExtensionFlagContractsByCommand(
+    runtimeProbe.flagRegistrations,
+  );
+  const actionDescriptors =
+    collectActionContractDescriptors(extensionContracts);
   const actionNames = new Set(actionDescriptors.map((entry) => entry.action));
   if (selectedAction && !actionNames.has(selectedAction)) {
-    throw new PmCliError(`Unknown action: "${options.action}".`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Unknown action: "${options.action}".`,
+      EXIT_CODE.USAGE,
+    );
   }
 
   const commandCatalog = [
     ...new Set([
-      ...PM_CORE_COMMAND_NAMES.filter((entry) => !PACKAGE_OWNED_COMMANDS.has(entry)),
+      ...PM_CORE_COMMAND_NAMES.filter(
+        (entry) => !PACKAGE_OWNED_COMMANDS.has(entry),
+      ),
       ...extensionContracts.map((entry) => entry.command),
     ]),
   ]
@@ -1159,15 +1375,22 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
     .sort((left, right) => left.localeCompare(right));
   const commandNames = new Set(commandCatalog);
   if (selectedCommand && !commandNames.has(selectedCommand)) {
-    throw new PmCliError(`Unknown command: "${options.command}".`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Unknown command: "${options.command}".`,
+      EXIT_CODE.USAGE,
+    );
   }
   const commandScopedDescriptors = selectedCommand
-    ? actionDescriptors.filter((descriptor) => actionDescriptorMatchesSelectedCommand(descriptor, selectedCommand))
+    ? actionDescriptors.filter((descriptor) =>
+        actionDescriptorMatchesSelectedCommand(descriptor, selectedCommand),
+      )
     : actionDescriptors;
   if (
     selectedCommand &&
     selectedAction &&
-    !commandScopedDescriptors.some((descriptor) => descriptor.action === selectedAction)
+    !commandScopedDescriptors.some(
+      (descriptor) => descriptor.action === selectedAction,
+    )
   ) {
     throw new PmCliError(
       `Action "${options.action}" is not mapped to command "${options.command}" in contracts output.`,
@@ -1205,21 +1428,29 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
       : schema;
 
   const scopedActionDescriptors = selectedAction
-    ? commandScopedDescriptors.filter((descriptor) => descriptor.action === selectedAction)
+    ? commandScopedDescriptors.filter(
+        (descriptor) => descriptor.action === selectedAction,
+      )
     : commandScopedDescriptors;
   const allActionAvailability = scopedActionDescriptors.map((descriptor) =>
     resolveActionAvailability(descriptor, runtimeProbe),
   );
   const actionAvailability =
-    runtimeOnly && !selectedAction ? allActionAvailability.filter((entry) => entry.invocable) : allActionAvailability;
+    runtimeOnly && !selectedAction
+      ? allActionAvailability.filter((entry) => entry.invocable)
+      : allActionAvailability;
   const actions = actionAvailability.map((entry) => entry.action);
-  const descriptorActionSet = new Set(actionDescriptors.map((descriptor) => descriptor.action));
+  const descriptorActionSet = new Set(
+    actionDescriptors.map((descriptor) => descriptor.action),
+  );
   let filteredSchema = selectedAction
     ? filterSchemaByAction(mergedSchema, selectedAction)
     : selectedCommand
       ? filterSchemaByActions(
           mergedSchema,
-          new Set(scopedActionDescriptors.map((descriptor) => descriptor.action)),
+          new Set(
+            scopedActionDescriptors.map((descriptor) => descriptor.action),
+          ),
         )
       : filterSchemaByActions(mergedSchema, descriptorActionSet);
   if (runtimeOnly && !selectedAction) {
@@ -1227,23 +1458,42 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
   }
   const includeSchemaSurface = !flagsOnly && !availabilityOnly;
   if (includeSchemaSurface) {
-    filteredSchema = attachCreateRequiredOptionContracts(filteredSchema, createRequiredOptionContracts);
+    filteredSchema = attachCreateRequiredOptionContracts(
+      filteredSchema,
+      createRequiredOptionContracts,
+    );
   }
   const commands =
     selectedCommand !== undefined
       ? [selectedCommand]
       : selectedAction
-        ? resolveScopedCommandsFromActionDescriptors(scopedActionDescriptors, commandCatalog)
+        ? resolveScopedCommandsFromActionDescriptors(
+            scopedActionDescriptors,
+            commandCatalog,
+          )
         : commandCatalog;
+  const outputCommands =
+    flagsOnly && selectedCommand === undefined && selectedAction === undefined
+      ? compactCommandAliasSurface(commands)
+      : commands;
+  const commandAliases = buildCommandAliasSurface(commands);
   const extensionCommandContracts = selectedCommand
     ? extensionContracts.filter((entry) => entry.command === selectedCommand)
     : selectedAction
-      ? extensionContracts.filter((entry) => commands.includes(normalizeCommandPath(entry.command)))
-    : extensionContracts;
+      ? extensionContracts.filter((entry) =>
+          outputCommands.includes(normalizeCommandPath(entry.command)),
+        )
+      : extensionContracts;
 
   const result: ContractsResult = {
-    schema_version: typeof mergedSchema["x-schema-version"] === "string" ? (mergedSchema["x-schema-version"] as string) : null,
-    schema_id: typeof mergedSchema.$id === "string" ? (mergedSchema.$id as string) : null,
+    schema_version:
+      typeof mergedSchema["x-schema-version"] === "string"
+        ? (mergedSchema["x-schema-version"] as string)
+        : null,
+    schema_id:
+      typeof mergedSchema.$id === "string"
+        ? (mergedSchema.$id as string)
+        : null,
     selected: {
       action: selectedAction ?? null,
       command: selectedCommand ?? null,
@@ -1253,7 +1503,7 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
       runtime_only: runtimeOnly,
       command_scoped: selectedCommand !== undefined,
     },
-    commands,
+    commands: outputCommands,
     runtime_schema: {
       statuses: statusRegistry.definitions.map((definition) => definition.id),
       open_status: statusRegistry.open_status,
@@ -1261,12 +1511,16 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
       canceled_status: statusRegistry.canceled_status,
       types: [...typeRegistry.types],
       fields_by_command: Object.fromEntries(
-        [...runtimeFieldRegistry.command_to_fields.entries()].map(([command, definitions]) => [
-          command,
-          [...new Set(definitions.map((definition) => `--${definition.cli_flag}`))].sort((left, right) =>
-            left.localeCompare(right),
-          ),
-        ]),
+        [...runtimeFieldRegistry.command_to_fields.entries()].map(
+          ([command, definitions]) => [
+            command,
+            [
+              ...new Set(
+                definitions.map((definition) => `--${definition.cli_flag}`),
+              ),
+            ].sort((left, right) => left.localeCompare(right)),
+          ],
+        ),
       ),
     },
     extension_contracts: {
@@ -1296,7 +1550,14 @@ export async function runContracts(options: ContractsCommandOptions, global: Glo
   }
 
   if (!schemaOnly && !availabilityOnly) {
-    result.command_flags = buildCommandFlagSurface(commands, extensionFlagMap, runtimeFieldFlagMap);
+    result.command_flags = buildCommandFlagSurface(
+      outputCommands,
+      extensionFlagMap,
+      runtimeFieldFlagMap,
+    );
+    if (commandAliases.length > 0) {
+      result.command_aliases = commandAliases;
+    }
   }
 
   if (!schemaOnly && !flagsOnly && !availabilityOnly) {

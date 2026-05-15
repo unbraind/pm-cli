@@ -174,7 +174,11 @@ export function registerListQueryCommands(program: Command): void {
   program
     .command("search")
     .argument("<keywords...>", "Keyword query tokens")
-    .description("Search items with core keyword mode.")
+    .description("Search items with keyword, semantic, or hybrid retrieval.")
+    .option("--mode <value>", "Search mode: keyword|semantic|hybrid (default: keyword)")
+    .option("--include-linked", "Include linked files, docs, and tests in the searchable corpus")
+    .option("--title-exact", "Require exact normalized title match for the full query string")
+    .option("--phrase-exact", "Require exact normalized phrase match in searchable text")
     .option("--type <value>", "Filter by item type")
     .option("--tag <value>", "Filter by tag")
     .option("--priority <value>", "Filter by priority")
@@ -191,14 +195,15 @@ export function registerListQueryCommands(program: Command): void {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const { runSearch } = await loadListQueryCommandsModule();
+      const searchOptions = normalizeSearchOptions(options);
       const result = await runSearch(
         normalizeSearchKeywordsInput(keywords),
         {
-          ...normalizeSearchOptions(options),
-          mode: "keyword",
-          includeLinked: false,
-          titleExact: false,
-          phraseExact: false,
+          ...searchOptions,
+          mode:
+            typeof searchOptions.mode === "string" && searchOptions.mode.trim().length > 0
+              ? searchOptions.mode
+              : "keyword",
         },
         globalOptions,
       );

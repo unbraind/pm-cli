@@ -748,6 +748,10 @@ describe("release readiness runtime coverage", () => {
 
       const searchHelp = context.runCli(["search", "--help"]);
       expect(searchHelp.code).toBe(0);
+      expect(searchHelp.stdout).toContain("--mode");
+      expect(searchHelp.stdout).toContain("--include-linked");
+      expect(searchHelp.stdout).toContain("--title-exact");
+      expect(searchHelp.stdout).toContain("--phrase-exact");
       expect(searchHelp.stdout).toMatch(/mutually\s+exclusive with --full\/--fields/);
       expect(searchHelp.stdout).toMatch(/invalid:\s+--full --fields\s+id,title/);
     });
@@ -1254,6 +1258,13 @@ describe("release readiness runtime coverage", () => {
       });
       expect(searchResult.code).toBe(0);
       expectTopLevelKeyOrder(searchResult.json, ["query", "mode", "items", "count", "filters", "projection", "now"]);
+      expect((searchResult.json as { mode?: string }).mode).toBe("keyword");
+
+      const explicitKeywordSearch = context.runCli(["search", "runtime", "--mode", "keyword", "--json"], {
+        expectJson: true,
+      });
+      expect(explicitKeywordSearch.code).toBe(0);
+      expect((explicitKeywordSearch.json as { mode?: string }).mode).toBe("keyword");
 
       const getResult = context.runCli(["get", createdId, "--json"], { expectJson: true });
       expect(getResult.code).toBe(0);

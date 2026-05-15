@@ -185,12 +185,13 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
-  it("describes search help text as core keyword mode", async () => {
+  it("describes search help text as keyword-first with opt-in semantic modes", async () => {
     await withTempPmPath(async (context) => {
       const help = context.runCli(["search", "--help"]);
       expect(help.code).toBe(0);
-      expect(help.stdout).toContain("Search items with core keyword mode.");
-      expect(help.stdout).not.toContain("--include-linked");
+      expect(help.stdout).toContain("Search items with keyword, semantic, or hybrid retrieval.");
+      expect(help.stdout).toMatch(/Search mode: keyword\|semantic\|hybrid \(default:\s+keyword\)/);
+      expect(help.stdout).toContain("--include-linked");
     });
   });
 

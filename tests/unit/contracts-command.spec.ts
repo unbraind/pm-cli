@@ -23,7 +23,11 @@ async function createProjectExtension(
 ): Promise<void> {
   const extensionRoot = path.join(pmPath, "extensions", directory);
   await mkdir(extensionRoot, { recursive: true });
-  await writeFile(path.join(extensionRoot, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  await writeFile(
+    path.join(extensionRoot, "manifest.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+    "utf8",
+  );
   await writeFile(path.join(extensionRoot, "index.mjs"), entrySource, "utf8");
 }
 
@@ -31,7 +35,9 @@ describe("contracts command runtime", () => {
   it("returns schema, actions, command flags, and alias surfaces", async () => {
     const result = await runContracts({}, GLOBAL_OPTIONS);
     expect(result.schema_version).toBe("4.0.1");
-    expect(result.schema_id).toBe("https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json");
+    expect(result.schema_id).toBe(
+      "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
+    );
     expect(result.selected.runtime_only).toBe(false);
     expect(result.actions ?? []).toContain("contracts");
     expect(result.actions ?? []).toContain("aggregate");
@@ -46,28 +52,62 @@ describe("contracts command runtime", () => {
     expect(result.commands).toContain("packages");
     expect(result.commands).toContain("install");
     expect(result.commands).toContain("upgrade");
-    expect((result.action_availability ?? []).some((entry) => entry.action === "create" && entry.invocable)).toBe(true);
+    expect(result.command_aliases).toEqual(
+      expect.arrayContaining([
+        { canonical: "context", aliases: ["ctx"] },
+        { canonical: "package", aliases: ["extension", "packages"] },
+      ]),
+    );
     expect(
       (result.action_availability ?? []).some(
-        (entry) => entry.action === "package-install" && entry.command_path === "package install" && entry.cli_exposed,
+        (entry) => entry.action === "create" && entry.invocable,
       ),
     ).toBe(true);
-    expect(result.command_flags?.some((entry) => entry.command === "contracts")).toBe(true);
-    expect(result.command_flags?.find((entry) => entry.command === "aggregate")?.flags).toEqual(
-      expect.arrayContaining([expect.objectContaining({ flag: "--group-by" }), expect.objectContaining({ flag: "--count" })]),
+    expect(
+      (result.action_availability ?? []).some(
+        (entry) =>
+          entry.action === "package-install" &&
+          entry.command_path === "package install" &&
+          entry.cli_exposed,
+      ),
+    ).toBe(true);
+    expect(
+      result.command_flags?.some((entry) => entry.command === "contracts"),
+    ).toBe(true);
+    expect(
+      result.command_flags?.find((entry) => entry.command === "aggregate")
+        ?.flags,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ flag: "--group-by" }),
+        expect.objectContaining({ flag: "--count" }),
+      ]),
     );
     expect(result.commander_aliases).toBeDefined();
-    expect(result.commander_aliases?.create_string_options.length).toBeGreaterThan(0);
+    expect(
+      result.commander_aliases?.create_string_options.length,
+    ).toBeGreaterThan(0);
     expect(result.commander_aliases?.list_string_options).toEqual(
-      expect.arrayContaining([expect.objectContaining({ target: "fields" }), expect.objectContaining({ target: "sort" })]),
+      expect.arrayContaining([
+        expect.objectContaining({ target: "fields" }),
+        expect.objectContaining({ target: "sort" }),
+      ]),
     );
     expect(result.extension_contracts).toMatchObject({
       capabilities: expect.arrayContaining(["commands", "schema", "services"]),
       services: expect.arrayContaining(["output_format", "history_append"]),
       policy_modes: expect.arrayContaining(["off", "warn", "enforce"]),
-      policy_surfaces: expect.arrayContaining(["commands.handler", "hooks.beforecommand", "search.provider"]),
+      policy_surfaces: expect.arrayContaining([
+        "commands.handler",
+        "hooks.beforecommand",
+        "search.provider",
+      ]),
       trust_modes: expect.arrayContaining(["off", "warn", "enforce"]),
-      sandbox_profiles: expect.arrayContaining(["none", "restricted", "strict"]),
+      sandbox_profiles: expect.arrayContaining([
+        "none",
+        "restricted",
+        "strict",
+      ]),
       manifest_versions: [1, 2],
       compatibility: {
         current: "v2",
@@ -89,28 +129,51 @@ describe("contracts command runtime", () => {
     expect(result.selected.schema_only).toBe(true);
     expect(result.selected.runtime_only).toBe(false);
     expect(result.command_flags).toBeUndefined();
-    const oneOf = (result.schema?.oneOf ?? []) as Array<{ properties?: { action?: { const?: string } } }>;
+    const oneOf = (result.schema?.oneOf ?? []) as Array<{
+      properties?: { action?: { const?: string } };
+    }>;
     expect(oneOf).toHaveLength(1);
     expect(oneOf[0]?.properties?.action?.const).toBe("create");
-    const createRequiredContracts = (oneOf[0] as Record<string, unknown>)["x-create-required-options"] as
+    const createRequiredContracts = (oneOf[0] as Record<string, unknown>)[
+      "x-create-required-options"
+    ] as
       | {
           default_create_mode?: string;
           by_create_mode?: {
-            strict?: { by_type?: Record<string, { required_flags?: string[] }> };
-            progressive?: { by_type?: Record<string, { required_flags?: string[] }> };
+            strict?: {
+              by_type?: Record<string, { required_flags?: string[] }>;
+            };
+            progressive?: {
+              by_type?: Record<string, { required_flags?: string[] }>;
+            };
           };
         }
       | undefined;
     expect(createRequiredContracts?.default_create_mode).toBe("strict");
-    expect(createRequiredContracts?.by_create_mode?.strict?.by_type?.Task?.required_flags).toEqual(
-      expect.arrayContaining(["--title", "--description", "--type", "--status", "--priority", "--message", "--dep", "--comment", "--doc"]),
+    expect(
+      createRequiredContracts?.by_create_mode?.strict?.by_type?.Task
+        ?.required_flags,
+    ).toEqual(
+      expect.arrayContaining([
+        "--title",
+        "--description",
+        "--type",
+        "--status",
+        "--priority",
+        "--message",
+        "--dep",
+        "--comment",
+        "--doc",
+      ]),
     );
-    expect(createRequiredContracts?.by_create_mode?.progressive?.by_type?.Task?.required_flags).toEqual(
-      expect.arrayContaining(["--title", "--description", "--type"]),
-    );
-    expect(createRequiredContracts?.by_create_mode?.progressive?.by_type?.Task?.required_flags).not.toEqual(
-      expect.arrayContaining(["--dep", "--comment", "--doc"]),
-    );
+    expect(
+      createRequiredContracts?.by_create_mode?.progressive?.by_type?.Task
+        ?.required_flags,
+    ).toEqual(expect.arrayContaining(["--title", "--description", "--type"]));
+    expect(
+      createRequiredContracts?.by_create_mode?.progressive?.by_type?.Task
+        ?.required_flags,
+    ).not.toEqual(expect.arrayContaining(["--dep", "--comment", "--doc"]));
   });
 
   it("includes runtime field flags for list aliases and runtime schema command metadata", async () => {
@@ -135,7 +198,10 @@ describe("contracts command runtime", () => {
         },
       );
       expect(listAliasContracts.command_flags?.[0]?.flags).toEqual(
-        expect.arrayContaining([expect.objectContaining({ flag: "--customer-segment" }), expect.objectContaining({ flag: "--segment" })]),
+        expect.arrayContaining([
+          expect.objectContaining({ flag: "--customer-segment" }),
+          expect.objectContaining({ flag: "--segment" }),
+        ]),
       );
 
       const runtimeContracts = await runContracts(
@@ -164,7 +230,9 @@ describe("contracts command runtime", () => {
     expect(result.selected.runtime_only).toBe(true);
     expect(result.actions ?? []).not.toContain("beads-import");
     expect(result.actions ?? []).toContain("validate");
-    expect((result.action_availability ?? []).every((entry) => entry.invocable)).toBe(true);
+    expect(
+      (result.action_availability ?? []).every((entry) => entry.invocable),
+    ).toBe(true);
 
     const fullResult = await runContracts(
       {},
@@ -174,11 +242,18 @@ describe("contracts command runtime", () => {
       },
     );
     expect(fullResult.actions ?? []).not.toContain("beads-import");
-    expect((fullResult.action_availability ?? []).some((entry) => entry.action === "beads-import")).toBe(false);
+    expect(
+      (fullResult.action_availability ?? []).some(
+        (entry) => entry.action === "beads-import",
+      ),
+    ).toBe(false);
   });
 
   it("narrows action and schema scope by command filter by default", async () => {
-    const result = await runContracts({ command: "list", runtimeOnly: true }, GLOBAL_OPTIONS);
+    const result = await runContracts(
+      { command: "list", runtimeOnly: true },
+      GLOBAL_OPTIONS,
+    );
     expect(result.selected.command).toBe("list");
     expect(result.selected.command_scoped).toBe(true);
     expect(result.actions).toEqual(["list"]);
@@ -190,37 +265,72 @@ describe("contracts command runtime", () => {
       }),
     ]);
     expect(result.commands).toEqual(["list"]);
-    const oneOf = (result.schema?.oneOf ?? []) as Array<{ properties?: { action?: { const?: string } } }>;
+    const oneOf = (result.schema?.oneOf ?? []) as Array<{
+      properties?: { action?: { const?: string } };
+    }>;
     expect(oneOf).toHaveLength(1);
     expect(oneOf[0]?.properties?.action?.const).toBe("list");
   });
 
   it("supports lightweight flags-only and availability-only projections", async () => {
-    const flagsOnly = await runContracts({ command: "update", flagsOnly: true }, GLOBAL_OPTIONS);
+    const flagsOnly = await runContracts(
+      { command: "update", flagsOnly: true },
+      GLOBAL_OPTIONS,
+    );
     expect(flagsOnly.selected.flags_only).toBe(true);
     expect(flagsOnly.selected.availability_only).toBe(false);
-    expect(flagsOnly.command_flags?.map((entry) => entry.command)).toEqual(["update"]);
+    expect(flagsOnly.command_flags?.map((entry) => entry.command)).toEqual([
+      "update",
+    ]);
     expect(flagsOnly.schema).toBeUndefined();
     expect(flagsOnly.actions).toBeUndefined();
     expect(flagsOnly.action_availability).toBeUndefined();
     expect(flagsOnly.commander_aliases).toBeUndefined();
 
-    const appendFlags = await runContracts({ command: "append", flagsOnly: true }, GLOBAL_OPTIONS);
+    const appendFlags = await runContracts(
+      { command: "append", flagsOnly: true },
+      GLOBAL_OPTIONS,
+    );
     expect(appendFlags.command_flags?.[0]?.flags).toEqual(
       expect.arrayContaining([expect.objectContaining({ flag: "--body" })]),
     );
 
-    const createFlags = await runContracts({ command: "create", flagsOnly: true }, GLOBAL_OPTIONS);
-    const createAcceptanceFlag = createFlags.command_flags?.[0]?.flags.find((entry) => entry.flag === "--acceptance-criteria");
-    expect(createAcceptanceFlag?.aliases).toEqual(expect.arrayContaining(["--acceptance_criteria"]));
-    expect(createFlags.command_flags?.[0]?.flags.some((entry) => entry.flag === "--acceptance_criteria")).toBe(false);
+    const createFlags = await runContracts(
+      { command: "create", flagsOnly: true },
+      GLOBAL_OPTIONS,
+    );
+    const createAcceptanceFlag = createFlags.command_flags?.[0]?.flags.find(
+      (entry) => entry.flag === "--acceptance-criteria",
+    );
+    expect(createAcceptanceFlag?.aliases).toEqual(
+      expect.arrayContaining(["--acceptance_criteria"]),
+    );
+    expect(
+      createFlags.command_flags?.[0]?.flags.some(
+        (entry) => entry.flag === "--acceptance_criteria",
+      ),
+    ).toBe(false);
 
-    const updateFlags = await runContracts({ command: "update", flagsOnly: true }, GLOBAL_OPTIONS);
-    const updateWhyNowFlag = updateFlags.command_flags?.[0]?.flags.find((entry) => entry.flag === "--why-now");
-    expect(updateWhyNowFlag?.aliases).toEqual(expect.arrayContaining(["--why_now"]));
-    expect(updateFlags.command_flags?.[0]?.flags.some((entry) => entry.flag === "--why_now")).toBe(false);
+    const updateFlags = await runContracts(
+      { command: "update", flagsOnly: true },
+      GLOBAL_OPTIONS,
+    );
+    const updateWhyNowFlag = updateFlags.command_flags?.[0]?.flags.find(
+      (entry) => entry.flag === "--why-now",
+    );
+    expect(updateWhyNowFlag?.aliases).toEqual(
+      expect.arrayContaining(["--why_now"]),
+    );
+    expect(
+      updateFlags.command_flags?.[0]?.flags.some(
+        (entry) => entry.flag === "--why_now",
+      ),
+    ).toBe(false);
 
-    const activityFlags = await runContracts({ command: "activity", flagsOnly: true }, GLOBAL_OPTIONS);
+    const activityFlags = await runContracts(
+      { command: "activity", flagsOnly: true },
+      GLOBAL_OPTIONS,
+    );
     expect(activityFlags.command_flags?.[0]?.flags).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ flag: "--id" }),
@@ -232,97 +342,237 @@ describe("contracts command runtime", () => {
       ]),
     );
 
-    const commandFlagParityChecks: Array<{ command: string; flags: string[] }> = [
-      {
-        command: "create",
-        flags: ["--acceptance-criteria", "--definition-of-ready", "--blocked-by", "--why-now", "--customer-impact"],
-      },
-      {
-        command: "update",
-        flags: ["--acceptance-criteria", "--definition-of-ready", "--blocked-by", "--why-now", "--customer-impact"],
-      },
-      {
-        command: "update-many",
-        flags: ["--acceptance-criteria", "--definition-of-ready", "--why-now", "--customer-impact"],
-      },
-      { command: "comments", flags: ["--add", "--stdin", "--file", "--allow-audit-comment"] },
-      { command: "notes", flags: ["--add", "--limit", "--author", "--message", "--allow-audit-note", "--allow-audit-comment", "--force"] },
-      {
-        command: "learnings",
-        flags: ["--add", "--limit", "--author", "--message", "--allow-audit-learning", "--allow-audit-comment", "--force"],
-      },
-      { command: "files", flags: ["--add", "--add-glob", "--list", "--append-stable", "--validate-paths", "--audit"] },
-      { command: "docs", flags: ["--add", "--add-glob", "--validate-paths", "--audit"] },
-      { command: "history", flags: ["--limit", "--diff", "--verify"] },
-      { command: "config", flags: ["--criterion", "--clear-criteria", "--format", "--policy"] },
-      { command: "restore", flags: ["--author", "--message", "--force"] },
-      { command: "delete", flags: ["--author", "--message", "--force"] },
-      {
-        command: "test",
-        flags: [
-          "--run",
-          "--background",
-          "--pm-context",
-          "--override-linked-pm-context",
-          "--fail-on-empty-test-run",
-          "--check-context",
-          "--auto-pm-context",
-        ],
-      },
-      {
-        command: "test-all",
-        flags: [
-          "--status",
-          "--limit",
-          "--offset",
-          "--background",
-          "--pm-context",
-          "--override-linked-pm-context",
-          "--fail-on-empty-test-run",
-          "--check-context",
-          "--auto-pm-context",
-        ],
-      },
-      { command: "gc", flags: ["--dry-run", "--scope"] },
-      { command: "extension", flags: ["--init", "--install", "--doctor", "--catalog", "--runtime-probe", "--strict-exit"] },
-      { command: "package", flags: ["--init", "--install", "--doctor", "--catalog", "--runtime-probe", "--strict-exit"] },
-      { command: "install", flags: ["--gh", "--github", "--ref", "--project", "--global"] },
-      { command: "upgrade", flags: ["--dry-run", "--cli-only", "--packages-only", "--repair", "--tag"] },
-      {
-        command: "update-many",
-        flags: [
-          "--filter-status",
-          "--dry-run",
-          "--rollback",
-          "--no-checkpoint",
-          "--dep",
-          "--replace-tests",
-          "--clear-docs",
-          "--clear-events",
-          "--allow-audit-update",
-        ],
-      },
-      {
-        command: "validate",
-        flags: [
-          "--check-metadata",
-          "--metadata-profile",
-          "--check-lifecycle",
-          "--check-stale-blockers",
-          "--dependency-cycle-severity",
-          "--verbose-file-lists",
-        ],
-      },
-      { command: "health", flags: ["--check-only", "--no-refresh", "--refresh-vectors", "--verbose-stale-items"] },
-    ];
+    const compactFlags = await runContracts(
+      { flagsOnly: true },
+      GLOBAL_OPTIONS,
+    );
+    expect(compactFlags.commands).toContain("context");
+    expect(compactFlags.commands).toContain("package");
+    expect(compactFlags.commands).not.toContain("ctx");
+    expect(compactFlags.commands).not.toContain("extension");
+    expect(compactFlags.commands).not.toContain("packages");
+    expect(
+      compactFlags.command_flags?.some((entry) => entry.command === "ctx"),
+    ).toBe(false);
+    expect(
+      compactFlags.command_flags?.some(
+        (entry) => entry.command === "extension",
+      ),
+    ).toBe(false);
+    expect(
+      compactFlags.command_flags?.some((entry) => entry.command === "packages"),
+    ).toBe(false);
+    expect(compactFlags.command_aliases).toEqual(
+      expect.arrayContaining([
+        { canonical: "context", aliases: ["ctx"] },
+        { canonical: "package", aliases: ["extension", "packages"] },
+      ]),
+    );
+
+    const selectedAliasFlags = await runContracts(
+      { command: "ctx", flagsOnly: true },
+      GLOBAL_OPTIONS,
+    );
+    expect(selectedAliasFlags.commands).toEqual(["ctx"]);
+    expect(
+      selectedAliasFlags.command_flags?.map((entry) => entry.command),
+    ).toEqual(["ctx"]);
+
+    const commandFlagParityChecks: Array<{ command: string; flags: string[] }> =
+      [
+        {
+          command: "create",
+          flags: [
+            "--acceptance-criteria",
+            "--definition-of-ready",
+            "--blocked-by",
+            "--why-now",
+            "--customer-impact",
+          ],
+        },
+        {
+          command: "update",
+          flags: [
+            "--acceptance-criteria",
+            "--definition-of-ready",
+            "--blocked-by",
+            "--why-now",
+            "--customer-impact",
+          ],
+        },
+        {
+          command: "update-many",
+          flags: [
+            "--acceptance-criteria",
+            "--definition-of-ready",
+            "--why-now",
+            "--customer-impact",
+          ],
+        },
+        {
+          command: "comments",
+          flags: ["--add", "--stdin", "--file", "--allow-audit-comment"],
+        },
+        {
+          command: "notes",
+          flags: [
+            "--add",
+            "--limit",
+            "--author",
+            "--message",
+            "--allow-audit-note",
+            "--allow-audit-comment",
+            "--force",
+          ],
+        },
+        {
+          command: "learnings",
+          flags: [
+            "--add",
+            "--limit",
+            "--author",
+            "--message",
+            "--allow-audit-learning",
+            "--allow-audit-comment",
+            "--force",
+          ],
+        },
+        {
+          command: "files",
+          flags: [
+            "--add",
+            "--add-glob",
+            "--list",
+            "--append-stable",
+            "--validate-paths",
+            "--audit",
+          ],
+        },
+        {
+          command: "docs",
+          flags: ["--add", "--add-glob", "--validate-paths", "--audit"],
+        },
+        { command: "history", flags: ["--limit", "--diff", "--verify"] },
+        {
+          command: "config",
+          flags: ["--criterion", "--clear-criteria", "--format", "--policy"],
+        },
+        { command: "restore", flags: ["--author", "--message", "--force"] },
+        { command: "delete", flags: ["--author", "--message", "--force"] },
+        {
+          command: "test",
+          flags: [
+            "--run",
+            "--background",
+            "--pm-context",
+            "--override-linked-pm-context",
+            "--fail-on-empty-test-run",
+            "--check-context",
+            "--auto-pm-context",
+          ],
+        },
+        {
+          command: "test-all",
+          flags: [
+            "--status",
+            "--limit",
+            "--offset",
+            "--background",
+            "--pm-context",
+            "--override-linked-pm-context",
+            "--fail-on-empty-test-run",
+            "--check-context",
+            "--auto-pm-context",
+          ],
+        },
+        { command: "gc", flags: ["--dry-run", "--scope"] },
+        {
+          command: "extension",
+          flags: [
+            "--init",
+            "--install",
+            "--doctor",
+            "--catalog",
+            "--runtime-probe",
+            "--strict-exit",
+          ],
+        },
+        {
+          command: "package",
+          flags: [
+            "--init",
+            "--install",
+            "--doctor",
+            "--catalog",
+            "--runtime-probe",
+            "--strict-exit",
+          ],
+        },
+        {
+          command: "install",
+          flags: ["--gh", "--github", "--ref", "--project", "--global"],
+        },
+        {
+          command: "upgrade",
+          flags: [
+            "--dry-run",
+            "--cli-only",
+            "--packages-only",
+            "--repair",
+            "--tag",
+          ],
+        },
+        {
+          command: "update-many",
+          flags: [
+            "--filter-status",
+            "--dry-run",
+            "--rollback",
+            "--no-checkpoint",
+            "--dep",
+            "--replace-tests",
+            "--clear-docs",
+            "--clear-events",
+            "--allow-audit-update",
+          ],
+        },
+        {
+          command: "validate",
+          flags: [
+            "--check-metadata",
+            "--metadata-profile",
+            "--check-lifecycle",
+            "--check-stale-blockers",
+            "--dependency-cycle-severity",
+            "--verbose-file-lists",
+          ],
+        },
+        {
+          command: "health",
+          flags: [
+            "--check-only",
+            "--no-refresh",
+            "--refresh-vectors",
+            "--verbose-stale-items",
+          ],
+        },
+      ];
     for (const check of commandFlagParityChecks) {
-      const parityResult = await runContracts({ command: check.command, flagsOnly: true }, GLOBAL_OPTIONS);
+      const parityResult = await runContracts(
+        { command: check.command, flagsOnly: true },
+        GLOBAL_OPTIONS,
+      );
       expect(parityResult.command_flags?.[0]?.flags).toEqual(
-        expect.arrayContaining(check.flags.map((flag) => expect.objectContaining({ flag }))),
+        expect.arrayContaining(
+          check.flags.map((flag) => expect.objectContaining({ flag })),
+        ),
       );
     }
 
-    const availabilityOnly = await runContracts({ command: "update", availabilityOnly: true }, GLOBAL_OPTIONS);
+    const availabilityOnly = await runContracts(
+      { command: "update", availabilityOnly: true },
+      GLOBAL_OPTIONS,
+    );
     expect(availabilityOnly.selected.flags_only).toBe(false);
     expect(availabilityOnly.selected.availability_only).toBe(true);
     expect(availabilityOnly.actions).toEqual(["update"]);
@@ -339,9 +589,14 @@ describe("contracts command runtime", () => {
   });
 
   it("scopes command_flags by action when no command filter is provided", async () => {
-    const commentsAction = await runContracts({ action: "comments", flagsOnly: true }, GLOBAL_OPTIONS);
+    const commentsAction = await runContracts(
+      { action: "comments", flagsOnly: true },
+      GLOBAL_OPTIONS,
+    );
     expect(commentsAction.commands).toEqual(["comments"]);
-    expect(commentsAction.command_flags?.map((entry) => entry.command)).toEqual(["comments"]);
+    expect(commentsAction.command_flags?.map((entry) => entry.command)).toEqual(
+      ["comments"],
+    );
     expect(commentsAction.command_flags?.[0]?.flags).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ flag: "--stdin" }),
@@ -349,14 +604,17 @@ describe("contracts command runtime", () => {
         expect.objectContaining({ flag: "--allow-audit-comment" }),
       ]),
     );
-
   });
 
   it("rejects conflicting contracts projection flags", async () => {
-    await expect(runContracts({ schemaOnly: true, flagsOnly: true }, GLOBAL_OPTIONS)).rejects.toMatchObject<PmCliError>({
+    await expect(
+      runContracts({ schemaOnly: true, flagsOnly: true }, GLOBAL_OPTIONS),
+    ).rejects.toMatchObject<PmCliError>({
       exitCode: EXIT_CODE.USAGE,
     });
-    await expect(runContracts({ flagsOnly: true, availabilityOnly: true }, GLOBAL_OPTIONS)).rejects.toMatchObject<PmCliError>({
+    await expect(
+      runContracts({ flagsOnly: true, availabilityOnly: true }, GLOBAL_OPTIONS),
+    ).rejects.toMatchObject<PmCliError>({
       exitCode: EXIT_CODE.USAGE,
     });
   });
@@ -450,15 +708,15 @@ describe("contracts command runtime", () => {
       );
 
       const result = await runContracts(
-      {
-        action: "beads-import",
-        runtimeOnly: true,
-        schemaOnly: true,
-      },
-      {
-        ...GLOBAL_OPTIONS,
-        path: context.pmPath,
-      },
+        {
+          action: "beads-import",
+          runtimeOnly: true,
+          schemaOnly: true,
+        },
+        {
+          ...GLOBAL_OPTIONS,
+          path: context.pmPath,
+        },
       );
       expect(result.actions).toEqual(["beads-import"]);
       expect(result.action_availability).toEqual([
@@ -478,7 +736,9 @@ describe("contracts command runtime", () => {
           },
         },
       ]);
-      const oneOf = (result.schema?.oneOf ?? []) as Array<{ properties?: { action?: { const?: string } } }>;
+      const oneOf = (result.schema?.oneOf ?? []) as Array<{
+        properties?: { action?: { const?: string } };
+      }>;
       expect(oneOf).toHaveLength(1);
       expect(oneOf[0]?.properties?.action?.const).toBe("beads-import");
     });
@@ -499,7 +759,11 @@ describe("contracts command runtime", () => {
       );
 
       expect(result.actions ?? []).not.toContain("beads-import");
-      expect((result.action_availability ?? []).some((entry) => entry.action === "beads-import")).toBe(false);
+      expect(
+        (result.action_availability ?? []).some(
+          (entry) => entry.action === "beads-import",
+        ),
+      ).toBe(false);
     });
   });
 
@@ -593,8 +857,12 @@ describe("contracts command runtime", () => {
             { flag: "--target" },
             { flag: "--dry-run" },
           ],
-          examples: ["pm migrate-asset --source assets/source.json --target assets/output.json"],
-          failure_hints: ["Ensure --source points to an existing readable file."],
+          examples: [
+            "pm migrate-asset --source assets/source.json --target assets/output.json",
+          ],
+          failure_hints: [
+            "Ensure --source points to an existing readable file.",
+          ],
         }),
       ]);
       expect(result.command_flags).toEqual([
@@ -625,7 +893,9 @@ describe("contracts command runtime", () => {
         };
         ["x-extension-source"]?: { layer?: string; name?: string } | null;
       }>;
-      const migrateBranch = oneOf.find((entry) => entry.properties?.action?.const === "migrate-asset");
+      const migrateBranch = oneOf.find(
+        (entry) => entry.properties?.action?.const === "migrate-asset",
+      );
       expect(migrateBranch).toBeDefined();
       expect(migrateBranch?.properties?.assetId).toBeDefined();
       expect(migrateBranch?.properties?.source).toBeDefined();
@@ -639,11 +909,15 @@ describe("contracts command runtime", () => {
   });
 
   it("rejects unknown action and command filters", async () => {
-    await expect(runContracts({ action: "unknown-action" }, GLOBAL_OPTIONS)).rejects.toMatchObject<PmCliError>({
+    await expect(
+      runContracts({ action: "unknown-action" }, GLOBAL_OPTIONS),
+    ).rejects.toMatchObject<PmCliError>({
       message: 'Unknown action: "unknown-action".',
       exitCode: EXIT_CODE.USAGE,
     });
-    await expect(runContracts({ command: "unknown-command" }, GLOBAL_OPTIONS)).rejects.toMatchObject<PmCliError>({
+    await expect(
+      runContracts({ command: "unknown-command" }, GLOBAL_OPTIONS),
+    ).rejects.toMatchObject<PmCliError>({
       message: 'Unknown command: "unknown-command".',
       exitCode: EXIT_CODE.USAGE,
     });
