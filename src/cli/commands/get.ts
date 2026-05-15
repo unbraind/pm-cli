@@ -31,7 +31,7 @@ interface ClaimStateContext {
 }
 
 export interface GetResult {
-  item: ItemFrontMatter;
+  item: Partial<ItemFrontMatter>;
   body: string;
   linked: {
     files: LinkedFile[];
@@ -39,6 +39,14 @@ export interface GetResult {
     docs: LinkedDoc[];
   };
   claim_state: ClaimStateContext;
+}
+
+const GET_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
+
+type GetDepth = (typeof GET_DEPTH_VALUES)[number];
+
+export interface GetOptions {
+  depth?: string;
 }
 
 function toClaimHistoryContext(
@@ -67,7 +75,37 @@ function resolveClaimStateContext(
   };
 }
 
-export async function runGet(id: string, global: GlobalOptions): Promise<GetResult> {
+function parseGetDepth(raw: string | undefined): GetDepth {
+  if (raw === undefined || raw.trim().length === 0) {
+    return "deep";
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (GET_DEPTH_VALUES.includes(normalized as GetDepth)) {
+    return normalized as GetDepth;
+  }
+  throw new PmCliError("Get --depth must be one of brief|standard|deep", EXIT_CODE.USAGE);
+}
+
+function projectItemForDepth(item: ItemFrontMatter, depth: GetDepth): Partial<ItemFrontMatter> {
+  if (depth === "deep") {
+    return item;
+  }
+  const {
+    comments: _comments,
+    notes: _notes,
+    learnings: _learnings,
+    files: _files,
+    tests: _tests,
+    docs: _docs,
+    reminders: _reminders,
+    events: _events,
+    ...projected
+  } = item;
+  return projected;
+}
+
+export async function runGet(id: string, global: GlobalOptions, options: GetOptions = {}): Promise<GetResult> {
+  const depth = parseGetDepth(options.depth);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
@@ -86,13 +124,16 @@ export async function runGet(id: string, global: GlobalOptions): Promise<GetResu
   } catch {
     history = [];
   }
+  const files = loaded.document.metadata.files ?? [];
+  const tests = loaded.document.metadata.tests ?? [];
+  const docs = loaded.document.metadata.docs ?? [];
   return {
-    item: loaded.document.metadata,
-    body: loaded.document.body,
+    item: projectItemForDepth(loaded.document.metadata, depth),
+    body: depth === "brief" ? "" : loaded.document.body,
     linked: {
-      files: loaded.document.metadata.files ?? [],
-      tests: loaded.document.metadata.tests ?? [],
-      docs: loaded.document.metadata.docs ?? [],
+      files: depth === "brief" ? [] : files,
+      tests: depth === "brief" ? [] : tests,
+      docs: depth === "brief" ? [] : docs,
     },
     claim_state: resolveClaimStateContext(loaded.document.metadata.assignee, history),
   };

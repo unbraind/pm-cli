@@ -83,6 +83,9 @@ describe("contracts command runtime", () => {
         expect.objectContaining({ flag: "--count" }),
       ]),
     );
+    expect(result.command_flags?.find((entry) => entry.command === "get")?.flags).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--depth" })]),
+    );
     expect(result.commander_aliases).toBeDefined();
     expect(
       result.commander_aliases?.create_string_options.length,

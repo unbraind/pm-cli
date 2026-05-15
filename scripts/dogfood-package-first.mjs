@@ -151,6 +151,10 @@ try {
   ]);
   run("context", ["context", "--limit", "5", "--depth", "standard"]);
   run("search keyword", ["search", "Dogfood package-first workflow", "--limit", "5"]);
+  const getBrief = run("get brief", ["get", id, "--depth", "brief"]);
+  assert(getBrief?.item?.id === id, "get --depth brief did not return the requested item");
+  assert(getBrief?.body === "", "get --depth brief should omit body text for low-token inspection");
+  assert(Array.isArray(getBrief?.linked?.files) && getBrief.linked.files.length === 0, "get --depth brief should omit linked files");
 
   const bareCoreCalendar = runExpectFailure("calendar unavailable before install", [
     "calendar",

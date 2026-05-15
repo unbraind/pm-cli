@@ -383,9 +383,12 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     ],
   },
   get: {
-    why: "Shows complete details for one item by ID.",
-    examples: ["pm get pm-a1b2", "pm get pm-a1b2 --json"],
-    tips: ["JSON output shape is { item, body, linked, claim_state }; body is top-level (not item.body)."],
+    why: "Shows details for one item by ID, with optional lower-token projections for agent loops.",
+    examples: ["pm get pm-a1b2", "pm get pm-a1b2 --depth brief --json", "pm get pm-a1b2 --depth standard"],
+    tips: [
+      "Default depth is deep for backward compatibility; use brief for metadata-only checks and standard for body plus linked artifacts without append-only logs.",
+      "JSON output shape is { item, body, linked, claim_state }; body is top-level (not item.body).",
+    ],
   },
   history: {
     why: "Inspects item mutation timeline and audit trail.",

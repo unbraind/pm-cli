@@ -50,6 +50,7 @@ import {
   EXTENSION_FLAG_CONTRACTS,
   FILES_FLAG_CONTRACTS,
   GC_FLAG_CONTRACTS,
+  GET_FLAG_CONTRACTS,
   GUIDE_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
@@ -902,6 +903,9 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   }
   if (command === "context" || command === "ctx") {
     return CONTEXT_FLAG_CONTRACTS;
+  }
+  if (command === "get") {
+    return GET_FLAG_CONTRACTS;
   }
   if (command === "search") {
     return SEARCH_FLAG_CONTRACTS;

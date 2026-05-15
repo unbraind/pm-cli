@@ -1284,6 +1284,10 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--stale-threshold" },
 ];
 
+export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--depth" },
+];
+
 export const GUIDE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--list" },
   { flag: "--format" },
@@ -1358,7 +1362,6 @@ const LIST_COMMAND_NAME_CONTRACTS = new Set([
 ]);
 
 const NO_SURFACE_COMMAND_NAME_CONTRACTS = new Set([
-  "get",
   "stats",
   "reindex",
   "help",
@@ -1418,6 +1421,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(CALENDAR_FLAG_CONTRACTS);
     case "context":
       return withSubcommandGlobalFlags(CONTEXT_FLAG_CONTRACTS);
+    case "get":
+      return withSubcommandGlobalFlags(GET_FLAG_CONTRACTS);
     case "search":
       return withSubcommandGlobalFlags(SEARCH_FLAG_CONTRACTS);
     case "history":
@@ -1931,7 +1936,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   guide: { optional: ["format", "depth"] },
   context: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
   ctx: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
-  get: { required: ["id"] },
+  get: { required: ["id"], optional: ["depth"] },
   search: {
     optional: SEARCH_CONTRACT_PARAMETER_KEYS,
     anyOfRequired: [["query"], ["keywords"]],

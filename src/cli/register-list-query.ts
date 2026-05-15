@@ -216,12 +216,19 @@ export function registerListQueryCommands(program: Command): void {
   program
     .command("get")
     .argument("<id>", "Item id")
+    .option("--depth <value>", "Detail depth: brief|standard|deep (default: deep)")
     .description("Show item details by ID.")
-    .action(async (id: string, _options: unknown, command) => {
+    .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const { runGet } = await loadListQueryCommandsModule();
-      const result = await runGet(id, globalOptions);
+      const result = await runGet(
+        id,
+        globalOptions,
+        {
+          depth: typeof options.depth === "string" ? options.depth : undefined,
+        },
+      );
       printResult(result, globalOptions);
       if (globalOptions.profile) {
         printError(`profile:command=get took_ms=${Date.now() - startedAt}`);

@@ -195,6 +195,44 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("accepts get depth for lower-token item inspection", async () => {
+    await withTempPmPath(async (context) => {
+      const help = context.runCli(["get", "--help"]);
+      expect(help.code).toBe(0);
+      expect(help.stdout).toContain("--depth");
+      expect(help.stdout).toContain("brief|standard|deep");
+
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "Get depth runtime",
+          "--description",
+          "Verify get depth projection.",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--create-mode",
+          "progressive",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const id = (created.json as { item?: { id?: string } }).item?.id ?? "";
+
+      const brief = context.runCli(["get", id, "--depth", "brief", "--json"], { expectJson: true });
+      expect(brief.code).toBe(0);
+      const payload = brief.json as { item?: { id?: string }; body?: string; linked?: { files?: unknown[] } };
+      expect(payload.item?.id).toBe(id);
+      expect(payload.body).toBe("");
+      expect(payload.linked?.files).toEqual([]);
+    });
+  });
+
   it("renders intent and example sections for installed templates plus core commands", async () => {
     await withTempPmPath(async (context) => {
       const installTemplates = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });

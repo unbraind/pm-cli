@@ -128,6 +128,45 @@ describe("runGet and runAppend", () => {
     });
   });
 
+  it("supports lower-token get depth projections while keeping deep as the default", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "get-depth-projection",
+        body: "depth body",
+        includeLinks: true,
+      });
+
+      context.runCli(["comments", id, "depth comment", "--json", "--author", "owner-a"], { expectJson: true });
+      context.runCli(["notes", id, "--add", "depth note", "--json", "--author", "owner-a"], { expectJson: true });
+
+      const deep = await runGet(id, { path: context.pmPath });
+      expect(deep.item.comments).toBeDefined();
+      expect(deep.item.notes).toBeDefined();
+      expect(deep.linked.files).toHaveLength(1);
+      expect(deep.body).toBe("depth body");
+
+      const standard = await runGet(id, { path: context.pmPath }, { depth: "standard" });
+      expect(standard.item.id).toBe(id);
+      expect(standard.item.comments).toBeUndefined();
+      expect(standard.item.notes).toBeUndefined();
+      expect(standard.item.files).toBeUndefined();
+      expect(standard.linked.files).toHaveLength(1);
+      expect(standard.body).toBe("depth body");
+
+      const brief = await runGet(id, { path: context.pmPath }, { depth: "brief" });
+      expect(brief.item.id).toBe(id);
+      expect(brief.item.comments).toBeUndefined();
+      expect(brief.linked.files).toEqual([]);
+      expect(brief.linked.tests).toEqual([]);
+      expect(brief.linked.docs).toEqual([]);
+      expect(brief.body).toBe("");
+
+      await expect(runGet(id, { path: context.pmPath }, { depth: "verbose" })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("surfaces claim state metadata with latest claim/release context", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, {
