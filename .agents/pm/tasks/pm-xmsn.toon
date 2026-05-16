@@ -6,7 +6,10 @@ status: closed
 priority: 2
 tags[0]:
 created_at: "2026-05-16T21:37:12.766Z"
-updated_at: "2026-05-16T21:37:15.564Z"
+updated_at: "2026-05-16T22:26:34.582Z"
 author: unknown
+resolution: Closed audit smoke item was cleanup-only and required no product code changes.
+expected_result: Temporary smoke item is closed cleanly and does not leave validation metadata warnings.
+actual_result: Smoke item was closed for cleanup; resolution metadata backfilled during the 2026-05-17 audit.
 close_reason: audit smoke test - cleanup
 body: ""

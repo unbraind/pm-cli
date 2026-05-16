@@ -2,12 +2,28 @@ id: pm-u83w
 title: pm install writes absolute-home-path into tracked .managed-extensions.json
 description: "When `pm install calendar` runs, the project-scope managed-extensions.json gets `source.input/location` absolute paths like ~/<repo>/packages/pm-calendar. These leak local home paths into a tracked file and break secret scans. Built-in packages bundled with pm-cli should be persisted by package-name reference (or repo-relative path), not absolute filesystem location."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,extensions,packages,pm-cli,privacy
 created_at: "2026-05-16T21:56:54.403Z"
-updated_at: "2026-05-16T21:56:54.403Z"
+updated_at: "2026-05-16T22:38:35.532Z"
 author: maintainer-agent
 acceptance_criteria: "pm install <builtin-name> persists source as {kind: 'builtin', name: ...} or relative-to-repo path; secret scan no longer flags managed-extensions.json after install; teams can share extension setup via committed tracker."
 parent: pm-rnpb
+resolution: "Bundled package alias installs persist managed source as kind=builtin with alias name/input/location, avoiding local absolute package roots."
+expected_result: pm install <builtin-name> writes portable managed source metadata and explicit local paths remain supported for local package installs.
+actual_result: "Builtin alias installs now store builtin alias metadata; catalog installed detection recognizes builtin records; regression tests, dogfood, secret scan, and release gate passed."
+comments[2]{created_at,author,text}:
+  "2026-05-16T22:29:49.704Z",codex-audit,"Implementation update: bundled package alias installs now persist managed source records as builtin aliases instead of local absolute package roots, while explicit filesystem package paths still persist as local sources. Dogfood passed 44 workflows after the change; linked focused package install test passed through pm test."
+  "2026-05-16T22:37:34.724Z",codex-audit,"Evidence: implemented portable builtin managed source records for bundled package alias installs, preserving local source records for explicit filesystem package paths. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts (47 tests); focused package install integration/unit subset; post-change dogfood passed 44 workflows; release gate passed with 1309 tests at 100 percent coverage, secret scan, npx/npm-pack/compatibility, and Sentry/telemetry gate."
+files[2]{path,scope,note}:
+  src/cli/commands/extension.ts,project,builtin package install source persisted without local absolute paths
+  tests/unit/extension-command.spec.ts,project,regression for portable builtin managed source records
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts -t 'bundled first-party packages|root install all|explicit local path',null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp8x5718-myh5o9,test,passed,"2026-05-16T22:29:18.829Z","2026-05-16T22:29:27.644Z","2026-05-16T22:29:27.644Z",null,null,1,0,0,null,null,null
+  test-local-mp8xg92k-65bvdg,test,passed,"2026-05-16T22:37:34.638Z","2026-05-16T22:38:03.500Z","2026-05-16T22:38:03.500Z",null,null,2,0,0,null,null,null
+close_reason: "Builtin package installs now persist portable builtin source aliases; tests, dogfood, secret scan, and release gate passed."
 body: ""

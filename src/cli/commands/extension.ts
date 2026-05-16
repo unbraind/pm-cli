@@ -99,9 +99,10 @@ export interface ExtensionCommandOptions {
 }
 
 export interface ManagedExtensionSource {
-  kind: "local" | "github" | "npm";
+  kind: "local" | "github" | "npm" | "builtin";
   input: string;
   location: string;
+  name?: string;
   package?: string;
   version?: string;
   repository?: string;
@@ -655,7 +656,7 @@ function normalizeManagedState(raw: unknown): ManagedExtensionState | null {
     }
     const source = entry.source as Record<string, unknown>;
     if (
-      (source.kind !== "local" && source.kind !== "github" && source.kind !== "npm") ||
+      (source.kind !== "local" && source.kind !== "github" && source.kind !== "npm" && source.kind !== "builtin") ||
       typeof source.input !== "string" ||
       typeof source.location !== "string"
     ) {
@@ -674,6 +675,7 @@ function normalizeManagedState(raw: unknown): ManagedExtensionState | null {
         kind: source.kind,
         input: source.input,
         location: source.location,
+        name: typeof source.name === "string" ? source.name : undefined,
         package: typeof source.package === "string" ? source.package : undefined,
         version: typeof source.version === "string" ? source.version : undefined,
         repository: typeof source.repository === "string" ? source.repository : undefined,
@@ -927,7 +929,15 @@ async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalO
   const installedLocations = new Set(
     managedStateRead.state.entries
       .filter((entry) => entry.scope === scope)
+      .filter((entry) => entry.source.kind !== "builtin")
       .map((entry) => path.resolve(entry.source.location)),
+  );
+  const installedBuiltinAliases = new Set(
+    managedStateRead.state.entries
+      .filter((entry) => entry.scope === scope && entry.source.kind === "builtin")
+      .flatMap((entry) => [entry.source.name, entry.source.input, entry.source.location])
+      .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+      .map((value) => value.trim().toLowerCase()),
   );
   const packages: Array<Record<string, unknown>> = [];
 
@@ -962,7 +972,7 @@ async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalO
       alias,
       bundled: true,
       available: true,
-      installed: installedLocations.has(path.resolve(packageRoot)),
+      installed: installedBuiltinAliases.has(alias) || installedLocations.has(path.resolve(packageRoot)),
       install_target: alias,
       install_command: `pm install ${alias} ${installScopeFlag}`,
       package_root: packageRoot,
@@ -2384,6 +2394,7 @@ export async function runExtension(
     }
     const bundledAliasSource =
       typeof githubOption === "string" ? null : await resolveBundledExtensionAliasSource(explicitSourceInput);
+    const bundledAliasName = bundledAliasSource === null ? null : explicitSourceInput.trim().toLowerCase();
     const sourceInput = bundledAliasSource ?? explicitSourceInput;
     const installSource = parseExtensionInstallSource(sourceInput, {
       forceGithub: typeof githubOption === "string",
@@ -2409,7 +2420,14 @@ export async function runExtension(
       }
 
       const sourceRecord: ManagedExtensionSource =
-        installSource.kind === "local"
+        bundledAliasName
+          ? {
+              kind: "builtin",
+              input: bundledAliasName,
+              location: bundledAliasName,
+              name: bundledAliasName,
+            }
+          : installSource.kind === "local"
           ? {
               kind: "local",
               input: installSource.input,

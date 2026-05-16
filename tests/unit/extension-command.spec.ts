@@ -190,8 +190,10 @@ describe("extension command runtime", () => {
           name: "builtin-beads-import",
         },
         source: {
-          kind: "local",
-          location: path.resolve(process.cwd(), "packages", "pm-beads"),
+          kind: "builtin",
+          input: "beads",
+          location: "beads",
+          name: "beads",
         },
         activated: true,
       });
@@ -202,8 +204,10 @@ describe("extension command runtime", () => {
           name: "builtin-todos-import-export",
         },
         source: {
-          kind: "local",
-          location: path.resolve(process.cwd(), "packages", "pm-todos"),
+          kind: "builtin",
+          input: "todos",
+          location: "todos",
+          name: "todos",
         },
         activated: true,
       });
@@ -214,8 +218,10 @@ describe("extension command runtime", () => {
           name: "builtin-calendar",
         },
         source: {
-          kind: "local",
-          location: path.resolve(process.cwd(), "packages", "pm-calendar"),
+          kind: "builtin",
+          input: "calendar",
+          location: "calendar",
+          name: "calendar",
         },
         activated: true,
       });
@@ -226,11 +232,29 @@ describe("extension command runtime", () => {
           name: "builtin-templates",
         },
         source: {
-          kind: "local",
-          location: path.resolve(process.cwd(), "packages", "pm-templates"),
+          kind: "builtin",
+          input: "templates",
+          location: "templates",
+          name: "templates",
         },
         activated: true,
       });
+
+      const managedState = await readManagedExtensionState(path.join(context.pmPath, "extensions"));
+      expect(managedState.state.entries.map((entry) => entry.source)).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ kind: "builtin", name: "beads", input: "beads", location: "beads" }),
+          expect.objectContaining({ kind: "builtin", name: "todos", input: "todos", location: "todos" }),
+          expect.objectContaining({ kind: "builtin", name: "calendar", input: "calendar", location: "calendar" }),
+          expect.objectContaining({ kind: "builtin", name: "templates", input: "templates", location: "templates" }),
+        ]),
+      );
+      for (const entry of managedState.state.entries) {
+        if (entry.source.kind === "builtin") {
+          expect(path.isAbsolute(entry.source.input)).toBe(false);
+          expect(path.isAbsolute(entry.source.location)).toBe(false);
+        }
+      }
     });
   });
 
@@ -494,8 +518,10 @@ describe("extension command runtime", () => {
             name: "env-beads-ext",
           },
           source: {
-            kind: "local",
-            location: bundledBeadsPackage,
+            kind: "builtin",
+            input: "beads",
+            location: "beads",
+            name: "beads",
           },
         });
       } finally {
@@ -570,8 +596,10 @@ describe("extension command runtime", () => {
             name: "custom-package-ext",
           },
           source: {
-            kind: "local",
-            location: bundledPackage,
+            kind: "builtin",
+            input: "custom",
+            location: "custom",
+            name: "custom",
           },
         });
       } finally {
@@ -596,7 +624,10 @@ describe("extension command runtime", () => {
             name: "builtin-todos-import-export",
           },
           source: {
-            kind: "local",
+            kind: "builtin",
+            input: "todos",
+            location: "todos",
+            name: "todos",
           },
         });
       } finally {

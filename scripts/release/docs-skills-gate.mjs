@@ -329,7 +329,7 @@ async function runGuideChecks(failures) {
       validateGuideCommands(topicResult, availableCommands, failures);
     }
   } finally {
-    await rm(tempRoot, { recursive: true, force: true });
+    await rm(tempRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
   }
 }
 
