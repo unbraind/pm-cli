@@ -1578,6 +1578,20 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     resolvedOptions = normalizeLegacyNoneCreateOptions(mergeCreateOptionsWithTemplate(templateOptions, resolvedOptions));
   }
   if (resolvedOptions.type === undefined) {
+    // Default-type fallback is suppressed under explicit --create-mode strict, where the strict
+    // required-option contract takes precedence and surfaces the missing_required_option envelope.
+    const explicitStrictMode = typeof resolvedOptions.createMode === "string"
+      && resolvedOptions.createMode.trim().toLowerCase() === "strict";
+    if (!explicitStrictMode) {
+      const defaultType = settings.governance.create_default_type?.trim();
+      if (defaultType && defaultType.length > 0 && resolveTypeName(defaultType, typeRegistry)) {
+        resolvedOptions.type = defaultType;
+      } else if (resolveTypeName("Task", typeRegistry)) {
+        resolvedOptions.type = "Task";
+      }
+    }
+  }
+  if (resolvedOptions.type === undefined) {
     throw new PmCliError("Missing required option --type <value>", EXIT_CODE.USAGE);
   }
   const resolvedTypeName = resolveTypeName(resolvedOptions.type, typeRegistry);

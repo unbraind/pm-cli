@@ -882,8 +882,20 @@ function resolveAction(target: string | undefined, options: ExtensionCommandOpti
     if (typeof target === "string" && (target.trim().toLowerCase() === "init" || target.trim().toLowerCase() === "scaffold")) {
       return "init";
     }
+    if (typeof target === "string" && target.trim().toLowerCase() === "explore") {
+      return "explore";
+    }
+    if (typeof target === "string" && target.trim().toLowerCase() === "manage") {
+      return "manage";
+    }
+    if (typeof target === "string" && (target.trim().toLowerCase() === "list" || target.trim() === "")) {
+      return "explore";
+    }
+    if (target === undefined) {
+      return "explore";
+    }
     throw new PmCliError(
-      "One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --reload, --doctor, --catalog, --init/--scaffold, --adopt, --adopt-all, --activate, --deactivate.",
+      "One action flag is required. Use one of: --install, --uninstall, --explore, --manage, --reload, --doctor, --catalog, --init/--scaffold, --adopt, --adopt-all, --activate, --deactivate. Bare `pm package` and `pm extension` default to --explore.",
       EXIT_CODE.USAGE,
     );
   }

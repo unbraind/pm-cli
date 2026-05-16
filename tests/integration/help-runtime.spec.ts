@@ -370,7 +370,17 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("renders structured usage guidance for missing required options", async () => {
     await withTempPmPath(async (context) => {
-      const usage = context.runCli(["create", "--title", "Only title", "--description", "Only description", "--json"]);
+      // create-mode=strict disables the default-Task fallback to keep the strict required-option contract
+      const usage = context.runCli([
+        "create",
+        "--title",
+        "Only title",
+        "--description",
+        "Only description",
+        "--create-mode",
+        "strict",
+        "--json",
+      ]);
       expect(usage.code).toBe(2);
       const envelope = JSON.parse(usage.stderr) as {
         type: string;
@@ -400,7 +410,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(envelope.examples?.length ?? 0).toBeGreaterThan(0);
       expect(envelope.next_steps?.length ?? 0).toBeGreaterThan(0);
       expect(envelope.recovery?.attempted_command).toBe(
-        'pm create --title "Only title" --description "Only description" --json',
+        'pm create --title "Only title" --description "Only description" --create-mode strict --json',
       );
       expect(envelope.recovery?.normalized_args).toEqual([
         "create",
@@ -408,10 +418,12 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         "Only title",
         "--description",
         "Only description",
+        "--create-mode",
+        "strict",
         "--json",
       ]);
       expect(envelope.recovery?.provided_fields).toEqual(
-        expect.arrayContaining(["--description", "--json", "--title"]),
+        expect.arrayContaining(["--description", "--json", "--title", "--create-mode"]),
       );
       expect(envelope.recovery?.missing).toEqual(expect.arrayContaining(["--type"]));
       expect(envelope.recovery?.suggested_retry).toContain("--type");

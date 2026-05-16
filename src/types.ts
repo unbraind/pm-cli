@@ -416,6 +416,7 @@ export interface GovernanceSettings {
   parent_reference: ParentReferencePolicy;
   metadata_profile: ValidateMetadataProfile;
   force_required_for_stale_lock: boolean;
+  create_default_type?: string;
 }
 
 export type ExtensionPolicyMode = "off" | "warn" | "enforce";

@@ -136,6 +136,7 @@ const governanceSettingsSchema = z
     parent_reference: z.union([z.literal("warn"), z.literal("strict_error")]).optional(),
     metadata_profile: z.union([z.literal("core"), z.literal("strict"), z.literal("custom")]).optional(),
     force_required_for_stale_lock: z.boolean().optional(),
+    create_default_type: z.string().optional(),
   })
   .optional();
 

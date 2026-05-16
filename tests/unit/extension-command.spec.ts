@@ -1658,9 +1658,10 @@ describe("extension command runtime", () => {
   });
 
   it("validates action flags and missing targets", async () => {
-    await expect(runExtension(undefined, {}, { path: ".agents/pm" })).rejects.toMatchObject({
-      exitCode: EXIT_CODE.USAGE,
-    });
+    // Bare invocation now defaults to --explore; verify it returns ok=true instead of throwing
+    const bareResult = await runExtension(undefined, {}, { path: ".agents/pm" });
+    expect(bareResult.action).toBe("explore");
+    expect(bareResult.ok).toBe(true);
     await expect(
       runExtension(undefined, { install: true, uninstall: true }, { path: ".agents/pm" }),
     ).rejects.toMatchObject({

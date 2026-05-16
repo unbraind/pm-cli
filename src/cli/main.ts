@@ -408,8 +408,7 @@ function buildPostActionTelemetryOutcome(): TelemetryCommandOutcome {
       : undefined;
   const resultExitCode = readRecordNumber(result, "exit_code", "exitCode");
   const exitCode = processExitCode ?? resultExitCode ?? EXIT_CODE.SUCCESS;
-  const resultOk = readRecordBoolean(result, "ok");
-  const ok = resultOk ?? exitCode === EXIT_CODE.SUCCESS;
+  const ok = exitCode === EXIT_CODE.SUCCESS;
   const errorCode = readRecordString(result, "error_code", "errorCode") ?? inferPostActionErrorCode(ok, exitCode);
   const errorCategory =
     normalizeTelemetryErrorCategory(readRecordString(result, "error_category", "errorCategory")) ??

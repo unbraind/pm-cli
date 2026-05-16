@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `pm package` / `pm extension` bare invocations now default to `--explore` instead of erroring on the required-action contract, matching the agent-friendly default used by `pm templates`.
+- `pm create` now defaults `--type` to the configurable `settings.governance.create_default_type` (falling back to `Task`) so the positional-title shortcut (`pm create "title"`) succeeds without forcing an explicit `--type` flag.
+- Telemetry `command_resolution` is now derived from the CLI exit code rather than the JSON output's `ok` field, so warning-but-exit-zero commands (`pm validate`, `pm health`) are no longer reported as failures in the telemetry KPI dashboards.
+
+### Added
+- New `settings.governance.create_default_type` knob lets each workspace pick the default item type for the positional-title `pm create` shortcut.
+
 ## [2026.5.14] - 2026-05-14
 
 ### Added
