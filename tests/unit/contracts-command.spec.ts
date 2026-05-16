@@ -55,7 +55,7 @@ describe("contracts command runtime", () => {
     expect(result.command_aliases).toEqual(
       expect.arrayContaining([
         { canonical: "context", aliases: ["ctx"] },
-        { canonical: "package", aliases: ["extension", "packages"] },
+        { canonical: "package", aliases: ["extension", "packages", "install"] },
       ]),
     );
     expect(
@@ -354,6 +354,7 @@ describe("contracts command runtime", () => {
     expect(compactFlags.commands).not.toContain("ctx");
     expect(compactFlags.commands).not.toContain("extension");
     expect(compactFlags.commands).not.toContain("packages");
+    expect(compactFlags.commands).not.toContain("install");
     expect(
       compactFlags.command_flags?.some((entry) => entry.command === "ctx"),
     ).toBe(false);
@@ -365,10 +366,13 @@ describe("contracts command runtime", () => {
     expect(
       compactFlags.command_flags?.some((entry) => entry.command === "packages"),
     ).toBe(false);
+    expect(
+      compactFlags.command_flags?.some((entry) => entry.command === "install"),
+    ).toBe(false);
     expect(compactFlags.command_aliases).toEqual(
       expect.arrayContaining([
         { canonical: "context", aliases: ["ctx"] },
-        { canonical: "package", aliases: ["extension", "packages"] },
+        { canonical: "package", aliases: ["extension", "packages", "install"] },
       ]),
     );
 
