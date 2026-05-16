@@ -2,12 +2,25 @@ id: pm-jw36
 title: Cache item body in metadata cache for fast keyword search
 description: Search keyword was 617ms because every search re-read+parsed all 721 item .toon files for body text. Caching body in front-matter cache (CACHE_VERSION 3 -> 4) reduces warm search to ~140ms (77% speedup). Cold first run rebuilds cache once.
 type: Issue
-status: open
+status: closed
 priority: 0
 tags[4]: cache,performance,pm-cli,search
 created_at: "2026-05-16T21:54:06.137Z"
-updated_at: "2026-05-16T21:54:06.137Z"
+updated_at: "2026-05-16T22:55:47.425Z"
 author: maintainer-agent
 acceptance_criteria: warm search command profile ~140ms (5x faster); list profile unchanged; pm health remains ok; cache invalidates correctly when item file changes.
 parent: pm-rnpb
+resolution: Await metadata-cache persistence and regression-test cached body reuse plus mutation invalidation.
+expected_result: Warm keyword search can use cached item bodies deterministically without stale results after item mutation.
+actual_result: "Focused linked test, dogfood, and full release gate passed; pm-jw36 closed with cache hit/invalidation evidence."
+comments[1]{created_at,author,text}:
+  "2026-05-16T22:55:34.908Z",codex-agent,"Evidence 2026-05-17: implementation verified and tightened. src/core/store/front-matter-cache.ts now awaits metadata-cache persistence so immediate warm follow-up commands reliably use cached item bodies; tests/unit/front-matter-cache.spec.ts verifies cached body reuse without re-reading the item file and refresh after mutation. Verification passed: pm linked test, focused search/cache/contracts suite, isolated dogfood 44 workflows, and full release gate with 1310 tests at 100 percent coverage plus Sentry/telemetry required gate."
+files[2]{path,scope,note}:
+  tests/unit/front-matter-cache.spec.ts,project,regression coverage for cached item bodies and invalidation
+  src/core/store/front-matter-cache.ts,project,await metadata-cache persistence for deterministic warm search cache
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/front-matter-cache.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,focused cache body regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp8xpdy6-y00do6,test,passed,"2026-05-16T22:45:01.239Z","2026-05-16T22:45:09.726Z","2026-05-16T22:45:09.726Z",null,null,1,0,0,null,null,null
+close_reason: cached body warm search path is deterministic; cache invalidation and full release gate verified
 body: ""

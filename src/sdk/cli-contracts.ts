@@ -906,6 +906,10 @@ export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--no-refresh" },
   { flag: "--refresh-vectors" },
   { flag: "--verbose-stale-items" },
+  { flag: "--skip-vectors" },
+  { flag: "--skip-integrity" },
+  { flag: "--skip-drift" },
+  { flag: "--full" },
 ];
 
 export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -2080,6 +2084,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
       "noRefresh",
       "refreshVectors",
       "verboseStaleItems",
+      "skipVectors",
+      "skipIntegrity",
+      "skipDrift",
+      "full",
     ],
   },
   validate: {
@@ -2444,6 +2452,15 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   verboseStaleItems: {
     description: "For health action, include full stale-item arrays in vectorization details.",
+  },
+  skipVectors: {
+    description: "For health action, skip vectorization checks for a faster diagnostic run.",
+  },
+  skipIntegrity: {
+    description: "For health action, skip item/history file integrity checks for a faster diagnostic run.",
+  },
+  skipDrift: {
+    description: "For health action, skip history drift hash checks for a faster diagnostic run.",
   },
   scanMode: {
     description: "Select file candidate scan mode for --check-files.",

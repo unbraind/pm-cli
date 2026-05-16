@@ -196,7 +196,7 @@ export async function listAllDocumentCandidatesCached(
 
   await Promise.all(parseTasks);
 
-  persistCache(pmRoot, {
+  await persistCache(pmRoot, {
     version: CACHE_VERSION,
     context_fingerprint: contextFingerprint,
     entries: newEntries,

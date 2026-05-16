@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-16T22:38:16.999Z"
+updated_at: "2026-05-16T22:56:23.620Z"
 deadline: "2026-06-01T00:00:00.000Z"
 author: codex-audit
 estimated_minutes: 300
@@ -14,7 +14,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[68]{created_at,author,text}:
+comments[72]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -83,7 +83,11 @@ comments[68]{created_at,author,text}:
   "2026-05-16T21:57:50.694Z",maintainer-agent,"Audit 2026-05-16 session 12 (maintainer-agent): Fixed 4 UX/perf bugs - (1) pm list --status open,in_progress now returns matching items (was 0 due to string-equality match); (2) TOON array-of-objects continuation lines no longer double-indented (~30-50% leading whitespace reduction in agent outputs); (3) front-matter cache now stores item body (search keyword warm path 617ms -> 140ms, 77% faster); (4) MCP pm_list defaults to compact projection (was 79k chars for 4 items). Also fixed (5) error recovery bundle no longer lists already-provided --flag as missing. New pm items: ziv0, ps85, jw36, 2cqx, ixi1, bzx3, nhka, u83w. Cleaned 83MB stale telemetry tmp file. All 1309 tests pass on previous run."
   "2026-05-16T22:25:31.732Z",codex-audit,"Execution start 2026-05-17: duplicate check reused pm-rnpb after context/search/list-open/list-in-progress. Bootstrap passed with global pm refreshed at 2026.5.14, node v25.9.0, pnpm 10.33.0, and pnpm build. Proceeding with isolated dogfood, GitHub/Sentry/telemetry/privacy checks, performance/code review, and scoped remediation without creating duplicate items."
   "2026-05-16T22:37:34.782Z",codex-audit,"Audit evidence 2026-05-17: isolated temp-project dogfood passed 44 workflows; GitHub repo has no open issues or PRs and notifications had no actionable pm-cli items; live telemetry stack is healthy with queue depth 0, one consumer, and fresh 24h events; Sentry/telemetry gate reports Sentry critical=0/high=0 and telemetry finish_error_rate_pct=2.32. Fixed pm-u83w builtin package managed-source privacy issue and docs-skills temp cleanup ENOTEMPTY release-gate flake. Release gate passed: build, typecheck, docs/skills, static quality, 1309 tests at 100 percent coverage, version policy, secret scan, npx smoke, npm pack, compatibility, Sentry/telemetry."
-files[47]{path,scope,note}:
+  "2026-05-16T22:43:45.206Z",codex-agent,"Sub-agent audit evidence 2026-05-17: agent-UX bounded audit found health fast-path CLI flags (--skip-vectors/--skip-integrity/--skip-drift/--full) missing from contracts/schema; package catalog/test output/context projection are larger follow-up candidates. Privacy/observability audit found no tracked credential/key leak in tracked files or pm history during bounded scans; recommended future gate improvements are Sentry lastSeen/release-window reporting and telemetry freshness/minimum sample checks."
+  "2026-05-16T22:50:36.958Z",codex-agent,"Release-gate feedback 2026-05-17: first full gate reached coverage and failed only completion-command expectation after adding health fast-path contract flags; patched bash completion regression to include --skip-vectors/--skip-integrity/--skip-drift/--full before rerunning focused and full gates."
+  "2026-05-16T22:55:34.964Z",codex-agent,"Final local evidence 2026-05-17: isolated temp-project dogfood passed 44 workflows after changes. Fixed pm-jw36 deterministic metadata-cache body persistence and added direct cache hit/invalidation regression. Exposed health fast-path flags in contracts, SDK action schema, and bash completion: --skip-vectors, --skip-integrity, --skip-drift, --full. Focused tests passed: completion/contracts/front-matter-cache and search/cache suites. Full release gate passed: build, typecheck, docs/skills, static quality, 1310 tests at 100 percent coverage, version policy, secret scan, npx smoke, npm pack, compatibility, Sentry critical=0/high=0, telemetry finish_error_rate_pct=2.3 and missing error-code rows=0."
+  "2026-05-16T22:56:09.833Z",codex-agent,"Post-gate health/validate 2026-05-17: pm health --check-only and pm validate --check-resolution --check-history-drift have resolution clean and vectorization ok with zero stale items. Remaining ok=false is limited to known history drift warnings on pm-54d, pm-7vm9, pm-f3q4, pm-fdla, pm-mb4n, pm-nhka, and pm-tq1; no new resolution metadata gaps after closing pm-jw36."
+files[48]{path,scope,note}:
   README.md,project,public README hygiene update
   scripts/check-secrets.mjs,project,detect absolute home-path and user@private-host leakage
   scripts/dogfood-package-first.mjs,project,latest isolated dogfood harness
@@ -131,7 +135,8 @@ files[47]{path,scope,note}:
   tests/unit/update-command.spec.ts,project,update event date alias regression
   vitest.config.ts,project,coverage include list covers new search corpus helper
   scripts/release/docs-skills-gate.mjs,project,retry temporary cleanup to avoid ENOTEMPTY release-gate false failure
-tests[21]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/completion-command.spec.ts,project,bash completion regression for health fast-path flags
+tests[22]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret and path leak guardrail
   node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,isolated temp-project dogfood harness
   node scripts/release/docs-skills-gate.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
@@ -144,6 +149,7 @@ tests[21]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,s
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused package/install contract alias regression
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused contracts and runtime flag parity regression
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/search-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused contracts/search runtime parity regression
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/front-matter-cache.spec.ts tests/unit/search-command.spec.ts tests/unit/search-cache.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused contracts and search cache regression
   node scripts/run-tests.mjs test -- tests/unit/embedding-batches.spec.ts tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/search-command.spec.ts tests/unit/sentry-helpers.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused remediation regressions
   node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused init/recovery/event regressions
   node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/contracts-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused get depth regression
