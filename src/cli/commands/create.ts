@@ -1432,6 +1432,12 @@ function buildTypeSpecificCreateExample(
 
 function requireStringOption(value: string | undefined, flag: string): string {
   if (value === undefined) {
+    if (flag === "--title") {
+      throw new PmCliError(
+        'Missing required option --title. Why required: every item needs a human-readable title for lookup, search, and reporting. Retry: pass the title as the first positional argument (example: pm create "Fix login bug" --type Issue) or with --title.',
+        EXIT_CODE.USAGE,
+      );
+    }
     throw new PmCliError(`Missing required option ${flag}`, EXIT_CODE.USAGE);
   }
   return value;
@@ -1834,6 +1840,9 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       statusRegistry.open_status,
     );
     const nextSteps = [`Run "pm create --help --type ${type}" for type-aware required option guidance.`];
+    if (combinedMissingFlags.includes("--title")) {
+      nextSteps.push('Title can also be passed as the first positional argument (example: pm create "Your title" --type ' + type + ').');
+    }
     if (createMode === "strict") {
       nextSteps.push('For staged onboarding, retry with "--create-mode progressive".');
       if (SCHEDULE_CREATE_PRESET_TYPES.has(type)) {

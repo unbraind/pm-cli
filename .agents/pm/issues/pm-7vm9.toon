@@ -1,0 +1,22 @@
+id: pm-7vm9
+title: Accept positional title argument in pm create
+description: "Agents naturally write 'pm create \"the title\" --type X' but the CLI required '--title'. Adding positional argument support removes a recurring friction point and matches the pattern used by update/close."
+type: Issue
+status: closed
+priority: 1
+tags[3]: agent-ux,create,dogfood
+created_at: "2026-05-16T16:12:05.486Z"
+updated_at: "2026-05-16T16:12:36.671Z"
+author: maintainer-agent
+parent: pm-rnpb
+resolution: "Added positional [title] argument to pm create. Title can be passed as positional shortcut or via --title flag. Updated help text and error guidance to mention the positional form. SDK contract description includes [required] marker so help payload still flags title as required for type-aware validation."
+expected_result: "pm create \"Title\" --type Issue works without requiring --title flag"
+actual_result: "Implemented; positional title flows through register-mutation action, normalized via existing options pipeline, validated by requireStringOption with enhanced error guidance"
+files[3]{path,scope,note}:
+  src/cli/commands/create.ts,project,null
+  src/cli/register-mutation.ts,project,null
+  src/sdk/cli-contracts/commander-mutation-options.ts,project,null
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,tests/integration/help-runtime.spec.ts,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts,tests/unit/create-command.spec.ts,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+body: ""

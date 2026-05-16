@@ -14,6 +14,11 @@ coverage/
 .agents/pm/runtime/metadata-cache.json
 .agents/pm/runtime/telemetry/
 
+# Local profiling artifacts must not be committed.
+*.cpuprofile
+*.heapprofile
+*.heapsnapshot
+
 # Local production operations artifacts are private and must not be committed.
 scripts/prod/
 scripts/prod/telemetry/

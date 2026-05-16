@@ -1,0 +1,13 @@
+id: pm-hosd
+title: Add --with-packages flag to pm init for one-shot package install
+description: "After 'pm init', agents must discover that commands like pm calendar/templates live in optional packages and run 'pm install *' separately. Adding --with-packages (or making --defaults install all bundled packages) reduces the cold-start to a single command."
+type: Feature
+status: open
+priority: 2
+tags[4]: agent-ux,dogfood,init,packages
+created_at: "2026-05-16T16:12:45.824Z"
+updated_at: "2026-05-16T16:12:45.824Z"
+author: maintainer-agent
+acceptance_criteria: pm init --with-packages installs all bundled first-party packages automatically; help text mentions the flag; init result includes installed_packages summary; existing pm init behaviour unchanged when flag omitted
+parent: pm-rnpb
+body: ""

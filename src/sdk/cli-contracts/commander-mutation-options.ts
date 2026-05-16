@@ -1,7 +1,12 @@
 import type { CommanderOptionAliasContract, CommanderOptionRegistrationContract } from "./commander-types.js";
 
 export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegistrationContract[] = [
-  { target: "title", keys: ["title"], option: "--title, -t <value>", description: "Item title", required: true },
+  {
+    target: "title",
+    keys: ["title"],
+    option: "--title, -t <value>",
+    description: "Item title [required] (or pass title as the first positional argument)",
+  },
   {
     target: "description",
     keys: ["description"],

@@ -48,6 +48,7 @@ function registerCommanderOptionContracts(command: Command, contracts: Commander
 export function registerMutationCommands(program: Command): void {
   const createCommand = program
     .command("create")
+    .argument("[title]", "Item title (positional shortcut for --title)")
     .description("Create a new project management item.");
   registerCommanderOptionContracts(createCommand, CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS);
   createCommand
@@ -61,9 +62,12 @@ export function registerMutationCommands(program: Command): void {
     .option("--clear-reminders", "Clear reminders")
     .option("--clear-events", "Clear events")
     .option("--clear-type-options", "Clear type options")
-    .action(async (options: Record<string, unknown>, command) => {
+    .action(async (positionalTitle: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      if (typeof positionalTitle === "string" && positionalTitle.length > 0 && options.title === undefined) {
+        options.title = positionalTitle;
+      }
       const normalized = normalizeCreateOptions(options, { requireType: false });
       const { runCreate } = await loadMutationCommandsModule();
       const result = await runCreate(normalized, globalOptions);
