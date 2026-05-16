@@ -2,11 +2,12 @@
 
 This directory is the public documentation home for `pm-cli`. It is organized for progressive disclosure: read the smallest page that answers the current question, then follow links only when more detail is needed.
 
-## CLI Guide Router
+## Optional CLI Guide Router
 
-`pm guide` exposes the same documentation routes from inside the CLI:
+`pm guide` is provided by the optional `guide-shell` package. Install it when local in-CLI documentation routing is useful:
 
 ```bash
+pm install guide-shell --project
 pm guide
 pm guide quickstart
 pm guide commands --depth standard
@@ -23,7 +24,7 @@ pm guide release --json
 | Maintainer | [Contributing](../CONTRIBUTING.md) | [Testing](TESTING.md), [Releasing](RELEASING.md), [Architecture](ARCHITECTURE.md) |
 | Package author | [Packages and Extensions](EXTENSIONS.md) | [SDK](SDK.md), [starter extension](examples/starter-extension/README.md) |
 | Codex user | [Codex Plugin](CODEX_PLUGIN.md) | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md) |
-| Machine client | `pm guide commands` | [Command Reference](COMMANDS.md#machine-contracts), then `pm contracts --json` |
+| Machine client | `pm contracts --json` | [Command Reference](COMMANDS.md#machine-contracts), optionally `pm install guide-shell --project && pm guide commands` |
 
 ## Documentation Map
 
@@ -41,8 +42,8 @@ pm guide release --json
 
 ## Guide Topic Map
 
-| `pm guide` topic | Primary docs |
-|------------------|--------------|
+| Optional `pm guide` topic | Primary docs |
+|-----------------------------|--------------|
 | `quickstart` | [Quickstart](QUICKSTART.md), [Command Reference](COMMANDS.md) |
 | `commands` | [Command Reference](COMMANDS.md), [Configuration](CONFIGURATION.md) |
 | `workflows` | [Agent Guide](AGENT_GUIDE.md), [Testing](TESTING.md) |

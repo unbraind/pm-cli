@@ -44,6 +44,8 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(detailedHelp.stdout).toContain("Why use this command:");
       expect(detailedHelp.stdout).toContain("Examples:");
       expect(detailedHelp.stdout).toContain("Tips:");
+      expect(detailedHelp.stdout).toContain("pm install guide-shell --project");
+      expect(detailedHelp.stdout).toContain("Install guide-shell before using pm guide");
     });
   });
 

@@ -42,6 +42,7 @@ pm release <ID>
 ## Local Docs Routing
 
 ```bash
+pm install guide-shell --project
 pm guide workflows
 pm guide commands --depth standard
 pm guide release --json

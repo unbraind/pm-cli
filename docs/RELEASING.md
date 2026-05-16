@@ -1,7 +1,7 @@
 # Releasing `@unbrained/pm-cli`
 
 This page is for maintainers cutting npm and GitHub releases. It assumes release work is tracked with `pm`.
-For local progressive-disclosure routing, use `pm guide release`.
+For local progressive-disclosure routing, install `guide-shell` with `pm install guide-shell --project`, then use `pm guide release`.
 
 ## Agent Quick Context
 
@@ -10,7 +10,7 @@ For local progressive-disclosure routing, use `pm guide release`.
 - Publishing is owned by the tag-driven GitHub Actions release workflow.
 - Do not run manual `npm publish`.
 - Run local parity gates before pushing release tags.
-- Use `pm guide release --json` for machine-readable release docs routing.
+- Use `pm guide release --json` for machine-readable release docs routing after `guide-shell` is installed.
 
 Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 

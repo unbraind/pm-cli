@@ -321,6 +321,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   guide: {
     why: "Routes local progressive-disclosure documentation so agents can fetch only the context they need.",
     examples: [
+      "pm install guide-shell --project",
       "pm guide",
       "pm guide quickstart",
       "pm guide commands --depth standard",
@@ -605,13 +606,13 @@ export const ROOT_HELP_BUNDLE: HelpBundle = {
   why: "Provides deterministic project management workflows for humans and coding agents.",
   examples: [
     "pm init",
-    "pm guide",
+    "pm install guide-shell --project",
     "pm list-open --limit 10",
     'pm create --title "..." --description "..." --type Task --status open --priority 1 --message "..." --create-mode progressive',
   ],
   tips: [
     "Use <command> --help for command-specific guidance and examples.",
-    "Use pm guide for local docs and skills routing with progressive disclosure.",
+    "Install guide-shell before using pm guide for local docs and skills routing.",
     "Use --json for machine parsing and integration flows.",
     "Use --no-pager to force direct help output in CI and other non-interactive shells.",
   ],

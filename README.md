@@ -23,9 +23,10 @@
 
 Full documentation starts at [docs/README.md](docs/README.md).
 
-Use local in-CLI routing when an agent should stay inside terminal context:
+Install the optional guide package when an agent should stay inside terminal context for local docs routing:
 
 ```bash
+pm install guide-shell --project
 pm guide
 pm guide quickstart
 pm guide commands --depth standard
@@ -108,7 +109,7 @@ pm list-in-progress --limit 20
 
 If no relevant item exists, create a parent lineage before child work, claim the child item, link changed files/docs/tests, and leave evidence comments before closing. The full workflow is in the [Agent Guide](docs/AGENT_GUIDE.md).
 
-For token-aware local routing, use `pm guide workflows` and then drill into related topics (`commands`, `skills`, `release`) only when needed.
+For token-aware local routing, install `guide-shell` with `pm install guide-shell --project`, then use `pm guide workflows` and drill into related topics (`commands`, `skills`, `release`) only when needed.
 
 ## Release Automation
 
@@ -126,7 +127,7 @@ For token-aware local routing, use `pm guide workflows` and then drill into rela
 - Built-in types include `Epic`, `Feature`, `Task`, `Chore`, `Issue`, `Decision`, `Event`, `Reminder`, `Milestone`, and `Meeting`.
 - Output defaults to sparse TOON. Use `--json` for strict parsing.
 - `pm contracts` is the machine-readable command and schema contract surface for agents.
-- `pm guide` is the local progressive-disclosure docs and skills index for agents.
+- `pm guide` is the optional local progressive-disclosure docs and skills index for agents after installing `guide-shell`.
 
 ## Tracker References
 

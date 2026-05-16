@@ -16,6 +16,7 @@ Use this skill for planning and coordination work where the main output is clean
 ## Quick Start
 
 ```bash
+pm install guide-shell --project
 pm guide quickstart
 pm context --limit 10
 pm search "<request keywords>" --limit 10

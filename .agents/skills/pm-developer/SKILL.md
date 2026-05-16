@@ -21,6 +21,7 @@ pm search "<task keywords>" --limit 10
 pm list-open --limit 20
 pm claim <ID>
 pm update <ID> --status in_progress
+pm install guide-shell --project
 pm guide workflows
 ```
 
@@ -47,7 +48,7 @@ Use one prompt template, then execute only the minimum required commands.
 
 ### Prompt: Documentation + Code Sync
 
-`Update implementation and docs together for <ID>. Ensure docs route through pm guide topics and verify command examples still match pm contracts output.`
+`Update implementation and docs together for <ID>. Ensure optional guide-shell docs route through pm guide topics and verify command examples still match pm contracts output.`
 
 ## Required Evidence Commands
 

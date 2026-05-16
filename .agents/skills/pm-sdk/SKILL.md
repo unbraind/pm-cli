@@ -16,6 +16,7 @@ Use this skill when integrating against `@unbrained/pm-cli/sdk` or validating ex
 ## Quick Start
 
 ```bash
+pm install guide-shell --project
 pm guide sdk
 pm contracts --schema-only
 pm contracts --runtime-only --availability-only

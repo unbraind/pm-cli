@@ -11,6 +11,7 @@ pm context --limit 10
 pm search "<request keywords>" --limit 10
 pm list-open --limit 20
 pm list-in-progress --limit 20
+pm install guide-shell --project
 pm guide workflows
 ```
 
@@ -95,15 +96,16 @@ pm release <item-id>
 | Low-noise machine contracts | `pm contracts --command <command> --flags-only --json` |
 | Timeline | `pm activity --id <id> --limit 20` |
 | Dependencies | `pm deps <id> --format tree` |
-| Local docs routing | `pm guide <topic>` |
+| Local docs routing | `pm install guide-shell --project`, then `pm guide <topic>` |
 
 Default TOON output is preferred for model-readable loops. Use `--json` only when strict parsing is needed.
 
 ## Guide Routing for Agents
 
-Use `pm guide` as the local progressive-disclosure router before opening large documents:
+Use `pm guide` as the local progressive-disclosure router after installing the optional `guide-shell` package:
 
 ```bash
+pm install guide-shell --project
 pm guide
 pm guide quickstart
 pm guide commands --depth standard
@@ -123,7 +125,7 @@ pm guide release --json
 
 - Keep [README](../README.md) short.
 - Put details in focused docs under `docs/`.
-- Keep reusable workflow prompts in `.agents/skills/*` and route via `pm guide skills`.
+- Keep reusable workflow prompts in `.agents/skills/*` and route via `pm guide skills` after `guide-shell` is installed.
 - Use relative links such as `[Command Reference](COMMANDS.md)`.
 - Add tracker references near the top of new docs when a task created the change.
 - Link docs back to the active item with `pm docs`.

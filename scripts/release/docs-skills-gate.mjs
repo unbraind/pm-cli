@@ -134,7 +134,10 @@ export function validateSkillFrontmatter(skillName, rawContent, failures) {
     failures.push(`Skill ${skillName}: SKILL.md should stay under 500 lines (found ${lineCount})`);
   }
   if (!body.includes("pm guide")) {
-    failures.push(`Skill ${skillName}: body must include pm guide routing to avoid stale deep links`);
+    failures.push(`Skill ${skillName}: body must include optional pm guide routing to avoid stale deep links`);
+  }
+  if (!body.includes("pm install guide-shell")) {
+    failures.push(`Skill ${skillName}: body must mention installing guide-shell before pm guide examples`);
   }
 }
 
@@ -335,6 +338,9 @@ async function validateRequiredGuideMentions(failures) {
     const content = await readUtf8(filePath);
     if (!content.includes("pm guide")) {
       failures.push(`Required docs routing marker missing in ${filePath}: expected "pm guide" reference`);
+    }
+    if (!content.includes("pm install guide-shell")) {
+      failures.push(`Required docs routing marker missing in ${filePath}: expected "pm install guide-shell" prerequisite`);
     }
   }
 }

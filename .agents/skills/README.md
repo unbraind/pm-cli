@@ -5,6 +5,7 @@ This directory contains `agentskills.io`-style skills for `pm` workflows.
 Start with:
 
 ```bash
+pm install guide-shell --project
 pm guide skills
 pm guide harnesses --depth standard
 ```

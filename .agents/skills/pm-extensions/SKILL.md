@@ -16,6 +16,7 @@ Use this skill when the request touches package or extension install, activation
 ## Quick Start
 
 ```bash
+pm install guide-shell --project
 pm guide extensions
 pm package explore --project
 pm package manage --detail summary

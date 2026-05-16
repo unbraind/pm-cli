@@ -29,7 +29,8 @@ describe("docs-skills gate helpers", () => {
     );
     expect(failures.some((entry) => entry.includes("must match directory name"))).toBe(true);
     expect(failures.some((entry) => entry.includes('explicit "Use when"'))).toBe(true);
-    expect(failures.some((entry) => entry.includes("must include pm guide routing"))).toBe(true);
+    expect(failures.some((entry) => entry.includes("must include optional pm guide routing"))).toBe(true);
+    expect(failures.some((entry) => entry.includes("must mention installing guide-shell"))).toBe(true);
   });
 
   it("resolves command examples against known command set", () => {
