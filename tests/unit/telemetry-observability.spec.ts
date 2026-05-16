@@ -35,6 +35,12 @@ describe("core/telemetry/observability", () => {
     expect(
       inferTelemetryErrorCode({
         ok: false,
+        errorMessage: "--reminder requires at=<iso|relative> and text=<value>",
+      }),
+    ).toBe("invalid_argument_value");
+    expect(
+      inferTelemetryErrorCode({
+        ok: false,
         errorMessage: "Tracker is not initialized at /tmp/project/.agents/pm. Run pm init first.",
       }),
     ).toBe("tracker_not_initialized");
@@ -79,6 +85,20 @@ describe("core/telemetry/observability", () => {
         errorCategory: "validation",
       }),
     ).toBe("validation_failed");
+    expect(
+      deriveTelemetryCommandResolution({
+        ok: false,
+        errorCode: "health_findings",
+        errorCategory: "validation",
+      }),
+    ).toBe("health_findings");
+    expect(
+      deriveTelemetryCommandResolution({
+        ok: false,
+        errorCode: "validation_findings",
+        errorCategory: "validation",
+      }),
+    ).toBe("validation_findings");
     expect(
       deriveTelemetryCommandResolution({
         ok: false,

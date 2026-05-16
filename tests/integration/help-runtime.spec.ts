@@ -430,6 +430,32 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("does not mark malformed provided reminder as missing or suggest an identical retry", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "--title", "Reminder validation", "--type", "Task", "--json"], {
+        expectJson: true,
+      });
+      expect(created.code).toBe(0);
+      const itemId = (created.json as { item?: { id?: string } }).item?.id;
+      expect(itemId).toBeDefined();
+
+      const usage = context.runCli(["update", itemId ?? "", "--reminder", "text=missing-at", "--json"]);
+      expect(usage.code).toBe(2);
+      const envelope = JSON.parse(usage.stderr) as {
+        code: string;
+        recovery?: {
+          provided_fields?: string[];
+          missing?: string[];
+          suggested_retry?: string;
+        };
+      };
+      expect(envelope.code).toBe("invalid_argument_value");
+      expect(envelope.recovery?.provided_fields).toEqual(expect.arrayContaining(["--json", "--reminder"]));
+      expect(envelope.recovery?.missing ?? []).not.toContain("--reminder");
+      expect(envelope.recovery?.suggested_retry).toBeUndefined();
+    });
+  });
+
   it("allows create templates to satisfy missing --type", async () => {
     await withTempPmPath(async (context) => {
       const installTemplates = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });

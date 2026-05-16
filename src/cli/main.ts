@@ -169,6 +169,8 @@ const TELEMETRY_COMMAND_RESOLUTION_SET = new Set<TelemetryCommandResolution>([
   "missing_required_argument",
   "invalid_usage",
   "validation_failed",
+  "health_findings",
+  "validation_findings",
   "conflict",
   "runtime_failed",
   "unknown_failed",
@@ -246,12 +248,15 @@ function buildPmCliRecoveryContext(
   if (!suggestedRetry) {
     suggestedRetry = attemptedCommand;
   }
+  if (suggestedRetry === attemptedCommand) {
+    suggestedRetry = undefined;
+  }
   const recovery: PmCliErrorRecoveryPayload = {
     attempted_command: existingRecovery?.attempted_command ?? attemptedCommand,
     normalized_args: existingRecovery?.normalized_args ?? [...invocationArgv],
     provided_fields: existingRecovery?.provided_fields ?? (providedFields.length > 0 ? providedFields : undefined),
     missing: existingRecovery?.missing ?? inferredMissing,
-    suggested_retry: suggestedRetry,
+    ...(suggestedRetry ? { suggested_retry: suggestedRetry } : {}),
   };
   return {
     ...(context ?? {}),

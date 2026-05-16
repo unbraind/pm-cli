@@ -2,12 +2,23 @@ id: pm-nhka
 title: Telemetry queue tmp file orphan cleanup (83MB stale)
 description: "Found ~/.pm-cli/runtime/telemetry/.events.jsonl.3619086.1777633553317.505a373b.tmp (83MB, dated 2026-05-01) left behind by an interrupted drain. pruneExpiredQueueEntries does not GC orphaned tmp files. Add periodic cleanup of .events.jsonl.*.tmp older than 1 hour."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: disk-usage,gc,pm-cli,telemetry
 created_at: "2026-05-16T21:54:23.126Z"
-updated_at: "2026-05-16T21:54:23.126Z"
+updated_at: "2026-05-16T23:45:07.072Z"
 author: maintainer-agent
 acceptance_criteria: Telemetry runtime startup or pruneExpiredQueueEntries removes .events.jsonl.*.tmp orphans older than configurable threshold (default 1h); covered by unit test.
 parent: pm-rnpb
+resolution: Implemented best-effort cleanup of stale telemetry queue atomic-write temp files during flush.
+expected_result: Telemetry removes .events.jsonl.*.tmp orphans older than one hour while preserving fresh temp files.
+actual_result: "Telemetry runtime regression, dogfood, and full release gate passed; no current tmp orphan remains."
+comments[1]{created_at,author,text}:
+  "2026-05-16T23:44:34.268Z",codex-agent,"Evidence 2026-05-17: telemetry flush now removes stale .events.jsonl.*.tmp atomic-write orphans older than one hour on a best-effort path while preserving fresh temp files. Verified telemetry-runtime regression, isolated dogfood, static quality, secret scan, and full release gate."
+files[2]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,stale telemetry queue tmp cleanup
+  tests/unit/telemetry-runtime.spec.ts,project,telemetry tmp orphan cleanup regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: telemetry queue stale tmp orphan cleanup implemented with regression coverage; dogfood and full release gate passed
 body: ""

@@ -401,7 +401,7 @@ function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext
     );
   }
 
-  if (message.startsWith("Invalid ") || message.includes(" must be ")) {
+  if (message.startsWith("Invalid ") || message.includes(" must be ") || message.includes(" requires ")) {
     return applyPmCliErrorContext(
       makeGuidanceMessage({
         code: "invalid_argument_value",

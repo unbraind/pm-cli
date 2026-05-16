@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { spawn } from "node:child_process";
-import { mkdir, rm, stat } from "node:fs/promises";
+import { mkdir, readdir, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { GlobalOptions } from "../shared/command-types.js";
@@ -33,6 +33,7 @@ const TELEMETRY_SANITIZE_MAX_ARRAY_ITEMS = 20;
 const TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS = 15;
 const TELEMETRY_RESULT_PREVIEW_MAX_BYTES = 8_192;
 const TELEMETRY_QUEUE_REWRITE_RETRY_DELAYS_MS = [25, 50, 100, 200] as const;
+const TELEMETRY_QUEUE_TMP_ORPHAN_MAX_AGE_MS = 60 * 60 * 1000;
 const TELEMETRY_FLUSH_LOCK_STALE_MS = 60_000;
 const OTEL_TRACES_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT";
 const OTEL_BASE_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_ENDPOINT";
@@ -181,6 +182,10 @@ export interface TelemetryErrorEventContext {
 
 function queuePath(globalPmRoot: string): string {
   return path.join(globalPmRoot, TELEMETRY_QUEUE_RELATIVE_PATH);
+}
+
+function telemetryRuntimeDirectory(globalPmRoot: string): string {
+  return path.dirname(queuePath(globalPmRoot));
 }
 
 function runtimeStatePath(globalPmRoot: string): string {
@@ -1077,6 +1082,30 @@ function sleep(milliseconds: number): Promise<void> {
   });
 }
 
+async function cleanupTelemetryQueueTempOrphans(
+  globalPmRoot: string,
+  maxAgeMs = TELEMETRY_QUEUE_TMP_ORPHAN_MAX_AGE_MS,
+): Promise<void> {
+  try {
+    const dirPath = telemetryRuntimeDirectory(globalPmRoot);
+    const entries = await readdir(dirPath, { withFileTypes: true });
+    const cutoffMs = Date.now() - Math.max(0, maxAgeMs);
+    await Promise.all(
+      entries
+        .filter((entry) => entry.isFile() && /^\.events\.jsonl\.\d+\.\d+\.[a-f0-9]+\.tmp$/.test(entry.name))
+        .map(async (entry) => {
+          const candidate = path.join(dirPath, entry.name);
+          const candidateStats = await stat(candidate);
+          if (candidateStats.mtimeMs < cutoffMs) {
+            await rm(candidate, { force: true });
+          }
+        }),
+    );
+  } catch {
+    // Telemetry cleanup is best-effort and must not affect command execution.
+  }
+}
+
 async function withQueueMutation<T>(operation: () => Promise<T>): Promise<T> {
   const run = _queueMutationPromise.catch(() => {}).then(operation);
   _queueMutationPromise = run.catch(() => {});
@@ -1132,6 +1161,7 @@ async function markFailedEntriesInCurrentQueue(
 }
 
 async function flushQueue(globalPmRoot: string, endpoint: string, retentionDays: number): Promise<void> {
+  await cleanupTelemetryQueueTempOrphans(globalPmRoot);
   const normalizedEndpoint = endpoint.trim();
   if (normalizedEndpoint.length === 0) {
     return;

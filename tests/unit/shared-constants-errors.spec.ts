@@ -183,6 +183,8 @@ describe("shared constants and errors contracts", () => {
     expect(resolveTelemetryErrorCategory("unknown_command_variant")).toBe("usage");
     expect(resolveTelemetryErrorCategory("missing_required_token")).toBe("usage");
     expect(resolveTelemetryErrorCategory("invalid_deadline")).toBe("validation");
+    expect(resolveTelemetryErrorCategory("health_findings")).toBe("validation");
+    expect(resolveTelemetryErrorCategory("validation_findings")).toBe("validation");
     expect(resolveTelemetryErrorCategory("close_through_update")).toBe("validation");
     expect(resolveTelemetryErrorCategory("legacy_item_not_found")).toBe("validation");
     expect(resolveTelemetryErrorCategory("schema_validation_failed")).toBe("validation");

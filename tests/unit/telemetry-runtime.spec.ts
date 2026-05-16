@@ -19,6 +19,7 @@ const originalOtelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 const originalOtelServiceName = process.env.OTEL_SERVICE_NAME;
 const originalTelemetryDisabled = process.env.PM_TELEMETRY_DISABLED;
 const originalTelemetryOtelDisabled = process.env.PM_TELEMETRY_OTEL_DISABLED;
+const originalTelemetryInlineFlush = process.env.PM_TELEMETRY_INLINE_FLUSH;
 const originalTelemetrySourceContext = process.env.PM_TELEMETRY_SOURCE_CONTEXT;
 const originalTelemetryIngestKey = process.env.PM_TELEMETRY_INGEST_KEY;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -88,6 +89,11 @@ describe("core/telemetry/runtime", () => {
       delete process.env.PM_TELEMETRY_OTEL_DISABLED;
     } else {
       process.env.PM_TELEMETRY_OTEL_DISABLED = originalTelemetryOtelDisabled;
+    }
+    if (originalTelemetryInlineFlush === undefined) {
+      delete process.env.PM_TELEMETRY_INLINE_FLUSH;
+    } else {
+      process.env.PM_TELEMETRY_INLINE_FLUSH = originalTelemetryInlineFlush;
     }
     if (originalTelemetrySourceContext === undefined) {
       delete process.env.PM_TELEMETRY_SOURCE_CONTEXT;
@@ -758,6 +764,43 @@ describe("core/telemetry/runtime", () => {
       expect(settings.telemetry.installation_id.length).toBeGreaterThan(0);
       expect(settings.telemetry.enabled).toBe(true);
       expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("removes stale telemetry queue temp orphans during flush", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      process.env.PM_TELEMETRY_INLINE_FLUSH = "1";
+      const telemetryDir = path.dirname(telemetryQueuePath(globalRoot));
+      await fs.mkdir(telemetryDir, { recursive: true });
+      const staleTemp = path.join(telemetryDir, ".events.jsonl.1234.1111111111111.abcdef12.tmp");
+      const freshTemp = path.join(telemetryDir, ".events.jsonl.1234.9999999999999.abcdef12.tmp");
+      await fs.writeFile(staleTemp, "stale", "utf8");
+      await fs.writeFile(freshTemp, "fresh", "utf8");
+      const staleDate = new Date(Date.now() - 2 * 60 * 60 * 1000);
+      await fs.utimes(staleTemp, staleDate, staleDate);
+
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(active).not.toBeNull();
+      await waitForPendingFlush();
+
+      await expect(fs.access(staleTemp)).rejects.toMatchObject({ code: "ENOENT" });
+      await expect(fs.access(freshTemp)).resolves.toBeUndefined();
     });
   });
 

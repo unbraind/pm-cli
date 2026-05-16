@@ -2,12 +2,31 @@ id: pm-bzx3
 title: Investigate validate/health telemetry classification (71-74% failure rate)
 description: "KPI report 2026-05-16 shows validate=73.68% and health=71.71% finish_failure_rate over 7d. Both commands intentionally exit non-zero when findings exist; the classifier counts these as command_failed. Add a soft-failure resolution (e.g. validation_findings, health_findings) so KPIs distinguish bugs from intentional non-zero exits."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: classification,observability,pm-cli,telemetry
 created_at: "2026-05-16T21:54:18.262Z"
-updated_at: "2026-05-16T21:54:18.262Z"
+updated_at: "2026-05-16T23:45:07.292Z"
 author: maintainer-agent
 acceptance_criteria: validate/health soft-failures (run completed; findings present) reported as a distinct resolution code; KPI report shows realistic error rates for diagnostics family.
 parent: pm-rnpb
+resolution: Implemented dedicated health_findings and validation_findings telemetry classifications plus report filters for soft diagnostic findings.
+expected_result: Health/validate strict-exit findings are distinguishable from runtime bugs and excluded from failure-rate KPI columns.
+actual_result: "Focused telemetry regression, live telemetry query, dogfood, and full release gate passed."
+comments[1]{created_at,author,text}:
+  "2026-05-16T23:44:34.386Z",codex-agent,"Evidence 2026-05-17: health/validate strict-exit findings now emit health_findings/validation_findings telemetry resolution values instead of generic runtime_failed, with validation-category mapping and local telemetry reports filtering those soft findings from failure-rate columns. Verified focused telemetry classifications, observability/constants/runtime unit coverage, live telemetry query, Sentry/telemetry release gate, dogfood, and 100 percent coverage release gate."
+files[9]{path,scope,note}:
+  src/cli/register-operations.ts,project,health/validate findings telemetry classification
+  src/core/telemetry/observability.ts,project,findings command resolution values
+  src/core/shared/constants.ts,project,findings error category mapping
+  scripts/prod/telemetry/query-telemetry.sh,project,filter findings from failure-rate metrics
+  scripts/prod/telemetry/bin/kpi-error-rate-report.sh,project,KPI failure-rate soft findings filter
+  scripts/prod/telemetry/bin/ux-opportunity-map.sh,project,UX failure-rate soft findings filter
+  tests/integration/cli.integration.spec.ts,project,strict-exit findings telemetry regression
+  tests/unit/telemetry-observability.spec.ts,project,findings resolution regression
+  tests/unit/shared-constants-errors.spec.ts,project,findings category regression
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'records telemetry classifications',null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/telemetry-observability.spec.ts tests/unit/shared-constants-errors.spec.ts tests/unit/telemetry-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "health/validate soft findings now have dedicated telemetry classifications and report filters; focused telemetry tests, live query, dogfood, and full release gate passed"
 body: ""

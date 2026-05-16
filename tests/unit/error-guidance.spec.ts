@@ -77,6 +77,14 @@ describe("pm cli error guidance context plumbing", () => {
     );
   });
 
+  it("classifies requires-style validation messages as invalid argument values", () => {
+    const envelope = formatPmCliErrorForJson("--reminder requires at=<iso|relative> and text=<value>", 2);
+
+    expect(envelope.code).toBe("invalid_argument_value");
+    expect(envelope.title).toBe("Invalid argument value");
+    expect(envelope.required).toContain("documented command constraints");
+  });
+
   it("applies runtime unknown-command guidance examples for commander errors", () => {
     const envelope = formatCommanderErrorForJson("unknown command 'beads'", "help", "Task|Issue", 2, {
       unknownCommandExamples: ["pm --help", "pm list-open --help", "pm context --help"],

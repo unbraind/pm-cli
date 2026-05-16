@@ -10,6 +10,8 @@ export type TelemetryCommandResolution =
   | "missing_required_argument"
   | "invalid_usage"
   | "validation_failed"
+  | "health_findings"
+  | "validation_findings"
   | "conflict"
   | "runtime_failed"
   | "unknown_failed";
@@ -162,7 +164,7 @@ export function inferTelemetryErrorCode(params: InferTelemetryErrorCodeParams): 
   ) {
     return "close_through_update";
   }
-  if (message.startsWith("invalid ") || message.includes(" must be ")) {
+  if (message.startsWith("invalid ") || message.includes(" must be ") || message.includes(" requires ")) {
     return "invalid_argument_value";
   }
   if (message.includes("strict create mode requires concrete values for --")) {
@@ -209,6 +211,12 @@ export function deriveTelemetryCommandResolution(params: {
   }
   if (normalizedCode === "missing_required_argument") {
     return "missing_required_argument";
+  }
+  if (normalizedCode === "health_findings") {
+    return "health_findings";
+  }
+  if (normalizedCode === "validation_findings") {
+    return "validation_findings";
   }
 
   if (params.errorCategory === "usage") {

@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 import { normalizeStatusInput } from "../core/item/status.js";
 import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
+import { setActiveCommandResult } from "../core/extensions/index.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { resolvePmRoot } from "../core/store/paths.js";
@@ -235,6 +236,14 @@ export function registerOperationCommands(program: Command): void {
       printResult(result, globalOptions);
       const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
       if (strictExit && !result.ok) {
+        setActiveCommandResult({
+          ...result,
+          exit_code: EXIT_CODE.GENERIC_FAILURE,
+          error_code: "health_findings",
+          error_category: "validation",
+          command_resolution: "health_findings",
+          resolution_stage: "execute",
+        });
         process.exitCode = EXIT_CODE.GENERIC_FAILURE;
       }
       if (globalOptions.profile) {
@@ -280,6 +289,14 @@ export function registerOperationCommands(program: Command): void {
       printResult(result, globalOptions);
       const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
       if (strictExit && !result.ok) {
+        setActiveCommandResult({
+          ...result,
+          exit_code: EXIT_CODE.GENERIC_FAILURE,
+          error_code: "validation_findings",
+          error_category: "validation",
+          command_resolution: "validation_findings",
+          resolution_stage: "execute",
+        });
         process.exitCode = EXIT_CODE.GENERIC_FAILURE;
       }
       if (globalOptions.profile) {

@@ -828,6 +828,17 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       await mkdir(path.dirname(globalSettingsPath), { recursive: true });
       await writeFile(globalSettingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 
+      const closedIssue = context.runCli(["create", "--title", "Telemetry validation finding", "--type", "Issue", "--status", "closed", "--json"], {
+        expectJson: true,
+      });
+      expect(closedIssue.code).toBe(0);
+
+      const strictExitValidate = context.runCli(["validate", "--check-resolution", "--strict-exit", "--json"], {
+        expectJson: true,
+      });
+      expect(strictExitValidate.code).toBe(1);
+      expect((strictExitValidate.json as { ok: boolean }).ok).toBe(false);
+
       await rm(path.join(context.pmPath, "events"), { recursive: true, force: true });
 
       const strictExitHealth = context.runCli(["health", "--strict-directories", "--strict-exit", "--json"], { expectJson: true });
@@ -857,14 +868,24 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           },
         );
 
+      const validateFinish = events.find(
+        (entry) => entry.event.event_type === "command_finish" && entry.event.command === "validate",
+      );
+      expect(validateFinish).toBeDefined();
+      expect(validateFinish?.event.payload.ok).toBe(false);
+      expect(validateFinish?.event.payload.exit_code).toBe(1);
+      expect(validateFinish?.event.payload.error_code).toBe("validation_findings");
+      expect(validateFinish?.event.payload.command_resolution).toBe("validation_findings");
+      expect(validateFinish?.event.payload.resolution_stage).toBe("execute");
+
       const healthFinish = events.find(
         (entry) => entry.event.event_type === "command_finish" && entry.event.command === "health",
       );
       expect(healthFinish).toBeDefined();
       expect(healthFinish?.event.payload.ok).toBe(false);
       expect(healthFinish?.event.payload.exit_code).toBe(1);
-      expect(healthFinish?.event.payload.error_code).toBe("command_failed");
-      expect(healthFinish?.event.payload.command_resolution).toBe("runtime_failed");
+      expect(healthFinish?.event.payload.error_code).toBe("health_findings");
+      expect(healthFinish?.event.payload.command_resolution).toBe("health_findings");
       expect(healthFinish?.event.payload.resolution_stage).toBe("execute");
 
       const parseError = events.find(

@@ -2,12 +2,26 @@ id: pm-ixi1
 title: Stop listing provided --flag as missing in error recovery bundle
 description: "When a flag was provided but its value rejected (e.g. malformed --reminder value), the recovery bundle reported the flag as 'missing: --reminder' and 'suggested_retry' was an identical command. Now filter inferredMissing to exclude flags that were already provided."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,errors,pm-cli
 created_at: "2026-05-16T21:54:12.960Z"
-updated_at: "2026-05-16T21:54:12.960Z"
+updated_at: "2026-05-16T23:45:07.023Z"
 author: maintainer-agent
 acceptance_criteria: Recovery bundle for malformed --reminder no longer claims --reminder is missing; suggested_retry only repeats the original command if no other recovery hint exists.
 parent: pm-rnpb
+resolution: Fixed recovery payload generation so already-provided malformed flags are not listed as missing and identical retry commands are omitted.
+expected_result: Malformed --reminder recovery shows provided_fields but no missing --reminder and no no-op suggested_retry.
+actual_result: "Focused regression, dogfood, and full release gate passed with the expected recovery envelope."
+comments[1]{created_at,author,text}:
+  "2026-05-16T23:44:34.221Z",codex-agent,"Evidence 2026-05-17: fixed recovery context to omit suggested_retry when it exactly matches attempted_command, and classified requires-style validation messages as invalid_argument_value. Verified focused malformed-reminder regression and error/telemetry observability regressions; full dogfood and release gate passed."
+files[4]{path,scope,note}:
+  src/cli/main.ts,project,suppress identical suggested_retry
+  src/cli/error-guidance.ts,project,classify requires-style validation
+  tests/integration/help-runtime.spec.ts,project,malformed reminder recovery regression
+  tests/unit/error-guidance.spec.ts,project,requires-style error classification regression
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts -t 'does not mark malformed provided reminder as missing or suggest an identical retry',null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts tests/unit/telemetry-observability.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "malformed provided flags no longer produce missing-field noise or identical retry guidance; focused regression, dogfood, and full release gate passed"
 body: ""
