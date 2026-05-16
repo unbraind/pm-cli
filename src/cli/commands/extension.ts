@@ -20,6 +20,7 @@ import {
   collectPackageExtensionDirectories,
   readPmPackageManifest,
 } from "../../core/packages/manifest.js";
+import { resolvePmPackageRootFromModule } from "../../core/packages/root.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -186,8 +187,7 @@ function resolvePackageRootCandidates(): string[] {
   if (typeof envRoot === "string" && envRoot.trim().length > 0) {
     candidates.push(path.resolve(envRoot.trim()));
   }
-  const moduleRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-  candidates.push(moduleRoot);
+  candidates.push(resolvePmPackageRootFromModule(import.meta.url, ["../../.."]));
   return [...new Set(candidates)];
 }
 

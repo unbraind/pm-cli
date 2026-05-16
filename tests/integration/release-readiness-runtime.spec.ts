@@ -457,6 +457,11 @@ describe("release readiness runtime coverage", () => {
       expect(versionResult.code).toBe(0);
       expect(versionResult.stdout.trim()).toBe(expectedVersion);
       expect(versionResult.stderr.trim()).toBe("");
+
+      const shortVersionResult = context.runCli(["-V"]);
+      expect(shortVersionResult.code).toBe(0);
+      expect(shortVersionResult.stdout.trim()).toBe(expectedVersion);
+      expect(shortVersionResult.stderr.trim()).toBe("");
     });
   });
 
@@ -1662,6 +1667,7 @@ describe("release readiness runtime coverage", () => {
       "src/core/item/parent-reference-policy.ts",
       "src/core/item/type-registry.ts",
       "src/core/output/command-aware.ts",
+      "src/core/packages/root.ts",
       "src/core/schema/runtime-field-filters.ts",
       "src/core/schema/runtime-field-values.ts",
       "src/core/schema/runtime-schema.ts",

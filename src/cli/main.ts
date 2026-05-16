@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import {
   activateExtensions,
@@ -34,6 +33,7 @@ import {
   type ExtensionRendererRegistry,
 } from "../core/extensions/index.js";
 import { pathExists } from "../core/fs/fs-utils.js";
+import { resolvePmPackageRootFromModule } from "../core/packages/root.js";
 import {
   resolveItemTypeRegistry,
 } from "../core/item/type-registry.js";
@@ -139,8 +139,7 @@ import {
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 
 function resolvePmPackageRoot(): string {
-  const mainPath = fileURLToPath(import.meta.url);
-  return path.resolve(path.dirname(mainPath), "../..");
+  return resolvePmPackageRootFromModule(import.meta.url, ["../.."]);
 }
 
 if (typeof process.env[PM_PACKAGE_ROOT_ENV] !== "string" || process.env[PM_PACKAGE_ROOT_ENV]?.trim().length === 0) {
@@ -1065,8 +1064,7 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
 
 function resolveCliVersion(): string {
   try {
-    const currentFilePath = fileURLToPath(import.meta.url);
-    const packageJsonPath = path.resolve(path.dirname(currentFilePath), "../../package.json");
+    const packageJsonPath = path.join(resolvePmPackageRoot(), "package.json");
     const raw = fs.readFileSync(packageJsonPath, "utf8");
     const parsed = JSON.parse(raw) as { version?: unknown };
     return typeof parsed.version === "string" ? parsed.version : "0.0.0";

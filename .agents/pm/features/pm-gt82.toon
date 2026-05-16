@@ -6,8 +6,26 @@ status: open
 priority: 0
 tags[2]: performance,startup
 created_at: "2026-05-16T15:07:08.622Z"
-updated_at: "2026-05-16T16:48:23.232Z"
+updated_at: "2026-05-16T17:13:35.708Z"
+assignee: codex-audit
 author: claude-code-agent
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-05-16T16:48:23.232Z",codex-agent,"Audit update 2026-05-16: latest isolated dogfood after init --with-packages passed 44 workflows; slowest normal commands were create 753ms, comments 683ms, package wildcard 634ms, notes/docs/learnings/get brief around 560-600ms. Release gate is green, but sub-200ms startup remains the largest remaining perceived-speed opportunity."
+  "2026-05-16T16:59:45.913Z",codex-audit,"Implementation update: adding a build-time bundled dist/cli.js path for the pm binary while keeping SDK/module exports emitted by tsc. Package-root resolution is being made independent of unbundled dist/cli/** module paths so package discovery, guide docs, upgrade version reads, telemetry flush, and Sentry release tagging continue to work from the bundled entrypoint."
+  "2026-05-16T17:07:21.271Z",codex-audit,"Benchmark finding: attempted esbuild bundling first, but the safe dependency-external ESM bundle averaged 234.9ms for node dist/cli.js --version versus 201.7ms for the tsc entry, so it was not shipped. Implemented a targeted fast --version/-V path instead; after build, node dist/cli.js --version averages 36.7ms versus 194.6ms for loading dist/cli/main.js, a 5.3x speedup for the standard agent bootstrap probe. Remaining all-command sub-200ms bundling stays open for a deeper CJS/import-meta redesign."
+  "2026-05-16T17:13:35.708Z",codex-audit,"Evidence: shipped targeted startup win and kept broader bundling scope honest. Verification passed: node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts (31 tests), pm test pm-gt82 --run sandboxed schema context, node scripts/dogfood-package-first.mjs (44 workflows), pnpm quality:static, node scripts/check-secrets.mjs, pm health --refresh-vectors (refreshed pm-p7av; zero stale vectors), hybrid search probe, and full release gate with required Sentry/telemetry. Remaining open scope: all-command sub-200ms startup still needs deeper command graph lazy-loading or a CJS-compatible bundle design."
+files[9]{path,scope,note}:
+  src/cli.ts,project,fast --version startup path
+  src/core/packages/root.ts,project,package-root discovery shared by bundled/future entrypoints
+  src/cli/main.ts,project,package-root resolution uses shared helper
+  src/cli/commands/extension.ts,project,bundled package discovery root resolution
+  src/cli/commands/guide.ts,project,guide docs root resolution
+  src/cli/commands/upgrade.ts,project,upgrade version root resolution
+  src/core/telemetry/runtime.ts,project,telemetry flush runner root resolution
+  src/core/sentry/instrument.ts,project,sentry release version root resolution
+  tests/integration/release-readiness-runtime.spec.ts,project,version/root coverage contract
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp8lnyio-0qq3g4,test,passed,"2026-05-16T17:07:21.171Z","2026-05-16T17:08:07.680Z","2026-05-16T17:08:07.680Z",null,null,1,0,0,null,null,null
 body: "Current: pm list ~890ms, pm context ~1.5s, pm health ~2.1s even with --skip-*. Root: 126+ unbundled ESM files loaded per invocation. Fix: add esbuild bundle step alongside tsc. Expected improvement: 5-10x."

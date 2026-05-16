@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolvePmPackageRootFromModule } from "../packages/root.js";
 
 const OPT_OUT_VALUES = new Set(["1", "true", "yes", "on"]);
 
@@ -188,16 +188,10 @@ function isKnownNoisyConsoleBreadcrumb(breadcrumb: { category?: string; message?
 
 function resolveCliVersion(): string {
   try {
-    const thisFile = fileURLToPath(import.meta.url);
-    const candidates = [
-      path.resolve(thisFile, "../../../../package.json"),
-      path.resolve(thisFile, "../../../package.json"),
-    ];
-    for (const candidate of candidates) {
-      if (fs.existsSync(candidate)) {
-        const parsed = JSON.parse(fs.readFileSync(candidate, "utf8")) as { version?: string };
-        if (typeof parsed.version === "string") return parsed.version;
-      }
+    const candidate = path.join(resolvePmPackageRootFromModule(import.meta.url, ["../../.."]), "package.json");
+    if (fs.existsSync(candidate)) {
+      const parsed = JSON.parse(fs.readFileSync(candidate, "utf8")) as { version?: string };
+      if (typeof parsed.version === "string") return parsed.version;
     }
   } catch {
     // Version resolution must never block startup.

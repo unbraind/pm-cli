@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolveConfiguredPmPackageRoot } from "../../core/packages/root.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -65,8 +65,6 @@ export interface GuideTopicResult {
 
 export type GuideResult = GuideIndexResult | GuideTopicResult;
 
-const PACKAGE_ROOT_FROM_SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
-
 function parseGuideOutputFormat(raw: string | undefined): GuideOutputFormat | undefined {
   if (!raw) {
     return undefined;
@@ -101,11 +99,7 @@ function parseGuideDepth(raw: string | undefined): GuideDepth {
 }
 
 function resolvePackageRoot(): string {
-  const envRoot = process.env.PM_CLI_PACKAGE_ROOT;
-  if (typeof envRoot === "string" && envRoot.trim().length > 0) {
-    return path.resolve(envRoot.trim());
-  }
-  return PACKAGE_ROOT_FROM_SOURCE;
+  return resolveConfiguredPmPackageRoot(process.env, "PM_CLI_PACKAGE_ROOT", import.meta.url, ["..", "..", ".."]);
 }
 
 function normalizeLineEndings(value: string): string {
@@ -332,4 +326,3 @@ export function renderGuideMarkdown(result: GuideResult): string {
   }
   return lines.join("\n");
 }
-

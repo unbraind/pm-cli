@@ -3,8 +3,8 @@ import { spawn } from "node:child_process";
 import { mkdir, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import type { GlobalOptions } from "../shared/command-types.js";
+import { resolvePmPackageRootFromModule } from "../packages/root.js";
 import { appendLineAtomic, readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import { resolveTelemetryErrorCategory, type TelemetryErrorCategory } from "../shared/constants.js";
 import { nowIso } from "../shared/time.js";
@@ -192,8 +192,7 @@ function flushLockPath(globalPmRoot: string): string {
 }
 
 function telemetryFlushRunnerPath(): string {
-  const runtimePath = fileURLToPath(import.meta.url);
-  return path.resolve(path.dirname(runtimePath), "../../cli/telemetry-flush.js");
+  return path.join(resolvePmPackageRootFromModule(import.meta.url, ["../../.."]), "dist", "cli", "telemetry-flush.js");
 }
 
 function shouldFlushInline(): boolean {
