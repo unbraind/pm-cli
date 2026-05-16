@@ -1,0 +1,16 @@
+id: pm-ntnf
+title: Default project scope for files/docs/tests and simplify scope UX
+description: "Make project scope the implicit default for non-package linked-resource commands so agents do not need to pass scope=project for files, docs, tests, comments, notes, or other project-local mutations. Keep explicit global/project scope only where it is meaningful for pm package operations, such as installing or managing global pm packages."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,packages,pm-cli,scope,token-efficiency
+created_at: "2026-05-16T23:06:37.341Z"
+updated_at: "2026-05-16T23:06:48.203Z"
+author: codex-agent
+acceptance_criteria: files/docs/test linked-resource commands accept entries without scope=project and persist project scope by default; help/contracts/examples stop requiring scope=project for project-local commands; package install/manage flows still allow explicit project/global scope where meaningful; backwards compatibility preserves existing scope=project inputs; focused tests and temp-project dogfood cover the simplified UX.
+parent: pm-rnpb
+comments[2]{created_at,author,text}:
+  "2026-05-16T23:06:37.341Z",codex-agent,"author=codex-agent,created_at=now,text=Duplicate check before create: pm search scope=project default global package files docs tests UX --limit 10; pm search remove scope project option files docs test package global --limit 10; pm list-open --limit 30 --tag agent-ux. Results found broad parent pm-rnpb and package-first parent pm-59gj, but no existing open item specifically for removing mandatory scope=project from linked-resource command UX. Creating this child under pm-rnpb."
+  "2026-05-16T23:06:48.203Z",codex-agent,"Clean duplicate-check evidence: searched scope=project defaults, remove scope project options, and open agent-ux items. No existing open item covered defaulting linked-resource project scope while preserving explicit global scope for pm package operations; pm-ntnf is the canonical child under pm-rnpb."
+body: "User request 2026-05-17: remove the need to manually type scope=project in commands/options where the PM path already identifies the project context. Project scope should be the default for project-local operations. Global scope should remain opt-in for global pm package operations only. This should reduce token use and CLI friction for agents while preserving backwards compatibility."

@@ -4,6 +4,120 @@ import { handleRequest } from "../../src/mcp/server.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("MCP dynamic package actions", () => {
+  it("normalizes scalar update log fields and defaults list output to compact", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli([
+        "create",
+        "--json",
+        "--title",
+        "MCP compact target",
+        "--description",
+        "MCP compact target description",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "mcp,projection",
+        "--body",
+        "large body that should not appear in compact list output",
+        "--deadline",
+        "+1d",
+        "--estimate",
+        "15",
+        "--acceptance-criteria",
+        "MCP compact target acceptance",
+        "--author",
+        "test-author",
+        "--message",
+        "Create MCP compact target",
+        "--dep",
+        "id=pm-seed-related,kind=related,author=seed-author,created_at=now",
+        "--comment",
+        "author=seed-author,created_at=now,text=seed comment",
+        "--note",
+        "author=seed-author,created_at=now,text=seed note",
+        "--learning",
+        "author=seed-author,created_at=now,text=seed learning",
+        "--file",
+        "path=README.md,scope=project,note=seed file",
+        "--test",
+        "command=node dist/cli.js --version,scope=project,note=seed test",
+        "--doc",
+        "path=README.md,scope=project,note=seed doc",
+      ], { expectJson: true });
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      const update = await handleRequest({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "pm_update",
+          arguments: {
+            path: context.pmPath,
+            id,
+            author: "mcp-agent",
+            options: {
+              comment: "scalar comment from MCP",
+              note: "scalar note from MCP",
+              learning: "scalar learning from MCP",
+            },
+          },
+        },
+      });
+      expect(update?.isError).not.toBe(true);
+      const updateResult = (update?.structuredContent as {
+        result?: {
+          item?: {
+            comments?: Array<{ text: string }>;
+            notes?: Array<{ text: string }>;
+            learnings?: Array<{ text: string }>;
+          };
+        };
+      } | undefined)?.result;
+      expect(updateResult?.item?.comments?.some((entry) => entry.text === "scalar comment from MCP")).toBe(true);
+      expect(updateResult?.item?.notes?.some((entry) => entry.text === "scalar note from MCP")).toBe(true);
+      expect(updateResult?.item?.learnings?.some((entry) => entry.text === "scalar learning from MCP")).toBe(true);
+
+      const list = await handleRequest({
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: {
+          name: "pm_list",
+          arguments: {
+            path: context.pmPath,
+            options: {
+              status: "open,in_progress",
+              tag: "mcp",
+            },
+          },
+        },
+      });
+
+      expect(list?.isError).not.toBe(true);
+      const listResult = (list?.structuredContent as {
+        result?: {
+          projection?: { mode: string; fields: string[] | null };
+          items?: Array<Record<string, unknown>>;
+          filters?: { status?: unknown };
+        };
+      } | undefined)?.result;
+      expect(listResult?.projection).toEqual({
+        mode: "compact",
+        fields: ["id", "title", "status", "type", "priority", "parent", "updated_at"],
+      });
+      expect(listResult?.filters?.status).toEqual(["open", "in_progress"]);
+      expect(listResult?.items?.[0]).toMatchObject({ id, title: "MCP compact target" });
+      expect(listResult?.items?.[0]).not.toHaveProperty("body");
+      expect(listResult?.items?.[0]).not.toHaveProperty("comments");
+    });
+  });
+
   it("invokes installed package actions discovered through runtime contracts", async () => {
     await withTempPmPath(async (context) => {
       const install = context.runCli(["--json", "install", "all", "--project"], { expectJson: true });

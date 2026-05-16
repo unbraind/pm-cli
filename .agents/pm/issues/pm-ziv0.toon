@@ -2,12 +2,25 @@ id: pm-ziv0
 title: Fix CSV status filter and multi-status support in pm list
 description: "pm list --status open,in_progress returned 0 items because the filter did string-equality match. Multi-status CSV must split into a Set and any single status matching wins."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,filtering,list,pm-cli
 created_at: "2026-05-16T21:53:57.165Z"
-updated_at: "2026-05-16T21:53:57.165Z"
+updated_at: "2026-05-16T23:13:08.651Z"
 author: maintainer-agent
 acceptance_criteria: "pm list --status open,in_progress returns all items matching either status; single-status filter unchanged; pm list-closed/list-canceled unchanged."
 parent: pm-rnpb
+resolution: Fixed by CSV status parsing and Set-based filtering.
+expected_result: "pm list --status open,in_progress returns items matching either status."
+actual_result: "Regression covers open,blocked matching and closed exclusion; MCP regression covers open,in_progress; linked test and release gate passed."
+comments[1]{created_at,author,text}:
+  "2026-05-16T23:12:21.977Z",codex-agent,"Evidence: list status filters split CSV values into normalized sets and return array-valued filters.status for multi-status queries. Regression covers open,blocked matching and closed exclusion; MCP regression also covers open,in_progress. Linked test, dogfood, full coverage, and release gate passed."
+files[2]{path,scope,note}:
+  src/cli/commands/list.ts,project,CSV status filter support
+  tests/unit/list-command.spec.ts,project,multi-status list regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,multi-status list regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp8ynyrk-orvm1l,test,passed,"2026-05-16T23:11:34.932Z","2026-05-16T23:12:03.008Z","2026-05-16T23:12:03.008Z",null,null,1,0,0,null,null,null
+close_reason: "CSV multi-status list filtering is implemented, tested, and gate-verified"
 body: ""

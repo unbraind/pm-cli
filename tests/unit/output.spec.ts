@@ -70,6 +70,23 @@ describe("core/output/output", () => {
     expect(rendered.endsWith("\n")).toBe(true);
   });
 
+  it("keeps TOON array object continuation lines at the expected indentation", () => {
+    const rendered = formatOutput(
+      {
+        items: [
+          {
+            id: "pm-a1b2",
+            title: "Compact output",
+          },
+        ],
+      },
+      {},
+    );
+
+    expect(rendered).toContain('items:\n  - id: "pm-a1b2"\n    title: "Compact output"\n');
+    expect(rendered).not.toContain('\n      title: "Compact output"');
+  });
+
   it("renders scalar fallback output for non-structured values", () => {
     expect(formatOutput([], {})).toBe("{}\n");
     expect(formatOutput({}, {})).toBe("{}\n");

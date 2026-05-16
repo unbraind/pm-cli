@@ -66,6 +66,7 @@ jobs:
         run: pnpm typecheck
 
       - name: Test
+        if: matrix.os != 'ubuntu-latest' || matrix.node != 20
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test

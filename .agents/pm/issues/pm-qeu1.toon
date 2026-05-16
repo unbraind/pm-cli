@@ -2,14 +2,26 @@ id: pm-qeu1
 title: MCP pm_update --comment string crashes with 'values.map is not a function'
 description: "Calling pm_update via MCP with options.comment='some text' (string, not array) crashes with `values.map is not a function`. Likely the same root cause as the tags-as-CSV fix (pm-1jcw from session 10) - comment/note/learning fields expect arrays and the MCP normalizer doesn't promote scalars. Workaround: call via CLI `pm comments <id> <text>`."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ux,mcp,pm-cli
 created_at: "2026-05-16T21:58:02.396Z"
-updated_at: "2026-05-16T21:59:05.363Z"
+updated_at: "2026-05-16T23:13:08.097Z"
 author: maintainer-agent
 acceptance_criteria: MCP pm_update accepts string scalars for comment/note/learning and promotes them to arrays; new test covers the normalization.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+resolution: Fixed by MCP option normalization and regression coverage for scalar comment/note/learning.
+expected_result: MCP pm_update accepts scalar log fields without values.map crashes.
+actual_result: "handleRequest(pm_update) accepts scalar comment, note, and learning; linked test and release gate passed."
+comments[2]{created_at,author,text}:
   "2026-05-16T21:59:05.363Z",maintainer-agent,"Fixed in this session: src/mcp/server.ts normalizeOptionsArrays now promotes scalar strings to single-element arrays for comment/note/learning/reminder/event/dep/depRemove/file/doc/test/unset/add/remove/addGlob/migrate/envSet/envClear fields when the CLI expects arrays. The running MCP server uses the old build until restarted."
+  "2026-05-16T23:12:21.685Z",codex-agent,"Evidence: src/mcp/server.ts already promoted scalar MCP log options; regression now exercises pm_update with scalar comment, note, and learning through handleRequest. Linked test passed via pm test --run and focused suite; full coverage/release gate also passed."
+files[2]{path,scope,note}:
+  src/mcp/server.ts,project,MCP scalar option normalization
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP scalar update regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,MCP scalar update regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp8ynqho-7901sx,test,passed,"2026-05-16T23:11:34.723Z","2026-05-16T23:11:52.284Z","2026-05-16T23:11:52.284Z",null,null,1,0,0,null,null,null
+close_reason: MCP scalar update regression covers comment/note/learning and all gates passed
 body: ""

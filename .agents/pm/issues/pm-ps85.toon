@@ -2,12 +2,25 @@ id: pm-ps85
 title: Fix TOON array-of-objects continuation lines double-indent
 description: "renderToonValue prepended an extra '${indent}  ' to each continuation line of array-item objects, doubling indentation. Subsequent line was rendered at depth+1 already; the extra prefix caused 4 spaces where 2 were expected. Saves ~30-50% leading whitespace in list/search outputs."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,output,pm-cli,token-efficiency,toon
 created_at: "2026-05-16T21:54:01.343Z"
-updated_at: "2026-05-16T21:54:01.343Z"
+updated_at: "2026-05-16T23:13:08.419Z"
 author: maintainer-agent
 acceptance_criteria: list/search items render as YAML-style aligned blocks; all 1309 tests pass; no test asserted the buggy doubled indent.
 parent: pm-rnpb
+resolution: Fixed and guarded by TOON indentation regression.
+expected_result: Array-object continuation lines render at the expected indentation without doubled leading spaces.
+actual_result: Regression asserts two-space continuation and rejects doubled indent; linked test and release gate passed.
+comments[1]{created_at,author,text}:
+  "2026-05-16T23:12:22.090Z",codex-agent,"Evidence: TOON array-object continuation rendering is covered by a regression that asserts two-space continuation and rejects the former doubled indent. Linked test, focused suite, dogfood, full coverage, and release gate passed."
+files[2]{path,scope,note}:
+  src/core/output/output.ts,project,TOON array continuation renderer
+  tests/unit/output.spec.ts,project,TOON indentation regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,TOON indentation regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp8ynnt1-bufbhf,test,passed,"2026-05-16T23:11:34.785Z","2026-05-16T23:11:48.805Z","2026-05-16T23:11:48.805Z",null,null,1,0,0,null,null,null
+close_reason: TOON array-object indentation regression passes and all gates passed
 body: ""

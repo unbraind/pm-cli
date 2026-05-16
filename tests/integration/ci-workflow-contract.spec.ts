@@ -68,6 +68,7 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.setupNode,
       "run: pnpm build",
       "run: pnpm typecheck",
+      "if: matrix.os != 'ubuntu-latest' || matrix.node != 20",
       "run: pnpm test",
       "run: pnpm version:check",
       "run: pnpm security:scan",

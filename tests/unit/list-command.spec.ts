@@ -511,6 +511,37 @@ describe("runList", () => {
     });
   });
 
+  it("supports CSV status filters for multi-status agent queries", async () => {
+    await withTempPmPath(async (context) => {
+      const openId = createItem(context, {
+        title: "Open CSV Target",
+        status: "open",
+        priority: "1",
+        tags: "status,csv",
+        deadline: "+1d",
+      });
+      const blockedId = createItem(context, {
+        title: "Blocked CSV Target",
+        status: "blocked",
+        priority: "1",
+        tags: "status,csv",
+        deadline: "+1d",
+      });
+      createItem(context, {
+        title: "Closed CSV Miss",
+        status: "closed",
+        priority: "1",
+        tags: "status,csv",
+        deadline: "+1d",
+      });
+
+      const result = await runList(undefined, { status: "open,blocked", tag: "status" }, { path: context.pmPath });
+
+      expect(result.filters.status).toEqual(["open", "blocked"]);
+      expect(result.items.map((item) => item.id).sort()).toEqual([blockedId, openId].sort());
+    });
+  });
+
   it("supports configurable list sorting and ordering", async () => {
     await withTempPmPath(async (context) => {
       createItem(context, {

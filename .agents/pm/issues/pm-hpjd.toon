@@ -2,12 +2,25 @@ id: pm-hpjd
 title: "CI: combine pnpm test + pnpm test:coverage into single coverage run"
 description: "ci.yml runs `pnpm test` (PM_RUN_TESTS_SKIP_BUILD=1) on all 5 matrix entries and then `pnpm test:coverage` again on ubuntu/20. The coverage run executes all tests too, so ubuntu/20 runs the full suite twice (~6min wasted/run). Make ubuntu/20 use `pnpm test:coverage` only; keep `pnpm test` only for the other matrix entries."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: ci,duplication,performance,pm-cli
 created_at: "2026-05-16T22:07:35.770Z"
-updated_at: "2026-05-16T22:07:35.770Z"
+updated_at: "2026-05-16T23:13:08.454Z"
 author: maintainer-agent
 acceptance_criteria: ubuntu-latest+node20 runs tests exactly once via coverage path; other matrix entries run pnpm test as before; CI overall time reduced by ~3min on ubuntu/20 entry.
 parent: pm-tzwy
+resolution: Fixed by skipping duplicate plain test on the ubuntu-latest Node 20 coverage leg.
+expected_result: "Ubuntu Node 20 runs the full suite once via coverage, while other matrix entries still run pnpm test."
+actual_result: "ci.yml guard and workflow contract regression are in place; linked test, coverage, release gate, and Sentry/telemetry gate passed."
+comments[1]{created_at,author,text}:
+  "2026-05-16T23:12:21.853Z",codex-agent,"Evidence: .github/workflows/ci.yml now skips plain pnpm test only on ubuntu-latest Node 20, where pnpm test:coverage still runs the full test suite once. CI workflow contract asserts the guard. Linked test, full coverage, release gate, and required Sentry/telemetry gate passed."
+files[2]{path,scope,note}:
+  .github/workflows/ci.yml,project,skip duplicate plain test on ubuntu node20 coverage leg
+  tests/integration/ci-workflow-contract.spec.ts,project,CI workflow guard asserts ubuntu node20 uses coverage instead of duplicate test
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,CI workflow contract regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp8ynnmx-cnzgv5,test,passed,"2026-05-16T23:11:35.115Z","2026-05-16T23:11:48.585Z","2026-05-16T23:11:48.585Z",null,null,1,0,0,null,null,null
+close_reason: Ubuntu Node 20 CI avoids duplicate plain test run and workflow contract verifies the guard
 body: ""
