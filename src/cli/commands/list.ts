@@ -198,32 +198,42 @@ function parseAssigneeFilter(raw: string | undefined): "assigned" | "unassigned"
   return normalized;
 }
 
-function resolveStatusFilter(status: ItemStatus | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
+function resolveSingleStatusToken(token: string, statusRegistry: RuntimeStatusRegistry): ItemStatus {
+  const trimmed = token.trim().toLowerCase();
+  if (trimmed === "open") return statusRegistry.open_status;
+  if (trimmed === "closed") return statusRegistry.close_status;
+  if (trimmed === "canceled" || trimmed === "cancelled") return statusRegistry.canceled_status;
+  const normalized = normalizeStatusInput(token, statusRegistry);
+  return normalized ?? (token as ItemStatus);
+}
+
+function resolveStatusFilter(
+  status: ItemStatus | undefined,
+  statusRegistry: RuntimeStatusRegistry,
+): ItemStatus[] | undefined {
   if (status === undefined) {
     return undefined;
   }
-  const normalized = normalizeStatusInput(status, statusRegistry);
-  const token = status.trim().toLowerCase();
-  if (token === "open") {
-    return statusRegistry.open_status;
+  const tokens = String(status)
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (tokens.length === 0) {
+    return undefined;
   }
-  if (token === "closed") {
-    return statusRegistry.close_status;
-  }
-  if (token === "canceled" || token === "cancelled") {
-    return statusRegistry.canceled_status;
-  }
-  return normalized ?? status;
+  const resolved = tokens.map((token) => resolveSingleStatusToken(token, statusRegistry));
+  return [...new Set(resolved)];
 }
 
 function applyFilters(
   items: ListedItem[],
-  status: ItemStatus | undefined,
+  status: ItemStatus[] | undefined,
   options: ListOptions,
   typeRegistry: ItemTypeRegistry,
   statusRegistry: RuntimeStatusRegistry,
   runtimeFieldFilters: Record<string, unknown>,
 ): ListedItem[] {
+  const statusSet = status && status.length > 0 ? new Set<ItemStatus>(status) : undefined;
   const typeFilter = parseType(options.type, typeRegistry);
   const tagFilter = options.tag?.trim().toLowerCase();
   const priorityFilter = parsePriority(options.priority);
@@ -246,7 +256,7 @@ function applyFilters(
   }
 
   return items.filter((item) => {
-    if (status && item.status !== status) return false;
+    if (statusSet && !statusSet.has(item.status)) return false;
     if (options.excludeTerminal && isTerminal(item.status, statusRegistry)) return false;
     if (typeFilter && item.type !== typeFilter) return false;
     if (tagFilter && !item.tags.includes(tagFilter)) return false;
@@ -389,6 +399,12 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   const resolvedStatus = explicitStatus ?? resolveStatusFilter(status, statusRegistry);
   const effectiveOptions = explicitStatus ? { ...options, excludeTerminal: false } : options;
   const filtered = applyFilters(items, resolvedStatus, effectiveOptions, typeRegistry, statusRegistry, runtimeFieldFilters);
+  const filtersStatus =
+    resolvedStatus === undefined
+      ? null
+      : resolvedStatus.length === 1
+        ? resolvedStatus[0]
+        : resolvedStatus;
   const sorted = sortItems(filtered, sortField, sortOrder, statusRegistry);
   const limit = parseIntegerLimit(options.limit);
   const offset = parseOffset(options.offset) ?? 0;
@@ -401,7 +417,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
     items: projected,
     count: projected.length,
     filters: {
-      status: resolvedStatus ?? null,
+      status: filtersStatus,
       type: options.type ?? null,
       tag: options.tag ?? null,
       priority: options.priority ?? null,

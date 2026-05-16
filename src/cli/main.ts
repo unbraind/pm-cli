@@ -230,17 +230,17 @@ function buildPmCliRecoveryContext(
 ): PmCliErrorContext {
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
   const providedFields = extractProvidedOptionFlags(invocationArgv);
-  const inferredMissing = inferMissingFieldsFromErrorMessage(rawMessage);
+  const providedSet = new Set(providedFields.map((flag) => normalizeLongOptionFlag(flag) ?? flag));
+  const rawInferred = inferMissingFieldsFromErrorMessage(rawMessage);
+  const trulyMissing = rawInferred?.filter((flag) => !providedSet.has(normalizeLongOptionFlag(flag) ?? flag));
+  const inferredMissing = trulyMissing && trulyMissing.length > 0 ? trulyMissing : undefined;
   const existingRecovery = context?.recovery;
   let suggestedRetry = existingRecovery?.suggested_retry;
   if (!suggestedRetry && inferredMissing && inferredMissing.length > 0) {
     const missingFlag = inferredMissing[0];
     const normalizedMissing = normalizeLongOptionFlag(missingFlag);
     if (normalizedMissing) {
-      const alreadyProvided = invocationArgv.some((token) => normalizeLongOptionFlag(token) === normalizedMissing);
-      if (!alreadyProvided) {
-        suggestedRetry = renderAttemptedCommand([...invocationArgv, normalizedMissing, "<value>"]);
-      }
+      suggestedRetry = renderAttemptedCommand([...invocationArgv, normalizedMissing, "<value>"]);
     }
   }
   if (!suggestedRetry) {

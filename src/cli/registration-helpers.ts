@@ -447,6 +447,7 @@ export function normalizeListOptions(options: Record<string, unknown>): ListOpti
     offset: readListOptionString(options, "offset"),
     includeBody: options.includeBody === true ? true : undefined,
     compact: options.compact === true ? true : undefined,
+    brief: options.brief === true ? true : undefined,
     fields: readListOptionString(options, "fields"),
     sort: readListOptionString(options, "sort"),
     order: readListOptionString(options, "order"),

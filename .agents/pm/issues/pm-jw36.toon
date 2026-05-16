@@ -1,0 +1,13 @@
+id: pm-jw36
+title: Cache item body in metadata cache for fast keyword search
+description: Search keyword was 617ms because every search re-read+parsed all 721 item .toon files for body text. Caching body in front-matter cache (CACHE_VERSION 3 -> 4) reduces warm search to ~140ms (77% speedup). Cold first run rebuilds cache once.
+type: Issue
+status: open
+priority: 0
+tags[4]: cache,performance,pm-cli,search
+created_at: "2026-05-16T21:54:06.137Z"
+updated_at: "2026-05-16T21:54:06.137Z"
+author: maintainer-agent
+acceptance_criteria: warm search command profile ~140ms (5x faster); list profile unchanged; pm health remains ok; cache invalidates correctly when item file changes.
+parent: pm-rnpb
+body: ""

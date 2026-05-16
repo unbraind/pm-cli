@@ -1,0 +1,13 @@
+id: pm-2cqx
+title: MCP pm_list defaults to compact projection for agents
+description: "pm_list MCP tool returned 79k chars for 4 in-progress items because projection defaulted to full (includes bodies, comments, all files). Now defaults to compact when no projection flag is set. Agents can opt out with options.compact=false or options.includeBody=true."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,mcp,pm-cli,projection,token-efficiency
+created_at: "2026-05-16T21:54:09.815Z"
+updated_at: "2026-05-16T21:54:09.815Z"
+author: maintainer-agent
+acceptance_criteria: MCP pm_list default returns compact rows; description explains compact/brief/fields/limit options; opt-in to full output still available.
+parent: pm-rnpb
+body: ""

@@ -1,0 +1,13 @@
+id: pm-nhka
+title: Telemetry queue tmp file orphan cleanup (83MB stale)
+description: "Found ~/.pm-cli/runtime/telemetry/.events.jsonl.3619086.1777633553317.505a373b.tmp (83MB, dated 2026-05-01) left behind by an interrupted drain. pruneExpiredQueueEntries does not GC orphaned tmp files. Add periodic cleanup of .events.jsonl.*.tmp older than 1 hour."
+type: Issue
+status: open
+priority: 2
+tags[4]: disk-usage,gc,pm-cli,telemetry
+created_at: "2026-05-16T21:54:23.126Z"
+updated_at: "2026-05-16T21:54:23.126Z"
+author: maintainer-agent
+acceptance_criteria: Telemetry runtime startup or pruneExpiredQueueEntries removes .events.jsonl.*.tmp orphans older than configurable threshold (default 1h); covered by unit test.
+parent: pm-rnpb
+body: ""

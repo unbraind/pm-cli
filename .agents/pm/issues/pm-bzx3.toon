@@ -1,0 +1,13 @@
+id: pm-bzx3
+title: Investigate validate/health telemetry classification (71-74% failure rate)
+description: "KPI report 2026-05-16 shows validate=73.68% and health=71.71% finish_failure_rate over 7d. Both commands intentionally exit non-zero when findings exist; the classifier counts these as command_failed. Add a soft-failure resolution (e.g. validation_findings, health_findings) so KPIs distinguish bugs from intentional non-zero exits."
+type: Issue
+status: open
+priority: 1
+tags[4]: classification,observability,pm-cli,telemetry
+created_at: "2026-05-16T21:54:18.262Z"
+updated_at: "2026-05-16T21:54:18.262Z"
+author: maintainer-agent
+acceptance_criteria: validate/health soft-failures (run completed; findings present) reported as a distinct resolution code; KPI report shows realistic error rates for diagnostics family.
+parent: pm-rnpb
+body: ""

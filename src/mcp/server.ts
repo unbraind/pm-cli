@@ -147,7 +147,13 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     name: "pm_list",
-    description: "List pm items with status/type/tag/priority filters.",
+    description:
+      "List pm items with status/type/tag/priority filters. Defaults to compact projection for token efficiency. " +
+      "options.status accepts CSV (open,in_progress). " +
+      "Pass options.compact=false or options.includeBody=true for full bodies/comments. " +
+      "Pass options.brief=true for ultra-terse (id/status/type/title only). " +
+      "Pass options.fields='id,title,priority' for custom projection. " +
+      "Pass options.limit=N to cap row count.",
     inputSchema: objectSchema({ options: { type: "object" } }),
   },
   {
@@ -247,10 +253,42 @@ function globalOptions(args: Record<string, unknown>): GlobalOptions {
 
 const ARRAY_TO_CSV_FIELDS = new Set(["tags", "blockedBy", "blocked_by", "skills"]);
 
+const SCALAR_TO_ARRAY_FIELDS = new Set([
+  "comment",
+  "note",
+  "learning",
+  "reminder",
+  "event",
+  "dep",
+  "depRemove",
+  "dep_remove",
+  "file",
+  "doc",
+  "test",
+  "unset",
+  "add",
+  "remove",
+  "addGlob",
+  "add_glob",
+  "migrate",
+  "envSet",
+  "env_set",
+  "envClear",
+  "env_clear",
+]);
+
 function normalizeOptionsArrays(options: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(options)) {
-    result[key] = Array.isArray(value) && ARRAY_TO_CSV_FIELDS.has(key) ? value.join(",") : value;
+    if (Array.isArray(value) && ARRAY_TO_CSV_FIELDS.has(key)) {
+      result[key] = value.join(",");
+      continue;
+    }
+    if (typeof value === "string" && SCALAR_TO_ARRAY_FIELDS.has(key)) {
+      result[key] = [value];
+      continue;
+    }
+    result[key] = value;
   }
   return result;
 }
@@ -372,8 +410,18 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runInit(readString(args, "prefix"), global, options);
     case "context":
       return runContext(options, global);
-    case "list":
-      return runList(readString(args, "status"), options, global);
+    case "list": {
+      const listOptions: Record<string, unknown> = { ...options };
+      if (
+        listOptions.compact === undefined &&
+        listOptions.brief === undefined &&
+        listOptions.fields === undefined &&
+        listOptions.includeBody === undefined
+      ) {
+        listOptions.compact = true;
+      }
+      return runList(readString(args, "status"), listOptions as never, global);
+    }
     case "get":
       return runGet(id ?? readRequiredString(options, "id"), global);
     case "search":

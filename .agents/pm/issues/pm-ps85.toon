@@ -1,0 +1,13 @@
+id: pm-ps85
+title: Fix TOON array-of-objects continuation lines double-indent
+description: "renderToonValue prepended an extra '${indent}  ' to each continuation line of array-item objects, doubling indentation. Subsequent line was rendered at depth+1 already; the extra prefix caused 4 spaces where 2 were expected. Saves ~30-50% leading whitespace in list/search outputs."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,output,pm-cli,token-efficiency,toon
+created_at: "2026-05-16T21:54:01.343Z"
+updated_at: "2026-05-16T21:54:01.343Z"
+author: maintainer-agent
+acceptance_criteria: list/search items render as YAML-style aligned blocks; all 1309 tests pass; no test asserted the buggy doubled indent.
+parent: pm-rnpb
+body: ""

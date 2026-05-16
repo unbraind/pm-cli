@@ -1,0 +1,15 @@
+id: pm-qeu1
+title: MCP pm_update --comment string crashes with 'values.map is not a function'
+description: "Calling pm_update via MCP with options.comment='some text' (string, not array) crashes with `values.map is not a function`. Likely the same root cause as the tags-as-CSV fix (pm-1jcw from session 10) - comment/note/learning fields expect arrays and the MCP normalizer doesn't promote scalars. Workaround: call via CLI `pm comments <id> <text>`."
+type: Issue
+status: open
+priority: 1
+tags[3]: agent-ux,mcp,pm-cli
+created_at: "2026-05-16T21:58:02.396Z"
+updated_at: "2026-05-16T21:59:05.363Z"
+author: maintainer-agent
+acceptance_criteria: MCP pm_update accepts string scalars for comment/note/learning and promotes them to arrays; new test covers the normalization.
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-16T21:59:05.363Z",maintainer-agent,"Fixed in this session: src/mcp/server.ts normalizeOptionsArrays now promotes scalar strings to single-element arrays for comment/note/learning/reminder/event/dep/depRemove/file/doc/test/unset/add/remove/addGlob/migrate/envSet/envClear fields when the CLI expects arrays. The running MCP server uses the old build until restarted."
+body: ""

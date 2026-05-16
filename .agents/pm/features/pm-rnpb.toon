@@ -6,15 +6,15 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-16T21:33:53.310Z"
-deadline: "2026-05-04T13:20:01.343Z"
+updated_at: "2026-05-16T22:00:32.798Z"
+deadline: "2026-06-01T00:00:00.000Z"
 author: codex-audit
 estimated_minutes: 300
 acceptance_criteria: Audit findings are actionable and deduplicated; changed files and verification commands are linked; temporary dogfood project validates core workflows; any discovered bugs with safe fixes are remediated and tested.
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[65]{created_at,author,text}:
+comments[66]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -80,7 +80,8 @@ comments[65]{created_at,author,text}:
   "2026-05-16T20:36:41.841Z",codex-agent,"Execution update 2026-05-16: duplicate check reused pm-rnpb and pm-4z9m for current dogfood/docs issue work. Current isolated dogfood passed 44 workflows; GitHub issue #29 reports stale pm guide docs for bare-core CLI, so this pass is making guide-shell package prerequisites explicit instead of creating a duplicate item."
   "2026-05-16T20:47:15.047Z",codex-agent,"Audit evidence 2026-05-16: temp dogfood passed 44 workflows; focused guide-shell docs regression passed; hybrid semantic search ranked pm-4z9m first; package-enabled calendar smoke in an isolated PM_PATH/PM_GLOBAL_PATH returned deadline/reminder/event entries; Sentry unresolved is only PM-CLI-A/PM-CLI-9 embedding timeout groups; live telemetry stack is healthy with queue depth 0 and 7d finish_error_rate_pct 2.30; full release gate passed with required telemetry/Sentry (1309 tests at 100 percent coverage, Sentry critical=0/high=2, telemetry finish_error_rate_pct=2.31)."
   "2026-05-16T21:33:53.310Z",claude-code-agent,"2026-05-16 dogfood pass: (1) `pm package`/`pm extension` bare invocations now default to `--explore` (was a hard USAGE error); (2) `pm create` defaults to `Task` (or `settings.governance.create_default_type`) so positional-title shortcut works without `--type`; strict `--create-mode strict` still requires `--type`; (3) Telemetry `command_resolution` now derived from exit code instead of JSON `ok` field, fixing the 75% spurious validate/health failure rate in KPI dashboards; (4) Resolved stale Sentry PM-CLI-A and PM-CLI-9 (Ollama embedding timeouts shipped in v2026.5.10 audit). 1309/1309 tests pass."
-files[41]{path,scope,note}:
+  "2026-05-16T21:57:50.694Z",maintainer-agent,"Audit 2026-05-16 session 12 (maintainer-agent): Fixed 4 UX/perf bugs - (1) pm list --status open,in_progress now returns matching items (was 0 due to string-equality match); (2) TOON array-of-objects continuation lines no longer double-indented (~30-50% leading whitespace reduction in agent outputs); (3) front-matter cache now stores item body (search keyword warm path 617ms -> 140ms, 77% faster); (4) MCP pm_list defaults to compact projection (was 79k chars for 4 items). Also fixed (5) error recovery bundle no longer lists already-provided --flag as missing. New pm items: ziv0, ps85, jw36, 2cqx, ixi1, bzx3, nhka, u83w. Cleaned 83MB stale telemetry tmp file. All 1309 tests pass on previous run."
+files[46]{path,scope,note}:
   README.md,project,public README hygiene update
   scripts/check-secrets.mjs,project,detect absolute home-path and user@private-host leakage
   scripts/dogfood-package-first.mjs,project,latest isolated dogfood harness
@@ -95,6 +96,7 @@ files[41]{path,scope,note}:
   src/cli/commands/extension.ts,project,fix extension reload/watch usage guidance
   src/cli/commands/get.ts,project,get depth projections for low-token agent reads
   src/cli/commands/init.ts,project,agent-friendly init defaults and author_default
+  src/cli/commands/list.ts,project,null
   src/cli/commands/reindex.ts,project,reindex uses shared calendar-aware corpus
   src/cli/commands/search.ts,project,keyword search scores reminder/event corpus and short phrase matches
   src/cli/commands/update.ts,project,event date alias for update
@@ -103,10 +105,14 @@ files[41]{path,scope,note}:
   src/cli/main.ts,project,error-path sentry initialization
   src/cli/register-list-query.ts,project,align search CLI flags with advertised search contract
   src/cli/register-setup.ts,project,init flags for defaults and author
+  src/cli/registration-helpers.ts,project,null
+  src/core/output/output.ts,project,null
   src/core/search/cache.ts,project,semantic mutation refresh uses shared calendar-aware corpus
   src/core/search/corpus.ts,project,shared search corpus builder includes calendar reminders/events
   src/core/search/embedding-batches.ts,project,provider-aware semantic input bounding
   src/core/sentry/instrument.ts,project,recursive path scrub across nested sentry event payloads
+  src/core/store/front-matter-cache.ts,project,null
+  src/mcp/server.ts,project,null
   src/sdk/cli-contracts.ts,project,compact alias duplicate flag contracts for agent schema
   tests/integration/cli.integration.spec.ts,project,init defaults author regression
   tests/integration/help-runtime.spec.ts,project,help coverage for keyword-first search mode flags

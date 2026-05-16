@@ -150,8 +150,7 @@ function renderToonValue(value: unknown, depth: number): string {
         if (rest.length === 0) {
           return `${indent}- ${firstLine.trimStart()}`;
         }
-        const nested = rest.map((line) => `${indent}  ${line}`).join("\n");
-        return `${indent}- ${firstLine.trimStart()}\n${nested}`;
+        return `${indent}- ${firstLine.trimStart()}\n${rest.join("\n")}`;
       })
       .join("\n");
   }

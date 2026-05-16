@@ -6,7 +6,7 @@ import { parseItemDocument } from "../item/item-format.js";
 import { ITEM_FILE_EXTENSIONS, getItemFormatFromPath } from "./paths.js";
 import type { ItemDocument, ItemFormat, ItemMetadata, ItemType, RuntimeSchemaSettings } from "../../types/index.js";
 
-const CACHE_VERSION = 3;
+const CACHE_VERSION = 4;
 const CACHE_FILENAME = "metadata-cache.json";
 
 interface CachedEntry {
@@ -15,6 +15,7 @@ interface CachedEntry {
   size: number;
   metadata: ItemMetadata;
   body_length: number;
+  body?: string;
 }
 
 interface CacheEnvelope {
@@ -146,6 +147,7 @@ export async function listAllDocumentCandidatesCached(
             if (cached && cached.mtime_ms === mtimeMs && cached.ctime_ms === ctimeMs && cached.size === size) {
               metadata = cached.metadata;
               bodyLength = cached.body_length;
+              body = cached.body;
             } else {
               const raw = await fs.readFile(filePath, "utf8");
               const parsed = parseItemDocument(raw, {
@@ -164,6 +166,7 @@ export async function listAllDocumentCandidatesCached(
               size,
               metadata,
               body_length: bodyLength,
+              body,
             };
 
             const existing = documentsById.get(metadata.id);

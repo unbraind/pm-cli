@@ -1,0 +1,13 @@
+id: pm-ziv0
+title: Fix CSV status filter and multi-status support in pm list
+description: "pm list --status open,in_progress returned 0 items because the filter did string-equality match. Multi-status CSV must split into a Set and any single status matching wins."
+type: Issue
+status: open
+priority: 1
+tags[4]: agent-ux,filtering,list,pm-cli
+created_at: "2026-05-16T21:53:57.165Z"
+updated_at: "2026-05-16T21:53:57.165Z"
+author: maintainer-agent
+acceptance_criteria: "pm list --status open,in_progress returns all items matching either status; single-status filter unchanged; pm list-closed/list-canceled unchanged."
+parent: pm-rnpb
+body: ""
