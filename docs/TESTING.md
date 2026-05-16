@@ -36,7 +36,7 @@ Use focused runs while iterating, then run coverage before closure when risk or 
 Add tests to the item that owns the work:
 
 ```bash
-pm test <item-id> --add command="node scripts/run-tests.mjs test -- tests/unit/output.spec.ts",scope=project,timeout_seconds=240
+pm test <item-id> --add command="node scripts/run-tests.mjs test -- tests/unit/output.spec.ts",timeout_seconds=240
 pm test <item-id> --run --progress
 ```
 
@@ -76,7 +76,7 @@ Linked tests can include assertion metadata:
 
 ```bash
 pm test <item-id> --add \
-  command="pm list-open --json",scope=project,timeout_seconds=120,assert_json_field_gte=count:0
+  command="pm list-open --json",timeout_seconds=120,assert_json_field_gte=count:0
 ```
 
 Common assertion keys include:

@@ -61,9 +61,9 @@ pm append <item-id> --body "Implementation notes..."
 5. **Link execution context**
 
 ```bash
-pm files <item-id> --add path=src/app.ts,scope=project,note="entrypoint"
-pm docs <item-id> --add path=docs/COMMANDS.md,scope=project,note="public docs"
-pm test <item-id> --add command="node scripts/run-tests.mjs test -- tests/unit/app.spec.ts",scope=project,timeout_seconds=240
+pm files <item-id> --add path=src/app.ts,note="entrypoint"
+pm docs <item-id> --add path=docs/COMMANDS.md,note="public docs"
+pm test <item-id> --add command="node scripts/run-tests.mjs test -- tests/unit/app.spec.ts",timeout_seconds=240
 ```
 
 6. **Record progress**

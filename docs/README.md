@@ -80,7 +80,7 @@ This documentation structure is tracked through:
 When changing docs, link files back to the active item:
 
 ```bash
-pm docs <item-id> --add path=docs/README.md,scope=project,note="documentation index"
+pm docs <item-id> --add path=docs/README.md,note="documentation index"
 pm comments <item-id> "Docs updated; links and build verified."
 ```
 

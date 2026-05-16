@@ -96,9 +96,9 @@ Do not create a duplicate item until `context`, `search`, and list commands show
 ## Link Work Artifacts
 
 ```bash
-pm files <item-id> --add path=src/core/lock/lock.ts,scope=project,note="implementation"
-pm docs <item-id> --add path=docs/ARCHITECTURE.md,scope=project,note="design context"
-pm test <item-id> --add command="node scripts/run-tests.mjs test -- tests/unit/lock.spec.ts",scope=project,timeout_seconds=240
+pm files <item-id> --add path=src/core/lock/lock.ts,note="implementation"
+pm docs <item-id> --add path=docs/ARCHITECTURE.md,note="design context"
+pm test <item-id> --add command="node scripts/run-tests.mjs test -- tests/unit/lock.spec.ts",timeout_seconds=240
 ```
 
 Use `node scripts/run-tests.mjs ...` for linked tests so tracker data is sandboxed.

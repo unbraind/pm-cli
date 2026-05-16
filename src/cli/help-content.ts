@@ -194,7 +194,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     examples: [
       'pm create --title "Harden lock flow" --description "Improve stale lock handling" --type Task --status open --priority 1 --message "Create lock hardening task" --create-mode progressive',
       'pm create --title "Weekly planning sync" --description "Recurring coordination meeting" --type Meeting --schedule-preset lightweight',
-      'pm create --title "Asset: Hero model" --description "Track playable model asset" --type Asset --status open --priority 1 --message "Create asset item" --type-option category=Character --dep "id=pm-epic01,kind=parent,author=codex-agent,created_at=now" --comment "author=codex-agent,created_at=now,text=Why this asset item exists." --note "author=codex-agent,created_at=now,text=Initial implementation note." --learning "author=codex-agent,created_at=now,text=Durable lesson placeholder." --file "path=src/assets/hero.glb,scope=project,note=tracked asset" --test "command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=240" --doc "path=README.md,scope=project,note=asset docs"',
+      'pm create --title "Asset: Hero model" --description "Track playable model asset" --type Asset --status open --priority 1 --message "Create asset item" --type-option category=Character --dep "id=pm-epic01,kind=parent,author=codex-agent,created_at=now" --comment "author=codex-agent,created_at=now,text=Why this asset item exists." --note "author=codex-agent,created_at=now,text=Initial implementation note." --learning "author=codex-agent,created_at=now,text=Durable lesson placeholder." --file "path=src/assets/hero.glb,note=tracked asset" --test "command=node scripts/run-tests.mjs test,timeout_seconds=240" --doc "path=README.md,note=asset docs"',
     ],
     tips: [
       "Use --schedule-preset lightweight for Reminder/Meeting/Event when you want minimal required create inputs.",
@@ -219,7 +219,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Bulk-updates matched item sets with dry-run previews and rollback checkpoints for safe large-scale metadata changes.",
     examples: [
       "pm update-many --filter-status open --status in_progress --dry-run",
-      'pm update-many --filter-tag wave:7 --replace-tests --test "command=node scripts/run-tests.mjs test -- tests/core/history.spec.ts,scope=project,timeout_seconds=240"',
+      'pm update-many --filter-tag wave:7 --replace-tests --test "command=node scripts/run-tests.mjs test -- tests/core/history.spec.ts,timeout_seconds=240"',
       'pm update-many --filter-tag governance --reviewer maintainer-review --message "Normalize reviewer metadata"',
       "pm update-many --rollback ckpt-abc123",
     ],
@@ -489,21 +489,21 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   files: {
     why: "Associates changed source files with tracker items for reproducibility.",
     examples: [
-      'pm files pm-a1b2 --add "path=src/cli/main.ts,scope=project,note=help orchestration"',
+      'pm files pm-a1b2 --add "path=src/cli/main.ts,note=help orchestration"',
       "pm files discover pm-a1b2",
       'pm files discover pm-a1b2 --apply --note "discovered from item text"',
     ],
   },
   docs: {
     why: "Associates relevant documentation paths with tracker items.",
-    examples: ['pm docs pm-a1b2 --add "path=README.md,scope=project,note=user-facing command guidance"'],
+    examples: ['pm docs pm-a1b2 --add "path=README.md,note=user-facing command guidance"'],
   },
   test: {
     why: "Links test commands/paths and optionally executes them for one item.",
     examples: [
-      'pm test pm-a1b2 --add "command=node scripts/run-tests.mjs test -- tests/unit/output.spec.ts,scope=project,timeout_seconds=2400"',
-      'pm test pm-a1b2 --add "command=pm list-all --type Task --limit 200,scope=project,assert_stdout_contains=count:,assert_stdout_regex=count:\\s+\\d+"',
-      'pm test pm-a1b2 --add "command=pm list-all --type Task --limit 200,scope=project,pm_context_mode=auto"',
+      'pm test pm-a1b2 --add "command=node scripts/run-tests.mjs test -- tests/unit/output.spec.ts,timeout_seconds=2400"',
+      'pm test pm-a1b2 --add "command=pm list-all --type Task --limit 200,assert_stdout_contains=count:,assert_stdout_regex=count:\\s+\\d+"',
+      'pm test pm-a1b2 --add "command=pm list-all --type Task --limit 200,pm_context_mode=auto"',
       "pm test pm-a1b2 --run --timeout 2400 --env-set PORT=0 --env-clear PLAYWRIGHT_BASE_URL --shared-host-safe --pm-context tracker --fail-on-context-mismatch --fail-on-skipped",
       "pm test pm-a1b2 --run --timeout 2400 --pm-context auto",
       "pm test pm-a1b2 --run --background --timeout 2400 --progress",

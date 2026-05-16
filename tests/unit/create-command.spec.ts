@@ -30,11 +30,11 @@ function baseCreateOptions(overrides: Partial<CreateCommandOptions> = {}): Creat
     comment: ["author=comment-author,text=seed comment"],
     note: ["author=note-author,text=seed note"],
     learning: ["author=learning-author,text=seed learning"],
-    file: ["path=src/cli.ts,scope=project,note=entrypoint"],
+    file: ["path=src/cli.ts,note=entrypoint"],
     test: [
-      "command=node scripts/run-tests.mjs test,path=tests/unit/create-command.spec.ts,scope=project,timeout=120,timeout_seconds=120,note=create-coverage",
+      "command=node scripts/run-tests.mjs test,path=tests/unit/create-command.spec.ts,timeout=120,timeout_seconds=120,note=create-coverage",
     ],
-    doc: ["path=README.md,scope=project,note=documentation"],
+    doc: ["path=README.md,note=documentation"],
     ...overrides,
   };
 }

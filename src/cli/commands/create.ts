@@ -1396,11 +1396,11 @@ function createExampleTokensForFlag(flag: string, typeName: string, openStatus: 
     case "--learning":
       return ["--learning", "\"author=maintainer,created_at=now,text=Durable lesson\""];
     case "--file":
-      return ["--file", "\"path=src/example.ts,scope=project,note=implementation file\""];
+      return ["--file", "\"path=src/example.ts,note=implementation file\""];
     case "--test":
-      return ["--test", "\"command=node scripts/run-tests.mjs test,scope=project,timeout_seconds=240\""];
+      return ["--test", "\"command=node scripts/run-tests.mjs test,timeout_seconds=240\""];
     case "--doc":
-      return ["--doc", "\"path=README.md,scope=project,note=reference doc\""];
+      return ["--doc", "\"path=README.md,note=reference doc\""];
     default:
       return [flag, "\"<value>\""];
   }

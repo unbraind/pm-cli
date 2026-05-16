@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: history,pm-cli,privacy,redaction,security
 created_at: "2026-05-03T13:34:41.813Z"
-updated_at: "2026-05-16T20:47:56.038Z"
+updated_at: "2026-05-16T23:19:49.997Z"
 author: codex-audit
 acceptance_criteria: A supported pm command can redact configured literals/patterns from item files and history streams; history drift validation remains meaningful after redaction; redaction operations are themselves auditable; secret scans can include history streams without false failures from known private operations paths.
 parent: pm-rnpb
@@ -15,7 +15,7 @@ expected_result: Expected closure outcome normalized from closed status; existin
 actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-03T13:34:41.813Z",codex-audit,null
-comments[10]{created_at,author,text}:
+comments[11]{created_at,author,text}:
   "2026-05-03T13:34:41.813Z",codex-audit,"Duplicate-check evidence: pm search history stream redaction command redact private path history drift --limit 10 found only closed history/security items; current audit discovered remaining private remote paths in historical JSONL streams after current item docs were sanitized."
   "2026-05-09T11:21:19.310Z",codex-agent,"2026-05-09 duplicate-check evidence: pm search tracker history privacy redaction private paths --limit 10 found this existing item as the canonical match. Current scan found no raw IP/password/token values in non-history tracked files; current pm item files only mention Sentry token variable names, but historical JSONL streams still include private remote paths from older telemetry operations. Do not hand-edit history; implement audited redaction support or migrate history safely."
   "2026-05-09T11:46:59.452Z",codex-agent,"Evidence 2026-05-09: privacy scan confirmed current tracked source/docs/workflows and current item files do not contain raw host/IP/password/token values from this request, but older append-only history streams still contain private infrastructure paths. This remains open because current pm policy forbids direct history rewrites; next work must add an audited redaction command or equivalent safe migration."
@@ -26,6 +26,7 @@ comments[10]{created_at,author,text}:
   "2026-05-12T05:29:03.212Z",codex-agent,"Audit update: post-package-refactor validate/health still show only the existing history hash mismatches for pm-54d, pm-f3q4, pm-fdla, pm-mb4n, and pm-tq1. Resolution metadata is clean; this remains the canonical blocker for history drift rather than a new package-refactor regression."
   "2026-05-16T16:48:23.271Z",codex-agent,"Audit update 2026-05-16: pm validate --check-resolution is clean after metadata backfill; remaining validation/health warnings are hash drift on pm-54d, pm-7vm9, pm-f3q4, pm-fdla, pm-mb4n, and pm-tq1. Keeping this as the canonical audited history redaction/drift follow-up."
   "2026-05-16T20:47:15.075Z",codex-agent,"Privacy evidence 2026-05-16: tracked secret scan passed and targeted scan found no raw host/password/token literals outside ignored private telemetry operations files. Current health/validate still reports only known history drift on pm-54d, pm-7vm9, pm-f3q4, pm-fdla, pm-mb4n, and pm-tq1; keeping this canonical redaction/history-drift item open."
+  "2026-05-16T23:19:49.997Z",codex-agent,"Privacy audit 2026-05-17: read-only sub-agent scan covered 1905 tracked files and 745 tracked pm history files. node scripts/check-secrets.mjs passed; targeted scans found no concrete private IPv4 literals, no /home paths in tracked pm history, and no actual credential material beyond scanner regex literals. Remaining concern is operational metadata in append-only history, so this existing item remains the canonical redaction/history artifact follow-up; no duplicate privacy item created."
 files[18]{path,scope,note}:
   .agents/pm/chores/pm-tq1.toon,project,item-test-command-redaction-local-package-path
   .agents/pm/epics/pm-54d.toon,project,epic-comment-redaction-global-install-path

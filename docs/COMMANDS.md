@@ -160,9 +160,9 @@ Use comments for progress and evidence, notes for implementation context, and le
 ## Linked Artifacts
 
 ```bash
-pm files <id> --add path=src/cli/main.ts,scope=project,note="command wiring"
+pm files <id> --add path=src/cli/main.ts,note="command wiring"
 pm files <id> --add-glob "src/cli/**/*.ts"
-pm docs <id> --add path=docs/COMMANDS.md,scope=project,note="public command docs"
+pm docs <id> --add path=docs/COMMANDS.md,note="public command docs"
 pm deps <id> --format tree
 ```
 
@@ -171,7 +171,7 @@ Linked files and docs keep reviews reproducible. `deps` is read-only and project
 ## Linked Tests
 
 ```bash
-pm test <id> --add command="node scripts/run-tests.mjs test -- tests/unit/output.spec.ts",scope=project,timeout_seconds=240
+pm test <id> --add command="node scripts/run-tests.mjs test -- tests/unit/output.spec.ts",timeout_seconds=240
 pm test <id> --run --progress
 pm test-all --status in_progress --progress
 ```

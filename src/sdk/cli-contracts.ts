@@ -2130,7 +2130,7 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     examples: [".agents/pm"],
   },
   scope: {
-    description: "Scope selector for commands that operate on project or global state.",
+    description: "Scope selector for commands that operate on project or global state. Linked files, docs, and tests default to project scope when omitted.",
     examples: ["project", "global"],
   },
   detail: {

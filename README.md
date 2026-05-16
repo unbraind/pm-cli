@@ -89,8 +89,8 @@ pm create \
 pm list-open --limit 10
 pm claim <item-id>
 pm update <item-id> --status in_progress --message "Start implementation"
-pm files <item-id> --add path=src/core/lock/lock.ts,scope=project
-pm test <item-id> --add command="node scripts/run-tests.mjs test -- tests/unit/lock.spec.ts",scope=project,timeout_seconds=240
+pm files <item-id> --add path=src/core/lock/lock.ts
+pm test <item-id> --add command="node scripts/run-tests.mjs test -- tests/unit/lock.spec.ts",timeout_seconds=240
 pm test <item-id> --run --progress
 pm close <item-id> "Fixed stale lock retry path; linked test passed."
 pm release <item-id>

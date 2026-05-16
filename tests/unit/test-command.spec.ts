@@ -797,7 +797,7 @@ describe("runTest", () => {
         id,
         {
           add: [
-            "command=node --version,scope=project,timeout=2.9,note=version",
+            "command=node --version,timeout=2.9,note=implicit project scope",
             "command=node --version,scope=project,timeout_seconds=2,note=duplicate",
             "command=node --version,scope=project,timeout_seconds=2,pm_context_mode=tracker,note=tracker-variant",
             "command=node -e \"process.stdout.write('path-metadata-token')\",path=tests/example.spec.ts,note=implicit project scope",

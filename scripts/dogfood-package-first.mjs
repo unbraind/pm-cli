@@ -100,8 +100,8 @@ try {
 
   run("claim", ["claim", id]);
   run("update", ["update", id, "--status", "in_progress", "--estimate", "15"]);
-  run("files", ["files", id, "--add", "path=README.md,scope=project,note=dogfood marker"]);
-  run("docs", ["docs", id, "--add", "path=README.md,scope=project,note=dogfood docs marker"]);
+  run("files", ["files", id, "--add", "path=README.md,note=dogfood marker"]);
+  run("docs", ["docs", id, "--add", "path=README.md,note=dogfood docs marker"]);
   run("comments", ["comments", id, "Dogfood comment shorthand remains accepted."]);
   run("notes", ["notes", id, "--add", "Dogfood note shorthand remains accepted."]);
   run("learnings", ["learnings", id, "--add", "Dogfood learning shorthand remains accepted."]);
@@ -224,7 +224,7 @@ try {
     "test",
     id,
     "--add",
-    "command=node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts,scope=project,timeout_seconds=240",
+    "command=node scripts/run-tests.mjs test -- tests/unit/parse-utils.spec.ts,timeout_seconds=240",
   ]);
   run("linked test run", ["test", id, "--run", "--fail-on-skipped"]);
   run("validate", ["validate", "--check-resolution", "--check-history-drift"]);

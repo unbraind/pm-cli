@@ -2,15 +2,40 @@ id: pm-ntnf
 title: Default project scope for files/docs/tests and simplify scope UX
 description: "Make project scope the implicit default for non-package linked-resource commands so agents do not need to pass scope=project for files, docs, tests, comments, notes, or other project-local mutations. Keep explicit global/project scope only where it is meaningful for pm package operations, such as installing or managing global pm packages."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,packages,pm-cli,scope,token-efficiency
 created_at: "2026-05-16T23:06:37.341Z"
-updated_at: "2026-05-16T23:06:48.203Z"
+updated_at: "2026-05-16T23:26:33.527Z"
 author: codex-agent
 acceptance_criteria: files/docs/test linked-resource commands accept entries without scope=project and persist project scope by default; help/contracts/examples stop requiring scope=project for project-local commands; package install/manage flows still allow explicit project/global scope where meaningful; backwards compatibility preserves existing scope=project inputs; focused tests and temp-project dogfood cover the simplified UX.
 parent: pm-rnpb
-comments[2]{created_at,author,text}:
+resolution: Implemented default project-scope guidance for linked files/docs/tests while preserving explicit global scope.
+expected_result: Agents can omit redundant scope=project for project-local linked resources and still persist project scope.
+actual_result: "Examples, dogfood, create/update seeds, and focused regressions all verify omitted linked-resource scope persists as project."
+comments[4]{created_at,author,text}:
   "2026-05-16T23:06:37.341Z",codex-agent,"author=codex-agent,created_at=now,text=Duplicate check before create: pm search scope=project default global package files docs tests UX --limit 10; pm search remove scope project option files docs test package global --limit 10; pm list-open --limit 30 --tag agent-ux. Results found broad parent pm-rnpb and package-first parent pm-59gj, but no existing open item specifically for removing mandatory scope=project from linked-resource command UX. Creating this child under pm-rnpb."
   "2026-05-16T23:06:48.203Z",codex-agent,"Clean duplicate-check evidence: searched scope=project defaults, remove scope project options, and open agent-ux items. No existing open item covered defaulting linked-resource project scope while preserving explicit global scope for pm package operations; pm-ntnf is the canonical child under pm-rnpb."
+  "2026-05-16T23:19:43.010Z",codex-agent,"Implementation update: linked files/docs/test guidance now defaults to project scope in examples and dogfood; explicit scope remains available for global/package semantics. Focused verification passed: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/files-docs-command.spec.ts tests/unit/test-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts (167 tests)."
+  "2026-05-16T23:26:22.207Z",codex-agent,"Final evidence: isolated temp-project dogfood passed 44 workflows using omitted scope for files/docs/test links; linked pm test passed with 167 focused regressions; static quality and secret scan passed; full release gate passed with build, typecheck, docs/skills, static quality, 1313 tests at 100 percent coverage, version policy, secret scan, npx smoke, npm pack, compatibility, Sentry critical=0/high=0/total=0, telemetry finish_error_rate_pct=2.29 and missing error-code rows=0. pm health telemetry re-check succeeded after inline flush; only known history drift remains under pm-xk39."
+files[7]{path,scope,note}:
+  scripts/dogfood-package-first.mjs,project,dogfood-omitted-scope-linked-resources
+  src/cli/commands/create.ts,project,create-example-default-project-scope
+  src/cli/help-content.ts,project,help-examples-drop-redundant-scope
+  src/sdk/cli-contracts.ts,project,scope-metadata-documents-default
+  tests/unit/create-command.spec.ts,project,create-seed-default-scope-regression
+  tests/unit/test-command.spec.ts,project,linked-test-default-scope-regression
+  tests/unit/update-command.spec.ts,project,update-seed-default-scope-regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/files-docs-command.spec.ts tests/unit/test-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused default project scope regressions
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp8yzkfn-1srxud,test,passed,"2026-05-16T23:20:22.406Z","2026-05-16T23:21:04.307Z","2026-05-16T23:21:04.307Z",null,null,1,0,0,null,null,null
+docs[6]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,agent-guide-short-linked-resource-examples
+  docs/COMMANDS.md,project,command-docs-short-linked-resource-examples
+  docs/QUICKSTART.md,project,quickstart-short-linked-resource-examples
+  docs/README.md,project,docs-index-short-doc-link-example
+  docs/TESTING.md,project,testing-docs-short-linked-test-examples
+  README.md,project,agent-loop-short-linked-resource-example
+close_reason: Default project scope UX implemented and verified; linked-resource examples and dogfood no longer require redundant scope=project.
 body: "User request 2026-05-17: remove the need to manually type scope=project in commands/options where the PM path already identifies the project context. Project scope should be the default for project-local operations. Global scope should remain opt-in for global pm package operations only. This should reduce token use and CLI friction for agents while preserving backwards compatibility."
