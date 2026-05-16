@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-16T17:27:40.404Z"
+updated_at: "2026-05-16T17:40:06.649Z"
 deadline: "2026-05-04T13:20:01.343Z"
 assignee: codex-audit
 author: codex-audit
@@ -15,7 +15,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[61]{created_at,author,text}:
+comments[62]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -77,6 +77,7 @@ comments[61]{created_at,author,text}:
   "2026-05-16T16:56:47.204Z",codex-audit,"Execution start 2026-05-16: duplicate check reused pm-rnpb after pm context/search/list-open/list-in-progress. Bootstrap passed: npm install -g ., pm --version 2026.5.14, node v25.9.0, pnpm 10.33.0, pnpm build. Baseline health warns on known history drift plus one stale vector item pm-p7av; proceeding with isolated temp-project dogfood, code/performance review, GitHub/Sentry/telemetry checks, scoped fixes, and CI follow-through."
   "2026-05-16T17:13:35.667Z",codex-audit,"Audit evidence 2026-05-16 latest pass: isolated temp-project dogfood passed 44 workflows. GitHub issue/PR snapshot is empty. Startup/code review found esbuild bundling is not yet a win (safe ESM bundle was slower), so this pass shipped a targeted fast --version/-V path instead: node dist/cli.js --version now averages 36.7ms versus 194.6ms for loading the full command graph. Semantic/vector health refreshed stale pm-p7av and hybrid search returned semantic matches; vectorization is now ok with zero stale items. Release gate passed with required Sentry/telemetry: 1308 tests at 100 percent coverage, static/docs/typecheck/build/npx/npm-pack/compatibility ok, Sentry critical=0/high=2, telemetry finish_error_rate_pct=2.31 and zero missing error-code rows. pm validate/health only retain known history drift on pm-54d, pm-7vm9, pm-f3q4, pm-fdla, pm-mb4n, pm-tq1 under pm-xk39."
   "2026-05-16T17:27:40.404Z",codex-audit,"Audit evidence 2026-05-16 continuation: GitHub open issue/PR snapshot remains empty. Latest isolated temp-project dogfood passed 44 workflows. Implemented pm-ibp7 vector timeout UX/config fix so semantic embedding timeout is project-configurable and timeout errors give agents concrete provider/model/batch/timeout guidance. Verification passed: focused 24-test suite, pm linked test, secret scan, health --refresh-vectors with vectorization ok and zero stale items, hybrid search probe, and required Sentry/telemetry release gate with 1309 tests at 100 percent coverage. Remaining health warnings are only the known six history drift items tracked by pm-xk39."
+  "2026-05-16T17:40:06.649Z",codex-audit,"GitHub CI evidence 2026-05-16: pushed f579c9d and watched CI run 25968347463 to completion. All matrix jobs passed: macOS Node 20, Ubuntu Node 20/22/24, and Windows Node 20. Ubuntu Node 20 completed the full release-heavy lane including coverage, static quality, compatibility migration, packaging smoke, npx tarball smoke, and Claude Code plugin smoke. Windows emitted only the hosted-runner transition notice."
 files[41]{path,scope,note}:
   README.md,project,public README hygiene update
   scripts/check-secrets.mjs,project,detect absolute home-path and user@private-host leakage
