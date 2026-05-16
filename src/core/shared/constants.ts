@@ -272,6 +272,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
     max_results: 50,
     embedding_model: "",
     embedding_batch_size: 32,
+    embedding_timeout_ms: 30_000,
     scanner_max_batch_retries: 3,
     provider: "",
   },

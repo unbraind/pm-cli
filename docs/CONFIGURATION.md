@@ -48,7 +48,7 @@ Precedence:
 | `validation.sprint_release_format` | `warn` or `strict_error` |
 | `validation.parent_reference` | `warn` or `strict_error` |
 | `item_types.definitions[]` | custom item types and type options |
-| `search.*` | search mode, scoring, providers, and vector settings |
+| `search.*` | search mode, scoring, providers, embedding timeout, and vector settings |
 
 ## Environment Variables
 
@@ -115,6 +115,8 @@ pm search "release docs" --mode keyword --limit 10
 ```
 
 Semantic and hybrid search can use built-in OpenAI-compatible or Ollama providers plus vector stores such as Qdrant or LanceDB. If local Ollama is available and semantic settings are unset, `pm` can resolve local defaults automatically.
+
+For local Ollama or slower embedding providers, tune `search.embedding_batch_size`, `search.embedding_timeout_ms`, and `search.scanner_max_batch_retries` in project config before assuming semantic search is broken. Keyword search remains the fast baseline while semantic indexing catches up.
 
 Useful commands:
 

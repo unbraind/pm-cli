@@ -29,6 +29,7 @@ export interface EmbeddingBatchExecutionOptions {
 
 interface EmbeddingBatchRuntime {
   batchSize: number;
+  timeoutMs: number;
   maxRetries: number;
   maxBatchInputCharacters: number;
   maxInputCharacters: number;
@@ -36,11 +37,15 @@ interface EmbeddingBatchRuntime {
 
 function resolveBatchRuntime(settings: PmSettings): EmbeddingBatchRuntime {
   const batchSizeCandidate = settings.search.embedding_batch_size;
+  const timeoutMsCandidate = settings.search.embedding_timeout_ms;
   const maxRetriesCandidate = settings.search.scanner_max_batch_retries;
   const batchSize = Number.isFinite(batchSizeCandidate) && batchSizeCandidate > 0 ? Math.floor(batchSizeCandidate) : 1;
+  const timeoutMs =
+    Number.isFinite(timeoutMsCandidate) && timeoutMsCandidate > 0 ? Math.floor(timeoutMsCandidate) : 30_000;
   const maxRetries = Number.isFinite(maxRetriesCandidate) && maxRetriesCandidate >= 0 ? Math.floor(maxRetriesCandidate) : 0;
   return {
     batchSize,
+    timeoutMs,
     maxRetries,
     maxBatchInputCharacters: Number.POSITIVE_INFINITY,
     maxInputCharacters: DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
@@ -93,17 +98,34 @@ function isEmbeddingTimeoutError(error: unknown): boolean {
   return message.includes("timed out") || message.includes("timeout");
 }
 
+function buildEmbeddingFailureMessage(
+  provider: EmbeddingProviderConfig,
+  batchLabel: string,
+  batchSize: number,
+  timeoutMs: number,
+  attempts: number,
+  error: unknown,
+): string {
+  const base = `Embedding batch ${batchLabel} failed after ${attempts} attempt(s): ${toErrorMessage(error)}`;
+  const details = `provider=${provider.name} model=${provider.model} batch_size=${batchSize} timeout_ms=${timeoutMs}`;
+  if (!isEmbeddingTimeoutError(error)) {
+    return `${base} (${details})`;
+  }
+  return `${base} (${details}; guidance=check provider availability or lower search.embedding_batch_size, raise search.embedding_timeout_ms, or run keyword search while semantic indexing catches up)`;
+}
+
 async function executeBatchWithAdaptiveSplit(
   provider: EmbeddingProviderConfig,
   batch: string[],
   batchLabel: string,
+  timeoutMs: number,
   maxRetries: number,
   warnings: string[],
 ): Promise<number[][]> {
   let lastError: unknown = null;
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     try {
-      const batchVectors = await executeEmbeddingRequest(provider, batch);
+      const batchVectors = await executeEmbeddingRequest(provider, batch, { timeout_ms: timeoutMs });
       if (attempt > 0) {
         warnings.push(
           `search_embedding_batch_retry_succeeded:batch=${batchLabel}:attempt=${attempt + 1}:size=${batch.length}`,
@@ -120,8 +142,8 @@ async function executeBatchWithAdaptiveSplit(
           `search_embedding_batch_split_after_timeout:batch=${batchLabel}:size=${batch.length}:parts=${left.length}|${right.length}`,
         );
         return [
-          ...(await executeBatchWithAdaptiveSplit(provider, left, `${batchLabel}.1`, maxRetries, warnings)),
-          ...(await executeBatchWithAdaptiveSplit(provider, right, `${batchLabel}.2`, maxRetries, warnings)),
+          ...(await executeBatchWithAdaptiveSplit(provider, left, `${batchLabel}.1`, timeoutMs, maxRetries, warnings)),
+          ...(await executeBatchWithAdaptiveSplit(provider, right, `${batchLabel}.2`, timeoutMs, maxRetries, warnings)),
         ];
       }
       if (attempt < maxRetries) {
@@ -130,7 +152,7 @@ async function executeBatchWithAdaptiveSplit(
       }
     }
   }
-  throw new Error(`Embedding batch ${batchLabel} failed after ${maxRetries + 1} attempt(s): ${toErrorMessage(lastError)}`);
+  throw new Error(buildEmbeddingFailureMessage(provider, batchLabel, batch.length, timeoutMs, maxRetries + 1, lastError));
 }
 
 export async function executeEmbeddingBatchesWithRetry(
@@ -171,7 +193,16 @@ export async function executeEmbeddingBatchesWithRetry(
       total_inputs: normalizedInputs.length,
       phase: "start",
     });
-    vectors.push(...(await executeBatchWithAdaptiveSplit(provider, batch, String(batchIndex + 1), runtime.maxRetries, warnings)));
+    vectors.push(
+      ...(await executeBatchWithAdaptiveSplit(
+        provider,
+        batch,
+        String(batchIndex + 1),
+        runtime.timeoutMs,
+        runtime.maxRetries,
+        warnings,
+      )),
+    );
     completedInputs += batch.length;
     options.onProgress?.({
       batch_index: batchIndex + 1,

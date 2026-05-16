@@ -265,6 +265,7 @@ const settingsSchema = z.object({
     max_results: z.number().int(),
     embedding_model: z.string(),
     embedding_batch_size: z.number().int(),
+    embedding_timeout_ms: z.number().int().optional(),
     scanner_max_batch_retries: z.number().int(),
     provider: z.string().optional(),
   }),
@@ -896,6 +897,7 @@ export function serializeSettings(settings: PmSettings): string {
     "max_results",
     "embedding_model",
     "embedding_batch_size",
+    "embedding_timeout_ms",
     "scanner_max_batch_retries",
     "provider",
   ]);

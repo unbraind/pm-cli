@@ -2,12 +2,32 @@ id: pm-ibp7
 title: "Embedding timeout UX: improve ollama feedback for PM-CLI-A/9"
 description: Recurring embedding timeouts with no progress feedback
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[3]: performance,sentry,vector-search
 created_at: "2026-05-16T15:07:34.653Z"
-updated_at: "2026-05-16T16:48:23.160Z"
+updated_at: "2026-05-16T17:27:59.438Z"
 author: claude-code-agent
-comments[1]{created_at,author,text}:
+resolution: Implemented search.embedding_timeout_ms and actionable embedding timeout diagnostics.
+expected_result: Agents can tune semantic embedding timeout from project config and understand Ollama timeout remediation from the error text.
+actual_result: "Timeout failures now include provider, model, batch_size, timeout_ms, and guidance to check provider availability, lower search.embedding_batch_size, raise search.embedding_timeout_ms, or use keyword search while indexing catches up."
+comments[2]{created_at,author,text}:
   "2026-05-16T16:48:23.160Z",codex-agent,"Audit update 2026-05-16: Sentry unresolved list is down to PM-CLI-A and PM-CLI-9, both embedding/Ollama timeout groups. Release gate passes within thresholds (critical=0, high=2), so this remains the canonical vector timeout UX/performance follow-up rather than a blocker for pm-hosd."
+  "2026-05-16T17:27:39.714Z",codex-audit,"Evidence 2026-05-16: implemented configurable semantic embedding timeout via search.embedding_timeout_ms, propagated it into embedding batch requests, and made timeout failures include provider/model/batch_size/timeout_ms plus actionable guidance for local Ollama or slow providers. Verification passed: focused embedding/settings tests (24 tests), pm linked test run, isolated dogfood harness (44 workflows), health --refresh-vectors with vectorization ok and zero stale items, hybrid search probe, secret scan, and full release gate with 1309 tests at 100 percent coverage plus required Sentry/telemetry gate (Sentry critical=0 high=2; telemetry finish_error_rate_pct=2.32)."
+files[8]{path,scope,note}:
+  src/core/search/embedding-batches.ts,project,configurable embedding timeout and timeout guidance
+  src/core/search/providers.ts,project,embedding request timeout option consumed by batch runner
+  src/core/shared/constants.ts,project,default search.embedding_timeout_ms
+  src/core/store/settings.ts,project,settings schema/order includes embedding timeout
+  src/types.ts,project,SDK PmSettings search timeout field
+  tests/unit/embedding-batches.spec.ts,project,timeout guidance regression
+  tests/unit/settings-store.spec.ts,project,settings serialization regression
+  tests/unit/shared-constants-errors.spec.ts,project,default settings contract regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/embedding-batches.spec.ts tests/unit/settings-store.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused embedding timeout settings regression
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp8mcquj-qd0bn3,test,passed,"2026-05-16T17:27:15.513Z","2026-05-16T17:27:24.139Z","2026-05-16T17:27:24.139Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/CONFIGURATION.md,project,semantic search timeout tuning guidance
+close_reason: "Configured semantic embedding timeout and actionable Ollama timeout guidance implemented; focused linked tests, dogfood, vector health, hybrid search, secret scan, and required Sentry/telemetry release gate passed."
 body: ""

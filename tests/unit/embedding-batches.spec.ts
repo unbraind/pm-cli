@@ -16,6 +16,7 @@ function buildSettings(batchSize: number, retries: number): PmSettings {
     search: {
       ...SETTINGS_DEFAULTS.search,
       embedding_batch_size: batchSize,
+      embedding_timeout_ms: SETTINGS_DEFAULTS.search.embedding_timeout_ms,
       scanner_max_batch_retries: retries,
     },
     providers: {
@@ -97,6 +98,8 @@ describe("executeEmbeddingBatchesWithRetry", () => {
   it("falls back to safe runtime values for invalid batch settings", async () => {
     const originalFetch = globalThis.fetch;
     let attempts = 0;
+    const settings = buildSettings(0, -1);
+    settings.search.embedding_timeout_ms = 0;
     globalThis.fetch = (async () => {
       attempts += 1;
       return {
@@ -109,7 +112,7 @@ describe("executeEmbeddingBatchesWithRetry", () => {
     }) as typeof globalThis.fetch;
 
     try {
-      const result = await executeEmbeddingBatchesWithRetry(PROVIDER, buildSettings(0, -1), ["alpha"]);
+      const result = await executeEmbeddingBatchesWithRetry(PROVIDER, settings, ["alpha"]);
       expect(result.warnings).toEqual([]);
       expect(result.vectors).toEqual([[0.1, 0.2]]);
       expect(attempts).toBe(1);
@@ -224,9 +227,36 @@ describe("executeEmbeddingBatchesWithRetry", () => {
 
     try {
       await expect(executeEmbeddingBatchesWithRetry(PROVIDER, buildSettings(1, 1), ["alpha"])).rejects.toThrow(
-        "Embedding batch 1 failed after 2 attempt(s)",
+        "Embedding batch 1 failed after 2 attempt(s): Embedding request failed with status 500 Internal Server Error: down (provider=openai model=text-embedding-3-small batch_size=1 timeout_ms=30000)",
       );
       expect(attempts).toBe(2);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("uses configurable embedding timeout and reports actionable Ollama timeout guidance", async () => {
+    const originalFetch = globalThis.fetch;
+    const settings = buildSettings(1, 0);
+    settings.search.embedding_timeout_ms = 75;
+    globalThis.fetch = (async (_url: unknown, init?: RequestInit) => {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      if (init?.signal?.aborted) {
+        throw Object.assign(new Error("aborted"), { name: "AbortError" });
+      }
+      return {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => ({ embeddings: [[0.1, 0.2]] }),
+        text: async () => "",
+      } as unknown as Response;
+    }) as typeof globalThis.fetch;
+
+    try {
+      await expect(executeEmbeddingBatchesWithRetry(OLLAMA_PROVIDER, settings, ["alpha"])).rejects.toThrow(
+        "provider=ollama model=qwen3-embedding:0.6b batch_size=1 timeout_ms=75; guidance=check provider availability or lower search.embedding_batch_size, raise search.embedding_timeout_ms, or run keyword search while semantic indexing catches up",
+      );
     } finally {
       globalThis.fetch = originalFetch;
     }

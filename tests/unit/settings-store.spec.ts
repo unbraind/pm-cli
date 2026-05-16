@@ -199,6 +199,7 @@ describe("core/store/settings", () => {
         "max_results",
         "embedding_model",
         "embedding_batch_size",
+        "embedding_timeout_ms",
         "scanner_max_batch_retries",
         "provider",
       ]);

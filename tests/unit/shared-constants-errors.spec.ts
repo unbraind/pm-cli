@@ -133,6 +133,7 @@ describe("shared constants and errors contracts", () => {
       max_results: 50,
       embedding_model: "",
       embedding_batch_size: 32,
+      embedding_timeout_ms: 30000,
       scanner_max_batch_retries: 3,
       provider: "",
     });

@@ -515,6 +515,7 @@ export interface PmSettings {
     max_results: number;
     embedding_model: string;
     embedding_batch_size: number;
+    embedding_timeout_ms: number;
     scanner_max_batch_retries: number;
     provider?: string;
     tuning?: {
