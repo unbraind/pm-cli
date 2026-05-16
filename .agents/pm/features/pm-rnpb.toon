@@ -6,9 +6,8 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-16T07:22:01.136Z"
+updated_at: "2026-05-16T07:35:54.656Z"
 deadline: "2026-05-04T13:20:01.343Z"
-assignee: codex-audit
 author: codex-audit
 estimated_minutes: 300
 acceptance_criteria: Audit findings are actionable and deduplicated; changed files and verification commands are linked; temporary dogfood project validates core workflows; any discovered bugs with safe fixes are remediated and tested.
