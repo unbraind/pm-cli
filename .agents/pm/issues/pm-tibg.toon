@@ -6,9 +6,12 @@ status: closed
 priority: 1
 tags[3]: health,performance,ux
 created_at: "2026-05-16T14:36:57.787Z"
-updated_at: "2026-05-16T14:50:44.502Z"
+updated_at: "2026-05-16T16:42:27.149Z"
 author: claude-code-agent
 parent: pm-jrjt
+resolution: Added fast health-check flags to separate routine checks from expensive validation.
+expected_result: Agents can run responsive health checks while still retaining an opt-in full health path.
+actual_result: "Health supports skip/full flags, MCP guidance documents them, and tests were added in closure evidence."
 files[1]{path,scope,note}:
   src/cli/commands/health.ts,project,null
 close_reason: "Fixed: added --skip-integrity, --skip-drift, --skip-vectors, --full flags to pm health. Fast path (all three skip flags) runs in ~800ms vs 5-7s cold-cache full run. MCP pm_health description updated with option hints. 2 new tests added."

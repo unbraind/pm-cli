@@ -6,9 +6,12 @@ status: closed
 priority: 0
 tags[3]: bug,pm-cli,sentry
 created_at: "2026-05-16T14:36:56.017Z"
-updated_at: "2026-05-16T14:50:44.562Z"
+updated_at: "2026-05-16T16:42:13.600Z"
 author: claude-code-agent
 parent: pm-jrjt
+resolution: Added defensive localeCompare fallbacks for missing sort fields.
+expected_result: Sort comparators tolerate extension or item records with undefined sortable fields.
+actual_result: List and contracts sort paths guard undefined values and the full test suite passed in closure evidence.
 files[2]{path,scope,note}:
   src/cli/commands/contracts.ts,project,null
   src/cli/commands/list.ts,project,null

@@ -6,9 +6,12 @@ status: closed
 priority: 0
 tags[3]: bug,extension,sentry
 created_at: "2026-05-16T14:37:05.915Z"
-updated_at: "2026-05-16T14:50:44.563Z"
+updated_at: "2026-05-16T16:42:13.601Z"
 author: claude-code-agent
 parent: pm-jrjt
+resolution: Converted the extension install stat path to a race-safe error path.
+expected_result: Missing extension source paths produce deterministic pm errors instead of uncaught ENOENT races.
+actual_result: resolveInstallSource catches ENOENT from fs.stat and returns a PmCliError; tests passed in closure evidence.
 files[1]{path,scope,note}:
   src/cli/commands/extension.ts,project,null
 close_reason: "Fixed: resolveInstallSource in extension.ts now wraps fs.stat in try/catch instead of pathExists + stat TOCTOU race. ENOENT is caught and converted to a PmCliError. Tests pass."

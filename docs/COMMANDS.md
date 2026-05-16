@@ -38,11 +38,13 @@ Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 
 ```bash
 pm init
+pm init --defaults --with-packages
 pm config project list
 pm health --check-only
 ```
 
 `pm init` creates `.agents/pm`. `pm health --check-only` inspects without refreshing optional search artifacts.
+Use `--with-packages` for one-step agent setup when bundled package commands should be active immediately.
 
 ## Packages
 

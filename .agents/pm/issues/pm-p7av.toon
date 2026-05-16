@@ -6,7 +6,10 @@ status: closed
 priority: 1
 tags[2]: extensions,sentry
 created_at: "2026-05-16T15:07:25.229Z"
-updated_at: "2026-05-16T16:13:41.518Z"
+updated_at: "2026-05-16T16:42:13.803Z"
 author: claude-code-agent
+resolution: Resolved stale Sentry extension/import issue groups as no longer reproducing.
+expected_result: Historical Sentry noise is cleared while active embedding timeout issues remain separately tracked.
+actual_result: Ten stale Sentry issues tied to pm-cli@2026.5.10 were marked resolved; PM-CLI-A/9 remain tracked by pm-ibp7.
 close_reason: "Resolved 10 stale Sentry issues (PM-CLI-N, H, K, J, M, F, D, G, E, C) as resolvedInNextRelease — all bound to release pm-cli@2026.5.10, zero new occurrences across 6+ days, six subsequent releases shipped without reproducing the cluster. Tracker pm-ibp7 still tracks ollama embedding timeouts (PM-CLI-A/9) separately."
 body: ""

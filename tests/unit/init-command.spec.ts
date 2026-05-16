@@ -90,6 +90,27 @@ describe("runInit", () => {
     }
   });
 
+  it("can install bundled first-party packages during initialization", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-with-packages-"));
+    try {
+      const result = await runInit("pm", { path: tempRoot }, { defaults: true, author: "init-agent", withPackages: true });
+
+      expect(result.ok).toBe(true);
+      expect(result.installed_packages).toMatchObject({
+        installed_all: true,
+      });
+      expect(result.installed_packages?.installed_count).toBeGreaterThanOrEqual(8);
+      expect(result.installed_packages?.packages.map((entry) => entry.alias)).toEqual(
+        expect.arrayContaining(["calendar", "templates"]),
+      );
+
+      const persisted = await readSettings(tempRoot);
+      expect(persisted.author_default).toBe("init-agent");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it("dispatches onWrite hooks for init directory ensure operations", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-hooks-"));
     try {

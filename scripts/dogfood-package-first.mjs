@@ -52,35 +52,6 @@ function run(label, args, options = {}) {
   }
 }
 
-function runExpectFailure(label, args, expectedExitCode) {
-  const startedAt = Date.now();
-  const completed = spawnSync(process.execPath, [cliPath, "--json", ...args], {
-    cwd: repoRoot,
-    encoding: "utf8",
-    env,
-    maxBuffer: 20 * 1024 * 1024,
-  });
-  const tookMs = Date.now() - startedAt;
-  timings.push({ label, took_ms: tookMs, code: completed.status ?? 1 });
-  if (completed.status !== expectedExitCode) {
-    throw new Error(
-      [
-        `${label} expected exit ${expectedExitCode} but got ${completed.status ?? "unknown"}`,
-        `command: pm --json ${args.join(" ")}`,
-        completed.stdout.trim() ? `stdout:\n${completed.stdout.trim()}` : "",
-        completed.stderr.trim() ? `stderr:\n${completed.stderr.trim()}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n"),
-    );
-  }
-  try {
-    return JSON.parse(completed.stderr);
-  } catch {
-    return null;
-  }
-}
-
 function idFrom(result, label) {
   const id = result?.item?.id ?? result?.id;
   if (typeof id !== "string" || id.length === 0) {
@@ -99,7 +70,9 @@ try {
   mkdirSync(path.dirname(markerFile), { recursive: true });
   writeFileSync(markerFile, "# Temporary pm dogfood project\n", "utf8");
 
-  run("init", ["init", "--defaults", "--author", "dogfood-agent"]);
+  const initResult = run("init", ["init", "--defaults", "--author", "dogfood-agent", "--with-packages"]);
+  assert(initResult?.installed_packages?.installed_all === true, "init --with-packages did not report installed_all=true");
+  assert(initResult?.installed_packages?.installed_count >= 8, "init --with-packages installed too few bundled packages");
   run("config", ["config", "project", "set", "test-result-tracking", "--policy", "enabled"]);
 
   const created = run("create task", [
@@ -161,7 +134,7 @@ try {
   assert(getFields?.item?.description === undefined, "get --fields should omit unselected metadata");
   assert(getFields?.body === "", "get --fields should omit body unless requested");
 
-  const bareCoreCalendar = runExpectFailure("calendar unavailable before install", [
+  run("calendar after init packages", [
     "calendar",
     "--view",
     "week",
@@ -169,11 +142,8 @@ try {
     "today",
     "--format",
     "json",
-  ], 2);
-  assert(bareCoreCalendar?.code === "unknown_command", "bare-core calendar failure should be unknown_command");
-
-  const bareCoreReindex = runExpectFailure("reindex unavailable before install", ["reindex", "--mode", "keyword"], 2);
-  assert(bareCoreReindex?.code === "unknown_command", "bare-core reindex failure should be unknown_command");
+  ]);
+  run("reindex after init packages", ["reindex", "--mode", "keyword"]);
 
   run("package install beads alias", ["install", "beads", "--project"]);
   run("package install templates alias", ["install", "templates", "--project"]);
@@ -191,8 +161,8 @@ try {
   assert(packageCatalog?.details?.total >= 2, "package catalog did not list bundled first-party packages");
   run("package explore", ["package", "explore", "--project"]);
   run("package doctor", ["package", "doctor", "--project", "--detail", "summary"]);
-  run("calendar after package install", ["calendar", "--view", "week", "--date", "today", "--format", "json"]);
-  run("reindex after package install", ["reindex", "--mode", "keyword"]);
+  run("calendar after package reinstall", ["calendar", "--view", "week", "--date", "today", "--format", "json"]);
+  run("reindex after package reinstall", ["reindex", "--mode", "keyword"]);
   const templatesSave = run("package command templates save", [
     "templates",
     "save",

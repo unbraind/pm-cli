@@ -3097,6 +3097,28 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("initializes and installs bundled packages in one agent-friendly command", async () => {
+    await withTempPmPath(async (context) => {
+      const initResult = context.runCli(
+        ["init", "--defaults", "--author", "dogfood-agent", "--with-packages", "--json"],
+        { expectJson: true },
+      );
+      expect(initResult.code).toBe(0);
+      expect(initResult.json).toMatchObject({
+        ok: true,
+        installed_packages: {
+          installed_all: true,
+        },
+      });
+      expect((initResult.json as { installed_packages: { installed_count: number } }).installed_packages.installed_count).toBeGreaterThanOrEqual(8);
+
+      const calendarResult = context.runCli(["calendar", "--json", "--view", "day", "--date", "2026-05-16"], {
+        expectJson: true,
+      });
+      expect(calendarResult.code).toBe(0);
+    });
+  });
+
   it("discovers referenced file links through files discover in a temporary project", async () => {
     await withTempPmPath(async (context) => {
       const projectRoot = path.join(context.tempRoot, "discovery-project");

@@ -55,6 +55,7 @@ import {
   GLOBAL_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
   HISTORY_FLAG_CONTRACTS,
+  INIT_FLAG_CONTRACTS,
   LEARNINGS_FLAG_CONTRACTS,
   LIST_COMMANDER_STRING_OPTION_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
@@ -872,6 +873,9 @@ function resolveActionAvailability(
 }
 
 function resolveCoreCommandFlags(command: string): CliFlagContract[] {
+  if (command === "init") {
+    return INIT_FLAG_CONTRACTS;
+  }
   if (command === "config") {
     return CONFIG_FLAG_CONTRACTS;
   }

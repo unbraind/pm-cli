@@ -713,6 +713,9 @@ export const HISTORY_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const INIT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--preset" },
+  { flag: "--defaults" },
+  { flag: "--author" },
+  { flag: "--with-packages" },
 ];
 
 export const CONFIG_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1523,6 +1526,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   sort: { type: "string", enum: ["priority", "deadline", "updated_at", "created_at", "title", "parent"] },
   prefix: { type: "string" },
   preset: { type: "string", enum: ["minimal", "default", "strict", "custom"] },
+  defaults: { type: "boolean" },
+  withPackages: { type: "boolean" },
   scope: { type: "string", enum: ["project", "global"] },
   contractAction: { type: "string" },
   command: { type: "string" },
@@ -1824,7 +1829,7 @@ const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
 
 const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContract> = {
-  init: { optional: ["prefix", "preset"] },
+  init: { optional: ["prefix", "preset", "defaults", "author", "withPackages"] },
   config: {
     required: ["scope", "configAction"],
     optional: ["key", "criterion", "clearCriteria", "format", "policy"],
@@ -2208,6 +2213,12 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   preset: {
     description: "Governance preset for initialization flows.",
     examples: ["minimal", "default", "strict"],
+  },
+  defaults: {
+    description: "Use non-interactive setup defaults during initialization.",
+  },
+  withPackages: {
+    description: "Install all bundled first-party pm packages during initialization.",
   },
   createMode: {
     description: "Create required-option policy mode.",

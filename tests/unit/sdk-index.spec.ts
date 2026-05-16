@@ -83,6 +83,9 @@ describe("public sdk entrypoint", () => {
       },
     });
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.create.required).toEqual(expect.arrayContaining(["title"]));
+    expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.init.optional).toEqual(
+      expect.arrayContaining(["defaults", "author", "withPackages"]),
+    );
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.upgrade.optional).toEqual(expect.arrayContaining(["dryRun"]));
   });
 

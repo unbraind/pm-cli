@@ -34,9 +34,10 @@ For one-off use:
 npx @unbrained/pm-cli --help
 ```
 
-Optional first-party packages are installable on demand:
+Optional first-party packages are installable during init or on demand:
 
 ```bash
+pm init --defaults --with-packages
 pm package catalog --project
 pm install '*' --project
 pm install all --project
@@ -51,6 +52,7 @@ pm health --check-only
 ```
 
 `pm init` creates `.agents/pm/` with settings, item folders, history, locks, search cache directories, and project extension storage.
+Use `pm init --defaults --with-packages` when agents should get bundled commands such as calendar, templates, advanced search, and governance helpers in one non-interactive setup step.
 
 ## Create Your First Item
 

@@ -464,6 +464,10 @@ describe("contracts command runtime", () => {
           command: "config",
           flags: ["--criterion", "--clear-criteria", "--format", "--policy"],
         },
+        {
+          command: "init",
+          flags: ["--preset", "--defaults", "--author", "--with-packages"],
+        },
         { command: "restore", flags: ["--author", "--message", "--force"] },
         { command: "delete", flags: ["--author", "--message", "--force"] },
         {

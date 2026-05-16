@@ -850,12 +850,18 @@ _pm() {
         init)
           _arguments \\
             '--preset[Governance preset for new setups]:preset:(minimal default strict)' \\
+            '--defaults[Use non-interactive setup defaults]' \\
+            '--author[Set the default mutation author for this project]:author' \\
+            '--with-packages[Install bundled first-party packages during initialization]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
         init)
           _arguments \\
             '--preset[Governance preset for new setups]:preset:(minimal default strict)' \\
+            '--defaults[Use non-interactive setup defaults]' \\
+            '--author[Set the default mutation author for this project]:author' \\
+            '--with-packages[Install bundled first-party packages during initialization]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1517,6 +1523,9 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l fail-on-warn -d 'Ali
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-references -d 'Run linked-command PM-ID reference checks'
 complete -c pm -n '__fish_seen_subcommand_from init' -l preset -d 'Governance preset for new setups' -r -a 'minimal default strict'
+complete -c pm -n '__fish_seen_subcommand_from init' -l defaults -d 'Use non-interactive setup defaults'
+complete -c pm -n '__fish_seen_subcommand_from init' -l author -d 'Set the default mutation author for this project' -r
+complete -c pm -n '__fish_seen_subcommand_from init' -l with-packages -d 'Install bundled first-party packages during initialization'
 complete -c pm -n '__fish_seen_subcommand_from config' -l criterion -d 'Criteria value for definition-of-done metadata-required-fields or lifecycle pattern keys (repeatable for set)' -r
 complete -c pm -n '__fish_seen_subcommand_from config' -l clear-criteria -d 'Clear config criteria-list key values'
 complete -c pm -n '__fish_seen_subcommand_from config' -l format -d 'Item format for item-format key' -r -a 'toon'

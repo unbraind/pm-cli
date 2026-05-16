@@ -13,6 +13,16 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings, writeSettings } from "../../core/store/settings.js";
 import type { GovernancePreset, PmSettings } from "../../types/index.js";
+import { runExtension, type ExtensionCommandResult } from "./extension.js";
+
+export interface InitInstalledPackagesSummary {
+  installed_all: boolean;
+  installed_count: number;
+  packages: Array<{
+    alias: string;
+    ok: boolean;
+  }>;
+}
 
 export interface InitResult {
   ok: boolean;
@@ -22,12 +32,14 @@ export interface InitResult {
   warnings: string[];
   governance_preset: GovernancePreset;
   wizard_used: boolean;
+  installed_packages?: InitInstalledPackagesSummary;
 }
 
 export interface InitCommandOptions {
   preset?: string;
   defaults?: boolean;
   author?: string;
+  withPackages?: boolean;
 }
 
 function cloneDefaults(): PmSettings {
@@ -90,6 +102,27 @@ function applyGovernancePreset(settings: PmSettings, preset: BuiltinGovernancePr
   };
   settings.validation.parent_reference = knobs.parent_reference;
   settings.validation.metadata_profile = knobs.metadata_profile;
+}
+
+function summarizeInstalledPackages(result: ExtensionCommandResult): InitInstalledPackagesSummary {
+  const details = result.details as {
+    installed_all?: unknown;
+    installed_count?: unknown;
+    packages?: Array<{
+      alias?: unknown;
+      ok?: unknown;
+    }>;
+  };
+  return {
+    installed_all: details.installed_all === true,
+    installed_count: typeof details.installed_count === "number" ? details.installed_count : 0,
+    packages: Array.isArray(details.packages)
+      ? details.packages.map((entry) => ({
+          alias: typeof entry.alias === "string" ? entry.alias : "",
+          ok: entry.ok === true,
+        }))
+      : [],
+  };
 }
 
 async function runInitWizard(initialPrefix: string, telemetryDefault: boolean): Promise<{
@@ -166,6 +199,7 @@ export async function runInit(
   const presetFromOption = normalizeInitGovernancePreset(options.preset);
   const useDefaults = options.defaults === true;
   const authorFromOption = normalizeOptionalInitAuthor(options.author);
+  const installBundledPackages = options.withPackages === true;
   let chosenPreset = presetFromOption;
   let chosenTelemetryEnabled: boolean | undefined;
 
@@ -248,6 +282,16 @@ export async function runInit(
     );
   }
 
+  let installedPackages: InitInstalledPackagesSummary | undefined;
+  if (installBundledPackages) {
+    const packageInstallResult = await runExtension("all", { install: true, project: true }, global);
+    warnings.push(...packageInstallResult.warnings);
+    installedPackages = summarizeInstalledPackages(packageInstallResult);
+    if (!installedPackages.installed_all || installedPackages.packages.some((entry) => !entry.ok)) {
+      throw new PmCliError("pm init --with-packages did not install all bundled packages successfully.", EXIT_CODE.GENERIC_FAILURE);
+    }
+  }
+
   return {
     ok: true,
     path: pmRoot,
@@ -256,5 +300,6 @@ export async function runInit(
     warnings,
     governance_preset: settings.governance.preset,
     wizard_used: wizardUsed,
+    ...(installedPackages ? { installed_packages: installedPackages } : {}),
   };
 }
