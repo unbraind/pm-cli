@@ -245,8 +245,18 @@ function globalOptions(args: Record<string, unknown>): GlobalOptions {
   };
 }
 
+const ARRAY_TO_CSV_FIELDS = new Set(["tags", "blockedBy", "blocked_by", "skills"]);
+
+function normalizeOptionsArrays(options: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(options)) {
+    result[key] = Array.isArray(value) && ARRAY_TO_CSV_FIELDS.has(key) ? value.join(",") : value;
+  }
+  return result;
+}
+
 function optionsWithAuthor(args: Record<string, unknown>): Record<string, unknown> {
-  const options = asRecord(args.options);
+  const options = normalizeOptionsArrays(asRecord(args.options));
   const author = readString(args, "author");
   return author && options.author === undefined ? { ...options, author } : options;
 }

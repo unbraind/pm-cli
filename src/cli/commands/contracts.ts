@@ -1205,7 +1205,7 @@ function resolveCreateRequiredOptionContract(
   required_type_options: string[];
   policy_errors: string[];
 } {
-  const baseRequiredOptions = new Set<string>(["title", "description", "type"]);
+  const baseRequiredOptions = new Set<string>(["title", "type"]);
   if (createMode === "strict") {
     for (const field of typeDefinition.required_create_fields) {
       baseRequiredOptions.add(field);

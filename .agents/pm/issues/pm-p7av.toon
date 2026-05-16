@@ -1,0 +1,11 @@
+id: pm-p7av
+title: "Sentry extension errors: cannot find module and activate failures"
+description: "10 unresolved errors from 2026-05-10: PM-CLI-N (fatal), PM-CLI-H/F/C (run), PM-CLI-K/J/M/D/G/E (activate)"
+type: Issue
+status: open
+priority: 1
+tags[2]: extensions,sentry
+created_at: "2026-05-16T15:07:25.229Z"
+updated_at: "2026-05-16T15:07:25.229Z"
+author: claude-code-agent
+body: ""

@@ -7,7 +7,6 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     keys: ["description"],
     option: "--description, -d <value>",
     description: "Item description (allow empty string)",
-    required: true,
   },
   { target: "type", keys: ["type"], option: "--type <value>", description: "Item type (built-ins plus any configured custom types)" },
   { target: "template", keys: ["template"], option: "--template <value>", description: "Apply named create template defaults before explicit flags" },

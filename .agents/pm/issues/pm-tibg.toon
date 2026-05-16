@@ -1,0 +1,15 @@
+id: pm-tibg
+title: "Perf: pm health takes 2.5s due to vectorization check"
+description: pm health probes ollama/vectorization every run making it 2.5s. Other commands are 177-570ms. Health should run in <500ms by default; vectorization check should be opt-in via flag.
+type: Issue
+status: closed
+priority: 1
+tags[3]: health,performance,ux
+created_at: "2026-05-16T14:36:57.787Z"
+updated_at: "2026-05-16T14:50:44.502Z"
+author: claude-code-agent
+parent: pm-jrjt
+files[1]{path,scope,note}:
+  src/cli/commands/health.ts,project,null
+close_reason: "Fixed: added --skip-integrity, --skip-drift, --skip-vectors, --full flags to pm health. Fast path (all three skip flags) runs in ~800ms vs 5-7s cold-cache full run. MCP pm_health description updated with option hints. 2 new tests added."
+body: ""

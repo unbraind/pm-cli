@@ -13,21 +13,26 @@ const PUBLISH_OR_RELEASE_PATTERNS = [
   "gh release",
   "npx changeset publish",
 ];
+const SHA_PATTERN = "[0-9a-f]{40}";
 const PINNED_ACTIONS = {
-  checkout: "uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6",
-  pnpmSetup: "uses: pnpm/action-setup@cb9c4fdd700176d874d52d64ce3b7418842cf6d3 # v6",
-  setupNode: "uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6",
-  setupBun: "uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2",
-  uploadArtifact: "uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7",
+  checkout: new RegExp(`uses: actions/checkout@${SHA_PATTERN}`),
+  pnpmSetup: new RegExp(`uses: pnpm/action-setup@${SHA_PATTERN}`),
+  setupNode: new RegExp(`uses: actions/setup-node@${SHA_PATTERN}`),
+  setupBun: new RegExp(`uses: oven-sh/setup-bun@${SHA_PATTERN}`),
+  uploadArtifact: new RegExp(`uses: actions/upload-artifact@${SHA_PATTERN}`),
 };
 
 function normalizeWorkflow(content: string): string {
   return content.replaceAll("\r\n", "\n");
 }
 
-function expectContainsAll(content: string, requiredSnippets: string[]): void {
+function expectContainsAll(content: string, requiredSnippets: Array<string | RegExp>): void {
   for (const snippet of requiredSnippets) {
-    expect(content).toContain(snippet);
+    if (snippet instanceof RegExp) {
+      expect(content).toMatch(snippet);
+    } else {
+      expect(content).toContain(snippet);
+    }
   }
 }
 

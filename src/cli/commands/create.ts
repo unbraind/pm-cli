@@ -1297,7 +1297,7 @@ function requireCreateOptionByType(
   };
   const hasOptionMutation = (optionKey: string): boolean => hasOptionValue(optionKey) || clearOptionKeys.has(optionKey);
 
-  const baseRequiredOptions = new Set<string>(["title", "description", "type"]);
+  const baseRequiredOptions = new Set<string>(["title", "type"]);
   if (createMode === "strict") {
     for (const field of typeDefinition.required_create_fields) {
       baseRequiredOptions.add(normalizeCreatePolicyOptionKey(field, typeName, "required_create_fields"));
@@ -2044,7 +2044,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       ? undefined
       : parseOptionalString(resolvedOptions.customerImpact);
   const title = requireStringOption(resolvedOptions.title, "--title");
-  const description = requireStringOption(resolvedOptions.description, "--description");
+  const description = resolvedOptions.description ?? "";
   const body = resolvedOptions.body ?? "";
 
   const frontMatter: ItemMetadata = normalizeFrontMatter({

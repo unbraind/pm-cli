@@ -1,0 +1,16 @@
+id: pm-b9y1
+title: "Fix: localeCompare on undefined in sort comparators"
+description: "TypeError: Cannot read properties of undefined (reading 'localeCompare') in Sentry PM-CLI-Q (last seen 2026-05-14). Sort comparators in contracts.ts, list.ts, and extension-command-help.ts can receive undefined from extension registrations or malformed items."
+type: Issue
+status: closed
+priority: 0
+tags[3]: bug,pm-cli,sentry
+created_at: "2026-05-16T14:36:56.017Z"
+updated_at: "2026-05-16T14:50:44.562Z"
+author: claude-code-agent
+parent: pm-jrjt
+files[2]{path,scope,note}:
+  src/cli/commands/contracts.ts,project,null
+  src/cli/commands/list.ts,project,null
+close_reason: "Fixed: added ?? '' defensive guards to all localeCompare call sites in list.ts (id, title) and contracts.ts (name, action). Sentry PM-CLI-Q reproduced by extension-provided items with undefined fields. All 1304 tests pass."
+body: ""

@@ -564,8 +564,11 @@ export function normalizeSearchOptions(options: Record<string, unknown>): Record
   const compactRequested = options.compact === true;
   const fullRequested = options.full === true;
   const defaultCompact = !compactRequested && !fullRequested && fields === undefined;
+  const mode = options.semantic === true ? "semantic"
+    : options.hybrid === true ? "hybrid"
+    : readSearchString("mode");
   const normalized: Record<string, unknown> = {
-    mode: readSearchString("mode"),
+    mode,
     includeLinked: options.includeLinked === true ? true : undefined,
     titleExact: options.titleExact === true ? true : undefined,
     phraseExact: options.phraseExact === true ? true : undefined,

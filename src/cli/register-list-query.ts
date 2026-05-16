@@ -176,6 +176,8 @@ export function registerListQueryCommands(program: Command): void {
     .argument("<keywords...>", "Keyword query tokens")
     .description("Search items with keyword, semantic, or hybrid retrieval.")
     .option("--mode <value>", "Search mode: keyword|semantic|hybrid (default: keyword)")
+    .option("--semantic", "Shorthand for --mode semantic")
+    .option("--hybrid", "Shorthand for --mode hybrid")
     .option("--include-linked", "Include linked files, docs, and tests in the searchable corpus")
     .option("--title-exact", "Require exact normalized title match for the full query string")
     .option("--phrase-exact", "Require exact normalized phrase match in searchable text")

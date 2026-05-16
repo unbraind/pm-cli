@@ -99,7 +99,7 @@ function parseStatus(raw: string | undefined, statusRegistry: RuntimeStatusRegis
 }
 
 function parseGroupBy(raw: string | undefined): AggregateGroupField[] {
-  const value = raw?.trim() ?? "parent,type";
+  const value = raw?.trim() ?? "status";
   if (value.length === 0) {
     throw new PmCliError("--group-by requires at least one field name", EXIT_CODE.USAGE);
   }

@@ -172,11 +172,11 @@ describe("contracts command runtime", () => {
     expect(
       createRequiredContracts?.by_create_mode?.progressive?.by_type?.Task
         ?.required_flags,
-    ).toEqual(expect.arrayContaining(["--title", "--description", "--type"]));
+    ).toEqual(expect.arrayContaining(["--title", "--type"]));
     expect(
       createRequiredContracts?.by_create_mode?.progressive?.by_type?.Task
         ?.required_flags,
-    ).not.toEqual(expect.arrayContaining(["--dep", "--comment", "--doc"]));
+    ).not.toEqual(expect.arrayContaining(["--dep", "--comment", "--doc", "--description"]));
   });
 
   it("includes runtime field flags for list aliases and runtime schema command metadata", async () => {
