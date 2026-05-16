@@ -1,5 +1,5 @@
 {
-  "name": "@unbrained/pm-package-todos",
+  "name": "@unbrained/pm-todos",
   "version": "0.1.0",
   "private": true,
   "type": "module",

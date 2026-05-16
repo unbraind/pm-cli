@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "pm-cli-native": {
+    "pm-mcp": {
       "command": "node",
       "args": [
         "./scripts/pm-mcp-server.mjs"

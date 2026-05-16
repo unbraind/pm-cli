@@ -1,0 +1,13 @@
+id: pm-lkd7
+title: "CI: smaller matrix on PRs, full matrix on main push only"
+description: "PRs currently spin all 5 matrix entries (3 OS x Node 20 + Node 22 + Node 24 on Ubuntu). Trade off PR breadth for speed: PRs run only ubuntu/node20 + macos/node20 (catch cross-OS quickly); main push runs full 5-entry matrix. Saves 2 runner jobs per PR push, ~20min total runner minutes per PR cycle."
+type: Issue
+status: open
+priority: 1
+tags[4]: ci,matrix,performance,pm-cli
+created_at: "2026-05-16T22:07:45.274Z"
+updated_at: "2026-05-16T22:07:45.274Z"
+author: maintainer-agent
+acceptance_criteria: PRs run 2-entry matrix (ubuntu+macos on Node 20); main push runs the full 5-entry matrix; nightly continues full matrix; documentation reflects this in CONTRIBUTING.md.
+parent: pm-tzwy
+body: ""

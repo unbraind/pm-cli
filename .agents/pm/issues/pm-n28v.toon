@@ -1,0 +1,13 @@
+id: pm-n28v
+title: "CI: cache .agents/pm/search/lancedb + sentry release cache"
+description: Tests and reindex flows generate a lancedb cache (~50MB) and sentry sourcemap upload caches. Caching them between runs avoids cold rebuild every time. Use actions/cache@v5 with restore-keys fallback. Skip cache invalidation when only docs change.
+type: Issue
+status: open
+priority: 3
+tags[4]: cache,ci,performance,pm-cli
+created_at: "2026-05-16T22:07:59.834Z"
+updated_at: "2026-05-16T22:07:59.834Z"
+author: maintainer-agent
+acceptance_criteria: lancedb cache restored on warm runs; sentry release cache restored when present; cache keys deterministic; no test runs against stale cache.
+parent: pm-tzwy
+body: ""

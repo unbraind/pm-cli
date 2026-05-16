@@ -1,5 +1,5 @@
 {
-  "name": "@unbrained/pm-package-guide-shell",
+  "name": "@unbrained/pm-guide-shell",
   "version": "0.1.0",
   "private": true,
   "type": "module",

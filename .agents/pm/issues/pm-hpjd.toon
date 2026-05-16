@@ -1,0 +1,13 @@
+id: pm-hpjd
+title: "CI: combine pnpm test + pnpm test:coverage into single coverage run"
+description: "ci.yml runs `pnpm test` (PM_RUN_TESTS_SKIP_BUILD=1) on all 5 matrix entries and then `pnpm test:coverage` again on ubuntu/20. The coverage run executes all tests too, so ubuntu/20 runs the full suite twice (~6min wasted/run). Make ubuntu/20 use `pnpm test:coverage` only; keep `pnpm test` only for the other matrix entries."
+type: Issue
+status: open
+priority: 1
+tags[4]: ci,duplication,performance,pm-cli
+created_at: "2026-05-16T22:07:35.770Z"
+updated_at: "2026-05-16T22:07:35.770Z"
+author: maintainer-agent
+acceptance_criteria: ubuntu-latest+node20 runs tests exactly once via coverage path; other matrix entries run pnpm test as before; CI overall time reduced by ~3min on ubuntu/20 entry.
+parent: pm-tzwy
+body: ""

@@ -1,0 +1,13 @@
+id: pm-27yz
+title: "CI: split quality+smoke gates into a parallel job, share dist via artifact"
+description: "Currently ubuntu/node20 runs build -> test -> coverage -> static-quality -> compatibility-check -> packaging-smoke -> npx-smoke -> plugin-smoke serially. Extract a build-once job that uploads dist + node_modules cache, then run build-test matrix in parallel with a 'gates' job that downloads dist and runs static/compat/packaging/smoke independently. Cuts ubuntu/20 critical path from ~12min to ~8min."
+type: Issue
+status: open
+priority: 2
+tags[4]: ci,parallelism,performance,pm-cli
+created_at: "2026-05-16T22:07:55.319Z"
+updated_at: "2026-05-16T22:07:55.319Z"
+author: maintainer-agent
+acceptance_criteria: build job uploads dist artifact; gates job downloads artifact and runs in parallel with matrix; ubuntu/20 critical path drops measurably; all gates still execute.
+parent: pm-tzwy
+body: ""

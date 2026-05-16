@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "pm-cli-native": {
+    "pm-mcp": {
       "command": "node",
-      "args": ["./plugins/pm-cli-claude/scripts/pm-mcp-server.mjs"],
+      "args": ["./plugins/pm-claude/scripts/pm-mcp-server.mjs"],
       "env": {
         "PM_AUTHOR": "claude-code-agent"
       },

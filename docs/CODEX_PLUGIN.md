@@ -1,6 +1,6 @@
 # Codex Plugin
 
-pm-cli ships a repo-local Codex plugin at [`plugins/pm-cli-codex`](../plugins/pm-cli-codex/README.md).
+pm-cli ships a repo-local Codex plugin at [`plugins/pm-codex`](../plugins/pm-codex/README.md).
 
 ## Install From This Repo
 
@@ -12,7 +12,7 @@ Restart Codex and install **pm CLI** from the `pm CLI Local` marketplace.
 
 ## What It Provides
 
-- `pm-cli-native` MCP server for structured pm operations without invoking the `pm` shell command
+- `pm-mcp` MCP server for structured pm operations without invoking the `pm` shell command
 - narrow tools for common loops: context, search, list, get, create, update, claim, release, close, comments, files, docs, tests, validate, health, contracts, and guide
 - `pm_run` for the rest of the pm surface, including calendar, activity, aggregate, dedupe-audit, normalize, reindex, extensions, templates, history, stats, gc, and test-runs controls
 - skills for native tracking, audits, and release workflows

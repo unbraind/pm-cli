@@ -1,0 +1,13 @@
+id: pm-iv1u
+title: "CI: skip non-source jobs on docs-only changes"
+description: "Currently any docs/README/CHANGELOG edit triggers the full 5-matrix CI run (~60 GitHub-minutes). Add paths-ignore to CI push trigger for ['docs/**', '**/*.md', 'CHANGELOG.md', 'CONTRIBUTING.md', '.github/ISSUE_TEMPLATE/**'] OR use a fast 'paths' filter job that conditionally skips build-test. Keep PR-side strict so docs PRs still get a smoke run for confidence."
+type: Issue
+status: open
+priority: 1
+tags[4]: ci,paths-filter,performance,pm-cli
+created_at: "2026-05-16T22:07:41.048Z"
+updated_at: "2026-05-16T22:07:41.048Z"
+author: maintainer-agent
+acceptance_criteria: Docs-only push to main skips build-test entirely or runs only a 1-job smoke validate; PRs still run a minimal check for safety; release.yml and nightly.yml unaffected.
+parent: pm-tzwy
+body: ""

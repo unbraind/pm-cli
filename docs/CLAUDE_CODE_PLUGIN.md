@@ -8,9 +8,9 @@ Native pm integration for Claude Code via the Model Context Protocol (MCP). Clau
 pm-cli/ (repo root)
 ├── .claude-plugin/
 │   └── marketplace.json     # Root marketplace catalog — read by /plugin marketplace add
-├── plugins/pm-cli-claude/
+├── plugins/pm-claude/
 │   ├── .claude-plugin/
-│   │   └── plugin.json      # Claude Code plugin manifest (name: "pm-cli")
+│   │   └── plugin.json      # Claude Code plugin manifest (name: "pm-claude")
 │   ├── .mcp.json            # MCP server config using ${CLAUDE_PLUGIN_ROOT}
 │   ├── skills/
 │   │   ├── pm-workflow/     # Auto-invoked: orient → claim → implement → close
@@ -77,15 +77,15 @@ Add the pm-cli GitHub repo as a marketplace source, then install:
 
 ```
 /plugin marketplace add unbraind/pm-cli
-/plugin install pm-cli@pm-cli
+/plugin install pm-claude@pm
 ```
 
-This clones the repo, reads `.claude-plugin/marketplace.json` at the root, installs the plugin from `./plugins/pm-cli-claude/`, and configures the MCP server, 5 skills, 9 slash commands, and the session hook automatically.
+This clones the repo, reads `.claude-plugin/marketplace.json` at the root, installs the plugin from `./plugins/pm-claude/`, and configures the MCP server, 5 skills, 9 slash commands, and the session hook automatically.
 
 ### 2. Global MCP via Claude Code CLI (MCP tools only)
 
 ```bash
-claude mcp add --transport stdio pm-cli-native -- npx -y @unbrained/pm-cli pm-mcp
+claude mcp add --transport stdio pm-mcp -- npx -y @unbrained/pm-cli pm-mcp
 ```
 
 Gives you the 18 MCP tools without skills or slash commands.
@@ -97,9 +97,9 @@ Add to the project's `.mcp.json`:
 ```json
 {
   "mcpServers": {
-    "pm-cli-native": {
+    "pm-mcp": {
       "command": "node",
-      "args": ["./plugins/pm-cli-claude/scripts/pm-mcp-server.mjs"],
+      "args": ["./plugins/pm-claude/scripts/pm-mcp-server.mjs"],
       "env": { "PM_AUTHOR": "claude-code-agent" }
     }
   }
@@ -110,7 +110,7 @@ The repo root `.mcp.json` uses this approach — activates automatically when Cl
 
 ## MCP Server Launcher
 
-`plugins/pm-cli-claude/scripts/pm-mcp-server.mjs` resolves the server in order:
+`plugins/pm-claude/scripts/pm-mcp-server.mjs` resolves the server in order:
 
 1. `PM_CLI_MCP_SERVER` env var (explicit override)
 2. `dist/mcp/server.js` walking up from the launcher (repo checkout)
@@ -188,7 +188,7 @@ For migration details and automation expectations, see:
 
 ```bash
 claude plugin validate .claude-plugin/marketplace.json
-claude plugin validate plugins/pm-cli-claude/.claude-plugin/plugin.json
+claude plugin validate plugins/pm-claude/.claude-plugin/plugin.json
 ```
 
 ### Manual verification

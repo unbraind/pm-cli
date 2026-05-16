@@ -248,7 +248,7 @@ describe("extension command runtime", () => {
             alias: "beads",
             available: true,
             installed: false,
-            package_name: "@unbrained/pm-package-beads",
+            package_name: "@unbrained/pm-beads",
             installable_resources: {
               extensions: ["extensions/beads"],
             },
@@ -265,7 +265,7 @@ describe("extension command runtime", () => {
             alias: "calendar",
             available: true,
             installed: false,
-            package_name: "@unbrained/pm-package-calendar",
+            package_name: "@unbrained/pm-calendar",
             catalog: {
               display_name: "Calendar Views",
               category: "workflow",
@@ -275,7 +275,7 @@ describe("extension command runtime", () => {
             alias: "governance-audit",
             available: true,
             installed: false,
-            package_name: "@unbrained/pm-package-governance-audit",
+            package_name: "@unbrained/pm-governance-audit",
             catalog: {
               display_name: "Governance Audit",
               category: "governance",
@@ -285,7 +285,7 @@ describe("extension command runtime", () => {
             alias: "guide-shell",
             available: true,
             installed: false,
-            package_name: "@unbrained/pm-package-guide-shell",
+            package_name: "@unbrained/pm-guide-shell",
             catalog: {
               display_name: "Guide + Shell UX",
               category: "workflow",
@@ -295,7 +295,7 @@ describe("extension command runtime", () => {
             alias: "linked-test-adapters",
             available: true,
             installed: false,
-            package_name: "@unbrained/pm-package-linked-test-adapters",
+            package_name: "@unbrained/pm-linked-test-adapters",
             catalog: {
               display_name: "Linked Test Adapters",
               category: "testing",
@@ -305,7 +305,7 @@ describe("extension command runtime", () => {
             alias: "search-advanced",
             available: true,
             installed: false,
-            package_name: "@unbrained/pm-package-search-advanced",
+            package_name: "@unbrained/pm-search-advanced",
             catalog: {
               display_name: "Advanced Search",
               category: "search",
@@ -315,7 +315,7 @@ describe("extension command runtime", () => {
             alias: "templates",
             available: true,
             installed: false,
-            package_name: "@unbrained/pm-package-templates",
+            package_name: "@unbrained/pm-templates",
             catalog: {
               display_name: "Create Templates",
               category: "workflow",
@@ -325,7 +325,7 @@ describe("extension command runtime", () => {
             alias: "todos",
             available: true,
             installed: false,
-            package_name: "@unbrained/pm-package-todos",
+            package_name: "@unbrained/pm-todos",
             catalog: {
               display_name: "Todos Import/Export",
               category: "migration",

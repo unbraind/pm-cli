@@ -1,6 +1,6 @@
 # pm Calendar Package
 
-`@unbrained/pm-package-calendar` provides agenda and calendar views as an installable pm package.
+`@unbrained/pm-calendar` provides agenda and calendar views as an installable pm package.
 
 ```bash
 pm install calendar

@@ -1,14 +1,14 @@
 {
-  "name": "pm-cli-local",
+  "name": "pm-local",
   "interface": {
     "displayName": "pm CLI Local"
   },
   "plugins": [
     {
-      "name": "pm-cli-codex",
+      "name": "pm-codex",
       "source": {
         "source": "local",
-        "path": "./plugins/pm-cli-codex"
+        "path": "./plugins/pm-codex"
       },
       "policy": {
         "installation": "AVAILABLE",

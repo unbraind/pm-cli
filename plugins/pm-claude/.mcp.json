@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "pm-cli-native": {
+    "pm-mcp": {
       "command": "node",
       "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/pm-mcp-server.mjs"],
       "env": {

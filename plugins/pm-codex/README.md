@@ -2,7 +2,7 @@
 
 This plugin packages pm-cli for Codex with:
 
-- a native stdio MCP server (`pm-cli-native`) backed by pm command modules, not shell `pm` invocations
+- a native stdio MCP server (`pm-mcp`) backed by pm command modules, not shell `pm` invocations
 - skills for developer, user, extension, SDK, release, and audit workflows
 - command prompts for common planning and verification loops
 - repo marketplace metadata for one-step local installation in Codex
@@ -15,7 +15,7 @@ From this repository:
 codex plugin marketplace add .
 ```
 
-Restart Codex, then install **pm CLI** from the repo marketplace. The bundled MCP server starts through `plugins/pm-cli-codex/scripts/pm-mcp-server.mjs`.
+Restart Codex, then install **pm CLI** from the repo marketplace. The bundled MCP server starts through `plugins/pm-codex/scripts/pm-mcp-server.mjs`.
 
 For a published package install, keep `@unbrained/pm-cli` available through npm. The launcher uses the local repo build when present and falls back to `npx -y @unbrained/pm-cli@latest pm-mcp` when the plugin is cached outside the repository.
 

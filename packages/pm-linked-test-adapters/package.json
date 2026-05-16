@@ -1,5 +1,5 @@
 {
-  "name": "@unbrained/pm-package-linked-test-adapters",
+  "name": "@unbrained/pm-linked-test-adapters",
   "version": "0.1.0",
   "private": true,
   "type": "module",

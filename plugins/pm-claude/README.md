@@ -42,7 +42,7 @@ Both `pm` and `pm-cli` marketplace IDs resolve to the same plugin.
 ### Option C: Global MCP server via Claude Code CLI (MCP tools only)
 
 ```bash
-claude mcp add --transport stdio pm-cli-native -- npx -y @unbrained/pm-cli pm-mcp
+claude mcp add --transport stdio pm-mcp -- npx -y @unbrained/pm-cli pm-mcp
 ```
 
 This gives you the 18 MCP tools but not the skills, slash commands, or session hook.
@@ -54,7 +54,7 @@ Add to your project's `.mcp.json`:
 ```json
 {
   "mcpServers": {
-    "pm-cli-native": {
+    "pm-mcp": {
       "command": "npx",
       "args": ["-y", "@unbrained/pm-cli@latest", "pm-mcp"],
       "env": {

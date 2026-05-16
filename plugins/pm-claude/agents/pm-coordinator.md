@@ -29,7 +29,7 @@ For batch audits spanning many items, create one top-level `TaskCreate` for the 
 
 ## Tools Available
 
-Use the `pm-cli-native` MCP server tools: `pm_context`, `pm_search`, `pm_list`, `pm_get`, `pm_create`, `pm_update`, `pm_claim`, `pm_release`, `pm_close`, `pm_comments`, `pm_files`, `pm_docs`, `pm_test`, `pm_validate`, `pm_health`, `pm_contracts`, `pm_guide`, and `pm_run` for all other operations.
+Use the `pm-mcp` MCP server tools: `pm_context`, `pm_search`, `pm_list`, `pm_get`, `pm_create`, `pm_update`, `pm_claim`, `pm_release`, `pm_close`, `pm_comments`, `pm_files`, `pm_docs`, `pm_test`, `pm_validate`, `pm_health`, `pm_contracts`, `pm_guide`, and `pm_run` for all other operations.
 
 Also use Claude Code's built-in `TaskCreate` and `TaskUpdate` tools for TUI panel display.
 

@@ -1,12 +1,12 @@
 {
-  "name": "pm-cli-codex",
-  "version": "1.0.0",
+  "name": "pm-codex",
+  "version": "1.1.0",
   "description": "Native Codex integration for pm-cli with bundled MCP tools, skills, commands, and agent workflows.",
   "author": {
     "name": "unbrained",
     "url": "https://github.com/unbraind/pm-cli"
   },
-  "homepage": "https://github.com/unbraind/pm-cli/tree/main/plugins/pm-cli-codex",
+  "homepage": "https://github.com/unbraind/pm-cli/tree/main/plugins/pm-codex",
   "repository": "https://github.com/unbraind/pm-cli",
   "license": "MIT",
   "keywords": [

@@ -254,7 +254,7 @@ describe("pm package manifest model", () => {
 
     await expect(readPmPackageManifest(beadsRoot)).resolves.toMatchObject({
       source: "pm",
-      package_name: "@unbrained/pm-package-beads",
+      package_name: "@unbrained/pm-beads",
       package_version: "0.1.0",
       aliases: ["beads"],
       catalog: {
@@ -271,7 +271,7 @@ describe("pm package manifest model", () => {
 
     await expect(readPmPackageManifest(calendarRoot)).resolves.toMatchObject({
       source: "pm",
-      package_name: "@unbrained/pm-package-calendar",
+      package_name: "@unbrained/pm-calendar",
       package_version: "0.1.0",
       aliases: ["calendar"],
       catalog: {
@@ -288,7 +288,7 @@ describe("pm package manifest model", () => {
 
     await expect(readPmPackageManifest(governanceAuditRoot)).resolves.toMatchObject({
       source: "pm",
-      package_name: "@unbrained/pm-package-governance-audit",
+      package_name: "@unbrained/pm-governance-audit",
       package_version: "0.1.0",
       aliases: ["governance-audit"],
       catalog: {
@@ -305,7 +305,7 @@ describe("pm package manifest model", () => {
 
     await expect(readPmPackageManifest(guideShellRoot)).resolves.toMatchObject({
       source: "pm",
-      package_name: "@unbrained/pm-package-guide-shell",
+      package_name: "@unbrained/pm-guide-shell",
       package_version: "0.1.0",
       aliases: ["guide-shell"],
       catalog: {
@@ -322,7 +322,7 @@ describe("pm package manifest model", () => {
 
     await expect(readPmPackageManifest(linkedTestAdaptersRoot)).resolves.toMatchObject({
       source: "pm",
-      package_name: "@unbrained/pm-package-linked-test-adapters",
+      package_name: "@unbrained/pm-linked-test-adapters",
       package_version: "0.1.0",
       aliases: ["linked-test-adapters"],
       catalog: {
@@ -339,7 +339,7 @@ describe("pm package manifest model", () => {
 
     await expect(readPmPackageManifest(searchAdvancedRoot)).resolves.toMatchObject({
       source: "pm",
-      package_name: "@unbrained/pm-package-search-advanced",
+      package_name: "@unbrained/pm-search-advanced",
       package_version: "0.1.0",
       aliases: ["search-advanced"],
       catalog: {
@@ -356,7 +356,7 @@ describe("pm package manifest model", () => {
 
     await expect(readPmPackageManifest(templatesRoot)).resolves.toMatchObject({
       source: "pm",
-      package_name: "@unbrained/pm-package-templates",
+      package_name: "@unbrained/pm-templates",
       package_version: "0.1.0",
       aliases: ["templates"],
       catalog: {
@@ -373,7 +373,7 @@ describe("pm package manifest model", () => {
 
     await expect(readPmPackageManifest(todosRoot)).resolves.toMatchObject({
       source: "pm",
-      package_name: "@unbrained/pm-package-todos",
+      package_name: "@unbrained/pm-todos",
       package_version: "0.1.0",
       aliases: ["todos"],
       catalog: {

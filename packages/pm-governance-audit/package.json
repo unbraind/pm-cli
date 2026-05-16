@@ -1,5 +1,5 @@
 {
-  "name": "@unbrained/pm-package-governance-audit",
+  "name": "@unbrained/pm-governance-audit",
   "version": "0.1.0",
   "private": true,
   "type": "module",

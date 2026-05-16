@@ -21,8 +21,8 @@ import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
 
 const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
-const launcherPath = path.join(repoRoot, "plugins", "pm-cli-claude", "scripts", "pm-mcp-server.mjs");
-const sessionStartPath = path.join(repoRoot, "plugins", "pm-cli-claude", "hooks", "session-start.mjs");
+const launcherPath = path.join(repoRoot, "plugins", "pm-claude", "scripts", "pm-mcp-server.mjs");
+const sessionStartPath = path.join(repoRoot, "plugins", "pm-claude", "hooks", "session-start.mjs");
 const tmpRoot = await mkdtemp(path.join(tmpdir(), "pm-claude-smoke-"));
 
 // Verify plugin files exist
@@ -30,31 +30,31 @@ const pluginFiles = [
   // Root-level marketplace (required for /plugin marketplace add unbraind/pm-cli)
   ".claude-plugin/marketplace.json",
   // Plugin manifests
-  "plugins/pm-cli-claude/.claude-plugin/plugin.json",
-  "plugins/pm-cli-claude/.mcp.json",
+  "plugins/pm-claude/.claude-plugin/plugin.json",
+  "plugins/pm-claude/.mcp.json",
   // Skills (5 total)
-  "plugins/pm-cli-claude/skills/pm-workflow/SKILL.md",
-  "plugins/pm-cli-claude/skills/pm-developer/SKILL.md",
-  "plugins/pm-cli-claude/skills/pm-release/SKILL.md",
-  "plugins/pm-cli-claude/skills/pm-audit/SKILL.md",
-  "plugins/pm-cli-claude/skills/pm-planner/SKILL.md",
+  "plugins/pm-claude/skills/pm-workflow/SKILL.md",
+  "plugins/pm-claude/skills/pm-developer/SKILL.md",
+  "plugins/pm-claude/skills/pm-release/SKILL.md",
+  "plugins/pm-claude/skills/pm-audit/SKILL.md",
+  "plugins/pm-claude/skills/pm-planner/SKILL.md",
   // Commands (9 total)
-  "plugins/pm-cli-claude/commands/pm-status.md",
-  "plugins/pm-cli-claude/commands/pm-start-task.md",
-  "plugins/pm-cli-claude/commands/pm-close-task.md",
-  "plugins/pm-cli-claude/commands/pm-triage.md",
-  "plugins/pm-cli-claude/commands/pm-audit.md",
-  "plugins/pm-cli-claude/commands/pm-search.md",
-  "plugins/pm-cli-claude/commands/pm-new.md",
-  "plugins/pm-cli-claude/commands/pm-list.md",
-  "plugins/pm-cli-claude/commands/pm-calendar.md",
+  "plugins/pm-claude/commands/pm-status.md",
+  "plugins/pm-claude/commands/pm-start-task.md",
+  "plugins/pm-claude/commands/pm-close-task.md",
+  "plugins/pm-claude/commands/pm-triage.md",
+  "plugins/pm-claude/commands/pm-audit.md",
+  "plugins/pm-claude/commands/pm-search.md",
+  "plugins/pm-claude/commands/pm-new.md",
+  "plugins/pm-claude/commands/pm-list.md",
+  "plugins/pm-claude/commands/pm-calendar.md",
   // Hooks
-  "plugins/pm-cli-claude/hooks/hooks.json",
-  "plugins/pm-cli-claude/hooks/session-start.mjs",
+  "plugins/pm-claude/hooks/hooks.json",
+  "plugins/pm-claude/hooks/session-start.mjs",
   // Scripts and agents
-  "plugins/pm-cli-claude/scripts/pm-mcp-server.mjs",
-  "plugins/pm-cli-claude/README.md",
-  "plugins/pm-cli-claude/agents/pm-coordinator.md",
+  "plugins/pm-claude/scripts/pm-mcp-server.mjs",
+  "plugins/pm-claude/README.md",
+  "plugins/pm-claude/agents/pm-coordinator.md",
   // Legacy root marketplace.json (backwards compat)
   "marketplace.json",
 ];
@@ -68,19 +68,18 @@ for (const relPath of pluginFiles) {
 console.log(`Plugin file structure: ${pluginFiles.length} files verified`);
 
 // Verify marketplace.json name is "pm" and plugin name matches plugin.json.
-// The marketplace is the repo-level catalog; the plugin entry remains pm-cli.
 const { readFileSync } = await import("node:fs");
 const rootMarketplace = JSON.parse(readFileSync(path.join(repoRoot, ".claude-plugin", "marketplace.json"), "utf-8"));
 if (rootMarketplace.name !== "pm") {
   throw new Error(`Root marketplace.json name must be "pm", got "${rootMarketplace.name}"`);
 }
 const marketplacePluginName = rootMarketplace.plugins?.[0]?.name;
-if (marketplacePluginName !== "pm-cli") {
-  throw new Error(`Root marketplace plugins[0].name must be "pm-cli", got "${marketplacePluginName}"`);
+if (marketplacePluginName !== "pm-claude") {
+  throw new Error(`Root marketplace plugins[0].name must be "pm-claude", got "${marketplacePluginName}"`);
 }
-const pluginJson = JSON.parse(readFileSync(path.join(repoRoot, "plugins", "pm-cli-claude", ".claude-plugin", "plugin.json"), "utf-8"));
-if (pluginJson.name !== "pm-cli") {
-  throw new Error(`plugin.json name must be "pm-cli", got "${pluginJson.name}"`);
+const pluginJson = JSON.parse(readFileSync(path.join(repoRoot, "plugins", "pm-claude", ".claude-plugin", "plugin.json"), "utf-8"));
+if (pluginJson.name !== "pm-claude") {
+  throw new Error(`plugin.json name must be "pm-claude", got "${pluginJson.name}"`);
 }
 if (marketplacePluginName !== pluginJson.name) {
   throw new Error(`marketplace plugin name "${marketplacePluginName}" does not match plugin.json name "${pluginJson.name}"`);

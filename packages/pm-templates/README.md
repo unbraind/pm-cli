@@ -1,6 +1,6 @@
 # pm Templates Package
 
-`@unbrained/pm-package-templates` provides reusable `pm create` templates as an installable pm package.
+`@unbrained/pm-templates` provides reusable `pm create` templates as an installable pm package.
 
 Install it with:
 

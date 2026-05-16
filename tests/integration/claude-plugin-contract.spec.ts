@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const pluginRoot = path.join(repoRoot, "plugins", "pm-cli-claude");
+const pluginRoot = path.join(repoRoot, "plugins", "pm-claude");
 
 async function fileExists(filePath: string): Promise<boolean> {
   try {
@@ -102,12 +102,12 @@ describe("Claude Code plugin contract", () => {
 
   it("has valid plugin.json with correct version and metadata", async () => {
     const pluginJson = (await readJson(path.join(pluginRoot, ".claude-plugin", "plugin.json"))) as Record<string, unknown>;
-    expect(pluginJson.name).toBe("pm-cli");
+    expect(pluginJson.name).toBe("pm-claude");
     expect(typeof pluginJson.version).toBe("string");
     expect(pluginJson.version).toMatch(/^\d+\.\d+\.\d+$/);
     const [major, minor] = (pluginJson.version as string).split(".").map(Number);
     expect(major).toBeGreaterThanOrEqual(1);
-    expect(minor).toBeGreaterThanOrEqual(3);
+    expect(minor).toBeGreaterThanOrEqual(4);
     expect(pluginJson.license).toBe("MIT");
     expect(pluginJson.homepage).toContain("github.com");
     expect(pluginJson.repository).toContain("github.com");
@@ -124,18 +124,18 @@ describe("Claude Code plugin contract", () => {
     expect(Array.isArray(plugins)).toBe(true);
     expect(plugins.length).toBeGreaterThan(0);
 
-    const pmCliPlugin = plugins.find((p) => p.name === "pm-cli");
-    expect(pmCliPlugin, "marketplace.json must contain pm-cli plugin").toBeTruthy();
-    expect(pmCliPlugin?.source).toBe("./plugins/pm-cli-claude");
+    const pmClaudePlugin = plugins.find((p) => p.name === "pm-claude");
+    expect(pmClaudePlugin, "marketplace.json must contain pm-claude plugin").toBeTruthy();
+    expect(pmClaudePlugin?.source).toBe("./plugins/pm-claude");
   });
 
-  it("has valid MCP server .mcp.json with pm-cli-native server", async () => {
+  it("has valid MCP server .mcp.json with pm-mcp server", async () => {
     const mcpJson = (await readJson(path.join(pluginRoot, ".mcp.json"))) as Record<string, unknown>;
     const servers = mcpJson.mcpServers as Record<string, unknown>;
     expect(servers).toBeDefined();
-    expect(servers["pm-cli-native"]).toBeDefined();
+    expect(servers["pm-mcp"]).toBeDefined();
 
-    const server = servers["pm-cli-native"] as Record<string, unknown>;
+    const server = servers["pm-mcp"] as Record<string, unknown>;
     expect(server.command).toBe("node");
     expect(Array.isArray(server.args)).toBe(true);
     const args = server.args as string[];

@@ -266,8 +266,6 @@ const SCALAR_TO_ARRAY_FIELDS = new Set([
   "doc",
   "test",
   "unset",
-  "add",
-  "remove",
   "addGlob",
   "add_glob",
   "migrate",
@@ -277,8 +275,23 @@ const SCALAR_TO_ARRAY_FIELDS = new Set([
   "env_clear",
 ]);
 
-function normalizeOptionsArrays(options: Record<string, unknown>): Record<string, unknown> {
+// Actions where the linked-resource fields `add` and `remove` are string[] arrays.
+// For other actions (comments/notes/learnings) `add` and `remove` are scalar strings
+// and must NOT be auto-promoted.
+const ARRAY_ADD_REMOVE_ACTIONS = new Set([
+  "files",
+  "files-discover",
+  "docs",
+  "test",
+  "test-all",
+]);
+
+function normalizeOptionsArrays(
+  options: Record<string, unknown>,
+  action?: string,
+): Record<string, unknown> {
   const result: Record<string, unknown> = {};
+  const promoteAddRemove = action !== undefined && ARRAY_ADD_REMOVE_ACTIONS.has(action);
   for (const [key, value] of Object.entries(options)) {
     if (Array.isArray(value) && ARRAY_TO_CSV_FIELDS.has(key)) {
       result[key] = value.join(",");
@@ -288,13 +301,17 @@ function normalizeOptionsArrays(options: Record<string, unknown>): Record<string
       result[key] = [value];
       continue;
     }
+    if (typeof value === "string" && promoteAddRemove && (key === "add" || key === "remove")) {
+      result[key] = [value];
+      continue;
+    }
     result[key] = value;
   }
   return result;
 }
 
-function optionsWithAuthor(args: Record<string, unknown>): Record<string, unknown> {
-  const options = normalizeOptionsArrays(asRecord(args.options));
+function optionsWithAuthor(args: Record<string, unknown>, action?: string): Record<string, unknown> {
+  const options = normalizeOptionsArrays(asRecord(args.options), action);
   const author = readString(args, "author");
   return author && options.author === undefined ? { ...options, author } : options;
 }
@@ -401,7 +418,7 @@ async function withCwd<T>(cwd: unknown, run: () => Promise<T>): Promise<T> {
 async function runAction(args: Record<string, unknown>): Promise<unknown> {
   const action = readRequiredString(args, "action");
   const global = globalOptions(args);
-  const options = optionsWithAuthor(args);
+  const options = optionsWithAuthor(args, action);
   const id = readString(args, "id");
   const force = args.force === true;
 
@@ -557,7 +574,7 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
     return {
       protocolVersion: "2025-06-18",
       capabilities: { tools: {} },
-      serverInfo: { name: "pm-cli-native", version: "1.0.0" },
+      serverInfo: { name: "pm-mcp", version: "1.0.0" },
       instructions:
         "You have access to native pm CLI tools for git-based project management. " +
         "Use pm_context or pm_search before creating new work. " +
