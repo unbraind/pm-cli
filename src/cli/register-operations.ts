@@ -210,6 +210,10 @@ export function registerOperationCommands(program: Command): void {
     .option("--no-refresh", "Disable automatic vector refresh attempts during health checks")
     .option("--refresh-vectors", "Explicitly enable vector refresh attempts during health checks")
     .option("--verbose-stale-items", "Include full stale vectorization ID lists in health output")
+    .option("--skip-vectors", "Skip vectorization check for a faster run")
+    .option("--skip-integrity", "Skip item/history file integrity check for a faster run")
+    .option("--skip-drift", "Skip history drift hash check for a faster run")
+    .option("--full", "Run all checks including slow integrity, drift, and vectorization checks")
     .option("--strict-exit", "Return non-zero exit when health warnings are present (ok=false)")
     .option("--fail-on-warn", "Alias for --strict-exit")
     .action(async (options: Record<string, unknown>, command) => {
@@ -223,6 +227,10 @@ export function registerOperationCommands(program: Command): void {
         noRefresh: Boolean(options.noRefresh),
         refreshVectors: Boolean(options.refreshVectors),
         verboseStaleItems: Boolean(options.verboseStaleItems),
+        skipVectors: Boolean(options.skipVectors),
+        skipIntegrity: Boolean(options.skipIntegrity),
+        skipDrift: Boolean(options.skipDrift),
+        full: Boolean(options.full),
       });
       printResult(result, globalOptions);
       const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);

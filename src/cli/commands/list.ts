@@ -95,7 +95,7 @@ function compareDefaultSort(left: ListedItem, right: ListedItem, statusRegistry:
   if (byUpdated !== 0) {
     return byUpdated;
   }
-  return left.id.localeCompare(right.id);
+  return (left.id ?? "").localeCompare(right.id ?? "");
 }
 
 function sortItemsDefault(items: ListedItem[], statusRegistry: RuntimeStatusRegistry): ListedItem[] {
@@ -305,7 +305,7 @@ function compareBySortField(left: ListedItem, right: ListedItem, field: ListSort
     case "created_at":
       return compareTimestampStrings(left.created_at, right.created_at);
     case "title":
-      return left.title.localeCompare(right.title);
+      return (left.title ?? "").localeCompare(right.title ?? "");
     case "parent":
       return compareNullableString(left.parent ?? null, right.parent ?? null);
     default:

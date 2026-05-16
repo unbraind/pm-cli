@@ -72,6 +72,10 @@ export interface RunHealthOptions {
   noRefresh?: boolean;
   refreshVectors?: boolean;
   verboseStaleItems?: boolean;
+  skipVectors?: boolean;
+  skipIntegrity?: boolean;
+  skipDrift?: boolean;
+  full?: boolean;
 }
 
 interface MigrationStatusEntry {
@@ -418,15 +422,15 @@ function resolveMigrationFailureReason(definition: Record<string, unknown>): str
 }
 
 function compareMigrationEntries(left: MigrationStatusEntry, right: MigrationStatusEntry): number {
-  const byLayer = left.layer.localeCompare(right.layer);
+  const byLayer = (left.layer ?? "").localeCompare(right.layer ?? "");
   if (byLayer !== 0) {
     return byLayer;
   }
-  const byName = left.name.localeCompare(right.name);
+  const byName = (left.name ?? "").localeCompare(right.name ?? "");
   if (byName !== 0) {
     return byName;
   }
-  return left.id.localeCompare(right.id);
+  return (left.id ?? "").localeCompare(right.id ?? "");
 }
 
 function summarizeMigrationStatuses(
@@ -1219,15 +1223,18 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     commandLabel: "health",
   });
   const historySummary = await countHistoryStreams(pmRoot);
-  const integrityCheck = await buildIntegrityCheck(pmRoot, typeRegistry.type_to_folder, settings.schema);
-  const historyDriftCheck = await buildHistoryDriftCheck(pmRoot, items);
-  const vectorizationCheck = await buildVectorizationCheck(
-    pmRoot,
-    settings,
-    items,
-    refreshPolicy,
-    options.verboseStaleItems === true,
-  );
+  const skipIntegrity = options.skipIntegrity === true && options.full !== true;
+  const skipDrift = options.skipDrift === true && options.full !== true;
+  const skipVectors = options.skipVectors === true && options.full !== true;
+  const integrityCheck = skipIntegrity
+    ? { check: { name: "integrity" as const, status: "ok" as const, details: { skipped: true } }, warnings: [] }
+    : await buildIntegrityCheck(pmRoot, typeRegistry.type_to_folder, settings.schema);
+  const historyDriftCheck = skipDrift
+    ? { check: { name: "history_drift" as const, status: "ok" as const, details: { skipped: true } }, warnings: [] }
+    : await buildHistoryDriftCheck(pmRoot, items);
+  const vectorizationCheck = skipVectors
+    ? { check: { name: "vectorization" as const, status: "ok" as const, details: { skipped: true } }, warnings: [] }
+    : await buildVectorizationCheck(pmRoot, settings, items, refreshPolicy, options.verboseStaleItems === true);
 
   const checks: HealthCheck[] = [
     {

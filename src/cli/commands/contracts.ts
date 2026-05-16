@@ -544,7 +544,7 @@ function collectExtensionFlagContractsByCommand(
         if (layerOrder !== 0) {
           return layerOrder;
         }
-        return left.name.localeCompare(right.name);
+        return (left.name ?? "").localeCompare(right.name ?? "");
       }),
     });
   }
@@ -824,7 +824,7 @@ function collectActionContractDescriptors(
     });
   }
   return [...descriptors.values()].sort((left, right) =>
-    left.action.localeCompare(right.action),
+    (left.action ?? "").localeCompare(right.action ?? ""),
   );
 }
 

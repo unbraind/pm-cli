@@ -1272,11 +1272,13 @@ async function resolveGithubSourceDirectory(cloneDirectory: string, source: Gith
 
 async function resolveInstallSource(source: InstallSource): Promise<ResolvedInstallSource> {
   if (source.kind === "local") {
-    if (!(await pathExists(source.absolute_path))) {
+    let localStats;
+    try {
+      localStats = await fs.stat(source.absolute_path);
+    } catch {
       throw new PmCliError(`Local extension source does not exist: "${source.absolute_path}".`, EXIT_CODE.NOT_FOUND);
     }
-    const stats = await fs.stat(source.absolute_path);
-    if (!stats.isDirectory()) {
+    if (!localStats.isDirectory()) {
       throw new PmCliError(`Local extension source must be a directory: "${source.absolute_path}".`, EXIT_CODE.USAGE);
     }
     const directory = await resolvePackageExtensionDirectory(source.absolute_path, source.input);
