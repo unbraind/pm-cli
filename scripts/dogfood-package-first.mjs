@@ -155,6 +155,11 @@ try {
   assert(getBrief?.item?.id === id, "get --depth brief did not return the requested item");
   assert(getBrief?.body === "", "get --depth brief should omit body text for low-token inspection");
   assert(Array.isArray(getBrief?.linked?.files) && getBrief.linked.files.length === 0, "get --depth brief should omit linked files");
+  const getFields = run("get fields", ["get", id, "--fields", "id,title,status,parent,type"]);
+  assert(getFields?.item?.id === id, "get --fields did not return the requested item id");
+  assert(getFields?.item?.title === "Dogfood package-first workflow", "get --fields did not return selected title");
+  assert(getFields?.item?.description === undefined, "get --fields should omit unselected metadata");
+  assert(getFields?.body === "", "get --fields should omit body unless requested");
 
   const bareCoreCalendar = runExpectFailure("calendar unavailable before install", [
     "calendar",

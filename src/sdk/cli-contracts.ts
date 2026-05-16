@@ -1286,6 +1286,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--depth" },
+  { flag: "--fields" },
 ];
 
 export const GUIDE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1936,7 +1937,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
   guide: { optional: ["format", "depth"] },
   context: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
   ctx: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
-  get: { required: ["id"], optional: ["depth"] },
+  get: { required: ["id"], optional: ["depth", "fields"] },
   search: {
     optional: SEARCH_CONTRACT_PARAMETER_KEYS,
     anyOfRequired: [["query"], ["keywords"]],
@@ -2531,8 +2532,8 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Render full nested search hit payload output.",
   },
   fields: {
-    description: "Comma-separated projection fields for search or list-family outputs.",
-    examples: ["id,title,score,matched_fields", "id,title,parent,type"],
+    description: "Comma-separated projection fields for get, search, or list-family outputs.",
+    examples: ["id,title,status,parent,type", "id,title,score,matched_fields"],
   },
   groupBy: {
     description:

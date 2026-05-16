@@ -47,6 +47,7 @@ type GetDepth = (typeof GET_DEPTH_VALUES)[number];
 
 export interface GetOptions {
   depth?: string;
+  fields?: string;
 }
 
 function toClaimHistoryContext(
@@ -104,8 +105,40 @@ function projectItemForDepth(item: ItemFrontMatter, depth: GetDepth): Partial<It
   return projected;
 }
 
+function parseGetFields(raw: string | undefined): string[] | null {
+  if (raw === undefined) {
+    return null;
+  }
+  const fields = raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (fields.length === 0) {
+    throw new PmCliError("Get --fields requires a comma-separated list of field names", EXIT_CODE.USAGE);
+  }
+  return fields;
+}
+
+function projectItemForFields(item: ItemFrontMatter, fields: string[]): Partial<ItemFrontMatter> {
+  const source = item as unknown as Record<string, unknown>;
+  const projected: Record<string, unknown> = {};
+  for (const field of fields) {
+    const normalized = field.startsWith("item.") ? field.slice("item.".length) : field;
+    if (normalized === "body" || normalized === "linked" || normalized.startsWith("linked.")) {
+      continue;
+    }
+    projected[normalized] = source[normalized];
+  }
+  return projected as Partial<ItemFrontMatter>;
+}
+
+function fieldsInclude(fields: string[] | null, name: string): boolean {
+  return fields?.some((field) => field === name || field === `item.${name}`) ?? false;
+}
+
 export async function runGet(id: string, global: GlobalOptions, options: GetOptions = {}): Promise<GetResult> {
   const depth = parseGetDepth(options.depth);
+  const fields = parseGetFields(options.fields);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
@@ -127,13 +160,21 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
   const files = loaded.document.metadata.files ?? [];
   const tests = loaded.document.metadata.tests ?? [];
   const docs = loaded.document.metadata.docs ?? [];
+  const fieldProjection = fields !== null;
+  const includeBody = !fieldProjection ? depth !== "brief" : fieldsInclude(fields, "body");
+  const includeLinked = !fieldProjection ? depth !== "brief" : fieldsInclude(fields, "linked");
+  const includeLinkedFiles = includeLinked || fieldsInclude(fields, "linked.files");
+  const includeLinkedTests = includeLinked || fieldsInclude(fields, "linked.tests");
+  const includeLinkedDocs = includeLinked || fieldsInclude(fields, "linked.docs");
   return {
-    item: projectItemForDepth(loaded.document.metadata, depth),
-    body: depth === "brief" ? "" : loaded.document.body,
+    item: fieldProjection
+      ? projectItemForFields(loaded.document.metadata, fields)
+      : projectItemForDepth(loaded.document.metadata, depth),
+    body: includeBody ? loaded.document.body : "",
     linked: {
-      files: depth === "brief" ? [] : files,
-      tests: depth === "brief" ? [] : tests,
-      docs: depth === "brief" ? [] : docs,
+      files: includeLinkedFiles ? files : [],
+      tests: includeLinkedTests ? tests : [],
+      docs: includeLinkedDocs ? docs : [],
     },
     claim_state: resolveClaimStateContext(loaded.document.metadata.assignee, history),
   };

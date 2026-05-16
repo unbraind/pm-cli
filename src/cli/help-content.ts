@@ -384,9 +384,14 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   get: {
     why: "Shows details for one item by ID, with optional lower-token projections for agent loops.",
-    examples: ["pm get pm-a1b2", "pm get pm-a1b2 --depth brief --json", "pm get pm-a1b2 --depth standard"],
+    examples: [
+      "pm get pm-a1b2",
+      "pm get pm-a1b2 --depth brief --json",
+      "pm get pm-a1b2 --fields id,title,status,parent,type --json",
+    ],
     tips: [
       "Default depth is deep for backward compatibility; use brief for metadata-only checks and standard for body plus linked artifacts without append-only logs.",
+      "Use --fields for the smallest deterministic item metadata payload when an agent only needs specific fields.",
       "JSON output shape is { item, body, linked, claim_state }; body is top-level (not item.body).",
     ],
   },

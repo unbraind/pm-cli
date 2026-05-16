@@ -167,6 +167,37 @@ describe("runGet and runAppend", () => {
     });
   });
 
+  it("supports custom get field projections for narrow agent reads", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "get-fields-projection",
+        body: "fields body",
+        includeLinks: true,
+      });
+
+      const focused = await runGet(id, { path: context.pmPath }, { fields: "id,title,status,parent,type" });
+      expect(focused.item).toEqual({
+        id,
+        title: "get-fields-projection",
+        status: "open",
+        parent: undefined,
+        type: "Task",
+      });
+      expect(focused.body).toBe("");
+      expect(focused.linked.files).toEqual([]);
+
+      const withBodyAndFiles = await runGet(id, { path: context.pmPath }, { fields: "item.id,body,linked.files" });
+      expect(withBodyAndFiles.item).toEqual({ id });
+      expect(withBodyAndFiles.body).toBe("fields body");
+      expect(withBodyAndFiles.linked.files).toHaveLength(1);
+      expect(withBodyAndFiles.linked.tests).toEqual([]);
+
+      await expect(runGet(id, { path: context.pmPath }, { fields: " , " })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("surfaces claim state metadata with latest claim/release context", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, {

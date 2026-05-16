@@ -217,6 +217,7 @@ export function registerListQueryCommands(program: Command): void {
     .command("get")
     .argument("<id>", "Item id")
     .option("--depth <value>", "Detail depth: brief|standard|deep (default: deep)")
+    .option("--fields <value>", "Render custom comma-separated item metadata fields (for example: --fields id,title,status,parent,type)")
     .description("Show item details by ID.")
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
@@ -227,6 +228,7 @@ export function registerListQueryCommands(program: Command): void {
         globalOptions,
         {
           depth: typeof options.depth === "string" ? options.depth : undefined,
+          fields: typeof options.fields === "string" ? options.fields : undefined,
         },
       );
       printResult(result, globalOptions);
