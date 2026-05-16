@@ -50,6 +50,7 @@ Use `--with-packages` for one-step agent setup when bundled package commands sho
 ## Packages
 
 ```bash
+pm package                     # bare command defaults to --explore (list installed)
 pm install '*' --project
 pm package catalog --project
 pm install npm:@scope/pm-package --project
@@ -59,7 +60,7 @@ pm upgrade --packages-only
 pm upgrade --cli-only --repair
 ```
 
-`pm install` and `pm package` are the preferred package-first workflow. `pm install '*'`, shell-expanded `pm install *`, and `pm install all` install bundled first-party packages. `pm extension` remains as a compatibility command for direct extension lifecycle operations.
+`pm install` and `pm package` are the preferred package-first workflow. `pm package` and `pm extension` bare invocations default to `--explore` so agents can list installed packages without remembering an action flag. `pm install '*'`, shell-expanded `pm install *`, and `pm install all` install bundled first-party packages. `pm extension` remains as a compatibility command for direct extension lifecycle operations.
 When package-owned commands are unavailable, usage guidance includes an install-ready retry (for example `pm install calendar`, `pm install search-advanced`, `pm install governance-audit`, or `pm install guide-shell`).
 
 ## Triage
@@ -77,7 +78,17 @@ Use `context` first for a compact active-work snapshot. Use `search` when the re
 
 ## Create and Update
 
-Minimal progressive create:
+Shortest agent-friendly create (positional title + defaults to `Task` type):
+
+```bash
+pm create "Document command contracts"
+pm create "Fix login bug" --type Issue --priority 1
+```
+
+`pm create` defaults `--type` to `settings.governance.create_default_type` (falling back to `Task`).
+Pass `--create-mode strict` to require an explicit `--type` flag for governance-controlled flows.
+
+Minimal progressive create with explicit fields:
 
 ```bash
 pm create \

@@ -48,6 +48,7 @@ Precedence:
 | `validation.sprint_release_format` | `warn` or `strict_error` |
 | `validation.parent_reference` | `warn` or `strict_error` |
 | `item_types.definitions[]` | custom item types and type options |
+| `governance.create_default_type` | default `--type` used by the `pm create "title"` positional shortcut (defaults to `Task`) |
 | `search.*` | search mode, scoring, providers, embedding timeout, and vector settings |
 
 ## Environment Variables
