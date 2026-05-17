@@ -2,12 +2,13 @@ id: pm-vmeo
 title: Dogfood + remediation session 13 (2026-05-17)
 description: Dogfood + remediation session 13 (2026-05-17)
 type: Plan
-status: open
+status: closed
 priority: 2
 tags[6]: agent-ux,audit,ci,dogfood,performance,telemetry
 created_at: "2026-05-17T18:12:13.514Z"
-updated_at: "2026-05-17T18:21:01.732Z"
+updated_at: "2026-05-17T19:01:48.497Z"
 author: claude-code-agent
+close_reason: "All 13 plan steps complete (3 completed, 9 skipped as already-shipped, 1 just completed by session 14 audit). Session 13 deliverables verified: secrets clean, telemetry healthy, 1360 tests at 100% coverage, CI green (commits bc93e6d5 + 6c18db4b on main), Sentry 0 unresolved. Plan completed cleanly."
 plan_mode: approved
 plan_steps[13]:
   - id: plan-step-001
@@ -100,7 +101,9 @@ plan_steps[13]:
   - id: plan-step-013
     order: 13
     title: Commit + push + green CI + close pm items
-    status: pending
+    status: completed
     created_at: "2026-05-17T18:12:49.618Z"
-    updated_at: "2026-05-17T18:12:49.618Z"
+    updated_at: "2026-05-17T19:00:50.187Z"
+    evidence: Commits bc93e6d5 (Windows test→nightly) and 6c18db4b (parallel CI gates) are on main. CI green per recent run list; secrets scan clean; 1360 tests pass at 100% coverage; history-redact verified working in dogfood. Session 14 audit confirms session 13 deliverables are stable.
+    completed_at: "2026-05-17T19:00:50.187Z"
 body: ""
