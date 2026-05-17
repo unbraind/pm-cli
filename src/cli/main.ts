@@ -96,10 +96,10 @@ import {
   invalidateSearchCachesForMutation,
   setResolvedGlobalOptions,
 } from "./registration-helpers.js";
-import { registerSetupCommands } from "./register-setup.js";
-import { registerListQueryCommands } from "./register-list-query.js";
-import { registerMutationCommands } from "./register-mutation.js";
-import { registerOperationCommands } from "./register-operations.js";
+import type { registerSetupCommands as RegisterSetupCommandsFn } from "./register-setup.js";
+import type { registerListQueryCommands as RegisterListQueryCommandsFn } from "./register-list-query.js";
+import type { registerMutationCommands as RegisterMutationCommandsFn } from "./register-mutation.js";
+import type { registerOperationCommands as RegisterOperationCommandsFn } from "./register-operations.js";
 import {
   type ExtensionCommandHelpDescriptor,
   normalizeExtensionCommandPath,
@@ -201,6 +201,44 @@ interface RuntimeExtensionSnapshot {
 
 let runtimeExtensionSnapshotCache: { key: string; snapshot: RuntimeExtensionSnapshot | null } | null = null;
 let activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
+
+type SetupRegistrationModule = {
+  registerSetupCommands: typeof RegisterSetupCommandsFn;
+};
+type ListQueryRegistrationModule = {
+  registerListQueryCommands: typeof RegisterListQueryCommandsFn;
+};
+type MutationRegistrationModule = {
+  registerMutationCommands: typeof RegisterMutationCommandsFn;
+};
+type OperationRegistrationModule = {
+  registerOperationCommands: typeof RegisterOperationCommandsFn;
+};
+
+let setupRegistrationModulePromise: Promise<SetupRegistrationModule> | null = null;
+let listQueryRegistrationModulePromise: Promise<ListQueryRegistrationModule> | null = null;
+let mutationRegistrationModulePromise: Promise<MutationRegistrationModule> | null = null;
+let operationRegistrationModulePromise: Promise<OperationRegistrationModule> | null = null;
+
+async function loadSetupRegistrationModule(): Promise<SetupRegistrationModule> {
+  setupRegistrationModulePromise ??= import("./register-setup.js");
+  return setupRegistrationModulePromise;
+}
+
+async function loadListQueryRegistrationModule(): Promise<ListQueryRegistrationModule> {
+  listQueryRegistrationModulePromise ??= import("./register-list-query.js");
+  return listQueryRegistrationModulePromise;
+}
+
+async function loadMutationRegistrationModule(): Promise<MutationRegistrationModule> {
+  mutationRegistrationModulePromise ??= import("./register-mutation.js");
+  return mutationRegistrationModulePromise;
+}
+
+async function loadOperationRegistrationModule(): Promise<OperationRegistrationModule> {
+  operationRegistrationModulePromise ??= import("./register-operations.js");
+  return operationRegistrationModulePromise;
+}
 
 function describeUnknownError(error: unknown): string {
   if (error instanceof PmCliError) {
@@ -1264,12 +1302,79 @@ program.hook("postAction", async () => {
   await runAndClearAfterCommandHooks(outcome);
 });
 
-registerSetupCommands(program);
-registerListQueryCommands(program);
-registerMutationCommands(program);
-registerOperationCommands(program);
-
 const VERSION_FLAG_TOKENS = new Set(["--version", "-V"]);
+const SETUP_COMMAND_NAMES = new Set([
+  "config",
+  "extension",
+  "init",
+  "install",
+  "package",
+  "packages",
+  "templates",
+  "upgrade",
+]);
+const LIST_QUERY_COMMAND_NAMES = new Set([
+  "activity",
+  "aggregate",
+  "context",
+  "ctx",
+  "get",
+  "history",
+  "list",
+  "list-all",
+  "list-blocked",
+  "list-canceled",
+  "list-closed",
+  "list-draft",
+  "list-in-progress",
+  "list-open",
+  "search",
+]);
+const MUTATION_COMMAND_NAMES = new Set([
+  "append",
+  "close",
+  "comments",
+  "delete",
+  "deps",
+  "discover",
+  "docs",
+  "files",
+  "learnings",
+  "notes",
+  "restore",
+  "update",
+  "update-many",
+  "create",
+]);
+const OPERATION_COMMAND_NAMES = new Set([
+  "claim",
+  "close-task",
+  "contracts",
+  "gc",
+  "health",
+  "pause-task",
+  "release",
+  "start-task",
+  "stats",
+  "test",
+  "test-all",
+  "test-runs",
+  "test-runs-worker",
+  "validate",
+]);
+interface CoreCommandRegistrationSelection {
+  setup: boolean;
+  listQuery: boolean;
+  mutation: boolean;
+  operation: boolean;
+}
+const REGISTER_ALL_CORE_COMMAND_FAMILIES: CoreCommandRegistrationSelection = {
+  setup: true,
+  listQuery: true,
+  mutation: true,
+  operation: true,
+};
+
 const RUNTIME_SCHEMA_FLAG_BOOTSTRAP_COMMANDS = new Set([
   "create",
   "update",
@@ -1290,6 +1395,93 @@ const RUNTIME_SCHEMA_FLAG_BOOTSTRAP_COMMANDS = new Set([
 
 function invocationRequestsVersion(invocationArgv: string[]): boolean {
   return invocationArgv.some((token) => VERSION_FLAG_TOKENS.has(token));
+}
+
+function resolveCoreCommandRegistrationSelection(
+  invocationArgv: string[],
+): CoreCommandRegistrationSelection {
+  if (invocationRequestsVersion(invocationArgv)) {
+    return {
+      setup: false,
+      listQuery: false,
+      mutation: false,
+      operation: false,
+    };
+  }
+  if (
+    invocationArgv.length === 0 ||
+    parseBootstrapHelpRequest(invocationArgv).requested
+  ) {
+    return REGISTER_ALL_CORE_COMMAND_FAMILIES;
+  }
+  const commandName = parseBootstrapCommandName(invocationArgv);
+  if (!commandName) {
+    return REGISTER_ALL_CORE_COMMAND_FAMILIES;
+  }
+  const normalizedCommand = commandName.trim().toLowerCase();
+  if (SETUP_COMMAND_NAMES.has(normalizedCommand)) {
+    return {
+      setup: true,
+      listQuery: false,
+      mutation: false,
+      operation: false,
+    };
+  }
+  if (LIST_QUERY_COMMAND_NAMES.has(normalizedCommand)) {
+    return {
+      setup: false,
+      listQuery: true,
+      mutation: false,
+      operation: false,
+    };
+  }
+  if (MUTATION_COMMAND_NAMES.has(normalizedCommand)) {
+    return {
+      setup: false,
+      listQuery: false,
+      mutation: true,
+      operation: false,
+    };
+  }
+  if (OPERATION_COMMAND_NAMES.has(normalizedCommand)) {
+    return {
+      setup: false,
+      listQuery: false,
+      mutation: false,
+      operation: true,
+    };
+  }
+  return REGISTER_ALL_CORE_COMMAND_FAMILIES;
+}
+
+function shouldAttachRichHelpTextForInvocation(invocationArgv: string[]): boolean {
+  return (
+    invocationArgv.length === 0 ||
+    parseBootstrapHelpRequest(invocationArgv).requested
+  );
+}
+
+async function registerCoreCommandFamilies(
+  rootProgram: Command,
+  selection: CoreCommandRegistrationSelection,
+): Promise<void> {
+  if (selection.setup) {
+    const { registerSetupCommands } = await loadSetupRegistrationModule();
+    registerSetupCommands(rootProgram);
+  }
+  if (selection.listQuery) {
+    const { registerListQueryCommands } =
+      await loadListQueryRegistrationModule();
+    registerListQueryCommands(rootProgram);
+  }
+  if (selection.mutation) {
+    const { registerMutationCommands } = await loadMutationRegistrationModule();
+    registerMutationCommands(rootProgram);
+  }
+  if (selection.operation) {
+    const { registerOperationCommands } = await loadOperationRegistrationModule();
+    registerOperationCommands(rootProgram);
+  }
 }
 
 function isKnownTopLevelCommandOrAlias(rootProgram: Command, commandName: string): boolean {
@@ -1333,14 +1525,18 @@ function shouldRegisterRuntimeSchemaFlags(invocationArgv: string[]): boolean {
 
 const bootstrapInvocation = normalizeBootstrapInvocation(process.argv.slice(2));
 
-attachRichHelpText(program, bootstrapInvocation.argv);
-
 async function main(): Promise<void> {
   const invocationArgv = bootstrapInvocation.argv;
   const invocationProcessArgv = [process.argv[0], process.argv[1], ...invocationArgv];
   const isBareInvocation = invocationArgv.length === 0;
   try {
     applyBootstrapPagerPolicy(invocationArgv);
+    const registrationSelection =
+      resolveCoreCommandRegistrationSelection(invocationArgv);
+    await registerCoreCommandFamilies(program, registrationSelection);
+    if (shouldAttachRichHelpTextForInvocation(invocationArgv)) {
+      attachRichHelpText(program, invocationArgv);
+    }
     const registerDynamicCommands = shouldRegisterDynamicExtensionPaths(program, invocationArgv);
     if (registerDynamicCommands) {
       await registerDynamicExtensionCommandPaths(program, invocationArgv);

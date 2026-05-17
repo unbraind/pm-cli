@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-17T08:33:31.156Z"
+updated_at: "2026-05-17T09:27:53.310Z"
 deadline: "2026-06-01T00:00:00.000Z"
 assignee: codex-agent
 author: codex-audit
@@ -15,7 +15,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[101]{created_at,author,text}:
+comments[103]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -117,6 +117,8 @@ comments[101]{created_at,author,text}:
   "2026-05-17T07:36:57.671Z",codex-agent,"Release gate evidence: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json passed end-to-end after fixing release-readiness init key-order expectation and a claim.ts branch-coverage edge. Final gate status: 93 test files / 1323 tests passed, 100% statements/branches/functions/lines, compatibility-check ok, secret scan ok, npx smoke ok, sentry critical/high/total 0, telemetry finish_error_rate_pct 2.27 with failures_without_error_code_rows 0."
   "2026-05-17T07:48:20.364Z",codex-agent,"Delivery evidence 2026-05-17: committed audit slice as d9f801d (Improve audit UX reliability and trim contracts default payload), pushed to origin/main, and watched GitHub Actions CI run 25984837175 to green across ubuntu node 20/22/24, macOS node 20, and windows node 20. All jobs concluded success; ubuntu node 20 full-gate lane passed coverage/static/compatibility/packaging/npx/plugin smoke steps."
   "2026-05-17T08:33:14.570Z",codex-agent,"Execution evidence 2026-05-17 extensive continuation (no duplicate items, no subagents): claimed existing lineage, backfilled resolution metadata for 13 closed items to clear validate resolution warnings, implemented pm-b7sd list default brief + explicit --full with contracts/help/tests sync, and completed pm-xz1p file-link hygiene remediation (tracked-all missing/orphaned now zero). Verification passed: focused list/contracts/help/integration regressions, isolated dogfood 51 workflows, PM_DOGFOOD_SEMANTIC=1 dogfood 52 workflows, and full release gate with required telemetry/Sentry (coverage 93 files/1323 tests at 100%, Sentry critical/high/total 0, telemetry finish_error_rate_pct 2.17, missing error-code rows 0)."
+  "2026-05-17T09:11:06.306Z",codex-agent,"Execution start 2026-05-17 startup-performance pass: duplicate checks rerun (context/search/list-open/list-in-progress) and existing lineage reused without creating duplicates. Running strictly single-agent/no-subagent. Claimed pm-rnpb + pm-gt82 and set pm-gt82 in_progress; proceeding with baseline startup profiling, bootstrap optimizations, isolated dogfood, full release gates, privacy scan, and GitHub green-check delivery."
+  "2026-05-17T09:27:53.310Z",codex-agent,"Startup-focused execution slice complete under existing lineage (no duplicate items, single-agent only): claimed pm-gt82, captured before/after benchmarks, implemented lazy core command-family registration plus help-path-only narrative attachment, verified list/search contracts parity, passed isolated dogfood (default + semantic), and passed full release gate with telemetry+sentry required."
 notes[2]{created_at,author,text}:
   "2026-05-17T07:36:59.474Z",codex-agent,"Design note 2026-05-17: unfiltered pm contracts default now intentionally omits three heavy sections (schema oneOf union, command_flags, commander_aliases) and emits explicit omitted_reason markers; --full restores complete schema and alias/flag surfaces for tooling that needs maximal detail."
   "2026-05-17T08:33:25.981Z",codex-agent,"Design note 2026-05-17: default brief projection was intentionally scoped to bare 'pm list' instead of all list-* commands to preserve existing automation contracts while still cutting agent token usage on the highest-frequency exploratory list call."
