@@ -61,6 +61,7 @@ describe("GitHub workflow contract", () => {
       '".github/ISSUE_TEMPLATE/**"',
       "permissions:",
       "contents: read",
+      "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: \"true\"",
       "concurrency:",
       "cancel-in-progress: true",
       "build-foundation:",

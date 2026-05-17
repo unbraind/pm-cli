@@ -1,0 +1,24 @@
+id: pm-1lef
+title: Opt CI JavaScript actions into Node 24 runtime
+description: GitHub Actions run 26000939754 was green but emitted Node 20 JavaScript action deprecation annotations for actions/download-artifact. Opt the CI workflow into the Node 24 JavaScript action runtime using the documented environment knob and add workflow contract coverage so future CI stays warning-clean on free GitHub runners.
+type: Chore
+status: in_progress
+priority: 1
+tags[4]: ci,free-tier,github-actions,node24
+created_at: "2026-05-17T19:55:48.113Z"
+updated_at: "2026-05-17T19:56:34.903Z"
+assignee: codex-extensive-audit-2026-05-17
+author: codex-extensive-audit-2026-05-17
+acceptance_criteria: CI workflow sets FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true; workflow contract tests assert the setting; local focused workflow contract test passes; pushed GitHub Actions CI is green without the prior Node 20 action deprecation annotation.
+parent: pm-rnpb
+comments[2]{created_at,author,text}:
+  "2026-05-17T19:55:48.113Z",codex-extensive-audit-2026-05-17,"Duplicate check: searched pm for 'Node.js 20 actions deprecated download-artifact GitHub Actions'. Existing hits pm-hfny and pm-tzwy are closed historical action pinning/performance work; no open item owns the current run 26000939754 Node 20 action runtime annotation, so this chore is net-new under pm-rnpb."
+  "2026-05-17T19:56:34.903Z",codex-extensive-audit-2026-05-17,"Evidence: added workflow-level FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true in .github/workflows/ci.yml and added ci-workflow-contract coverage for the setting. Linked pm test passed: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts (4 tests, 1 file)."
+files[2]{path,scope,note}:
+  .github/workflows/ci.yml,project,CI workflow Node 24 JavaScript action runtime opt-in
+  tests/integration/ci-workflow-contract.spec.ts,project,Workflow contract regression for Node 24 action runtime opt-in
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpa749w8-l7htpy,test,passed,"2026-05-17T19:56:23.303Z","2026-05-17T19:56:27.032Z","2026-05-17T19:56:27.032Z",null,null,1,0,0,null,null,null
+body: ""
