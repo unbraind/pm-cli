@@ -72,6 +72,17 @@ jobs:
             pm-cli-validation-cache-${{ runner.os }}-node20-
             pm-cli-validation-cache-${{ runner.os }}-
 
+      - name: Restore LanceDB and Sentry caches
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: |
+            .agents/pm/search/lancedb
+            ~/.cache/sentry-cli
+          key: pm-cli-observability-cache-${{ runner.os }}-node20-${{ hashFiles('pnpm-lock.yaml', '.agents/pm/settings.json', '.agents/pm/**/*.toon', '.agents/pm/**/*.md', 'src/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts') }}
+          restore-keys: |
+            pm-cli-observability-cache-${{ runner.os }}-node20-
+            pm-cli-observability-cache-${{ runner.os }}-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

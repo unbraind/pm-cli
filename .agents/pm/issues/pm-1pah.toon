@@ -2,21 +2,25 @@ id: pm-1pah
 title: "CI: cache vitest/.cache + tsbuildinfo for incremental builds + faster tests"
 description: "vitest writes a cache directory that speeds up subsequent runs; tsc supports incremental builds via tsconfig {composite/incremental:true} writing .tsbuildinfo. Cache both with actions/cache@v5 keyed on lockfile + source hash so warm CI is 30-50% faster. Today every CI run starts cold."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: cache,ci,performance,pm-cli
 created_at: "2026-05-16T22:07:50.563Z"
-updated_at: "2026-05-17T09:45:41.313Z"
+updated_at: "2026-05-17T11:30:59.931Z"
 author: maintainer-agent
 acceptance_criteria: "actions/cache restores .tsbuildinfo and vitest cache on warm runs; tsconfig has incremental:true; second consecutive CI run measurably faster than first; cache key invalidates on lockfile or source changes."
 parent: pm-tzwy
-comments[6]{created_at,author,text}:
+resolution: Validation workflows restore TypeScript and Vitest caches with deterministic keys and restore-keys.
+expected_result: Warm CI runs reuse .cache/tsbuildinfo and .cache/vitest safely for faster incremental validation.
+actual_result: Cache steps are present across CI/nightly/release/auto-release with contract coverage and green main evidence.
+comments[7]{created_at,author,text}:
   "2026-05-17T00:14:26.274Z",codex-agent,"Evidence 2026-05-17: implemented free-tier CI validation caches using pinned actions/cache@v5 for CI, nightly, release, and auto-release validation paths; TypeScript now writes incremental build info to .cache/tsbuildinfo and Vitest cache uses .cache/vitest with .cache ignored. Verification passed: pnpm build, pnpm typecheck, focused CI workflow contract test (4 tests), pm test pm-1pah --run with sandboxed 48-command dogfood, static quality, secret scan, and full release gate with 93 files / 1316 tests at 100 percent coverage. Sentry/telemetry gate passed with Sentry critical/high/total 0 and telemetry finish_error_rate_pct 2.27, missing error-code rows 0."
   "2026-05-17T00:14:51.628Z",codex-agent,"Tracker hygiene note 2026-05-17: after concurrent evidence mutations, health briefly reported pm-1pah history drift and stale vector. Adding this serialized mutation after the full gate and refresh-vector check to restore a clean latest hash anchor before final validation."
   "2026-05-17T00:19:17.581Z",codex-agent,"Evidence: linked verification passed on 2026-05-17: dogfood-package-first passed 48 isolated temp-project commands; ci-workflow-contract passed 4 tests; pnpm typecheck passed. Cache coverage includes TypeScript build info and Vitest cache paths across CI/nightly/release/auto-release workflows."
   "2026-05-17T01:14:46.717Z",codex-audit,"Progress: reproduced current main CI failure as stale restored TypeScript build info causing pnpm build to skip emitting dist/cli.js on fresh runners; added build-cache guard and executable-mode finalizer. Local reproduction now passes rm -rf dist && pnpm build && test -x dist/cli.js && test -x dist/mcp/server.js && npm install -g . && pm --version."
   "2026-05-17T01:18:22.096Z",codex-audit,"Evidence: focused release/build contract tests passed (37 tests); dogfood-package-first passed 51 isolated temp-project workflows; pnpm typecheck passed; node scripts/run-tests.mjs coverage passed 93 files / 1317 tests with 100 percent statements/branches/functions/lines. Fresh required Sentry/telemetry release gate is running before push."
   "2026-05-17T01:23:48.324Z",codex-audit,"Final local evidence before push: stale-cache reproduction passed, global pm shim works after npm install -g ., focused release/build contracts passed 37 tests after package file inclusion, dogfood passed 51 workflows, typecheck/static/secret scan passed, full coverage passed 93 files / 1317 tests at 100 percent, npm pack dry-run includes scripts/prepare-build-cache.mjs and scripts/finalize-build.mjs, and required Sentry/telemetry release gate passed with Sentry critical/high/total 0 and telemetry finish_error_rate_pct 2.22."
+  "2026-05-17T11:15:07.911Z",codex-agent,"Closure validation 2026-05-17: TypeScript and Vitest cache restores are active in CI/nightly/release/auto-release workflows using pinned actions/cache@v5, with .cache/tsbuildinfo + .cache/vitest and deterministic hash keys/restore-keys. Contract coverage asserts these keys/paths in tests/integration/ci-workflow-contract.spec.ts. Main CI run 25988613623 passed on current workflow."
 files[14]{path,scope,note}:
   .github/workflows/auto-release.yml,project,auto-release pipeline TypeScript/Vitest cache restore
   .github/workflows/ci.yml,project,pinned TypeScript/Vitest cache restore for CI
@@ -42,4 +46,5 @@ test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resum
   test-local-mp912713-fw2qdk,test,passed,"2026-05-17T00:18:27.606Z","2026-05-17T00:19:06.135Z","2026-05-17T00:19:06.135Z",null,null,3,0,0,null,null,null
 docs[1]{path,scope,note}:
   CONTRIBUTING.md,project,CI workflow behavior remains documented from parent optimization
+close_reason: Incremental TypeScript/Vitest cache strategy is implemented across workflows with regression coverage and green main CI evidence; acceptance criteria met.
 body: ""

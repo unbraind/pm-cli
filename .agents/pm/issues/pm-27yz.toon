@@ -2,17 +2,20 @@ id: pm-27yz
 title: "CI: split quality+smoke gates into a parallel job, share dist via artifact"
 description: "Currently ubuntu/node20 runs build -> test -> coverage -> static-quality -> compatibility-check -> packaging-smoke -> npx-smoke -> plugin-smoke serially. Extract a build-once job that uploads dist + node_modules cache, then run build-test matrix in parallel with a 'gates' job that downloads dist and runs static/compat/packaging/smoke independently. Cuts ubuntu/20 critical path from ~12min to ~8min."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[4]: ci,parallelism,performance,pm-cli
 created_at: "2026-05-16T22:07:55.319Z"
-updated_at: "2026-05-17T10:41:26.928Z"
-assignee: codex-agent
+updated_at: "2026-05-17T11:30:55.239Z"
 author: maintainer-agent
 acceptance_criteria: build job uploads dist artifact; gates job downloads artifact and runs in parallel with matrix; ubuntu/20 critical path drops measurably; all gates still execute.
 parent: pm-tzwy
-comments[1]{created_at,author,text}:
+resolution: CI pipeline now uses build-foundation plus parallel build-test and gates jobs with shared dist artifact.
+expected_result: Artifact handoff preserves all gates while reducing ubuntu/node20 critical path duration.
+actual_result: Main CI run 25988613623 passed with artifact handoff and parallel gate execution; acceptance criteria confirmed.
+comments[2]{created_at,author,text}:
   "2026-05-17T10:41:26.928Z",codex-agent,"Local evidence 2026-05-17 pre-push: refactored CI into build-foundation + build-test + gates jobs. build-foundation now uploads dist-node20-ubuntu artifact; build-test and gates both download dist and run in parallel. Focused workflow contract tests passed (10 tests), pnpm typecheck passed, full release gate passed with 93 files / 1326 tests and 100 percent coverage, required Sentry/telemetry gate passed (Sentry critical=0 high=0 total=0, telemetry finish_error_rate_pct=2.12, missing_error_code_rows=0), dogfood temp-project run passed 54 commands, and check-secrets passed."
+  "2026-05-17T11:15:01.152Z",codex-agent,"Remote CI evidence 2026-05-17: main commit 93a9eb01 completed green on GitHub Actions run 25988613623 (CI, push, 9m56s). Acceptance criteria verified: build-foundation uploads dist artifact, build-test and gates jobs depend on build-foundation and run in parallel, dist artifact is downloaded in both jobs, and all required quality/security/smoke gates remain present in workflow contract tests."
 files[2]{path,scope,note}:
   .github/workflows/ci.yml,project,split build foundation and parallel gates using dist artifact
   tests/integration/ci-workflow-contract.spec.ts,project,regression contract coverage for split CI jobs and artifact flow
@@ -22,4 +25,5 @@ tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Split CI into build-foundation + parallel build-test/gates with shared dist artifact and validated end-to-end in local gates plus green GitHub run 25988613623; acceptance criteria satisfied.
 body: ""

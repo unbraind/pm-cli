@@ -6,14 +6,16 @@ status: in_progress
 priority: 0
 tags[6]: ci,cost,free-tier,github-actions,performance,pm-cli
 created_at: "2026-05-16T22:07:27.879Z"
-updated_at: "2026-05-17T10:41:47.654Z"
+updated_at: "2026-05-17T11:31:57.718Z"
 assignee: codex-agent
 author: maintainer-agent
 acceptance_criteria: "Average CI duration per push/PR cut by >=40%; total runner minutes per PR cut by >=50% on common docs-only or single-file PRs; full matrix still runs on main push; coverage gate, static quality gate, plugin smoke tests still gating; pnpm audit/security:scan still gating; no paid GitHub features used; CI is green on the change."
 parent: pm-rnpb
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-05-17T10:33:05.353Z",codex-agent,"Execution start 2026-05-17: bootstrap complete (npm install -g ., pm --version, node -v, pnpm -v, pnpm build) and duplicate-check/orient commands rerun (pm context, pm search ci free-tier cache matrix gates artifact, pm list-open, pm list-in-progress). Active implementation slice is pm-27yz under this parent; releasing unrelated stale claims to keep in_progress/claim hygiene strict."
   "2026-05-17T10:41:27.702Z",codex-agent,"Progress update 2026-05-17: completed pm-27yz implementation locally with parallelized CI gates architecture and full local verification stack green (focused contracts, typecheck, release gates with required telemetry/Sentry, dogfood, secret scan). Next step is commit/push and remote GitHub checks evidence."
+  "2026-05-17T11:14:59.487Z",codex-agent,"Execution continuation 2026-05-17: reran bootstrap (npm install -g ., pm --version 2026.5.14, node v25.9.0, pnpm 10.33.0, pnpm build) and duplicate-check/orient commands (pm context, pm search ci free-tier cache matrix gates artifact sentry telemetry dogfood, pm list-open, pm list-in-progress). Reusing existing CI lineage without creating duplicate items; enforcing parent+single-active-child in_progress policy."
+  "2026-05-17T11:31:57.718Z",codex-agent,"Lineage update 2026-05-17 before push: closed child issues pm-27yz, pm-iv1u, pm-1pah, and pm-n28v with acceptance evidence and backfilled resolution metadata. Latest local verification for n28v includes linked run test-local-mp9p1ujz-zjy2f5 (4/4 passed), required release gates (1326 tests, 100% coverage), standalone sentry/telemetry gate (critical=0 high=0 total=0; telemetry error rate 2.11%), check-secrets clean, and dogfood temp-project 54-command pass. Next step is commit/push this workflow/test/update set and capture fresh GitHub Actions run evidence."
 files[2]{path,scope,note}:
   .github/workflows/ci.yml,project,parallel CI architecture via build foundation and gates jobs
   tests/integration/ci-workflow-contract.spec.ts,project,CI workflow contract updated for split jobs and artifact flow

@@ -85,7 +85,8 @@ function main() {
   runCheckedStep("npx-smoke", pnpm, ["smoke:npx"]);
   checks.push({ name: "npx-smoke", ok: true });
 
-  runCheckedStep("npm-pack-dry-run", npm, ["pack", "--dry-run"]);
+  // Keep the same packaging validation but avoid huge tarball file listings in gate logs.
+  runCheckedStep("npm-pack-dry-run", npm, ["pack", "--dry-run", "--silent"]);
   checks.push({ name: "npm-pack-dry-run", ok: true });
 
   if (!skipCompatibility) {
