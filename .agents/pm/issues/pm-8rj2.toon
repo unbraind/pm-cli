@@ -1,0 +1,13 @@
+id: pm-8rj2
+title: pm bare command silent exit 0 — no help shown
+description: "Dogfood 2026-05-17: running `pm` with no args prints nothing and exits 0. Agents need either help or top-line greeting/command list. Trivial fix in src/cli/main.ts: default to --help when argv has only the bin entry."
+type: Issue
+status: closed
+priority: 1
+tags[4]: agent-ux,bug,cli,help
+created_at: "2026-05-17T06:47:16.090Z"
+updated_at: "2026-05-17T07:05:08.460Z"
+deadline: "2026-05-22T06:47:16.090Z"
+author: maintainer-agent
+close_reason: "Implemented bare 'pm' invocation now shows --help via outputHelp() in src/cli/main.ts. Verified: 'pm' (no args) prints usage and command list, exits 0."
+body: ""

@@ -2,11 +2,12 @@ id: pm-klqo
 title: "CLI silently corrupts --tags '[\"a\",\"b\"]' JSON-array input (agent-unfriendly)"
 description: "Dogfood 2026-05-17: `pm create --tags '[\"a\",\"b\"]'` saves tags as `[\"[\\\"a\\\"\", \"\\\"b\\\"]\"]` with no warning. Critical agent-blocker because MCP server normalizes JSON arrays to CSV but the CLI parser does not, so agents copying examples from tool schemas end up with broken data.\n\nFix proposal: in src/cli/commands/create.ts parseTags() and equivalent in update.ts, if the raw string trims to a JSON array (starts with [) try JSON.parse and treat the array as the tag list. Apply same to other CSV-style fields (skills, blockedBy) wherever the CLI accepts them.\n\nAcceptance: tests cover CSV input, JSON array input, mixed/spaced input; existing CSV behavior unchanged."
 type: Issue
-status: open
+status: closed
 priority: 0
 tags[8]: agent-ux,bug,cli,create,parsing,pm-cli,tags,update
 created_at: "2026-05-17T05:49:42.738Z"
-updated_at: "2026-05-17T05:49:42.738Z"
+updated_at: "2026-05-17T06:44:23.810Z"
 deadline: "2026-05-20T05:49:42.738Z"
 author: claude-code-agent
+close_reason: "Verified fixed: parseTags() in src/core/item/parse.ts:27-66 already accepts JSON-array input via coerceJsonTagArray() (commit 46a225b). Dogfood test in /tmp confirms --tags '[\"a\",\"b\"]' produces tags=[a,b] correctly."
 body: ""

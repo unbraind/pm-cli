@@ -134,6 +134,22 @@ describe("runClaim/runRelease", () => {
       expect(takeover.previous_assignee).toBe("other-author");
       expect(takeover.forced).toBe(false);
       expect(takeover.item.assignee).toBe("test-author");
+      expect(takeover.warnings).toEqual(expect.arrayContaining(["claim_takeover:other-author->test-author"]));
+    });
+  });
+
+  it("supports --if-available to skip silently when item is held by another author (pm-d4bo)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, {
+        title: "claim-if-available-held",
+        status: "open",
+        assignee: "other-author",
+      });
+      const result = await runClaim(id, false, { path: context.pmPath }, { ifAvailable: true });
+      expect(result.skipped).toBe(true);
+      expect(result.previous_assignee).toBe("other-author");
+      expect(result.item.assignee).toBe("other-author");
+      expect(result.warnings).toEqual(expect.arrayContaining(["claim_skipped_held_by:other-author"]));
     });
   });
 

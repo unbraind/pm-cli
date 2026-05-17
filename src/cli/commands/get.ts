@@ -4,7 +4,7 @@ import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
+import { buildItemNotFoundError, locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, LinkedDoc, LinkedFile, LinkedTest } from "../../types/index.js";
@@ -151,7 +151,7 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
   if (!located) {
-    throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
+    throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeRegistry.type_to_folder);
   }
   const loaded = await readLocatedItem(located, { schema: settings.schema });
   const files = loaded.document.metadata.files ?? [];

@@ -6,16 +6,16 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-17T01:41:40.804Z"
+updated_at: "2026-05-17T07:37:01.283Z"
 deadline: "2026-06-01T00:00:00.000Z"
-assignee: codex-audit
+assignee: codex-agent
 author: codex-audit
 estimated_minutes: 300
 acceptance_criteria: Audit findings are actionable and deduplicated; changed files and verification commands are linked; temporary dogfood project validates core workflows; any discovered bugs with safe fixes are remediated and tested.
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[95]{created_at,author,text}:
+comments[99]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -111,7 +111,21 @@ comments[95]{created_at,author,text}:
   "2026-05-17T01:18:22.049Z",codex-audit,"Sub-agent search/calendar/performance findings 2026-05-17: auto semantic refresh should apply runtime Ollama defaults during mutation refresh, default search mode semantics should be made config-driven or simplified, calendar grouping/rendering needs timezone-aware UX plus compact projection, and low-token reads still pay startup/import overhead under pm-gt82. Recorded as existing-lineage follow-ups; current implementation remains scoped to fixing the red CI cache/build regression."
   "2026-05-17T01:26:43.050Z",codex-audit-2026-05-17,"2026-05-17 detailed execution plan: 1) keep pm-rnpb as parent and reuse existing children; do not create duplicates. 2) parallel sub-agent review streams: GitHub/CI state, code-quality/dead-code/performance scan, package/SDK/extensibility surface, telemetry/Sentry/privacy scan. 3) local dogfood in isolated temp project with PM_PATH/PM_GLOBAL_PATH using latest dist and package-first harness, then add manual probes for calendar/search/reindex/contracts/config/get fields. 4) prioritize concrete fixes in already-open items: CI runtime/cache correctness and parallelization (pm-tzwy/pm-1pah/pm-27yz/pm-iv1u), startup/agent-token UX (pm-gt82), package/SDK extensibility (pm-59gj), privacy/history redaction hygiene (pm-xk39), and current open tracker items. 5) verify with focused tests first, then full coverage, static quality, docs/skills, secret scan, release gates with Sentry/telemetry required, package smoke/npx smoke/dogfood. 6) inspect live telemetry/Sentry and GitHub issues/PRs/checks; keep private ops notes only under ignored scripts/prod/telemetry. 7) link changed files/tests/docs to pm items, add evidence comments, commit, push, and watch GitHub Actions to green."
   "2026-05-17T01:41:40.804Z",codex-audit-2026-05-17,"Audit evidence 2026-05-17: sub-agents completed GitHub/CI, code-quality/performance, SDK/package, and privacy/telemetry/search/calendar reviews. No open GitHub issues/PRs; previous main CI run 25977934114 for a444f64 completed green after the cache fix. Current scoped implementation addressed package-first SDK/catalog findings under pm-59gj. Remaining follow-ups stay mapped to existing items: pm-gt82/pm-mbdu for startup/import and large-file refactors, pm-iv1u/pm-27yz/pm-tzwy for CI runtime reduction, pm-xk39 for history drift/redaction, and pm-59gj for package scaffold/templates/config-driven follow-ups."
-files[57]{path,scope,note}:
+  "2026-05-17T07:14:07.938Z",codex-agent,"Duplicate-check evidence 2026-05-17: pm context --limit 10; pm search 'latest audit ux token dogfood contracts validate claim' --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20. Reusing pm-rnpb as canonical lineage; no duplicate item created."
+  "2026-05-17T07:36:55.884Z",codex-agent,"Execution evidence 2026-05-17: continued extensive audit without duplicate item creation or subagents. Completed UX/token hardening for update no-op did-you-mean wiring, contracts default brief projection, claim claimed_by branch cleanup, and release-readiness init output contract sync. Measured pm contracts --json reduction from 90195 bytes (4888 lines) to 22983 bytes (999 lines) while pm contracts --full --json remains unchanged at 377550 bytes for opt-in full surfaces."
+  "2026-05-17T07:36:56.823Z",codex-agent,"Verification evidence: isolated package-first dogfood passed 51 workflows; manual isolated probes confirmed bare pm shows help, claim --if-available returns skipped:true with held owner preserved, and pm update --status closed --close-reason auto-routes through close with warning token. Privacy scan passed (node scripts/check-secrets.mjs + targeted .agents/pm rg scans for private paths/IPs/tokens/user@private-host) with no findings."
+  "2026-05-17T07:36:57.671Z",codex-agent,"Release gate evidence: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json passed end-to-end after fixing release-readiness init key-order expectation and a claim.ts branch-coverage edge. Final gate status: 93 test files / 1323 tests passed, 100% statements/branches/functions/lines, compatibility-check ok, secret scan ok, npx smoke ok, sentry critical/high/total 0, telemetry finish_error_rate_pct 2.27 with failures_without_error_code_rows 0."
+notes[1]{created_at,author,text}:
+  "2026-05-17T07:36:59.474Z",codex-agent,"Design note 2026-05-17: unfiltered pm contracts default now intentionally omits three heavy sections (schema oneOf union, command_flags, commander_aliases) and emits explicit omitted_reason markers; --full restores complete schema and alias/flag surfaces for tooling that needs maximal detail."
+learnings[1]{created_at,author,text}:
+  "2026-05-17T07:37:01.283Z",codex-agent,"Durable learning: strict 100% branch coverage is valuable for agent UX changes because nullable fallback expressions can silently introduce uncovered impossible branches; prefer explicit state predicates over defensive null coalescing in logically constrained paths."
+files[62]{path,scope,note}:
+  packages/pm-calendar/extensions/calendar/index.js,project,calendar output service JS parity
+  packages/pm-calendar/extensions/calendar/index.ts,project,calendar output service fallback
+  packages/pm-calendar/extensions/calendar/runtime.js,project,calendar package runtime JS parity
+  packages/pm-calendar/extensions/calendar/runtime.ts,project,calendar package markdown output renderer
+  packages/pm-guide-shell/extensions/guide-shell/index.js,project,guide output service JS parity
+  packages/pm-guide-shell/extensions/guide-shell/index.ts,project,guide output service fallback
   README.md,project,public README hygiene update
   scripts/check-secrets.mjs,project,detect absolute home-path and user@private-host leakage
   scripts/dogfood-package-first.mjs,project,latest isolated dogfood harness
@@ -122,6 +136,7 @@ files[57]{path,scope,note}:
   src/cli.ts,project,nonblocking sentry startup for CLI responsiveness
   src/cli/commander-usage.ts,project,required-option retry flag normalization
   src/cli/commands/activity.ts,project,harden activity output for malformed legacy history rows
+  src/cli/commands/claim.ts,project,claim skipped response coverage and claimed_by branch hardening
   src/cli/commands/contracts.ts,project,use compact flag contracts in command surface
   src/cli/commands/create.ts,project,event date alias for create
   src/cli/commands/extension.ts,project,fix extension reload/watch usage guidance
@@ -131,23 +146,29 @@ files[57]{path,scope,note}:
   src/cli/commands/reindex.ts,project,reindex uses shared calendar-aware corpus
   src/cli/commands/search.ts,project,keyword search scores reminder/event corpus and short phrase matches
   src/cli/commands/update.ts,project,event date alias for update
+  src/cli/commands/validate.ts,project,metadata output token-noise reduction verification
   src/cli/error-guidance.ts,project,required-option guidance normalization
   src/cli/help-content.ts,project,agent help documents get fields
   src/cli/main.ts,project,error-path sentry initialization
   src/cli/register-list-query.ts,project,align search CLI flags with advertised search contract
+  src/cli/register-operations.ts,project,contracts help text clarifies --full heavy surfaces
   src/cli/register-setup.ts,project,init flags for defaults and author
   src/cli/registration-helpers.ts,project,null
+  src/core/extensions/loader.ts,project,chain output_format service overrides for package renderers
   src/core/output/output.ts,project,null
   src/core/search/cache.ts,project,semantic mutation refresh uses shared calendar-aware corpus
   src/core/search/corpus.ts,project,shared search corpus builder includes calendar reminders/events
   src/core/search/embedding-batches.ts,project,provider-aware semantic input bounding
+  src/core/search/semantic-defaults.ts,project,prefer qwen Ollama embedding auto default
   src/core/sentry/instrument.ts,project,recursive path scrub across nested sentry event payloads
   src/core/store/front-matter-cache.ts,project,null
+  src/core/store/item-store.ts,project,did-you-mean not-found helper wired through update no-op path
   src/mcp/server.ts,project,null
   src/sdk/cli-contracts.ts,project,compact alias duplicate flag contracts for agent schema
   tests/integration/cli.integration.spec.ts,project,init defaults author regression
   tests/integration/help-runtime.spec.ts,project,help coverage for keyword-first search mode flags
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness guard for nonblocking sentry startup
+  tests/unit/claim-command.spec.ts,project,claim if-available and takeover warning regression coverage
   tests/unit/completion-command.spec.ts,project,bash completion regression for health fast-path flags
   tests/unit/contracts-command.spec.ts,project,regression for canonical flag surface with aliases
   tests/unit/create-command.spec.ts,project,create event date alias regression
@@ -157,19 +178,11 @@ files[57]{path,scope,note}:
   tests/unit/search-cache.spec.ts,project,regression for bounded semantic refresh corpus input
   tests/unit/search-command.spec.ts,project,regression for reminder/event search matches
   tests/unit/search-corpus.spec.ts,project,unit coverage for semantic corpus helper branches
+  tests/unit/semantic-defaults.spec.ts,project,qwen Ollama model preference regression
   tests/unit/sentry-helpers.spec.ts,project,regression for nested sentry event scrub behavior
   tests/unit/update-command.spec.ts,project,update event date alias regression
   vitest.config.ts,project,coverage include list covers new search corpus helper
-  src/core/search/semantic-defaults.ts,project,prefer qwen Ollama embedding auto default
-  src/core/extensions/loader.ts,project,chain output_format service overrides for package renderers
-  packages/pm-calendar/extensions/calendar/runtime.ts,project,calendar package markdown output renderer
-  packages/pm-calendar/extensions/calendar/runtime.js,project,calendar package runtime JS parity
-  packages/pm-calendar/extensions/calendar/index.ts,project,calendar output service fallback
-  packages/pm-calendar/extensions/calendar/index.js,project,calendar output service JS parity
-  packages/pm-guide-shell/extensions/guide-shell/index.ts,project,guide output service fallback
-  packages/pm-guide-shell/extensions/guide-shell/index.js,project,guide output service JS parity
-  tests/unit/semantic-defaults.spec.ts,project,qwen Ollama model preference regression
-tests[24]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[26]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret and path leak guardrail
   node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,isolated temp-project dogfood harness
   node scripts/release/docs-skills-gate.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
@@ -179,6 +192,7 @@ tests[24]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,s
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'keeps activity readable|supports activity stream',null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused activity regression
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/contracts-command.spec.ts tests/unit/search-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused help/contracts/search runtime parity regression
   node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts tests/unit/update-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused package/install contract alias regression
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused contracts and runtime flag parity regression
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/search-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused contracts/search runtime parity regression
@@ -186,6 +200,7 @@ tests[24]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,s
   node scripts/run-tests.mjs test -- tests/unit/embedding-batches.spec.ts tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/search-command.spec.ts tests/unit/sentry-helpers.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused remediation regressions
   node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused init/recovery/event regressions
   node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/contracts-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused get depth regression
+  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/integration/cli.integration.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,flaky spec stabilization rerun
   node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,focused search and indexing regression
   node scripts/run-tests.mjs test -- tests/unit/semantic-defaults.spec.ts tests/unit/get-append-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null

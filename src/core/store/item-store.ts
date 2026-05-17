@@ -208,6 +208,80 @@ async function listAllDocuments(
     .map((entry) => entry.document);
 }
 
+async function listKnownItemIds(
+  pmRoot: string,
+  typeToFolder: Record<string, string>,
+): Promise<string[]> {
+  const folders = new Set(Object.values(typeToFolder));
+  const allIds: string[] = [];
+  await Promise.all(
+    [...folders].map(async (folder) => {
+      try {
+        const entries = await fs.readdir(path.join(pmRoot, folder));
+        for (const entry of entries) {
+          for (const ext of ITEM_FILE_EXTENSIONS) {
+            if (entry.toLowerCase().endsWith(ext)) {
+              allIds.push(entry.slice(0, -ext.length));
+              break;
+            }
+          }
+        }
+      } catch {
+        // ignore missing folders
+      }
+    }),
+  );
+  return allIds;
+}
+
+function levenshtein(a: string, b: string): number {
+  if (a === b) return 0;
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const curr = [i];
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr.push(Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost));
+    }
+    prev = curr;
+  }
+  return prev[b.length];
+}
+
+async function buildDidYouMeanSuggestions(
+  pmRoot: string,
+  badId: string,
+  idPrefix: string,
+  typeToFolder: Record<string, string>,
+): Promise<string[]> {
+  const normalized = normalizeItemId(badId, idPrefix);
+  const ids = await listKnownItemIds(pmRoot, typeToFolder);
+  if (ids.length === 0) return [];
+  const scored = ids
+    .map((id) => ({ id, distance: levenshtein(id, normalized) }))
+    .filter((entry) => entry.distance <= Math.max(3, Math.floor(normalized.length / 2)))
+    .sort((left, right) => left.distance - right.distance)
+    .slice(0, 3)
+    .map((entry) => entry.id);
+  return scored;
+}
+
+export async function buildItemNotFoundError(
+  pmRoot: string,
+  badId: string,
+  idPrefix: string,
+  typeToFolder: Record<string, string>,
+): Promise<PmCliError> {
+  const suggestions = await buildDidYouMeanSuggestions(pmRoot, badId, idPrefix, typeToFolder);
+  const nextSteps: string[] = ["Confirm the active --path/PM_PATH scope, then retry with a valid id."];
+  if (suggestions.length > 0) {
+    nextSteps.unshift(`Did you mean one of: ${suggestions.join(", ")}?`);
+  }
+  return new PmCliError(`Item ${badId} not found`, EXIT_CODE.NOT_FOUND, { nextSteps });
+}
+
 export async function mutateItem(params: {
   pmRoot: string;
   settings: PmSettings;
@@ -224,7 +298,7 @@ export async function mutateItem(params: {
     params.typeToFolder ?? resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations()).type_to_folder;
   const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix, params.settings.item_format, typeToFolder);
   if (!located) {
-    throw new PmCliError(`Item ${params.id} not found`, EXIT_CODE.NOT_FOUND);
+    throw await buildItemNotFoundError(params.pmRoot, params.id, params.settings.id_prefix, typeToFolder);
   }
 
   const releaseLock = await acquireLock(
@@ -392,7 +466,7 @@ export async function deleteItem(params: {
   const typeToFolder = resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations()).type_to_folder;
   const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix, params.settings.item_format, typeToFolder);
   if (!located) {
-    throw new PmCliError(`Item ${params.id} not found`, EXIT_CODE.NOT_FOUND);
+    throw await buildItemNotFoundError(params.pmRoot, params.id, params.settings.id_prefix, typeToFolder);
   }
 
   const releaseLock = await acquireLock(

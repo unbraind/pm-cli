@@ -33,6 +33,7 @@ export interface InitResult {
   governance_preset: GovernancePreset;
   wizard_used: boolean;
   installed_packages?: InitInstalledPackagesSummary;
+  next_steps: string[];
 }
 
 export interface InitCommandOptions {
@@ -292,6 +293,21 @@ export async function runInit(
     }
   }
 
+  const nextSteps: string[] = [
+    'Create your first item: pm create --type Task --title "<title>"',
+    'List active items: pm list',
+    'Get agent-friendly project context: pm context',
+  ];
+  if (!installBundledPackages) {
+    nextSteps.push(
+      "Add optional packages for richer workflows: pm install calendar --project, pm install templates --project, pm install guide-shell --project",
+    );
+    nextSteps.push("Or install everything bundled: pm init --with-packages (idempotent on re-run)");
+  } else {
+    nextSteps.push("Explore newly-available commands: pm cal, pm templates, pm guide");
+  }
+  nextSteps.push("Set PM_AUTHOR=<your-agent-id> so mutations attribute to the right caller.");
+
   return {
     ok: true,
     path: pmRoot,
@@ -301,5 +317,6 @@ export async function runInit(
     governance_preset: settings.governance.preset,
     wizard_used: wizardUsed,
     ...(installedPackages ? { installed_packages: installedPackages } : {}),
+    next_steps: nextSteps,
   };
 }

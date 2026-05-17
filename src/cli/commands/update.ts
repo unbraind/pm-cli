@@ -29,9 +29,10 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { resolveIsoOrRelative } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extensions/item-fields.js";
-import { locateItem, mutateItem } from "../../core/store/item-store.js";
+import { buildItemNotFoundError, locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { runClose } from "./close.js";
 import {
   normalizeRiskInput,
   normalizeSeverityInput,
@@ -1422,77 +1423,134 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     }
   }
 
-  const changedFlags = [
-    options.title !== undefined,
-    options.description !== undefined,
-    options.body !== undefined,
-    options.status !== undefined,
-    options.closeReason !== undefined,
-    options.priority !== undefined,
-    options.type !== undefined,
-    options.tags !== undefined,
-    options.deadline !== undefined,
-    options.estimatedMinutes !== undefined,
-    options.acceptanceCriteria !== undefined,
-    options.definitionOfReady !== undefined,
-    options.order !== undefined,
-    options.rank !== undefined,
-    options.goal !== undefined,
-    options.objective !== undefined,
-    options.value !== undefined,
-    options.impact !== undefined,
-    options.outcome !== undefined,
-    options.whyNow !== undefined,
-    options.assignee !== undefined,
-    options.parent !== undefined,
-    options.reviewer !== undefined,
-    options.risk !== undefined,
-    options.confidence !== undefined,
-    options.sprint !== undefined,
-    options.release !== undefined,
-    options.blockedBy !== undefined,
-    options.blockedReason !== undefined,
-    options.unblockNote !== undefined,
-    options.reporter !== undefined,
-    options.severity !== undefined,
-    options.environment !== undefined,
-    options.reproSteps !== undefined,
-    options.resolution !== undefined,
-    options.expectedResult !== undefined,
-    options.actualResult !== undefined,
-    options.affectedVersion !== undefined,
-    options.fixedVersion !== undefined,
-    options.component !== undefined,
-    options.regression !== undefined,
-    options.customerImpact !== undefined,
-    options.dep !== undefined,
-    options.depRemove !== undefined,
-    options.replaceDeps === true,
-    options.comment !== undefined,
-    options.note !== undefined,
-    options.learning !== undefined,
-    options.file !== undefined,
-    options.test !== undefined,
-    options.replaceTests === true,
-    options.doc !== undefined,
-    options.reminder !== undefined,
-    options.event !== undefined,
-    options.typeOption !== undefined,
-    options.unset !== undefined && options.unset.length > 0,
-    options.clearDeps === true,
-    options.clearComments === true,
-    options.clearNotes === true,
-    options.clearLearnings === true,
-    options.clearFiles === true,
-    options.clearTests === true,
-    options.clearDocs === true,
-    options.clearReminders === true,
-    options.clearEvents === true,
-    options.clearTypeOptions === true,
-  ].some(Boolean);
+  const fieldFlags: Record<string, boolean> = {
+    title: options.title !== undefined,
+    description: options.description !== undefined,
+    body: options.body !== undefined,
+    status: options.status !== undefined,
+    closeReason: options.closeReason !== undefined,
+    priority: options.priority !== undefined,
+    type: options.type !== undefined,
+    tags: options.tags !== undefined,
+    deadline: options.deadline !== undefined,
+    estimatedMinutes: options.estimatedMinutes !== undefined,
+    acceptanceCriteria: options.acceptanceCriteria !== undefined,
+    definitionOfReady: options.definitionOfReady !== undefined,
+    order: options.order !== undefined,
+    rank: options.rank !== undefined,
+    goal: options.goal !== undefined,
+    objective: options.objective !== undefined,
+    value: options.value !== undefined,
+    impact: options.impact !== undefined,
+    outcome: options.outcome !== undefined,
+    whyNow: options.whyNow !== undefined,
+    assignee: options.assignee !== undefined,
+    parent: options.parent !== undefined,
+    reviewer: options.reviewer !== undefined,
+    risk: options.risk !== undefined,
+    confidence: options.confidence !== undefined,
+    sprint: options.sprint !== undefined,
+    release: options.release !== undefined,
+    blockedBy: options.blockedBy !== undefined,
+    blockedReason: options.blockedReason !== undefined,
+    unblockNote: options.unblockNote !== undefined,
+    reporter: options.reporter !== undefined,
+    severity: options.severity !== undefined,
+    environment: options.environment !== undefined,
+    reproSteps: options.reproSteps !== undefined,
+    resolution: options.resolution !== undefined,
+    expectedResult: options.expectedResult !== undefined,
+    actualResult: options.actualResult !== undefined,
+    affectedVersion: options.affectedVersion !== undefined,
+    fixedVersion: options.fixedVersion !== undefined,
+    component: options.component !== undefined,
+    regression: options.regression !== undefined,
+    customerImpact: options.customerImpact !== undefined,
+    dep: options.dep !== undefined,
+    depRemove: options.depRemove !== undefined,
+    replaceDeps: options.replaceDeps === true,
+    comment: options.comment !== undefined,
+    note: options.note !== undefined,
+    learning: options.learning !== undefined,
+    file: options.file !== undefined,
+    test: options.test !== undefined,
+    replaceTests: options.replaceTests === true,
+    doc: options.doc !== undefined,
+    reminder: options.reminder !== undefined,
+    event: options.event !== undefined,
+    typeOption: options.typeOption !== undefined,
+    unset: options.unset !== undefined && options.unset.length > 0,
+    clearDeps: options.clearDeps === true,
+    clearComments: options.clearComments === true,
+    clearNotes: options.clearNotes === true,
+    clearLearnings: options.clearLearnings === true,
+    clearFiles: options.clearFiles === true,
+    clearTests: options.clearTests === true,
+    clearDocs: options.clearDocs === true,
+    clearReminders: options.clearReminders === true,
+    clearEvents: options.clearEvents === true,
+    clearTypeOptions: options.clearTypeOptions === true,
+  };
+  const changedFlags = Object.values(fieldFlags).some(Boolean);
 
   if (!changedFlags) {
-    throw new PmCliError("No update flags provided", EXIT_CODE.USAGE);
+    const located = await locateItem(
+      pmRoot,
+      id,
+      settings.id_prefix,
+      settings.item_format,
+      typeRegistry.type_to_folder,
+    );
+    if (!located) {
+      throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeRegistry.type_to_folder);
+    }
+    const { document } = await readLocatedItem(located, { schema: settings.schema });
+    return {
+      item: document.metadata as unknown as Record<string, unknown>,
+      changed_fields: [],
+      warnings: ["noop_no_update_fields"],
+    };
+  }
+
+  if (fieldFlags.status && fieldFlags.closeReason) {
+    const targetStatus = normalizeStatusInput(options.status as ItemStatus, statusRegistry);
+    if (targetStatus === statusRegistry.close_status) {
+      const otherFieldsChanged = Object.entries(fieldFlags).some(
+        ([key, value]) => value && key !== "status" && key !== "closeReason",
+      );
+      if (otherFieldsChanged) {
+        throw new PmCliError(
+          `Cannot combine other field updates with --status ${statusRegistry.close_status} --close-reason. Run pm update for non-close fields, then pm close <id> "<reason>" separately.`,
+          EXIT_CODE.USAGE,
+          {
+            code: "close_through_update",
+            why: "Closing requires explicit pm close to capture validation; combining other field updates in the same call would mask the close audit trail.",
+            examples: [
+              `pm update ${id} --title "<title>"`,
+              `pm close ${id} "${options.closeReason}" --author "${author}"`,
+            ],
+            nextSteps: [
+              "Split into two commands: pm update <id> --<field> <value>; pm close <id> \"<reason>\".",
+            ],
+          },
+        );
+      }
+      const closeResult = await runClose(
+        id,
+        options.closeReason as string,
+        {
+          author: options.author,
+          message: options.message,
+          force: options.force,
+        },
+        global,
+      );
+      return {
+        item: closeResult.item,
+        changed_fields: closeResult.changed_fields,
+        warnings: [...closeResult.warnings, "auto_routed_from_update_to_close"],
+      };
+    }
   }
   if (options.order !== undefined && options.rank !== undefined && options.order !== options.rank) {
     throw new PmCliError("--order and --rank must match when both are provided", EXIT_CODE.USAGE);

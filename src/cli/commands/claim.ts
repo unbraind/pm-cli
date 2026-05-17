@@ -12,6 +12,8 @@ export interface ClaimResult {
   claimed_by: string;
   previous_assignee: string | null;
   forced: boolean;
+  skipped?: boolean;
+  warnings?: string[];
 }
 
 export interface ReleaseResult {
@@ -25,6 +27,7 @@ export interface ReleaseResult {
 export interface ClaimMutationOptions {
   author?: string;
   message?: string;
+  ifAvailable?: boolean;
 }
 
 export interface ReleaseMutationOptions extends ClaimMutationOptions {
@@ -51,6 +54,8 @@ export async function runClaim(
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const author = resolveAuthor(options.author, settings.author_default);
   let previousAssignee: string | null = null;
+  let skipped = false;
+  const mutationWarnings: string[] = [];
 
   const result = await mutateItem({
     pmRoot,
@@ -65,16 +70,27 @@ export async function runClaim(
       if (statusIsTerminal(document.metadata.status, statusRegistry) && !force) {
         throw new PmCliError(`Cannot claim terminal item ${document.metadata.id} without --force`, EXIT_CODE.CONFLICT);
       }
+      const heldByOther = previousAssignee !== null && previousAssignee !== author;
+      if (heldByOther && options.ifAvailable === true) {
+        skipped = true;
+        mutationWarnings.push(`claim_skipped_held_by:${previousAssignee}`);
+        return { changedFields: [] };
+      }
+      if (heldByOther) {
+        mutationWarnings.push(`claim_takeover:${previousAssignee}->${author}`);
+      }
       document.metadata.assignee = author;
-      return { changedFields: ["assignee"] };
+      return { changedFields: ["assignee"], warnings: mutationWarnings };
     },
   });
 
   return {
     item: result.item as unknown as Record<string, unknown>,
-    claimed_by: author,
+    claimed_by: skipped && previousAssignee !== null ? previousAssignee : author,
     previous_assignee: previousAssignee,
     forced: force,
+    ...(skipped ? { skipped: true } : {}),
+    ...(mutationWarnings.length > 0 ? { warnings: mutationWarnings } : {}),
   };
 }
 

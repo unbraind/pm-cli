@@ -687,21 +687,32 @@ function buildMetadataCheck(
     warningTokens.push(`${METADATA_WARNING_TOKEN_BY_FIELD[field]}:${missingItems.length}`);
   }
 
-  const counts = Object.fromEntries(
-    SUPPORTED_METADATA_REQUIRED_FIELDS.map((field) => [METADATA_COUNT_KEY_BY_FIELD[field], missingByField[field].length]),
-  );
+  // Zero-suppress counts to reduce agent token cost (telemetry pm-tylj).
+  const counts: Record<string, number> = {};
+  for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
+    const value = missingByField[field].length;
+    if (value > 0) {
+      counts[METADATA_COUNT_KEY_BY_FIELD[field]] = value;
+    }
+  }
   const details: Record<string, unknown> = {
     checked_items: items.length,
     metadata_profile: metadataPolicy.profile,
     metadata_profile_source: metadataPolicy.profile_source,
     metadata_profile_fallback_to_core: metadataPolicy.fallback_to_core,
     required_fields: [...metadataPolicy.required_fields],
-    configured_custom_required_fields: [...metadataPolicy.configured_custom_fields],
     supported_required_fields: [...SUPPORTED_METADATA_REQUIRED_FIELDS],
     counts,
   };
+  if (metadataPolicy.configured_custom_fields.length > 0) {
+    details.configured_custom_required_fields = [...metadataPolicy.configured_custom_fields];
+  }
 
+  // Only emit per-field item_ids/truncated keys when there are missing items.
   for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
+    if (missingByField[field].length === 0) {
+      continue;
+    }
     const summarized = summarizeList(missingByField[field]);
     details[METADATA_ITEM_IDS_KEY_BY_FIELD[field]] = summarized.values;
     details[METADATA_TRUNCATED_KEY_BY_FIELD[field]] = summarized.truncated;

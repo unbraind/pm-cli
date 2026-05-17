@@ -58,6 +58,12 @@ describe("contracts command runtime", () => {
         { canonical: "package", aliases: ["extension", "packages", "install"] },
       ]),
     );
+    expect(result.schema).toBeUndefined();
+    expect(result.schema_omitted_reason).toBe("unfiltered_default_brief");
+    expect(result.command_flags).toBeUndefined();
+    expect(result.command_flags_omitted_reason).toBe("unfiltered_default_brief");
+    expect(result.commander_aliases).toBeUndefined();
+    expect(result.commander_aliases_omitted_reason).toBe("unfiltered_default_brief");
     expect(
       (result.action_availability ?? []).some(
         (entry) => entry.action === "create" && entry.invocable,
@@ -71,11 +77,14 @@ describe("contracts command runtime", () => {
           entry.cli_exposed,
       ),
     ).toBe(true);
+    const fullResult = await runContracts({ full: true }, GLOBAL_OPTIONS);
+    expect(fullResult.schema).toBeDefined();
+    expect(fullResult.schema_omitted_reason).toBeUndefined();
     expect(
-      result.command_flags?.some((entry) => entry.command === "contracts"),
+      fullResult.command_flags?.some((entry) => entry.command === "contracts"),
     ).toBe(true);
     expect(
-      result.command_flags?.find((entry) => entry.command === "aggregate")
+      fullResult.command_flags?.find((entry) => entry.command === "aggregate")
         ?.flags,
     ).toEqual(
       expect.arrayContaining([
@@ -83,14 +92,14 @@ describe("contracts command runtime", () => {
         expect.objectContaining({ flag: "--count" }),
       ]),
     );
-    expect(result.command_flags?.find((entry) => entry.command === "get")?.flags).toEqual(
+    expect(fullResult.command_flags?.find((entry) => entry.command === "get")?.flags).toEqual(
       expect.arrayContaining([expect.objectContaining({ flag: "--depth" }), expect.objectContaining({ flag: "--fields" })]),
     );
-    expect(result.commander_aliases).toBeDefined();
+    expect(fullResult.commander_aliases).toBeDefined();
     expect(
-      result.commander_aliases?.create_string_options.length,
+      fullResult.commander_aliases?.create_string_options.length,
     ).toBeGreaterThan(0);
-    expect(result.commander_aliases?.list_string_options).toEqual(
+    expect(fullResult.commander_aliases?.list_string_options).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ target: "fields" }),
         expect.objectContaining({ target: "sort" }),

@@ -99,6 +99,7 @@ export interface ContractsCommandOptions {
   flagsOnly?: boolean;
   availabilityOnly?: boolean;
   runtimeOnly?: boolean;
+  full?: boolean;
 }
 
 interface CommandFlagSurface {
@@ -132,6 +133,9 @@ export interface ContractsResult {
   action_availability?: ContractsActionAvailability[];
   commands: string[];
   schema?: Record<string, unknown>;
+  schema_omitted_reason?: string;
+  command_flags_omitted_reason?: string;
+  commander_aliases_omitted_reason?: string;
   command_flags?: CommandFlagSurface[];
   command_aliases?: CommandAliasSurface[];
   commander_aliases?: Record<string, CommanderOptionAliasContract[]>;
@@ -1327,6 +1331,15 @@ export async function runContracts(
   const flagsOnly = options.flagsOnly === true;
   const availabilityOnly = options.availabilityOnly === true;
   const runtimeOnly = options.runtimeOnly === true;
+  const fullOutput = options.full === true;
+  const unfilteredDefaultBriefMode =
+    !fullOutput && !schemaOnly && !flagsOnly && !availabilityOnly && !selectedAction && !selectedCommand;
+  // Agent token-cost guard: when no filter and no projection flag and not --full,
+  // skip the giant schema oneOf union (the 200KB+ chunk). Restore via --full
+  // or by scoping to a specific --command/--action.
+  const omitUnfilteredSchema = unfilteredDefaultBriefMode;
+  const omitUnfilteredCommandFlags = unfilteredDefaultBriefMode;
+  const omitUnfilteredCommanderAliases = unfilteredDefaultBriefMode;
   const projectionFlagsEnabled = [
     schemaOnly,
     flagsOnly,
@@ -1552,24 +1565,35 @@ export async function runContracts(
     result.action_availability = actionAvailability;
   }
 
-  if (includeSchemaSurface) {
+  if (includeSchemaSurface && !omitUnfilteredSchema) {
     result.schema = filteredSchema;
+    result.extension_commands = extensionCommandContracts;
+  } else if (includeSchemaSurface && omitUnfilteredSchema) {
+    result.schema_omitted_reason = "unfiltered_default_brief";
     result.extension_commands = extensionCommandContracts;
   }
 
   if (!schemaOnly && !availabilityOnly) {
-    result.command_flags = buildCommandFlagSurface(
-      outputCommands,
-      extensionFlagMap,
-      runtimeFieldFlagMap,
-    );
+    if (!omitUnfilteredCommandFlags) {
+      result.command_flags = buildCommandFlagSurface(
+        outputCommands,
+        extensionFlagMap,
+        runtimeFieldFlagMap,
+      );
+    } else {
+      result.command_flags_omitted_reason = "unfiltered_default_brief";
+    }
     if (commandAliases.length > 0) {
       result.command_aliases = commandAliases;
     }
   }
 
   if (!schemaOnly && !flagsOnly && !availabilityOnly) {
-    result.commander_aliases = buildCommanderAliasSurface();
+    if (!omitUnfilteredCommanderAliases) {
+      result.commander_aliases = buildCommanderAliasSurface();
+    } else {
+      result.commander_aliases_omitted_reason = "unfiltered_default_brief";
+    }
   }
 
   return result;

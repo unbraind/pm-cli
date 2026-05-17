@@ -333,6 +333,10 @@ export function registerOperationCommands(program: Command): void {
     .option("--availability-only", "Return action availability surface only")
     .option("--runtime-only", "Include only actions invocable in the current runtime")
     .option("--active-only", "Alias for --runtime-only")
+    .option(
+      "--full",
+      "Include full schema and command-flag surfaces (large; default brief output omits heavy sections for unfiltered queries)",
+    )
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
@@ -344,6 +348,7 @@ export function registerOperationCommands(program: Command): void {
         flagsOnly: Boolean(options.flagsOnly),
         availabilityOnly: Boolean(options.availabilityOnly),
         runtimeOnly: Boolean(options.runtimeOnly) || Boolean(options.activeOnly),
+        full: Boolean(options.full),
       }, globalOptions);
       printResult(result, globalOptions);
       if (globalOptions.profile) {
@@ -357,6 +362,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--force", "Force claim override")
+    .option("--if-available", "Skip silently when the item is already claimed by another author (returns skipped=true)")
     .description("Claim an item for active work.")
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
@@ -365,6 +371,7 @@ export function registerOperationCommands(program: Command): void {
       const result = await runClaim(id, Boolean(options.force), globalOptions, {
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
+        ifAvailable: options.ifAvailable === true,
       });
       await invalidateSearchCachesForMutation(globalOptions, result);
       printResult(result, globalOptions);

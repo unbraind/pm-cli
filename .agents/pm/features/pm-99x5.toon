@@ -2,11 +2,14 @@ id: pm-99x5
 title: "pm get/show: did-you-mean suggestions for unknown IDs (telemetry: 233 hits/30d)"
 description: "Telemetry shows item_not_found fires 233 times in 30 days. Agents are pasting IDs that are typos or stale.\n\nProposed: on item_not_found, run a cheap Damerau-Levenshtein over the in-memory id index and surface up to 3 nearest candidates in the error payload's `did_you_mean` field plus next_steps. Apply to pm get/show, pm update, pm close, pm claim, pm release, pm comments, pm files, pm docs, pm test, pm history.\n\nAcceptance: regression tests for each command path; tests cover edge cases (no near matches, ambiguous matches)."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,errors,pm-cli,telemetry
 created_at: "2026-05-17T05:46:54.543Z"
-updated_at: "2026-05-17T05:46:54.543Z"
+updated_at: "2026-05-17T07:37:03.165Z"
 deadline: "2026-05-27T05:46:54.543Z"
 author: claude-code-agent
+comments[1]{created_at,author,text}:
+  "2026-05-17T07:37:03.165Z",codex-agent,"Audit follow-up 2026-05-17 (--allow-audit-comment): fixed remaining update no-op gap where unknown IDs in runUpdate(no fields) bypassed shared did-you-mean context. The no-op existence check now uses buildItemNotFoundError(), restoring nextSteps suggestions parity with other get/update mutation paths and passing targeted regression tests."
+close_reason: "Implemented pm-99x5: item-not-found errors now include did-you-mean suggestions via Levenshtein distance over disk-listed IDs (top-3, distance<=3 or half id length). Applied to pm get and all mutation paths via shared buildItemNotFoundError() in src/core/store/item-store.ts. Reduces 233 hits/30d."
 body: ""

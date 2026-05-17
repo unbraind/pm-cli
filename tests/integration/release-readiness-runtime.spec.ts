@@ -1091,6 +1091,7 @@ describe("release readiness runtime coverage", () => {
         "warnings",
         "governance_preset",
         "wizard_used",
+        "next_steps",
       ]);
 
       const createResult = context.runCli(

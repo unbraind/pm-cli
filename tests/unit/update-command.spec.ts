@@ -96,10 +96,57 @@ describe("runUpdate", () => {
     }
   });
 
-  it("requires at least one update flag", async () => {
+  it("returns a noop success when no field-changing flag is provided (pm-7cup)", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-no-flags");
-      await expect(runUpdate(id, {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+      const result = await runUpdate(id, {}, { path: context.pmPath });
+      expect(result.changed_fields).toEqual([]);
+      expect(result.warnings).toContain("noop_no_update_fields");
+      const item = result.item as { id: string };
+      expect(item.id).toBe(id);
+    });
+  });
+
+  it("returns NOT_FOUND for unknown id with did-you-mean suggestion (pm-99x5)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "did-you-mean-seed");
+      // Mutate one character of the known id so Levenshtein distance == 1.
+      const mistyped = `${id.slice(0, -1)}${id.endsWith("a") ? "b" : "a"}`;
+      await expect(runUpdate(mistyped, {}, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        context: {
+          nextSteps: expect.arrayContaining([expect.stringContaining(id)]),
+        },
+      });
+    });
+  });
+
+  it("auto-routes pm update --status closed --close-reason to pm close (pm-12ib)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "auto-route-close");
+      const result = await runUpdate(
+        id,
+        { status: "closed", closeReason: "done via auto-route" },
+        { path: context.pmPath },
+      );
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["status", "close_reason"]));
+      expect(result.warnings).toContain("auto_routed_from_update_to_close");
+      const item = result.item as { status: string; close_reason: string };
+      expect(item.status).toBe("closed");
+      expect(item.close_reason).toBe("done via auto-route");
+    });
+  });
+
+  it("rejects pm update --status closed --close-reason combined with other field updates (pm-12ib)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "auto-route-close-with-others");
+      await expect(
+        runUpdate(
+          id,
+          { status: "closed", closeReason: "done", title: "new title" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
     });

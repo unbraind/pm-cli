@@ -1338,6 +1338,7 @@ attachRichHelpText(program, bootstrapInvocation.argv);
 async function main(): Promise<void> {
   const invocationArgv = bootstrapInvocation.argv;
   const invocationProcessArgv = [process.argv[0], process.argv[1], ...invocationArgv];
+  const isBareInvocation = invocationArgv.length === 0;
   try {
     applyBootstrapPagerPolicy(invocationArgv);
     const registerDynamicCommands = shouldRegisterDynamicExtensionPaths(program, invocationArgv);
@@ -1353,6 +1354,10 @@ async function main(): Promise<void> {
     wrapProgramActionsForExtensionHandlers(program);
     const renderedBootstrapJsonHelp = await maybeRenderBootstrapJsonHelp(program, invocationArgv, activeRuntimeExtensionCommandDescriptors);
     if (renderedBootstrapJsonHelp) {
+      return;
+    }
+    if (isBareInvocation) {
+      program.outputHelp();
       return;
     }
     await program.parseAsync(invocationProcessArgv);

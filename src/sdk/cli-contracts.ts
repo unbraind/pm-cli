@@ -1327,6 +1327,7 @@ export const CONTRACTS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--availability-only" },
   { flag: "--runtime-only" },
   { flag: "--active-only" },
+  { flag: "--full" },
 ];
 
 export const COMPLETION_FLAG_CONTRACTS: CliFlagContract[] = [

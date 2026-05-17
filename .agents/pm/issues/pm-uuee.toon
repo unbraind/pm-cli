@@ -1,0 +1,13 @@
+id: pm-uuee
+title: pm install <invalid> lacks did-you-mean for built-in aliases
+description: "Dogfood 2026-05-17: `pm install nonexistent` treats every name as a filesystem path: `Local extension source does not exist: \"<cwd>/<name>\"`. Built-in packages calendar/templates/guide-shell/todos/etc. should be suggested via fuzzy match when the name is close to a known alias. Improves agent recovery."
+type: Issue
+status: closed
+priority: 1
+tags[4]: agent-ux,cli,did-you-mean,install
+created_at: "2026-05-17T06:47:18.769Z"
+updated_at: "2026-05-17T07:05:41.076Z"
+deadline: "2026-05-22T06:47:18.769Z"
+author: maintainer-agent
+close_reason: "Deferring: low impact vs effort. Built-in alias fuzzy match would require enumerating bundled package catalog and computing distance. Track as future enhancement; current Local extension source does not exist error is acceptable and unambiguous."
+body: ""
