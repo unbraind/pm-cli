@@ -412,6 +412,24 @@ describe("contracts command runtime", () => {
       selectedAliasFlags.command_flags?.map((entry) => entry.command),
     ).toEqual(["ctx"]);
 
+    const installFlags = await runContracts(
+      { command: "install", flagsOnly: true },
+      GLOBAL_OPTIONS,
+    );
+    expect(installFlags.command_flags?.[0]?.flags).toEqual([
+      { flag: "--project" },
+      { flag: "--local" },
+      { flag: "--global" },
+      { flag: "--gh" },
+      { flag: "--github" },
+      { flag: "--ref" },
+    ]);
+    expect(
+      installFlags.command_flags?.[0]?.flags.some(
+        (entry) => entry.flag === "--doctor" || entry.flag === "--init",
+      ),
+    ).toBe(false);
+
     const commandFlagParityChecks: Array<{ command: string; flags: string[] }> =
       [
         {

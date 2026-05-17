@@ -169,7 +169,7 @@ function registerLifecycleCommand(
     .argument("[target]", `${noun[0]!.toUpperCase()}${noun.slice(1)} source/name or scaffold target path (for --init/--scaffold)`)
     .option("--init", `Generate a starter ${noun} scaffold at target path`)
     .option("--scaffold", "Alias for --init")
-    .option("--install", `Install ${noun} from local path or GitHub source`)
+    .option("--install", `Install ${noun} from local path, bundled alias, npm: source, wildcard, or GitHub source`)
     .option("--uninstall", `Uninstall an installed ${noun}`)
     .option("--explore", `List discovered ${plural} in selected scope`)
     .option("--manage", `List managed ${plural} with update-check metadata`)
@@ -184,8 +184,8 @@ function registerLifecycleCommand(
     .option("--project", `Use project ${noun} scope (default)`)
     .option("--local", "Alias for --project")
     .option("--global", `Use global ${noun} scope`)
-    .option("--gh <owner/repo[/path]>", "Install from GitHub shorthand source")
-    .option("--github <owner/repo[/path]>", "Alias for --gh")
+    .option("--gh <github-source>", "Install from GitHub shorthand source (owner/repo[/path])")
+    .option("--github <github-source>", "Alias for --gh")
     .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
     .option("--detail <mode>", `${noun[0]!.toUpperCase()}${noun.slice(1)} diagnostics detail mode (summary|deep)`)
     .option("--trace", "Include actionable registration traces in doctor deep diagnostics")
@@ -211,7 +211,11 @@ function registerLifecycleCommand(
       .command("init")
       .alias("scaffold")
       .argument("<target>", `Scaffold target directory path`)
-      .description(`Generate a starter ${noun} scaffold with manifest and entrypoint.`),
+      .description(
+        vocabulary === "package"
+          ? "Generate a starter package scaffold with package metadata, manifest, and entrypoint."
+          : "Generate a starter extension scaffold with manifest and entrypoint.",
+      ),
     vocabulary,
   ).action(async (target: string, _options: Record<string, unknown>, command) => {
     await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "init", vocabulary);
@@ -220,11 +224,11 @@ function registerLifecycleCommand(
   addLifecycleScopeOptions(
     lifecycleCommand
       .command("install")
-      .argument("[targets...]", `${noun[0]!.toUpperCase()}${noun.slice(1)} source (local path, bundled alias, wildcard, or GitHub source)`)
-      .option("--gh <owner/repo[/path]>", "Install from GitHub shorthand source")
-      .option("--github <owner/repo[/path]>", "Alias for --gh")
+      .argument("[targets...]", `${noun[0]!.toUpperCase()}${noun.slice(1)} source (local path, bundled alias, npm: source, wildcard, or GitHub source)`)
+      .option("--gh <github-source>", "Install from GitHub shorthand source (owner/repo[/path])")
+      .option("--github <github-source>", "Alias for --gh")
       .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
-      .description(`Install ${noun} from local path or GitHub source.`),
+      .description(`Install ${noun} from local path, bundled alias, npm: source, wildcard, or GitHub source.`),
     vocabulary,
   ).action(async (targets: string[] | undefined, _options: Record<string, unknown>, command) => {
     const target = await normalizeInstallTargets(targets);
@@ -424,9 +428,9 @@ export function registerSetupCommands(program: Command): void {
   addPackageScopeOptions(
     program
       .command("install")
-      .argument("[targets...]", "Package source (local path, bundled alias, wildcard, or GitHub source)")
-      .option("--gh <owner/repo[/path]>", "Install from GitHub shorthand source")
-      .option("--github <owner/repo[/path]>", "Alias for --gh")
+      .argument("[targets...]", "Package source (local path, bundled alias, npm: source, wildcard, or GitHub source)")
+      .option("--gh <github-source>", "Install from GitHub shorthand source (owner/repo[/path])")
+      .option("--github <github-source>", "Alias for --gh")
       .option("--ref <ref>", "Git ref/branch/tag for GitHub install sources")
       .description("Install a pm package into the project package scope by default."),
   ).action(async (targets: string[] | undefined, _options: Record<string, unknown>, command) => {

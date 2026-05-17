@@ -56,6 +56,7 @@ import {
   HEALTH_FLAG_CONTRACTS,
   HISTORY_FLAG_CONTRACTS,
   HISTORY_REDACT_FLAG_CONTRACTS,
+  INSTALL_FLAG_CONTRACTS,
   INIT_FLAG_CONTRACTS,
   LEARNINGS_FLAG_CONTRACTS,
   LIST_COMMANDER_STRING_OPTION_CONTRACTS,
@@ -888,10 +889,12 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   if (
     command === "extension" ||
     command === "package" ||
-    command === "packages" ||
-    command === "install"
+    command === "packages"
   ) {
     return EXTENSION_FLAG_CONTRACTS;
+  }
+  if (command === "install") {
+    return INSTALL_FLAG_CONTRACTS;
   }
   if (command === "create") {
     return CREATE_FLAG_CONTRACTS;

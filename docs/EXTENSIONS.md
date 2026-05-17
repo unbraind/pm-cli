@@ -1,85 +1,53 @@
 # Packages and Extensions
 
-Packages let you add or override `pm` runtime behavior without modifying core `pm-cli` sources. A package can currently contain one or more runtime extensions, and the package-first command surface is the preferred user-facing workflow.
-
-`pm extension ...` remains supported for compatibility. New scripts and docs should prefer `pm install ...` and `pm package ...`.
-
-This document is the canonical package/extension reference for manifest contracts, governance policy, trust and sandbox controls, reload workflows, and diagnostics.
-
-## Quick Start
+Packages add optional `pm` workflows without changing the core CLI. A package can ship one or more runtime extensions plus metadata such as docs and examples. Prefer the package-first commands in new docs and automation:
 
 ```bash
-# 1) Scaffold a package extension
-pm package init ./my-package-extension
-
-# 2) Install in project scope
+pm package init ./my-package
 pm install ./my-package --project
-
-# Or install all bundled first-party packages
-pm install '*' --project
-
-# 3) Run diagnostics
 pm package doctor --project --detail summary
-
-# 4) Plan CLI/SDK and package upgrades
-pm upgrade --dry-run
-
-# 5) Reload runtime modules after local edits
 pm package reload --project
+pm upgrade --dry-run
 ```
 
-Compatibility equivalents:
+`pm extension ...` remains supported for compatibility and low-level runtime debugging.
 
-```bash
-pm extension init ./my-package        # prefer: pm package init ./my-package
-pm extension install ./my-package --project
-pm extension doctor --project --detail summary
-pm extension reload --project
-```
+Related docs:
 
-Use compatibility equivalents only for existing automation or for debugging extension-runtime behavior directly.
-
-## Upgrade Workflow
-
-`pm upgrade` is the package-first update entrypoint:
-
-```bash
-pm upgrade --dry-run              # plan CLI/SDK and project package updates
-pm upgrade                        # update the global pm CLI/SDK, then refresh project packages
-pm upgrade --packages-only        # refresh managed packages without changing the CLI
-pm upgrade todos --dry-run        # plan one managed package refresh
-pm upgrade --cli-only --repair    # force a global CLI/SDK reinstall through npm
-```
-
-CLI/SDK upgrades use `npm install -g @unbrained/pm-cli@<tag>`.
-Managed package upgrades reuse the source recorded at install time, including `npm:`, GitHub, local, and first-party package paths.
-Use `--tag <version-or-dist-tag>` to target a registry tag such as `latest` or `next`.
-
-## Extension Locations
-
-- project scope: `.agents/pm/extensions/<name>/`
-- global scope: `~/.pm-cli/extensions/<name>/`
-- project entries override global entries for matching command paths
-
-Runtime path overrides:
-
-- `PM_PATH`: project tracker root override
-- `PM_GLOBAL_PATH`: global profile root override
+- [SDK](SDK.md)
+- [Configuration](CONFIGURATION.md)
+- [Testing](TESTING.md)
+- [Command Reference](COMMANDS.md)
 
 ## Package Sources
 
-`pm install` accepts these package sources:
+`pm install` accepts local, registry, and GitHub sources:
 
 ```bash
-pm install ./local-package
-pm install /absolute/path/to/package
-pm install npm:@scope/package
-pm install npm:package@1.2.3
-pm install https://github.com/org/repo
-pm install --github org/repo/path --ref main
+pm install ./local-package --project
+pm install /absolute/path/to/package --project
+pm install npm:@scope/package --project
+pm install npm:package@1.2.3 --project
+pm install https://github.com/org/repo --project
+pm install --github org/repo/path --ref main --project
 ```
 
-Package roots can expose resources with a `pm` manifest in `package.json`:
+Bundled first-party packages live under `packages/pm-*`:
+
+```bash
+pm package catalog --project
+pm install '*' --project
+pm install all --project
+pm install calendar --project
+pm install search-advanced --project
+pm install governance-audit --project
+```
+
+`pm install '*'`, `pm install all`, and shell-expanded `pm install *` are normalized to the same bundled install-all request. First-party package aliases come from each package manifest, with a fallback derived from the `packages/pm-*` directory name.
+
+## Package Manifest
+
+Package roots declare resources in `package.json` under `pm`:
 
 ```json
 {
@@ -89,7 +57,7 @@ Package roots can expose resources with a `pm` manifest in `package.json`:
     "aliases": ["my-workflow"],
     "extensions": ["extensions/my-extension"],
     "docs": ["README.md"],
-    "examples": ["README.md"],
+    "examples": ["examples/basic.md"],
     "catalog": {
       "display_name": "My pm Package",
       "category": "workflow",
@@ -99,54 +67,70 @@ Package roots can expose resources with a `pm` manifest in `package.json`:
         "docs": "https://example.com/docs",
         "repository": "https://github.com/org/my-pm-package",
         "report": "https://github.com/org/my-pm-package/issues"
-      },
-      "media": {
-        "image": "https://example.com/preview.png"
       }
     }
   }
 }
 ```
 
-`pm.aliases` declares short install targets for bundled first-party packages. If aliases are omitted, `pm` derives a default alias from the `packages/pm-*` directory name. The SDK exposes this project-management package model through `PM_PACKAGE_RESOURCE_KINDS`, `PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS`, and `readPmPackageManifest`. Package installation currently activates only `pm.extensions`; `pm.docs` and `pm.examples` are metadata-first catalog resources. Agent-specific bundles such as prompts, skills, and MCP servers should live in separate agent adapter packages rather than the core `pm` package contract.
+Current resource kinds are:
 
-When no manifest is present, `pm` discovers conventional extension directories:
+- `extensions`
+- `docs`
+- `examples`
+
+Installation activates `pm.extensions`. `pm.docs` and `pm.examples` are catalog metadata. Agent-specific assets such as prompts, skills, or MCP servers should live in agent adapter packages, not in the core `pm` package contract.
+
+When no package manifest is present, `pm` discovers conventional extension directories:
 
 - `.agents/pm/extensions/`
 - `extensions/`
 - `.custom/pm-extensions/`
 - `.custom/pm-extension/`
 
-If a package contains multiple extension manifests, install the exact extension path so the managed state has one deterministic package target.
+If a source contains multiple extension manifests, install the exact extension path so managed state has one deterministic target.
 
-First-party optional packages are shipped as package roots under `packages/`:
+## Extension Layout
 
-```bash
-pm package catalog --project
-pm install '*' --project
-pm install all --project
-pm install packages/pm-calendar --project
-pm install packages/pm-beads --project
-pm install packages/pm-todos --project
+Project extensions are stored under `.agents/pm/extensions/<name>/`. Global extensions are stored under `~/.pm-cli/extensions/<name>/`. Project entries override global entries when they register the same command path or runtime surface.
+
+Runtime path overrides:
+
+- `PM_PATH`: project tracker root
+- `PM_GLOBAL_PATH`: global profile root
+
+A minimal extension has a `manifest.json` and an entrypoint:
+
+```json
+{
+  "name": "hello",
+  "version": "0.1.0",
+  "entry": "./index.js",
+  "capabilities": ["commands"]
+}
 ```
 
-`pm install '*'` and `pm install all` install every bundled first-party package in deterministic alias order. If your shell expands `pm install *`, pm recognizes that expansion and treats it as the same bundled-package install-all request.
+```js
+import { defineExtension } from "@unbrained/pm-cli/sdk";
 
-Compatibility aliases remain available:
-
-```bash
-pm install beads --project
-pm install calendar --project
-pm install todos --project
+export default defineExtension({
+  activate(api) {
+    api.registerCommand({
+      name: "hello",
+      description: "Print a deterministic hello payload.",
+      intent: "verify extension command activation",
+      examples: ["pm hello"],
+      run() {
+        return { ok: true, message: "hello" };
+      },
+    });
+  },
+});
 ```
 
-Those aliases install package-shipped extension sources. They are then tracked in managed package state and can be refreshed with `pm upgrade --packages-only`.
+## Extension Manifest
 
-If a package-owned command is invoked before installation (for example `pm calendar --help`, `pm reindex --help`, or `pm normalize --help` in bare core mode), runtime usage guidance now includes a direct recovery command such as `pm install calendar`, `pm install search-advanced`, or `pm install governance-audit`.
-
-## Manifest Contract
-
-### Manifest v1 (supported)
+Manifest v1 is supported:
 
 ```json
 {
@@ -158,7 +142,7 @@ If a package-owned command is invoked before installation (for example `pm calen
 }
 ```
 
-### Manifest v2 (recommended)
+Manifest v2 is recommended when governance, trust, or sandbox metadata matters:
 
 ```json
 {
@@ -181,471 +165,16 @@ If a package-owned command is invoked before installation (for example `pm calen
     "env_write": false,
     "process_spawn": false
   },
-  "capabilities": ["commands", "hooks"]
-}
-```
-
-### Capability values
-
-- `commands`
-- `parser`
-- `preflight`
-- `services`
-- `renderers`
-- `hooks`
-- `schema`
-- `importers`
-- `search`
-
-## Governance Policy (`extensions.policy`)
-
-Policy is configured in `settings.json` under `extensions.policy`.
-
-```json
-{
-  "extensions": {
-    "policy": {
-      "mode": "enforce",
-      "trust_mode": "warn",
-      "require_provenance": true,
-      "default_sandbox_profile": "restricted",
-      "allowed_extensions": [],
-      "blocked_extensions": [],
-      "allowed_capabilities": [],
-      "blocked_capabilities": ["services"],
-      "allowed_surfaces": [],
-      "blocked_surfaces": ["commands.override"],
-      "allowed_commands": [],
-      "blocked_commands": ["dangerous command"],
-      "allowed_actions": [],
-      "blocked_actions": ["dangerous-command"],
-      "allowed_services": [],
-      "blocked_services": ["output_format"]
-    }
-  }
-}
-```
-
-Mode semantics:
-
-- `mode`: `off|warn|enforce` for extension/capability/surface/command/action/service checks
-- `trust_mode`: `off|warn|enforce` for trust checks
-- `default_sandbox_profile`: `none|restricted|strict`
-
-Sandbox profiles:
-
-- `none`: no sandbox permission gating
-- `restricted`: blocks sensitive writes and spawn (`process_spawn`, `env_write`)
-- `strict`: blocks spawn/network/write style permissions (`process_spawn`, `network`, `fs_write`, `env_write`)
-
-If profile is non-`none` and manifest permissions are missing, policy emits a deterministic warning or block.
-
-## Supported Surface Tokens
-
-Use these values with `allowed_surfaces` and `blocked_surfaces`:
-
-- `commands.override`
-- `commands.handler`
-- `hooks.beforecommand`
-- `hooks.aftercommand`
-- `hooks.onwrite`
-- `hooks.onread`
-- `hooks.onindex`
-- `schema.flags`
-- `schema.itemfields`
-- `schema.itemtypes`
-- `schema.migrations`
-- `parser.override`
-- `preflight.override`
-- `services.override`
-- `renderers.override`
-- `importers.importer`
-- `importers.exporter`
-- `search.provider`
-- `search.vectorstore`
-
-## Reload and Watch Workflows
-
-Manual reload:
-
-```bash
-pm extension --reload --project
-```
-
-Watch-mode semantics:
-
-```bash
-pm extension --reload --project --watch
-```
-
-In non-interactive automation, `--watch` performs a deterministic single-pass reload and emits a watch-hint warning.
-
-## Diagnostics and Management
-
-Basic diagnostics:
-
-```bash
-pm extension --doctor --project --detail summary
-```
-
-Deep diagnostics:
-
-```bash
-pm extension --doctor --project --detail deep --trace
-```
-
-Management commands:
-
-```bash
-pm package catalog --project
-pm package explore
-pm package manage --project
-pm package manage --project --runtime-probe
-pm package manage --project --fix-managed-state
-pm package activate my-extension --project
-pm package deactivate my-extension --project
-pm package uninstall my-extension --project
-```
-
-Common warning prefixes:
-
-- `extension_policy_violation_extension`
-- `extension_policy_violation_capability`
-- `extension_policy_violation_registration`
-- `extension_policy_violation_trust`
-- `extension_policy_blocked_extension`
-- `extension_policy_blocked_capability`
-- `extension_policy_blocked_registration`
-- `extension_policy_blocked_trust`
-
-## Migration Checklist (v1 -> v2)
-
-1. Keep existing manifest fields.
-2. Add `manifest_version: 2`.
-3. Add `trusted`, `provenance`, `sandbox_profile`, and `permissions`.
-4. Extend `extensions.policy` with trust/sandbox and command/action/service controls.
-5. Run:
-
-```bash
-pm contracts --json
-pm package doctor --project --detail summary --strict-exit
-```
-
-6. Resolve warnings before enforcing `mode=enforce` and `trust_mode=enforce`.
-
-## Runnable Examples
-
-- `docs/examples/starter-extension/`
-- `docs/examples/policy-restricted-extension/`
-- `docs/examples/sdk-contract-consumer/`
-- `docs/examples/sdk-app-embedding/`
-- `docs/examples/ci/github-actions-pm-extension-gate.yml`
-- `docs/examples/ci/gitlab-ci-pm-extension-gate.yml`
-- `docs/examples/ci/jenkins-pm-extension-gate.Jenkinsfile`
-# Extension Runtime Details
-
-Extensions let you add or override `pm` runtime behavior without modifying core `pm-cli`.
-
-This guide is the authoritative reference for:
-
-- manifest `v1` and `v2` contracts
-- governance policy (`extensions.policy`) controls
-- trust/provenance and sandbox restrictions
-- manual reload and watch-mode workflows
-- migration from policy-only setups to enterprise controls
-
-## Quick Start
-
-```bash
-# 1) Scaffold a package-backed extension
-pm package init ./my-package
-
-# 2) Install in project scope
-pm install ./my-package --project
-
-# 3) Run diagnostics
-pm package doctor --project --detail summary
-
-# 4) Reload runtime modules after local edits
-pm package reload --project
-```
-
-## Delta From Previous Scope
-
-Compared to the previous policy-only extension surface, this release adds:
-
-- **Manifest v2 metadata** for trust, provenance, sandbox profile, and runtime permission declarations.
-- **Policy v2 controls** for trust mode, provenance requirement, sandbox defaults, and command/action/service allow/block maps.
-- **Registration enforcement upgrades** so command/action/service restrictions are evaluated at registration boundaries.
-- **Hot reload controls** via cache-busted package reload (`pm package reload`) with watch-mode semantics (`--watch`).
-- **Contracts metadata upgrades** for trust/sandbox compatibility information in `pm contracts`.
-
-## Extension Locations
-
-- Project scope: `.agents/pm/extensions/<name>/`
-- Global scope: `~/.pm-cli/extensions/<name>/`
-- Project entries override global entries when command paths collide.
-
-Overrides:
-
-- `PM_PATH`: project tracker root override
-- `PM_GLOBAL_PATH`: global profile root override
-
-## Manifest Contract
-
-### Manifest v1 (still supported)
-
-```json
-{
-  "name": "my-ext",
-  "version": "0.1.0",
-  "entry": "./index.js",
-  "priority": 100,
-  "capabilities": ["commands"]
-}
-```
-
-### Manifest v2 (recommended)
-
-```json
-{
-  "name": "my-ext",
-  "version": "0.2.0",
-  "entry": "./index.js",
-  "priority": 100,
-  "manifest_version": 2,
-  "trusted": true,
-  "provenance": {
-    "source": "github://org/repo/path",
-    "verified": true
-  },
-  "sandbox_profile": "restricted",
-  "permissions": {
-    "fs_read": true,
-    "fs_write": false,
-    "network": false,
-    "env_read": true,
-    "env_write": false,
-    "process_spawn": false
-  },
-  "capabilities": ["commands", "hooks"]
-}
-```
-
-### Capability Values
-
-- `commands`
-- `parser`
-- `preflight`
-- `services`
-- `renderers`
-- `hooks`
-- `schema`
-- `importers`
-- `search`
-
-## Governance Policy v2
-
-Policy is configured under `settings.json` -> `extensions.policy`.
-
-```json
-{
-  "extensions": {
-    "policy": {
-      "mode": "enforce",
-      "trust_mode": "warn",
-      "require_provenance": true,
-      "trusted_extensions": ["policy-restricted-extension"],
-      "default_sandbox_profile": "restricted",
-      "allowed_extensions": [],
-      "blocked_extensions": [],
-      "allowed_capabilities": [],
-      "blocked_capabilities": ["services"],
-      "allowed_surfaces": [],
-      "blocked_surfaces": ["commands.override"],
-      "allowed_commands": [],
-      "blocked_commands": ["dangerous command"],
-      "allowed_actions": [],
-      "blocked_actions": ["dangerous-command"],
-      "allowed_services": [],
-      "blocked_services": ["output_format"],
-      "extension_overrides": [
-        {
-          "name": "policy-restricted-extension",
-          "require_trusted": true,
-          "require_provenance": true,
-          "sandbox_profile": "strict",
-          "allowed_surfaces": ["commands.handler", "hooks.beforecommand"],
-          "blocked_surfaces": ["services.override"]
-        }
-      ]
-    }
-  }
-}
-```
-
-### Mode Semantics
-
-- `mode`: `off|warn|enforce` for extension/capability/surface/command/action/service restrictions
-- `trust_mode`: `off|warn|enforce` for trust checks
-- `default_sandbox_profile`: `none|restricted|strict`
-
-### Sandbox Profiles
-
-Sandbox profiles are policy-driven gates evaluated against manifest permission declarations:
-
-- `none`: no sandbox permission gating
-- `restricted`: blocks sensitive writes/spawn (`process_spawn`, `env_write`)
-- `strict`: blocks spawn/network/write-style permissions (`process_spawn`, `network`, `fs_write`, `env_write`)
-
-If a non-`none` profile is active and manifest permissions are missing, a deterministic policy warning/block is emitted.
-
-### Surface Tokens
-
-Supported `allowed_surfaces` / `blocked_surfaces` values:
-
-- `commands.override`
-- `commands.handler`
-- `hooks.beforecommand`
-- `hooks.aftercommand`
-- `hooks.onwrite`
-- `hooks.onread`
-- `hooks.onindex`
-- `schema.flags`
-- `schema.itemfields`
-- `schema.itemtypes`
-- `schema.migrations`
-- `parser.override`
-- `preflight.override`
-- `services.override`
-- `renderers.override`
-- `importers.importer`
-- `importers.exporter`
-- `search.provider`
-- `search.vectorstore`
-
-## Hot Reload
-
-### Manual reload
-
-```bash
-pm extension --reload --project
-```
-
-This runs extension discovery/load with cache-busted import URLs and returns deterministic load/activation diagnostics.
-
-### Watch mode
-
-```bash
-pm extension --reload --project --watch
-```
-
-`--watch` enables watch-mode semantics for reload workflows. In non-interactive automation, it executes a deterministic single-pass reload and emits a watch hint warning.
-
-## Diagnostics and Warning Codes
-
-Common warning prefixes:
-
-- `extension_policy_violation_extension`
-- `extension_policy_violation_capability`
-- `extension_policy_violation_registration`
-- `extension_policy_violation_trust`
-- `extension_policy_blocked_extension`
-- `extension_policy_blocked_capability`
-- `extension_policy_blocked_registration`
-- `extension_policy_blocked_trust`
-
-Use:
-
-```bash
-pm extension --doctor --project --detail deep --trace
-```
-
-for full activation traces.
-
-## Migration (v1 -> v2)
-
-1. Keep existing manifest fields unchanged.
-2. Add `manifest_version: 2`.
-3. Add `trusted`, `provenance`, `sandbox_profile`, and `permissions`.
-4. Extend `extensions.policy` with trust/sandbox/command-action-service fields.
-5. Run:
-
-```bash
-pm contracts --json
-pm extension --doctor --project --detail summary --strict-exit
-```
-
-6. Fix any policy warnings before enforcing (`mode=enforce`, `trust_mode=enforce`).
-
-## Runnable Examples
-
-- `docs/examples/starter-extension/`
-- `docs/examples/policy-restricted-extension/`
-- `docs/examples/sdk-contract-consumer/`
-- `docs/examples/sdk-app-embedding/`
-- `docs/examples/ci/github-actions-pm-extension-gate.yml`
-- `docs/examples/ci/gitlab-ci-pm-extension-gate.yml`
-- `docs/examples/ci/jenkins-pm-extension-gate.Jenkinsfile`
-# Extension Runtime Governance
-
-Extensions let you add or override `pm` runtime behavior without editing core `pm-cli` sources. They are loaded at runtime, gated by manifest capabilities, and now support granular governance policies for capability/surface allow/block controls.
-
-## Quick Start
-
-```bash
-# 1) Scaffold a new package
-pm package init ./my-package
-
-# 2) Install into project scope
-pm install ./my-package --project
-
-# 3) Run package diagnostics
-pm package doctor --project --detail summary
-
-# 4) Deep diagnostics with traces
-pm package doctor --project --detail deep --trace
-```
-
-Expected summary signals from `pm package doctor`:
-
-- `details.summary.status`: `ok` or `warn`
-- `details.summary.warning_codes`: deterministic warning code list
-- `details.summary.policy`: active policy mode and configured counts
-- `details.triage.remediation`: actionable follow-up guidance
-
-## Extension Locations and Precedence
-
-- Project extensions: `.agents/pm/extensions/<name>/`
-- Global extensions: `~/.pm-cli/extensions/<name>/`
-- Project takes precedence when both scopes register the same command/surface.
-- Discovery and activation remain deterministic across runs.
-
-Environment overrides:
-
-- `PM_PATH`: project tracker root override
-- `PM_GLOBAL_PATH`: global profile root override
-
-## Manifest and Capabilities
-
-Minimal `manifest.json`:
-
-```json
-{
-  "name": "pm-ext-example",
-  "version": "0.1.0",
-  "entry": "./index.js",
-  "priority": 100,
-  "capabilities": ["commands"]
+  "capabilities": ["commands", "schema"]
 }
 ```
 
 Rules:
 
-- `entry` must resolve inside extension directory (symlink-safe canonical checks apply).
-- Declare only capabilities actually used.
-- Unknown capabilities produce deterministic warnings with guidance.
-- Legacy aliases (`migration`, `validation`) are remapped to `schema` with guidance warnings.
+- `entry` must resolve inside the extension directory.
+- Declare only capabilities the extension actually uses.
+- Unknown capabilities emit deterministic warnings.
+- Legacy aliases such as `migration` and `validation` are normalized to `schema` with warnings.
 
 Supported capabilities:
 
@@ -659,47 +188,55 @@ Supported capabilities:
 - `importers`
 - `search`
 
-## Governance Policy (Granular Controls)
+## Governance Policy
 
-Extension governance policy is configured in `settings.json` under `extensions.policy`.
-
-Policy modes:
-
-- `off`: no policy enforcement/warnings
-- `warn`: allow registrations but emit policy violation warnings
-- `enforce`: block disallowed extensions/capabilities/surfaces
-
-Example policy:
+Governance policy is configured in `settings.json` under `extensions.policy`:
 
 ```json
 {
   "extensions": {
     "policy": {
       "mode": "enforce",
-      "allowed_extensions": ["release-audit-ext"],
+      "trust_mode": "warn",
+      "require_provenance": true,
+      "default_sandbox_profile": "restricted",
+      "allowed_extensions": [],
       "blocked_extensions": [],
       "allowed_capabilities": [],
       "blocked_capabilities": ["services"],
       "allowed_surfaces": [],
       "blocked_surfaces": ["commands.override"],
-      "extension_overrides": [
-        {
-          "name": "release-audit-ext",
-          "allowed_surfaces": ["commands.handler", "hooks.beforecommand"],
-          "blocked_surfaces": ["services.override"]
-        }
-      ]
+      "allowed_commands": [],
+      "blocked_commands": ["dangerous command"],
+      "allowed_actions": [],
+      "blocked_actions": [],
+      "allowed_services": [],
+      "blocked_services": []
     }
   }
 }
 ```
 
-### Surface Tokens
+Policy modes:
 
-Use these exact values for `allowed_surfaces` / `blocked_surfaces`:
+- `off`: no policy enforcement or warnings
+- `warn`: allow registrations but emit policy warnings
+- `enforce`: block disallowed extensions, capabilities, commands, actions, services, or surfaces
 
-- `commands.override`
+Sandbox profiles:
+
+- `none`: no extra sandbox restriction
+- `restricted`: safe default for normal package workflows
+- `strict`: most restrictive policy profile
+
+Surface tokens include:
+
 - `commands.handler`
+- `commands.override`
+- `parser.override`
+- `preflight.override`
+- `services.override`
+- `renderers.override`
 - `hooks.beforecommand`
 - `hooks.aftercommand`
 - `hooks.onwrite`
@@ -709,323 +246,130 @@ Use these exact values for `allowed_surfaces` / `blocked_surfaces`:
 - `schema.itemfields`
 - `schema.itemtypes`
 - `schema.migrations`
-- `parser.override`
-- `preflight.override`
-- `services.override`
-- `renderers.override`
-- `importers.importer`
-- `importers.exporter`
+- `importers`
 - `search.provider`
-- `search.vectorstore`
 
-Policy diagnostics use deterministic warning codes:
+Use `pm package doctor --project --detail deep --trace` to inspect active policy state and warning codes.
 
-- `extension_policy_violation_extension`
-- `extension_policy_violation_capability`
-- `extension_policy_violation_registration`
-- `extension_policy_blocked_extension`
-- `extension_policy_blocked_capability`
-- `extension_policy_blocked_registration`
+## Runtime APIs
 
-## Runtime APIs (Public SDK)
+Use the public SDK barrel. Do not deep-import from `src/core` or `dist/core`.
 
-Use `@unbrained/pm-cli/sdk` only (no internal imports).
+```js
+import { defineExtension } from "@unbrained/pm-cli/sdk";
+```
 
-- `api.registerCommand(def)` -> `commands`
-- `api.registerParser(command, fn)` -> `parser`
-- `api.registerPreflight(fn)` -> `preflight`
-- `api.registerService(name, fn)` -> `services`
-- `api.registerRenderer(format, fn)` -> `renderers`
-- `api.registerFlags(command, flags)` -> `schema`
-- `api.registerItemFields(fields)` -> `schema`
-- `api.registerItemTypes(types)` -> `schema`
-- `api.registerMigration(def)` -> `schema`
-- `api.registerImporter(name, fn)` -> `importers`
-- `api.registerExporter(name, fn)` -> `importers`
-- `api.registerSearchProvider(provider)` -> `search`
-- `api.registerVectorStoreAdapter(adapter)` -> `search`
-- `api.hooks.beforeCommand/afterCommand/onWrite/onRead/onIndex(fn)` -> `hooks`
+Common APIs:
+
+- `api.registerCommand(definition)` adds package-owned commands.
+- `api.registerFlags(command, flags)` adds runtime command flags.
+- `api.registerItemFields(fields)` adds custom metadata fields.
+- `api.registerItemTypes(types)` adds custom item types.
+- `api.registerMigration(definition)` adds schema migrations.
+- `api.registerOutputService(definition)` customizes output rendering.
+- `api.registerRenderer(definition)` adds format-specific renderers.
+- `api.registerHook(name, handler)` adds lifecycle hooks.
+
+Inline command flags require both `commands` and `schema` capabilities. Runtime schema changes should be verified with:
+
+```bash
+pm contracts --runtime-only --schema-only --json
+pm contracts --command <command> --flags-only --json
+```
 
 ## Lifecycle Commands
 
-```bash
-# Explore
-pm extension --explore --project
-
-# Manage (update checks + managed state diagnostics)
-pm extension --manage --project
-
-# Optional runtime probe parity in manage mode
-pm extension --manage --project --runtime-probe
-
-# Auto-adopt unmanaged extensions into managed state
-pm extension --manage --project --fix-managed-state
-
-# Activation/deactivation
-pm extension --activate my-extension --project
-pm extension --deactivate my-extension --project
-
-# Uninstall
-pm extension --uninstall my-extension --project
-```
-
-## Non-Interactive Automation Patterns
-
-For CI/CD and agents:
-
-- Prefer `--json` outputs.
-- Use `pm contracts --schema-only --json` before invoking action payloads.
-- Run `pm extension --doctor --detail summary --strict-exit` as a gate.
-- Add `--detail deep --trace` on failure paths for remediation payloads.
-- Use `--no-extensions` as a deterministic fallback for core-only triage.
-
-## Runnable Examples
-
-- Full starter extension: `docs/examples/starter-extension/`
-- Capability-restricted policy example: `docs/examples/policy-restricted-extension/`
-- Programmatic contracts consumer: `docs/examples/sdk-contract-consumer/`
-- CI gating workflow: `docs/examples/ci/github-actions-pm-extension-gate.yml`
-
-## Troubleshooting
-
-- Manifest/entry failures: run `pm package explore --project`
-- Activation failures: run `pm package doctor --detail deep --trace`
-- Policy blocks: review `settings.extensions.policy` and `details.summary.policy`
-- Runtime drift suspicion: compare with `pm --no-extensions <command>`
-- Managed-state update-check gaps: run `pm package manage --fix-managed-state`
-
-## Related Docs
-
-- `docs/SDK.md`
-- `docs/examples/starter-extension/README.md`
-- `docs/CLAUDE_CODE_PLUGIN.md`
-# Extension Runtime Reference
-
-Extensions add commands, schema, renderers, importers/exporters, search adapters, lifecycle hooks, and selected runtime overrides without modifying core `pm-cli`.
-
-## Agent Quick Context
-
-- Use `pm package init ./my-package` for a starter scaffold.
-- Use `@unbrained/pm-cli/sdk` for public extension APIs.
-- Declare only the capabilities your extension uses.
-- Run `pm package doctor --detail deep --trace` for activation failures.
-- Use `--no-extensions` to isolate core behavior during incident triage.
-- Install `guide-shell` with `pm install guide-shell --project`, then use `pm guide extensions --depth standard` for local docs routing.
-
-Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
-
-## Extension Locations
-
-| Scope | Path |
-|-------|------|
-| Project | `.agents/pm/extensions/<name>/` |
-| Global | `~/.pm-cli/extensions/<name>/` |
-
-Environment overrides:
-
-- `PM_PATH` changes project tracker root.
-- `PM_GLOBAL_PATH` changes global profile root.
-
-Load order is global, then project. Project extensions take precedence when keys collide.
-
-## Lifecycle Manager
-
-Scaffold:
-
-```bash
-pm package init ./my-package
-pm package scaffold ./my-package
-```
-
-Install:
-
-```bash
-pm package install ./my-package --project
-pm package install github.com/unbraind/pm-cli/packages/pm-todos --project
-pm install todos --project
-```
-
-Inspect and manage:
+Explore installed runtime entries:
 
 ```bash
 pm package explore --project
-pm package manage --project
-pm package doctor --detail summary
-pm package doctor --detail deep --trace
+pm package explore --project --json
 ```
 
-Activate and deactivate:
+Run diagnostics:
+
+```bash
+pm package doctor --project --detail summary
+pm package doctor --project --detail deep --trace
+pm package doctor --project --strict-exit
+```
+
+Manage state and update checks:
+
+```bash
+pm package manage --project
+pm package manage --project --fix-managed-state
+pm package adopt my-extension --project
+pm package adopt-all --project
+```
+
+Activate or deactivate:
 
 ```bash
 pm package activate my-extension --project
 pm package deactivate my-extension --project
 ```
 
-Adopt unmanaged extensions:
+Uninstall:
 
 ```bash
-pm package adopt my-extension --project
-pm package adopt-all --project
+pm package uninstall my-extension --project
 ```
 
-## Install Sources
-
-`pm install` and `pm package install` accept:
-
-- local directories
-- GitHub HTTPS URLs
-- `github.com/<owner>/<repo>[/path]`
-- `--gh <owner>/<repo>[/path]`
-- optional `--ref <branch|tag|sha>`
-
-When a GitHub source omits a subpath, the installer accepts a repository root containing one extension manifest or exactly one extension under known extension roots.
-
-## Manifest
-
-Every extension has `manifest.json`:
-
-```json
-{
-  "name": "pm-ext-example",
-  "version": "0.1.0",
-  "entry": "./index.js",
-  "priority": 100,
-  "capabilities": ["commands"]
-}
-```
-
-Rules:
-
-- `entry` must stay inside the extension directory.
-- `capabilities` gates what the extension can register.
-- Unknown capabilities emit guidance.
-- Legacy capability aliases are normalized for compatibility with warnings.
-
-Capability names:
-
-- `commands`
-- `parser`
-- `preflight`
-- `services`
-- `renderers`
-- `hooks`
-- `schema`
-- `importers`
-- `search`
-
-## Minimal Extension
-
-`manifest.json`:
-
-```json
-{
-  "name": "hello",
-  "version": "0.1.0",
-  "entry": "./index.js",
-  "capabilities": ["commands"]
-}
-```
-
-`index.js`:
-
-```js
-import { defineExtension } from "@unbrained/pm-cli/sdk";
-
-export default defineExtension({
-  activate(api) {
-    api.registerCommand({
-      name: "hello",
-      description: "Print a deterministic hello payload.",
-      intent: "verify extension command activation",
-      examples: ["pm hello"],
-      run: async () => ({ message: "hello" }),
-    });
-  },
-});
-```
-
-Run:
+Reload local edits:
 
 ```bash
-pm extension install ./hello --project
-pm hello
+pm package reload --project
+pm package reload --project --watch
 ```
 
-## API Reference
+Compatibility equivalents remain available through `pm extension ...` for existing automation.
 
-Use [SDK](SDK.md) for typed examples. Runtime APIs include:
+## Upgrade Workflow
 
-| API | Capability | Purpose |
-|-----|------------|---------|
-| `api.registerCommand(def)` | `commands` | add or replace command handlers |
-| `api.registerParser(command, fn)` | `parser` | normalize args/options before dispatch |
-| `api.registerPreflight(fn)` | `preflight` | influence mutation gate decisions |
-| `api.registerService(name, fn)` | `services` | replace selected runtime services |
-| `api.registerRenderer(format, fn)` | `renderers` | override TOON or JSON output |
-| `api.registerImporter(name, fn)` | `importers` | add `<name> import` |
-| `api.registerExporter(name, fn)` | `importers` | add `<name> export` |
-| `api.registerFlags(command, flags)` | `schema` | describe dynamic command flags |
-| `api.registerItemFields(fields)` | `schema` | add item metadata fields |
-| `api.registerItemTypes(types)` | `schema` | add custom item types |
-| `api.registerMigration(def)` | `schema` | add schema migrations |
-| `api.registerSearchProvider(provider)` | `search` | add search provider |
-| `api.registerVectorStoreAdapter(adapter)` | `search` | add vector adapter |
-| `api.hooks.beforeCommand(fn)` | `hooks` | run before commands |
-| `api.hooks.afterCommand(fn)` | `hooks` | run after commands |
-| `api.hooks.onWrite(fn)` | `hooks` | observe writes |
-| `api.hooks.onRead(fn)` | `hooks` | observe reads |
-| `api.hooks.onIndex(fn)` | `hooks` | observe index operations |
-
-## Command Metadata
-
-Dynamic commands should include human and machine metadata:
-
-```js
-api.registerCommand({
-  name: "acme sync",
-  action: "acme-sync",
-  description: "Synchronize ACME records into pm items.",
-  intent: "run deterministic import before release prep",
-  examples: ["pm acme sync --source ./records.json --dry-run"],
-  failure_hints: ["Ensure --source points to readable JSON."],
-  flags: [
-    { long: "--source", value_name: "path", description: "Input file path", required: true },
-    { long: "--dry-run", description: "Preview without writing", type: "boolean" }
-  ],
-  run: async (context) => ({ ok: true, args: context.args }),
-});
-```
-
-Inline command flags require both `commands` and `schema` capabilities.
-
-## Service and Preflight Safety
-
-`parser`, `preflight`, and `services` are powerful. They can change command input, mutation gates, output formatting, lock behavior, history appends, and item-store writes. Only enable these capabilities for reviewed extensions.
-
-For troubleshooting:
+`pm upgrade` is the package-first update entrypoint:
 
 ```bash
-pm --no-extensions list-open
-pm extension doctor --detail deep --trace
-pm health --check-only
+pm upgrade --dry-run
+pm upgrade
+pm upgrade --packages-only
+pm upgrade todos --dry-run
+pm upgrade --cli-only --repair
 ```
 
-## Bundled Managed Extensions
+CLI/SDK upgrades use `npm install -g @unbrained/pm-cli@<tag>`. Managed package upgrades reuse the source recorded at install time, including registry, GitHub, local, and first-party package sources.
 
-`pm-cli` ships optional first-party package roots that are not auto-installed:
+## Automation Patterns
 
-| Alias | Commands after install | Purpose |
-|-------|------------------------|---------|
-| `beads` | `pm beads import` | import Beads JSONL records |
-| `todos` | `pm todos import`, `pm todos export` | round-trip todos markdown format |
-
-Install:
+Use non-interactive commands with explicit project scope:
 
 ```bash
-pm install beads --project
-pm install todos --project
+pm init --defaults --author codex-agent
+pm install '*' --project
+pm package doctor --project --detail summary --json
+pm contracts --flags-only --json
+pm health --check-only --json
 ```
 
-## Starter Extension
+For package-owned commands, install the package before assuming the command is available. Runtime contracts expose installed package actions; static SDK contracts intentionally expose only core actions.
 
-See [examples/starter-extension](examples/starter-extension/README.md) for a compact extension that demonstrates all capability categories through the public SDK.
+If a package-owned command is invoked before installation, usage guidance includes the recovery install command when `pm` can map the command to a bundled package.
+
+## Troubleshooting
+
+- Manifest or entry failure: run `pm package explore --project`.
+- Activation failure: run `pm package doctor --detail deep --trace`.
+- Policy block: inspect `settings.extensions.policy` and `details.summary.policy`.
+- Runtime drift: compare with `pm --no-extensions <command>`.
+- Managed-state update-check gap: run `pm package manage --fix-managed-state`.
+- Unknown package command: run `pm package catalog --project` and install the owning package.
+
+## Runnable Examples
+
+- `docs/examples/starter-extension/`
+- `docs/examples/policy-restricted-extension/`
+- `docs/examples/sdk-contract-consumer/`
+- `docs/examples/sdk-app-embedding/`
+- `docs/examples/ci/github-actions-pm-extension-gate.yml`
+- `docs/examples/ci/gitlab-ci-pm-extension-gate.yml`
+- `docs/examples/ci/jenkins-pm-extension-gate.Jenkinsfile`

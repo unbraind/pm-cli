@@ -36,6 +36,7 @@ const OPTIONAL_PACKAGE_INSTALL_HINTS: Record<string, string> = {
   calendar: "calendar",
   cal: "calendar",
   reindex: "search-advanced",
+  "search-advanced": "search-advanced",
   "dedupe-audit": "governance-audit",
   "comments-audit": "governance-audit",
   normalize: "governance-audit",

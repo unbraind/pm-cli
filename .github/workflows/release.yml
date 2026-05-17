@@ -93,6 +93,9 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Docs and skills gate
+        run: pnpm quality:docs-skills
+
       - name: Test with coverage gate
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"

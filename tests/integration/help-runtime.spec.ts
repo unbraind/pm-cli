@@ -178,12 +178,14 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
-  it("reports reindex as optional package-owned command in bare core mode", async () => {
+  it("reports search package commands as optional package-owned commands in bare core mode", async () => {
     await withTempPmPath(async (context) => {
-      const help = context.runCli(["reindex", "--help"]);
-      expect(help.code).toBe(2);
-      expect(help.stderr).toContain("Unknown command reindex");
-      expect(help.stderr).toContain("pm install search-advanced");
+      for (const commandName of ["reindex", "search-advanced"]) {
+        const help = context.runCli([commandName, "--help"]);
+        expect(help.code).toBe(2);
+        expect(help.stderr).toContain(`Unknown command ${commandName}`);
+        expect(help.stderr).toContain("pm install search-advanced");
+      }
     });
   });
 

@@ -23,6 +23,7 @@ const REQUIRED_PM_GUIDE_DOCS = ["README.md", "docs/README.md", "docs/COMMANDS.md
 const REQUIRED_SKILLS = ["pm-developer", "pm-user", "pm-extensions", "pm-sdk"];
 const SKILLS_ROOT = ".agents/skills";
 const REQUIRED_HARNESS_DOC = ".agents/skills/HARNESS_COMPATIBILITY.md";
+const DOC_LINE_LIMITS = new Map([["docs/EXTENSIONS.md", 450]]);
 
 function usage() {
   console.log(`Usage:
@@ -345,6 +346,31 @@ async function validateRequiredGuideMentions(failures) {
   }
 }
 
+async function validatePublicDocBudgets(failures) {
+  for (const [filePath, maxLines] of DOC_LINE_LIMITS) {
+    const content = await readUtf8(filePath);
+    const lineCount = content.split(/\r?\n/).length;
+    if (lineCount > maxLines) {
+      failures.push(`${filePath}: keep public docs under ${maxLines} lines (found ${lineCount})`);
+    }
+    const h1Headings = content.match(/^# /gm) ?? [];
+    if (h1Headings.length !== 1) {
+      failures.push(`${filePath}: expected exactly one top-level heading (found ${h1Headings.length})`);
+    }
+    const seenHeadings = new Set();
+    for (const line of content.split(/\r?\n/)) {
+      if (!line.startsWith("## ")) {
+        continue;
+      }
+      const heading = line.trim().toLowerCase();
+      if (seenHeadings.has(heading)) {
+        failures.push(`${filePath}: duplicate section heading "${line.trim()}"`);
+      }
+      seenHeadings.add(heading);
+    }
+  }
+}
+
 async function runSkillChecks(failures) {
   if (!(await fileExists(REQUIRED_HARNESS_DOC))) {
     failures.push(`Missing required harness compatibility guide: ${REQUIRED_HARNESS_DOC}`);
@@ -371,6 +397,7 @@ async function main() {
   const failures = [];
 
   await requireFiles(REQUIRED_DOC_FILES, failures);
+  await validatePublicDocBudgets(failures);
   await validateRequiredGuideMentions(failures);
   await runSkillChecks(failures);
   await runGuideChecks(failures);

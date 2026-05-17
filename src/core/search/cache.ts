@@ -417,7 +417,9 @@ export async function refreshSearchArtifactsForMutation(
   itemIds: string[],
 ): Promise<SearchMutationArtifactRefreshResult> {
   const invalidation = await invalidateSearchCacheArtifacts(pmRoot);
-  const semanticRefresh = await refreshSemanticEmbeddingsForMutatedItems(pmRoot, itemIds);
+  const semanticRefresh = await refreshSemanticEmbeddingsForMutatedItems(pmRoot, itemIds, {
+    apply_runtime_defaults: true,
+  });
   return {
     invalidated: invalidation.invalidated,
     refreshed: semanticRefresh.refreshed,

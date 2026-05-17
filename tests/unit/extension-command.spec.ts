@@ -167,6 +167,62 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("scaffolds package-root metadata via package init while keeping installable extension resources", async () => {
+    await withTempPmPath(async (context) => {
+      const scaffoldPath = path.join(context.tempRoot, "starter-package");
+      const scaffold = await runExtension(scaffoldPath, {
+        init: true,
+        project: true,
+        vocabulary: "package",
+      }, { path: context.pmPath });
+      expect(scaffold.action).toBe("init");
+      expect(scaffold.details).toMatchObject({
+        extension: {
+          name: "starter-package",
+          command: "starter-package ping",
+        },
+        target_path: scaffoldPath,
+        created_directory: true,
+      });
+
+      const packageJson = JSON.parse(await readFile(path.join(scaffoldPath, "package.json"), "utf8")) as Record<string, unknown>;
+      expect(packageJson).toMatchObject({
+        name: "pm-starter-package",
+        private: true,
+        type: "module",
+        pm: {
+          aliases: ["starter-package"],
+          extensions: ["extensions/starter-package"],
+          docs: ["README.md"],
+          examples: ["README.md"],
+        },
+      });
+      expect(packageJson.peerDependencies).toMatchObject({
+        "@unbrained/pm-cli": "*",
+      });
+
+      const manifest = JSON.parse(
+        await readFile(path.join(scaffoldPath, "extensions", "starter-package", "manifest.json"), "utf8"),
+      ) as Record<string, unknown>;
+      expect(manifest).toMatchObject({
+        name: "starter-package",
+        entry: "./index.js",
+        capabilities: ["commands"],
+      });
+      const entry = await readFile(path.join(scaffoldPath, "extensions", "starter-package", "index.js"), "utf8");
+      expect(entry).toContain("export function activate(api)");
+      expect(entry).toContain('name: "starter-package ping"');
+
+      const install = await runExtension(scaffoldPath, { install: true, project: true }, { path: context.pmPath });
+      expect(install.details).toMatchObject({
+        extension: {
+          name: "starter-package",
+        },
+        activated: true,
+      });
+    });
+  });
+
   it("reports usage guidance for missing init target and conflicts for divergent scaffold files", async () => {
     await withTempPmPath(async (context) => {
       await expect(runExtension("init", {}, { path: context.pmPath })).rejects.toMatchObject({

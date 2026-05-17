@@ -821,6 +821,15 @@ export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--fail-on-warn" },
 ];
 
+export const INSTALL_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--project" },
+  { flag: "--local" },
+  { flag: "--global" },
+  { flag: "--gh" },
+  { flag: "--github" },
+  { flag: "--ref" },
+];
+
 export const UPGRADE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--dry-run" },
   { flag: "--cli-only" },
@@ -1474,8 +1483,9 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
     case "extension":
     case "package":
     case "packages":
-    case "install":
       return withSubcommandGlobalFlags(EXTENSION_FLAG_CONTRACTS);
+    case "install":
+      return withSubcommandGlobalFlags(INSTALL_FLAG_CONTRACTS);
     case "upgrade":
       return withSubcommandGlobalFlags(UPGRADE_FLAG_CONTRACTS);
     case "create":

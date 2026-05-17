@@ -6,7 +6,7 @@ export const manifest = {
   version: "0.1.0",
   entry: "./index.js",
   priority: 0,
-  capabilities: ["commands"],
+  capabilities: ["commands", "schema"],
 };
 
 const searchAdvancedFlags = [
