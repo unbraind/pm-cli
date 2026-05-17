@@ -132,13 +132,18 @@ describe("generateBashScript", () => {
   it("includes init agent guidance flag across completion scripts", () => {
     const bashScript = generateBashScript();
     expect(bashScript).toContain("--agent-guidance");
+    expect(bashScript).toContain("--defaults");
+    expect(bashScript).toContain("--yes");
+    expect(bashScript).toContain("-y");
 
     const zshScript = generateZshScript();
     expect(zshScript).toContain("--agent-guidance[Agent guidance mode]");
+    expect(zshScript).toContain("Alias for --defaults");
 
     const fishScript = generateFishScript();
     expect(fishScript).toContain("__fish_seen_subcommand_from init");
     expect(fishScript).toContain("-l agent-guidance");
+    expect(fishScript).toContain("-s y -l yes");
   });
 
   it("includes underscore metadata aliases in bash completion output", () => {

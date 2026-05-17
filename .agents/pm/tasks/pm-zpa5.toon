@@ -1,0 +1,24 @@
+id: pm-zpa5
+title: Add pm plan list subcommand or did-you-mean to pm list --type Plan
+description: `pm plan list` produces a generic unknown subcommand error. Agents naturally try this. Either add `list` to plan subcommand enum (route to `pm list --type Plan`) or surface a did-you-mean hint pointing to `pm list --type Plan`. Lowers retry tokens.
+type: Task
+status: closed
+priority: 3
+tags[4]: agent-ux,cli,plan,pm-cli
+created_at: "2026-05-17T19:19:32.081Z"
+updated_at: "2026-05-17T19:45:32.135Z"
+author: claude-code-agent
+acceptance_criteria: `pm plan list` either succeeds or guides agent to the right invocation
+parent: pm-rnpb
+resolution: Added targeted did-you-mean examples for pm plan list/ls attempts.
+expected_result: Agents trying pm plan list receive concise guidance toward pm list --type Plan or pm list-all --type Plan.
+actual_result: "CLI integration verified the guidance text, and dogfood/release gates passed."
+comments[1]{created_at,author,text}:
+  "2026-05-17T19:44:58.942Z",codex-20260517,"Evidence: pm plan list/ls now returns targeted examples pointing agents to pm list --type Plan and pm list-all --type Plan instead of a generic unknown-subcommand failure. CLI integration verifies the guidance text."
+files[2]{path,scope,note}:
+  src/cli/register-mutation.ts,project,add did-you-mean guidance for pm plan list/ls attempts
+  tests/integration/cli.integration.spec.ts,project,CLI regression for pm plan list guidance
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Implemented agent-friendly did-you-mean guidance for pm plan list attempts. Acceptance allowed either success or guidance; guidance is now covered by CLI integration and release gates.
+body: ""

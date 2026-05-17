@@ -1,0 +1,28 @@
+id: pm-lwbr
+title: Accept pm init --yes alias for --defaults
+description: Many agent harnesses default to typing `--yes`/`-y` for non-interactive bootstrap. `pm init --yes` errors with 'Unknown option --yes'. Add `--yes` (and `-y`) as alias for `--defaults` in register-setup.ts and document it in help. Keeps token efficiency and reduces friction during first-time agent setup.
+type: Task
+status: closed
+priority: 2
+tags[4]: agent-ux,cli,init,pm-cli
+created_at: "2026-05-17T19:19:24.505Z"
+updated_at: "2026-05-17T19:45:28.921Z"
+author: claude-code-agent
+acceptance_criteria: pm init --yes works equivalent to --defaults; pm init -y works; help shows alias; regression test added
+parent: pm-rnpb
+resolution: Added -y/--yes as an alias for pm init --defaults and surfaced it through contracts and completions.
+expected_result: "pm init --yes and pm init -y run non-interactive defaults like --defaults, and agents can discover the alias without retrying."
+actual_result: "Integration, contracts, completion, dogfood, and release gates passed with the alias available."
+comments[1]{created_at,author,text}:
+  "2026-05-17T19:44:50.647Z",codex-20260517,"Evidence: init now accepts --yes and -y as aliases for --defaults; contracts expose --defaults with short -y and alias --yes; bash/zsh/fish completions include the alias. Verification passed in focused integration/contracts/completion tests, dogfood, and full release gate."
+files[6]{path,scope,note}:
+  src/cli/commands/completion.ts,project,surface init --yes/-y in shell completions
+  src/cli/register-setup.ts,project,register -y/--yes as non-interactive init defaults alias
+  src/sdk/cli-contracts.ts,project,publish init alias in machine-readable flag contracts
+  tests/integration/cli.integration.spec.ts,project,integration coverage for init --yes and -y
+  tests/unit/completion-command.spec.ts,project,completion coverage for init --yes/-y
+  tests/unit/contracts-command.spec.ts,project,contract coverage for init --defaults alias metadata
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented init --yes/-y alias for non-interactive defaults with help, contracts, completion, and integration coverage. This reduces first-run agent retry tokens while preserving --defaults as the canonical flag."
+body: ""

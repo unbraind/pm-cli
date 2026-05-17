@@ -2730,6 +2730,12 @@ function collectPreflightCollisionWarnings(preflight: ExtensionPreflightRegistry
   );
 }
 
+// Services whose runtime semantics are chain/fall-through (each override gets a chance);
+// for those, registering multiple overrides is by design, not a collision.
+const CHAINED_SERVICE_NAMES: ReadonlySet<ExtensionServiceName> = new Set<ExtensionServiceName>([
+  "output_format",
+]);
+
 function collectServiceCollisionWarnings(services: ExtensionServiceRegistry): string[] {
   const warnings: string[] = [];
   const grouped = new Map<ExtensionServiceName, RegisteredExtensionServiceOverride[]>();
@@ -2741,6 +2747,9 @@ function collectServiceCollisionWarnings(services: ExtensionServiceRegistry): st
   for (const service of [...grouped.keys()].sort((left, right) => left.localeCompare(right))) {
     const bucket = grouped.get(service) ?? [];
     if (bucket.length <= 1) {
+      continue;
+    }
+    if (CHAINED_SERVICE_NAMES.has(service)) {
       continue;
     }
     const winner = bucket[bucket.length - 1];

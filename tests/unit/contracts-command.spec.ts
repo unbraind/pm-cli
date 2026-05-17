@@ -339,6 +339,24 @@ describe("contracts command runtime", () => {
       ),
     ).toBe(false);
 
+    const initFlags = await runContracts(
+      { command: "init", flagsOnly: true },
+      GLOBAL_OPTIONS,
+    );
+    const initDefaultsFlag = initFlags.command_flags?.[0]?.flags.find(
+      (entry) => entry.flag === "--defaults",
+    );
+    expect(initDefaultsFlag).toMatchObject({
+      flag: "--defaults",
+      short: "-y",
+    });
+    expect(initDefaultsFlag?.aliases).toEqual(expect.arrayContaining(["--yes"]));
+    expect(
+      initFlags.command_flags?.[0]?.flags.some(
+        (entry) => entry.flag === "--yes",
+      ),
+    ).toBe(false);
+
     const activityFlags = await runContracts(
       { command: "activity", flagsOnly: true },
       GLOBAL_OPTIONS,

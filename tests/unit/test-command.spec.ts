@@ -487,6 +487,25 @@ describe("runTest", () => {
     });
   });
 
+  it("preserves history hash chain after tests_add round-trip through TOON", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "history-drift-tests-add");
+      await runTest(
+        id,
+        { add: ["command=node --version,scope=project"], message: "seed test entry" },
+        { path: context.pmPath },
+      );
+      const verify = context.runCli(["history", id, "--verify", "--json"], { expectJson: true });
+      expect(verify.code).toBe(0);
+      const payload = verify.json as {
+        verification: { ok: boolean; errors?: string[]; current_matches_latest: boolean };
+      };
+      expect(payload.verification.ok).toBe(true);
+      expect(payload.verification.current_matches_latest).toBe(true);
+      expect(payload.verification.errors ?? []).not.toContain("verify_failed:current_item_hash_mismatch");
+    });
+  });
+
   it("rejects linked commands that invoke test-all recursion variants", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "reject-recursive-test-all");

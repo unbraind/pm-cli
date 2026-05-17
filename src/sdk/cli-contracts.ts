@@ -768,7 +768,7 @@ export const PLAN_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const INIT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--preset" },
-  { flag: "--defaults" },
+  { flag: "--defaults", short: "-y", aliases: ["--yes"] },
   { flag: "--author" },
   { flag: "--agent-guidance" },
   { flag: "--with-packages" },

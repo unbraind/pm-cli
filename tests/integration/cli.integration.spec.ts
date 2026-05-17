@@ -3118,6 +3118,25 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("treats --yes/-y as alias for --defaults during init", async () => {
+    await withTempPmPath(async (context) => {
+      const initResult = context.runCli(["init", "--yes", "--author", "dogfood-agent", "--json"], { expectJson: true });
+      expect(initResult.code).toBe(0);
+      expect(initResult.json).toMatchObject({
+        ok: true,
+        wizard_used: false,
+      });
+    });
+    await withTempPmPath(async (context) => {
+      const initResult = context.runCli(["init", "-y", "--author", "dogfood-agent", "--json"], { expectJson: true });
+      expect(initResult.code).toBe(0);
+      expect(initResult.json).toMatchObject({
+        ok: true,
+        wizard_used: false,
+      });
+    });
+  });
+
   it("initializes and installs bundled packages in one agent-friendly command", async () => {
     await withTempPmPath(async (context) => {
       const initResult = context.runCli(
@@ -3137,6 +3156,30 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         expectJson: true,
       });
       expect(calendarResult.code).toBe(0);
+    });
+  });
+
+  it("accepts positional title for plan create and guides plan list attempts", async () => {
+    await withTempPmPath(async (context) => {
+      const initResult = context.runCli(["init", "--defaults", "--json"], { expectJson: true });
+      expect(initResult.code).toBe(0);
+
+      const createPlanResult = context.runCli(
+        ["plan", "create", "Positional plan title", "--scope", "integration coverage", "--json"],
+        { expectJson: true },
+      );
+      expect(createPlanResult.code).toBe(0);
+      expect(createPlanResult.json).toMatchObject({
+        plan: {
+          title: "Positional plan title",
+          scope: "integration coverage",
+        },
+      });
+
+      const listPlanResult = context.runCli(["plan", "list"]);
+      expect(listPlanResult.code).not.toBe(0);
+      expect(listPlanResult.stderr).toContain("Unknown pm plan subcommand");
+      expect(listPlanResult.stderr).toContain("pm list --type Plan");
     });
   });
 

@@ -610,7 +610,10 @@ function sortTests(values: LinkedTest[] | undefined): LinkedTest[] | undefined {
       command: value.command?.trim() || undefined,
       path: value.path ? normalizePathValue(value.path) : undefined,
       scope: value.scope,
-      timeout_seconds: value.timeout_seconds,
+      timeout_seconds:
+        typeof value.timeout_seconds === "number" && Number.isFinite(value.timeout_seconds) && value.timeout_seconds > 0
+          ? value.timeout_seconds
+          : undefined,
       pm_context_mode: (() => {
         const normalized = value.pm_context_mode?.trim().toLowerCase();
         if (!normalized || !LINKED_TEST_PM_CONTEXT_MODE_VALUES.has(normalized)) {

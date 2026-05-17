@@ -1,0 +1,24 @@
+id: pm-5u9z
+title: Suppress benign extension_service_override_collision when calendar+guide-shell both bundled
+description: "In any project with `pm init --with-packages` (or after bundled packages are installed), `pm health` reports a warning: `extension_service_override_collision:output_format:project:builtin-guide-shell:project:builtin-calendar`. Both built-in packages register an `output_format` service; the loader already chains them deterministically (pm-rnpb feature note: `chain output_format service overrides for package renderers`). Demote this expected configuration to debug-level or silence it when the chained loader resolved without ambiguity. Currently fires `ok=true` but produces alarming warning text on every health run."
+type: Issue
+status: closed
+priority: 2
+tags[4]: agent-ux,extensions,health,pm-cli
+created_at: "2026-05-17T19:19:37.251Z"
+updated_at: "2026-05-17T19:45:34.155Z"
+author: claude-code-agent
+acceptance_criteria: Default `pm init --with-packages` + `pm health` produces no warnings; collision still flagged for non-builtin conflicts; regression test added
+parent: pm-rnpb
+resolution: Classified output_format service overrides as chained registrations so expected bundled package renderers do not emit collision warnings.
+expected_result: pm init --with-packages followed by pm health has no benign output_format collision warning while non-chained service collisions still warn.
+actual_result: "Extension-loader regression, isolated dogfood, semantic dogfood, and release gates verified the behavior."
+comments[1]{created_at,author,text}:
+  "2026-05-17T19:45:02.993Z",codex-20260517,"Evidence: output_format service overrides are now treated as chained/fall-through registrations, so bundled package renderers no longer produce collision warnings; non-chained service collisions remain warned. Extension-loader regression covers both behaviors, and temp-project init --with-packages + health passed in dogfood."
+files[2]{path,scope,note}:
+  src/core/extensions/loader.ts,project,suppress collision warnings for chained output_format services
+  tests/unit/extension-loader.spec.ts,project,regression for chained output_format and non-chained service collision warnings
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented suppression of benign chained output_format service collision warnings while preserving collision warnings for non-chained services. Verified through extension-loader regression, isolated dogfood, semantic dogfood, and full release gates."
+body: ""

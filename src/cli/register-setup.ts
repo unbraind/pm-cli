@@ -327,6 +327,7 @@ export function registerSetupCommands(program: Command): void {
     .argument("[prefix]", "Optional id prefix")
     .option("--preset <value>", "Governance preset for new setups: minimal|default|strict")
     .option("--defaults", "Use non-interactive setup defaults without opening the wizard")
+    .option("-y, --yes", "Alias for --defaults (non-interactive setup)")
     .option("--author <value>", "Set the default mutation author for this project")
     .option("--agent-guidance <mode>", "Agent guidance mode: ask|add|skip|status")
     .option("--with-packages", "Install all bundled first-party packages during initialization")
@@ -340,7 +341,7 @@ export function registerSetupCommands(program: Command): void {
         globalOptions,
         {
           preset: typeof options.preset === "string" ? options.preset : undefined,
-          defaults: options.defaults === true,
+          defaults: options.defaults === true || options.yes === true,
           author: typeof options.author === "string" ? options.author : undefined,
           agentGuidance: typeof options.agentGuidance === "string" ? options.agentGuidance : undefined,
           withPackages: options.withPackages === true,

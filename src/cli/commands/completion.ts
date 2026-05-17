@@ -900,6 +900,8 @@ _pm() {
           _arguments \\
             '--preset[Governance preset for new setups]:preset:(minimal default strict)' \\
             '--defaults[Use non-interactive setup defaults]' \\
+            '-y[Alias for --defaults]' \\
+            '--yes[Alias for --defaults]' \\
             '--author[Set the default mutation author for this project]:author' \\
             '--agent-guidance[Agent guidance mode]:mode:(ask add skip status)' \\
             '--with-packages[Install bundled first-party packages during initialization]' \\
@@ -910,6 +912,8 @@ _pm() {
           _arguments \\
             '--preset[Governance preset for new setups]:preset:(minimal default strict)' \\
             '--defaults[Use non-interactive setup defaults]' \\
+            '-y[Alias for --defaults]' \\
+            '--yes[Alias for --defaults]' \\
             '--author[Set the default mutation author for this project]:author' \\
             '--agent-guidance[Agent guidance mode]:mode:(ask add skip status)' \\
             '--with-packages[Install bundled first-party packages during initialization]' \\
@@ -1604,6 +1608,7 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift 
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-references -d 'Run linked-command PM-ID reference checks'
 complete -c pm -n '__fish_seen_subcommand_from init' -l preset -d 'Governance preset for new setups' -r -a 'minimal default strict'
 complete -c pm -n '__fish_seen_subcommand_from init' -l defaults -d 'Use non-interactive setup defaults'
+complete -c pm -n '__fish_seen_subcommand_from init' -s y -l yes -d 'Alias for --defaults'
 complete -c pm -n '__fish_seen_subcommand_from init' -l author -d 'Set the default mutation author for this project' -r
 complete -c pm -n '__fish_seen_subcommand_from init' -l agent-guidance -d 'Agent guidance mode' -r -a 'ask add skip status'
 complete -c pm -n '__fish_seen_subcommand_from init' -l with-packages -d 'Install bundled first-party packages during initialization'

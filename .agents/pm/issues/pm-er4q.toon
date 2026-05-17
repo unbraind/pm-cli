@@ -1,0 +1,24 @@
+id: pm-er4q
+title: pm test --add causes immediate history drift via null timeout_seconds
+description: "Reproduction: in a fresh tracker, `pm create` + `pm test <id> --add 'node scripts/run-tests.mjs test'` triggers history_drift_hash_mismatch immediately. Root cause: `sortTests` in src/core/item/item-format.ts:606 assigns `timeout_seconds: value.timeout_seconds` without coercing null to undefined. After TOON round-trip the field comes back as `null`, so canonicalDocument of the reloaded item produces `{command, scope, timeout_seconds: null}` whereas the patch chain records `{command, scope}` — break of replay parity. Verified by hand on Node 25.9.0 with pm 2026.5.14."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,bug,history,pm-cli,test-command
+created_at: "2026-05-17T19:19:21.079Z"
+updated_at: "2026-05-17T19:45:27.186Z"
+author: claude-code-agent
+acceptance_criteria: 1) Repro sequence (create + test --add) produces history_drift=ok 2) sortTests coerces null->undefined symmetric to file load 3) regression test added
+parent: pm-rnpb
+resolution: Fixed linked-test timeout_seconds normalization so absent timeouts do not persist as null and break history replay.
+expected_result: Fresh create plus pm test --add without timeout_seconds verifies clean history and does not trigger history_drift_hash_mismatch.
+actual_result: Regression and dogfood runs verified linked-test history replay remains clean; full release gate passed.
+comments[1]{created_at,author,text}:
+  "2026-05-17T19:44:45.538Z",codex-20260517,"Evidence: fixed linked-test canonicalization by dropping non-positive/non-finite/null timeout_seconds during TOON normalization. Verification passed: focused 248-test bundle, normal dogfood 74 workflows, semantic dogfood 75 workflows, and full release gate 94 files / 1364 tests at 100% coverage."
+files[2]{path,scope,note}:
+  src/core/item/item-format.ts,project,coerce invalid linked-test timeout_seconds values out of canonical TOON documents
+  tests/unit/test-command.spec.ts,project,regression for pm test --add history verification parity
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented pm test --add history-drift fix. Linked tests without timeout_seconds now round-trip through TOON without adding null timeout values, and history verification stays clean in regression coverage and isolated dogfood."
+body: ""

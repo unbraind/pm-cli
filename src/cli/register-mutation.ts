@@ -398,7 +398,7 @@ export function registerMutationCommands(program: Command): void {
     .command("plan")
     .description("Agent-optimized Plan item workflow: create, manage steps, link dependencies, approve, and materialize.")
     .argument("[subcommand]", "Plan subcommand: create|show|add-step|update-step|complete-step|block-step|reorder-step|remove-step|link|unlink|decision|discovery|validation|resume|approve|materialize")
-    .argument("[id]", "Plan id (required for non-create subcommands)")
+    .argument("[id]", "Plan id (required for non-create subcommands); for create this may be the positional title")
     .argument("[stepRef]", "Step reference: stable id (plan-step-001) or order integer")
     .argument("[reorderTo]", "New order integer for reorder-step")
     .option("--title <value>", "Plan title")
@@ -493,9 +493,14 @@ export function registerMutationCommands(program: Command): void {
         );
       }
       if (!PLAN_SUBCOMMANDS.includes(normalizedSubcommand as typeof PLAN_SUBCOMMANDS[number])) {
+        const didYouMean =
+          normalizedSubcommand === "list" || normalizedSubcommand === "ls"
+            ? ['pm list --type Plan', 'pm list-all --type Plan']
+            : undefined;
         throw new PmCliError(
           `Unknown pm plan subcommand "${subcommand}". Allowed: ${PLAN_SUBCOMMANDS.join(", ")}`,
           EXIT_CODE.USAGE,
+          didYouMean ? { code: "unknown_subcommand", examples: didYouMean } : undefined,
         );
       }
       const planOptions: Record<string, unknown> = { ...options };
@@ -540,9 +545,16 @@ export function registerMutationCommands(program: Command): void {
         }
         reorderTo = parsed;
       }
+      // Allow positional title for `pm plan create "Title"` (mirrors pm create UX).
+      // Plan create never takes an id positional; the second token is the title.
+      let planId = id;
+      if (normalizedSubcommand === "create" && typeof id === "string" && id.length > 0 && planOptions.title === undefined) {
+        planOptions.title = id;
+        planId = undefined;
+      }
       const result = await runPlan({
         subcommand: normalizedSubcommand as typeof PLAN_SUBCOMMANDS[number],
-        id,
+        id: planId,
         stepRef,
         reorderTo,
         options: planOptions as Record<string, never>,

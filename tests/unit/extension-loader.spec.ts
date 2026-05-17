@@ -3205,4 +3205,78 @@ describe("extension loader", () => {
       warnings: [],
     });
   });
+
+  it("treats output format service overrides as chained while preserving other service collision warnings", async () => {
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: {
+        global: "/tmp/global",
+        project: "/tmp/project",
+      },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      loaded: [
+        {
+          layer: "project",
+          directory: "service-one",
+          manifest_path: "/tmp/project/service-one/manifest.json",
+          name: "service-one",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 10,
+          entry_path: "/tmp/project/service-one/index.mjs",
+          capabilities: ["services"],
+          module: {
+            activate(api: {
+              registerService: (
+                name: "output_format" | "history_append",
+                handler: (context: unknown) => unknown,
+              ) => void;
+            }) {
+              api.registerService("output_format", (context) => context);
+              api.registerService("history_append", (context) => context);
+            },
+          },
+        },
+        {
+          layer: "project",
+          directory: "service-two",
+          manifest_path: "/tmp/project/service-two/manifest.json",
+          name: "service-two",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 20,
+          entry_path: "/tmp/project/service-two/index.mjs",
+          capabilities: ["services"],
+          module: {
+            activate(api: {
+              registerService: (
+                name: "output_format" | "history_append",
+                handler: (context: unknown) => unknown,
+              ) => void;
+            }) {
+              api.registerService("output_format", (context) => context);
+              api.registerService("history_append", (context) => context);
+            },
+          },
+        },
+      ],
+      failed: [],
+    });
+
+    expect(activation.service_override_count).toBe(4);
+    expect(activation.warnings).not.toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("extension_service_override_collision:output_format"),
+      ]),
+    );
+    expect(activation.warnings).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("extension_service_override_collision:history_append:project:service-two:project:service-one"),
+      ]),
+    );
+  });
 });
