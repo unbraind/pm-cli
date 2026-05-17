@@ -6,10 +6,13 @@ status: closed
 priority: 1
 tags[5]: agent-ux,bootstrap,docs,init,pm-cli
 created_at: "2026-05-17T08:59:13.994Z"
-updated_at: "2026-05-17T10:09:16.049Z"
+updated_at: "2026-05-17T10:22:58.425Z"
 author: codex-agent
 acceptance_criteria: "Detector reports present/missing/outdated per AGENTS.md and CLAUDE.md; writer is idempotent; existing user content is preserved; missing files are created only on explicit approval/add mode; marked block can be updated by template version; unit tests cover present, missing, outdated, absent-file, and both-file scenarios."
 parent: pm-7t04
+resolution: Implemented the idempotent AGENTS/CLAUDE guidance detector and writer.
+expected_result: pm init can detect missing or present agent guidance and write compact guidance safely.
+actual_result: "Guidance scanning, marker detection, and idempotent block writing were added and regression-covered."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-7t04,parent,"2026-05-17T08:59:13.994Z",codex-agent,null
 comments[2]{created_at,author,text}:

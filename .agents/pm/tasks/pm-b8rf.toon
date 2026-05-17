@@ -6,10 +6,13 @@ status: closed
 priority: 1
 tags[7]: agent-ux,contracts,help,init,pm-cli,sdk,settings
 created_at: "2026-05-17T08:59:44.986Z"
-updated_at: "2026-05-17T10:10:22.978Z"
+updated_at: "2026-05-17T10:23:14.592Z"
 author: codex-agent
 acceptance_criteria: settings schema accepts and persists agent_guidance deterministically; pm init help and JSON help include the guidance option; pm contracts --command init --flags-only and action schema expose the option; MCP schema can pass the option; config/docs give a clear operator path to inspect or reset declined state if implemented.
 parent: pm-7t04
+resolution: "Exposed agent guidance controls through settings, contracts, help, and completion surfaces."
+expected_result: Users and machine clients can discover and invoke init guidance modes consistently.
+actual_result: The --agent-guidance option is documented in help/contracts/SDK/completion and persists project settings state.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-7t04,parent,"2026-05-17T08:59:44.986Z",codex-agent,null
   pm-8rjn,blocks,"2026-05-17T08:59:44.986Z",codex-agent,null

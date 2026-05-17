@@ -6,10 +6,13 @@ status: closed
 priority: 1
 tags[5]: agent-ux,bootstrap,init,pm-cli,settings
 created_at: "2026-05-17T08:59:31.342Z"
-updated_at: "2026-05-17T10:09:42.936Z"
+updated_at: "2026-05-17T10:23:06.403Z"
 author: codex-agent
 acceptance_criteria: pm init asks once in interactive mode when guidance is missing; yes writes guidance; no records project-level decline; future default init runs do not ask after decline; pm init --agent-guidance add writes guidance even after decline; non-interactive init never waits for input; result payload includes deterministic guidance status for JSON/TOON output.
 parent: pm-7t04
+resolution: Implemented init approval flow and persisted decline state for agent guidance prompts.
+expected_result: "TTY init asks before writing guidance, non-interactive init never blocks, and explicit skip/add/status modes behave predictably."
+actual_result: "Init guidance modes now support ask, skip, add, and status with persisted declined state and deterministic non-interactive output."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-7t04,parent,"2026-05-17T08:59:31.342Z",codex-agent,null
   pm-g2nd,blocks,"2026-05-17T08:59:31.342Z",codex-agent,null

@@ -6,10 +6,13 @@ status: closed
 priority: 1
 tags[5]: agent-ux,contracts,init,pm-cli,tests
 created_at: "2026-05-17T09:00:02.257Z"
-updated_at: "2026-05-17T10:12:04.954Z"
+updated_at: "2026-05-17T10:23:32.239Z"
 author: codex-agent
 acceptance_criteria: All new behavior has focused unit and integration coverage; non-interactive init regression proves no prompt hang; JSON output ordering remains deterministic; linked focused command passes; full coverage remains 100 percent when the implementation closes.
 parent: pm-7t04
+resolution: Added regression coverage for init agent guidance workflows.
+expected_result: "Status, skip, add, non-interactive behavior, contracts, SDK, and completion surfaces are covered by focused tests."
+actual_result: "Focused unit, integration, contracts, SDK, completion, dogfood, coverage, and release gates verified the guidance lifecycle."
 dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-7t04,parent,"2026-05-17T09:00:02.257Z",codex-agent,null
   pm-8rjn,blocks,"2026-05-17T09:00:02.257Z",codex-agent,null

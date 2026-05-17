@@ -6,10 +6,13 @@ status: closed
 priority: 2
 tags[6]: agent-ux,docs,guide,init,plugins,pm-cli
 created_at: "2026-05-17T09:00:17.605Z"
-updated_at: "2026-05-17T10:11:00.141Z"
+updated_at: "2026-05-17T10:23:44.906Z"
 author: codex-agent
 acceptance_criteria: "Quickstart, Agent Guide, Command Reference, help/guide surfaces, and relevant plugin guidance mention the agent-guidance init option and decline/add-later behavior; docs avoid stale copied flag lists where runtime contracts should be used; docs are linked to implementation items before closure."
 parent: pm-7t04
+resolution: Documented the pm init agent guidance workflow in public docs and plugin guidance.
+expected_result: Agents can discover init guidance status/add/skip behavior through progressive docs and plugin references.
+actual_result: "Agent, quickstart, command, and plugin docs explain the guidance lifecycle and route readers to exact command contracts."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-7t04,parent,"2026-05-17T09:00:17.605Z",codex-agent,null
   pm-b8rf,blocks,"2026-05-17T09:00:17.605Z",codex-agent,null
