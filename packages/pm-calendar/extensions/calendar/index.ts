@@ -52,7 +52,7 @@ export function activate(api: ExtensionApi): void {
   api.registerCommand(calendarCommand("cal"));
   api.registerService("output_format", (context) => {
     const rendered = renderCalendarPackageOutput(context as ServiceOverrideContext);
-    return rendered ?? context.payload;
+    return rendered ?? null;
   });
 }
 

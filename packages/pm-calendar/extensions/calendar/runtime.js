@@ -51,10 +51,6 @@ function isCalendarResult(value) {
   );
 }
 
-function isCalendarCommand(command) {
-  return command === "calendar" || command === "cal";
-}
-
 function readPayloadFormat(payload) {
   if (typeof payload === "object" && payload !== null) {
     const format = payload.format;
@@ -72,6 +68,26 @@ function readPayloadResult(payload) {
   return payload;
 }
 
+function readPayloadCommandOptions(payload) {
+  if (typeof payload === "object" && payload !== null) {
+    const commandOptions = payload.command_options;
+    if (typeof commandOptions === "object" && commandOptions !== null) {
+      return commandOptions;
+    }
+  }
+  return {};
+}
+
+function readPayloadGlobalOptions(payload) {
+  if (typeof payload === "object" && payload !== null) {
+    const global = payload.global;
+    if (typeof global === "object" && global !== null) {
+      return global;
+    }
+  }
+  return {};
+}
+
 export async function runCalendarPackage(options, global) {
   const loaded = await ensureCalendarCoreModule();
   return loaded.runCalendar(options, global);
@@ -79,11 +95,14 @@ export async function runCalendarPackage(options, global) {
 
 export function renderCalendarPackageOutput(context) {
   const result = readPayloadResult(context.payload);
-  if (!calendarCore || !isCalendarCommand(context.command) || !isCalendarResult(result)) {
+  if (!calendarCore || !isCalendarResult(result)) {
     return null;
   }
-  const options = context.options ?? {};
-  const global = context.global ?? {};
+  const options =
+    context.options && Object.keys(context.options).length > 0
+      ? context.options
+      : readPayloadCommandOptions(context.payload);
+  const global = context.global ?? readPayloadGlobalOptions(context.payload);
   const outputFormat = calendarCore.resolveCalendarOutputFormat(options, global);
   if (outputFormat === "markdown") {
     return `${calendarCore.renderCalendarMarkdown(result)}\n`;

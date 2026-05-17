@@ -17,12 +17,13 @@ const env = {
   PM_GLOBAL_PATH: globalPath,
   PM_AUTHOR: "dogfood-agent",
 };
+const semanticDogfoodEnabled = process.env.PM_DOGFOOD_SEMANTIC === "1";
 
 const timings = [];
 
-function run(label, args, options = {}) {
+function runProcess(label, args, options = {}) {
   const startedAt = Date.now();
-  const completed = spawnSync(process.execPath, [cliPath, "--json", ...args], {
+  const completed = spawnSync(process.execPath, [cliPath, ...(options.json === false ? [] : ["--json"]), ...args], {
     cwd: repoRoot,
     encoding: "utf8",
     env,
@@ -34,7 +35,7 @@ function run(label, args, options = {}) {
     throw new Error(
       [
         `${label} failed with exit ${completed.status ?? "unknown"}`,
-        `command: pm --json ${args.join(" ")}`,
+        `command: pm ${options.json === false ? "" : "--json "}${args.join(" ")}`,
         completed.stdout.trim() ? `stdout:\n${completed.stdout.trim()}` : "",
         completed.stderr.trim() ? `stderr:\n${completed.stderr.trim()}` : "",
       ]
@@ -42,7 +43,7 @@ function run(label, args, options = {}) {
         .join("\n"),
     );
   }
-  if (options.parseJson === false) {
+  if (options.parseJson === false || options.json === false) {
     return completed.stdout;
   }
   try {
@@ -50,6 +51,14 @@ function run(label, args, options = {}) {
   } catch (error) {
     throw new Error(`${label} did not emit valid JSON: ${error instanceof Error ? error.message : String(error)}`);
   }
+}
+
+function run(label, args, options = {}) {
+  return runProcess(label, args, options);
+}
+
+function runText(label, args) {
+  return runProcess(label, args, { json: false });
 }
 
 function idFrom(result, label) {
@@ -64,6 +73,62 @@ function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
   }
+}
+
+function assertCalendarMarkdown(label, markdown) {
+  assert(markdown.includes("# pm calendar"), `${label} did not render calendar markdown heading`);
+  assert(markdown.includes("Dogfood calendar event"), `${label} did not render dogfood calendar event`);
+}
+
+function runSemanticDogfoodProbe() {
+  if (!semanticDogfoodEnabled) {
+    timings.push({ label: "semantic dogfood skipped", took_ms: 0, code: 0 });
+    return { attempted: false, skipped_reason: "PM_DOGFOOD_SEMANTIC not set" };
+  }
+  const semanticEnv = {
+    ...env,
+    PM_OLLAMA_MODEL: process.env.PM_OLLAMA_MODEL || "qwen3-embedding:0.6b",
+  };
+  const startedAt = Date.now();
+  const reindex = spawnSync(process.execPath, [cliPath, "--json", "reindex", "--mode", "hybrid", "--progress"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    env: semanticEnv,
+    maxBuffer: 20 * 1024 * 1024,
+  });
+  const tookMs = Date.now() - startedAt;
+  timings.push({ label: "semantic hybrid reindex", took_ms: tookMs, code: reindex.status ?? 1 });
+  if (reindex.status !== 0) {
+    throw new Error(
+      [
+        `semantic hybrid reindex failed with exit ${reindex.status ?? "unknown"}`,
+        reindex.stdout.trim() ? `stdout:\n${reindex.stdout.trim()}` : "",
+        reindex.stderr.trim() ? `stderr:\n${reindex.stderr.trim()}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    );
+  }
+  const reindexPayload = JSON.parse(reindex.stdout);
+  assert(reindexPayload?.semantic?.enabled === true, "semantic hybrid reindex did not report semantic.enabled=true");
+  assert((reindexPayload?.semantic?.batches_completed ?? 0) >= 1, "semantic hybrid reindex completed no batches");
+  assert((reindexPayload?.semantic?.embedded_items ?? 0) >= 1, "semantic hybrid reindex embedded no items");
+  assert((reindexPayload?.semantic?.vector_upserted ?? 0) >= 1, "semantic hybrid reindex upserted no vectors");
+
+  const search = spawnSync(process.execPath, [cliPath, "--json", "search", "package workflow", "--mode", "hybrid", "--limit", "5"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    env: semanticEnv,
+    maxBuffer: 20 * 1024 * 1024,
+  });
+  timings.push({ label: "semantic hybrid search", took_ms: 0, code: search.status ?? 1 });
+  if (search.status !== 0) {
+    throw new Error(`semantic hybrid search failed: ${search.stderr.trim() || search.stdout.trim()}`);
+  }
+  const searchPayload = JSON.parse(search.stdout);
+  assert(searchPayload?.mode === "hybrid", "semantic hybrid search did not report mode=hybrid");
+  assert((searchPayload?.items ?? []).length >= 1, "semantic hybrid search returned no items");
+  return { attempted: true, model: semanticEnv.PM_OLLAMA_MODEL };
 }
 
 try {
@@ -177,6 +242,10 @@ try {
     "--format",
     "json",
   ]);
+  assertCalendarMarkdown(
+    "calendar markdown after init packages",
+    runText("calendar markdown after init packages", ["calendar", "--view", "week", "--date", "+1d", "--full-period"]),
+  );
   run("reindex after init packages", ["reindex", "--mode", "keyword"]);
 
   run("package install beads alias", ["install", "beads", "--project"]);
@@ -203,6 +272,10 @@ try {
   run("package explore", ["package", "explore", "--project"]);
   run("package doctor", ["package", "doctor", "--project", "--detail", "summary"]);
   run("calendar after package reinstall", ["calendar", "--view", "week", "--date", "today", "--format", "json"]);
+  assertCalendarMarkdown(
+    "calendar markdown after package reinstall",
+    runText("calendar markdown after package reinstall", ["calendar", "--view", "week", "--date", "+1d", "--full-period"]),
+  );
   run("reindex after package reinstall", ["reindex", "--mode", "keyword"]);
   const templatesSave = run("package command templates save", [
     "templates",
@@ -273,6 +346,7 @@ try {
   if (sdkSmoke.status !== 0) {
     throw new Error(`SDK direct import failed: ${sdkSmoke.stderr.trim() || sdkSmoke.stdout.trim()}`);
   }
+  const semanticDogfood = runSemanticDogfoodProbe();
 
   run("linked test add", [
     "test",
@@ -293,6 +367,7 @@ try {
         ok: true,
         temp_root: tempRoot,
         pm_path: pmPath,
+        semantic_dogfood: semanticDogfood,
         commands: timings.length,
         slowest,
       },

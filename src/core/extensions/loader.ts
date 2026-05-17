@@ -3076,54 +3076,15 @@ export function runServiceOverrideSync(
   services: ExtensionServiceRegistry,
   context: ServiceOverrideContext,
 ): ServiceOverrideResult {
-  const matched = [...services.overrides].reverse().find((entry) => entry.service === context.service);
-  if (!matched) {
+  const matches = [...services.overrides].reverse().filter((entry) => entry.service === context.service);
+  if (matches.length === 0) {
     return resolveDefaultServiceResult(context);
   }
 
-  try {
-    const result = matched.run({
-      service: context.service,
-      command: context.command ? normalizeCommandName(context.command) : undefined,
-      args: context.args ? cloneContextSnapshot(context.args) : undefined,
-      options: context.options ? cloneCommandOptionsSnapshot(context.options) : undefined,
-      global: context.global ? cloneGlobalOptionsSnapshot(context.global) : undefined,
-      pm_root: context.pm_root,
-      payload: cloneContextSnapshot(context.payload),
-    });
-    if (result instanceof Promise) {
-      return {
-        handled: false,
-        result: context.payload,
-        warnings: [`extension_service_override_async_unsupported:${matched.layer}:${matched.name}:${matched.service}`],
-      };
-    }
-    return {
-      handled: true,
-      result,
-      warnings: [],
-    };
-  } catch {
-    return {
-      handled: false,
-      result: context.payload,
-      warnings: [`extension_service_override_failed:${matched.layer}:${matched.name}:${matched.service}`],
-    };
-  }
-}
-
-export async function runServiceOverride(
-  services: ExtensionServiceRegistry,
-  context: ServiceOverrideContext,
-): Promise<ServiceOverrideResult> {
-  const matched = [...services.overrides].reverse().find((entry) => entry.service === context.service);
-  if (!matched) {
-    return resolveDefaultServiceResult(context);
-  }
-
-  try {
-    const result = await Promise.resolve(
-      matched.run({
+  const warnings: string[] = [];
+  for (const matched of matches) {
+    try {
+      const serviceContext = {
         service: context.service,
         command: context.command ? normalizeCommandName(context.command) : undefined,
         args: context.args ? cloneContextSnapshot(context.args) : undefined,
@@ -3131,20 +3092,70 @@ export async function runServiceOverride(
         global: context.global ? cloneGlobalOptionsSnapshot(context.global) : undefined,
         pm_root: context.pm_root,
         payload: cloneContextSnapshot(context.payload),
-      }),
-    );
-    return {
-      handled: true,
-      result,
-      warnings: [],
-    };
-  } catch {
-    return {
-      handled: false,
-      result: context.payload,
-      warnings: [`extension_service_override_failed:${matched.layer}:${matched.name}:${matched.service}`],
-    };
+      };
+      const result = matched.run(serviceContext);
+      if (result instanceof Promise) {
+        warnings.push(`extension_service_override_async_unsupported:${matched.layer}:${matched.name}:${matched.service}`);
+        continue;
+      }
+      if (context.service === "output_format" && (result === null || result === undefined || result === serviceContext.payload)) {
+        continue;
+      }
+      return {
+        handled: true,
+        result,
+        warnings,
+      };
+    } catch {
+      warnings.push(`extension_service_override_failed:${matched.layer}:${matched.name}:${matched.service}`);
+    }
   }
+  return {
+    handled: false,
+    result: context.payload,
+    warnings,
+  };
+}
+
+export async function runServiceOverride(
+  services: ExtensionServiceRegistry,
+  context: ServiceOverrideContext,
+): Promise<ServiceOverrideResult> {
+  const matches = [...services.overrides].reverse().filter((entry) => entry.service === context.service);
+  if (matches.length === 0) {
+    return resolveDefaultServiceResult(context);
+  }
+
+  const warnings: string[] = [];
+  for (const matched of matches) {
+    try {
+      const serviceContext = {
+        service: context.service,
+        command: context.command ? normalizeCommandName(context.command) : undefined,
+        args: context.args ? cloneContextSnapshot(context.args) : undefined,
+        options: context.options ? cloneCommandOptionsSnapshot(context.options) : undefined,
+        global: context.global ? cloneGlobalOptionsSnapshot(context.global) : undefined,
+        pm_root: context.pm_root,
+        payload: cloneContextSnapshot(context.payload),
+      };
+      const result = await Promise.resolve(matched.run(serviceContext));
+      if (context.service === "output_format" && (result === null || result === undefined || result === serviceContext.payload)) {
+        continue;
+      }
+      return {
+        handled: true,
+        result,
+        warnings,
+      };
+    } catch {
+      warnings.push(`extension_service_override_failed:${matched.layer}:${matched.name}:${matched.service}`);
+    }
+  }
+  return {
+    handled: false,
+    result: context.payload,
+    warnings,
+  };
 }
 
 export function runCommandOverride(

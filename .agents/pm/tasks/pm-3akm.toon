@@ -1,6 +1,6 @@
 id: pm-3akm
-title: "Telemetry pipeline verified: all 9 containers healthy, E2E event ingestion working"
-description: "Full audit of remote telemetry stack confirms all components operational. API accepts events, Grafana accessible, all 9 Docker containers running. Telemetry data not published to GitHub. CLI fields match API contract."
+title: "Telemetry pipeline verified: all [redacted_service_count] services healthy, E2E event ingestion working"
+description: "Full audit of remote telemetry stack confirms all components operational. API accepts events, [redacted_monitoring_ui] accessible, all 9 [redacted_service_group] running. Telemetry data not published to GitHub. CLI fields match API contract."
 type: Task
 status: closed
 priority: 0
@@ -12,8 +12,8 @@ author: audit-agent
 estimated_minutes: 30
 acceptance_criteria: All telemetry components verified operational
 parent: pm-lnq3
-resolution: "Resolution normalized from close_reason: All telemetry components verified operational - 9/9 containers healthy, E2E event flow confirmed, security verified"
-expected_result: "Expected closure outcome: All telemetry components verified operational - 9/9 containers healthy, E2E event flow confirmed, security verified"
-actual_result: "Actual closure outcome: All telemetry components verified operational - 9/9 containers healthy, E2E event flow confirmed, security verified"
-close_reason: "All telemetry components verified operational - 9/9 containers healthy, E2E event flow confirmed, security verified"
-body: "Verification evidence:\\n- POST https://pm-cli.unbrained.dev/v1/events: HTTP 200, accepted:1\\n- GET https://pm.unbrained.dev: HTTP 302 (Grafana)\\n- docker compose ps: 9 containers all Up/Healthy (api, worker, grafana, loki, tempo, prometheus, alloy, rabbitmq, postgres)\\n- .gitignore: .agents/pm/runtime/telemetry/ excluded\\n- CLI runtime.ts uses event_type/occurred_at matching API TelemetryEnvelope\\n- Sensitive data redaction working: emails, tokens, passwords, paths all sanitized\\n- Queue flush: batch 100, retry with backoff, 2.5s timeout"
+resolution: "Resolution normalized from close_reason: All telemetry components verified operational - 9/[redacted_service_count] services healthy, E2E event flow confirmed, security verified"
+expected_result: "Expected closure outcome: All telemetry components verified operational - 9/[redacted_service_count] services healthy, E2E event flow confirmed, security verified"
+actual_result: "Actual closure outcome: All telemetry components verified operational - 9/[redacted_service_count] services healthy, E2E event flow confirmed, security verified"
+close_reason: "All telemetry components verified operational - 9/[redacted_service_count] services healthy, E2E event flow confirmed, security verified"
+body: "Verification evidence:\\n- POST [redacted_telemetry_endpoint]: HTTP 200, accepted:1\\n- GET [redacted_monitoring_endpoint]: HTTP 302 ([redacted_monitoring_ui])\\n- docker compose ps: [redacted_service_count] services all Up/Healthy (api, worker, [redacted_monitoring_ui], loki, tempo, prometheus, alloy, rabbitmq, postgres)\\n- .gitignore: .agents/pm/runtime/telemetry/ excluded\\n- CLI runtime.ts uses event_type/occurred_at matching API TelemetryEnvelope\\n- Sensitive data redaction working: emails, tokens, passwords, paths all sanitized\\n- Queue flush: batch 100, retry with backoff, 2.5s timeout"

@@ -9,6 +9,8 @@ const DEFAULT_OLLAMA_MODEL = "qwen3-embedding:0.6b";
 const DEFAULT_LANCEDB_PATH = ".agents/pm/search/lancedb/";
 const OLLAMA_VERSION_TIMEOUT_MS = 1_500;
 const OLLAMA_LIST_TIMEOUT_MS = 2_500;
+const QWEN_EMBEDDING_MODEL_PATTERN = /qwen.*(?:embed|embedding)|(?:embed|embedding).*qwen/i;
+const EMBEDDING_MODEL_PATTERN = /embed|embedding/i;
 
 export interface SemanticRuntimeDefaultsResolution {
   settings: PmSettings;
@@ -68,7 +70,11 @@ function parseOllamaModelList(output: string): string | null {
   if (models.length === 0) {
     return null;
   }
-  const embeddingModel = models.find((entry) => /embed|embedding/i.test(entry));
+  const preferredQwenEmbeddingModel = models.find((entry) => QWEN_EMBEDDING_MODEL_PATTERN.test(entry));
+  if (preferredQwenEmbeddingModel) {
+    return preferredQwenEmbeddingModel;
+  }
+  const embeddingModel = models.find((entry) => EMBEDDING_MODEL_PATTERN.test(entry));
   return embeddingModel ?? models[0];
 }
 

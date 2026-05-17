@@ -965,7 +965,13 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         }
         if (extensionCommandResult.handled) {
           setActiveCommandResult(extensionCommandResult.result);
-          printResult(extensionCommandResult.result, globalOptions);
+          printResult(extensionCommandResult.result, {
+            ...globalOptions,
+            command: commandPath,
+            commandArgs,
+            commandOptions,
+            pmRoot,
+          });
           if (globalOptions.profile) {
             printError(`profile:command=${commandPath} took_ms=${Date.now() - startedAt}`);
           }
@@ -1058,7 +1064,13 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
         );
         const result = await runRequiredExtensionCommand(command, scopedOptions, globalOptions);
         await invalidateSearchCachesForMutation(globalOptions, result);
-        printResult(result, globalOptions);
+        printResult(result, {
+          ...globalOptions,
+          command: commandPath,
+          commandArgs: command.args.map(String),
+          commandOptions: scopedOptions,
+          pmRoot,
+        });
         if (globalOptions.profile) {
           printError(`profile:command=${commandPath} took_ms=${Date.now() - startedAt}`);
         }

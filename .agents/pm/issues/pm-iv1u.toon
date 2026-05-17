@@ -6,13 +6,14 @@ status: open
 priority: 1
 tags[4]: ci,paths-filter,performance,pm-cli
 created_at: "2026-05-16T22:07:41.048Z"
-updated_at: "2026-05-16T23:44:34.601Z"
+updated_at: "2026-05-17T00:19:17.578Z"
 assignee: codex-agent
 author: maintainer-agent
 acceptance_criteria: Docs-only push to main skips build-test entirely or runs only a 1-job smoke validate; PRs still run a minimal check for safety; release.yml and nightly.yml unaffected.
 parent: pm-tzwy
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-16T23:44:34.601Z",codex-agent,"Evidence 2026-05-17: CI push trigger now ignores docs-only paths while pull_request remains strict; release/nightly unchanged. Verified workflow contract test, typecheck, isolated dogfood, static quality, secret scan, and full release gate. Final live main CI verification will happen after push."
+  "2026-05-17T00:19:17.578Z",codex-agent,"Evidence: linked verification passed on 2026-05-17: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts passed 4 tests; pnpm typecheck passed. CI push trigger now uses paths-ignore for docs/markdown/CHANGELOG/CONTRIBUTING/issue templates while pull_request remains strict."
 files[3]{path,scope,note}:
   .github/workflows/ci.yml,project,docs-only push paths-ignore
   tests/integration/ci-workflow-contract.spec.ts,project,CI trigger contract regression
@@ -20,4 +21,6 @@ files[3]{path,scope,note}:
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp911n20-a29l1t,test,passed,"2026-05-17T00:18:27.535Z","2026-05-17T00:18:40.248Z","2026-05-17T00:18:40.248Z",null,null,2,0,0,null,null,null
 body: ""

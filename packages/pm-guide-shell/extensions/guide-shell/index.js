@@ -66,7 +66,7 @@ export function activate(api) {
   api.registerCommand(completionTagsCommand());
   api.registerService("output_format", (context) => {
     const rendered = renderGuideShellPackageOutput(context);
-    return rendered ?? context.payload;
+    return rendered ?? null;
   });
 }
 

@@ -46,7 +46,7 @@ export function activate(api) {
   api.registerCommand(calendarCommand("cal"));
   api.registerService("output_format", (context) => {
     const rendered = renderCalendarPackageOutput(context);
-    return rendered ?? context.payload;
+    return rendered ?? null;
   });
 }
 

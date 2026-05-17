@@ -60,10 +60,6 @@ function isCalendarResult(value: unknown): value is CalendarResult {
   );
 }
 
-function isCalendarCommand(command: unknown): boolean {
-  return command === "calendar" || command === "cal";
-}
-
 function readPayloadFormat(payload: unknown): "toon" | "json" {
   if (typeof payload === "object" && payload !== null) {
     const format = (payload as { format?: unknown }).format;
@@ -81,6 +77,26 @@ function readPayloadResult(payload: unknown): unknown {
   return payload;
 }
 
+function readPayloadCommandOptions(payload: unknown): CalendarOptions {
+  if (typeof payload === "object" && payload !== null) {
+    const commandOptions = (payload as { command_options?: unknown }).command_options;
+    if (typeof commandOptions === "object" && commandOptions !== null) {
+      return commandOptions as CalendarOptions;
+    }
+  }
+  return {};
+}
+
+function readPayloadGlobalOptions(payload: unknown): GlobalOptions {
+  if (typeof payload === "object" && payload !== null) {
+    const global = (payload as { global?: unknown }).global;
+    if (typeof global === "object" && global !== null) {
+      return global as GlobalOptions;
+    }
+  }
+  return {};
+}
+
 export async function runCalendarPackage(options: CalendarOptions, global: GlobalOptions): Promise<CalendarResult> {
   const loaded = await ensureCalendarCoreModule();
   return loaded.runCalendar(options, global);
@@ -88,11 +104,14 @@ export async function runCalendarPackage(options: CalendarOptions, global: Globa
 
 export function renderCalendarPackageOutput(context: ServiceOverrideContext): string | null {
   const result = readPayloadResult(context.payload);
-  if (!calendarCore || !isCalendarCommand(context.command) || !isCalendarResult(result)) {
+  if (!calendarCore || !isCalendarResult(result)) {
     return null;
   }
-  const options = (context.options ?? {}) as CalendarOptions;
-  const global = (context.global ?? {}) as GlobalOptions;
+  const options =
+    context.options && Object.keys(context.options).length > 0
+      ? (context.options as CalendarOptions)
+      : readPayloadCommandOptions(context.payload);
+  const global = context.global ?? readPayloadGlobalOptions(context.payload);
   const outputFormat = calendarCore.resolveCalendarOutputFormat(options, global);
   if (outputFormat === "markdown") {
     return `${calendarCore.renderCalendarMarkdown(result)}\n`;

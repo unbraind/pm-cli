@@ -10,6 +10,10 @@ export interface OutputOptions {
   json?: boolean;
   quiet?: boolean;
   defaultOutputFormat?: "toon" | "json";
+  command?: string;
+  commandArgs?: string[];
+  commandOptions?: Record<string, unknown>;
+  pmRoot?: string;
 }
 
 interface NodeLikeError {
@@ -177,6 +181,34 @@ function renderToonValue(value: unknown, depth: number): string {
   return `${indent}${renderScalar(value)}`;
 }
 
+function renderDefaultMarkdownResult(value: unknown): string | null {
+  if (!isPlainObject(value) || value.output_default !== "markdown") {
+    return null;
+  }
+  if (typeof value.view !== "string" || !Array.isArray(value.events) || !Array.isArray(value.days)) {
+    return null;
+  }
+  const lines = [`# pm calendar (${value.view})`, ""];
+  const summary = isPlainObject(value.summary) ? value.summary : {};
+  lines.push(`- events: ${String(summary.events ?? 0)}`);
+  lines.push("");
+  if (value.events.length === 0) {
+    lines.push("No calendar events matched the selected filters.");
+    return `${lines.join("\n")}\n`;
+  }
+  for (const event of value.events) {
+    if (!isPlainObject(event)) {
+      continue;
+    }
+    const kind = typeof event.kind === "string" ? event.kind : "event";
+    const title = typeof event.item_title === "string" ? event.item_title : "";
+    const itemId = typeof event.item_id === "string" ? event.item_id : "";
+    const reminderText = typeof event.reminder_text === "string" && event.reminder_text.length > 0 ? ` ${event.reminder_text}` : "";
+    lines.push(`- [${kind}] ${itemId} ${title}${reminderText}`.trim());
+  }
+  return `${lines.join("\n")}\n`;
+}
+
 export function formatOutput(result: unknown, options: OutputOptions): string {
   const commandOverride = runActiveCommandOverride(result);
   const effectiveResult = commandOverride.result;
@@ -187,9 +219,14 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
       : options.json === false
         ? "toon"
         : options.defaultOutputFormat === "json"
-          ? "json"
-          : "toon";
+        ? "json"
+        : "toon";
   const serviceOverride = runActiveServiceOverrideSync("output_format", {
+    command: options.command,
+    args: options.commandArgs,
+    command_options: options.commandOptions,
+    global: { ...options },
+    pm_root: options.pmRoot,
     format,
     options: { ...options },
     result: effectiveResult,
@@ -197,14 +234,21 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
   if (serviceOverride.handled && typeof serviceOverride.result === "string") {
     return serviceOverride.result.endsWith("\n") ? serviceOverride.result : `${serviceOverride.result}\n`;
   }
-  const rendererOverride = runActiveRendererOverride(format, effectiveResult);
+  const outputResult = serviceOverride.handled ? serviceOverride.result : effectiveResult;
+  if (format === "toon") {
+    const markdownDefault = renderDefaultMarkdownResult(outputResult);
+    if (markdownDefault !== null) {
+      return markdownDefault;
+    }
+  }
+  const rendererOverride = runActiveRendererOverride(format, outputResult);
   if (rendererOverride.rendered !== null) {
     return rendererOverride.rendered.endsWith("\n") ? rendererOverride.rendered : `${rendererOverride.rendered}\n`;
   }
   if (format === "json") {
-    return `${JSON.stringify(effectiveResult, null, 2)}\n`;
+    return `${JSON.stringify(outputResult, null, 2)}\n`;
   }
-  const compactedToon = compactToonValue(effectiveResult);
+  const compactedToon = compactToonValue(outputResult);
   if (compactedToon === undefined) {
     return "{}\n";
   }

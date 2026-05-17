@@ -38,7 +38,7 @@ export interface GetResult {
     tests: LinkedTest[];
     docs: LinkedDoc[];
   };
-  claim_state: ClaimStateContext;
+  claim_state?: ClaimStateContext;
 }
 
 const GET_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
@@ -136,6 +136,10 @@ function fieldsInclude(fields: string[] | null, name: string): boolean {
   return fields?.some((field) => field === name || field === `item.${name}`) ?? false;
 }
 
+function fieldsIncludeRoot(fields: string[], name: string): boolean {
+  return fields.some((field) => field === name || field.startsWith(`${name}.`));
+}
+
 export async function runGet(id: string, global: GlobalOptions, options: GetOptions = {}): Promise<GetResult> {
   const depth = parseGetDepth(options.depth);
   const fields = parseGetFields(options.fields);
@@ -150,13 +154,6 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
   }
   const loaded = await readLocatedItem(located, { schema: settings.schema });
-  const historyPath = getHistoryPath(pmRoot, located.id);
-  let history: ClaimHistoryEntry[] = [];
-  try {
-    history = await readHistoryEntries(historyPath, located.id);
-  } catch {
-    history = [];
-  }
   const files = loaded.document.metadata.files ?? [];
   const tests = loaded.document.metadata.tests ?? [];
   const docs = loaded.document.metadata.docs ?? [];
@@ -166,7 +163,19 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
   const includeLinkedFiles = includeLinked || fieldsInclude(fields, "linked.files");
   const includeLinkedTests = includeLinked || fieldsInclude(fields, "linked.tests");
   const includeLinkedDocs = includeLinked || fieldsInclude(fields, "linked.docs");
-  return {
+  const includeClaimState = !fieldProjection || fieldsIncludeRoot(fields, "claim_state");
+  let claimState: ClaimStateContext | undefined;
+  if (includeClaimState) {
+    const historyPath = getHistoryPath(pmRoot, located.id);
+    let history: ClaimHistoryEntry[] = [];
+    try {
+      history = await readHistoryEntries(historyPath, located.id);
+    } catch {
+      history = [];
+    }
+    claimState = resolveClaimStateContext(loaded.document.metadata.assignee, history);
+  }
+  const result: GetResult = {
     item: fieldProjection
       ? projectItemForFields(loaded.document.metadata, fields)
       : projectItemForDepth(loaded.document.metadata, depth),
@@ -176,6 +185,9 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
       tests: includeLinkedTests ? tests : [],
       docs: includeLinkedDocs ? docs : [],
     },
-    claim_state: resolveClaimStateContext(loaded.document.metadata.assignee, history),
   };
+  if (claimState) {
+    result.claim_state = claimState;
+  }
+  return result;
 }

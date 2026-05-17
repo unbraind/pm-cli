@@ -1,6 +1,6 @@
 id: pm-0kjv
 title: "Feature: Telemetry pipeline verified end-to-end"
-description: "Full telemetry pipeline verified: client-side queue (events.jsonl), state tracking (state.json), endpoint probe (healthz), flush with retry/backoff, PM_TELEMETRY_DISABLED env var, server-side Docker stack with 9 containers (API, Worker, Grafana, Alloy, Loki, Tempo, Prometheus, RabbitMQ, Postgres), and 29,700 events stored in Postgres."
+description: "Full telemetry pipeline verified: client-side queue (events.jsonl), state tracking (state.json), endpoint probe (healthz), flush with retry/backoff, PM_TELEMETRY_DISABLED env var, server-side Docker stack with [redacted_service_count] services (API, Worker, [redacted_monitoring_ui], [redacted_collector], [redacted_log_store], [redacted_trace_store], [redacted_metrics_service], [redacted_queue_service], [redacted_datastore]), and [redacted_event_count] events stored in [redacted_datastore]."
 type: Feature
 status: closed
 priority: 0
@@ -8,20 +8,20 @@ tags[4]: audit,pm-cli,telemetry,verification
 created_at: "2026-05-01T18:04:41.968Z"
 updated_at: "2026-05-02T11:03:21.949Z"
 author: audit-agent
-acceptance_criteria: "Events flow from CLI through queue, API, RabbitMQ, worker, to Postgres and are queryable in Grafana"
+acceptance_criteria: "Events flow from CLI through queue, API, [redacted_queue_service], worker, to [redacted_datastore] and are queryable in [redacted_monitoring_ui]"
 parent: pm-2eb3
-resolution: "Resolution normalized from close_reason: Full telemetry pipeline verified: client queue working, endpoint probe healthy, 9 Docker containers running, 29700 events in Postgres, dogfood events visible. Queue bloat issue documented separately as pm-ntr0."
-expected_result: "Expected closure outcome: Full telemetry pipeline verified: client queue working, endpoint probe healthy, 9 Docker containers running, 29700 events in Postgres, dogfood events visible. Queue bloat issue documented separately as pm-ntr0."
-actual_result: "Actual closure outcome: Full telemetry pipeline verified: client queue working, endpoint probe healthy, 9 Docker containers running, 29700 events in Postgres, dogfood events visible. Queue bloat issue documented separately as pm-ntr0."
+resolution: "Resolution normalized from close_reason: Full telemetry pipeline verified: client queue working, endpoint probe healthy, 9 [redacted_service_group] running, 29700 events in [redacted_datastore], dogfood events visible. Queue bloat issue documented separately as pm-ntr0."
+expected_result: "Expected closure outcome: Full telemetry pipeline verified: client queue working, endpoint probe healthy, 9 [redacted_service_group] running, 29700 events in [redacted_datastore], dogfood events visible. Queue bloat issue documented separately as pm-ntr0."
+actual_result: "Actual closure outcome: Full telemetry pipeline verified: client queue working, endpoint probe healthy, 9 [redacted_service_group] running, 29700 events in [redacted_datastore], dogfood events visible. Queue bloat issue documented separately as pm-ntr0."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-2eb3,parent,"2026-05-01T18:04:41.968Z",audit-agent,null
   pm-ntr0,related,"2026-05-01T18:04:41.968Z",audit-agent,null
 comments[3]{created_at,author,text}:
-  "2026-05-01T18:04:41.968Z",audit-agent,"Evidence: SSH to [redacted_host] confirmed 9 containers running. RabbitMQ queue pm.telemetry.events has 0 pending/1 consumer. Postgres telemetry_events table has 29700 rows. Recent dogfood events visible with source_context=dogfood. Endpoint accepts valid UUID events with HTTP 200."
+  "2026-05-01T18:04:41.968Z",audit-agent,"Evidence: SSH to [redacted_host] confirmed [redacted_service_count] services running. [redacted_queue_service] queue [redacted_queue_name] has 0 pending/1 consumer. [redacted_datastore] [redacted_table] table has [redacted_event_count] rows. Recent dogfood events visible with source_context=dogfood. Endpoint accepts valid UUID events with HTTP 200."
   "2026-05-01T22:54:09.011Z",audit-agent,"SECURITY AUDIT: Historical comment contains a private IP reference from telemetry audit evidence. No credentials exposed."
   "2026-05-02T11:03:21.949Z",codex-agent,"Audit reseal: current redacted item state re-recorded through pm mutation after prior hygiene edits; no secret material added."
 files[2]{path,scope,note}:
   src/core/telemetry/runtime.ts,project,telemetry runtime verified
   src/core/telemetry/consent.ts,project,consent mechanism verified
-close_reason: "Full telemetry pipeline verified: client queue working, endpoint probe healthy, 9 Docker containers running, 29700 events in Postgres, dogfood events visible. Queue bloat issue documented separately as pm-ntr0."
-body: "Client: events queued at ~/.pm-cli/runtime/telemetry/events.jsonl with attempt tracking and exponential backoff. pm health --check-telemetry probes healthz endpoint. PM_TELEMETRY_DISABLED=1 disables telemetry. Redaction works for recent max capture level events. Server: all 9 containers up and healthy. RabbitMQ has 0 pending messages with 1 active consumer. Postgres has events from 2026-04-25 to present. Dogfood events visible with source_context=dogfood in Postgres. Grafana at pm.unbrained.dev accessible. No secrets in repo (check-secrets.mjs passes)."
+close_reason: "Full telemetry pipeline verified: client queue working, endpoint probe healthy, 9 [redacted_service_group] running, 29700 events in [redacted_datastore], dogfood events visible. Queue bloat issue documented separately as pm-ntr0."
+body: "Client: events queued at ~/.pm-cli/runtime/telemetry/events.jsonl with attempt tracking and exponential backoff. pm health --check-telemetry probes healthz endpoint. PM_TELEMETRY_DISABLED=1 disables telemetry. Redaction works for recent max capture level events. Server: all [redacted_service_count] services up and healthy. [redacted_queue_service] has 0 pending messages with 1 active consumer. [redacted_datastore] has events from 2026-04-25 to present. Dogfood events visible with source_context=dogfood in [redacted_datastore]. [redacted_monitoring_ui] at [redacted_monitoring_host] accessible. No secrets in repo (check-secrets.mjs passes)."

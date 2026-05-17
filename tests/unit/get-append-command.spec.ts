@@ -185,12 +185,26 @@ describe("runGet and runAppend", () => {
       });
       expect(focused.body).toBe("");
       expect(focused.linked.files).toEqual([]);
+      expect(focused.claim_state).toBeUndefined();
 
       const withBodyAndFiles = await runGet(id, { path: context.pmPath }, { fields: "item.id,body,linked.files" });
       expect(withBodyAndFiles.item).toEqual({ id });
       expect(withBodyAndFiles.body).toBe("fields body");
       expect(withBodyAndFiles.linked.files).toHaveLength(1);
       expect(withBodyAndFiles.linked.tests).toEqual([]);
+
+      const withClaimState = await runGet(id, { path: context.pmPath }, { fields: "id,claim_state" });
+      expect(withClaimState.item).toEqual({ id });
+      expect(withClaimState.claim_state).toEqual({
+        claimed: false,
+        assignee: null,
+        last_claim: null,
+        last_release: null,
+      });
+
+      const withDottedClaimState = await runGet(id, { path: context.pmPath }, { fields: "id,claim_state.claimed" });
+      expect(withDottedClaimState.item).toEqual({ id });
+      expect(withDottedClaimState.claim_state?.claimed).toBe(false);
 
       await expect(runGet(id, { path: context.pmPath }, { fields: " , " })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
@@ -256,6 +270,10 @@ describe("runGet and runAppend", () => {
         last_claim: null,
         last_release: null,
       });
+
+      const projected = await runGet(id, { path: context.pmPath }, { fields: "id,title" });
+      expect(projected.item).toEqual({ id, title: "get-history-decode-fallback" });
+      expect(projected.claim_state).toBeUndefined();
     });
   });
 
