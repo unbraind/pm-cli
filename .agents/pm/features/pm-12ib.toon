@@ -1,0 +1,12 @@
+id: pm-12ib
+title: "Auto-route pm update --status closed --close-reason to pm close (telemetry: 248 hits/30d)"
+description: "Telemetry analysis (scripts/prod/telemetry/query-telemetry.sh, 2026-05-17) shows close_through_update fires 248 times in 30 days — agents routinely write `pm update <id> --status closed --close-reason \"...\"` and bounce off the validation guard.\n\nCurrent behavior: src/cli/commands/update.ts:1530 throws PmCliError with helpful guidance, but agent has to retry.\n\nProposed behavior: when update is called with --status closed AND --close-reason, internally invoke runClose() with the same author/message/reason. Emit a telemetry hint event so we can track the auto-route. Keep the hard error only when --close-reason is absent (so we still nudge proper usage when reason is missing).\n\nAcceptance: existing test for close_through_update still asserts the bare path errors; new test asserts the auto-route path succeeds with metadata.close_reason set and history records both messages."
+type: Feature
+status: open
+priority: 1
+tags[5]: agent-ux,close,pm-cli,telemetry,update
+created_at: "2026-05-17T05:46:43.522Z"
+updated_at: "2026-05-17T05:46:43.522Z"
+deadline: "2026-05-24T05:46:43.522Z"
+author: claude-code-agent
+body: ""

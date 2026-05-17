@@ -1,0 +1,12 @@
+id: pm-d4bo
+title: pm claim --if-available (skip when held) — reduce 533 ownership_conflict events
+description: "Telemetry: ownership_conflict fires 533 times in 30 days. Agents commonly want \"claim if free, otherwise move on\".\n\nProposed flag: `--if-available` for pm claim. When set, claim returns ok:true with `{claimed: false, held_by: <agent>, expires_at: ...}` instead of erroring on conflict. The current --force flag remains for steal semantics.\n\nAcceptance: tests cover claim/skip/steal trichotomy; MCP pm_claim documented with the new flag."
+type: Feature
+status: open
+priority: 2
+tags[5]: agent-ux,claim,locks,pm-cli,telemetry
+created_at: "2026-05-17T05:46:58.443Z"
+updated_at: "2026-05-17T05:46:58.443Z"
+deadline: "2026-05-27T05:46:58.443Z"
+author: claude-code-agent
+body: ""

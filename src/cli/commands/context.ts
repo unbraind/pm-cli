@@ -368,6 +368,18 @@ function isBlockedStatus(status: ItemStatus, statusRegistry: RuntimeStatusRegist
   return statusRegistry.blocked_statuses.has(normalizeStatusForRegistry(status, statusRegistry));
 }
 
+// Projection flags belong to list/calendar/activity output shaping and must not
+// leak into runContext's downstream calls, which need full ItemFrontMatter rows.
+const LIST_PROJECTION_FLAGS = ["compact", "brief", "fields", "includeBody", "include_body"] as const;
+
+function stripListProjectionFlags(options: ContextOptions): Record<string, unknown> {
+  const copy: Record<string, unknown> = { ...(options as Record<string, unknown>) };
+  for (const key of LIST_PROJECTION_FLAGS) {
+    delete copy[key];
+  }
+  return copy;
+}
+
 // ---------------------------------------------------------------------------
 // Sorting / mapping helpers (unchanged from original)
 // ---------------------------------------------------------------------------
@@ -414,7 +426,7 @@ function toContextFocusItem(item: ItemFrontMatter): ContextFocusItem {
     order: item.order ?? null,
     deadline: item.deadline ?? null,
     assignee: item.assignee ?? null,
-    tags: [...item.tags],
+    tags: Array.isArray(item.tags) ? [...item.tags] : [],
     updated_at: item.updated_at,
   };
 }
@@ -936,13 +948,14 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
     ["hierarchy", "progress", "blockers", "staleness"].includes(s),
   );
 
-  const listOptions: ListOptions = { ...(options as Record<string, unknown>), excludeTerminal: true };
+  const baseListOptions = stripListProjectionFlags(options);
+  const listOptions: ListOptions = { ...baseListOptions, excludeTerminal: true };
   const listed = await runList(undefined, listOptions, global);
   const listedFrontMatter = listed.items as ItemFrontMatter[];
 
   let allItems: ItemFrontMatter[] = listedFrontMatter;
   if (needsAllItems) {
-    const allListOptions: ListOptions = { ...(options as Record<string, unknown>), excludeTerminal: false };
+    const allListOptions: ListOptions = { ...baseListOptions, excludeTerminal: false };
     const allListed = await runList(undefined, allListOptions, global);
     allItems = allListed.items as ItemFrontMatter[];
   }
@@ -971,7 +984,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   const blockedFallback = blockedFallbackUsed ? blockedItems.slice(0, limit).map(toContextFocusItem) : [];
 
   const calendarOptions: CalendarOptions = {
-    ...(options as Record<string, unknown>),
+    ...baseListOptions,
     view: "agenda",
     include: "all",
     limit: String(limit),

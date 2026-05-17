@@ -265,19 +265,43 @@ export function registerMutationCommands(program: Command): void {
   program
     .command("close")
     .argument("<id>", "Item id")
-    .argument("<text>", "Close reason text")
+    .argument("[text]", "Close reason text (alias: --reason)")
+    .option("--reason <value>", "Close reason text (alias for positional <text>)")
+    .option("--close-reason <value>", "Close reason text (alias for positional <text>)")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--validate-close [mode]", 'Validate closure metadata before close: "off", "warn", or "strict" (default: settings governance preset)')
     .option("--force", "Force ownership override")
     .description("Close an item with a required reason.")
-    .action(async (id: string, text: string, options: Record<string, unknown>, command) => {
+    .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const { runClose } = await loadMutationCommandsModule();
+      const reasonFromOption =
+        (typeof options.reason === "string" && options.reason.trim().length > 0 && options.reason) ||
+        (typeof options.closeReason === "string" && options.closeReason.trim().length > 0 && options.closeReason) ||
+        undefined;
+      const resolvedText = typeof text === "string" && text.length > 0 ? text : reasonFromOption;
+      if (typeof resolvedText !== "string" || resolvedText.length === 0) {
+        throw new PmCliError(
+          "pm close requires a close reason as the second positional argument or via --reason.",
+          EXIT_CODE.USAGE,
+          {
+            code: "missing_required_argument",
+            why: "Close mutations are auditable; a reason is mandatory for the history record.",
+            examples: [
+              `pm close ${id} "All acceptance criteria met"`,
+              `pm close ${id} --reason "Verified by integration test"`,
+            ],
+            nextSteps: [
+              "Re-run with the close reason as the second positional argument, or pass --reason \"<text>\".",
+            ],
+          },
+        );
+      }
       const result = await runClose(
         id,
-        text,
+        resolvedText,
         {
           author: typeof options.author === "string" ? options.author : undefined,
           message: typeof options.message === "string" ? options.message : undefined,

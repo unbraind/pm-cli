@@ -1,0 +1,12 @@
+id: pm-p8j6
+title: pm contracts default returns 286 KB / 9612 lines — token catastrophe for agents
+description: "Dogfood 2026-05-17: agents calling `pm contracts` with no flag receive 286 KB / 9612 lines of JSON output. Routinely blows context for downstream agents.\n\nProposal: change default to a compact summary (action names + 1-line description + counts), with `--full` opting into the current dump. Existing flags like `--availability-only`, `--command <name>` should remain. Update contracts contract test + MCP description for pm_contracts to note the default shape.\n\nAcceptance: default output under 4 KB; --full mirrors current behavior; tests cover both projections."
+type: Issue
+status: open
+priority: 1
+tags[5]: agent-ux,context-efficiency,contracts,pm-cli,token-budget
+created_at: "2026-05-17T05:49:46.095Z"
+updated_at: "2026-05-17T05:49:46.095Z"
+deadline: "2026-05-24T05:49:46.095Z"
+author: claude-code-agent
+body: ""

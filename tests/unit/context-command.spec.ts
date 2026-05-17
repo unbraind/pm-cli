@@ -355,6 +355,29 @@ describe("context command module", () => {
     });
   });
 
+  it("ignores caller-supplied list projection flags so MCP options never strip tags", async () => {
+    await withTempPmPath(async (context) => {
+      createContextItem(context, { title: "Projection task", type: "Task", status: "open", priority: "1" });
+
+      const projectionPermutations: ContextOptions[] = [
+        { compact: true } as unknown as ContextOptions,
+        { brief: true } as unknown as ContextOptions,
+        { fields: "id,title" } as unknown as ContextOptions,
+        { includeBody: true } as unknown as ContextOptions,
+        { include_body: true } as unknown as ContextOptions,
+        { depth: "standard", compact: true } as unknown as ContextOptions,
+      ];
+      for (const options of projectionPermutations) {
+        const result = await runContext(options, { path: context.pmPath });
+        const focusItems = [...result.high_level, ...result.low_level];
+        expect(focusItems.length).toBeGreaterThan(0);
+        for (const focus of focusItems) {
+          expect(Array.isArray(focus.tags)).toBe(true);
+        }
+      }
+    });
+  });
+
   it("--depth standard includes hierarchy, activity, progress, workload", async () => {
     await withTempPmPath(async (context) => {
       createContextItem(context, { title: "Standard epic", type: "Epic", status: "open", priority: "0" });

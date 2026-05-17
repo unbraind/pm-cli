@@ -1,0 +1,12 @@
+id: pm-7cup
+title: "pm update with no fields should noop-succeed, not fail (telemetry: 128 hits/30d)"
+description: "Telemetry shows no_update_fields fires 128 times in 30 days — agents call `pm update <id>` with no actionable options (often because they generated a stale args list). Hard-failing wastes the agent turn.\n\nProposed: src/cli/error-guidance.ts:383 — change from PmCliError to a soft success path that emits the no-op outcome as JSON `{ ok: true, no_op: true, hint: ... }` with exit code 0. Add `no_op` to the telemetry success bucket so it's distinguishable.\n\nAcceptance: tests assert exit 0, --json contains no_op:true, history is NOT written, and a single telemetry event records the no-op for analytics."
+type: Feature
+status: open
+priority: 1
+tags[4]: agent-ux,pm-cli,telemetry,update
+created_at: "2026-05-17T05:46:49.262Z"
+updated_at: "2026-05-17T05:46:49.262Z"
+deadline: "2026-05-24T05:46:49.262Z"
+author: claude-code-agent
+body: ""

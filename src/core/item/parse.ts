@@ -25,15 +25,44 @@ const CONTINUABLE_VALUE_KEYS = new Set([
 ]);
 
 export function parseTags(raw: string): string[] {
-  if (raw.trim() === "") {
+  const trimmed = raw.trim();
+  if (trimmed === "") {
     return [];
   }
-  const tags = raw
+  const source = coerceJsonTagArray(trimmed) ?? trimmed;
+  const tags = source
     .split(",")
     .map((tag) => tag.trim())
     .filter(Boolean)
     .map((tag) => tag.toLowerCase());
   return Array.from(new Set(tags)).sort((a, b) => a.localeCompare(b));
+}
+
+// Agents and MCP callers frequently pass --tags as a JSON array (e.g.
+// `--tags '["a","b"]'`). The MCP server normalizes that upstream, but direct
+// CLI invocations used to write the raw bracket string into front matter,
+// silently corrupting tags. Accept JSON arrays of primitives transparently.
+function coerceJsonTagArray(trimmed: string): string | null {
+  if (!trimmed.startsWith("[")) {
+    return null;
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(parsed)) {
+    return null;
+  }
+  return parsed
+    .map((entry) =>
+      typeof entry === "string" || typeof entry === "number" || typeof entry === "boolean"
+        ? String(entry).replace(/,/g, " ")
+        : "",
+    )
+    .filter((entry) => entry.length > 0)
+    .join(",");
 }
 
 function normalizeLineEndings(value: string): string {

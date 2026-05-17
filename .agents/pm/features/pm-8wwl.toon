@@ -1,0 +1,12 @@
+id: pm-8wwl
+title: pm init footer + bundle calendar so cal/templates are discoverable
+description: "Dogfood 2026-05-17: brand-new agents miss `pm cal`/`pm calendar` because the package is not bundled and `pm --help` lists nothing about installing it. Suggest: (a) print a 5-line next-steps footer at the end of `pm init` listing core invocations and the single-command install for calendar/templates/guide-shell, (b) ship calendar in the default install (it is already the de-facto path for context.agenda) so `pm cal` works out of the box.\n\nAcceptance: pm init prints the footer; calendar command works in a fresh tracker without explicit install; tests assert both."
+type: Feature
+status: open
+priority: 1
+tags[5]: agent-ux,bootstrap,calendar,init,pm-cli
+created_at: "2026-05-17T05:49:50.840Z"
+updated_at: "2026-05-17T05:49:50.840Z"
+deadline: "2026-05-24T05:49:50.840Z"
+author: claude-code-agent
+body: ""

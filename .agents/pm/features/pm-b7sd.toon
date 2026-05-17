@@ -1,0 +1,12 @@
+id: pm-b7sd
+title: pm list should default to --brief (full output via --full) to halve token cost
+description: "Dogfood 2026-05-17: `pm list` default returns 143 lines for 11 items (~12 lines per row). `--brief` returns 59 lines (~5 per row). Agents pay 2x context for the default, almost never needing the verbose fields.\n\nProposal: flip default to brief; add --full for current behavior. Keep --compact, --fields, --json untouched. Update list contract test and MCP pm_list description.\n\nAcceptance: pm list returns brief shape by default; pm list --full matches existing default output; --json default ≤ half its current byte cost on the dogfood tracker."
+type: Feature
+status: open
+priority: 2
+tags[5]: agent-ux,context-efficiency,list,pm-cli,token-budget
+created_at: "2026-05-17T05:50:01.041Z"
+updated_at: "2026-05-17T05:50:01.041Z"
+deadline: "2026-05-24T05:50:01.041Z"
+author: claude-code-agent
+body: ""

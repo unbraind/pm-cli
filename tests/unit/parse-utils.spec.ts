@@ -15,6 +15,15 @@ describe("core/item/parse", () => {
     expect(parseTags("   ")).toEqual([]);
   });
 
+  it("accepts JSON-array shaped tag input so MCP/agent paste-through stays lossless", () => {
+    expect(parseTags('["alpha","beta"]')).toEqual(["alpha", "beta"]);
+    expect(parseTags(' [ "BETA" , "alpha" , "alpha" ] ')).toEqual(["alpha", "beta"]);
+    expect(parseTags('["alpha", 7, true]')).toEqual(["7", "alpha", "true"]);
+    expect(parseTags("[]")).toEqual([]);
+    // Malformed JSON falls back to CSV semantics so we never regress legacy paths.
+    expect(parseTags("[alpha,beta]")).toEqual(["[alpha", "beta]"]);
+  });
+
   it("parses csv key-value values with quoted commas and escaped quotes", () => {
     const parsed = parseCsvKv(String.raw`path=README.md,scope=project,note="alpha, \"beta\""`, "--file");
     expect(parsed).toEqual({

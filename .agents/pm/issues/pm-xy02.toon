@@ -1,0 +1,13 @@
+id: pm-xy02
+title: MCP pm_context crashes on caller-supplied projection flags (compact/brief/fields/includeBody)
+description: "Fixed: pm_context downstream passes options to runList; if caller supplies compact/brief/fields/includeBody, the list returns the compact projection (id/status/type/title only) and runContext's toContextFocusItem chokes with `item.tags is not iterable`.\n\nRoot cause: context.ts forwards full options dict to runList without stripping projection flags.\n\nFix: src/cli/commands/context.ts — added stripListProjectionFlags() helper that removes compact/brief/fields/includeBody/include_body before forwarding, applied to both the list query and calendar query. Also hardened toContextFocusItem() to default tags to [] when missing. Added regression test in tests/unit/context-command.spec.ts.\n\nSeverity: blocking — any MCP caller passing common projection options gets a hard crash. Discovered in 2026-05-17 dogfood session."
+type: Issue
+status: in_progress
+priority: 0
+tags[6]: agent-ux,bug,context,mcp,pm-cli,regression
+created_at: "2026-05-17T05:46:37.065Z"
+updated_at: "2026-05-17T05:46:37.065Z"
+deadline: "2026-05-18T05:46:37.065Z"
+assignee: claude-code-agent
+author: claude-code-agent
+body: ""

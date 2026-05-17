@@ -1,0 +1,12 @@
+id: pm-tylj
+title: pm validate after fresh create is scary — downgrade default profile noise
+description: "Dogfood 2026-05-17: a brand-new agent creating a minimal item (just title + description) then running `pm validate` sees ok:false with missing_acceptance_criteria, missing_estimated_minutes, missing_reviewer warnings. This is intimidating and pushes agents into anti-patterns.\n\nProposal: default metadata_profile in settings should treat these as `info` not `warn`, OR pm init should pick a relaxed profile and document opt-in to stricter profiles via `pm config validate.profile strict`.\n\nAcceptance: pm validate on a fresh tracker with bare items returns ok:true (or ok:true with `info` rows). Tests cover default profile + opting into strict."
+type: Issue
+status: open
+priority: 1
+tags[4]: agent-ux,defaults,pm-cli,validate
+created_at: "2026-05-17T05:49:56.100Z"
+updated_at: "2026-05-17T05:49:56.100Z"
+deadline: "2026-05-24T05:49:56.100Z"
+author: claude-code-agent
+body: ""
