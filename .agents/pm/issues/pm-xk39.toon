@@ -2,12 +2,11 @@ id: pm-xk39
 title: Add audited history-stream redaction command
 description: "Implement a first-class pm mutation for redacting sensitive strings from append-only history streams without hand-editing JSONL files, preserving replay integrity by recomputing affected history hashes or recording a verifiable redaction marker. Reopened because the 2026-05-09 audit still found private infrastructure paths in historical JSONL streams while current item files are mostly sanitized."
 type: Issue
-status: in_progress
+status: open
 priority: 1
 tags[5]: history,pm-cli,privacy,redaction,security
 created_at: "2026-05-03T13:34:41.813Z"
-updated_at: "2026-05-17T14:35:29.907Z"
-assignee: codex-agent
+updated_at: "2026-05-17T14:48:58.880Z"
 author: codex-audit
 acceptance_criteria: A supported pm command can redact configured literals/patterns from item files and history streams; history drift validation remains meaningful after redaction; redaction operations are themselves auditable; secret scans can include history streams without false failures from known private operations paths.
 parent: pm-rnpb
