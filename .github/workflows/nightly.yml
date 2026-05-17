@@ -14,17 +14,19 @@ concurrency:
 
 jobs:
   nightly:
-    name: Nightly (Node ${{ matrix.node }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    name: Nightly (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        node:
-          - 20
-          - 22
-          - 24
-          - 25
+        include:
+          - { os: ubuntu-latest, node: 20 }
+          - { os: ubuntu-latest, node: 22 }
+          - { os: ubuntu-latest, node: 24 }
+          - { os: ubuntu-latest, node: 25 }
+          - { os: macos-latest, node: 20 }
+          - { os: windows-latest, node: 20 }
 
     steps:
       - name: Checkout
@@ -67,11 +69,11 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Version policy check
-        if: matrix.node == 20
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         run: pnpm version:check
 
       - name: Secret leak scan
-        if: matrix.node == 20
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         run: pnpm security:scan
 
       - name: Build
@@ -81,22 +83,22 @@ jobs:
         run: pnpm typecheck
 
       - name: Test with coverage gate
-        if: matrix.node == 20
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test:coverage
 
       - name: Static quality gate
-        if: matrix.node == 20
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         run: pnpm quality:static
 
       - name: Compatibility migration gate
-        if: matrix.node == 20
+        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         timeout-minutes: 6
         run: node scripts/release/compatibility-check.mjs --json
 
       - name: Test
-        if: matrix.node != 20
+        if: matrix.os != 'ubuntu-latest' || matrix.node != 20
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test

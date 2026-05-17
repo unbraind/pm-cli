@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- CI: split the serial `gates` job into a parallel matrix (`coverage`, `typecheck`, `static`, `compat`, `smokes`) all fanning out from the shared `build-foundation` dist artifact. Reduces push critical path from ~10 min to ~5-6 min on the free-tier ubuntu runners without losing any coverage.
+- CI: split the serial `gates` job into a parallel matrix (`coverage`, `typecheck`, `static`, `compat`, `smokes`) all fanning out from the shared `build-foundation` dist artifact, and moved the slow Windows test job from push CI to nightly so it no longer dominates the push critical path. Reduces push critical path from ~10 min to ~5-6 min on the free-tier runners; Windows + macOS cross-platform coverage now runs daily in `nightly.yml` so regressions are still caught within 24h.
 - `pm package` / `pm extension` bare invocations now default to `--explore` instead of erroring on the required-action contract, matching the agent-friendly default used by `pm templates`.
 - `pm create` now defaults `--type` to the configurable `settings.governance.create_default_type` (falling back to `Task`) so the positional-title shortcut (`pm create "title"`) succeeds without forcing an explicit `--type` flag.
 - Telemetry `command_resolution` is now derived from the CLI exit code rather than the JSON output's `ok` field, so warning-but-exit-zero commands (`pm validate`, `pm health`) are no longer reported as failures in the telemetry KPI dashboards.
