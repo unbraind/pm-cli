@@ -49,12 +49,14 @@
     ".claude-plugin/**",
     "plugins/**",
     "packages/pm-*/**",
+    "scripts/finalize-build.mjs",
     "scripts/install.sh",
     "scripts/install.ps1",
+    "scripts/prepare-build-cache.mjs",
     "marketplace.json"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/finalize-build.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json",
     "start": "node dist/cli.js",
     "dev": "tsx src/cli.ts",

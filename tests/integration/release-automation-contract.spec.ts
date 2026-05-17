@@ -22,6 +22,9 @@ describe("release automation contract", () => {
       scripts?: Record<string, string | undefined>;
     };
     expect(packageJson.scripts).toBeDefined();
+    expect(packageJson.scripts?.build).toBe(
+      "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/finalize-build.mjs",
+    );
     expect(packageJson.scripts?.["quality:static"]).toBe("node scripts/release/static-quality-gate.mjs");
     expect(packageJson.scripts?.typecheck).toBe("tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json");
     expect(packageJson.scripts?.["quality:docs-skills"]).toBe("node scripts/release/docs-skills-gate.mjs");

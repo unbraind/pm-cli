@@ -1555,8 +1555,10 @@ describe("release readiness runtime coverage", () => {
       "LICENSE",
       "docs/**",
       "packages/pm-*/**",
+      "scripts/finalize-build.mjs",
       "scripts/install.sh",
       "scripts/install.ps1",
+      "scripts/prepare-build-cache.mjs",
     ];
 
     expect(packageJson.files).toBeDefined();
@@ -1565,6 +1567,9 @@ describe("release readiness runtime coverage", () => {
     }
 
     expect(packageJson.scripts?.prepublishOnly).toBe("pnpm build");
+    expect(packageJson.scripts?.build).toBe(
+      "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/finalize-build.mjs",
+    );
     expect(packageJson.scripts?.typecheck).toBe("tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json");
     expect(packageJson.scripts?.["version:check"]).toBe("node scripts/release-version.mjs check");
     expect(packageJson.scripts?.["version:next"]).toBe("node scripts/release-version.mjs next");
