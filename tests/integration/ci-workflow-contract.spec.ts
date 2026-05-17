@@ -110,6 +110,7 @@ describe("GitHub workflow contract", () => {
       "path: dist",
       "if-no-files-found: error",
       PINNED_ACTIONS.downloadArtifact,
+      "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1",
       "name: Download dist artifact",
       "name: Dist artifact smoke check",
       "run: node dist/cli.js --version",
