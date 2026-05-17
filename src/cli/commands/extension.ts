@@ -961,7 +961,9 @@ async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalO
     const report = manifest.catalog?.links?.report ?? manifest.package_bugs_url;
     const docs = manifest.catalog?.links?.docs ?? manifest.package_homepage;
     const npm = manifest.catalog?.links?.npm ??
-      (manifest.package_name ? `https://www.npmjs.com/package/${encodeURIComponent(manifest.package_name)}` : undefined);
+      (manifest.package_name && manifest.package_private !== true
+        ? `https://www.npmjs.com/package/${encodeURIComponent(manifest.package_name)}`
+        : undefined);
     const metadataOnlyResources = Object.fromEntries(
       PM_PACKAGE_RESOURCE_KINDS
         .filter((resourceKind) => resourceKind !== "extensions")

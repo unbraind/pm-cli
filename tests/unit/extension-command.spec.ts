@@ -357,6 +357,9 @@ describe("extension command runtime", () => {
           },
         ],
       });
+      const beforeInstallPackages = (beforeInstall.details as { packages?: Array<{ alias?: string; catalog?: { links?: { npm?: string } } }> }).packages ?? [];
+      expect(beforeInstallPackages.find((entry) => entry.alias === "calendar")?.catalog?.links?.npm).toBeUndefined();
+      expect(beforeInstallPackages.find((entry) => entry.alias === "templates")?.catalog?.links?.npm).toBeUndefined();
 
       await runExtension("todos", { install: true, project: true }, { path: context.pmPath });
       const afterInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });
@@ -586,6 +589,11 @@ describe("extension command runtime", () => {
             expect.objectContaining({
               alias: "custom",
               package_name: "@example/pm-custom",
+              catalog: expect.objectContaining({
+                links: expect.objectContaining({
+                  npm: "https://www.npmjs.com/package/%40example%2Fpm-custom",
+                }),
+              }),
             }),
           ]),
         });

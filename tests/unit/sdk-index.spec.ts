@@ -65,6 +65,24 @@ describe("public sdk entrypoint", () => {
     expect(PM_TOOL_ACTIONS).not.toContain("todos-export");
     expect(PM_TOOL_ACTIONS).not.toContain("calendar");
     expect(PM_TOOL_ACTIONS).not.toContain("templates-save");
+    expect(PM_TOOL_ACTIONS).not.toEqual(
+      expect.arrayContaining([
+        "comments-audit",
+        "completion",
+        "dedupe-audit",
+        "guide",
+        "normalize",
+        "reindex",
+        "test-runs-list",
+        "test-runs-status",
+        "test-runs-logs",
+        "test-runs-stop",
+        "test-runs-resume",
+      ]),
+    );
+    expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS).not.toHaveProperty("reindex");
+    expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS).not.toHaveProperty("normalize");
+    expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS).not.toHaveProperty("test-runs-list");
 
     expect(PM_TOOL_PARAMETERS_SCHEMA.type).toBe("object");
     expect(PM_TOOL_PARAMETERS_SCHEMA.oneOf).toEqual(

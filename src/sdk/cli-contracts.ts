@@ -241,24 +241,19 @@ export const PM_TOOL_ACTIONS = [
   "list-closed",
   "list-canceled",
   "aggregate",
-  "dedupe-audit",
-  "guide",
   "context",
   "ctx",
   "get",
   "search",
-  "reindex",
   "history",
   "activity",
   "restore",
   "update",
   "update-many",
-  "normalize",
   "close",
   "delete",
   "append",
   "comments",
-  "comments-audit",
   "notes",
   "learnings",
   "files",
@@ -266,17 +261,11 @@ export const PM_TOOL_ACTIONS = [
   "deps",
   "test",
   "test-all",
-  "test-runs-list",
-  "test-runs-status",
-  "test-runs-logs",
-  "test-runs-stop",
-  "test-runs-resume",
   "stats",
   "health",
   "validate",
   "gc",
   "contracts",
-  "completion",
   "claim",
   "release",
   "start-task",
@@ -1841,7 +1830,7 @@ const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 
 const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
 
-const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContract> = {
+const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = {
   init: { optional: ["prefix", "preset", "defaults", "author", "withPackages"] },
   config: {
     required: ["scope", "configAction"],
@@ -2128,7 +2117,9 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<PmToolAction, PmActionSchemaContra
 };
 
 export const PM_TOOL_ACTION_PARAMETER_CONTRACTS: Readonly<Record<PmToolAction, PmActionSchemaContract>> =
-  PM_TOOL_ACTION_SCHEMA_CONTRACTS;
+  Object.freeze(
+    Object.fromEntries(PM_TOOL_ACTIONS.map((action) => [action, PM_TOOL_ACTION_SCHEMA_CONTRACTS[action]])),
+  ) as Readonly<Record<PmToolAction, PmActionSchemaContract>>;
 
 const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples?: unknown[] }> = {
   action: {

@@ -40,6 +40,7 @@ export interface PmPackageManifest {
   package_json_path?: string;
   package_name?: string;
   package_version?: string;
+  package_private?: boolean;
   package_description?: string;
   package_keywords?: string[];
   package_homepage?: string;
@@ -209,6 +210,7 @@ export async function readPmPackageManifest(packageRoot: string): Promise<PmPack
     package_json_path: packageJsonPath,
     package_name: typeof packageJson.name === "string" ? packageJson.name : undefined,
     package_version: typeof packageJson.version === "string" ? packageJson.version : undefined,
+    package_private: packageJson.private === true,
     package_description: typeof packageJson.description === "string" ? packageJson.description : undefined,
     package_keywords: normalizeStringArray(packageJson.keywords),
     package_homepage: typeof packageJson.homepage === "string" ? packageJson.homepage : undefined,
