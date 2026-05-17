@@ -508,6 +508,13 @@ describe("runList", () => {
       expect(Object.keys(fieldItem)).toEqual(["id", "title", "parent"]);
       expect(fieldItem.id).toBe(id);
       expect(fieldItem.title).toBe("Projection Target");
+
+      const full = await runList(undefined, { full: true }, { path: context.pmPath });
+      expect(full.projection).toEqual({
+        mode: "full",
+        fields: null,
+      });
+      expect(full.items[0]).toHaveProperty("priority");
     });
   });
 
@@ -596,6 +603,9 @@ describe("runList", () => {
       });
 
       await expect(runList(undefined, { compact: true, fields: "id" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runList(undefined, { full: true, fields: "id" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
       await expect(runList(undefined, { fields: "   " }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({

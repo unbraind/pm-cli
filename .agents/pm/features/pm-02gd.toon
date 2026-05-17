@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:calendar","area:docs","area:integration",pm-cli,release
 created_at: "2026-03-31T22:29:34.570Z"
-updated_at: "2026-04-04T21:32:45.381Z"
+updated_at: "2026-05-17T08:20:38.720Z"
 deadline: "2026-04-10T22:29:34.570Z"
 assignee: codex-agent
 author: codex-agent
@@ -50,8 +50,6 @@ notes[1]{created_at,author,text}:
   "2026-03-31T22:29:34.570Z",codex-agent,Maintain TOON global default while calendar keeps command-specific markdown default.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:24:32.493Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[1]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,wrapper parity updates
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full release coverage gate
 docs[1]{path,scope,note}:

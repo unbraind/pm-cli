@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:extensions-pi",core,"milestone:5",pm-cli
 created_at: "2026-02-17T23:02:12.269Z"
-updated_at: "2026-04-04T21:46:49.925Z"
+updated_at: "2026-05-17T08:22:11.011Z"
 deadline: "2026-03-13T23:02:12.269Z"
 assignee: steve
 author: steve
@@ -77,15 +77,13 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:34:12.922Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:14.348Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[8]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper project-scoped module path
+files[6]{path,scope,note}:
   package.json,project,publish allowlist includes Pi wrapper source module
   PRD.md,project,docs-first Pi wrapper include-linked parameter contract
   README.md,project,docs-first Pi wrapper include-linked usage contract
   src/cli/main.ts,project,remove_cli_wrapper
   tests/integration/cli.integration.spec.ts,project,remove_obsolete_pi_cli_case
   tests/integration/release-readiness-runtime.spec.ts,project,packaging allowlist contract coverage for Pi wrapper path
-  tests/unit/pi-agent-extension.spec.ts,project,unit coverage for pi extension mapping/registration
 tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,sandboxed full coverage gate
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,sandboxed integration regression

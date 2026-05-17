@@ -508,7 +508,7 @@ describe("contracts command runtime", () => {
         { command: "gc", flags: ["--dry-run", "--scope"] },
         {
           command: "list-open",
-          flags: ["--compact", "--brief", "--fields", "--include-body"],
+          flags: ["--compact", "--brief", "--full", "--fields", "--include-body"],
         },
         {
           command: "search",

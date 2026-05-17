@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: files,governance,pm-cli,validation
 created_at: "2026-04-04T17:53:32.045Z"
-updated_at: "2026-04-25T17:54:33.850Z"
+updated_at: "2026-05-17T08:22:21.610Z"
 deadline: "2026-04-11T17:53:32.045Z"
 author: codex-agent
 estimated_minutes: 180
@@ -50,8 +50,7 @@ notes[2]{created_at,author,text}:
   "2026-04-25T17:54:24.560Z",codex-agent,"Verification: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts passed (34 tests)."
 learnings[1]{created_at,author,text}:
   "2026-04-25T17:54:27.095Z",codex-agent,Workspace-root derivation should account for nested cwd under tracker roots to avoid false diagnostic framing in validate --check-files.
-files[6]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,pi-validate-mode-mapping
+files[5]{path,scope,note}:
   src/cli/commands/completion.ts,project,validate-mode-completion
   src/cli/commands/validate.ts,project,check-files implementation
   src/cli/main.ts,project,validate-scan-mode-wiring

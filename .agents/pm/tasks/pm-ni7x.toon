@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:extensions-pi",code,doc,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-04T23:13:22.240Z"
-updated_at: "2026-04-04T21:47:21.351Z"
+updated_at: "2026-05-17T08:22:25.135Z"
 deadline: "2026-03-05T23:13:22.240Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
@@ -54,11 +54,9 @@ notes[1]{created_at,author,text}:
   "2026-03-04T23:13:22.240Z",cursor-maintainer,"Plan: docs-first update in README and PRD then wrapper schema and helper update plus unit tests."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:11.924Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[4]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper project-scoped module path
+files[2]{path,scope,note}:
   PRD.md,project,docs-first parity update
   README.md,project,docs-first parity update
-  tests/unit/pi-agent-extension.spec.ts,project,unit coverage updates
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,sandboxed coverage gate
   node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted unit parity coverage

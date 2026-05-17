@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: contracts,extensions,help,pm-cli,tests
 created_at: "2026-04-06T09:49:17.322Z"
-updated_at: "2026-04-25T11:04:43.346Z"
+updated_at: "2026-05-17T08:22:41.006Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
@@ -17,7 +17,7 @@ actual_result: Resolution metadata fields were backfilled without altering closu
 comments[2]{created_at,author,text}:
   "2026-04-06T09:49:17.322Z",codex-agent,"Duplicate-check evidence: dedupe command set run immediately before create and no open/in_progress/blocked duplicate found for this scope."
   "2026-04-06T11:02:05.598Z",codex-agent,"Implemented extension command metadata capture and surfaced it in runtime help + help JSON payloads, while merging active extension command/action schemas into pm contracts with extension source metadata. Verification: targeted extension help/contracts suites and full-suite/coverage passes."
-files[9]{path,scope,note}:
+files[8]{path,scope,note}:
   src/cli/commands/contracts.ts,project,runtime extension command/action schema merging into contracts output
   src/cli/main.ts,project,dynamic extension help descriptor ingestion and JSON help metadata merge
   src/core/extensions/loader.ts,project,registerCommand metadata normalization and runtime registration tracking
@@ -26,7 +26,6 @@ files[9]{path,scope,note}:
   tests/integration/help-runtime.spec.ts,project,extension command help metadata integration coverage
   tests/unit/contracts-command.spec.ts,project,runtime extension contracts merge coverage
   tests/unit/extension-loader.spec.ts,project,extension command metadata registration coverage
-  tests/unit/pi-agent-extension.spec.ts,project,contracts/pi schema parity for new command metadata surfaces
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/unit/contracts-command.spec.ts tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,extension help/contracts runtime regression suite
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:

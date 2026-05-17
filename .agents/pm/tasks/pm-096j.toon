@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: "area:docs","area:extensions-pi",code,"milestone:6",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T16:08:41.139Z"
-updated_at: "2026-04-04T21:45:54.557Z"
+updated_at: "2026-05-17T08:20:42.175Z"
 deadline: "2026-03-09T16:10:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -52,13 +52,11 @@ notes[1]{created_at,author,text}:
   "2026-03-08T16:08:41.139Z",maintainer-agent,Plan update docs first then implement schema and arg mapping then extend wrapper and release contract coverage before pm validation.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:32:06.352Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[6]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper action schema and arg mapping
+files[4]{path,scope,note}:
   AGENTS.md,project,Pi wrapper all-fields example
   PRD.md,project,explicit Pi wrapper parity contract
   README.md,project,public Pi wrapper parity contract
   tests/integration/release-readiness-runtime.spec.ts,project,docs wrapper contract guard
-  tests/unit/pi-agent-extension.spec.ts,project,wrapper parity regression coverage
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,sandbox-safe 100 percent coverage gate
   node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-contract.spec.ts tests/integration/help-readme-contract.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,targeted Pi wrapper parity regression

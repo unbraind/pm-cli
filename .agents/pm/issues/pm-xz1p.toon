@@ -6,11 +6,89 @@ status: open
 priority: 2
 tags[4]: files,pm-cli,tracker-hygiene,validation
 created_at: "2026-05-03T13:55:10.634Z"
-updated_at: "2026-05-16T20:47:56.126Z"
+updated_at: "2026-05-17T08:33:08.805Z"
+assignee: codex-agent
 author: codex-audit
 acceptance_criteria: Missing linked paths from old src/*.ts locations are migrated or removed; orphaned tracked files are linked to relevant items or intentionally documented; pm validate --check-files --scan-mode tracked-all passes without file-link warnings.
 parent: pm-rnpb
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-05-03T13:55:10.634Z",codex-audit,"Duplicate-check evidence: pm search linked file validation missing orphaned paths --limit 10 found only closed prior hygiene items; latest audit still reports 15 legacy missing linked paths and 6 orphaned tracked files."
   "2026-05-16T16:48:30.998Z",codex-agent,"Audit update 2026-05-16: release gate and secret scan pass. pm validate --check-resolution is clean; linked-file hygiene remains separate open scope and was not expanded in this init/package setup fix."
+  "2026-05-17T08:33:08.805Z",codex-agent,"Validation hygiene cleanup complete: removed 42 stale missing linked paths from historical files/docs metadata using pm files/docs mutations, linked all 75 tracked orphaned paths to pm-xz1p for explicit ownership, and re-ran 'pm validate --check-files --scan-mode tracked-all --json' to green (missing=0, orphaned=0)."
+files[75]{path,scope,note}:
+  .claude-plugin/marketplace.json,project,validation orphaned tracked path backfill
+  .mcp.json,project,validation orphaned tracked path backfill
+  docs/examples/ci/gitlab-ci-pm-extension-gate.yml,project,validation orphaned tracked path backfill
+  docs/examples/ci/jenkins-pm-extension-gate.Jenkinsfile,project,validation orphaned tracked path backfill
+  docs/examples/policy-restricted-extension/index.js,project,validation orphaned tracked path backfill
+  docs/examples/policy-restricted-extension/manifest.json,project,validation orphaned tracked path backfill
+  docs/examples/policy-restricted-extension/package.json,project,validation orphaned tracked path backfill
+  docs/examples/sdk-app-embedding/package.json,project,validation orphaned tracked path backfill
+  docs/examples/sdk-app-embedding/README.md,project,validation orphaned tracked path backfill
+  docs/examples/sdk-app-embedding/run-embedded-pm.mjs,project,validation orphaned tracked path backfill
+  docs/examples/sdk-contract-consumer/inspect-contracts.mjs,project,validation orphaned tracked path backfill
+  docs/examples/sdk-contract-consumer/package.json,project,validation orphaned tracked path backfill
+  marketplace.json,project,validation orphaned tracked path backfill
+  packages/pm-calendar/extensions/calendar/manifest.json,project,validation orphaned tracked path backfill
+  packages/pm-governance-audit/extensions/governance-audit/index.js,project,validation orphaned tracked path backfill
+  packages/pm-governance-audit/extensions/governance-audit/runtime.js,project,validation orphaned tracked path backfill
+  packages/pm-governance-audit/README.md,project,validation orphaned tracked path backfill
+  packages/pm-guide-shell/extensions/guide-shell/manifest.json,project,validation orphaned tracked path backfill
+  packages/pm-guide-shell/extensions/guide-shell/runtime.js,project,validation orphaned tracked path backfill
+  packages/pm-guide-shell/README.md,project,validation orphaned tracked path backfill
+  packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.js,project,validation orphaned tracked path backfill
+  packages/pm-linked-test-adapters/extensions/linked-test-adapters/runtime.js,project,validation orphaned tracked path backfill
+  packages/pm-linked-test-adapters/README.md,project,validation orphaned tracked path backfill
+  packages/pm-templates/extensions/templates/index.js,project,validation orphaned tracked path backfill
+  packages/pm-templates/extensions/templates/manifest.json,project,validation orphaned tracked path backfill
+  plugins/pm-claude/.claude-plugin/plugin.json,project,validation orphaned tracked path backfill
+  plugins/pm-claude/.mcp.json,project,validation orphaned tracked path backfill
+  plugins/pm-claude/agents/pm-coordinator.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/agents/pm-delivery-chain.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/agents/pm-triage-agent.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/agents/pm-verification-agent.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-audit.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-calendar.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-close-task.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-developer.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-init.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-list.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-new.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-planner.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-release.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-search.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-start-task.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-status.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-triage.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/commands/pm-workflow.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/hooks/hooks.json,project,validation orphaned tracked path backfill
+  plugins/pm-claude/hooks/session-start.mjs,project,validation orphaned tracked path backfill
+  plugins/pm-claude/README.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/scripts/pm-mcp-server.mjs,project,validation orphaned tracked path backfill
+  plugins/pm-claude/skills/pm-audit/SKILL.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/skills/pm-developer/SKILL.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/skills/pm-planner/SKILL.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/skills/pm-release/SKILL.md,project,validation orphaned tracked path backfill
+  plugins/pm-claude/skills/pm-workflow/SKILL.md,project,validation orphaned tracked path backfill
+  plugins/pm-codex/.codex-plugin/plugin.json,project,validation orphaned tracked path backfill
+  plugins/pm-codex/.mcp.json,project,validation orphaned tracked path backfill
+  plugins/pm-codex/assets/pm-cli-small.svg,project,validation orphaned tracked path backfill
+  plugins/pm-codex/commands/pm-audit.md,project,validation orphaned tracked path backfill
+  plugins/pm-codex/commands/pm-close-task.md,project,validation orphaned tracked path backfill
+  plugins/pm-codex/commands/pm-start-task.md,project,validation orphaned tracked path backfill
+  plugins/pm-codex/README.md,project,validation orphaned tracked path backfill
+  plugins/pm-codex/scripts/pm-mcp-server.mjs,project,validation orphaned tracked path backfill
+  plugins/pm-codex/skills/pm-auditor/agents/openai.yaml,project,validation orphaned tracked path backfill
+  plugins/pm-codex/skills/pm-auditor/SKILL.md,project,validation orphaned tracked path backfill
+  plugins/pm-codex/skills/pm-native/agents/openai.yaml,project,validation orphaned tracked path backfill
+  plugins/pm-codex/skills/pm-native/SKILL.md,project,validation orphaned tracked path backfill
+  plugins/pm-codex/skills/pm-release/agents/openai.yaml,project,validation orphaned tracked path backfill
+  plugins/pm-codex/skills/pm-release/SKILL.md,project,validation orphaned tracked path backfill
+  scripts/release/changelog-promote.mjs,project,validation orphaned tracked path backfill
+  scripts/release/utils.mjs,project,validation orphaned tracked path backfill
+  src/cli/extension-command-help.ts,project,validation orphaned tracked path backfill
+  src/cli/migration-gates.ts,project,validation orphaned tracked path backfill
+  src/cli/shared-parsers.ts,project,validation orphaned tracked path backfill
+  tests/integration/claude-plugin-contract.spec.ts,project,validation orphaned tracked path backfill
+  tests/unit/migration-gates.spec.ts,project,validation orphaned tracked path backfill
 body: ""

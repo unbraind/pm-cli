@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: pagination,pm-cli,test-all,wave9
 created_at: "2026-04-07T08:09:59.994Z"
-updated_at: "2026-04-25T11:03:59.353Z"
+updated_at: "2026-05-17T08:21:09.566Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
@@ -17,8 +17,7 @@ actual_result: Resolution metadata fields were backfilled without altering closu
 comments[2]{created_at,author,text}:
   "2026-04-07T08:09:59.994Z",codex-agent,"Duplicate-check evidence commands: pm context --limit 10; pm list-open --limit 50; pm search test-all limit offset blast radius --limit 10. Net-new because no active item directly implements test-all limit and offset controls."
   "2026-04-07T08:42:17.148Z",codex-agent,"Completed Wave 8/9 test-all blast-radius controls: added --limit/--offset filtering before linked-test execution while preserving deterministic ID ordering and existing status filtering semantics. Wired new flags through main CLI command parsing, managed background command argument forwarding, contracts/schema, completion (bash/zsh/fish), Pi wrapper mapping, and help examples. Added runtime validation for non-negative integer limit/offset plus pagination regression coverage and help/contracts parity tests. Verification passed: node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts."
-files[11]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,test-all-limit-offset-pi-mapping
+files[9]{path,scope,note}:
   src/cli/commands/completion.ts,project,test-all-limit-offset-completion-parity
   src/cli/commands/test-all.ts,project,test-all-limit-offset-selection-runtime
   src/cli/help-content.ts,project,test-all-pagination-help-examples
@@ -27,7 +26,6 @@ files[11]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,test-all-help-pagination-regression
   tests/unit/completion-command.spec.ts,project,test-all-pagination-completion-regression
   tests/unit/contracts-command.spec.ts,project,test-all-pagination-contract-regression
-  tests/unit/pi-agent-extension.spec.ts,project,test-all-pagination-pi-regression
   tests/unit/test-all-command.spec.ts,project,test-all-pagination-runtime-regression
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/test-all-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,5400,null,null,null,null,null,null,null,null,null,null,null,test-all-pagination-regression-suite

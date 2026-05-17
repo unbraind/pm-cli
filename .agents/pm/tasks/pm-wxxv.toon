@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: contracts,packages,pm-cli,sdk
 created_at: "2026-05-12T19:46:36.014Z"
-updated_at: "2026-05-13T19:31:02.614Z"
+updated_at: "2026-05-17T08:23:01.290Z"
 author: codex-agent
 acceptance_criteria: Static SDK core actions no longer imply optional first-party package commands are always core; installed package commands remain discoverable through runtime contracts; MCP/action availability parity is documented or tested; focused SDK/contracts/package tests pass.
 parent: pm-59gj
@@ -24,18 +24,16 @@ comments[10]{created_at,author,text}:
   "2026-05-13T19:11:17.942Z",codex-agent,"Git evidence: committed package action dispatch work as 51d0ba3 and pushed to origin/main. Waiting for GitHub Actions on the pushed main commit to finish green."
   "2026-05-13T19:25:04.216Z",codex-agent,"CI failure diagnosis: GitHub Actions run 25820691894 failed only in Claude Code plugin smoke because plugins/pm-cli-claude/scripts/pm-mcp-server.mjs imports dist/mcp/server.js but the server now only starts on direct execution; launcher must invoke exported startMcpServer after import."
   "2026-05-13T19:31:02.614Z",codex-agent,"CI fix evidence: patched Claude and Codex plugin MCP launchers to call exported startMcpServer() after importing the repo/explicit server module. Local verification passed via pm test pm-wxxv --run --progress: coverage 92 files / 1293 tests at 100%, focused contract/package/MCP regressions, Claude plugin smoke, Codex plugin smoke, dogfood package-first 35 commands, and pnpm typecheck."
-files[11]{path,scope,note}:
+files[9]{path,scope,note}:
   packages/pm-beads/extensions/beads/index.ts,project,use public SDK type imports in first-party package entrypoint
   packages/pm-todos/extensions/todos/index.ts,project,use public SDK type imports in first-party package entrypoint
-  src/cli/commands/contracts.ts,project,derive optional actions only from active extension contracts
-  src/sdk/cli-contracts.ts,project,remove optional package actions from static SDK schema
-  tests/unit/contracts-command.spec.ts,project,regress static-vs-runtime optional action contracts
-  src/mcp/server.ts,project,MCP pm_run dispatches installed package actions
-  tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP dynamic package action regression
-  tests/unit/sdk-index.spec.ts,project,SDK barrel contract export regression
   scripts/dogfood-package-first.mjs,project,expanded package install/upgrade dogfood matrix
-  plugins/pm-cli-claude/scripts/pm-mcp-server.mjs,project,Claude plugin launcher starts imported MCP server
-  plugins/pm-cli-codex/scripts/pm-mcp-server.mjs,project,Codex plugin launcher starts imported MCP server
+  src/cli/commands/contracts.ts,project,derive optional actions only from active extension contracts
+  src/mcp/server.ts,project,MCP pm_run dispatches installed package actions
+  src/sdk/cli-contracts.ts,project,remove optional package actions from static SDK schema
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP dynamic package action regression
+  tests/unit/contracts-command.spec.ts,project,regress static-vs-runtime optional action contracts
+  tests/unit/sdk-index.spec.ts,project,SDK barrel contract export regression
 tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,full 100 percent coverage gate
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused static/runtime contract regression

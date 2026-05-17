@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:files",audit,governance,implementation,pm-cli
 created_at: "2026-04-03T20:58:12.553Z"
-updated_at: "2026-04-04T21:40:21.862Z"
+updated_at: "2026-05-17T08:23:08.395Z"
 deadline: "2026-04-11T20:58:12.553Z"
 author: codex-agent
 estimated_minutes: 180
@@ -37,8 +37,7 @@ notes[1]{created_at,author,text}:
   "2026-04-03T20:58:12.553Z",codex-agent,Preserve default files mutation behavior while adding opt-in stable append.
 learnings[1]{created_at,author,text}:
   "2026-04-03T20:58:12.553Z",codex-agent,Stable append semantics improve governance readability in high-churn link arrays.
-files[10]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,pi files action append-stable passthrough
+files[8]{path,scope,note}:
   src/cli/commands/completion.ts,project,bash completion files/docs split with append-stable
   src/cli/commands/files.ts,project,files mutation implementation
   src/cli/main.ts,project,files append-stable CLI option wiring
@@ -47,7 +46,6 @@ files[10]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,files help includes append-stable
   tests/unit/completion-command.spec.ts,project,completion append-stable coverage
   tests/unit/files-docs-command.spec.ts,project,append-stable ordering regression coverage
-  tests/unit/pi-agent-extension.spec.ts,project,pi append-stable arg mapping coverage
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,issue3 targeted suite
   node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,Issue3 targeted regression suite

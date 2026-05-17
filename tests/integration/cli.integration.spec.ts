@@ -3844,15 +3844,36 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       // pm list (bare command) excludes terminal statuses by default
       const listActive = context.runCli(["list", "--json", "--type", "Task"], { expectJson: true });
       expect(listActive.code).toBe(0);
-      const listActiveJson = listActive.json as { count: number; items: Array<{ status: string }> };
+      const listActiveJson = listActive.json as {
+        count: number;
+        items: Array<Record<string, unknown>>;
+        projection: { mode: string; fields: string[] | null };
+      };
       expect(listActiveJson.count).toBe(5);
-      const activeStatuses = listActiveJson.items.map((item) => item.status);
+      expect(listActiveJson.projection).toEqual({
+        mode: "compact",
+        fields: ["id", "status", "type", "title"],
+      });
+      expect(Object.keys(listActiveJson.items[0] ?? {})).toEqual(["id", "status", "type", "title"]);
+      const activeStatuses = listActiveJson.items.map((item) => item.status as string);
       expect(activeStatuses).not.toContain("closed");
       expect(activeStatuses).not.toContain("canceled");
       expect(activeStatuses).toContain("draft");
       expect(activeStatuses).toContain("open");
       expect(activeStatuses).toContain("in_progress");
       expect(activeStatuses).toContain("blocked");
+
+      const listActiveFull = context.runCli(["list", "--json", "--type", "Task", "--full"], { expectJson: true });
+      expect(listActiveFull.code).toBe(0);
+      const listActiveFullJson = listActiveFull.json as {
+        projection: { mode: string; fields: string[] | null };
+        items: Array<Record<string, unknown>>;
+      };
+      expect(listActiveFullJson.projection).toEqual({
+        mode: "full",
+        fields: null,
+      });
+      expect(listActiveFullJson.items[0]).toHaveProperty("priority");
 
       const listInProgressViaStatus = context.runCli(["list", "--json", "--type", "Task", "--status", "in_progress"], {
         expectJson: true,

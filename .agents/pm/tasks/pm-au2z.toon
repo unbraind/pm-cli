@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: assertions,external-audit,implementation,linked-tests
 created_at: "2026-04-04T12:43:14.932Z"
-updated_at: "2026-04-04T21:40:41.719Z"
+updated_at: "2026-05-17T08:21:31.745Z"
 deadline: "2026-04-11T12:43:14.932Z"
 author: codex-agent
 estimated_minutes: 260
@@ -43,8 +43,7 @@ comments[2]{created_at,author,text}:
   "2026-04-04T14:01:41.605Z",codex-agent,"Implemented fail-on-skipped policy flags plus linked-test assertions (stdout/stderr contains+regex, min-lines, JSON equals/gte) across create/test/test-all runtime and contracts. Evidence: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/test-command.spec.ts tests/unit/test-all-command.spec.ts tests/unit/validate-command.spec.ts; node scripts/run-tests.mjs coverage; pm test pm-au2z --run --fail-on-skipped passed."
 notes[1]{created_at,author,text}:
   "2026-04-04T12:43:14.932Z",codex-agent,All new policy and assertions remain opt-in to avoid breaking existing user workflows.
-files[13]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,assertion-and-skip-policy-implementation
+files[12]{path,scope,note}:
   src/cli/commands/create.ts,project,assertion-and-skip-policy-implementation
   src/cli/commands/test-all.ts,project,assertion-and-skip-policy-implementation
   src/cli/commands/test.ts,project,assertion-and-skip-policy-implementation

@@ -575,6 +575,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--offset" },
   { flag: "--compact" },
   { flag: "--brief" },
+  { flag: "--full" },
   { flag: "--fields" },
   { flag: "--sort" },
   { flag: "--order" },
@@ -1810,6 +1811,7 @@ const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "includeBody",
   "compact",
   "brief",
+  "full",
 ]);
 const AGGREGATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_AGGREGATE_OPTION_CONTRACTS.map((entry) => entry.param),

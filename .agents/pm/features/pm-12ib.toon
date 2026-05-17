@@ -6,8 +6,11 @@ status: closed
 priority: 1
 tags[5]: agent-ux,close,pm-cli,telemetry,update
 created_at: "2026-05-17T05:46:43.522Z"
-updated_at: "2026-05-17T07:05:18.245Z"
+updated_at: "2026-05-17T08:15:31.546Z"
 deadline: "2026-05-24T05:46:43.522Z"
 author: claude-code-agent
+resolution: "Implemented pm-12ib: pm update --status closed --close-reason <text> now auto-routes to pm close, returning success with warnings:['auto_routed_from_update_to_close']. Mixed updates (status+close-reason + other fields) still rejected with helpful guidance. Tests added. Reduces 248 hits/30d."
+expected_result: "Expected result: closure includes explicit resolution metadata and verifiable delivery evidence."
+actual_result: "Actual result: Implemented pm-12ib: pm update --status closed --close-reason <text> now auto-routes to pm close, returning success with warnings:['auto_routed_from_update_to_close']. Mixed updates (status+close-reason + other fields) still rejected with helpful guidance. Tests added. Reduces 248 hits/30d."
 close_reason: "Implemented pm-12ib: pm update --status closed --close-reason <text> now auto-routes to pm close, returning success with warnings:['auto_routed_from_update_to_close']. Mixed updates (status+close-reason + other fields) still rejected with helpful guidance. Tests added. Reduces 248 hits/30d."
 body: ""

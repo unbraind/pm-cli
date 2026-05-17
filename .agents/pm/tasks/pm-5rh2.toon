@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[9]: "area:core","area:docs","area:extensions-pi",code,doc,"milestone:next",pm-cli,"priority:0",tests
 created_at: "2026-03-05T08:56:51.061Z"
-updated_at: "2026-04-05T22:45:27.127Z"
+updated_at: "2026-05-17T08:21:16.615Z"
 deadline: "2026-03-06T08:56:51.061Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -52,8 +52,7 @@ notes[1]{created_at,author,text}:
   "2026-03-05T08:56:51.061Z",maintainer-agent,"Plan: migrate schema and commands then docs and tests then pm item cleanup."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:31:08.005Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[19]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper parameter migration
+files[18]{path,scope,note}:
   package.json,project,publish path updated to project-scoped Pi extension
   src/cli/commands/claim.ts,project,claim and release assignee behavior
   src/cli/commands/close.ts,project,clear assignee on close

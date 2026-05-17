@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[5]: manifest,packages,planning,pm-cli,sdk
 created_at: "2026-05-11T17:58:43.930Z"
-updated_at: "2026-05-14T17:56:34.798Z"
+updated_at: "2026-05-17T08:22:44.272Z"
 author: codex-agent
 acceptance_criteria: Package manifest schema is documented and represented in SDK/contracts; resource precedence is explicit for runtime extensions; direct Pi agent code and package metadata are removed from the main codebase; focused package/SDK/install tests pass.
 parent: pm-59gj
@@ -18,7 +18,7 @@ comments[4]{created_at,author,text}:
   "2026-05-11T20:05:29.769Z",codex-agent,"Implementation update: package manifest contract now exposes only pm.extensions for general project-management extension packages. Removed direct Pi runtime/package assets from the main codebase, renamed provider-safe SDK schema exports to provider-neutral names, removed Pi package metadata and optional peer dependency from package.json, and changed the todos extension default folder from .pi/todos to .pm/todos."
   "2026-05-14T15:37:48.330Z",codex-package-refactor,"Implemented metadata-first package resource expansion: core manifest contract now supports extensions/docs/examples, package install/catalog surfaces communicate extension-only activation semantics, and first-party package manifests now publish docs/examples metadata resources. Focused tests updated and passing."
   "2026-05-14T15:49:52.921Z",codex-package-refactor,"Verification complete: node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts passed (60 tests); node scripts/dogfood-package-first.mjs passed; node scripts/run-tests.mjs coverage passed (1299/1299, 100%); node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json passed with sentry critical=1 high=4 and telemetry finish_error_rate_pct=2.24; node scripts/smoke-claude-plugin.mjs passed."
-files[24]{path,scope,note}:
+files[22]{path,scope,note}:
   docs/EXTENSIONS.md,project,manifest/resource contract docs
   docs/SDK.md,project,SDK resource kind docs
   package.json,project,removed Pi package metadata and peer
@@ -35,12 +35,10 @@ files[24]{path,scope,note}:
   pnpm-lock.yaml,project,removed Pi optional peer lock entries
   src/cli/commands/extension.ts,project,install diagnostics use pm.extensions only
   src/core/packages/manifest.ts,project,general pm package manifest contract
-  src/pi/native.ts,project,removed direct Pi runtime from main source
   src/sdk/cli-contracts.ts,project,provider-neutral tool schema names
   src/sdk/index.ts,project,package manifest SDK exports
   tests/unit/extension-command.spec.ts,project,catalog messaging assertions
   tests/unit/package-manifest.spec.ts,project,package manifest contract tests
-  tests/unit/pi-agent-extension.spec.ts,project,removed main-package Pi integration tests
   tests/unit/sdk-index.spec.ts,project,SDK resource kind export coverage
   vitest.config.ts,project,coverage includes package manifest module
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
@@ -48,9 +46,8 @@ tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts tests/unit/extension-command.spec.ts tests/unit/extension-command-github.spec.ts tests/unit/todos-extension.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/main-loose-options.spec.ts tests/integration/claude-plugin-contract.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused package and Pi-decoupling regression suite
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mp1mv29j-sxon4r,test,passed,"2026-05-11T20:06:28.475Z","2026-05-11T20:07:15.511Z","2026-05-11T20:07:15.511Z",null,null,1,0,0,null,null,null
-docs[4]{path,scope,note}:
+docs[3]{path,scope,note}:
   docs/EXTENSIONS.md,project,package manifest contract docs
-  docs/PI_PACKAGE.md,project,removed bundled Pi package docs
   docs/README.md,project,removed Pi package public docs route
   docs/SDK.md,project,provider-neutral SDK schema docs
 close_reason: Metadata-first package resource contract delivered with extension-only activation semantics and passing verification stack.

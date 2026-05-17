@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:extensions","area:pi","area:sdk","milestone:extension-manager",pm-cli
 created_at: "2026-04-03T16:16:50.033Z"
-updated_at: "2026-04-05T02:19:20.584Z"
+updated_at: "2026-05-17T08:21:24.622Z"
 deadline: "2026-04-13T16:16:50.033Z"
 author: codex-agent
 estimated_minutes: 180
@@ -48,13 +48,11 @@ comments[6]{created_at,author,text}:
   "2026-04-05T02:19:16.984Z",codex-agent,"Issues 2+7 follow-up completed: contracts now emits per-action runtime availability metadata and supports runtime action filtering (`--runtime-only`, alias `--active-only`) with CLI/completion/contracts/Pi parity. Evidence: node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts passed; contracts repro probe with --no-extensions shows runtime_only=true, beads-import filtered from runtime actions, and full output action_availability marks beads-import as extension-disabled; node scripts/run-tests.mjs coverage passed (branch 91.01%); pnpm build passed."
 notes[1]{created_at,author,text}:
   "2026-04-03T16:16:50.033Z",codex-agent,Will update cli-contracts constants/schemas and wrapper action mapping with tests.
-files[6]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper mapping for beads-import preserve-source-ids
+files[4]{path,scope,note}:
   src/cli/commands/completion.ts,project,contracts runtime-only/active-only completion parity
   src/cli/commands/contracts.ts,project,runtime action availability and runtime-only filtering
   src/sdk/cli-contracts.ts,project,shared command and action contracts
   tests/unit/contracts-command.spec.ts,project,contracts runtime availability and probe-failure regression coverage
-  tests/unit/pi-agent-extension.spec.ts,project,schema and arg mapping coverage for beads-import optional file and preserveSourceIds
 tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,integration extension command coverage
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,contracts and wrapper parity regressions

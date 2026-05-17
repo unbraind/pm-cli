@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:files","area:ux",external-audit,pm-cli
 created_at: "2026-04-03T14:48:12.160Z"
-updated_at: "2026-04-04T21:33:50.193Z"
+updated_at: "2026-05-17T08:21:00.965Z"
 deadline: "2026-04-13T14:48:12.160Z"
 author: codex-agent
 estimated_minutes: 240
@@ -35,8 +35,7 @@ comments[3]{created_at,author,text}:
   "2026-04-03T15:22:26.212Z",codex-agent,"Final verification complete: linked suite passed and full gates passed (build + full test + coverage). Additional sandbox smoke checks confirm files/docs --add-glob help and JSON mutation surfaces behave as documented."
 notes[1]{created_at,author,text}:
   "2026-04-03T14:48:12.160Z",codex-agent,"Implementation includes command wiring,parser logic,and regression coverage for glob expansion."
-files[12]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper argument mapping for addGlob
+files[10]{path,scope,note}:
   package.json,project,fast-glob dependency for deterministic pattern expansion
   pnpm-lock.yaml,project,lockfile update for fast-glob dependency
   src/cli/commands/completion.ts,project,bash completion includes add-glob for files/docs
@@ -47,7 +46,6 @@ files[12]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,CLI integration regression for files/docs add-glob
   tests/unit/completion-command.spec.ts,project,completion regression for add-glob flag
   tests/unit/files-docs-command.spec.ts,project,unit coverage for add-glob parsing/expansion/dedup
-  tests/unit/pi-agent-extension.spec.ts,project,Pi argument mapping regression for addGlob
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,add-glob + wrapper + completion regression suite
 docs[1]{path,scope,note}:

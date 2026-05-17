@@ -201,7 +201,7 @@ try {
 
   const listOpenContracts = run("contracts list-open flags", ["contracts", "--command", "list-open", "--flags-only"]);
   const listOpenFlags = listOpenContracts?.command_flags?.[0]?.flags?.map((entry) => entry.flag) ?? [];
-  for (const flag of ["--compact", "--brief", "--fields", "--include-body"]) {
+  for (const flag of ["--compact", "--brief", "--full", "--fields", "--include-body"]) {
     assert(listOpenFlags.includes(flag), `contracts list-open flags missing ${flag}`);
   }
   const searchContracts = run("contracts search flags", ["contracts", "--command", "search", "--flags-only"]);

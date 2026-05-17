@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:create","area:templates",external-audit,pm-cli
 created_at: "2026-04-03T11:56:47.754Z"
-updated_at: "2026-04-04T21:33:47.188Z"
+updated_at: "2026-05-17T08:21:21.367Z"
 deadline: "2026-04-17T11:57:45.116Z"
 author: codex-agent
 estimated_minutes: 240
@@ -40,8 +40,7 @@ comments[5]{created_at,author,text}:
 notes[2]{created_at,author,text}:
   "2026-04-03T11:56:47.754Z",codex-agent,Must preserve current create behavior and remain optional for existing users.
   "2026-04-03T11:59:56.638Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
-files[8]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,pi action mapping for templates/history/files-docs flags
+files[7]{path,scope,note}:
   src/cli/commands/completion.ts,project,template command completion
   src/cli/commands/create.ts,project,template apply merge with create options
   src/cli/commands/index.ts,project,templates command barrel exports

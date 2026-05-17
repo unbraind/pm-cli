@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:validation",audit,governance,implementation,pm-cli
 created_at: "2026-04-03T20:58:05.700Z"
-updated_at: "2026-04-04T21:40:20.460Z"
+updated_at: "2026-05-17T08:22:19.981Z"
 deadline: "2026-04-11T20:58:05.700Z"
 author: codex-agent
 estimated_minutes: 180
@@ -37,8 +37,7 @@ notes[1]{created_at,author,text}:
   "2026-04-03T20:58:05.700Z",codex-agent,"Update validate command,CLI wiring,contracts,and tests together."
 learnings[1]{created_at,author,text}:
   "2026-04-03T20:58:05.700Z",codex-agent,Keep additive defaults to avoid breaking existing validate workflows.
-files[8]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,pi validate action scan-mode passthrough
+files[7]{path,scope,note}:
   src/cli/commands/completion.ts,project,validate scan-mode completion support
   src/cli/commands/validate.ts,project,scan-mode and candidate totals implementation
   src/cli/main.ts,project,validate command scan-mode option wiring

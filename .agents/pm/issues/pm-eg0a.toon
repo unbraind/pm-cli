@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[3]: "area:agent-ux","area:sdk","audit:2026-04-25"
 created_at: "2026-04-25T20:01:16.224Z"
-updated_at: "2026-04-25T20:03:58.791Z"
+updated_at: "2026-05-17T08:21:52.361Z"
 deadline: "2026-04-27T20:01:16.224Z"
 author: codex-agent
 estimated_minutes: 75
@@ -29,9 +29,8 @@ notes[1]{created_at,author,text}:
   "2026-04-25T20:01:16.224Z",codex-agent,Mismatch observed between pm contracts action schema and templates command help/options.
 learnings[1]{created_at,author,text}:
   "2026-04-25T20:01:16.224Z",codex-agent,"Action schema contracts must be constrained per subcommand support,not inherited wholesale from create."
-files[2]{path,scope,note}:
+files[1]{path,scope,note}:
   src/sdk/cli-contracts.ts,project,template contract key filtering
-  .pi/extensions/pm-cli/index.ts,project,template save arg builder filtering
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:

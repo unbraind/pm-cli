@@ -6,8 +6,11 @@ status: closed
 priority: 1
 tags[4]: agent-ux,pm-cli,telemetry,update
 created_at: "2026-05-17T05:46:49.262Z"
-updated_at: "2026-05-17T07:05:14.560Z"
+updated_at: "2026-05-17T08:15:33.943Z"
 deadline: "2026-05-24T05:46:49.262Z"
 author: claude-code-agent
+resolution: "Implemented pm-7cup: pm update with no field-changing flags now returns success result {item, changed_fields:[], warnings:['noop_no_update_fields']} instead of throwing no_update_fields error. Item still verified to exist (preserves did-you-mean behavior). Tests added in tests/unit/update-command.spec.ts. Reduces 128 hits/30d agent friction."
+expected_result: "Expected result: closure includes explicit resolution metadata and verifiable delivery evidence."
+actual_result: "Actual result: Implemented pm-7cup: pm update with no field-changing flags now returns success result {item, changed_fields:[], warnings:['noop_no_update_fields']} instead of throwing no_update_fields error. Item still verified to exist (preserves did-you-mean behavior). Tests added in tests/unit/update-command.spec.ts. Reduces 128 hits/30d agent friction."
 close_reason: "Implemented pm-7cup: pm update with no field-changing flags now returns success result {item, changed_fields:[], warnings:['noop_no_update_fields']} instead of throwing no_update_fields error. Item still verified to exist (preserves did-you-mean behavior). Tests added in tests/unit/update-command.spec.ts. Reduces 128 hits/30d agent friction."
 body: ""

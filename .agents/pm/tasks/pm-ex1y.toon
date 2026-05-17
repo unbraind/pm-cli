@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[7]: "area:cli",code,docs,"milestone:3",pm-cli,"priority:0",tests
 created_at: "2026-03-06T23:44:33.076Z"
-updated_at: "2026-04-04T21:45:21.005Z"
+updated_at: "2026-05-17T08:21:57.369Z"
 deadline: "2026-03-10T23:59:00.000Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -52,13 +52,11 @@ notes[1]{created_at,author,text}:
   "2026-03-06T23:44:33.076Z",maintainer-agent,Docs-first then CLI registration then integration/unit test coverage.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:31:31.595Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[6]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,pi action mapping parity for list-draft
+files[4]{path,scope,note}:
   PRD.md,project,command contract includes list-draft
   README.md,project,document list-draft command
   src/cli/main.ts,project,add list-draft command registration
   tests/integration/cli.integration.spec.ts,project,integration coverage for list-draft
-  tests/unit/pi-agent-extension.spec.ts,project,list-draft wrapper action coverage
 tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,coverage gate
   node scripts/run-tests.mjs test,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full sandbox regression

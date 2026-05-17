@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[5]: "audit:2026-04-26",dx,extensions,pm-cli,sdk
 created_at: "2026-04-26T14:52:29.628Z"
-updated_at: "2026-04-27T18:12:27.155Z"
+updated_at: "2026-05-17T08:22:58.026Z"
 deadline: "2026-05-10T14:52:29.628Z"
 author: audit-agent
 estimated_minutes: 90
@@ -27,8 +27,7 @@ notes[2]{created_at,author,text}:
 learnings[2]{created_at,author,text}:
   "2026-04-27T18:11:22.254Z",codex-agent,"author=codex-agent,created_at=now,text=For retry-safe CLI scaffolds, treat matching existing files as unchanged and only fail when file contents diverge; this preserves idempotency while preventing silent clobbering."
   "2026-04-27T18:11:41.046Z",codex-agent,"For retry-safe CLI scaffolds, treat matching existing files as unchanged and only fail when file contents diverge to preserve idempotency without silent clobbering."
-files[9]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,map extension-init PI tool action to pm extension --init args
+files[8]{path,scope,note}:
   docs/examples/starter-extension/index.js,project,reference entry implementing all capabilities
   docs/examples/starter-extension/manifest.json,project,reference manifest for extension bootstrapping
   docs/examples/starter-extension/README.md,project,starter template added as immediate scaffold substitute

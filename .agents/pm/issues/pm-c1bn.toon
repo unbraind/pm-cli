@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: exit-codes,external-audit,linked-tests,pm-cli
 created_at: "2026-04-04T18:16:15.038Z"
-updated_at: "2026-04-05T17:57:21.389Z"
+updated_at: "2026-05-17T08:21:38.829Z"
 deadline: "2026-04-14T18:16:15.038Z"
 author: codex-agent
 estimated_minutes: 180
@@ -47,8 +47,7 @@ comments[5]{created_at,author,text}:
   "2026-04-05T17:56:39.494Z",codex-agent,"Evidence: full verification passed via node scripts/run-tests.mjs coverage (895 tests, branches 91.01%) and pnpm build; fail-on-empty-test-run guardrails shipped with additional safe-output and JSON path edge-case coverage."
 notes[1]{created_at,author,text}:
   "2026-04-04T18:16:15.038Z",codex-agent,Implement CLI test command exit-code parity with test-all dependency-failed behavior.
-files[12]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,fail-on-empty-test-run Pi wrapper parity
+files[10]{path,scope,note}:
   src/cli/commands/completion.ts,project,fail-on-empty-test-run completion parity
   src/cli/commands/test-all.ts,project,test-all empty-run guard passthrough
   src/cli/commands/test.ts,project,empty-run detection and linked-test failure category handling
@@ -57,7 +56,6 @@ files[12]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,pm-test-exit-code-integration-coverage
   tests/integration/release-readiness-runtime.spec.ts,project,release-runtime-exit-code-coverage
   tests/unit/completion-command.spec.ts,project,fail-on-empty-test-run completion tests
-  tests/unit/pi-agent-extension.spec.ts,project,fail-on-empty-test-run Pi schema and args coverage
   tests/unit/test-all-command.spec.ts,project,test-all fail-on-empty-test-run unit coverage
   tests/unit/test-command.spec.ts,project,fail-on-empty-test-run unit coverage
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:

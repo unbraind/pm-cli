@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
 created_at: "2026-03-08T23:48:17.954Z"
-updated_at: "2026-04-04T21:45:07.995Z"
+updated_at: "2026-05-17T08:22:04.353Z"
 deadline: "2026-03-22T23:48:17.954Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -47,8 +47,6 @@ notes[1]{created_at,author,text}:
   "2026-03-08T23:48:17.954Z",maintainer-agent,"Initial plan: design workflow presets for pi extension."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:37:05.836Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[1]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,target extension file
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,metadata-audit-baseline-regression
 docs[1]{path,scope,note}:

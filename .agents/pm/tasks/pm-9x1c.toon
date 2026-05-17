@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[4]: commands,install,packages,pm-cli
 created_at: "2026-05-11T17:41:31.580Z"
-updated_at: "2026-05-11T19:32:15.955Z"
+updated_at: "2026-05-17T08:21:26.631Z"
 author: codex-agent
 acceptance_criteria: pm install installs package/extension sources; pm package and pm packages expose lifecycle subcommands; contracts/native integrations include package actions; command tests cover aliases.
 parent: pm-59gj
@@ -22,7 +22,7 @@ comments[8]{created_at,author,text}:
   "2026-05-11T19:12:11.284Z",codex-agent,"CI repair verification: node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts passed 1 file/66 tests after npm local path normalization; pm test pm-9x1c --run --progress passed all 3 linked checks again (docs gate, focused package suite 4 files/128 tests, release automation contract 1 file/5 tests)."
   "2026-05-11T19:24:18.135Z",codex-agent,"Second CI follow-up: GitHub run 25691595256 showed the Windows failure still occurred and Ubuntu compatibility gate passed its checks but failed temp cleanup on telemetry runtime directory. Follow-up fix handles existing local npm package dirs directly (preserving package metadata without npm pack/tar) and disables observability writes plus adds cleanup retry for compatibility temp roots."
   "2026-05-11T19:32:15.955Z",codex-agent,"Second CI repair verification: node scripts/release/compatibility-check.mjs --json passed; node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts passed 1 file/66 tests; pm test pm-9x1c --run --progress passed all 4 linked checks including compatibility, docs, focused package suite 4 files/128 tests, and release automation contract."
-files[12]{path,scope,note}:
+files[10]{path,scope,note}:
   scripts/release/compatibility-check.mjs,project,compatibility gate cleanup hardened after CI
   scripts/release/sentry-telemetry-gate.mjs,project,package work exposed starter-extension console-noise gate miss
   src/cli/commands/contracts.ts,project,contract flag surface package/install aliases
@@ -30,11 +30,9 @@ files[12]{path,scope,note}:
   src/cli/guide-topics.ts,project,guide package terminology
   src/cli/register-setup.ts,project,package command and root install registration
   src/mcp/server.ts,project,MCP package/install action aliases
-  src/pi/native.ts,project,Pi native package action aliases
   src/sdk/cli-contracts.ts,project,package/install action contracts
   tests/integration/cli.integration.spec.ts,project,root install and package alias integration coverage
   tests/unit/contracts-command.spec.ts,project,contract package alias assertions
-  tests/unit/pi-agent-extension.spec.ts,project,native tool package action assertions
 tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/release/compatibility-check.mjs --json,null,project,180,null,null,null,null,null,null,null,null,null,null,null,release compatibility gate cleanup regression
   node scripts/release/docs-skills-gate.mjs,null,project,180,null,null,null,null,null,null,null,null,null,null,null,docs and skill routing drift gate

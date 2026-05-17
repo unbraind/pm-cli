@@ -34,6 +34,7 @@ export function registerListQueryCommands(program: Command): void {
     status?: ItemStatus,
     excludeTerminal?: boolean,
     allowStatusFilter?: boolean,
+    defaultBrief?: boolean,
   ): void {
     const command = program.command(name).description(description);
     if (allowStatusFilter) {
@@ -54,11 +55,12 @@ export function registerListQueryCommands(program: Command): void {
       .option("--limit <n>", "Limit returned item count")
       .option("--offset <n>", "Skip the first n matching rows before limit is applied")
       .option("--include-body", "Include item body in each returned list row")
-      .option("--compact", "Render compact list projection fields (mutually exclusive with --brief/--fields)")
-      .option("--brief", "Ultra-compact output: id, status, type, title only (agent-optimized, mutually exclusive with --compact/--fields)")
+      .option("--compact", "Render compact list projection fields (mutually exclusive with --brief/--full/--fields)")
+      .option("--brief", "Ultra-compact output: id, status, type, title only (agent-optimized, mutually exclusive with --compact/--full/--fields)")
+      .option("--full", "Render full list projection fields (mutually exclusive with --compact/--brief/--fields)")
       .option(
         "--fields <value>",
-        "Render custom comma-separated list fields (mutually exclusive with --compact/--brief; valid: --fields id,title)",
+        "Render custom comma-separated list fields (mutually exclusive with --compact/--brief/--full; valid: --fields id,title)",
       )
       .option("--sort <value>", "Sort field: priority|deadline|updated_at|created_at|title|parent")
       .option("--order <value>", "Sort order: asc|desc (requires --sort)")
@@ -67,6 +69,16 @@ export function registerListQueryCommands(program: Command): void {
         const globalOptions = getGlobalOptions(actionCommand);
         const startedAt = Date.now();
         const listOptions = normalizeListOptions(options);
+        if (
+          defaultBrief === true &&
+          listOptions.includeBody !== true &&
+          listOptions.compact !== true &&
+          listOptions.brief !== true &&
+          listOptions.full !== true &&
+          listOptions.fields === undefined
+        ) {
+          listOptions.brief = true;
+        }
         if (excludeTerminal) listOptions.excludeTerminal = true;
         const { runList } = await loadListQueryCommandsModule();
         const result = await runList(status, listOptions, globalOptions);
@@ -85,7 +97,7 @@ export function registerListQueryCommands(program: Command): void {
       });
   }
 
-  registerListCommand("list", "List active items with optional filters.", undefined, true, true);
+  registerListCommand("list", "List active items with optional filters.", undefined, true, true, true);
   registerListCommand("list-all", "List all items with optional filters.", undefined, false, true);
   registerListCommand("list-draft", "List draft items with optional filters.", "draft");
   registerListCommand("list-open", "List open items with optional filters.", "open");

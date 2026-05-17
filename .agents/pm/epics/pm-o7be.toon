@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: 2026-04-06,agent-ux,extensions,external-audit,pm-cli,search
 created_at: "2026-04-06T09:48:14.630Z"
-updated_at: "2026-04-27T18:14:01.717Z"
+updated_at: "2026-05-17T08:22:28.949Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
@@ -43,15 +43,13 @@ notes[3]{created_at,author,text}:
 learnings[2]{created_at,author,text}:
   "2026-04-25T17:55:23.972Z",codex-agent,Large dogfood audits benefit from exercising command contracts programmatically (help JSON + contracts) to catch registry-wide regressions early while keeping deterministic exit-code checks.
   "2026-04-25T20:04:34.346Z",codex-agent,"When wrapping Commander actions, mutate processed args through command._processArguments and option value sources instead of patching listener argument shapes directly."
-files[8]{path,scope,note}:
+files[6]{path,scope,note}:
   docs/EXTENSIONS.md,project,SDK dependency setup guidance
   src/cli/commands/validate.ts,project,workspace-root resolution fix
-  tests/unit/validate-command.spec.ts,project,nested-cwd regression test
   src/cli/main.ts,project,parser override forwarding fix
   src/sdk/cli-contracts.ts,project,templates-save contract key filtering
-  .pi/extensions/pm-cli/index.ts,project,templates-save arg emission filtering
   tests/integration/cli.integration.spec.ts,project,core parser override regression test
-  tests/unit/pi-agent-extension.spec.ts,project,templates-save schema/arg parity test
+  tests/unit/validate-command.spec.ts,project,nested-cwd regression test
 tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,dogfood regression bundle
   node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/unit/search-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/context-command.spec.ts tests/unit/parse-utils.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,final child-wave regression suite including extension scaffold + contracts/completion parity

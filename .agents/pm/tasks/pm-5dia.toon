@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: adoption,extensions,external-audit,pm-cli
 created_at: "2026-04-05T01:12:30.369Z"
-updated_at: "2026-04-05T22:44:23.080Z"
+updated_at: "2026-05-17T08:21:11.157Z"
 author: codex-agent
 estimated_minutes: 300
 acceptance_criteria: "pm extension supports adopt for existing unmanaged extensions, writes deterministic managed metadata including source/ref/provenance fields when available, and extension doctor/manage surfaces reflect managed update-check eligibility."
@@ -30,8 +30,7 @@ comments[10]{created_at,author,text}:
   "2026-04-05T20:39:52.496Z",codex-agent,Duplicate-check evidence refreshed; reusing canonical managed-state adoption lineage for remediation shortcut parity (no duplicate item created).
   "2026-04-05T20:49:15.233Z",codex-agent,"Validation evidence: managed-state remediation path remains first-class while warning semantics are refined. Health/manage/doctor now keep actionable partial-coverage warnings for action-required unmanaged extensions and informational posture for expected bundled-style unmanaged entries."
   "2026-04-05T22:41:55.625Z",codex-agent,"Normalization decision: item contains complete implementation + verification evidence for adopt/adopt-all/fix-managed-state workflow; closing to remove active-state drift and closed-parent mismatch."
-files[7]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper action mapping for extension-adopt
+files[6]{path,scope,note}:
   src/cli/commands/completion.ts,project,shell completion parity for extension --adopt
   src/cli/commands/extension.ts,project,adopt workflow plus managed-state provenance
   src/cli/help-content.ts,project,help examples and tips for adopt/doctor

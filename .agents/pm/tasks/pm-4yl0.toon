@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[7]: "area:commands",code,docs,"milestone:1",pm-cli,"priority:1",tests
 created_at: "2026-03-04T00:26:07.113Z"
-updated_at: "2026-04-04T21:47:02.566Z"
+updated_at: "2026-05-17T08:21:07.907Z"
 deadline: "2026-03-08T23:59:00.000Z"
 assignee: cursor-maintainer
 author: cursor-maintainer
@@ -53,8 +53,7 @@ notes[1]{created_at,author,text}:
   "2026-03-04T00:26:07.113Z",cursor-maintainer,Validate unit integration docs parity and sandboxed coverage sweep.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:16.179Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[15]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper project-scoped module path
+files[13]{path,scope,note}:
   PRD.md,project,docs-first command contract update
   README.md,project,promote delete command docs
   src/cli/commands/delete.ts,project,root compatibility wrapper
@@ -66,7 +65,6 @@ files[15]{path,scope,note}:
   tests/integration/help-runtime.spec.ts,project,allow empty roadmap command list
   tests/integration/release-readiness-runtime.spec.ts,project,docs help contract update
   tests/unit/delete-command.spec.ts,project,delete command unit coverage
-  tests/unit/pi-agent-extension.spec.ts,project,delete action mapping coverage
   tests/unit/structure-exports.spec.ts,project,assert delete export
   vitest.config.ts,project,coverage include for new modules
 tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:

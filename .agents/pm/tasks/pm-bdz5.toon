@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","milestone:5",pm-cli,roadmap
 created_at: "2026-03-07T14:01:19.679Z"
-updated_at: "2026-04-04T21:49:34.649Z"
+updated_at: "2026-05-17T08:21:35.052Z"
 deadline: "2026-03-21T14:01:19.679Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -50,11 +50,9 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:36:44.392Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:36:45.616Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[4]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi extension module
+files[2]{path,scope,note}:
   PRD.md,project,Specify packaged dist fallback contract
   README.md,project,Document deterministic fallback invocation order
-  tests/unit/pi-agent-extension.spec.ts,project,fallback path regression assertions
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Pi extension tests
 docs[2]{path,scope,note}:

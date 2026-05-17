@@ -6,8 +6,11 @@ status: closed
 priority: 0
 tags[8]: agent-ux,bug,cli,create,parsing,pm-cli,tags,update
 created_at: "2026-05-17T05:49:42.738Z"
-updated_at: "2026-05-17T06:44:23.810Z"
+updated_at: "2026-05-17T08:15:43.959Z"
 deadline: "2026-05-20T05:49:42.738Z"
 author: claude-code-agent
+resolution: "Verified fixed: parseTags() in src/core/item/parse.ts:27-66 already accepts JSON-array input via coerceJsonTagArray() (commit 46a225b). Dogfood test in /tmp confirms --tags '[\"a\",\"b\"]' produces tags=[a,b] correctly."
+expected_result: "Expected result: closure includes explicit resolution metadata and verifiable delivery evidence."
+actual_result: "Actual result: Verified fixed: parseTags() in src/core/item/parse.ts:27-66 already accepts JSON-array input via coerceJsonTagArray() (commit 46a225b). Dogfood test in /tmp confirms --tags '[\"a\",\"b\"]' produces tags=[a,b] correctly."
 close_reason: "Verified fixed: parseTags() in src/core/item/parse.ts:27-66 already accepts JSON-array input via coerceJsonTagArray() (commit 46a225b). Dogfood test in /tmp confirms --tags '[\"a\",\"b\"]' produces tags=[a,b] correctly."
 body: ""

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[9]: "area:cli","area:core","area:docs","area:schema",code,"milestone:7",pm-cli,"priority:1",tests
 created_at: "2026-03-07T23:59:27.285Z"
-updated_at: "2026-04-04T21:32:28.101Z"
+updated_at: "2026-05-17T08:20:57.742Z"
 deadline: "2026-04-15T11:57:44.149Z"
 author: maintainer-agent
 estimated_minutes: 180
@@ -53,8 +53,7 @@ notes[2]{created_at,author,text}:
   "2026-04-03T11:59:55.773Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:48.084Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[22]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper forwards --policy for config action
+files[20]{path,scope,note}:
   PRD.md,project,schema definition update
   README.md,project,docs update
   src/cli/commands/config.ts,project,sprint/release policy config key get/set
@@ -72,7 +71,6 @@ files[22]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,release contract expectations update
   tests/unit/config-command.spec.ts,project,config command sprint-release policy coverage
   tests/unit/create-command.spec.ts,project,create command coverage for optional scalar fields
-  tests/unit/pi-agent-extension.spec.ts,project,Pi config arg mapping includes policy
   tests/unit/settings-store.spec.ts,project,settings key-order contract includes validation block
   tests/unit/shared-constants-errors.spec.ts,project,key order contract coverage
   tests/unit/update-command.spec.ts,project,update command coverage for optional scalar fields

@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:dependencies","area:metadata",core,pm-cli,release-readiness
 created_at: "2026-04-01T20:43:14.612Z"
-updated_at: "2026-04-04T17:49:10.355Z"
+updated_at: "2026-05-17T08:23:09.959Z"
 deadline: "2026-04-06T20:43:14.612Z"
 author: codex-agent
 estimated_minutes: 180
@@ -52,8 +52,7 @@ notes[1]{created_at,author,text}:
 learnings[2]{created_at,author,text}:
   "2026-04-01T20:43:14.612Z",codex-agent,Create-only dependency seeding is insufficient for long-lived trackers that require retrospective graph hygiene.
   "2026-04-01T21:33:35.271Z",codex-agent,Dependency metadata hygiene requires post-create mutation pathways; supporting additive and selector-based removal semantics in update keeps legacy graphs maintainable without manual item rewrites.
-files[12]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,pi wrapper parameter parity for depRemove
+files[10]{path,scope,note}:
   CHANGELOG.md,project,unreleased entry for dependency mutation support
   PRD.md,project,normative update contract changes for dependency mutation
   README.md,project,user docs for dependency mutation flags
@@ -63,7 +62,6 @@ files[12]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,integration coverage for update dependency mutation flow
   tests/integration/release-readiness-runtime.spec.ts,project,runtime help contract coverage for new flags
   tests/unit/completion-command.spec.ts,project,completion coverage for new update flags
-  tests/unit/pi-agent-extension.spec.ts,project,wrapper arg and schema coverage for depRemove
   tests/unit/update-command.spec.ts,project,unit coverage for dependency add/remove/clear validation
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,dependency-mutation-regression-surface

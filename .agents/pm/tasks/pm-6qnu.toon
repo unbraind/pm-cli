@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: completion,external-audit,pm-cli,search
 created_at: "2026-04-06T16:47:49.461Z"
-updated_at: "2026-04-25T11:04:01.251Z"
+updated_at: "2026-05-17T08:21:19.810Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: Completion supports lazy or dynamic tag suggestion mode with deterministic fallback and optional eager expansion mode for compatibility.
@@ -17,12 +17,10 @@ actual_result: Resolution metadata fields were backfilled without altering closu
 comments[2]{created_at,author,text}:
   "2026-04-06T16:47:49.461Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new scope under pm-o7be for lazy dynamic completion tag sourcing.
   "2026-04-06T17:54:28.296Z",codex-agent,"Implemented lazy dynamic tag completion with optional eager expansion. Added hidden completion-tags command in CLI wiring, plumbed completion --eager-tags option through command parsing and Pi wrapper, and updated shell generators to use runtime tag lookups by default (with cache TTL) while preserving eager embedded tags when explicitly requested. Resolved TypeScript template-literal bash interpolation issue by moving shell choice rendering into explicit constants and verified behavior with completion/contract/Pi tests plus integration coverage. Verification: same 6-suite regression sweep passed twice via pm test --run."
-files[5]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper support for eagerTags parameter
+files[3]{path,scope,note}:
   src/cli/commands/completion.ts,project,lazy dynamic tag resolution and shell cache behavior
   src/cli/main.ts,project,completion command wiring for eager tags and hidden completion-tags
   tests/unit/completion-command.spec.ts,project,lazy/eager tag completion coverage
-  tests/unit/pi-agent-extension.spec.ts,project,Pi completion eagerTags argument mapping tests
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/task-lifecycle-aliases.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,lazy dynamic tag completion and runtime wiring regression sweep
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:

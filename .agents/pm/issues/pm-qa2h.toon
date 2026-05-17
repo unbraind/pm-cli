@@ -6,7 +6,10 @@ status: closed
 priority: 1
 tags[6]: auto-release,bug,ci,github-actions,pm-cli,release
 created_at: "2026-05-17T06:23:17.480Z"
-updated_at: "2026-05-17T06:23:17.480Z"
+updated_at: "2026-05-17T08:15:50.406Z"
 assignee: claude-code-agent
 author: claude-code-agent
+resolution: Completed auto-release.yml workflow_dispatch silently overrides explicit push=false to true and closed with verified delivery evidence.
+expected_result: "Expected result: closure includes explicit resolution metadata and verifiable delivery evidence."
+actual_result: "Actual result: Completed auto-release.yml workflow_dispatch silently overrides explicit push=false to true and closed with verified delivery evidence."
 body: ""

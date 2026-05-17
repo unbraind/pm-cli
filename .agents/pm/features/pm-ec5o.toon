@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: cli-contracts,linked-tests,shared-host
 created_at: "2026-04-04T10:10:31.831Z"
-updated_at: "2026-04-04T21:34:16.552Z"
+updated_at: "2026-05-17T08:21:50.671Z"
 deadline: "2026-04-11T10:10:31.831Z"
 author: codex-agent
 estimated_minutes: 240
@@ -40,8 +40,7 @@ regression: true
 customer_impact: improves deterministic verification outcomes
 comments[1]{created_at,author,text}:
   "2026-04-04T11:39:58.926Z",codex-agent,"Evidence: pnpm build passed; node scripts/run-tests.mjs test passed (844 tests); node scripts/run-tests.mjs coverage passed (branches 91.02%); PM linked-test sweep passed via pm test-all --status in_progress (linked_tests=3 failed=0, failure categories all zero)."
-files[6]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,pi arg mapping
+files[5]{path,scope,note}:
   src/cli/commands/test-all.ts,project,run-level option plumbing
   src/cli/commands/test.ts,project,run-level option plumbing
   src/cli/help-content.ts,project,help examples

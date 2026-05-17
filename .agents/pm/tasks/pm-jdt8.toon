@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[9]: "area:config","area:workflow",code,docs,"milestone:7",pm-cli,"priority:0",release-readiness,tests
 created_at: "2026-03-08T14:33:25.586Z"
-updated_at: "2026-04-04T21:45:53.109Z"
+updated_at: "2026-05-17T08:22:12.701Z"
 deadline: "2026-03-09T14:33:25.586Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -52,8 +52,7 @@ notes[1]{created_at,author,text}:
   "2026-03-08T14:33:25.586Z",maintainer-agent,Plan update docs first then add settings storage and config command wiring then run focused and full regression checks.
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:32:05.404Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[15]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper config action parity
+files[13]{path,scope,note}:
   AGENTS.md,project,maintainer workflow contract
   PRD.md,project,authoritative config contract update
   README.md,project,public config command documentation
@@ -65,7 +64,6 @@ files[15]{path,scope,note}:
   src/types.ts,project,settings schema includes workflow definition-of-done
   tests/integration/cli.integration.spec.ts,project,config CLI integration coverage
   tests/unit/config-command.spec.ts,project,unit coverage for config command
-  tests/unit/pi-agent-extension.spec.ts,project,Pi wrapper config action coverage
   tests/unit/settings-store.spec.ts,project,settings workflow compatibility coverage
   vitest.config.ts,project,coverage include for config command
 tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:

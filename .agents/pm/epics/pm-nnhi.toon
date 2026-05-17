@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[3]: audit,code-quality,pm-cli
 created_at: "2026-05-01T23:46:35.809Z"
-updated_at: "2026-05-01T23:48:26.514Z"
+updated_at: "2026-05-17T08:22:27.239Z"
 author: audit-agent
 resolution: Full audit complete. Build fixed. Zero type errors. Zero any usage. 1088 tests passing. Security scanner enhanced. Telemetry stack documented. Sentry analyzed. Performance baselined.
 expected_result: "All pm CLI systems audited, working, and documented"
@@ -15,9 +15,8 @@ learnings[3]{created_at,author,text}:
   "2026-05-01T23:47:30.179Z",audit-agent,"Build fix: Root-level barrel re-exports (src/constants.ts etc) were deleted but tests still imported from them. Restored 15 barrel files as single-line re-exports to core/ modules. This preserves backward compatibility for existing test imports while keeping the core/ module decomposition clean."
   "2026-05-01T23:47:44.257Z",audit-agent,"Sentry data is clean: 8 issues total, all PmCliError (validation), zero unhandled exceptions. Error scrubbing verified working -- no PII in events. The error guidance system provides structured remediation that is highly agent-friendly."
   "2026-05-01T23:47:49.476Z",audit-agent,"Search pipeline robust: 636 items, semantic reindex in ~34s via local Ollama qwen3-embedding:0.6b with LanceDB. Hybrid search returns relevant results with 2.3s latency. Auto-indexing tracks mutations via vectorization status ledger."
-files[3]{path,scope,note}:
+files[2]{path,scope,note}:
   scripts/check-secrets.mjs,project,Enhanced with sentry token rules
-  src/constants.ts,project,Restored barrel re-export for test compatibility
   tests/integration/release-readiness-runtime.spec.ts,project,Fixed uncovered files list
 close_reason: "Audit complete. Build fixed (15 barrel re-exports), 1088 tests pass, security scanner enhanced, search pipeline verified (636 items), calendar 4 views + 3 formats, SDK 80+ exports, telemetry documented, Sentry 0 crashes, performance baselined. 3 improvement items created: pm-6c3h, pm-p0p1, pm-f6wr."
 body: ""

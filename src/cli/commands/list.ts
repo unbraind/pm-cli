@@ -35,6 +35,7 @@ export interface ListOptions {
   includeBody?: boolean;
   compact?: boolean;
   brief?: boolean;
+  full?: boolean;
   fields?: string;
   sort?: string;
   order?: string;
@@ -133,10 +134,21 @@ function parseFieldSelectors(raw: string | undefined): string[] | undefined {
 function parseProjectionConfig(options: ListOptions): ListProjectionConfig {
   const compactRequested = options.compact === true;
   const briefRequested = options.brief === true;
+  const fullRequested = options.full === true;
   const fieldSelectors = parseFieldSelectors(options.fields);
-  const enabledModes = Number(compactRequested) + Number(briefRequested) + Number(fieldSelectors !== undefined);
+  const enabledModes =
+    Number(compactRequested) + Number(briefRequested) + Number(fullRequested) + Number(fieldSelectors !== undefined);
   if (enabledModes > 1) {
-    throw new PmCliError("List projection options are mutually exclusive. Use one of --compact, --brief, or --fields.", EXIT_CODE.USAGE);
+    throw new PmCliError(
+      "List projection options are mutually exclusive. Use one of --compact, --brief, --full, or --fields.",
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (fullRequested) {
+    return {
+      mode: "full",
+      fields: [],
+    };
   }
   if (briefRequested) {
     return {

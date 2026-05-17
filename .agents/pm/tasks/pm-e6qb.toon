@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[6]: "area:extensions-pi",code,"milestone:5",pm-cli,"priority:1",tests
 created_at: "2026-03-05T00:27:48.810Z"
-updated_at: "2026-04-04T21:47:24.283Z"
+updated_at: "2026-05-17T08:21:48.624Z"
 deadline: "2026-03-06T00:27:48.810Z"
 assignee: maintainer-agent
 author: maintainer-agent
@@ -53,9 +53,6 @@ notes[1]{created_at,author,text}:
   "2026-03-05T00:27:48.810Z",maintainer-agent,"Plan: update wrapper fallback path construction and extend pi-agent-extension unit assertions."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:10.942Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[2]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper project-scoped module path
-  tests/unit/pi-agent-extension.spec.ts,project,fallback regression assertions
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,sandboxed coverage gate
   node scripts/run-tests.mjs test -- tests/unit/pi-agent-extension.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,targeted Pi wrapper regression

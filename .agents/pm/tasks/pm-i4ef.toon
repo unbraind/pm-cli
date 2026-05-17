@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: dependencies,governance,pm-cli,validation
 created_at: "2026-04-06T16:47:21.911Z"
-updated_at: "2026-04-27T16:44:26.414Z"
+updated_at: "2026-05-17T08:22:07.672Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: pm validate exposes dependency-cycle diagnostics with deterministic counts and sample cycle paths and configurable severity policy while preserving existing validate checks.
@@ -17,8 +17,7 @@ actual_result: "Lifecycle validate now detects active-item dependency cycles, su
 comments[2]{created_at,author,text}:
   "2026-04-06T16:47:21.911Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new validate extension scope under pm-dw5s for dependency-cycle diagnostics.
   "2026-04-27T16:44:10.015Z",codex-agent,"Implemented lifecycle dependency-cycle diagnostics in pm validate: lifecycle check now builds a deterministic active-item dependency graph, detects cyclic SCC components, and emits stable cycle item IDs + sample cycle paths in check details. Added configurable policy flag --dependency-cycle-severity (off|warn|error) across CLI runtime, completion, contracts, and Pi wrapper mappings. Verification: pm test pm-i4ef --run --progress passed (validate/contracts/completion/pi/release-readiness suites: 236 tests) and pnpm build passed."
-files[11]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,pi-wrapper-forwarding-for-validate-dependency-cycle-severity
+files[9]{path,scope,note}:
   src/cli/commands/completion.ts,project,validate-dependency-cycle-severity-shell-completion
   src/cli/commands/validate.ts,project,lifecycle-dependency-cycle-detection-and-severity-policy
   src/cli/help-content.ts,project,validate-help-narrative-and-example-for-cycle-severity
@@ -27,7 +26,6 @@ files[11]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness-required-validate-flags-parity
   tests/unit/completion-command.spec.ts,project,validate-completion-flag-regression
   tests/unit/contracts-command.spec.ts,project,validate-contract-flag-parity-regression
-  tests/unit/pi-agent-extension.spec.ts,project,pi-validate-schema-and-arg-forwarding-regression
   tests/unit/validate-command.spec.ts,project,lifecycle-cycle-diagnostics-and-severity-regressions
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,validate-cycle-diagnostics-contracts-completion-and-release-readiness-regressions

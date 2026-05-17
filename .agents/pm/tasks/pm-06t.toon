@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:commands",core,"milestone:1",pm-cli
 created_at: "2026-02-17T23:02:08.240Z"
-updated_at: "2026-04-04T21:46:20.961Z"
+updated_at: "2026-05-17T08:20:40.513Z"
 deadline: "2026-02-23T23:02:08.240Z"
 assignee: steve
 author: steve
@@ -67,8 +67,7 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:34:17.459Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:18.607Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[24]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper project-scoped module path
+files[18]{path,scope,note}:
   AGENTS.md,project,create repeatable seed requirement note
   PRD.md,project,core vs roadmap command list update
   README.md,project,command matrix updated for close
@@ -83,14 +82,9 @@ files[24]{path,scope,note}:
   src/cli/commands/test.ts,project,linked test tracking and optional execution
   src/cli/commands/update.ts,project,update command implementation
   src/cli/main.ts,project,register close command
-  src/item-format.ts,project,undefined-key normalization cleanup
-  src/item-store.ts,project,shared lock mutate and history pipeline
-  src/parse.ts,project,CSV key-value parser with quoted comma support
-  src/settings.ts,project,persistent session id generation
   tests/integration/cli.integration.spec.ts,project,exercise close command in lifecycle
   tests/integration/release-readiness-runtime.spec.ts,project,doc/help command alignment contract
   tests/unit/close-command.spec.ts,project,unit coverage for runClose
-  tests/unit/pi-agent-extension.spec.ts,project,assert Pi wrapper emits required assigned-to-session flag
   tests/unit/todos-extension.spec.ts,project,update create fixtures for required assigned-to-session contract
 tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,full coverage gate in sandbox

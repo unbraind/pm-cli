@@ -6,8 +6,11 @@ status: closed
 priority: 2
 tags[5]: agent-ux,claim,locks,pm-cli,telemetry
 created_at: "2026-05-17T05:46:58.443Z"
-updated_at: "2026-05-17T07:05:25.655Z"
+updated_at: "2026-05-17T08:15:42.023Z"
 deadline: "2026-05-27T05:46:58.443Z"
 author: claude-code-agent
+resolution: "Implemented pm-d4bo: pm claim --if-available flag skips silently with skipped:true when item is held by another author. Also added claim_takeover:<prev>-><new> warning on default (non-flag) takeovers. Tests added. Targets 533 ownership_conflict events/30d."
+expected_result: "Expected result: closure includes explicit resolution metadata and verifiable delivery evidence."
+actual_result: "Actual result: Implemented pm-d4bo: pm claim --if-available flag skips silently with skipped:true when item is held by another author. Also added claim_takeover:<prev>-><new> warning on default (non-flag) takeovers. Tests added. Targets 533 ownership_conflict events/30d."
 close_reason: "Implemented pm-d4bo: pm claim --if-available flag skips silently with skipped:true when item is held by another author. Also added claim_takeover:<prev>-><new> warning on default (non-flag) takeovers. Tests added. Targets 533 ownership_conflict events/30d."
 body: ""

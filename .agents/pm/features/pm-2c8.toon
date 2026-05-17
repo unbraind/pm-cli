@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: architecture,pm-cli,refactor,release-readiness
 created_at: "2026-02-17T23:37:26.647Z"
-updated_at: "2026-04-04T21:44:36.281Z"
+updated_at: "2026-05-17T08:20:54.403Z"
 deadline: "2026-02-21T23:37:26.647Z"
 assignee: cursor-agent
 author: cursor-agent
@@ -96,7 +96,7 @@ notes[1]{created_at,author,text}:
   "2026-04-01T20:34:43.863Z",codex-agent,metadata-audit-note-linked-to-full-item-normalization
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:34:45.505Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[61]{path,scope,note}:
+files[46]{path,scope,note}:
   src/cli.ts,project,Stable bin wrapper that delegates to src/cli/main.ts
   src/cli/commands/activity.ts,project,import-boundary migration candidate
   src/cli/commands/append.ts,project,import-boundary migration candidate
@@ -118,8 +118,6 @@ files[61]{path,scope,note}:
   src/cli/commands/test.ts,project,import-boundary migration candidate
   src/cli/commands/update.ts,project,import-boundary migration candidate
   src/cli/main.ts,project,New CLI wiring entrypoint with expanded commands
-  src/command-types.ts,project,compatibility wrapper to core shared command types
-  src/constants.ts,project,compatibility wrapper to core shared constants
   src/core/fs/fs-utils.ts,project,Core boundary wrapper
   src/core/fs/index.ts,project,Core namespace export
   src/core/history/history.ts,project,Core boundary wrapper
@@ -141,19 +139,6 @@ files[61]{path,scope,note}:
   src/core/store/item-store.ts,project,Core boundary wrapper
   src/core/store/paths.ts,project,Core boundary wrapper
   src/core/store/settings.ts,project,Core boundary wrapper
-  src/errors.ts,project,compatibility wrapper to core shared errors
-  src/fs-utils.ts,project,compatibility wrapper to core fs module
-  src/history.ts,project,compatibility wrapper to core history module
-  src/id.ts,project,compatibility wrapper to core item id module
-  src/item-format.ts,project,compatibility wrapper to core item format module
-  src/item-store.ts,project,compatibility re-export
-  src/lock.ts,project,compatibility wrapper to core lock module
-  src/output.ts,project,compatibility wrapper to core output module
-  src/parse.ts,project,compatibility wrapper to core item parse module
-  src/paths.ts,project,compatibility re-export
-  src/serialization.ts,project,compatibility wrapper to core shared serialization
-  src/settings.ts,project,compatibility re-export
-  src/time.ts,project,compatibility wrapper to core shared time
   src/types/index.ts,project,Shared type namespace entry
   tests/unit/list-sort-branches.spec.ts,project,mock compatibility for core store boundary migration
   tests/unit/runtime-registrations.spec.ts,project,wrapper parity contract coverage

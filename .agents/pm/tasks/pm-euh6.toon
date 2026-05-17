@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: calendar,external-audit,pm-cli,ux
 created_at: "2026-04-06T16:48:03.748Z"
-updated_at: "2026-04-25T11:04:17.224Z"
+updated_at: "2026-05-17T08:21:53.977Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: calendar help and docs explicitly define period boundaries and --full-period provides deterministic full-window behavior for day week and month views.
@@ -17,7 +17,7 @@ actual_result: Resolution metadata fields were backfilled without altering closu
 comments[2]{created_at,author,text}:
   "2026-04-06T16:48:03.748Z",codex-agent,Duplicate-check evidence used pm context pm search and open or in-progress lists. Net-new scope under pm-o7be for calendar full-period contract clarity.
   "2026-04-06T18:25:49.246Z",codex-agent,"Implemented explicit period-boundary semantics for calendar day/week/month views with new --full-period (and --full_period alias) while preserving agenda behavior. Runtime now records both effective window and anchored period metadata in range payloads and markdown output clarifies period vs active-window wording. Contracts/completion/Pi parity updated so full-period appears in command flags, generated shell completion, and Pi calendar arguments. Validation includes unit coverage for day/week/month full-period behavior and rejection of --full-period on agenda view, plus release-readiness help/contract parity assertions."
-files[10]{path,scope,note}:
+files[9]{path,scope,note}:
   src/cli/commands/calendar.ts,project,add full-period semantics and explicit period/window reporting
   src/cli/commands/completion.ts,project,calendar completion updates for full-period
   src/cli/help-content.ts,project,calendar help examples and period wording tips
@@ -27,7 +27,6 @@ files[10]{path,scope,note}:
   tests/unit/calendar-command.spec.ts,project,full-period behavior and validation coverage
   tests/unit/completion-command.spec.ts,project,completion regression coverage for calendar full-period flag
   tests/unit/contracts-command.spec.ts,project,contracts flags-only coverage for calendar full-period
-  tests/unit/pi-agent-extension.spec.ts,project,Pi schema/args parity for calendar fullPeriod
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,calendar/activity command behavior plus contracts/completion/parity regression sweep
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:

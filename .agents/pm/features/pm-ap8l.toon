@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: "area:docs","area:files","area:ux",external-audit,pm-cli
 created_at: "2026-04-01T16:22:26.127Z"
-updated_at: "2026-04-04T21:33:30.920Z"
+updated_at: "2026-05-17T08:21:30.121Z"
 deadline: "2026-04-17T11:57:38.765Z"
 author: cursor-agent
 estimated_minutes: 200
@@ -56,8 +56,7 @@ notes[2]{created_at,author,text}:
   "2026-04-03T11:59:51.587Z",codex-agent,"Mandatory closure checklist: (1) run linked targeted tests via pm test <id> --run; (2) run pnpm build; (3) run node scripts/run-tests.mjs test; (4) run node scripts/run-tests.mjs coverage; (5) update touched docs (README/PRD/AGENTS/CHANGELOG/ARCHITECTURE as applicable); (6) add pm comment with concrete evidence/results; (7) close + release item before commit/push."
 learnings[1]{created_at,author,text}:
   "2026-04-01T20:36:25.559Z",codex-agent,metadata-completeness-improves-multi-agent-handoffs
-files[9]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,files/docs migrate-validate-audit pi mapping
+files[8]{path,scope,note}:
   README.md,project,metadata-audit-linked-context
   src/cli/commands/docs.ts,project,linked doc parity for migration/validation
   src/cli/commands/files.ts,project,bulk migration and linked file listing

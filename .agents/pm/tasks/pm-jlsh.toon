@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: error-guidance,list,pm-cli,tests
 created_at: "2026-04-06T09:49:14.733Z"
-updated_at: "2026-04-25T11:04:22.766Z"
+updated_at: "2026-05-17T08:22:14.872Z"
 author: codex-agent
 estimated_minutes: 60
 acceptance_criteria: "Governance backfill acceptance: item metadata is complete and remains consistent with existing work history."
@@ -18,8 +18,7 @@ comments[3]{created_at,author,text}:
   "2026-04-06T09:49:14.733Z",codex-agent,"Duplicate-check evidence: dedupe command set run immediately before create and no open/in_progress/blocked duplicate found for this scope."
   "2026-04-06T11:01:43.232Z",codex-agent,"Implemented parent-scoped list filtering () across list/list-* command paths and replaced invalid-id echo guidance for get-not-found flows. Verification: targeted list/guidance/Pi wrapper regressions plus full-suite and coverage passes."
   "2026-04-06T11:02:29.538Z",codex-agent,"Clarification: parent-scoped list filtering via --parent is implemented across list/list-* command paths with contract and Pi-wrapper parity, and get-not-found guidance now points to deterministic recovery commands."
-files[9]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper list parent parameter mapping
+files[7]{path,scope,note}:
   src/cli/commands/list.ts,project,parent filter support in list/list-* runtime filters
   src/cli/error-guidance.ts,project,get not-found deterministic recovery examples
   src/cli/main.ts,project,list parent filter and get guidance wiring
@@ -27,7 +26,6 @@ files[9]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,list parent integration coverage
   tests/unit/error-guidance.spec.ts,project,get guidance deterministic examples regression
   tests/unit/list-command.spec.ts,project,parent filter unit regression
-  tests/unit/pi-agent-extension.spec.ts,project,list parent schema and arg mapping parity
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/error-guidance.spec.ts tests/integration/cli.integration.spec.ts tests/unit/pi-agent-extension.spec.ts,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,list parent and get guidance regression suite
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:

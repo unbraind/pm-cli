@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[5]: background-runtime,completion,contracts,pi,pm-cli
 created_at: "2026-04-04T19:07:14.888Z"
-updated_at: "2026-04-04T21:56:08.375Z"
+updated_at: "2026-05-17T08:21:04.576Z"
 deadline: "2026-04-14T19:07:14.888Z"
 author: codex-agent
 estimated_minutes: 220
@@ -36,8 +36,7 @@ comments[2]{created_at,author,text}:
   "2026-04-04T20:22:23.130Z",codex-agent,"Synced cli contracts, completion, help content, command-aware output, and Pi wrapper action mappings for background test-run surfaces; release-readiness integration suite passed (23 tests)."
 notes[1]{created_at,author,text}:
   "2026-04-04T19:07:14.888Z",codex-agent,"Includes sdk contracts,completion generators,Pi extension args/schema,and contract tests."
-files[5]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi argument mapping for new actions
+files[4]{path,scope,note}:
   src/cli/commands/completion.ts,project,shell completion for test-runs and background options
   src/cli/help-content.ts,project,help text for background lifecycle commands
   src/core/output/command-aware.ts,project,command summaries and next steps for test-runs

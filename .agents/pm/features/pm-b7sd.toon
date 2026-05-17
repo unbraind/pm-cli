@@ -6,7 +6,23 @@ status: open
 priority: 2
 tags[5]: agent-ux,context-efficiency,list,pm-cli,token-budget
 created_at: "2026-05-17T05:50:01.041Z"
-updated_at: "2026-05-17T05:50:01.041Z"
+updated_at: "2026-05-17T08:33:01.995Z"
 deadline: "2026-05-24T05:50:01.041Z"
+assignee: codex-agent
 author: claude-code-agent
+comments[1]{created_at,author,text}:
+  "2026-05-17T08:33:01.995Z",codex-agent,"Implemented list token-efficiency update: bare 'pm list' now defaults to brief projection (id/status/type/title), while '--full' preserves verbose rows. Added projection conflict handling for --full, synced contracts/schema/help surfaces, and covered behavior in unit + integration regressions."
+files[8]{path,scope,note}:
+  scripts/dogfood-package-first.mjs,project,dogfood asserts list contracts include --full
+  src/cli/commands/list.ts,project,list projection supports explicit --full
+  src/cli/register-list-query.ts,project,list command defaults to brief unless include-body/projection flags
+  src/cli/registration-helpers.ts,project,normalizeListOptions forwards full projection flag
+  src/sdk/cli-contracts.ts,project,list flag contracts include --full and action schema optional field
+  tests/integration/cli.integration.spec.ts,project,integration coverage for list default brief and --full
+  tests/unit/contracts-command.spec.ts,project,contracts list-open flags include --full
+  tests/unit/list-command.spec.ts,project,list projection unit regressions for full/conflicts
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t filters list,null,project,300,null,null,null,null,null,null,null,null,null,null,null,integration list default brief regression
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts -t documents list/search projection exclusivity guidance,null,project,300,null,null,null,null,null,null,null,null,null,null,null,help projection guidance regression
+  node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/contracts-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused list/contracts regression
 body: ""

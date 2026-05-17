@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:comments",external-audit,implementation,pm-cli
 created_at: "2026-04-04T22:38:14.047Z"
-updated_at: "2026-04-07T08:38:35.219Z"
+updated_at: "2026-05-17T08:22:56.336Z"
 deadline: "2026-04-10T22:38:14.047Z"
 author: codex-agent
 estimated_minutes: 240
@@ -37,8 +37,7 @@ comments[13]{created_at,author,text}:
   "2026-04-07T08:38:32.652Z",codex-agent,"Completed Wave 8/9 comments-audit alias parity: added first-class --limit alias while preserving --limit-items, wired command parsing through comments-audit runtime, and enforced deterministic conflict handling when both flags are present with different values. Updated contracts/completion/help/Pi surfaces and regression tests to keep parity across CLI and agent tooling. Verification passed: node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/pi-agent-extension.spec.ts tests/integration/release-readiness-runtime.spec.ts."
 notes[1]{created_at,author,text}:
   "2026-04-04T22:38:14.047Z",codex-agent,Planned files include new command module plus main/completion/contracts/Pi and comments command tests.
-files[10]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,pi-comments-audit-mapping
+files[8]{path,scope,note}:
   src/cli/commands/comments-audit.ts,project,bulk-comments-audit-command
   src/cli/commands/completion.ts,project,comments-audit-completion
   src/cli/help-content.ts,project,comments-audit-exclusivity-and-latest-zero-help-guidance
@@ -47,7 +46,6 @@ files[10]{path,scope,note}:
   tests/integration/release-readiness-runtime.spec.ts,project,comments-audit-help-flag-parity-regression
   tests/unit/comments-command.spec.ts,project,comments-audit-regression
   tests/unit/completion-command.spec.ts,project,completion-flag-coverage-for-full-history
-  tests/unit/pi-agent-extension.spec.ts,project,comments-audit-limit-alias-pi-coverage
 tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,comments-audit-targeted
   node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full-history-contract-and-help-regression

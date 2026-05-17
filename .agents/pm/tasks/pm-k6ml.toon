@@ -6,7 +6,7 @@ status: closed
 priority: 1
 tags[4]: "area:tests","area:validation",external-audit,pm-cli
 created_at: "2026-04-03T18:07:42.651Z"
-updated_at: "2026-04-05T02:19:01.427Z"
+updated_at: "2026-05-17T08:22:18.337Z"
 deadline: "2026-04-08T18:07:42.651Z"
 author: codex-agent
 estimated_minutes: 210
@@ -50,8 +50,7 @@ comments[5]{created_at,author,text}:
   "2026-04-05T02:18:54.642Z",codex-agent,"Issue 6 follow-up completed: pm validate now supports non-default warning-fail exits via --strict-exit and --fail-on-warn while keeping default behavior compatible. Evidence: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/integration/cli.integration.spec.ts passed; repro probes show status=1 for both strict-exit and fail-on-warn in tracked-all-strict mode; node scripts/run-tests.mjs coverage passed (branch 91.01%); pnpm build passed."
 notes[1]{created_at,author,text}:
   "2026-04-03T18:07:42.651Z",codex-agent,Re-use existing health/integrity logic where possible to reduce drift.
-files[13]{path,scope,note}:
-  .pi/extensions/pm-cli/index.ts,project,Pi wrapper parity for validate and flags
+files[12]{path,scope,note}:
   src/cli/commands/close.ts,project,close validate-close mode
   src/cli/commands/completion.ts,project,validate and close completion flags
   src/cli/commands/index.ts,project,validate barrel export
