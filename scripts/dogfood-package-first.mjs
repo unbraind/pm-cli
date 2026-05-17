@@ -144,6 +144,29 @@ try {
   for (const flag of ["--mode", "--semantic", "--hybrid", "--include-linked"]) {
     assert(searchFlags.includes(flag), `contracts search flags missing ${flag}`);
   }
+  const allFlagContracts = run("contracts all flags", ["contracts", "--flags-only"]);
+  const flagsByCommand = new Map(
+    (allFlagContracts?.command_flags ?? []).map((entry) => [
+      entry.command,
+      new Set((entry.flags ?? []).flatMap((flag) => [flag.flag, ...(flag.aliases ?? [])])),
+    ]),
+  );
+  const requireContractFlag = (command, flag) => {
+    assert(flagsByCommand.get(command)?.has(flag), `contracts --flags-only missing ${command} ${flag}`);
+  };
+  requireContractFlag("package", "--catalog");
+  requireContractFlag("package", "--explore");
+  requireContractFlag("package", "--doctor");
+  requireContractFlag("package", "--install");
+  requireContractFlag("package", "--project");
+  requireContractFlag("package", "--global");
+  requireContractFlag("upgrade", "--packages-only");
+  requireContractFlag("upgrade", "--dry-run");
+  requireContractFlag("init", "--with-packages");
+  requireContractFlag("get", "--fields");
+  const packageAliasesFromContracts =
+    allFlagContracts?.command_aliases?.find((entry) => entry.canonical === "package")?.aliases ?? [];
+  assert(packageAliasesFromContracts.includes("install"), "contracts --flags-only missing install command alias");
 
   run("calendar after init packages", [
     "calendar",
@@ -169,7 +192,14 @@ try {
   const installAll = run("package install all", ["install", "all", "--project"]);
   assert(installAll?.details?.installed_all === true, "install all did not report installed_all=true");
   const packageCatalog = run("package catalog", ["package", "catalog", "--project"]);
-  assert(packageCatalog?.details?.total >= 2, "package catalog did not list bundled first-party packages");
+  assert(packageCatalog?.details?.total >= 8, "package catalog did not list all bundled first-party packages");
+  const packageAliases = new Set((packageCatalog?.details?.packages ?? []).map((entry) => entry.alias));
+  for (const alias of ["beads", "calendar", "templates", "todos", "search-advanced"]) {
+    assert(packageAliases.has(alias), `package catalog missing bundled alias ${alias}`);
+  }
+  const packageList = run("package list", ["package", "list", "--project"]);
+  assert(packageList?.action === "catalog", "package list compatibility path did not resolve to catalog action");
+  assert(packageList?.details?.total >= 8, "package list did not list all bundled first-party packages");
   run("package explore", ["package", "explore", "--project"]);
   run("package doctor", ["package", "doctor", "--project", "--detail", "summary"]);
   run("calendar after package reinstall", ["calendar", "--view", "week", "--date", "today", "--format", "json"]);
@@ -213,10 +243,23 @@ try {
   const todosExportFolder = path.join(tempRoot, "todos-export");
   const todosExport = run("package command todos export", ["todos", "export", "--folder", todosExportFolder]);
   assert(todosExport?.exported >= 1, "todos export package command did not export any items");
-  run("upgrade packages", ["upgrade", "--packages-only"]);
-  run("upgrade dry-run", ["upgrade", "--dry-run"]);
+  const upgradePackages = run("upgrade packages", ["upgrade", "--packages-only"]);
+  assert(upgradePackages?.summary?.requested_packages === true, "upgrade --packages-only did not request packages");
+  assert(upgradePackages?.summary?.failed === 0, "upgrade --packages-only reported failed package upgrades");
+  const upgradeDryRun = run("upgrade dry-run", ["upgrade", "--dry-run"]);
+  assert(upgradeDryRun?.dry_run === true, "upgrade --dry-run did not report dry_run=true");
+  assert(upgradeDryRun?.summary?.requested_cli === true, "upgrade --dry-run did not include CLI planning");
+  assert(upgradeDryRun?.summary?.requested_packages === true, "upgrade --dry-run did not include package planning");
 
-  run("sdk import", ["contracts", "--availability-only", "--runtime-only"]);
+  const runtimeContracts = run("sdk import", ["contracts", "--availability-only", "--runtime-only"]);
+  const availableRuntimeActions = new Set(
+    (runtimeContracts?.action_availability ?? [])
+      .filter((entry) => entry.available === true && entry.invocable === true)
+      .map((entry) => entry.action),
+  );
+  for (const action of ["beads-import", "templates-save", "templates-show", "todos-export", "search-advanced"]) {
+    assert(availableRuntimeActions.has(action), `runtime contracts missing installed package action ${action}`);
+  }
   const sdkSmoke = spawnSync(
     process.execPath,
     ["--input-type=module", "-e", "import('./dist/sdk/index.js').then((sdk) => { if (!sdk.PM_PROVIDER_TOOL_PARAMETERS_SCHEMA) process.exit(2); })"],

@@ -3,7 +3,8 @@
   "compilerOptions": {
     "rootDir": ".",
     "types": ["node"],
-    "noEmit": true
+    "noEmit": true,
+    "tsBuildInfoFile": ".cache/tsbuildinfo/packages.tsbuildinfo"
   },
   "include": ["packages/**/*.ts"]
 }

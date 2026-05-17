@@ -2,12 +2,34 @@ id: pm-1pah
 title: "CI: cache vitest/.cache + tsbuildinfo for incremental builds + faster tests"
 description: "vitest writes a cache directory that speeds up subsequent runs; tsc supports incremental builds via tsconfig {composite/incremental:true} writing .tsbuildinfo. Cache both with actions/cache@v5 keyed on lockfile + source hash so warm CI is 30-50% faster. Today every CI run starts cold."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[4]: cache,ci,performance,pm-cli
 created_at: "2026-05-16T22:07:50.563Z"
-updated_at: "2026-05-16T22:07:50.563Z"
+updated_at: "2026-05-17T00:14:51.628Z"
+assignee: codex-agent
 author: maintainer-agent
 acceptance_criteria: "actions/cache restores .tsbuildinfo and vitest cache on warm runs; tsconfig has incremental:true; second consecutive CI run measurably faster than first; cache key invalidates on lockfile or source changes."
 parent: pm-tzwy
+comments[2]{created_at,author,text}:
+  "2026-05-17T00:14:26.274Z",codex-agent,"Evidence 2026-05-17: implemented free-tier CI validation caches using pinned actions/cache@v5 for CI, nightly, release, and auto-release validation paths; TypeScript now writes incremental build info to .cache/tsbuildinfo and Vitest cache uses .cache/vitest with .cache ignored. Verification passed: pnpm build, pnpm typecheck, focused CI workflow contract test (4 tests), pm test pm-1pah --run with sandboxed 48-command dogfood, static quality, secret scan, and full release gate with 93 files / 1316 tests at 100 percent coverage. Sentry/telemetry gate passed with Sentry critical/high/total 0 and telemetry finish_error_rate_pct 2.27, missing error-code rows 0."
+  "2026-05-17T00:14:51.628Z",codex-agent,"Tracker hygiene note 2026-05-17: after concurrent evidence mutations, health briefly reported pm-1pah history drift and stale vector. Adding this serialized mutation after the full gate and refresh-vector check to restore a clean latest hash anchor before final validation."
+files[9]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,auto-release pipeline TypeScript/Vitest cache restore
+  .github/workflows/ci.yml,project,pinned TypeScript/Vitest cache restore for CI
+  .github/workflows/nightly.yml,project,nightly validation TypeScript/Vitest cache restore
+  .github/workflows/release.yml,project,release validation TypeScript/Vitest cache restore
+  .gitignore,project,ignore local CI cache artifacts
+  tests/integration/ci-workflow-contract.spec.ts,project,workflow cache contract coverage
+  tsconfig.json,project,incremental TypeScript build info cache path
+  tsconfig.packages.json,project,separate package typecheck build info cache
+  vitest.config.ts,project,stable Vitest cache directory for CI
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp90pxlc-io7j99,test,passed,"2026-05-17T00:09:04.612Z","2026-05-17T00:09:34.032Z","2026-05-17T00:09:34.032Z",null,null,3,0,0,null,null,null
+docs[1]{path,scope,note}:
+  CONTRIBUTING.md,project,CI workflow behavior remains documented from parent optimization
 body: ""

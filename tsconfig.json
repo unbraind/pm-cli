@@ -11,6 +11,8 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "declaration": true,
+    "incremental": true,
+    "tsBuildInfoFile": ".cache/tsbuildinfo/pm-cli.tsbuildinfo",
     "sourceMap": true,
     "inlineSources": true,
     "sourceRoot": "/"

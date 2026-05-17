@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-16T23:59:44.395Z"
+updated_at: "2026-05-17T00:14:26.338Z"
 deadline: "2026-06-01T00:00:00.000Z"
 assignee: codex-agent
 author: codex-audit
@@ -15,7 +15,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[79]{created_at,author,text}:
+comments[82]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -95,10 +95,14 @@ comments[79]{created_at,author,text}:
   "2026-05-16T23:47:40.108Z",codex-agent,"Execution start 2026-05-17: duplicate checks reused pm-rnpb broad audit lineage and existing CI/free-tier items pm-tzwy plus pm-lkd7. Bootstrap passed: npm install -g ., pm --version 2026.5.14, node v25.9.0, pnpm 10.33.0, pnpm build, pm contracts --flags-only --json, and pm health --check-only --json with only known history drift warnings on pm-54d/pm-7vm9/pm-f3q4/pm-fdla/pm-mb4n/pm-tq1. Sub-agents are running read-only privacy, agent-UX, and CI audits as requested."
   "2026-05-16T23:51:36.321Z",codex-agent,"Sub-agent agent-UX finding accepted 2026-05-17: help/runtime exposed list --brief and search --semantic/--hybrid but pm contracts omitted them. Applying scoped SDK contract/schema sync plus dogfood parity assertions under existing pm-rnpb audit lineage; no duplicate item created."
   "2026-05-16T23:59:44.395Z",codex-agent,"Final local evidence 2026-05-17: sub-agents completed read-only CI, agent-UX, and privacy scans. Privacy scan found no tracked credential/private-IP/home-path leaks in tracked pm history; pm-xk39 remains canonical for history redaction/drift. Implemented pm-lkd7 reduced PR CI matrix plus contract/schema sync for help-visible list --brief and search --semantic/--hybrid. Isolated temp-project dogfood passed 46 workflows; focused contract and CI tests passed; full release gate passed with 93 files / 1316 tests at 100 percent coverage, Sentry critical/high/total 0, telemetry finish_error_rate_pct 2.28, missing error-code rows 0. Health/validate remain resolution-clean with only known history drift on pm-54d/pm-7vm9/pm-f3q4/pm-fdla/pm-mb4n/pm-tq1."
+  "2026-05-17T00:03:01.294Z",codex-agent,"Execution continuation 2026-05-17: duplicate checks reused pm-rnpb and child CI/cache item pm-1pah after pm context/search/list-open/list-in-progress. Bootstrap passed with npm install -g ., pm --version 2026.5.14, node v25.9.0, pnpm 10.33.0; pnpm build is running. User explicitly requested sub-agents, so read-only agents are auditing CI cache scope, privacy/secrets, and agent-UX/dogfood coverage while implementation proceeds."
+  "2026-05-17T00:07:15.122Z",codex-agent,"Agent-UX dogfood finding 2026-05-17: read-only sub-agent confirmed contracts/package/install/upgrade/init/get surfaces are healthy but dogfood under-asserted broad contracts, package list compatibility, catalog alias count, upgrade summary shape, and installed runtime package actions. Implemented focused assertions in scripts/dogfood-package-first.mjs under existing audit lineage; no duplicate item created."
+  "2026-05-17T00:14:26.338Z",codex-agent,"Final local evidence 2026-05-17 cache/dogfood slice: sub-agents completed read-only CI-cache, privacy, and agent-UX audits. Privacy scan found no new tracked raw credential/private-IP/user@host/home-path leak; pm-xk39 remains canonical for history drift. Implemented validation caches across CI/nightly/release/auto-release plus stronger package-first dogfood assertions. Full release gate passed with 1316 tests at 100 percent coverage, Sentry critical/high/total 0, telemetry finish_error_rate_pct 2.27, missing error-code rows 0."
 files[48]{path,scope,note}:
   README.md,project,public README hygiene update
   scripts/check-secrets.mjs,project,detect absolute home-path and user@private-host leakage
   scripts/dogfood-package-first.mjs,project,latest isolated dogfood harness
+  scripts/release/docs-skills-gate.mjs,project,retry temporary cleanup to avoid ENOTEMPTY release-gate false failure
   scripts/release/run-release-pipeline.mjs,project,skip auto-release when CHANGELOG Unreleased has no promotable content
   scripts/release/sentry-telemetry-gate.mjs,project,fallback to authenticated Sentry CLI when release gate API token access fails
   scripts/release/static-quality-gate.mjs,project,raise max source line threshold for expanded loader
@@ -131,6 +135,7 @@ files[48]{path,scope,note}:
   tests/integration/cli.integration.spec.ts,project,init defaults author regression
   tests/integration/help-runtime.spec.ts,project,help coverage for keyword-first search mode flags
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness guard for nonblocking sentry startup
+  tests/unit/completion-command.spec.ts,project,bash completion regression for health fast-path flags
   tests/unit/contracts-command.spec.ts,project,regression for canonical flag surface with aliases
   tests/unit/create-command.spec.ts,project,create event date alias regression
   tests/unit/embedding-batches.spec.ts,project,regression for oversized ollama embedding input truncation
@@ -142,8 +147,6 @@ files[48]{path,scope,note}:
   tests/unit/sentry-helpers.spec.ts,project,regression for nested sentry event scrub behavior
   tests/unit/update-command.spec.ts,project,update event date alias regression
   vitest.config.ts,project,coverage include list covers new search corpus helper
-  scripts/release/docs-skills-gate.mjs,project,retry temporary cleanup to avoid ENOTEMPTY release-gate false failure
-  tests/unit/completion-command.spec.ts,project,bash completion regression for health fast-path flags
 tests[22]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret and path leak guardrail
   node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,isolated temp-project dogfood harness

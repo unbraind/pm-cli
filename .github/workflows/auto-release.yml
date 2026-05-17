@@ -61,6 +61,17 @@ jobs:
           node-version: 20
           cache: pnpm
 
+      - name: Restore TypeScript and Vitest caches
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: |
+            .cache/tsbuildinfo
+            .cache/vitest
+          key: pm-cli-validation-cache-${{ runner.os }}-node20-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}
+          restore-keys: |
+            pm-cli-validation-cache-${{ runner.os }}-node20-
+            pm-cli-validation-cache-${{ runner.os }}-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
