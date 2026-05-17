@@ -6,7 +6,7 @@ status: open
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-17T19:45:54.983Z"
+updated_at: "2026-05-17T20:11:58.046Z"
 deadline: "2026-06-01T00:00:00.000Z"
 author: codex-audit
 estimated_minutes: 300
@@ -14,7 +14,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[111]{created_at,author,text}:
+comments[112]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -126,6 +126,7 @@ comments[111]{created_at,author,text}:
   "2026-05-17T19:28:11.488Z",codex-20260517,"Execution plan 2026-05-17 continuation: reused pm-rnpb and newly opened child items pm-er4q, pm-lwbr, pm-qbts, pm-zpa5, and pm-5u9z after context/search/list-open/list-in-progress duplicate checks. Scope: preserve existing working-tree fixes, complete public contracts/help/tests for init --yes, plan positional create and plan-list guidance, test linked-test hash stability, and benign chained output_format health warnings; run focused tests, isolated temp-project dogfood, privacy scan, release/telemetry/Sentry gate, commit/push, and watch GitHub Actions green. Sub-agents launched read-only for diff-to-item mapping and dogfood/observability validation."
   "2026-05-17T19:37:01.687Z",codex-20260517,"Focused verification passed after completing regressions and contract/completion sync: node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/extension-loader.spec.ts tests/integration/cli.integration.spec.ts => 5 files / 248 tests passed."
   "2026-05-17T19:45:07.127Z",codex-20260517,"Final local evidence 2026-05-17 continuation: implemented and closed child items pm-er4q, pm-lwbr, pm-qbts, pm-zpa5, and pm-5u9z. Verification passed: focused test bundle 5 files / 248 tests, normal dogfood 74 workflows, semantic dogfood 75 workflows with qwen3-embedding:0.6b, check-secrets, pnpm security:scan, resolution validation clean after pm-vmeo backfill, telemetry stack healthy with queue depth 0/consumer 1 and recent events, Sentry unresolved issues 0, required Sentry/telemetry gate ok with finish_error_rate_pct 2.03 and no missing error-code rows, and full release gate ok with 94 files / 1364 tests at 100% coverage plus compatibility/npx/npm-pack/static/docs/typecheck."
+  "2026-05-17T20:11:58.046Z",codex-extensive-audit-2026-05-17,"Session closeout evidence: shipped agent UX/health fixes for pm-er4q, pm-lwbr, pm-qbts, pm-zpa5, pm-5u9z, and pm-1lef. Local verification included focused unit/integration tests, normal and semantic dogfood runs, secret/security scans, release gates, Sentry/telemetry gate, resolution validation, and vector refresh. Remote CI evidence: d89ad455 run 26000939754 green; e456b0c1 run 26001315059 green after moving CI download-artifact to Node 24-native v8.0.1 with no compact-watcher annotations. Known residual: legacy history drift remains tracked separately under pm-xk39; no duplicate item created."
 notes[2]{created_at,author,text}:
   "2026-05-17T07:36:59.474Z",codex-agent,"Design note 2026-05-17: unfiltered pm contracts default now intentionally omits three heavy sections (schema oneOf union, command_flags, commander_aliases) and emits explicit omitted_reason markers; --full restores complete schema and alias/flag surfaces for tooling that needs maximal detail."
   "2026-05-17T08:33:25.981Z",codex-agent,"Design note 2026-05-17: default brief projection was intentionally scoped to bare 'pm list' instead of all list-* commands to preserve existing automation contracts while still cutting agent token usage on the highest-frequency exploratory list call."

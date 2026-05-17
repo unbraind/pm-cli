@@ -2,19 +2,22 @@ id: pm-1lef
 title: Opt CI JavaScript actions into Node 24 runtime
 description: GitHub Actions run 26000939754 was green but emitted Node 20 JavaScript action deprecation annotations for actions/download-artifact. Opt the CI workflow into the Node 24 JavaScript action runtime using the documented environment knob and add workflow contract coverage so future CI stays warning-clean on free GitHub runners.
 type: Chore
-status: in_progress
+status: closed
 priority: 1
 tags[4]: ci,free-tier,github-actions,node24
 created_at: "2026-05-17T19:55:48.113Z"
-updated_at: "2026-05-17T20:04:30.707Z"
-assignee: codex-extensive-audit-2026-05-17
+updated_at: "2026-05-17T20:11:50.692Z"
 author: codex-extensive-audit-2026-05-17
 acceptance_criteria: CI workflow sets FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true; workflow contract tests assert the setting; local focused workflow contract test passes; pushed GitHub Actions CI is green without the prior Node 20 action deprecation annotation.
 parent: pm-rnpb
-comments[3]{created_at,author,text}:
+resolution: Pinned CI download-artifact to the Node 24-native v8.0.1 SHA and kept the workflow-level Node 24 JavaScript action opt-in.
+expected_result: CI workflow uses a Node 24-native download-artifact action and preserves free-tier GitHub Actions coverage without deprecation annotations.
+actual_result: Local workflow contract test passed and GitHub Actions run 26001315059 completed green with no annotations in the compact watcher.
+comments[4]{created_at,author,text}:
   "2026-05-17T19:55:48.113Z",codex-extensive-audit-2026-05-17,"Duplicate check: searched pm for 'Node.js 20 actions deprecated download-artifact GitHub Actions'. Existing hits pm-hfny and pm-tzwy are closed historical action pinning/performance work; no open item owns the current run 26000939754 Node 20 action runtime annotation, so this chore is net-new under pm-rnpb."
   "2026-05-17T19:56:34.903Z",codex-extensive-audit-2026-05-17,"Evidence: added workflow-level FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true in .github/workflows/ci.yml and added ci-workflow-contract coverage for the setting. Linked pm test passed: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts (4 tests, 1 file)."
   "2026-05-17T20:04:26.059Z",codex-extensive-audit-2026-05-17,"Follow-up evidence: run 26001127637 was green but still emitted forced-runtime annotations because actions/download-artifact v5 declares node20. Upstream actions/download-artifact v8.0.1 resolves tag v8.0.1/v8 to SHA 3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c and action.yml declares runs.using=node24, so CI now pins that SHA and the contract asserts the v8.0.1 reference."
+  "2026-05-17T20:11:44.200Z",codex-extensive-audit-2026-05-17,"Final evidence: GitHub Actions CI run 26001315059 for commit e456b0c10ed8c80fdcbadf5c023301ced2bc805b completed successfully across build foundation, Node 20/22/24 Ubuntu, macOS Node 20, and coverage/typecheck/static/compat/smoke gates. Compact watcher reported no annotations after pinning actions/download-artifact to v8.0.1 SHA 3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c."
 files[2]{path,scope,note}:
   .github/workflows/ci.yml,project,CI workflow Node 24 JavaScript action runtime opt-in
   tests/integration/ci-workflow-contract.spec.ts,project,Workflow contract regression for Node 24 action runtime opt-in
@@ -23,4 +26,5 @@ tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mpa749w8-l7htpy,test,passed,"2026-05-17T19:56:23.303Z","2026-05-17T19:56:27.032Z","2026-05-17T19:56:27.032Z",null,null,1,0,0,null,null,null
   test-local-mpa7en3j-bgjxev,test,passed,"2026-05-17T20:04:27.939Z","2026-05-17T20:04:30.703Z","2026-05-17T20:04:30.703Z",null,null,1,0,0,null,null,null
+close_reason: "CI workflow now uses Node 24-native download-artifact v8.0.1, contract coverage passed, and GitHub Actions run 26001315059 was green without annotations."
 body: ""
