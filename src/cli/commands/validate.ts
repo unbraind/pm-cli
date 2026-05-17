@@ -23,7 +23,8 @@ import { nowIso } from "../../core/shared/time.js";
 import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { ItemMetadata, ValidateMetadataProfile, ValidateMetadataRequiredField } from "../../types/index.js";
+import type { HistoryEntry, ItemMetadata, ValidateMetadataProfile, ValidateMetadataRequiredField } from "../../types/index.js";
+import { verifyHistoryChain } from "./history.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
 
 type ValidateCheckName = "metadata" | "resolution" | "lifecycle" | "files" | "command_references" | "history_drift";
@@ -1190,6 +1191,7 @@ async function buildHistoryDriftCheck(pmRoot: string, items: ItemWithBody[]): Pr
   const missingStreams: string[] = [];
   const unreadableStreams: string[] = [];
   const hashMismatches: string[] = [];
+  const chainMismatches: string[] = [];
 
   for (const item of items) {
     const historyPath = getHistoryPath(pmRoot, item.id);
@@ -1200,16 +1202,22 @@ async function buildHistoryDriftCheck(pmRoot: string, items: ItemWithBody[]): Pr
         missingStreams.push(item.id);
         continue;
       }
+      const entries: HistoryEntry[] = [];
       for (const line of raw.split(/\r?\n/)) {
         const trimmed = line.trim();
         if (trimmed.length === 0) {
           continue;
         }
-        const parsed = JSON.parse(trimmed) as { after_hash?: unknown };
+        const parsed = JSON.parse(trimmed) as HistoryEntry;
         if (typeof parsed.after_hash !== "string" || parsed.after_hash.trim().length === 0) {
           throw new Error("missing after_hash");
         }
+        entries.push(parsed);
         latestAfterHash = parsed.after_hash;
+      }
+      const chainVerification = verifyHistoryChain(entries);
+      if (!chainVerification.ok) {
+        chainMismatches.push(item.id);
       }
     } catch (error: unknown) {
       if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT") {
@@ -1235,7 +1243,7 @@ async function buildHistoryDriftCheck(pmRoot: string, items: ItemWithBody[]): Pr
     }
   }
 
-  const driftedItems = [...new Set([...missingStreams, ...unreadableStreams, ...hashMismatches])].sort((a, b) =>
+  const driftedItems = [...new Set([...missingStreams, ...unreadableStreams, ...hashMismatches, ...chainMismatches])].sort((a, b) =>
     a.localeCompare(b),
   );
   const warnings: string[] = [];
@@ -1247,6 +1255,9 @@ async function buildHistoryDriftCheck(pmRoot: string, items: ItemWithBody[]): Pr
   }
   if (hashMismatches.length > 0) {
     warnings.push(`validate_history_drift_hash_mismatches:${hashMismatches.length}`);
+  }
+  if (chainMismatches.length > 0) {
+    warnings.push(`validate_history_drift_chain_mismatches:${chainMismatches.length}`);
   }
   const summarizedDrifted = summarizeList(driftedItems);
 
@@ -1263,6 +1274,7 @@ async function buildHistoryDriftCheck(pmRoot: string, items: ItemWithBody[]): Pr
           missing_streams: missingStreams.length,
           unreadable_streams: unreadableStreams.length,
           hash_mismatches: hashMismatches.length,
+          chain_mismatches: chainMismatches.length,
         },
       },
     },

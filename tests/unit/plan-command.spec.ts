@@ -68,6 +68,39 @@ describe("runPlan command family", () => {
     });
   });
 
+  it("show supports field projection for low-token Plan inspection", async () => {
+    await withTempPmPath(async (context) => {
+      const { planId } = await bootstrapPlan(context);
+      await runPlan({
+        subcommand: "add-step",
+        id: planId,
+        options: { stepTitle: "project me", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+
+      const projected = await runPlan({
+        subcommand: "show",
+        id: planId,
+        options: { depth: "deep", fields: "id,title,steps_summary" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(projected.plan).toEqual({
+        id: planId,
+        title: "Test Plan",
+        steps_summary: {
+          total: 1,
+          pending: 1,
+          in_progress: 0,
+          blocked: 0,
+          completed: 0,
+          skipped: 0,
+          superseded: 0,
+        },
+      });
+      expect(projected.next_actions).toEqual(expect.arrayContaining([expect.stringContaining("approve")]));
+    });
+  });
+
   it("rejects pm plan commands on non-Plan items", async () => {
     await withTempPmPath(async (context) => {
       const created = context.runCli([
@@ -431,6 +464,14 @@ describe("runPlan command family", () => {
           subcommand: "show",
           id: planId,
           options: { depth: "ginormous" } as Parameters<typeof runPlan>[0]["options"],
+          global: { ...GLOBAL, path: context.pmPath },
+        }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runPlan({
+          subcommand: "show",
+          id: planId,
+          options: { fields: "" } as Parameters<typeof runPlan>[0]["options"],
           global: { ...GLOBAL, path: context.pmPath },
         }),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });

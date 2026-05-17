@@ -235,6 +235,35 @@ function asDepth(value: string | undefined): PlanShowDepth {
   return found;
 }
 
+function parsePlanFields(raw: string | undefined): string[] | null {
+  if (raw === undefined) {
+    return null;
+  }
+  const fields = raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (fields.length === 0) {
+    throw new PmCliError("Plan --fields requires a comma-separated list of plan field names", EXIT_CODE.USAGE);
+  }
+  return fields;
+}
+
+function projectPlanForFields(plan: PlanResultPlan, fields: string[]): PlanResultPlan {
+  const source = plan as unknown as Record<string, unknown>;
+  const projected: Record<string, unknown> = {};
+  for (const field of fields) {
+    const normalized = field.startsWith("plan.") ? field.slice("plan.".length) : field;
+    if (normalized.length === 0) {
+      continue;
+    }
+    if (Object.prototype.hasOwnProperty.call(source, normalized)) {
+      projected[normalized] = source[normalized];
+    }
+  }
+  return projected as unknown as PlanResultPlan;
+}
+
 function parsePairList(raw: string, label: string): Record<string, string> {
   const out: Record<string, string> = {};
   for (const entry of raw.split(",")) {
@@ -530,12 +559,14 @@ async function planShow(
   ctx: PlanWriteContext,
 ): Promise<PlanCommandResult> {
   const depth = asDepth(options.depth);
+  const fields = parsePlanFields(options.fields);
   const { document, itemId } = await readPlanItem(ctx, id);
-  const plan = projectPlan(document.metadata, depth);
+  const fullPlan = projectPlan(document.metadata, depth);
+  const plan = fields === null ? fullPlan : projectPlanForFields(fullPlan, fields);
   return {
     action: "show",
     plan,
-    next_actions: nextActionsFor(itemId, plan),
+    next_actions: nextActionsFor(itemId, fullPlan),
     warnings: [],
     generated_at: nowIso(),
   };
@@ -1172,4 +1203,3 @@ export async function runPlan(input: PlanDispatchInput): Promise<PlanCommandResu
       throw new PmCliError(`Unknown pm plan subcommand "${input.subcommand}"`, EXIT_CODE.USAGE);
   }
 }
-

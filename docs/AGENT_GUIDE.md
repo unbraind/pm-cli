@@ -100,7 +100,7 @@ pm release <item-id>
 | Audited history redaction | `pm history-redact <id> --literal "<secret>" --replacement "[redacted]" --dry-run` |
 | Agent plan create | `pm plan create --title "<scope>" --harness claude-code --scope "<short>" --claim` |
 | Agent plan step update | `pm plan update-step <plan-id> plan-step-001 --step-status in_progress --step-evidence "<short>"` |
-| Agent plan read | `pm plan show <plan-id> --depth brief` (or `--depth standard|deep`) |
+| Agent plan read | `pm plan show <plan-id> --depth brief` (or `--fields id,title,steps_summary`) |
 | Materialize plan steps | `pm plan materialize <plan-id> --steps plan-step-002 --materialize-type Task` |
 | Dependencies | `pm deps <id> --format tree` |
 | Local docs routing | `pm install guide-shell --project`, then `pm guide <topic>` |

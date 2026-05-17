@@ -160,8 +160,12 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     name: "pm_get",
-    description: "Read one pm item with body, linked files/tests/docs, and claim state.",
-    inputSchema: objectSchema({ id: idSchema }, ["id"]),
+    description:
+      "Read one pm item. Pass options.depth='brief' or options.fields='id,title,status' for low-token inspection.",
+    inputSchema: objectSchema({
+      id: idSchema,
+      options: { type: "object", description: "Get options such as depth=brief|standard|deep or fields=id,title,status." },
+    }, ["id"]),
   },
   {
     name: "pm_create",
@@ -231,6 +235,8 @@ const TOOLS: ToolDefinition[] = [
       "Run agent-optimized Plan workflows. options.subcommand selects: create|show|add-step|update-step|complete-step|block-step|reorder-step|remove-step|link|unlink|decision|discovery|validation|resume|approve|materialize. Provide id for all non-create subcommands; provide stepRef for step lifecycle subcommands. Plans store agent-readable steps with dependencies, decisions, discoveries, validation, and resume context.",
     inputSchema: objectSchema({
       id: { type: "string", description: "Plan id (required for all subcommands except create)." },
+      stepRef: { type: "string", description: "Step id or order for step lifecycle subcommands." },
+      reorderTo: { type: "number", description: "New order for reorder-step." },
       options: { type: "object", description: "Plan options including subcommand, stepRef, stepStatus, link, depth, etc." },
     }),
   },
@@ -451,7 +457,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runList(readString(args, "status"), listOptions as never, global);
     }
     case "get":
-      return runGet(id ?? readRequiredString(options, "id"), global);
+      return runGet(id ?? readRequiredString(options, "id"), global, options);
     case "search":
       return runSearch(readRequiredString(args, "query"), options, global);
     case "create":
@@ -522,17 +528,22 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
     case "plan": {
       const subcommand = readRequiredString(options, "subcommand");
       const planRecord = options as Record<string, unknown>;
-      const reorderToken = planRecord.reorderTo;
+      const reorderToken = planRecord.reorderTo ?? args.reorderTo;
       const reorderTo =
         typeof reorderToken === "number" && Number.isFinite(reorderToken)
           ? reorderToken
           : typeof reorderToken === "string" && reorderToken.trim().length > 0
             ? Number.parseInt(reorderToken, 10)
             : undefined;
+      const stepRef = typeof planRecord.stepRef === "string"
+        ? (planRecord.stepRef as string)
+        : typeof args.stepRef === "string"
+          ? (args.stepRef as string)
+          : undefined;
       return runPlan({
         subcommand: subcommand as never,
         id: typeof id === "string" ? id : typeof planRecord.id === "string" ? (planRecord.id as string) : undefined,
-        stepRef: typeof planRecord.stepRef === "string" ? (planRecord.stepRef as string) : undefined,
+        stepRef,
         reorderTo,
         options: options as never,
         global,

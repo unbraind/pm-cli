@@ -166,7 +166,7 @@ function applyHistoryPatch(current: ReplayDocument, patch: HistoryPatchOp[], ent
   }
 }
 
-function verifyHistoryChain(entries: HistoryEntry[]): { ok: boolean; errors: string[] } {
+export function verifyHistoryChain(entries: HistoryEntry[]): { ok: boolean; errors: string[] } {
   let replay: ReplayDocument = structuredClone(EMPTY_REPLAY_DOCUMENT);
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
@@ -177,7 +177,14 @@ function verifyHistoryChain(entries: HistoryEntry[]): { ok: boolean; errors: str
         errors: [`verify_failed:before_hash_mismatch:entry_${index + 1}`],
       };
     }
-    replay = applyHistoryPatch(replay, entry.patch, index + 1);
+    try {
+      replay = applyHistoryPatch(replay, entry.patch, index + 1);
+    } catch {
+      return {
+        ok: false,
+        errors: [`verify_failed:patch_apply_failed:entry_${index + 1}`],
+      };
+    }
     const afterHash = replayHash(replay);
     if (afterHash !== entry.after_hash) {
       return {

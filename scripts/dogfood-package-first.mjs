@@ -464,11 +464,51 @@ try {
   assert(Array.isArray(planMaterialize?.materialized) && planMaterialize.materialized.length === 1, "plan materialize did not create one item");
   const planShow = run("plan show deep", ["plan", "show", planId, "--depth", "deep"]);
   assert(planShow?.plan?.steps?.length === 2, "plan show deep did not include steps array");
+  const planFields = run("plan show fields", ["plan", "show", planId, "--fields", "id,title,steps_summary"]);
+  assert(planFields?.plan?.id === planId, "plan show --fields did not return selected id");
+  assert(planFields?.plan?.title === "Dogfood plan workflow", "plan show --fields did not return selected title");
+  assert(planFields?.plan?.steps_summary?.total === 2, "plan show --fields did not return selected steps_summary");
+  assert(planFields?.plan?.mode === undefined, "plan show --fields returned unselected mode");
   const planHistory = run("plan history verify", ["history", planId, "--verify"]);
   assert(planHistory?.verification?.ok === true, "plan history hash chain failed to verify after lifecycle");
   const planSearch = run("plan search corpus", ["search", "exponential dogfood", "--limit", "5"]);
   assert(Array.isArray(planSearch?.items), "plan search did not return items array");
   run("plan close", ["close", planId, "plan dogfood lifecycle complete", "--validate-close", "warn"]);
+
+  const redactionSentinel = "dogfood-private-sentinel";
+  const redactionReplacement = "[dogfood-redacted]";
+  run("history-redact sentinel append", [
+    "append",
+    id,
+    "--body",
+    `body contains ${redactionSentinel}`,
+    "--message",
+    `append ${redactionSentinel}`,
+  ]);
+  const redactionDryRun = run("history-redact dry-run", [
+    "history-redact",
+    id,
+    "--literal",
+    redactionSentinel,
+    "--replacement",
+    redactionReplacement,
+    "--dry-run",
+  ]);
+  assert(redactionDryRun?.changed === true, "history-redact dry-run did not find sentinel");
+  assert(redactionDryRun?.history?.audit_entry_added === false, "history-redact dry-run unexpectedly added audit entry");
+  const redactionApplied = run("history-redact apply", [
+    "history-redact",
+    id,
+    "--literal",
+    redactionSentinel,
+    "--replacement",
+    redactionReplacement,
+  ]);
+  assert(redactionApplied?.changed === true, "history-redact apply did not change history");
+  assert(redactionApplied?.history?.audit_entry_added === true, "history-redact apply did not add audit marker");
+  assert(redactionApplied?.history?.verify_ok === true, "history-redact apply produced invalid history chain");
+  const redactionHistory = run("history-redact history verify", ["history", id, "--verify"]);
+  assert(redactionHistory?.verification?.ok === true, "history-redact item history failed verification");
 
   run("linked test add", [
     "test",

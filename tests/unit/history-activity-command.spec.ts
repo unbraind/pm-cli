@@ -180,6 +180,25 @@ describe("runHistory and runActivity", () => {
     });
   });
 
+  it("returns structured verification errors when history replay cannot apply a patch", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Verify Apply Failure");
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const rawLines = (await readFile(historyPath, "utf8"))
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+      const firstEntry = JSON.parse(rawLines[0]) as { patch: Array<{ op: string; path: string; value?: unknown }> };
+      firstEntry.patch = [{ op: "replace", path: "/metadata/does_not_exist", value: true }];
+      rawLines[0] = JSON.stringify(firstEntry);
+      await writeFile(historyPath, `${rawLines.join("\n")}\n`, "utf8");
+
+      const tampered = await runHistory(id, { verify: true }, { path: context.pmPath });
+      expect(tampered.verification?.ok).toBe(false);
+      expect(tampered.verification?.errors).toEqual(["verify_failed:patch_apply_failed:entry_1"]);
+    });
+  });
+
   it("redacts history/item payloads, recomputes hashes, and appends an audit marker", async () => {
     await withTempPmPath(async (context) => {
       const id = createItem(context, "History Redact");

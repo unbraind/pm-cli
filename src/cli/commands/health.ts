@@ -37,8 +37,9 @@ import {
   resolvePmRoot,
 } from "../../core/store/paths.js";
 import { readSettingsWithMetadata } from "../../core/store/settings.js";
-import type { ItemFormat, PmSettings } from "../../types/index.js";
+import type { HistoryEntry, ItemFormat, PmSettings } from "../../types/index.js";
 import { readManagedExtensionState } from "./extension.js";
+import { verifyHistoryChain } from "./history.js";
 
 type HealthStatus = "ok" | "warn";
 type MigrationRuntimeStatus = "pending" | "failed" | "applied";
@@ -960,6 +961,7 @@ async function buildHistoryDriftCheck(
   const missingStreams: string[] = [];
   const unreadableStreams: string[] = [];
   const hashMismatches: string[] = [];
+  const chainMismatches: string[] = [];
 
   for (const item of items) {
     const historyPath = getHistoryPath(pmRoot, item.id);
@@ -971,16 +973,22 @@ async function buildHistoryDriftCheck(
         continue;
       }
       const lines = raw.split(/\r?\n/);
+      const entries: HistoryEntry[] = [];
       for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed.length === 0) {
           continue;
         }
-        const parsed = JSON.parse(trimmed) as { after_hash?: unknown };
+        const parsed = JSON.parse(trimmed) as HistoryEntry;
         if (typeof parsed.after_hash !== "string" || parsed.after_hash.trim().length === 0) {
           throw new Error("missing after_hash");
         }
+        entries.push(parsed);
         latestAfterHash = parsed.after_hash;
+      }
+      const chainVerification = verifyHistoryChain(entries);
+      if (!chainVerification.ok) {
+        chainMismatches.push(item.id);
       }
     } catch (error: unknown) {
       if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT") {
@@ -1004,13 +1012,14 @@ async function buildHistoryDriftCheck(
     }
   }
 
-  const driftedItems = [...new Set([...missingStreams, ...unreadableStreams, ...hashMismatches])].sort((a, b) =>
+  const driftedItems = [...new Set([...missingStreams, ...unreadableStreams, ...hashMismatches, ...chainMismatches])].sort((a, b) =>
     a.localeCompare(b),
   );
   const warnings = [
     ...missingStreams.map((id) => `history_drift_missing_stream:${id}`),
     ...unreadableStreams.map((id) => `history_drift_unreadable_stream:${id}`),
     ...hashMismatches.map((id) => `history_drift_hash_mismatch:${id}`),
+    ...chainMismatches.map((id) => `history_drift_chain_mismatch:${id}`),
   ];
 
   return {
@@ -1025,10 +1034,12 @@ async function buildHistoryDriftCheck(
           missing_streams: missingStreams.length,
           unreadable_streams: unreadableStreams.length,
           hash_mismatches: hashMismatches.length,
+          chain_mismatches: chainMismatches.length,
         },
         missing_streams: missingStreams,
         unreadable_streams: unreadableStreams,
         hash_mismatches: hashMismatches,
+        chain_mismatches: chainMismatches,
       },
     },
     warnings,

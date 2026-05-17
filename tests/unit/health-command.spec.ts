@@ -181,6 +181,7 @@ describe("runHealth", () => {
           missing_streams: 0,
           unreadable_streams: 0,
           hash_mismatches: 0,
+          chain_mismatches: 0,
         },
       });
 
@@ -340,6 +341,7 @@ describe("runHealth", () => {
           `history_drift_missing_stream:${missingId}`,
           `history_drift_unreadable_stream:${unreadableId}`,
           `history_drift_hash_mismatch:${mismatchId}`,
+          `history_drift_chain_mismatch:${mismatchId}`,
         ]),
       );
 
@@ -351,6 +353,51 @@ describe("runHealth", () => {
         missing_streams: [missingId],
         unreadable_streams: [unreadableId],
         hash_mismatches: [mismatchId],
+        chain_mismatches: [mismatchId],
+      });
+    });
+  });
+
+  it("detects history chain drift when the latest item hash still matches", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createSeedItem(context);
+      const update = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--status",
+          "in_progress",
+          "--author",
+          "test-author",
+          "--message",
+          "Add second history entry",
+        ],
+        { expectJson: true },
+      );
+      expect(update.code).toBe(0);
+
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const lines = (await readFile(historyPath, "utf8"))
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+      expect(lines.length).toBeGreaterThanOrEqual(2);
+      const firstEntry = JSON.parse(lines[0]) as { after_hash: string };
+      firstEntry.after_hash = "tampered-after-hash";
+      lines[0] = JSON.stringify(firstEntry);
+      await writeFile(historyPath, `${lines.join("\n")}\n`, "utf8");
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.ok).toBe(false);
+      expect(health.warnings).toContain(`history_drift_chain_mismatch:${id}`);
+      expect(health.warnings).not.toContain(`history_drift_hash_mismatch:${id}`);
+
+      const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
+      expect(historyDriftCheck?.details).toMatchObject({
+        drifted_items: [id],
+        hash_mismatches: [],
+        chain_mismatches: [id],
       });
     });
   });

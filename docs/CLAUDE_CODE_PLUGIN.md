@@ -64,7 +64,7 @@ The server exposes 18 native tools that call pm library functions directly:
 | `pm_validate` | `pm validate` | `options.checkResolution`, `options.checkFiles` |
 | `pm_health` | `pm health` | `options.checkOnly` |
 | `pm_contracts` | `pm contracts` | `options.command`, `options.json` |
-| `pm_guide` | `pm guide` | `options.topic`, `options.depth` |
+| `pm_plan` | `pm plan` | `options.subcommand`, `id`, `stepRef` |
 | `pm_run` | any pm action | `action` (required), `id`, `query`, `reason`, `options.*` |
 
 All tools accept `cwd` (workspace directory), `path` (pm data root override), and `author` (mutation author).

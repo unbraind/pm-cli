@@ -1165,13 +1165,14 @@ describe("runValidate", () => {
       expect(historyCheck.status).toBe("warn");
       const details = historyCheck.details as {
         drifted_items_count: number;
-        counts: { missing_streams: number; unreadable_streams: number; hash_mismatches: number };
+        counts: { missing_streams: number; unreadable_streams: number; hash_mismatches: number; chain_mismatches: number };
       };
       expect(details.drifted_items_count).toBe(4);
       expect(details.counts).toEqual({
         missing_streams: 2,
         unreadable_streams: 1,
         hash_mismatches: 1,
+        chain_mismatches: 0,
       });
     });
   });
@@ -1236,6 +1237,52 @@ describe("runValidate", () => {
       expect(historyCheck.status).toBe("warn");
       const details = historyCheck.details as { counts: { hash_mismatches: number } };
       expect(details.counts.hash_mismatches).toBe(1);
+    });
+  });
+
+  it("reports history drift when the history chain fails but the latest item hash still matches", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "validate-history-chain-mismatch");
+      const updated = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--status",
+          "in_progress",
+          "--author",
+          "seed-author",
+          "--message",
+          "Add second history entry",
+        ],
+        { expectJson: true },
+      );
+      expect(updated.code).toBe(0);
+
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const lines = (await readFile(historyPath, "utf8"))
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+      expect(lines.length).toBeGreaterThanOrEqual(2);
+      const firstEntry = JSON.parse(lines[0]) as { after_hash: string };
+      firstEntry.after_hash = "tampered-after-hash";
+      lines[0] = JSON.stringify(firstEntry);
+      await writeFile(historyPath, `${lines.join("\n")}\n`, "utf8");
+
+      const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
+      expect(result.ok).toBe(false);
+      expect(result.warnings).toContain("validate_history_drift_chain_mismatches:1");
+      expect(result.warnings).not.toContain("validate_history_drift_hash_mismatches:1");
+      const historyCheck = checkByName(result, "history_drift");
+      expect(historyCheck.status).toBe("warn");
+      const details = historyCheck.details as {
+        drifted_items_count: number;
+        counts: { hash_mismatches: number; chain_mismatches: number };
+      };
+      expect(details.drifted_items_count).toBe(1);
+      expect(details.counts.hash_mismatches).toBe(0);
+      expect(details.counts.chain_mismatches).toBe(1);
     });
   });
 });

@@ -6,7 +6,7 @@ Native pm CLI integration for Claude Code. Use pm project management tools direc
 
 | Component | What it provides |
 |-----------|----------------|
-| **18 MCP tools** | Full pm surface: context, search, list, get, create, update, claim, release, close, comments, files, docs, test, validate, health, contracts, guide + `pm_run` for everything else |
+| **18 MCP tools** | Full pm surface: context, search, list, get, create, update, claim, release, close, comments, files, docs, test, validate, health, contracts, plan + `pm_run` for everything else |
 | **5 skills** | `pm-workflow`, `pm-developer`, `pm-release`, `pm-audit`, `pm-planner` — auto-loaded as Claude Code skills |
 | **14 slash commands** | Full lifecycle coverage — status, start, close, triage, audit, search, new, list, calendar, developer, planner, release, workflow, init |
 | **3 subagents** | `pm-coordinator` (batch/multi-item), `pm-triage-agent` (duplicate-safe item creation), `pm-verification-agent` (evidence + close readiness), and a `pm-delivery-chain` orchestrator |
@@ -163,7 +163,7 @@ Spawn pm-triage-agent to set up the pm item for: add OAuth2 login support
 | `pm_validate` | Run validation checks |
 | `pm_health` | Run health diagnostics |
 | `pm_contracts` | Inspect command contracts |
-| `pm_guide` | Read guide topics |
+| `pm_plan` | Manage durable Plan workflows |
 
 ### General tool
 

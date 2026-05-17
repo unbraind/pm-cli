@@ -115,6 +115,93 @@ describe("MCP dynamic package actions", () => {
       expect(listResult?.items?.[0]).toMatchObject({ id, title: "MCP compact target" });
       expect(listResult?.items?.[0]).not.toHaveProperty("body");
       expect(listResult?.items?.[0]).not.toHaveProperty("comments");
+
+      const getBrief = await handleRequest({
+        jsonrpc: "2.0",
+        id: 3,
+        method: "tools/call",
+        params: {
+          name: "pm_get",
+          arguments: {
+            path: context.pmPath,
+            id,
+            options: {
+              fields: "id,title,status",
+            },
+          },
+        },
+      });
+      expect(getBrief?.isError).not.toBe(true);
+      const getResult = (getBrief?.structuredContent as {
+        result?: { item?: Record<string, unknown>; body?: string; linked?: { files?: unknown[] } };
+      } | undefined)?.result;
+      expect(getResult?.item).toEqual({ id, title: "MCP compact target", status: "open" });
+      expect(getResult?.body).toBe("");
+      expect(getResult?.linked?.files).toEqual([]);
+    });
+  });
+
+  it("accepts top-level Plan step references through the narrow MCP tool", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await handleRequest({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "pm_plan",
+          arguments: {
+            path: context.pmPath,
+            options: {
+              subcommand: "create",
+              title: "MCP plan",
+              scope: "MCP stepRef coverage",
+              harness: "codex",
+              author: "mcp-agent",
+            },
+          },
+        },
+      });
+      const planId = (created?.structuredContent as { result?: { plan?: { id?: string } } } | undefined)?.result?.plan?.id;
+      expect(planId).toMatch(/^pm-/);
+
+      await handleRequest({
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: {
+          name: "pm_plan",
+          arguments: {
+            path: context.pmPath,
+            id: planId,
+            options: {
+              subcommand: "add-step",
+              stepTitle: "Read code",
+              author: "mcp-agent",
+            },
+          },
+        },
+      });
+
+      const updated = await handleRequest({
+        jsonrpc: "2.0",
+        id: 3,
+        method: "tools/call",
+        params: {
+          name: "pm_plan",
+          arguments: {
+            path: context.pmPath,
+            id: planId,
+            stepRef: "plan-step-001",
+            options: {
+              subcommand: "complete-step",
+              stepEvidence: "done",
+              author: "mcp-agent",
+            },
+          },
+        },
+      });
+      const result = (updated?.structuredContent as { result?: { step?: { status?: string; evidence?: string } } } | undefined)?.result;
+      expect(result?.step).toMatchObject({ status: "completed", evidence: "done" });
     });
   });
 

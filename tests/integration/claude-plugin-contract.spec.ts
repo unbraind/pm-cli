@@ -176,7 +176,7 @@ describe("Claude Code plugin contract", () => {
       "pm_context", "pm_search", "pm_list", "pm_get", "pm_create",
       "pm_update", "pm_claim", "pm_release", "pm_close", "pm_comments",
       "pm_files", "pm_docs", "pm_test", "pm_validate", "pm_health",
-      "pm_contracts", "pm_run",
+      "pm_contracts", "pm_plan", "pm_run",
     ];
     const agents = ["pm-coordinator", "pm-triage-agent", "pm-verification-agent", "pm-delivery-chain"];
     for (const agent of agents) {
@@ -184,6 +184,7 @@ describe("Claude Code plugin contract", () => {
       // Each agent must reference at least one native MCP tool
       const referencesNativeTools = PM_NATIVE_TOOLS.some((tool) => content.includes(tool));
       expect(referencesNativeTools, `Agent ${agent} should reference native MCP tools`).toBe(true);
+      expect(content, `Agent ${agent} should not reference removed pm_guide tool`).not.toContain("pm_guide");
     }
   });
 });

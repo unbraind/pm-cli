@@ -2,15 +2,19 @@ id: pm-b7sd
 title: pm list should default to --brief (full output via --full) to halve token cost
 description: "Dogfood 2026-05-17: `pm list` default returns 143 lines for 11 items (~12 lines per row). `--brief` returns 59 lines (~5 per row). Agents pay 2x context for the default, almost never needing the verbose fields.\n\nProposal: flip default to brief; add --full for current behavior. Keep --compact, --fields, --json untouched. Update list contract test and MCP pm_list description.\n\nAcceptance: pm list returns brief shape by default; pm list --full matches existing default output; --json default ≤ half its current byte cost on the dogfood tracker."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,context-efficiency,list,pm-cli,token-budget
 created_at: "2026-05-17T05:50:01.041Z"
-updated_at: "2026-05-17T10:33:19.198Z"
+updated_at: "2026-05-17T14:25:49.531Z"
 deadline: "2026-05-24T05:50:01.041Z"
 author: claude-code-agent
-comments[1]{created_at,author,text}:
+resolution: Implemented list default brief projection and explicit --full escape hatch.
+expected_result: Bare pm list returns low-token brief rows while pm list --full preserves the prior verbose shape.
+actual_result: "Focused list/contracts/help integration tests and dogfood confirm default brief, --full, and contract exposure work."
+comments[2]{created_at,author,text}:
   "2026-05-17T08:33:01.995Z",codex-agent,"Implemented list token-efficiency update: bare 'pm list' now defaults to brief projection (id/status/type/title), while '--full' preserves verbose rows. Added projection conflict handling for --full, synced contracts/schema/help surfaces, and covered behavior in unit + integration regressions."
+  "2026-05-17T14:25:44.935Z",codex-agent,"Verification evidence 2026-05-17: reran list default/--full closeout checks after claiming item. Passing commands: node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/contracts-command.spec.ts (28 tests); node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'filters list' (1 passed); node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts -t 'documents list/search projection exclusivity guidance' (1 passed). Current dogfood harness also passed with list contract coverage included."
 files[8]{path,scope,note}:
   scripts/dogfood-package-first.mjs,project,dogfood asserts list contracts include --full
   src/cli/commands/list.ts,project,list projection supports explicit --full
@@ -24,4 +28,5 @@ tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t filters list,null,project,300,null,null,null,null,null,null,null,null,null,null,null,integration list default brief regression
   node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts -t documents list/search projection exclusivity guidance,null,project,300,null,null,null,null,null,null,null,null,null,null,null,help projection guidance regression
   node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/contracts-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused list/contracts regression
+close_reason: List default brief behavior and --full compatibility are implemented and verified by focused unit/integration tests plus dogfood.
 body: ""

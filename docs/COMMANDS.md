@@ -249,6 +249,7 @@ pm plan materialize <plan-id> --steps plan-step-002,plan-step-003 --materialize-
 pm plan show <plan-id> --depth brief
 pm plan show <plan-id> --depth standard
 pm plan show <plan-id> --depth deep
+pm plan show <plan-id> --fields id,title,steps_summary
 ```
 
 Subcommand cheatsheet:
