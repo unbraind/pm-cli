@@ -142,10 +142,19 @@ jobs:
         run: pnpm test
 
   gates:
-    name: Gates (Ubuntu, Node 20)
+    name: Gates (${{ matrix.gate }})
     needs: build-foundation
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        gate:
+          - coverage
+          - typecheck
+          - static
+          - compat
+          - smokes
 
     steps:
       - name: Checkout
@@ -193,38 +202,37 @@ jobs:
           name: dist-node20-ubuntu
           path: dist
 
-      - name: Version policy check
-        run: pnpm version:check
-
-      - name: Secret leak scan
-        run: pnpm security:scan
-
-      - name: Test with coverage gate
+      - name: Run coverage gate
+        if: matrix.gate == 'coverage'
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test:coverage
 
-      - name: Typecheck
+      - name: Run typecheck gate
+        if: matrix.gate == 'typecheck'
         run: pnpm typecheck
 
-      - name: Static quality gate
-        run: pnpm quality:static
+      - name: Run static + secret + version gates
+        if: matrix.gate == 'static'
+        run: |
+          pnpm version:check
+          pnpm security:scan
+          pnpm quality:static
+          npm pack --dry-run
 
-      - name: Compatibility migration gate
+      - name: Run compatibility migration gate
+        if: matrix.gate == 'compat'
         timeout-minutes: 6
         run: node scripts/release/compatibility-check.mjs --json
 
-      - name: Packaging smoke check
-        run: npm pack --dry-run
-
-      - name: npx tarball smoke check
-        run: pnpm smoke:npx
-
-      - name: Claude Code plugin smoke
-        run: node scripts/smoke-claude-plugin.mjs
+      - name: Run npx + plugin smoke gates
+        if: matrix.gate == 'smokes'
+        run: |
+          pnpm smoke:npx
+          node scripts/smoke-claude-plugin.mjs
 
       - name: Upload coverage artifact
-        if: always()
+        if: always() && matrix.gate == 'coverage'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: coverage-node20-ubuntu-latest

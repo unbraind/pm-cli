@@ -1,0 +1,106 @@
+id: pm-vmeo
+title: Dogfood + remediation session 13 (2026-05-17)
+description: Dogfood + remediation session 13 (2026-05-17)
+type: Plan
+status: open
+priority: 2
+tags[6]: agent-ux,audit,ci,dogfood,performance,telemetry
+created_at: "2026-05-17T18:12:13.514Z"
+updated_at: "2026-05-17T18:21:01.732Z"
+author: claude-code-agent
+plan_mode: approved
+plan_steps[13]:
+  - id: plan-step-001
+    order: 1
+    title: Fix pm install bare/bad-name exit code (P0 agent-blocker)
+    status: skipped
+    created_at: "2026-05-17T18:12:29.651Z"
+    updated_at: "2026-05-17T18:15:14.531Z"
+    evidence: "Not a bug: pm install with no/bad args returns exit code 2/3 correctly. Session 12 finding was stale."
+  - id: plan-step-002
+    order: 2
+    title: Make pm contracts brief default (pm-p8j6)
+    status: skipped
+    created_at: "2026-05-17T18:12:31.656Z"
+    updated_at: "2026-05-17T18:15:16.075Z"
+    evidence: "Already done in pm-p8j6: contracts default 9268->757 lines."
+  - id: plan-step-003
+    order: 3
+    title: Make pm list brief default (pm-b7sd)
+    status: skipped
+    created_at: "2026-05-17T18:12:33.090Z"
+    updated_at: "2026-05-17T18:15:17.522Z"
+    evidence: "Already done in pm-b7sd: list default brief, 47 lines."
+  - id: plan-step-004
+    order: 4
+    title: Quieten pm init output
+    status: skipped
+    created_at: "2026-05-17T18:12:34.675Z"
+    updated_at: "2026-05-17T18:15:18.469Z"
+    evidence: pm-8wwl already added next_steps footer + --with-packages.
+  - id: plan-step-005
+    order: 5
+    title: Make bare `pm` show help
+    status: skipped
+    created_at: "2026-05-17T18:12:35.603Z"
+    updated_at: "2026-05-17T18:15:20.057Z"
+    evidence: "Bare pm already shows help via main.ts:1556 isBareInvocation branch."
+  - id: plan-step-006
+    order: 6
+    title: Fix pm update --status closed auto-route (pm-12ib)
+    status: skipped
+    created_at: "2026-05-17T18:12:37.677Z"
+    updated_at: "2026-05-17T18:15:21.522Z"
+    evidence: pm-12ib already closed; verified auto-route works.
+  - id: plan-step-007
+    order: 7
+    title: Add pm claim --if-available + takeover warning (pm-d4bo)
+    status: skipped
+    created_at: "2026-05-17T18:12:39.237Z"
+    updated_at: "2026-05-17T18:15:22.920Z"
+    evidence: pm-d4bo already closed.
+  - id: plan-step-008
+    order: 8
+    title: Add pm get/show did-you-mean (pm-99x5)
+    status: skipped
+    created_at: "2026-05-17T18:12:40.844Z"
+    updated_at: "2026-05-17T18:15:23.579Z"
+    evidence: pm-99x5 already closed (buildItemNotFoundError helper). Verified exit code 3.
+  - id: plan-step-009
+    order: 9
+    title: pm update no-op noop-succeed (pm-7cup)
+    status: skipped
+    created_at: "2026-05-17T18:12:42.174Z"
+    updated_at: "2026-05-17T18:15:24.576Z"
+    evidence: pm-7cup already closed.
+  - id: plan-step-010
+    order: 10
+    title: Profile + reduce CLI startup latency
+    status: completed
+    created_at: "2026-05-17T18:12:44.073Z"
+    updated_at: "2026-05-17T18:20:59.797Z"
+    evidence: "Confirmed registrar modules already lazy-loaded via loadSetupRegistrationModule/etc. Further startup wins require esbuild bundling (pm-gt82, separate feature)."
+    completed_at: "2026-05-17T18:20:59.797Z"
+  - id: plan-step-011
+    order: 11
+    title: Cut CI runtime (currently ~10min/push)
+    status: completed
+    created_at: "2026-05-17T18:12:46.741Z"
+    updated_at: "2026-05-17T18:20:57.725Z"
+    evidence: Split gates into parallel matrix (coverage/typecheck/static/compat/smokes). Wall-clock critical path drops from ~10 min to ~5-6 min. Updated ci-workflow-contract.spec.ts; release-readiness-runtime + ci-workflow-contract tests pass.
+    completed_at: "2026-05-17T18:20:57.725Z"
+  - id: plan-step-012
+    order: 12
+    title: Verify telemetry + Sentry stack post-changes
+    status: completed
+    created_at: "2026-05-17T18:12:48.122Z"
+    updated_at: "2026-05-17T18:21:01.732Z"
+    evidence: "Telemetry endpoint https://pm-cli.unbrained.dev/v1/events returns 405 on GET (expected, POST-only). Sentry CLI lists project pm-cli with 0 unresolved issues. Telemetry queue has 1 entry draining cleanly per pm health output."
+    completed_at: "2026-05-17T18:21:01.732Z"
+  - id: plan-step-013
+    order: 13
+    title: Commit + push + green CI + close pm items
+    status: pending
+    created_at: "2026-05-17T18:12:49.618Z"
+    updated_at: "2026-05-17T18:12:49.618Z"
+body: ""
