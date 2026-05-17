@@ -395,6 +395,45 @@ export function registerMutationCommands(program: Command): void {
     });
 
   program
+    .command("history-redact")
+    .argument("<id>", "Item id")
+    .option("--literal <value>", "Literal string to redact (repeatable)", collect)
+    .option("--regex <value>", "Regex pattern to redact (repeatable; accepts /pattern/flags or raw pattern)", collect)
+    .option("--replacement <value>", 'Replacement string (default: "[redacted]")')
+    .option("--dry-run", "Preview redaction impact without writing item/history files")
+    .option("--author <value>", "Mutation author")
+    .option("--message <value>", "Audit history message for the redaction marker entry")
+    .option("--force", "Force ownership/lock override")
+    .description("Redact sensitive literals/patterns from an item history stream and recompute hashes.")
+    .action(async (id: string, options: Record<string, unknown>, command) => {
+      const globalOptions = getGlobalOptions(command);
+      const startedAt = Date.now();
+      const { runHistoryRedact } = await loadMutationCommandsModule();
+      const literal = Array.isArray(options.literal) ? (options.literal as string[]) : undefined;
+      const regex = Array.isArray(options.regex) ? (options.regex as string[]) : undefined;
+      const result = await runHistoryRedact(
+        id,
+        {
+          literal,
+          regex,
+          replacement: typeof options.replacement === "string" ? options.replacement : undefined,
+          dryRun: options.dryRun === true,
+          author: typeof options.author === "string" ? options.author : undefined,
+          message: typeof options.message === "string" ? options.message : undefined,
+          force: Boolean(options.force),
+        },
+        globalOptions,
+      );
+      if (result.changed && !result.dry_run) {
+        await invalidateSearchCachesForMutation(globalOptions, result);
+      }
+      printResult(result, globalOptions);
+      if (globalOptions.profile) {
+        printError(`profile:command=history-redact took_ms=${Date.now() - startedAt}`);
+      }
+    });
+
+  program
     .command("comments")
     .argument("<id>", "Item id")
     .argument("[text]", "Optional comment text shorthand (equivalent to --add)")

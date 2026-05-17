@@ -55,6 +55,7 @@ import {
   GLOBAL_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
   HISTORY_FLAG_CONTRACTS,
+  HISTORY_REDACT_FLAG_CONTRACTS,
   INIT_FLAG_CONTRACTS,
   LEARNINGS_FLAG_CONTRACTS,
   LIST_COMMANDER_STRING_OPTION_CONTRACTS,
@@ -935,6 +936,9 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   }
   if (command === "history") {
     return HISTORY_FLAG_CONTRACTS;
+  }
+  if (command === "history-redact") {
+    return HISTORY_REDACT_FLAG_CONTRACTS;
   }
   if (command === "restore") {
     return RESTORE_FLAG_CONTRACTS;

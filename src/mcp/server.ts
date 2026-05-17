@@ -39,6 +39,7 @@ import {
   runGet,
   runHealth,
   runHistory,
+  runHistoryRedact,
   runInit,
   runLearnings,
   runList,
@@ -506,6 +507,8 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runFilesDiscover(id ?? readRequiredString(options, "id"), options, global);
     case "history":
       return runHistory(id ?? readRequiredString(options, "id"), options, global);
+    case "history-redact":
+      return runHistoryRedact(id ?? readRequiredString(options, "id"), options, global);
     case "stats":
       return runStats(global);
     case "append":
@@ -580,6 +583,7 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
         "Use pm_context or pm_search before creating new work. " +
         "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_update, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_test, pm_validate, pm_health, pm_contracts) over pm_run when they cover the operation. " +
         "Use pm_run with an explicit action for package-owned operations (calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume), plus activity, aggregate, history, stats, append, notes, learnings, test-all, and gc. " +
+        "Use history-redact for audited history-stream redaction workflows. " +
         "Set author to 'claude-code-agent' on all mutations. " +
         "Do not pass path during real repository tracking — only pass path for sandbox or test runs.",
     };

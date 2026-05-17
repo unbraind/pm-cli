@@ -97,6 +97,7 @@ pm release <item-id>
 | Command flags | `pm <command> --help --json` |
 | Low-noise machine contracts | `pm contracts --command <command> --flags-only --json` |
 | Timeline | `pm activity --id <id> --limit 20` |
+| Audited history redaction | `pm history-redact <id> --literal "<secret>" --replacement "[redacted]" --dry-run` |
 | Dependencies | `pm deps <id> --format tree` |
 | Local docs routing | `pm install guide-shell --project`, then `pm guide <topic>` |
 
@@ -140,5 +141,6 @@ Use these defaults unless the task requires otherwise:
 - `PM_AUTHOR=<stable-agent-name>` for mutations.
 - `node scripts/run-tests.mjs test` and `node scripts/run-tests.mjs coverage` for tests.
 - `pm validate --check-resolution --check-history-drift` before closing broad work.
+- `pm history-redact <id> --dry-run` before rewriting sensitive history payloads, then rerun without `--dry-run` once scope is confirmed.
 - `pm normalize --dry-run --json` before lifecycle metadata cleanups.
 - `pm health --check-only` when inspecting repository health without refresh side effects.

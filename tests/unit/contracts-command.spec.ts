@@ -470,6 +470,10 @@ describe("contracts command runtime", () => {
         },
         { command: "history", flags: ["--limit", "--diff", "--verify"] },
         {
+          command: "history-redact",
+          flags: ["--literal", "--regex", "--replacement", "--dry-run", "--author", "--message", "--force"],
+        },
+        {
           command: "config",
           flags: ["--criterion", "--clear-criteria", "--format", "--policy"],
         },

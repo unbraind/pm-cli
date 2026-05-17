@@ -109,6 +109,7 @@ const CORE_COMMANDS = [
   "search",
   "get",
   "history",
+  "history-redact",
   "activity",
   "restore",
   "update",
@@ -312,6 +313,7 @@ const REQUIRED_LEARNINGS_FLAGS = [
 const REQUIRED_CLAIM_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_RELEASE_FLAGS = ["--author", "--message", "--allow-audit-release", "--force"];
 const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
+const REQUIRED_HISTORY_REDACT_FLAGS = ["--literal", "--regex", "--replacement", "--dry-run", "--author", "--message", "--force"];
 const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--validate-close", "--force", "--reason", "--close-reason"];
 const REQUIRED_VALIDATE_FLAGS = [
   "--check-metadata",
@@ -843,7 +845,7 @@ describe("release readiness runtime coverage", () => {
     });
   });
 
-  it("keeps close, validate, delete, append, and restore help aligned with runtime behavior", async () => {
+  it("keeps close, validate, delete, append, restore, and history-redact help aligned with runtime behavior", async () => {
     await withTempPmPath(async (context) => {
       const closeHelp = context.runCli(["close", "--help"]);
       expect(closeHelp.code).toBe(0);
@@ -876,6 +878,15 @@ describe("release readiness runtime coverage", () => {
       expect(restoreHelp.stdout).toContain("Restore an item to an earlier timestamp or version.");
       for (const flag of REQUIRED_RESTORE_FLAGS) {
         expect(restoreHelp.stdout).toContain(flag);
+      }
+
+      const historyRedactHelp = context.runCli(["history-redact", "--help"]);
+      expect(historyRedactHelp.code).toBe(0);
+      expect(historyRedactHelp.stdout).toContain("Usage: pm history-redact [options] <id>");
+      expect(historyRedactHelp.stdout).toContain("Redact sensitive literals/patterns from an item history stream");
+      expect(historyRedactHelp.stdout).toMatch(/recompute\s+hashes\./);
+      for (const flag of REQUIRED_HISTORY_REDACT_FLAGS) {
+        expect(historyRedactHelp.stdout).toContain(flag);
       }
 
       const validateHelp = context.runCli(["validate", "--help"]);
@@ -1652,6 +1663,7 @@ describe("release readiness runtime coverage", () => {
       "src/cli/commands/comments-audit.ts",
       "src/cli/commands/dedupe-audit.ts",
       "src/cli/commands/guide.ts",
+      "src/cli/commands/history-redact.ts",
       "src/cli/commands/init-agent-guidance.ts",
       "src/cli/commands/metadata-normalizers.ts",
       "src/cli/commands/normalize.ts",

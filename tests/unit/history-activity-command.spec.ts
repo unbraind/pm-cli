@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runActivity } from "../../src/cli/commands/activity.js";
 import { readHistoryEntries, runHistory } from "../../src/cli/commands/history.js";
+import { runHistoryRedact } from "../../src/cli/commands/history-redact.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks, type ExtensionHookRegistry } from "../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
@@ -176,6 +177,83 @@ describe("runHistory and runActivity", () => {
       const tampered = await runHistory(id, { verify: true }, { path: context.pmPath });
       expect(tampered.verification?.ok).toBe(false);
       expect((tampered.verification?.errors ?? []).length).toBeGreaterThan(0);
+    });
+  });
+
+  it("redacts history/item payloads, recomputes hashes, and appends an audit marker", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Redact");
+      const leakedPath = "/home/steve/private/path";
+      context.runCli(
+        ["append", id, "--json", "--body", `contains ${leakedPath}`, "--author", "test-author", "--message", `append ${leakedPath}`],
+        { expectJson: true },
+      );
+
+      const redacted = await runHistoryRedact(
+        id,
+        {
+          literal: [leakedPath],
+          replacement: "[redacted_path]",
+          author: "test-author",
+        },
+        { path: context.pmPath },
+      );
+      expect(redacted.changed).toBe(true);
+      expect(redacted.history.entries_changed).toBeGreaterThan(0);
+      expect(redacted.history.audit_entry_added).toBe(true);
+      expect(redacted.history.verify_ok).toBe(true);
+
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const historyRaw = await readFile(historyPath, "utf8");
+      expect(historyRaw).not.toContain(leakedPath);
+      expect(historyRaw).toContain("[redacted_path]");
+      expect(historyRaw).toContain('"op":"history_redact"');
+
+      const itemPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+      const itemRaw = await readFile(itemPath, "utf8");
+      expect(itemRaw).toContain("[redacted_path]");
+      expect(itemRaw).not.toContain(leakedPath);
+
+      const verified = await runHistory(id, { verify: true }, { path: context.pmPath });
+      expect(verified.verification?.ok).toBe(true);
+    });
+  });
+
+  it("supports dry-run previews for history redaction", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Redact Dry Run");
+      const leakedToken = "token-abc-123";
+      context.runCli(
+        ["append", id, "--json", "--body", `secret ${leakedToken}`, "--author", "test-author", "--message", "append token"],
+        { expectJson: true },
+      );
+
+      const dryRunResult = await runHistoryRedact(
+        id,
+        {
+          literal: leakedToken,
+          replacement: "[redacted_token]",
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(dryRunResult.changed).toBe(true);
+      expect(dryRunResult.dry_run).toBe(true);
+      expect(dryRunResult.history.audit_entry_added).toBe(false);
+
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const historyRaw = await readFile(historyPath, "utf8");
+      expect(historyRaw).toContain(leakedToken);
+      expect(historyRaw).not.toContain("[redacted_token]");
+    });
+  });
+
+  it("requires at least one matcher for history-redact", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Redact Missing Matcher");
+      await expect(runHistoryRedact(id, {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 

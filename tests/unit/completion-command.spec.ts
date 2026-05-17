@@ -42,6 +42,7 @@ describe("generateBashScript", () => {
       "search",
       "reindex",
       "history",
+      "history-redact",
       "activity",
       "restore",
       "update-many",
@@ -429,6 +430,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("cal:Alias for calendar");
     expect(script).toContain("context:Show a token-efficient project context snapshot");
     expect(script).toContain("ctx:Alias for context");
+    expect(script).toContain("history-redact:Redact sensitive literals/patterns and recompute history hashes");
     expect(script).toContain("notes:List or add notes for an item");
     expect(script).toContain("learnings:List or add learnings for an item");
     expect(script).toContain("deps:Show dependency relationships for an item");
@@ -582,6 +584,7 @@ describe("generateFishScript", () => {
       ["contracts", "machine-readable command and schema contracts"],
       ["health", "project tracker health"],
       ["stats", "project tracker statistics"],
+      ["history-redact", "Redact sensitive literals/patterns and recompute history hashes"],
     ] as [string, string][]) {
       expect(script).toContain(`-a ${cmd}`);
       expect(script).toContain(desc);

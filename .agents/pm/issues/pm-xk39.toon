@@ -2,11 +2,12 @@ id: pm-xk39
 title: Add audited history-stream redaction command
 description: "Implement a first-class pm mutation for redacting sensitive strings from append-only history streams without hand-editing JSONL files, preserving replay integrity by recomputing affected history hashes or recording a verifiable redaction marker. Reopened because the 2026-05-09 audit still found private infrastructure paths in historical JSONL streams while current item files are mostly sanitized."
 type: Issue
-status: open
+status: in_progress
 priority: 1
 tags[5]: history,pm-cli,privacy,redaction,security
 created_at: "2026-05-03T13:34:41.813Z"
-updated_at: "2026-05-17T10:33:15.295Z"
+updated_at: "2026-05-17T12:23:38.188Z"
+assignee: codex-agent
 author: codex-audit
 acceptance_criteria: A supported pm command can redact configured literals/patterns from item files and history streams; history drift validation remains meaningful after redaction; redaction operations are themselves auditable; secret scans can include history streams without false failures from known private operations paths.
 parent: pm-rnpb
@@ -15,7 +16,7 @@ expected_result: Expected closure outcome normalized from closed status; existin
 actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-03T13:34:41.813Z",codex-audit,null
-comments[14]{created_at,author,text}:
+comments[16]{created_at,author,text}:
   "2026-05-03T13:34:41.813Z",codex-audit,"Duplicate-check evidence: pm search history stream redaction command redact private path history drift --limit 10 found only closed history/security items; current audit discovered remaining private remote paths in historical JSONL streams after current item docs were sanitized."
   "2026-05-09T11:21:19.310Z",codex-agent,"2026-05-09 duplicate-check evidence: pm search tracker history privacy redaction private paths --limit 10 found this existing item as the canonical match. Current scan found no raw IP/password/token values in non-history tracked files; current pm item files only mention Sentry token variable names, but historical JSONL streams still include private remote paths from older telemetry operations. Do not hand-edit history; implement audited redaction support or migrate history safely."
   "2026-05-09T11:46:59.452Z",codex-agent,"Evidence 2026-05-09: privacy scan confirmed current tracked source/docs/workflows and current item files do not contain raw host/IP/password/token values from this request, but older append-only history streams still contain private infrastructure paths. This remains open because current pm policy forbids direct history rewrites; next work must add an audited redaction command or equivalent safe migration."
@@ -30,7 +31,13 @@ comments[14]{created_at,author,text}:
   "2026-05-17T00:05:14.137Z",codex-agent,"Privacy audit 2026-05-17: read-only sub-agent scan ran tracked-file and pm-history checks including scripts/check-secrets, private IPv4 patterns, absolute /home or /Users paths, user@host literals, credential assignment patterns, and scripts/prod tracking. Result: no new raw credential/password/private-IP/user@host/home-path leak found in tracked tree; git ls-files scripts/prod returned empty. Known history drift remains on pm-54d, pm-7vm9, pm-f3q4, pm-fdla, pm-mb4n, and pm-tq1; keeping this item as canonical rather than creating a duplicate."
   "2026-05-17T00:21:38.601Z",codex-agent,"Privacy sub-agent finding 2026-05-17: no raw credential/private key/private-IP/user@host leaks found; scripts/check-secrets passes and scripts/prod is untracked. Real tracked risk is legacy pm item/history text exposing operational telemetry/Sentry/Grafana metadata and token-scope details. Applying narrow redaction to current item files and mirrored history streams as authorized by user; product telemetry endpoint constants are left unchanged as intentional public config."
   "2026-05-17T09:28:30.316Z",codex-agent,"Startup pass cross-check 2026-05-17: reran tracked-file + .agents/pm privacy scans while validating pm-gt82 changes; no new key/private-token/private-IP/home-path leak introduced. Remaining hits are prior policy-discussion strings (for example user@private-host wording) rather than credential payloads."
-files[18]{path,scope,note}:
+  "2026-05-17T12:23:20.996Z",codex-agent,"Implementation complete: added native history-redact mutation command with repeatable --literal/--regex matchers, deterministic history rewrite, hash-chain recomputation, verification, audit marker entry (op=history_redact), ownership/lock governance checks, dry-run preview, MCP runAction support, CLI contracts exposure, and completion/docs updates. Added/updated coverage in unit+integration suites (history/activity, validate drift compatibility, contracts flags, completion command list/description, release-readiness help+coverage allowlist)."
+  "2026-05-17T12:23:27.941Z",codex-agent,"Verification evidence: (1) targeted tests passed: node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts (191/191). (2) isolated history-redact dogfood in temp PM_PATH passed with changed=true, replacements=2, audit_entry_added=true, pm history --verify ok=true, pm validate --check-history-drift status=ok. (3) node scripts/dogfood-package-first.mjs passed (ok=true, commands=54). (4) node scripts/check-secrets.mjs passed with no credential-like findings. (5) node scripts/release/sentry-telemetry-gate.mjs --telemetry-mode required --max-critical 10 --max-high 20 --json passed: Sentry critical=0 high=0 total=0; telemetry finish_error_rate_pct≈2.1 and failures_without_error_code_rows=0. (6) node scripts/release/run-gates.mjs --telemetry-mode required --json passed all checks including coverage 1330/1330 tests and 100% statement/branch/function/line coverage."
+notes[1]{created_at,author,text}:
+  "2026-05-17T12:23:36.671Z",codex-agent,"history-redact uses deterministic replay + hash recomputation for every entry, then appends a no-op history_redact audit marker to keep the operation itself discoverable in history output."
+learnings[1]{created_at,author,text}:
+  "2026-05-17T12:23:38.188Z",codex-agent,"Release security scans flag concrete /home examples even in docs/contracts examples; prefer [redacted_path_prefix] placeholders in public command docs and schema examples."
+files[30]{path,scope,note}:
   .agents/pm/chores/pm-tq1.toon,project,item-test-command-redaction-local-package-path
   .agents/pm/epics/pm-54d.toon,project,epic-comment-redaction-global-install-path
   .agents/pm/extensions/.managed-extensions.json,project,managed-extension-source-location-redaction
@@ -49,4 +56,27 @@ files[18]{path,scope,note}:
   .agents/pm/tasks/pm-f3q4.toon,project,item-comment-redaction-global-install-path
   .agents/pm/tasks/pm-fdla.toon,project,item-comment-redaction-global-install-path
   .agents/pm/tasks/pm-mb4n.toon,project,item-comment-redaction-host-user-literal
+  src/cli/commands/completion.ts,project,completion-surface-history-redact
+  src/cli/commands/contracts.ts,project,contracts-core-flag-resolution
+  src/cli/commands/history-redact.ts,project,audited-history-redaction-command
+  src/cli/commands/index.ts,project,history-redact-export-surface
+  src/cli/register-mutation.ts,project,history-redact-command-registration
+  src/mcp/server.ts,project,mcp-action-routing-history-redact
+  src/sdk/cli-contracts.ts,project,tool-actions-flags-schema-history-redact
+  tests/integration/release-readiness-runtime.spec.ts,project,release-runtime-help-and-coverage-alignment
+  tests/unit/completion-command.spec.ts,project,completion-command-coverage-history-redact
+  tests/unit/contracts-command.spec.ts,project,contracts-flags-coverage-history-redact
+  tests/unit/history-activity-command.spec.ts,project,history-redact-command-tests
+  tests/unit/validate-command.spec.ts,project,validate-history-drift-redaction-compatibility
+tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/run-gates.mjs --telemetry-mode required --json,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/sentry-telemetry-gate.mjs --telemetry-mode required --max-critical 10 --max-high 20 --json,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp9qxe7x-kkam1b,test,passed,"2026-05-17T12:17:00.196Z","2026-05-17T12:23:12.189Z","2026-05-17T12:23:12.189Z",null,null,5,0,0,null,null,null
+docs[2]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,agent-guidance-for-audited-history-redaction
+  docs/COMMANDS.md,project,document-history-redact-command-usage
 body: ""

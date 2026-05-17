@@ -168,6 +168,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "search",
   "reindex",
   "history",
+  "history-redact",
   "activity",
   "restore",
   "update",
@@ -246,6 +247,7 @@ export const PM_TOOL_ACTIONS = [
   "get",
   "search",
   "history",
+  "history-redact",
   "activity",
   "restore",
   "update",
@@ -700,6 +702,16 @@ export const HISTORY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--limit" },
   { flag: "--diff" },
   { flag: "--verify" },
+];
+
+export const HISTORY_REDACT_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--literal" },
+  { flag: "--regex" },
+  { flag: "--replacement" },
+  { flag: "--dry-run" },
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--force" },
 ];
 
 export const INIT_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1432,6 +1444,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(SEARCH_FLAG_CONTRACTS);
     case "history":
       return withSubcommandGlobalFlags(HISTORY_FLAG_CONTRACTS);
+    case "history-redact":
+      return withSubcommandGlobalFlags(HISTORY_REDACT_FLAG_CONTRACTS);
     case "activity":
       return withSubcommandGlobalFlags(ACTIVITY_FLAG_CONTRACTS);
     case "restore":
@@ -1657,6 +1671,9 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   autoPmContext: { type: "boolean" },
   diff: { type: "boolean" },
   verify: { type: "boolean" },
+  literal: { type: "array", items: { type: "string" } },
+  regex: { type: "array", items: { type: "string" } },
+  replacement: { type: "string" },
   timeout: { anyOf: [{ type: "string" }, { type: "number" }] },
   validateClose: { type: "string", enum: ["off", "warn", "strict"] },
   checkMetadata: { type: "boolean" },
@@ -1958,6 +1975,11 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   },
   reindex: { optional: ["mode", "progress"] },
   history: { required: ["id"], optional: ["limit", "diff", "verify"] },
+  "history-redact": {
+    required: ["id"],
+    optional: ["literal", "regex", "replacement", "dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+    anyOfRequired: [["literal"], ["regex"]],
+  },
   activity: { optional: ACTIVITY_CONTRACT_PARAMETER_KEYS },
   restore: { required: ["id", "target"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   update: { required: ["id"], optional: UPDATE_CONTRACT_PARAMETER_KEYS },
@@ -2418,6 +2440,19 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   latest: {
     description: "Number of most recent comments to include per item in comments-audit output (use 0 for summary-only item rows).",
     examples: [0, 1, "3"],
+  },
+  literal: {
+    description: "Repeatable literal matcher used by history-redact to scrub exact string values.",
+    examples: ["[redacted_path_prefix]/private/path"],
+  },
+  regex: {
+    description:
+      "Repeatable regex matcher used by history-redact. Accepts either /pattern/flags or a raw pattern (global mode is auto-enabled).",
+    examples: ["/192\\\\.168\\\\.[0-9.]+/g", "token=[A-Za-z0-9_-]+"],
+  },
+  replacement: {
+    description: 'Replacement text used by history-redact (defaults to "[redacted]").',
+    examples: ["[scrubbed_path]"],
   },
   validateClose: {
     description: 'Close-time metadata validation mode ("off", "warn", or "strict").',

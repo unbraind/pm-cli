@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runClose } from "../../src/cli/commands/close.js";
+import { runHistoryRedact } from "../../src/cli/commands/history-redact.js";
 import { runInit } from "../../src/cli/commands/init.js";
 import { runValidate } from "../../src/cli/commands/validate.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
@@ -1188,6 +1189,34 @@ describe("runValidate", () => {
       expect(historyCheck.status).toBe("warn");
       const details = historyCheck.details as { counts: { unreadable_streams: number } };
       expect(details.counts.unreadable_streams).toBe(1);
+    });
+  });
+
+  it("keeps history drift checks green after audited redaction rewrites", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "validate-history-redact-drift");
+      const leakedPath = "/home/steve/private/drift";
+      context.runCli(
+        ["append", id, "--json", "--body", `drift ${leakedPath}`, "--author", "seed-author", "--message", "append drift payload"],
+        { expectJson: true },
+      );
+
+      const redaction = await runHistoryRedact(
+        id,
+        {
+          literal: leakedPath,
+          replacement: "[redacted_path]",
+          author: "seed-author",
+        },
+        { path: context.pmPath },
+      );
+      expect(redaction.changed).toBe(true);
+      expect(redaction.history.verify_ok).toBe(true);
+
+      const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
+      const historyCheck = checkByName(result, "history_drift");
+      expect(historyCheck.status).toBe("ok");
+      expect(result.warnings).not.toEqual(expect.arrayContaining(["validate_history_drift_hash_mismatches:1"]));
     });
   });
 

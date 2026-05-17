@@ -246,6 +246,9 @@ export function generateBashScript(
     "    history)",
     `      COMPREPLY=(${compgen("--limit --diff --verify --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
+    "    history-redact)",
+    `      COMPREPLY=(${compgen("--literal --regex --replacement --dry-run --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
+    "      ;;",
     "    activity)",
     `      COMPREPLY=(${compgen(ACTIVITY_FLAGS)})`,
     "      ;;",
@@ -339,6 +342,7 @@ _pm_commands() {
     'search:Search items with keyword, semantic, or hybrid modes'
     'reindex:Rebuild search artifacts'
     'history:Show item history entries'
+    'history-redact:Redact sensitive literals/patterns and recompute history hashes'
     'activity:Show recent activity across items'
     'restore:Restore an item to an earlier state'
     'update:Update item fields and metadata'
@@ -708,6 +712,18 @@ _pm() {
             '--limit[Max entries]:number' \\
             '--diff[Include changed-field patch summary]' \\
             '--verify[Verify history hash chain and replay integrity]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        history-redact)
+          _arguments \\
+            '--literal[Literal string matcher to redact from history/item payloads]:literal' \\
+            '--regex[Regex matcher to redact (/pattern/flags or raw pattern)]:regex' \\
+            '--replacement[Replacement text (defaults to [redacted])]:replacement' \\
+            '--dry-run[Preview redaction impact without writing files]' \\
+            '--author[Mutation author]:author' \\
+            '--message[Audit history message]:message' \\
+            '--force[Force ownership/lock override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1101,6 +1117,7 @@ complete -c pm -n __pm_no_subcommand -a get           -d 'Show item details by I
 complete -c pm -n __pm_no_subcommand -a search        -d 'Search items with keyword, semantic, or hybrid modes'
 complete -c pm -n __pm_no_subcommand -a reindex       -d 'Rebuild search artifacts'
 complete -c pm -n __pm_no_subcommand -a history       -d 'Show item history entries'
+complete -c pm -n __pm_no_subcommand -a history-redact -d 'Redact sensitive literals/patterns and recompute history hashes'
 complete -c pm -n __pm_no_subcommand -a activity      -d 'Show recent activity across items'
 complete -c pm -n __pm_no_subcommand -a restore       -d 'Restore an item to an earlier state'
 complete -c pm -n __pm_no_subcommand -a update        -d 'Update item fields and metadata'
@@ -1411,6 +1428,13 @@ complete -c pm -n '__fish_seen_subcommand_from reindex' -l progress -d 'Emit pro
 complete -c pm -n '__fish_seen_subcommand_from history'  -l limit -d 'Max history entries' -r
 complete -c pm -n '__fish_seen_subcommand_from history'  -l diff -d 'Include changed-field patch summary'
 complete -c pm -n '__fish_seen_subcommand_from history'  -l verify -d 'Verify history hash chain and replay integrity'
+complete -c pm -n '__fish_seen_subcommand_from history-redact' -l literal -d 'Literal string matcher to redact from history/item payloads' -r
+complete -c pm -n '__fish_seen_subcommand_from history-redact' -l regex -d 'Regex matcher to redact (/pattern/flags or raw pattern)' -r
+complete -c pm -n '__fish_seen_subcommand_from history-redact' -l replacement -d 'Replacement text (defaults to [redacted])' -r
+complete -c pm -n '__fish_seen_subcommand_from history-redact' -l dry-run -d 'Preview redaction impact without writing files'
+complete -c pm -n '__fish_seen_subcommand_from history-redact' -l author -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from history-redact' -l message -d 'Audit history message' -r
+complete -c pm -n '__fish_seen_subcommand_from history-redact' -l force -d 'Force ownership/lock override'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l id -d 'Filter by item ID' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l op -d 'Filter by history operation' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l author -d 'Filter by history author' -r
