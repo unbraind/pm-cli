@@ -2,13 +2,24 @@ id: pm-tzwy
 title: Drastically improve GitHub runner time and resource usage (free-tier only)
 description: "Current CI per-commit cost: 5 matrix jobs running ~11-12min each (~700s wall). Goal: cut total runner minutes 40-60% without losing test coverage, platform matrix, or quality gates. Constraint: free-tier GitHub features only - no paid runners, no GitHub Hosted Larger Runners. Approach: skip-on-doc-only, eliminate duplicate test runs, smaller PR matrix, tsbuildinfo incremental cache, parallelize gates into their own short job, cache vitest/lancedb/sentry caches between runs."
 type: Feature
-status: open
+status: in_progress
 priority: 0
 tags[6]: ci,cost,free-tier,github-actions,performance,pm-cli
 created_at: "2026-05-16T22:07:27.879Z"
-updated_at: "2026-05-16T23:47:41.693Z"
+updated_at: "2026-05-17T10:41:47.654Z"
 assignee: codex-agent
 author: maintainer-agent
 acceptance_criteria: "Average CI duration per push/PR cut by >=40%; total runner minutes per PR cut by >=50% on common docs-only or single-file PRs; full matrix still runs on main push; coverage gate, static quality gate, plugin smoke tests still gating; pnpm audit/security:scan still gating; no paid GitHub features used; CI is green on the change."
 parent: pm-rnpb
+comments[2]{created_at,author,text}:
+  "2026-05-17T10:33:05.353Z",codex-agent,"Execution start 2026-05-17: bootstrap complete (npm install -g ., pm --version, node -v, pnpm -v, pnpm build) and duplicate-check/orient commands rerun (pm context, pm search ci free-tier cache matrix gates artifact, pm list-open, pm list-in-progress). Active implementation slice is pm-27yz under this parent; releasing unrelated stale claims to keep in_progress/claim hygiene strict."
+  "2026-05-17T10:41:27.702Z",codex-agent,"Progress update 2026-05-17: completed pm-27yz implementation locally with parallelized CI gates architecture and full local verification stack green (focused contracts, typecheck, release gates with required telemetry/Sentry, dogfood, secret scan). Next step is commit/push and remote GitHub checks evidence."
+files[2]{path,scope,note}:
+  .github/workflows/ci.yml,project,parallel CI architecture via build foundation and gates jobs
+  tests/integration/ci-workflow-contract.spec.ts,project,CI workflow contract updated for split jobs and artifact flow
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/check-secrets.mjs,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/dogfood-package-first.mjs,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
 body: ""

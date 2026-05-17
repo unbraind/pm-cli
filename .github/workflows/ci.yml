@@ -20,8 +20,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build-foundation:
+    name: Build foundation (Ubuntu, Node 20)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@26f6d4f2c533a43e6b5da0b4a5dd983f98f7b49a # v6
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Restore TypeScript and Vitest caches
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: |
+            .cache/tsbuildinfo
+            .cache/vitest
+          key: pm-cli-validation-cache-${{ runner.os }}-node20-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}
+          restore-keys: |
+            pm-cli-validation-cache-${{ runner.os }}-node20-
+            pm-cli-validation-cache-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dist-node20-ubuntu
+          path: dist
+          if-no-files-found: error
+
   build-test:
-    name: Build/Test (${{ matrix.os }}, Node ${{ matrix.node }})
+    name: Test (${{ matrix.os }}, Node ${{ matrix.node }})
+    needs: build-foundation
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
@@ -59,19 +103,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Version policy check
+      - name: Download dist artifact
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: dist-node20-ubuntu
+          path: dist
+
+      - name: Dist artifact smoke check
         if: matrix.os == 'ubuntu-latest' && matrix.node == 20
-        run: pnpm version:check
-
-      - name: Secret leak scan
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
-        run: pnpm security:scan
-
-      - name: Build
-        run: pnpm build
-
-      - name: Typecheck
-        run: pnpm typecheck
+        run: node dist/cli.js --version
 
       - name: Test
         if: matrix.os != 'ubuntu-latest' || matrix.node != 20
@@ -79,37 +119,81 @@ jobs:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test
 
+  gates:
+    name: Gates (Ubuntu, Node 20)
+    needs: build-foundation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@26f6d4f2c533a43e6b5da0b4a5dd983f98f7b49a # v6
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Restore TypeScript and Vitest caches
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: |
+            .cache/tsbuildinfo
+            .cache/vitest
+          key: pm-cli-validation-cache-${{ runner.os }}-node20-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}
+          restore-keys: |
+            pm-cli-validation-cache-${{ runner.os }}-node20-
+            pm-cli-validation-cache-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download dist artifact
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: dist-node20-ubuntu
+          path: dist
+
+      - name: Version policy check
+        run: pnpm version:check
+
+      - name: Secret leak scan
+        run: pnpm security:scan
+
       - name: Test with coverage gate
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         env:
           PM_RUN_TESTS_SKIP_BUILD: "1"
         run: pnpm test:coverage
 
+      - name: Typecheck
+        run: pnpm typecheck
+
       - name: Static quality gate
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         run: pnpm quality:static
 
       - name: Compatibility migration gate
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         timeout-minutes: 6
         run: node scripts/release/compatibility-check.mjs --json
 
       - name: Packaging smoke check
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         run: npm pack --dry-run
 
       - name: npx tarball smoke check
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         run: pnpm smoke:npx
 
       - name: Claude Code plugin smoke
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
         run: node scripts/smoke-claude-plugin.mjs
 
       - name: Upload coverage artifact
-        if: always() && matrix.os == 'ubuntu-latest' && matrix.node == 20
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: coverage-node${{ matrix.node }}-${{ matrix.os }}
+          name: coverage-node20-ubuntu-latest
           path: coverage
           if-no-files-found: ignore

@@ -2,12 +2,24 @@ id: pm-27yz
 title: "CI: split quality+smoke gates into a parallel job, share dist via artifact"
 description: "Currently ubuntu/node20 runs build -> test -> coverage -> static-quality -> compatibility-check -> packaging-smoke -> npx-smoke -> plugin-smoke serially. Extract a build-once job that uploads dist + node_modules cache, then run build-test matrix in parallel with a 'gates' job that downloads dist and runs static/compat/packaging/smoke independently. Cuts ubuntu/20 critical path from ~12min to ~8min."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[4]: ci,parallelism,performance,pm-cli
 created_at: "2026-05-16T22:07:55.319Z"
-updated_at: "2026-05-16T22:07:55.319Z"
+updated_at: "2026-05-17T10:41:26.928Z"
+assignee: codex-agent
 author: maintainer-agent
 acceptance_criteria: build job uploads dist artifact; gates job downloads artifact and runs in parallel with matrix; ubuntu/20 critical path drops measurably; all gates still execute.
 parent: pm-tzwy
+comments[1]{created_at,author,text}:
+  "2026-05-17T10:41:26.928Z",codex-agent,"Local evidence 2026-05-17 pre-push: refactored CI into build-foundation + build-test + gates jobs. build-foundation now uploads dist-node20-ubuntu artifact; build-test and gates both download dist and run in parallel. Focused workflow contract tests passed (10 tests), pnpm typecheck passed, full release gate passed with 93 files / 1326 tests and 100 percent coverage, required Sentry/telemetry gate passed (Sentry critical=0 high=0 total=0, telemetry finish_error_rate_pct=2.12, missing_error_code_rows=0), dogfood temp-project run passed 54 commands, and check-secrets passed."
+files[2]{path,scope,note}:
+  .github/workflows/ci.yml,project,split build foundation and parallel gates using dist artifact
+  tests/integration/ci-workflow-contract.spec.ts,project,regression contract coverage for split CI jobs and artifact flow
+tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/check-secrets.mjs,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/dogfood-package-first.mjs,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
 body: ""

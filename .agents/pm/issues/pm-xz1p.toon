@@ -6,8 +6,7 @@ status: open
 priority: 2
 tags[4]: files,pm-cli,tracker-hygiene,validation
 created_at: "2026-05-03T13:55:10.634Z"
-updated_at: "2026-05-17T08:33:08.805Z"
-assignee: codex-agent
+updated_at: "2026-05-17T10:33:17.033Z"
 author: codex-audit
 acceptance_criteria: Missing linked paths from old src/*.ts locations are migrated or removed; orphaned tracked files are linked to relevant items or intentionally documented; pm validate --check-files --scan-mode tracked-all passes without file-link warnings.
 parent: pm-rnpb
