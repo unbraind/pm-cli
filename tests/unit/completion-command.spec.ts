@@ -51,6 +51,7 @@ describe("generateBashScript", () => {
       "delete",
       "append",
       "comments",
+      "plan",
       "notes",
       "learnings",
       "files",
@@ -431,6 +432,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("context:Show a token-efficient project context snapshot");
     expect(script).toContain("ctx:Alias for context");
     expect(script).toContain("history-redact:Redact sensitive literals/patterns and recompute history hashes");
+    expect(script).toContain("plan:Agent-optimized Plan item workflow");
     expect(script).toContain("notes:List or add notes for an item");
     expect(script).toContain("learnings:List or add learnings for an item");
     expect(script).toContain("deps:Show dependency relationships for an item");
@@ -439,7 +441,7 @@ describe("generateZshScript", () => {
 
   it("includes type completions for relevant flags", () => {
     const script = generateZshScript();
-    expect(script).toContain("Epic Feature Task Chore Issue Decision Event Reminder Milestone Meeting");
+    expect(script).toContain("Epic Feature Task Chore Issue Decision Event Reminder Milestone Meeting Plan");
     expect(script).toContain("0 1 2 3 4");
     expect(script).toContain("keyword semantic hybrid");
     expect(script).toContain("bash zsh fish");
@@ -585,6 +587,7 @@ describe("generateFishScript", () => {
       ["health", "project tracker health"],
       ["stats", "project tracker statistics"],
       ["history-redact", "Redact sensitive literals/patterns and recompute history hashes"],
+      ["plan", "Agent-optimized Plan workflow"],
     ] as [string, string][]) {
       expect(script).toContain(`-a ${cmd}`);
       expect(script).toContain(desc);
@@ -606,7 +609,7 @@ describe("generateFishScript", () => {
 
   it("includes type and status value completions", () => {
     const script = generateFishScript();
-    expect(script).toContain("Epic Feature Task Chore Issue Decision Event Reminder Milestone Meeting");
+    expect(script).toContain("Epic Feature Task Chore Issue Decision Event Reminder Milestone Meeting Plan");
     expect(script).toContain("0 1 2 3 4");
   });
 

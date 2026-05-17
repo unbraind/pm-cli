@@ -394,6 +394,168 @@ export function registerMutationCommands(program: Command): void {
       }
     });
 
+  const planCommand = program
+    .command("plan")
+    .description("Agent-optimized Plan item workflow: create, manage steps, link dependencies, approve, and materialize.")
+    .argument("[subcommand]", "Plan subcommand: create|show|add-step|update-step|complete-step|block-step|reorder-step|remove-step|link|unlink|decision|discovery|validation|resume|approve|materialize")
+    .argument("[id]", "Plan id (required for non-create subcommands)")
+    .argument("[stepRef]", "Step reference: stable id (plan-step-001) or order integer")
+    .argument("[reorderTo]", "New order integer for reorder-step")
+    .option("--title <value>", "Plan title")
+    .option("--description <value>", "Plan description")
+    .option("--scope <value>", "Short scope statement of the target change or investigation")
+    .option("--parent <value>", "Parent pm item id")
+    .option("--related <value>", "Related pm item ids (repeatable, csv-friendly)", collect)
+    .option("--blocks <value>", "Pm item ids this plan blocks (repeatable, csv-friendly)", collect)
+    .option("--blocked-by <value>", "Pm item ids that block this plan (repeatable, csv-friendly)", collect)
+    .option("--blocked_by <value>", "Alias for --blocked-by", collect)
+    .option("--harness <value>", "Plan harness provenance: codex|claude-code|cursor|generic")
+    .option("--mode <value>", "Plan mode: draft|research|review|approved|executing|paused|completed|superseded")
+    .option("--resume-context <value>", "Compact context summary for a future stateless agent")
+    .option("--resume_context <value>", "Alias for --resume-context")
+    .option("--tags <value>", "Comma-separated tags")
+    .option("--priority <value>", "Priority 0-4")
+    .option("--body <value>", "Plan item body")
+    .option("--claim", "Claim the plan on create for the author")
+    .option("--from-search <value>", "Record the search query that led to plan creation")
+    .option("--from_search <value>", "Alias for --from-search")
+    .option("--step-title <value>", "Step title for add-step / update-step")
+    .option("--step_title <value>", "Alias for --step-title")
+    .option("--step-body <value>", "Step body text")
+    .option("--step_body <value>", "Alias for --step-body")
+    .option("--step-owner <value>", "Step owner")
+    .option("--step_owner <value>", "Alias for --step-owner")
+    .option("--step-status <value>", "Step status: pending|in_progress|completed|blocked|skipped|superseded")
+    .option("--step_status <value>", "Alias for --step-status")
+    .option("--step-evidence <value>", "Step evidence text (used by update-step/complete-step)")
+    .option("--step_evidence <value>", "Alias for --step-evidence")
+    .option("--step-blocked-reason <value>", "Step blocked reason (required when blocking)")
+    .option("--step_blocked_reason <value>", "Alias for --step-blocked-reason")
+    .option("--step-replacement <value>", "Replacement reference for a superseded step")
+    .option("--step_replacement <value>", "Alias for --step-replacement")
+    .option("--depends-on <value>", "Pm item ids the step depends on (repeatable, csv-friendly)", collect)
+    .option("--depends_on <value>", "Alias for --depends-on", collect)
+    .option("--link <value>", "Pm item id to link (repeatable, csv-friendly)", collect)
+    .option("--link-kind <value>", "Link kind: related|blocks|blocked_by|depends_on|discovered_from|implements|verifies|supersedes")
+    .option("--link_kind <value>", "Alias for --link-kind")
+    .option("--link-note <value>", "Optional note for the link")
+    .option("--link_note <value>", "Alias for --link-note")
+    .option("--promote-to-item-dep", "Also add the linked id as a top-level item dependency when linking")
+    .option("--promote_to_item_dep", "Alias for --promote-to-item-dep")
+    .option("--allow-multiple-active", "Allow multiple steps to be in_progress at once")
+    .option("--allow_multiple_active", "Alias for --allow-multiple-active")
+    .option("--file <value>", "Step linked file path=<value>[,scope=project|global,note=<text>] (repeatable)", collect)
+    .option("--test <value>", "Step linked test command=<value>[,path=<value>,note=<text>] (repeatable)", collect)
+    .option("--doc <value>", "Step linked doc path=<value>[,scope=project|global,note=<text>] (repeatable)", collect)
+    .option("--decision-text <value>", "Decision log entry text")
+    .option("--decision_text <value>", "Alias for --decision-text")
+    .option("--decision-rationale <value>", "Decision log entry rationale")
+    .option("--decision_rationale <value>", "Alias for --decision-rationale")
+    .option("--decision-evidence <value>", "Decision log entry evidence")
+    .option("--decision_evidence <value>", "Alias for --decision-evidence")
+    .option("--discovery-text <value>", "Discovery log entry text")
+    .option("--discovery_text <value>", "Alias for --discovery-text")
+    .option("--validation-text <value>", "Validation log entry text")
+    .option("--validation_text <value>", "Alias for --validation-text")
+    .option("--validation-command <value>", "Validation log entry command")
+    .option("--validation_command <value>", "Alias for --validation-command")
+    .option("--validation-expected <value>", "Validation log entry expected outcome")
+    .option("--validation_expected <value>", "Alias for --validation-expected")
+    .option("--depth <value>", "Show depth: brief|standard|deep (default: brief)")
+    .option("--fields <value>", "Comma-separated field projection for show output")
+    .option("--steps <value>", "Comma-separated step ids/orders for materialize")
+    .option("--materialize-type <value>", "Item type for materialized steps (default: Task)")
+    .option("--materialize_type <value>", "Alias for --materialize-type")
+    .option("--materialize-parent <value>", "Parent item id for materialized children (default: the plan)")
+    .option("--materialize_parent <value>", "Alias for --materialize-parent")
+    .option("--materialize-tags <value>", "Comma-separated tags for materialized children")
+    .option("--materialize_tags <value>", "Alias for --materialize-tags")
+    .option("--author <value>", "Mutation author")
+    .option("--message <value>", "Mutation message")
+    .option("--force", "Force ownership override")
+    .action(async (subcommand: string | undefined, id: string | undefined, stepRef: string | undefined, reorderToken: string | undefined, options: Record<string, unknown>, command) => {
+      const globalOptions = getGlobalOptions(command);
+      const startedAt = Date.now();
+      const { runPlan, PLAN_SUBCOMMANDS } = await loadMutationCommandsModule();
+      const normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
+      if (!normalizedSubcommand) {
+        throw new PmCliError(
+          `pm plan requires a subcommand. Allowed: ${PLAN_SUBCOMMANDS.join(", ")}`,
+          EXIT_CODE.USAGE,
+          {
+            code: "missing_required_argument",
+            examples: [
+              'pm plan create --title "Refactor lock retry"',
+              "pm plan show pm-a1b2 --depth standard",
+              'pm plan add-step pm-a1b2 --step-title "Read lock.ts"',
+            ],
+          },
+        );
+      }
+      if (!PLAN_SUBCOMMANDS.includes(normalizedSubcommand as typeof PLAN_SUBCOMMANDS[number])) {
+        throw new PmCliError(
+          `Unknown pm plan subcommand "${subcommand}". Allowed: ${PLAN_SUBCOMMANDS.join(", ")}`,
+          EXIT_CODE.USAGE,
+        );
+      }
+      const planOptions: Record<string, unknown> = { ...options };
+      // Normalize alternate-snake/camel aliases that Commander parses as different keys.
+      const aliasPairs: Array<[string, string]> = [
+        ["blocked_by", "blockedBy"],
+        ["resume_context", "resumeContext"],
+        ["from_search", "fromSearch"],
+        ["step_title", "stepTitle"],
+        ["step_body", "stepBody"],
+        ["step_owner", "stepOwner"],
+        ["step_status", "stepStatus"],
+        ["step_evidence", "stepEvidence"],
+        ["step_blocked_reason", "stepBlockedReason"],
+        ["step_replacement", "stepReplacement"],
+        ["depends_on", "dependsOn"],
+        ["link_kind", "linkKind"],
+        ["link_note", "linkNote"],
+        ["promote_to_item_dep", "promoteToItemDep"],
+        ["allow_multiple_active", "allowMultipleActive"],
+        ["decision_text", "decisionText"],
+        ["decision_rationale", "decisionRationale"],
+        ["decision_evidence", "decisionEvidence"],
+        ["discovery_text", "discoveryText"],
+        ["validation_text", "validationText"],
+        ["validation_command", "validationCommand"],
+        ["validation_expected", "validationExpected"],
+        ["materialize_type", "materializeType"],
+        ["materialize_parent", "materializeParent"],
+        ["materialize_tags", "materializeTags"],
+      ];
+      for (const [snake, camel] of aliasPairs) {
+        if (planOptions[snake] !== undefined && planOptions[camel] === undefined) {
+          planOptions[camel] = planOptions[snake];
+        }
+      }
+      let reorderTo: number | undefined;
+      if (normalizedSubcommand === "reorder-step" && typeof reorderToken === "string") {
+        const parsed = Number.parseInt(reorderToken, 10);
+        if (!Number.isFinite(parsed)) {
+          throw new PmCliError(`reorder-step requires an integer new order, got "${reorderToken}"`, EXIT_CODE.USAGE);
+        }
+        reorderTo = parsed;
+      }
+      const result = await runPlan({
+        subcommand: normalizedSubcommand as typeof PLAN_SUBCOMMANDS[number],
+        id,
+        stepRef,
+        reorderTo,
+        options: planOptions as Record<string, never>,
+        global: globalOptions,
+      });
+      await invalidateSearchCachesForMutation(globalOptions, result);
+      printResult(result, globalOptions);
+      if (globalOptions.profile) {
+        printError(`profile:command=plan took_ms=${Date.now() - startedAt}`);
+      }
+    });
+  void planCommand;
+
   program
     .command("history-redact")
     .argument("<id>", "Item id")

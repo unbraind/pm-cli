@@ -27,6 +27,7 @@ Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 | Bootstrap | `init`, `config`, `health` | create and inspect tracker setup |
 | Triage | `context`, `search`, `list*`, `aggregate`, `dedupe-audit` | find work and audit decomposition |
 | Lifecycle | `create`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state |
+| Planning | `plan create`, `plan add-step`, `plan update-step`, `plan complete-step`, `plan link`, `plan approve`, `plan materialize` | agent-optimized living plans with ordered steps, evidence, decisions, validation, and materialization |
 | Logs | `comments`, `notes`, `learnings`, `comments-audit` | record progress and durable context |
 | Links | `files`, `docs`, `test`, `deps` | connect items to artifacts, tests, and relationships |
 | Verification | `test`, `test-all`, `test-runs`, `validate`, `gc` | run linked tests and repository checks |
@@ -227,6 +228,55 @@ pm restore <id> <timestamp-or-version>
 
 History is append-only. Restore appends a new restore event instead of rewriting old history.
 `history-redact` rewrites matching history payloads deterministically, recomputes hash chains, and appends an auditable `history_redact` marker entry when changes are applied.
+
+## Plan Workflow
+
+`pm plan` is the agent-optimized planning loop built on the first-class `Plan` item type. Plans persist ordered steps, evidence, decisions, discoveries, validation, and resume context. Each mutation appends a history entry; full hash-chain replay is preserved.
+
+```bash
+pm plan create --title "Refactor lock retry" --scope "Improve retry semantics" --harness claude-code --parent pm-epic1 --related pm-rel1,pm-rel2 --claim
+pm plan add-step <plan-id> --step-title "Read lock.ts" --step-body "Inspect retry path" --depends-on pm-task1
+pm plan update-step <plan-id> plan-step-001 --step-status in_progress --step-evidence "started reading lock.ts"
+pm plan complete-step <plan-id> plan-step-001 --step-evidence "lock.ts read; retry path captured"
+pm plan block-step <plan-id> plan-step-003 --step-blocked-reason "waiting on pm-task9 approval"
+pm plan link <plan-id> plan-step-002 --link pm-rel3 --link-kind discovered_from --link-note "found related util"
+pm plan decision <plan-id> --decision-text "Use exponential backoff" --decision-rationale "Avoid thundering herd"
+pm plan discovery <plan-id> --discovery-text "Found existing util in src/util/retry.ts"
+pm plan validation <plan-id> --validation-text "Coverage stays at 100%" --validation-command "node scripts/run-tests.mjs coverage"
+pm plan resume <plan-id> --resume-context "step 2 pending; tests still failing on retry path"
+pm plan approve <plan-id> --message "ready to execute"
+pm plan materialize <plan-id> --steps plan-step-002,plan-step-003 --materialize-type Task --materialize-parent pm-epic1
+pm plan show <plan-id> --depth brief
+pm plan show <plan-id> --depth standard
+pm plan show <plan-id> --depth deep
+```
+
+Subcommand cheatsheet:
+
+| Subcommand | Purpose |
+|------------|---------|
+| `create` | Create a Plan item with scope, harness, parent, related, blocked-by, and optional auto-claim |
+| `show` | Progressive-disclosure read (brief / standard / deep) with current step + next-action hints |
+| `add-step` | Append a step with title/body/owner/status/dependencies/files/tests/docs |
+| `update-step` | Patch one step (title, body, status, evidence, owner, blocked reason) |
+| `complete-step` | Shortcut for setting a step to `completed` with evidence |
+| `block-step` | Shortcut for setting a step to `blocked` with required `--step-blocked-reason` |
+| `reorder-step` | Move a step to a new 1-based order |
+| `remove-step` | Drop a step and renumber remaining steps |
+| `link` / `unlink` | Add or remove `linked_items` on a step (with optional `--promote-to-item-dep`) |
+| `decision` | Append a decision log entry (decision/rationale/evidence) |
+| `discovery` | Append a discovery log entry |
+| `validation` | Append a validation check (text/command/expected) |
+| `resume` | Replace the resume-context summary for stateless agents |
+| `approve` | Move `plan_mode` to `approved` (default) or any other mode via `--mode` |
+| `materialize` | Create real pm items (default `Task`) from selected steps with bidirectional links |
+
+Invariants:
+
+- Exactly one step is `in_progress` per Plan; pass `--allow-multiple-active` for explicit parallel branches.
+- Blocking a step requires `--step-blocked-reason` (or an already-recorded reason).
+- `materialize` adds `discovered_from` + `parent` to each new item and an `implements` link back on the source step plus a `child` dependency on the Plan.
+- Search keyword corpus includes plan_scope, step titles/bodies, decisions, discoveries, validation, and step linked items.
 
 ## Machine Contracts
 

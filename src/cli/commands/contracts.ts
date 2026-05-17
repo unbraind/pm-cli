@@ -68,6 +68,7 @@ import {
   PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS,
   PM_EXTENSION_SERVICE_NAME_CONTRACTS,
   PM_EXTENSION_TRUST_MODE_CONTRACTS,
+  PLAN_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   PM_TOOL_ACTIONS,
   PM_TOOL_PARAMETERS_SCHEMA,
@@ -939,6 +940,9 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   }
   if (command === "history-redact") {
     return HISTORY_REDACT_FLAG_CONTRACTS;
+  }
+  if (command === "plan") {
+    return PLAN_FLAG_CONTRACTS;
   }
   if (command === "restore") {
     return RESTORE_FLAG_CONTRACTS;

@@ -24,6 +24,7 @@ export const PM_OPTIONAL_TYPE_SUBDIRS = [
   "reminders",
   "milestones",
   "meetings",
+  "plans",
 ] as const;
 
 export const PM_REQUIRED_SUBDIRS = [...PM_CORE_REQUIRED_SUBDIRS, ...PM_OPTIONAL_TYPE_SUBDIRS] as const;
@@ -39,6 +40,7 @@ export const TYPE_TO_FOLDER: Record<BuiltinItemType, string> = {
   Reminder: "reminders",
   Milestone: "milestones",
   Meeting: "meetings",
+  Plan: "plans",
 };
 
 export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<string> = [
@@ -102,6 +104,14 @@ export const FRONT_MATTER_KEY_ORDER: ReadonlyArray<string> = [
   "test_runs",
   "docs",
   "close_reason",
+  "plan_mode",
+  "plan_scope",
+  "plan_harness",
+  "plan_resume_context",
+  "plan_validation",
+  "plan_decisions",
+  "plan_discoveries",
+  "plan_steps",
 ];
 
 type BuiltinGovernancePreset = Exclude<GovernancePreset, "custom">;

@@ -36,9 +36,83 @@ export function buildEventCorpus(item: ItemMetadata): string[] {
   );
 }
 
+export function buildPlanFlatCorpus(item: ItemMetadata): string {
+  const segments: Array<string | undefined> = [];
+  segments.push(item.plan_mode, item.plan_scope, item.plan_harness, item.plan_resume_context);
+  for (const step of item.plan_steps ?? []) {
+    segments.push(step.title, step.body, step.status, step.owner, step.evidence, step.blocked_reason, step.superseded_by);
+    for (const link of step.linked_items ?? []) {
+      segments.push(`${link.kind} ${link.id}`, link.note);
+    }
+    for (const file of step.files ?? []) segments.push(file.path, file.note);
+    for (const test of step.tests ?? []) segments.push(test.command, test.path, test.note);
+    for (const doc of step.docs ?? []) segments.push(doc.path, doc.note);
+  }
+  for (const decision of item.plan_decisions ?? []) {
+    segments.push(decision.decision, decision.rationale, decision.evidence);
+  }
+  for (const discovery of item.plan_discoveries ?? []) {
+    segments.push(discovery.text);
+  }
+  for (const check of item.plan_validation ?? []) {
+    segments.push(check.text, check.command, check.expected);
+  }
+  return segments.filter((segment): segment is string => typeof segment === "string" && segment.length > 0).join(" ");
+}
+
+export function buildPlanCorpus(item: ItemMetadata): Record<string, unknown> | undefined {
+  const steps = (item.plan_steps ?? []).map((step) =>
+    compactParts([
+      step.order,
+      step.id,
+      step.title,
+      step.body,
+      step.status,
+      step.owner,
+      step.evidence,
+      step.blocked_reason,
+      step.superseded_by,
+      (step.linked_items ?? []).map((link) => compactParts([link.kind, link.id, link.note])).join(" "),
+      (step.files ?? []).map((file) => compactParts([file.path, file.note])).join(" "),
+      (step.tests ?? []).map((test) => compactParts([test.command, test.path, test.note])).join(" "),
+      (step.docs ?? []).map((doc) => compactParts([doc.path, doc.note])).join(" "),
+    ]),
+  );
+  const decisions = (item.plan_decisions ?? []).map((entry) =>
+    compactParts([entry.decision, entry.rationale, entry.evidence, entry.step_id]),
+  );
+  const discoveries = (item.plan_discoveries ?? []).map((entry) => compactParts([entry.text, entry.step_id]));
+  const validation = (item.plan_validation ?? []).map((entry) =>
+    compactParts([entry.text, entry.command, entry.expected]),
+  );
+  const hasPlanContent =
+    item.plan_mode !== undefined ||
+    item.plan_scope !== undefined ||
+    item.plan_harness !== undefined ||
+    item.plan_resume_context !== undefined ||
+    steps.length > 0 ||
+    decisions.length > 0 ||
+    discoveries.length > 0 ||
+    validation.length > 0;
+  if (!hasPlanContent) {
+    return undefined;
+  }
+  return {
+    mode: item.plan_mode,
+    scope: item.plan_scope,
+    harness: item.plan_harness,
+    resume_context: item.plan_resume_context,
+    steps,
+    decisions,
+    discoveries,
+    validation,
+  };
+}
+
 export function buildSearchCorpus(document: ItemDocument): Record<string, unknown> {
   const item = document.metadata;
-  return {
+  const plan = buildPlanCorpus(item);
+  const corpus: Record<string, unknown> = {
     title: item.title,
     description: item.description,
     tags: item.tags,
@@ -54,6 +128,10 @@ export function buildSearchCorpus(document: ItemDocument): Record<string, unknow
       kind: entry.kind,
     })),
   };
+  if (plan) {
+    corpus.plan = plan;
+  }
+  return corpus;
 }
 
 function resolveSemanticCorpusInputMaxCharacters(candidate: number | undefined): number {

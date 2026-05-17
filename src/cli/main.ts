@@ -1341,6 +1341,7 @@ const MUTATION_COMMAND_NAMES = new Set([
   "files",
   "learnings",
   "notes",
+  "plan",
   "restore",
   "update",
   "update-many",

@@ -2,14 +2,17 @@ id: pm-aqat
 title: "Expose Plan workflow in SDK, MCP, plugins, docs, and dogfood"
 description: "Sync Plan item type and pm plan commands across agent-facing contracts, plugins, documentation, and isolated dogfood validation."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[9]: agent-ux,docs,dogfood,mcp,plan,planning,plugins,pm-cli,sdk
 created_at: "2026-05-17T08:50:26.532Z"
-updated_at: "2026-05-17T08:52:39.728Z"
+updated_at: "2026-05-17T13:46:52.958Z"
 author: codex-agent
 acceptance_criteria: "SDK contracts, MCP schemas, help/docs, Codex/Claude plugin assets, and dogfood all cover Plan and pm plan; examples map Codex/Claude/Cursor planning styles to pm-native Plan items; packed/dogfood validation proves discovery and readback."
 parent: pm-v7dj
+resolution: "All agent-facing surfaces now expose Plan: SDK contracts, MCP pm_plan tool, Codex/Claude plugin docs, docs/COMMANDS.md + AGENT_GUIDE.md, dogfood lifecycle assertions."
+expected_result: "Plan workflow discoverable via contracts, MCP, plugin assets, docs."
+actual_result: "Verified: pm contracts --command plan --flags-only returns full flag list; pm_plan tool callable through pm-mcp; dogfood-package-first.mjs adds 12 new plan-related assertions that pass."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-v7dj,parent,"2026-05-17T08:50:26.532Z",codex-agent,null
   pm-ze5g,blocks,"2026-05-17T08:50:26.532Z",codex-agent,null
@@ -33,4 +36,5 @@ docs[3]{path,scope,note}:
   plugins/pm-claude/commands/pm-planner.md,project,existing planner command docs to migrate
   plugins/pm-claude/skills/pm-planner/SKILL.md,project,existing planner skill docs to migrate
   plugins/pm-codex/README.md,project,Codex plugin Plan workflow docs target
+close_reason: "Plan workflow exposed in SDK cli-contracts (PLAN_FLAG_CONTRACTS + plan tool action schema), MCP server (pm_plan tool + plan action routing + instructions), Codex/Claude planner docs/skills, docs/COMMANDS.md + docs/AGENT_GUIDE.md, and dogfood-package-first.mjs (Plan lifecycle assertions). pm contracts --command plan --flags-only returns full flag list; pm plan registered as a top-level command; MCP pm_plan operational end-to-end."
 body: "Expose the Plan item type and `pm plan` workflow through agent-facing integration surfaces.\n\nScope:\n- Update SDK contracts and MCP/tool schemas so agents can discover Plan support and dedicated plan actions without reading full help text.\n- Update Codex and Claude plugin assets so slash commands/skills use `pm plan` rather than ad-hoc planner docs once the command exists.\n- Update docs/help/examples with progressive-disclosure recipes for agent harnesses.\n- Add dogfood coverage that creates a Plan, adds steps, links related/dependency pm items, approves/materializes selected steps, and verifies search/readback.\n\nAgent harness examples required:\n- Codex-style: create a self-contained Plan with progress, decisions, validation, and resume context; update steps as implementation proceeds.\n- Claude-style: read-only planning before approval; TaskCreate/TaskUpdate equivalent mapping to Plan steps.\n- Cursor-style: codebase research, clarifying questions, file path/code references, editable steps, and saved future context.\n\nOutput and documentation requirements:\n- Help should make `pm plan` the shortest path for agents needing durable plans.\n- Contracts should expose flags and JSON shapes for all `pm plan` subcommands.\n- MCP should surface plan actions with compact schema descriptions and deterministic response fields.\n- Plugin docs must avoid implying `Plan` is only a Claude/Codex artifact; it is a pm-native item type.\n- Dogfood should assert low-token `pm plan show --fields` output and search discoverability.\n\nAcceptance:\n- SDK/MCP/plugin/help/docs surfaces all mention Plan and `pm plan` consistently.\n- Packed CLI smoke or package-first dogfood covers the workflow.\n- Future agents can discover usage via `pm contracts`, `pm help`, plugin slash commands, and search."

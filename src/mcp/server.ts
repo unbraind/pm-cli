@@ -44,6 +44,7 @@ import {
   runLearnings,
   runList,
   runNotes,
+  runPlan,
   runRelease,
   runSearch,
   runStats,
@@ -223,6 +224,15 @@ const TOOLS: ToolDefinition[] = [
     name: "pm_contracts",
     description: "Inspect pm command, flag, schema, and availability contracts.",
     inputSchema: objectSchema({ options: { type: "object" } }),
+  },
+  {
+    name: "pm_plan",
+    description:
+      "Run agent-optimized Plan workflows. options.subcommand selects: create|show|add-step|update-step|complete-step|block-step|reorder-step|remove-step|link|unlink|decision|discovery|validation|resume|approve|materialize. Provide id for all non-create subcommands; provide stepRef for step lifecycle subcommands. Plans store agent-readable steps with dependencies, decisions, discoveries, validation, and resume context.",
+    inputSchema: objectSchema({
+      id: { type: "string", description: "Plan id (required for all subcommands except create)." },
+      options: { type: "object", description: "Plan options including subcommand, stepRef, stepStatus, link, depth, etc." },
+    }),
   },
 ];
 
@@ -509,6 +519,25 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runHistory(id ?? readRequiredString(options, "id"), options, global);
     case "history-redact":
       return runHistoryRedact(id ?? readRequiredString(options, "id"), options, global);
+    case "plan": {
+      const subcommand = readRequiredString(options, "subcommand");
+      const planRecord = options as Record<string, unknown>;
+      const reorderToken = planRecord.reorderTo;
+      const reorderTo =
+        typeof reorderToken === "number" && Number.isFinite(reorderToken)
+          ? reorderToken
+          : typeof reorderToken === "string" && reorderToken.trim().length > 0
+            ? Number.parseInt(reorderToken, 10)
+            : undefined;
+      return runPlan({
+        subcommand: subcommand as never,
+        id: typeof id === "string" ? id : typeof planRecord.id === "string" ? (planRecord.id as string) : undefined,
+        stepRef: typeof planRecord.stepRef === "string" ? (planRecord.stepRef as string) : undefined,
+        reorderTo,
+        options: options as never,
+        global,
+      });
+    }
     case "stats":
       return runStats(global);
     case "append":
@@ -540,6 +569,7 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_validate: (args) => runAction({ ...args, action: "validate" }),
   pm_health: (args) => runAction({ ...args, action: "health" }),
   pm_contracts: (args) => runAction({ ...args, action: "contracts" }),
+  pm_plan: (args) => runAction({ ...args, action: "plan" }),
 };
 
 function resultContent(result: unknown): Record<string, unknown> {
@@ -581,7 +611,8 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
       instructions:
         "You have access to native pm CLI tools for git-based project management. " +
         "Use pm_context or pm_search before creating new work. " +
-        "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_update, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_test, pm_validate, pm_health, pm_contracts) over pm_run when they cover the operation. " +
+        "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_update, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_test, pm_validate, pm_health, pm_contracts, pm_plan) over pm_run when they cover the operation. " +
+        "Use pm_plan for agent harness Plan workflows: it provides Codex/Claude/Cursor-style planning with durable steps, dependencies, decisions, discoveries, validation, and materialization. " +
         "Use pm_run with an explicit action for package-owned operations (calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume), plus activity, aggregate, history, stats, append, notes, learnings, test-all, and gc. " +
         "Use history-redact for audited history-stream redaction workflows. " +
         "Set author to 'claude-code-agent' on all mutations. " +

@@ -358,6 +358,118 @@ try {
   }
   const semanticDogfood = runSemanticDogfoodProbe();
 
+  const planCreate = run("plan create", [
+    "plan",
+    "create",
+    "--title",
+    "Dogfood plan workflow",
+    "--scope",
+    "End-to-end Plan lifecycle dogfood",
+    "--harness",
+    "claude-code",
+    "--parent",
+    id,
+  ]);
+  const planId = planCreate?.plan?.id;
+  assert(typeof planId === "string" && planId.length > 0, "plan create did not return a plan id");
+  const planAddStep1 = run("plan add-step 1", [
+    "plan",
+    "add-step",
+    planId,
+    "--step-title",
+    "Investigate dogfood path",
+    "--step-body",
+    "Walk the dogfood lifecycle",
+  ]);
+  assert(planAddStep1?.step?.id === "plan-step-001", "plan add-step 1 did not assign plan-step-001");
+  const planAddStep2 = run("plan add-step 2", [
+    "plan",
+    "add-step",
+    planId,
+    "--step-title",
+    "Materialize follow-up Task",
+    "--depends-on",
+    id,
+  ]);
+  assert(planAddStep2?.step?.id === "plan-step-002", "plan add-step 2 did not assign plan-step-002");
+  const planUpdateStep = run("plan update-step", [
+    "plan",
+    "update-step",
+    planId,
+    "plan-step-001",
+    "--step-status",
+    "in_progress",
+    "--step-evidence",
+    "starting investigation",
+  ]);
+  assert(planUpdateStep?.step?.status === "in_progress", "plan update-step did not move plan-step-001 to in_progress");
+  const planCompleteStep = run("plan complete-step", [
+    "plan",
+    "complete-step",
+    planId,
+    "plan-step-001",
+    "--step-evidence",
+    "investigation complete",
+  ]);
+  assert(planCompleteStep?.step?.status === "completed", "plan complete-step did not mark plan-step-001 completed");
+  const planDecision = run("plan decision", [
+    "plan",
+    "decision",
+    planId,
+    "--decision-text",
+    "Promote plan-step-002 into a real Task",
+    "--decision-rationale",
+    "Dogfood requires materialization",
+  ]);
+  assert(Array.isArray(planDecision?.plan?.decisions) && planDecision.plan.decisions.length >= 1, "plan decision did not append decision entry");
+  const planDiscovery = run("plan discovery", [
+    "plan",
+    "discovery",
+    planId,
+    "--discovery-text",
+    "Existing dogfood helper covers Plan smoke",
+  ]);
+  assert(Array.isArray(planDiscovery?.plan?.discoveries) && planDiscovery.plan.discoveries.length >= 1, "plan discovery did not append discovery entry");
+  const planValidation = run("plan validation", [
+    "plan",
+    "validation",
+    planId,
+    "--validation-text",
+    "history --verify must remain ok",
+    "--validation-command",
+    "pm history <plan-id> --verify",
+  ]);
+  assert(Array.isArray(planValidation?.plan?.validation) && planValidation.plan.validation.length >= 1, "plan validation did not append validation entry");
+  const planResume = run("plan resume", [
+    "plan",
+    "resume",
+    planId,
+    "--resume-context",
+    "step 2 pending; materialize next",
+  ]);
+  assert(planResume?.plan?.resume_context?.includes("step 2 pending"), "plan resume did not store resume_context");
+  const planApprove = run("plan approve", ["plan", "approve", planId]);
+  assert(planApprove?.plan?.mode === "approved", "plan approve did not flip plan_mode to approved");
+  const planMaterialize = run("plan materialize", [
+    "plan",
+    "materialize",
+    planId,
+    "--steps",
+    "plan-step-002",
+    "--materialize-type",
+    "Task",
+    "--materialize-parent",
+    id,
+  ]);
+  assert(Array.isArray(planMaterialize?.materialized) && planMaterialize.materialized.length === 1, "plan materialize did not create one item");
+  const planShow = run("plan show deep", ["plan", "show", planId, "--depth", "deep"]);
+  assert(planShow?.plan?.steps?.length === 2, "plan show deep did not include steps array");
+  const planHistory = run("plan history verify", ["history", planId, "--verify"]);
+  assert(planHistory?.verification?.ok === true, "plan history hash chain failed to verify after lifecycle");
+  const planSearch = run("plan search corpus", ["search", "exponential dogfood", "--limit", "5"]);
+  assert(Array.isArray(planSearch?.items), "plan search did not return items array");
+  run("plan close", ["close", planId, "plan dogfood lifecycle complete", "--validate-close", "warn"]);
+
   run("linked test add", [
     "test",
     id,

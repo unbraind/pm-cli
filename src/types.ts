@@ -9,6 +9,7 @@ export const BUILTIN_ITEM_TYPE_VALUES = [
   "Reminder",
   "Milestone",
   "Meeting",
+  "Plan",
 ] as const;
 export const ITEM_TYPE_VALUES = BUILTIN_ITEM_TYPE_VALUES;
 export type BuiltinItemType = (typeof BUILTIN_ITEM_TYPE_VALUES)[number];
@@ -189,6 +190,109 @@ export interface CalendarEvent {
   recurrence?: RecurrenceRule;
 }
 
+export const PLAN_MODE_VALUES = [
+  "draft",
+  "research",
+  "review",
+  "approved",
+  "executing",
+  "paused",
+  "completed",
+  "superseded",
+] as const;
+export type PlanMode = (typeof PLAN_MODE_VALUES)[number];
+
+export const PLAN_STEP_STATUS_VALUES = [
+  "pending",
+  "in_progress",
+  "completed",
+  "blocked",
+  "skipped",
+  "superseded",
+] as const;
+export type PlanStepStatus = (typeof PLAN_STEP_STATUS_VALUES)[number];
+
+export const PLAN_HARNESS_VALUES = ["codex", "claude-code", "cursor", "generic"] as const;
+export type PlanHarness = (typeof PLAN_HARNESS_VALUES)[number];
+
+export const PLAN_STEP_LINK_KIND_VALUES = [
+  "related",
+  "blocks",
+  "blocked_by",
+  "depends_on",
+  "discovered_from",
+  "implements",
+  "verifies",
+  "supersedes",
+] as const;
+export type PlanStepLinkKind = (typeof PLAN_STEP_LINK_KIND_VALUES)[number];
+
+export interface PlanStepLink {
+  id: string;
+  kind: PlanStepLinkKind;
+  note?: string;
+  required_before_step?: boolean;
+}
+
+export interface PlanStepFile {
+  path: string;
+  scope?: LinkScope;
+  note?: string;
+}
+
+export interface PlanStepTest {
+  command?: string;
+  path?: string;
+  note?: string;
+}
+
+export interface PlanStepDoc {
+  path: string;
+  scope?: LinkScope;
+  note?: string;
+}
+
+export interface PlanStep {
+  id: string;
+  order: number;
+  title: string;
+  body?: string;
+  status: PlanStepStatus;
+  owner?: string;
+  evidence?: string;
+  blocked_reason?: string;
+  superseded_by?: string;
+  linked_items?: PlanStepLink[];
+  files?: PlanStepFile[];
+  tests?: PlanStepTest[];
+  docs?: PlanStepDoc[];
+  created_at: string;
+  updated_at: string;
+  completed_at?: string;
+}
+
+export interface PlanDecision {
+  ts: string;
+  author: string;
+  decision: string;
+  rationale?: string;
+  evidence?: string;
+  step_id?: string;
+}
+
+export interface PlanDiscovery {
+  ts: string;
+  author: string;
+  text: string;
+  step_id?: string;
+}
+
+export interface PlanValidationCheck {
+  text: string;
+  command?: string;
+  expected?: string;
+}
+
 export interface ItemTypeOptionDefinition {
   key: string;
   values: string[];
@@ -345,6 +449,14 @@ export interface ItemMetadata {
   test_runs?: ItemTestRunSummary[];
   docs?: LinkedDoc[];
   close_reason?: string;
+  plan_mode?: PlanMode;
+  plan_scope?: string;
+  plan_harness?: PlanHarness;
+  plan_steps?: PlanStep[];
+  plan_decisions?: PlanDecision[];
+  plan_discoveries?: PlanDiscovery[];
+  plan_validation?: PlanValidationCheck[];
+  plan_resume_context?: string;
   [key: string]: unknown;
 }
 

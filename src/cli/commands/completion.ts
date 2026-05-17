@@ -15,6 +15,7 @@ import {
   INIT_FLAG_CONTRACTS,
   LIST_FILTER_FLAG_CONTRACTS,
   NORMALIZE_FLAG_CONTRACTS,
+  PLAN_FLAG_CONTRACTS,
   PM_CORE_COMMAND_NAMES,
   SEARCH_FLAG_CONTRACTS,
   UPDATE_FLAG_CONTRACTS,
@@ -59,6 +60,9 @@ const SEARCH_FLAGS = toCompletionFlagString(SEARCH_FLAG_CONTRACTS);
 const HEALTH_FLAGS = toCompletionFlagString(HEALTH_FLAG_CONTRACTS);
 const INIT_FLAGS = toCompletionFlagString(INIT_FLAG_CONTRACTS);
 const CONTRACTS_FLAGS = toCompletionFlagString(CONTRACTS_FLAG_CONTRACTS);
+const PLAN_FLAGS = toCompletionFlagString(PLAN_FLAG_CONTRACTS);
+const PLAN_SUBCOMMANDS_LIST =
+  "create show add-step update-step complete-step block-step reorder-step remove-step link unlink decision discovery validation resume approve materialize";
 const COMPLETION_FLAGS = toCompletionFlagString(COMPLETION_FLAG_CONTRACTS);
 const COMPLETION_SHELL_CHOICES = `${COMPLETION_FLAGS} bash zsh fish`;
 const GUIDE_TOPIC_CHOICES = joinCompletionValues(listGuideTopicIds());
@@ -249,6 +253,9 @@ export function generateBashScript(
     "    history-redact)",
     `      COMPREPLY=(${compgen("--literal --regex --replacement --dry-run --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
+    "    plan)",
+    `      COMPREPLY=(${compgen(`${PLAN_SUBCOMMANDS_LIST} ${PLAN_FLAGS}`)})`,
+    "      ;;",
     "    activity)",
     `      COMPREPLY=(${compgen(ACTIVITY_FLAGS)})`,
     "      ;;",
@@ -343,6 +350,7 @@ _pm_commands() {
     'reindex:Rebuild search artifacts'
     'history:Show item history entries'
     'history-redact:Redact sensitive literals/patterns and recompute history hashes'
+    'plan:Agent-optimized Plan item workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)'
     'activity:Show recent activity across items'
     'restore:Restore an item to an earlier state'
     'update:Update item fields and metadata'
@@ -724,6 +732,31 @@ _pm() {
             '--author[Mutation author]:author' \\
             '--message[Audit history message]:message' \\
             '--force[Force ownership/lock override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        plan)
+          _arguments \\
+            '1:subcommand:(create show add-step update-step complete-step block-step reorder-step remove-step link unlink decision discovery validation resume approve materialize)' \\
+            '--title[Plan title]:title' \\
+            '--scope[Plan scope statement]:scope' \\
+            '--harness[Plan harness provenance]:harness:(codex claude-code cursor generic)' \\
+            '--mode[Plan mode]:mode:(draft research review approved executing paused completed superseded)' \\
+            '--resume-context[Resume context summary]:text' \\
+            '--step-title[Step title]:title' \\
+            '--step-status[Step status]:status:(pending in_progress completed blocked skipped superseded)' \\
+            '--step-evidence[Step evidence]:text' \\
+            '--depends-on[Pm item id step depends on]:id' \\
+            '--link[Pm item id to link]:id' \\
+            '--link-kind[Link kind]:kind:(related blocks blocked_by depends_on discovered_from implements verifies supersedes)' \\
+            '--depth[Show depth]:depth:(brief standard deep)' \\
+            '--steps[Step ids/orders for materialize]:steps' \\
+            '--materialize-type[Item type for materialized steps]:type' \\
+            '--allow-multiple-active[Allow multiple in_progress steps]' \\
+            '--promote-to-item-dep[Also add link as top-level item dependency]' \\
+            '--author[Mutation author]:author' \\
+            '--message[Mutation message]:message' \\
+            '--force[Force ownership override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1118,6 +1151,7 @@ complete -c pm -n __pm_no_subcommand -a search        -d 'Search items with keyw
 complete -c pm -n __pm_no_subcommand -a reindex       -d 'Rebuild search artifacts'
 complete -c pm -n __pm_no_subcommand -a history       -d 'Show item history entries'
 complete -c pm -n __pm_no_subcommand -a history-redact -d 'Redact sensitive literals/patterns and recompute history hashes'
+complete -c pm -n __pm_no_subcommand -a plan          -d 'Agent-optimized Plan workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)'
 complete -c pm -n __pm_no_subcommand -a activity      -d 'Show recent activity across items'
 complete -c pm -n __pm_no_subcommand -a restore       -d 'Restore an item to an earlier state'
 complete -c pm -n __pm_no_subcommand -a update        -d 'Update item fields and metadata'
@@ -1435,6 +1469,26 @@ complete -c pm -n '__fish_seen_subcommand_from history-redact' -l dry-run -d 'Pr
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l message -d 'Audit history message' -r
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l force -d 'Force ownership/lock override'
+complete -c pm -n '__fish_seen_subcommand_from plan' -a 'create show add-step update-step complete-step block-step reorder-step remove-step link unlink decision discovery validation resume approve materialize' -d 'Plan subcommand'
+complete -c pm -n '__fish_seen_subcommand_from plan' -l title -d 'Plan title' -r
+complete -c pm -n '__fish_seen_subcommand_from plan' -l scope -d 'Plan scope statement' -r
+complete -c pm -n '__fish_seen_subcommand_from plan' -l harness -d 'Plan harness provenance' -r -a 'codex claude-code cursor generic'
+complete -c pm -n '__fish_seen_subcommand_from plan' -l mode -d 'Plan mode' -r -a 'draft research review approved executing paused completed superseded'
+complete -c pm -n '__fish_seen_subcommand_from plan' -l resume-context -d 'Resume context summary' -r
+complete -c pm -n '__fish_seen_subcommand_from plan' -l step-title -d 'Step title' -r
+complete -c pm -n '__fish_seen_subcommand_from plan' -l step-status -d 'Step status' -r -a 'pending in_progress completed blocked skipped superseded'
+complete -c pm -n '__fish_seen_subcommand_from plan' -l step-evidence -d 'Step evidence' -r
+complete -c pm -n '__fish_seen_subcommand_from plan' -l depends-on -d 'Pm item id step depends on' -r
+complete -c pm -n '__fish_seen_subcommand_from plan' -l link -d 'Pm item id to link' -r
+complete -c pm -n '__fish_seen_subcommand_from plan' -l link-kind -d 'Link kind' -r -a 'related blocks blocked_by depends_on discovered_from implements verifies supersedes'
+complete -c pm -n '__fish_seen_subcommand_from plan' -l depth -d 'Show depth' -r -a 'brief standard deep'
+complete -c pm -n '__fish_seen_subcommand_from plan' -l steps -d 'Step ids/orders for materialize' -r
+complete -c pm -n '__fish_seen_subcommand_from plan' -l materialize-type -d 'Item type for materialized steps' -r
+complete -c pm -n '__fish_seen_subcommand_from plan' -l allow-multiple-active -d 'Allow multiple in_progress steps'
+complete -c pm -n '__fish_seen_subcommand_from plan' -l promote-to-item-dep -d 'Also add link as item dependency'
+complete -c pm -n '__fish_seen_subcommand_from plan' -l author -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from plan' -l message -d 'Mutation message' -r
+complete -c pm -n '__fish_seen_subcommand_from plan' -l force -d 'Force ownership override'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l id -d 'Filter by item ID' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l op -d 'Filter by history operation' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l author -d 'Filter by history author' -r

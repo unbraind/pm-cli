@@ -364,7 +364,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm context --from +0d --to +7d --format markdown --depth deep",
     ],
     tips: [
-      "High-level focus contains Epics/Features and low-level focus contains Tasks/Issues/Chores/Event/Reminder/Milestone/Meeting.",
+      "High-level focus contains Epics/Features and low-level focus contains Tasks/Issues/Chores/Decisions/Event/Reminder/Milestone/Meeting/Plan.",
       "When no open or in-progress work exists, blocked items are shown as fallback context.",
       "--depth brief (default) shows focus+agenda; standard adds hierarchy/activity/progress/workload; deep adds blockers/files/staleness/tests.",
       "--section overrides --depth and selects specific sections: hierarchy, activity, progress, blockers, files, workload, staleness, tests.",

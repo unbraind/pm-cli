@@ -112,6 +112,7 @@ describe("runStats", () => {
         Reminder: 0,
         Milestone: 0,
         Meeting: 0,
+        Plan: 0,
       });
       expect(stats.by_status).toEqual({
         draft: 0,
@@ -194,6 +195,7 @@ describe("runStats", () => {
         Reminder: 0,
         Milestone: 0,
         Meeting: 0,
+        Plan: 0,
       });
       expect(stats.by_status).toEqual({
         draft: 0,

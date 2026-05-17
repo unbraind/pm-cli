@@ -30,6 +30,18 @@ export { runInit } from "./init.js";
 export { runLearnings } from "./learnings.js";
 export { runList, type ListOptions } from "./list.js";
 export { runNotes } from "./notes.js";
+export {
+  runPlan,
+  PLAN_SUBCOMMANDS,
+  PLAN_SHOW_DEPTH_VALUES,
+  type PlanCommandOptions,
+  type PlanCommandResult,
+  type PlanDispatchInput,
+  type PlanResultPlan,
+  type PlanStepSummary,
+  type PlanShowDepth,
+  type PlanSubcommand,
+} from "./plan.js";
 export { runSearch } from "./search.js";
 export { runRestore } from "./restore.js";
 export { runStats } from "./stats.js";

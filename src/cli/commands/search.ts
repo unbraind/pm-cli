@@ -22,7 +22,7 @@ import {
   type VectorStoreConfig,
   type VectorStoreResolution,
 } from "../../core/search/vector-stores.js";
-import { buildEventCorpus, buildReminderCorpus } from "../../core/search/corpus.js";
+import { buildEventCorpus, buildPlanFlatCorpus, buildReminderCorpus } from "../../core/search/corpus.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
@@ -286,6 +286,7 @@ function collectExactPhraseFields(document: ItemDocument): string[] {
     buildReminderCorpus(item).join(" "),
     buildEventCorpus(item).join(" "),
     (item.dependencies ?? []).map((entry) => `${entry.id} ${entry.kind}`).join(" "),
+    buildPlanFlatCorpus(item),
   ];
 }
 
@@ -503,6 +504,7 @@ function scoreDocument(
       value: (item.dependencies ?? []).map((entry) => `${entry.id} ${entry.kind}`).join(" "),
       weight: tuning.dependencies_weight,
     },
+    { name: "plan", value: buildPlanFlatCorpus(item), weight: tuning.body_weight },
     { name: "linked_content", value: linkedCorpus, weight: tuning.linked_content_weight },
   ];
 

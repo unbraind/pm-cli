@@ -11,6 +11,14 @@ import type {
   LinkedFile,
   LinkedTest,
   LogNote,
+  PlanDecision,
+  PlanDiscovery,
+  PlanStep,
+  PlanStepDoc,
+  PlanStepFile,
+  PlanStepLink,
+  PlanStepStatus,
+  PlanValidationCheck,
   RecurrenceRule,
   Reminder,
 } from "../../types/index.js";
@@ -732,6 +740,190 @@ function sortDocs(values: LinkedDoc[] | undefined): LinkedDoc[] | undefined {
     });
 }
 
+function trimStringOrUndefined(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function normalizePlanStepLinks(value: unknown): PlanStepLink[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const out: PlanStepLink[] = [];
+  for (const entry of value) {
+    if (entry === null || typeof entry !== "object") continue;
+    const record = entry as Record<string, unknown>;
+    const id = trimStringOrUndefined(record.id);
+    const kind = trimStringOrUndefined(record.kind);
+    if (!id || !kind) continue;
+    const link: PlanStepLink = { id, kind: kind as PlanStepLink["kind"] };
+    const note = trimStringOrUndefined(record.note);
+    if (note) link.note = note;
+    if (record.required_before_step === true) link.required_before_step = true;
+    out.push(link);
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+function normalizePlanStepFiles(value: unknown): PlanStepFile[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const out: PlanStepFile[] = [];
+  for (const entry of value) {
+    if (entry === null || typeof entry !== "object") continue;
+    const record = entry as Record<string, unknown>;
+    const path = trimStringOrUndefined(record.path);
+    if (!path) continue;
+    const file: PlanStepFile = { path: normalizePathValue(path) };
+    if (record.scope === "project" || record.scope === "global") file.scope = record.scope;
+    const note = trimStringOrUndefined(record.note);
+    if (note) file.note = note;
+    out.push(file);
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+function normalizePlanStepTests(value: unknown): { command?: string; path?: string; note?: string }[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const out: { command?: string; path?: string; note?: string }[] = [];
+  for (const entry of value) {
+    if (entry === null || typeof entry !== "object") continue;
+    const record = entry as Record<string, unknown>;
+    const command = trimStringOrUndefined(record.command);
+    const path = trimStringOrUndefined(record.path);
+    if (!command && !path) continue;
+    const test: { command?: string; path?: string; note?: string } = {};
+    if (command) test.command = command;
+    if (path) test.path = normalizePathValue(path);
+    const note = trimStringOrUndefined(record.note);
+    if (note) test.note = note;
+    out.push(test);
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+function normalizePlanStepDocs(value: unknown): PlanStepDoc[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const out: PlanStepDoc[] = [];
+  for (const entry of value) {
+    if (entry === null || typeof entry !== "object") continue;
+    const record = entry as Record<string, unknown>;
+    const path = trimStringOrUndefined(record.path);
+    if (!path) continue;
+    const doc: PlanStepDoc = { path: normalizePathValue(path) };
+    if (record.scope === "project" || record.scope === "global") doc.scope = record.scope;
+    const note = trimStringOrUndefined(record.note);
+    if (note) doc.note = note;
+    out.push(doc);
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+function normalizePlanSteps(value: unknown): PlanStep[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const out: PlanStep[] = [];
+  for (const entry of value) {
+    if (entry === null || typeof entry !== "object") continue;
+    const record = entry as Record<string, unknown>;
+    const id = trimStringOrUndefined(record.id);
+    const title = trimStringOrUndefined(record.title);
+    const status = trimStringOrUndefined(record.status);
+    const orderRaw = record.order;
+    const order = typeof orderRaw === "number" && Number.isFinite(orderRaw) ? orderRaw : Number(orderRaw);
+    if (!id || !title || !status || !Number.isFinite(order)) continue;
+    const created_at = typeof record.created_at === "string" ? record.created_at : "";
+    const updated_at = typeof record.updated_at === "string" ? record.updated_at : "";
+    if (!created_at || !updated_at) continue;
+    const step: PlanStep = {
+      id,
+      order,
+      title,
+      status: status as PlanStepStatus,
+      created_at,
+      updated_at,
+    };
+    const body = trimStringOrUndefined(record.body);
+    if (body) step.body = body;
+    const owner = trimStringOrUndefined(record.owner);
+    if (owner) step.owner = owner;
+    const evidence = trimStringOrUndefined(record.evidence);
+    if (evidence) step.evidence = evidence;
+    const blockedReason = trimStringOrUndefined(record.blocked_reason);
+    if (blockedReason) step.blocked_reason = blockedReason;
+    const supersededBy = trimStringOrUndefined(record.superseded_by);
+    if (supersededBy) step.superseded_by = supersededBy;
+    const completedAt = typeof record.completed_at === "string" ? record.completed_at : undefined;
+    if (completedAt && completedAt.length > 0) step.completed_at = completedAt;
+    const links = normalizePlanStepLinks(record.linked_items);
+    if (links) step.linked_items = links;
+    const files = normalizePlanStepFiles(record.files);
+    if (files) step.files = files;
+    const tests = normalizePlanStepTests(record.tests);
+    if (tests) step.tests = tests;
+    const docs = normalizePlanStepDocs(record.docs);
+    if (docs) step.docs = docs;
+    out.push(step);
+  }
+  out.sort((left, right) => left.order - right.order);
+  return out.length > 0 ? out : undefined;
+}
+
+function normalizePlanDecisions(value: unknown): PlanDecision[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const out: PlanDecision[] = [];
+  for (const entry of value) {
+    if (entry === null || typeof entry !== "object") continue;
+    const record = entry as Record<string, unknown>;
+    const ts = typeof record.ts === "string" ? record.ts : "";
+    const author = typeof record.author === "string" ? record.author : "";
+    const decision = trimStringOrUndefined(record.decision);
+    if (!ts || !author || !decision) continue;
+    const item: PlanDecision = { ts, author, decision };
+    const rationale = trimStringOrUndefined(record.rationale);
+    if (rationale) item.rationale = rationale;
+    const evidence = trimStringOrUndefined(record.evidence);
+    if (evidence) item.evidence = evidence;
+    const stepId = trimStringOrUndefined(record.step_id);
+    if (stepId) item.step_id = stepId;
+    out.push(item);
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+function normalizePlanDiscoveries(value: unknown): PlanDiscovery[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const out: PlanDiscovery[] = [];
+  for (const entry of value) {
+    if (entry === null || typeof entry !== "object") continue;
+    const record = entry as Record<string, unknown>;
+    const ts = typeof record.ts === "string" ? record.ts : "";
+    const author = typeof record.author === "string" ? record.author : "";
+    const text = trimStringOrUndefined(record.text);
+    if (!ts || !author || !text) continue;
+    const item: PlanDiscovery = { ts, author, text };
+    const stepId = trimStringOrUndefined(record.step_id);
+    if (stepId) item.step_id = stepId;
+    out.push(item);
+  }
+  return out.length > 0 ? out : undefined;
+}
+
+function normalizePlanValidation(value: unknown): PlanValidationCheck[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const out: PlanValidationCheck[] = [];
+  for (const entry of value) {
+    if (entry === null || typeof entry !== "object") continue;
+    const record = entry as Record<string, unknown>;
+    const text = trimStringOrUndefined(record.text);
+    if (!text) continue;
+    const item: PlanValidationCheck = { text };
+    const command = trimStringOrUndefined(record.command);
+    if (command) item.command = command;
+    const expected = trimStringOrUndefined(record.expected);
+    if (expected) item.expected = expected;
+    out.push(item);
+  }
+  return out.length > 0 ? out : undefined;
+}
+
 function normalizeTypeOptions(values: Record<string, string> | undefined): Record<string, string> | undefined {
   if (!values) {
     return undefined;
@@ -851,6 +1043,14 @@ export function normalizeFrontMatter(
     regression: frontMatter.regression,
     customer_impact: frontMatter.customer_impact?.trim() || undefined,
     close_reason: frontMatter.close_reason || undefined,
+    plan_mode: trimStringOrUndefined(frontMatter.plan_mode) as ItemMetadata["plan_mode"],
+    plan_scope: trimStringOrUndefined(frontMatter.plan_scope),
+    plan_harness: trimStringOrUndefined(frontMatter.plan_harness) as ItemMetadata["plan_harness"],
+    plan_resume_context: trimStringOrUndefined(frontMatter.plan_resume_context),
+    plan_steps: normalizePlanSteps(frontMatter.plan_steps),
+    plan_decisions: normalizePlanDecisions(frontMatter.plan_decisions),
+    plan_discoveries: normalizePlanDiscoveries(frontMatter.plan_discoveries),
+    plan_validation: normalizePlanValidation(frontMatter.plan_validation),
   };
   const sourceRecord = frontMatter as unknown as Record<string, unknown>;
   for (const [key, value] of Object.entries(sourceRecord)) {

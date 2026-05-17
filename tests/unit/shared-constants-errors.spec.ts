@@ -35,6 +35,7 @@ describe("shared constants and errors contracts", () => {
       "reminders",
       "milestones",
       "meetings",
+      "plans",
     ]);
     expect(TYPE_TO_FOLDER).toEqual({
       Epic: "epics",
@@ -47,6 +48,7 @@ describe("shared constants and errors contracts", () => {
       Reminder: "reminders",
       Milestone: "milestones",
       Meeting: "meetings",
+      Plan: "plans",
     });
     expect(FRONT_MATTER_KEY_ORDER).toEqual([
       "id",
@@ -109,6 +111,14 @@ describe("shared constants and errors contracts", () => {
       "test_runs",
       "docs",
       "close_reason",
+      "plan_mode",
+      "plan_scope",
+      "plan_harness",
+      "plan_resume_context",
+      "plan_validation",
+      "plan_decisions",
+      "plan_discoveries",
+      "plan_steps",
     ]);
     expect(EMPTY_CANONICAL_DOCUMENT).toEqual({
       metadata: {},

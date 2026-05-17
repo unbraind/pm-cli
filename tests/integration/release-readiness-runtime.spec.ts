@@ -1667,6 +1667,7 @@ describe("release readiness runtime coverage", () => {
       "src/cli/commands/init-agent-guidance.ts",
       "src/cli/commands/metadata-normalizers.ts",
       "src/cli/commands/normalize.ts",
+      "src/cli/commands/plan.ts",
       "src/cli/commands/templates.ts",
       "src/cli/commands/test-runs.ts",
       "src/cli/commands/update-many.ts",
