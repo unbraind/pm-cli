@@ -196,7 +196,7 @@ function buildRedactionRules(
         code: "missing_required_argument",
         required: "Provide --literal <value> and/or --regex <pattern>.",
         examples: [
-          'pm history-redact pm-a1b2 --literal "/home/alice/private"',
+          'pm history-redact pm-a1b2 --literal "[redacted_path_prefix]/private"',
           'pm history-redact pm-a1b2 --regex "/192\\\\.168\\\\.[0-9.]+/g" --replacement "[scrubbed_ip]"',
         ],
       },
