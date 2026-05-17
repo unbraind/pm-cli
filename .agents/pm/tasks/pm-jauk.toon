@@ -1,0 +1,38 @@
+id: pm-jauk
+title: Add built-in Plan item type and storage/search integration
+description: "Add Plan as a core pm item type with normal storage, history, search, contracts, and lowercase plan resolution."
+type: Task
+status: open
+priority: 1
+tags[7]: agent-ux,history,item-types,plan,planning,pm-cli,search
+created_at: "2026-05-17T08:49:41.571Z"
+updated_at: "2026-05-17T08:52:39.753Z"
+author: codex-agent
+acceptance_criteria: Plan is a built-in item type; --type plan resolves to Plan; Plan uses normal item storage/history; Plan appears in contracts/help/completion/list/context/stats; search indexes plan-specific fields; focused tests and sandboxed dogfood pass.
+parent: pm-v7dj
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-v7dj,parent,"2026-05-17T08:49:41.571Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-05-17T08:49:41.571Z",codex-agent,Child task created from pm-v7dj after online research and duplicate-check evidence recorded on parent. This slice isolates built-in type/storage/search integration before dedicated pm plan commands.
+  "2026-05-17T08:52:39.753Z",codex-agent,"Research evidence: Plan should be a built-in type because it can reuse normal item storage, history hash chains, dependencies, search, list/context/stats, and linked files/docs/tests. Linked implementation files and focused regression command for future work."
+files[17]{path,scope,note}:
+  src/cli/commands/completion.ts,project,Plan completion support
+  src/cli/commands/create.ts,project,Plan create support
+  src/cli/commands/update.ts,project,Plan metadata update support
+  src/cli/help-content.ts,project,Plan help guidance
+  src/cli/help-json-payload.ts,project,Plan help JSON/runtime schema guidance
+  src/core/item/item-format.ts,project,Plan metadata serialization
+  src/core/item/type-registry.ts,project,case-insensitive plan type resolution
+  src/core/search/corpus.ts,project,Plan fields in search corpus
+  src/core/shared/constants.ts,project,Plan folder mapping
+  src/types.ts,project,built-in Plan item type
+  tests/integration/help-runtime.spec.ts,project,Plan contracts/help runtime regression
+  tests/unit/completion-command.spec.ts,project,Plan shell completion regression
+  tests/unit/create-command.spec.ts,project,Plan create regression
+  tests/unit/search-command.spec.ts,project,Plan search regression
+  tests/unit/shared-constants-errors.spec.ts,project,Plan built-in constants regression
+  tests/unit/stats-command.spec.ts,project,Plan stats/list category regression
+  tests/unit/update-command.spec.ts,project,Plan update regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/shared-constants-errors.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/search-command.spec.ts tests/unit/stats-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused Plan item type/storage/search contracts
+body: "Implement the storage/runtime foundation for first-class plans.\n\nScope:\n- Add built-in item type `Plan` while allowing agents to type `--type plan` through the existing case-insensitive resolver.\n- Store Plan items in `.agents/pm/plans/` using the same TOON/front-matter/history mechanics as Epic, Feature, Task, etc.\n- Add strongly typed plan metadata fields or equivalent normalized metadata support: `plan_mode`, `plan_scope`, `plan_harness`, `plan_steps`, `plan_decisions`, `plan_discoveries`, `plan_validation`, and `plan_resume_context`.\n- Ensure Plan items participate in context/list/search/stats/validate/history like all other types.\n- Search indexing must include plan scope, step text, decisions, discoveries, validation, dependencies, linked files/docs/tests, comments, notes, and learnings.\n\nResearch constraints from parent:\n- Codex-style plans must be living, self-contained, validated, and resumable by a future stateless agent.\n- Claude/Cursor-style plan modes require read-only planning before approval, reviewable steps, and progress/status updates.\n- Reuse normal pm item history rather than inventing a sidecar plan artifact.\n\nImplementation hints:\n- Start at `src/types.ts` and `src/core/shared/constants.ts` for built-ins and folders.\n- Confirm `src/core/item/type-registry.ts` continues resolving lowercase `plan` to `Plan`.\n- Update settings/default folder initialization and any tests that assert exact built-in type lists or folder maps.\n- Update help/contracts/completion/runtime schema expectations to include Plan.\n\nAcceptance:\n- `pm create --type Plan ...` and `pm create --type plan ...` both create Plan items.\n- Plan items are written under the normal item store and have history streams.\n- `pm contracts --command create --flags-only --json` includes Plan in runtime schema types.\n- `pm search` can find Plan items by plan scope, step content, decisions, and linked item context.\n- Focused tests cover built-in constants, type registry resolution, create/update behavior, search corpus, stats/context/list behavior, and history preservation."

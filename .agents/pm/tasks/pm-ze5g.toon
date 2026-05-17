@@ -1,0 +1,30 @@
+id: pm-ze5g
+title: Implement pm plan command family for agent harness workflows
+description: "Add dedicated pm plan commands for Plan item creation, step lifecycle updates, dependency linking, approval, materialization, and progressive-disclosure reads."
+type: Task
+status: open
+priority: 1
+tags[7]: agent-ux,commands,dependencies,history,plan,planning,pm-cli
+created_at: "2026-05-17T08:50:06.874Z"
+updated_at: "2026-05-17T08:52:39.781Z"
+author: codex-agent
+acceptance_criteria: pm plan command family supports create/show/add-step/update-step/complete-step/block-step/reorder-step/link/approve/materialize/close; each mutation writes history; step links support related/dependency pm ids; outputs are low-token TOON plus deterministic JSON; focused tests cover command contracts and behavior.
+parent: pm-v7dj
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-jauk,blocks,"2026-05-17T08:50:06.874Z",codex-agent,null
+  pm-v7dj,parent,"2026-05-17T08:50:06.874Z",codex-agent,null
+comments[2]{created_at,author,text}:
+  "2026-05-17T08:50:06.874Z",codex-agent,Child task created from pm-v7dj. This slice depends on the built-in Plan type/storage foundation in pm-jauk.
+  "2026-05-17T08:52:39.781Z",codex-agent,"Research evidence: pm plan commands should mirror harness step lifecycle: Codex living plans, Claude TaskCreate/TaskUpdate style updates, and Cursor editable plans with code references. Linked command/contract files and focused regression command for future work."
+files[8]{path,scope,note}:
+  src/cli/commands/index.ts,project,export plan command
+  src/cli/main.ts,project,register pm plan command
+  src/cli/register-list-query.ts,project,plan projections/fields parity
+  src/mcp/server.ts,project,plan MCP action routing
+  src/sdk/cli-contracts.ts,project,plan action contracts
+  tests/integration/cli.integration.spec.ts,project,plan CLI workflow regression
+  tests/integration/release-readiness-runtime.spec.ts,project,plan help/runtime release-readiness regression
+  tests/unit/contracts-command.spec.ts,project,plan contract regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,focused pm plan command/contracts regression
+body: "Implement the dedicated agent-optimized command family for Plan item lifecycle and step mutations.\n\nScope:\n- Add `pm plan create|show|add-step|update-step|complete-step|block-step|reorder-step|link|approve|materialize|close`.\n- All commands must mutate normal Plan items through pm store/history APIs only.\n- Every step mutation must append a history entry and preserve deterministic before/after patches.\n- Default read output should be brief TOON for agents; JSON must expose stable machine-gating fields.\n\nHarness behavior to mirror:\n- Codex: durable living plan with progress, decision log, validation, and restartable context.\n- Claude Code: plan before editing, no implementation until approval, task-level create/update/readback semantics.\n- Cursor: codebase research, clarifying questions, editable plan steps, file paths/code references, saveable future context.\n\nCommand contract details:\n- `pm plan create --title ... --scope ... --parent pm-xxxx --related pm-yyyy --from-search \"query\"` creates a Plan item and records search/duplicate-check evidence.\n- `pm plan show <ID> --depth brief|standard|deep --fields ... --json` supports progressive disclosure.\n- `pm plan add-step <ID> --title ... --body ... --depends-on pm-xxxx --related pm-yyyy --file path=... --test command=... --doc path=...` appends a stable step id.\n- `pm plan update-step <ID> <STEP> --status ... --evidence ... --owner ...` patches one step.\n- `pm plan link <ID> --step <STEP> --related pm-xxxx --kind related|blocks|blocked_by|depends_on|discovered_from|implements|verifies` adds step-level context.\n- `pm plan approve <ID>` marks the plan approved for execution but does not automatically edit files.\n- `pm plan materialize <ID> --steps ... --type Task --parent ...` creates implementation items from plan steps and links them back.\n\nInvariants:\n- Exactly one `in_progress` step by default; `--allow-multiple-active` is explicit for parallel agent plans.\n- Blocked steps require linked blocked-by item or blocked reason.\n- Superseded steps require rationale and optional replacement step/item id.\n- Plan close requires implemented/materialized, superseded, canceled, or analysis-only evidence.\n\nAcceptance:\n- Agents can use one command family instead of raw metadata surgery for plan steps.\n- Commands are deterministic, script-friendly, and covered in SDK contracts.\n- Error messages give retry guidance for missing step ids, invalid status transitions, unsafe materialization, and non-Plan item ids.\n- Focused unit/integration tests cover command parsing, mutations, history entries, projections, and materialization."
