@@ -1,0 +1,23 @@
+id: pm-g2nd
+title: Build idempotent AGENTS/CLAUDE pm guidance detector and writer
+description: "Create the reusable logic that inspects root AGENTS.md and CLAUDE.md, decides whether core pm guidance is present, and appends or creates a stable marked guidance block without overwriting user content."
+type: Task
+status: open
+priority: 1
+tags[5]: agent-ux,bootstrap,docs,init,pm-cli
+created_at: "2026-05-17T08:59:13.994Z"
+updated_at: "2026-05-17T09:00:59.215Z"
+author: codex-agent
+acceptance_criteria: "Detector reports present/missing/outdated per AGENTS.md and CLAUDE.md; writer is idempotent; existing user content is preserved; missing files are created only on explicit approval/add mode; marked block can be updated by template version; unit tests cover present, missing, outdated, absent-file, and both-file scenarios."
+parent: pm-7t04
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-7t04,parent,"2026-05-17T08:59:13.994Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-05-17T08:59:13.994Z",codex-agent,Child task created from pm-7t04 detailed research. This slice isolates filesystem/template behavior before init prompt wiring.
+files[3]{path,scope,note}:
+  src/cli/commands/init.ts,project,detector writer integration point
+  src/core/fs/fs-utils.ts,project,atomic read write helpers for context docs
+  tests/unit/init-command.spec.ts,project,detector writer unit coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,planned detector writer unit regression
+body: "Research-backed design:\n- Scan repository root, not .agents/pm, for AGENTS.md and CLAUDE.md. Treat missing files as eligible targets only when the user explicitly asks to add guidance or approves creation.\n- Positive detection should require either a stable pm marker or a minimum set of command/workflow tokens: PM_AUTHOR, pm context, pm search, pm create, pm claim, pm files, pm docs, pm test, pm test --run, pm close, pm release.\n- Writer should append a concise marked section, for example <!-- pm-cli-guidance:start v1 --> ... <!-- pm-cli-guidance:end -->, and update only the marked block on future template-version changes.\n- Guidance content should be short enough for startup context: bootstrap, orient/search before create, claim/update, link files/docs/tests, evidence comments, linked test run, close/release, TOON/JSON guidance, and sandbox-safe tests.\n- Preserve existing line endings where practical and use atomic writes plus extension onWrite hooks if available in the chosen implementation path."

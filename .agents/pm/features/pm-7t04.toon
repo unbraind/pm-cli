@@ -1,0 +1,43 @@
+id: pm-7t04
+title: Add pm init checks for AGENTS/CLAUDE pm workflow guidance
+description: "Teach pm init to detect whether AGENTS.md and/or CLAUDE.md include core pm command/workflow guidance, ask before adding missing guidance, persist declined prompts, and expose an explicit init option to add the guidance later."
+type: Feature
+status: open
+priority: 1
+tags[5]: agent-ux,bootstrap,docs,init,pm-cli
+created_at: "2026-05-17T08:58:01.020Z"
+updated_at: "2026-05-17T09:03:03.303Z"
+author: codex-agent
+acceptance_criteria: pm init detects missing core pm guidance in AGENTS.md and/or CLAUDE.md; TTY init asks before modifying files; approval writes idempotent marked guidance; decline persists project state so future init runs do not ask; explicit pm init option can add guidance later; non-interactive runs do not block; settings/schema/contracts/help/docs/tests cover the behavior.
+parent: pm-rnpb
+dependencies[6]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,parent,"2026-05-17T08:58:01.020Z",codex-agent,null
+  pm-0nia,child,"2026-05-17T09:00:35.995Z",codex-agent,null
+  pm-1265,child,"2026-05-17T09:00:35.995Z",codex-agent,null
+  pm-8rjn,child,"2026-05-17T09:00:35.995Z",codex-agent,null
+  pm-b8rf,child,"2026-05-17T09:00:35.995Z",codex-agent,null
+  pm-g2nd,child,"2026-05-17T09:00:35.995Z",codex-agent,null
+comments[3]{created_at,author,text}:
+  "2026-05-17T08:58:01.020Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10; pm search \"AGENTS CLAUDE init workflow help\" --limit 10; pm list-open --limit 20; pm list-in-progress --limit 20; inspected pm-8wwl and pm-v7dj. No existing active item covers init-time AGENTS/CLAUDE guidance detection, approval, decline persistence, and later explicit add."
+  "2026-05-17T09:02:38.347Z",codex-agent,"Evidence: detailed codebase research captured in body; created child tasks pm-g2nd, pm-8rjn, pm-b8rf, pm-0nia, and pm-1265; linked planned implementation files, docs, and sandbox-safe verification commands. Bootstrap/build sanity passed before mutations: npm install -g ., pm --version 2026.5.14, node v25.9.0, pnpm 10.33.0, pnpm build."
+  "2026-05-17T09:03:03.303Z",codex-agent,"Validation evidence: pm validate --check-resolution --check-history-drift returned resolution ok and history_drift warn with 13 existing hash mismatches (pm-0kjv, pm-3akm, pm-54d, pm-7vm9, pm-8pzn, pm-f3q4, pm-fdla, pm-g8gj, pm-jkip, pm-lnq3, pm-mb4n, pm-q4jp, pm-tq1). New planning items were retrievable and linked; no implementation code was changed in this planning pass."
+notes[1]{created_at,author,text}:
+  "2026-05-17T08:58:01.020Z",codex-agent,"Planning parent for the requested feature. This item should stay open until implementation and verification are completed; child tasks decompose detector/template, init/settings UX, contracts/docs, and tests."
+learnings[1]{created_at,author,text}:
+  "2026-05-17T08:58:01.020Z",codex-agent,Reuse the existing TTY-only init wizard pattern and project settings persistence instead of creating a second prompt store. Keep context-file edits idempotent with stable markers so repeated init runs are safe.
+files[7]{path,scope,note}:
+  src/cli/commands/init.ts,project,init detection prompt and write orchestration
+  src/cli/register-setup.ts,project,init option wiring
+  src/core/store/settings.ts,project,agent guidance persistence schema
+  src/core/shared/constants.ts,project,settings defaults for guidance state
+  src/types.ts,project,PmSettings agent guidance types
+  src/sdk/cli-contracts.ts,project,init action contract options
+  src/cli/help-content.ts,project,init help guidance
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,planned focused init settings contracts regression
+docs[4]{path,scope,note}:
+  AGENTS.md,project,current repo has full guidance and serves as detector positive case
+  docs/AGENT_GUIDE.md,project,source for canonical agent workflow guidance
+  docs/COMMANDS.md,project,source for command families and examples
+  docs/QUICKSTART.md,project,source for init and first-item workflow
+body: "Research snapshot (2026-05-17):\n- Existing init flow lives in src/cli/commands/init.ts and already owns directory creation, settings writes, TTY-only wizard prompts, --defaults, --author, --with-packages, runtime schema scaffolding, package installation, and next_steps output.\n- Command wiring for init is in src/cli/register-setup.ts. Help examples/tips are in src/cli/help-content.ts. SDK/MCP action contracts expose init optional keys from src/sdk/cli-contracts.ts. JSON key-order regression for init is covered in tests/integration/release-readiness-runtime.spec.ts.\n- Settings schema/types currently have telemetry prompt state but no project-level agent-guidance state. Add a narrow settings.agent_guidance object for prompt completion, decline, template version, and last checked files. Unknown settings are stripped today, so schema/types/serialization must be updated together.\n- AGENTS.md exists in this repo and already contains extensive pm guidance; CLAUDE.md is absent. The feature should work generically for either root AGENTS.md, root CLAUDE.md, both, or neither.\n- Existing docs already define the content source: docs/AGENT_GUIDE.md, docs/COMMANDS.md, docs/QUICKSTART.md, and guide topic workflows. The init-injected block should be shorter than this repo AGENTS.md and idempotent, with stable markers and a template version.\n\nImplementation direction:\n1. Add an idempotent detector/patcher for AGENTS.md and CLAUDE.md that checks for a stable pm guidance marker plus core command tokens such as pm init, pm context, pm search, pm create, pm claim, pm files/docs/test, pm test --run, pm close, pm release, and PM_AUTHOR.\n2. Extend pm init with explicit modes, preferably a single value flag such as --agent-guidance <ask|add|skip|status> plus a convenience alias if desired. Default ask mode should prompt only in TTY and only when guidance is missing and the project has not declined.\n3. On approval, append or create a clearly marked section without clobbering user content. On decline, write project settings so the user/agent is not asked again. A later pm init --agent-guidance add should override the decline and write the section.\n4. Non-interactive init should never block. It should report guidance_missing in next_steps/warnings unless --agent-guidance add/skip/status makes intent explicit.\n5. Update help, contracts, config/settings docs, tests, and plugin/guide surfaces so agents can discover the workflow."

@@ -1,0 +1,30 @@
+id: pm-b8rf
+title: "Expose agent guidance init option in settings, contracts, help, and config"
+description: "Make the new pm init agent-guidance behavior discoverable and machine-safe across settings schema/types, runtime help, SDK contracts, MCP action schema, and optional config inspection."
+type: Task
+status: open
+priority: 1
+tags[7]: agent-ux,contracts,help,init,pm-cli,sdk,settings
+created_at: "2026-05-17T08:59:44.986Z"
+updated_at: "2026-05-17T09:01:39.183Z"
+author: codex-agent
+acceptance_criteria: settings schema accepts and persists agent_guidance deterministically; pm init help and JSON help include the guidance option; pm contracts --command init --flags-only and action schema expose the option; MCP schema can pass the option; config/docs give a clear operator path to inspect or reset declined state if implemented.
+parent: pm-7t04
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-7t04,parent,"2026-05-17T08:59:44.986Z",codex-agent,null
+  pm-8rjn,blocks,"2026-05-17T08:59:44.986Z",codex-agent,null
+comments[1]{created_at,author,text}:
+  "2026-05-17T08:59:44.986Z",codex-agent,Child task created from pm-7t04. This slice makes the UX contract visible to humans and agents after prompt behavior exists.
+files[9]{path,scope,note}:
+  src/cli/help-content.ts,project,init help examples
+  src/cli/register-setup.ts,project,flag registration
+  src/core/shared/constants.ts,project,settings defaults
+  src/core/store/settings.ts,project,settings schema serialization
+  src/mcp/server.ts,project,MCP pm_run init schema uses contracts
+  src/sdk/cli-contracts.ts,project,init action schema and flag contracts
+  src/types.ts,project,public setting type
+  tests/unit/config-command.spec.ts,project,config regression if key is added
+  tests/unit/contracts-command.spec.ts,project,contract regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,planned settings contracts help regression
+body: "Implementation direction:\n- Extend PmSettings with agent_guidance state and defaults in src/types.ts and src/core/shared/constants.ts.\n- Extend settings schema, merge, and serialize ordering in src/core/store/settings.ts; keep output deterministic.\n- Add init option wiring in src/cli/register-setup.ts and action schema optional keys in src/sdk/cli-contracts.ts.\n- Update help text in src/cli/help-content.ts and JSON/help payload expectations so agents discover the later-add path.\n- Consider a read/reset config key only if implementation needs an operator escape hatch beyond pm init --agent-guidance add/skip/status. If added, keep scope project-only and document clear behavior.\n- Keep MCP pm_run init schema in sync through SDK contracts so connected agents can request guidance add/status without shell-specific assumptions."
