@@ -78,9 +78,14 @@ jobs:
       - name: Run auto release pipeline
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          INPUT_ALLOW_SAME_DAY_RELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_same_day_release || 'false' }}
-          INPUT_PUSH: ${{ github.event_name == 'workflow_dispatch' && inputs.push || 'true' }}
-          INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          # GitHub Actions evaluates boolean `false` as falsy in `&& ... || ...`
+          # ternaries, so the naive `inputs.push || 'true'` silently overrides
+          # an explicit `push=false`. Nest a second ternary that coerces the
+          # boolean input into the literal string 'true'/'false' first, then
+          # fall through to the schedule default with the outer ternary.
+          INPUT_ALLOW_SAME_DAY_RELEASE: ${{ github.event_name == 'workflow_dispatch' && (inputs.allow_same_day_release && 'true' || 'false') || 'false' }}
+          INPUT_PUSH: ${{ github.event_name == 'workflow_dispatch' && (inputs.push && 'true' || 'false') || 'true' }}
+          INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && (inputs.dry_run && 'true' || 'false') || 'false' }}
           INPUT_TELEMETRY_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.telemetry_mode || 'off' }}
           GH_TOKEN: ${{ github.token }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}

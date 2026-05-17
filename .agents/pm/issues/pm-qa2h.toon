@@ -1,0 +1,12 @@
+id: pm-qa2h
+title: auto-release.yml workflow_dispatch silently overrides explicit push=false to true
+description: "Found 2026-05-17 while dry-running auto-release after the close --reason fix. The workflow's ternary `${{ github.event_name == 'workflow_dispatch' && inputs.push || 'true' }}` evaluates as: when push=false, `&& false` short-circuits to `false`, then `|| 'true'` falls through to the cron default 'true'. Result: an operator can never run a true dry-run, because INPUT_PUSH stays 'true' and the workflow's own dry_run+push guard exits 2.\n\nFix shipped this session: nest a coercion ternary so `inputs.push && 'true' || 'false'` yields a string first, before the outer fallback runs. Same fix applied to dry_run and allow_same_day_release.\n\nCron path is unaffected (it never enters the workflow_dispatch branch), but operators can now dispatch with dry_run=true push=false to validate the pipeline without making a real release."
+type: Issue
+status: closed
+priority: 1
+tags[6]: auto-release,bug,ci,github-actions,pm-cli,release
+created_at: "2026-05-17T06:23:17.480Z"
+updated_at: "2026-05-17T06:23:17.480Z"
+assignee: claude-code-agent
+author: claude-code-agent
+body: ""
