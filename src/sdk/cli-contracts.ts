@@ -773,6 +773,8 @@ export const REINDEX_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const CLOSE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--reason" },
+  { flag: "--close-reason" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--validate-close" },

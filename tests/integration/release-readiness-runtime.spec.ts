@@ -312,7 +312,7 @@ const REQUIRED_LEARNINGS_FLAGS = [
 const REQUIRED_CLAIM_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_RELEASE_FLAGS = ["--author", "--message", "--allow-audit-release", "--force"];
 const REQUIRED_RESTORE_FLAGS = ["--author", "--message", "--force"];
-const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--validate-close", "--force"];
+const REQUIRED_CLOSE_FLAGS = ["--author", "--message", "--validate-close", "--force", "--reason", "--close-reason"];
 const REQUIRED_VALIDATE_FLAGS = [
   "--check-metadata",
   "--metadata-profile",
@@ -847,8 +847,9 @@ describe("release readiness runtime coverage", () => {
     await withTempPmPath(async (context) => {
       const closeHelp = context.runCli(["close", "--help"]);
       expect(closeHelp.code).toBe(0);
-      expect(closeHelp.stdout).toContain("Usage: pm close [options] <id> <text>");
+      expect(closeHelp.stdout).toContain("Usage: pm close [options] <id> [text]");
       expect(closeHelp.stdout).toContain("Close an item with a required reason.");
+      expect(closeHelp.stdout).toContain("Close reason text (alias: --reason)");
       for (const flag of REQUIRED_CLOSE_FLAGS) {
         expect(closeHelp.stdout).toContain(flag);
       }
