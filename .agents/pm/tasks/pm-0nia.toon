@@ -2,11 +2,11 @@ id: pm-0nia
 title: Add regression coverage for pm init agent guidance workflows
 description: "Cover AGENTS.md/CLAUDE.md guidance detection, approval, decline persistence, later explicit add, non-interactive behavior, output shape, settings serialization, contracts, and release-readiness help."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,contracts,init,pm-cli,tests
 created_at: "2026-05-17T09:00:02.257Z"
-updated_at: "2026-05-17T09:01:55.638Z"
+updated_at: "2026-05-17T10:12:04.954Z"
 author: codex-agent
 acceptance_criteria: All new behavior has focused unit and integration coverage; non-interactive init regression proves no prompt hang; JSON output ordering remains deterministic; linked focused command passes; full coverage remains 100 percent when the implementation closes.
 parent: pm-7t04
@@ -15,15 +15,34 @@ dependencies[4]{id,kind,created_at,author,source_kind}:
   pm-8rjn,blocks,"2026-05-17T09:00:02.257Z",codex-agent,null
   pm-b8rf,blocks,"2026-05-17T09:00:02.257Z",codex-agent,null
   pm-g2nd,blocks,"2026-05-17T09:00:02.257Z",codex-agent,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-17T09:00:02.257Z",codex-agent,Child task created from pm-7t04. This slice should be executed with or after the implementation slices.
-files[6]{path,scope,note}:
+  "2026-05-17T10:11:58.540Z",codex-agent,"Executed focused unit+integration regressions, temp-dir dogfood, full coverage, release gates, security scan, and explicit Sentry/telemetry gate; all completed successfully after adding release-readiness coverage list entry for the new helper module."
+notes[1]{created_at,author,text}:
+  "2026-05-17T10:12:00.270Z",codex-agent,Release readiness regression test exposed uncovered-files allowlist drift immediately after adding init-agent-guidance.ts; updated allowlist to keep coverage gate deterministic.
+learnings[1]{created_at,author,text}:
+  "2026-05-17T10:12:01.791Z",codex-agent,New source files should be paired with release-readiness uncovered-file allowlist updates before running the full gate pipeline.
+files[10]{path,scope,note}:
+  scripts/dogfood-package-first.mjs,project,dogfood assertions for init guidance status/add lifecycle
+  tests/integration/cli.integration.spec.ts,project,init status/skip/add integration coverage
   tests/integration/help-runtime.spec.ts,project,help runtime coverage
   tests/integration/release-readiness-runtime.spec.ts,project,runtime init output and noninteractive coverage
+  tests/unit/completion-command.spec.ts,project,completion surface regression for --agent-guidance
   tests/unit/config-command.spec.ts,project,config coverage if added
   tests/unit/contracts-command.spec.ts,project,contracts coverage
   tests/unit/init-command.spec.ts,project,unit coverage for detection prompt and writer
+  tests/unit/sdk-index.spec.ts,project,SDK action optional keys regression
   tests/unit/settings-store.spec.ts,project,settings persistence coverage
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[10]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/check-secrets.mjs,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Tracked-file secret scan
+  node scripts/dogfood-package-first.mjs,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Temporary-directory package-first dogfood including guidance lifecycle
+  node scripts/release/run-gates.mjs --telemetry-mode best-effort,null,project,7200,null,null,null,null,null,null,null,null,null,null,null,Full release-readiness gate suite
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Sentry and telemetry readiness evidence
+  node scripts/run-tests.mjs coverage,null,project,3600,null,null,null,null,null,null,null,null,null,null,null,Full 100 percent coverage gate
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Targeted integration regression run
   node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,planned full focused guidance regression
+  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Linked verification suite from parent item
+  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/completion-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,Focused unit regression run
+  "pnpm quality:static",null,project,900,null,null,null,null,null,null,null,null,null,null,null,Static quality gate
+close_reason: "Regression suite, temp-dir dogfood, release gates, security scan, and Sentry/telemetry checks all passed for init guidance delivery."
 body: "Focused coverage plan:\n- tests/unit/init-command.spec.ts: helper-level present/missing/outdated detection, writer idempotence, AGENTS-only, CLAUDE-only, both files, absent files, and TTY-decline/add state transitions.\n- tests/unit/settings-store.spec.ts: agent_guidance defaults, schema migration from missing state, deterministic serialization key order, and persistence of declined metadata.\n- tests/unit/config-command.spec.ts if config key is added: inspect/reset behavior and settings write op.\n- tests/unit/contracts-command.spec.ts and tests/integration/help-runtime.spec.ts: init flag/help/contract visibility.\n- tests/integration/release-readiness-runtime.spec.ts: JSON key ordering for any new init result field, non-interactive init does not hang, and explicit add/status behavior works in a temp repository.\n- Use node scripts/run-tests.mjs so PM_PATH and PM_GLOBAL_PATH remain sandboxed."

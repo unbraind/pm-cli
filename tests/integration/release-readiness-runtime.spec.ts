@@ -1092,6 +1092,7 @@ describe("release readiness runtime coverage", () => {
         "governance_preset",
         "wizard_used",
         "next_steps",
+        "agent_guidance",
       ]);
 
       const createResult = context.runCli(
@@ -1651,6 +1652,7 @@ describe("release readiness runtime coverage", () => {
       "src/cli/commands/comments-audit.ts",
       "src/cli/commands/dedupe-audit.ts",
       "src/cli/commands/guide.ts",
+      "src/cli/commands/init-agent-guidance.ts",
       "src/cli/commands/metadata-normalizers.ts",
       "src/cli/commands/normalize.ts",
       "src/cli/commands/templates.ts",

@@ -138,6 +138,15 @@ try {
   const initResult = run("init", ["init", "--defaults", "--author", "dogfood-agent", "--with-packages"]);
   assert(initResult?.installed_packages?.installed_all === true, "init --with-packages did not report installed_all=true");
   assert(initResult?.installed_packages?.installed_count >= 8, "init --with-packages installed too few bundled packages");
+  assert(initResult?.agent_guidance?.mode === "ask", "init did not return default agent guidance mode");
+  assert(initResult?.agent_guidance?.present === false, "fresh temp project unexpectedly reported agent guidance present");
+  const guidanceStatusBefore = run("init guidance status before add", ["init", "--agent-guidance", "status"]);
+  assert(guidanceStatusBefore?.agent_guidance?.present === false, "init --agent-guidance status should report missing guidance before add");
+  const guidanceAdd = run("init guidance add", ["init", "--agent-guidance", "add"]);
+  assert(guidanceAdd?.agent_guidance?.present === true, "init --agent-guidance add did not report guidance present");
+  assert(guidanceAdd?.agent_guidance?.applied === true, "init --agent-guidance add did not apply guidance on first run");
+  const guidanceStatusAfter = run("init guidance status after add", ["init", "--agent-guidance", "status"]);
+  assert(guidanceStatusAfter?.agent_guidance?.present === true, "init --agent-guidance status should report guidance present after add");
   run("config", ["config", "project", "set", "test-result-tracking", "--policy", "enabled"]);
 
   const created = run("create task", [
@@ -227,6 +236,7 @@ try {
   requireContractFlag("package", "--global");
   requireContractFlag("upgrade", "--packages-only");
   requireContractFlag("upgrade", "--dry-run");
+  requireContractFlag("init", "--agent-guidance");
   requireContractFlag("init", "--with-packages");
   requireContractFlag("get", "--fields");
   const packageAliasesFromContracts =

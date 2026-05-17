@@ -14,6 +14,12 @@ import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings, writeSettings } from "../../core/store/settings.js";
 import type { GovernancePreset, PmSettings } from "../../types/index.js";
 import { runExtension, type ExtensionCommandResult } from "./extension.js";
+import {
+  INIT_AGENT_GUIDANCE_MODE_VALUES,
+  runInitAgentGuidance,
+  type InitAgentGuidanceMode,
+  type InitAgentGuidanceSummary,
+} from "./init-agent-guidance.js";
 
 export interface InitInstalledPackagesSummary {
   installed_all: boolean;
@@ -34,6 +40,7 @@ export interface InitResult {
   wizard_used: boolean;
   installed_packages?: InitInstalledPackagesSummary;
   next_steps: string[];
+  agent_guidance: InitAgentGuidanceSummary;
 }
 
 export interface InitCommandOptions {
@@ -41,6 +48,7 @@ export interface InitCommandOptions {
   defaults?: boolean;
   author?: string;
   withPackages?: boolean;
+  agentGuidance?: string;
 }
 
 function cloneDefaults(): PmSettings {
@@ -79,6 +87,23 @@ function normalizeOptionalInitAuthor(rawValue: string | undefined): string | und
     throw new PmCliError("--author must not be empty", EXIT_CODE.USAGE);
   }
   return normalized;
+}
+
+function normalizeInitAgentGuidanceMode(rawValue: string | undefined): InitAgentGuidanceMode {
+  if (rawValue === undefined) {
+    return "ask";
+  }
+  const normalized = rawValue.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized.length === 0) {
+    throw new PmCliError("--agent-guidance must not be empty", EXIT_CODE.USAGE);
+  }
+  if (normalized === "ask" || normalized === "add" || normalized === "skip" || normalized === "status") {
+    return normalized;
+  }
+  throw new PmCliError(
+    `Invalid --agent-guidance value "${rawValue}". Allowed: ${INIT_AGENT_GUIDANCE_MODE_VALUES.join(", ")}`,
+    EXIT_CODE.USAGE,
+  );
 }
 
 function parseYesNoChoice(answer: string, currentDefault: boolean): boolean {
@@ -201,6 +226,7 @@ export async function runInit(
   const useDefaults = options.defaults === true;
   const authorFromOption = normalizeOptionalInitAuthor(options.author);
   const installBundledPackages = options.withPackages === true;
+  const agentGuidanceMode = normalizeInitAgentGuidanceMode(options.agentGuidance);
   let chosenPreset = presetFromOption;
   let chosenTelemetryEnabled: boolean | undefined;
 
@@ -246,6 +272,18 @@ export async function runInit(
       settings.telemetry.enabled = chosenTelemetryEnabled;
       settings.telemetry.first_run_prompt_completed = true;
     }
+    await writeSettings(pmRoot, settings);
+  }
+
+  const agentGuidanceResult = await runInitAgentGuidance({
+    pm_root: pmRoot,
+    cwd,
+    mode: agentGuidanceMode,
+    interactive: process.stdin.isTTY === true && process.stdout.isTTY === true,
+    settings,
+  });
+  warnings.push(...agentGuidanceResult.warnings);
+  if (agentGuidanceResult.settings_changed) {
     await writeSettings(pmRoot, settings);
   }
 
@@ -307,6 +345,11 @@ export async function runInit(
     nextSteps.push("Explore newly-available commands: pm cal, pm templates, pm guide");
   }
   nextSteps.push("Set PM_AUTHOR=<your-agent-id> so mutations attribute to the right caller.");
+  for (const guidanceNextStep of agentGuidanceResult.next_steps) {
+    if (!nextSteps.includes(guidanceNextStep)) {
+      nextSteps.push(guidanceNextStep);
+    }
+  }
 
   return {
     ok: true,
@@ -318,5 +361,6 @@ export async function runInit(
     wizard_used: wizardUsed,
     ...(installedPackages ? { installed_packages: installedPackages } : {}),
     next_steps: nextSteps,
+    agent_guidance: agentGuidanceResult.summary,
   };
 }

@@ -2,26 +2,35 @@ id: pm-8rjn
 title: Wire pm init approval flow and declined guidance persistence
 description: "Extend pm init so missing AGENTS/CLAUDE guidance is surfaced safely: prompt in TTY, persist declines in project settings, and allow a later explicit init option to add guidance."
 type: Task
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,bootstrap,init,pm-cli,settings
 created_at: "2026-05-17T08:59:31.342Z"
-updated_at: "2026-05-17T09:01:18.482Z"
+updated_at: "2026-05-17T10:09:42.936Z"
 author: codex-agent
 acceptance_criteria: pm init asks once in interactive mode when guidance is missing; yes writes guidance; no records project-level decline; future default init runs do not ask after decline; pm init --agent-guidance add writes guidance even after decline; non-interactive init never waits for input; result payload includes deterministic guidance status for JSON/TOON output.
 parent: pm-7t04
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-7t04,parent,"2026-05-17T08:59:31.342Z",codex-agent,null
   pm-g2nd,blocks,"2026-05-17T08:59:31.342Z",codex-agent,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-17T08:59:31.342Z",codex-agent,Child task created from pm-7t04. Depends on detector/writer task pm-g2nd.
-files[6]{path,scope,note}:
+  "2026-05-17T10:09:35.916Z",codex-agent,"Implemented init guidance mode flow: ask mode now prompts only in TTY, non-interactive runs report missing guidance without blocking, explicit skip persists decline state, and explicit add clears decline state while writing guidance."
+notes[1]{created_at,author,text}:
+  "2026-05-17T10:09:37.615Z",codex-agent,Declined state now short-circuits future ask-mode runs until an explicit add request is issued.
+learnings[1]{created_at,author,text}:
+  "2026-05-17T10:09:39.380Z",codex-agent,Keeping ask/add/skip/status as one value flag avoids interactive ambiguity and keeps MCP/tool payloads deterministic.
+files[8]{path,scope,note}:
+  src/cli/commands/init-agent-guidance.ts,project,TTY prompt handling and declined-state behavior
   src/cli/commands/init.ts,project,approval flow and result payload
   src/cli/register-setup.ts,project,agent guidance option parsing
   src/core/shared/constants.ts,project,agent guidance defaults
   src/core/store/settings.ts,project,decline persistence
   src/types.ts,project,agent guidance setting type
+  tests/integration/cli.integration.spec.ts,project,Integration coverage for status/skip/add flows
   tests/unit/init-command.spec.ts,project,TTY approval decline tests
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,Init guidance workflow regressions
   node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/settings-store.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,planned prompt persistence regression
+close_reason: Init approval flow and decline persistence implemented with explicit add/skip/status behavior and integration coverage.
 body: "Implementation direction:\n- Add an init option with explicit modes, preferably --agent-guidance <ask|add|skip|status>. Consider aliases only if they do not clutter contracts.\n- Default ask behavior: after settings exist and before returning next_steps, check AGENTS.md/CLAUDE.md. If missing guidance and no project decline is recorded, ask in TTY.\n- Approval path: call the writer, return structured result fields and warnings/next_steps that name updated files.\n- Decline path: write settings.agent_guidance with prompt_completed=true, declined=true, declined_at, template_version, and target files so future init runs do not ask again.\n- Non-interactive/defaults path: do not block. Report guidance_missing in warnings/next_steps unless mode is add, skip, or status.\n- Explicit add path: override prior decline, write guidance, and clear declined state. Explicit skip path should record the decline if the feature is asking for durable silence. Explicit status should inspect and return state without writing files."

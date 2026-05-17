@@ -14,6 +14,14 @@ Initialize pm project tracking using native MCP tools. Argument: `$ARGUMENTS` (o
    ```json
    { "tool": "pm_run", "args": { "action": "init", "options": {} } }
    ```
+   If guidance state inspection is needed before writing AGENTS/CLAUDE sections, run:
+   ```json
+   { "tool": "pm_run", "args": { "action": "init", "options": { "agentGuidance": "status" } } }
+   ```
+   To explicitly add compact workflow guidance without waiting for interactive prompts, run:
+   ```json
+   { "tool": "pm_run", "args": { "action": "init", "options": { "agentGuidance": "add" } } }
+   ```
 
 3. **Verify initialization** — call `pm_health` again to confirm `ok: true`.
 
@@ -37,6 +45,7 @@ Initialize pm project tracking using native MCP tools. Argument: `$ARGUMENTS` (o
 
 5. **Show quick-start summary**:
    - pm initialized at `.agents/pm/`
+   - guidance mode defaults to `ask` (TTY prompt only); use `agentGuidance=add|skip|status` in `pm_run` options for deterministic behavior
    - Available slash commands: `/pm-status`, `/pm-new`, `/pm-start-task`, `/pm-close-task`, `/pm-list`, `/pm-search`, `/pm-triage`, `/pm-calendar`, `/pm-developer`, `/pm-planner`, `/pm-release`, `/pm-audit`, `/pm-workflow`
    - All 18 MCP tools available: `pm_context`, `pm_search`, `pm_list`, `pm_get`, `pm_create`, `pm_update`, `pm_claim`, `pm_release`, `pm_close`, `pm_comments`, `pm_files`, `pm_docs`, `pm_test`, `pm_validate`, `pm_health`, `pm_contracts`, `pm_guide`, `pm_run`
    - Next: use `/pm-new <title>` to create your first item, or `/pm-status` to see the tracker state

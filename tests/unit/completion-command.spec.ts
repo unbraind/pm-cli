@@ -127,6 +127,18 @@ describe("generateBashScript", () => {
     expect(script).toContain("--event");
   });
 
+  it("includes init agent guidance flag across completion scripts", () => {
+    const bashScript = generateBashScript();
+    expect(bashScript).toContain("--agent-guidance");
+
+    const zshScript = generateZshScript();
+    expect(zshScript).toContain("--agent-guidance[Agent guidance mode]");
+
+    const fishScript = generateFishScript();
+    expect(fishScript).toContain("__fish_seen_subcommand_from init");
+    expect(fishScript).toContain("-l agent-guidance");
+  });
+
   it("includes underscore metadata aliases in bash completion output", () => {
     const script = generateBashScript();
     expect(script).toContain("--acceptance_criteria");

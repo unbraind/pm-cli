@@ -462,6 +462,14 @@ export interface ExtensionPolicySettings {
   extension_overrides: ExtensionPolicyOverrideSettings[];
 }
 
+export interface AgentGuidanceSettings {
+  prompt_completed: boolean;
+  declined: boolean;
+  declined_at: string;
+  template_version: number;
+  last_checked_files: string[];
+}
+
 export interface PmSettings {
   version: number;
   id_prefix: string;
@@ -501,6 +509,7 @@ export interface PmSettings {
     installation_id: string;
     retention_days: number;
   };
+  agent_guidance: AgentGuidanceSettings;
   item_types: {
     definitions: ItemTypeDefinition[];
   };

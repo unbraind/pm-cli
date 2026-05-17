@@ -192,6 +192,13 @@ export const SETTINGS_DEFAULTS: PmSettings = {
     installation_id: "",
     retention_days: 365,
   },
+  agent_guidance: {
+    prompt_completed: false,
+    declined: false,
+    declined_at: "",
+    template_version: 1,
+    last_checked_files: [],
+  },
   item_types: {
     definitions: [],
   },

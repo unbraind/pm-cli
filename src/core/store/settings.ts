@@ -230,6 +230,15 @@ const settingsSchema = z.object({
       retention_days: z.number().int().positive().optional(),
     })
     .optional(),
+  agent_guidance: z
+    .object({
+      prompt_completed: z.boolean().optional(),
+      declined: z.boolean().optional(),
+      declined_at: z.string().optional(),
+      template_version: z.number().int().positive().optional(),
+      last_checked_files: z.array(z.string()).optional(),
+    })
+    .optional(),
   item_types: z
     .object({
       definitions: z.array(itemTypeDefinitionSchema),
@@ -382,6 +391,23 @@ function normalizeStringList(values: string[] | undefined): string[] {
   return [...new Set((values ?? []).map((value) => value.trim()).filter((value) => value.length > 0))].sort((left, right) =>
     left.localeCompare(right),
   );
+}
+
+function normalizeAgentGuidanceSettings(
+  value: Partial<PmSettings["agent_guidance"]> | undefined,
+): PmSettings["agent_guidance"] {
+  const defaults = SETTINGS_DEFAULTS.agent_guidance;
+  const templateVersion = value?.template_version;
+  return {
+    prompt_completed: value?.prompt_completed === true,
+    declined: value?.declined === true,
+    declined_at: typeof value?.declined_at === "string" ? value.declined_at : defaults.declined_at,
+    template_version:
+      typeof templateVersion === "number" && Number.isInteger(templateVersion) && templateVersion > 0
+        ? templateVersion
+        : defaults.template_version,
+    last_checked_files: normalizeStringList(value?.last_checked_files ?? defaults.last_checked_files),
+  };
 }
 
 function normalizeLowerStringList(values: string[] | undefined): string[] {
@@ -682,6 +708,7 @@ function mergeSettings(raw: unknown): PmSettings {
       installation_id: settings.telemetry?.installation_id ?? defaults.telemetry.installation_id,
       retention_days: settings.telemetry?.retention_days ?? defaults.telemetry.retention_days,
     },
+    agent_guidance: normalizeAgentGuidanceSettings(settings.agent_guidance ?? defaults.agent_guidance),
     item_types: {
       definitions: normalizeItemTypeDefinitions(settings.item_types?.definitions),
     },
@@ -741,6 +768,7 @@ export function serializeSettings(settings: PmSettings): string {
       ),
     },
     governance,
+    agent_guidance: normalizeAgentGuidanceSettings(settings.agent_guidance),
     item_types: {
       definitions: normalizeItemTypeDefinitions(settings.item_types?.definitions),
     },
@@ -778,6 +806,7 @@ export function serializeSettings(settings: PmSettings): string {
     "workflow",
     "testing",
     "telemetry",
+    "agent_guidance",
     "item_types",
     "schema",
     "context",
@@ -819,6 +848,13 @@ export function serializeSettings(settings: PmSettings): string {
     "endpoint",
     "installation_id",
     "retention_days",
+  ]);
+  ordered.agent_guidance = orderObject(ordered.agent_guidance as Record<string, unknown>, [
+    "prompt_completed",
+    "declined",
+    "declined_at",
+    "template_version",
+    "last_checked_files",
   ]);
   ordered.item_types = orderObject(ordered.item_types as Record<string, unknown>, ["definitions"]);
   ordered.schema = orderObject(ordered.schema as Record<string, unknown>, [

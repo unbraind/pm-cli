@@ -138,6 +138,7 @@ describe("core/store/settings", () => {
         "workflow",
         "testing",
         "telemetry",
+        "agent_guidance",
         "item_types",
         "schema",
         "context",
@@ -169,6 +170,13 @@ describe("core/store/settings", () => {
         "endpoint",
         "installation_id",
         "retention_days",
+      ]);
+      expectOrderedObjectKeys(parsed.agent_guidance, [
+        "prompt_completed",
+        "declined",
+        "declined_at",
+        "template_version",
+        "last_checked_files",
       ]);
       expectOrderedObjectKeys(parsed.item_types, ["definitions"]);
       expectOrderedObjectKeys(parsed.schema, ["version", "files", "statuses", "fields", "workflow", "unknown_field_policy"]);

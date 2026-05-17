@@ -101,10 +101,17 @@ export function resolveHelpDetailMode(argv: string[]): HelpDetailMode {
 const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   init: {
     why: "Bootstraps tracker storage and settings so all other commands can run safely.",
-    examples: ['pm init', 'pm init acme', "pm init --preset minimal", "pm init --defaults --with-packages"],
+    examples: [
+      "pm init",
+      "pm init acme",
+      "pm init --preset minimal",
+      "pm init --agent-guidance add",
+      "pm init --defaults --with-packages",
+    ],
     tips: [
       "Run this once per repository before create/list/update commands.",
       "Use --preset for non-interactive automation; omit it in a TTY to use the setup wizard.",
+      "Use --agent-guidance add to inject compact AGENTS/CLAUDE workflow guidance, or --agent-guidance status to inspect missing guidance without modifying files.",
       "Use --with-packages when agents need bundled commands such as calendar and templates available immediately.",
     ],
   },

@@ -706,6 +706,7 @@ export const INIT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--preset" },
   { flag: "--defaults" },
   { flag: "--author" },
+  { flag: "--agent-guidance" },
   { flag: "--with-packages" },
 ];
 
@@ -1527,6 +1528,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   prefix: { type: "string" },
   preset: { type: "string", enum: ["minimal", "default", "strict", "custom"] },
   defaults: { type: "boolean" },
+  agentGuidance: { type: "string", enum: ["ask", "add", "skip", "status"] },
   withPackages: { type: "boolean" },
   scope: { type: "string", enum: ["project", "global"] },
   contractAction: { type: "string" },
@@ -1836,7 +1838,7 @@ const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
 
 const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = {
-  init: { optional: ["prefix", "preset", "defaults", "author", "withPackages"] },
+  init: { optional: ["prefix", "preset", "defaults", "author", "agentGuidance", "withPackages"] },
   config: {
     required: ["scope", "configAction"],
     optional: ["key", "criterion", "clearCriteria", "format", "policy"],
@@ -2229,6 +2231,10 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   },
   defaults: {
     description: "Use non-interactive setup defaults during initialization.",
+  },
+  agentGuidance: {
+    description: "Control AGENTS.md/CLAUDE.md guidance behavior during init: ask, add, skip, or status.",
+    examples: ["ask", "add", "skip", "status"],
   },
   withPackages: {
     description: "Install all bundled first-party pm packages during initialization.",

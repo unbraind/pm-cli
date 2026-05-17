@@ -2,12 +2,11 @@ id: pm-1pah
 title: "CI: cache vitest/.cache + tsbuildinfo for incremental builds + faster tests"
 description: "vitest writes a cache directory that speeds up subsequent runs; tsc supports incremental builds via tsconfig {composite/incremental:true} writing .tsbuildinfo. Cache both with actions/cache@v5 keyed on lockfile + source hash so warm CI is 30-50% faster. Today every CI run starts cold."
 type: Issue
-status: in_progress
+status: open
 priority: 1
 tags[4]: cache,ci,performance,pm-cli
 created_at: "2026-05-16T22:07:50.563Z"
-updated_at: "2026-05-17T01:23:48.324Z"
-assignee: codex-audit
+updated_at: "2026-05-17T09:45:41.313Z"
 author: maintainer-agent
 acceptance_criteria: "actions/cache restores .tsbuildinfo and vitest cache on warm runs; tsconfig has incremental:true; second consecutive CI run measurably faster than first; cache key invalidates on lockfile or source changes."
 parent: pm-tzwy

@@ -852,6 +852,7 @@ _pm() {
             '--preset[Governance preset for new setups]:preset:(minimal default strict)' \\
             '--defaults[Use non-interactive setup defaults]' \\
             '--author[Set the default mutation author for this project]:author' \\
+            '--agent-guidance[Agent guidance mode]:mode:(ask add skip status)' \\
             '--with-packages[Install bundled first-party packages during initialization]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -861,6 +862,7 @@ _pm() {
             '--preset[Governance preset for new setups]:preset:(minimal default strict)' \\
             '--defaults[Use non-interactive setup defaults]' \\
             '--author[Set the default mutation author for this project]:author' \\
+            '--agent-guidance[Agent guidance mode]:mode:(ask add skip status)' \\
             '--with-packages[Install bundled first-party packages during initialization]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1525,6 +1527,7 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-refere
 complete -c pm -n '__fish_seen_subcommand_from init' -l preset -d 'Governance preset for new setups' -r -a 'minimal default strict'
 complete -c pm -n '__fish_seen_subcommand_from init' -l defaults -d 'Use non-interactive setup defaults'
 complete -c pm -n '__fish_seen_subcommand_from init' -l author -d 'Set the default mutation author for this project' -r
+complete -c pm -n '__fish_seen_subcommand_from init' -l agent-guidance -d 'Agent guidance mode' -r -a 'ask add skip status'
 complete -c pm -n '__fish_seen_subcommand_from init' -l with-packages -d 'Install bundled first-party packages during initialization'
 complete -c pm -n '__fish_seen_subcommand_from config' -l criterion -d 'Criteria value for definition-of-done metadata-required-fields or lifecycle pattern keys (repeatable for set)' -r
 complete -c pm -n '__fish_seen_subcommand_from config' -l clear-criteria -d 'Clear config criteria-list key values'

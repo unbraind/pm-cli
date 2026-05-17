@@ -2,20 +2,28 @@ id: pm-1265
 title: Document pm init agent guidance context workflow
 description: "Update user-facing docs, guide topics, and plugin command guidance so agents understand how pm init manages AGENTS.md/CLAUDE.md guidance and how to add it later after declining."
 type: Task
-status: open
+status: closed
 priority: 2
 tags[6]: agent-ux,docs,guide,init,plugins,pm-cli
 created_at: "2026-05-17T09:00:17.605Z"
-updated_at: "2026-05-17T09:02:23.754Z"
+updated_at: "2026-05-17T10:11:00.141Z"
 author: codex-agent
 acceptance_criteria: "Quickstart, Agent Guide, Command Reference, help/guide surfaces, and relevant plugin guidance mention the agent-guidance init option and decline/add-later behavior; docs avoid stale copied flag lists where runtime contracts should be used; docs are linked to implementation items before closure."
 parent: pm-7t04
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-7t04,parent,"2026-05-17T09:00:17.605Z",codex-agent,null
   pm-b8rf,blocks,"2026-05-17T09:00:17.605Z",codex-agent,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-17T09:00:17.605Z",codex-agent,Child task created from pm-7t04. This docs slice should follow contract/help naming decisions so examples match shipped flags.
-files[4]{path,scope,note}:
+  "2026-05-17T10:10:52.906Z",codex-agent,"Updated operator and plugin docs to explain ask/add/skip/status behavior, decline persistence, and deterministic non-interactive usage paths for init guidance."
+notes[1]{created_at,author,text}:
+  "2026-05-17T10:10:54.603Z",codex-agent,Plugin docs now include explicit pm_run payload examples so hosted agents can set options.agentGuidance without shell-specific assumptions.
+learnings[1]{created_at,author,text}:
+  "2026-05-17T10:10:56.709Z",codex-agent,Init UX changes need mirrored plugin examples because many agent flows invoke pm through pm_run rather than direct shell flags.
+files[7]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Agent workflow bootstrap includes guidance checks
+  docs/COMMANDS.md,project,Init command guidance mode reference
+  docs/QUICKSTART.md,project,Init guidance mode usage and non-interactive behavior
   plugins/pm-claude/commands/pm-init.md,project,Claude plugin init guidance
   plugins/pm-codex/README.md,project,Codex plugin guidance if applicable
   src/cli/guide-topics.ts,project,guide routing for agent workflows
@@ -28,4 +36,5 @@ docs[5]{path,scope,note}:
   docs/CODEX_PLUGIN.md,project,Codex plugin docs if updated
   docs/COMMANDS.md,project,init option command docs
   docs/QUICKSTART.md,project,init behavior docs
+close_reason: Quickstart/commands/agent guide and plugin docs now document init guidance modes and persistence behavior.
 body: "Documentation plan:\n- docs/QUICKSTART.md: mention pm init guidance behavior and the explicit later-add option.\n- docs/AGENT_GUIDE.md: describe that AGENTS.md/CLAUDE.md should contain bootstrap/orient/claim/link/verify/close basics and that pm init can add a compact block.\n- docs/COMMANDS.md: add init option examples and clarify non-interactive behavior.\n- src/cli/guide-topics.ts / guide-shell docs if needed: route agents to this workflow without requiring full README context.\n- plugins/pm-claude/commands/pm-init.md and plugins/pm-codex README/commands if relevant: keep harness-specific startup guidance aligned with the new core behavior.\n- Avoid duplicating the entire AGENTS.md content; link or summarize core commands only."

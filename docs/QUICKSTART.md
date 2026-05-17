@@ -49,9 +49,13 @@ pm package doctor --project --detail summary
 ```bash
 pm init
 pm health --check-only
+pm init --agent-guidance status
+pm init --agent-guidance add
 ```
 
 `pm init` creates `.agents/pm/` with settings, item folders, history, locks, search cache directories, and project extension storage.
+When AGENTS/CLAUDE guidance is missing, default `pm init` uses `--agent-guidance ask`: it prompts only in TTY, never blocks non-interactive runs, and records declined prompts.
+Use `pm init --agent-guidance add` to write the compact workflow block later, or `pm init --agent-guidance status` to inspect guidance state without changing files.
 Use `pm init --defaults --with-packages` when agents should get bundled commands such as calendar, templates, advanced search, and governance helpers in one non-interactive setup step.
 
 ## Create Your First Item

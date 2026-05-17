@@ -328,6 +328,7 @@ export function registerSetupCommands(program: Command): void {
     .option("--preset <value>", "Governance preset for new setups: minimal|default|strict")
     .option("--defaults", "Use non-interactive setup defaults without opening the wizard")
     .option("--author <value>", "Set the default mutation author for this project")
+    .option("--agent-guidance <mode>", "Agent guidance mode: ask|add|skip|status")
     .option("--with-packages", "Install all bundled first-party packages during initialization")
     .description("Initialize pm storage and defaults for the current workspace.")
     .action(async (prefix: string | undefined, options: Record<string, unknown>, command) => {
@@ -341,6 +342,7 @@ export function registerSetupCommands(program: Command): void {
           preset: typeof options.preset === "string" ? options.preset : undefined,
           defaults: options.defaults === true,
           author: typeof options.author === "string" ? options.author : undefined,
+          agentGuidance: typeof options.agentGuidance === "string" ? options.agentGuidance : undefined,
           withPackages: options.withPackages === true,
         },
       );

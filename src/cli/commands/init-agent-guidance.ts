@@ -1,0 +1,401 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
+import { runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import { pathExists } from "../../core/fs/fs-utils.js";
+import type { PmSettings } from "../../types/index.js";
+
+export type InitAgentGuidanceMode = "ask" | "add" | "skip" | "status";
+
+export const INIT_AGENT_GUIDANCE_MODE_VALUES: InitAgentGuidanceMode[] = ["ask", "add", "skip", "status"];
+
+const AGENT_GUIDANCE_TARGET_FILENAMES = ["AGENTS.md", "CLAUDE.md"] as const;
+const AGENT_GUIDANCE_REQUIRED_TOKENS = [
+  "pm init",
+  "pm context",
+  "pm search",
+  "pm create",
+  "pm claim",
+  "pm files",
+  "pm docs",
+  "pm test --run",
+  "pm close",
+  "pm release",
+  "pm_author",
+] as const;
+const AGENT_GUIDANCE_REQUIRED_TOKEN_THRESHOLD = 8;
+const AGENT_GUIDANCE_TEMPLATE_VERSION = 1;
+const AGENT_GUIDANCE_START_MARKER_PREFIX = "<!-- pm-cli:agent-guidance:start:";
+const AGENT_GUIDANCE_START_MARKER = `<!-- pm-cli:agent-guidance:start:v${AGENT_GUIDANCE_TEMPLATE_VERSION} -->`;
+const AGENT_GUIDANCE_END_MARKER = "<!-- pm-cli:agent-guidance:end -->";
+
+interface AgentGuidanceFileScan {
+  file_path: string;
+  exists: boolean;
+  has_guidance: boolean;
+  has_marker: boolean;
+}
+
+interface AgentGuidanceBlockRange {
+  start_index: number;
+  end_index: number;
+}
+
+export interface InitAgentGuidanceSummary {
+  mode: InitAgentGuidanceMode;
+  present: boolean;
+  prompted: boolean;
+  applied: boolean;
+  skipped: boolean;
+  declined: boolean;
+  prompt_completed: boolean;
+  template_version: number;
+  target_file: string;
+  checked_files: string[];
+  files_with_guidance: string[];
+  missing_files: string[];
+}
+
+export interface RunInitAgentGuidanceOptions {
+  pm_root: string;
+  cwd: string;
+  mode: InitAgentGuidanceMode;
+  interactive: boolean;
+  settings: PmSettings;
+}
+
+export interface RunInitAgentGuidanceResult {
+  summary: InitAgentGuidanceSummary;
+  warnings: string[];
+  next_steps: string[];
+  settings_changed: boolean;
+}
+
+function toPortableRelativePath(projectRoot: string, targetPath: string): string {
+  const relative = path.relative(projectRoot, targetPath);
+  if (relative.length === 0) {
+    return path.basename(targetPath);
+  }
+  return relative.split(path.sep).join("/");
+}
+
+function ensureTrailingNewline(value: string): string {
+  return value.endsWith("\n") ? value : `${value}\n`;
+}
+
+function detectLineEnding(value: string): "\n" | "\r\n" {
+  return value.includes("\r\n") ? "\r\n" : "\n";
+}
+
+function findGuidanceBlockRange(content: string): AgentGuidanceBlockRange | null {
+  const startIndex = content.indexOf(AGENT_GUIDANCE_START_MARKER_PREFIX);
+  if (startIndex === -1) {
+    return null;
+  }
+  const endMarkerIndex = content.indexOf(AGENT_GUIDANCE_END_MARKER, startIndex);
+  if (endMarkerIndex === -1) {
+    return null;
+  }
+  return {
+    start_index: startIndex,
+    end_index: endMarkerIndex + AGENT_GUIDANCE_END_MARKER.length,
+  };
+}
+
+function hasGuidanceMarker(content: string): boolean {
+  return findGuidanceBlockRange(content) !== null;
+}
+
+function buildAgentGuidanceBlock(lineEnding: "\n" | "\r\n"): string {
+  const lines = [
+    AGENT_GUIDANCE_START_MARKER,
+    "## pm Workflow (Agent Quickstart)",
+    "",
+    "- Orient before mutate: `pm context --limit 10`, `pm search \"<keywords>\" --limit 10`, `pm list-open --limit 20`.",
+    "- Claim and execute: `pm claim <id>` then `pm update <id> --status in_progress`.",
+    "- Link evidence while coding: `pm files <id> --add ...`, `pm docs <id> --add ...`, `pm test <id> --add command=\"node scripts/run-tests.mjs test -- ...\"`.",
+    "- Verify and close: `pm test <id> --run --progress`, `pm close <id> \"<evidence>\" --validate-close warn`, `pm release <id>`.",
+    "- Set `PM_AUTHOR=<stable-agent-id>` before mutation commands.",
+    "",
+    AGENT_GUIDANCE_END_MARKER,
+    "",
+  ];
+  return lines.join(lineEnding);
+}
+
+function upsertAgentGuidanceBlock(existingContent: string): { next_content: string; changed: boolean } {
+  const lineEnding = detectLineEnding(existingContent);
+  const nextBlock = buildAgentGuidanceBlock(lineEnding);
+  const existingRange = findGuidanceBlockRange(existingContent);
+  if (existingRange) {
+    const nextContent = ensureTrailingNewline(
+      `${existingContent.slice(0, existingRange.start_index)}${nextBlock}${existingContent.slice(existingRange.end_index)}`,
+    );
+    return {
+      next_content: nextContent,
+      changed: nextContent !== existingContent,
+    };
+  }
+  const separator = existingContent.length === 0 ? "" : existingContent.endsWith("\n") ? "\n" : "\n\n";
+  const nextContent = ensureTrailingNewline(`${existingContent}${separator}${nextBlock}`);
+  return {
+    next_content: nextContent,
+    changed: nextContent !== existingContent,
+  };
+}
+
+function resolveProjectRoot(pmRoot: string, cwd: string): string {
+  const parent = path.dirname(pmRoot);
+  if (path.basename(pmRoot) === "pm" && path.basename(parent) === ".agents") {
+    return path.dirname(parent);
+  }
+  return path.resolve(cwd, pmRoot);
+}
+
+function resolveTargetGuidancePath(scans: AgentGuidanceFileScan[], projectRoot: string): string {
+  const existingAgents = scans.find((entry) => path.basename(entry.file_path) === "AGENTS.md" && entry.exists);
+  if (existingAgents) {
+    return existingAgents.file_path;
+  }
+  const existingAny = scans.find((entry) => entry.exists);
+  if (existingAny) {
+    return existingAny.file_path;
+  }
+  return path.join(projectRoot, "AGENTS.md");
+}
+
+function parsePromptChoice(answer: string, currentDefault: boolean): boolean {
+  const normalized = answer.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return currentDefault;
+  }
+  if (normalized === "y" || normalized === "yes") {
+    return true;
+  }
+  if (normalized === "n" || normalized === "no") {
+    return false;
+  }
+  return currentDefault;
+}
+
+async function promptForGuidanceWrite(targetRelativePath: string): Promise<boolean> {
+  const rl = readline.createInterface({ input, output });
+  try {
+    output.write("\nAgent guidance check\n");
+    output.write("No AGENTS.md/CLAUDE.md file currently contains compact pm workflow guidance.\n");
+    const answer = await rl.question(`Add a compact pm workflow section to ${targetRelativePath}? [Y/n] `);
+    output.write("\n");
+    return parsePromptChoice(answer, true);
+  } finally {
+    rl.close();
+  }
+}
+
+function normalizeAgentGuidanceState(settings: PmSettings): PmSettings["agent_guidance"] {
+  const current = settings.agent_guidance;
+  return {
+    prompt_completed: current?.prompt_completed === true,
+    declined: current?.declined === true,
+    declined_at: typeof current?.declined_at === "string" ? current.declined_at : "",
+    template_version:
+      typeof current?.template_version === "number" && Number.isInteger(current.template_version) && current.template_version > 0
+        ? current.template_version
+        : AGENT_GUIDANCE_TEMPLATE_VERSION,
+    last_checked_files: Array.isArray(current?.last_checked_files)
+      ? [...new Set(current.last_checked_files.map((value) => value.trim()).filter((value) => value.length > 0))].sort(
+          (left, right) => left.localeCompare(right),
+        )
+      : [],
+  };
+}
+
+async function scanGuidanceFiles(projectRoot: string): Promise<AgentGuidanceFileScan[]> {
+  const scans: AgentGuidanceFileScan[] = [];
+  for (const filename of AGENT_GUIDANCE_TARGET_FILENAMES) {
+    const filePath = path.join(projectRoot, filename);
+    const exists = await pathExists(filePath);
+    if (!exists) {
+      scans.push({
+        file_path: filePath,
+        exists,
+        has_guidance: false,
+        has_marker: false,
+      });
+      continue;
+    }
+    const content = await fs.readFile(filePath, "utf8");
+    const contentLower = content.toLowerCase();
+    const tokenHits = AGENT_GUIDANCE_REQUIRED_TOKENS.filter((token) => contentLower.includes(token));
+    const hasMarker = hasGuidanceMarker(content);
+    scans.push({
+      file_path: filePath,
+      exists,
+      has_guidance: hasMarker || tokenHits.length >= AGENT_GUIDANCE_REQUIRED_TOKEN_THRESHOLD,
+      has_marker: hasMarker,
+    });
+  }
+  return scans;
+}
+
+function pushUnique(target: string[], value: string): void {
+  if (!target.includes(value)) {
+    target.push(value);
+  }
+}
+
+function applyAgentGuidanceState(
+  settings: PmSettings,
+  currentState: PmSettings["agent_guidance"],
+): { changed: boolean; state: PmSettings["agent_guidance"] } {
+  const existing = normalizeAgentGuidanceState(settings);
+  const changed = JSON.stringify(existing) !== JSON.stringify(currentState);
+  if (changed) {
+    settings.agent_guidance = currentState;
+  }
+  return { changed, state: currentState };
+}
+
+async function writeGuidanceFile(filePath: string): Promise<{ changed: boolean; warnings: string[] }> {
+  const exists = await pathExists(filePath);
+  const currentContent = exists ? await fs.readFile(filePath, "utf8") : "";
+  const nextContent = upsertAgentGuidanceBlock(currentContent);
+  if (!nextContent.changed) {
+    return { changed: false, warnings: [] };
+  }
+  await fs.writeFile(filePath, nextContent.next_content, "utf8");
+  return {
+    changed: true,
+    warnings: await runActiveOnWriteHooks({
+      path: filePath,
+      scope: "project",
+      op: "init:agent_guidance_file",
+    }),
+  };
+}
+
+export async function runInitAgentGuidance(options: RunInitAgentGuidanceOptions): Promise<RunInitAgentGuidanceResult> {
+  const warnings: string[] = [];
+  const nextSteps: string[] = [];
+  const projectRoot = resolveProjectRoot(options.pm_root, options.cwd);
+  let scans = await scanGuidanceFiles(projectRoot);
+  const targetPath = resolveTargetGuidancePath(scans, projectRoot);
+  const targetRelativePath = toPortableRelativePath(projectRoot, targetPath);
+  const addLaterHint = "Add workflow guidance later: pm init --agent-guidance add";
+  let prompted = false;
+  let applied = false;
+  let skipped = false;
+  let state = normalizeAgentGuidanceState(options.settings);
+  const checkedFiles = scans.map((entry) => toPortableRelativePath(projectRoot, entry.file_path));
+  const presentBefore = scans.some((entry) => entry.has_guidance);
+
+  const markState = (partial: Partial<PmSettings["agent_guidance"]>): void => {
+    state = {
+      ...state,
+      ...partial,
+      template_version: AGENT_GUIDANCE_TEMPLATE_VERSION,
+      last_checked_files: checkedFiles,
+    };
+  };
+
+  if (options.mode === "status") {
+    if (!presentBefore) {
+      warnings.push("agent_guidance:missing");
+      pushUnique(nextSteps, addLaterHint);
+    }
+  } else if (options.mode === "skip") {
+    skipped = true;
+    markState({
+      prompt_completed: true,
+      declined: true,
+      declined_at: state.declined_at.length > 0 ? state.declined_at : new Date().toISOString(),
+    });
+    warnings.push("agent_guidance:explicit_skip");
+    pushUnique(nextSteps, addLaterHint);
+  } else if (options.mode === "add") {
+    if (!presentBefore) {
+      const writeResult = await writeGuidanceFile(targetPath);
+      warnings.push(...writeResult.warnings);
+      if (writeResult.changed) {
+        applied = true;
+        warnings.push(`agent_guidance:added:${targetRelativePath}`);
+      }
+    }
+    markState({
+      prompt_completed: true,
+      declined: false,
+      declined_at: "",
+    });
+  } else if (presentBefore) {
+    if (state.declined) {
+      markState({
+        prompt_completed: true,
+        declined: false,
+        declined_at: "",
+      });
+    }
+  } else if (state.prompt_completed && state.declined) {
+    skipped = true;
+    warnings.push("agent_guidance:skipped_declined");
+    pushUnique(nextSteps, addLaterHint);
+  } else if (options.interactive) {
+    prompted = true;
+    const approved = await promptForGuidanceWrite(targetRelativePath);
+    if (approved) {
+      const writeResult = await writeGuidanceFile(targetPath);
+      warnings.push(...writeResult.warnings);
+      if (writeResult.changed) {
+        applied = true;
+        warnings.push(`agent_guidance:added:${targetRelativePath}`);
+      }
+      markState({
+        prompt_completed: true,
+        declined: false,
+        declined_at: "",
+      });
+    } else {
+      skipped = true;
+      markState({
+        prompt_completed: true,
+        declined: true,
+        declined_at: new Date().toISOString(),
+      });
+      warnings.push("agent_guidance:declined");
+      pushUnique(nextSteps, addLaterHint);
+    }
+  } else {
+    warnings.push("agent_guidance:missing_non_interactive");
+    pushUnique(nextSteps, addLaterHint);
+  }
+
+  const stateUpdate = applyAgentGuidanceState(options.settings, state);
+  if (applied) {
+    scans = await scanGuidanceFiles(projectRoot);
+  }
+
+  const summary: InitAgentGuidanceSummary = {
+    mode: options.mode,
+    present: scans.some((entry) => entry.has_guidance),
+    prompted,
+    applied,
+    skipped,
+    declined: state.declined,
+    prompt_completed: state.prompt_completed,
+    template_version: state.template_version,
+    target_file: targetRelativePath,
+    checked_files: scans.map((entry) => toPortableRelativePath(projectRoot, entry.file_path)),
+    files_with_guidance: scans
+      .filter((entry) => entry.has_guidance)
+      .map((entry) => toPortableRelativePath(projectRoot, entry.file_path)),
+    missing_files: scans
+      .filter((entry) => !entry.exists)
+      .map((entry) => toPortableRelativePath(projectRoot, entry.file_path)),
+  };
+
+  return {
+    summary,
+    warnings,
+    next_steps: nextSteps,
+    settings_changed: stateUpdate.changed,
+  };
+}

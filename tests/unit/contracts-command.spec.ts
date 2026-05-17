@@ -475,7 +475,7 @@ describe("contracts command runtime", () => {
         },
         {
           command: "init",
-          flags: ["--preset", "--defaults", "--author", "--with-packages"],
+          flags: ["--preset", "--defaults", "--author", "--agent-guidance", "--with-packages"],
         },
         { command: "restore", flags: ["--author", "--message", "--force"] },
         { command: "delete", flags: ["--author", "--message", "--force"] },

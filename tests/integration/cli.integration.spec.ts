@@ -3140,6 +3140,65 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("supports agent guidance init status, skip, and add modes", async () => {
+    await withTempPmPath(async (context) => {
+      const guidanceStatusBefore = context.runCli(["init", "--agent-guidance", "status", "--json"], { expectJson: true });
+      expect(guidanceStatusBefore.code).toBe(0);
+      expect(guidanceStatusBefore.json).toMatchObject({
+        agent_guidance: {
+          mode: "status",
+          present: false,
+        },
+      });
+
+      const skip = context.runCli(["init", "--agent-guidance", "skip", "--json"], { expectJson: true });
+      expect(skip.code).toBe(0);
+      expect(skip.json).toMatchObject({
+        agent_guidance: {
+          mode: "skip",
+          declined: true,
+          prompt_completed: true,
+        },
+      });
+
+      const askAfterSkip = context.runCli(["init", "--json"], { expectJson: true });
+      expect(askAfterSkip.code).toBe(0);
+      expect(askAfterSkip.json).toMatchObject({
+        agent_guidance: {
+          mode: "ask",
+          skipped: true,
+          declined: true,
+        },
+      });
+
+      const add = context.runCli(["init", "--agent-guidance", "add", "--json"], { expectJson: true });
+      expect(add.code).toBe(0);
+      expect(add.json).toMatchObject({
+        agent_guidance: {
+          mode: "add",
+          present: true,
+          applied: true,
+          declined: false,
+        },
+      });
+
+      const guidancePath = path.join(context.tempRoot, "AGENTS.md");
+      const guidanceBody = await readFile(guidancePath, "utf8");
+      expect(guidanceBody).toContain("<!-- pm-cli:agent-guidance:start:v1 -->");
+      expect(guidanceBody).toContain("pm context --limit 10");
+      expect(guidanceBody).toContain("pm close <id>");
+
+      const guidanceStatusAfter = context.runCli(["init", "--agent-guidance", "status", "--json"], { expectJson: true });
+      expect(guidanceStatusAfter.code).toBe(0);
+      expect(guidanceStatusAfter.json).toMatchObject({
+        agent_guidance: {
+          mode: "status",
+          present: true,
+        },
+      });
+    });
+  });
+
   it("discovers referenced file links through files discover in a temporary project", async () => {
     await withTempPmPath(async (context) => {
       const projectRoot = path.join(context.tempRoot, "discovery-project");

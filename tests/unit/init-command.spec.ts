@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -20,7 +20,15 @@ describe("runInit", () => {
       expect(result.path).toBe(tempRoot);
       expect(result.settings.id_prefix).toBe("acme-");
       expect(result.created_dirs).toHaveLength(PM_REQUIRED_SUBDIRS.length - 1 + 4);
-      expect(result.warnings).toEqual([`already_exists:${tempRoot}`]);
+      expect(result.warnings).toContain(`already_exists:${tempRoot}`);
+      expect(result.warnings).toContain("agent_guidance:missing_non_interactive");
+      expect(result.agent_guidance).toMatchObject({
+        mode: "ask",
+        present: false,
+        prompted: false,
+        applied: false,
+      });
+      expect(result.next_steps).toContain("Add workflow guidance later: pm init --agent-guidance add");
 
       for (const subdir of PM_REQUIRED_SUBDIRS) {
         const expectedPath = subdir ? path.join(tempRoot, subdir) : tempRoot;
@@ -58,6 +66,49 @@ describe("runInit", () => {
 
       const persisted = await readSettings(tempRoot);
       expect(persisted.id_prefix).toBe("next-");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("persists explicit skip state and supports idempotent explicit guidance add", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-agent-guidance-"));
+    try {
+      const skipped = await runInit("pm", { path: tempRoot }, { defaults: true, agentGuidance: "skip" });
+      expect(skipped.agent_guidance).toMatchObject({
+        mode: "skip",
+        present: false,
+        skipped: true,
+        declined: true,
+        prompt_completed: true,
+      });
+      expect(skipped.warnings).toContain("agent_guidance:explicit_skip");
+
+      const added = await runInit("pm", { path: tempRoot }, { agentGuidance: "add" });
+      const guidancePath = path.join(tempRoot, "AGENTS.md");
+      const firstGuidance = await readFile(guidancePath, "utf8");
+      expect(added.agent_guidance).toMatchObject({
+        mode: "add",
+        present: true,
+        applied: true,
+        declined: false,
+        prompt_completed: true,
+      });
+      expect(firstGuidance).toContain("<!-- pm-cli:agent-guidance:start:v1 -->");
+      expect(firstGuidance).toContain("pm context --limit 10");
+      expect(firstGuidance).toContain("PM_AUTHOR");
+
+      const readded = await runInit("pm", { path: tempRoot }, { agentGuidance: "add" });
+      const secondGuidance = await readFile(guidancePath, "utf8");
+      expect(readded.agent_guidance.applied).toBe(false);
+      expect(secondGuidance).toBe(firstGuidance);
+
+      const status = await runInit("pm", { path: tempRoot }, { agentGuidance: "status" });
+      expect(status.agent_guidance).toMatchObject({
+        mode: "status",
+        present: true,
+      });
+      expect(status.warnings).not.toContain("agent_guidance:missing");
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
