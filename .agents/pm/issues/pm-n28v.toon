@@ -6,17 +6,18 @@ status: closed
 priority: 3
 tags[4]: cache,ci,performance,pm-cli
 created_at: "2026-05-16T22:07:59.834Z"
-updated_at: "2026-05-17T11:31:45.578Z"
+updated_at: "2026-05-17T11:43:41.671Z"
 author: maintainer-agent
 acceptance_criteria: lancedb cache restored on warm runs; sentry release cache restored when present; cache keys deterministic; no test runs against stale cache.
 parent: pm-tzwy
 resolution: CI/nightly/release/auto-release now restore LanceDB and Sentry CLI caches with deterministic keys and restore-keys.
 expected_result: Warm workflow executions reuse vector index and Sentry upload caches to reduce repeated setup overhead without stale-cache regressions.
 actual_result: "All targeted workflows include pinned observability cache steps, workflow contracts lock the snippets, and linked/full gates plus dogfood/observability checks are green."
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-05-17T11:17:24.078Z",codex-agent,"Implementation progress 2026-05-17: added dedicated observability cache restore step to CI/nightly/release/auto-release workflows using pinned actions/cache@v5 for .agents/pm/search/lancedb and ~/.cache/sentry-cli with deterministic hash keys + restore-keys (node-specific where applicable). Updated tests/integration/ci-workflow-contract.spec.ts to pin new cache step names/paths/keys across all four workflows. Focused regression check passed: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts (4 tests)."
   "2026-05-17T11:24:40.483Z",codex-agent,"UX polish 2026-05-17: reduced gate log noise/token bloat by switching npm pack dry-run invocation in scripts/release/run-gates.mjs to --silent. This keeps packaging verification intact but avoids massive tarball file listing output during local and CI troubleshooting loops."
   "2026-05-17T11:31:17.857Z",codex-agent,"Verification evidence 2026-05-17: pm test pm-n28v --run --progress passed all 4 linked checks (run_id test-local-mp9p1ujz-zjy2f5), including dogfood temp-project run (54 commands), full run-gates required mode, focused workflow contract test, and check-secrets. Standalone sentry/telemetry gate also passed with critical=0 high=0 total=0, telemetry finish_error_rate_pct=2.11, missing_error_code_rows=0. pm validate --check-resolution --check-history-drift now reports resolution status OK (0 missing fields) with only pre-existing history drift warnings on 13 legacy items; pm health --check-only --no-refresh shows telemetry queue healthy (queue_entries=2, invalid_rows=0, draining=true, latest successful flush timestamp present)."
+  "2026-05-17T11:43:41.671Z",codex-agent,"Delivery evidence 2026-05-17: committed and pushed main as a1f134cfe165bff79387e5a1d15b9af63c9e37fc. GitHub Actions CI run 25989643786 completed success across build-foundation, gates, and matrix test jobs after introducing observability cache restores and workflow contracts."
 files[6]{path,scope,note}:
   .github/workflows/auto-release.yml,project,parity cache restore for auto-release validation
   .github/workflows/ci.yml,project,add lancedb and sentry cache restore/save for CI jobs
