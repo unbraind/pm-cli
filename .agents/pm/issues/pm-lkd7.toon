@@ -2,12 +2,27 @@ id: pm-lkd7
 title: "CI: smaller matrix on PRs, full matrix on main push only"
 description: "PRs currently spin all 5 matrix entries (3 OS x Node 20 + Node 22 + Node 24 on Ubuntu). Trade off PR breadth for speed: PRs run only ubuntu/node20 + macos/node20 (catch cross-OS quickly); main push runs full 5-entry matrix. Saves 2 runner jobs per PR push, ~20min total runner minutes per PR cycle."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: ci,matrix,performance,pm-cli
 created_at: "2026-05-16T22:07:45.274Z"
-updated_at: "2026-05-16T22:07:45.274Z"
+updated_at: "2026-05-16T23:59:58.135Z"
 author: maintainer-agent
 acceptance_criteria: PRs run 2-entry matrix (ubuntu+macos on Node 20); main push runs the full 5-entry matrix; nightly continues full matrix; documentation reflects this in CONTRIBUTING.md.
 parent: pm-tzwy
+resolution: "Implemented event-aware GitHub Actions matrix: pull_request runs ubuntu-latest/macOS Node 20 only; main push keeps full five-job matrix."
+expected_result: PRs run 2-entry matrix; main pushes run full five-entry matrix; nightly remains unchanged; CONTRIBUTING documents behavior.
+actual_result: "Focused CI contract, linked pm test, isolated dogfood, static/secret/typecheck, full release gate, Sentry, and telemetry checks passed."
+comments[1]{created_at,author,text}:
+  "2026-05-16T23:59:44.382Z",codex-agent,"Evidence 2026-05-17: implemented event-aware CI matrix using free GitHub Actions features. pull_request now expands only ubuntu-latest Node 20 and macos-latest Node 20; main push keeps the full five-job matrix with ubuntu/macos/windows Node 20 plus ubuntu Node 22/24. Documentation updated in CONTRIBUTING.md. Verification passed: focused CI workflow contract, pm linked test sandbox, typecheck, isolated dogfood 46 workflows including contract parity assertions, static quality, secret scan, and full release gate with 93 files / 1316 tests at 100 percent coverage; Sentry critical/high/total 0 and telemetry finish_error_rate_pct 2.28 with zero missing error-code rows."
+files[2]{path,scope,note}:
+  tests/integration/ci-workflow-contract.spec.ts,project,CI matrix contract regression
+  .github/workflows/ci.yml,project,event-aware PR/main CI matrix
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mp8zzo3l-gz9jot,test,passed,"2026-05-16T23:48:54.640Z","2026-05-16T23:49:08.673Z","2026-05-16T23:49:08.673Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  CONTRIBUTING.md,project,document reduced PR matrix
+close_reason: "PR CI matrix reduced to ubuntu/macos Node 20 while main retains full matrix; focused, dogfood, release gate, Sentry, telemetry, and privacy checks passed"
 body: ""

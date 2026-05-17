@@ -498,6 +498,14 @@ describe("contracts command runtime", () => {
         },
         { command: "gc", flags: ["--dry-run", "--scope"] },
         {
+          command: "list-open",
+          flags: ["--compact", "--brief", "--fields", "--include-body"],
+        },
+        {
+          command: "search",
+          flags: ["--mode", "--semantic", "--hybrid", "--include-linked"],
+        },
+        {
           command: "extension",
           flags: [
             "--init",

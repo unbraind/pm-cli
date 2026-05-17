@@ -134,6 +134,17 @@ try {
   assert(getFields?.item?.description === undefined, "get --fields should omit unselected metadata");
   assert(getFields?.body === "", "get --fields should omit body unless requested");
 
+  const listOpenContracts = run("contracts list-open flags", ["contracts", "--command", "list-open", "--flags-only"]);
+  const listOpenFlags = listOpenContracts?.command_flags?.[0]?.flags?.map((entry) => entry.flag) ?? [];
+  for (const flag of ["--compact", "--brief", "--fields", "--include-body"]) {
+    assert(listOpenFlags.includes(flag), `contracts list-open flags missing ${flag}`);
+  }
+  const searchContracts = run("contracts search flags", ["contracts", "--command", "search", "--flags-only"]);
+  const searchFlags = searchContracts?.command_flags?.[0]?.flags?.map((entry) => entry.flag) ?? [];
+  for (const flag of ["--mode", "--semantic", "--hybrid", "--include-linked"]) {
+    assert(searchFlags.includes(flag), `contracts search flags missing ${flag}`);
+  }
+
   run("calendar after init packages", [
     "calendar",
     "--view",

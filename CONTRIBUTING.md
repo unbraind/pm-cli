@@ -144,7 +144,7 @@ When unmanaged extension state is expected to be managed, use `pm extension --do
 
 - Include focused scope and rationale.
 - Confirm all checks pass (`pnpm build && pnpm typecheck && pnpm test:coverage`).
-- CI runs the full matrix on `main` pushes unless the push only changes docs/markdown or issue templates; pull requests still run CI for review confidence.
+- CI runs the full matrix on `main` pushes unless the push only changes docs/markdown or issue templates. Pull requests run the reduced free-tier matrix (`ubuntu-latest` Node 20 and `macos-latest` Node 20) for review confidence, while nightly keeps broader regression coverage.
 - Update relevant user-facing docs when behavior changes, but keep enforcement in `pm` data and runtime tests.
 - Keep private operations artifacts out of tracked public docs and package output.
 - Add/maintain tests for any new behavior (100% coverage required).

@@ -6,7 +6,8 @@ status: open
 priority: 0
 tags[6]: ci,cost,free-tier,github-actions,performance,pm-cli
 created_at: "2026-05-16T22:07:27.879Z"
-updated_at: "2026-05-16T22:07:27.879Z"
+updated_at: "2026-05-16T23:47:41.693Z"
+assignee: codex-agent
 author: maintainer-agent
 acceptance_criteria: "Average CI duration per push/PR cut by >=40%; total runner minutes per PR cut by >=50% on common docs-only or single-file PRs; full matrix still runs on main push; coverage gate, static quality gate, plugin smoke tests still gating; pnpm audit/security:scan still gating; no paid GitHub features used; CI is green on the change."
 parent: pm-rnpb

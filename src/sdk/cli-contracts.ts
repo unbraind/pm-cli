@@ -585,6 +585,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--limit" },
   { flag: "--offset" },
   { flag: "--compact" },
+  { flag: "--brief" },
   { flag: "--fields" },
   { flag: "--sort" },
   { flag: "--order" },
@@ -1311,6 +1312,8 @@ export const DEPS_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--mode" },
+  { flag: "--semantic" },
+  { flag: "--hybrid" },
   { flag: "--include-linked" },
   { flag: "--title-exact" },
   { flag: "--phrase-exact" },
@@ -1607,6 +1610,7 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   },
   op: { type: "string" },
   compact: { type: "boolean" },
+  brief: { type: "boolean" },
   full: { type: "boolean" },
   view: { type: "string", enum: ["agenda", "day", "week", "month"] },
   date: { type: "string" },
@@ -1619,6 +1623,8 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   recurrenceLookbackDays: { anyOf: [{ type: "string" }, { type: "number" }] },
   occurrenceLimit: { anyOf: [{ type: "string" }, { type: "number" }] },
   includeLinked: { type: "boolean" },
+  semantic: { type: "boolean" },
+  hybrid: { type: "boolean" },
   titleExact: { type: "boolean" },
   phraseExact: { type: "boolean" },
   includeBody: { type: "boolean" },
@@ -1811,6 +1817,7 @@ const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_LIST_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
   "includeBody",
   "compact",
+  "brief",
 ]);
 const AGGREGATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_AGGREGATE_OPTION_CONTRACTS.map((entry) => entry.param),
@@ -1822,6 +1829,8 @@ const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "query",
   "keywords",
   "mode",
+  "semantic",
+  "hybrid",
   "includeLinked",
   "titleExact",
   "phraseExact",
