@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.18] - 2026-05-18
+
 ### Changed
 - CI: split the serial `gates` job into a parallel matrix (`coverage`, `typecheck`, `static`, `compat`, `smokes`) all fanning out from the shared `build-foundation` dist artifact, and moved the slow Windows test job from push CI to nightly so it no longer dominates the push critical path. Reduces push critical path from ~10 min to ~5-6 min on the free-tier runners; Windows + macOS cross-platform coverage now runs daily in `nightly.yml` so regressions are still caught within 24h.
 - `pm package` / `pm extension` bare invocations now default to `--explore` instead of erroring on the required-action contract, matching the agent-friendly default used by `pm templates`.
