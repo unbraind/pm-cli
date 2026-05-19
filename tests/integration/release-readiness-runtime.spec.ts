@@ -1302,13 +1302,39 @@ describe("release readiness runtime coverage", () => {
       expect(installSearchAdvanced.code).toBe(0);
 
       const searchAdvancedResult = context.runCli(
-        ["search-advanced", "--mode", "keyword", "--limit", "20", "runtime", "--json"],
+        ["search-advanced", "--mode", "keyword", "--limit", "20", "--fields", "id,title,score", "runtime", "--json"],
         {
           expectJson: true,
         },
       );
       expect(searchAdvancedResult.code).toBe(0);
       expectTopLevelKeyOrder(searchAdvancedResult.json, ["query", "mode", "items", "count", "filters", "projection", "now"]);
+      expect((searchAdvancedResult.json as { query?: string }).query).toBe("runtime");
+      expect((searchAdvancedResult.json as { projection?: { fields?: string[] } }).projection?.fields).toEqual([
+        "id",
+        "title",
+        "score",
+      ]);
+
+      const searchAdvancedFlags = context.runCli(
+        ["contracts", "--command", "search-advanced", "--runtime-only", "--flags-only", "--json"],
+        { expectJson: true },
+      );
+      expect(searchAdvancedFlags.code).toBe(0);
+      const flagNames = ((searchAdvancedFlags.json as { command_flags?: Array<{ flags?: Array<{ flag: string }> }> }).command_flags?.[0]?.flags ?? []).map(
+        (entry) => entry.flag,
+      );
+      expect(flagNames).toEqual(expect.arrayContaining(["--fields", "--limit", "--type", "--semantic", "--hybrid"]));
+
+      const searchAdvancedDefault = context.runCli(
+        ["search-advanced", "runtime", "--fields", "id,title,score", "--json"],
+        {
+          expectJson: true,
+        },
+      );
+      expect(searchAdvancedDefault.code).toBe(0);
+      expect((searchAdvancedDefault.json as { mode?: string; query?: string }).mode).toBe("keyword");
+      expect((searchAdvancedDefault.json as { mode?: string; query?: string }).query).toBe("runtime");
 
       const reindexPackageResult = context.runCli(["reindex", "--mode", "keyword", "--json"], { expectJson: true });
       expect(reindexPackageResult.code).toBe(0);
@@ -1708,7 +1734,6 @@ describe("release readiness runtime coverage", () => {
       "src/sdk/cli-contracts.ts",
       "src/sdk/cli-contracts/commander-mutation-options.ts",
       "src/sdk/cli-contracts/commander-types.ts",
-      "src/sdk/runtime.ts",
     ]);
   });
 

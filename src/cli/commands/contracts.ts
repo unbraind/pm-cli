@@ -7,6 +7,7 @@ import {
   loadExtensions,
 } from "../../core/extensions/index.js";
 import type {
+  ExtensionRegistrationRegistry,
   RegisteredExtensionCommandDefinition,
   RegisteredExtensionFlagDefinitions,
 } from "../../core/extensions/index.js";
@@ -190,6 +191,7 @@ interface RuntimeExtensionActionProbe {
   disabledReason: string | null;
   commandDefinitions: RegisteredExtensionCommandDefinition[];
   flagRegistrations: RegisteredExtensionFlagDefinitions[];
+  registrations: ExtensionRegistrationRegistry | null;
   policyState: {
     mode: string;
     trust_mode: string;
@@ -743,6 +745,7 @@ async function resolveRuntimeExtensionActionProbe(
       disabledReason: "extensions_disabled",
       commandDefinitions: [],
       flagRegistrations: [],
+      registrations: null,
       policyState: defaultPolicyState,
     };
   }
@@ -754,6 +757,7 @@ async function resolveRuntimeExtensionActionProbe(
       disabledReason: null,
       commandDefinitions: [],
       flagRegistrations: [],
+      registrations: null,
       policyState: defaultPolicyState,
     };
   }
@@ -780,6 +784,7 @@ async function resolveRuntimeExtensionActionProbe(
       disabledReason: null,
       commandDefinitions: activationResult.registrations.commands,
       flagRegistrations: activationResult.registrations.flags,
+      registrations: activationResult.registrations,
       policyState: {
         mode: loadResult.policy.mode,
         trust_mode: loadResult.policy.trust_mode,
@@ -792,6 +797,7 @@ async function resolveRuntimeExtensionActionProbe(
       disabledReason: "extension_runtime_probe_failed",
       commandDefinitions: [],
       flagRegistrations: [],
+      registrations: null,
       policyState: defaultPolicyState,
     };
   }
@@ -1369,9 +1375,10 @@ export async function runContracts(
   } catch {
     settings = structuredClone(SETTINGS_DEFAULTS);
   }
+  const runtimeProbe = await resolveRuntimeExtensionActionProbe(global);
   const typeRegistry = resolveItemTypeRegistry(
     settings,
-    getActiveExtensionRegistrations(),
+    runtimeProbe.registrations ?? getActiveExtensionRegistrations(),
   );
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
@@ -1379,7 +1386,6 @@ export async function runContracts(
     buildRuntimeFieldFlagContracts(runtimeFieldRegistry);
   const createRequiredOptionContracts =
     buildCreateRequiredOptionContracts(typeRegistry);
-  const runtimeProbe = await resolveRuntimeExtensionActionProbe(global);
   const extensionContracts = collectExtensionCommandContracts(runtimeProbe);
   const extensionFlagMap = collectExtensionFlagContractsByCommand(
     runtimeProbe.flagRegistrations,

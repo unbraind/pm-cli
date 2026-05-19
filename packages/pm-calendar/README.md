@@ -3,7 +3,9 @@
 `@unbrained/pm-calendar` provides agenda and calendar views as an installable pm package.
 
 ```bash
-pm install calendar
+pm install calendar --project
+# Or bootstrap all bundled package commands in a new project:
+pm init --defaults --with-packages
 pm calendar --view week --full-period
 pm cal --json --view agenda --include reminders,events
 ```

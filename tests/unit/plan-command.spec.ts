@@ -98,6 +98,17 @@ describe("runPlan command family", () => {
         },
       });
       expect(projected.next_actions).toEqual(expect.arrayContaining([expect.stringContaining("approve")]));
+      await expect(
+        runPlan({
+          subcommand: "show",
+          id: planId,
+          options: { fields: "id,typo,steps_summary" } as Parameters<typeof runPlan>[0]["options"],
+          global: { ...GLOBAL, path: context.pmPath },
+        }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Unknown Plan --fields value(s): typo"),
+      });
     });
   });
 

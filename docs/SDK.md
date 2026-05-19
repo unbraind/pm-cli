@@ -110,7 +110,16 @@ pm contracts --action calendar --runtime-only --schema-only --json
 pm contracts --command templates --runtime-only --flags-only --json
 ```
 
-Use static SDK contracts for baseline validation, then use `pm contracts --runtime-only` in the target project before invoking package-provided commands or actions.
+Use static SDK contracts for baseline validation, then use runtime contracts in the target project before invoking package-provided commands or actions. Embedded SDK consumers can avoid subprocesses:
+
+```ts
+import { getContracts } from "@unbrained/pm-cli/sdk";
+
+const contracts = await getContracts("/path/to/project/.agents/pm", {
+  runtimeOnly: true,
+  flagsOnly: true,
+});
+```
 
 When a package-owned command is missing at runtime, CLI usage guidance now includes a deterministic install hint (for example `pm install calendar` or `pm install search-advanced`) so agents can recover in one retry.
 
@@ -223,7 +232,7 @@ Manifest capability: `search`.
 ## Robust Automation Pattern
 
 1. Read `PM_TOOL_ACTIONS` or `PM_TOOL_PARAMETERS_SCHEMA` for baseline static validation.
-2. Run `pm contracts --runtime-only --json` inside the target project.
+2. Load runtime contracts with `getContracts(pmRoot, { runtimeOnly: true })` or run `pm contracts --runtime-only --json` inside the target project.
 3. Verify the action appears in `actions` and has `action_availability[].invocable: true`.
 4. Validate required fields with `PM_TOOL_ACTION_PARAMETER_CONTRACTS` for static actions or the runtime schema for package actions.
 5. Execute only after preflight passes.

@@ -117,7 +117,8 @@ For token-aware local routing, install `guide-shell` with `pm install guide-shel
 - Tag-driven publishing remains in `.github/workflows/release.yml`.
 - Local parity commands:
   - `pnpm release:pipeline:dry-run`
-  - `pnpm release:pipeline -- --telemetry-mode required`
+  - `pnpm release:pipeline`
+  - run maintainer-only reliability checks separately and keep their raw details in ignored local notes
 
 ## Core Model
 

@@ -128,6 +128,27 @@ function runSemanticDogfoodProbe() {
   const searchPayload = JSON.parse(search.stdout);
   assert(searchPayload?.mode === "hybrid", "semantic hybrid search did not report mode=hybrid");
   assert((searchPayload?.items ?? []).length >= 1, "semantic hybrid search returned no items");
+
+  const searchAdvanced = spawnSync(
+    process.execPath,
+    [cliPath, "--json", "search-advanced", "--hybrid", "package workflow", "--limit", "5"],
+    {
+      cwd: repoRoot,
+      encoding: "utf8",
+      env: semanticEnv,
+      maxBuffer: 20 * 1024 * 1024,
+    },
+  );
+  timings.push({ label: "semantic search-advanced hybrid alias", took_ms: 0, code: searchAdvanced.status ?? 1 });
+  if (searchAdvanced.status !== 0) {
+    throw new Error(`semantic search-advanced --hybrid failed: ${searchAdvanced.stderr.trim() || searchAdvanced.stdout.trim()}`);
+  }
+  const searchAdvancedPayload = JSON.parse(searchAdvanced.stdout);
+  assert(searchAdvancedPayload?.mode === "hybrid", "search-advanced --hybrid alias did not select hybrid mode");
+  assert(
+    searchAdvancedPayload?.query === "package workflow",
+    "search-advanced --hybrid should not leak into query text",
+  );
   return { attempted: true, model: semanticEnv.PM_OLLAMA_MODEL };
 }
 
@@ -226,6 +247,27 @@ try {
   for (const flag of ["--mode", "--semantic", "--hybrid", "--include-linked"]) {
     assert(searchFlags.includes(flag), `contracts search flags missing ${flag}`);
   }
+  const searchAdvancedContracts = run("contracts search-advanced flags", [
+    "contracts",
+    "--command",
+    "search-advanced",
+    "--runtime-only",
+    "--flags-only",
+  ]);
+  const searchAdvancedFlags = searchAdvancedContracts?.command_flags?.[0]?.flags?.map((entry) => entry.flag) ?? [];
+  for (const flag of ["--mode", "--semantic", "--hybrid", "--fields", "--limit"]) {
+    assert(searchAdvancedFlags.includes(flag), `contracts search-advanced flags missing ${flag}`);
+  }
+  const searchAdvancedKeyword = run("package command search-advanced keyword", [
+    "search-advanced",
+    "Dogfood package-first workflow",
+    "--fields",
+    "id,title,score",
+    "--limit",
+    "5",
+  ]);
+  assert(searchAdvancedKeyword?.mode === "keyword", "search-advanced should default to keyword mode");
+  assert(searchAdvancedKeyword?.query === "Dogfood package-first workflow", "search-advanced query parsing drifted");
   const allFlagContracts = run("contracts all flags", ["contracts", "--flags-only"]);
   const flagsByCommand = new Map(
     (allFlagContracts?.command_flags ?? []).map((entry) => [

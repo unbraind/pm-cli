@@ -48,6 +48,9 @@ function readStringOption(options, key, aliases = []) {
   return undefined;
 }
 
+const BOOLEAN_TRUE_VALUES = new Set(["true", "1", "yes", "on"]);
+const BOOLEAN_FALSE_VALUES = new Set(["false", "0", "no", "off"]);
+
 function readBooleanOption(options, key, aliases = []) {
   const keys = [key, ...aliases];
   for (const candidate of keys) {
@@ -60,10 +63,10 @@ function readBooleanOption(options, key, aliases = []) {
     }
     if (typeof value === "string") {
       const normalized = value.trim().toLowerCase();
-      if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on") {
+      if (BOOLEAN_TRUE_VALUES.has(normalized)) {
         return true;
       }
-      if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off") {
+      if (BOOLEAN_FALSE_VALUES.has(normalized)) {
         return false;
       }
     }
@@ -71,24 +74,79 @@ function readBooleanOption(options, key, aliases = []) {
   return undefined;
 }
 
+const SEARCH_VALUE_FLAGS = new Set([
+  "--mode",
+  "--type",
+  "--tag",
+  "--priority",
+  "--deadline-before",
+  "--deadline_before",
+  "--deadline-after",
+  "--deadline_after",
+  "--limit",
+  "--fields",
+]);
+
+const SEARCH_BOOLEAN_FLAGS = new Set([
+  "--semantic",
+  "--hybrid",
+  "--include-linked",
+  "--include_linked",
+  "--title-exact",
+  "--title_exact",
+  "--phrase-exact",
+  "--phrase_exact",
+  "--compact",
+  "--full",
+  "--json",
+]);
+
+function stripSearchOptionTokens(args) {
+  const queryTokens = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const token = args[index]?.trim() ?? "";
+    const equalsIndex = token.indexOf("=");
+    const flagName = equalsIndex > 0 ? token.slice(0, equalsIndex) : token;
+    if (SEARCH_VALUE_FLAGS.has(flagName)) {
+      if (equalsIndex < 0) {
+        index += 1;
+      }
+      continue;
+    }
+    if (SEARCH_BOOLEAN_FLAGS.has(flagName)) {
+      continue;
+    }
+    if (token.length > 0) {
+      queryTokens.push(token);
+    }
+  }
+  return queryTokens;
+}
+
 function resolveSearchQuery(args) {
-  const query = args
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0)
-    .join(" ");
+  const query = stripSearchOptionTokens(args).join(" ");
   if (query.length === 0) {
     throw new PmCliError("Search query must not be empty", EXIT_CODE.USAGE);
   }
   return query;
 }
 
-function normalizeAdvancedSearchOptions(rawOptions) {
+function normalizeAdvancedSearchOptions(rawOptions, args) {
   const fields = readStringOption(rawOptions, "fields");
   const compactRequested = readBooleanOption(rawOptions, "compact") === true;
   const fullRequested = readBooleanOption(rawOptions, "full") === true;
   const defaultCompact = !compactRequested && !fullRequested && fields === undefined;
+  const explicitMode = readStringOption(rawOptions, "mode");
+  const argFlags = new Set(args.map((value) => value?.trim() ?? ""));
+  const mode =
+    explicitMode ??
+    (readBooleanOption(rawOptions, "semantic") === true || argFlags.has("--semantic")
+      ? "semantic"
+      : readBooleanOption(rawOptions, "hybrid") === true || argFlags.has("--hybrid")
+        ? "hybrid"
+        : "keyword");
   return {
-    mode: readStringOption(rawOptions, "mode"),
+    mode,
     includeLinked: readBooleanOption(rawOptions, "includeLinked", ["include_linked"]) === true ? true : undefined,
     titleExact: readBooleanOption(rawOptions, "titleExact", ["title_exact"]) === true ? true : undefined,
     phraseExact: readBooleanOption(rawOptions, "phraseExact", ["phrase_exact"]) === true ? true : undefined,
@@ -112,7 +170,7 @@ function normalizeReindexOptions(rawOptions) {
 }
 
 export async function runAdvancedSearchPackage(args, rawOptions, global) {
-  return runSearch(resolveSearchQuery(args), normalizeAdvancedSearchOptions(rawOptions), global);
+  return runSearch(resolveSearchQuery(args), normalizeAdvancedSearchOptions(rawOptions, args), global);
 }
 
 export async function runAdvancedReindexPackage(rawOptions, global) {

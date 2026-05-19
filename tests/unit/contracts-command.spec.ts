@@ -188,6 +188,53 @@ describe("contracts command runtime", () => {
     ).not.toEqual(expect.arrayContaining(["--dep", "--comment", "--doc", "--description"]));
   });
 
+  it("emits a usable plan action schema for strict clients", async () => {
+    const result = await runContracts(
+      {
+        action: "plan",
+        schemaOnly: true,
+      },
+      GLOBAL_OPTIONS,
+    );
+    const oneOf = (result.schema?.oneOf ?? []) as Array<{
+      required?: string[];
+      properties?: Record<string, { type?: string; enum?: string[]; anyOf?: Array<{ type?: string }> }>;
+    }>;
+    const planSchema = oneOf[0];
+
+    expect(planSchema?.required).toEqual(["action", "subcommand"]);
+    expect(planSchema?.properties?.subcommand?.enum).toEqual(
+      expect.arrayContaining(["create", "show", "add-step", "materialize"]),
+    );
+    expect(planSchema?.properties?.stepRef?.type).toBe("string");
+    expect(planSchema?.properties?.reorderTo?.anyOf).toEqual(
+      expect.arrayContaining([expect.objectContaining({ type: "number" })]),
+    );
+    expect(planSchema?.properties?.scope).toMatchObject({ type: "string" });
+    expect(planSchema?.properties?.scope).not.toHaveProperty("enum");
+    expect(planSchema?.properties?.mode?.enum).toEqual(
+      expect.arrayContaining(["draft", "research", "approved", "completed"]),
+    );
+    expect(planSchema?.properties?.file?.anyOf).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "string" }),
+        expect.objectContaining({ type: "array" }),
+      ]),
+    );
+    expect(planSchema?.properties?.test?.anyOf).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "string" }),
+        expect.objectContaining({ type: "array" }),
+      ]),
+    );
+    expect(planSchema?.properties?.doc?.anyOf).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "string" }),
+        expect.objectContaining({ type: "array" }),
+      ]),
+    );
+  });
+
   it("includes runtime field flags for list aliases and runtime schema command metadata", async () => {
     await withTempPmPath(async (context) => {
       const settings = await readSettings(context.pmPath);

@@ -1,5 +1,9 @@
 import { defineConfig } from "vitest/config";
 
+const coverageReporters = process.env.CI
+  ? (["text", "json-summary"] as const)
+  : (["text", "json-summary", "html"] as const);
+
 export default defineConfig({
   cacheDir: ".cache/vitest",
   test: {
@@ -8,9 +12,10 @@ export default defineConfig({
     hookTimeout: 30_000,
     coverage: {
       provider: "v8",
-      reporter: ["text", "json-summary", "html"],
+      reporter: coverageReporters,
       include: [
         "packages/pm-beads/extensions/beads/runtime.js",
+        "packages/pm-search-advanced/extensions/search-advanced/runtime.js",
         "packages/pm-todos/extensions/todos/runtime.js",
         "src/command-types.ts",
         "src/constants.ts",
@@ -102,6 +107,7 @@ export default defineConfig({
         "src/time.ts",
         "src/types.ts",
         "src/sdk/index.ts",
+        "src/sdk/runtime.ts",
         "src/types/index.ts",
       ],
       exclude: [

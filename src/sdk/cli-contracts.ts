@@ -16,6 +16,12 @@ export {
   UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   UPDATE_COMMANDER_STRING_OPTION_CONTRACTS,
 } from "./cli-contracts/commander-mutation-options.js";
+import {
+  PLAN_HARNESS_VALUES,
+  PLAN_MODE_VALUES,
+  PLAN_STEP_LINK_KIND_VALUES,
+  PLAN_STEP_STATUS_VALUES,
+} from "../types/index.js";
 
 export interface CliFlagContract {
   flag: string;
@@ -1837,6 +1843,101 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   policy: { type: "string" },
 };
 
+const PLAN_SUBCOMMAND_VALUES = [
+  "create",
+  "show",
+  "add-step",
+  "update-step",
+  "complete-step",
+  "block-step",
+  "reorder-step",
+  "remove-step",
+  "link",
+  "unlink",
+  "decision",
+  "discovery",
+  "validation",
+  "resume",
+  "approve",
+  "materialize",
+] as const;
+
+const PLAN_ACTION_PARAMETER_PROPERTIES: Record<string, unknown> = {
+  subcommand: { type: "string", enum: [...PLAN_SUBCOMMAND_VALUES] },
+  stepRef: { type: "string" },
+  reorderTo: { anyOf: [{ type: "string" }, { type: "number" }] },
+  scope: { type: "string" },
+  harness: { type: "string", enum: [...PLAN_HARNESS_VALUES] },
+  mode: { type: "string", enum: [...PLAN_MODE_VALUES] },
+  resumeContext: { type: "string" },
+  related: { type: "string" },
+  blocks: { type: "string" },
+  claim: { type: "boolean" },
+  fromSearch: { type: "string" },
+  stepTitle: { type: "string" },
+  stepBody: { type: "string" },
+  stepOwner: { type: "string" },
+  stepStatus: { type: "string", enum: [...PLAN_STEP_STATUS_VALUES] },
+  stepEvidence: { type: "string" },
+  stepBlockedReason: { type: "string" },
+  stepReplacement: { type: "string" },
+  dependsOn: { type: "string" },
+  link: { type: "string" },
+  linkKind: { type: "string", enum: [...PLAN_STEP_LINK_KIND_VALUES] },
+  linkNote: { type: "string" },
+  promoteToItemDep: { type: "boolean" },
+  allowMultipleActive: { type: "boolean" },
+  file: { anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }] },
+  test: { anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }] },
+  doc: { anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }] },
+  decisionText: { type: "string" },
+  decisionRationale: { type: "string" },
+  decisionEvidence: { type: "string" },
+  discoveryText: { type: "string" },
+  validationText: { type: "string" },
+  validationCommand: { type: "string" },
+  validationExpected: { type: "string" },
+  steps: { type: "array", items: { type: "string" } },
+  materializeType: { type: "string" },
+  materializeParent: { type: "string" },
+  materializeTags: { type: "string" },
+};
+
+const PLAN_ACTION_PARAMETER_METADATA: Record<string, { description: string; examples?: unknown[] }> = {
+  subcommand: {
+    description: "Plan workflow operation to run.",
+    examples: ["create", "show", "add-step", "approve"],
+  },
+  stepRef: {
+    description: "Plan step id or order for step lifecycle subcommands.",
+    examples: ["plan-step-001", "1"],
+  },
+  reorderTo: {
+    description: "New integer order for reorder-step.",
+    examples: [1, "2"],
+  },
+  scope: {
+    description: "Short free-text scope statement describing what the Plan covers.",
+    examples: ["Release readiness audit", "Search package migration"],
+  },
+  mode: {
+    description: "Plan lifecycle mode.",
+    examples: ["draft", "research", "approved"],
+  },
+  file: {
+    description: "File link to attach while creating or materializing a Plan.",
+    examples: ["path=src/cli.ts,note=implementation surface"],
+  },
+  test: {
+    description: "Test command link to attach while creating or materializing a Plan.",
+    examples: ["command=pnpm build,timeout_seconds=300"],
+  },
+  doc: {
+    description: "Documentation link to attach while creating or materializing a Plan.",
+    examples: ["path=docs/SDK.md,note=public API reference"],
+  },
+};
+
 const PM_TOOL_GLOBAL_PARAMETER_KEYS = ["json", "quiet", "profile", "noExtensions", "noPager", "path", "pmExecutable", "timeoutMs"] as const;
 
 export interface PmActionSchemaContract {
@@ -2820,6 +2921,37 @@ function decorateToolParameterDefinition(key: string, definition: unknown): Reco
   };
 }
 
+function actionScopedToolParameterMetadata(
+  action: PmToolAction,
+  key: string,
+): { description: string; examples?: unknown[] } | undefined {
+  if (action === "plan" && Object.prototype.hasOwnProperty.call(PLAN_ACTION_PARAMETER_METADATA, key)) {
+    return PLAN_ACTION_PARAMETER_METADATA[key];
+  }
+  return PM_TOOL_PARAMETER_METADATA[key];
+}
+
+function decorateActionScopedToolParameterDefinition(
+  action: PmToolAction,
+  key: string,
+  definition: unknown,
+): Record<string, unknown> {
+  const baseDefinition = typeof definition === "object" && definition !== null ? { ...(definition as Record<string, unknown>) } : {};
+  const metadata = actionScopedToolParameterMetadata(action, key);
+  return {
+    ...baseDefinition,
+    description: metadata?.description ?? fallbackToolParameterDescription(key),
+    ...(metadata?.examples ? { examples: metadata.examples } : {}),
+  };
+}
+
+function actionScopedToolParameterDefinition(action: PmToolAction, key: string): unknown {
+  if (action === "plan" && Object.prototype.hasOwnProperty.call(PLAN_ACTION_PARAMETER_PROPERTIES, key)) {
+    return PLAN_ACTION_PARAMETER_PROPERTIES[key];
+  }
+  return PM_TOOL_PARAMETER_PROPERTIES[key];
+}
+
 function buildActionScopedToolSchema(action: PmToolAction): Record<string, unknown> {
   const contract = PM_TOOL_ACTION_SCHEMA_CONTRACTS[action];
   const required = toSchemaKeyList(contract.required ?? []);
@@ -2835,9 +2967,9 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
     if (key === "action") {
       continue;
     }
-    const definition = PM_TOOL_PARAMETER_PROPERTIES[key];
+    const definition = actionScopedToolParameterDefinition(action, key);
     if (definition) {
-      properties[key] = decorateToolParameterDefinition(key, definition);
+      properties[key] = decorateActionScopedToolParameterDefinition(action, key, definition);
     }
   }
   const schema: Record<string, unknown> = {

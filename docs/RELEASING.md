@@ -53,7 +53,7 @@ Policy:
 - release at most once per UTC day by default
 - same-day follow-up release (`YYYY.M.D-N`) is manual-only via `allow_same_day_release=true`
 - release preparation must pass all quality and compatibility gates before commit+tag push
-- external Sentry checks run when a Sentry token is configured; local maintainers can make Sentry and private telemetry mandatory with `--telemetry-mode required`
+- external Sentry checks run when a Sentry token is configured; local maintainers should run private reliability checks separately and keep raw operational details in ignored local notes
 - after creating and pushing a new tag, auto-release dispatches `.github/workflows/release.yml` with that tag and waits for the publish workflow to finish, because GitHub does not start normal push/tag workflows from `GITHUB_TOKEN` pushes
 
 Pipeline entrypoint:
@@ -104,7 +104,7 @@ If private reliability checks identify repeated user friction, either confirm th
 pnpm release:pipeline:dry-run
 
 # Full local preparation (version/changelog mutation + local commit/tag)
-pnpm release:pipeline -- --telemetry-mode required
+pnpm release:pipeline
 ```
 
 5. Push branch and tag after local green.

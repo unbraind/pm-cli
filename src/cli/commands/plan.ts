@@ -249,17 +249,53 @@ function parsePlanFields(raw: string | undefined): string[] | null {
   return fields;
 }
 
+const PLAN_FIELD_KEYS = new Set<keyof PlanResultPlan>([
+  "id",
+  "title",
+  "status",
+  "mode",
+  "scope",
+  "harness",
+  "parent",
+  "resume_context",
+  "steps_summary",
+  "current_step",
+  "blocked_steps",
+  "steps",
+  "decisions",
+  "discoveries",
+  "validation",
+  "linked_items",
+]);
+
 function projectPlanForFields(plan: PlanResultPlan, fields: string[]): PlanResultPlan {
   const source = plan as unknown as Record<string, unknown>;
   const projected: Record<string, unknown> = {};
+  const unknownFields: string[] = [];
   for (const field of fields) {
     const normalized = field.startsWith("plan.") ? field.slice("plan.".length) : field;
     if (normalized.length === 0) {
       continue;
     }
+    if (!PLAN_FIELD_KEYS.has(normalized as keyof PlanResultPlan)) {
+      unknownFields.push(field);
+      continue;
+    }
     if (Object.prototype.hasOwnProperty.call(source, normalized)) {
       projected[normalized] = source[normalized];
     }
+  }
+  if (unknownFields.length > 0) {
+    throw new PmCliError(`Unknown Plan --fields value(s): ${unknownFields.join(", ")}`, EXIT_CODE.USAGE, {
+      nextSteps: [
+        `Use --fields ${[...PLAN_FIELD_KEYS].join(",")}`,
+        "Run pm plan show <id> --depth brief for compact default fields.",
+      ],
+      recovery: {
+        provided_fields: unknownFields,
+        suggested_retry: `pm plan show <id> --fields ${[...PLAN_FIELD_KEYS].join(",")}`,
+      },
+    });
   }
   return projected as unknown as PlanResultPlan;
 }

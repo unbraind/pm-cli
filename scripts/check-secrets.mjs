@@ -69,16 +69,6 @@ function lineNumberFromIndex(content, index) {
   return line;
 }
 
-function excerptAround(content, index, width = 80) {
-  const start = Math.max(0, index - width);
-  const end = Math.min(content.length, index + width);
-  return content
-    .slice(start, end)
-    .replaceAll("\n", "\\n")
-    .replaceAll("\r", "")
-    .trim();
-}
-
 function run() {
   const findings = [];
   const files = gitTrackedFiles();
@@ -116,7 +106,6 @@ function run() {
           file,
           rule: rule.name,
           line: lineNumberFromIndex(content, index),
-          excerpt: excerptAround(content, index),
         });
       }
     }
@@ -125,7 +114,7 @@ function run() {
   if (findings.length > 0) {
     console.error("Potential secrets detected:");
     for (const finding of findings) {
-      console.error(`- ${finding.file}:${finding.line} [${finding.rule}] ${finding.excerpt}`);
+      console.error(`- ${finding.file}:${finding.line} [${finding.rule}] redacted`);
     }
     process.exit(1);
   }
