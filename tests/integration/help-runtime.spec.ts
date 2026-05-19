@@ -154,6 +154,14 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(directPayload.options.some((entry) => entry.long === "--title" && entry.required)).toBe(true);
       expect(directPayload.options.some((entry) => entry.long === "--title" && entry.value_name === "value")).toBe(true);
 
+      const planJsonHelp = context.runCli(["plan", "--help", "--json"], { expectJson: true });
+      expect(planJsonHelp.code).toBe(0);
+      const planPayload = planJsonHelp.json as {
+        options: Array<{ long: string | null; aliases?: string[]; alias_for: string | null }>;
+      };
+      expect(planPayload.options.some((entry) => entry.long === "--blocked_by")).toBe(false);
+      expect(planPayload.options.find((entry) => entry.long === "--blocked-by")?.aliases).toContain("--blocked_by");
+
       const helpCommandJson = context.runCli(["help", "create", "--json"], { expectJson: true });
       expect(helpCommandJson.code).toBe(0);
       const helpCommandPayload = helpCommandJson.json as {

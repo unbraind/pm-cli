@@ -1641,6 +1641,32 @@ describe("runHealth", () => {
     });
   });
 
+  it("supports brief low-token projection for agent health checks", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context);
+      const health = await runHealth({ path: context.pmPath }, { brief: true });
+      expect(health.ok).toBe(true);
+      expect(health.projection).toEqual({
+        mode: "brief",
+        warning_count: 0,
+        warnings_truncated: false,
+        detail_limit: 8,
+      });
+      const extensionCheck = health.checks.find((c) => c.name === "extensions");
+      expect(extensionCheck?.details).toMatchObject({
+        discovered: {
+          count: 0,
+          sample: [],
+          truncated: false,
+        },
+        activation: {
+          command_handler_count: 0,
+        },
+      });
+      expect(extensionCheck?.details).not.toHaveProperty("roots");
+    });
+  });
+
   it("full flag overrides skip flags", async () => {
     await withTempPmPath(async (context) => {
       const health = await runHealth({ path: context.pmPath }, { skipIntegrity: true, skipDrift: true, full: true });

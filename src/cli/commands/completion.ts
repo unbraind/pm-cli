@@ -998,6 +998,7 @@ _pm() {
             '--no-refresh[Disable automatic vector refresh attempts during health checks]' \\
             '--refresh-vectors[Explicitly enable vector refresh attempts during health checks]' \\
             '--verbose-stale-items[Include full stale vectorization ID lists in health output]' \\
+            '--brief[Emit compact health details for low-token agent checks]' \\
             '--strict-exit[Return non-zero exit when health warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit]' \\
             '--json[Output JSON]' \\
@@ -1621,6 +1622,7 @@ complete -c pm -n '__fish_seen_subcommand_from health' -l check-only -d 'Run rea
 complete -c pm -n '__fish_seen_subcommand_from health' -l no-refresh -d 'Disable automatic vector refresh attempts during health checks'
 complete -c pm -n '__fish_seen_subcommand_from health' -l refresh-vectors -d 'Explicitly enable vector refresh attempts during health checks'
 complete -c pm -n '__fish_seen_subcommand_from health' -l verbose-stale-items -d 'Include full stale vectorization ID lists in health output'
+complete -c pm -n '__fish_seen_subcommand_from health' -l brief -d 'Emit compact health details for low-token agent checks'
 complete -c pm -n '__fish_seen_subcommand_from health' -l strict-exit -d 'Return non-zero exit when health warnings are present'
 complete -c pm -n '__fish_seen_subcommand_from health' -l fail-on-warn -d 'Alias for --strict-exit'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l status -d 'Filter by item status' -r -a 'draft open in_progress blocked closed canceled'

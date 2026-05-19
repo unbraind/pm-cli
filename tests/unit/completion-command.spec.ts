@@ -284,7 +284,7 @@ describe("generateBashScript", () => {
   it("includes strict health flags in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--strict-directories --strict-exit --fail-on-warn --check-only --check-telemetry --no-refresh --refresh-vectors --verbose-stale-items --skip-vectors --skip-integrity --skip-drift --full --json --quiet --path --no-extensions --no-pager --profile --help",
+      "--strict-directories --strict-exit --fail-on-warn --check-only --check-telemetry --no-refresh --refresh-vectors --verbose-stale-items --brief --skip-vectors --skip-integrity --skip-drift --full --json --quiet --path --no-extensions --no-pager --profile --help",
     );
   });
 
@@ -513,6 +513,7 @@ describe("generateZshScript", () => {
     const script = generateZshScript();
     expect(script).toContain("--strict-directories[Treat optional item-type directories as required failures]");
     expect(script).toContain("--verbose-stale-items[Include full stale vectorization ID lists in health output]");
+    expect(script).toContain("--brief[Emit compact health details for low-token agent checks]");
     expect(script).toContain("--strict-exit[Return non-zero exit when health warnings are present]");
     expect(script).toContain("--fail-on-warn[Alias for --strict-exit]");
   });
@@ -670,6 +671,7 @@ describe("generateFishScript", () => {
     expect(script).toContain("__fish_seen_subcommand_from health");
     expect(script).toContain("-l strict-directories");
     expect(script).toContain("-l verbose-stale-items");
+    expect(script).toContain("-l brief");
     expect(script).toContain("-l strict-exit");
     expect(script).toContain("-l fail-on-warn");
   });

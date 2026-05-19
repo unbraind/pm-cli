@@ -221,7 +221,7 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     name: "pm_health",
-    description: "Run pm health diagnostics. Pass options.skipIntegrity=true, options.skipDrift=true, options.skipVectors=true for a fast (~800ms) status-only check. Use options.full=true for the complete deep check including file integrity and history drift.",
+    description: "Run pm health diagnostics. Pass options.brief=true for compact low-token details, options.skipIntegrity=true, options.skipDrift=true, options.skipVectors=true for a fast status-only check, or options.full=true for the complete deep check.",
     inputSchema: objectSchema({ options: { type: "object" } }),
   },
   {

@@ -281,6 +281,18 @@ try {
   assert(packageList?.details?.total >= 8, "package list did not list all bundled first-party packages");
   run("package explore", ["package", "explore", "--project"]);
   run("package doctor", ["package", "doctor", "--project", "--detail", "summary"]);
+  const guideList = run("package command guide list", ["guide", "--list"]);
+  assert(Array.isArray(guideList?.topics) && guideList.topics.length >= 1, "guide --list package command returned no topics");
+  const completionBash = runText("package command completion bash", ["completion", "bash"]);
+  assert(completionBash.includes("_pm_completion"), "completion bash package command did not render completion script");
+  const dedupeAudit = run("package command dedupe-audit", ["dedupe-audit", "--limit", "5"]);
+  assert(Array.isArray(dedupeAudit?.clusters), "dedupe-audit package command did not return clusters array");
+  const commentsAudit = run("package command comments-audit", ["comments-audit", "--limit", "5"]);
+  assert(Array.isArray(commentsAudit?.items), "comments-audit package command did not return items array");
+  const normalizeDryRun = run("package command normalize dry-run", ["normalize", "--dry-run"]);
+  assert(normalizeDryRun?.dry_run === true, "normalize --dry-run package command did not report dry_run=true");
+  const testRunsList = run("package command test-runs list", ["test-runs", "list", "--limit", "5"]);
+  assert(Array.isArray(testRunsList?.runs), "test-runs list package command did not return runs array");
   run("calendar after package reinstall", ["calendar", "--view", "week", "--date", "today", "--format", "json"]);
   assertCalendarMarkdown(
     "calendar markdown after package reinstall",
@@ -518,6 +530,8 @@ try {
   ]);
   run("linked test run", ["test", id, "--run", "--fail-on-skipped"]);
   run("validate", ["validate", "--check-resolution", "--check-history-drift"]);
+  const healthBrief = run("health brief", ["health", "--check-only", "--no-refresh", "--brief"]);
+  assert(healthBrief?.projection?.mode === "brief", "health --brief did not report projection.mode=brief");
   run("health", ["health", "--check-only", "--no-refresh"]);
   run("close", ["close", id, "temporary dogfood workflow passed", "--validate-close", "warn"]);
   run("release", ["release", id]);

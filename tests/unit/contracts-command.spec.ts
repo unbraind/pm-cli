@@ -649,6 +649,7 @@ describe("contracts command runtime", () => {
             "--no-refresh",
             "--refresh-vectors",
             "--verbose-stale-items",
+            "--brief",
             "--skip-vectors",
             "--skip-integrity",
             "--skip-drift",

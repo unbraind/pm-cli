@@ -154,6 +154,37 @@ export function buildHelpOptionSummaries(command: Command): HelpOptionSummary[] 
   });
 }
 
+export function compactHelpOptionAliases(options: HelpOptionSummary[]): HelpOptionSummary[] {
+  const canonicalByLong = new Map<string, HelpOptionSummary>();
+  const aliasOptions: HelpOptionSummary[] = [];
+  for (const option of options) {
+    if (option.alias_for && option.long) {
+      aliasOptions.push(option);
+      continue;
+    }
+    if (option.long) {
+      canonicalByLong.set(option.long, option);
+    }
+  }
+  for (const aliasOption of aliasOptions) {
+    if (!aliasOption.alias_for || !aliasOption.long) {
+      continue;
+    }
+    const canonical = canonicalByLong.get(aliasOption.alias_for);
+    if (!canonical) {
+      continue;
+    }
+    const aliases = new Set([...(canonical.aliases ?? []), aliasOption.long]);
+    canonical.aliases = [...aliases].sort((left, right) => left.localeCompare(right));
+  }
+  return options.filter((option) => {
+    if (!option.alias_for || !option.long) {
+      return true;
+    }
+    return !canonicalByLong.has(option.alias_for);
+  });
+}
+
 export function buildHelpArgumentSummaries(command: Command): HelpArgumentSummary[] {
   const commandRecord = command as unknown as {
     registeredArguments?: Array<{
@@ -238,9 +269,11 @@ export function buildJsonHelpPayload(
         detail_mode: detailMode,
       }
     : fallbackNarrative;
-  const optionSummaries = mergeHelpOptionSummaries(
-    buildHelpOptionSummaries(targetCommand),
-    buildDynamicExtensionHelpOptionSummaries(extensionDescriptor),
+  const optionSummaries = compactHelpOptionAliases(
+    mergeHelpOptionSummaries(
+      buildHelpOptionSummaries(targetCommand),
+      buildDynamicExtensionHelpOptionSummaries(extensionDescriptor),
+    ),
   );
   const subcommands = buildHelpSubcommandSummaries(targetCommand);
   return {

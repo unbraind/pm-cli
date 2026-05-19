@@ -63,6 +63,12 @@ export interface HealthResult {
   ok: boolean;
   checks: HealthCheck[];
   warnings: string[];
+  projection?: {
+    mode: "brief" | "full";
+    warning_count: number;
+    warnings_truncated: boolean;
+    detail_limit: number;
+  };
   generated_at: string;
 }
 
@@ -77,6 +83,7 @@ export interface RunHealthOptions {
   skipIntegrity?: boolean;
   skipDrift?: boolean;
   full?: boolean;
+  brief?: boolean;
 }
 
 interface MigrationStatusEntry {
@@ -121,6 +128,7 @@ interface ExtensionHealthTriageSummary {
 
 type ItemWithBody = Awaited<ReturnType<typeof listAllFrontMatterWithBody>>[number];
 const STALE_VECTORIZATION_SUMMARY_LIMIT = 25;
+const BRIEF_HEALTH_DETAIL_LIMIT = 8;
 const TELEMETRY_QUEUE_RELATIVE_PATH = path.join("runtime", "telemetry", "events.jsonl");
 const TELEMETRY_STATE_RELATIVE_PATH = path.join("runtime", "telemetry", "state.json");
 const TELEMETRY_ENDPOINT_PROBE_TIMEOUT_MS = 2_500;
@@ -729,6 +737,207 @@ function summarizeList(values: string[], limit: number): { values: string[]; tru
   };
 }
 
+function summarizeRecordList(value: unknown, limit: number): { count: number; sample: unknown[]; truncated: boolean } {
+  if (!Array.isArray(value)) {
+    return {
+      count: 0,
+      sample: [],
+      truncated: false,
+    };
+  }
+  return {
+    count: value.length,
+    sample: value.slice(0, limit),
+    truncated: value.length > limit,
+  };
+}
+
+function summarizeExtensionRecord(value: unknown): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return {};
+  }
+  const record = value as Record<string, unknown>;
+  return {
+    layer: record.layer,
+    directory: record.directory,
+    name: record.name,
+    version: record.version,
+    enabled: record.enabled,
+    status: record.status,
+    has_activate: record.has_activate,
+    capabilities: record.capabilities,
+  };
+}
+
+function summarizeExtensionList(value: unknown, limit: number): { count: number; sample: unknown[]; truncated: boolean } {
+  const summary = summarizeRecordList(value, limit);
+  return {
+    ...summary,
+    sample: summary.sample.map((entry) => summarizeExtensionRecord(entry)),
+  };
+}
+
+function summarizeStringList(value: unknown, limit: number): { count: number; sample: string[]; truncated: boolean } {
+  if (!Array.isArray(value)) {
+    return {
+      count: 0,
+      sample: [],
+      truncated: false,
+    };
+  }
+  const strings = value.filter((entry): entry is string => typeof entry === "string");
+  return {
+    count: strings.length,
+    sample: strings.slice(0, limit),
+    truncated: strings.length > limit,
+  };
+}
+
+function summarizeHealthCheckDetails(check: HealthCheck, limit: number): Record<string, unknown> {
+  const details = check.details;
+  if (check.name === "settings") {
+    return {
+      version: details.version,
+      id_prefix: details.id_prefix,
+      locks_ttl_seconds: details.locks_ttl_seconds,
+      warnings: summarizeStringList(details.warnings, limit),
+    };
+  }
+  if (check.name === "directories") {
+    return {
+      required_count: Array.isArray(details.required) ? details.required.length : 0,
+      optional_count: Array.isArray(details.optional) ? details.optional.length : 0,
+      missing_required: summarizeStringList(details.missing_required, limit),
+      missing_optional: summarizeStringList(details.missing_optional, limit),
+      missing: summarizeStringList(details.missing, limit),
+      strict_directories: details.strict_directories,
+    };
+  }
+  if (check.name === "settings_values") {
+    return {
+      warnings: summarizeStringList(details.warnings, limit),
+    };
+  }
+  if (check.name === "telemetry") {
+    return {
+      enabled: details.enabled,
+      capture_level: details.capture_level,
+      endpoint: details.endpoint,
+      queue_exists: details.queue_exists,
+      queue_entries: details.queue_entries,
+      queue_draining: details.queue_draining,
+      queue_invalid_rows: details.queue_invalid_rows,
+      queue_rows_total: details.queue_rows_total,
+      last_successful_flush_at: details.last_successful_flush_at,
+      last_failed_flush_at: details.last_failed_flush_at,
+      endpoint_probe: details.endpoint_probe,
+      env_overrides: details.env_overrides,
+    };
+  }
+  if (check.name === "extensions") {
+    const activation = typeof details.activation === "object" && details.activation !== null ? (details.activation as Record<string, unknown>) : {};
+    return {
+      disabled_by_flag: details.disabled_by_flag,
+      discovered: summarizeExtensionList(details.discovered, limit),
+      effective: summarizeExtensionList(details.effective, limit),
+      loaded: summarizeExtensionList(details.loaded, limit),
+      failed: summarizeRecordList(details.failed, limit),
+      warnings: summarizeStringList(details.warnings, limit),
+      activation: {
+        failed: summarizeRecordList(activation.failed, limit),
+        warnings: summarizeStringList(activation.warnings, limit),
+        hook_counts: activation.hook_counts,
+        command_handler_count: activation.command_handler_count,
+        service_override_count: activation.service_override_count,
+        renderer_override_count: activation.renderer_override_count,
+        registration_counts: activation.registration_counts,
+        migration_status:
+          typeof activation.migration_status === "object" && activation.migration_status !== null
+            ? {
+                applied_count: (activation.migration_status as Record<string, unknown>).applied_count,
+                pending_count: (activation.migration_status as Record<string, unknown>).pending_count,
+                failed_count: (activation.migration_status as Record<string, unknown>).failed_count,
+              }
+            : null,
+      },
+      triage: details.triage,
+      capability_contract: details.capability_contract,
+      capability_guidance: summarizeRecordList(details.capability_guidance, limit),
+    };
+  }
+  if (check.name === "storage") {
+    return details;
+  }
+  if (check.name === "integrity") {
+    return {
+      checked_item_files: details.checked_item_files,
+      checked_history_streams: details.checked_history_streams,
+      counts: details.counts,
+      item_unreadable: summarizeStringList(details.item_unreadable, limit),
+      item_conflict_markers: summarizeRecordList(details.item_conflict_markers, limit),
+      item_parse_failures: summarizeStringList(details.item_parse_failures, limit),
+      history_unreadable: summarizeStringList(details.history_unreadable, limit),
+      history_conflict_markers: summarizeRecordList(details.history_conflict_markers, limit),
+      history_invalid_json: summarizeRecordList(details.history_invalid_json, limit),
+      skipped: details.skipped,
+    };
+  }
+  if (check.name === "history_drift") {
+    return {
+      checked_items: details.checked_items,
+      counts: details.counts,
+      drifted_items: summarizeStringList(details.drifted_items, limit),
+      missing_streams: summarizeStringList(details.missing_streams, limit),
+      unreadable_streams: summarizeStringList(details.unreadable_streams, limit),
+      hash_mismatches: summarizeStringList(details.hash_mismatches, limit),
+      chain_mismatches: summarizeStringList(details.chain_mismatches, limit),
+      skipped: details.skipped,
+    };
+  }
+  if (check.name === "vectorization") {
+    return {
+      semantic_runtime_available: details.semantic_runtime_available,
+      compatibility_mode_auto_defaults: details.compatibility_mode_auto_defaults,
+      auto_ollama_defaults_applied: details.auto_ollama_defaults_applied,
+      refresh_policy: details.refresh_policy,
+      provider_active: details.provider_active,
+      vector_store_active: details.vector_store_active,
+      items: details.items,
+      ledger_entries_before: details.ledger_entries_before,
+      stale_items_before_total: details.stale_items_before_total,
+      stale_items_before: summarizeStringList(details.stale_items_before, limit),
+      refresh_attempted: details.refresh_attempted,
+      refresh_skipped_reason: details.refresh_skipped_reason,
+      refresh_result: details.refresh_result,
+      ledger_entries_after: details.ledger_entries_after,
+      stale_items_after_total: details.stale_items_after_total,
+      stale_items_after: summarizeStringList(details.stale_items_after, limit),
+      skipped: details.skipped,
+    };
+  }
+  return details;
+}
+
+function applyBriefHealthProjection(result: HealthResult): HealthResult {
+  const warningsSummary = summarizeStringList(result.warnings, BRIEF_HEALTH_DETAIL_LIMIT);
+  return {
+    ok: result.ok,
+    checks: result.checks.map((check) => ({
+      name: check.name,
+      status: check.status,
+      details: summarizeHealthCheckDetails(check, BRIEF_HEALTH_DETAIL_LIMIT),
+    })),
+    warnings: warningsSummary.sample,
+    projection: {
+      mode: "brief",
+      warning_count: warningsSummary.count,
+      warnings_truncated: warningsSummary.truncated,
+      detail_limit: BRIEF_HEALTH_DETAIL_LIMIT,
+    },
+    generated_at: result.generated_at,
+  };
+}
+
 function selectStaleItemDetail(
   values: string[],
   verboseStaleItems: boolean,
@@ -1308,10 +1517,11 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     ...hookWarnings,
   ];
   const normalizedWarnings = [...new Set(warnings)];
-  return {
+  const result: HealthResult = {
     ok: normalizedWarnings.length === 0,
     checks,
     warnings: normalizedWarnings,
     generated_at: nowIso(),
   };
+  return options.brief === true ? applyBriefHealthProjection(result) : result;
 }
