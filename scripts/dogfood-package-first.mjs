@@ -202,6 +202,12 @@ try {
   assert(getBrief?.item?.id === id, "get --depth brief did not return the requested item");
   assert(getBrief?.body === "", "get --depth brief should omit body text for low-token inspection");
   assert(Array.isArray(getBrief?.linked?.files) && getBrief.linked.files.length === 0, "get --depth brief should omit linked files");
+  const listOpenBrief = run("list-open default brief", ["list-open", "--limit", "1"]);
+  assert(listOpenBrief?.projection?.mode === "compact", "list-open default should use compact brief projection");
+  assert(
+    listOpenBrief?.projection?.fields?.join(",") === "id,status,type,title",
+    "list-open default brief fields drifted",
+  );
   const getFields = run("get fields", ["get", id, "--fields", "id,title,status,parent,type"]);
   assert(getFields?.item?.id === id, "get --fields did not return the requested item id");
   assert(getFields?.item?.title === "Dogfood package-first workflow", "get --fields did not return selected title");
@@ -209,6 +215,8 @@ try {
   assert(getFields?.body === "", "get --fields should omit body unless requested");
 
   const listOpenContracts = run("contracts list-open flags", ["contracts", "--command", "list-open", "--flags-only"]);
+  assert(listOpenContracts?.runtime_schema === undefined, "contracts list-open flags should omit runtime_schema");
+  assert(listOpenContracts?.extension_contracts === undefined, "contracts list-open flags should omit extension_contracts");
   const listOpenFlags = listOpenContracts?.command_flags?.[0]?.flags?.map((entry) => entry.flag) ?? [];
   for (const flag of ["--compact", "--brief", "--full", "--fields", "--include-body"]) {
     assert(listOpenFlags.includes(flag), `contracts list-open flags missing ${flag}`);
@@ -273,7 +281,16 @@ try {
   const packageCatalog = run("package catalog", ["package", "catalog", "--project"]);
   assert(packageCatalog?.details?.total >= 8, "package catalog did not list all bundled first-party packages");
   const packageAliases = new Set((packageCatalog?.details?.packages ?? []).map((entry) => entry.alias));
-  for (const alias of ["beads", "calendar", "templates", "todos", "search-advanced"]) {
+  for (const alias of [
+    "beads",
+    "calendar",
+    "governance-audit",
+    "guide-shell",
+    "linked-test-adapters",
+    "search-advanced",
+    "templates",
+    "todos",
+  ]) {
     assert(packageAliases.has(alias), `package catalog missing bundled alias ${alias}`);
   }
   const packageList = run("package list", ["package", "list", "--project"]);
@@ -352,7 +369,18 @@ try {
       .filter((entry) => entry.available === true && entry.invocable === true)
       .map((entry) => entry.action),
   );
-  for (const action of ["beads-import", "templates-save", "templates-show", "todos-export", "search-advanced"]) {
+  for (const action of [
+    "beads-import",
+    "completion",
+    "comments-audit",
+    "dedupe-audit",
+    "guide",
+    "search-advanced",
+    "templates-save",
+    "templates-show",
+    "test-runs-list",
+    "todos-export",
+  ]) {
     assert(availableRuntimeActions.has(action), `runtime contracts missing installed package action ${action}`);
   }
   const sdkSmoke = spawnSync(

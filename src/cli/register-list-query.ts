@@ -100,8 +100,8 @@ export function registerListQueryCommands(program: Command): void {
   registerListCommand("list", "List active items with optional filters.", undefined, true, true, true);
   registerListCommand("list-all", "List all items with optional filters.", undefined, false, true);
   registerListCommand("list-draft", "List draft items with optional filters.", "draft");
-  registerListCommand("list-open", "List open items with optional filters.", "open");
-  registerListCommand("list-in-progress", "List in-progress items with optional filters.", "in_progress");
+  registerListCommand("list-open", "List open items with optional filters.", "open", false, false, true);
+  registerListCommand("list-in-progress", "List in-progress items with optional filters.", "in_progress", false, false, true);
   registerListCommand("list-blocked", "List blocked items with optional filters.", "blocked");
   registerListCommand("list-closed", "List closed items with optional filters.", "closed");
   registerListCommand("list-canceled", "List canceled items with optional filters.", "canceled");

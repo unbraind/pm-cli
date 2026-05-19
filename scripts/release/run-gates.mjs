@@ -6,6 +6,7 @@ function usage() {
   console.log(`Usage:
   node scripts/release/run-gates.mjs [--json]
     [--skip-compatibility]
+    [--skip-dogfood]
     [--skip-telemetry-sentry]
     [--telemetry-mode off|best-effort|required]
     [--max-sentry-critical 10]
@@ -50,6 +51,7 @@ function main() {
 
   const outputJson = flagBool(flags, "json", false);
   const skipCompatibility = flagBool(flags, "skip-compatibility", false);
+  const skipDogfood = flagBool(flags, "skip-dogfood", false);
   const skipTelemetrySentry = flagBool(flags, "skip-telemetry-sentry", false);
   const telemetryMode = flagString(flags, "telemetry-mode", "best-effort");
   const maxSentryCritical = flagString(flags, "max-sentry-critical", "10");
@@ -84,6 +86,13 @@ function main() {
 
   runCheckedStep("npx-smoke", pnpm, ["smoke:npx"]);
   checks.push({ name: "npx-smoke", ok: true });
+
+  if (!skipDogfood) {
+    runCheckedStep("package-first-dogfood", pnpm, ["dogfood:package-first"]);
+    checks.push({ name: "package-first-dogfood", ok: true });
+  } else {
+    checks.push({ name: "package-first-dogfood", ok: true, skipped: true });
+  }
 
   // Keep the same packaging validation but avoid huge tarball file listings in gate logs.
   runCheckedStep("npm-pack-dry-run", npm, ["pack", "--dry-run", "--silent"]);

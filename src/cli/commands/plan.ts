@@ -424,6 +424,15 @@ function ensurePlanItem(item: ItemMetadata): void {
     throw new PmCliError(
       `Item ${item.id} is type ${item.type}; pm plan commands require type=Plan. Use pm plan create or pm create --type Plan first.`,
       EXIT_CODE.USAGE,
+      {
+        code: "wrong_item_type",
+        required: "Use pm plan commands only with items whose type is Plan.",
+        why: "Plan commands read and mutate Plan-specific step, decision, discovery, and validation fields.",
+        examples: [
+          `pm get ${item.id} --depth brief`,
+          'pm plan create --title "Execution plan" --scope "<goal>"',
+        ],
+      },
     );
   }
 }

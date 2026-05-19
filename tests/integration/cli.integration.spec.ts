@@ -2590,7 +2590,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const listOpen = context.runCli(["list-open", "--type", "Task", "--limit", "5", "--json"], { expectJson: true });
       expect(listOpen.code).toBe(0);
-      const parentScopedList = context.runCli(["list-open", "--parent", id, "--limit", "10", "--json"], {
+      const parentScopedList = context.runCli(["list-open", "--parent", id, "--limit", "10", "--full", "--json"], {
         expectJson: true,
       });
       expect(parentScopedList.code).toBe(0);
@@ -3843,7 +3843,12 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(listDraftJson.count).toBe(1);
       expect(listDraftJson.items.map((item) => item.status)).toEqual(["draft"]);
 
-      const listOpen = context.runCli(["list-open", "--json", "--type", "Task"], { expectJson: true });
+      const listOpenBrief = context.runCli(["list-open", "--json", "--type", "Task", "--limit", "1"], { expectJson: true });
+      expect(listOpenBrief.code).toBe(0);
+      const listOpenBriefJson = listOpenBrief.json as { projection: { mode: string; fields: string[] } };
+      expect(listOpenBriefJson.projection).toEqual({ mode: "compact", fields: ["id", "status", "type", "title"] });
+
+      const listOpen = context.runCli(["list-open", "--json", "--type", "Task", "--full"], { expectJson: true });
       expect(listOpen.code).toBe(0);
       const listOpenJson = listOpen.json as {
         count: number;

@@ -113,8 +113,8 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_PERSONAL_ADMIN_TOKEN: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN }}
         run: |
-          if [ -z "${SENTRY_PERSONAL_ADMIN_TOKEN:-}" ]; then
-            echo "SENTRY_PERSONAL_ADMIN_TOKEN is not configured; skipping Sentry issue threshold gate."
+          if [ -z "${SENTRY_PERSONAL_ADMIN_TOKEN:-}" ] && [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then
+            echo "No Sentry token is configured; skipping Sentry issue threshold gate."
             exit 0
           fi
           node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --max-critical 10 --max-high 20
@@ -144,6 +144,9 @@ jobs:
 
       - name: npx tarball smoke check
         run: pnpm smoke:npx
+
+      - name: Package-first dogfood
+        run: pnpm dogfood:package-first
 
       - name: Generate release notes
         run: node scripts/generate-release-notes.mjs --version "${RELEASE_TAG#v}" --output "$RUNNER_TEMP/release-notes.md"

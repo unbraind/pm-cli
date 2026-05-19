@@ -1517,6 +1517,7 @@ export async function runContracts(
         )
       : extensionContracts;
 
+  const includeRuntimeContractSections = !(flagsOnly && !fullOutput);
   const result: ContractsResult = {
     schema_version:
       typeof mergedSchema["x-schema-version"] === "string"
@@ -1536,7 +1537,10 @@ export async function runContracts(
       command_scoped: selectedCommand !== undefined,
     },
     commands: outputCommands,
-    runtime_schema: {
+  };
+
+  if (includeRuntimeContractSections) {
+    result.runtime_schema = {
       statuses: statusRegistry.definitions.map((definition) => definition.id),
       open_status: statusRegistry.open_status,
       close_status: statusRegistry.close_status,
@@ -1554,8 +1558,8 @@ export async function runContracts(
           ],
         ),
       ),
-    },
-    extension_contracts: {
+    };
+    result.extension_contracts = {
       capabilities: [...PM_EXTENSION_CAPABILITY_CONTRACTS],
       services: [...PM_EXTENSION_SERVICE_NAME_CONTRACTS],
       policy_modes: [...PM_EXTENSION_POLICY_MODE_CONTRACTS],
@@ -1568,8 +1572,8 @@ export async function runContracts(
         previous: ["v1"],
         breaking_strategy: "versioned_breaking",
       },
-    },
-  };
+    };
+  }
 
   if (!flagsOnly) {
     result.actions = actions;

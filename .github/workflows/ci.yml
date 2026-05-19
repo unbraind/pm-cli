@@ -232,6 +232,7 @@ jobs:
         if: matrix.gate == 'smokes'
         run: |
           pnpm smoke:npx
+          pnpm dogfood:package-first
           node scripts/smoke-claude-plugin.mjs
 
       - name: Upload coverage artifact
