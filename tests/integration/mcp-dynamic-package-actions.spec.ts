@@ -355,6 +355,18 @@ describe("MCP dynamic package actions", () => {
       });
       const verboseResult = (verbose?.structuredContent as { result?: { compact?: boolean } } | undefined)?.result;
       expect(verboseResult?.compact).toBe(false);
+
+      const full = await handleRequest({
+        jsonrpc: "2.0",
+        id: 11,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: { path: context.pmPath, action: "activity", options: { full: true } },
+        },
+      });
+      const fullResult = (full?.structuredContent as { result?: { compact?: boolean } } | undefined)?.result;
+      expect(fullResult?.compact).toBe(false);
     });
   });
 });

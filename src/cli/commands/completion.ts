@@ -248,7 +248,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
     "      ;;",
     "    history)",
-    `      COMPREPLY=(${compgen("--limit --diff --verify --json --quiet --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--limit --compact --full --diff --verify --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    history-redact)",
     `      COMPREPLY=(${compgen("--literal --regex --replacement --dry-run --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
@@ -718,6 +718,8 @@ _pm() {
         history)
           _arguments \\
             '--limit[Max entries]:number' \\
+            '--compact[Condensed history projection]' \\
+            '--full[Show full history entries]' \\
             '--diff[Include changed-field patch summary]' \\
             '--verify[Verify history hash chain and replay integrity]' \\
             '--json[Output JSON]' \\
@@ -768,6 +770,8 @@ _pm() {
             '--from[Lower timestamp bound (ISO/date string or relative)]:date' \\
             '--to[Upper timestamp bound (ISO/date string or relative)]:date' \\
             '--limit[Max entries]:number' \\
+            '--compact[Condensed activity projection]' \\
+            '--full[Show full activity entries]' \\
             '--stream[Emit line-delimited JSON rows]:mode' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1465,6 +1469,8 @@ complete -c pm -n '__fish_seen_subcommand_from reindex' -l progress -d 'Emit pro
 
 # history / activity flags
 complete -c pm -n '__fish_seen_subcommand_from history'  -l limit -d 'Max history entries' -r
+complete -c pm -n '__fish_seen_subcommand_from history'  -l compact -d 'Condensed history projection'
+complete -c pm -n '__fish_seen_subcommand_from history'  -l full -d 'Show full history entries'
 complete -c pm -n '__fish_seen_subcommand_from history'  -l diff -d 'Include changed-field patch summary'
 complete -c pm -n '__fish_seen_subcommand_from history'  -l verify -d 'Verify history hash chain and replay integrity'
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l literal -d 'Literal string matcher to redact from history/item payloads' -r
@@ -1500,6 +1506,8 @@ complete -c pm -n '__fish_seen_subcommand_from activity' -l author -d 'Filter by
 complete -c pm -n '__fish_seen_subcommand_from activity' -l from -d 'Lower timestamp bound (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l to -d 'Upper timestamp bound (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from activity' -l limit -d 'Max activity entries' -r
+complete -c pm -n '__fish_seen_subcommand_from activity' -l compact -d 'Condensed activity projection'
+complete -c pm -n '__fish_seen_subcommand_from activity' -l full -d 'Show full activity entries'
 complete -c pm -n '__fish_seen_subcommand_from activity' -l stream -d 'Emit line-delimited JSON rows'
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l action -d 'Filter schema by tool action' -r
 complete -c pm -n '__fish_seen_subcommand_from contracts' -l command -d 'Scope output to one command (narrow-by-default)' -r

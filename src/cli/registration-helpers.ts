@@ -668,7 +668,7 @@ export function normalizeActivityOptions(options: Record<string, unknown>): {
     from: readActivityString("from"),
     to: readActivityString("to"),
     limit: readActivityString("limit"),
-    compact: options.compact === true ? true : undefined,
+    compact: options.full === true ? false : options.compact === false ? false : true,
   };
 }
 

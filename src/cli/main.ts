@@ -71,7 +71,11 @@ import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { PmSettings } from "../types/index.js";
-import { coerceLooseCommandOptionsWithFlagDefinitions, parseLooseCommandOptions } from "./extension-command-options.js";
+import {
+  coerceLooseCommandOptionsWithFlagDefinitions,
+  parseLooseCommandOptions,
+  validateLooseCommandOptionsWithFlagDefinitions,
+} from "./extension-command-options.js";
 import { attachRichHelpText } from "./help-content.js";
 import {
   extractProvidedOptionFlags,
@@ -537,6 +541,9 @@ function extractCommandScopedOptions(
   delete scoped.pager;
 
   const looseOptions = parseLooseCommandOptions(commandArgs);
+  if (extensionFlagDefinitions.length > 0) {
+    validateLooseCommandOptionsWithFlagDefinitions(looseOptions, extensionFlagDefinitions, getCommandPath(command));
+  }
   for (const [key, value] of Object.entries(looseOptions)) {
     if (scoped[key] === undefined) {
       scoped[key] = value;
@@ -559,6 +566,27 @@ function collectExtensionFlagDefinitionsForCommand(
   return registrations.flags
     .filter((entry) => normalizeExtensionCommandPath(entry.target_command) === normalizedCommandPath)
     .flatMap((entry) => entry.flags);
+}
+
+function collectExtensionFlagDefinitionsForInvocation(
+  registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>,
+  commandPath: string,
+  commandArgs: string[],
+): Array<Record<string, unknown>> {
+  const exact = collectExtensionFlagDefinitionsForCommand(registrations, commandPath);
+  const pathParts = [commandPath];
+  let nestedMatch: Array<Record<string, unknown>> = [];
+  for (const arg of commandArgs) {
+    if (arg.startsWith("-")) {
+      break;
+    }
+    pathParts.push(arg);
+    const nested = collectExtensionFlagDefinitionsForCommand(registrations, pathParts.join(" "));
+    if (nested.length > 0) {
+      nestedMatch = nested;
+    }
+  }
+  return nestedMatch.length > 0 ? nestedMatch : exact;
 }
 
 const RUNTIME_FIELD_COMMAND_BY_COMMAND_PATH: Readonly<Record<string, RuntimeFieldCommand>> = {
@@ -950,7 +978,7 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
         let commandArgs = actionCommand.args.map(String);
         const activeRegistrations = getActiveExtensionRegistrations();
         const extensionFlagDefinitions = activeRegistrations
-          ? collectExtensionFlagDefinitionsForCommand(activeRegistrations, commandPath)
+          ? collectExtensionFlagDefinitionsForInvocation(activeRegistrations, commandPath, commandArgs)
           : [];
         const runtimeFieldFlagDefinitions = await collectRuntimeFieldLooseFlagDefinitionsForCommand(commandPath, pmRoot);
         let commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, [
@@ -1094,7 +1122,11 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
       .action(async (_options: Record<string, unknown>, command) => {
         const globalOptions = getGlobalOptions(command);
         const startedAt = Date.now();
-        const extensionFlagDefinitions = collectExtensionFlagDefinitionsForCommand(snapshot.registrations, commandPath);
+        const extensionFlagDefinitions = collectExtensionFlagDefinitionsForInvocation(
+          snapshot.registrations,
+          commandPath,
+          command.args.map(String),
+        );
         const scopedOptions = extractCommandScopedOptions(
           command,
           command.args.map(String),
@@ -1197,7 +1229,11 @@ program.hook("preAction", async (_thisCommand, actionCommand) => {
   setActiveExtensionRenderers(runtimeExtensions.renderers);
   setActiveExtensionRegistrations(runtimeExtensions.registrations);
 
-  const extensionFlagDefinitions = collectExtensionFlagDefinitionsForCommand(runtimeExtensions.registrations, commandPath);
+  const extensionFlagDefinitions = collectExtensionFlagDefinitionsForInvocation(
+    runtimeExtensions.registrations,
+    commandPath,
+    commandArgs,
+  );
   commandOptions = extractCommandScopedOptions(actionCommand, commandArgs, extensionFlagDefinitions);
   const parserOverride = await runActiveParserOverride({
     command: commandPath,

@@ -219,10 +219,11 @@ Use dry-run modes before broad lifecycle or cleanup changes.
 
 ```bash
 pm history <id> --limit 20
-pm history <id> --diff --verify
+pm history <id> --full --diff --verify
 pm history-redact <id> --literal "[redacted_path_prefix]/private" --replacement "[redacted_path]"
 pm history-redact <id> --regex "/192\\.168\\.[0-9.]+/g" --dry-run
 pm activity --id <id> --limit 50
+pm activity --full --id <id> --limit 50
 pm restore <id> <timestamp-or-version>
 ```
 

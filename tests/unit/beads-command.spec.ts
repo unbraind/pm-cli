@@ -302,7 +302,7 @@ describe("runBeadsImport", () => {
         },
       ]);
 
-      const history = context.runCli(["history", "pm-legacy.1", "--json"], { expectJson: true });
+      const history = context.runCli(["history", "pm-legacy.1", "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string }> };
       expect(historyJson.history.some((entry) => entry.op === "import")).toBe(true);

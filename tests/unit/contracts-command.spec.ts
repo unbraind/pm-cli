@@ -188,6 +188,23 @@ describe("contracts command runtime", () => {
     ).not.toEqual(expect.arrayContaining(["--dep", "--comment", "--doc", "--description"]));
   });
 
+  it("exposes activity projection flags in the action schema", async () => {
+    const result = await runContracts(
+      {
+        action: "activity",
+        schemaOnly: true,
+      },
+      GLOBAL_OPTIONS,
+    );
+    const oneOf = (result.schema?.oneOf ?? []) as Array<{
+      properties?: Record<string, unknown>;
+    }>;
+
+    expect(oneOf).toHaveLength(1);
+    expect(oneOf[0]?.properties).toHaveProperty("compact");
+    expect(oneOf[0]?.properties).toHaveProperty("full");
+  });
+
   it("emits a usable plan action schema for strict clients", async () => {
     const result = await runContracts(
       {
@@ -551,7 +568,7 @@ describe("contracts command runtime", () => {
           command: "docs",
           flags: ["--add", "--add-glob", "--validate-paths", "--audit"],
         },
-        { command: "history", flags: ["--limit", "--diff", "--verify"] },
+        { command: "history", flags: ["--limit", "--compact", "--full", "--diff", "--verify"] },
         {
           command: "history-redact",
           flags: ["--literal", "--regex", "--replacement", "--dry-run", "--author", "--message", "--force"],

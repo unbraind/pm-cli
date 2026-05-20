@@ -174,7 +174,7 @@ describe("runRestore", () => {
       expect(getJson.item.status).toBe(restoreCreateSeedFixture.status);
       expect(getJson.body).toBe(restoreCreateSeedFixture.body);
 
-      const history = context.runCli(["history", id, "--json"], { expectJson: true });
+      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string }> };
       expect(historyJson.history.at(-1)?.op).toBe("restore");
@@ -229,7 +229,7 @@ describe("runRestore", () => {
   it("restores by timestamp to the latest matching entry", async () => {
     await withTempPmPath(async (context) => {
       const id = createRestoreFixture(context, "Timestamp Restore Item");
-      const history = context.runCli(["history", id, "--json"], { expectJson: true });
+      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ ts: string }> };
       const targetTimestamp = historyJson.history[1]?.ts;
@@ -251,7 +251,7 @@ describe("runRestore", () => {
   it("validates restore targets", async () => {
     await withTempPmPath(async (context) => {
       const id = createRestoreFixture(context, "Invalid Restore Target Item");
-      const history = context.runCli(["history", id, "--json"], { expectJson: true });
+      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
       const firstTs = (history.json as { history: Array<{ ts: string }> }).history[0].ts;
       const beforeCreate = new Date(new Date(firstTs).getTime() - 10_000).toISOString();
@@ -361,7 +361,7 @@ describe("runRestore", () => {
       expect(getJson.item.status).toBe("in_progress");
       expect(getJson.body).toContain("second body section");
 
-      const history = context.runCli(["history", id, "--json"], { expectJson: true });
+      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string }> };
       expect(historyJson.history.at(-1)?.op).toBe("restore");
@@ -554,7 +554,7 @@ describe("runRestore", () => {
       );
       expect(restored.item.id).toBe(id);
 
-      const history = context.runCli(["history", id, "--json"], { expectJson: true });
+      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string; author: string }> };
       const restoreEntries = historyJson.history.filter((entry) => entry.op === "restore");

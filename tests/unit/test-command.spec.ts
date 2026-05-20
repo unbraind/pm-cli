@@ -510,7 +510,7 @@ describe("runTest", () => {
         { add: ["command=node --version,scope=project"], message: "seed test entry" },
         { path: context.pmPath },
       );
-      const verify = context.runCli(["history", id, "--verify", "--json"], { expectJson: true });
+      const verify = context.runCli(["history", id, "--verify", "--json", "--full"], { expectJson: true });
       expect(verify.code).toBe(0);
       const payload = verify.json as {
         verification: { ok: boolean; errors?: string[]; current_matches_latest: boolean };

@@ -357,7 +357,7 @@ const REQUIRED_CALENDAR_FLAGS = [
   "--format",
 ];
 
-const REQUIRED_ACTIVITY_FLAGS = ["--id", "--op", "--author", "--from", "--to", "--limit", "--stream"];
+const REQUIRED_ACTIVITY_FLAGS = ["--id", "--op", "--author", "--from", "--to", "--limit", "--compact", "--full", "--stream"];
 
 const REQUIRED_CONTEXT_FLAGS = [
   "--date",
@@ -1348,13 +1348,13 @@ describe("release readiness runtime coverage", () => {
         "generated_at",
       ]);
 
-      const historyResult = context.runCli(["history", createdId, "--limit", "20", "--json"], { expectJson: true });
+      const historyResult = context.runCli(["history", createdId, "--limit", "20", "--json", "--full"], { expectJson: true });
       expect(historyResult.code).toBe(0);
-      expectTopLevelKeyOrder(historyResult.json, ["id", "history", "count", "limit"]);
+      expectTopLevelKeyOrder(historyResult.json, ["id", "history", "compact", "count", "limit"]);
 
       const activityResult = context.runCli(["activity", "--limit", "20", "--json"], { expectJson: true });
       expect(activityResult.code).toBe(0);
-      expectTopLevelKeyOrder(activityResult.json, ["activity", "compact", "count", "limit"]);
+      expectTopLevelKeyOrder(activityResult.json, ["activity", "compact_activity", "compact", "count", "limit"]);
 
       const statsResult = context.runCli(["stats", "--json"], { expectJson: true });
       expect(statsResult.code).toBe(0);

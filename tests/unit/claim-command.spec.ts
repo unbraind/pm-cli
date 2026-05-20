@@ -257,7 +257,7 @@ describe("runClaim/runRelease", () => {
       process.env.PM_AUTHOR = "env-default-author";
       try {
         await runClaim(id, false, { path: context.pmPath }, { author: "claim-author", message: "claim message" });
-        const claimHistory = context.runCli(["history", id, "--json", "--limit", "1"], { expectJson: true });
+        const claimHistory = context.runCli(["history", id, "--json", "--full", "--limit", "1"], { expectJson: true });
         expect(claimHistory.code).toBe(0);
         const claimEntry = (claimHistory.json as { history: Array<{ op: string; author: string; message?: string }> }).history[0];
         expect(claimEntry.op).toBe("claim");
@@ -265,7 +265,7 @@ describe("runClaim/runRelease", () => {
         expect(claimEntry.message).toBe("claim message");
 
         await runRelease(id, true, { path: context.pmPath }, { author: "release-author", message: "release message" });
-        const releaseHistory = context.runCli(["history", id, "--json", "--limit", "1"], { expectJson: true });
+        const releaseHistory = context.runCli(["history", id, "--json", "--full", "--limit", "1"], { expectJson: true });
         expect(releaseHistory.code).toBe(0);
         const releaseEntry = (releaseHistory.json as { history: Array<{ op: string; author: string; message?: string }> })
           .history[0];

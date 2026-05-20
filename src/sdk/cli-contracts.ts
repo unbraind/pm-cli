@@ -526,6 +526,8 @@ export const TOOL_ACTIVITY_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "from", flag: "--from" },
   { param: "to", flag: "--to" },
   { param: "limit", flag: "--limit" },
+  { param: "compact", flag: "--compact" },
+  { param: "full", flag: "--full" },
 ];
 
 export const TOOL_CONTEXT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
@@ -708,6 +710,8 @@ export const DOCS_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const HISTORY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--limit" },
+  { flag: "--compact" },
+  { flag: "--full" },
   { flag: "--diff" },
   { flag: "--verify" },
 ];
@@ -1341,6 +1345,8 @@ export const ACTIVITY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--from" },
   { flag: "--to" },
   { flag: "--limit" },
+  { flag: "--compact" },
+  { flag: "--full" },
   { flag: "--stream" },
 ];
 
@@ -2140,7 +2146,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     anyOfRequired: [["query"], ["keywords"]],
   },
   reindex: { optional: ["mode", "progress"] },
-  history: { required: ["id"], optional: ["limit", "diff", "verify"] },
+  history: { required: ["id"], optional: ["limit", "compact", "full", "diff", "verify"] },
   "history-redact": {
     required: ["id"],
     optional: ["literal", "regex", "replacement", "dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],

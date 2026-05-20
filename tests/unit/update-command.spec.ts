@@ -62,14 +62,14 @@ function createTask(context: TempPmContext, title: string, options: CreateTaskOp
 }
 
 function latestUpdateAuthor(context: TempPmContext, id: string): string | undefined {
-  const history = context.runCli(["history", id, "--json"], { expectJson: true });
+  const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
   expect(history.code).toBe(0);
   const entries = (history.json as { history: Array<{ op: string; author: string }> }).history;
   return [...entries].reverse().find((entry) => entry.op === "update")?.author;
 }
 
 function latestUpdateOperation(context: TempPmContext, id: string): string | undefined {
-  const history = context.runCli(["history", id, "--json"], { expectJson: true });
+  const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
   expect(history.code).toBe(0);
   const entries = (history.json as { history: Array<{ op: string }> }).history;
   return [...entries].reverse().find((entry) => entry.op.startsWith("update"))?.op;
@@ -1212,7 +1212,7 @@ describe("runUpdate", () => {
       );
       expect(item.docs).toEqual(expect.arrayContaining([expect.objectContaining({ path: "README.md", scope: "project" })]));
 
-      const history = context.runCli(["history", id, "--json"], { expectJson: true });
+      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
       const updateOps = (history.json as { history: Array<{ op: string; message?: string }> }).history.filter(
         (entry) => entry.op === "update",

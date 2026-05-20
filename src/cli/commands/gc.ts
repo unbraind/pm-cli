@@ -30,6 +30,16 @@ const GC_TARGETS: readonly GcTarget[] = [
     kind: "file",
   },
   {
+    scope: "embeddings",
+    relativePath: "search/vectorization-status.json",
+    kind: "file",
+  },
+  {
+    scope: "embeddings",
+    relativePath: "search/lancedb",
+    kind: "directory",
+  },
+  {
     scope: "runtime",
     relativePath: "runtime/test-runs",
     kind: "directory",
@@ -147,7 +157,11 @@ function buildGcGuidance(params: {
   }
   const searchScopeSelected = params.scopes.includes("index") || params.scopes.includes("embeddings");
   const searchArtifactsAffected = params.removed.some(
-    (entry) => entry === "index/manifest.json" || entry === "search/embeddings.jsonl",
+    (entry) =>
+      entry === "index/manifest.json" ||
+      entry === "search/embeddings.jsonl" ||
+      entry === "search/vectorization-status.json" ||
+      entry === "search/lancedb",
   );
   if (searchScopeSelected && searchArtifactsAffected) {
     guidance.push(
