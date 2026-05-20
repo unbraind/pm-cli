@@ -1,0 +1,13 @@
+id: pm-6vfg
+title: MCP pm_comments returns full comment history (no default limit) — token bloat on long-lived items
+description: "Calling MCP pm_comments on a long-lived item (e.g. pm-rnpb has 137 comments) returns the entire comment array (~92KB), exceeding the agent tool token cap and spilling to disk. Unlike pm_list/pm_search/activity (where a compact projection keeps all rows but trims fields), limiting comments DROPS older comments (lossy), so a naive default limit risks hiding history from agents that need it. The CLI `comments --limit N` exists. Decision needed on the right agent-default: (a) default to the most recent N with an explicit total count + hint to page older, (b) a compact projection that truncates each comment body, or (c) require explicit options.limit and document it in the tool description. Separately, a minor parsing quirk: passing options.add='text=...' with commas in the value stored the literal 'text=' prefix instead of stripping it."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,comments,dogfood,mcp,token-efficiency
+created_at: "2026-05-20T20:45:19.948Z"
+updated_at: "2026-05-20T20:45:19.948Z"
+author: claude-code-agent
+acceptance_criteria: "MCP pm_comments has a documented, non-lossy-by-surprise default that keeps agent output within token limits while preserving access to full history; tool description documents limit/paging; the add='text=...' prefix-stripping quirk is fixed or documented; regression test added."
+parent: pm-rnpb
+body: ""
