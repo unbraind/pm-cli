@@ -569,11 +569,15 @@ describe("runDocs", () => {
         ["docs", id, "--add", "path=README.md,scope=project,note=seed", "--json", "--author", "owner-a"],
         { expectJson: true },
       );
-      const listed = context.runCli(["docs", id, "--list", "--json", "--author", "owner-a"], { expectJson: true });
+      const listed = context.runCli(["docs", id, "--list", "--json"], { expectJson: true });
       expect(listed.code).toBe(0);
       const payload = listed.json as { docs?: Array<{ path?: string }>; count?: number };
       expect(payload.count).toBe(1);
       expect(payload.docs?.[0]?.path).toBe("README.md");
+
+      const listedAgain = context.runCli(["docs", id, "--list", "--json"], { expectJson: true });
+      expect(listedAgain.code).toBe(0);
+      expect((listedAgain.json as { count?: number }).count).toBe(payload.count);
     });
   });
 

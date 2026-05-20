@@ -36,6 +36,12 @@ describe("check-secrets rules", () => {
     expect(rulesFor("tests/x.spec.ts", "path /home/steve/secret/file")).not.toContain("absolute-home-path");
   });
 
+  it("reports one-based line numbers for findings", () => {
+    const token = `ghp_${"A1b2C3d4".repeat(5)}`;
+    const findings = scanContent("a.txt", ["line1", "line2", `token ${token}`].join("\n"));
+    expect(findings.find((finding: { rule: string }) => finding.rule === "github-token")?.line).toBe(3);
+  });
+
   it("exposes a non-empty rule set for the secret scanner", () => {
     expect(Array.isArray(RULES)).toBe(true);
     expect(RULES.length).toBeGreaterThan(10);

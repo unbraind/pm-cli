@@ -463,7 +463,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
     case "get":
       return runGet(id ?? readRequiredString(options, "id"), global, options);
     case "search": {
-      const searchOptions: Record<string, unknown> = { ...options };
+      const searchOptions: Parameters<typeof runSearch>[1] = { ...options };
       if (
         searchOptions.compact === undefined &&
         searchOptions.full === undefined &&
@@ -471,7 +471,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       ) {
         searchOptions.compact = true;
       }
-      return runSearch(readRequiredString(args, "query"), searchOptions as never, global);
+      return runSearch(readRequiredString(args, "query"), searchOptions, global);
     }
     case "create":
       return runCreate(options, global);
@@ -512,11 +512,11 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
         global,
       );
     case "activity": {
-      const activityOptions: Record<string, unknown> = { ...options };
+      const activityOptions: Parameters<typeof runActivity>[0] = { ...options };
       if (activityOptions.compact === undefined) {
         activityOptions.compact = true;
       }
-      return runActivity(activityOptions as never, global);
+      return runActivity(activityOptions, global);
     }
     case "aggregate":
       return runAggregate(options, global);

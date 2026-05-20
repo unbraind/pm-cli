@@ -82,6 +82,7 @@ export function registerOperationCommands(program: Command): void {
       const result = await runTest(id, {
         add: addValues,
         remove: removeValues,
+        list: Boolean(options.list),
         run: Boolean(options.run),
         timeout: typeof options.timeout === "string" ? options.timeout : undefined,
         progress: Boolean(options.progress),

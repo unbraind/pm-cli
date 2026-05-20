@@ -379,9 +379,23 @@ describe("runGet and runAppend", () => {
       expect(aliased.code).toBe(0);
       expect((aliased.json as { appended?: string }).appended).toBe("appended via text alias");
 
-      const conflicting = context.runCli(["append", id, "positional", "--text", "alias", "--author", "owner-a"]);
-      expect(conflicting.code).toBe(EXIT_CODE.USAGE);
-      expect(conflicting.stderr).toContain("exactly one source");
+      const stdinText = context.runCli(["append", id, "--text", "-", "--json", "--author", "owner-a"], {
+        expectJson: true,
+        input: "appended from stdin",
+      });
+      expect(stdinText.code).toBe(0);
+      expect((stdinText.json as { appended?: string }).appended).toBe("appended from stdin");
+
+      const conflictCases = [
+        ["append", id, "positional", "--text", "alias", "--author", "owner-a"],
+        ["append", id, "--body", "from-body", "--text", "from-text", "--author", "owner-a"],
+        ["append", id, "from-positional", "--body", "from-body", "--author", "owner-a"],
+      ];
+      for (const args of conflictCases) {
+        const conflicting = context.runCli(args);
+        expect(conflicting.code).toBe(EXIT_CODE.USAGE);
+        expect(conflicting.stderr).toContain("exactly one source");
+      }
 
       const missing = context.runCli(["append", id, "--author", "owner-a"]);
       expect(missing.code).toBe(EXIT_CODE.USAGE);

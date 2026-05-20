@@ -19,6 +19,7 @@ export interface DocsCommandOptions {
   addGlob?: string[];
   remove?: string[];
   migrate?: string[];
+  list?: boolean;
   validatePaths?: boolean;
   audit?: boolean;
   author?: string;

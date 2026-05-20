@@ -15,7 +15,7 @@ export interface TempPmContext {
   tempRoot: string;
   pmPath: string;
   env: NodeJS.ProcessEnv;
-  runCli: (args: string[], options?: { expectJson?: boolean; cwd?: string }) => CliRunResult;
+  runCli: (args: string[], options?: { expectJson?: boolean; cwd?: string; input?: string }) => CliRunResult;
 }
 
 function distCliPath(): string {
@@ -189,13 +189,14 @@ function normalizeLegacyCreateArgsForTests(args: string[]): string[] {
 function runNodeCli(
   env: NodeJS.ProcessEnv,
   args: string[],
-  options?: { expectJson?: boolean; cwd?: string },
+  options?: { expectJson?: boolean; cwd?: string; input?: string },
 ): CliRunResult {
   const normalizedArgs = normalizeLegacyCreateArgsForTests(args);
   const completed = spawnSync(process.execPath, [distCliPath(), ...normalizedArgs], {
     cwd: options?.cwd ?? process.cwd(),
     env,
     encoding: "utf8",
+    input: options?.input,
   });
 
   const result: CliRunResult = {

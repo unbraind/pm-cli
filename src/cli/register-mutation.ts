@@ -361,8 +361,7 @@ export function registerMutationCommands(program: Command): void {
       const bodyFromOption = typeof options.body === "string" ? options.body : undefined;
       const bodyFromAlias = typeof options.text === "string" ? options.text : undefined;
       const bodyFromPositional = typeof text === "string" ? text : undefined;
-      const bodySourceCount =
-        Number(bodyFromOption !== undefined) + Number(bodyFromAlias !== undefined) + Number(bodyFromPositional !== undefined);
+      const bodySourceCount = [bodyFromOption, bodyFromAlias, bodyFromPositional].filter((value) => value !== undefined).length;
       if (bodySourceCount > 1) {
         throw new PmCliError("Specify append text with exactly one source: positional [text], --body, or --text", EXIT_CODE.USAGE);
       }
@@ -862,6 +861,7 @@ export function registerMutationCommands(program: Command): void {
         addGlob: addGlobValues,
         remove: removeValues,
         migrate: migrateValues,
+        list: Boolean(options.list),
         validatePaths: Boolean(options.validatePaths),
         audit: Boolean(options.audit),
         author: typeof options.author === "string" ? options.author : undefined,
