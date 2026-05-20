@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { normalizeRuntimeSchemaSettings, resolveRuntimeStatusRegistry } from "../../src/core/schema/runtime-schema.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
@@ -32,6 +33,46 @@ function createTaskWithSegment(
 }
 
 describe("runtime schema command flag registration", () => {
+  it("ignores malformed runtime schema tokens instead of throwing", () => {
+    const normalized = normalizeRuntimeSchemaSettings({
+      statuses: [
+        {
+          id: "open",
+          aliases: ["todo", undefined] as unknown as string[],
+          roles: ["default_open", undefined] as unknown as string[],
+        },
+        {
+          id: undefined,
+        } as unknown as { id: string },
+      ],
+      workflow: {
+        open_status: undefined,
+        close_status: "closed",
+      },
+      fields: [
+        {
+          key: "customer_segment",
+          type: undefined,
+          cli_aliases: ["segment", undefined] as unknown as string[],
+          commands: ["create", undefined] as unknown as ["create"],
+        },
+      ],
+      unknown_field_policy: undefined,
+    });
+
+    expect(normalized.statuses.map((status) => status.id)).toEqual(["open"]);
+    expect(normalized.statuses[0]?.aliases).toEqual(["todo"]);
+    expect(normalized.fields[0]).toMatchObject({
+      key: "customer_segment",
+      type: "string",
+      cli_aliases: ["segment"],
+      commands: ["create"],
+    });
+
+    const registry = resolveRuntimeStatusRegistry(normalized);
+    expect(registry.alias_to_id.get("todo")).toBe("open");
+  });
+
   it("supports runtime list flags on list command aliases", async () => {
     await withTempPmPath(async (context) => {
       const settings = await readSettings(context.pmPath);

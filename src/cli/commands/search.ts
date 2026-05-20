@@ -272,20 +272,43 @@ function parseTokens(query: string): string[] {
   return normalized.split(/\s+/).filter(Boolean);
 }
 
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+}
+
+function textEntries(value: unknown): Array<{ text: string }> {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is { text: string } =>
+        typeof entry === "object" && entry !== null && typeof (entry as { text?: unknown }).text === "string",
+      )
+    : [];
+}
+
+function dependencyEntries(value: unknown): Array<{ id: string; kind: string }> {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is { id: string; kind: string } =>
+        typeof entry === "object" &&
+        entry !== null &&
+        typeof (entry as { id?: unknown }).id === "string" &&
+        typeof (entry as { kind?: unknown }).kind === "string",
+      )
+    : [];
+}
+
 function collectExactPhraseFields(document: ItemDocument): string[] {
   const item = document.metadata;
   return [
     item.title,
     item.description,
     item.status,
-    item.tags.join(" "),
+    stringArray(item.tags).join(" "),
     document.body,
-    (item.comments ?? []).map((entry) => entry.text).join(" "),
-    (item.notes ?? []).map((entry) => entry.text).join(" "),
-    (item.learnings ?? []).map((entry) => entry.text).join(" "),
+    textEntries(item.comments).map((entry) => entry.text).join(" "),
+    textEntries(item.notes).map((entry) => entry.text).join(" "),
+    textEntries(item.learnings).map((entry) => entry.text).join(" "),
     buildReminderCorpus(item).join(" "),
     buildEventCorpus(item).join(" "),
-    (item.dependencies ?? []).map((entry) => `${entry.id} ${entry.kind}`).join(" "),
+    dependencyEntries(item.dependencies).map((entry) => `${entry.id} ${entry.kind}`).join(" "),
     buildPlanFlatCorpus(item),
   ];
 }
@@ -330,7 +353,7 @@ function applyFilters(
   return items.filter((document) => {
     const item = document.metadata;
     if (typeFilter && item.type !== typeFilter) return false;
-    if (tagFilter && !item.tags.includes(tagFilter)) return false;
+    if (tagFilter && !stringArray(item.tags).includes(tagFilter)) return false;
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
     if (deadlineBefore && (!item.deadline || compareTimestampStrings(item.deadline, deadlineBefore) > 0)) return false;
     if (deadlineAfter && (!item.deadline || compareTimestampStrings(item.deadline, deadlineAfter) < 0)) return false;
@@ -491,17 +514,17 @@ function scoreDocument(
   const searchableFields: Array<{ name: string; value: string; weight: number }> = [
     { name: "title", value: item.title, weight: tuning.title_weight },
     { name: "description", value: item.description, weight: tuning.description_weight },
-    { name: "tags", value: item.tags.join(" "), weight: tuning.tags_weight },
+    { name: "tags", value: stringArray(item.tags).join(" "), weight: tuning.tags_weight },
     { name: "status", value: item.status, weight: tuning.status_weight },
     { name: "body", value: document.body, weight: tuning.body_weight },
-    { name: "comments", value: (item.comments ?? []).map((entry) => entry.text).join(" "), weight: tuning.comments_weight },
-    { name: "notes", value: (item.notes ?? []).map((entry) => entry.text).join(" "), weight: tuning.notes_weight },
-    { name: "learnings", value: (item.learnings ?? []).map((entry) => entry.text).join(" "), weight: tuning.learnings_weight },
+    { name: "comments", value: textEntries(item.comments).map((entry) => entry.text).join(" "), weight: tuning.comments_weight },
+    { name: "notes", value: textEntries(item.notes).map((entry) => entry.text).join(" "), weight: tuning.notes_weight },
+    { name: "learnings", value: textEntries(item.learnings).map((entry) => entry.text).join(" "), weight: tuning.learnings_weight },
     { name: "reminders", value: buildReminderCorpus(item).join(" "), weight: tuning.reminders_weight },
     { name: "events", value: buildEventCorpus(item).join(" "), weight: tuning.events_weight },
     {
       name: "dependencies",
-      value: (item.dependencies ?? []).map((entry) => `${entry.id} ${entry.kind}`).join(" "),
+      value: dependencyEntries(item.dependencies).map((entry) => `${entry.id} ${entry.kind}`).join(" "),
       weight: tuning.dependencies_weight,
     },
     { name: "plan", value: buildPlanFlatCorpus(item), weight: tuning.body_weight },

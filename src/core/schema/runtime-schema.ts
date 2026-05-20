@@ -129,17 +129,17 @@ const RUNTIME_FIELD_COMMAND_SET = new Set<string>(RUNTIME_FIELD_COMMAND_VALUES);
 const RUNTIME_UNKNOWN_FIELD_POLICY_SET = new Set<string>(RUNTIME_UNKNOWN_FIELD_POLICY_VALUES);
 
 function normalizeStringList(values: string[] | undefined): string[] {
-  return [...new Set((values ?? []).map((value) => value.trim()).filter((value) => value.length > 0))].sort((left, right) =>
-    left.localeCompare(right),
-  );
+  const candidates = Array.isArray(values) ? values : [];
+  return [...new Set(candidates.map((value) => (typeof value === "string" ? value.trim() : "")).filter((value) => value.length > 0))]
+    .sort((left, right) => left.localeCompare(right));
 }
 
-function normalizeStatusToken(value: string): string {
-  return value.trim().toLowerCase().replaceAll(/[\s-]+/g, "_");
+function normalizeStatusToken(value: unknown): string {
+  return typeof value === "string" ? value.trim().toLowerCase().replaceAll(/[\s-]+/g, "_") : "";
 }
 
-function normalizeStatusId(value: string | undefined): string | undefined {
-  if (!value) {
+function normalizeStatusId(value: unknown): string | undefined {
+  if (typeof value !== "string" || value.length === 0) {
     return undefined;
   }
   const normalized = normalizeStatusToken(value);
@@ -150,8 +150,8 @@ function stripFlagPrefix(value: string): string {
   return value.startsWith("--") ? value.slice(2) : value;
 }
 
-function normalizeCliToken(value: string): string {
-  return stripFlagPrefix(value.trim().toLowerCase().replaceAll(/[\s_]+/g, "-"));
+function normalizeCliToken(value: unknown): string {
+  return typeof value === "string" ? stripFlagPrefix(value.trim().toLowerCase().replaceAll(/[\s_]+/g, "-")) : "";
 }
 
 function keyToDefaultCliFlag(value: string): string {
@@ -217,7 +217,7 @@ function normalizeRuntimeFieldDefinition(definition: RuntimeFieldDefinition): Ru
   const cliAliases = normalizeStringList(definition.cli_aliases)
     .map((value) => normalizeCliToken(value))
     .filter((value) => value.length > 0 && value !== cliFlag);
-  const typeCandidate = (definition.type ?? "string").trim().toLowerCase();
+  const typeCandidate = typeof definition.type === "string" ? definition.type.trim().toLowerCase() : "string";
   const type = RUNTIME_FIELD_TYPE_SET.has(typeCandidate) ? (typeCandidate as RuntimeFieldType) : "string";
   const commands = (() => {
     const normalized = normalizeStringList(definition.commands).filter((value): value is RuntimeFieldCommand =>
@@ -282,7 +282,8 @@ export function normalizeRuntimeSchemaSettings(schema: Partial<RuntimeSchemaSett
     }
     return [...dedupedByKey.values()].sort((left, right) => left.key.localeCompare(right.key));
   })();
-  const unknownFieldPolicyCandidate = schema?.unknown_field_policy?.trim().toLowerCase() ?? "allow";
+  const unknownFieldPolicyCandidate =
+    typeof schema?.unknown_field_policy === "string" ? schema.unknown_field_policy.trim().toLowerCase() : "allow";
   const unknownFieldPolicy = RUNTIME_UNKNOWN_FIELD_POLICY_SET.has(unknownFieldPolicyCandidate)
     ? unknownFieldPolicyCandidate
     : "allow";

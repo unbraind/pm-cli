@@ -270,6 +270,28 @@ const PACKAGE_OWNED_COMMANDS = new Set<string>([
   "test-runs resume",
 ]);
 
+const PACKAGE_OWNED_COMMAND_INSTALL_HINTS = new Map<string, string>([
+  ["cal", "calendar"],
+  ["calendar", "calendar"],
+  ["comments-audit", "governance-audit"],
+  ["completion", "guide-shell"],
+  ["completion-tags", "guide-shell"],
+  ["dedupe-audit", "governance-audit"],
+  ["guide", "guide-shell"],
+  ["normalize", "governance-audit"],
+  ["reindex", "search-advanced"],
+  ["templates", "templates"],
+  ["templates list", "templates"],
+  ["templates save", "templates"],
+  ["templates show", "templates"],
+  ["test-runs", "linked-test-adapters"],
+  ["test-runs list", "linked-test-adapters"],
+  ["test-runs status", "linked-test-adapters"],
+  ["test-runs logs", "linked-test-adapters"],
+  ["test-runs stop", "linked-test-adapters"],
+  ["test-runs resume", "linked-test-adapters"],
+]);
+
 const CANONICAL_COMMAND_ALIASES: CommandAliasSurface[] = [
   {
     canonical: "context",
@@ -1413,6 +1435,13 @@ export async function runContracts(
     .sort((left, right) => left.localeCompare(right));
   const commandNames = new Set(commandCatalog);
   if (selectedCommand && !commandNames.has(selectedCommand)) {
+    const packageHint = PACKAGE_OWNED_COMMAND_INSTALL_HINTS.get(selectedCommand);
+    if (packageHint) {
+      throw new PmCliError(
+        `Unknown command: "${options.command}". Command "${selectedCommand}" is provided by the optional "${packageHint}" package. Run "pm install ${packageHint} --project" and retry.`,
+        EXIT_CODE.USAGE,
+      );
+    }
     throw new PmCliError(
       `Unknown command: "${options.command}".`,
       EXIT_CODE.USAGE,

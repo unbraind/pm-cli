@@ -1068,5 +1068,11 @@ describe("contracts command runtime", () => {
       message: 'Unknown command: "unknown-command".',
       exitCode: EXIT_CODE.USAGE,
     });
+    await expect(
+      runContracts({ command: "calendar" }, { ...GLOBAL_OPTIONS, path: "/tmp/pm-contracts-no-calendar" }),
+    ).rejects.toMatchObject<PmCliError>({
+      message: expect.stringContaining("pm install calendar --project"),
+      exitCode: EXIT_CODE.USAGE,
+    });
   });
 });

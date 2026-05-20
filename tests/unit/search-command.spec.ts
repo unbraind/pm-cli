@@ -838,6 +838,31 @@ describe("runSearch", () => {
     expect(deadlineAfterMiss.count).toBe(0);
   });
 
+  it("keeps keyword search readable for malformed legacy array fields", async () => {
+    const malformed = {
+      ...makeFrontMatter({
+        id: "pm-legacy-malformed",
+        title: "legacy malformed item",
+        description: "contains stabletoken",
+      }),
+      tags: undefined,
+      comments: undefined,
+      notes: undefined,
+      learnings: undefined,
+      dependencies: undefined,
+    } as unknown as ItemFrontMatter;
+
+    listAllFrontMatterMock.mockResolvedValueOnce([malformed]);
+    readFileMock.mockResolvedValueOnce(serializeDocument(malformed, ""));
+
+    const { runSearch } = await import("../../src/cli/commands/search.js");
+    const result = await runSearch("stabletoken", { mode: "keyword" }, { path: "/tmp/pm-search" });
+
+    expect(result.count).toBe(1);
+    expect(result.items[0].item.id).toBe("pm-legacy-malformed");
+    expect(result.items[0].matched_fields).toEqual(["description"]);
+  });
+
   it("executes semantic and hybrid search modes with deterministic ranking", async () => {
     const semanticTop = makeFrontMatter({
       id: "pm-sem-top",
