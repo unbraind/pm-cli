@@ -646,7 +646,7 @@ export function resolveRuntimeStatusRegistry(schema: RuntimeSchemaSettings): Run
   };
 }
 
-export function normalizeStatusInputWithRegistry(value: string, registry: RuntimeStatusRegistry): string | undefined {
+export function normalizeStatusInputWithRegistry(value: unknown, registry: RuntimeStatusRegistry): string | undefined {
   const normalized = normalizeStatusToken(value);
   if (!normalized) {
     return undefined;

@@ -271,10 +271,10 @@ function buildPmCliRecoveryContext(
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
   const providedFields = extractProvidedOptionFlags(invocationArgv);
   const providedSet = new Set(providedFields.map((flag) => normalizeLongOptionFlag(flag) ?? flag));
-  const rawInferred = inferMissingFieldsFromErrorMessage(rawMessage);
+  const existingRecovery = context?.recovery;
+  const rawInferred = existingRecovery?.suggested_retry ? undefined : inferMissingFieldsFromErrorMessage(rawMessage);
   const trulyMissing = rawInferred?.filter((flag) => !providedSet.has(normalizeLongOptionFlag(flag) ?? flag));
   const inferredMissing = trulyMissing && trulyMissing.length > 0 ? trulyMissing : undefined;
-  const existingRecovery = context?.recovery;
   let suggestedRetry = existingRecovery?.suggested_retry;
   if (!suggestedRetry && inferredMissing && inferredMissing.length > 0) {
     const missingFlag = inferredMissing[0];

@@ -416,6 +416,19 @@ describe("extension command runtime", () => {
       const beforeInstallPackages = (beforeInstall.details as { packages?: Array<{ alias?: string; catalog?: { links?: { npm?: string } } }> }).packages ?? [];
       expect(beforeInstallPackages.find((entry) => entry.alias === "calendar")?.catalog?.links?.npm).toBeUndefined();
       expect(beforeInstallPackages.find((entry) => entry.alias === "templates")?.catalog?.links?.npm).toBeUndefined();
+      expect(beforeInstallPackages.some((entry) => Object.prototype.hasOwnProperty.call(entry, "package_root"))).toBe(false);
+
+      const compactCatalog = await runExtension(
+        undefined,
+        { catalog: true, project: true, vocabulary: "package", fields: "alias,installed,install_command,category" },
+        { path: context.pmPath },
+      );
+      expect((compactCatalog.details as { packages?: Array<Record<string, unknown>> }).packages?.[0]).toEqual({
+        alias: "beads",
+        installed: false,
+        install_command: "pm install beads --project",
+        category: "migration",
+      });
 
       await runExtension("todos", { install: true, project: true }, { path: context.pmPath });
       const afterInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });

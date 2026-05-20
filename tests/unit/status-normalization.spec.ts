@@ -14,5 +14,6 @@ describe("normalizeStatusInput", () => {
     expect(normalizeStatusInput("   ")).toBeUndefined();
     expect(normalizeStatusInput("in progress")).toBeUndefined();
     expect(normalizeStatusInput("doing")).toBeUndefined();
+    expect(normalizeStatusInput(undefined)).toBeUndefined();
   });
 });

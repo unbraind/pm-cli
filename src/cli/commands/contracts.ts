@@ -1440,6 +1440,13 @@ export async function runContracts(
       throw new PmCliError(
         `Unknown command: "${options.command}". Command "${selectedCommand}" is provided by the optional "${packageHint}" package. Run "pm install ${packageHint} --project" and retry.`,
         EXIT_CODE.USAGE,
+        {
+          examples: [`pm install ${packageHint} --project`, `pm contracts --command ${selectedCommand} --flags-only --json`],
+          nextSteps: [`Install the optional package first: pm install ${packageHint} --project`],
+          recovery: {
+            suggested_retry: `pm install ${packageHint} --project`,
+          },
+        },
       );
     }
     throw new PmCliError(

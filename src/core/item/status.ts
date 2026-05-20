@@ -7,12 +7,15 @@ const STATUS_ALIAS_MAP: Readonly<Record<string, ItemStatus>> = {
   cancelled: "canceled",
 };
 
-export function normalizeStatusInput(value: string, registry?: RuntimeStatusRegistry): ItemStatus | undefined {
+export function normalizeStatusInput(value: unknown, registry?: RuntimeStatusRegistry): ItemStatus | undefined {
   if (registry) {
     const normalizedFromRegistry = normalizeStatusInputWithRegistry(value, registry);
     if (normalizedFromRegistry) {
       return normalizedFromRegistry;
     }
+  }
+  if (typeof value !== "string") {
+    return undefined;
   }
   const normalized = value.trim().toLowerCase();
   if (!normalized) {

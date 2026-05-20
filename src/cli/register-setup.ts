@@ -70,6 +70,7 @@ function normalizeExtensionOptions(
     gh: readString("gh"),
     github: readString("github"),
     ref: readString("ref"),
+    fields: readString("fields"),
     detail: readString("detail"),
     trace: readBoolean("trace"),
     watch: readBoolean("watch"),
@@ -284,7 +285,11 @@ function registerLifecycleCommand(
   });
 
   addLifecycleScopeOptions(
-    lifecycleCommand.command("catalog").alias("list").description(`List bundled first-party ${noun} catalog metadata.`),
+    lifecycleCommand
+      .command("catalog")
+      .alias("list")
+      .option("--fields <value>", "Render compact comma-separated catalog fields, for example: alias,installed,install_command")
+      .description(`List bundled first-party ${noun} catalog metadata.`),
     vocabulary,
   ).action(async (_options: Record<string, unknown>, command) => {
     await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "catalog", vocabulary);

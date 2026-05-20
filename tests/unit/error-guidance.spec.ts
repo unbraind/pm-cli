@@ -85,6 +85,23 @@ describe("pm cli error guidance context plumbing", () => {
     expect(envelope.required).toContain("documented command constraints");
   });
 
+  it("uses attempted command context for allowed-value retry guidance", () => {
+    const envelope = formatPmCliErrorForJson("Get --depth must be one of brief|standard|deep", 2, {
+      recovery: {
+        attempted_command: "pm get pm-rnpb --depth full",
+        normalized_args: ["get", "pm-rnpb", "--depth", "full"],
+        provided_fields: ["--depth"],
+      },
+    });
+
+    expect(envelope.code).toBe("invalid_argument_value");
+    expect(envelope.examples).toEqual(["pm get pm-rnpb --depth brief", "pm get --help"]);
+    expect(envelope.next_steps).toEqual([
+      "Allowed values: brief|standard|deep",
+      'Run "pm get --help" to confirm command-specific constraints.',
+    ]);
+  });
+
   it("applies runtime unknown-command guidance examples for commander errors", () => {
     const envelope = formatCommanderErrorForJson("unknown command 'beads'", "help", "Task|Issue", 2, {
       unknownCommandExamples: ["pm --help", "pm list-open --help", "pm context --help"],

@@ -95,6 +95,7 @@ export interface ExtensionCommandOptions {
   watch?: boolean;
   runtimeProbe?: boolean;
   fixManagedState?: boolean;
+  fields?: string;
   vocabulary?: "extension" | "package";
 }
 
@@ -916,7 +917,7 @@ function resolveScope(options: ExtensionCommandOptions): ExtensionScope {
   return global ? "global" : "project";
 }
 
-async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalOptions): Promise<{
+async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalOptions, options: ExtensionCommandOptions = {}): Promise<{
   total: number;
   scope: ExtensionScope;
   installable_resource_kinds: string[];
@@ -977,7 +978,6 @@ async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalO
       installed: installedBuiltinAliases.has(alias) || installedLocations.has(path.resolve(packageRoot)),
       install_target: alias,
       install_command: `pm install ${alias} ${installScopeFlag}`,
-      package_root: packageRoot,
       package_name: manifest.package_name,
       package_version: manifest.package_version,
       description: manifest.catalog?.summary ?? manifest.package_description,
@@ -1002,13 +1002,68 @@ async function buildBundledPackageCatalog(scope: ExtensionScope, global: GlobalO
     });
   }
 
+  const fields = parsePackageCatalogFields(options.fields);
+  const outputPackages = fields ? packages.map((entry) => projectPackageCatalogEntry(entry, fields)) : packages;
   return {
-    total: packages.length,
+    total: outputPackages.length,
     scope,
     installable_resource_kinds: ["extensions"],
     metadata_only_resource_kinds: PM_PACKAGE_RESOURCE_KINDS.filter((resourceKind) => resourceKind !== "extensions"),
-    packages,
+    packages: outputPackages,
   };
+}
+
+const PACKAGE_CATALOG_FIELD_KEYS = new Set([
+  "alias",
+  "bundled",
+  "available",
+  "installed",
+  "install_target",
+  "install_command",
+  "package_name",
+  "package_version",
+  "description",
+  "keywords",
+  "resources",
+  "installable_resources",
+  "metadata_only_resources",
+  "catalog",
+  "category",
+  "display_name",
+]);
+
+function parsePackageCatalogFields(raw: string | undefined): string[] | undefined {
+  if (raw === undefined) {
+    return undefined;
+  }
+  const fields = [...new Set(raw.split(",").map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
+  if (fields.length === 0) {
+    throw new PmCliError("Package catalog --fields requires a comma-separated list of field names", EXIT_CODE.USAGE);
+  }
+  const unknown = fields.filter((field) => !PACKAGE_CATALOG_FIELD_KEYS.has(field));
+  if (unknown.length > 0) {
+    throw new PmCliError(`Unknown package catalog --fields value(s): ${unknown.join(", ")}`, EXIT_CODE.USAGE, {
+      examples: [
+        "pm package list --project --fields alias,installed,install_command",
+        "pm package catalog --project --fields alias,package_name,category",
+      ],
+    });
+  }
+  return fields;
+}
+
+function projectPackageCatalogEntry(entry: Record<string, unknown>, fields: string[]): Record<string, unknown> {
+  const projected: Record<string, unknown> = {};
+  for (const field of fields) {
+    if (field === "category") {
+      projected[field] = (entry.catalog as { category?: unknown } | undefined)?.category ?? null;
+    } else if (field === "display_name") {
+      projected[field] = (entry.catalog as { display_name?: unknown } | undefined)?.display_name ?? null;
+    } else {
+      projected[field] = entry[field] ?? null;
+    }
+  }
+  return projected;
 }
 
 function parseGithubPathSpec(pathSpec: string, input: string, refOverride?: string): GithubInstallSource | null {
@@ -2329,12 +2384,19 @@ export async function runExtension(
     ok: true,
     action,
     scope,
-    roots: {
-      project: resolvedRoots.roots.project,
-      global: resolvedRoots.roots.global,
-      selected: resolvedRoots.selected_root,
-      settings_root: resolvedRoots.settings_root,
-    },
+    roots: action === "catalog" && typeof options.fields === "string" && options.fields.trim().length > 0
+      ? {
+          project: "project",
+          global: "global",
+          selected: scope,
+          settings_root: "project",
+        }
+      : {
+          project: resolvedRoots.roots.project,
+          global: resolvedRoots.roots.global,
+          selected: resolvedRoots.selected_root,
+          settings_root: resolvedRoots.settings_root,
+        },
     warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
     details,
   });
@@ -2417,7 +2479,7 @@ export async function runExtension(
     if (typeof normalizedTarget === "string" && normalizedTarget.length > 0 && normalizedTarget !== "catalog") {
       throw new PmCliError('Action "catalog" does not accept a package target.', EXIT_CODE.USAGE);
     }
-    return withResult(await buildBundledPackageCatalog(scope, global));
+    return withResult(await buildBundledPackageCatalog(scope, global, options));
   }
 
   if (action === "install") {

@@ -846,6 +846,7 @@ describe("runSearch", () => {
         description: "contains stabletoken",
       }),
       tags: undefined,
+      status: undefined,
       comments: undefined,
       notes: undefined,
       learnings: undefined,
@@ -1865,18 +1866,23 @@ describe("runSearch", () => {
 
     const fieldResult = await runSearch(
       "token",
-      { mode: "keyword", fields: "id,score,item.title,item.missing_field" },
+      { mode: "keyword", fields: "id,score,item.title,item.status" },
       { path: "/tmp/pm-search" },
     );
     expect(fieldResult.projection).toEqual({
       mode: "fields",
-      fields: ["id", "score", "item.title", "item.missing_field"],
+      fields: ["id", "score", "item.title", "item.status"],
     });
     const projected = fieldResult.items[0] as Record<string, unknown>;
     expect(projected.id).toBe("pm-projection");
     expect(typeof projected.score).toBe("number");
     expect(projected["item.title"]).toBe("Projection title token");
-    expect(projected["item.missing_field"]).toBeNull();
+    expect(projected["item.status"]).toBe("in_progress");
+
+    await expect(runSearch("token", { mode: "keyword", fields: "id,titel" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+      message: expect.stringContaining("Unknown search --fields value(s): titel"),
+    });
 
     await expect(
       runSearch("token", { mode: "keyword", compact: true, full: true }, { path: "/tmp/pm-search" }),

@@ -30,6 +30,7 @@ import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/sc
 import {
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
+  type RuntimeFieldRegistry,
   type RuntimeStatusRegistry,
 } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -78,6 +79,64 @@ const DEFAULT_COMPACT_SEARCH_FIELDS = [
   "score",
   "matched_fields",
 ] as const;
+
+const SEARCH_HIT_FIELD_KEYS = new Set(["score", "matched_fields"]);
+const SEARCH_ITEM_FIELD_KEYS = new Set([
+  "id",
+  "title",
+  "description",
+  "type",
+  "status",
+  "priority",
+  "tags",
+  "created_at",
+  "updated_at",
+  "deadline",
+  "assignee",
+  "author",
+  "estimated_minutes",
+  "acceptance_criteria",
+  "dependencies",
+  "comments",
+  "notes",
+  "learnings",
+  "reminders",
+  "events",
+  "files",
+  "tests",
+  "docs",
+  "close_reason",
+  "parent",
+  "reviewer",
+  "risk",
+  "confidence",
+  "sprint",
+  "release",
+  "blocked_by",
+  "blocked_reason",
+  "reporter",
+  "severity",
+  "environment",
+  "repro_steps",
+  "resolution",
+  "expected_result",
+  "actual_result",
+  "affected_version",
+  "fixed_version",
+  "component",
+  "regression",
+  "customer_impact",
+  "definition_of_ready",
+  "order",
+  "rank",
+  "goal",
+  "objective",
+  "value",
+  "impact",
+  "outcome",
+  "why_now",
+  "plan",
+]);
 
 const LONG_QUERY_TOKEN_THRESHOLD = 2;
 const LONG_QUERY_TITLE_EXACT_BONUS = 120;
@@ -262,6 +321,27 @@ function parseProjectionConfig(options: SearchOptions): SearchProjectionConfig {
     mode: "full",
     fields: [],
   };
+}
+
+function validateSearchProjectionFields(projection: SearchProjectionConfig, runtimeFieldRegistry: RuntimeFieldRegistry): void {
+  if (projection.mode !== "fields") {
+    return;
+  }
+  const runtimeKeys = new Set(runtimeFieldRegistry.definitions.flatMap((field) => [field.key, field.metadata_key]));
+  const unknown = projection.fields.filter((field) => {
+    const normalized = field.trim();
+    const itemKey = normalized.startsWith("item.") ? normalized.slice("item.".length) : normalized;
+    return !SEARCH_HIT_FIELD_KEYS.has(normalized) && !SEARCH_ITEM_FIELD_KEYS.has(itemKey) && !runtimeKeys.has(itemKey);
+  });
+  if (unknown.length > 0) {
+    throw new PmCliError(`Unknown search --fields value(s): ${unknown.join(", ")}`, EXIT_CODE.USAGE, {
+      examples: [
+        "pm search <query> --fields id,title,status,score",
+        "pm search <query> --fields id,title,item.description,matched_fields",
+      ],
+      nextSteps: ["Use item.<field> for explicit item metadata fields, or run pm search --help for projection examples."],
+    });
+  }
 }
 
 function parseTokens(query: string): string[] {
@@ -515,7 +595,7 @@ function scoreDocument(
     { name: "title", value: item.title, weight: tuning.title_weight },
     { name: "description", value: item.description, weight: tuning.description_weight },
     { name: "tags", value: stringArray(item.tags).join(" "), weight: tuning.tags_weight },
-    { name: "status", value: item.status, weight: tuning.status_weight },
+    { name: "status", value: typeof item.status === "string" ? item.status : "", weight: tuning.status_weight },
     { name: "body", value: document.body, weight: tuning.body_weight },
     { name: "comments", value: textEntries(item.comments).map((entry) => entry.text).join(" "), weight: tuning.comments_weight },
     { name: "notes", value: textEntries(item.notes).map((entry) => entry.text).join(" "), weight: tuning.notes_weight },
@@ -1105,6 +1185,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const settings = runtimeDefaultsResolution.settings;
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
+  validateSearchProjectionFields(projection, runtimeFieldRegistry);
   const runtimeFieldFilters = collectRuntimeFilterValues(options as Record<string, unknown>, runtimeFieldRegistry, "search");
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const maxResults = resolveSearchMaxResults(settings);

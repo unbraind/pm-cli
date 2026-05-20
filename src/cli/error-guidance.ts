@@ -211,6 +211,44 @@ function normalizeContextList(values: string[] | undefined): string[] | undefine
   return normalized.length > 0 ? normalized : undefined;
 }
 
+function inferCommandNameFromRecovery(recovery: PmCliErrorRecoveryPayload | undefined): string | undefined {
+  const args = recovery?.normalized_args;
+  if (!Array.isArray(args) || args.length === 0) {
+    return undefined;
+  }
+  const firstCommandArg = args.find((arg) => arg.trim().length > 0 && !arg.startsWith("-"));
+  return firstCommandArg?.trim();
+}
+
+function inferAllowedValuesFromMessage(message: string): string[] {
+  const match = message.match(/\bmust be one of:?\s+([A-Za-z0-9_.|,\- ]+)/i);
+  if (!match) {
+    return [];
+  }
+  return match[1]
+    .split(/[|,]/)
+    .map((entry) => entry.trim())
+    .filter((entry) => /^[A-Za-z0-9_.-]+$/.test(entry));
+}
+
+function buildAllowedValueRetryCommand(recovery: PmCliErrorRecoveryPayload | undefined, allowedValues: string[]): string | undefined {
+  const args = recovery?.normalized_args;
+  const fields = recovery?.provided_fields;
+  const replacement = allowedValues[0];
+  if (!Array.isArray(args) || !Array.isArray(fields) || !replacement) {
+    return undefined;
+  }
+  for (const field of fields) {
+    const index = args.findIndex((arg) => arg === field);
+    if (index >= 0 && index < args.length - 1 && !args[index + 1]?.startsWith("-")) {
+      const nextArgs = [...args];
+      nextArgs[index + 1] = replacement;
+      return renderPmCommand(nextArgs);
+    }
+  }
+  return undefined;
+}
+
 function buildFallbackTitleFromMessage(message: string): string | undefined {
   const firstLine = message.split(/\r?\n/)[0]?.trim() ?? "";
   if (firstLine.length === 0) {
@@ -402,6 +440,15 @@ function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext
   }
 
   if (message.startsWith("Invalid ") || message.includes(" must be ") || message.includes(" requires ")) {
+    const recovery = normalizeRecoveryPayload(context?.recovery);
+    const commandName = inferCommandNameFromRecovery(recovery);
+    const helpExample = commandName ? `pm ${commandName} --help` : "pm <command> --help";
+    const allowedValues = inferAllowedValuesFromMessage(message);
+    const retryExample = buildAllowedValueRetryCommand(recovery, allowedValues);
+    const examples = retryExample ? [retryExample, helpExample] : [helpExample, "pm contracts --command <command> --flags-only --json"];
+    const nextSteps = allowedValues.length > 0
+      ? [`Allowed values: ${allowedValues.join("|")}`, `Run "${helpExample}" to confirm command-specific constraints.`]
+      : ["Check allowed values in command help, then rerun with corrected input."];
     return applyPmCliErrorContext(
       makeGuidanceMessage({
         code: "invalid_argument_value",
@@ -409,8 +456,8 @@ function buildPmCliErrorGuidance(rawMessage: string, context?: PmCliErrorContext
         happened: message,
         required: "Use values that match documented command constraints.",
         why: "Validation protects data consistency and deterministic behavior across commands.",
-        examples: ["pm create --help", "pm update --help", "pm calendar --help"],
-        nextSteps: ["Check allowed values in command help, then rerun with corrected input."],
+        examples,
+        nextSteps,
       }),
       rawMessage,
       context,
