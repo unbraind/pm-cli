@@ -17,10 +17,14 @@ describe("check-secrets rules", () => {
   });
 
   it("flags other high-risk credential shapes", () => {
-    expect(rulesFor("a.txt", "-----BEGIN OPENSSH PRIVATE KEY-----")).toContain("private-key");
+    // Fixtures are assembled at runtime so the scanner never flags this spec's own source.
+    const privateKey = `-----BEGIN OPENSSH ${"PRIVATE KEY"}-----`;
+    const privateIp = `192.168.${"1.183"}`;
+    expect(rulesFor("a.txt", privateKey)).toContain("private-key");
     expect(rulesFor("a.txt", `AKIA${"ABCDEFGH12345678"}`)).toContain("aws-access-key");
     expect(rulesFor("a.txt", `sntrys_${"y".repeat(40)}`)).toContain("sentry-org-token");
-    expect(rulesFor("a.txt", "ssh steve@192.168.1.183")).toContain("private-ssh-target");
+    expect(rulesFor("a.txt", `ssh user@${privateIp}`)).toContain("private-ssh-target");
+    expect(rulesFor("a.txt", privateIp)).toContain("private-ip");
   });
 
   it("does not flag clean documentation content", () => {
