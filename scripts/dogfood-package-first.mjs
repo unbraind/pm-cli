@@ -233,7 +233,8 @@ try {
   assert(getFields?.item?.id === id, "get --fields did not return the requested item id");
   assert(getFields?.item?.title === "Dogfood package-first workflow", "get --fields did not return selected title");
   assert(getFields?.item?.description === undefined, "get --fields should omit unselected metadata");
-  assert(getFields?.body === "", "get --fields should omit body unless requested");
+  assert(getFields?.body === undefined, "get --fields should omit body unless requested");
+  assert(getFields?.linked === undefined, "get --fields should omit linked containers unless requested");
 
   const listOpenContracts = run("contracts list-open flags", ["contracts", "--command", "list-open", "--flags-only"]);
   assert(listOpenContracts?.runtime_schema === undefined, "contracts list-open flags should omit runtime_schema");

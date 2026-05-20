@@ -7,6 +7,7 @@ import { runAppend } from "../../src/cli/commands/append.js";
 import { runGet } from "../../src/cli/commands/get.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
+import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 afterEach(() => {
@@ -183,8 +184,8 @@ describe("runGet and runAppend", () => {
         parent: undefined,
         type: "Task",
       });
-      expect(focused.body).toBe("");
-      expect(focused.linked.files).toEqual([]);
+      expect(focused.body).toBeUndefined();
+      expect(focused.linked).toBeUndefined();
       expect(focused.claim_state).toBeUndefined();
 
       const withBodyAndFiles = await runGet(id, { path: context.pmPath }, { fields: "item.id,body,linked.files" });
@@ -209,6 +210,46 @@ describe("runGet and runAppend", () => {
       await expect(runGet(id, { path: context.pmPath }, { fields: " , " })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(runGet(id, { path: context.pmPath }, { fields: "id,bogus" })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Unknown get --fields value(s): bogus"),
+      });
+    });
+  });
+
+  it("allows configured runtime metadata fields in get projections", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.schema.fields = [
+        ...(settings.schema.fields ?? []),
+        {
+          key: "customer_segment",
+          type: "string",
+          commands: ["create", "update", "list", "search"],
+          cli_aliases: ["segment"],
+        },
+      ];
+      await writeSettings(context.pmPath, settings, "settings:write");
+      const created = context.runCli([
+        "create",
+        "--json",
+        "--title",
+        "Runtime field get",
+        "--description",
+        "Runtime field get description",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--customer-segment",
+        "enterprise",
+      ], { expectJson: true });
+      const id = (created.json as { item: { id: string } }).item.id;
+
+      const projected = await runGet(id, { path: context.pmPath }, { fields: "id,customer_segment" });
+      expect(projected.item).toEqual({ id, customer_segment: "enterprise" });
     });
   });
 

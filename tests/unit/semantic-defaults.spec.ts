@@ -93,6 +93,37 @@ describe("resolveSettingsWithSemanticRuntimeDefaults", () => {
     expect(resolved.settings.search.embedding_model).toBe("qwen3-embedding:0.6b");
   });
 
+  it("does not select a non-embedding Ollama chat model as an auto default", () => {
+    const settings = makeSettings();
+    spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
+      if (args[0] === "--version") {
+        return {
+          status: 0,
+          stdout: "ollama version is 0.0.0",
+          stderr: "",
+        };
+      }
+      if (args[0] === "list") {
+        return {
+          status: 0,
+          stdout: "NAME ID SIZE MODIFIED\nllama3.2:latest abc 2 GB now\ngemma4:latest def 4 GB now\n",
+          stderr: "",
+        };
+      }
+      return {
+        status: 1,
+        stdout: "",
+        stderr: "",
+      };
+    });
+
+    const resolved = resolveSettingsWithSemanticRuntimeDefaults(settings);
+
+    expect(resolved.auto_ollama_defaults_applied).toBe(true);
+    expect(resolved.settings.providers.ollama.model).toBe("qwen3-embedding:0.6b");
+    expect(resolved.settings.search.embedding_model).toBe("qwen3-embedding:0.6b");
+  });
+
   it("uses PM_OLLAMA_MODEL override when auto defaults are applied", () => {
     const settings = makeSettings();
     process.env.PM_OLLAMA_MODEL = "custom-embed-model:latest";

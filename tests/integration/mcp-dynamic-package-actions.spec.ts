@@ -136,8 +136,8 @@ describe("MCP dynamic package actions", () => {
         result?: { item?: Record<string, unknown>; body?: string; linked?: { files?: unknown[] } };
       } | undefined)?.result;
       expect(getResult?.item).toEqual({ id, title: "MCP compact target", status: "open" });
-      expect(getResult?.body).toBe("");
-      expect(getResult?.linked?.files).toEqual([]);
+      expect(getResult?.body).toBeUndefined();
+      expect(getResult?.linked).toBeUndefined();
     });
   });
 

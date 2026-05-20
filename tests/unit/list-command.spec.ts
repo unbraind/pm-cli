@@ -611,6 +611,10 @@ describe("runList", () => {
       await expect(runList(undefined, { fields: "   " }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(runList(undefined, { fields: "id,bogus" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Unknown list --fields value(s): bogus"),
+      });
       await expect(runList(undefined, { order: "asc" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });

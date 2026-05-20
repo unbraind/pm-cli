@@ -1517,6 +1517,17 @@ describe("runCreate", () => {
 
   it("validates reminder seed parsing", async () => {
     await withTempPmPath(async (context) => {
+      const dateTitleAliasResult = await runCreate(
+        baseCreateOptions({
+          reminder: ["date=2026-03-02T09:00:00.000Z,title=date title alias"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(dateTitleAliasResult.item.reminders?.[0]).toMatchObject({
+        at: "2026-03-02T09:00:00.000Z",
+        text: "date title alias",
+      });
+
       await expect(
         runCreate(
           baseCreateOptions({

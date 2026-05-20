@@ -1389,6 +1389,16 @@ describe("runUpdate", () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-invalid-reminders");
 
+      const dateTitleAliasResult = await runUpdate(
+        id,
+        { reminder: ["date=2026-03-03T12:00:00.000Z,title=date title alias"], message: "set date title alias reminder" },
+        { path: context.pmPath },
+      );
+      expect(dateTitleAliasResult.item.reminders?.[0]).toMatchObject({
+        at: "2026-03-03T12:00:00.000Z",
+        text: "date title alias",
+      });
+
       await expect(
         runUpdate(
           id,

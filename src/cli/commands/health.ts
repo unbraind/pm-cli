@@ -27,7 +27,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
-import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
+import { listAllFrontMatter, listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import {
   getHistoryPath,
   getItemFormatFromPath,
@@ -37,7 +37,7 @@ import {
   resolvePmRoot,
 } from "../../core/store/paths.js";
 import { readSettingsWithMetadata } from "../../core/store/settings.js";
-import type { HistoryEntry, ItemFormat, PmSettings } from "../../types/index.js";
+import type { HistoryEntry, ItemFormat, ItemMetadata, PmSettings } from "../../types/index.js";
 import { readManagedExtensionState } from "./extension.js";
 import { verifyHistoryChain } from "./history.js";
 
@@ -1427,34 +1427,40 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     checkTelemetry: options.checkTelemetry === true,
   });
   const extensionCheck = await buildExtensionCheck(pmRoot, settings, Boolean(global.noExtensions));
+  const fastBriefCheckOnly = options.brief === true && options.checkOnly === true && options.full !== true;
+  const skipIntegrity = (options.skipIntegrity === true || fastBriefCheckOnly) && options.full !== true;
+  const skipDrift = (options.skipDrift === true || fastBriefCheckOnly) && options.full !== true;
+  const skipVectors = (options.skipVectors === true || fastBriefCheckOnly) && options.full !== true;
   const itemReadWarnings: string[] = [];
-  const items = await listAllFrontMatterWithBody(
-    pmRoot,
-    settings.item_format,
-    typeRegistry.type_to_folder,
-    itemReadWarnings,
-    settings.schema,
-  );
+  const items = skipDrift && skipVectors
+    ? await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, itemReadWarnings, settings.schema)
+    : await listAllFrontMatterWithBody(
+        pmRoot,
+        settings.item_format,
+        typeRegistry.type_to_folder,
+        itemReadWarnings,
+        settings.schema,
+      );
+  const itemsWithBody = items as Array<ItemMetadata & { body: string }>;
   const normalizedItemReadWarnings = [...new Set(itemReadWarnings)];
-  const historyPolicy = await enforceHistoryStreamPolicyForItems({
-    pmRoot,
-    settings,
-    itemIds: items.map((item) => item.id),
-    commandLabel: "health",
-  });
+  const historyPolicy = skipDrift
+    ? { warnings: [] }
+    : await enforceHistoryStreamPolicyForItems({
+        pmRoot,
+        settings,
+        itemIds: items.map((item) => item.id),
+        commandLabel: "health",
+      });
   const historySummary = await countHistoryStreams(pmRoot);
-  const skipIntegrity = options.skipIntegrity === true && options.full !== true;
-  const skipDrift = options.skipDrift === true && options.full !== true;
-  const skipVectors = options.skipVectors === true && options.full !== true;
   const integrityCheck = skipIntegrity
     ? { check: { name: "integrity" as const, status: "ok" as const, details: { skipped: true } }, warnings: [] }
     : await buildIntegrityCheck(pmRoot, typeRegistry.type_to_folder, settings.schema);
   const historyDriftCheck = skipDrift
     ? { check: { name: "history_drift" as const, status: "ok" as const, details: { skipped: true } }, warnings: [] }
-    : await buildHistoryDriftCheck(pmRoot, items);
+    : await buildHistoryDriftCheck(pmRoot, itemsWithBody);
   const vectorizationCheck = skipVectors
     ? { check: { name: "vectorization" as const, status: "ok" as const, details: { skipped: true } }, warnings: [] }
-    : await buildVectorizationCheck(pmRoot, settings, items, refreshPolicy, options.verboseStaleItems === true);
+    : await buildVectorizationCheck(pmRoot, settings, itemsWithBody, refreshPolicy, options.verboseStaleItems === true);
 
   const checks: HealthCheck[] = [
     {

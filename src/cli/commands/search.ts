@@ -180,9 +180,9 @@ function buildImplicitSemanticFallbackWarning(error: unknown): string {
   return "search_implicit_semantic_fallback:error:using_keyword_mode";
 }
 
-function parseMode(raw: string | undefined, context: SearchModeContext): SearchMode {
+function parseMode(raw: string | undefined, _context: SearchModeContext): SearchMode {
   if (raw === undefined) {
-    return context.hasProvider && context.hasVectorStore ? "hybrid" : "keyword";
+    return "keyword";
   }
   const normalized = raw.trim().toLowerCase();
   if (normalized !== "keyword" && normalized !== "semantic" && normalized !== "hybrid") {

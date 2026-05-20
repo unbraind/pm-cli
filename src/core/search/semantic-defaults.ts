@@ -75,7 +75,7 @@ function parseOllamaModelList(output: string): string | null {
     return preferredQwenEmbeddingModel;
   }
   const embeddingModel = models.find((entry) => EMBEDDING_MODEL_PATTERN.test(entry));
-  return embeddingModel ?? models[0];
+  return embeddingModel ?? null;
 }
 
 function resolveAutoOllamaModel(settings: PmSettings): string {

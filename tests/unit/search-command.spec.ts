@@ -229,9 +229,9 @@ describe("runSearch", () => {
       },
     } as unknown as { id_prefix: string };
     readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
-    const defaultHybridNoItems = await runSearch("token", {}, { path: "/tmp/pm-search" });
-    expect(defaultHybridNoItems.mode).toBe("hybrid");
-    expect(defaultHybridNoItems.count).toBe(0);
+    const defaultKeywordNoItems = await runSearch("token", {}, { path: "/tmp/pm-search" });
+    expect(defaultKeywordNoItems.mode).toBe("keyword");
+    expect(defaultKeywordNoItems.count).toBe(0);
     readSettingsMock.mockResolvedValueOnce(openAiSemanticSettings);
     const semanticNoItems = await runSearch("token", { mode: "semantic" }, { path: "/tmp/pm-search" });
     expect(semanticNoItems.mode).toBe("semantic");
@@ -296,7 +296,7 @@ describe("runSearch", () => {
     });
   });
 
-  it("defaults to hybrid mode when Ollama auto-defaults are available", async () => {
+  it("keeps the SDK default keyword-first even when Ollama auto-defaults are available", async () => {
     readSettingsMock.mockResolvedValue(makeDefaultSettings() as unknown as { id_prefix: string });
     spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
       if (args[0] === "--version") {
@@ -322,11 +322,11 @@ describe("runSearch", () => {
 
     const { runSearch } = await import("../../src/cli/commands/search.js");
     const result = await runSearch("token", {}, { path: "/tmp/pm-search" });
-    expect(result.mode).toBe("hybrid");
+    expect(result.mode).toBe("keyword");
     expect(result.count).toBe(0);
   });
 
-  it("falls back to keyword mode when implicit Ollama semantic execution fails", async () => {
+  it("does not invoke implicit Ollama semantic execution for default search", async () => {
     readSettingsMock.mockResolvedValue(makeDefaultSettings() as unknown as { id_prefix: string });
     spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
       if (args[0] === "--version") {
@@ -369,7 +369,8 @@ describe("runSearch", () => {
       expect(implicitResult.mode).toBe("keyword");
       expect(implicitResult.count).toBe(1);
       expect(implicitResult.items[0].item.id).toBe("pm-ollama-auto-fallback");
-      expect(implicitResult.warnings).toContain("search_implicit_semantic_fallback:connection:using_keyword_mode");
+      expect(implicitResult.warnings).toBeUndefined();
+      expect(fetchMock).not.toHaveBeenCalled();
       await expect(runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" })).rejects.toThrow(
         "Embedding request execution failed",
       );
@@ -378,7 +379,7 @@ describe("runSearch", () => {
     }
   });
 
-  it("labels implicit fallback warnings as timeout when semantic execution times out", async () => {
+  it("keeps default search keyword-first when auto semantic execution would time out", async () => {
     readSettingsMock.mockResolvedValue(makeDefaultSettings() as unknown as { id_prefix: string });
     spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
       if (args[0] === "--version") {
@@ -420,13 +421,14 @@ describe("runSearch", () => {
       const implicitResult = await runSearch("token", {}, { path: "/tmp/pm-search" });
       expect(implicitResult.mode).toBe("keyword");
       expect(implicitResult.count).toBe(1);
-      expect(implicitResult.warnings).toContain("search_implicit_semantic_fallback:timeout:using_keyword_mode");
+      expect(implicitResult.warnings).toBeUndefined();
+      expect(fetchMock).not.toHaveBeenCalled();
     } finally {
       globalThis.fetch = originalFetch;
     }
   });
 
-  it("falls back to keyword mode for implicit configured hybrid search timeouts", async () => {
+  it("keeps default search keyword-first for configured semantic providers", async () => {
     const configuredItem = makeFrontMatter({
       id: "pm-configured-timeout-fallback",
       title: "token configured timeout",
@@ -461,7 +463,8 @@ describe("runSearch", () => {
       const implicitResult = await runSearch("token", {}, { path: "/tmp/pm-search" });
       expect(implicitResult.mode).toBe("keyword");
       expect(implicitResult.count).toBe(1);
-      expect(implicitResult.warnings).toContain("search_implicit_semantic_fallback:timeout:using_keyword_mode");
+      expect(implicitResult.warnings).toBeUndefined();
+      expect(fetchMock).not.toHaveBeenCalled();
       await expect(runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" })).rejects.toThrow(
         "Embedding request execution failed",
       );

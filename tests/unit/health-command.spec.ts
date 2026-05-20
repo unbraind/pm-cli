@@ -1667,6 +1667,21 @@ describe("runHealth", () => {
     });
   });
 
+  it("uses fast skipped expensive checks for brief check-only agent loops", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context);
+      const health = await runHealth({ path: context.pmPath }, { brief: true, checkOnly: true });
+      const integrityCheck = health.checks.find((c) => c.name === "integrity");
+      const driftCheck = health.checks.find((c) => c.name === "history_drift");
+      const vectorCheck = health.checks.find((c) => c.name === "vectorization");
+      expect(integrityCheck?.details).toMatchObject({ skipped: true });
+      expect(driftCheck?.details).toMatchObject({ skipped: true });
+      expect(vectorCheck?.details).toMatchObject({ skipped: true });
+      expect(health.projection?.mode).toBe("brief");
+      expect(health.ok).toBe(true);
+    });
+  });
+
   it("full flag overrides skip flags", async () => {
     await withTempPmPath(async (context) => {
       const health = await runHealth({ path: context.pmPath }, { skipIntegrity: true, skipDrift: true, full: true });

@@ -1,7 +1,8 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
+import { resolveRuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
+import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { buildItemNotFoundError, locateItem, readLocatedItem } from "../../core/store/item-store.js";
@@ -32,8 +33,8 @@ interface ClaimStateContext {
 
 export interface GetResult {
   item: Partial<ItemFrontMatter>;
-  body: string;
-  linked: {
+  body?: string;
+  linked?: {
     files: LinkedFile[];
     tests: LinkedTest[];
     docs: LinkedDoc[];
@@ -119,6 +120,39 @@ function parseGetFields(raw: string | undefined): string[] | null {
   return fields;
 }
 
+function normalizeGetField(field: string): string {
+  return field.startsWith("item.") ? field.slice("item.".length) : field;
+}
+
+function validateGetFields(fields: string[] | null, runtimeMetadataKeys: Iterable<string>): void {
+  if (fields === null) {
+    return;
+  }
+  const itemFields = new Set([...FRONT_MATTER_KEY_ORDER, ...runtimeMetadataKeys]);
+  const allowedRootFields = new Set(["body", "linked", "claim_state"]);
+  const allowedLinkedFields = new Set(["linked.files", "linked.tests", "linked.docs"]);
+  const allowedClaimStateFields = new Set(["claim_state.claimed", "claim_state.assignee", "claim_state.last_claim", "claim_state.last_release"]);
+  const unknown = fields.filter((field) => {
+    const normalized = normalizeGetField(field);
+    return (
+      !itemFields.has(normalized) &&
+      !allowedRootFields.has(normalized) &&
+      !allowedLinkedFields.has(normalized) &&
+      !allowedClaimStateFields.has(normalized)
+    );
+  });
+  if (unknown.length > 0) {
+    throw new PmCliError(`Unknown get --fields value(s): ${unknown.join(", ")}`, EXIT_CODE.USAGE, {
+      code: "unknown_field_projection",
+      examples: [
+        "pm get <id> --fields id,title,status,type,updated_at",
+        "pm get <id> --fields id,title,claim_state",
+        "pm get <id> --fields id,title,body,linked.files",
+      ],
+    });
+  }
+}
+
 function projectItemForFields(item: ItemFrontMatter, fields: string[]): Partial<ItemFrontMatter> {
   const source = item as unknown as Record<string, unknown>;
   const projected: Record<string, unknown> = {};
@@ -154,6 +188,11 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
     throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeRegistry.type_to_folder);
   }
   const loaded = await readLocatedItem(located, { schema: settings.schema });
+  const runtimeMetadataKeys: string[] = [];
+  for (const field of resolveRuntimeFieldRegistry(settings.schema).definitions) {
+    runtimeMetadataKeys.push(field.metadata_key);
+  }
+  validateGetFields(fields, runtimeMetadataKeys);
   const files = loaded.document.metadata.files ?? [];
   const tests = loaded.document.metadata.tests ?? [];
   const docs = loaded.document.metadata.docs ?? [];
@@ -179,13 +218,17 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
     item: fieldProjection
       ? projectItemForFields(loaded.document.metadata, fields)
       : projectItemForDepth(loaded.document.metadata, depth),
-    body: includeBody ? loaded.document.body : "",
-    linked: {
+  };
+  if (!fieldProjection || includeBody) {
+    result.body = includeBody ? loaded.document.body : "";
+  }
+  if (!fieldProjection || includeLinked || includeLinkedFiles || includeLinkedTests || includeLinkedDocs) {
+    result.linked = {
       files: includeLinkedFiles ? files : [],
       tests: includeLinkedTests ? tests : [],
       docs: includeLinkedDocs ? docs : [],
-    },
-  };
+    };
+  }
   if (claimState) {
     result.claim_state = claimState;
   }

@@ -689,10 +689,10 @@ function weekdayOrderIndex(value: (typeof RECURRENCE_WEEKDAY_VALUES)[number]): n
 function parseReminderEntries(raw: string[], nowValue: Date): Reminder[] {
   return raw.map((entry) => {
     const kv = parseCsvKv(entry, "--reminder");
-    const atRaw = kv.at?.trim();
-    const textRaw = kv.text?.trim();
+    const atRaw = (kv.at ?? kv.date)?.trim();
+    const textRaw = (kv.text ?? kv.title)?.trim();
     if (!atRaw || !textRaw) {
-      throw new PmCliError("--reminder requires at=<iso|relative> and text=<value>", EXIT_CODE.USAGE);
+      throw new PmCliError("--reminder requires at=<iso|relative> or date=<iso|relative>, plus text=<value> or title=<value>", EXIT_CODE.USAGE);
     }
     return {
       at: resolveIsoOrRelative(atRaw, nowValue, "reminder.at"),

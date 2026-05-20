@@ -9,7 +9,7 @@ import {
   resolveRuntimeStatusRegistry,
   type RuntimeStatusRegistry,
 } from "../../core/schema/runtime-schema.js";
-import { EXIT_CODE } from "../../core/shared/constants.js";
+import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
@@ -172,6 +172,28 @@ function parseProjectionConfig(options: ListOptions): ListProjectionConfig {
     mode: "full",
     fields: [],
   };
+}
+
+function normalizeProjectionField(field: string): string {
+  return field.startsWith("item.") ? field.slice("item.".length) : field;
+}
+
+function validateListProjectionFields(projection: ListProjectionConfig, runtimeMetadataKeys: Iterable<string>): void {
+  if (projection.mode !== "fields") {
+    return;
+  }
+  const allowed = new Set([...FRONT_MATTER_KEY_ORDER, "body", ...runtimeMetadataKeys]);
+  const unknown = projection.fields.filter((field) => !allowed.has(normalizeProjectionField(field)));
+  if (unknown.length > 0) {
+    throw new PmCliError(`Unknown list --fields value(s): ${unknown.join(", ")}`, EXIT_CODE.USAGE, {
+      code: "unknown_field_projection",
+      examples: [
+        "pm list-open --fields id,title,status,type,updated_at",
+        "pm list --fields id,title,parent,priority --limit 10",
+        "pm list-all --fields id,title,body --limit 5",
+      ],
+    });
+  }
 }
 
 function parseSortField(raw: string | undefined): ListSortField | undefined {
@@ -355,17 +377,9 @@ function sortItems(
 }
 
 function readListFieldValue(item: ListedItem, field: string): unknown {
-  const normalized = field.trim();
+  const normalized = normalizeProjectionField(field.trim());
   if (normalized.length === 0) {
     return null;
-  }
-  if (normalized.startsWith("item.")) {
-    const nestedKey = normalized.slice("item.".length);
-    if (nestedKey.length === 0) {
-      return null;
-    }
-    const itemRecord = item as unknown as Record<string, unknown>;
-    return itemRecord[nestedKey] ?? null;
   }
   const itemRecord = item as unknown as Record<string, unknown>;
   if (Object.prototype.hasOwnProperty.call(itemRecord, normalized)) {
@@ -397,11 +411,13 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
   const runtimeFieldFilters = collectRuntimeFilterValues(options as Record<string, unknown>, runtimeFieldRegistry, "list");
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const projection = parseProjectionConfig(options);
+  validateListProjectionFields(projection, runtimeFieldRegistry.definitions.map((field) => field.metadata_key));
   const listWarnings: string[] = [];
-  const items = options.includeBody
+  const projectionNeedsBody = projection.fields.some((field) => normalizeProjectionField(field) === "body");
+  const items = options.includeBody || projectionNeedsBody
     ? await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema)
     : await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
-  const projection = parseProjectionConfig(options);
   const sortField = parseSortField(options.sort);
   const sortOrder = parseSortOrder(options.order) ?? "asc";
   if (!sortField && options.order !== undefined) {

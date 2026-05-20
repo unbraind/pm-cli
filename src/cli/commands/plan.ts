@@ -572,6 +572,92 @@ async function planCreate(
   });
 
   let finalMetadata: ItemMetadata = seedResult.item as unknown as ItemMetadata;
+  let initialStep: PlanStep | undefined;
+  const initialValidationText = options.validationText?.trim();
+  const initialValidationCommand = options.validationCommand?.trim();
+  const initialValidationExpected = options.validationExpected?.trim();
+  const initialValidation =
+    initialValidationText || initialValidationCommand || initialValidationExpected
+      ? ({
+          text: initialValidationText || initialValidationCommand || "Validation check",
+          command: initialValidationCommand || undefined,
+          expected: initialValidationExpected || undefined,
+        } satisfies PlanValidationCheck)
+      : undefined;
+  if (options.stepTitle?.trim()) {
+    const status = asStepStatus(options.stepStatus, "pending");
+    const linkedItems = buildLinkInputs(options, "depends_on");
+    const files = toSpecArray(options.file).map(parseStepFile);
+    const tests = toSpecArray(options.test).map(parseStepTest);
+    const docs = toSpecArray(options.doc).map(parseStepDoc);
+    const now = nowIso();
+    initialStep = {
+      id: "plan-step-001",
+      order: 1,
+      title: options.stepTitle.trim(),
+      body: options.stepBody?.trim() || undefined,
+      status,
+      owner: options.stepOwner?.trim() || undefined,
+      evidence: options.stepEvidence?.trim() || undefined,
+      blocked_reason: status === "blocked" ? options.stepBlockedReason?.trim() || "" : undefined,
+      linked_items: linkedItems.length > 0 ? linkedItems : undefined,
+      files: files.length > 0 ? files : undefined,
+      tests: tests.length > 0 ? tests : undefined,
+      docs: docs.length > 0 ? docs : undefined,
+      created_at: now,
+      updated_at: now,
+      completed_at: status === "completed" ? now : undefined,
+    };
+    const stepped = await mutateItem({
+      pmRoot: ctx.pmRoot,
+      settings: ctx.settings,
+      id: createResult.item.id,
+      op: "plan_create_initial_step",
+      author: resolveAuthor(options.author, ctx.settings.author_default),
+      message: `plan create initial step "${initialStep.title}"`,
+      mutate(doc) {
+        ensurePlanItem(doc.metadata);
+        doc.metadata.plan_steps = [initialStep as PlanStep];
+        if (initialValidation) {
+          doc.metadata.plan_validation = [...(doc.metadata.plan_validation ?? []), initialValidation];
+        }
+        return { changedFields: initialValidation ? ["plan_steps", "plan_validation"] : ["plan_steps"] };
+      },
+    });
+    finalMetadata = stepped.item as unknown as ItemMetadata;
+  } else if (initialValidation) {
+    const validated = await mutateItem({
+      pmRoot: ctx.pmRoot,
+      settings: ctx.settings,
+      id: createResult.item.id,
+      op: "plan_create_initial_validation",
+      author: resolveAuthor(options.author, ctx.settings.author_default),
+      message: "plan create initial validation",
+      mutate(doc) {
+        ensurePlanItem(doc.metadata);
+        doc.metadata.plan_validation = [...(doc.metadata.plan_validation ?? []), initialValidation];
+        return { changedFields: ["plan_validation"] };
+      },
+    });
+    finalMetadata = validated.item as unknown as ItemMetadata;
+  } else if (
+    options.stepBody?.trim() ||
+    options.stepOwner?.trim() ||
+    options.stepStatus?.trim() ||
+    options.stepEvidence?.trim() ||
+    options.stepBlockedReason?.trim() ||
+    options.stepReplacement?.trim() ||
+    toArray(options.dependsOn).length > 0 ||
+    toArray(options.link).length > 0 ||
+    toSpecArray(options.file).length > 0 ||
+    toSpecArray(options.test).length > 0 ||
+    toSpecArray(options.doc).length > 0
+  ) {
+    throw new PmCliError("pm plan create step options require --step-title", EXIT_CODE.USAGE, {
+      code: "missing_required_option",
+      examples: ['pm plan create --title "Execution plan" --step-title "Read the code"'],
+    });
+  }
   if (options.claim) {
     const claimed = await mutateItem({
       pmRoot: ctx.pmRoot,
@@ -592,6 +678,7 @@ async function planCreate(
   return {
     action: "create",
     plan,
+    step: initialStep,
     next_actions: nextActionsFor(createResult.item.id, plan),
     warnings: [...createResult.warnings],
     generated_at: nowIso(),

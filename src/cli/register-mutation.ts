@@ -199,7 +199,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--file <value>", "Add linked file path=<value>,scope=<project|global>,note=<text>", collect)
     .option("--test <value>", "Add linked test command=<value>,path=<value>,scope=<project|global>", collect)
     .option("--doc <value>", "Add linked doc path=<value>,scope=<project|global>,note=<text>", collect)
-    .option("--reminder <value>", "Add reminder entry at=<iso|relative>,text=<text>", collect)
+    .option("--reminder <value>", "Add reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>", collect)
     .option("--event <value>", "Add event entry start=<iso|relative>,end=<iso|relative>,recur_*", collect)
     .option("--type-option <value>", "Set type options key=value (repeatable)", collect)
     .option("--type_option <value>", "Alias for --type-option", collect)

@@ -254,8 +254,8 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         type: "Task",
       });
       expect(fieldsPayload.item).not.toHaveProperty("description");
-      expect(fieldsPayload.body).toBe("");
-      expect(fieldsPayload.linked?.files).toEqual([]);
+      expect(fieldsPayload.body).toBeUndefined();
+      expect(fieldsPayload.linked).toBeUndefined();
     });
   });
 

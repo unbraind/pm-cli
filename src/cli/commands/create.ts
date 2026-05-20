@@ -908,10 +908,10 @@ function parseReminders(raw: string[] | undefined, nowValue: string): { values: 
   assertNoLegacyNoneTokens(raw, "--reminder", "Use --clear-reminders to clear reminders.");
   const values = raw.map((entry) => {
     const kv = parseCsvKv(entry, "--reminder");
-    const atRaw = parseOptionalString(kv.at);
-    const textRaw = parseOptionalString(kv.text);
+    const atRaw = parseOptionalString(kv.at ?? kv.date);
+    const textRaw = parseOptionalString(kv.text ?? kv.title);
     if (!atRaw || !textRaw) {
-      throw new PmCliError("--reminder requires at=<iso|relative> and text=<value>", EXIT_CODE.USAGE);
+      throw new PmCliError("--reminder requires at=<iso|relative> or date=<iso|relative>, plus text=<value> or title=<value>", EXIT_CODE.USAGE);
     }
     const text = textRaw.trim();
     if (!text) {

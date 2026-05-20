@@ -479,7 +479,7 @@ _pm() {
             '--deadline[Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)]:deadline' \\
             '--estimate[Estimated minutes]:minutes' \\
             '--acceptance-criteria[Acceptance criteria]:criteria' \\
-            '--reminder[Reminder entry at=<iso|relative>,text=<text>]:reminder' \\
+            '--reminder[Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>]:reminder' \\
             '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
             '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
             '--unset[Clear scalar metadata field by name]:field' \\
@@ -517,7 +517,7 @@ _pm() {
             '--file[Linked file path=<value>,scope=<project|global>,note=<text>]:file' \\
             '--test[Linked test command=<value>,path=<value>,scope=<project|global>]:test' \\
             '--doc[Linked doc path=<value>,scope=<project|global>,note=<text>]:doc' \\
-            '--reminder[Reminder entry at=<iso|relative>,text=<text>]:reminder' \\
+            '--reminder[Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>]:reminder' \\
             '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
             '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
             '--unset[Clear scalar metadata field by name]:field' \\
@@ -600,7 +600,7 @@ _pm() {
             '--file[Linked file path=<value>,scope=<project|global>,note=<text>]:file' \\
             '--test[Linked test command=<value>,path=<value>,scope=<project|global>]:test' \\
             '--doc[Linked doc path=<value>,scope=<project|global>,note=<text>]:doc' \\
-            '--reminder[Reminder entry at=<iso|relative>,text=<text>]:reminder' \\
+            '--reminder[Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>]:reminder' \\
             '--event[Event entry start=<iso|relative>,end=<iso|relative>,recur_*]:event' \\
             '--type-option[Type option key=value or key=<name>,value=<value>]:type_option' \\
             '--unset[Clear scalar metadata field by name]:field' \\
@@ -1254,7 +1254,7 @@ complete -c pm -n '__fish_seen_subcommand_from create' -s b -l body             
 complete -c pm -n '__fish_seen_subcommand_from create' -l deadline                -d 'Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l estimate                -d 'Estimated minutes' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l acceptance-criteria     -d 'Acceptance criteria' -r
-complete -c pm -n '__fish_seen_subcommand_from create' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text>' -r
+complete -c pm -n '__fish_seen_subcommand_from create' -l reminder                -d 'Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l author                  -d 'Mutation author' -r
@@ -1286,7 +1286,7 @@ complete -c pm -n '__fish_seen_subcommand_from update' -l learning              
 complete -c pm -n '__fish_seen_subcommand_from update' -l file                    -d 'Linked file path=<value>,scope=<project|global>,note=<text>' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l test                    -d 'Linked test command=<value>,path=<value>,scope=<project|global>' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l doc                     -d 'Linked doc path=<value>,scope=<project|global>,note=<text>' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text>' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l reminder                -d 'Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l unset                   -d 'Clear scalar metadata field by name' -r
@@ -1368,7 +1368,7 @@ complete -c pm -n '__fish_seen_subcommand_from update-many' -l learning         
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l file                    -d 'Linked file path=<value>,scope=<project|global>,note=<text>' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l test                    -d 'Linked test command=<value>,path=<value>,scope=<project|global>' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l doc                     -d 'Linked doc path=<value>,scope=<project|global>,note=<text>' -r
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l reminder                -d 'Reminder entry at=<iso|relative>,text=<text>' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l reminder                -d 'Reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l event                   -d 'Event entry start=<iso|relative>,end=<iso|relative>,recur_*' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l type-option             -d 'Type option key=value or key=<name>,value=<value>' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l unset                   -d 'Clear scalar metadata field by name' -r
