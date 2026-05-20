@@ -73,7 +73,7 @@ function latestDeleteHistoryEntry(
   context: TempPmContext,
   id: string,
 ): { op: string; author: string; message?: string; patch: unknown[] } | undefined {
-  const history = context.runCli(["history", id, "--json"], { expectJson: true });
+  const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
   expect(history.code).toBe(0);
   const entries = (history.json as { history: Array<{ op: string; author: string; message?: string; patch: unknown[] }> }).history;
   return [...entries].reverse().find((entry) => entry.op === "delete");

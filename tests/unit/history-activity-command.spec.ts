@@ -121,6 +121,26 @@ describe("runHistory and runActivity", () => {
       expect(limited.count).toBe(1);
       expect(limited.limit).toBe(1);
 
+      const compact = await runHistory(id, { compact: true }, { path: context.pmPath });
+      expect(compact.compact).toBe(true);
+      expect(compact.history).toEqual([]);
+      expect(compact.compact_history).toHaveLength(compact.count);
+      expect(compact.compact_history?.some((entry) => entry.changed_fields.includes("body"))).toBe(true);
+
+      const cliDefault = context.runCli(["history", id, "--json"], { expectJson: true });
+      expect(cliDefault.code).toBe(0);
+      expect(cliDefault.json).toMatchObject({ compact: true, history: [] });
+      expect((cliDefault.json as { compact_history?: unknown[] }).compact_history?.length).toBeGreaterThan(0);
+
+      const cliFull = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
+      expect(cliFull.code).toBe(0);
+      expect(cliFull.json).toMatchObject({ compact: false });
+      expect((cliFull.json as { history?: unknown[] }).history?.length).toBeGreaterThan(0);
+
+      const conflictingProjection = context.runCli(["history", id, "--compact", "--full"]);
+      expect(conflictingProjection.code).toBe(EXIT_CODE.USAGE);
+      expect(conflictingProjection.stderr).toContain("History projection options are mutually exclusive");
+
       const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
       await writeFile(historyPath, "   \n", "utf8");
       const emptyHistory = await runHistory(id, {}, { path: context.pmPath });
@@ -362,6 +382,20 @@ describe("runHistory and runActivity", () => {
       const limited = await runActivity({ limit: "1" }, { path: context.pmPath });
       expect(limited.count).toBe(1);
       expect(limited.limit).toBe(1);
+
+      const cliDefault = context.runCli(["activity", "--json", "--limit", "5"], { expectJson: true });
+      expect(cliDefault.code).toBe(0);
+      expect(cliDefault.json).toMatchObject({ compact: true, activity: [] });
+      expect((cliDefault.json as { compact_activity?: unknown[] }).compact_activity?.length).toBeGreaterThan(0);
+
+      const cliFull = context.runCli(["activity", "--json", "--full", "--limit", "5"], { expectJson: true });
+      expect(cliFull.code).toBe(0);
+      expect(cliFull.json).toMatchObject({ compact: false });
+      expect((cliFull.json as { activity?: unknown[] }).activity?.length).toBeGreaterThan(0);
+
+      const conflictingProjection = context.runCli(["activity", "--compact", "--full"]);
+      expect(conflictingProjection.code).toBe(EXIT_CODE.USAGE);
+      expect(conflictingProjection.stderr).toContain("Activity projection options are mutually exclusive");
     });
   });
 

@@ -118,7 +118,7 @@ describe("built-in todos extension import/export", () => {
       expect(getImportedJson.item.description).toBe("");
       expect(getImportedJson.body).toBe("Imported body one.");
 
-      const history = context.runCli(["history", "pm-todo-one", "--json"], { expectJson: true });
+      const history = context.runCli(["history", "pm-todo-one", "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string }> };
       expect(historyJson.history.some((entry) => entry.op === "import")).toBe(true);

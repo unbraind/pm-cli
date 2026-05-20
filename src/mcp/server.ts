@@ -512,10 +512,11 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
         global,
       );
     case "activity": {
-      const activityOptions: Parameters<typeof runActivity>[0] = { ...options };
+      const activityOptions = { ...options } as Parameters<typeof runActivity>[0] & { full?: unknown };
       if (activityOptions.compact === undefined) {
-        activityOptions.compact = true;
+        activityOptions.compact = activityOptions.full === true ? false : true;
       }
+      delete activityOptions.full;
       return runActivity(activityOptions, global);
     }
     case "aggregate":

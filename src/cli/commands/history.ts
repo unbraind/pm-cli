@@ -19,6 +19,7 @@ export interface HistoryCommandOptions {
   limit?: string;
   diff?: boolean;
   verify?: boolean;
+  compact?: boolean;
 }
 
 export interface HistoryDiffEntry {
@@ -42,6 +43,8 @@ export interface HistoryVerificationResult {
 export interface HistoryResult {
   id: string;
   history: HistoryEntry[];
+  compact_history?: HistoryDiffEntry[];
+  compact: boolean;
   count: number;
   limit: number | null;
   diff?: HistoryDiffEntry[];
@@ -276,15 +279,19 @@ export async function runHistory(id: string, options: HistoryCommandOptions, glo
 
   const fullHistory = await readHistoryEntries(historyPath, resolvedId);
   const history = limitEntries(fullHistory, limit);
+  const compact = options.compact === true;
+  const compactHistory = compact ? buildDiffEntries(history, Math.max(0, fullHistory.length - history.length)) : undefined;
   const result: HistoryResult = {
     id: resolvedId,
-    history,
+    history: compact ? [] : history,
+    compact_history: compactHistory,
+    compact,
     count: history.length,
     limit: limit ?? null,
   };
 
   if (options.diff) {
-    result.diff = buildDiffEntries(history, Math.max(0, fullHistory.length - history.length));
+    result.diff = compactHistory ?? buildDiffEntries(history, Math.max(0, fullHistory.length - history.length));
   }
 
   if (options.verify) {

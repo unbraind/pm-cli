@@ -181,7 +181,7 @@ History entries are append-only JSONL records:
 Useful diagnostics:
 
 ```bash
-pm history <id> --diff --verify
+pm history <id> --full --diff --verify
 pm activity --id <id> --limit 50
 pm validate --check-history-drift
 ```

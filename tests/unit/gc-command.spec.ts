@@ -28,12 +28,20 @@ describe("runGc", () => {
     await withTempPmPath(async (context) => {
       await writeFile(path.join(context.pmPath, "index", "manifest.json"), '{"seed":true}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "embeddings.jsonl"), '{"id":"seed"}\n', "utf8");
+      await writeFile(path.join(context.pmPath, "search", "vectorization-status.json"), '{"version":1,"items":[]}\n', "utf8");
+      await mkdir(path.join(context.pmPath, "search", "lancedb"), { recursive: true });
+      await writeFile(path.join(context.pmPath, "search", "lancedb", "vectors.jsonl"), '{"id":"seed"}\n', "utf8");
 
       const gc = await runGc({ path: context.pmPath });
       expect(gc.ok).toBe(true);
       expect(gc.dry_run).toBe(false);
       expect(gc.scope).toEqual(["index", "embeddings", "runtime"]);
-      expect(gc.removed).toEqual(["index/manifest.json", "search/embeddings.jsonl"]);
+      expect(gc.removed).toEqual([
+        "index/manifest.json",
+        "search/embeddings.jsonl",
+        "search/vectorization-status.json",
+        "search/lancedb",
+      ]);
       expect(gc.retained).toEqual(["runtime/test-runs"]);
       expect(gc.warnings).toEqual([]);
       expect(gc.guidance).toEqual([
@@ -44,7 +52,13 @@ describe("runGc", () => {
       const gcSecondRun = await runGc({ path: context.pmPath });
       expect(gcSecondRun.ok).toBe(true);
       expect(gcSecondRun.removed).toEqual([]);
-      expect(gcSecondRun.retained).toEqual(["index/manifest.json", "search/embeddings.jsonl", "runtime/test-runs"]);
+      expect(gcSecondRun.retained).toEqual([
+        "index/manifest.json",
+        "search/embeddings.jsonl",
+        "search/vectorization-status.json",
+        "search/lancedb",
+        "runtime/test-runs",
+      ]);
       expect(gcSecondRun.warnings).toEqual([]);
       expect(gcSecondRun.guidance).toEqual([]);
     });
@@ -58,7 +72,12 @@ describe("runGc", () => {
       const gc = await runGc({ path: context.pmPath });
       expect(gc.ok).toBe(false);
       expect(gc.removed).toEqual(["search/embeddings.jsonl"]);
-      expect(gc.retained).toEqual(["index/manifest.json", "runtime/test-runs"]);
+      expect(gc.retained).toEqual([
+        "index/manifest.json",
+        "search/vectorization-status.json",
+        "search/lancedb",
+        "runtime/test-runs",
+      ]);
       expect(gc.warnings).toEqual(["not_a_file:index/manifest.json"]);
     });
   });
@@ -80,6 +99,8 @@ describe("runGc", () => {
     await withTempPmPath(async (context) => {
       await writeFile(path.join(context.pmPath, "index", "manifest.json"), '{"seed":true}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "embeddings.jsonl"), '{"id":"seed"}\n', "utf8");
+      await writeFile(path.join(context.pmPath, "search", "vectorization-status.json"), '{"version":1,"items":[]}\n', "utf8");
+      await mkdir(path.join(context.pmPath, "search", "lancedb"), { recursive: true });
       await mkdir(path.join(context.pmPath, "runtime", "test-runs"), { recursive: true });
       await writeFile(path.join(context.pmPath, "runtime", "test-runs", "seed.log"), "seed\n", "utf8");
 
@@ -92,7 +113,13 @@ describe("runGc", () => {
       expect(gc.ok).toBe(true);
       expect(gc.dry_run).toBe(true);
       expect(gc.scope).toEqual(["index", "embeddings", "runtime"]);
-      expect(gc.removed).toEqual(["index/manifest.json", "search/embeddings.jsonl", "runtime/test-runs"]);
+      expect(gc.removed).toEqual([
+        "index/manifest.json",
+        "search/embeddings.jsonl",
+        "search/vectorization-status.json",
+        "search/lancedb",
+        "runtime/test-runs",
+      ]);
       expect(gc.retained).toEqual([]);
       expect(gc.guidance).toEqual([
         "Dry-run preview only: no cache artifacts were deleted.",
@@ -101,6 +128,8 @@ describe("runGc", () => {
 
       await expect(fs.stat(path.join(context.pmPath, "index", "manifest.json"))).resolves.toBeTruthy();
       await expect(fs.stat(path.join(context.pmPath, "search", "embeddings.jsonl"))).resolves.toBeTruthy();
+      await expect(fs.stat(path.join(context.pmPath, "search", "vectorization-status.json"))).resolves.toBeTruthy();
+      await expect(fs.stat(path.join(context.pmPath, "search", "lancedb"))).resolves.toBeTruthy();
       await expect(fs.stat(path.join(context.pmPath, "runtime", "test-runs", "seed.log"))).resolves.toBeTruthy();
     });
   });
@@ -109,6 +138,8 @@ describe("runGc", () => {
     await withTempPmPath(async (context) => {
       await writeFile(path.join(context.pmPath, "index", "manifest.json"), '{"seed":true}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "embeddings.jsonl"), '{"id":"seed"}\n', "utf8");
+      await writeFile(path.join(context.pmPath, "search", "vectorization-status.json"), '{"version":1,"items":[]}\n', "utf8");
+      await mkdir(path.join(context.pmPath, "search", "lancedb"), { recursive: true });
       await mkdir(path.join(context.pmPath, "runtime", "test-runs"), { recursive: true });
       await writeFile(path.join(context.pmPath, "runtime", "test-runs", "seed.log"), "seed\n", "utf8");
 
@@ -124,6 +155,15 @@ describe("runGc", () => {
       expect(runtimeOnly.removed).toEqual(["runtime/test-runs"]);
       expect(runtimeOnly.retained).toEqual([]);
       await expect(fs.stat(path.join(context.pmPath, "runtime", "test-runs"))).rejects.toBeTruthy();
+
+      const embeddingsOnly = await runGc({ path: context.pmPath }, { scope: ["embeddings"] });
+      expect(embeddingsOnly.scope).toEqual(["embeddings"]);
+      expect(embeddingsOnly.removed).toEqual([
+        "search/embeddings.jsonl",
+        "search/vectorization-status.json",
+        "search/lancedb",
+      ]);
+      expect(embeddingsOnly.retained).toEqual([]);
     });
   });
 
@@ -142,6 +182,8 @@ describe("runGc", () => {
     await withTempPmPath(async (context) => {
       await writeFile(path.join(context.pmPath, "index", "manifest.json"), '{"seed":true}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "embeddings.jsonl"), '{"id":"seed"}\n', "utf8");
+      await writeFile(path.join(context.pmPath, "search", "vectorization-status.json"), '{"version":1,"items":[]}\n', "utf8");
+      await mkdir(path.join(context.pmPath, "search", "lancedb"), { recursive: true });
 
       const events: string[] = [];
       setActiveExtensionHooks({
@@ -185,19 +227,30 @@ describe("runGc", () => {
 
       const gc = await runGc({ path: context.pmPath });
       expect(gc.ok).toBe(false);
-      expect(gc.removed).toEqual(["index/manifest.json", "search/embeddings.jsonl"]);
+      expect(gc.removed).toEqual([
+        "index/manifest.json",
+        "search/embeddings.jsonl",
+        "search/vectorization-status.json",
+        "search/lancedb",
+      ]);
       expect(gc.retained).toEqual(["runtime/test-runs"]);
       expect(gc.warnings).toEqual([
+        "extension_hook_failed:project:boom-read-hook:onRead",
+        "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
       ]);
       expect(events).toContain("read:manifest.json");
       expect(events).toContain("read:embeddings.jsonl");
+      expect(events).toContain("read:vectorization-status.json");
+      expect(events).toContain("read:lancedb");
       expect(events).toContain("read:test-runs");
       expect(events).toContain("write:gc:remove:manifest.json");
       expect(events).toContain("write:gc:remove:embeddings.jsonl");
-      expect(events).toContain("index:gc:3");
+      expect(events).toContain("write:gc:remove:vectorization-status.json");
+      expect(events).toContain("write:gc:remove:lancedb");
+      expect(events).toContain("index:gc:5");
     });
   });
 
@@ -222,7 +275,13 @@ describe("runGc", () => {
       const gc = await runGc({ path: context.pmPath });
       expect(gc.ok).toBe(false);
       expect(gc.removed).toEqual([]);
-      expect(gc.retained).toEqual(["index/manifest.json", "search/embeddings.jsonl", "runtime/test-runs"]);
+      expect(gc.retained).toEqual([
+        "index/manifest.json",
+        "search/embeddings.jsonl",
+        "search/vectorization-status.json",
+        "search/lancedb",
+        "runtime/test-runs",
+      ]);
       expect(gc.warnings).toEqual(["extension_hook_failed:project:boom-index-hook:onIndex"]);
     });
   });

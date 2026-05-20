@@ -2,12 +2,55 @@ id: pm-3pbs
 title: Reduce default verbosity of pm activity/history CLI output and add a compact mode to pm history
 description: "Dogfood (2026-05-20) found the human-facing CLI defaults for pm activity (~809 lines for 18 items) and pm history <id> (~241 lines for one item) dump full JSON Patch ops + before/after hashes per entry. pm activity --compact (4 lines/entry) exists but is opt-in, and pm history has no compact mode at all. The MCP/agent path now defaults to compact (pm-8jd3), but the CLI default and a history compact mode remain. Proposal: keep full patches behind --verbose/--patches and make a condensed view the default (or at least add `pm history <id> --compact`). Changing CLI defaults is a contract change touching several specs, so scope/test carefully."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[6]: activity,agent-ux,cli,dogfood,history,token-efficiency
 created_at: "2026-05-20T20:32:36.067Z"
-updated_at: "2026-05-20T20:32:36.067Z"
+updated_at: "2026-05-20T22:09:39.022Z"
 author: claude-code-agent
 acceptance_criteria: pm history supports a compact projection; default verbosity of activity/history is reduced (or compact is the default) with full patches available behind an explicit flag; existing specs updated; build + 100% coverage green.
 parent: pm-rnpb
+resolution: fixed
+expected_result: "pm history and pm activity default to compact, token-efficient output while --full preserves complete JSON Patch audit entries; contracts/completions/docs/tests stay aligned."
+actual_result: "Implemented compact history projection, compact-by-default history/activity CLIs, --full escape hatches, activity full MCP/schema parity, semantic gc cleanup, strict dynamic flag rejection, and full regression coverage."
+comments[5]{created_at,author,text}:
+  "2026-05-20T21:31:49.887Z",codex-manual-dogfood,"Manual dogfood reviewer start: will specifically inspect activity/history output token efficiency and compact-mode behavior inside an isolated temp project; no repo file edits."
+  "2026-05-20T21:34:13.083Z",codex-manual-dogfood,"Manual dogfood evidence 2026-05-20: on temp item pm-j1m0, pm activity --limit 5 emitted full JSON-patch bodies for five entries; pm history pm-j1m0 --limit 20 emitted full patch bodies; pm history pm-j1m0 --compact --limit 20 emitted concise rows with op/author/patch_ops/changed_fields. Recommendation: make compact activity/history the default or add a brief default with explicit --full for patches; keep --compact for scriptable low-token review."
+  "2026-05-20T21:41:43.234Z",codex-gpt5,"Evidence: implemented token-efficient history defaults, semantic gc cleanup, and strict dynamic extension flag rejection. Focused verification passed: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/gc-command.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/main-loose-options.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts --reporter=dot (7 files, 192 tests). Additional dynamic-command regression passed: tests/unit/main-loose-options.spec.ts + tests/integration/cli.integration.spec.ts (2 files, 76 tests). pnpm exec tsc --noEmit passed."
+  "2026-05-20T21:44:55.059Z",codex-full-audit,"Audit note: current worktree already contains implementation for compact pm history default, --full escape hatch, completion/contracts/docs updates, and related tests. Continuing review/verification without reverting existing changes."
+  "2026-05-20T22:09:01.519Z",codex-full-audit,"Verification evidence: pnpm build passed; focused regression passed: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/main-loose-options.spec.ts tests/integration/cli.integration.spec.ts tests/unit/contracts-command.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/gc-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts --reporter=dot (6 files, 128 tests); full coverage passed: node scripts/run-tests.mjs coverage (96 files, 1395 tests, 100% statements/branches/functions/lines); pnpm quality:static passed; node scripts/check-secrets.mjs passed."
+files[17]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,Clarify full history verification example
+  docs/COMMANDS.md,project,Document compact default and explicit full history output
+  src/cli/commands/completion.ts,project,Expose history compact in shell completion
+  src/cli/commands/gc.ts,project,Clear vectorization ledger and local vector snapshot with embeddings scope
+  src/cli/commands/history.ts,project,Add compact history projection
+  src/cli/extension-command-options.ts,project,Validate loose extension command options against registered flags
+  src/cli/help-content.ts,project,Prefer compact history example in help
+  src/cli/main.ts,project,Reject unsupported flags for dynamic extension commands with advertised flag schemas
+  src/cli/register-list-query.ts,project,Expose compact history CLI flag
+  src/cli/registration-helpers.ts,project,Default CLI activity output to compact unless --full is provided
+  src/mcp/server.ts,project,Honor pm_run activity full option while keeping compact default
+  src/sdk/cli-contracts.ts,project,Expose compact flags in runtime contracts
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,Cover pm_run activity full override
+  tests/integration/release-readiness-runtime.spec.ts,project,Update runtime key-order readiness for history compact field
+  tests/unit/contracts-command.spec.ts,project,Cover activity full/compact action schema contract
+  tests/unit/gc-command.spec.ts,project,Cover semantic gc cleanup of embeddings ledger and local vector snapshot
+  tests/unit/main-loose-options.spec.ts,project,Cover unknown and disabled dynamic flag rejection
+tests[11]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/gc-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/gc-command.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/main-loose-options.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts --reporter=dot,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/contracts-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts --reporter=dot,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/main-loose-options.spec.ts tests/integration/cli.integration.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/main-loose-options.spec.ts tests/integration/cli.integration.spec.ts tests/unit/contracts-command.spec.ts tests/unit/history-activity-command.spec.ts tests/unit/gc-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts --reporter=dot,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+docs[2]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,Use explicit full history for audit verification example
+  docs/COMMANDS.md,project,History command examples prefer compact default
+close_reason: "Closed after implementing compact-by-default history/activity output, explicit --full escape hatches, runtime contracts/completions/docs parity, semantic gc cleanup, and strict dynamic extension flag validation. Verification passed: pnpm build; focused regression 6 files/128 tests; full coverage 96 files/1395 tests at 100%; pnpm quality:static; node scripts/check-secrets.mjs."
 body: ""

@@ -40,7 +40,7 @@ function baseCreateOptions(overrides: Partial<CreateCommandOptions> = {}): Creat
 }
 
 function readCreateHistory(context: TempPmContext, id: string): Array<{ op: string; author: string; message?: string }> {
-  const history = context.runCli(["history", id, "--json"], { expectJson: true });
+  const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
   expect(history.code).toBe(0);
   return (history.json as { history: Array<{ op: string; author: string; message?: string }> }).history;
 }

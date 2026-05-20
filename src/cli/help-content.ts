@@ -406,12 +406,13 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
   },
   history: {
     why: "Inspects item mutation timeline and audit trail.",
-    examples: ["pm history pm-a1b2 --limit 20"],
+    examples: ["pm history pm-a1b2 --limit 20", "pm history pm-a1b2 --full --verify"],
   },
   activity: {
     why: "Reviews recent tracker-wide activity across items.",
     examples: [
       "pm activity --limit 50",
+      "pm activity --full --id pm-a1b2 --limit 50",
       "pm activity --id pm-a1b2 --op update --author codex-agent --from -7d --to now",
       "pm activity --json --stream rows --limit 200",
     ],

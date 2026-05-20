@@ -445,7 +445,7 @@ describe("runGet and runAppend", () => {
       expect(firstAppend.changed_fields).toContain("body");
       const afterFirstAppend = await runGet(emptyBodyId, { path: context.pmPath });
       expect(afterFirstAppend.body).toBe("first entry");
-      const firstHistory = context.runCli(["history", emptyBodyId, "--json"], { expectJson: true });
+      const firstHistory = context.runCli(["history", emptyBodyId, "--json", "--full"], { expectJson: true });
       expect(firstHistory.code).toBe(0);
       const firstHistoryJson = firstHistory.json as { history: Array<{ op: string; author: string }> };
       const firstAppendAuthor = [...firstHistoryJson.history]
@@ -479,7 +479,7 @@ describe("runGet and runAppend", () => {
         const afterSecondAppend = await runGet(spacedBodyId, { path: context.pmPath });
         expect(afterSecondAppend.body).toBe("existing body\n\nsecond entry");
 
-        const history = context.runCli(["history", spacedBodyId, "--json"], { expectJson: true });
+        const history = context.runCli(["history", spacedBodyId, "--json", "--full"], { expectJson: true });
         expect(history.code).toBe(0);
         const historyJson = history.json as { history: Array<{ op: string; author: string }> };
         const appendAuthor = [...historyJson.history]
@@ -503,7 +503,7 @@ describe("runGet and runAppend", () => {
           { path: context.pmPath },
         );
         expect(settingsAppend.changed_fields).toContain("body");
-        const settingsHistory = context.runCli(["history", settingsAuthorId, "--json"], { expectJson: true });
+        const settingsHistory = context.runCli(["history", settingsAuthorId, "--json", "--full"], { expectJson: true });
         expect(settingsHistory.code).toBe(0);
         const settingsHistoryJson = settingsHistory.json as {
           history: Array<{ op: string; author: string }>;

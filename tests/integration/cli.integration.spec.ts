@@ -610,7 +610,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         "utf8",
       );
 
-      const activityResult = context.runCli(["activity", "--json", "--id", id, "--limit", "5"], { expectJson: true });
+      const activityResult = context.runCli(["activity", "--json", "--full", "--id", id, "--limit", "5"], { expectJson: true });
       expect(activityResult.code).toBe(0);
       const activityJson = activityResult.json as { activity: Array<{ id: string; op: string }> };
       expect(activityJson.activity.some((entry) => entry.id === id && entry.op === "unknown")).toBe(true);
@@ -2582,7 +2582,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(childCreateResult.code).toBe(0);
       const childId = (childCreateResult.json as { item: { id: string } }).item.id;
 
-      const historyAfterCreate = context.runCli(["history", id, "--json"], { expectJson: true });
+      const historyAfterCreate = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(historyAfterCreate.code).toBe(0);
       const historyAfterCreateJson = historyAfterCreate.json as { count: number; history: Array<{ op: string }> };
       expect(historyAfterCreateJson.count).toBeGreaterThanOrEqual(1);
@@ -2848,12 +2848,12 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const runTestsJson = runTests.json as { run_results: Array<{ status: string }> };
       expect(runTestsJson.run_results.some((entry) => entry.status === "passed")).toBe(true);
 
-      const historyLatest = context.runCli(["history", id, "--json", "--limit", "1"], { expectJson: true });
+      const historyLatest = context.runCli(["history", id, "--json", "--full", "--limit", "1"], { expectJson: true });
       expect(historyLatest.code).toBe(0);
       const historyLatestJson = historyLatest.json as { count: number };
       expect(historyLatestJson.count).toBe(1);
 
-      const activity = context.runCli(["activity", "--json", "--limit", "10"], { expectJson: true });
+      const activity = context.runCli(["activity", "--json", "--full", "--limit", "10"], { expectJson: true });
       expect(activity.code).toBe(0);
       const activityJson = activity.json as { activity: Array<{ id: string }> };
       expect(activityJson.activity.some((entry) => entry.id === id)).toBe(true);
@@ -2970,6 +2970,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       await writeFile(path.join(context.pmPath, "index", "manifest.json"), '{"seed":true}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "embeddings.jsonl"), '{"id":"seed"}\n', "utf8");
+      await writeFile(path.join(context.pmPath, "search", "vectorization-status.json"), '{"version":1,"items":[]}\n', "utf8");
+      await mkdir(path.join(context.pmPath, "search", "lancedb"), { recursive: true });
       const gc = context.runCli(["gc", "--json"], { expectJson: true });
       expect(gc.code).toBe(0);
       const gcJson = gc.json as {
@@ -2979,7 +2981,12 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         warnings: string[];
       };
       expect(gcJson.ok).toBe(true);
-      expect(gcJson.removed).toEqual(["index/manifest.json", "search/embeddings.jsonl"]);
+      expect(gcJson.removed).toEqual([
+        "index/manifest.json",
+        "search/embeddings.jsonl",
+        "search/vectorization-status.json",
+        "search/lancedb",
+      ]);
       expect(gcJson.retained).toEqual(["runtime/test-runs"]);
       expect(gcJson.warnings).toEqual([]);
 
@@ -3388,7 +3395,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         [normalizedGlobalFile, "docs/plan.md", "src/app.ts"].sort(),
       );
 
-      const history = context.runCli(["history", id, "--json", "--limit", "1"], { expectJson: true, cwd: projectRoot });
+      const history = context.runCli(["history", id, "--json", "--full", "--limit", "1"], { expectJson: true, cwd: projectRoot });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string }> };
       expect(historyJson.history.at(-1)?.op).toBe("files_discover");
@@ -3467,7 +3474,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const listAllJson = listAll.json as { items: Array<{ id: string }> };
       expect(listAllJson.items.some((item) => item.id === id)).toBe(false);
 
-      const history = context.runCli(["history", id, "--json"], { expectJson: true });
+      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string }> };
       expect(historyJson.history.at(-1)?.op).toBe("delete");
@@ -3581,7 +3588,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(filesList.code).toBe(0);
       const filesListJson = filesList.json as { files: Array<{ path: string }> };
       expect(filesListJson.files.map((entry) => entry.path).sort()).toEqual(["src/cli/help-content.ts", "src/cli/main.ts"]);
-      const afterFilesSequence = context.runCli(["history", id, "--json", "--limit", "1"], { expectJson: true });
+      const afterFilesSequence = context.runCli(["history", id, "--json", "--full", "--limit", "1"], { expectJson: true });
       expect(afterFilesSequence.code).toBe(0);
 
       const addDocFirst = context.runCli(
@@ -4763,7 +4770,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const getResult = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(getResult.code).toBe(0);
 
-      const historyResult = context.runCli(["history", id, "--json"], { expectJson: true });
+      const historyResult = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(historyResult.code).toBe(0);
 
       const activityResult = context.runCli(["activity", "--json"], { expectJson: true });
@@ -4985,7 +4992,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
-  it("surfaces registerFlags metadata in dynamic command help without changing loose option parsing", async () => {
+  it("surfaces registerFlags metadata and rejects unsupported dynamic command flags", async () => {
     await withTempPmPath(async (context) => {
       const extensionDir = path.join(context.pmPath, "extensions", "acme-sync-flag-help-ext");
       await mkdir(extensionDir, { recursive: true });
@@ -5044,7 +5051,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(helpResult.stdout).not.toContain("--hidden-flag");
       expect(helpResult.stdout).not.toContain("Ignored invalid long flag");
 
-      const dispatched = context.runCli(["acme", "sync", "--json", "--dry-run", "--limit", "2", "artifact-Z"], {
+      const dispatched = context.runCli(["acme", "sync", "--json", "--dry-run", "--limit", "2", "--required-flag", "ok", "artifact-Z"], {
         expectJson: true,
       });
       expect(dispatched.code).toBe(0);
@@ -5055,15 +5062,25 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         options: {
           dryRun: boolean;
           limit: string;
+          requiredFlag: string;
         };
       };
       expect(dispatchedJson.ok).toBe(true);
       expect(dispatchedJson.source).toBe("acme-sync-flag-help-ext");
-      expect(dispatchedJson.args).toEqual(["--dry-run", "--limit", "2", "artifact-Z"]);
+      expect(dispatchedJson.args).toEqual(["--dry-run", "--limit", "2", "--required-flag", "ok", "artifact-Z"]);
       expect(dispatchedJson.options).toEqual({
         dryRun: true,
         limit: "2",
+        requiredFlag: "ok",
       });
+
+      const unknownFlag = context.runCli(["acme", "sync", "--unsupported", "--required-flag", "ok"]);
+      expect(unknownFlag.code).toBe(2);
+      expect(unknownFlag.stderr).toContain("Unknown option '--unsupported' for extension command 'acme sync'");
+
+      const disabledFlag = context.runCli(["acme", "sync", "--disabled-flag", "--required-flag", "ok"]);
+      expect(disabledFlag.code).toBe(2);
+      expect(disabledFlag.stderr).toContain("Option '--disabled-flag' is disabled for extension command 'acme sync'");
     });
   });
 
@@ -5989,7 +6006,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(secondJson.item.status).toBe("blocked");
       expect(secondJson.item.priority).toBe(0);
 
-      const history = context.runCli(["history", "pm-beads-integration-1", "--json"], { expectJson: true });
+      const history = context.runCli(["history", "pm-beads-integration-1", "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string }> };
       expect(historyJson.history.some((entry) => entry.op === "import")).toBe(true);
@@ -6396,7 +6413,7 @@ it("enforces strict missing-stream policy across history-touching CLI commands",
     expect(strictSet.code).toBe(0);
     await rm(path.join(context.pmPath, "history", `${id}.jsonl`), { force: true });
 
-    expect(context.runCli(["history", id, "--json"]).code).toBe(3);
+    expect(context.runCli(["history", id, "--json", "--full"]).code).toBe(3);
     expect(context.runCli(["activity", "--json"]).code).toBe(3);
     expect(context.runCli(["stats", "--json"]).code).toBe(3);
     expect(context.runCli(["health", "--json"]).code).toBe(3);
@@ -6816,7 +6833,7 @@ it("restores an item by version through CLI", async () => {
       expect(getJson.item.status).toBe("open");
       expect(getJson.body).toBe("body-v1");
 
-      const history = context.runCli(["history", id, "--json"], { expectJson: true });
+      const history = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(history.code).toBe(0);
       const historyJson = history.json as { history: Array<{ op: string }> };
       expect(historyJson.history.at(-1)?.op).toBe("restore");

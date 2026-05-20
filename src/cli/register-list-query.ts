@@ -255,17 +255,23 @@ export function registerListQueryCommands(program: Command): void {
     .command("history")
     .argument("<id>", "Item id")
     .option("--limit <n>", "Return only the latest n history entries")
+    .option("--compact", "Condensed output: show entry index, timestamp, op, author, patch count, and changed fields")
+    .option("--full", "Show full history entries with JSON Patch payloads")
     .option("--diff", "Include per-entry changed field summaries from history patches")
     .option("--verify", "Verify hash chain and replay integrity for the full history stream")
     .description("Show item history entries.")
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      if (options.compact === true && options.full === true) {
+        throw new PmCliError("History projection options are mutually exclusive. Use either --compact or --full.", EXIT_CODE.USAGE);
+      }
       const { runHistory } = await loadListQueryCommandsModule();
       const result = await runHistory(
         id,
         {
           limit: typeof options.limit === "string" ? options.limit : undefined,
+          compact: options.full === true ? false : true,
           diff: Boolean(options.diff),
           verify: Boolean(options.verify),
         },
@@ -286,11 +292,15 @@ export function registerListQueryCommands(program: Command): void {
     .option("--to <value>", "Upper timestamp bound (ISO/date string or relative)")
     .option("--limit <n>", "Return only the latest n activity entries")
     .option("--compact", "Condensed output: show only id, op, ts, author, msg per entry")
+    .option("--full", "Show full activity entries with JSON Patch payloads")
     .option("--stream [mode]", "Emit line-delimited JSON rows (requires --json). Optional mode: rows|ndjson|jsonl")
     .description("Show recent activity across items.")
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      if (options.compact === true && options.full === true) {
+        throw new PmCliError("Activity projection options are mutually exclusive. Use either --compact or --full.", EXIT_CODE.USAGE);
+      }
       const normalized = normalizeActivityOptions(options);
       const { runActivity } = await loadListQueryCommandsModule();
       const result = await runActivity(normalized, globalOptions);
