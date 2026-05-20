@@ -31,6 +31,7 @@ export function registerOperationCommands(program: Command): void {
     .argument("<id>", "Item id")
     .option("--add <value>", "Add linked test entry (CSV/markdown pairs or - for stdin)", collect)
     .option("--remove <value>", "Remove linked test entry by command/path (command=<value>, path=<value>, markdown pairs, plain value, or - for stdin)", collect)
+    .option("--list", "List linked tests without mutating")
     .option("--run", "Run linked test commands")
     .option("--background", "Run linked tests in managed background mode")
     .option("--timeout <seconds>", "Default run timeout in seconds")
@@ -81,6 +82,7 @@ export function registerOperationCommands(program: Command): void {
       const result = await runTest(id, {
         add: addValues,
         remove: removeValues,
+        list: Boolean(options.list),
         run: Boolean(options.run),
         timeout: typeof options.timeout === "string" ? options.timeout : undefined,
         progress: Boolean(options.progress),

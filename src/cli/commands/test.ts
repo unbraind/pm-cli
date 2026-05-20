@@ -130,6 +130,7 @@ interface LinkedTestRuntimeDirectives {
 export interface TestCommandOptions {
   add?: string[];
   remove?: string[];
+  list?: boolean;
   run?: boolean;
   timeout?: string;
   progress?: boolean;

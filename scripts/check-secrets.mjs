@@ -2,10 +2,11 @@
 
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
-const RULES = [
+export const RULES = [
   { name: "private-key", regex: /-----BEGIN [A-Z ]*PRIVATE KEY-----/g },
-  { name: "github-token", regex: /\b(?:ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/g },
+  { name: "github-token", regex: /\b(?:gh[opsru]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/g },
   { name: "npm-token", regex: /\bnpm_[A-Za-z0-9]{20,}\b/g },
   { name: "aws-access-key", regex: /\bAKIA[0-9A-Z]{16}\b/g },
   { name: "google-api-key", regex: /\bAIza[0-9A-Za-z_-]{35}\b/g },
@@ -69,6 +70,29 @@ function lineNumberFromIndex(content, index) {
   return line;
 }
 
+export function scanContent(file, content) {
+  const findings = [];
+  for (const rule of RULES) {
+    if (rule.includeFiles && !rule.includeFiles.test(file)) {
+      continue;
+    }
+    if (rule.excludeFiles && rule.excludeFiles.test(file)) {
+      continue;
+    }
+    rule.regex.lastIndex = 0;
+    const matches = content.matchAll(rule.regex);
+    for (const match of matches) {
+      const index = match.index ?? 0;
+      findings.push({
+        file,
+        rule: rule.name,
+        line: lineNumberFromIndex(content, index),
+      });
+    }
+  }
+  return findings;
+}
+
 function run() {
   const findings = [];
   const files = gitTrackedFiles();
@@ -90,25 +114,7 @@ function run() {
       continue;
     }
 
-    const content = buffer.toString("utf8");
-    for (const rule of RULES) {
-      if (rule.includeFiles && !rule.includeFiles.test(file)) {
-        continue;
-      }
-      if (rule.excludeFiles && rule.excludeFiles.test(file)) {
-        continue;
-      }
-      rule.regex.lastIndex = 0;
-      const matches = content.matchAll(rule.regex);
-      for (const match of matches) {
-        const index = match.index ?? 0;
-        findings.push({
-          file,
-          rule: rule.name,
-          line: lineNumberFromIndex(content, index),
-        });
-      }
-    }
+    findings.push(...scanContent(file, buffer.toString("utf8")));
   }
 
   if (findings.length > 0) {
@@ -122,4 +128,6 @@ function run() {
   console.log("No credential-like secrets detected in tracked files.");
 }
 
-run();
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  run();
+}

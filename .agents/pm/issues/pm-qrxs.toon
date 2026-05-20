@@ -1,0 +1,21 @@
+id: pm-qrxs
+title: "MCP pm_search defaults to full item bodies, blowing past agent token limits"
+description: "Through the pm-mcp server, pm_search returned no projection by default and fell back to mode=full (entire item bodies/comments/notes per hit). A 10-hit hybrid query produced ~175KB of output that exceeded the agent tool token cap and had to be spilled to disk — making search nearly unusable for agents and wasting context. pm_list (pm-2cqx) and pm_get/pm_context already default to low-token projections; pm_search was the remaining gap."
+type: Issue
+status: closed
+priority: 0
+tags[5]: agent-ux,dogfood,mcp,search,token-efficiency
+created_at: "2026-05-20T20:18:33.113Z"
+updated_at: "2026-05-20T20:19:18.518Z"
+author: claude-code-agent
+acceptance_criteria: MCP pm_search defaults to a compact projection (id/title/status/type/priority/updated_at/score/matched_fields) when the caller passes no compact/full/fields option; callers can still opt into full via options.full=true; tool description documents the default and opt-outs; regression test asserts compact-by-default and full opt-in through handleRequest.
+parent: pm-rnpb
+resolution: MCP pm_search now defaults to a compact projection; full bodies are opt-in via options.full=true.
+expected_result: Agent search calls return token-efficient compact hits by default without exceeding tool output caps.
+actual_result: Default MCP pm_search returns flat compact hits (id/title/status/type/priority/updated_at/score/matched_fields); options.full=true returns nested full items. Regression test passes 4/4.
+files[1]{path,scope,note}:
+  src/mcp/server.ts,project,search action injects compact default + documents projection opt-outs
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,asserts pm_search compact-by-default + full opt-in via handleRequest
+close_reason: "Fixed in src/mcp/server.ts: the search case now injects compact=true when the caller passes no compact/full/fields option (mirroring the pm_list pattern), and the pm_search tool description documents the compact default plus options.mode/limit/fields/full opt-outs. Added regression test in tests/integration/mcp-dynamic-package-actions.spec.ts asserting compact-by-default (flat hit, no body/item nesting) and full opt-in (nested item) through handleRequest. Build green; MCP integration spec passes 4/4. NOTE: the long-running pm-mcp server process in this session still serves the previous build, so a fresh full-bodied response is expected until the MCP server restarts — verified the new behavior via the rebuilt CLI/handleRequest path."
+body: ""

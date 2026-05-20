@@ -1,0 +1,13 @@
+id: pm-5k2w
+title: "Dogfood 2026-05-20 low-severity CLI polish backlog (config UX, init verbosity, help alias bloat, default-safety, doc/validator drift)"
+description: "Low-severity polish items from the 2026-05-20 dogfood pass, grouped to avoid item sprawl. M5: pm config set <key> <value> positional form errors ('too many arguments') and config get/read wording drifts from the real get/set/list/export actions + typed --policy/--format/--criterion flags; align help wording and detect the positional-value mistake. L1: pm init dumps the full settings tree (~193 lines) by default; consider concise default + tree behind --verbose (a --quiet exists). L4: pm create --help (~107 lines) lists --foo-bar and --foo_bar aliases separately; collapse alias display. L5: create changed_fields lists every field including unset body (noise on create). L6: cal --help lists --include deadlines|reminders|events|all but validator also accepts 'scheduled' (doc/validator drift). L7: pm guide (package uninstalled) prints 'Unknown command' with no install hint; package-catalog referenced in maintainer memory is not a command. L8: --priority 9 vs --priority high give slightly different phrasings. L9: templates package installs but pm templates shows count:0 (no starter templates ship). L10: pm gc deletes by default (dry_run:false) while normalize/update-many default to dry-run (inconsistent default safety); pm delete has no --force/dry-run. L11: --event start=+3d,end=+3d rejects equal timestamps without hinting equal==invalid. Also H1 note: pm validate already supports --strict-exit/--fail-on-warn (exits non-zero on ok:false) — default exit 0 is correct because ok:false includes advisory metadata-completeness warnings; improve discoverability in docs/help rather than changing the default."
+type: Chore
+status: open
+priority: 3
+tags[5]: agent-ux,cli,docs,dogfood,polish
+created_at: "2026-05-20T20:33:06.671Z"
+updated_at: "2026-05-20T20:33:06.671Z"
+author: claude-code-agent
+acceptance_criteria: Each listed sub-item is either fixed with a regression test or explicitly declined with rationale; no change drops coverage below 100%; doc/validator drift (L6) resolved; default-safety inconsistencies (L10) reviewed.
+parent: pm-rnpb
+body: ""

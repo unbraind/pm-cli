@@ -6,16 +6,16 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-20T17:24:14.443Z"
+updated_at: "2026-05-20T21:09:02.005Z"
 deadline: "2026-06-01T00:00:00.000Z"
-assignee: codex-gpt5-audit
+assignee: codex-pr-review
 author: codex-audit
 estimated_minutes: 300
 acceptance_criteria: Audit findings are actionable and deduplicated; changed files and verification commands are linked; temporary dogfood project validates core workflows; any discovered bugs with safe fixes are remediated and tested.
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[136]{created_at,author,text}:
+comments[139]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -152,13 +152,16 @@ comments[136]{created_at,author,text}:
   "2026-05-20T17:04:54.837Z",codex-gpt5-audit,"Execution continuation 2026-05-20: duplicate checks reused in-progress feature pm-rnpb after pm context, pm search dogfood/performance/semantic/telemetry/SDK/calendar/CI, pm list-open, and pm list-in-progress. Bootstrap passed with npm install -g ., pm --version 2026.5.18, node v25.9.0, pnpm 10.33.0, and pnpm build. GitHub snapshot: no open issues; open PRs #30, #31, #32 are Dependabot updates with green checks. Proceeding with manual temp-project dogfood, sub-agent review lanes, live telemetry/Sentry review, and scoped remediation without creating duplicate items."
   "2026-05-20T17:22:27.959Z",codex-gpt5-audit,"Evidence 2026-05-20 continuation: sub-agent lanes and manual dogfood found actionable issues in dependency security, package catalog verbosity/path exposure, malformed legacy metadata crashes, search projection typos, and optional package command recovery. Fixed brace-expansion override/lockfile to 5.0.6, added null-safe status/runtime normalization plus search scoring for malformed metadata, made search --fields reject unknown selectors, added compact package catalog/list --fields with path-redacted roots, removed package_root from catalog output, and made optional package contract failures suggest pm install <package> --project instead of a bogus --project retry. Verification passed: focused 5-file suite 105 tests, pnpm build, pnpm audit --prod --audit-level moderate, node scripts/check-secrets.mjs, normal dogfood 84 workflows, semantic dogfood 86 workflows with qwen3-embedding:0.6b, and full release gate with 95 files / 1379 tests at 100% coverage plus Sentry high=2 under threshold and telemetry finish_error_rate_pct=2.52. Residuals kept in existing lineages: timezone-aware calendar bucketing, vector prune of deleted IDs, runtime schema-derived strict action schemas, SDK cwd threading, release parallelization, coverage allowlist policy, and large-file split pm-mbdu."
   "2026-05-20T17:24:14.443Z",codex-gpt5-audit,"Evidence 2026-05-20 final dogfood/audit slice: reused existing lineage after pm context/search/list-open/list-in-progress duplicate check. Sub-agent lanes covered SDK/package extensibility, semantic search/calendar, CI/coverage/performance/code quality, telemetry/Sentry/GitHub/privacy, and manual temp-project dogfood UX. Implemented fixes: hardened malformed/non-string status handling behind PM-CLI-R, hardened search scoring for malformed status fields behind PM-CLI-S, rejected unknown search --fields values instead of returning null projections, added compact package catalog/list --fields output without local package_root exposure, fixed optional-package contract recovery to suggest pm install <package> --project, added command-aware allowed-value retry guidance, and updated the production brace-expansion override to >=5.0.6. Verification passed: pnpm build; focused unit suite tests/unit/search-command.spec.ts tests/unit/status-normalization.spec.ts tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/error-guidance.spec.ts (105 tests); pnpm audit --prod --audit-level moderate; node scripts/dogfood-package-first.mjs (84 workflows); PM_DOGFOOD_SEMANTIC=1 node scripts/dogfood-package-first.mjs (86 workflows, qwen3-embedding:0.6b); node scripts/check-secrets.mjs; node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json (build, typecheck, docs-skills, static quality, 100% coverage, version policy, secret scan, npx smoke, package dogfood, pack dry-run, compatibility, Sentry/telemetry gate all ok). Residual findings intentionally left in existing lineages rather than duplicated: calendar timezone day bucketing for offset events, semantic full reindex orphan-vector pruning, runtime-customized strict action schema, SDK getContracts cwd behavior, CI workflow serialization/static thresholds, package scaffold SDK imports, and known history-drift/privacy backlog under pm-xk39."
+  "2026-05-20T20:44:34.646Z",claude-code-agent,"text=Dogfood+privacy session 2026-05-20 (claude-code-agent, sub-agent driven). Shipped under PR #34 (branch audit/dogfood-2026-05-20-agent-ux): pm-qrxs (MCP pm_search compact default), pm-8jd3 (MCP activity compact default), pm-h4zb (secret guardrail: all gh token prefixes + testable rules + sudo-pw redaction), pm-atsv (CLI consistency: append text forms, scope-error enumeration, docs/test --list, command did-you-mean), pm-d7us (Sentry PM-CLI-R/PM-CLI-S root-caused as pre-2026.5.18 unguarded .trim/.join, already fixed on HEAD, marked resolvedInNextRelease). Gates: build, typecheck, 100% coverage (1620/1179/279/1566), secret scan, static-quality, packaged dogfood (84 cmds), sentry/telemetry gate ok (sentry 0/0/0, telemetry error rate 2.6%, queue draining real-time). Open follow-ups: pm-3pbs, pm-nbht, pm-orrl, pm-5k2w."
+  "2026-05-20T21:01:07.352Z",codex-pr-review,"Evidence: addressed PR #34 review threads. Local verification passed: pnpm build; focused suite PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/check-secrets.spec.ts tests/unit/get-append-command.spec.ts tests/unit/files-docs-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/test-command.spec.ts (6 files, 104 tests); full gate pnpm build && node scripts/run-tests.mjs coverage && pnpm quality:static && node scripts/check-secrets.mjs (96 files, 1392 tests, 100 percent coverage, static gate, secret scan)."
+  "2026-05-20T21:09:02.005Z",codex-pr-review,"GitHub verification: PR #34 commit 03765c95 has mergeStateStatus CLEAN and all checks passed: Build foundation, Ubuntu tests, macOS tests, coverage, typecheck, static, compat, smokes, Sourcery, and CodeRabbit (Actions run 26189749692). Proceeding to merge and delete PR branch."
 notes[2]{created_at,author,text}:
   "2026-05-17T07:36:59.474Z",codex-agent,"Design note 2026-05-17: unfiltered pm contracts default now intentionally omits three heavy sections (schema oneOf union, command_flags, commander_aliases) and emits explicit omitted_reason markers; --full restores complete schema and alias/flag surfaces for tooling that needs maximal detail."
   "2026-05-17T08:33:25.981Z",codex-agent,"Design note 2026-05-17: default brief projection was intentionally scoped to bare 'pm list' instead of all list-* commands to preserve existing automation contracts while still cutting agent token usage on the highest-frequency exploratory list call."
 learnings[2]{created_at,author,text}:
   "2026-05-17T07:37:01.283Z",codex-agent,"Durable learning: strict 100% branch coverage is valuable for agent UX changes because nullable fallback expressions can silently introduce uncovered impossible branches; prefer explicit state predicates over defensive null coalescing in logically constrained paths."
   "2026-05-17T08:33:31.156Z",codex-agent,"Durable learning: when adding default terse projections for agent UX, preserve semantic override paths (include-body, explicit full/compact/fields) so feature-level defaults do not silently drop required payloads in existing workflows."
-files[87]{path,scope,note}:
+files[93]{path,scope,note}:
   .github/workflows/ci.yml,project,CI smoke gate runs package-first dogfood
   .github/workflows/docs.yml,project,lightweight-docs-only-ci-gate
   .github/workflows/release.yml,project,release-docs-skills-gate
@@ -189,6 +192,7 @@ files[87]{path,scope,note}:
   src/cli/commands/claim.ts,project,claim skipped response coverage and claimed_by branch hardening
   src/cli/commands/contracts.ts,project,use compact flag contracts in command surface
   src/cli/commands/create.ts,project,event date alias for create
+  src/cli/commands/docs.ts,project,type support for docs list option
   src/cli/commands/extension.ts,project,fix extension reload/watch usage guidance
   src/cli/commands/get.ts,project,get depth projections for low-token agent reads
   src/cli/commands/health.ts,project,health brief projection for low-token agent diagnostics
@@ -197,6 +201,7 @@ files[87]{path,scope,note}:
   src/cli/commands/plan.ts,project,Plan show field projection UX fix
   src/cli/commands/reindex.ts,project,reindex uses shared calendar-aware corpus
   src/cli/commands/search.ts,project,keyword search scores reminder/event corpus and short phrase matches
+  src/cli/commands/test.ts,project,type support for test list option
   src/cli/commands/update.ts,project,event date alias for update
   src/cli/commands/validate.ts,project,metadata output token-noise reduction verification
   src/cli/error-guidance.ts,project,required-option guidance normalization
@@ -204,6 +209,7 @@ files[87]{path,scope,note}:
   src/cli/help-json-payload.ts,project,compact machine-readable help aliases for token-efficient agent help
   src/cli/main.ts,project,error-path sentry initialization
   src/cli/register-list-query.ts,project,align search CLI flags with advertised search contract
+  src/cli/register-mutation.ts,project,address PR review append source counting and docs list propagation
   src/cli/register-operations.ts,project,contracts help text clarifies --full heavy surfaces
   src/cli/register-setup.ts,project,init flags for defaults and author
   src/cli/registration-helpers.ts,project,null
@@ -221,12 +227,14 @@ files[87]{path,scope,note}:
   src/mcp/server.ts,project,null
   src/sdk/cli-contracts.ts,project,compact alias duplicate flag contracts for agent schema
   src/sdk/runtime.ts,project,public getContracts SDK helper
+  tests/helpers/withTempPmPath.ts,project,allow spawned CLI stdin regression tests
   tests/integration/ci-workflow-contract.spec.ts,project,workflow contract covers dogfood and Sentry token fallback
   tests/integration/claude-plugin-contract.spec.ts,project,plugin MCP tool list regression
   tests/integration/cli.integration.spec.ts,project,init defaults author regression
   tests/integration/help-runtime.spec.ts,project,help coverage for keyword-first search mode flags
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP get projection and plan stepRef regression
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness guard for nonblocking sentry startup
+  tests/unit/check-secrets.spec.ts,project,line-number regression for secret scanner review
   tests/unit/claim-command.spec.ts,project,claim if-available and takeover warning regression coverage
   tests/unit/completion-command.spec.ts,project,bash completion regression for health fast-path flags
   tests/unit/contracts-command.spec.ts,project,regression for canonical flag surface with aliases
@@ -234,6 +242,7 @@ files[87]{path,scope,note}:
   tests/unit/embedding-batches.spec.ts,project,regression for oversized ollama embedding input truncation
   tests/unit/error-guidance.spec.ts,project,retry guidance regression
   tests/unit/extension-command.spec.ts,project,package-init-scaffold-regression
+  tests/unit/files-docs-command.spec.ts,project,docs list non-mutation review coverage
   tests/unit/get-append-command.spec.ts,project,get depth projection regression
   tests/unit/health-command.spec.ts,project,health brief projection regression coverage
   tests/unit/plan-command.spec.ts,project,Plan field projection regression
@@ -246,7 +255,7 @@ files[87]{path,scope,note}:
   tests/unit/sentry-helpers.spec.ts,project,regression for nested sentry event scrub behavior
   tests/unit/update-command.spec.ts,project,update event date alias regression
   vitest.config.ts,project,coverage include list covers new search corpus helper
-tests[45]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[46]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret and path leak guardrail
   node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,isolated temp-project dogfood harness
   node scripts/release/docs-skills-gate.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
@@ -273,6 +282,7 @@ tests[45]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,s
   PM_DOGFOOD_SEMANTIC=1 node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,semantic temporary-project dogfood coverage
   PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
   PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs coverage -- --testTimeout 120000 --maxWorkers 1,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,serial full 100 percent coverage gate
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/check-secrets.spec.ts tests/unit/get-append-command.spec.ts tests/unit/files-docs-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/test-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused PR review regression suite
   PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/ci-workflow-contract.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused contracts/list/plan/workflow regression suite
   PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/extension-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/search-cache.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused package docs search contract regression
   PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/sdk-index.spec.ts tests/unit/plan-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,focused Plan contracts and SDK regression

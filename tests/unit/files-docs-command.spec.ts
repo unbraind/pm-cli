@@ -185,6 +185,7 @@ describe("runFiles", () => {
         runFiles(id, { add: ["path=README.md,scope=workspace"] }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Valid scopes: project, global (default: project)"),
       });
       await expect(runFiles(id, { remove: ["   "] }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
@@ -561,6 +562,25 @@ describe("runFiles", () => {
 });
 
 describe("runDocs", () => {
+  it("accepts --list as a no-mutation alias for listing linked docs", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "docs-list-flag");
+      context.runCli(
+        ["docs", id, "--add", "path=README.md,scope=project,note=seed", "--json", "--author", "owner-a"],
+        { expectJson: true },
+      );
+      const listed = context.runCli(["docs", id, "--list", "--json"], { expectJson: true });
+      expect(listed.code).toBe(0);
+      const payload = listed.json as { docs?: Array<{ path?: string }>; count?: number };
+      expect(payload.count).toBe(1);
+      expect(payload.docs?.[0]?.path).toBe("README.md");
+
+      const listedAgain = context.runCli(["docs", id, "--list", "--json"], { expectJson: true });
+      expect(listedAgain.code).toBe(0);
+      expect((listedAgain.json as { count?: number }).count).toBe(payload.count);
+    });
+  });
+
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-docs-not-init-"));
     try {
@@ -587,6 +607,7 @@ describe("runDocs", () => {
         runDocs(id, { add: ["path=README.md,scope=workspace"] }, { path: context.pmPath }),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Valid scopes: project, global (default: project)"),
       });
       await expect(runDocs(id, { remove: ["   "] }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,

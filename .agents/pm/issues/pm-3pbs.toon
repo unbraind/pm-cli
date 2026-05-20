@@ -1,0 +1,13 @@
+id: pm-3pbs
+title: Reduce default verbosity of pm activity/history CLI output and add a compact mode to pm history
+description: "Dogfood (2026-05-20) found the human-facing CLI defaults for pm activity (~809 lines for 18 items) and pm history <id> (~241 lines for one item) dump full JSON Patch ops + before/after hashes per entry. pm activity --compact (4 lines/entry) exists but is opt-in, and pm history has no compact mode at all. The MCP/agent path now defaults to compact (pm-8jd3), but the CLI default and a history compact mode remain. Proposal: keep full patches behind --verbose/--patches and make a condensed view the default (or at least add `pm history <id> --compact`). Changing CLI defaults is a contract change touching several specs, so scope/test carefully."
+type: Issue
+status: open
+priority: 2
+tags[6]: activity,agent-ux,cli,dogfood,history,token-efficiency
+created_at: "2026-05-20T20:32:36.067Z"
+updated_at: "2026-05-20T20:32:36.067Z"
+author: claude-code-agent
+acceptance_criteria: pm history supports a compact projection; default verbosity of activity/history is reduced (or compact is the default) with full patches available behind an explicit flag; existing specs updated; build + 100% coverage green.
+parent: pm-rnpb
+body: ""

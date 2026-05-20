@@ -363,6 +363,46 @@ describe("runGet and runAppend", () => {
     });
   });
 
+  it("accepts append text as positional shorthand or --text alias and rejects conflicting/missing sources", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, { title: "append-text-forms", body: "seed body" });
+
+      const positional = context.runCli(["append", id, "appended via positional", "--json", "--author", "owner-a"], {
+        expectJson: true,
+      });
+      expect(positional.code).toBe(0);
+      expect((positional.json as { appended?: string }).appended).toBe("appended via positional");
+
+      const aliased = context.runCli(["append", id, "--text", "appended via text alias", "--json", "--author", "owner-a"], {
+        expectJson: true,
+      });
+      expect(aliased.code).toBe(0);
+      expect((aliased.json as { appended?: string }).appended).toBe("appended via text alias");
+
+      const stdinText = context.runCli(["append", id, "--text", "-", "--json", "--author", "owner-a"], {
+        expectJson: true,
+        input: "appended from stdin",
+      });
+      expect(stdinText.code).toBe(0);
+      expect((stdinText.json as { appended?: string }).appended).toBe("appended from stdin");
+
+      const conflictCases = [
+        ["append", id, "positional", "--text", "alias", "--author", "owner-a"],
+        ["append", id, "--body", "from-body", "--text", "from-text", "--author", "owner-a"],
+        ["append", id, "from-positional", "--body", "from-body", "--author", "owner-a"],
+      ];
+      for (const args of conflictCases) {
+        const conflicting = context.runCli(args);
+        expect(conflicting.code).toBe(EXIT_CODE.USAGE);
+        expect(conflicting.stderr).toContain("exactly one source");
+      }
+
+      const missing = context.runCli(["append", id, "--author", "owner-a"]);
+      expect(missing.code).toBe(EXIT_CODE.USAGE);
+      expect(missing.stderr).toContain("Missing append text");
+    });
+  });
+
   it("returns empty append output when incoming body is blank", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, {

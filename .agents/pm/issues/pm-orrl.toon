@@ -1,0 +1,13 @@
+id: pm-orrl
+title: "pm create --blocked-by stores free-text metadata, not a dependency edge or blocked status (agent-confusing)"
+description: "Dogfood (2026-05-20): pm create --type Task --blocked-by pm-xxxx sets blocked_by:'pm-xxxx' as metadata but creates no dependency edge (pm deps shows edge_count 0) and leaves status=open (not blocked). Help text says '--blocked-by <value> Blocked-by item ID or reason', so it is intentionally free-text, distinct from --dep which creates real edges. Agents reasonably expect blocked-by to create an edge and/or set blocked status. Decision needed: (a) when the value resolves to a valid item id, also create a blocks/blocked-by dependency edge (and optionally set status=blocked), or (b) sharpen help/docs to make the metadata-vs-edge distinction explicit and point to --dep for edges. Recommend (a) for the id case with (b) wording as a fallback."
+type: Issue
+status: open
+priority: 2
+tags[5]: agent-ux,cli,create,dependencies,dogfood
+created_at: "2026-05-20T20:32:50.496Z"
+updated_at: "2026-05-20T20:32:50.496Z"
+author: claude-code-agent
+acceptance_criteria: "Behavior of --blocked-by is unambiguous: either it creates a real dependency edge (and documents status implications) when given a valid item id, or help/docs clearly state it is free-text metadata distinct from --dep; chosen behavior is tested."
+parent: pm-rnpb
+body: ""

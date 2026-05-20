@@ -1,0 +1,22 @@
+id: pm-h4zb
+title: "Harden secret-scan guardrail: detect all GitHub token prefixes, make rules unit-testable, redact plaintext sudo password from gitignored ops doc"
+description: "A privacy re-audit (sub-agent sweep of tracked files, the .agents/pm history streams, and gitignored scripts/prod/telemetry) confirmed the public shipping surface (git-tracked files + npm tarball + all 776 history streams) is CLEAN. Two gaps surfaced: (1) scripts/check-secrets.mjs only matched ghp_/github_pat_ GitHub tokens, missing gho_/ghu_/ghs_/ghr_ (OAuth/user/server/refresh) prefixes; (2) the scanner ran on import with no exported rules, so detection logic had no unit coverage. Separately, a gitignored local ops doc (scripts/prod/telemetry/conntect-to-remote.md) stored a plaintext sudo password — it never ships (gitignored) but should not sit in plaintext."
+type: Issue
+status: closed
+priority: 1
+tags[5]: ci,dogfood,guardrail,privacy,security
+created_at: "2026-05-20T20:19:27.785Z"
+updated_at: "2026-05-20T20:20:05.078Z"
+author: claude-code-agent
+acceptance_criteria: "Secret scanner detects all GitHub token prefixes (ghp_/gho_/ghu_/ghs_/ghr_/github_pat_); RULES + scanContent are exported and covered by a unit test; the scanner only auto-runs when invoked as a CLI (no side effect on import); the plaintext sudo password is removed from the gitignored ops doc; pnpm security:scan still passes with zero findings on tracked files; coverage stays 100%."
+parent: pm-rnpb
+resolution: Secret-scan guardrail now covers all GitHub token prefixes and is unit-tested; plaintext sudo password removed from the local ops doc.
+expected_result: CI secret gate catches a wider class of GitHub tokens and the detection rules are regression-protected; no plaintext credential remains on disk.
+actual_result: "gho_/ghu_/ghs_/ghr_ now detected; RULES/scanContent exported and covered (5/5); ops doc password redacted; security:scan clean."
+files[2]{path,scope,note}:
+  scripts/check-secrets.mjs,project,"broaden github-token rule to gh[opsru]_; export RULES+scanContent; guard run() to CLI-only invocation"
+  tests/unit/check-secrets.spec.ts,project,"regression: all GitHub token prefixes + excludeFiles + clean-content negative cases"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/check-secrets.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,secret-rule regression
+close_reason: "Broadened the github-token rule in scripts/check-secrets.mjs from ghp_/github_pat_ to gh[opsru]_ (ghp/gho/ghu/ghs/ghr) + github_pat_. Refactored the scanner to export RULES and scanContent(file, content) and guarded run() behind a CLI-entry check (fileURLToPath(import.meta.url) === process.argv[1]) so importing it has no side effects. Added tests/unit/check-secrets.spec.ts covering all token prefixes, other high-risk shapes (private-key/aws/sentry-org/ssh-target), excludeFiles behavior, and clean-content negatives. Redacted the plaintext sudo password from the gitignored scripts/prod/telemetry/conntect-to-remote.md (replaced with a pointer to read from local secret store / .env PM_REMOTE_SUDO_PASSWORD); confirmed the literal exists nowhere else. pnpm security:scan passes 'No credential-like secrets detected in tracked files.'; new spec passes 5/5. scripts/ is excluded from the coverage allowlist so 100% coverage is unaffected."
+body: ""

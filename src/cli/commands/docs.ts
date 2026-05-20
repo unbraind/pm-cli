@@ -19,6 +19,7 @@ export interface DocsCommandOptions {
   addGlob?: string[];
   remove?: string[];
   migrate?: string[];
+  list?: boolean;
   validatePaths?: boolean;
   audit?: boolean;
   author?: string;
@@ -69,7 +70,10 @@ function resolveAuthor(candidate: string | undefined, fallback: string): string 
 function ensureScope(raw: string | undefined): LinkScope {
   const value = (raw ?? "project") as LinkScope;
   if (!SCOPE_VALUES.includes(value)) {
-    throw new PmCliError(`Invalid scope "${raw}"`, EXIT_CODE.USAGE);
+    throw new PmCliError(
+      `Invalid scope "${raw}". Valid scopes: ${SCOPE_VALUES.join(", ")} (default: project).`,
+      EXIT_CODE.USAGE,
+    );
   }
   return value;
 }
