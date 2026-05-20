@@ -348,17 +348,34 @@ export function registerMutationCommands(program: Command): void {
   program
     .command("append")
     .argument("<id>", "Item id")
-    .requiredOption("--body <value>", "Text to append to body (or - for stdin)")
+    .argument("[text]", "Optional body text shorthand (equivalent to --body; use - for stdin)")
+    .option("--body <value>", "Text to append to body (or - for stdin)")
+    .option("--text <value>", "Alias for --body")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "Mutation message")
     .option("--force", "Force ownership override")
     .description("Append text to an item's body.")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
+    .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      const bodyFromOption = typeof options.body === "string" ? options.body : undefined;
+      const bodyFromAlias = typeof options.text === "string" ? options.text : undefined;
+      const bodyFromPositional = typeof text === "string" ? text : undefined;
+      const bodySourceCount =
+        Number(bodyFromOption !== undefined) + Number(bodyFromAlias !== undefined) + Number(bodyFromPositional !== undefined);
+      if (bodySourceCount > 1) {
+        throw new PmCliError("Specify append text with exactly one source: positional [text], --body, or --text", EXIT_CODE.USAGE);
+      }
+      const resolvedBody = bodyFromOption ?? bodyFromAlias ?? bodyFromPositional;
+      if (resolvedBody === undefined) {
+        throw new PmCliError(
+          "Missing append text. Provide it as positional [text], --body <value>, or --text <value> (use - for stdin).",
+          EXIT_CODE.USAGE,
+        );
+      }
       const { runAppend } = await loadMutationCommandsModule();
       const result = await runAppend(id, {
-        body: typeof options.body === "string" ? options.body : "",
+        body: resolvedBody,
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
         force: Boolean(options.force),
@@ -825,6 +842,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--add-glob <value>", "Add linked doc entries from a glob (plain glob or pattern=<glob>,scope=<scope>,note=<text>; repeatable)", collect)
     .option("--remove <value>", "Remove linked doc by path (path=<value>, path:<value>, plain path, or - for stdin)", collect)
     .option("--migrate <value>", "Migrate linked doc paths in-place (from=<prefix>,to=<prefix>; repeatable)", collect)
+    .option("--list", "List linked docs without mutating")
     .option("--validate-paths", "Validate linked doc paths for existence and file shape")
     .option("--audit", "Audit linked doc usage across all items for this item's linked paths")
     .option("--author <value>", "Mutation author")

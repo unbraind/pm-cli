@@ -101,6 +101,18 @@ export function scoreCommandPathMatch(commandPath: string, queryToken: string): 
   if (normalizedPath.includes(normalizedToken)) {
     return 3;
   }
+  // Fall back to edit distance so transposition/typo cases (e.g. "lst" -> "list") still rank.
+  const maxDistance = normalizedToken.length >= 5 ? 2 : 1;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const segment of pathSegments) {
+    const distance = levenshteinDistanceWithinLimit(segment, normalizedToken, maxDistance);
+    if (distance !== null) {
+      bestDistance = Math.min(bestDistance, distance);
+    }
+  }
+  if (Number.isFinite(bestDistance)) {
+    return 4 + bestDistance;
+  }
   return Number.POSITIVE_INFINITY;
 }
 
@@ -227,10 +239,12 @@ export function buildUnknownCommandGuidanceFromRuntime(
   const suggestedPaths = (rankedCandidates.length > 0 ? rankedCandidates : fallbackTopLevel).slice(0, 3);
   const examples = [...new Set(["pm --help", ...suggestedPaths.map((path) => `pm ${path} --help`)])];
   const optionalPackageHint = resolveOptionalPackageInstallHint(normalizedUnknown);
+  const didYouMean = rankedCandidates.length > 0 ? `Did you mean: ${rankedCandidates.slice(0, 3).join(", ")}?` : null;
 
   return {
     unknownCommandExamples: examples,
     unknownCommandNextSteps: [
+      ...(didYouMean ? [didYouMean] : []),
       'Run "pm --help" to list commands available in this runtime, including active extensions.',
       "Use one of the suggested command paths above with --help to inspect valid flags and usage.",
       ...(optionalPackageHint ? [optionalPackageHint] : []),

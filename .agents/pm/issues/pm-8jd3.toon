@@ -1,0 +1,20 @@
+id: pm-8jd3
+title: MCP pm_run activity defaults to verbose raw history-patch dump (token waste for agents)
+description: "Over the pm-mcp server, pm_run action=activity passed options straight through and defaulted compact=false, returning the full activity array with raw JSON Patch ops + before/after hashes per entry (~800 lines for ~18 items in dogfood). runActivity already supports compact mode (returns slim compact_activity and empties the heavy activity array), matching the list/search compact-default pattern."
+type: Issue
+status: closed
+priority: 1
+tags[5]: activity,agent-ux,dogfood,mcp,token-efficiency
+created_at: "2026-05-20T20:31:53.081Z"
+updated_at: "2026-05-20T20:32:10.312Z"
+author: claude-code-agent
+acceptance_criteria: "MCP activity defaults to compact when the caller passes no compact option; callers can still request the full patch stream via options.compact=false; regression test asserts compact-by-default (compact=true, empty activity[], populated compact_activity[]) and verbose opt-out via handleRequest/pm_run."
+parent: pm-rnpb
+resolution: MCP activity now defaults to compact; full patch stream remains available via options.compact=false.
+expected_result: Agents calling activity get a slim summary by default instead of an ~800-line raw-patch dump.
+actual_result: "compact-by-default returns compact=true, empty activity[], populated compact_activity[]; compact=false restores the verbose stream. MCP spec passes 5/5."
+files[2]{path,scope,note}:
+  src/mcp/server.ts,project,activity case injects compact=true default
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,activity compact-default + verbose opt-out regression
+close_reason: "Fixed in src/mcp/server.ts: the activity case now injects compact=true when the caller omits a compact option (mirroring list/search). Full patch stream still available via options.compact=false. Regression test added to mcp-dynamic-package-actions.spec.ts; MCP spec passes 5/5. The remaining CLI-default verbosity for pm activity/history (human-facing) and a new history compact mode are tracked separately as follow-up."
+body: ""

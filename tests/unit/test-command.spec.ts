@@ -292,6 +292,21 @@ describe("runTest", () => {
     }
   });
 
+  it("accepts --list as a no-mutation alias for listing linked tests", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "test-list-flag");
+      context.runCli(
+        ["test", id, "--add", "command=node --version,scope=project,note=seed", "--json", "--author", "owner-a"],
+        { expectJson: true },
+      );
+      const listed = context.runCli(["test", id, "--list", "--json", "--author", "owner-a"], { expectJson: true });
+      expect(listed.code).toBe(0);
+      const payload = listed.json as { tests?: Array<{ command?: string }>; count?: number };
+      expect(payload.count).toBe(1);
+      expect(payload.tests?.[0]?.command).toContain("node --version");
+    });
+  });
+
   it("validates add/remove payloads and timeout parsing", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "validate-test-command");

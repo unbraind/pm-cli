@@ -144,7 +144,11 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     name: "pm_search",
-    description: "Search pm items with keyword, semantic, or hybrid search.",
+    description:
+      "Search pm items with keyword, semantic, or hybrid search. " +
+      "Defaults to a compact projection for token efficiency. " +
+      "Pass options.mode=keyword|semantic|hybrid, options.limit=N to cap hits, " +
+      "options.fields='id,title,score' for a custom projection, or options.full=true for full item bodies (can be large).",
     inputSchema: objectSchema({ query: { type: "string" }, options: { type: "object" } }, ["query"]),
   },
   {
@@ -458,8 +462,17 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
     }
     case "get":
       return runGet(id ?? readRequiredString(options, "id"), global, options);
-    case "search":
-      return runSearch(readRequiredString(args, "query"), options, global);
+    case "search": {
+      const searchOptions: Record<string, unknown> = { ...options };
+      if (
+        searchOptions.compact === undefined &&
+        searchOptions.full === undefined &&
+        searchOptions.fields === undefined
+      ) {
+        searchOptions.compact = true;
+      }
+      return runSearch(readRequiredString(args, "query"), searchOptions as never, global);
+    }
     case "create":
       return runCreate(options, global);
     case "update":
@@ -498,8 +511,13 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
         options,
         global,
       );
-    case "activity":
-      return runActivity(options, global);
+    case "activity": {
+      const activityOptions: Record<string, unknown> = { ...options };
+      if (activityOptions.compact === undefined) {
+        activityOptions.compact = true;
+      }
+      return runActivity(activityOptions as never, global);
+    }
     case "aggregate":
       return runAggregate(options, global);
     case "extension":

@@ -104,6 +104,16 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("suggests the nearest command for edit-distance typos", async () => {
+    await withTempPmPath(async (context) => {
+      const result = context.runCli(["lst"]);
+      expect(result.code).toBe(2);
+      expect(result.stderr).toContain("Unknown command lst");
+      expect(result.stderr).toContain("Did you mean: list");
+      expect(result.stderr).toContain("pm list --help");
+    });
+  });
+
   it("applies help_format service overrides for commander usage errors", async () => {
     await withTempPmPath(async (context) => {
       await createProjectExtension(

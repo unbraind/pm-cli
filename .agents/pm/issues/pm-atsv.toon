@@ -1,0 +1,28 @@
+id: pm-atsv
+title: "Dogfood 2026-05-20: CLI/agent-UX consistency fixes (append text forms, scope errors, --list parity, command typo suggestions)"
+description: "Hands-on dogfood sub-agent pass over the full command surface (every type + lifecycle + ~25 error paths) surfaced four agent-facing consistency gaps, all now fixed: (M1) pm append only accepted --body, rejecting positional text and --text while comments/notes/learnings/close accept positional; (M2) invalid file/doc scope errored with no list of valid values, unlike the project's other enum errors; (M3) --list worked on files but errored 'Unknown option --list' on docs and test; (M4) unknown-command guidance only handled prefix/substring typos (creat->create) but fell back to alphabetical examples for edit-distance typos (lst->list), with no explicit did-you-mean."
+type: Issue
+status: closed
+priority: 1
+tags[5]: agent-ux,cli,consistency,dogfood,errors
+created_at: "2026-05-20T20:29:51.062Z"
+updated_at: "2026-05-20T20:30:20.784Z"
+author: claude-code-agent
+acceptance_criteria: "pm append accepts positional [text] and --text alias (and rejects multiple sources with a clear message); invalid scope errors enumerate valid scopes (project, global) with the default; pm docs and pm test accept --list; unknown-command guidance scores edit-distance typos and emits an explicit 'Did you mean: <cmd>?'; all changes covered by regression tests; build + 100% coverage stay green."
+parent: pm-rnpb
+resolution: All four dogfood consistency findings (M1-M4) fixed with regression tests; 97 focused tests pass.
+expected_result: append/docs/test/unknown-command surfaces behave consistently with the rest of the CLI and are friendlier for agents.
+actual_result: "append accepts positional + --text (rejects conflicts); invalid scope errors list project/global; docs/test accept --list; pm lst -> 'Did you mean: list?'. Verified in sandbox + focused specs."
+files[5]{path,scope,note}:
+  src/cli/commander-usage.ts,project,scoreCommandPathMatch levenshtein tier + Did-you-mean nextStep
+  src/cli/commands/docs.ts,project,scope error enumerates valid scopes
+  src/cli/commands/files.ts,project,scope error enumerates valid scopes
+  src/cli/register-mutation.ts,project,"append positional [text] + --text alias; docs --list flag"
+  src/cli/register-operations.ts,project,test --list flag
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,edit-distance command did-you-mean regression
+  node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,scope-error enumeration + docs --list regression
+  node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,append positional/--text/conflict/missing regression
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,test --list regression
+close_reason: "Implemented M1-M4: (M1) append now takes positional [text] and a --text alias, drops the auto-throwing requiredOption, and rejects multiple sources with 'Specify append text with exactly one source...' / missing with 'Missing append text...'. (M2) files.ts and docs.ts ensureScope errors now read 'Invalid scope \\\"x\\\". Valid scopes: project, global (default: project).'. (M3) added --list to docs (register-mutation.ts) and test (register-operations.ts); both already list when bare, the flag is now accepted for parity with files. (M4) scoreCommandPathMatch gained a Levenshtein tier (within-limit edit distance scored 4+distance) so lst->list ranks, and buildUnknownCommandUsageContext prepends 'Did you mean: <cmds>?' when ranked candidates exist. Regression tests added/strengthened across get-append-command, files-docs-command, test-command, and help-runtime specs; 97 focused tests pass. register-*.ts/commander-usage.ts are outside the coverage allowlist; files.ts/docs.ts edits are message-only (no new branches), so 100% coverage holds."
+body: ""
