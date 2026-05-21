@@ -49,6 +49,7 @@ type GetDepth = (typeof GET_DEPTH_VALUES)[number];
 export interface GetOptions {
   depth?: string;
   fields?: string;
+  full?: boolean;
 }
 
 function toClaimHistoryContext(
@@ -175,7 +176,10 @@ function fieldsIncludeRoot(fields: string[], name: string): boolean {
 }
 
 export async function runGet(id: string, global: GlobalOptions, options: GetOptions = {}): Promise<GetResult> {
-  const depth = parseGetDepth(options.depth);
+  if (options.full && options.fields !== undefined) {
+    throw new PmCliError("Get projection options are mutually exclusive. Use either --full or --fields.", EXIT_CODE.USAGE);
+  }
+  const depth = options.full ? "deep" : parseGetDepth(options.depth);
   const fields = parseGetFields(options.fields);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

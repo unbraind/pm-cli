@@ -545,8 +545,8 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Validates tracker/runtime health including extension triage, migration, and integrity diagnostics.",
     examples: [
       "pm health",
+      "pm health --check-only --summary --json",
       "pm health --brief --json",
-      "pm health --check-only --brief --json",
       "pm health --no-refresh",
       "pm health --refresh-vectors",
     ],

@@ -104,7 +104,7 @@ Use standalone checks when validating a repository:
 ```bash
 pm validate --check-resolution --check-history-drift
 pm validate --check-files --scan-mode tracked-all
-pm health --check-only
+pm health --check-only --summary --json
 ```
 
 ## Search Configuration

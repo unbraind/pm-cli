@@ -1379,6 +1379,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--depth" },
+  { flag: "--full" },
   { flag: "--fields" },
 ];
 
@@ -2146,7 +2147,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   guide: { optional: ["format", "depth"] },
   context: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
   ctx: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
-  get: { required: ["id"], optional: ["depth", "fields"] },
+  get: { required: ["id"], optional: ["depth", "full", "fields"] },
   search: {
     optional: SEARCH_CONTRACT_PARAMETER_KEYS,
     anyOfRequired: [["query"], ["keywords"]],

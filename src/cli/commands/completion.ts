@@ -250,6 +250,9 @@ export function generateBashScript(
     "    history)",
     `      COMPREPLY=(${compgen("--limit --compact --full --diff --verify --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
+    "    get)",
+    `      COMPREPLY=(${compgen("--depth --full --fields --json --quiet --path --no-extensions --no-pager --profile --help")})`,
+    "      ;;",
     "    history-redact)",
     `      COMPREPLY=(${compgen("--literal --regex --replacement --dry-run --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
@@ -722,6 +725,14 @@ _pm() {
             '--full[Show full history entries]' \\
             '--diff[Include changed-field patch summary]' \\
             '--verify[Verify history hash chain and replay integrity]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        get)
+          _arguments \\
+            '--depth[Detail depth]:(brief standard deep)' \\
+            '--full[Explicit full item read]' \\
+            '--fields[Render custom comma-separated item fields]:fields' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1467,6 +1478,11 @@ complete -c pm -n '__fish_seen_subcommand_from guide' -a '${guideTopicChoices}' 
 # reindex flags
 complete -c pm -n '__fish_seen_subcommand_from reindex' -l mode -d 'Reindex mode' -r -a 'keyword semantic hybrid'
 complete -c pm -n '__fish_seen_subcommand_from reindex' -l progress -d 'Emit progress updates to stderr'
+
+# get flags
+complete -c pm -n '__fish_seen_subcommand_from get' -l depth -d 'Detail depth' -r -a 'brief standard deep'
+complete -c pm -n '__fish_seen_subcommand_from get' -l full -d 'Explicit full item read'
+complete -c pm -n '__fish_seen_subcommand_from get' -l fields -d 'Render custom comma-separated item fields' -r
 
 # history / activity flags
 complete -c pm -n '__fish_seen_subcommand_from history'  -l limit -d 'Max history entries' -r

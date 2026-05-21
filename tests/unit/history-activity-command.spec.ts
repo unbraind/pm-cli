@@ -132,6 +132,11 @@ describe("runHistory and runActivity", () => {
       expect(cliDefault.json).toMatchObject({ compact: true, history: [] });
       expect((cliDefault.json as { compact_history?: unknown[] }).compact_history?.length).toBeGreaterThan(0);
 
+      const compactDiff = context.runCli(["history", id, "--json", "--diff"], { expectJson: true });
+      expect(compactDiff.code).toBe(0);
+      expect(compactDiff.json).toMatchObject({ compact: true, history: [] });
+      expect((compactDiff.json as { diff?: unknown[] }).diff).toBeUndefined();
+
       const cliFull = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(cliFull.code).toBe(0);
       expect(cliFull.json).toMatchObject({ compact: false });
