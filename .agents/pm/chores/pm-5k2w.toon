@@ -6,15 +6,16 @@ status: open
 priority: 3
 tags[5]: agent-ux,cli,docs,dogfood,polish
 created_at: "2026-05-20T20:33:06.671Z"
-updated_at: "2026-05-21T05:03:41.138Z"
+updated_at: "2026-05-21T05:12:26.530Z"
 author: claude-code-agent
 acceptance_criteria: Each listed sub-item is either fixed with a regression test or explicitly declined with rationale; no change drops coverage below 100%; doc/validator drift (L6) resolved; default-safety inconsistencies (L10) reviewed.
 parent: pm-rnpb
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-05-21T04:30:32.081Z",codex-full-manual-audit,"Evidence: focused manual smoke passed config list shorthand, cal week positional view, close active-child warning, gc reindex install guidance, and PM_NO_TELEMETRY health reporting. Local checks passed so far: pnpm build; focused 7-file suite 37 tests after calendar runtime fix and 6-file suite 129 tests before that; pnpm quality:static; node scripts/check-secrets.mjs."
   "2026-05-21T04:40:05.493Z",codex-full-manual-audit,"Evidence: full release gate passed after stale GC expectation update. Passed build, typecheck, docs-skills, static quality, coverage 96 files / 1399 tests at 100 percent, version policy, secret scan, npx packed smoke, package-first dogfood 84 workflows, npm pack dry-run, compatibility, and required Sentry/telemetry gate with Sentry critical=0 high=1 and telemetry finish_error_rate_pct=2.71."
   "2026-05-21T04:42:28.101Z",codex-full-manual-audit,"Pause evidence: focused subset fixed and release-gated. Fixed config list shorthand, calendar positional view handling, GC missing-reindex guidance, PM_NO_TELEMETRY opt-out reporting/runtime, invalid dependency kind recovery, close active-child warning, and extension contract metadata/alias dedupe. Remaining backlog items on this chore stay open: init verbosity, help alias display bloat, create changed_fields noise, calendar include scheduled doc drift, guide install hints, priority wording drift, template starter content, broader default-safety review, and event equal-timestamp hinting. Full gate passed with run-gates telemetry-mode required and 100% selected coverage."
   "2026-05-21T05:03:41.138Z",codex-full-manual-audit,"PR review response evidence: addressed valid CodeRabbit/Sourcery feedback by shifting config shorthand keys correctly, validating extension flag value_type fallback before using valueName string fallback, making merged extension x-extension-command deterministic while exposing x-extension-commands, merging duplicate flag metadata predictably, using merged extension contracts for action descriptors and alias-aware command catalog, and adding PM_NO_TELEMETRY health coverage. Focused review-fix suite passed: 3 files, 26 tests; tsc --noEmit passed."
+  "2026-05-21T05:12:26.530Z",codex-full-manual-audit,"CI fix evidence: PR run 26206567968 exposed alias availability regression where merged command_path values like cal|calendar and test-runs aliases were treated as one literal command. Fixed contract command-path matching, scoped-command derivation, and extension availability to split alias groups. Verification passed: calendar/contracts/health focused suite 64 tests, tsc --noEmit, and node scripts/dogfood-package-first.mjs 84 commands."
 files[20]{path,scope,note}:
   packages/pm-calendar/extensions/calendar/index.js,project,compiled calendar package entry kept in sync
   packages/pm-calendar/extensions/calendar/index.ts,project,calendar positional view support
@@ -36,9 +37,10 @@ files[20]{path,scope,note}:
   tests/unit/health-command.spec.ts,project,Regression test for telemetry env override reporting
   tests/unit/telemetry-runtime.spec.ts,project,Regression test for PM_NO_TELEMETRY opt-out
   tests/unit/update-command.spec.ts,project,Regression test for dependency kind guidance
-tests[7]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,420,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/health-command.spec.ts --reporter=dot,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   "PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/health-command.spec.ts tests/integration/cli.integration.spec.ts -t \"extension|PM_NO_TELEMETRY|config\" --reporter=dot",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/health-command.spec.ts tests/unit/telemetry-runtime.spec.ts tests/unit/update-command.spec.ts tests/unit/close-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts --reporter=dot,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
   PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/gc-command.spec.ts tests/unit/calendar-command.spec.ts --reporter=dot,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null

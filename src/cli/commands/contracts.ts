@@ -345,11 +345,19 @@ function actionDescriptorMatchesSelectedCommand(
   if (descriptor.command_path === null) {
     return false;
   }
-  const commandPath = normalizeCommandPath(descriptor.command_path);
-  if (commandPath === selectedCommand) {
-    return true;
-  }
-  return commandPath.startsWith(`${selectedCommand} `);
+  return splitCommandPathAliases(descriptor.command_path).some((commandPath) => {
+    if (commandPath === selectedCommand) {
+      return true;
+    }
+    return commandPath.startsWith(`${selectedCommand} `);
+  });
+}
+
+function splitCommandPathAliases(commandPath: string): string[] {
+  return commandPath
+    .split("|")
+    .map((entry) => normalizeCommandPath(entry))
+    .filter((entry) => entry.length > 0);
 }
 
 function resolveScopedCommandsFromActionDescriptors(
@@ -362,18 +370,19 @@ function resolveScopedCommandsFromActionDescriptors(
     if (!descriptor.command_path) {
       continue;
     }
-    const commandPath = normalizeCommandPath(descriptor.command_path);
-    const tokens = commandPath.split(" ").filter((entry) => entry.length > 0);
-    if (tokens.length === 0) {
-      continue;
-    }
-    for (let end = tokens.length; end > 0; end -= 1) {
-      const candidate = tokens.slice(0, end).join(" ");
-      if (!commandSet.has(candidate)) {
+    for (const commandPath of splitCommandPathAliases(descriptor.command_path)) {
+      const tokens = commandPath.split(" ").filter((entry) => entry.length > 0);
+      if (tokens.length === 0) {
         continue;
       }
-      scoped.add(candidate);
-      break;
+      for (let end = tokens.length; end > 0; end -= 1) {
+        const candidate = tokens.slice(0, end).join(" ");
+        if (!commandSet.has(candidate)) {
+          continue;
+        }
+        scoped.add(candidate);
+        break;
+      }
     }
   }
   return [...scoped].sort((left, right) => left.localeCompare(right));
@@ -966,11 +975,12 @@ function resolveActionAvailability(
     };
   }
 
-  const commandPath = descriptor.command_path
-    ? normalizeCommandPath(descriptor.command_path)
-    : "";
-  const extensionCommandAvailable =
-    commandPath.length > 0 && runtimeProbe.handlers.has(commandPath);
+  const commandPaths = descriptor.command_path
+    ? splitCommandPathAliases(descriptor.command_path)
+    : [];
+  const extensionCommandAvailable = commandPaths.some((commandPath) =>
+    runtimeProbe.handlers.has(commandPath),
+  );
   const invocable =
     runtimeProbe.disabledReason === null && extensionCommandAvailable;
   return {
