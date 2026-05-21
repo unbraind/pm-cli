@@ -521,11 +521,14 @@ function toExtensionFlagContract(
   if (valueName) {
     contract.value_name = valueName;
   }
-  const rawValueType =
-    toOptionalTrimmedString(definition.value_type) ??
-    toOptionalTrimmedString(definition.type) ??
-    (valueName ? "string" : null);
-  if (rawValueType === "string" || rawValueType === "number" || rawValueType === "boolean") {
+  const rawValueType = [
+    toOptionalTrimmedString(definition.value_type),
+    toOptionalTrimmedString(definition.type),
+    valueName ? "string" : null,
+  ].find((candidate): candidate is "string" | "number" | "boolean" =>
+    candidate === "string" || candidate === "number" || candidate === "boolean",
+  );
+  if (rawValueType) {
     contract.value_type = rawValueType;
   }
   return contract;
@@ -719,6 +722,10 @@ function extensionSchemaPropertyNameFromFlag(
 function buildExtensionActionSchemaBranch(
   contract: ExtensionCommandContract,
 ): Record<string, unknown> {
+  const commands = contract.command
+    .split("|")
+    .map((command) => command.trim())
+    .filter((command) => command.length > 0);
   const properties: Record<string, unknown> = {
     action: {
       type: "string",
@@ -775,9 +782,21 @@ function buildExtensionActionSchemaBranch(
     required,
     additionalProperties: true,
     "x-extension-source": contract.source,
-    "x-extension-command": contract.command,
-    "x-extension-commands": [contract.command],
+    "x-extension-command": commands[0] ?? contract.command,
+    "x-extension-commands": commands,
   };
+}
+
+function mergeExtensionFlagContract(existing: CliFlagContract, incoming: CliFlagContract): void {
+  existing.description ??= incoming.description;
+  existing.value_name ??= incoming.value_name;
+  existing.value_type ??= incoming.value_type;
+  if (incoming.required === true) {
+    existing.required = true;
+  }
+  if (incoming.repeatable === true) {
+    existing.repeatable = true;
+  }
 }
 
 function mergeExtensionContractsByAction(
@@ -805,6 +824,11 @@ function mergeExtensionContractsByAction(
       if (!flagKeys.has(key)) {
         flagKeys.add(key);
         existing.flags.push(flag);
+      } else {
+        const existingFlag = existing.flags.find((candidate) => `${candidate.flag}|${candidate.short ?? ""}` === key);
+        if (existingFlag) {
+          mergeExtensionFlagContract(existingFlag, flag);
+        }
       }
     }
     existing.examples = [...new Set([...existing.examples, ...contract.examples])];
@@ -1470,11 +1494,12 @@ export async function runContracts(
   const createRequiredOptionContracts =
     buildCreateRequiredOptionContracts(typeRegistry);
   const extensionContracts = collectExtensionCommandContracts(runtimeProbe);
+  const mergedExtensionContracts = mergeExtensionContractsByAction(extensionContracts);
   const extensionFlagMap = collectExtensionFlagContractsByCommand(
     runtimeProbe.flagRegistrations,
   );
   const actionDescriptors =
-    collectActionContractDescriptors(extensionContracts);
+    collectActionContractDescriptors(mergedExtensionContracts);
   const actionNames = new Set(actionDescriptors.map((entry) => entry.action));
   if (selectedAction && !actionNames.has(selectedAction)) {
     throw new PmCliError(
@@ -1488,7 +1513,7 @@ export async function runContracts(
       ...PM_CORE_COMMAND_NAMES.filter(
         (entry) => !PACKAGE_OWNED_COMMANDS.has(entry),
       ),
-      ...extensionContracts.map((entry) => entry.command),
+      ...mergedExtensionContracts.flatMap((entry) => entry.command.split("|")),
     ]),
   ]
     .map((entry) => normalizeCommandPath(entry))
@@ -1551,13 +1576,9 @@ export async function runContracts(
       })
       .filter((entry): entry is string => entry !== null),
   );
-  const extensionBranches = mergeExtensionContractsByAction(extensionContracts)
+  const extensionBranches = mergedExtensionContracts
     .filter((contract) => !schemaActionSet.has(contract.action))
-    .map((contract) => {
-      const branch = buildExtensionActionSchemaBranch(contract);
-      branch["x-extension-commands"] = contract.command.split("|");
-      return branch;
-    });
+    .map((contract) => buildExtensionActionSchemaBranch(contract));
   const mergedSchema =
     extensionBranches.length > 0
       ? {

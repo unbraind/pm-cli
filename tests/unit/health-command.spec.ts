@@ -210,6 +210,45 @@ describe("runHealth", () => {
     });
   });
 
+  it("reports PM_NO_TELEMETRY as a standalone telemetry opt-out", async () => {
+    const originalTelemetryDisabled = process.env.PM_TELEMETRY_DISABLED;
+    const originalNoTelemetry = process.env.PM_NO_TELEMETRY;
+    const originalOtelDisabled = process.env.PM_TELEMETRY_OTEL_DISABLED;
+    delete process.env.PM_TELEMETRY_DISABLED;
+    process.env.PM_NO_TELEMETRY = "1";
+    delete process.env.PM_TELEMETRY_OTEL_DISABLED;
+    try {
+      await withTempPmPath(async (context) => {
+        delete process.env.PM_TELEMETRY_OTEL_DISABLED;
+        const health = await runHealth({ path: context.pmPath });
+        const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+        expect(telemetryCheck?.details).toMatchObject({
+          env_overrides: {
+            telemetry_disabled: true,
+            pm_no_telemetry: true,
+            telemetry_otel_disabled: false,
+          },
+        });
+      });
+    } finally {
+      if (originalTelemetryDisabled === undefined) {
+        delete process.env.PM_TELEMETRY_DISABLED;
+      } else {
+        process.env.PM_TELEMETRY_DISABLED = originalTelemetryDisabled;
+      }
+      if (originalNoTelemetry === undefined) {
+        delete process.env.PM_NO_TELEMETRY;
+      } else {
+        process.env.PM_NO_TELEMETRY = originalNoTelemetry;
+      }
+      if (originalOtelDisabled === undefined) {
+        delete process.env.PM_TELEMETRY_OTEL_DISABLED;
+      } else {
+        process.env.PM_TELEMETRY_OTEL_DISABLED = originalOtelDisabled;
+      }
+    }
+  });
+
   it("reports pending telemetry queue entries and last successful flush metadata", async () => {
     await withTempPmPath(async (context) => {
       const globalRoot = context.env.PM_GLOBAL_PATH as string;

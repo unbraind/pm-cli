@@ -401,10 +401,11 @@ export function registerSetupCommands(program: Command): void {
       const actionShorthands = new Set(["get", "set", "list", "export"]);
       const resolvedScope = scope && actionShorthands.has(scope) ? "project" : (scope ?? "project");
       const resolvedAction = scope && actionShorthands.has(scope) ? scope : (action ?? "list");
+      const resolvedKey = scope && actionShorthands.has(scope) ? action : key;
       const result = await runConfig(
         resolvedScope,
         resolvedAction,
-        key,
+        resolvedKey,
         {
           criterion: criteria,
           format: typeof options.format === "string" ? options.format : undefined,
