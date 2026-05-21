@@ -2342,6 +2342,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "noRefresh",
       "refreshVectors",
       "verboseStaleItems",
+      "summary",
       "skipVectors",
       "skipIntegrity",
       "skipDrift",

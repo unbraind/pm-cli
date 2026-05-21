@@ -673,7 +673,9 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l strict-directories");
     expect(script).toContain("-l verbose-stale-items");
     expect(script).toContain("-l brief");
-    expect(script).toContain("-l summary");
+    expect(script).toContain(
+      "complete -c pm -n '__fish_seen_subcommand_from health' -l summary -d 'Emit one-line-style health status with check names and warning count'",
+    );
     expect(script).toContain("-l strict-exit");
     expect(script).toContain("-l fail-on-warn");
   });

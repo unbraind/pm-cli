@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-21T17:42:51.746Z"
+updated_at: "2026-05-21T17:53:33.794Z"
 deadline: "2026-06-01T00:00:00.000Z"
 author: codex-audit
 estimated_minutes: 300
@@ -14,7 +14,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[161]{created_at,author,text}:
+comments[162]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -176,6 +176,7 @@ comments[161]{created_at,author,text}:
   "2026-05-21T04:42:32.110Z",codex-full-manual-audit,"Audit closeout evidence: broad manual dogfood and sub-agent review completed for this slice. Local release gate passed with telemetry required, package-first dogfood passed including semantic qwen Ollama mode, Sentry/telemetry gate passed against current baseline, GitHub issue/PR/vulnerability scan found no open actionable GitHub items. Residuals remain tracked under existing lineage: broader read-path performance, semantic provider staleness/auto-index parity, CI duration reduction beyond current selected coverage gate, and telemetry queue backlog investigation."
   "2026-05-21T17:23:31.764Z",codex-gpt5,"Execution start 2026-05-21: bootstrap passed (npm install -g ., pm --version 2026.5.18, node v25.9.0, pnpm 10.33.0, pnpm build). Duplicate checks used pm context/search/list-open/list-in-progress; reusing active parent pm-rnpb and existing open children pm-6vfg/pm-nbht/pm-orrl, no duplicate items created. Dogfood finding: stale habit  failed; runtime-discovered replacement is , and  clearly reports allowed values brief|standard|deep."
   "2026-05-21T17:42:51.746Z",codex-gpt5,"Final evidence 2026-05-21: completed child items pm-6vfg, pm-nbht, and pm-orrl without creating duplicates; closed and released all three with resolution/expected/actual metadata. Implemented MCP comments paging, health --summary, and create --blocked-by dependency semantics. Privacy pass used pm history-redact for pm-ny6y/pm-r9ei/pm-vhdc and verified each chain plus tracked secret scan. Verification passed: combined focused suite 8 files / 310 tests; manual temp smoke for blocked-by and health summary; package-first dogfood 84 workflows; semantic dogfood 86 workflows with qwen3-embedding:0.6b; full release gate 96 files / 1406 tests with 100 percent coverage and required Sentry/telemetry gate (Sentry critical=0 high=1 total=1 under threshold, telemetry finish_error_rate_pct=3.04, missing error-code rows=0). Resolution validation is clean; known legacy history drift remains under pm-xk39."
+  "2026-05-21T17:53:33.794Z",codex-gpt5,"Correction 2026-05-21: an earlier evidence comment had shell command substitution strip command names. Intended dogfood note: stale habit \"pm show --full\" failed; runtime-discovered replacement is \"pm get <id> --depth deep\"; invalid \"pm get <id> --depth full\" reports allowed values brief|standard|deep."
 notes[2]{created_at,author,text}:
   "2026-05-17T07:36:59.474Z",codex-agent,"Design note 2026-05-17: unfiltered pm contracts default now intentionally omits three heavy sections (schema oneOf union, command_flags, commander_aliases) and emits explicit omitted_reason markers; --full restores complete schema and alias/flag surfaces for tooling that needs maximal detail."
   "2026-05-17T08:33:25.981Z",codex-agent,"Design note 2026-05-17: default brief projection was intentionally scoped to bare 'pm list' instead of all list-* commands to preserve existing automation contracts while still cutting agent token usage on the highest-frequency exploratory list call."

@@ -1461,12 +1461,11 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
   });
   const extensionCheck = await buildExtensionCheck(pmRoot, settings, Boolean(global.noExtensions));
   const summaryMode = options.summary === true && options.full !== true;
-  const fastBriefCheckOnly =
-    ((options.brief === true && options.checkOnly === true) || (summaryMode && options.checkOnly === true)) &&
-    options.full !== true;
-  const skipIntegrity = (options.skipIntegrity === true || fastBriefCheckOnly) && options.full !== true;
-  const skipDrift = (options.skipDrift === true || fastBriefCheckOnly) && options.full !== true;
-  const skipVectors = (options.skipVectors === true || fastBriefCheckOnly) && options.full !== true;
+  const fastProjectionCheckOnly =
+    options.checkOnly === true && (options.brief === true || options.summary === true) && options.full !== true;
+  const skipIntegrity = (options.skipIntegrity === true || fastProjectionCheckOnly) && options.full !== true;
+  const skipDrift = (options.skipDrift === true || fastProjectionCheckOnly) && options.full !== true;
+  const skipVectors = (options.skipVectors === true || fastProjectionCheckOnly) && options.full !== true;
   const itemReadWarnings: string[] = [];
   const items = skipDrift && skipVectors
     ? await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, itemReadWarnings, settings.schema)
