@@ -1030,7 +1030,10 @@ function parseEvents(raw: string[] | undefined, nowValue: string): { values: Cal
     const endRaw = parseOptionalString(kv.end)?.trim();
     const endAt = endRaw ? resolveIsoOrRelative(endRaw, referenceDate, "event.end") : undefined;
     if (endAt && endAt <= startAt) {
-      throw new PmCliError("--event end must be after start", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "--event end must be after start; equal start/end timestamps are invalid. Omit end for an instant event or set end later than start.",
+        EXIT_CODE.USAGE,
+      );
     }
 
     const titleRaw = parseOptionalString(kv.title);
@@ -1071,10 +1074,10 @@ function parseEvents(raw: string[] | undefined, nowValue: string): { values: Cal
   return { values, explicitEmpty: false };
 }
 
-function buildChangedFields(frontMatter: ItemMetadata, explicitUnsets: string[]): string[] {
+function buildChangedFields(frontMatter: ItemMetadata, body: string, explicitUnsets: string[]): string[] {
   const changed = [
     ...FRONT_MATTER_KEY_ORDER.filter((key) => frontMatter[key] !== undefined),
-    "body",
+    ...(body.length > 0 ? ["body"] : []),
     ...explicitUnsets.map((key) => `unset:${key}`),
   ];
   return Array.from(new Set(changed));
@@ -2219,7 +2222,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     await lockRelease();
   }
 
-  const changedFields = buildChangedFields(frontMatter, explicitUnsetKeys);
+  const changedFields = buildChangedFields(frontMatter, body, explicitUnsetKeys);
   const outputItem = structuredClone(frontMatter);
   return {
     item: outputItem,

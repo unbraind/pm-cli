@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[8]: changelog,compatibility,migration,pm-cli,publishing,release,sentry,telemetry
 created_at: "2026-05-02T09:23:42.332Z"
-updated_at: "2026-05-02T10:01:51.981Z"
+updated_at: "2026-05-21T18:16:52.097Z"
 deadline: "2026-05-03T09:23:42.332Z"
 author: codex-release-agent
 estimated_minutes: 300
@@ -38,8 +38,7 @@ tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test -- tests/unit/sentry-helpers.spec.ts tests/integration/ci-workflow-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Sentry filter and release workflow contract regression
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-moo66sgk-nvun8y,test,passed,"2026-05-02T09:55:23.992Z","2026-05-02T09:59:28.916Z","2026-05-02T09:59:28.916Z",null,null,2,0,0,null,null,null
-docs[2]{path,scope,note}:
+docs[1]{path,scope,note}:
   docs/RELEASING.md,project,release workflow documentation
-  scripts/prod/telemetry/reports/2026-05-02-release-telemetry-sentry-check.md,project,ignored private telemetry and Sentry audit report
 close_reason: 2026.5.2 release candidate prepared and locally verified; final publication will be performed by the GitHub Release workflow tag.
 body: ""

@@ -59,7 +59,15 @@ export function getGlobalOptions(command: Command): GlobalOptions {
   if (resolved) {
     return { ...resolved };
   }
-  const opts = command.optsWithGlobals();
+  const commandLike = command as Command & {
+    optsWithGlobals?: () => Record<string, unknown>;
+    opts?: () => Record<string, unknown>;
+  };
+  const opts = typeof commandLike.optsWithGlobals === "function"
+    ? commandLike.optsWithGlobals()
+    : typeof commandLike.opts === "function"
+      ? commandLike.opts()
+      : {};
   return {
     json: opts.json === true ? true : undefined,
     quiet: Boolean(opts.quiet),

@@ -719,6 +719,7 @@ describe("release readiness runtime coverage", () => {
         expect(help.stdout).toContain(flag);
       }
       expect(help.stdout).toContain("agenda|day|week|month");
+      expect(help.stdout).toContain("deadlines|reminders|events|scheduled|all");
       expect(help.stdout).toContain("markdown|toon|json");
     });
   });

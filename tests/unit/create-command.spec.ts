@@ -130,6 +130,7 @@ describe("runCreate", () => {
       expect(result.item.files).toBeUndefined();
       expect(result.item.docs).toBeUndefined();
       expect(result.item.tests).toBeUndefined();
+      expect(result.changed_fields).not.toContain("body");
     });
   });
 
@@ -1719,6 +1720,18 @@ describe("runCreate", () => {
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            event: ["start=2026-03-04T10:00:00.000Z,end=2026-03-04T10:00:00.000Z"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("equal start/end timestamps are invalid"),
+      });
 
       await expect(
         runCreate(

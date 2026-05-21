@@ -486,6 +486,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("--view");
     expect(script).toContain("--past");
     expect(script).toContain("--full-period");
+    expect(script).toContain("all deadlines reminders events scheduled");
     expect(script).toContain("--format");
     expect(script).toContain("--reminder");
     expect(script).toContain("--event");
@@ -728,6 +729,7 @@ describe("generateFishScript", () => {
     expect(script).toContain("-l past");
     expect(script).toContain("-l full-period");
     expect(script).toContain("-l include");
+    expect(script).toContain("all deadlines reminders events scheduled");
     expect(script).toContain("-l occurrence-limit");
     expect(script).toContain("-l format");
   });

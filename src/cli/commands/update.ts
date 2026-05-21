@@ -807,7 +807,10 @@ function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
     const endRaw = kv.end?.trim();
     const endAt = endRaw ? resolveIsoOrRelative(endRaw, nowValue, "event.end") : undefined;
     if (endAt && endAt <= startAt) {
-      throw new PmCliError("--event end must be after start", EXIT_CODE.USAGE);
+      throw new PmCliError(
+        "--event end must be after start; equal start/end timestamps are invalid. Omit end for an instant event or set end later than start.",
+        EXIT_CODE.USAGE,
+      );
     }
 
     const titleRaw = kv.title;
