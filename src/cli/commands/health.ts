@@ -970,7 +970,7 @@ interface TelemetryRuntimeStateRecord {
   last_failed_flush_error?: string;
 }
 
-function telemetryEnvFlagEnabled(envKey: "PM_TELEMETRY_DISABLED" | "PM_TELEMETRY_OTEL_DISABLED"): boolean {
+function telemetryEnvFlagEnabled(envKey: "PM_TELEMETRY_DISABLED" | "PM_TELEMETRY_OTEL_DISABLED" | "PM_NO_TELEMETRY"): boolean {
   const value = (process.env[envKey] ?? "").trim().toLowerCase();
   return value === "1" || value === "true" || value === "yes" || value === "on";
 }
@@ -1154,7 +1154,8 @@ async function buildTelemetryCheck(
           attempted: false,
         },
         env_overrides: {
-          telemetry_disabled: telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED"),
+          telemetry_disabled: telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED") || telemetryEnvFlagEnabled("PM_NO_TELEMETRY"),
+          pm_no_telemetry: telemetryEnvFlagEnabled("PM_NO_TELEMETRY"),
           telemetry_otel_disabled: telemetryEnvFlagEnabled("PM_TELEMETRY_OTEL_DISABLED"),
         },
       },

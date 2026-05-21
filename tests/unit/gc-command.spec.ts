@@ -45,7 +45,7 @@ describe("runGc", () => {
       expect(gc.retained).toEqual(["runtime/test-runs"]);
       expect(gc.warnings).toEqual([]);
       expect(gc.guidance).toEqual([
-        'Search artifacts were removed; run "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
+        'Search artifacts were removed; run "pm install search-advanced --project" if reindex is unavailable, then "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
       ]);
       expect(gc.generated_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 
@@ -123,7 +123,7 @@ describe("runGc", () => {
       expect(gc.retained).toEqual([]);
       expect(gc.guidance).toEqual([
         "Dry-run preview only: no cache artifacts were deleted.",
-        'Search artifacts were removed; run "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
+        'Search artifacts were removed; run "pm install search-advanced --project" if reindex is unavailable, then "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
       ]);
 
       await expect(fs.stat(path.join(context.pmPath, "index", "manifest.json"))).resolves.toBeTruthy();

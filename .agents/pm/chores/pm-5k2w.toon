@@ -6,8 +6,39 @@ status: open
 priority: 3
 tags[5]: agent-ux,cli,docs,dogfood,polish
 created_at: "2026-05-20T20:33:06.671Z"
-updated_at: "2026-05-20T20:33:06.671Z"
+updated_at: "2026-05-21T04:42:31.292Z"
 author: claude-code-agent
 acceptance_criteria: Each listed sub-item is either fixed with a regression test or explicitly declined with rationale; no change drops coverage below 100%; doc/validator drift (L6) resolved; default-safety inconsistencies (L10) reviewed.
 parent: pm-rnpb
+comments[3]{created_at,author,text}:
+  "2026-05-21T04:30:32.081Z",codex-full-manual-audit,"Evidence: focused manual smoke passed config list shorthand, cal week positional view, close active-child warning, gc reindex install guidance, and PM_NO_TELEMETRY health reporting. Local checks passed so far: pnpm build; focused 7-file suite 37 tests after calendar runtime fix and 6-file suite 129 tests before that; pnpm quality:static; node scripts/check-secrets.mjs."
+  "2026-05-21T04:40:05.493Z",codex-full-manual-audit,"Evidence: full release gate passed after stale GC expectation update. Passed build, typecheck, docs-skills, static quality, coverage 96 files / 1399 tests at 100 percent, version policy, secret scan, npx packed smoke, package-first dogfood 84 workflows, npm pack dry-run, compatibility, and required Sentry/telemetry gate with Sentry critical=0 high=1 and telemetry finish_error_rate_pct=2.71."
+  "2026-05-21T04:42:28.101Z",codex-full-manual-audit,"Pause evidence: focused subset fixed and release-gated. Fixed config list shorthand, calendar positional view handling, GC missing-reindex guidance, PM_NO_TELEMETRY opt-out reporting/runtime, invalid dependency kind recovery, close active-child warning, and extension contract metadata/alias dedupe. Remaining backlog items on this chore stay open: init verbosity, help alias display bloat, create changed_fields noise, calendar include scheduled doc drift, guide install hints, priority wording drift, template starter content, broader default-safety review, and event equal-timestamp hinting. Full gate passed with run-gates telemetry-mode required and 100% selected coverage."
+files[19]{path,scope,note}:
+  packages/pm-calendar/extensions/calendar/index.js,project,compiled calendar package entry kept in sync
+  packages/pm-calendar/extensions/calendar/index.ts,project,calendar positional view support
+  src/cli/commands/close.ts,project,close validation warns on active children
+  src/cli/commands/contracts.ts,project,extension action schema aliases and flag metadata
+  src/cli/commands/gc.ts,project,gc reindex install guidance
+  src/cli/commands/health.ts,project,health reports PM_NO_TELEMETRY alias
+  src/cli/commands/update.ts,project,dependency kind recovery lists allowed values
+  src/cli/main.ts,project,dynamic extension command action arg handling
+  src/cli/register-setup.ts,project,config action shorthand for agent UX
+  src/core/telemetry/runtime.ts,project,PM_NO_TELEMETRY opt-out alias
+  src/sdk/cli-contracts.ts,project,extension flag contract metadata
+  tests/unit/builtin-extension-entrypoints.spec.ts,project,Built-in extension entrypoint smoke coverage
+  tests/unit/calendar-command.spec.ts,project,Calendar positional view smoke coverage
+  tests/unit/close-command.spec.ts,project,Regression test for active-child close warning
+  tests/unit/contracts-command.spec.ts,project,Regression tests for extension contract metadata and alias dedupe
+  tests/unit/gc-command.spec.ts,project,gc guidance regression coverage
+  tests/unit/health-command.spec.ts,project,Regression test for telemetry env override reporting
+  tests/unit/telemetry-runtime.spec.ts,project,Regression test for PM_NO_TELEMETRY opt-out
+  tests/unit/update-command.spec.ts,project,Regression test for dependency kind guidance
+tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,420,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/health-command.spec.ts tests/unit/telemetry-runtime.spec.ts tests/unit/update-command.spec.ts tests/unit/close-command.spec.ts tests/unit/calendar-command.spec.ts tests/unit/builtin-extension-entrypoints.spec.ts --reporter=dot,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/gc-command.spec.ts tests/unit/calendar-command.spec.ts --reporter=dot,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
 body: ""

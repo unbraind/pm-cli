@@ -126,6 +126,7 @@ describe("runHealth", () => {
         },
         env_overrides: {
           telemetry_disabled: true,
+          pm_no_telemetry: false,
           telemetry_otel_disabled: true,
         },
       });

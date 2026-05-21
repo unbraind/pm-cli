@@ -10,6 +10,7 @@ import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js
 interface CreateTaskOptions {
   status?: "draft" | "open" | "in_progress" | "blocked" | "closed" | "canceled";
   assignee?: string;
+  parent?: string;
 }
 
 function createTask(context: TempPmContext, title: string, options: CreateTaskOptions = {}): string {
@@ -43,6 +44,8 @@ function createTask(context: TempPmContext, title: string, options: CreateTaskOp
       `Create ${title}`,
       "--assignee",
       options.assignee ?? "none",
+      "--parent",
+      options.parent ?? "none",
       "--dep",
       "none",
       "--comment",
@@ -157,6 +160,22 @@ describe("runClose", () => {
       expect(result.warnings).toEqual([
         `close_validation_missing_fields:${id}:resolution,expected_result,actual_result`,
       ]);
+    });
+  });
+
+  it("warns when closing a parent with active child items", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createTask(context, "close-parent-active-child");
+      const childId = createTask(context, "close-child-active", { parent: parentId });
+      const result = await runClose(
+        parentId,
+        "close parent with active child",
+        {
+          validateClose: "warn",
+        },
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toContain(`close_validation_active_children:${parentId}:${childId}`);
     });
   });
 

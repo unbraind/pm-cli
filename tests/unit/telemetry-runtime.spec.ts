@@ -18,6 +18,7 @@ const originalOtelTracesEndpoint = process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOIN
 const originalOtelEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 const originalOtelServiceName = process.env.OTEL_SERVICE_NAME;
 const originalTelemetryDisabled = process.env.PM_TELEMETRY_DISABLED;
+const originalNoTelemetry = process.env.PM_NO_TELEMETRY;
 const originalTelemetryOtelDisabled = process.env.PM_TELEMETRY_OTEL_DISABLED;
 const originalTelemetryInlineFlush = process.env.PM_TELEMETRY_INLINE_FLUSH;
 const originalTelemetrySourceContext = process.env.PM_TELEMETRY_SOURCE_CONTEXT;
@@ -35,6 +36,7 @@ async function withTempGlobalRoot(run: (globalRoot: string) => Promise<void>): P
   const globalRoot = path.join(tempRoot, ".pm-cli");
   process.env.PM_GLOBAL_PATH = globalRoot;
   delete process.env.PM_TELEMETRY_DISABLED;
+  delete process.env.PM_NO_TELEMETRY;
   try {
     await run(globalRoot);
   } finally {
@@ -84,6 +86,11 @@ describe("core/telemetry/runtime", () => {
       delete process.env.PM_TELEMETRY_DISABLED;
     } else {
       process.env.PM_TELEMETRY_DISABLED = originalTelemetryDisabled;
+    }
+    if (originalNoTelemetry === undefined) {
+      delete process.env.PM_NO_TELEMETRY;
+    } else {
+      process.env.PM_NO_TELEMETRY = originalNoTelemetry;
     }
     if (originalTelemetryOtelDisabled === undefined) {
       delete process.env.PM_TELEMETRY_OTEL_DISABLED;
@@ -706,6 +713,33 @@ describe("core/telemetry/runtime", () => {
   it("skips telemetry command collection when PM_TELEMETRY_DISABLED is set", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       process.env.PM_TELEMETRY_DISABLED = "1";
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+
+      expect(active).toBeNull();
+      await expect(fs.access(telemetryQueuePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  it("skips telemetry command collection when PM_NO_TELEMETRY is set", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      process.env.PM_NO_TELEMETRY = "1";
       const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
       globalThis.fetch = fetchMock as unknown as typeof fetch;
 

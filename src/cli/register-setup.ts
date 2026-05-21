@@ -364,8 +364,8 @@ export function registerSetupCommands(program: Command): void {
 
   program
     .command("config")
-    .argument("<scope>", "Config scope: project|global")
-    .argument("<action>", "Config action: get|set|list|export")
+    .argument("[scope]", "Config scope: project|global, or action shorthand list|export|get|set for project scope")
+    .argument("[action]", "Config action: get|set|list|export")
     .argument(
       "[key]",
       "Config key for get|set: definition-of-done|item-format|history-missing-stream-policy|sprint-release-format-policy|parent-reference-policy|metadata-validation-profile|metadata-required-fields|lifecycle-stale-blocker-reason-patterns|lifecycle-closure-like-blocked-reason-patterns|lifecycle-closure-like-resolution-patterns|lifecycle-closure-like-actual-result-patterns|governance-preset|governance-ownership-enforcement|governance-create-mode-default|governance-close-validation-default|governance-parent-reference-policy|governance-metadata-validation-profile|governance-force-required-for-stale-lock|test-result-tracking|telemetry-tracking|context",
@@ -393,14 +393,17 @@ export function registerSetupCommands(program: Command): void {
     .option("--section-staleness <value>", "Enable/disable context staleness section (true|false)")
     .option("--section-tests <value>", "Enable/disable context tests section (true|false)")
     .description("Read or update pm settings for the current workspace or global profile.")
-    .action(async (scope: string, action: string, key: string | undefined, options: Record<string, unknown>, command) => {
+    .action(async (scope: string | undefined, action: string | undefined, key: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const criteria = Array.isArray(options.criterion) ? (options.criterion as string[]) : [];
       const { runConfig } = await loadSetupCommandsModule();
+      const actionShorthands = new Set(["get", "set", "list", "export"]);
+      const resolvedScope = scope && actionShorthands.has(scope) ? "project" : (scope ?? "project");
+      const resolvedAction = scope && actionShorthands.has(scope) ? scope : (action ?? "list");
       const result = await runConfig(
-        scope,
-        action,
+        resolvedScope,
+        resolvedAction,
         key,
         {
           criterion: criteria,

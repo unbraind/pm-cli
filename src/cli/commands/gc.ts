@@ -165,7 +165,7 @@ function buildGcGuidance(params: {
   );
   if (searchScopeSelected && searchArtifactsAffected) {
     guidance.push(
-      'Search artifacts were removed; run "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
+      'Search artifacts were removed; run "pm install search-advanced --project" if reindex is unavailable, then "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
     );
   }
   return guidance;

@@ -507,6 +507,27 @@ function toExtensionFlagContract(
   if (normalizedShort && normalizedLong) {
     contract.short = normalizedShort;
   }
+  const description = toOptionalTrimmedString(definition.description);
+  if (description) {
+    contract.description = description;
+  }
+  if (definition.required === true) {
+    contract.required = true;
+  }
+  if (definition.repeatable === true) {
+    contract.repeatable = true;
+  }
+  const valueName = toOptionalTrimmedString(definition.value_name);
+  if (valueName) {
+    contract.value_name = valueName;
+  }
+  const rawValueType =
+    toOptionalTrimmedString(definition.value_type) ??
+    toOptionalTrimmedString(definition.type) ??
+    (valueName ? "string" : null);
+  if (rawValueType === "string" || rawValueType === "number" || rawValueType === "boolean") {
+    contract.value_type = rawValueType;
+  }
   return contract;
 }
 
@@ -735,11 +756,17 @@ function buildExtensionActionSchemaBranch(
     if (!propertyName || properties[propertyName] !== undefined) {
       continue;
     }
-    const isBooleanFlag = !flag.flag.includes(" ");
+    const valueType = flag.value_type ?? "boolean";
+    const schemaType =
+      valueType === "boolean" ? "boolean" : valueType === "number" ? ["number", "string"] : "string";
     properties[propertyName] = {
-      type: isBooleanFlag ? ["boolean", "string"] : "string",
-      description: `Extension option '${flag.flag}' for action '${contract.action}'.`,
+      type: flag.repeatable ? "array" : schemaType,
+      ...(flag.repeatable ? { items: { type: schemaType } } : {}),
+      description: flag.description ?? `Extension option '${flag.flag}' for action '${contract.action}'.`,
     };
+    if (flag.required === true) {
+      required.push(propertyName);
+    }
   }
 
   return {
@@ -749,7 +776,41 @@ function buildExtensionActionSchemaBranch(
     additionalProperties: true,
     "x-extension-source": contract.source,
     "x-extension-command": contract.command,
+    "x-extension-commands": [contract.command],
   };
+}
+
+function mergeExtensionContractsByAction(
+  contracts: ExtensionCommandContract[],
+): ExtensionCommandContract[] {
+  const byAction = new Map<string, ExtensionCommandContract>();
+  for (const contract of contracts) {
+    const existing = byAction.get(contract.action);
+    if (!existing) {
+      byAction.set(contract.action, {
+        ...contract,
+        flags: [...contract.flags],
+        examples: [...contract.examples],
+        failure_hints: [...contract.failure_hints],
+      });
+      continue;
+    }
+    existing.command = [...new Set([existing.command, contract.command])]
+      .sort((left, right) => left.localeCompare(right))
+      .join("|");
+    existing.arguments = existing.arguments.length >= contract.arguments.length ? existing.arguments : contract.arguments;
+    const flagKeys = new Set(existing.flags.map((flag) => `${flag.flag}|${flag.short ?? ""}`));
+    for (const flag of contract.flags) {
+      const key = `${flag.flag}|${flag.short ?? ""}`;
+      if (!flagKeys.has(key)) {
+        flagKeys.add(key);
+        existing.flags.push(flag);
+      }
+    }
+    existing.examples = [...new Set([...existing.examples, ...contract.examples])];
+    existing.failure_hints = [...new Set([...existing.failure_hints, ...contract.failure_hints])];
+  }
+  return [...byAction.values()].sort((left, right) => left.action.localeCompare(right.action));
 }
 
 async function resolveRuntimeExtensionActionProbe(
@@ -1490,9 +1551,13 @@ export async function runContracts(
       })
       .filter((entry): entry is string => entry !== null),
   );
-  const extensionBranches = extensionContracts
+  const extensionBranches = mergeExtensionContractsByAction(extensionContracts)
     .filter((contract) => !schemaActionSet.has(contract.action))
-    .map((contract) => buildExtensionActionSchemaBranch(contract));
+    .map((contract) => {
+      const branch = buildExtensionActionSchemaBranch(contract);
+      branch["x-extension-commands"] = contract.command.split("|");
+      return branch;
+    });
   const mergedSchema =
     extensionBranches.length > 0
       ? {

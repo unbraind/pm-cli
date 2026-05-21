@@ -1747,6 +1747,24 @@ describe("runUpdate", () => {
     });
   });
 
+  it("lists allowed dependency kinds when dependency kind is invalid", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-invalid-dependency-kind");
+      await expect(
+        runUpdate(
+          id,
+          {
+            dep: ["id=dep-invalid,kind=depends_on"],
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Allowed:"),
+      });
+    });
+  });
+
   it("accepts colon and markdown formats for update type-option entries", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");
