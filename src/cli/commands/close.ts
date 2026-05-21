@@ -1,10 +1,11 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { mutateItem } from "../../core/store/item-store.js";
+import { listAllFrontMatter, mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus } from "../../types/index.js";
@@ -77,6 +78,26 @@ function findMissingCloseValidationFields(frontMatter: ItemFrontMatter): string[
   return missing;
 }
 
+async function findActiveChildIds(
+  pmRoot: string,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  parentId: string,
+  statusRegistry: RuntimeStatusRegistry,
+): Promise<string[]> {
+  const typeRegistry = resolveItemTypeRegistry(settings);
+  const items = await listAllFrontMatter(
+    pmRoot,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+    undefined,
+    settings.schema,
+  );
+  return items
+    .filter((item) => item.parent === parentId && !isTerminal(item.status, statusRegistry))
+    .map((item) => item.id)
+    .sort((left, right) => left.localeCompare(right));
+}
+
 export async function runClose(
   id: string,
   closeReasonText: string,
@@ -93,6 +114,8 @@ export async function runClose(
   const author = toAuthor(options.author, settings.author_default);
   const closeReason = ensureCloseReason(closeReasonText);
   const validateCloseMode = parseValidateCloseMode(options.validateClose) ?? settings.governance.close_validation_default;
+  const activeChildIds =
+    validateCloseMode === "off" ? [] : await findActiveChildIds(pmRoot, settings, id, statusRegistry);
 
   const result = await mutateItem({
     pmRoot,
@@ -117,6 +140,15 @@ export async function runClose(
             );
           }
           mutationWarnings.push(`close_validation_missing_fields:${document.metadata.id}:${missingFields.join(",")}`);
+        }
+        if (activeChildIds.length > 0) {
+          if (validateCloseMode === "strict") {
+            throw new PmCliError(
+              `Cannot close item ${document.metadata.id}: active child items remain open (${activeChildIds.join(", ")}). Close, cancel, or re-parent them first, or use --validate-close warn.`,
+              EXIT_CODE.USAGE,
+            );
+          }
+          mutationWarnings.push(`close_validation_active_children:${document.metadata.id}:${activeChildIds.join(",")}`);
         }
       }
 

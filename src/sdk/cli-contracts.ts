@@ -27,6 +27,11 @@ export interface CliFlagContract {
   flag: string;
   short?: string;
   aliases?: string[];
+  description?: string;
+  required?: boolean;
+  repeatable?: boolean;
+  value_name?: string;
+  value_type?: "string" | "number" | "boolean";
 }
 
 export interface ToolOptionFlagContract {

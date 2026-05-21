@@ -36,8 +36,21 @@ function calendarCommand(name) {
     name,
     action: "calendar",
     description: "Show deadline, reminder, and scheduled event calendar views.",
+    arguments: [{ name: "view", required: false, description: "Calendar view: agenda|day|week|month." }],
     flags: [...calendarFlags],
-    run: async (context) => runCalendarPackage(context.options, context.global),
+    run: async (context) => {
+      const positionalView = context.args[0]?.startsWith("-") ? undefined : context.args[0]?.trim();
+      if (positionalView && context.args.length > 1) {
+        throw new Error("Calendar accepts at most one positional view: agenda|day|week|month.");
+      }
+      return runCalendarPackage(
+        {
+          ...context.options,
+          ...(positionalView && context.options.view === undefined ? { view: positionalView } : {}),
+        },
+        context.global,
+      );
+    },
   };
 }
 

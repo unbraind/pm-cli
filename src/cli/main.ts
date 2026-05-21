@@ -1119,7 +1119,9 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
     dynamicCommand
       .allowUnknownOption(true)
       .allowExcessArguments(true)
-      .action(async (_options: Record<string, unknown>, command) => {
+      .action(async (...actionArgs: unknown[]) => {
+        const maybeCommand = actionArgs[actionArgs.length - 1];
+        const command = maybeCommand instanceof Command ? maybeCommand : dynamicCommand;
         const globalOptions = getGlobalOptions(command);
         const startedAt = Date.now();
         const extensionFlagDefinitions = collectExtensionFlagDefinitionsForInvocation(

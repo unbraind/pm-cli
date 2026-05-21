@@ -39,6 +39,7 @@ const OTEL_TRACES_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT";
 const OTEL_BASE_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_ENDPOINT";
 const OTEL_SERVICE_NAME_ENV = "OTEL_SERVICE_NAME";
 const PM_TELEMETRY_DISABLED_ENV = "PM_TELEMETRY_DISABLED";
+const PM_NO_TELEMETRY_ENV = "PM_NO_TELEMETRY";
 const PM_TELEMETRY_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
 const PM_TELEMETRY_OTEL_DISABLED_ENV = "PM_TELEMETRY_OTEL_DISABLED";
 const PM_TELEMETRY_OTEL_DISABLED_VALUES = new Set(["1", "true", "yes", "on"]);
@@ -512,7 +513,10 @@ function hashTelemetryErrorFingerprint(
 }
 
 function telemetryDisabledByEnvironment(): boolean {
-  return PM_TELEMETRY_DISABLED_VALUES.has((process.env[PM_TELEMETRY_DISABLED_ENV] ?? "").trim().toLowerCase());
+  return (
+    PM_TELEMETRY_DISABLED_VALUES.has((process.env[PM_TELEMETRY_DISABLED_ENV] ?? "").trim().toLowerCase()) ||
+    PM_TELEMETRY_DISABLED_VALUES.has((process.env[PM_NO_TELEMETRY_ENV] ?? "").trim().toLowerCase())
+  );
 }
 
 function resolveOtelTracesEndpoint(): string | null {

@@ -862,7 +862,7 @@ describe("contracts command runtime", () => {
           "    api.registerCommand({",
           "      name: 'beads import',",
           "      action: 'beads-import',",
-          "      flags: [{ long: '--file', value_name: 'path' }],",
+          "      flags: [{ long: '--file', value_name: 'path', value_type: 'string' }],",
           "      run: () => ({ ok: true }),",
           "    });",
           "  },",
@@ -1017,9 +1017,9 @@ describe("contracts command runtime", () => {
             },
           ],
           flags: [
-            { flag: "--source" },
-            { flag: "--target" },
-            { flag: "--dry-run" },
+            { flag: "--source", description: "Source asset payload path.", required: true, value_name: "path", value_type: "string" },
+            { flag: "--target", description: "Destination payload path.", value_name: "path", value_type: "string" },
+            { flag: "--dry-run", description: "Preview migration only." },
           ],
           examples: [
             "pm migrate-asset --source assets/source.json --target assets/output.json",
@@ -1034,9 +1034,9 @@ describe("contracts command runtime", () => {
           command: "migrate-asset",
           provider: "extension",
           flags: [
-            { flag: "--source" },
-            { flag: "--target" },
-            { flag: "--dry-run" },
+            { flag: "--source", description: "Source asset payload path.", required: true, value_name: "path", value_type: "string" },
+            { flag: "--target", description: "Destination payload path.", value_name: "path", value_type: "string" },
+            { flag: "--dry-run", description: "Preview migration only." },
           ],
           extension_sources: [
             {
@@ -1056,6 +1056,7 @@ describe("contracts command runtime", () => {
           dryRun?: unknown;
         };
         ["x-extension-source"]?: { layer?: string; name?: string } | null;
+        ["x-extension-commands"]?: string[];
       }>;
       const migrateBranch = oneOf.find(
         (entry) => entry.properties?.action?.const === "migrate-asset",
@@ -1065,10 +1066,51 @@ describe("contracts command runtime", () => {
       expect(migrateBranch?.properties?.source).toBeDefined();
       expect(migrateBranch?.properties?.target).toBeDefined();
       expect(migrateBranch?.properties?.dryRun).toBeDefined();
+      expect(migrateBranch?.properties?.source).toMatchObject({ type: "string" });
+      expect(migrateBranch?.properties?.dryRun).toMatchObject({ type: "boolean" });
+      expect((migrateBranch as { required?: string[] } | undefined)?.required).toContain("source");
       expect(migrateBranch?.["x-extension-source"]).toEqual({
         layer: "project",
         name: "migrate-asset-contracts",
       });
+      expect(migrateBranch?.["x-extension-commands"]).toEqual(["migrate-asset"]);
+    });
+  });
+
+  it("deduplicates extension schema branches by action while preserving command aliases", async () => {
+    await withTempPmPath(async (context) => {
+      await createProjectExtension(
+        context.pmPath,
+        "alias-action-contracts",
+        {
+          name: "alias-action-contracts",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["commands", "schema"],
+        },
+        [
+          "const flags = [{ long: '--view', value_name: 'value', value_type: 'string', description: 'View.' }];",
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({ name: 'alias-main', action: 'alias-action', flags, run: () => ({ ok: true }) });",
+          "    api.registerCommand({ name: 'alias-short', action: 'alias-action', flags, run: () => ({ ok: true }) });",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      );
+
+      const result = await runContracts(
+        { action: "alias-action", schemaOnly: true },
+        { ...GLOBAL_OPTIONS, path: context.pmPath },
+      );
+      const branches = (result.schema?.oneOf ?? []) as Array<{
+        properties?: { action?: { const?: string }; view?: unknown };
+        ["x-extension-commands"]?: string[];
+      }>;
+      expect(branches.filter((branch) => branch.properties?.action?.const === "alias-action")).toHaveLength(1);
+      expect(branches[0]?.["x-extension-commands"]).toEqual(["alias-main", "alias-short"]);
+      expect(branches[0]?.properties?.view).toMatchObject({ type: "string" });
     });
   });
 

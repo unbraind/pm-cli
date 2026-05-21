@@ -2894,6 +2894,12 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(configGetJson.criteria).toEqual(["linked files/tests/docs present", "tests pass"]);
       expect(configGetJson.changed).toBe(false);
 
+      const configGetShorthand = context.runCli(["config", "get", "definition-of-done", "--json"], { expectJson: true });
+      expect(configGetShorthand.code).toBe(0);
+      const configGetShorthandJson = configGetShorthand.json as { criteria: string[]; changed: boolean };
+      expect(configGetShorthandJson.criteria).toEqual(["linked files/tests/docs present", "tests pass"]);
+      expect(configGetShorthandJson.changed).toBe(false);
+
       const sprintReleasePolicySet = context.runCli(
         ["config", "project", "set", "sprint-release-format-policy", "--policy", "strict_error", "--json"],
         { expectJson: true },

@@ -668,7 +668,7 @@ function enforceAllowAuditUpdateScope(options: UpdateCommandOptions, clearFrontM
 
 function ensureEnum<T extends string>(value: string, allowed: readonly T[], label: string): T {
   if (!allowed.includes(value as T)) {
-    throw new PmCliError(`Invalid ${label} value "${value}"`, EXIT_CODE.USAGE);
+    throw new PmCliError(`Invalid ${label} value "${value}". Allowed: ${allowed.join(", ")}`, EXIT_CODE.USAGE);
   }
   return value as T;
 }
