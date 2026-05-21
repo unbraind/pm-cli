@@ -1713,6 +1713,66 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
     });
   });
 
+  it("creates a blocked_by dependency edge when --blocked-by references an existing item", async () => {
+    await withTempPmPath(async (context) => {
+      const blocker = context.runCli(
+        [
+          "create",
+          "--json",
+          "--create-mode",
+          "progressive",
+          "--title",
+          "Blocked-by seed",
+          "--description",
+          "Seed item used as blocker",
+          "--type",
+          "Task",
+          "--author",
+          "integration-test",
+        ],
+        { expectJson: true },
+      );
+      expect(blocker.code).toBe(0);
+      const blockerId = (blocker.json as { item: { id: string } }).item.id;
+
+      const blocked = context.runCli(
+        [
+          "create",
+          "--json",
+          "--create-mode",
+          "progressive",
+          "--title",
+          "Blocked by existing item",
+          "--description",
+          "Create should derive a blocked_by edge",
+          "--type",
+          "Task",
+          "--blocked-by",
+          blockerId,
+          "--author",
+          "integration-test",
+        ],
+        { expectJson: true },
+      );
+      expect(blocked.code).toBe(0);
+      const blockedItem = (blocked.json as {
+        item: { id: string; status: string; blocked_by: string; dependencies?: Array<{ id: string; kind: string }> };
+      }).item;
+      expect(blockedItem.status).toBe("blocked");
+      expect(blockedItem.blocked_by).toBe(blockerId);
+      expect(blockedItem.dependencies).toEqual([expect.objectContaining({ id: blockerId, kind: "blocked_by" })]);
+
+      const deps = context.runCli(["deps", blockedItem.id, "--json"], { expectJson: true });
+      expect(deps.code).toBe(0);
+      const depsJson = deps.json as {
+        edge_count: number;
+        tree?: { dependencies: Array<{ id: string; via?: string }> };
+      };
+      expect(depsJson.edge_count).toBe(1);
+      expect(depsJson.tree?.dependencies).toEqual([expect.objectContaining({ id: blockerId, via: "blocked_by" })]);
+    });
+  });
+
   it("accepts extended optional field flags for create/update including blocked aliases", async () => {
     await withTempPmPath(async (context) => {
       const createResult = context.runCli(

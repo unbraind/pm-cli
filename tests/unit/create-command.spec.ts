@@ -133,6 +133,100 @@ describe("runCreate", () => {
     });
   });
 
+  it("derives a blocked_by dependency from --blocked-by when it references an existing item", async () => {
+    await withTempPmPath(async (context) => {
+      const blocker = await runCreate(
+        baseCreateOptions({
+          title: "create-blocker-seed",
+          description: "blocker seed",
+          message: "create blocker seed",
+        }),
+        { path: context.pmPath },
+      );
+
+      const blocked = await runCreate(
+        baseCreateOptions({
+          title: "create-blocked-by-id",
+          description: "blocked by an existing item id",
+          status: undefined,
+          blockedBy: blocker.item.id,
+          dep: undefined,
+        }),
+        { path: context.pmPath },
+      );
+      expect(blocked.item.blocked_by).toBe(blocker.item.id);
+      expect(blocked.item.status).toBe("blocked");
+      expect(blocked.item.dependencies).toEqual([
+        expect.objectContaining({
+          id: blocker.item.id,
+          kind: "blocked_by",
+          author: "seed-author",
+        }),
+      ]);
+
+      const explicitStatus = await runCreate(
+        baseCreateOptions({
+          title: "create-blocked-by-explicit-status",
+          description: "explicit status is preserved",
+          status: "open",
+          blockedBy: blocker.item.id,
+          dep: undefined,
+        }),
+        { path: context.pmPath },
+      );
+      expect(explicitStatus.item.status).toBe("open");
+      expect(explicitStatus.item.dependencies).toEqual([
+        expect.objectContaining({ id: blocker.item.id, kind: "blocked_by" }),
+      ]);
+    });
+  });
+
+  it("keeps free-text blocked_by metadata without deriving dependency edges", async () => {
+    await withTempPmPath(async (context) => {
+      const blocked = await runCreate(
+        baseCreateOptions({
+          title: "create-blocked-by-free-text",
+          description: "blocked by external reason",
+          status: undefined,
+          blockedBy: "waiting on external vendor",
+          dep: undefined,
+        }),
+        { path: context.pmPath },
+      );
+      expect(blocked.item.blocked_by).toBe("waiting on external vendor");
+      expect(blocked.item.status).toBe("open");
+      expect(blocked.item.dependencies).toBeUndefined();
+    });
+  });
+
+  it("deduplicates derived blocked_by dependency against explicit dependencies", async () => {
+    await withTempPmPath(async (context) => {
+      const blocker = await runCreate(
+        baseCreateOptions({
+          title: "create-blocker-dedupe-seed",
+          description: "blocker seed",
+          message: "create blocker dedupe seed",
+        }),
+        { path: context.pmPath },
+      );
+      const blocked = await runCreate(
+        baseCreateOptions({
+          title: "create-blocked-by-dedupe",
+          description: "blocked by explicit and derived dependency",
+          status: undefined,
+          blockedBy: blocker.item.id,
+          dep: [`id=${blocker.item.id},kind=blocked_by,created_at=now`],
+        }),
+        { path: context.pmPath },
+      );
+      const blockedByEdges = blocked.item.dependencies?.filter(
+        (dependency) => dependency.id === blocker.item.id && dependency.kind === "blocked_by",
+      );
+      expect(blockedByEdges).toHaveLength(1);
+      expect(blocked.item.status).toBe("blocked");
+    });
+  });
+
   it("supports schedule lightweight preset for Reminder/Meeting/Event minimal creation", async () => {
     await withTempPmPath(async (context) => {
       for (const type of ["Reminder", "Meeting", "Event"] as const) {

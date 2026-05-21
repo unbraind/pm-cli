@@ -18,6 +18,7 @@ export interface CommentsCommandOptions {
   stdin?: boolean;
   file?: string;
   limit?: string;
+  includeMeta?: boolean;
   author?: string;
   message?: string;
   force?: boolean;
@@ -28,6 +29,10 @@ export interface CommentsResult {
   id: string;
   comments: Comment[];
   count: number;
+  total_count?: number;
+  returned_count?: number;
+  has_more?: boolean;
+  limit?: number;
 }
 
 function resolveAuthor(candidate: string | undefined, fallback: string): string {
@@ -46,6 +51,11 @@ function parseCommentTextInput(raw: string): string {
   const trimmed = raw.trim();
   if (!trimmed) {
     return "";
+  }
+  const textPrefixMatch = /^(?:[-*+]\s*)?text\s*[:=]/i.exec(trimmed);
+  if (textPrefixMatch && !trimmed.startsWith("```")) {
+    const text = trimmed.slice(textPrefixMatch[0].length).trim();
+    return text || trimmed;
   }
   const looksStructured = /^(?:[-*+]\s*)?text\s*[:=]/im.test(trimmed) || trimmed.startsWith("```");
   if (!looksStructured) {
@@ -137,11 +147,20 @@ export async function runComments(id: string, options: CommentsCommandOptions, g
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }
     const loaded = await readLocatedItem(located, { schema: settings.schema });
-    const comments = limitComments(loaded.document.metadata.comments ?? [], limit);
+    const allComments = loaded.document.metadata.comments ?? [];
+    const comments = limitComments(allComments, limit);
     return {
       id: located.id,
       comments,
       count: comments.length,
+      ...(options.includeMeta === true
+        ? {
+            total_count: allComments.length,
+            returned_count: comments.length,
+            has_more: comments.length < allComments.length,
+            ...(limit !== undefined ? { limit } : {}),
+          }
+        : {}),
     };
   }
 
@@ -195,10 +214,19 @@ export async function runComments(id: string, options: CommentsCommandOptions, g
     throw error;
   }
 
-  const comments = limitComments(result.item.comments as Comment[], limit);
+  const allComments = result.item.comments as Comment[];
+  const comments = limitComments(allComments, limit);
   return {
     id: result.item.id,
     comments,
     count: comments.length,
+    ...(options.includeMeta === true
+      ? {
+          total_count: allComments.length,
+          returned_count: comments.length,
+          has_more: comments.length < allComments.length,
+          ...(limit !== undefined ? { limit } : {}),
+        }
+      : {}),
   };
 }

@@ -2,12 +2,30 @@ id: pm-nbht
 title: pm health output stays large even with --brief/--skip flags; add a true one-line summary mode
 description: "Dogfood (2026-05-20): pm health emits ~1503 lines; --brief ~400 lines; --skip-integrity --skip-drift --skip-vectors ~1469 lines (skip flags cut compute time, not output size). For an agent that just needs ok:true/false plus failing-check names, this is heavy. The MCP pm_health brief projection helps but the CLI surface and brief size could shrink further. Proposal: a --summary mode returning just {ok, per-check name+status, warning_count} (a few lines), and ensure --skip-* also trims the corresponding output sections, not only the work."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,cli,dogfood,health,token-efficiency
 created_at: "2026-05-20T20:32:43.298Z"
-updated_at: "2026-05-20T20:32:43.298Z"
+updated_at: "2026-05-21T17:41:37.231Z"
 author: claude-code-agent
 acceptance_criteria: A summary/one-line health mode returns ok + per-check status + warning_count in a few lines; --skip-* flags omit their sections from output; brief projection size measurably reduced; specs + 100% coverage green.
 parent: pm-rnpb
+resolution: "Added pm health --summary and wired it through CLI help, contracts, completion, and tests; summary output reports check names/status and warning_count while omitting explicitly skipped expensive sections."
+expected_result: "Agents can run a concise health check and avoid large output from skipped integrity, drift, and vector checks."
+actual_result: Manual temp-project smoke and release gate verified summary output with skipped sections omitted and full test coverage passing.
+comments[2]{created_at,author,text}:
+  "2026-05-21T17:23:35.734Z",codex-gpt5,"Execution start 2026-05-21: duplicate check reused parent pm-rnpb and existing child pm-nbht after pm context/search/list-open/list-in-progress. Working on true summary output and skipped-section output trimming, with focused manual temp-project dogfood planned."
+  "2026-05-21T17:40:17.147Z",codex-gpt5,"Evidence 2026-05-21: implemented pm health --summary with ok/check names/warning_count and projection metadata, omitting explicitly skipped expensive check sections from output. Wired flag through CLI help, contracts, completion, and runtime help tests. Manual temp-project smoke verified --summary with skip-integrity/skip-drift/skip-vectors returns only settings/directories/settings_values/telemetry/extensions/storage. Verification passed: combined focused suite 8 files / 310 tests; package-first dogfood 84 workflows; semantic dogfood 86 workflows; full release gate 96 files / 1406 tests at 100 percent coverage plus required Sentry/telemetry."
+files[8]{path,scope,note}:
+  src/cli/commands/completion.ts,project,health --summary shell completion
+  src/cli/commands/health.ts,project,health summary projection and omitted skipped checks
+  src/cli/register-operations.ts,project,health --summary CLI flag wiring
+  src/sdk/cli-contracts.ts,project,health --summary contract flag
+  tests/integration/release-readiness-runtime.spec.ts,project,runtime help flag regression
+  tests/unit/completion-command.spec.ts,project,completion regression
+  tests/unit/contracts-command.spec.ts,project,health flag contract regression
+  tests/unit/health-command.spec.ts,project,summary projection regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/health-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented health --summary token-efficient output, skip-section omission, help/contracts/completion wiring, and regression coverage; verified by focused tests, temp dogfood, semantic dogfood, and full release gate with required Sentry/telemetry."
 body: ""

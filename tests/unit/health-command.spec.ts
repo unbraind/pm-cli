@@ -1722,6 +1722,33 @@ describe("runHealth", () => {
     });
   });
 
+  it("supports summary projection and omits skipped check sections", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context);
+      const health = await runHealth(
+        { path: context.pmPath },
+        { summary: true, skipIntegrity: true, skipDrift: true, skipVectors: true },
+      );
+      expect(health.ok).toBe(true);
+      expect(health.warning_count).toBe(0);
+      expect(health.projection).toMatchObject({
+        mode: "summary",
+        warning_count: 0,
+        warnings_truncated: false,
+        omitted_checks: ["integrity", "history_drift", "vectorization"],
+      });
+      expect(health.checks.map((check) => check.name)).toEqual([
+        "settings",
+        "directories",
+        "settings_values",
+        "telemetry",
+        "extensions",
+        "storage",
+      ]);
+      expect(health.checks.every((check) => Object.keys(check.details).length === 0)).toBe(true);
+    });
+  });
+
   it("full flag overrides skip flags", async () => {
     await withTempPmPath(async (context) => {
       const health = await runHealth({ path: context.pmPath }, { skipIntegrity: true, skipDrift: true, full: true });

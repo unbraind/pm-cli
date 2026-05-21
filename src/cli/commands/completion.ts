@@ -1003,6 +1003,7 @@ _pm() {
             '--refresh-vectors[Explicitly enable vector refresh attempts during health checks]' \\
             '--verbose-stale-items[Include full stale vectorization ID lists in health output]' \\
             '--brief[Emit compact health details for low-token agent checks]' \\
+            '--summary[Emit one-line-style health status with check names and warning count]' \\
             '--strict-exit[Return non-zero exit when health warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit]' \\
             '--json[Output JSON]' \\

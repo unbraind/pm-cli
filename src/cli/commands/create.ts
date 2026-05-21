@@ -1886,7 +1886,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   }
 
   const id = await generateItemId(pmRoot, settings.id_prefix);
-  const status =
+  let status =
     resolvedOptions.status !== undefined ? parseStatusValue(resolvedOptions.status, statusRegistry) : statusRegistry.open_status;
   const priority = resolvedOptions.priority !== undefined ? ensurePriority(resolvedOptions.priority) : 2;
   const tags = unsetTargets.frontMatterKeys.has("tags")
@@ -2007,6 +2007,32 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     unsetTargets.frontMatterKeys.has("blocked_by") || resolvedOptions.blockedBy === undefined
       ? undefined
       : parseOptionalString(resolvedOptions.blockedBy);
+  let dependencyValues = dependencies.values;
+  if (blockedBy !== undefined) {
+    const normalizedBlockedBy = normalizeItemId(blockedBy, settings.id_prefix);
+    const blockedByLocated = await locateItem(pmRoot, normalizedBlockedBy, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+    if (blockedByLocated) {
+      const hasBlockedByDependency = (dependencyValues ?? []).some(
+        (dependency) => dependency.id === blockedByLocated.id && dependency.kind === "blocked_by",
+      );
+      if (!hasBlockedByDependency) {
+        dependencyValues = [
+          ...(dependencyValues ?? []),
+          {
+            id: blockedByLocated.id,
+            kind: "blocked_by",
+            created_at: nowValue,
+            author,
+          },
+        ];
+      }
+      if (resolvedOptions.status === undefined) {
+        status = statusRegistry.blocked_statuses.has("blocked")
+          ? "blocked"
+          : [...statusRegistry.blocked_statuses].sort((left, right) => left.localeCompare(right))[0] ?? statusRegistry.open_status;
+      }
+    }
+  }
   const blockedReason =
     unsetTargets.frontMatterKeys.has("blocked_reason") || resolvedOptions.blockedReason === undefined
       ? undefined
@@ -2115,7 +2141,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     component,
     regression,
     customer_impact: customerImpact,
-    dependencies: dependencies.values,
+    dependencies: dependencyValues,
     comments: comments.values as Comment[] | undefined,
     notes: notes.values as LogNote[] | undefined,
     learnings: learnings.values as LogNote[] | undefined,

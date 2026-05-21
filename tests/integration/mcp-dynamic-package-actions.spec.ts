@@ -138,6 +138,40 @@ describe("MCP dynamic package actions", () => {
       expect(getResult?.item).toEqual({ id, title: "MCP compact target", status: "open" });
       expect(getResult?.body).toBeUndefined();
       expect(getResult?.linked).toBeUndefined();
+
+      for (let index = 0; index < 25; index += 1) {
+        const comment = context.runCli(["comments", id, "--add", `mcp comment ${index}`, "--json"], { expectJson: true });
+        expect(comment.code).toBe(0);
+      }
+      const comments = await handleRequest({
+        jsonrpc: "2.0",
+        id: 4,
+        method: "tools/call",
+        params: {
+          name: "pm_comments",
+          arguments: {
+            path: context.pmPath,
+            id,
+          },
+        },
+      });
+      expect(comments?.isError).not.toBe(true);
+      const commentsResult = (comments?.structuredContent as {
+        result?: {
+          comments?: Array<{ text: string }>;
+          count?: number;
+          total_count?: number;
+          returned_count?: number;
+          has_more?: boolean;
+          limit?: number;
+        };
+      } | undefined)?.result;
+      expect(commentsResult?.count).toBe(20);
+      expect(commentsResult?.returned_count).toBe(20);
+      expect(commentsResult?.total_count).toBe(27);
+      expect(commentsResult?.has_more).toBe(true);
+      expect(commentsResult?.limit).toBe(20);
+      expect(commentsResult?.comments?.[0]?.text).toBe("mcp comment 5");
     });
   });
 

@@ -989,6 +989,7 @@ export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--refresh-vectors" },
   { flag: "--verbose-stale-items" },
   { flag: "--brief" },
+  { flag: "--summary" },
   { flag: "--skip-vectors" },
   { flag: "--skip-integrity" },
   { flag: "--skip-drift" },

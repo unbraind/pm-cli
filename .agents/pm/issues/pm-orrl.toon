@@ -2,12 +2,25 @@ id: pm-orrl
 title: "pm create --blocked-by stores free-text metadata, not a dependency edge or blocked status (agent-confusing)"
 description: "Dogfood (2026-05-20): pm create --type Task --blocked-by pm-xxxx sets blocked_by:'pm-xxxx' as metadata but creates no dependency edge (pm deps shows edge_count 0) and leaves status=open (not blocked). Help text says '--blocked-by <value> Blocked-by item ID or reason', so it is intentionally free-text, distinct from --dep which creates real edges. Agents reasonably expect blocked-by to create an edge and/or set blocked status. Decision needed: (a) when the value resolves to a valid item id, also create a blocks/blocked-by dependency edge (and optionally set status=blocked), or (b) sharpen help/docs to make the metadata-vs-edge distinction explicit and point to --dep for edges. Recommend (a) for the id case with (b) wording as a fallback."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,cli,create,dependencies,dogfood
 created_at: "2026-05-20T20:32:50.496Z"
-updated_at: "2026-05-20T20:32:50.496Z"
+updated_at: "2026-05-21T17:41:37.203Z"
 author: claude-code-agent
 acceptance_criteria: "Behavior of --blocked-by is unambiguous: either it creates a real dependency edge (and documents status implications) when given a valid item id, or help/docs clearly state it is free-text metadata distinct from --dep; chosen behavior is tested."
 parent: pm-rnpb
+resolution: "pm create --blocked-by now derives a real blocked_by dependency edge when the value resolves to an existing item id, defaults status to blocked only when status is omitted, preserves explicit statuses, and keeps free-text reasons as metadata only."
+expected_result: Agents can use --blocked-by with an item id and get dependency graph semantics without losing the free-text reason workflow.
+actual_result: "Focused tests and manual temp-project smoke verified dependency edge_count=1 with via=blocked_by, free-text fallback, explicit-status preservation, and dedupe behavior."
+comments[2]{created_at,author,text}:
+  "2026-05-21T17:27:14.467Z",codex-gpt5,"Execution start 2026-05-21: duplicate check reused existing pm-orrl under pm-rnpb. Sub-agent review found pm plan already maps blocked-by to kind=blocked_by dependencies; implementing create behavior to derive a real edge only when the blocked-by value resolves to an existing pm item, preserving free-text metadata fallback."
+  "2026-05-21T17:40:17.167Z",codex-gpt5,"Evidence 2026-05-21: implemented create --blocked-by semantics for existing item IDs. The CLI preserves blocked_by metadata, derives one blocked_by dependency edge when the value resolves to an existing item, defaults status to blocked only when status was omitted, preserves explicit statuses, and keeps free-text reasons as metadata without edges. Manual temp-project smoke verified deps edge_count=1 and via=blocked_by. Verification passed: focused blocked-by suite, combined focused suite 8 files / 310 tests, package-first dogfood 84 workflows, semantic dogfood 86 workflows, and full release gate 96 files / 1406 tests at 100 percent coverage plus required Sentry/telemetry."
+files[3]{path,scope,note}:
+  src/cli/commands/create.ts,project,derive blocked_by dependency edge for existing item ids
+  tests/integration/cli.integration.spec.ts,project,CLI deps regression for create --blocked-by existing id
+  tests/unit/create-command.spec.ts,project,blocked-by id/free-text/dedupe regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/integration/cli.integration.spec.ts -t 'blocked_by dependency|blocked-by references|extended optional field',null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented create --blocked-by existing-id semantics with real blocked_by dependency edge, blocked default status only when omitted, explicit-status preservation, free-text fallback, and dedupe coverage; verified by focused tests, temp dogfood, semantic dogfood, and full release gate with required Sentry/telemetry."
 body: ""

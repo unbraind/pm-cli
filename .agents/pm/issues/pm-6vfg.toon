@@ -2,12 +2,26 @@ id: pm-6vfg
 title: MCP pm_comments returns full comment history (no default limit) — token bloat on long-lived items
 description: "Calling MCP pm_comments on a long-lived item (e.g. pm-rnpb has 137 comments) returns the entire comment array (~92KB), exceeding the agent tool token cap and spilling to disk. Unlike pm_list/pm_search/activity (where a compact projection keeps all rows but trims fields), limiting comments DROPS older comments (lossy), so a naive default limit risks hiding history from agents that need it. The CLI `comments --limit N` exists. Decision needed on the right agent-default: (a) default to the most recent N with an explicit total count + hint to page older, (b) a compact projection that truncates each comment body, or (c) require explicit options.limit and document it in the tool description. Separately, a minor parsing quirk: passing options.add='text=...' with commas in the value stored the literal 'text=' prefix instead of stripping it."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,comments,dogfood,mcp,token-efficiency
 created_at: "2026-05-20T20:45:19.948Z"
-updated_at: "2026-05-20T20:45:19.948Z"
+updated_at: "2026-05-21T17:41:37.158Z"
 author: claude-code-agent
 acceptance_criteria: "MCP pm_comments has a documented, non-lossy-by-surprise default that keeps agent output within token limits while preserving access to full history; tool description documents limit/paging; the add='text=...' prefix-stripping quirk is fixed or documented; regression test added."
 parent: pm-rnpb
+resolution: MCP pm_comments now defaults list calls to a token-efficient latest-20 page with explicit paging metadata; full history remains available via options.full or caller-supplied limit.
+expected_result: Agents can inspect long-lived item comments without overflowing context and can tell when older comments exist.
+actual_result: MCP comments returns latest comments plus total_count/returned_count/has_more/limit metadata; text= comment payloads strip the prefix even when the value contains commas.
+comments[2]{created_at,author,text}:
+  "2026-05-21T17:23:35.608Z",codex-gpt5,"Execution start 2026-05-21: duplicate check reused parent pm-rnpb and existing child pm-6vfg after pm context/search/list-open/list-in-progress. Working on MCP comments default token-efficiency and add text= parsing quirk; sub-agents are reviewing related health/dependency/privacy surfaces."
+  "2026-05-21T17:40:17.143Z",codex-gpt5,"Evidence 2026-05-21: implemented MCP comments token-efficiency default. pm_comments list calls now default to latest 20 comments with total_count, returned_count, has_more, and limit metadata unless options.limit or options.full is supplied. CLI runComments remains backward compatible and only emits metadata when requested. Also fixed comments --add text=... parsing so comma-containing text values strip the text= prefix. Verification passed: combined focused suite 8 files / 310 tests; package-first dogfood 84 workflows; semantic dogfood 86 workflows; full release gate 96 files / 1406 tests at 100 percent coverage plus required Sentry/telemetry."
+files[4]{path,scope,note}:
+  src/cli/commands/comments.ts,project,comment paging metadata and text= parsing
+  src/mcp/server.ts,project,MCP comments default paging and tool description
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP comments compact default regression
+  tests/unit/comments-command.spec.ts,project,comments metadata and text= regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented MCP comments compact default with explicit paging metadata and text= parsing fix; verified by focused tests, temp dogfood, semantic dogfood, and full release gate with required Sentry/telemetry."
 body: ""

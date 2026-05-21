@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: history,pm-cli,privacy,redaction,security
 created_at: "2026-05-03T13:34:41.813Z"
-updated_at: "2026-05-17T19:01:26.400Z"
+updated_at: "2026-05-21T17:40:27.965Z"
 author: codex-audit
 acceptance_criteria: A supported pm command can redact configured literals/patterns from item files and history streams; history drift validation remains meaningful after redaction; redaction operations are themselves auditable; secret scans can include history streams without false failures from known private operations paths.
 parent: pm-rnpb
@@ -15,7 +15,7 @@ expected_result: Expected closure outcome normalized from closed status; existin
 actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-03T13:34:41.813Z",codex-audit,null
-comments[19]{created_at,author,text}:
+comments[20]{created_at,author,text}:
   "2026-05-03T13:34:41.813Z",codex-audit,"Duplicate-check evidence: pm search history stream redaction command redact private path history drift --limit 10 found only closed history/security items; current audit discovered remaining private remote paths in historical JSONL streams after current item docs were sanitized."
   "2026-05-09T11:21:19.310Z",codex-agent,"2026-05-09 duplicate-check evidence: pm search tracker history privacy redaction private paths --limit 10 found this existing item as the canonical match. Current scan found no raw IP/password/token values in non-history tracked files; current pm item files only mention Sentry token variable names, but historical JSONL streams still include private remote paths from older telemetry operations. Do not hand-edit history; implement audited redaction support or migrate history safely."
   "2026-05-09T11:46:59.452Z",codex-agent,"Evidence 2026-05-09: privacy scan confirmed current tracked source/docs/workflows and current item files do not contain raw host/IP/password/token values from this request, but older append-only history streams still contain private infrastructure paths. This remains open because current pm policy forbids direct history rewrites; next work must add an audited redaction command or equivalent safe migration."
@@ -35,6 +35,7 @@ comments[19]{created_at,author,text}:
   "2026-05-17T14:11:36.390Z",codex-agent,"Continuation evidence 2026-05-17: this item was already in_progress with implementation comments, but fresh verification found pm history pm-xk39 --verify reports verify_failed:after_hash_mismatch:entry_9 while pm validate --check-history-drift reports 13 other drifted items and does not list pm-xk39. Keeping pm-xk39 active until the history verification gap is repaired or explicitly documented; not closing based on stale prior evidence."
   "2026-05-17T14:35:29.907Z",codex-agent,"Evidence 2026-05-17 continuation: history verification now returns structured diagnostics for patch-apply failures and full-chain mismatches instead of throwing or silently missing drift. pm validate --check-history-drift now reports 35 drifted items with 34 chain mismatches and 13 hash mismatches; pm health reports the same counts, and pm history pm-imob --verify --limit 1 returns verify_failed:patch_apply_failed:entry_13 as data. This item remains the canonical open history redaction/drift follow-up; not closing because the real repo still has legacy chain/hash drift to repair or explicitly migrate. No duplicate item created."
   "2026-05-17T19:01:26.400Z",claude-code-agent,"Session 14 (2026-05-17) audit: history-redact command verified working (pm history-redact --help renders, --literal/--regex/--dry-run flags present, default replacement [redacted]). check-secrets.mjs passes cleanly. However, `pm validate --check-history-drift` still reports 35 drifted items (13 hash + 34 chain mismatches) including pm-xk39 itself. The COMMAND is shipped; the legacy DRIFT cleanup is a separate operational task that does not block the command's acceptance criteria but needs a follow-up item to actually run history-redact / migration over the 35 streams."
+  "2026-05-21T17:40:19.200Z",codex-gpt5,"Evidence 2026-05-21: privacy sub-agent found no raw credentials, but identified three legacy history entries with private operations topology details. Used pm history-redact, not direct JSONL edits, to redact pm-ny6y Caddy routing details, pm-r9ei telemetry topology/local evidence path details, and pm-vhdc remote health command details. Verification passed: pm history pm-ny6y --verify, pm history pm-r9ei --verify, pm history pm-vhdc --verify, and node scripts/check-secrets.mjs."
 notes[1]{created_at,author,text}:
   "2026-05-17T12:23:36.671Z",codex-agent,"history-redact uses deterministic replay + hash recomputation for every entry, then appends a no-op history_redact audit marker to keep the operation itself discoverable in history output."
 learnings[1]{created_at,author,text}:
@@ -75,13 +76,14 @@ files[35]{path,scope,note}:
   tests/unit/health-command.spec.ts,project,health chain-drift regression
   tests/unit/history-activity-command.spec.ts,project,history-redact-command-tests
   tests/unit/validate-command.spec.ts,project,validate-history-drift-redaction-compatibility
-tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[7]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/release/run-gates.mjs --telemetry-mode required --json,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/release/sentry-telemetry-gate.mjs --telemetry-mode required --max-critical 10 --max-high 20 --json,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/health-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused history integrity diagnostics
+  pm history pm-ny6y --verify && pm history pm-r9ei --verify && pm history pm-vhdc --verify && node scripts/check-secrets.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mp9qxe7x-kkam1b,test,passed,"2026-05-17T12:17:00.196Z","2026-05-17T12:23:12.189Z","2026-05-17T12:23:12.189Z",null,null,5,0,0,null,null,null
 docs[2]{path,scope,note}:
