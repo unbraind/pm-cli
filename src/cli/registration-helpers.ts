@@ -14,7 +14,6 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { ItemStatus } from "../types/index.js";
 import {
   ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
-  CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS,
   CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
   CREATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   CREATE_COMMANDER_STRING_OPTION_CONTRACTS,
@@ -31,7 +30,6 @@ import type {
   AggregateOptions,
   ListOptions,
 } from "./commands/index.js";
-import type { CalendarOptions } from "./commands/calendar.js";
 import type { runList, runActivity } from "./commands/index.js";
 
 export {
@@ -618,45 +616,6 @@ export function normalizeSearchKeywordsInput(keywords: string[]): string {
   return query;
 }
 
-export function normalizeCalendarOptions(options: Record<string, unknown>): CalendarOptions {
-  const readCalendarString = (target: string): string | undefined =>
-    readFirstStringFromCommanderOptions(
-      options,
-      CALENDAR_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
-        target,
-        keys: [target],
-      },
-    );
-  const normalized: Record<string, unknown> = {
-    view: readCalendarString("view"),
-    date: readCalendarString("date"),
-    from: readCalendarString("from"),
-    to: readCalendarString("to"),
-    past: options.past === true ? true : undefined,
-    fullPeriod: options.fullPeriod === true || options.full_period === true ? true : undefined,
-    limit: readCalendarString("limit"),
-    type: readCalendarString("type"),
-    tag: readCalendarString("tag"),
-    priority: readCalendarString("priority"),
-    status: readCalendarString("status"),
-    assignee: readCalendarString("assignee"),
-    assigneeFilter: readCalendarString("assigneeFilter"),
-    sprint: readCalendarString("sprint"),
-    release: readCalendarString("release"),
-    include: readCalendarString("include"),
-    recurrenceLookaheadDays: readCalendarString("recurrenceLookaheadDays"),
-    recurrenceLookbackDays: readCalendarString("recurrenceLookbackDays"),
-    occurrenceLimit: readCalendarString("occurrenceLimit"),
-    format: readCalendarString("format"),
-  };
-  for (const [key, value] of Object.entries(options)) {
-    if (Object.hasOwn(normalized, key)) {
-      continue;
-    }
-    normalized[key] = value;
-  }
-  return normalized as CalendarOptions;
-}
 
 export function normalizeActivityOptions(options: Record<string, unknown>): {
   id?: string;

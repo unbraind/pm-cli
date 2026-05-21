@@ -48,7 +48,8 @@ function registerCommanderOptionContracts(command: Command, contracts: Commander
 export function registerMutationCommands(program: Command): void {
   const createCommand = program
     .command("create")
-    .argument("[title]", "Item title (positional shortcut for --title)")
+    .argument("[typeOrTitle]", "Item title, or item type when a title follows (e.g. `pm create task \"Fix bug\"`)")
+    .argument("[title]", "Item title when the first argument is an item type")
     .description("Create a new project management item.");
   registerCommanderOptionContracts(createCommand, CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS);
   createCommand
@@ -62,9 +63,28 @@ export function registerMutationCommands(program: Command): void {
     .option("--clear-reminders", "Clear reminders")
     .option("--clear-events", "Clear events")
     .option("--clear-type-options", "Clear type options")
-    .action(async (positionalTitle: string | undefined, options: Record<string, unknown>, command) => {
+    .action(async (
+      typeOrTitle: string | undefined,
+      secondTitle: string | undefined,
+      options: Record<string, unknown>,
+      command,
+    ) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      // Support both `pm create "<title>"` and the natural subcommand-style
+      // `pm create <type> "<title>"` so agents are never blocked by argument
+      // count. When two positionals are given, the first is the item type.
+      let positionalType: string | undefined;
+      let positionalTitle: string | undefined;
+      if (typeof secondTitle === "string" && secondTitle.length > 0) {
+        positionalType = typeOrTitle;
+        positionalTitle = secondTitle;
+      } else if (typeof typeOrTitle === "string" && typeOrTitle.length > 0) {
+        positionalTitle = typeOrTitle;
+      }
+      if (typeof positionalType === "string" && positionalType.length > 0 && options.type === undefined) {
+        options.type = positionalType;
+      }
       if (typeof positionalTitle === "string" && positionalTitle.length > 0 && options.title === undefined) {
         options.title = positionalTitle;
       }

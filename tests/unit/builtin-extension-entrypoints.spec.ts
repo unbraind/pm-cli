@@ -384,6 +384,44 @@ describe("built-in extension entrypoints", () => {
     expect(rendered).toBe("# package calendar\n");
   });
 
+  it("accepts a positional view combined with --date (loose flag tokens are not extra positionals)", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    // context.args still contains the loose flag tokens for `pm cal day --date +7d`.
+    const result = await commands[0]!.run({
+      command: "cal",
+      args: ["day", "--date", "+7d"],
+      options: { date: "+7d" },
+      global: globalFlags,
+      pm_root: "/tmp/pm",
+    });
+
+    const calls = readRuntimeCalls();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toEqual({
+      kind: "calendar",
+      options: { date: "+7d", view: "day" },
+      global: globalFlags,
+    });
+    expect(result).toMatchObject({ view: "day" });
+  });
+
+  it("still rejects two positional views", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    await expect(
+      commands[0]!.run({
+        command: "cal",
+        args: ["day", "week"],
+        options: {},
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+      }),
+    ).rejects.toThrow("at most one positional view");
+  });
+
   it("registers beads import handler and coerces extension options", async () => {
     const { api, commands } = createCommandOnlyApi();
 

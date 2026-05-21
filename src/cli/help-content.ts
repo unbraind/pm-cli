@@ -658,10 +658,6 @@ export function resolveHelpNarrative(commandPath: string | undefined, detailMode
   };
 }
 
-export function listDocumentedHelpPaths(): string[] {
-  return Object.keys(HELP_BY_COMMAND_PATH).sort((left, right) => left.localeCompare(right));
-}
-
 export function attachRichHelpText(program: Command, argv: string[] = process.argv.slice(2)): void {
   const detailMode = resolveHelpDetailMode(argv);
   program.addHelpText("after", renderHelpBundle(ROOT_HELP_BUNDLE, detailMode));

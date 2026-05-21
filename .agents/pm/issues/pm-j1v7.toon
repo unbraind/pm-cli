@@ -1,0 +1,14 @@
+id: pm-j1v7
+title: "Agent UX: pm update --status closed, explicit semantic/hybrid search, and pm create <type> <title> must never block agents"
+description: "Telemetry (close_through_update 86 hits) + manual dogfood found three agent-blocking paths. (1) pm update <id> --status closed threw close_through_update; now auto-routes to the auditable close workflow, applying any other field updates first and deriving a close reason from --close-reason/--message or a generic default (warnings auto_routed_from_update_to_close + close_reason_defaulted, the latter only when truly defaulted). (2) Explicit pm search --semantic/--hybrid threw unknown_error when the embedding/vector backend was down or unconfigured; now degrades to keyword with search_<mode>_fallback:<reason>:using_keyword_mode. (3) pm create task \"title\" was rejected with 'too many arguments'; now the natural pm create <type> <title> form works alongside pm create \"title\"."
+type: Issue
+status: closed
+priority: 0
+tags[4]: agent-ux,calendar,search,telemetry
+created_at: "2026-05-21T21:56:32.982Z"
+updated_at: "2026-05-21T22:09:28.710Z"
+author: claude-code-agent
+acceptance_criteria: "No agent-blocking on close-via-update, explicit semantic/hybrid backend failure, or subcommand-style create; full test coverage; release gates green."
+parent: pm-rnpb
+close_reason: "Implemented and verified: pm update --status closed auto-routes to close (never blocks; reason from --close-reason/--message or default; close_reason_defaulted only when truly defaulted), explicit semantic/hybrid search degrades to keyword on backend failure/missing config, and pm create <type> <title> positional form works. 1414 tests pass at 100% coverage; typecheck/static/secrets/docs-skills/version/pack/package-dogfood all green."
+body: ""

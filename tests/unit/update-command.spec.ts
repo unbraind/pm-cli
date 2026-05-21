@@ -137,18 +137,48 @@ describe("runUpdate", () => {
     });
   });
 
-  it("rejects pm update --status closed --close-reason combined with other field updates (pm-12ib)", async () => {
+  it("auto-routes pm update --status closed combined with other field updates (never blocks agents)", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "auto-route-close-with-others");
-      await expect(
-        runUpdate(
-          id,
-          { status: "closed", closeReason: "done", title: "new title" },
-          { path: context.pmPath },
-        ),
-      ).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.USAGE,
-      });
+      const result = await runUpdate(
+        id,
+        { status: "closed", closeReason: "done", title: "new title" },
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toContain("auto_routed_from_update_to_close");
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["title", "status", "close_reason"]));
+      const item = result.item as { status: string; title: string; close_reason: string };
+      expect(item.status).toBe("closed");
+      expect(item.title).toBe("new title");
+      expect(item.close_reason).toBe("done");
+    });
+  });
+
+  it("auto-routes pm update --status closed without a reason using a derived default (never blocks agents)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "auto-route-close-no-reason");
+      const result = await runUpdate(id, { status: "closed" }, { path: context.pmPath });
+      expect(result.warnings).toContain("auto_routed_from_update_to_close");
+      expect(result.warnings).toContain("close_reason_defaulted");
+      const item = result.item as { status: string; close_reason: string };
+      expect(item.status).toBe("closed");
+      expect(item.close_reason).toBe("Closed via pm update");
+    });
+  });
+
+  it("derives the close reason from --message without flagging it as defaulted", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "auto-route-close-message-reason");
+      const result = await runUpdate(
+        id,
+        { status: "closed", message: "shipped in v2" },
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toContain("auto_routed_from_update_to_close");
+      // A real reason came from --message, so it is not a defaulted placeholder.
+      expect(result.warnings).not.toContain("close_reason_defaulted");
+      const item = result.item as { close_reason: string };
+      expect(item.close_reason).toBe("shipped in v2");
     });
   });
 
@@ -741,10 +771,6 @@ describe("runUpdate", () => {
 
       await expect(runUpdate(id, { status: "not-a-status" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
-      });
-      await expect(runUpdate(id, { status: "closed" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.USAGE,
-        message: 'Invalid --status value "closed". Use "pm close <ID> <TEXT>" to close an item.',
       });
       await expect(runUpdate(id, { type: "NotAType" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,

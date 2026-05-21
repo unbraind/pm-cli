@@ -132,21 +132,23 @@ describe("search-advanced package runtime", () => {
       );
       expect(invalidBooleanSearch.mode).toBe("keyword");
 
-      await expect(runtime.runAdvancedSearchPackage(
+      // Explicit hybrid/semantic with no embedding backend configured must
+      // degrade to keyword search (never block) instead of throwing.
+      const hybridFallback = await runtime.runAdvancedSearchPackage(
         ["--hybrid", "calendar package", "--limit", "5"],
         { limit: "5" },
         global,
-      )).rejects.toMatchObject({
-        message: expect.stringContaining("Search mode 'hybrid' requires"),
-      });
+      );
+      expect(hybridFallback.mode).toBe("keyword");
+      expect(hybridFallback.warnings?.some((warning: string) => warning.startsWith("search_hybrid_fallback:"))).toBe(true);
 
-      await expect(runtime.runAdvancedSearchPackage(
+      const semanticFallback = await runtime.runAdvancedSearchPackage(
         ["--semantic", "calendar package", "--limit=5"],
         {},
         global,
-      )).rejects.toMatchObject({
-        message: expect.stringContaining("Search mode 'semantic' requires"),
-      });
+      );
+      expect(semanticFallback.mode).toBe("keyword");
+      expect(semanticFallback.warnings?.some((warning: string) => warning.startsWith("search_semantic_fallback:"))).toBe(true);
     });
   });
 

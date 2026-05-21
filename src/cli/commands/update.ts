@@ -1513,32 +1513,39 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     };
   }
 
-  if (fieldFlags.status && fieldFlags.closeReason) {
+  // `pm update --status <close_status>` always routes to the auditable close
+  // workflow so agents are never blocked by close-through-update errors. Any
+  // other field updates in the same call are applied first, then the item is
+  // closed with the supplied --close-reason (or a derived default when omitted).
+  if (fieldFlags.status) {
     const targetStatus = normalizeStatusInput(options.status as ItemStatus, statusRegistry);
     if (targetStatus === statusRegistry.close_status) {
-      const otherFieldsChanged = Object.entries(fieldFlags).some(
-        ([key, value]) => value && key !== "status" && key !== "closeReason",
-      );
-      if (otherFieldsChanged) {
-        throw new PmCliError(
-          `Cannot combine other field updates with --status ${statusRegistry.close_status} --close-reason. Run pm update for non-close fields, then pm close <id> "<reason>" separately.`,
-          EXIT_CODE.USAGE,
-          {
-            code: "close_through_update",
-            why: "Closing requires explicit pm close to capture validation; combining other field updates in the same call would mask the close audit trail.",
-            examples: [
-              `pm update ${id} --title "<title>"`,
-              `pm close ${id} "${options.closeReason}" --author "${author}"`,
-            ],
-            nextSteps: [
-              "Split into two commands: pm update <id> --<field> <value>; pm close <id> \"<reason>\".",
-            ],
-          },
+      const otherFieldKeys = Object.entries(fieldFlags)
+        .filter(([key, value]) => value && key !== "status" && key !== "closeReason")
+        .map(([key]) => key);
+
+      const routeWarnings: string[] = [];
+      let preChangedFields: string[] = [];
+      if (otherFieldKeys.length > 0) {
+        const preUpdate = await runUpdate(
+          id,
+          { ...options, status: undefined, closeReason: undefined, message: undefined },
+          global,
         );
+        preChangedFields = preUpdate.changed_fields;
+        routeWarnings.push(...preUpdate.warnings);
       }
+
+      const explicitReason = typeof options.closeReason === "string" ? options.closeReason.trim() : "";
+      const fallbackMessage = typeof options.message === "string" ? options.message.trim() : "";
+      const closeReason = explicitReason || fallbackMessage || "Closed via pm update";
+      // Only flag a defaulted reason when neither --close-reason nor --message
+      // supplied any text and we had to invent the generic placeholder.
+      const reasonDefaulted = explicitReason.length === 0 && fallbackMessage.length === 0;
+
       const closeResult = await runClose(
         id,
-        options.closeReason as string,
+        closeReason,
         {
           author: options.author,
           message: options.message,
@@ -1546,10 +1553,15 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         },
         global,
       );
+
+      const warnings = [...routeWarnings, ...closeResult.warnings, "auto_routed_from_update_to_close"];
+      if (reasonDefaulted) {
+        warnings.push("close_reason_defaulted");
+      }
       return {
         item: closeResult.item,
-        changed_fields: closeResult.changed_fields,
-        warnings: [...closeResult.warnings, "auto_routed_from_update_to_close"],
+        changed_fields: [...preChangedFields, ...closeResult.changed_fields],
+        warnings,
       };
     }
   }
@@ -1587,25 +1599,9 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       const previousStatus = document.metadata.status;
       const previousStatusNormalized = normalizeStatusInput(previousStatus, statusRegistry) ?? previousStatus;
       if (options.status !== undefined) {
+        // Close-status routing (with reason + audit) is handled before mutateItem
+        // by the close gate above, so only non-close transitions reach this path.
         const status = parseStatus(options.status, statusRegistry);
-        if (status === statusRegistry.close_status) {
-          throw new PmCliError(
-            `Invalid --status value "${statusRegistry.close_status}". Use "pm close <ID> <TEXT>" to close an item.`,
-            EXIT_CODE.USAGE,
-            {
-              code: "close_through_update",
-              why: "Closing requires a close reason and optional validation checks that pm update cannot enforce. Use pm close for auditable close workflows.",
-              examples: [
-                `pm close ${id} "All acceptance criteria met" --author "${author}" --message "Close: verified"`,
-                `pm close ${id} "Resolved" --validate-close warn --author "${author}"`,
-              ],
-              nextSteps: [
-                'Use "pm close <ID> <reason>" to close with required close reason and optional --validate-close.',
-                'To cancel instead, use "pm update <ID> --status canceled".',
-              ],
-            },
-          );
-        }
         document.metadata.status = status;
         if (status === statusRegistry.canceled_status) {
           delete document.metadata.assignee;

@@ -192,14 +192,14 @@ describe("runSearch", () => {
     const keywordDefaultNoSemantic = await runSearch("token", {}, { path: "/tmp/pm-search" });
     expect(keywordDefaultNoSemantic.mode).toBe("keyword");
     expect(keywordDefaultNoSemantic.count).toBe(0);
-    await expect(runSearch("token", { mode: "semantic" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
-      exitCode: EXIT_CODE.USAGE,
-      message: expect.stringContaining("requires a configured embedding provider"),
-    });
-    await expect(runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
-      exitCode: EXIT_CODE.USAGE,
-      message: expect.stringContaining("requires a configured embedding provider"),
-    });
+    // Explicit semantic/hybrid with no embedding provider degrades to keyword
+    // search (never blocks the agent) and reports a fallback warning.
+    const semanticUnconfigured = await runSearch("token", { mode: "semantic" }, { path: "/tmp/pm-search" });
+    expect(semanticUnconfigured.mode).toBe("keyword");
+    expect(semanticUnconfigured.warnings).toContain("search_semantic_fallback:error:using_keyword_mode");
+    const hybridUnconfigured = await runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+    expect(hybridUnconfigured.mode).toBe("keyword");
+    expect(hybridUnconfigured.warnings).toContain("search_hybrid_fallback:error:using_keyword_mode");
     readSettingsMock.mockResolvedValueOnce({
       providers: {
         openai: {
@@ -209,10 +209,10 @@ describe("runSearch", () => {
         },
       },
     } as unknown as { id_prefix: string });
-    await expect(runSearch("token", { mode: "semantic" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
-      exitCode: EXIT_CODE.USAGE,
-      message: expect.stringContaining("requires a configured vector store"),
-    });
+    // Provider present but no vector store also degrades instead of failing.
+    const semanticNoVector = await runSearch("token", { mode: "semantic" }, { path: "/tmp/pm-search" });
+    expect(semanticNoVector.mode).toBe("keyword");
+    expect(semanticNoVector.warnings).toContain("search_semantic_fallback:error:using_keyword_mode");
     const openAiSemanticSettings = {
       providers: {
         openai: {
@@ -371,9 +371,11 @@ describe("runSearch", () => {
       expect(implicitResult.items[0].item.id).toBe("pm-ollama-auto-fallback");
       expect(implicitResult.warnings).toBeUndefined();
       expect(fetchMock).not.toHaveBeenCalled();
-      await expect(runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" })).rejects.toThrow(
-        "Embedding request execution failed",
-      );
+      // Explicit hybrid with an unreachable embedding backend degrades to keyword.
+      const hybridFallback = await runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      expect(hybridFallback.mode).toBe("keyword");
+      expect(hybridFallback.count).toBe(1);
+      expect(hybridFallback.warnings?.some((warning) => warning.startsWith("search_hybrid_fallback:"))).toBe(true);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -465,9 +467,11 @@ describe("runSearch", () => {
       expect(implicitResult.count).toBe(1);
       expect(implicitResult.warnings).toBeUndefined();
       expect(fetchMock).not.toHaveBeenCalled();
-      await expect(runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" })).rejects.toThrow(
-        "Embedding request execution failed",
-      );
+      // Explicit hybrid with a timing-out embedding backend degrades to keyword.
+      const hybridFallback = await runSearch("token", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      expect(hybridFallback.mode).toBe("keyword");
+      expect(hybridFallback.count).toBe(1);
+      expect(hybridFallback.warnings?.some((warning) => warning.startsWith("search_hybrid_fallback:"))).toBe(true);
     } finally {
       globalThis.fetch = originalFetch;
     }
@@ -575,7 +579,7 @@ describe("runSearch", () => {
     }
   });
 
-  it("fails semantic mode when an extension provider throws and built-in fallback is unavailable", async () => {
+  it("degrades to keyword when an extension provider throws and built-in fallback is unavailable", async () => {
     const extensionItem = makeFrontMatter({
       id: "pm-ext-provider-error",
       title: "extension provider item",
@@ -603,10 +607,10 @@ describe("runSearch", () => {
     });
 
     const { runSearch } = await import("../../src/cli/commands/search.js");
-    await expect(runSearch("extension", { mode: "semantic" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
-      exitCode: EXIT_CODE.GENERIC_FAILURE,
-      message: expect.stringContaining('Extension search provider "ext-provider" failed'),
-    });
+    const result = await runSearch("extension", { mode: "semantic" }, { path: "/tmp/pm-search" });
+    expect(result.mode).toBe("keyword");
+    expect(result.count).toBe(1);
+    expect(result.warnings?.some((warning) => warning.startsWith("search_semantic_fallback:"))).toBe(true);
   });
 
   it("supports extension vector adapter queries for semantic mode", async () => {
@@ -670,7 +674,7 @@ describe("runSearch", () => {
     }
   });
 
-  it("fails semantic mode when extension vector adapter query fails without built-in fallback", async () => {
+  it("degrades to keyword when extension vector adapter query fails without built-in fallback", async () => {
     const semanticItem = makeFrontMatter({
       id: "pm-vector-adapter-fail",
       title: "vector extension fail",
@@ -716,10 +720,10 @@ describe("runSearch", () => {
 
     try {
       const { runSearch } = await import("../../src/cli/commands/search.js");
-      await expect(runSearch("vector", { mode: "semantic" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
-        exitCode: EXIT_CODE.GENERIC_FAILURE,
-        message: expect.stringContaining("Extension vector adapter query failed"),
-      });
+      const result = await runSearch("vector", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      expect(result.mode).toBe("keyword");
+      expect(result.count).toBe(1);
+      expect(result.warnings?.some((warning) => warning.startsWith("search_semantic_fallback:"))).toBe(true);
     } finally {
       globalThis.fetch = originalFetch;
     }
