@@ -337,6 +337,21 @@ describe("generateBashScript", () => {
     expect(script).toContain("--stream");
   });
 
+  it("includes get projection flags", () => {
+    const bashScript = generateBashScript();
+    expect(bashScript).toContain("get)");
+    expect(bashScript).toContain("--depth --full --fields");
+
+    const zshScript = generateZshScript();
+    expect(zshScript).toContain("get)");
+    expect(zshScript).toContain("--depth[Detail depth]:(brief standard deep)");
+    expect(zshScript).toContain("--full[Explicit full item read]");
+
+    const fishScript = generateFishScript();
+    expect(fishScript).toContain("__fish_seen_subcommand_from get");
+    expect(fishScript).toContain("-l full -d 'Explicit full item read'");
+  });
+
   it("includes search-specific flags", () => {
     const script = generateBashScript();
     expect(script).toContain("--mode");

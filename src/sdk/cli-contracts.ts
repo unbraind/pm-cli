@@ -1379,6 +1379,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--depth" },
+  { flag: "--full" },
   { flag: "--fields" },
 ];
 
@@ -2146,7 +2147,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   guide: { optional: ["format", "depth"] },
   context: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
   ctx: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
-  get: { required: ["id"], optional: ["depth", "fields"] },
+  get: { required: ["id"], optional: ["depth", "full", "fields"] },
   search: {
     optional: SEARCH_CONTRACT_PARAMETER_KEYS,
     anyOfRequired: [["query"], ["keywords"]],
@@ -2835,7 +2836,7 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
     description: "Render compact projection output for search and list-family actions.",
   },
   full: {
-    description: "Render full nested search hit payload output.",
+    description: "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
   },
   fields: {
     description: "Comma-separated projection fields for get, search, or list-family outputs.",

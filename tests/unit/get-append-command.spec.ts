@@ -146,6 +146,12 @@ describe("runGet and runAppend", () => {
       expect(deep.linked.files).toHaveLength(1);
       expect(deep.body).toBe("depth body");
 
+      const explicitFull = await runGet(id, { path: context.pmPath }, { full: true });
+      expect(explicitFull.item.comments).toBeDefined();
+      expect(explicitFull.item.notes).toBeDefined();
+      expect(explicitFull.linked.files).toHaveLength(1);
+      expect(explicitFull.body).toBe("depth body");
+
       const standard = await runGet(id, { path: context.pmPath }, { depth: "standard" });
       expect(standard.item.id).toBe(id);
       expect(standard.item.comments).toBeUndefined();
@@ -163,6 +169,12 @@ describe("runGet and runAppend", () => {
       expect(brief.body).toBe("");
 
       await expect(runGet(id, { path: context.pmPath }, { depth: "verbose" })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runGet(id, { path: context.pmPath }, { full: true, fields: "id,title" })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runGet(id, { path: context.pmPath }, { full: true, depth: "brief" })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
     });

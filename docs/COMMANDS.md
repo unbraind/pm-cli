@@ -44,10 +44,10 @@ pm init --defaults --with-packages
 pm init --agent-guidance status
 pm init --agent-guidance add
 pm config project list
-pm health --check-only
+pm health --check-only --summary --json
 ```
 
-`pm init` creates `.agents/pm`. `pm health --check-only` inspects without refreshing optional search artifacts.
+`pm init` creates `.agents/pm`. `pm health --check-only --summary --json` gives the smallest machine-readable health gate without refreshing optional search artifacts.
 `pm init --agent-guidance ask` is the default behavior: prompt in TTY only when AGENTS/CLAUDE guidance is missing and no decline is recorded.
 Use `--agent-guidance add` to write guidance, `--agent-guidance skip` to persist a decline without writing, and `--agent-guidance status` to inspect guidance state.
 Use `--with-packages` for one-step agent setup when bundled package commands should be active immediately.

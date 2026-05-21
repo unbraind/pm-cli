@@ -291,7 +291,7 @@ export async function runHistory(id: string, options: HistoryCommandOptions, glo
   };
 
   if (options.diff) {
-    result.diff = compactHistory ?? buildDiffEntries(history, Math.max(0, fullHistory.length - history.length));
+    result.diff = compact ? [] : buildDiffEntries(history, Math.max(0, fullHistory.length - history.length));
   }
 
   if (options.verify) {

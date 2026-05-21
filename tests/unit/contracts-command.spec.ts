@@ -93,7 +93,11 @@ describe("contracts command runtime", () => {
       ]),
     );
     expect(fullResult.command_flags?.find((entry) => entry.command === "get")?.flags).toEqual(
-      expect.arrayContaining([expect.objectContaining({ flag: "--depth" }), expect.objectContaining({ flag: "--fields" })]),
+      expect.arrayContaining([
+        expect.objectContaining({ flag: "--depth" }),
+        expect.objectContaining({ flag: "--full" }),
+        expect.objectContaining({ flag: "--fields" }),
+      ]),
     );
     expect(fullResult.commander_aliases).toBeDefined();
     expect(
