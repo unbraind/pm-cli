@@ -62,12 +62,14 @@ export interface HealthCheck {
 export interface HealthResult {
   ok: boolean;
   checks: HealthCheck[];
+  warning_count?: number;
   warnings: string[];
   projection?: {
-    mode: "brief" | "full";
+    mode: "brief" | "summary" | "full";
     warning_count: number;
     warnings_truncated: boolean;
     detail_limit: number;
+    omitted_checks?: HealthCheck["name"][];
   };
   generated_at: string;
 }
@@ -84,6 +86,7 @@ export interface RunHealthOptions {
   skipDrift?: boolean;
   full?: boolean;
   brief?: boolean;
+  summary?: boolean;
 }
 
 interface MigrationStatusEntry {
@@ -938,6 +941,35 @@ function applyBriefHealthProjection(result: HealthResult): HealthResult {
   };
 }
 
+function isSkippedHealthCheck(check: HealthCheck): boolean {
+  return check.details.skipped === true;
+}
+
+function applySummaryHealthProjection(result: HealthResult): HealthResult {
+  const warningsSummary = summarizeStringList(result.warnings, BRIEF_HEALTH_DETAIL_LIMIT);
+  const omittedChecks = result.checks.filter(isSkippedHealthCheck).map((check) => check.name);
+  return {
+    ok: result.ok,
+    checks: result.checks
+      .filter((check) => !isSkippedHealthCheck(check))
+      .map((check) => ({
+        name: check.name,
+        status: check.status,
+        details: {},
+      })),
+    warning_count: warningsSummary.count,
+    warnings: warningsSummary.sample,
+    projection: {
+      mode: "summary",
+      warning_count: warningsSummary.count,
+      warnings_truncated: warningsSummary.truncated,
+      detail_limit: BRIEF_HEALTH_DETAIL_LIMIT,
+      omitted_checks: omittedChecks,
+    },
+    generated_at: result.generated_at,
+  };
+}
+
 function selectStaleItemDetail(
   values: string[],
   verboseStaleItems: boolean,
@@ -1428,10 +1460,12 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     checkTelemetry: options.checkTelemetry === true,
   });
   const extensionCheck = await buildExtensionCheck(pmRoot, settings, Boolean(global.noExtensions));
-  const fastBriefCheckOnly = options.brief === true && options.checkOnly === true && options.full !== true;
-  const skipIntegrity = (options.skipIntegrity === true || fastBriefCheckOnly) && options.full !== true;
-  const skipDrift = (options.skipDrift === true || fastBriefCheckOnly) && options.full !== true;
-  const skipVectors = (options.skipVectors === true || fastBriefCheckOnly) && options.full !== true;
+  const summaryMode = options.summary === true && options.full !== true;
+  const fastProjectionCheckOnly =
+    options.checkOnly === true && (options.brief === true || options.summary === true) && options.full !== true;
+  const skipIntegrity = (options.skipIntegrity === true || fastProjectionCheckOnly) && options.full !== true;
+  const skipDrift = (options.skipDrift === true || fastProjectionCheckOnly) && options.full !== true;
+  const skipVectors = (options.skipVectors === true || fastProjectionCheckOnly) && options.full !== true;
   const itemReadWarnings: string[] = [];
   const items = skipDrift && skipVectors
     ? await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, itemReadWarnings, settings.schema)
@@ -1530,5 +1564,8 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     warnings: normalizedWarnings,
     generated_at: nowIso(),
   };
+  if (summaryMode) {
+    return applySummaryHealthProjection(result);
+  }
   return options.brief === true ? applyBriefHealthProjection(result) : result;
 }

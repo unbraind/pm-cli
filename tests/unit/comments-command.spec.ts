@@ -209,7 +209,7 @@ describe("runComments", () => {
 
       const ambiguousCsvLike = "text=hello,scope:project";
       const ambiguousResult = await runComments(id, { add: ambiguousCsvLike }, { path: context.pmPath });
-      expect(ambiguousResult.comments.at(-1)?.text).toBe(ambiguousCsvLike);
+      expect(ambiguousResult.comments.at(-1)?.text).toBe("hello,scope:project");
 
       const fenced = ["```", "text: fenced body", "```"].join("\n");
       const fencedResult = await runComments(id, { add: fenced }, { path: context.pmPath });
@@ -218,6 +218,26 @@ describe("runComments", () => {
       const malformed = ["```", "not structured", "```"].join("\n");
       const malformedResult = await runComments(id, { add: malformed }, { path: context.pmPath });
       expect(malformedResult.comments.at(-1)?.text).toBe(malformed);
+    });
+  });
+
+  it("can include paging metadata for limited comment snapshots", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-limit-metadata");
+      await runComments(id, { add: "first comment" }, { path: context.pmPath });
+      await runComments(id, { add: "second comment" }, { path: context.pmPath });
+      await runComments(id, { add: "third comment" }, { path: context.pmPath });
+
+      const limited = await runComments(id, { limit: "2", includeMeta: true }, { path: context.pmPath });
+      expect(limited).toMatchObject({
+        id,
+        count: 2,
+        total_count: 3,
+        returned_count: 2,
+        has_more: true,
+        limit: 2,
+      });
+      expect(limited.comments.map((entry) => entry.text)).toEqual(["second comment", "third comment"]);
     });
   });
 

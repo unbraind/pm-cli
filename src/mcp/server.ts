@@ -200,7 +200,10 @@ const TOOLS: ToolDefinition[] = [
   },
   {
     name: "pm_comments",
-    description: "List or add comments on a pm item. Use options.add to append.",
+    description:
+      "List or add comments on a pm item. Use options.add to append. " +
+      "List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. " +
+      "Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
   },
   {
@@ -483,8 +486,19 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runRelease(id ?? readRequiredString(options, "id"), force, global, options);
     case "close":
       return runClose(id ?? readRequiredString(options, "id"), readRequiredString(args, "reason"), options, global);
-    case "comments":
-      return runComments(id ?? readRequiredString(options, "id"), options, global);
+    case "comments": {
+      const commentOptions: Record<string, unknown> = { ...options };
+      const isListing =
+        commentOptions.add === undefined && commentOptions.stdin === undefined && commentOptions.file === undefined;
+      if (isListing) {
+        commentOptions.includeMeta = true;
+        if (commentOptions.limit === undefined && commentOptions.full !== true) {
+          commentOptions.limit = "20";
+        }
+      }
+      delete commentOptions.full;
+      return runComments(id ?? readRequiredString(options, "id"), commentOptions, global);
+    }
     case "notes":
       return runNotes(id ?? readRequiredString(options, "id"), options, global);
     case "learnings":

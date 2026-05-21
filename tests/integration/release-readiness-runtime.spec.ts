@@ -331,7 +331,7 @@ const REQUIRED_VALIDATE_FLAGS = [
   "--fail-on-warn",
   "--check-history-drift",
 ];
-const REQUIRED_HEALTH_FLAGS = ["--strict-directories", "--strict-exit", "--fail-on-warn", "--verbose-stale-items"];
+const REQUIRED_HEALTH_FLAGS = ["--strict-directories", "--strict-exit", "--fail-on-warn", "--verbose-stale-items", "--summary"];
 const REQUIRED_DELETE_FLAGS = ["--author", "--message", "--force"];
 const REQUIRED_APPEND_FLAGS = ["--body", "--author", "--message", "--force"];
 const REQUIRED_DEPS_FLAGS = ["--format", "--max-depth", "--collapse", "--summary"];

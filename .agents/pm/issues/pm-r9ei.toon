@@ -26,7 +26,7 @@ learnings[1]{created_at,author,text}:
 files[1]{path,scope,note}:
   scripts/prod/telemetry/2026-04-27-pm-cli-telemetry-overview.json,project,local snapshot of patched Grafana dashboard JSON
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
-  "ssh -o BatchMode=yes 'curl -fsS \"http://127.0.0.1:19090/api/v1/query?query=rabbitmq_queue_messages\" && curl -fsS \"http://127.0.0.1:19090/api/v1/query?query=rabbitmq_queue_messages_unacked\"'",null,project,180,null,null,null,null,null,null,null,null,null,null,null,promql queue metric availability smoke
+  "ssh -o BatchMode=yes [redacted_user]@[redacted_host] 'curl -fsS \"http://127.0.0.1:19090/api/v1/query?query=rabbitmq_queue_messages\" && curl -fsS \"http://127.0.0.1:19090/api/v1/query?query=rabbitmq_queue_messages_unacked\"'",null,project,180,null,null,null,null,null,null,null,null,null,null,null,promql queue metric availability smoke
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mohlp2dy-ew2asp,test,failed,"2026-04-27T19:39:11.580Z","2026-04-27T19:39:12.598Z","2026-04-27T19:39:12.598Z",null,null,0,1,0,null,null,null
   test-local-mohlpwx1-kyik2u,test,passed,"2026-04-27T19:39:51.148Z","2026-04-27T19:39:52.165Z","2026-04-27T19:39:52.165Z",null,null,1,0,0,null,null,null

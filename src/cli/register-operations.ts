@@ -214,6 +214,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--refresh-vectors", "Explicitly enable vector refresh attempts during health checks")
     .option("--verbose-stale-items", "Include full stale vectorization ID lists in health output")
     .option("--brief", "Emit compact health details for low-token agent checks")
+    .option("--summary", "Emit one-line-style health status with check names and warning count")
     .option("--skip-vectors", "Skip vectorization check for a faster run")
     .option("--skip-integrity", "Skip item/history file integrity check for a faster run")
     .option("--skip-drift", "Skip history drift hash check for a faster run")
@@ -232,6 +233,7 @@ export function registerOperationCommands(program: Command): void {
         refreshVectors: Boolean(options.refreshVectors),
         verboseStaleItems: Boolean(options.verboseStaleItems),
         brief: Boolean(options.brief),
+        summary: Boolean(options.summary),
         skipVectors: Boolean(options.skipVectors),
         skipIntegrity: Boolean(options.skipIntegrity),
         skipDrift: Boolean(options.skipDrift),
