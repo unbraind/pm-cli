@@ -1477,6 +1477,17 @@ describe("runUpdate", () => {
       await expect(
         runUpdate(
           id,
+          { event: ["start=2026-03-03T12:00:00.000Z,end=2026-03-03T12:00:00.000Z"] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("equal start/end timestamps are invalid"),
+      });
+
+      await expect(
+        runUpdate(
+          id,
           { event: ["start=2026-03-03T12:00:00.000Z,title=   "] },
           { path: context.pmPath },
         ),

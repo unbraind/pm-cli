@@ -661,7 +661,7 @@ _pm() {
             '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--sprint[Filter by sprint]:sprint' \\
             '--release[Filter by release]:release' \\
-            '--include[Include event sources]:(all deadlines reminders events)' \\
+            '--include[Include event sources]:(all deadlines reminders events scheduled)' \\
             '--recurrence-lookahead-days[Bound open-ended recurrence lookahead]:days' \\
             '--recurrence-lookback-days[Bound open-ended recurrence lookback]:days' \\
             '--occurrence-limit[Cap occurrences per recurring event]:number' \\
@@ -1436,7 +1436,7 @@ complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l assignee  -d 'Fi
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l sprint    -d 'Filter by sprint' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l release   -d 'Filter by release' -r
-complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l include   -d 'Include event sources' -r -a 'all deadlines reminders events'
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l include   -d 'Include event sources' -r -a 'all deadlines reminders events scheduled'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l recurrence-lookahead-days -d 'Bound open-ended recurrence lookahead' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l recurrence-lookback-days -d 'Bound open-ended recurrence lookback' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l occurrence-limit -d 'Cap occurrences per recurring event' -r

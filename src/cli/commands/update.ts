@@ -39,6 +39,7 @@ import {
   parseConfidenceInput,
   parseRegressionInput,
 } from "./metadata-normalizers.js";
+import { EVENT_END_AFTER_START_MESSAGE } from "./event-validation-messages.js";
 import type {
   CalendarEvent,
   Comment,
@@ -807,7 +808,7 @@ function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
     const endRaw = kv.end?.trim();
     const endAt = endRaw ? resolveIsoOrRelative(endRaw, nowValue, "event.end") : undefined;
     if (endAt && endAt <= startAt) {
-      throw new PmCliError("--event end must be after start", EXIT_CODE.USAGE);
+      throw new PmCliError(EVENT_END_AFTER_START_MESSAGE, EXIT_CODE.USAGE);
     }
 
     const titleRaw = kv.title;
