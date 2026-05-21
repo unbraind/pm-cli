@@ -1,0 +1,13 @@
+id: pm-7rlp
+title: "CI/CD + test-suite performance: in-process CLI runner and dedupe redundant matrix legs"
+description: "CI/test audit. Biggest win: ~1,500+ real 'node dist/cli.js' subprocess spawns dominate the 1414-test suite (742 runCli sites + 757 withTempPmPath inits; cold spawn ~35-44ms each). Add an in-process runner that calls main(argv) directly (capture stdout/stderr, reset module state), keep a small set of true-subprocess E2E tests; convert help-runtime + release-readiness + the bulk of unit specs. CI: the full suite runs 2-4x per run because build-test matrix legs run 'pnpm test' while gates(coverage) runs the same suite + coverage; on PR/push run ubuntu-20 coverage as authoritative and move the OS x Node compat matrix to nightly only; dedupe 'npm pack --dry-run' between static and smokes. Keep the 100% coverage gate. Free GitHub features only. Auto-release change-detection was audited and is CORRECT (no bug)."
+type: Chore
+status: open
+priority: 1
+tags[3]: ci,performance,tests
+created_at: "2026-05-21T21:57:10.762Z"
+updated_at: "2026-05-21T21:57:10.762Z"
+author: claude-code-agent
+acceptance_criteria: Suite wall-time cut substantially via in-process runner; CI removes redundant full-suite legs; 100% coverage gate intact; nightly retains full OS/Node matrix.
+parent: pm-rnpb
+body: ""

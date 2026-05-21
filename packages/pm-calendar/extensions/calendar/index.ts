@@ -45,8 +45,14 @@ function calendarCommand(name: "calendar" | "cal"): CommandDefinition {
     arguments: [{ name: "view", required: false, description: "Calendar view: agenda|day|week|month." }],
     flags: [...calendarFlags],
     run: async (context) => {
-      const positionalView = context.args[0]?.startsWith("-") ? undefined : context.args[0]?.trim();
-      if (positionalView && context.args.length > 1) {
+      // Extension flags are parsed loosely, so context.args still contains flag
+      // tokens (e.g. ["day", "--date", "+7d"]). Only the leading non-flag tokens
+      // are true positionals, so a positional view combined with --date/--from/etc.
+      // must not be mistaken for multiple positional views.
+      const firstFlagIndex = context.args.findIndex((arg) => arg.startsWith("-"));
+      const positionalArgs = firstFlagIndex === -1 ? context.args : context.args.slice(0, firstFlagIndex);
+      const positionalView = positionalArgs[0]?.trim();
+      if (positionalArgs.length > 1) {
         throw new Error("Calendar accepts at most one positional view: agenda|day|week|month.");
       }
       return runCalendarPackage(

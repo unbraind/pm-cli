@@ -6,8 +6,10 @@ status: open
 priority: 2
 tags[2]: code-quality,refactor
 created_at: "2026-05-16T15:07:29.175Z"
-updated_at: "2026-05-16T16:48:23.315Z"
+updated_at: "2026-05-21T22:28:13.204Z"
 author: claude-code-agent
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-05-16T16:48:23.315Z",codex-agent,"Audit update 2026-05-16: release static gate and full coverage pass, but large command files remain a maintainability concern visible in npm pack output and source review (extension/create/update/test families). No duplicate item created; keep this chore as the canonical LOC/complexity refactor."
+  "2026-05-21T21:57:40.078Z",claude-code-agent,"Code-quality audit produced concrete low-risk split plans (re-export via existing barrels, no consumer changes): (1) sdk/cli-contracts.ts 3059 LOC -> cli-contracts/tool-option-contracts.ts (TOOL_*_OPTION_CONTRACTS data tables) + cli-contracts/enum-contracts.ts (PM_* consts + guards), root keeps flag-alias helpers + GLOBAL/SUBCOMMAND contracts. (2) core/extensions/loader.ts 3272 -> extension-capability-aliases.ts (825-990), extension-registries.ts (createEmpty* factories 1180-1221), extension-hook-runtime.ts (run*Override/Hooks 2847-3225); loader keeps discovery/activation. (3) cli/commands/extension.ts 3192 -> extension/install-sources.ts (github/npm/local 1069-1408), extension/managed-state.ts (600-752), extension/bundled-catalog.ts. Highest-value duplication: runUpdate (update.ts ~972 LOC) has 53 near-identical field blocks + ~30 non-null assertions; drive from a declarative field table [{option, metadataKey, transform}] to collapse ~500 lines. Also: shared toItemRecord() helper to remove ~15 'item as unknown as Record' + 10 'as unknown as ItemMetadata' casts."
+  "2026-05-21T22:28:13.198Z",claude-code-agent,"PR #40 review (Gemini HIGH, echoed by Sourcery): the pm update --status closed auto-route applies pre-close field updates via a recursive runUpdate then runClose = two atomic writes (non-atomic across the pair) for the rare combined case (close-only path is already a single atomic close). Fold the fix into this refactor: once runUpdate's field-application becomes a reusable mutate function (field-table), make runClose accept those field deltas so close-with-fields is a single mutateItem transaction."
 body: ""

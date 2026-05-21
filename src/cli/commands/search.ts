@@ -239,6 +239,14 @@ function buildImplicitSemanticFallbackWarning(error: unknown): string {
   return "search_implicit_semantic_fallback:error:using_keyword_mode";
 }
 
+// Explicit --semantic/--hybrid searches must never hard-fail an agent when the
+// embedding/vector backend is unreachable or unconfigured: degrade to keyword
+// search and surface a machine-readable warning instead of an unknown_error.
+function buildExplicitSemanticFallbackWarning(requestedMode: SearchMode, error: unknown): string {
+  const reason = classifyImplicitSemanticFallbackReason(error);
+  return `search_${requestedMode}_fallback:${reason}:using_keyword_mode`;
+}
+
 function parseMode(raw: string | undefined, _context: SearchModeContext): SearchMode {
   if (raw === undefined) {
     return "keyword";
@@ -1306,13 +1314,16 @@ export async function runSearch(query: string, options: SearchOptions, global: G
         });
       }
     } catch (error: unknown) {
-      const canFallbackToKeyword = !modeWasExplicit && effectiveMode === "hybrid";
-      if (!canFallbackToKeyword) {
-        throw error;
-      }
+      // Any semantic/hybrid attempt that fails (backend down, timeout, or the
+      // project is not configured for semantic search) degrades to keyword mode
+      // so agents are never blocked. Keyword hits are always computed locally
+      // before this point, so the fallback is guaranteed to succeed.
+      const fallbackWarning = modeWasExplicit
+        ? buildExplicitSemanticFallbackWarning(effectiveMode, error)
+        : buildImplicitSemanticFallbackWarning(error);
       effectiveMode = "keyword";
       hits = keywordHits;
-      warnings.push(buildImplicitSemanticFallbackWarning(error));
+      warnings.push(fallbackWarning);
     }
   }
 

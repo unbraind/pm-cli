@@ -11,10 +11,6 @@ export function tokenizeAlphaNumeric(value: string): string[] {
     .filter((token) => token.length > 0);
 }
 
-export function uniqueTokens(value: string): string[] {
-  return [...new Set(tokenizeAlphaNumeric(value))];
-}
-
 export function jaccardSimilarity(leftTokens: string[], rightTokens: string[]): number {
   if (leftTokens.length === 0 && rightTokens.length === 0) {
     return 1;

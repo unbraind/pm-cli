@@ -1,0 +1,13 @@
+id: pm-fu5d
+title: "Dogfood 2026-05-21 follow-ups: test --add key validation, semantic-fallback labeling, close active-children info, stale blocker on close"
+description: "Manual dogfood findings not yet fixed (separate from pm-5k2w which holds the 2026-05-20 polish backlog). B2 [med]: pm test --add 'cmd=...,name=...' silently stores the whole pair as the command - reject/warn unknown keys, accept cmd as alias for command. S1 [med]: when no embedding provider is configured but ollama auto-defaults engage, search reports mode:semantic with no warning even though embedded_items=0 - clarify degraded/lexical state. C3 [med]: closing a parent/epic with active children under minimal governance is silent - emit an informational closed_with_active_children warning even when not blocking. C4 [low]: closed items retain blocked_by metadata - clear/annotate on terminal transition. U2 [low]: did-you-mean missing for unknown options (--statuss). U3 [low]: accept --list as alias for --explore on package/extension. CAL1 [med]: support compound relative event times (start=+1d,end=+1d+2h) or a duration= field."
+type: Chore
+status: open
+priority: 3
+tags[3]: agent-ux,dogfood,polish
+created_at: "2026-05-21T21:57:44.257Z"
+updated_at: "2026-05-21T21:57:44.257Z"
+author: claude-code-agent
+acceptance_criteria: Each listed finding is fixed or explicitly deferred with rationale; no agent-blocking introduced.
+parent: pm-rnpb
+body: ""

@@ -310,18 +310,6 @@ function formatDynamicExtensionOptionDescription(definition: Record<string, unkn
   return `${description}${markerSuffix}`;
 }
 
-export function applyDynamicExtensionOptions(command: Command, descriptor: ExtensionCommandHelpDescriptor): void {
-  const seen = new Set<string>();
-  for (const definition of descriptor.flags) {
-    const optionFlags = formatDynamicExtensionOptionFlags(definition);
-    if (!optionFlags || seen.has(optionFlags)) {
-      continue;
-    }
-    seen.add(optionFlags);
-    command.option(optionFlags, formatDynamicExtensionOptionDescription(definition));
-  }
-}
-
 function buildDynamicExtensionHelpOptionSummary(definition: Record<string, unknown>): HelpOptionSummary | null {
   const flags = formatDynamicExtensionOptionFlags(definition);
   if (!flags) {

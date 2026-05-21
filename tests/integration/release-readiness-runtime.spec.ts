@@ -1559,20 +1559,49 @@ describe("release readiness runtime coverage", () => {
       expect(createResult.code).toBe(0);
       const createdId = (createResult.json as { item: { id: string } }).item.id;
 
-      const invalidUpdateCloseResult = context.runCli(["update", createdId, "--status", "closed", "--json"]);
-      expect(invalidUpdateCloseResult.code).toBe(2);
-      const invalidUpdateEnvelope = parseJsonErrorEnvelope(invalidUpdateCloseResult.stderr);
-      expect(invalidUpdateEnvelope).toMatchObject({
-        code: "close_through_update",
-        exit_code: 2,
+      // pm update --status closed must never block agents: it auto-routes to the
+      // auditable close workflow with a derived close reason when none is given.
+      const autoRouteCloseResult = context.runCli(["update", createdId, "--status", "closed", "--json"], {
+        expectJson: true,
       });
-      expect(invalidUpdateEnvelope.detail).toContain('Use "pm close <ID> <TEXT>"');
+      expect(autoRouteCloseResult.code).toBe(0);
+      const autoRouteJson = autoRouteCloseResult.json as {
+        item: { status: string; close_reason: string };
+        warnings: string[];
+      };
+      expect(autoRouteJson.item.status).toBe("closed");
+      expect(autoRouteJson.warnings).toEqual(
+        expect.arrayContaining(["auto_routed_from_update_to_close", "close_reason_defaulted"]),
+      );
 
       const closeResult = context.runCli(
-        ["close", createdId, "close workflow reason", "--author", "test-author", "--message", "close workflow", "--json"],
+        ["close", createdId, "close workflow reason", "--author", "test-author", "--message", "close workflow", "--force", "--json"],
         { expectJson: true },
       );
       expect(closeResult.code).toBe(0);
+    });
+  });
+
+  it("accepts the natural `pm create <type> <title>` positional form", async () => {
+    await withTempPmPath(async (context) => {
+      // Subcommand-style create must not be rejected with "too many arguments".
+      const typedCreate = context.runCli(["create", "feature", "Build login page", "--json"], { expectJson: true });
+      expect(typedCreate.code).toBe(0);
+      const typedItem = (typedCreate.json as { item: { type: string; title: string } }).item;
+      expect(typedItem.type).toBe("Feature");
+      expect(typedItem.title).toBe("Build login page");
+
+      // Single-positional title form still works and defaults the type.
+      const titleOnly = context.runCli(["create", "Just a title", "--json"], { expectJson: true });
+      expect(titleOnly.code).toBe(0);
+      expect((titleOnly.json as { item: { title: string } }).item.title).toBe("Just a title");
+
+      // An invalid first positional type yields an actionable error, not a crash.
+      const badType = context.runCli(["create", "notarealtype", "Some title", "--json"]);
+      expect(badType.code).toBe(2);
+      const badEnvelope = parseJsonErrorEnvelope(badType.stderr);
+      expect(badEnvelope.code).toBe("invalid_argument_value");
+      expect(badEnvelope.detail).toContain("Invalid type value");
     });
   });
 
@@ -1716,7 +1745,6 @@ describe("release readiness runtime coverage", () => {
       "src/core/extensions/extension-types.ts",
       "src/core/item/parent-reference-policy.ts",
       "src/core/item/type-registry.ts",
-      "src/core/output/command-aware.ts",
       "src/core/packages/root.ts",
       "src/core/schema/runtime-field-filters.ts",
       "src/core/schema/runtime-field-values.ts",

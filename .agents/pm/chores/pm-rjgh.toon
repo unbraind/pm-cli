@@ -1,0 +1,13 @@
+id: pm-rjgh
+title: "Docs hygiene: stop shipping PRD.md in npm package, dedupe PRD<->docs, slim CHANGELOG, reconcile marketplace.json"
+description: Docs audit. PRD.md (118KB) is in package.json files and ships to every install while duplicating docs/ (commands/architecture/search/extensions/testing) and drifting from them; remove from published files and trim/relink it. CHANGELOG.md (71KB) is bloated by the 2026.5.3-1..8 same-day cluster; collapse to one entry. Root marketplace.json and .claude-plugin/marketplace.json have drifted (root lacks metadata/category) - reconcile from a single source (both have contract/smoke coupling). Tighten AGENTS.md to defer workflow detail to docs/AGENT_GUIDE.md. No private-infra leaks found in tracked docs (verified).
+type: Chore
+status: open
+priority: 2
+tags[3]: cleanup,docs,packaging
+created_at: "2026-05-21T21:57:15.117Z"
+updated_at: "2026-05-21T21:57:15.117Z"
+author: claude-code-agent
+acceptance_criteria: PRD.md not in published package; CHANGELOG slimmed; marketplace.json files reconciled with contract+smoke green; no doc drift.
+parent: pm-rnpb
+body: ""

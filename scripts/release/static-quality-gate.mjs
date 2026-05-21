@@ -198,7 +198,6 @@ function checkOrphanSourceModules(files) {
     "src/mcp/server.ts",
     "src/sdk/index.ts",
     "src/types/index.ts",
-    "src/core/output/command-aware.ts",
   ]);
   const violations = [];
   for (const [absolutePath, incomingCount] of incoming.entries()) {
