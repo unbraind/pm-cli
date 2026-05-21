@@ -135,7 +135,7 @@ describe("runHistory and runActivity", () => {
       const compactDiff = context.runCli(["history", id, "--json", "--diff"], { expectJson: true });
       expect(compactDiff.code).toBe(0);
       expect(compactDiff.json).toMatchObject({ compact: true, history: [] });
-      expect((compactDiff.json as { diff?: unknown[] }).diff).toBeUndefined();
+      expect((compactDiff.json as { diff?: unknown[] }).diff).toEqual([]);
 
       const cliFull = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(cliFull.code).toBe(0);

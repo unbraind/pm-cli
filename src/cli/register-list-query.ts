@@ -231,7 +231,7 @@ export function registerListQueryCommands(program: Command): void {
     .command("get")
     .argument("<id>", "Item id")
     .option("--depth <value>", "Detail depth: brief|standard|deep (default: deep)")
-    .option("--full", "Explicit full item read; equivalent to --depth deep (mutually exclusive with --fields)")
+    .option("--full", "Explicit full item read; equivalent to --depth deep (mutually exclusive with --depth/--fields)")
     .option("--fields <value>", "Render custom comma-separated item metadata fields (for example: --fields id,title,status,parent,type)")
     .description("Show item details by ID.")
     .action(async (id: string, options: Record<string, unknown>, command) => {
