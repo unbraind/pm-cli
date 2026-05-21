@@ -1689,6 +1689,7 @@ describe("release readiness runtime coverage", () => {
       "src/cli/commands/aggregate.ts",
       "src/cli/commands/comments-audit.ts",
       "src/cli/commands/dedupe-audit.ts",
+      "src/cli/commands/event-validation-messages.ts",
       "src/cli/commands/guide.ts",
       "src/cli/commands/history-redact.ts",
       "src/cli/commands/init-agent-guidance.ts",

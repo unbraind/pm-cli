@@ -46,6 +46,15 @@ type CommandWithResolvedGlobals = Command & {
   [RESOLVED_GLOBAL_OPTIONS]?: GlobalOptions;
 };
 
+interface CommandOptionsReader {
+  optsWithGlobals?: () => Record<string, unknown>;
+  opts?: () => Record<string, unknown>;
+}
+
+function commandOptionsReader(command: unknown): CommandOptionsReader {
+  return typeof command === "object" && command !== null ? command as CommandOptionsReader : {};
+}
+
 export function setResolvedGlobalOptions(command: Command, globalOptions: GlobalOptions): void {
   (command as CommandWithResolvedGlobals)[RESOLVED_GLOBAL_OPTIONS] = { ...globalOptions };
 }
@@ -59,14 +68,11 @@ export function getGlobalOptions(command: Command): GlobalOptions {
   if (resolved) {
     return { ...resolved };
   }
-  const commandLike = command as Command & {
-    optsWithGlobals?: () => Record<string, unknown>;
-    opts?: () => Record<string, unknown>;
-  };
-  const opts = typeof commandLike.optsWithGlobals === "function"
-    ? commandLike.optsWithGlobals()
-    : typeof commandLike.opts === "function"
-      ? commandLike.opts()
+  const reader = commandOptionsReader(command);
+  const opts = typeof reader.optsWithGlobals === "function"
+    ? reader.optsWithGlobals()
+    : typeof reader.opts === "function"
+      ? reader.opts()
       : {};
   return {
     json: opts.json === true ? true : undefined,

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { getGlobalOptions, setResolvedGlobalOptions } from "../../src/cli/registration-helpers.js";
 
 describe("registration helpers", () => {
-  it("uses resolved global options when command-like objects lack commander globals", () => {
+  it("falls back to opts() for command-like objects without optsWithGlobals", () => {
     const command = { opts: () => ({ json: true, quiet: true, path: ".pm" }) } as unknown as Command;
 
     expect(getGlobalOptions(command)).toEqual({

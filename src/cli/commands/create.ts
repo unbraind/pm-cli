@@ -46,6 +46,7 @@ import {
   parseConfidenceInput,
   parseRegressionInput,
 } from "./metadata-normalizers.js";
+import { EVENT_END_AFTER_START_MESSAGE } from "./event-validation-messages.js";
 import type {
   CalendarEvent,
   Comment,
@@ -1030,10 +1031,7 @@ function parseEvents(raw: string[] | undefined, nowValue: string): { values: Cal
     const endRaw = parseOptionalString(kv.end)?.trim();
     const endAt = endRaw ? resolveIsoOrRelative(endRaw, referenceDate, "event.end") : undefined;
     if (endAt && endAt <= startAt) {
-      throw new PmCliError(
-        "--event end must be after start; equal start/end timestamps are invalid. Omit end for an instant event or set end later than start.",
-        EXIT_CODE.USAGE,
-      );
+      throw new PmCliError(EVENT_END_AFTER_START_MESSAGE, EXIT_CODE.USAGE);
     }
 
     const titleRaw = parseOptionalString(kv.title);
