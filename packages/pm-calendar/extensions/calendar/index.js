@@ -43,13 +43,8 @@ function calendarCommand(name) {
       // tokens (e.g. ["day", "--date", "+7d"]). Only the leading non-flag tokens
       // are true positionals, so a positional view combined with --date/--from/etc.
       // must not be mistaken for multiple positional views.
-      const positionalArgs = [];
-      for (const arg of context.args) {
-        if (arg.startsWith("-")) {
-          break;
-        }
-        positionalArgs.push(arg);
-      }
+      const firstFlagIndex = context.args.findIndex((arg) => arg.startsWith("-"));
+      const positionalArgs = firstFlagIndex === -1 ? context.args : context.args.slice(0, firstFlagIndex);
       const positionalView = positionalArgs[0]?.trim();
       if (positionalArgs.length > 1) {
         throw new Error("Calendar accepts at most one positional view: agenda|day|week|month.");
