@@ -2,11 +2,11 @@ id: pm-pjs5
 title: "Deduplicate history, restore, and redaction replay helpers"
 description: "Duplicate audit 2026-05-22: jscpd found history/restore/redaction commands repeat history patch normalization and replay helpers. Representative clones include history.ts:118-139 vs restore.ts:91-112, history.ts:139-167 vs restore.ts:213-241, history-redact.ts:292-313 vs restore.ts:91-112, history-redact.ts:320-339 vs history.ts:139-232, history-redact.ts:455-465 vs history.ts:173-183, and history-redact.ts:502-516 vs restore.ts:334-348. Existing pm-xk39 tracks the redaction feature, but no active item covers extracting shared replay/patch mechanics across commands. Fix by moving common history-entry read, patch normalization, replay apply, and subject resolution helpers into a shared history command module used by history, restore, and history-redact."
 type: Chore
-status: open
+status: closed
 priority: 1
 tags[5]: code-quality,dedup,history,redaction,restore
 created_at: "2026-05-22T19:00:05.247Z"
-updated_at: "2026-05-22T20:27:17.295Z"
+updated_at: "2026-05-22T21:16:21.435Z"
 author: codex-duplication-audit
 acceptance_criteria: "History patch path/op normalization and replay helpers are single-sourced; history, restore, and history-redact commands share the common module without changing CLI output; restore/history-redact/history unit tests pass; pnpm build passes."
 parent: pm-rnpb
@@ -16,4 +16,5 @@ files[3]{path,scope,note}:
   src/cli/commands/history-redact.ts,project,redaction replay helper clone
   src/cli/commands/history.ts,project,history replay helper clone
   src/cli/commands/restore.ts,project,restore replay helper clone
+close_reason: "Resolved in PR #44 (13048461): replay/patch mechanics single-sourced in src/core/history/replay.ts (ReplayDocument, replayHash, normalizeReplayPatch*, toReplayDocument, tryApplyReplayPatch, verifyHistoryChain, reanchorHistoryEntries); history/restore/history-redact/history-repair share it. Per-command error-formatting wrappers kept local by design to preserve CLI error contracts. Full coverage gate + build green; no CLI output change."
 body: ""

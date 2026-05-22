@@ -6,12 +6,16 @@ status: open
 priority: 0
 tags[0]:
 created_at: "2026-05-22T20:27:40.121Z"
-updated_at: "2026-05-22T20:51:29.584Z"
+updated_at: "2026-05-22T21:16:30.205Z"
 assignee: claude-code-agent
 author: claude-code-agent
 plan_mode: draft
 plan_scope: "Add pm history-repair, dedup replay helpers, clear legacy history drift"
 plan_harness: claude-code
+plan_decisions[1]{ts,author,decision,rationale}:
+  "2026-05-22T21:11:00.067Z",claude-code-agent,"Re-anchor in raw replay space, not via createHistoryEntry","Keep clean entries' patches verbatim (minimal diff) and recompute only hashes; lenient-repair only entries that no longer strictly apply; append a reconciliation entry compare(finalReplay,currentItem) so the latest after_hash equals validate/health's hashDocument(currentItem). Computing in raw replay space (not canonical createHistoryEntry) guarantees verifyHistoryChain passes without canonicalization drift."
+plan_discoveries[1]{ts,author,text}:
+  "2026-05-22T21:11:00.328Z",claude-code-agent,"pm-lty: a legacy stream whose first entry is a partial update (not a create) replays to a non-canonicalizable doc, so replayHash threw. Fix: replayHash falls back to a deterministic structural hash for such states; fully formed docs are unaffected and stay consistent with validate."
 plan_steps[7]:
   - id: plan-step-001
     order: 1
@@ -68,7 +72,9 @@ plan_steps[7]:
   - id: plan-step-007
     order: 7
     title: check-secrets + package-first dogfood + privacy sub-agent verdict; CHANGELOG; commit/push/PR; wait for bots; merge
-    status: in_progress
+    status: completed
     created_at: "2026-05-22T20:28:07.228Z"
-    updated_at: "2026-05-22T20:51:29.583Z"
+    updated_at: "2026-05-22T21:16:30.205Z"
+    evidence: "check-secrets + dogfood green; CHANGELOG updated; committed (5a23d8aa+6d547052), PR #44 opened, all CI green, AI bots addressed (2 cycles), squash-merged to main (13048461); back on main; pm health ok=true."
+    completed_at: "2026-05-22T21:16:30.205Z"
 body: ""

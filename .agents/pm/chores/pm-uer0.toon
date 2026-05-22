@@ -1,0 +1,12 @@
+id: pm-uer0
+title: Harden read-then-lock window uniformly across history-redact/restore/history-repair
+description: "Surfaced by CodeRabbit review on PR #44 (history-repair). history-redact, restore, and history-repair all read the history stream + on-disk item and compute the rewrite/reconciliation BEFORE acquiring the per-item lock, then acquire the lock only around the atomic write. This leaves a small TOCTOU window where a concurrent mutation between read and lock could let the command write a rewrite computed against stale state. The atomic write + rollback protects file integrity, and concurrent same-item history rewrites are rare, so this is low severity. If addressed, do it uniformly across all three commands (acquire the lock before the initial read, or re-read+re-verify under the lock before writing) rather than diverging one command from its siblings."
+type: Chore
+status: open
+priority: 3
+tags[4]: code-quality,concurrency,history,locking
+created_at: "2026-05-22T21:06:47.968Z"
+updated_at: "2026-05-22T21:06:47.968Z"
+author: claude-code-agent
+parent: pm-rnpb
+body: ""
