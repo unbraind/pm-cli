@@ -6,7 +6,7 @@ status: open
 priority: 0
 tags[2]: performance,startup
 created_at: "2026-05-16T15:07:08.622Z"
-updated_at: "2026-05-17T09:45:19.165Z"
+updated_at: "2026-05-22T15:45:00.043Z"
 author: claude-code-agent
 comments[11]{created_at,author,text}:
   "2026-05-16T16:48:23.232Z",codex-agent,"Audit update 2026-05-16: latest isolated dogfood after init --with-packages passed 44 workflows; slowest normal commands were create 753ms, comments 683ms, package wildcard 634ms, notes/docs/learnings/get brief around 560-600ms. Release gate is green, but sub-200ms startup remains the largest remaining perceived-speed opportunity."
@@ -20,8 +20,9 @@ comments[11]{created_at,author,text}:
   "2026-05-17T09:17:39.943Z",codex-agent,"Token/contract parity verification 2026-05-17: startup bootstrap changes did not alter list/search/help contract surfaces. Confirmed contracts --command list-open --flags-only still exposes --compact/--brief/--full/--fields/--include-body, contracts --command search --flags-only still exposes --mode/--semantic/--hybrid/--include-linked, and top-level plus list help still render rich Intent narratives on help paths."
   "2026-05-17T09:27:50.721Z",codex-agent,"Final evidence 2026-05-17 startup pass: after lazy command-family registration + help-attach gating in src/cli/main.ts, post-change 8-run warm medians improved on key commands versus pre-change baseline (help 183.6ms vs 190ms, list --json --limit 1 382.1ms vs 408.2ms, get --depth brief 311.3ms vs 326.2ms, contracts --flags-only 309.6ms vs 349.4ms). Isolated dogfood passed in temp sandboxes for both default (51 commands) and semantic mode (52 commands, qwen3-embedding:0.6b). Full release gate passed with telemetry+sentry required: build/typecheck/docs/static quality/coverage/version policy/secrets/npx/npm-pack/compatibility all ok; tests 1323/1323 with 100% coverage; sentry critical/high/total 0; telemetry finish_error_rate_pct 2.13 with missing-error-code rows 0."
   "2026-05-17T09:28:29.427Z",codex-agent,"Privacy/observability verification 2026-05-17: node scripts/check-secrets.mjs passed; targeted rg sweeps over .agents/pm for credential tokens/private-key blocks/private IPv4/home-path/user@host patterns found no active secret material. Direct sentry-telemetry gate passed in required mode (sentry critical/high/total=0/0/0, telemetry finish_error_rate_pct=2.13, failures_without_error_code_rows=0)."
-notes[1]{created_at,author,text}:
+notes[2]{created_at,author,text}:
   "2026-05-17T09:12:12.755Z",codex-agent,"Benchmark method: spawned fresh node dist/cli.js processes per run from repo root, PM_AUTHOR=codex-agent, no PM_PATH overrides (real tracker), maxBuffer 20-30MiB. Collected both repeated timing arrays and one-shot --profile outputs with and without --no-extensions."
+  "2026-05-22T15:45:00.043Z",maintainer-agent,"Partial progress 2026-05-22: removed zod from settings hot path (settings import 157ms->14ms; --help 227->140ms; list 540->340ms). The remaining startup levers are (a) esbuild bundling (this item) to collapse module-resolution overhead, and (b) item-store full-scan cost for list/context/search (context still ~556ms reading ~786 item files; no read cache - index/ dir is empty). esbuild bundle would mainly help the per-module resolution; an item-store read index would help the scan-bound commands."
 learnings[1]{created_at,author,text}:
   "2026-05-17T09:27:52.419Z",codex-agent,"Durable learning: startup refactors that replace static imports with dynamic imports can trigger orphan-module governance checks; preserving type-only import edges keeps static-quality graph integrity while maintaining runtime lazy-loading."
 files[9]{path,scope,note}:

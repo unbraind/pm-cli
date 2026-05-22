@@ -1,0 +1,12 @@
+id: pm-6blp
+title: "pm plan: materialize creates dependency cycle; decision/discovery/validation flag mismatch; --steps all unsupported"
+description: "Dogfood 2026-05-22: (1) CORRECTNESS: pm plan materialize generated a dependency cycle (generated task depends back on the plan; validate then flags the cycle). (2) UX: pm plan decision rejects --decision (actual flag --decision-text; likewise --discovery-text/--validation-text) with no did-you-mean suggestion. (3) pm plan materialize requires --steps and rejects --steps all; agents expect 'all' as the obvious default. Fix the cycle, add flag suggestions, support --steps all."
+type: Issue
+status: open
+priority: 2
+tags[0]:
+created_at: "2026-05-22T15:44:33.944Z"
+updated_at: "2026-05-22T15:44:33.944Z"
+author: maintainer-agent
+parent: pm-rnpb
+body: ""

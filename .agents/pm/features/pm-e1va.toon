@@ -1,0 +1,12 @@
+id: pm-e1va
+title: "Config-driven custom item types: wire schema/types.json into runtime schema"
+description: "Dogfood 2026-05-22 BLOCKER: pm init scaffolds .agents/pm/schema/types.json with {definitions:[]}, implying custom types register there, but the loader reads type_definitions_from_file and never merges it into the runtime schema (only settings.json item_types.definitions works; custom STATUSES do merge from schema/statuses.json). pm create MyType errors with Allowed: <hardcoded list>. Fix: (a) merge schema/types.json definitions into mergedSchema like statuses/fields, AND/OR (b) add a CLI to register a type (pm config set item-type / pm schema add-type), AND (c) make the invalid-type error hint where to register types. Aligns with project goal: schema defined by config, not hardcoded."
+type: Feature
+status: open
+priority: 1
+tags[0]:
+created_at: "2026-05-22T15:44:26.189Z"
+updated_at: "2026-05-22T15:44:26.189Z"
+author: maintainer-agent
+parent: pm-rnpb
+body: ""

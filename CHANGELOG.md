@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Crash: `pm context`, `pm list`, and `pm aggregate` no longer throw `Cannot read properties of undefined (reading 'trim')` when a status filter resolves an undefined token (Sentry PM-CLI-R; `normalizeStatusToken` now type-guards its input).
+- Crash: keyword and hybrid `pm search` no longer throw `Cannot read properties of undefined (reading 'join')` on items without reminders/events/dependencies (Sentry PM-CLI-S; reminder/event corpus builders tolerate missing arrays).
+- Crash: global option resolution guards against Commander command objects lacking `optsWithGlobals` (Sentry PM-CLI-T).
+- `pm calendar --date <date>` no longer crashes.
+
+### Changed
+- **Performance: removed the `zod` dependency from the settings hot path.** `settings.json` is now validated by a dependency-free validator that mirrors the previous schema exactly (type checks, required/optional fields, integer/positive constraints, literal unions, unknown-key stripping, all-or-nothing failure). Importing the settings module dropped from ~157ms to ~14ms, cutting the single largest startup cost off **every** command: `pm --help` ~227ms→~140ms and `pm list` ~540ms→~340ms (~38% faster) on the maintainer machine. One fewer runtime dependency.
+- `pm update --status closed|canceled` now auto-routes to the close/cancel flow instead of erroring, so agents that conflate `update` and `close` are never blocked (the most frequent real CLI error in telemetry).
+- Semantic and hybrid `pm search` degrade gracefully to keyword retrieval, with a clear label, when no embedding model is reachable — they never block.
+- Improved agent read-path token efficiency across `get`/`list`/`context` outputs.
+
+### Added
+- `pm create <type> <title>` positional form and close-via-update auto-routing for agent ergonomics.
+
 ## [2026.5.18] - 2026-05-18
 
 ### Changed
