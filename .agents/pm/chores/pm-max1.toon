@@ -1,0 +1,20 @@
+id: pm-max1
+title: Deduplicate recurrence weekday ordering helper
+description: "Duplicate audit 2026-05-22: weekdayOrderIndex is repeated in four recurrence/calendar modules: src/core/item/item-format.ts:100, src/cli/commands/create.ts:510, src/cli/commands/update.ts:686, and src/cli/commands/calendar.ts:138. Each copy wraps RECURRENCE_WEEKDAY_VALUES.indexOf(value), making recurrence parsing/serialization/calendar expansion drift-prone. Existing recurrence implementation items are closed, and open pm-why9 covers create/update parser blocks but not the shared item-format/calendar weekday helper."
+type: Chore
+status: open
+priority: 3
+tags[4]: calendar,code-quality,dedup,recurrence
+created_at: "2026-05-22T19:16:52.926Z"
+updated_at: "2026-05-22T19:16:52.926Z"
+author: codex-duplicate-audit
+acceptance_criteria: "One shared recurrence weekday ordering helper is exported from the appropriate item/time module; item serialization, create/update parsing, and calendar expansion use it; recurrence ordering behavior stays covered; focused recurrence/calendar tests and pnpm build pass."
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T19:16:52.926Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'weekdayOrderIndex RECURRENCE_WEEKDAY_VALUES recurrence weekday order' found only closed recurrence work plus unrelated pm-8fx3; no active exact helper-dedup item."
+files[4]{path,scope,note}:
+  src/core/item/item-format.ts,project,weekdayOrderIndex clone
+  src/cli/commands/create.ts,project,weekdayOrderIndex clone
+  src/cli/commands/update.ts,project,weekdayOrderIndex clone
+  src/cli/commands/calendar.ts,project,weekdayOrderIndex clone
+body: ""

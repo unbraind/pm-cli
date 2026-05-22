@@ -1,0 +1,22 @@
+id: pm-7tug
+title: Extract shared temporary-directory lifecycle helpers for tests
+description: "Duplicate audit 2026-05-22: test files locally repeat mkdtemp(path.join(os.tmpdir(), prefix)), callback execution, and rm(..., { recursive: true, force: true }) cleanup. Representative helpers are tests/unit/fs-utils.spec.ts:14 withTempDir, tests/unit/search-cache.spec.ts:15 withTempDir, tests/unit/config-command.spec.ts:20 withTempRoot, tests/unit/settings-store.spec.ts:12 withTempRoot, tests/unit/telemetry-runtime.spec.ts:34 withTempGlobalRoot, and tests/unit/telemetry-consent.spec.ts:9 withTempGlobalRoot. This is distinct from pm-ibyi legacy settings fixtures and pm-eltf item factories."
+type: Chore
+status: open
+priority: 3
+tags[4]: code-quality,dedup,fixtures,tests
+created_at: "2026-05-22T19:17:40.595Z"
+updated_at: "2026-05-22T19:17:40.595Z"
+author: codex-duplicate-audit
+acceptance_criteria: Generic withTempDir and specialized withTempGlobalRoot/withTempRoot helpers live under tests/helpers; affected tests consume them instead of local lifecycle copies; cleanup remains force-recursive and safe; targeted tests and pnpm build pass.
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T19:17:40.595Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'temporary directory withTempDir withTempRoot withTempGlobalRoot lifecycle helper tests' found no active exact item; pm-ibyi covers legacy settings fixture content, not temp-directory lifecycle."
+files[6]{path,scope,note}:
+  tests/unit/fs-utils.spec.ts,project,withTempDir clone
+  tests/unit/search-cache.spec.ts,project,withTempDir clone
+  tests/unit/config-command.spec.ts,project,withTempRoot clone
+  tests/unit/settings-store.spec.ts,project,withTempRoot clone
+  tests/unit/telemetry-runtime.spec.ts,project,withTempGlobalRoot clone
+  tests/unit/telemetry-consent.spec.ts,project,withTempGlobalRoot clone
+body: ""

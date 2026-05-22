@@ -683,6 +683,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(validateResult.code).toBe(0);
       const payload = validateResult.json as {
         ok: boolean;
+        has_warnings: boolean;
         warnings: string[];
         checks: Array<{
           name: string;
@@ -693,7 +694,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           };
         }>;
       };
-      expect(payload.ok).toBe(false);
+      expect(payload.ok).toBe(true);
+      expect(payload.has_warnings).toBe(true);
       expect(payload.warnings).toContain("validate_resolution_missing_fields:1");
       const resolutionCheck = payload.checks.find((check) => check.name === "resolution");
       expect(resolutionCheck?.status).toBe("warn");
@@ -771,6 +773,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(lifecycleValidate.code).toBe(0);
       const lifecyclePayload = lifecycleValidate.json as {
         ok: boolean;
+        has_warnings: boolean;
         warnings: string[];
         checks: Array<{
           name: string;
@@ -781,7 +784,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           };
         }>;
       };
-      expect(lifecyclePayload.ok).toBe(false);
+      expect(lifecyclePayload.ok).toBe(true);
+      expect(lifecyclePayload.has_warnings).toBe(true);
       expect(lifecyclePayload.warnings).toContain("validate_lifecycle_active_closure_like_metadata:1");
       expect(lifecyclePayload.warnings).toContain("validate_lifecycle_active_terminal_parent:1");
       const lifecycleCheck = lifecyclePayload.checks.find((check) => check.name === "lifecycle");
@@ -791,11 +795,13 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const strictExitValidate = context.runCli(["validate", "--check-resolution", "--strict-exit", "--json"], { expectJson: true });
       expect(strictExitValidate.code).toBe(1);
-      expect((strictExitValidate.json as { ok: boolean }).ok).toBe(false);
+      expect((strictExitValidate.json as { ok: boolean; has_warnings: boolean }).ok).toBe(true);
+      expect((strictExitValidate.json as { ok: boolean; has_warnings: boolean }).has_warnings).toBe(true);
 
       const failOnWarnValidate = context.runCli(["validate", "--check-resolution", "--fail-on-warn", "--json"], { expectJson: true });
       expect(failOnWarnValidate.code).toBe(1);
-      expect((failOnWarnValidate.json as { ok: boolean }).ok).toBe(false);
+      expect((failOnWarnValidate.json as { ok: boolean; has_warnings: boolean }).ok).toBe(true);
+      expect((failOnWarnValidate.json as { ok: boolean; has_warnings: boolean }).has_warnings).toBe(true);
 
       await rm(path.join(context.pmPath, "events"), { recursive: true, force: true });
       const strictExitHealth = context.runCli(["health", "--strict-directories", "--strict-exit", "--json"], { expectJson: true });
@@ -837,7 +843,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         expectJson: true,
       });
       expect(strictExitValidate.code).toBe(1);
-      expect((strictExitValidate.json as { ok: boolean }).ok).toBe(false);
+      expect((strictExitValidate.json as { ok: boolean; has_warnings: boolean }).ok).toBe(true);
+      expect((strictExitValidate.json as { ok: boolean; has_warnings: boolean }).has_warnings).toBe(true);
 
       await rm(path.join(context.pmPath, "events"), { recursive: true, force: true });
 

@@ -315,6 +315,42 @@ describe("runPlan command family", () => {
     });
   });
 
+  it("accepts shorthand decision/discovery/validation text options for MCP-style calls", async () => {
+    await withTempPmPath(async (context) => {
+      const { planId } = await bootstrapPlan(context);
+      const dec = await runPlan({
+        subcommand: "decision",
+        id: planId,
+        options: { decision: "pick shorthand", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(dec.plan.decisions?.[0]?.decision).toBe("pick shorthand");
+      const disc = await runPlan({
+        subcommand: "discovery",
+        id: planId,
+        options: { discovery: "found shorthand", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(disc.plan.discoveries?.[0]?.text).toBe("found shorthand");
+      const val = await runPlan({
+        subcommand: "validation",
+        id: planId,
+        options: { validation: "check shorthand", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(val.plan.validation?.[0]?.text).toBe("check shorthand");
+      const cliDecision = context.runCli(["plan", "decision", planId, "--decision", "cli decision", "--json", "--author", "test-author"], { expectJson: true });
+      expect(cliDecision.code).toBe(0);
+      expect((cliDecision.json as { plan: { decisions?: Array<{ decision: string }> } }).plan.decisions?.at(-1)?.decision).toBe("cli decision");
+      const cliDiscovery = context.runCli(["plan", "discovery", planId, "--discovery", "cli discovery", "--json", "--author", "test-author"], { expectJson: true });
+      expect(cliDiscovery.code).toBe(0);
+      expect((cliDiscovery.json as { plan: { discoveries?: Array<{ text: string }> } }).plan.discoveries?.at(-1)?.text).toBe("cli discovery");
+      const cliValidation = context.runCli(["plan", "validation", planId, "--validation", "cli validation", "--json", "--author", "test-author"], { expectJson: true });
+      expect(cliValidation.code).toBe(0);
+      expect((cliValidation.json as { plan: { validation?: Array<{ text: string }> } }).plan.validation?.at(-1)?.text).toBe("cli validation");
+    });
+  });
+
   it("approve flips plan_mode and materialize creates child items", async () => {
     await withTempPmPath(async (context) => {
       const { planId } = await bootstrapPlan(context);
@@ -339,6 +375,38 @@ describe("runPlan command family", () => {
       });
       expect(materialized.materialized?.length).toBe(1);
       expect(materialized.materialized?.[0]?.type).toBe("Task");
+    });
+  });
+
+  it("materialize supports --steps all without adding reverse child dependencies to the plan", async () => {
+    await withTempPmPath(async (context) => {
+      const { planId } = await bootstrapPlan(context);
+      await runPlan({
+        subcommand: "add-step",
+        id: planId,
+        options: { stepTitle: "first materialized", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      await runPlan({
+        subcommand: "add-step",
+        id: planId,
+        options: { stepTitle: "second materialized", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+
+      const result = await runPlan({
+        subcommand: "materialize",
+        id: planId,
+        options: { steps: "all", materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+
+      const materializedIds = new Set(result.materialized?.map((entry) => entry.id) ?? []);
+      expect(materializedIds.size).toBe(2);
+      expect(result.plan.linked_items?.filter((entry) => materializedIds.has(entry.id))).toEqual([]);
+      expect(result.plan.steps?.every((step) => step.linked_items?.some((link) => materializedIds.has(link.id) && link.kind === "implements"))).toBe(true);
+      const validation = context.runCli(["validate", "--check-lifecycle", "--dependency-cycle-severity", "error", "--json"], { expectJson: true });
+      expect(validation.code).toBe(0);
     });
   });
 

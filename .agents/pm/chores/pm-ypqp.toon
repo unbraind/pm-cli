@@ -1,0 +1,16 @@
+id: pm-ypqp
+title: Deduplicate templates package runtime and legacy command implementation
+description: "Duplicate audit 2026-05-22: jscpd found src/cli/commands/templates.ts and packages/pm-templates/extensions/templates/runtime.ts carry nearly the same template normalization, option parsing, stored-template document parsing, reading, create execution, and list/apply branches. Representative clones include templates.ts:13-89 vs runtime.ts:63-138, templates.ts:89-113 vs runtime.ts:142-166, templates.ts:134-168 vs runtime.ts:180-214, and templates.ts:171-243 vs runtime.ts:211-283. Search found closed extraction item pm-2fgn and open package-first parent pm-59gj, but no active follow-up for this code drift. Fix by making the package runtime call a shared implementation or moving the legacy command to the package-backed runtime path, while preserving standalone package smoke behavior."
+type: Chore
+status: open
+priority: 1
+tags[4]: code-quality,dedup,packages,templates
+created_at: "2026-05-22T18:59:30.799Z"
+updated_at: "2026-05-22T19:00:50.695Z"
+author: codex-duplication-audit
+acceptance_criteria: "Template name normalization, stored-template parsing, create-option mapping, and apply/list execution are single-sourced; src command and package runtime no longer diverge on template semantics; package smoke tests, templates unit tests, and pnpm build pass."
+parent: pm-rnpb
+files[2]{path,scope,note}:
+  packages/pm-templates/extensions/templates/runtime.ts,project,package runtime duplicate
+  src/cli/commands/templates.ts,project,legacy template command duplicate
+body: ""

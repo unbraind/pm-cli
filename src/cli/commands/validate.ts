@@ -126,6 +126,7 @@ const METADATA_TRUNCATED_KEY_BY_FIELD: Record<ValidateMetadataRequiredField, str
 };
 const GIT_LS_FILES_MAX_BUFFER = 32 * 1024 * 1024;
 const FILE_LIST_SUMMARY_LIMIT = 40;
+const DIAGNOSTIC_LIST_SUMMARY_LIMIT = 40;
 const execFileAsync = promisify(execFile);
 
 export interface ValidateCommandOptions {
@@ -137,6 +138,7 @@ export interface ValidateCommandOptions {
   checkFiles?: boolean;
   includePmInternals?: boolean;
   verboseFileLists?: boolean;
+  verboseDiagnostics?: boolean;
   checkHistoryDrift?: boolean;
   checkCommandReferences?: boolean;
   scanMode?: string;
@@ -151,6 +153,7 @@ export interface ValidateCheck {
 
 export interface ValidateResult {
   ok: boolean;
+  has_warnings: boolean;
   checks: ValidateCheck[];
   warnings: string[];
   generated_at: string;
@@ -576,7 +579,7 @@ async function collectProjectFileCandidates(
   };
 }
 
-function summarizeList(values: string[], limit = 200): { values: string[]; truncated: boolean } {
+function summarizeList(values: string[], limit = DIAGNOSTIC_LIST_SUMMARY_LIMIT): { values: string[]; truncated: boolean } {
   /* c8 ignore start -- truncation behavior only surfaces with very large synthetic datasets. */
   if (values.length <= limit) {
     return { values, truncated: false };
@@ -665,6 +668,7 @@ function buildMetadataCheck(
   items: ItemWithBody[],
   metadataPolicy: ValidateMetadataPolicy,
   statusRegistry: RuntimeStatusRegistry,
+  verboseDiagnostics: boolean,
 ): { check: ValidateCheck; warnings: string[] } {
   const missingByField = Object.fromEntries(
     SUPPORTED_METADATA_REQUIRED_FIELDS.map((field) => [field, [] as string[]]),
@@ -714,7 +718,10 @@ function buildMetadataCheck(
     if (missingByField[field].length === 0) {
       continue;
     }
-    const summarized = summarizeList(missingByField[field]);
+    const summarized = summarizeList(
+      missingByField[field],
+      verboseDiagnostics ? missingByField[field].length : DIAGNOSTIC_LIST_SUMMARY_LIMIT,
+    );
     details[METADATA_ITEM_IDS_KEY_BY_FIELD[field]] = summarized.values;
     details[METADATA_TRUNCATED_KEY_BY_FIELD[field]] = summarized.truncated;
   }
@@ -732,6 +739,7 @@ function buildMetadataCheck(
 function buildResolutionCheck(
   items: ItemWithBody[],
   statusRegistry: RuntimeStatusRegistry,
+  verboseDiagnostics: boolean,
 ): { check: ValidateCheck; warnings: string[] } {
   const terminalDoneStatuses = new Set<string>(statusRegistry.terminal_done_statuses);
   terminalDoneStatuses.add(statusRegistry.close_status);
@@ -751,9 +759,13 @@ function buildResolutionCheck(
 
   const warnings =
     missingResolutionRows.length > 0 ? [`validate_resolution_missing_fields:${missingResolutionRows.length}`] : [];
-  const summarizedRows = summarizeList(missingResolutionRows.map((row) => `${row.id}:${row.missing_fields.join(",")}`));
+  const diagnosticLimit = verboseDiagnostics ? Number.POSITIVE_INFINITY : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
+  const summarizedRows = summarizeList(
+    missingResolutionRows.map((row) => `${row.id}:${row.missing_fields.join(",")}`),
+    diagnosticLimit,
+  );
   const remediationHints = missingResolutionRows.map((row) => buildResolutionRemediationCommand(row));
-  const summarizedHints = summarizeList(remediationHints);
+  const summarizedHints = summarizeList(remediationHints, diagnosticLimit);
   return {
     check: {
       name: "resolution",
@@ -1387,12 +1399,12 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   const warnings = [...new Set(itemReadWarnings)];
 
   if (requestedChecks.has("metadata")) {
-    const metadataCheck = buildMetadataCheck(items, metadataPolicy, statusRegistry);
+    const metadataCheck = buildMetadataCheck(items, metadataPolicy, statusRegistry, Boolean(options.verboseDiagnostics));
     checks.push(metadataCheck.check);
     warnings.push(...metadataCheck.warnings);
   }
   if (requestedChecks.has("resolution")) {
-    const resolutionCheck = buildResolutionCheck(items, statusRegistry);
+    const resolutionCheck = buildResolutionCheck(items, statusRegistry, Boolean(options.verboseDiagnostics));
     checks.push(resolutionCheck.check);
     warnings.push(...resolutionCheck.warnings);
   }
@@ -1431,8 +1443,10 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   }
 
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+  const hasErrors = normalizedWarnings.some((warning) => warning.startsWith("validate_lifecycle_dependency_cycles_error:"));
   return {
-    ok: normalizedWarnings.length === 0,
+    ok: !hasErrors,
+    has_warnings: normalizedWarnings.length > 0,
     checks,
     warnings: normalizedWarnings,
     generated_at: nowIso(),

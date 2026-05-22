@@ -1,0 +1,16 @@
+id: pm-qsk8
+title: Deduplicate health and validate history-drift checks
+description: "Duplicate audit 2026-05-22: jscpd found src/cli/commands/health.ts and src/cli/commands/validate.ts repeat the history drift scan and warning construction logic. Representative clones include health.ts:1202-1217 vs validate.ts:1190-1205 and health.ts:1219-1243 vs validate.ts:1206-1230. Search found closed implementation items pm-x0vj/pm-7vr9, but no active follow-up to single-source the check. Fix by extracting a shared history drift diagnostic builder that can render the compact health summary and the validate check payload from one scan result."
+type: Chore
+status: open
+priority: 2
+tags[5]: code-quality,dedup,health,history,validate
+created_at: "2026-05-22T19:00:15.512Z"
+updated_at: "2026-05-22T19:01:14.965Z"
+author: codex-duplication-audit
+acceptance_criteria: Health and validate use one shared history-drift scan/diagnostic implementation; output differences are limited to format adapters; health and validate tests cover the shared warnings; pnpm build passes.
+parent: pm-rnpb
+files[2]{path,scope,note}:
+  src/cli/commands/health.ts,project,history drift check clone
+  src/cli/commands/validate.ts,project,history drift check clone
+body: ""

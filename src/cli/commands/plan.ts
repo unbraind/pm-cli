@@ -89,10 +89,13 @@ export interface PlanCommandOptions {
   test?: string | string[];
   doc?: string | string[];
   decisionText?: string;
+  decision?: string;
   decisionRationale?: string;
   decisionEvidence?: string;
   discoveryText?: string;
+  discovery?: string;
   validationText?: string;
+  validation?: string;
   validationCommand?: string;
   validationExpected?: string;
   depth?: string;
@@ -387,6 +390,21 @@ function resolveStepRef(steps: PlanStep[], ref: string): PlanStep {
     if (byOrder) return byOrder;
   }
   throw new PmCliError(`Step "${ref}" not found in plan`, EXIT_CODE.NOT_FOUND);
+}
+
+function resolveMaterializeTargets(steps: PlanStep[], refs: string[]): PlanStep[] {
+  if (refs.some((ref) => ref.trim().toLowerCase() === "all")) {
+    return steps.slice().sort((left, right) => left.order - right.order);
+  }
+  const targets: PlanStep[] = [];
+  const seen = new Set<string>();
+  for (const ref of refs) {
+    const step = resolveStepRef(steps, ref);
+    if (seen.has(step.id)) continue;
+    targets.push(step);
+    seen.add(step.id);
+  }
+  return targets;
 }
 
 function findCurrentStep(steps: PlanStep[]): PlanStep | undefined {
@@ -1068,14 +1086,25 @@ async function planAppendLog(
   ctx: PlanWriteContext,
   kind: "decision" | "discovery" | "validation",
 ): Promise<PlanCommandResult> {
-  if (kind === "decision" && !options.decisionText?.trim()) {
-    throw new PmCliError("pm plan decision requires --decision-text", EXIT_CODE.USAGE);
-  }
-  if (kind === "discovery" && !options.discoveryText?.trim()) {
-    throw new PmCliError("pm plan discovery requires --discovery-text", EXIT_CODE.USAGE);
-  }
-  if (kind === "validation" && !options.validationText?.trim()) {
-    throw new PmCliError("pm plan validation requires --validation-text", EXIT_CODE.USAGE);
+  const logText =
+    kind === "decision"
+      ? options.decisionText?.trim() || options.decision?.trim()
+      : kind === "discovery"
+        ? options.discoveryText?.trim() || options.discovery?.trim()
+        : options.validationText?.trim() || options.validation?.trim();
+  if (!logText) {
+    const canonical = `--${kind}-text`;
+    const shorthand = `--${kind}`;
+    throw new PmCliError(`pm plan ${kind} requires ${canonical}`, EXIT_CODE.USAGE, {
+      code: "missing_required_option",
+      examples: [
+        `pm plan ${kind} <plan-id> ${canonical} "..."`,
+        `pm plan ${kind} <plan-id> ${shorthand} "..."`,
+      ],
+      recovery: {
+        suggested_retry: `pm plan ${kind} <plan-id> ${canonical} <value>`,
+      },
+    });
   }
   const author = resolveAuthor(options.author, ctx.settings.author_default);
   const { document, itemId } = await mutatePlanSteps({
@@ -1091,7 +1120,7 @@ async function planAppendLog(
         list.push({
           ts: now,
           author,
-          decision: options.decisionText!.trim(),
+          decision: logText,
           rationale: options.decisionRationale?.trim() || undefined,
           evidence: options.decisionEvidence?.trim() || undefined,
         });
@@ -1100,13 +1129,13 @@ async function planAppendLog(
       }
       if (kind === "discovery") {
         const list = doc.metadata.plan_discoveries ?? [];
-        list.push({ ts: now, author, text: options.discoveryText!.trim() });
+        list.push({ ts: now, author, text: logText });
         doc.metadata.plan_discoveries = list;
         return { changedSteps: [] };
       }
       const list = doc.metadata.plan_validation ?? [];
       list.push({
-        text: options.validationText!.trim(),
+        text: logText,
         command: options.validationCommand?.trim() || undefined,
         expected: options.validationExpected?.trim() || undefined,
       });
@@ -1188,7 +1217,7 @@ async function planMaterialize(
 ): Promise<PlanCommandResult> {
   const stepRefs = toArray(options.steps);
   if (stepRefs.length === 0) {
-    throw new PmCliError("pm plan materialize requires --steps <ids|orders>", EXIT_CODE.USAGE);
+    throw new PmCliError("pm plan materialize requires --steps <ids|orders|all>", EXIT_CODE.USAGE);
   }
   const targetType = options.materializeType?.trim() || "Task";
   const typeRegistry = resolveItemTypeRegistry(ctx.settings, getActiveExtensionRegistrations());
@@ -1201,7 +1230,7 @@ async function planMaterialize(
 
   const planRead = await readPlanItem(ctx, id);
   const steps = (planRead.document.metadata.plan_steps ?? []).slice();
-  const targets: PlanStep[] = stepRefs.map((ref) => resolveStepRef(steps, ref));
+  const targets = resolveMaterializeTargets(steps, stepRefs);
   if (targets.length === 0) {
     throw new PmCliError("No matching plan steps found for --steps", EXIT_CODE.NOT_FOUND);
   }
@@ -1252,11 +1281,6 @@ async function planMaterialize(
         step.linked_items = links;
         step.updated_at = nowIso();
       }
-      const deps = doc.metadata.dependencies ?? [];
-      for (const m of materialized) {
-        deps.push({ id: m.id, kind: "child", created_at: nowIso(), author: resolveAuthor(options.author, ctx.settings.author_default) });
-      }
-      doc.metadata.dependencies = deps;
       return { changedSteps: targets.map((entry) => entry.id) };
     },
   });

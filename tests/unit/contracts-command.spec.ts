@@ -708,6 +708,7 @@ describe("contracts command runtime", () => {
             "--check-stale-blockers",
             "--dependency-cycle-severity",
             "--verbose-file-lists",
+            "--verbose-diagnostics",
           ],
         },
         {

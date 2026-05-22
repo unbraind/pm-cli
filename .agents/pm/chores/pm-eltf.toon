@@ -1,0 +1,19 @@
+id: pm-eltf
+title: Extract shared test item factories for command specs
+description: "Duplicate audit 2026-05-22: many command specs copy a createTask/createSeedItem helper that shells through pm create with the same long flag list, then extracts json.item.id. The widened duplicate scan found the same 10-line create sequence across at least 9 files including tests/integration/task-lifecycle-aliases.spec.ts:5, tests/unit/comments-command.spec.ts:16, tests/unit/close-command.spec.ts, tests/unit/restore-command.spec.ts, tests/unit/delete-command.spec.ts, tests/unit/beads-command.spec.ts, tests/unit/notes-learnings-command.spec.ts, tests/unit/validate-command.spec.ts, and tests/unit/test-command.spec.ts. This is distinct from pm-7rlp, which targets test runtime performance and CI matrix duplication rather than fixture boilerplate. Fix by adding a shared tests/helper item factory with overridable title/type/status/metadata defaults and migrating repeated local helpers where that does not hide test intent."
+type: Chore
+status: open
+priority: 2
+tags[3]: code-quality,dedup,tests
+created_at: "2026-05-22T18:54:16.326Z"
+updated_at: "2026-05-22T18:54:16.326Z"
+author: codex-duplicate-audit
+acceptance_criteria: Shared test helper covers common create-item setup with explicit overrides; repeated long createTask/createSeedItem blocks are removed from affected specs; migrated tests still make command-specific setup obvious; targeted unit/integration specs and pnpm build pass.
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T18:54:16.326Z",codex-duplicate-audit,"Duplicate-check evidence: searched tracker for createTask helper and repeated create item test duplication. No open item covers this fixture clone; pm-7rlp covers runner/CI performance only. Scan found 9 files with identical create flag windows."
+files[3]{path,scope,note}:
+  tests/unit/comments-command.spec.ts,project,representative repeated createTask helper
+  tests/integration/task-lifecycle-aliases.spec.ts,project,representative repeated createTask helper
+  tests/helpers/withTempPmPath.ts,project,likely home for shared factory
+body: ""

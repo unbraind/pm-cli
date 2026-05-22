@@ -1,0 +1,18 @@
+id: pm-0d0q
+title: Single-source Claude plugin capability inventory docs
+description: "Duplicate audit 2026-05-22: Claude plugin capability inventory is duplicated and already drifting between docs/CLAUDE_CODE_PLUGIN.md:45-83 and plugins/pm-claude/README.md:5-14 plus :101-174. The docs repeat counts and inventories for MCP tools, skills, slash commands, subagents, install modes, and pm_run actions. Current drift: docs/CLAUDE_CODE_PLUGIN.md:83 says 9 slash commands, while plugins/pm-claude/README.md:11 says 14; plugins/pm-claude/README.md:12 says 3 subagents but lists 4. Existing pm-rjgh covers PRD/CHANGELOG/marketplace/AGENTS hygiene and pm-js0r covers wrapper/smoke code, not this docs inventory drift."
+type: Chore
+status: open
+priority: 2
+tags[4]: claude,dedup,docs,plugins
+created_at: "2026-05-22T19:17:59.720Z"
+updated_at: "2026-05-22T19:17:59.720Z"
+author: codex-duplicate-audit
+acceptance_criteria: One Claude plugin document is canonical for capability inventory; the other surface routes to it or uses generated inventory; slash command/subagent/tool counts agree with actual plugin files; docs-skills gate and relevant plugin smoke/docs checks pass.
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T19:17:59.720Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'Claude plugin capability inventory slash commands subagents docs README drift' found adjacent pm-rjgh, pm-js0r, and pm-ash0 but no active item for Claude docs capability inventory duplication."
+docs[2]{path,scope,note}:
+  docs/CLAUDE_CODE_PLUGIN.md,project,duplicated capability inventory
+  plugins/pm-claude/README.md,project,canonical candidate with drifting counts
+body: ""

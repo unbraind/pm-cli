@@ -1,0 +1,18 @@
+id: pm-w98k
+title: Single-source extension capability and policy-surface contract lists
+description: "Duplicate audit 2026-05-22: the repo static quality gate with --duplicate-window 10 found extension contract arrays duplicated between src/core/extensions/extension-types.ts and src/sdk/cli-contracts.ts. Representative clones are KNOWN_EXTENSION_CAPABILITIES vs PM_EXTENSION_CAPABILITY_CONTRACTS at extension-types.ts:4-14 and cli-contracts.ts:45-55, KNOWN_EXTENSION_POLICY_MODES/TRUST/SANDBOX vs PM_EXTENSION_*_CONTRACTS at extension-types.ts:27-32 and cli-contracts.ts:72-77, and KNOWN_EXTENSION_POLICY_SURFACES vs PM_EXTENSION_POLICY_SURFACE_CONTRACTS at extension-types.ts:34-55 and cli-contracts.ts:79-100. Search found closed SDK typing/docs work and open pm-axd1 for policy default objects, but no active item for single-sourcing the core-vs-SDK contract constants. Fix by exporting one canonical contract source or generating the SDK aliases from the core source so extension capabilities/surfaces/modes cannot drift."
+type: Chore
+status: open
+priority: 2
+tags[5]: code-quality,contracts,dedup,extensions,sdk
+created_at: "2026-05-22T19:04:36.132Z"
+updated_at: "2026-05-22T19:05:03.117Z"
+author: codex-duplication-audit
+acceptance_criteria: "Extension capabilities, policy modes, trust modes, sandbox profiles, and policy surfaces have one canonical source; SDK-facing exported names remain backward-compatible or are generated aliases; core governance and contracts command output continue to expose the same values; focused extension contracts tests and pnpm build pass."
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T19:05:03.117Z",codex-duplication-audit,"Evidence: duplicate-check searches before creation included 'duplicate duplicated duplication repeated copy-paste code logic tests text', 'Deduplicate', and 'extension types sdk cli contracts command option action service duplicate'. Existing pm-axd1 covers extension governance policy default objects, and closed SDK items cover typing/docs, but no active item covered the duplicated core-vs-SDK contract lists. Static scan evidence: node scripts/release/static-quality-gate.mjs --duplicate-window 10 --max-duplicate-chunks 200 --json reported extension-types.ts vs cli-contracts.ts clones for capabilities, policy modes, sandbox profiles, and policy surfaces."
+files[2]{path,scope,note}:
+  src/core/extensions/extension-types.ts,project,core extension contract constants
+  src/sdk/cli-contracts.ts,project,SDK extension contract constants clone
+body: ""

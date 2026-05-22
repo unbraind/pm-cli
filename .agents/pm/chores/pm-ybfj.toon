@@ -1,0 +1,18 @@
+id: pm-ybfj
+title: Deduplicate Beads and Todos package adapter runtimes
+description: "Duplicate audit 2026-05-22: jscpd found packages/pm-beads and packages/pm-todos duplicate both extension command metadata and runtime adapter logic. Index clones include beads/index.ts:34-59 vs todos/index.ts:36-61 and beads/index.ts:60-81 vs todos/index.ts:62-83. Runtime clones include beads/runtime.ts:102-118 vs todos/runtime.ts:96-112, beads/runtime.ts:121-137 vs todos/runtime.ts:116-132, beads/runtime.ts:148-165 vs todos/runtime.ts:221-238, and beads/runtime.ts:452-469 vs todos/runtime.ts:260-277. Existing pm-y5u0 covers generic runtime option readers, but this is a separate import/export adapter pattern duplication. Fix by extracting shared package adapter primitives for external-source item mapping, command contract shape, conflict/result rendering, and dry-run/import counters."
+type: Chore
+status: open
+priority: 2
+tags[5]: beads,code-quality,dedup,packages,todos
+created_at: "2026-05-22T18:59:42.420Z"
+updated_at: "2026-05-22T19:00:50.760Z"
+author: codex-duplication-audit
+acceptance_criteria: "Beads and Todos packages share common adapter/runtime helpers for repeated command metadata, source mapping, import counters, and result rendering; package-specific field mapping remains explicit; beads/todos unit tests and package smoke coverage pass; pnpm build passes."
+parent: pm-rnpb
+files[4]{path,scope,note}:
+  packages/pm-beads/extensions/beads/index.ts,project,adapter command metadata clone
+  packages/pm-beads/extensions/beads/runtime.ts,project,adapter runtime clone
+  packages/pm-todos/extensions/todos/index.ts,project,adapter command metadata clone
+  packages/pm-todos/extensions/todos/runtime.ts,project,adapter runtime clone
+body: ""

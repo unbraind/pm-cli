@@ -1,0 +1,20 @@
+id: pm-ols6
+title: Centralize audit ownership-conflict guidance
+description: "Duplicate audit 2026-05-22: append-only/audit override commands repeat the same ownership-conflict catch predicate and guidance wrapping. Representative blocks are in src/cli/commands/learnings.ts:122, src/cli/commands/notes.ts:118, src/cli/commands/comments.ts:196, and src/cli/commands/claim.ts:131. Each checks PmCliError conflict text, then throws a new PmCliError with code ownership_conflict plus command-specific required/examples/nextSteps. This is not included in pm-why9's CLI parser/update-table scope. Fix by extracting a helper that recognizes mutateItem assignee conflicts and formats command-specific audit guidance without changing current messages."
+type: Chore
+status: open
+priority: 3
+tags[3]: code-quality,dedup,ownership
+created_at: "2026-05-22T18:54:47.501Z"
+updated_at: "2026-05-22T18:54:47.501Z"
+author: codex-duplicate-audit
+acceptance_criteria: "A shared helper owns the assignee-conflict recognition and PmCliError wrapping; comments, notes, learnings, and release/claim audit override paths keep their current user-facing guidance; tests cover at least one command-specific message and one pass-through non-conflict error; pnpm build and targeted command tests pass."
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T18:54:47.501Z",codex-duplicate-audit,"Duplicate-check evidence: searched tracker for ownership/allow-audit conflict dedup. Existing pm-why9 does not mention this path; no specific open item found. Code scan found the same catch predicate across comments, notes, learnings, and claim/release logic."
+files[4]{path,scope,note}:
+  src/cli/commands/learnings.ts,project,duplicated conflict guidance
+  src/cli/commands/notes.ts,project,duplicated conflict guidance
+  src/cli/commands/comments.ts,project,duplicated conflict guidance
+  src/cli/commands/claim.ts,project,duplicated conflict guidance
+body: ""

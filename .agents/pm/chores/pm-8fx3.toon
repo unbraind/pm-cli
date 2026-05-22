@@ -1,0 +1,18 @@
+id: pm-8fx3
+title: Deduplicate front-matter key-order contract literals in tests
+description: "Duplicate audit 2026-05-22: jscpd found tests/unit/shared-constants-errors.spec.ts copies the full FRONT_MATTER_KEY_ORDER array from src/core/shared/constants.ts. Representative clone: constants.ts:46-115 vs shared-constants-errors.spec.ts:53-122. The literal copy catches accidental key-order changes, but it is large and easy to update mechanically without noticing intended contract changes. Existing pm-why9 covers default status/workflow model duplication, not this front-matter contract literal. Fix by replacing the long copied array with a smaller contract fixture strategy: either a named snapshot/golden file with clear update intent, or assertions over stable sentinel ordering and required membership that preserve contract value without a full in-test copy."
+type: Chore
+status: open
+priority: 3
+tags[4]: code-quality,dedup,serialization,tests
+created_at: "2026-05-22T19:09:00.475Z"
+updated_at: "2026-05-22T19:09:25.448Z"
+author: codex-dup-audit
+acceptance_criteria: shared-constants tests no longer inline-copy the entire FRONT_MATTER_KEY_ORDER array; the replacement still catches accidental front-matter ordering or missing required keys; serialization/release-readiness expectations remain deterministic; focused shared-constants tests and pnpm build pass.
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T19:09:25.448Z",codex-dup-audit,"Duplicate-check evidence: before creating, searched existing items for FRONT_MATTER_KEY_ORDER/shared constants/key-order test duplication. Existing pm-why9 covers runtime-schema vs constants defaults, not front-matter key-order contract literals. jscpd and manual inspection confirmed constants.ts:46-115 duplicates shared-constants-errors.spec.ts:53-122."
+files[2]{path,scope,note}:
+  src/core/shared/constants.ts,project,front-matter key-order source
+  tests/unit/shared-constants-errors.spec.ts,project,copied key-order contract literal
+body: ""
