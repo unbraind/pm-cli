@@ -393,7 +393,11 @@ function resolveStepRef(steps: PlanStep[], ref: string): PlanStep {
 }
 
 function resolveMaterializeTargets(steps: PlanStep[], refs: string[]): PlanStep[] {
-  if (refs.some((ref) => ref.trim().toLowerCase() === "all")) {
+  const allRefs = refs.filter((ref) => ref.trim().toLowerCase() === "all");
+  if (allRefs.length > 0) {
+    if (refs.length > allRefs.length) {
+      throw new PmCliError("pm plan materialize --steps all cannot be combined with other step refs", EXIT_CODE.USAGE);
+    }
     return steps.slice().sort((left, right) => left.order - right.order);
   }
   const targets: PlanStep[] = [];

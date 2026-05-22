@@ -28,7 +28,7 @@ import { verifyHistoryChain } from "./history.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
 
 type ValidateCheckName = "metadata" | "resolution" | "lifecycle" | "files" | "command_references" | "history_drift";
-type ValidateStatus = "ok" | "warn";
+type ValidateStatus = "ok" | "warn" | "error";
 type ValidateDependencyCycleSeverity = "off" | "warn" | "error";
 type ValidateFileScanMode = "default" | "tracked-all" | "tracked-all-strict";
 type ItemWithBody = Awaited<ReturnType<typeof listAllFrontMatterWithBody>>[number];
@@ -614,11 +614,6 @@ function summarizeFileList(
   };
 }
 
-function isValidateErrorWarning(warning: string): boolean {
-  const token = warning.split(":", 1)[0] ?? "";
-  return token.endsWith("_error");
-}
-
 const RESOLUTION_REMEDIATION_FLAG_BY_FIELD: Record<ResolutionFieldKey, string> = {
   resolution: "--resolution",
   expected_result: "--expected-result",
@@ -1050,7 +1045,11 @@ function buildLifecycleCheck(
   return {
     check: {
       name: "lifecycle",
-      status: warnings.length === 0 ? "ok" : "warn",
+      status: dependencyCycleDiagnostics.cycle_count > 0 && dependencyCycleSeverity === "error"
+        ? "error"
+        : warnings.length === 0
+          ? "ok"
+          : "warn",
       details: {
         checked_active_items: activeItems.length,
         active_closure_like_metadata_items: closureLikeRows.length,
@@ -1448,7 +1447,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   }
 
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
-  const hasErrors = normalizedWarnings.some(isValidateErrorWarning);
+  const hasErrors = checks.some((check) => check.status === "error");
   return {
     ok: !hasErrors,
     has_warnings: normalizedWarnings.length > 0,

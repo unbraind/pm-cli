@@ -410,6 +410,27 @@ describe("runPlan command family", () => {
     });
   });
 
+  it("rejects --steps all combined with other materialize refs", async () => {
+    await withTempPmPath(async (context) => {
+      const { planId } = await bootstrapPlan(context);
+      await runPlan({
+        subcommand: "add-step",
+        id: planId,
+        options: { stepTitle: "only materialized", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+
+      await expect(
+        runPlan({
+          subcommand: "materialize",
+          id: planId,
+          options: { steps: ["all", "missing-step"], materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          global: { ...GLOBAL, path: context.pmPath },
+        }),
+      ).rejects.toMatchObject({ exitCode: 2 });
+    });
+  });
+
   it("create supports claim and from-search options and accepts blocks/blockedBy deps", async () => {
     await withTempPmPath(async (context) => {
       const related = context.runCli([
