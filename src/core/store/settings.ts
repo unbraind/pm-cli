@@ -363,6 +363,16 @@ function normalizeItemTypeDefinition(definition: ItemTypeDefinition): ItemTypeDe
   };
 }
 
+/**
+ * Produce a normalized, deduplicated, and alphabetically ordered list of item type definitions.
+ *
+ * Treats `undefined` as an empty input and drops any invalid definitions. When multiple definitions
+ * share the same name (case-insensitive), only one entry per name is kept. The returned list is
+ * sorted by `name` using locale-aware string comparison.
+ *
+ * @param definitions - The input list of item type definitions to normalize (may be `undefined`)
+ * @returns An array of validated `ItemTypeDefinition` objects with duplicates removed and sorted by name
+ */
 export function normalizeItemTypeDefinitions(definitions: ItemTypeDefinition[] | undefined): ItemTypeDefinition[] {
   const normalized = (definitions ?? [])
     .map((definition) => normalizeItemTypeDefinition(definition))
@@ -374,6 +384,12 @@ export function normalizeItemTypeDefinitions(definitions: ItemTypeDefinition[] |
   return [...dedupedByName.values()].sort((left, right) => left.name.localeCompare(right.name));
 }
 
+/**
+ * Merge a validated settings object with defaults and produce a fully populated, normalized settings object.
+ *
+ * @param settings - A validated ParsedSettings input (already conforming to the expected schema).
+ * @returns A complete PmSettings with defaults applied, governance knobs resolved, `item_format` coerced when required, and nested sections normalized (validation, agent_guidance, item_types, schema, extensions, providers, vector_store, context, search, telemetry, workflow, testing, etc.).
+ */
 function mergeSettings(settings: ParsedSettings): PmSettings {
   const defaults = cloneDefaults();
   const governance = resolveGovernanceKnobs({
@@ -677,6 +693,15 @@ export function serializeSettings(settings: PmSettings): string {
   return `${JSON.stringify(ordered, null, 2)}\n`;
 }
 
+/**
+ * Read project settings from disk, validate and merge them with defaults, and return settings plus metadata and warnings.
+ *
+ * @param pmRoot - Filesystem path of the project root used to locate the settings file
+ * @returns An object containing:
+ *   - `settings`: the merged and normalized project settings
+ *   - `metadata.has_explicit_item_format`: `true` when the original file explicitly specified an item format, `false` otherwise
+ *   - `warnings`: array of warning codes or messages produced while reading, validating, merging, or scaffolding settings
+ */
 export async function readSettingsWithMetadata(pmRoot: string): Promise<SettingsReadResult> {
   const settingsPath = getSettingsPath(pmRoot);
   const raw = await readFileIfExists(settingsPath);

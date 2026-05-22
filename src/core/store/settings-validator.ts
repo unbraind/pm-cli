@@ -104,6 +104,14 @@ const FAIL: Outcome = { ok: false };
 const vString: Check = (input) => (typeof input === "string" ? { ok: true, value: input } : FAIL);
 const vBoolean: Check = (input) => (typeof input === "boolean" ? { ok: true, value: input } : FAIL);
 
+/**
+ * Validates that the input is a number, optionally requiring integer-ness and positivity.
+ *
+ * @param options - Validation modifiers:
+ *   - `int`: require the number to be an integer
+ *   - `positive`: require the number to be greater than zero
+ * @returns `{ ok: true, value: number }` if the input satisfies the checks, `{ ok: false }` otherwise.
+ */
 function vNumber(options: { int?: boolean; positive?: boolean } = {}): Check {
   return (input) => {
     if (typeof input !== "number" || Number.isNaN(input)) {
@@ -119,10 +127,22 @@ function vNumber(options: { int?: boolean; positive?: boolean } = {}): Check {
   };
 }
 
+/**
+ * Creates a validator that accepts only the specified string literals.
+ *
+ * @param allowed - The allowed string values for the validator (variadic).
+ * @returns An Outcome with `ok: true` and the validated string when the input matches one of `allowed`, otherwise the failure outcome.
+ */
 function vLiteral(...allowed: string[]): Check {
   return (input) => (typeof input === "string" && allowed.includes(input) ? { ok: true, value: input } : FAIL);
 }
 
+/**
+ * Creates a validator that accepts arrays whose elements pass the given item validator.
+ *
+ * @param item - Validator applied to each array element; every element must pass for the array to be valid
+ * @returns An Outcome: `ok: true` with an array of validated element values when `input` is an array and all elements pass `item`, or `ok: false` on failure
+ */
 function vArray(item: Check): Check {
   return (input) => {
     if (!Array.isArray(input)) {
@@ -140,10 +160,24 @@ function vArray(item: Check): Check {
   };
 }
 
+/**
+ * Creates a validator that treats `undefined` as an absent (optional) value.
+ *
+ * @param inner - Validator to run when the input is not `undefined`
+ * @returns `OK_ABSENT` if the input is `undefined`, otherwise the validation outcome produced by `inner`
+ */
 function vOptional(inner: Check): Check {
   return (input) => (input === undefined ? OK_ABSENT : inner(input));
 }
 
+/**
+ * Validates that an input is a plain object and returns a new object containing only the validated keys defined by `shape`.
+ *
+ * The input must be a non-null, non-array object. Each key in `shape` is validated against the corresponding value from the input; if any check fails, validation fails. Optional checks that return `undefined` cause the key to be omitted from the output. Any keys not listed in `shape` are dropped.
+ *
+ * @param shape - A record mapping object keys to `Check` validator functions that validate and transform each field
+ * @returns An `Outcome` with `{ ok: true, value: Record<string, unknown> }` containing only successfully validated keys, or `FAIL` if the input is not an object or any field check fails
+ */
 function vObject(shape: Record<string, Check>): Check {
   return (input) => {
     if (typeof input !== "object" || input === null || Array.isArray(input)) {
@@ -401,7 +435,11 @@ const settingsCheck = vObject({
   }),
 });
 
-/** Validate raw settings, returning stripped, type-checked data or failure (matching the legacy zod safeParse). */
+/**
+ * Validate raw settings and produce a validated, unknown-key-stripped settings object.
+ *
+ * @returns The validation result: `{ success: true, data: ParsedSettings }` when validation succeeds, or `{ success: false }` when validation fails.
+ */
 export function validateSettings(raw: unknown): SettingsValidationResult {
   const result = settingsCheck(raw);
   if (!result.ok) {
