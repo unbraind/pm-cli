@@ -180,6 +180,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "reindex",
   "history",
   "history-redact",
+  "history-repair",
   "activity",
   "restore",
   "update",
@@ -260,6 +261,7 @@ export const PM_TOOL_ACTIONS = [
   "search",
   "history",
   "history-redact",
+  "history-repair",
   "activity",
   "restore",
   "update",
@@ -725,6 +727,13 @@ export const HISTORY_REDACT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--literal" },
   { flag: "--regex" },
   { flag: "--replacement" },
+  { flag: "--dry-run" },
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--force" },
+];
+
+export const HISTORY_REPAIR_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--dry-run" },
   { flag: "--author" },
   { flag: "--message" },
@@ -1529,6 +1538,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(HISTORY_FLAG_CONTRACTS);
     case "history-redact":
       return withSubcommandGlobalFlags(HISTORY_REDACT_FLAG_CONTRACTS);
+    case "history-repair":
+      return withSubcommandGlobalFlags(HISTORY_REPAIR_FLAG_CONTRACTS);
     case "plan":
       return withSubcommandGlobalFlags(PLAN_FLAG_CONTRACTS);
     case "activity":
@@ -2162,6 +2173,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     required: ["id"],
     optional: ["literal", "regex", "replacement", "dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
     anyOfRequired: [["literal"], ["regex"]],
+  },
+  "history-repair": {
+    required: ["id"],
+    optional: ["dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
   },
   plan: {
     required: ["subcommand"],

@@ -40,6 +40,7 @@ import {
   runHealth,
   runHistory,
   runHistoryRedact,
+  runHistoryRepair,
   runInit,
   runLearnings,
   runList,
@@ -558,6 +559,8 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runHistory(id ?? readRequiredString(options, "id"), options, global);
     case "history-redact":
       return runHistoryRedact(id ?? readRequiredString(options, "id"), options, global);
+    case "history-repair":
+      return runHistoryRepair(id ?? readRequiredString(options, "id"), options, global);
     case "plan": {
       const subcommand = readRequiredString(options, "subcommand");
       const planRecord = options as Record<string, unknown>;
@@ -658,7 +661,7 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
         "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_update, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_test, pm_validate, pm_health, pm_contracts, pm_plan) over pm_run when they cover the operation. " +
         "Use pm_plan for agent harness Plan workflows: it provides Codex/Claude/Cursor-style planning with durable steps, dependencies, decisions, discoveries, validation, and materialization. " +
         "Use pm_run with an explicit action for package-owned operations (calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume), plus activity, aggregate, history, stats, append, notes, learnings, test-all, and gc. " +
-        "Use history-redact for audited history-stream redaction workflows. " +
+        "Use history-redact for audited history-stream redaction workflows, and history-repair to re-anchor a drifted history chain so pm health/validate report ok. " +
         "Set author to 'claude-code-agent' on all mutations. " +
         "Do not pass path during real repository tracking — only pass path for sandbox or test runs.",
     };

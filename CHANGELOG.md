@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `pm create <type> <title>` positional form and close-via-update auto-routing for agent ergonomics.
+- **`pm history-repair <id>`** — a first-class, audited command that re-anchors a drifted history chain so `pm health` / `pm validate --check-history-drift` return ok. It deterministically replays the stream, recomputes every before/after hash, repairs legacy patch ops that no longer strictly apply (`replace`→`add` on first-write paths; skips unresolvable array-shape ops), reconciles the latest hash with the on-disk item document, and appends an auditable `history_repair` marker. It never modifies item content, supports `--dry-run`/`--author`/`--message`/`--force` with the same ownership/lock governance as `history-redact`, and is a safe no-op on a clean stream. Exposed via the CLI, the MCP `history-repair` action, SDK contracts, and shell completions. This is the missing peer to `history-redact` (which only re-anchors a chain when a redaction match occurs), so cleanly-drifted legacy streams could never be repaired before.
+
+### Changed (history)
+- Consolidated the duplicated history replay/patch mechanics shared by `history`, `restore`, `history-redact`, and `history-repair` into a single `src/core/history/replay.ts` module (`ReplayDocument`, `replayHash`, `normalizeReplayPatch*`, `toReplayDocument`, `tryApplyReplayPatch`, `verifyHistoryChain`, `reanchorHistoryEntries`). Each command keeps its own thin error-formatting wrapper to preserve exact CLI error contracts. No behavior change.
 
 ## [2026.5.18] - 2026-05-18
 

@@ -647,6 +647,36 @@ export function registerMutationCommands(program: Command): void {
     });
 
   program
+    .command("history-repair")
+    .argument("<id>", "Item id")
+    .option("--dry-run", "Preview the re-anchor impact without writing the history file")
+    .option("--author <value>", "Mutation author")
+    .option("--message <value>", "Audit history message for the repair marker entry")
+    .option("--force", "Force ownership/lock override")
+    .description("Re-anchor a drifted item history chain (recompute hashes, reconcile with the on-disk item) and record an audit marker.")
+    .action(async (id: string, options: Record<string, unknown>, command) => {
+      const globalOptions = getGlobalOptions(command);
+      const startedAt = Date.now();
+      const { runHistoryRepair } = await loadMutationCommandsModule();
+      const result = await runHistoryRepair(
+        id,
+        {
+          dryRun: options.dryRun === true,
+          author: typeof options.author === "string" ? options.author : undefined,
+          message: typeof options.message === "string" ? options.message : undefined,
+          force: Boolean(options.force),
+        },
+        globalOptions,
+      );
+      // history-repair only re-anchors the audit stream; item content is untouched,
+      // so search caches do not need invalidation.
+      printResult(result, globalOptions);
+      if (globalOptions.profile) {
+        printError(`profile:command=history-repair took_ms=${Date.now() - startedAt}`);
+      }
+    });
+
+  program
     .command("comments")
     .argument("<id>", "Item id")
     .argument("[text]", "Optional comment text shorthand (equivalent to --add)")

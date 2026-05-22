@@ -1,6 +1,6 @@
-import jsonPatch from "fast-json-patch";
 import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
 import { hashDocument, hashEmptyDocument } from "../../core/history/history.js";
+import { verifyHistoryChain } from "../../core/history/replay.js";
 import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
@@ -13,7 +13,9 @@ import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { parseLimit } from "../shared-parsers.js";
-import type { HistoryEntry, HistoryPatchOp, ItemDocument } from "../../types/index.js";
+import type { HistoryEntry } from "../../types/index.js";
+
+export { verifyHistoryChain } from "../../core/history/replay.js";
 
 export interface HistoryCommandOptions {
   limit?: string;
@@ -50,16 +52,6 @@ export interface HistoryResult {
   diff?: HistoryDiffEntry[];
   verification?: HistoryVerificationResult;
 }
-
-interface ReplayDocument {
-  metadata: Record<string, unknown>;
-  body: string;
-}
-
-const EMPTY_REPLAY_DOCUMENT: ReplayDocument = {
-  metadata: {},
-  body: "",
-};
 
 function limitEntries<T>(values: T[], limit: number | undefined): T[] {
   if (limit === undefined) return values;
@@ -108,98 +100,6 @@ function buildDiffEntries(entries: HistoryEntry[], startIndex: number): HistoryD
       changed_fields: [...changedFields].sort((left, right) => left.localeCompare(right)),
     };
   });
-}
-
-function replayHash(document: ReplayDocument): string {
-  const itemDocument: ItemDocument = {
-    metadata: document.metadata as unknown as ItemDocument["metadata"],
-    body: document.body,
-  };
-  return hashDocument(itemDocument);
-}
-
-function normalizeReplayPatchPath(path: string): string {
-  if (path === "/front_matter") {
-    return "/metadata";
-  }
-  if (path.startsWith("/front_matter/")) {
-    return `/metadata/${path.slice("/front_matter/".length)}`;
-  }
-  return path;
-}
-
-function normalizeReplayPatchOps(patch: HistoryPatchOp[]): HistoryPatchOp[] {
-  return patch.map((operation) => ({
-    ...operation,
-    path: normalizeReplayPatchPath(operation.path),
-    from: operation.from ? normalizeReplayPatchPath(operation.from) : undefined,
-  }));
-}
-
-function applyHistoryPatch(current: ReplayDocument, patch: HistoryPatchOp[], entryNumber: number): ReplayDocument {
-  try {
-    const normalizedPatch = normalizeReplayPatchOps(patch);
-    const applied = jsonPatch.applyPatch(
-      structuredClone(current),
-      normalizedPatch as jsonPatch.Operation[],
-      true,
-      false,
-    ).newDocument as unknown;
-    if (
-      typeof applied !== "object" ||
-      applied === null ||
-      !("metadata" in applied) ||
-      !("body" in applied) ||
-      typeof (applied as { body: unknown }).body !== "string" ||
-      typeof (applied as { metadata: unknown }).metadata !== "object" ||
-      (applied as { metadata: unknown }).metadata === null
-    ) {
-      throw new PmCliError(
-        `History replay produced an invalid document shape at entry ${entryNumber}.`,
-        EXIT_CODE.GENERIC_FAILURE,
-      );
-    }
-    const replay = applied as { metadata: Record<string, unknown>; body: string };
-    return {
-      metadata: replay.metadata,
-      body: replay.body,
-    };
-  } catch {
-    throw new PmCliError(`Failed to apply history patch at entry ${entryNumber}.`, EXIT_CODE.GENERIC_FAILURE);
-  }
-}
-
-export function verifyHistoryChain(entries: HistoryEntry[]): { ok: boolean; errors: string[] } {
-  let replay: ReplayDocument = structuredClone(EMPTY_REPLAY_DOCUMENT);
-  for (let index = 0; index < entries.length; index += 1) {
-    const entry = entries[index];
-    const beforeHash = replayHash(replay);
-    if (beforeHash !== entry.before_hash) {
-      return {
-        ok: false,
-        errors: [`verify_failed:before_hash_mismatch:entry_${index + 1}`],
-      };
-    }
-    try {
-      replay = applyHistoryPatch(replay, entry.patch, index + 1);
-    } catch {
-      return {
-        ok: false,
-        errors: [`verify_failed:patch_apply_failed:entry_${index + 1}`],
-      };
-    }
-    const afterHash = replayHash(replay);
-    if (afterHash !== entry.after_hash) {
-      return {
-        ok: false,
-        errors: [`verify_failed:after_hash_mismatch:entry_${index + 1}`],
-      };
-    }
-  }
-  return {
-    ok: true,
-    errors: [],
-  };
 }
 
 export async function readHistoryEntries(historyPath: string, itemId: string): Promise<HistoryEntry[]> {
