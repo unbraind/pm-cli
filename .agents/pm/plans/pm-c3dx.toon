@@ -1,0 +1,74 @@
+id: pm-c3dx
+title: history-repair command + legacy drift cleanup + replay dedup
+description: "Plan for pm-85hm: ship audited history-repair (re-anchor) command, consolidate replay helpers (pm-pjs5), clear 31 drifted streams so pm health is ok, verify telemetry/sentry, ship PR."
+type: Plan
+status: open
+priority: 0
+tags[0]:
+created_at: "2026-05-22T20:27:40.121Z"
+updated_at: "2026-05-22T20:51:29.584Z"
+assignee: claude-code-agent
+author: claude-code-agent
+plan_mode: draft
+plan_scope: "Add pm history-repair, dedup replay helpers, clear legacy history drift"
+plan_harness: claude-code
+plan_steps[7]:
+  - id: plan-step-001
+    order: 1
+    title: Extract shared replay helpers into src/core/history/replay.ts (pm-pjs5)
+    status: completed
+    created_at: "2026-05-22T20:27:40.128Z"
+    updated_at: "2026-05-22T20:51:26.071Z"
+    evidence: Created src/core/history/replay.ts; refactored history.ts/restore.ts/history-redact.ts onto it (pm-pjs5). tsc --noEmit clean.
+    completed_at: "2026-05-22T20:51:26.071Z"
+    linked_items[1]{id,kind}:
+      pm-85hm,implements
+  - id: plan-step-002
+    order: 2
+    title: Implement src/cli/commands/history-repair.ts (re-anchor + reconciliation + audit marker + governance)
+    status: completed
+    created_at: "2026-05-22T20:28:05.782Z"
+    updated_at: "2026-05-22T20:51:26.584Z"
+    evidence: "Implemented history-repair.ts: replay+re-anchor, lenient legacy-op recovery, item reconciliation, history_repair audit marker, ownership/lock governance, dry-run."
+    completed_at: "2026-05-22T20:51:26.584Z"
+    linked_items[1]{id,kind}:
+      pm-85hm,depends_on
+  - id: plan-step-003
+    order: 3
+    title: "Wire command: register-mutation, commands/index, MCP server action, SDK contracts, completion, contracts"
+    status: completed
+    created_at: "2026-05-22T20:28:06.187Z"
+    updated_at: "2026-05-22T20:51:27.149Z"
+    evidence: "Wired register-mutation, commands/index, MCP server action+instructions, SDK contracts (PM_CORE_COMMAND_NAMES/PM_TOOL_ACTIONS/flag contracts/param keys), contracts.ts, completion (bash/zsh/fish)."
+    completed_at: "2026-05-22T20:51:27.149Z"
+  - id: plan-step-004
+    order: 4
+    title: Refactor history.ts/restore.ts/history-redact.ts onto shared replay module (pm-pjs5); docs COMMANDS/AGENT_GUIDE
+    status: completed
+    created_at: "2026-05-22T20:28:06.442Z"
+    updated_at: "2026-05-22T20:51:27.747Z"
+    evidence: "Docs: COMMANDS.md + AGENT_GUIDE.md document history-repair; CHANGELOG [Unreleased] Added/Changed entries."
+    completed_at: "2026-05-22T20:51:27.747Z"
+  - id: plan-step-005
+    order: 5
+    title: "Tests: replay unit + history-repair unit + integration (CLI/MCP); coverage include; full coverage gate"
+    status: completed
+    created_at: "2026-05-22T20:28:06.717Z"
+    updated_at: "2026-05-22T20:51:28.433Z"
+    evidence: "Added tests/unit/history-replay.spec.ts (20 cases, replay.ts in coverage include) + tests/unit/history-repair-command.spec.ts; updated release-readiness allowlist. Full coverage gate running."
+    completed_at: "2026-05-22T20:51:28.433Z"
+  - id: plan-step-006
+    order: 6
+    title: "Temp-dir manual dogfood of history-repair; run on real 31 streams; verify pm health/validate ok:true"
+    status: completed
+    created_at: "2026-05-22T20:28:06.977Z"
+    updated_at: "2026-05-22T20:51:29.036Z"
+    evidence: "Temp-dir dogfood passed (drift inject->repair->verify). Sandbox repaired all 31 real streams (incl 4 lenient + pm-lty partial-metadata edge); real run cleared drift: pm health ok=true, validate drifted=0."
+    completed_at: "2026-05-22T20:51:29.036Z"
+  - id: plan-step-007
+    order: 7
+    title: check-secrets + package-first dogfood + privacy sub-agent verdict; CHANGELOG; commit/push/PR; wait for bots; merge
+    status: in_progress
+    created_at: "2026-05-22T20:28:07.228Z"
+    updated_at: "2026-05-22T20:51:29.583Z"
+body: ""

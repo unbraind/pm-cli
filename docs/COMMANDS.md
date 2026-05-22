@@ -31,7 +31,7 @@ Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 | Logs | `comments`, `notes`, `learnings`, `comments-audit` | record progress and durable context |
 | Links | `files`, `docs`, `test`, `deps` | connect items to artifacts, tests, and relationships |
 | Verification | `test`, `test-all`, `test-runs`, `validate`, `gc` | run linked tests and repository checks |
-| History | `history`, `history-redact`, `activity`, `restore`, `stats` | inspect, redact, and recover item state |
+| History | `history`, `history-redact`, `history-repair`, `activity`, `restore`, `stats` | inspect, redact, re-anchor, and recover item state |
 | Calendar | `calendar`, `cal` | project deadlines, reminders, and events |
 | Packages | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups | install, upgrade, manage, and run package-backed extension commands |
 | Machines | `contracts`, `help`, optional `guide`/`completion` | command contracts plus optional guide-shell docs routing and shell helpers |
@@ -222,6 +222,8 @@ pm history <id> --limit 20
 pm history <id> --full --diff --verify
 pm history-redact <id> --literal "[redacted_path_prefix]/private" --replacement "[redacted_path]"
 pm history-redact <id> --regex "/192\\.168\\.[0-9.]+/g" --dry-run
+pm history-repair <id> --dry-run
+pm history-repair <id> --message "re-anchor legacy drift"
 pm activity --id <id> --limit 50
 pm activity --full --id <id> --limit 50
 pm restore <id> <timestamp-or-version>
@@ -229,6 +231,7 @@ pm restore <id> <timestamp-or-version>
 
 History is append-only. Restore appends a new restore event instead of rewriting old history.
 `history-redact` rewrites matching history payloads deterministically, recomputes hash chains, and appends an auditable `history_redact` marker entry when changes are applied.
+`history-repair` re-anchors a drifted history chain when `pm health`/`pm validate --check-history-drift` report stale hashes: it replays the stream, recomputes every before/after hash, repairs legacy patch ops that no longer strictly apply, reconciles the latest hash with the on-disk item, and appends an auditable `history_repair` marker. It never modifies item content and is a safe no-op on a clean stream.
 
 ## Plan Workflow
 

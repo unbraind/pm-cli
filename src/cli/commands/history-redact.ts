@@ -1,7 +1,15 @@
 import fs from "node:fs/promises";
-import jsonPatch from "fast-json-patch";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
-import { createHistoryEntry, hashDocument } from "../../core/history/history.js";
+import { createHistoryEntry } from "../../core/history/history.js";
+import {
+  EMPTY_REPLAY_DOCUMENT,
+  historyEntriesToRaw,
+  replayHash,
+  replayToItemDocument,
+  tryApplyReplayPatch,
+  verifyHistoryChain,
+  type ReplayDocument,
+} from "../../core/history/replay.js";
 import { normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
 import { canonicalDocument, serializeItemDocument } from "../../core/item/item-format.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -14,7 +22,7 @@ import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../co
 import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings, resolveGovernanceKnobs } from "../../core/store/settings.js";
-import type { HistoryEntry, HistoryPatchOp, ItemDocument, ItemMetadata } from "../../types/index.js";
+import type { HistoryEntry, HistoryPatchOp, ItemDocument } from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
 
 export interface HistoryRedactCommandOptions {
@@ -25,11 +33,6 @@ export interface HistoryRedactCommandOptions {
   author?: string;
   message?: string;
   force?: boolean;
-}
-
-interface ReplayDocument {
-  metadata: Record<string, unknown>;
-  body: string;
 }
 
 interface RegexRule {
@@ -54,18 +57,13 @@ interface RedactionRewriteResult {
   replacements: number;
 }
 
-interface HistoryVerifyResult {
-  ok: boolean;
-  errors: string[];
-}
-
 interface HistoryIntegritySnapshot {
   hashMismatchesBefore: number;
   hashMismatchesAfter: number;
   finalDocument: ReplayDocument;
 }
 
-interface HistoryRedactSubject {
+export interface HistorySubject {
   id: string;
   historyPath: string;
   located: Awaited<ReturnType<typeof locateItem>>;
@@ -102,11 +100,6 @@ export interface HistoryRedactResult {
   warnings: string[];
   generated_at: string;
 }
-
-const EMPTY_REPLAY_DOCUMENT: ReplayDocument = {
-  metadata: {},
-  body: "",
-};
 
 function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
   const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
@@ -292,67 +285,17 @@ function redactUnknownValue(value: unknown, rules: RedactionRule[], replacement:
   };
 }
 
-function normalizeReplayPatchPath(path: string): string {
-  if (path === "/front_matter") {
-    return "/metadata";
-  }
-  if (path.startsWith("/front_matter/")) {
-    return `/metadata/${path.slice("/front_matter/".length)}`;
-  }
-  return path;
-}
-
-function normalizeReplayPatchOps(patch: HistoryPatchOp[]): HistoryPatchOp[] {
-  return patch.map((operation) => ({
-    ...operation,
-    path: normalizeReplayPatchPath(operation.path),
-    from: operation.from ? normalizeReplayPatchPath(operation.from) : undefined,
-  }));
-}
-
-function replayHash(document: ReplayDocument): string {
-  return hashDocument({
-    metadata: document.metadata as unknown as ItemMetadata,
-    body: document.body,
-  });
-}
-
 function applyHistoryPatch(current: ReplayDocument, patch: HistoryPatchOp[], entryNumber: number, op: string): ReplayDocument {
-  try {
-    const normalizedPatch = normalizeReplayPatchOps(patch);
-    const applied = jsonPatch.applyPatch(
-      structuredClone(current),
-      normalizedPatch as jsonPatch.Operation[],
-      true,
-      false,
-    ).newDocument as unknown;
-    if (
-      typeof applied !== "object" ||
-      applied === null ||
-      !("metadata" in applied) ||
-      !("body" in applied) ||
-      typeof (applied as { body: unknown }).body !== "string" ||
-      typeof (applied as { metadata: unknown }).metadata !== "object" ||
-      (applied as { metadata: unknown }).metadata === null
-    ) {
-      throw new PmCliError(
-        `history-redact replay produced an invalid document shape at entry ${entryNumber}.`,
-        EXIT_CODE.GENERIC_FAILURE,
-      );
-    }
-    const replay = applied as { metadata: Record<string, unknown>; body: string };
-    return {
-      metadata: replay.metadata,
-      body: replay.body,
-    };
-  } catch (error) {
+  const result = tryApplyReplayPatch(current, patch);
+  if (!result.ok) {
     throw new PmCliError(
       `history-redact failed to apply patch at entry ${entryNumber} (op=${op}): ${
-        error instanceof Error ? error.message : String(error)
+        result.error instanceof Error ? result.error.message : String(result.error)
       }`,
       EXIT_CODE.GENERIC_FAILURE,
     );
   }
+  return result.document;
 }
 
 function inspectHistoryIntegrity(entries: HistoryEntry[]): HistoryIntegritySnapshot {
@@ -451,49 +394,16 @@ function rewriteHistoryEntries(entries: HistoryEntry[], rules: RedactionRule[], 
   };
 }
 
-function verifyHistoryEntries(entries: HistoryEntry[]): HistoryVerifyResult {
-  let replay = structuredClone(EMPTY_REPLAY_DOCUMENT);
-  for (let index = 0; index < entries.length; index += 1) {
-    const entry = entries[index];
-    const beforeHash = replayHash(replay);
-    if (beforeHash !== entry.before_hash) {
-      return {
-        ok: false,
-        errors: [`verify_failed:before_hash_mismatch:entry_${index + 1}`],
-      };
-    }
-    replay = applyHistoryPatch(replay, entry.patch, index + 1, entry.op);
-    const afterHash = replayHash(replay);
-    if (afterHash !== entry.after_hash) {
-      return {
-        ok: false,
-        errors: [`verify_failed:after_hash_mismatch:entry_${index + 1}`],
-      };
-    }
-  }
-  return {
-    ok: true,
-    errors: [],
-  };
-}
-
-function replayToItemDocument(replay: ReplayDocument): ItemDocument {
-  return {
-    metadata: replay.metadata as unknown as ItemMetadata,
-    body: replay.body,
-  };
-}
-
 function hasItemMetadata(replay: ReplayDocument): boolean {
   return Object.keys(replay.metadata).length > 0;
 }
 
-async function resolveSubject(
+export async function resolveHistorySubject(
   pmRoot: string,
   id: string,
   settings: Awaited<ReturnType<typeof readSettings>>,
   typeToFolder: Record<string, string>,
-): Promise<HistoryRedactSubject> {
+): Promise<HistorySubject> {
   const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
   if (located) {
     return {
@@ -519,13 +429,6 @@ async function resolveSubject(
   throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
 }
 
-function toHistoryRaw(entries: HistoryEntry[]): string {
-  if (entries.length === 0) {
-    return "";
-  }
-  return `${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`;
-}
-
 export async function runHistoryRedact(
   id: string,
   options: HistoryRedactCommandOptions,
@@ -540,7 +443,7 @@ export async function runHistoryRedact(
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const replacement = typeof options.replacement === "string" && options.replacement.length > 0 ? options.replacement : "[redacted]";
   const rules = buildRedactionRules(options.literal, options.regex);
-  const subject = await resolveSubject(pmRoot, id, settings, typeRegistry.type_to_folder);
+  const subject = await resolveHistorySubject(pmRoot, id, settings, typeRegistry.type_to_folder);
 
   if (!(await pathExists(subject.historyPath))) {
     throw new PmCliError(`No history stream exists for ${subject.id}.`, EXIT_CODE.NOT_FOUND);
@@ -619,7 +522,7 @@ export async function runHistoryRedact(
     );
     auditEntryAdded = true;
   }
-  const historyVerify = verifyHistoryEntries(rewrittenEntries);
+  const historyVerify = verifyHistoryChain(rewrittenEntries);
   if (!historyVerify.ok) {
     throw new PmCliError(
       `history-redact produced an invalid rewritten chain (${historyVerify.errors.join(", ")}).`,
@@ -673,7 +576,7 @@ export async function runHistoryRedact(
         if (currentItemPath && (!nextItemPath || nextItemPath !== currentItemPath)) {
           await fs.rm(currentItemPath, { force: true });
         }
-        await writeFileAtomic(subject.historyPath, toHistoryRaw(rewrittenEntries));
+        await writeFileAtomic(subject.historyPath, historyEntriesToRaw(rewrittenEntries));
       } catch (error) {
         if (previousHistoryRaw === null) {
           await fs.rm(subject.historyPath, { force: true });

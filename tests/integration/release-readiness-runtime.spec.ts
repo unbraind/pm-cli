@@ -1721,6 +1721,7 @@ describe("release readiness runtime coverage", () => {
       "src/cli/commands/event-validation-messages.ts",
       "src/cli/commands/guide.ts",
       "src/cli/commands/history-redact.ts",
+      "src/cli/commands/history-repair.ts",
       "src/cli/commands/init-agent-guidance.ts",
       "src/cli/commands/metadata-normalizers.ts",
       "src/cli/commands/normalize.ts",

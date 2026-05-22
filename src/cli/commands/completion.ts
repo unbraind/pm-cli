@@ -256,6 +256,9 @@ export function generateBashScript(
     "    history-redact)",
     `      COMPREPLY=(${compgen("--literal --regex --replacement --dry-run --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
+    "    history-repair)",
+    `      COMPREPLY=(${compgen("--dry-run --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
+    "      ;;",
     "    plan)",
     `      COMPREPLY=(${compgen(`${PLAN_SUBCOMMANDS_LIST} ${PLAN_FLAGS}`)})`,
     "      ;;",
@@ -353,6 +356,7 @@ _pm_commands() {
     'reindex:Rebuild search artifacts'
     'history:Show item history entries'
     'history-redact:Redact sensitive literals/patterns and recompute history hashes'
+    'history-repair:Re-anchor a drifted history chain so pm health/validate report ok'
     'plan:Agent-optimized Plan item workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)'
     'activity:Show recent activity across items'
     'restore:Restore an item to an earlier state'
@@ -742,6 +746,15 @@ _pm() {
             '--regex[Regex matcher to redact (/pattern/flags or raw pattern)]:regex' \\
             '--replacement[Replacement text (defaults to [redacted])]:replacement' \\
             '--dry-run[Preview redaction impact without writing files]' \\
+            '--author[Mutation author]:author' \\
+            '--message[Audit history message]:message' \\
+            '--force[Force ownership/lock override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        history-repair)
+          _arguments \\
+            '--dry-run[Preview the re-anchor impact without writing the history file]' \\
             '--author[Mutation author]:author' \\
             '--message[Audit history message]:message' \\
             '--force[Force ownership/lock override]' \\
@@ -1172,6 +1185,7 @@ complete -c pm -n __pm_no_subcommand -a search        -d 'Search items with keyw
 complete -c pm -n __pm_no_subcommand -a reindex       -d 'Rebuild search artifacts'
 complete -c pm -n __pm_no_subcommand -a history       -d 'Show item history entries'
 complete -c pm -n __pm_no_subcommand -a history-redact -d 'Redact sensitive literals/patterns and recompute history hashes'
+complete -c pm -n __pm_no_subcommand -a history-repair -d 'Re-anchor a drifted history chain so pm health/validate report ok'
 complete -c pm -n __pm_no_subcommand -a plan          -d 'Agent-optimized Plan workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)'
 complete -c pm -n __pm_no_subcommand -a activity      -d 'Show recent activity across items'
 complete -c pm -n __pm_no_subcommand -a restore       -d 'Restore an item to an earlier state'
@@ -1497,6 +1511,10 @@ complete -c pm -n '__fish_seen_subcommand_from history-redact' -l dry-run -d 'Pr
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l message -d 'Audit history message' -r
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l force -d 'Force ownership/lock override'
+complete -c pm -n '__fish_seen_subcommand_from history-repair' -l dry-run -d 'Preview the re-anchor impact without writing the history file'
+complete -c pm -n '__fish_seen_subcommand_from history-repair' -l author -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from history-repair' -l message -d 'Audit history message' -r
+complete -c pm -n '__fish_seen_subcommand_from history-repair' -l force -d 'Force ownership/lock override'
 complete -c pm -n '__fish_seen_subcommand_from plan' -a 'create show add-step update-step complete-step block-step reorder-step remove-step link unlink decision discovery validation resume approve materialize' -d 'Plan subcommand'
 complete -c pm -n '__fish_seen_subcommand_from plan' -l title -d 'Plan title' -r
 complete -c pm -n '__fish_seen_subcommand_from plan' -l scope -d 'Plan scope statement' -r

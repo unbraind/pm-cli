@@ -98,6 +98,7 @@ pm release <item-id>
 | Low-noise machine contracts | `pm contracts --command <command> --flags-only --json` |
 | Timeline | `pm activity --id <id> --limit 20` |
 | Audited history redaction | `pm history-redact <id> --literal "<secret>" --replacement "[redacted]" --dry-run` |
+| Audited history re-anchor | `pm history-repair <id> --dry-run` (clears drift flagged by `pm health`/`pm validate`) |
 | Agent plan create | `pm plan create --title "<scope>" --harness claude-code --scope "<short>" --claim` |
 | Agent plan step update | `pm plan update-step <plan-id> plan-step-001 --step-status in_progress --step-evidence "<short>"` |
 | Agent plan read | `pm plan show <plan-id> --depth brief` (or `--fields id,title,steps_summary`) |
@@ -146,5 +147,6 @@ Use these defaults unless the task requires otherwise:
 - `node scripts/run-tests.mjs test` and `node scripts/run-tests.mjs coverage` for tests.
 - `pm validate --check-resolution --check-history-drift` before closing broad work.
 - `pm history-redact <id> --dry-run` before rewriting sensitive history payloads, then rerun without `--dry-run` once scope is confirmed.
+- `pm history-repair <id> --dry-run` when `pm health` or `pm validate --check-history-drift` report drifted streams; it re-anchors the hash chain and reconciles with the on-disk item without touching item content. Rerun without `--dry-run` to apply.
 - `pm normalize --dry-run --json` before lifecycle metadata cleanups.
 - `pm health --check-only` when inspecting repository health without refresh side effects.

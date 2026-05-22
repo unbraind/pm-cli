@@ -1,28 +1,29 @@
 import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
-import { appendHistoryEntry, createHistoryEntry, hashDocument } from "../../core/history/history.js";
+import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
+import {
+  EMPTY_REPLAY_DOCUMENT,
+  normalizeReplayPatchOps,
+  replayHash,
+  toReplayDocument,
+  type ReplayDocument as CanonicalReplayDocument,
+} from "../../core/history/replay.js";
 import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
 import { normalizeItemId, normalizeRawItemId } from "../../core/item/id.js";
 import { canonicalDocument, serializeItemDocument } from "../../core/item/item-format.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { acquireLock } from "../../core/lock/lock.js";
-import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../../core/shared/constants.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { orderObject } from "../../core/shared/serialization.js";
 import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { HistoryEntry, HistoryPatchOp, ItemDocument, ItemMetadata } from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
-
-interface CanonicalReplayDocument {
-  metadata: Record<string, unknown>;
-  body: string;
-}
 
 interface ResolvedRestoreTarget {
   kind: "version" | "timestamp";
@@ -56,57 +57,10 @@ export interface RestoreResult {
   warnings: string[];
 }
 
-const EMPTY_REPLAY_DOCUMENT: CanonicalReplayDocument = {
-  metadata: {},
-  body: "",
-};
-
 function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
   const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
   const trimmed = resolved.trim();
   return trimmed || "unknown";
-}
-
-function toReplayDocument(document: ItemDocument): CanonicalReplayDocument {
-  if (!document.metadata || Object.keys(document.metadata).length === 0) {
-    return {
-      metadata: {},
-      body: document.body ?? "",
-    };
-  }
-  const canonical = canonicalDocument(document);
-  return {
-    metadata: orderObject(
-      canonical.metadata as unknown as Record<string, unknown>,
-      FRONT_MATTER_KEY_ORDER,
-    ),
-    body: canonical.body,
-  };
-}
-
-function replayHash(document: CanonicalReplayDocument): string {
-  return hashDocument({
-    metadata: document.metadata as unknown as ItemMetadata,
-    body: document.body,
-  });
-}
-
-function normalizeReplayPatchPath(path: string): string {
-  if (path === "/front_matter") {
-    return "/metadata";
-  }
-  if (path.startsWith("/front_matter/")) {
-    return `/metadata/${path.slice("/front_matter/".length)}`;
-  }
-  return path;
-}
-
-function normalizeReplayPatchOps(patch: HistoryPatchOp[]): HistoryPatchOp[] {
-  return patch.map((operation) => ({
-    ...operation,
-    path: normalizeReplayPatchPath(operation.path),
-    from: operation.from ? normalizeReplayPatchPath(operation.from) : undefined,
-  }));
 }
 
 function ensureReplayTarget(target: string, history: HistoryEntry[]): ResolvedRestoreTarget {
