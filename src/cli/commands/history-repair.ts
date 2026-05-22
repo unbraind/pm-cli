@@ -5,6 +5,7 @@ import {
   historyEntriesToRaw,
   reanchorHistoryEntries,
   replayHash,
+  toReplayDocument,
   verifyHistoryChain,
   type ReplayDocument,
 } from "../../core/history/replay.js";
@@ -89,14 +90,15 @@ export async function runHistoryRepair(
   // Reconcile the replayed chain with the current on-disk item document so the
   // latest after_hash matches what pm validate/health compute for the item.
   let currentItemReplay: ReplayDocument | null = null;
-  let currentItemPath: string | null = subject.located?.itemPath ?? null;
+  const currentItemPath: string | null = subject.located?.itemPath ?? null;
   let matchedChainBefore: boolean | null = null;
-  if (subject.located) {
-    const loaded = await readLocatedItem(subject.located, { schema: settings.schema });
-    currentItemReplay = {
-      metadata: loaded.document.metadata as unknown as Record<string, unknown>,
-      body: loaded.document.body,
-    };
+  const loadedItem = subject.located
+    ? await readLocatedItem(subject.located, { schema: settings.schema })
+    : null;
+  if (loadedItem) {
+    // Use the shared canonical replay form so reconciliation hashing matches the
+    // semantics pm validate/health use for the on-disk item (avoids hash divergence).
+    currentItemReplay = toReplayDocument(loadedItem.document);
     const lastOriginalAfterHash = historyEntries[historyEntries.length - 1]?.after_hash;
     matchedChainBefore = replayHash(currentItemReplay) === lastOriginalAfterHash;
   }
@@ -162,10 +164,9 @@ export async function runHistoryRepair(
   }
 
   if (changed && !dryRun) {
-    if (subject.located) {
-      const loaded = await readLocatedItem(subject.located, { schema: settings.schema });
+    if (loadedItem) {
       const governance = resolveGovernanceKnobs(settings);
-      const assigned = loaded.document.metadata.assignee?.trim();
+      const assigned = loadedItem.document.metadata.assignee?.trim();
       if (assigned && assigned !== author && !options.force) {
         if (governance.ownership_enforcement === "strict") {
           throw new PmCliError(
