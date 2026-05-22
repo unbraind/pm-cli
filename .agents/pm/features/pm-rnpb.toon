@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-22T19:57:23.616Z"
+updated_at: "2026-05-22T19:58:24.848Z"
 deadline: "2026-06-01T00:00:00.000Z"
 assignee: codex-extensive-audit
 author: codex-audit
@@ -15,7 +15,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[190]{created_at,author,text}:
+comments[191]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -206,6 +206,7 @@ comments[190]{created_at,author,text}:
   "2026-05-22T19:42:10.030Z",codex-validate-worker-20260522,"Final local gate evidence 2026-05-22: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json passed. Coverage 98 files / 1435 tests, 100 percent statements/branches/functions/lines. Package-first dogfood passed 84 workflows in /tmp/pm-dogfood-HQIFsE. Compatibility check passed from base 2026.5.18. Sentry/telemetry gate passed: Sentry critical=0 high=0 total=0; telemetry finish_error_rate_pct=3.16; failures_without_error_code_rows=0."
   "2026-05-22T19:49:56.115Z",codex-validate-worker-20260522,"AI review feedback: Gemini suggested generalizing validate error detection instead of checking only validate_lifecycle_dependency_cycles_error. Applying that feedback by adding centralized isValidateErrorWarning classification for any validate warning token ending in _error, preserving current dependency-cycle behavior and future error-severity diagnostics."
   "2026-05-22T19:57:23.616Z",codex-validate-worker-20260522,"AI review feedback update: Sourcery flagged --steps all mixed with other refs silently ignoring invalid refs, and recommended deriving validate hard-error state from check statuses. Applying both: --steps all is now exclusive and throws usage if combined; lifecycle checks can now emit status=error for error-severity dependency cycles and runValidate derives ok from check.status === error."
+  "2026-05-22T19:58:24.848Z",codex-validate-worker-20260522,"AI review feedback update: Sourcery also noted plan log canonical/shorthand precedence should be explicit. The implementation already preferred canonical --*-text values; making that explicit with resolvePlanLogText and regression coverage so canonical decision/discovery/validation text wins when both forms are supplied."
 notes[2]{created_at,author,text}:
   "2026-05-17T07:36:59.474Z",codex-agent,"Design note 2026-05-17: unfiltered pm contracts default now intentionally omits three heavy sections (schema oneOf union, command_flags, commander_aliases) and emits explicit omitted_reason markers; --full restores complete schema and alias/flag surfaces for tooling that needs maximal detail."
   "2026-05-17T08:33:25.981Z",codex-agent,"Design note 2026-05-17: default brief projection was intentionally scoped to bare 'pm list' instead of all list-* commands to preserve existing automation contracts while still cutting agent token usage on the highest-frequency exploratory list call."

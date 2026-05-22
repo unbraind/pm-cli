@@ -411,6 +411,22 @@ function resolveMaterializeTargets(steps: PlanStep[], refs: string[]): PlanStep[
   return targets;
 }
 
+function resolvePlanLogText(kind: "decision" | "discovery" | "validation", options: PlanCommandOptions): string | undefined {
+  const canonical =
+    kind === "decision"
+      ? options.decisionText
+      : kind === "discovery"
+        ? options.discoveryText
+        : options.validationText;
+  const shorthand =
+    kind === "decision"
+      ? options.decision
+      : kind === "discovery"
+        ? options.discovery
+        : options.validation;
+  return canonical?.trim() || shorthand?.trim() || undefined;
+}
+
 function findCurrentStep(steps: PlanStep[]): PlanStep | undefined {
   return steps.find((step) => step.status === "in_progress")
     ?? steps.find((step) => step.status === "pending");
@@ -1090,12 +1106,7 @@ async function planAppendLog(
   ctx: PlanWriteContext,
   kind: "decision" | "discovery" | "validation",
 ): Promise<PlanCommandResult> {
-  const logText =
-    kind === "decision"
-      ? options.decisionText?.trim() || options.decision?.trim()
-      : kind === "discovery"
-        ? options.discoveryText?.trim() || options.discovery?.trim()
-        : options.validationText?.trim() || options.validation?.trim();
+  const logText = resolvePlanLogText(kind, options);
   if (!logText) {
     const canonical = `--${kind}-text`;
     const shorthand = `--${kind}`;

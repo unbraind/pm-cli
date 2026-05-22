@@ -351,6 +351,23 @@ describe("runPlan command family", () => {
     });
   });
 
+  it("prefers canonical plan log text when shorthand aliases are also provided", async () => {
+    await withTempPmPath(async (context) => {
+      const { planId } = await bootstrapPlan(context);
+      const result = await runPlan({
+        subcommand: "decision",
+        id: planId,
+        options: {
+          decisionText: "canonical decision",
+          decision: "alias decision",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(result.plan.decisions?.[0]?.decision).toBe("canonical decision");
+    });
+  });
+
   it("approve flips plan_mode and materialize creates child items", async () => {
     await withTempPmPath(async (context) => {
       const { planId } = await bootstrapPlan(context);
