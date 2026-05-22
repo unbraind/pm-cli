@@ -11,6 +11,13 @@
  * are stripped here just as zod stripped them — so settings behavior is
  * byte-identical to the previous implementation.
  */
+import {
+  GOVERNANCE_PRESET_VALUES,
+  RUNTIME_FIELD_COMMAND_VALUES,
+  RUNTIME_FIELD_TYPE_VALUES,
+  RUNTIME_STATUS_ROLE_VALUES,
+  RUNTIME_UNKNOWN_FIELD_POLICY_VALUES,
+} from "../../types.js";
 import type {
   AgentGuidanceSettings,
   ExtensionPolicySettings,
@@ -95,21 +102,22 @@ export interface ParsedSettings {
 
 export type SettingsValidationResult = { success: true; data: ParsedSettings } | { success: false };
 
-type Outcome = { ok: true; value: unknown } | { ok: false };
-type Check = (input: unknown) => Outcome;
+type Outcome<T> = { ok: true; value: T } | { ok: false };
+type Check<T> = (input: unknown) => Outcome<T>;
 
-const OK_ABSENT: Outcome = { ok: true, value: undefined };
-const FAIL: Outcome = { ok: false };
+// Generic over `never` so it is assignable to every `Outcome<T>`.
+const FAIL: Outcome<never> = { ok: false };
 
-const vString: Check = (input) => (typeof input === "string" ? { ok: true, value: input } : FAIL);
-const vBoolean: Check = (input) => (typeof input === "boolean" ? { ok: true, value: input } : FAIL);
+const vString: Check<string> = (input) => (typeof input === "string" ? { ok: true, value: input } : FAIL);
+const vBoolean: Check<boolean> = (input) => (typeof input === "boolean" ? { ok: true, value: input } : FAIL);
 
-function vNumber(options: { int?: boolean; positive?: boolean } = {}): Check {
+function vNumber(options: { int?: boolean; positive?: boolean } = {}): Check<number> {
   return (input) => {
-    if (typeof input !== "number" || Number.isNaN(input)) {
+    // `Number.isFinite` rejects non-numbers, NaN, and ±Infinity in one check.
+    if (typeof input !== "number" || !Number.isFinite(input)) {
       return FAIL;
     }
-    if (options.int && !Number.isInteger(input)) {
+    if (options.int && (!Number.isInteger(input) || !Number.isSafeInteger(input))) {
       return FAIL;
     }
     if (options.positive && input <= 0) {
@@ -119,16 +127,19 @@ function vNumber(options: { int?: boolean; positive?: boolean } = {}): Check {
   };
 }
 
-function vLiteral(...allowed: string[]): Check {
-  return (input) => (typeof input === "string" && allowed.includes(input) ? { ok: true, value: input } : FAIL);
+function vLiteral<const T extends string>(...allowed: readonly T[]): Check<T> {
+  return (input) =>
+    typeof input === "string" && (allowed as readonly string[]).includes(input)
+      ? { ok: true, value: input as T }
+      : FAIL;
 }
 
-function vArray(item: Check): Check {
+function vArray<T>(item: Check<T>): Check<T[]> {
   return (input) => {
     if (!Array.isArray(input)) {
       return FAIL;
     }
-    const value: unknown[] = [];
+    const value: T[] = [];
     for (const element of input) {
       const result = item(element);
       if (!result.ok) {
@@ -140,11 +151,11 @@ function vArray(item: Check): Check {
   };
 }
 
-function vOptional(inner: Check): Check {
-  return (input) => (input === undefined ? OK_ABSENT : inner(input));
+function vOptional<T>(inner: Check<T>): Check<T | undefined> {
+  return (input) => (input === undefined ? { ok: true, value: undefined } : inner(input));
 }
 
-function vObject(shape: Record<string, Check>): Check {
+function vObject(shape: Record<string, Check<unknown>>): Check<Record<string, unknown>> {
   return (input) => {
     if (typeof input !== "object" || input === null || Array.isArray(input)) {
       return FAIL;
@@ -194,21 +205,7 @@ const itemTypeDefinition = vObject({
 const runtimeStatusDefinition = vObject({
   id: vString,
   aliases: vOptional(vArray(vString)),
-  roles: vOptional(
-    vArray(
-      vLiteral(
-        "draft",
-        "active",
-        "blocked",
-        "terminal",
-        "terminal_done",
-        "terminal_canceled",
-        "default_open",
-        "default_close",
-        "default_cancel",
-      ),
-    ),
-  ),
+  roles: vOptional(vArray(vLiteral(...RUNTIME_STATUS_ROLE_VALUES))),
   description: vOptional(vString),
   order: vOptional(vNumber()),
 });
@@ -220,10 +217,8 @@ const runtimeFieldDefinition = vObject({
   cli_flag: vOptional(vString),
   cli_aliases: vOptional(vArray(vString)),
   description: vOptional(vString),
-  type: vOptional(vLiteral("string", "number", "boolean", "string_array")),
-  commands: vOptional(
-    vArray(vLiteral("create", "update", "update_many", "list", "search", "calendar", "context")),
-  ),
+  type: vOptional(vLiteral(...RUNTIME_FIELD_TYPE_VALUES)),
+  commands: vOptional(vArray(vLiteral(...RUNTIME_FIELD_COMMAND_VALUES))),
   repeatable: vOptional(vBoolean),
   required: vOptional(vBoolean),
   required_on_create: vOptional(vBoolean),
@@ -254,13 +249,13 @@ const runtimeSchemaSettings = vOptional(
         canceled_status: vOptional(vString),
       }),
     ),
-    unknown_field_policy: vOptional(vLiteral("allow", "warn", "reject")),
+    unknown_field_policy: vOptional(vLiteral(...RUNTIME_UNKNOWN_FIELD_POLICY_VALUES)),
   }),
 );
 
 const governanceSettings = vOptional(
   vObject({
-    preset: vOptional(vLiteral("minimal", "default", "strict", "custom")),
+    preset: vOptional(vLiteral(...GOVERNANCE_PRESET_VALUES)),
     ownership_enforcement: vOptional(vLiteral("none", "warn", "strict")),
     create_mode_default: vOptional(vLiteral("progressive", "strict")),
     close_validation_default: vOptional(vLiteral("off", "warn", "strict")),
@@ -407,5 +402,5 @@ export function validateSettings(raw: unknown): SettingsValidationResult {
   if (!result.ok) {
     return { success: false };
   }
-  return { success: true, data: result.value as ParsedSettings };
+  return { success: true, data: result.value as unknown as ParsedSettings };
 }

@@ -77,6 +77,18 @@ describe("core/store/settings-validator", () => {
     expect(validateSettings(raw).success).toBe(false);
   });
 
+  it("rejects an infinite number", () => {
+    const raw = minimalValidSettings();
+    (raw.search as Record<string, unknown>).score_threshold = Number.POSITIVE_INFINITY;
+    expect(validateSettings(raw).success).toBe(false);
+  });
+
+  it("rejects an unsafe integer where an integer is required", () => {
+    const raw = minimalValidSettings();
+    (raw.search as Record<string, unknown>).max_results = Number.MAX_SAFE_INTEGER + 1;
+    expect(validateSettings(raw).success).toBe(false);
+  });
+
   it("accepts a float where a non-integer number is allowed", () => {
     const raw = minimalValidSettings();
     (raw.search as Record<string, unknown>).score_threshold = 0.42;

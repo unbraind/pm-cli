@@ -6,9 +6,10 @@ status: open
 priority: 0
 tags[2]: performance,startup
 created_at: "2026-05-16T15:07:08.622Z"
-updated_at: "2026-05-22T15:45:00.043Z"
+updated_at: "2026-05-22T16:29:54.345Z"
+assignee: codex-review-followup
 author: claude-code-agent
-comments[11]{created_at,author,text}:
+comments[13]{created_at,author,text}:
   "2026-05-16T16:48:23.232Z",codex-agent,"Audit update 2026-05-16: latest isolated dogfood after init --with-packages passed 44 workflows; slowest normal commands were create 753ms, comments 683ms, package wildcard 634ms, notes/docs/learnings/get brief around 560-600ms. Release gate is green, but sub-200ms startup remains the largest remaining perceived-speed opportunity."
   "2026-05-16T16:59:45.913Z",codex-audit,"Implementation update: adding a build-time bundled dist/cli.js path for the pm binary while keeping SDK/module exports emitted by tsc. Package-root resolution is being made independent of unbundled dist/cli/** module paths so package discovery, guide docs, upgrade version reads, telemetry flush, and Sentry release tagging continue to work from the bundled entrypoint."
   "2026-05-16T17:07:21.271Z",codex-audit,"Benchmark finding: attempted esbuild bundling first, but the safe dependency-external ESM bundle averaged 234.9ms for node dist/cli.js --version versus 201.7ms for the tsc entry, so it was not shipped. Implemented a targeted fast --version/-V path instead; after build, node dist/cli.js --version averages 36.7ms versus 194.6ms for loading dist/cli/main.js, a 5.3x speedup for the standard agent bootstrap probe. Remaining all-command sub-200ms bundling stays open for a deeper CJS/import-meta redesign."
@@ -20,12 +21,14 @@ comments[11]{created_at,author,text}:
   "2026-05-17T09:17:39.943Z",codex-agent,"Token/contract parity verification 2026-05-17: startup bootstrap changes did not alter list/search/help contract surfaces. Confirmed contracts --command list-open --flags-only still exposes --compact/--brief/--full/--fields/--include-body, contracts --command search --flags-only still exposes --mode/--semantic/--hybrid/--include-linked, and top-level plus list help still render rich Intent narratives on help paths."
   "2026-05-17T09:27:50.721Z",codex-agent,"Final evidence 2026-05-17 startup pass: after lazy command-family registration + help-attach gating in src/cli/main.ts, post-change 8-run warm medians improved on key commands versus pre-change baseline (help 183.6ms vs 190ms, list --json --limit 1 382.1ms vs 408.2ms, get --depth brief 311.3ms vs 326.2ms, contracts --flags-only 309.6ms vs 349.4ms). Isolated dogfood passed in temp sandboxes for both default (51 commands) and semantic mode (52 commands, qwen3-embedding:0.6b). Full release gate passed with telemetry+sentry required: build/typecheck/docs/static quality/coverage/version policy/secrets/npx/npm-pack/compatibility all ok; tests 1323/1323 with 100% coverage; sentry critical/high/total 0; telemetry finish_error_rate_pct 2.13 with missing-error-code rows 0."
   "2026-05-17T09:28:29.427Z",codex-agent,"Privacy/observability verification 2026-05-17: node scripts/check-secrets.mjs passed; targeted rg sweeps over .agents/pm for credential tokens/private-key blocks/private IPv4/home-path/user@host patterns found no active secret material. Direct sentry-telemetry gate passed in required mode (sentry critical/high/total=0/0/0, telemetry finish_error_rate_pct=2.13, failures_without_error_code_rows=0)."
+  "2026-05-22T16:21:07.143Z",codex-review-followup,"Review follow-up: PR #41 has unresolved CodeRabbit/Gemini threads on vNumber finite/safe-integer parity. Outside-diff .agents/pm warnings are bot false positives for this repo because tracker mutations must go through pm CLI and generate .agents/pm artifacts; no direct manual file edits will be made."
+  "2026-05-22T16:29:54.345Z",codex-review-followup,"Evidence: addressed PR #41 reviewer finite-number feedback. Local verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/settings-validator.spec.ts (19 tests); pnpm quality:static; pm test pm-gt82 --run --progress (6/6 linked tests passed, including release gate 1433/1433 tests with 100% coverage, dogfood 84 workflows, semantic dogfood 86 workflows, sentry critical/high/total 0/0/0, telemetry finish_error_rate_pct 3.24). Secret scan passed after pm evidence updates."
 notes[2]{created_at,author,text}:
   "2026-05-17T09:12:12.755Z",codex-agent,"Benchmark method: spawned fresh node dist/cli.js processes per run from repo root, PM_AUTHOR=codex-agent, no PM_PATH overrides (real tracker), maxBuffer 20-30MiB. Collected both repeated timing arrays and one-shot --profile outputs with and without --no-extensions."
   "2026-05-22T15:45:00.043Z",maintainer-agent,"Partial progress 2026-05-22: removed zod from settings hot path (settings import 157ms->14ms; --help 227->140ms; list 540->340ms). The remaining startup levers are (a) esbuild bundling (this item) to collapse module-resolution overhead, and (b) item-store full-scan cost for list/context/search (context still ~556ms reading ~786 item files; no read cache - index/ dir is empty). esbuild bundle would mainly help the per-module resolution; an item-store read index would help the scan-bound commands."
 learnings[1]{created_at,author,text}:
   "2026-05-17T09:27:52.419Z",codex-agent,"Durable learning: startup refactors that replace static imports with dynamic imports can trigger orphan-module governance checks; preserving type-only import edges keeps static-quality graph integrity while maintaining runtime lazy-loading."
-files[9]{path,scope,note}:
+files[11]{path,scope,note}:
   src/cli.ts,project,fast --version startup path
   src/cli/commands/extension.ts,project,bundled package discovery root resolution
   src/cli/commands/guide.ts,project,guide docs root resolution
@@ -33,14 +36,18 @@ files[9]{path,scope,note}:
   src/cli/main.ts,project,package-root resolution uses shared helper
   src/core/packages/root.ts,project,package-root discovery shared by bundled/future entrypoints
   src/core/sentry/instrument.ts,project,sentry release version root resolution
+  src/core/store/settings-validator.ts,project,"review follow-up: finite and safe-integer settings number validation"
   src/core/telemetry/runtime.ts,project,telemetry flush runner root resolution
   tests/integration/release-readiness-runtime.spec.ts,project,version/root coverage contract
-tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/settings-validator.spec.ts,project,regression coverage for finite and safe-integer validation
+tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,isolated temp-project package-first dogfood
   node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,full release gate with telemetry and sentry required
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/cli.integration.spec.ts tests/unit/contracts-command.spec.ts tests/unit/list-command.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,focused startup regressions
   node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/settings-validator.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,focused validator regression test
   PM_DOGFOOD_SEMANTIC=1 node scripts/dogfood-package-first.mjs,null,project,600,null,null,null,null,null,null,null,null,null,null,null,isolated semantic hybrid dogfood
-test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mp8lnyio-0qq3g4,test,passed,"2026-05-16T17:07:21.171Z","2026-05-16T17:08:07.680Z","2026-05-16T17:08:07.680Z",null,null,1,0,0,null,null,null
+  test-local-mph4xiq8-jlp467,test,passed,"2026-05-22T16:22:28.206Z","2026-05-22T16:29:35.889Z","2026-05-22T16:29:35.889Z",null,null,6,0,0,null,null,null
 body: "Current: pm list ~890ms, pm context ~1.5s, pm health ~2.1s even with --skip-*. Root: 126+ unbundled ESM files loaded per invocation. Fix: add esbuild bundle step alongside tsc. Expected improvement: 5-10x."
