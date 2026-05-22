@@ -1,0 +1,19 @@
+id: pm-gvk2
+title: Extract reusable semantic HTTP mock fixtures
+description: "Duplicate audit 2026-05-22: semantic/vector tests duplicate globalThis.fetch stubs for OpenAI embeddings and Qdrant upsert responses. The repeated mock block appears in tests/unit/health-command.spec.ts:539, tests/unit/reindex-command.spec.ts:204, and tests/unit/search-cache.spec.ts, including the same /v1/embeddings and /collections/pm_items/points?wait=true response handling. This is separate from the broader shared item factory duplication because it is domain-specific semantic infrastructure with enough behavior to drift. Fix by adding a focused helper such as installSemanticFetchMock({ embeddings, qdrantStatus, captureCalls }) and migrating health/reindex/search-cache tests to it."
+type: Chore
+status: open
+priority: 2
+tags[3]: dedup,search,tests
+created_at: "2026-05-22T18:54:31.857Z"
+updated_at: "2026-05-22T18:54:31.857Z"
+author: codex-duplicate-audit
+acceptance_criteria: "Semantic tests share one typed HTTP mock fixture for embeddings and Qdrant responses; tests can still customize input-count embeddings and failure paths; duplicated global fetch setup/restore blocks are removed from health, reindex, and search-cache specs; targeted semantic/search tests pass."
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T18:54:31.857Z",codex-duplicate-audit,"Duplicate-check evidence: searched tracker for Qdrant/fetch mock duplication. Results only showed broad pm-rnpb and closed vector-store work; no open item tracks the duplicated test HTTP mocks. Scan found overlapping 10-12 line windows in health, reindex, and search-cache specs."
+files[3]{path,scope,note}:
+  tests/unit/health-command.spec.ts,project,semantic fetch mock clone
+  tests/unit/reindex-command.spec.ts,project,semantic fetch mock clone
+  tests/unit/search-cache.spec.ts,project,semantic fetch mock clone
+body: ""

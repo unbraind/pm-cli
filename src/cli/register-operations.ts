@@ -271,7 +271,8 @@ export function registerOperationCommands(program: Command): void {
     .option("--scan-mode <value>", "Select file candidate scan mode for --check-files (default|tracked-all|tracked-all-strict)")
     .option("--include-pm-internals", "Include PM storage internals in tracked-all candidate scans")
     .option("--verbose-file-lists", "Include full file-path lists for validate --check-files details")
-    .option("--strict-exit", "Return non-zero exit when validation warnings are present (ok=false)")
+    .option("--verbose-diagnostics", "Include full validate diagnostic ID lists instead of compact summaries")
+    .option("--strict-exit", "Return non-zero exit when validation warnings are present")
     .option("--fail-on-warn", "Alias for --strict-exit")
     .option("--check-history-drift", "Run item/history hash drift checks")
     .action(async (options: Record<string, unknown>, command) => {
@@ -290,11 +291,12 @@ export function registerOperationCommands(program: Command): void {
         scanMode: typeof options.scanMode === "string" ? options.scanMode : undefined,
         includePmInternals: Boolean(options.includePmInternals),
         verboseFileLists: Boolean(options.verboseFileLists),
+        verboseDiagnostics: Boolean(options.verboseDiagnostics),
         checkHistoryDrift: Boolean(options.checkHistoryDrift),
       }, globalOptions);
       printResult(result, globalOptions);
       const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
-      if (strictExit && !result.ok) {
+      if (strictExit && (result.has_warnings || !result.ok)) {
         setActiveCommandResult({
           ...result,
           exit_code: EXIT_CODE.GENERIC_FAILURE,

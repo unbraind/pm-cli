@@ -1,0 +1,21 @@
+id: pm-48vd
+title: Single-source guide-shell routing snippets across docs
+description: "Duplicate audit 2026-05-22: guide-shell routing snippets are copied with small variations across README.md:26-34, docs/README.md:7-15, docs/AGENT_GUIDE.md:112-121, AGENTS.md:17-23, and docs/COMMANDS.md:3-11. Each tells agents to install guide-shell and run pm guide topics, but the topic lists differ (skills, sdk, release, --json), making guide-topic changes easy to miss. Existing pm-rjgh includes AGENTS tightening but not the repeated guide-shell snippets across all entrypoints."
+type: Chore
+status: open
+priority: 3
+tags[3]: dedup,docs,guide-shell
+created_at: "2026-05-22T19:18:23.375Z"
+updated_at: "2026-05-22T19:18:23.375Z"
+author: codex-duplicate-audit
+acceptance_criteria: One docs entrypoint owns the canonical guide-shell snippet; other pages use short pointers or task-specific single commands; guide topic examples stay aligned with runtime contracts; docs-skills gate passes.
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T19:18:23.375Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'guide-shell routing snippets README docs AGENT_GUIDE COMMANDS pm guide duplicated' found broad parent/docs history but no active exact item for guide-shell snippet dedup."
+docs[5]{path,scope,note}:
+  AGENTS.md,project,guide-shell snippet copy
+  docs/AGENT_GUIDE.md,project,guide-shell snippet copy
+  docs/COMMANDS.md,project,guide-shell snippet copy
+  docs/README.md,project,canonical guide-shell snippet candidate
+  README.md,project,guide-shell snippet copy
+body: ""

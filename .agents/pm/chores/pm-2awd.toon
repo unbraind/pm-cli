@@ -1,0 +1,20 @@
+id: pm-2awd
+title: Single-source extension manifest and policy examples in docs
+description: "Duplicate audit 2026-05-22: docs/EXTENSIONS.md embeds extension manifest and policy examples that duplicate runnable example files. Manifest v2 provenance/sandbox/permissions/capabilities examples appear in docs/EXTENSIONS.md:145-170 and docs/examples/policy-restricted-extension/manifest.json:1-21 plus docs/examples/starter-extension/manifest.json:1-32; policy config examples appear in docs/EXTENSIONS.md:193-217 and docs/examples/policy-restricted-extension/README.md:26-59. Existing pm-w98k covers source-code extension contract constants and pm-axd1 covers production/test default objects, not docs/example snippet drift."
+type: Chore
+status: open
+priority: 3
+tags[4]: dedup,docs,examples,extensions
+created_at: "2026-05-22T19:18:35.275Z"
+updated_at: "2026-05-22T19:18:35.275Z"
+author: codex-duplicate-audit
+acceptance_criteria: docs/EXTENSIONS.md either links to runnable example manifests/configs or embeds snippets generated/checked from those files; extension example docs no longer drift from runnable files; docs-skills gate and example/package checks pass.
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T19:18:35.275Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'extension manifest policy examples docs EXTENSIONS policy-restricted starter manifest duplicated' found adjacent pm-w98k/pm-axd1 but no active item for docs/example snippet duplication."
+docs[4]{path,scope,note}:
+  docs/examples/policy-restricted-extension/manifest.json,project,runnable manifest duplicate
+  docs/examples/policy-restricted-extension/README.md,project,policy config duplicate
+  docs/examples/starter-extension/manifest.json,project,runnable manifest duplicate
+  docs/EXTENSIONS.md,project,inline manifest and policy snippets
+body: ""

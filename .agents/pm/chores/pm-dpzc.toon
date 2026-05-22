@@ -1,0 +1,19 @@
+id: pm-dpzc
+title: Deduplicate path containment helpers across package and extension code
+description: "Duplicate audit 2026-05-22: path containment logic is repeated across package and extension boundaries. src/core/packages/manifest.ts:225 defines isPathWithinDirectory; src/cli/commands/extension.ts:541 and src/core/extensions/loader.ts:1160 define the same containment plus canonical realpath wrapper logic. Existing searches found closed sandbox work and open contract-list items, but no active item for filesystem boundary helper duplication."
+type: Chore
+status: open
+priority: 2
+tags[5]: code-quality,dedup,extensions,packages,security
+created_at: "2026-05-22T19:16:32.934Z"
+updated_at: "2026-05-22T19:16:32.934Z"
+author: codex-duplicate-audit
+acceptance_criteria: "A shared path containment/canonical containment helper is used by package manifest validation, extension install/doctor, and extension loader paths; path traversal/security semantics remain unchanged; focused package/extension tests and pnpm build pass."
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T19:16:32.934Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'path containment isPathWithinDirectory canonical path extension package loader manifest' found pm-w98k for extension contract lists, not filesystem boundary validation; no active exact helper-dedup item found."
+files[3]{path,scope,note}:
+  src/core/packages/manifest.ts,project,isPathWithinDirectory clone
+  src/cli/commands/extension.ts,project,canonical containment clone
+  src/core/extensions/loader.ts,project,canonical containment clone
+body: ""

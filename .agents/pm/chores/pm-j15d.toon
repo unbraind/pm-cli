@@ -1,0 +1,23 @@
+id: pm-j15d
+title: Extract shared extension fixture writer for tests
+description: "Duplicate audit 2026-05-22: extension/package tests repeat fixture creation for manifest.json plus trivial index.js/index.mjs entrypoints. Representative copies include tests/integration/help-runtime.spec.ts:6 createProjectExtension, tests/unit/sdk-index.spec.ts:31 createProjectExtension, tests/unit/contracts-command.spec.ts:18 createProjectExtension, tests/unit/extension-loader.spec.ts:26 createExtension, tests/unit/extension-command-github.spec.ts:19 writeMockExtension, tests/unit/package-manifest.spec.ts:15 createExtension, and many inline manifest/index writes in tests/unit/extension-command.spec.ts. Existing pm-eltf covers item factories, not extension fixture setup."
+type: Chore
+status: open
+priority: 2
+tags[4]: code-quality,dedup,extensions,tests
+created_at: "2026-05-22T19:17:37.412Z"
+updated_at: "2026-05-22T19:17:37.412Z"
+author: codex-duplicate-audit
+acceptance_criteria: "A shared writeTestExtension/createTestExtension helper supports project/global/source roots, entry filename, capabilities, and custom entry source; repeated local extension fixture writers are removed where they do not clarify test intent; extension/package tests and pnpm build pass."
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T19:17:37.412Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'writeTestExtension createProjectExtension extension fixture manifest test helper' and broad helper search found no active exact item; pm-eltf is scoped to createTask/createSeedItem item factories."
+files[7]{path,scope,note}:
+  tests/integration/help-runtime.spec.ts,project,createProjectExtension clone
+  tests/unit/sdk-index.spec.ts,project,createProjectExtension clone
+  tests/unit/contracts-command.spec.ts,project,createProjectExtension clone
+  tests/unit/extension-loader.spec.ts,project,createExtension clone
+  tests/unit/extension-command-github.spec.ts,project,writeMockExtension clone
+  tests/unit/package-manifest.spec.ts,project,createExtension clone
+  tests/unit/extension-command.spec.ts,project,inline extension fixture clones
+body: ""

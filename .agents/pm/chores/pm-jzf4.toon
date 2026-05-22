@@ -1,0 +1,16 @@
+id: pm-jzf4
+title: Deduplicate files/docs linked-resource command implementations
+description: "Duplicate audit 2026-05-22: jscpd found src/cli/commands/docs.ts and src/cli/commands/files.ts share large command bodies: imports and option setup, path/spec parsing, artifact normalization, dedupe/sort handling, add/remove/list flows, and rendering blocks. Representative clones include docs.ts:24-54 vs files.ts:34-64, docs.ts:61-88 vs files.ts:105-132, docs.ts:94-161 vs files.ts:138-205, docs.ts:213-243 vs files.ts:288-318, and docs.ts:319-354 vs files.ts:535-570. Existing pm-3eu2/pm-n2ts are closed feature work, and pm-why9 covers CLI parser blocks but not the linked-resource command twin implementation. Fix by extracting a typed linked-artifact command core parameterized by resource kind, metadata key, validation, and rendering labels."
+type: Chore
+status: open
+priority: 2
+tags[3]: code-quality,dedup,linked-resources
+created_at: "2026-05-22T18:59:13.028Z"
+updated_at: "2026-05-22T19:00:50.893Z"
+author: codex-duplication-audit
+acceptance_criteria: "files/docs command behavior is driven by one shared implementation with kind-specific adapters; duplicate parsing, add/remove/list, dedupe/sort, and render logic is removed from docs.ts/files.ts; existing files/docs unit and integration coverage passes; pnpm build passes."
+parent: pm-rnpb
+files[2]{path,scope,note}:
+  src/cli/commands/docs.ts,project,duplicated linked-docs command body
+  src/cli/commands/files.ts,project,duplicated linked-files command body
+body: ""

@@ -1,0 +1,21 @@
+id: pm-xh0y
+title: Deduplicate mutation author fallback resolution across commands
+description: "Duplicate audit 2026-05-22: mutation commands locally reimplement the same author fallback logic: explicit candidate, PM_AUTHOR, settings.author_default, trimmed value, then unknown fallback. Representative copies are resolveAuthor in src/cli/commands/append.ts:23, comments.ts:38, files.ts:108 and toAuthor in delete.ts:21 and history-redact.ts:111, with the same pattern also appearing in notes/learnings/docs/test/claim/close/update/restore/plan paths. Existing searches found only broad parent/history hits and adjacent command-stack items; no active item owns the shared mutation-author contract."
+type: Chore
+status: open
+priority: 3
+tags[3]: cli,code-quality,dedup
+created_at: "2026-05-22T19:16:14.504Z"
+updated_at: "2026-05-22T19:16:14.504Z"
+author: codex-duplicate-audit
+acceptance_criteria: One shared helper owns mutation author resolution; command modules consume it without behavior changes; PM_AUTHOR/settings.author_default/unknown fallback semantics stay covered by focused command tests; pnpm build passes.
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T19:16:14.504Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'author fallback resolveAuthor mutation author PM_AUTHOR settings.author_default' and pm search 'shared author helper resolve mutation author fallback' found no active exact item; pm-9y8q is scoped to comments/notes/learnings stacks, not cross-command author fallback."
+files[5]{path,scope,note}:
+  src/cli/commands/append.ts,project,resolveAuthor clone
+  src/cli/commands/comments.ts,project,resolveAuthor clone
+  src/cli/commands/files.ts,project,resolveAuthor clone
+  src/cli/commands/delete.ts,project,toAuthor clone
+  src/cli/commands/history-redact.ts,project,toAuthor clone
+body: ""

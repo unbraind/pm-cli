@@ -2,11 +2,26 @@ id: pm-1nht
 title: "pm validate: ok:false on warn-only checks + dumps every item ID per field"
 description: "Dogfood 2026-05-22 HIGH (agent UX + token): on a healthy project, validate returns ok:false purely because warn-level checks fire (closed missing resolution, missing acceptance_criteria/etc under core profile), and lists every affected ID for every field (NxM payload). Agents read ok:false as a hard failure and may abort; the ID lists are very token-heavy. Fix: top-level ok=true when only warn checks fire (separate ok from has_warnings); aggregate/truncate per-field ID lists by default with counts, full lists behind --verbose. Keep the remediation hints."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[0]:
 created_at: "2026-05-22T15:44:32.363Z"
-updated_at: "2026-05-22T15:44:32.363Z"
+updated_at: "2026-05-22T19:36:32.565Z"
 author: maintainer-agent
 parent: pm-rnpb
+comments[3]{created_at,author,text}:
+  "2026-05-22T19:21:10.496Z",codex-validate-worker-20260522,"Implementation plan: separate hard validation failures from warning-only checks so top-level ok stays true for warnings; keep warnings visible via has_warnings/warnings; compact metadata and resolution ID arrays by default while preserving counts and truncation markers; add focused validate regression coverage and run an isolated temp-project validate smoke."
+  "2026-05-22T19:25:17.430Z",codex-validate-worker-20260522,"Evidence: focused regression passed: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/contracts-command.spec.ts (57 tests). Manual isolated temp-project smoke passed using node dist/cli.js: validate --check-resolution now returns ok=true and has_warnings=true for warning-only missing resolution; validate --check-resolution --strict-exit still exits non-zero as expected."
+  "2026-05-22T19:36:30.855Z",codex-validate-worker-20260522,"Evidence update: first full release gate exposed two stale integration expectations for validate warning-only ok semantics. Updated tests/integration/cli.integration.spec.ts to assert ok=true plus has_warnings=true while strict-exit/fail-on-warn still exit 1. Focused integration rerun passed: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t 'supports close validation modes and standalone validate command|records telemetry classifications for strict-exit runtime and parse failures' (2 passed, 71 skipped)."
+files[6]{path,scope,note}:
+  src/cli/commands/validate.ts,project,separate validate ok from warnings and compact diagnostic ID lists
+  src/cli/register-operations.ts,project,wire validate verbose diagnostics and strict warning exit
+  src/sdk/cli-contracts.ts,project,expose verboseDiagnostics validate contract
+  tests/integration/cli.integration.spec.ts,project,integration coverage for validate has_warnings strict-exit semantics
+  tests/unit/contracts-command.spec.ts,project,validate verbose diagnostics contract coverage
+  tests/unit/validate-command.spec.ts,project,warning-only ok and has_warnings regression coverage
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"supports close validation modes and standalone validate command|records telemetry classifications for strict-exit runtime and parse failures\"",null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused validate CLI integration semantics
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/contracts-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused validate warning semantics and contract regression
+close_reason: "Implemented validate warning-only semantics: warnings remain visible through has_warnings/warnings, ok only flips false for explicit error-severity findings, diagnostic ID lists default to compact 40-item summaries with --verbose-diagnostics escape hatch, and --strict-exit/--fail-on-warn preserve warning-fail automation."
 body: ""

@@ -1,0 +1,19 @@
+id: pm-3y56
+title: Single-source Plan workflow examples across plugin docs
+description: "Duplicate audit 2026-05-22: Plan workflow examples are repeated across plugins/pm-claude/skills/pm-planner/SKILL.md:114-143, plugins/pm-codex/skills/pm-native/SKILL.md:59-75, and plugins/pm-claude/commands/pm-planner.md:53-69. The snippets describe pm_plan purpose and JSON lifecycle examples for create/add-step/update/complete/decision/approve/materialize/show/resume, but diverge by harness, included subcommands, and example fields. Closed pm-aqat exposed Plan workflow surfaces but does not track deduplicating copied plugin examples."
+type: Chore
+status: open
+priority: 3
+tags[4]: dedup,docs,plan,plugins
+created_at: "2026-05-22T19:18:21.800Z"
+updated_at: "2026-05-22T19:18:21.800Z"
+author: codex-duplicate-audit
+acceptance_criteria: A canonical Plan workflow recipe exists in docs or shared plugin reference; Claude/Codex skills and commands keep only harness-specific deltas and link to the recipe; examples stay valid against current plan contracts; docs-skills gate and focused plugin docs checks pass.
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-22T19:18:21.800Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'Plan workflow examples pm_plan planner skill command duplicated plugin docs' found closed Plan implementation items and no active docs-example dedup item."
+docs[3]{path,scope,note}:
+  plugins/pm-claude/commands/pm-planner.md,project,Plan example clone
+  plugins/pm-claude/skills/pm-planner/SKILL.md,project,Plan example clone
+  plugins/pm-codex/skills/pm-native/SKILL.md,project,Plan example clone
+body: ""

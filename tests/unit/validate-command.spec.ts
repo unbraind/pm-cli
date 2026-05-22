@@ -182,7 +182,8 @@ describe("runValidate", () => {
       expect(seeded.code).toBe(0);
 
       const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_lifecycle_active_closure_like_metadata:1");
       expect(result.warnings).toContain("validate_lifecycle_active_terminal_parent:1");
       const lifecycleCheck = checkByName(result, "lifecycle");
@@ -221,7 +222,8 @@ describe("runValidate", () => {
       expect(seeded.code).toBe(0);
 
       const result = await runValidate({ checkStaleBlockers: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_lifecycle_stale_blockers:1");
       const lifecycleCheck = checkByName(result, "lifecycle");
       expect(lifecycleCheck.status).toBe("warn");
@@ -273,7 +275,8 @@ describe("runValidate", () => {
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 
       const result = await runValidate({ checkStaleBlockers: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_lifecycle_stale_blockers:1");
       expect(result.warnings).toContain("validate_lifecycle_active_closure_like_metadata:1");
 
@@ -299,7 +302,8 @@ describe("runValidate", () => {
     await withTempPmPath(async (context) => {
       const [first, second, third] = seedDependencyCycle(context);
       const result = await runValidate({ checkLifecycle: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_lifecycle_dependency_cycles:1");
       const lifecycleCheck = checkByName(result, "lifecycle");
       expect(lifecycleCheck.status).toBe("warn");
@@ -333,8 +337,11 @@ describe("runValidate", () => {
         { path: context.pmPath },
       );
       expect(warnResult.ok).toBe(false);
+      expect(warnResult.has_warnings).toBe(true);
       expect(warnResult.warnings).toContain("validate_lifecycle_dependency_cycles_error:1");
+      expect(warnResult.warnings.some((warning) => warning.endsWith("_error:1"))).toBe(true);
       const errorLifecycleCheck = checkByName(warnResult, "lifecycle");
+      expect(errorLifecycleCheck.status).toBe("error");
       const errorDetails = errorLifecycleCheck.details as {
         dependency_cycle_severity_policy: string;
         dependency_cycle_count: number;
@@ -386,7 +393,8 @@ describe("runValidate", () => {
       expect(linked.code).toBe(0);
 
       const result = await runValidate({ checkCommandReferences: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_command_references_stale_pm_ids:1");
       const commandCheck = checkByName(result, "command_references");
       expect(commandCheck.status).toBe("warn");
@@ -446,7 +454,8 @@ describe("runValidate", () => {
       await writeFile(itemPath, after, "utf8");
 
       const result = await runValidate({ checkCommandReferences: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       const commandCheck = checkByName(result, "command_references");
       expect(commandCheck.status).toBe("warn");
       const details = commandCheck.details as {
@@ -485,7 +494,8 @@ describe("runValidate", () => {
       await writeFile(itemPath, after, "utf8");
 
       const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_metadata_missing_estimate:1");
       expect(result.warnings).toContain("validate_metadata_missing_close_reason:1");
       const metadataCheck = checkByName(result, "metadata");
@@ -509,7 +519,8 @@ describe("runValidate", () => {
       await writeFile(itemPath, after, "utf8");
 
       const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_metadata_missing_author:1");
       expect(result.warnings).toContain("validate_metadata_missing_acceptance_criteria:1");
       const metadataCheck = checkByName(result, "metadata");
@@ -526,7 +537,8 @@ describe("runValidate", () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-metadata-strict-profile");
       const result = await runValidate({ checkMetadata: true, metadataProfile: "strict" }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_metadata_missing_reviewer:1");
       expect(result.warnings).toContain("validate_metadata_missing_risk:1");
       expect(result.warnings).toContain("validate_metadata_missing_confidence:1");
@@ -562,7 +574,8 @@ describe("runValidate", () => {
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 
       const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_metadata_missing_sprint:1");
       expect(result.warnings).toContain("validate_metadata_missing_release:1");
       expect(result.warnings.some((warning) => warning.startsWith("validate_metadata_missing_reviewer:"))).toBe(false);
@@ -597,7 +610,8 @@ describe("runValidate", () => {
       await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
 
       const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_metadata_custom_profile_missing_required_fields:0");
 
       const metadataCheck = checkByName(result, "metadata");
@@ -649,7 +663,8 @@ describe("runValidate", () => {
       await runClose(id, "done", {}, { path: context.pmPath });
 
       const result = await runValidate({ checkResolution: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_resolution_missing_fields:1");
       const resolutionCheck = checkByName(result, "resolution");
       expect(resolutionCheck.status).toBe("warn");
@@ -714,7 +729,8 @@ describe("runValidate", () => {
       expect(linked.code).toBe(0);
 
       const result = await runValidate({ checkFiles: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_files_missing_linked_paths:1");
       const filesCheck = checkByName(result, "files");
       expect(filesCheck.status).toBe("warn");
@@ -767,7 +783,8 @@ describe("runValidate", () => {
       expect(addedFiles.code).toBe(0);
 
       const result = await runValidate({ checkFiles: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_files_missing_linked_paths:1");
       expect(result.warnings.some((warning) => warning.startsWith("validate_files_orphaned_paths:"))).toBe(true);
       const filesCheck = checkByName(result, "files");
@@ -1130,7 +1147,8 @@ describe("runValidate", () => {
       await rm(path.join(context.pmPath, "history", `${id}.jsonl`), { force: true });
 
       const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_history_drift_missing_streams:1");
       const historyCheck = checkByName(result, "history_drift");
       expect(historyCheck.status).toBe("warn");
@@ -1157,7 +1175,8 @@ describe("runValidate", () => {
       await writeFile(mismatchPath, mismatchAfter, "utf8");
 
       const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_history_drift_missing_streams:2");
       expect(result.warnings).toContain("validate_history_drift_unreadable_streams:1");
       expect(result.warnings).toContain("validate_history_drift_hash_mismatches:1");
@@ -1184,7 +1203,8 @@ describe("runValidate", () => {
       await writeFile(historyPath, "{not-json}\n", "utf8");
 
       const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_history_drift_unreadable_streams:1");
       const historyCheck = checkByName(result, "history_drift");
       expect(historyCheck.status).toBe("warn");
@@ -1231,7 +1251,8 @@ describe("runValidate", () => {
       await writeFile(itemPath, after, "utf8");
 
       const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_history_drift_hash_mismatches:1");
       const historyCheck = checkByName(result, "history_drift");
       expect(historyCheck.status).toBe("warn");
@@ -1271,7 +1292,8 @@ describe("runValidate", () => {
       await writeFile(historyPath, `${lines.join("\n")}\n`, "utf8");
 
       const result = await runValidate({ checkHistoryDrift: true }, { path: context.pmPath });
-      expect(result.ok).toBe(false);
+      expect(result.ok).toBe(true);
+      expect(result.has_warnings).toBe(true);
       expect(result.warnings).toContain("validate_history_drift_chain_mismatches:1");
       expect(result.warnings).not.toContain("validate_history_drift_hash_mismatches:1");
       const historyCheck = checkByName(result, "history_drift");
