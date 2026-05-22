@@ -1,0 +1,12 @@
+id: pm-1nht
+title: "pm validate: ok:false on warn-only checks + dumps every item ID per field"
+description: "Dogfood 2026-05-22 HIGH (agent UX + token): on a healthy project, validate returns ok:false purely because warn-level checks fire (closed missing resolution, missing acceptance_criteria/etc under core profile), and lists every affected ID for every field (NxM payload). Agents read ok:false as a hard failure and may abort; the ID lists are very token-heavy. Fix: top-level ok=true when only warn checks fire (separate ok from has_warnings); aggregate/truncate per-field ID lists by default with counts, full lists behind --verbose. Keep the remediation hints."
+type: Chore
+status: open
+priority: 2
+tags[0]:
+created_at: "2026-05-22T15:44:32.363Z"
+updated_at: "2026-05-22T15:44:32.363Z"
+author: maintainer-agent
+parent: pm-rnpb
+body: ""

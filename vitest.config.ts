@@ -92,6 +92,7 @@ export default defineConfig({
         "src/core/store/item-store.ts",
         "src/core/store/paths.ts",
         "src/core/store/settings.ts",
+        "src/core/store/settings-validator.ts",
         "src/errors.ts",
         "src/fs-utils.ts",
         "src/history.ts",

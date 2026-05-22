@@ -1,0 +1,12 @@
+id: pm-why9
+title: "Code dedup: extract shared CLI parser blocks and consolidate item-record casts"
+description: "Code-quality audit 2026-05-22 (complements pm-mbdu file splits): (1) byte-identical legacy-none block duplicated in create.ts and update.ts (~250 lines) -> shared/legacy-none.ts. (2) 9 parseLinkedTest* parsers duplicated in create.ts and test.ts -> linked-test-parsers.ts. (3) recurrence/event parsers duplicated create.ts/update.ts -> recurrence-parsers.ts. (4) asRecord defined in loader.ts, mcp/server.ts, main.ts -> shared/primitives.ts. (5) default status/workflow model duplicated runtime-schema.ts vs constants.ts -> single source. (6) update.ts mutate() has 53 near-identical scalar-field blocks + 37 guarded non-null assertions -> declarative field-table (~470 LOC removed). All zero-behavior-change refactors."
+type: Chore
+status: open
+priority: 3
+tags[0]:
+created_at: "2026-05-22T15:44:36.989Z"
+updated_at: "2026-05-22T15:44:36.989Z"
+author: maintainer-agent
+parent: pm-rnpb
+body: ""

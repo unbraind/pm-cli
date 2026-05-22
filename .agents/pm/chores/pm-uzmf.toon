@@ -1,0 +1,12 @@
+id: pm-uzmf
+title: "Calendar agent ergonomics: equal start/end rejected; schedule-less Event items invisible"
+description: "Dogfood 2026-05-22 (related to pm-fu5d CAL1): (1) start=+Nd,end=+Nd (identical offsets) is rejected as equal start/end - agents naively pass identical offsets; auto-treat equal start/end as an instant event (or interpret bare end as end-of-window). (2) pm create event 'Title' with no --event schedule creates a Type=Event item that never appears on the calendar (no events array) - warn at create time or surface schedule-less events with a 'no time set' note."
+type: Chore
+status: open
+priority: 3
+tags[0]:
+created_at: "2026-05-22T15:44:35.471Z"
+updated_at: "2026-05-22T15:44:35.471Z"
+author: maintainer-agent
+parent: pm-rnpb
+body: ""

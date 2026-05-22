@@ -1,0 +1,12 @@
+id: pm-ot8r
+title: "Auto daily release silently skips releasable commits when CHANGELOG [Unreleased] is empty"
+description: "Root cause why crash fixes (PR #39/#40, Sentry PM-CLI-R/S/T) stayed unreleased on 2026.5.18 for days: run-release-pipeline.mjs reports skipped:true reason:changelog_unreleased_empty when [Unreleased] has no body, even though there are src-touching commits since the last tag. The skip is by design but produces a silent no-op (25s green run) so maintainers do not notice fixes are stranded. Fix: when commits since last release tag touch src/ but [Unreleased] is empty, emit a loud warning (and optionally auto-generate entries from conventional commits via generate-release-notes.mjs) instead of a silent success. Immediate mitigation applied: populated CHANGELOG [Unreleased] so the next auto-release ships the backlog."
+type: Issue
+status: open
+priority: 1
+tags[0]:
+created_at: "2026-05-22T15:44:28.669Z"
+updated_at: "2026-05-22T15:44:28.669Z"
+author: maintainer-agent
+parent: pm-rnpb
+body: ""

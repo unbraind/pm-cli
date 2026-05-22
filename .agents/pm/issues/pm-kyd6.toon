@@ -1,0 +1,12 @@
+id: pm-kyd6
+title: pm update --blocked-by does not create a pm deps graph edge
+description: "Dogfood 2026-05-22 HIGH: pm update <id> --blocked-by pm-X stores blocked_by metadata but creates no edge in pm deps (edge_count:0). Agents that record blockers via the documented --blocked-by flag get an empty dependency graph and wrong what-is-blocking-me answers. Fix: have --blocked-by also create a blocks/blocked-by dependency edge (or unify the two concepts), so metadata and graph agree."
+type: Issue
+status: open
+priority: 2
+tags[0]:
+created_at: "2026-05-22T15:44:30.773Z"
+updated_at: "2026-05-22T15:44:30.773Z"
+author: maintainer-agent
+parent: pm-rnpb
+body: ""
