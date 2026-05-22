@@ -614,6 +614,11 @@ function summarizeFileList(
   };
 }
 
+function isValidateErrorWarning(warning: string): boolean {
+  const token = warning.split(":", 1)[0] ?? "";
+  return token.endsWith("_error");
+}
+
 const RESOLUTION_REMEDIATION_FLAG_BY_FIELD: Record<ResolutionFieldKey, string> = {
   resolution: "--resolution",
   expected_result: "--expected-result",
@@ -1443,7 +1448,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   }
 
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
-  const hasErrors = normalizedWarnings.some((warning) => warning.startsWith("validate_lifecycle_dependency_cycles_error:"));
+  const hasErrors = normalizedWarnings.some(isValidateErrorWarning);
   return {
     ok: !hasErrors,
     has_warnings: normalizedWarnings.length > 0,

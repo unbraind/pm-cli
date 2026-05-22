@@ -339,6 +339,7 @@ describe("runValidate", () => {
       expect(warnResult.ok).toBe(false);
       expect(warnResult.has_warnings).toBe(true);
       expect(warnResult.warnings).toContain("validate_lifecycle_dependency_cycles_error:1");
+      expect(warnResult.warnings.some((warning) => warning.endsWith("_error:1"))).toBe(true);
       const errorLifecycleCheck = checkByName(warnResult, "lifecycle");
       const errorDetails = errorLifecycleCheck.details as {
         dependency_cycle_severity_policy: string;
