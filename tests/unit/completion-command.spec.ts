@@ -135,15 +135,18 @@ describe("generateBashScript", () => {
     expect(bashScript).toContain("--defaults");
     expect(bashScript).toContain("--yes");
     expect(bashScript).toContain("-y");
+    expect(bashScript).toContain("--verbose");
 
     const zshScript = generateZshScript();
     expect(zshScript).toContain("--agent-guidance[Agent guidance mode]");
     expect(zshScript).toContain("Alias for --defaults");
+    expect(zshScript).toContain("--verbose[");
 
     const fishScript = generateFishScript();
     expect(fishScript).toContain("__fish_seen_subcommand_from init");
     expect(fishScript).toContain("-l agent-guidance");
     expect(fishScript).toContain("-s y -l yes");
+    expect(fishScript).toContain("-l verbose");
   });
 
   it("includes underscore metadata aliases in bash completion output", () => {

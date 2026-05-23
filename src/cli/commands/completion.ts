@@ -953,6 +953,7 @@ _pm() {
             '--author[Set the default mutation author for this project]:author' \\
             '--agent-guidance[Agent guidance mode]:mode:(ask add skip status)' \\
             '--with-packages[Install bundled first-party packages during initialization]' \\
+            '--verbose[Include the full resolved settings tree in init output]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -965,6 +966,7 @@ _pm() {
             '--author[Set the default mutation author for this project]:author' \\
             '--agent-guidance[Agent guidance mode]:mode:(ask add skip status)' \\
             '--with-packages[Install bundled first-party packages during initialization]' \\
+            '--verbose[Include the full resolved settings tree in init output]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1694,6 +1696,7 @@ complete -c pm -n '__fish_seen_subcommand_from init' -s y -l yes -d 'Alias for -
 complete -c pm -n '__fish_seen_subcommand_from init' -l author -d 'Set the default mutation author for this project' -r
 complete -c pm -n '__fish_seen_subcommand_from init' -l agent-guidance -d 'Agent guidance mode' -r -a 'ask add skip status'
 complete -c pm -n '__fish_seen_subcommand_from init' -l with-packages -d 'Install bundled first-party packages during initialization'
+complete -c pm -n '__fish_seen_subcommand_from init' -l verbose -d 'Include the full resolved settings tree in init output'
 complete -c pm -n '__fish_seen_subcommand_from config' -l criterion -d 'Criteria value for definition-of-done metadata-required-fields or lifecycle pattern keys (repeatable for set)' -r
 complete -c pm -n '__fish_seen_subcommand_from config' -l clear-criteria -d 'Clear config criteria-list key values'
 complete -c pm -n '__fish_seen_subcommand_from config' -l format -d 'Item format for item-format key' -r -a 'toon'

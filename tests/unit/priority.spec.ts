@@ -52,7 +52,7 @@ describe("resolvePriority", () => {
   });
 
   it("rejects out-of-range numbers and non-priority words", () => {
-    for (const raw of ["5", "-1", "10", "bogus", "1.0", "2px", "highish"]) {
+    for (const raw of ["5", "-1", "10", "bogus", "1.0", "2px", "highish", "__proto__", "constructor"]) {
       let caught: unknown;
       try {
         resolvePriority(raw);

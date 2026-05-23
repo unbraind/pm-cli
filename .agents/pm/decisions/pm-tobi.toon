@@ -6,15 +6,16 @@ status: closed
 priority: 2
 tags[5]: agent-ux,cli,decision,default-safety,dogfood
 created_at: "2026-05-23T17:08:54.664Z"
-updated_at: "2026-05-23T18:17:52.591Z"
+updated_at: "2026-05-23T18:37:54.513Z"
 author: claude-code-agent
 acceptance_criteria: gc help documents delete-by-default + --dry-run; pm delete gains a non-mutating --dry-run that reports the target; no existing default behavior changed; regression tests cover delete --dry-run.
 parent: pm-5k2w
 resolution: "Implemented default-safety decision: kept gc delete-by-default with clearer help and added non-mutating pm delete --dry-run."
 expected_result: Destructive commands retain existing defaults but have clear preview affordances and docs.
 actual_result: pm delete dry-run previews target without history/item mutation; gc help clarifies default delete; contracts/completions/tests/manual dogfood/full release gate passed.
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-23T17:50:14.116Z",default-safety-subagent,"Evidence: Implemented L10 default-safety preview. pm delete now accepts --dry-run, returns dry_run:true plus target_path and changed_fields:[deleted], and does not remove the item or append delete history. pm gc --help now states gc deletes matched artifacts by default unless --dry-run is used. Verification passed: node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/unit/gc-command.spec.ts tests/integration/help-runtime.spec.ts (46 tests); pnpm exec tsc -p tsconfig.json --noEmit. Scope note: left shared contracts/completion untouched for coordinator ownership."
+  "2026-05-23T18:37:54.513Z",codex-active-work,"Post-review fix evidence: dry-run delete preview now uses the core deleteItem path for lock, ownership, history-policy, and item_store_delete override preflights, then returns before file/history mutation. target_path is normalized for deterministic CLI JSON output. Focused delete/contracts/completion/priority/init tests and manual temp dogfood passed."
 files[6]{path,scope,note}:
   src/cli/commands/delete.ts,project,L10 adds non-mutating delete dry-run result
   src/cli/help-content.ts,project,L10 detailed gc help clarifies delete-by-default policy

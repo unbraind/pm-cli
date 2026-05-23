@@ -49,9 +49,9 @@ export function resolvePriority(raw: string): Priority {
     throw priorityUsageError(raw);
   }
 
-  const named = PRIORITY_NAME_TO_VALUE[trimmed.toLowerCase()];
-  if (named !== undefined) {
-    return named;
+  const normalizedName = trimmed.toLowerCase();
+  if (Object.prototype.hasOwnProperty.call(PRIORITY_NAME_TO_VALUE, normalizedName)) {
+    return PRIORITY_NAME_TO_VALUE[normalizedName as keyof typeof PRIORITY_NAME_TO_VALUE];
   }
 
   // Numeric form: only exact integers 0..4 are valid. Number() would accept
