@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-23T20:55:24.149Z",
+  "updated_at": "2026-05-23T20:59:37.993Z",
   "entries": [
     {
       "name": "pm-changelog",
@@ -13,7 +13,7 @@
         "schema"
       ],
       "installed_at": "2026-05-23T20:26:03.509Z",
-      "updated_at": "2026-05-23T20:47:47.081Z",
+      "updated_at": "2026-05-23T20:59:32.354Z",
       "source": {
         "kind": "github",
         "input": "unbraind/pm-changelog",
@@ -23,10 +23,10 @@
         "repo": "pm-changelog",
         "ref": "main",
         "subpath": ".",
-        "commit": "a99e8ff969e7796a6bce2434ecce959244ae22b4"
+        "commit": "0acca83160d2f9689b9e5f027cc49fb481686006"
       },
-      "last_update_check_at": "2026-05-23T20:55:23.725Z",
-      "last_update_remote_commit": "a99e8ff969e7796a6bce2434ecce959244ae22b4",
+      "last_update_check_at": "2026-05-23T20:59:37.584Z",
+      "last_update_remote_commit": "0acca83160d2f9689b9e5f027cc49fb481686006",
       "update_available": false
     }
   ]

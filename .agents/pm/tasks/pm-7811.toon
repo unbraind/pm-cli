@@ -6,17 +6,18 @@ status: blocked
 priority: 0
 tags[5]: changelog,ci,packages,release,sdk
 created_at: "2026-05-23T20:25:40.368Z"
-updated_at: "2026-05-23T20:52:12.396Z"
+updated_at: "2026-05-23T20:59:58.224Z"
 author: codex-pm-changelog
 parent: pm-59gj
 blocked_reason: "pm-changelog npm publication requires an authorized npm 2FA/bypass-token publisher. The package fix is committed to unbraind/pm-changelog main at a99e8ff with green CI, and pm-cli installs that fixed GitHub package revision, but npm latest remains 2026.5.23-1 until a publisher completes npm publish 2026.5.23-2."
-comments[6]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-05-23T20:25:40.368Z",codex-pm-changelog,"Duplicate check: searched for 'pm-changelog changelog package release CI'. Existing package-first lineage pm-59gj is canonical; no dedicated open pm-changelog integration item existed, so this child task tracks the requested work."
   "2026-05-23T20:25:59.418Z",codex-pm-changelog,"Baseline before install: pm package explore/manage/doctor in project scope reported zero project packages and ok=true; npm latest for pm-changelog is 2026.5.23-1 with @unbrained/pm-cli peer >=2026.5.14."
   "2026-05-23T20:26:49.874Z",codex-pm-changelog,"Issue found: installed pm-changelog exposes help/contracts, but runtime generation failed: pm changelog generate --stdout --title 'pm CLI Changelog' --release-version Unreleased --status closed --group-by version exits with extension_command_handler_failed. Investigating whether this is package handler logic or SDK surface."
   "2026-05-23T20:39:19.289Z",codex-pm-changelog,"Upstream fix: pm-changelog issue #1 filed, fixed in unbraind/pm-changelog commit 2a3c4bb, and direct npm run release:check passed there. npm publish of 2026.5.23-2 is blocked from this shell by npm 2FA policy, so this repo will install the fixed package from GitHub ref 2a3c4bb until an authorized npm publisher publishes the version."
   "2026-05-23T20:44:08.323Z",codex-pm-changelog,"Implementation update: removed the local wrapper approach. pm-cli now calls the installed pm-changelog package command directly via node dist/cli.js changelog generate. Generated CHANGELOG.pm.md is package-owned and checked by CI/release through pnpm changelog:pm:check."
   "2026-05-23T20:47:55.235Z",codex-pm-changelog,"Upstream package final status: pm-changelog fix is now commit a99e8ff with green GitHub CI run 26343165489. This includes large JSON buffer handling, manifest version alignment, and extension --check nonzero failure when generated changelog is stale. pm-cli reinstalled that GitHub package revision."
+  "2026-05-23T20:59:58.224Z",codex-pm-changelog-integrator,"Evidence: CI static gate failed on the first push because GitHub-source pm-changelog install included upstream tracker data with a local absolute path. Opened unbraind/pm-changelog#2, fixed upstream with pm history-redact at 0acca83160d2f9689b9e5f027cc49fb481686006, reinstalled via pm install --gh, and local static gate sequence now passes including pnpm changelog:pm:check and pnpm security:scan."
 files[8]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Project package manager state now records pm-changelog as an installed managed package
   .agents/pm/extensions/pm-changelog,project,Installed fixed pm-changelog 2026.5.23-2 from GitHub main commit a99e8ff

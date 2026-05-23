@@ -19,7 +19,7 @@ release: 0.1.0
 reporter: codex
 severity: high
 environment: local shell npm registry
-repro_steps: Run npm whoami or npm publish --access public from /home/steve/container/pm-packages/pm-changelog.
+repro_steps: Run npm whoami or npm publish --access public from <local-package-path>.
 resolution: "Published pm-changelog@0.1.0 publicly to npm using the NPM_MEDIA_SERVER token loaded from ~/.bashrc, verified registry visibility, and verified pm install npm:pm-changelog --project in a clean temporary pm project."
 expected_result: "pm-changelog is published publicly to npm and installable via pm install npm:pm-changelog --project."
 actual_result: "npm whoami with a temporary npm config returned unbrained; npm publish --access public completed for pm-changelog@0.1.0; npm view pm-changelog version returned 0.1.0; clean temp project /tmp/pm-changelog-npm-6vxLt7 installed npm:pm-changelog and generated CHANGELOG.md containing Verify npm pm install."
