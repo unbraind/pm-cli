@@ -6,11 +6,11 @@ status: blocked
 priority: 0
 tags[5]: changelog,ci,packages,release,sdk
 created_at: "2026-05-23T20:25:40.368Z"
-updated_at: "2026-05-23T21:22:01.834Z"
+updated_at: "2026-05-23T21:29:28.759Z"
 author: codex-pm-changelog
 parent: pm-59gj
 blocked_reason: "Repository integration is implemented and verified, but npm publication of pm-changelog 2026.5.23-5 is blocked by npm E403 requiring two-factor authentication or a granular token with bypass 2FA. Current repo is pinned to verified GitHub source f5ebc23 with green upstream CI until an authorized publisher completes npm publish."
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-05-23T20:25:40.368Z",codex-pm-changelog,"Duplicate check: searched for 'pm-changelog changelog package release CI'. Existing package-first lineage pm-59gj is canonical; no dedicated open pm-changelog integration item existed, so this child task tracks the requested work."
   "2026-05-23T20:25:59.418Z",codex-pm-changelog,"Baseline before install: pm package explore/manage/doctor in project scope reported zero project packages and ok=true; npm latest for pm-changelog is 2026.5.23-1 with @unbrained/pm-cli peer >=2026.5.14."
   "2026-05-23T20:26:49.874Z",codex-pm-changelog,"Issue found: installed pm-changelog exposes help/contracts, but runtime generation failed: pm changelog generate --stdout --title 'pm CLI Changelog' --release-version Unreleased --status closed --group-by version exits with extension_command_handler_failed. Investigating whether this is package handler logic or SDK surface."
@@ -20,6 +20,7 @@ comments[9]{created_at,author,text}:
   "2026-05-23T20:59:58.224Z",codex-pm-changelog-integrator,"Evidence: CI static gate failed on the first push because GitHub-source pm-changelog install included upstream tracker data with a local absolute path. Opened unbraind/pm-changelog#2, fixed upstream with pm history-redact at 0acca83160d2f9689b9e5f027cc49fb481686006, reinstalled via pm install --gh, and local static gate sequence now passes including pnpm changelog:pm:check and pnpm security:scan."
   "2026-05-23T21:05:02.310Z",codex-pm-changelog-integrator,"Evidence: CI static gate for 68f80d49 failed because the installed GitHub package's dist/ payload was ignored by pm-changelog's nested .gitignore and therefore absent from the checkout; node dist/cli.js could not load the extension entry and reported Unknown command changelog. Fixing by force-adding the installed package dist files produced by pm install --gh."
   "2026-05-23T21:21:12.041Z",codex-pm-changelog-integrator,"Evidence: upstream pm-changelog issues #1 and #3 are fixed and closed. Installed pm-changelog 2026.5.23-5 from GitHub main at f5ebc23c7e3dbc9d41ac687b14826fe5632e9d1a via pm install; upstream CI run 26343824903 passed. Package doctor is clean with runtime command changelog generate active; pnpm changelog:pm:check reports unchanged CHANGELOG.pm.md with 788 items. Local static gate passed: pnpm version:check && pnpm changelog:pm:check && pnpm security:scan && pnpm quality:static && npm pack --dry-run. Npm publish of 2026.5.23-5 is blocked by npm E403 requiring 2FA or a bypass-2FA token, so this repo is pinned to the verified GitHub source until authorized publish."
+  "2026-05-23T21:29:28.759Z",codex-pm-changelog-integrator,"Evidence update: after closing pm-bu50, CHANGELOG.pm.md was stale by one closed item. Regenerated it with the installed pm-changelog package via pnpm changelog:pm; pnpm changelog:pm:check now reports item_count=789 and local static gate passes again."
 files[8]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Project package manager state now records pm-changelog as an installed managed package
   .agents/pm/extensions/pm-changelog,project,Installed fixed pm-changelog 2026.5.23-2 from GitHub main commit a99e8ff

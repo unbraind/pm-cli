@@ -110,6 +110,7 @@
 
 ### Fixed
 
+- pm-changelog extension fails on large tracker JSON (pm-bu50)
 - Calendar: pm cal <view\> --date crashes \(positional view + any flag\) (pm-l292)
 - Sentry PM-CLI-R/PM-CLI-S: undefined-status .trim and undefined-tags .join crashes \(fixed in HEAD, mark resolvedInNextRelease\) (pm-d7us)
 - pm test --add causes immediate history drift via null timeout\_seconds (pm-er4q)
