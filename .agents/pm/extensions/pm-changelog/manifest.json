@@ -1,6 +1,6 @@
 {
   "name": "pm-changelog",
-  "version": "2026.5.23-2",
+  "version": "2026.5.23-5",
   "manifest_version": 2,
   "description": "Generate CHANGELOG.md release notes from pm-cli items",
   "author": "@unbraind",
@@ -8,8 +8,7 @@
   "priority": 50,
   "permissions": {
     "fs_read": true,
-    "fs_write": true,
-    "process_spawn": true
+    "fs_write": true
   },
   "capabilities": [
     "commands",

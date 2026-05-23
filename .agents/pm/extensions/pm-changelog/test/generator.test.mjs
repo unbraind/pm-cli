@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import test from "node:test";
 
 import { createChangelog, mergeChangelog, readPmItems, writeChangelog } from "../dist/index.js";
@@ -593,4 +593,63 @@ test("pm package install activates changelog command", () => {
     ),
     /Command \\"changelog generate\\" failed/
   );
+});
+
+test("pm extension command works when only node cli entrypoint is available", () => {
+  const dir = mkdtempSync(join(tmpdir(), "pm-changelog-node-cli-"));
+  const pmCli = join(process.cwd(), "node_modules", "@unbrained", "pm-cli", "dist", "cli.js");
+  const pmBin = join(process.cwd(), "node_modules", ".bin", "pm");
+
+  execFileSync(pmBin, ["init", "--json"], {
+    cwd: dir,
+    encoding: "utf-8",
+  });
+  execFileSync(pmBin, ["install", process.cwd(), "--project", "--json"], {
+    cwd: dir,
+    encoding: "utf-8",
+  });
+  execFileSync(
+    pmBin,
+    [
+      "create",
+      "--type",
+      "task",
+      "--title",
+      "Generate changelog without global pm",
+      "--description",
+      "Verify extension can use the current node cli entrypoint",
+      "--status",
+      "closed",
+      "--json",
+    ],
+    {
+      cwd: dir,
+      encoding: "utf-8",
+    }
+  );
+
+  const generated = JSON.parse(execFileSync(
+    process.execPath,
+    [
+      pmCli,
+      "changelog",
+      "generate",
+      "--output",
+      "CHANGELOG.md",
+      "--release-version",
+      "node-cli",
+      "--date",
+      "2026-05-17",
+      "--json",
+    ],
+    {
+      cwd: dir,
+      encoding: "utf-8",
+      env: { ...process.env, PATH: dirname(process.execPath) },
+    }
+  ));
+
+  assert.equal(generated.changed, true);
+  assert.equal(generated.item_count, 1);
+  assert.match(readFileSync(join(dir, "CHANGELOG.md"), "utf-8"), /## node-cli - 2026-05-17/);
 });

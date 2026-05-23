@@ -1,6 +1,10 @@
-import type { defineExtension as defineExtensionType } from "@unbrained/pm-cli/sdk";
+import { existsSync, realpathSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
-import { createChangelog, mergeChangelog, readPmItems, writeChangelog } from "./generator.js";
+import type { defineExtension as defineExtensionType, ItemFrontMatter } from "@unbrained/pm-cli/sdk";
+
+import { createChangelog, mergeChangelog, writeChangelog } from "./generator.js";
 import type { ChangelogGroupBy } from "./types.js";
 
 const defineExtension: typeof defineExtensionType = ((extension: unknown) => extension) as typeof defineExtensionType;
@@ -57,7 +61,8 @@ export default defineExtension({
           .map((status) => status.trim())
           .filter(Boolean);
 
-        const items = readPmItems({ pmRoot: ctx.pm_root });
+        const listAllFrontMatter = await loadListAllFrontMatter();
+        const items = await listAllFrontMatter(ctx.pm_root);
         const generationOptions = {
           items,
           title: ctx.options["title"] as string | undefined,
@@ -113,4 +118,29 @@ function stringOption(options: Record<string, unknown>, kebabKey: string, camelK
 
 function booleanOption(options: Record<string, unknown>, kebabKey: string, camelKey: string): boolean {
   return Boolean(options[kebabKey] ?? options[camelKey]);
+}
+
+type ListAllFrontMatter = (pmRoot: string) => Promise<ItemFrontMatter[]>;
+
+async function loadListAllFrontMatter(): Promise<ListAllFrontMatter> {
+  try {
+    const sdk = await import("@unbrained/pm-cli/sdk");
+    return sdk.listAllFrontMatter;
+  } catch (error) {
+    const currentCli = process.argv[1];
+    const candidates = [
+      typeof currentCli === "string" ? resolve(dirname(currentCli), "sdk", "index.js") : undefined,
+      typeof currentCli === "string" ? resolve(dirname(realpathSync(currentCli)), "sdk", "index.js") : undefined,
+    ].filter((candidate): candidate is string => typeof candidate === "string");
+
+    for (const candidate of candidates) {
+      if (!existsSync(candidate)) continue;
+      const sdk = await import(pathToFileURL(candidate).href) as { listAllFrontMatter?: ListAllFrontMatter };
+      if (typeof sdk.listAllFrontMatter === "function") {
+        return sdk.listAllFrontMatter;
+      }
+    }
+
+    throw error;
+  }
 }

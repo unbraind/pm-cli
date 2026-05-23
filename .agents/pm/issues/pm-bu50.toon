@@ -2,11 +2,11 @@ id: pm-bu50
 title: pm-changelog extension fails on large tracker JSON
 description: "The installed pm-changelog package command fails in this repository because its extension handler shells out to pm list-all --json with Node's default spawnSync buffer. This repository emits about 5.4 MB of JSON, triggering ENOBUFS before changelog generation can run."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: bug,changelog,package,upstream
 created_at: "2026-05-23T20:27:39.801Z"
-updated_at: "2026-05-23T20:44:08.277Z"
+updated_at: "2026-05-23T21:21:43.846Z"
 author: codex-pm-changelog
 parent: pm-7811
 severity: high
@@ -16,6 +16,8 @@ expected_result: The extension command generates changelog output or uses a stre
 actual_result: Command fails with extension_command_handler_failed; direct spawnSync reproduction reports spawnSync pm ENOBUFS.
 affected_version: 2026.5.23-1
 component: pm-changelog
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-23T20:44:08.277Z",codex-pm-changelog,"Upstream status: fixed in unbraind/pm-changelog commit 5c83152 with green GitHub CI run 26343027144. npm publish of 2026.5.23-2 is blocked by npm 2FA from this shell, so pm-cli installs the fixed package from GitHub main commit 5c83152 for now."
+  "2026-05-23T21:21:34.924Z",codex-pm-changelog-integrator,"Evidence: fixed upstream in pm-changelog 2026.5.23-5 at f5ebc23c7e3dbc9d41ac687b14826fe5632e9d1a. GitHub Actions run 26343824903 passed, issue unbraind/pm-changelog#1 is closed, and pm-cli package doctor plus pnpm changelog:pm:check pass with this package installed from GitHub. npm publication remains blocked by npm E403 2FA/bypass-token requirements, but the functional defect is resolved in source and in this repo."
+close_reason: "Resolved upstream and verified in pm-cli via installed pm-changelog 2026.5.23-5; npm publication is an external authorization blocker, not an unfixed package defect."
 body: ""
