@@ -32,6 +32,7 @@ Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 | Links | `files`, `docs`, `test`, `deps` | connect items to artifacts, tests, and relationships |
 | Verification | `test`, `test-all`, `test-runs`, `validate`, `gc` | run linked tests and repository checks |
 | History | `history`, `history-redact`, `history-repair`, `activity`, `restore`, `stats` | inspect, redact, re-anchor, and recover item state |
+| Schema | `schema add-type` | register config-driven custom item types into `.agents/pm/schema/types.json` |
 | Calendar | `calendar`, `cal` | project deadlines, reminders, and events |
 | Packages | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups | install, upgrade, manage, and run package-backed extension commands |
 | Machines | `contracts`, `help`, optional `guide`/`completion` | command contracts plus optional guide-shell docs routing and shell helpers |
@@ -232,6 +233,21 @@ pm restore <id> <timestamp-or-version>
 History is append-only. Restore appends a new restore event instead of rewriting old history.
 `history-redact` rewrites matching history payloads deterministically, recomputes hash chains, and appends an auditable `history_redact` marker entry when changes are applied.
 `history-repair` re-anchors a drifted history chain when `pm health`/`pm validate --check-history-drift` report stale hashes: it replays the stream, recomputes every before/after hash, repairs legacy patch ops that no longer strictly apply, reconciles the latest hash with the on-disk item, and appends an auditable `history_repair` marker. It never modifies item content and is a safe no-op on a clean stream.
+
+## Custom Item Types
+
+`pm schema add-type` registers a config-driven custom item type so agents can use `pm create <Type> "..."` for project-specific work categories without editing settings by hand. The definition is merged into the runtime type registry from `.agents/pm/schema/types.json` (shape: `{ "definitions": [ItemTypeDefinition...] }`).
+
+```bash
+pm schema add-type Spike --description "Time-boxed investigation" --default-status open
+pm schema add-type Spike --alias spike --alias research --folder spikes
+pm create Spike "Investigate retry backoff"
+```
+
+- The command is an idempotent UPSERT keyed on the type name (case-insensitive); re-running it merges aliases and overrides supplied fields while preserving everything else.
+- Built-in types (Chore, Decision, Epic, Event, Feature, Issue, Meeting, Milestone, Plan, Reminder, Task) are reserved and cannot be redefined.
+- Flags: `--description <text>`, `--default-status <status>`, `--folder <dir>`, `--alias <name>` (repeatable), plus the standard `--author`/`--message`/`--force` governance flags. Add `--json` for the machine envelope.
+- When `pm create`/`pm update` reject an unknown type, the error now points back here: `To register a custom type, run: pm schema add-type "X" (writes .agents/pm/schema/types.json).`
 
 ## Plan Workflow
 

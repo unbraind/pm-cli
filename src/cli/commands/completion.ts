@@ -259,6 +259,9 @@ export function generateBashScript(
     "    history-repair)",
     `      COMPREPLY=(${compgen("--dry-run --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
+    "    schema)",
+    `      COMPREPLY=(${compgen("add-type --description --default-status --folder --alias --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
+    "      ;;",
     "    plan)",
     `      COMPREPLY=(${compgen(`${PLAN_SUBCOMMANDS_LIST} ${PLAN_FLAGS}`)})`,
     "      ;;",
@@ -357,6 +360,7 @@ _pm_commands() {
     'history:Show item history entries'
     'history-redact:Redact sensitive literals/patterns and recompute history hashes'
     'history-repair:Re-anchor a drifted history chain so pm health/validate report ok'
+    'schema:Register custom item types into .agents/pm/schema/types.json'
     'plan:Agent-optimized Plan item workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)'
     'activity:Show recent activity across items'
     'restore:Restore an item to an earlier state'
@@ -757,6 +761,19 @@ _pm() {
             '--dry-run[Preview the re-anchor impact without writing the history file]' \\
             '--author[Mutation author]:author' \\
             '--message[Audit history message]:message' \\
+            '--force[Force ownership/lock override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        schema)
+          _arguments \\
+            '1:subcommand:(add-type)' \\
+            '--description[Human description for the custom item type]:text' \\
+            '--default-status[Default status hint for the custom item type]:status' \\
+            '--folder[Storage folder for items of this custom type]:dir' \\
+            '--alias[Alias for the custom type (repeatable)]:name' \\
+            '--author[Mutation author]:author' \\
+            '--message[Mutation message]:message' \\
             '--force[Force ownership/lock override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1186,6 +1203,7 @@ complete -c pm -n __pm_no_subcommand -a reindex       -d 'Rebuild search artifac
 complete -c pm -n __pm_no_subcommand -a history       -d 'Show item history entries'
 complete -c pm -n __pm_no_subcommand -a history-redact -d 'Redact sensitive literals/patterns and recompute history hashes'
 complete -c pm -n __pm_no_subcommand -a history-repair -d 'Re-anchor a drifted history chain so pm health/validate report ok'
+complete -c pm -n __pm_no_subcommand -a schema        -d 'Register custom item types into .agents/pm/schema/types.json'
 complete -c pm -n __pm_no_subcommand -a plan          -d 'Agent-optimized Plan workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)'
 complete -c pm -n __pm_no_subcommand -a activity      -d 'Show recent activity across items'
 complete -c pm -n __pm_no_subcommand -a restore       -d 'Restore an item to an earlier state'
@@ -1515,6 +1533,14 @@ complete -c pm -n '__fish_seen_subcommand_from history-repair' -l dry-run -d 'Pr
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l message -d 'Audit history message' -r
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l force -d 'Force ownership/lock override'
+complete -c pm -n '__fish_seen_subcommand_from schema' -a 'add-type' -d 'Schema subcommand'
+complete -c pm -n '__fish_seen_subcommand_from schema' -l description -d 'Human description for the custom item type' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l default-status -d 'Default status hint for the custom item type' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l folder -d 'Storage folder for items of this custom type' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l alias -d 'Alias for the custom type (repeatable)' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l author -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l message -d 'Mutation message' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l force -d 'Force ownership/lock override'
 complete -c pm -n '__fish_seen_subcommand_from plan' -a 'create show add-step update-step complete-step block-step reorder-step remove-step link unlink decision discovery validation resume approve materialize' -d 'Plan subcommand'
 complete -c pm -n '__fish_seen_subcommand_from plan' -l title -d 'Plan title' -r
 complete -c pm -n '__fish_seen_subcommand_from plan' -l scope -d 'Plan scope statement' -r

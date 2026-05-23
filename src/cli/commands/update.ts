@@ -9,6 +9,7 @@ import {
   validateTypeOptions,
 } from "../../core/item/type-registry.js";
 import { normalizeItemId } from "../../core/item/id.js";
+import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
 import {
   normalizeParentReferenceValue,
   validateMissingParentReference,
@@ -1733,7 +1734,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         const resolvedTypeName = resolveTypeName(options.type, typeRegistry);
         if (!resolvedTypeName) {
           throw new PmCliError(
-            `Invalid type value "${options.type}". Allowed: ${typeRegistry.types.join(", ")}`,
+            buildInvalidTypeError(options.type, typeRegistry.types),
             EXIT_CODE.USAGE,
           );
         }

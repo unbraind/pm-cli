@@ -78,6 +78,7 @@ import {
   REINDEX_FLAG_CONTRACTS,
   RELEASE_FLAG_CONTRACTS,
   RESTORE_FLAG_CONTRACTS,
+  SCHEMA_FLAG_CONTRACTS,
   SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
   SEARCH_FLAG_CONTRACTS,
   START_TASK_FLAG_CONTRACTS,
@@ -1070,6 +1071,9 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   }
   if (command === "history-repair") {
     return HISTORY_REPAIR_FLAG_CONTRACTS;
+  }
+  if (command === "schema") {
+    return SCHEMA_FLAG_CONTRACTS;
   }
   if (command === "plan") {
     return PLAN_FLAG_CONTRACTS;

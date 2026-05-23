@@ -1,0 +1,71 @@
+id: pm-fy8o
+title: pm schema add-type CLI + invalid-type error hint (pm-e1va)
+description: "Add a `pm schema add-type` mutation command that registers custom item types into .agents/pm/schema/types.json, and make the create/update invalid-type error point agents to it. Part (a) merge already shipped; this slice delivers (b) the register CLI and (c) the discoverable error."
+type: Plan
+status: open
+priority: 2
+tags[0]:
+created_at: "2026-05-23T11:36:26.851Z"
+updated_at: "2026-05-23T11:56:00.035Z"
+author: claude-code-agent
+plan_mode: draft
+plan_scope: "Add a `pm schema add-type` mutation command that registers custom item types into .agents/pm/schema/types.json, and make the create/update invalid-type error point agents to it. Part (a) merge already shipped; this slice delivers (b) the register CLI and (c) the discoverable error."
+plan_harness: claude-code
+plan_validation[1]{text}:
+  "Orchestrator independent verification 2026-05-23 (rebuilt dist from current source): reviewed full diff for code quality (pure logic in core/schema/item-types-file.ts, IO/governance in cli/commands/schema.ts, hint wired into create.ts:1581+update.ts:1734 via buildInvalidTypeError, all wiring sites present: index/register-mutation/mcp-server/sdk-cli-contracts/contracts/completion). Independent temp-dir dogfood = 20/20 effective: builtin create still works; invalid-type error now contains 'pm schema add-type' + 'schema/types.json' + keeps Allowed list; schema add-type human+json; create custom type + via alias works; idempotent upsert (single def); built-in collision rejected; bare/unknown subcommand rejected; contracts expose --default-status; list/get/update/search/validate/health all green. Shell completions confirmed to include schema across bash+zsh+fish (with guide-shell package). Full release gate running."
+plan_decisions[1]{ts,author,decision}:
+  "2026-05-23T11:36:37.862Z",claude-code-agent,"New top-level `pm schema` mutation command family, starting with `schema add-type`, rather than overloading `pm config`."
+plan_discoveries[1]{ts,author,text}:
+  "2026-05-23T11:51:39.021Z",claude-code-agent,"schema add-type stores the supplied name verbatim as the canonical name on upsert (case-insensitive match), so re-running with a different case rewrites the stored case; create/update still resolve any case + aliases via registry.alias_to_type, so this is harmless. completion.ts ALL_COMMANDS derives from PM_CORE_COMMAND_NAMES (auto), but the fish __pm_no_subcommand list and zsh _pm_commands description list are hand-maintained and were updated explicitly."
+plan_steps[6]:
+  - id: plan-step-001
+    order: 1
+    title: "Shared invalid-type hint helper; wire into create.ts:1581 and update.ts:1736 error envelopes"
+    status: completed
+    created_at: "2026-05-23T11:36:26.859Z"
+    updated_at: "2026-05-23T11:41:34.365Z"
+    evidence: "Added buildInvalidTypeError/buildInvalidTypeHint in new src/core/schema/item-types-file.ts; wired into create.ts (~line 1580) and update.ts (~line 1734) throw sites with imports. Hint: 'pm schema add-type \"X\" (writes .agents/pm/schema/types.json)'."
+    completed_at: "2026-05-23T11:41:34.365Z"
+    linked_items[1]{id,kind}:
+      pm-e1va,depends_on
+  - id: plan-step-002
+    order: 2
+    title: Implement schema.ts add-type command (parse/govern/output)
+    status: completed
+    created_at: "2026-05-23T11:40:32.164Z"
+    updated_at: "2026-05-23T11:42:09.936Z"
+    evidence: "Created src/cli/commands/schema.ts: runSchemaAddType (init guard, normalizeAddTypeInput, read/parse/upsert/serialize types.json, lock via schema-types id, governance.force_required_for_stale_lock, on-write hooks, atomic write w/ rollback), SchemaAddTypeResult envelope, formatSchemaAddTypeHuman, SCHEMA_SUBCOMMANDS=['add-type']."
+    completed_at: "2026-05-23T11:42:09.936Z"
+  - id: plan-step-003
+    order: 3
+    title: Wire schema everywhere (index/register-mutation/MCP/SDK/contracts/completion)
+    status: completed
+    created_at: "2026-05-23T11:40:32.548Z"
+    updated_at: "2026-05-23T11:45:51.951Z"
+    evidence: "Wired schema everywhere: index.ts exports; register-mutation.ts schema command w/ subcommand dispatch (modeled on plan); mcp/server.ts case 'schema' + runSchemaAddType import; sdk/cli-contracts.ts (PM_CORE_COMMAND_NAMES, PM_TOOL_ACTIONS, SCHEMA_FLAG_CONTRACTS, flag dispatch, PM_TOOL_ACTION_SCHEMA_CONTRACTS.schema, new param props subcommand/name/defaultStatus/alias + metadata); contracts.ts import+dispatch; completion.ts bash/zsh/fish. build + quality:static both pass."
+    completed_at: "2026-05-23T11:45:51.951Z"
+  - id: plan-step-004
+    order: 4
+    title: Docs + CHANGELOG + vitest include/exclude
+    status: completed
+    created_at: "2026-05-23T11:40:32.823Z"
+    updated_at: "2026-05-23T11:47:02.119Z"
+    evidence: "vitest.config.ts: added item-types-file.ts to include; schema.ts to both include and exclude. docs/COMMANDS.md: Schema table row + Custom Item Types section. docs/AGENT_GUIDE.md: cookbook row + checklist entry. CHANGELOG.md [Unreleased]: Added (pm schema add-type) + Changed (invalid-type hint)."
+    completed_at: "2026-05-23T11:47:02.119Z"
+  - id: plan-step-005
+    order: 5
+    title: Tests + run coverage gate to 100%
+    status: completed
+    created_at: "2026-05-23T11:40:33.122Z"
+    updated_at: "2026-05-23T11:50:53.056Z"
+    evidence: "Added tests/unit/item-types-file.spec.ts (pure-logic 100%) and tests/unit/schema-command.spec.ts (integration: discoverable failure->register->create succeeds, idempotent alias-merge upsert, human line, built-in collision, missing/unknown subcommand, empty name). Focused: 28 passed. Full coverage gate: 102 files / 1515 tests passed; Statements/Branches/Functions/Lines all 100%."
+    completed_at: "2026-05-23T11:50:53.056Z"
+  - id: plan-step-006
+    order: 6
+    title: Manual temp-dir dogfood + check-secrets
+    status: completed
+    created_at: "2026-05-23T11:40:33.389Z"
+    updated_at: "2026-05-23T11:51:33.464Z"
+    evidence: "Temp-dir dogfood (isolated PM_PATH/PM_GLOBAL_PATH, PM_NO_TELEMETRY=1, dist/cli.js): init ok; create FooType fails(exit2) with hint 'pm schema add-type \"FooType\" (writes .agents/pm/schema/types.json)'; schema add-type FooType --description --default-status -> human line; create FooType succeeds(type=FooType); types.json has the def; idempotent re-run merges alias 'ft'(single def); built-in collision 'schema add-type Task' errors(exit2); no-subcommand errors with allowed list; create via mixed-case name and alias both resolve. check-secrets: clean. quality:static: passed. contracts --command schema surfaces flags."
+    completed_at: "2026-05-23T11:51:33.464Z"
+body: ""

@@ -2,13 +2,13 @@ id: pm-c3dx
 title: history-repair command + legacy drift cleanup + replay dedup
 description: "Plan for pm-85hm: ship audited history-repair (re-anchor) command, consolidate replay helpers (pm-pjs5), clear 31 drifted streams so pm health is ok, verify telemetry/sentry, ship PR."
 type: Plan
-status: open
+status: closed
 priority: 0
 tags[0]:
 created_at: "2026-05-22T20:27:40.121Z"
-updated_at: "2026-05-22T21:16:30.205Z"
-assignee: claude-code-agent
+updated_at: "2026-05-23T11:34:58.947Z"
 author: claude-code-agent
+close_reason: "Completed plan — all 7 steps done and shipped. history-repair command, replay dedup (src/core/history/replay.ts, pm-pjs5), and legacy 31-stream drift cleanup landed via PR #44 (squash-merge 13048461). pm health ok=true and validate drifted=0 confirmed at completion and again 2026-05-23 (health integrity/history_drift checks all ok). The implementing item pm-85hm tracks the shipped work; this Plan is fully materialized. Closing."
 plan_mode: draft
 plan_scope: "Add pm history-repair, dedup replay helpers, clear legacy history drift"
 plan_harness: claude-code

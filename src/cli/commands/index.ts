@@ -43,6 +43,14 @@ export {
   type PlanShowDepth,
   type PlanSubcommand,
 } from "./plan.js";
+export {
+  runSchemaAddType,
+  formatSchemaAddTypeHuman,
+  SCHEMA_SUBCOMMANDS,
+  type SchemaSubcommand,
+  type SchemaAddTypeCommandOptions,
+  type SchemaAddTypeResult,
+} from "./schema.js";
 export { runSearch } from "./search.js";
 export { runRestore } from "./restore.js";
 export { runStats } from "./stats.js";

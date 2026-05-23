@@ -15,6 +15,7 @@ import {
   normalizeUpdateOptions,
   printError,
   printResult,
+  writeStdout,
 } from "./registration-helpers.js";
 
 type MutationCommandsModule = typeof import("./commands/index.js");
@@ -675,6 +676,79 @@ export function registerMutationCommands(program: Command): void {
       printResult(result, globalOptions);
       if (globalOptions.profile) {
         printError(`profile:command=history-repair took_ms=${Date.now() - startedAt}`);
+      }
+    });
+
+  program
+    .command("schema")
+    .argument("[subcommand]", "Schema subcommand: add-type")
+    .argument("[name]", "Custom item type name (for add-type)")
+    .option("--description <text>", "Human description for the custom item type")
+    .option("--default-status <status>", "Default status hint recorded for the custom item type")
+    .option("--default_status <status>", "Alias for --default-status")
+    .option("--folder <dir>", "Storage folder for items of this custom type")
+    .option("--alias <name>", "Alias for the custom type (repeatable, csv-friendly)", collect)
+    .option("--author <value>", "Mutation author")
+    .option("--message <value>", "Mutation message")
+    .option("--force", "Force ownership/lock override")
+    .description("Manage config-driven runtime schema: register custom item types into .agents/pm/schema/types.json.")
+    .action(async (
+      subcommand: string | undefined,
+      name: string | undefined,
+      options: Record<string, unknown>,
+      command,
+    ) => {
+      const globalOptions = getGlobalOptions(command);
+      const startedAt = Date.now();
+      const { runSchemaAddType, formatSchemaAddTypeHuman, SCHEMA_SUBCOMMANDS } = await loadMutationCommandsModule();
+      const normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
+      if (!normalizedSubcommand) {
+        throw new PmCliError(
+          `pm schema requires a subcommand. Allowed: ${SCHEMA_SUBCOMMANDS.join(", ")}`,
+          EXIT_CODE.USAGE,
+          {
+            code: "missing_required_argument",
+            examples: [
+              'pm schema add-type Spike --description "Time-boxed investigation" --default-status open',
+              'pm schema add-type Spike --alias spike --alias research',
+            ],
+          },
+        );
+      }
+      if (!SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number])) {
+        throw new PmCliError(
+          `Unknown pm schema subcommand "${subcommand}". Allowed: ${SCHEMA_SUBCOMMANDS.join(", ")}`,
+          EXIT_CODE.USAGE,
+          { code: "unknown_subcommand" },
+        );
+      }
+      const aliases = Array.isArray(options.alias) ? (options.alias as string[]) : undefined;
+      const defaultStatus =
+        typeof options.defaultStatus === "string"
+          ? options.defaultStatus
+          : typeof options.default_status === "string"
+            ? (options.default_status as string)
+            : undefined;
+      const result = await runSchemaAddType(
+        name,
+        {
+          description: typeof options.description === "string" ? options.description : undefined,
+          defaultStatus,
+          folder: typeof options.folder === "string" ? options.folder : undefined,
+          alias: aliases,
+          author: typeof options.author === "string" ? options.author : undefined,
+          force: Boolean(options.force),
+        },
+        globalOptions,
+      );
+      // Registering a type does not touch item content, so search caches stay valid.
+      if (globalOptions.json === true || globalOptions.defaultOutputFormat === "json") {
+        printResult(result, globalOptions);
+      } else if (!globalOptions.quiet) {
+        writeStdout(`${formatSchemaAddTypeHuman(result)}\n`);
+      }
+      if (globalOptions.profile) {
+        printError(`profile:command=schema took_ms=${Date.now() - startedAt}`);
       }
     });
 

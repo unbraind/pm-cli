@@ -99,6 +99,7 @@ pm release <item-id>
 | Timeline | `pm activity --id <id> --limit 20` |
 | Audited history redaction | `pm history-redact <id> --literal "<secret>" --replacement "[redacted]" --dry-run` |
 | Audited history re-anchor | `pm history-repair <id> --dry-run` (clears drift flagged by `pm health`/`pm validate`) |
+| Register custom item type | `pm schema add-type <Name> --description "<text>" --default-status open` (then `pm create <Name> "..."`) |
 | Agent plan create | `pm plan create --title "<scope>" --harness claude-code --scope "<short>" --claim` |
 | Agent plan step update | `pm plan update-step <plan-id> plan-step-001 --step-status in_progress --step-evidence "<short>"` |
 | Agent plan read | `pm plan show <plan-id> --depth brief` (or `--fields id,title,steps_summary`) |
@@ -148,5 +149,6 @@ Use these defaults unless the task requires otherwise:
 - `pm validate --check-resolution --check-history-drift` before closing broad work.
 - `pm history-redact <id> --dry-run` before rewriting sensitive history payloads, then rerun without `--dry-run` once scope is confirmed.
 - `pm history-repair <id> --dry-run` when `pm health` or `pm validate --check-history-drift` report drifted streams; it re-anchors the hash chain and reconciles with the on-disk item without touching item content. Rerun without `--dry-run` to apply.
+- `pm schema add-type <Name>` when `pm create`/`pm update` reject a project-specific type as invalid; it registers the type in `.agents/pm/schema/types.json` so `pm create <Name> "..."` works. Built-in types are reserved; the upsert is idempotent.
 - `pm normalize --dry-run --json` before lifecycle metadata cleanups.
 - `pm health --check-only` when inspecting repository health without refresh side effects.
