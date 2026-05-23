@@ -464,6 +464,11 @@ describe("release readiness runtime coverage", () => {
       expect(shortVersionResult.code).toBe(0);
       expect(shortVersionResult.stdout.trim()).toBe(expectedVersion);
       expect(shortVersionResult.stderr.trim()).toBe("");
+
+      const noExtensionsVersionResult = context.runCli(["--no-extensions", "--version"]);
+      expect(noExtensionsVersionResult.code).toBe(0);
+      expect(noExtensionsVersionResult.stdout.trim()).toBe(expectedVersion);
+      expect(noExtensionsVersionResult.stderr.trim()).toBe("");
     });
   });
 
@@ -1700,6 +1705,8 @@ describe("release readiness runtime coverage", () => {
 
     expect(cliEntrypoint).not.toContain("ensureSentryInit");
     expect(cliEntrypoint).not.toContain("await ensureSentryInit()");
+    expect(cliEntrypoint).toContain("enableNodeCompileCache");
+    expect(cliEntrypoint).toContain("PM_CLI_DISABLE_COMPILE_CACHE");
     expect(mainSource).toContain("ensureSentryForErrorReporting");
     expect(telemetryRuntimeSource).toContain("telemetryFlushRunnerPath");
     expect(telemetryRuntimeSource).toContain("child.unref()");

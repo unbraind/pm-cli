@@ -6,9 +6,12 @@ status: closed
 priority: 1
 tags[0]:
 created_at: "2026-05-22T15:44:28.669Z"
-updated_at: "2026-05-23T10:23:23.319Z"
+updated_at: "2026-05-23T11:01:01.607Z"
 author: maintainer-agent
 parent: pm-rnpb
+resolution: Closed before resolution metadata was required; validated during 2026-05-23 tracker hygiene pass as historical completed work.
+expected_result: "Closed items should carry resolution, expected_result, and actual_result metadata so pm validate can report a clean project-management state."
+actual_result: "Backfilled missing resolution metadata without changing item status, implementation history, or linked evidence."
 comments[9]{created_at,author,text}:
   "2026-05-23T10:18:01.810Z",codex-release-ux,"Start: Claimed by codex-release-ux. Scope is the auto daily release skip behavior. Duplicate check: pm search/open review found existing canonical item pm-ot8r under pm-rnpb, so I am reusing it instead of creating a new item. Planned lanes: release script implementation, focused regression tests, docs/changelog parity, manual temp-project/release dry-run validation, telemetry/Sentry/GitHub closeout."
   "2026-05-23T10:18:32.864Z",release-test-docs-subagent,"Start: release-test/docs read-only inspection for release pipeline behavior. Scope: changelog empty skip, dry-run behavior, release gates, docs/RELEASING.md, existing tests/docs only; no file edits planned."
