@@ -507,7 +507,7 @@ describe("runTest", () => {
       const id = createTask(context, "cmd-alias-test");
       const result = await runTest(
         id,
-        { add: ["cmd=node --version,scope=project,note=cmd alias"], message: "seed cmd alias" },
+        { add: ["CMD=node --version,SCOPE=project,note=cmd alias"], message: "seed cmd alias" },
         { path: context.pmPath },
       );
       const entry = result.tests.find((test) => test.note === "cmd alias");

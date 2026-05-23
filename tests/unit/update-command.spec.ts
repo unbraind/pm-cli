@@ -1143,6 +1143,89 @@ describe("runUpdate", () => {
     });
   });
 
+  it("accepts cmd as a structured update --test alias without corrupting linked test commands", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-test-cmd-alias");
+      const result = await runUpdate(
+        id,
+        {
+          test: ["CMD=node --version,SCOPE=project,note=cmd alias"],
+          message: "add linked test through cmd alias",
+        },
+        { path: context.pmPath },
+      );
+
+      const tests = (result.item as { tests?: Array<{ command: string; scope?: string; note?: string }> }).tests ?? [];
+      expect(tests).toEqual([
+        expect.objectContaining({
+          command: "node --version",
+          scope: "project",
+          note: "cmd alias",
+        }),
+      ]);
+      expect(tests.some((entry) => entry.command.includes("cmd="))).toBe(false);
+    });
+  });
+
+  it("rejects unknown structured update --test keys instead of storing them as commands", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-test-unknown-key");
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            test: ["cmd=node --version,name=smoke"],
+            message: "unknown linked test key",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--test does not recognize key \"name\""),
+      });
+
+      await expect(
+        runUpdate(
+          id,
+          {
+            test: ["command=node --version,cmd=node --help"],
+            message: "conflicting linked test command aliases",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--test command and cmd must match"),
+      });
+
+      const listed = context.runCli(["get", id, "--json", "--fields", "tests"], { expectJson: true });
+      expect((listed.json as { item?: { tests?: unknown[] } }).item?.tests).toBeUndefined();
+    });
+  });
+
+  it("keeps bare update --test commands containing equals signs working", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-test-bare-equals");
+      const result = await runUpdate(
+        id,
+        {
+          test: ['node -e "process.env.FOO=\\"bar\\""'],
+          message: "add bare command with equals",
+        },
+        { path: context.pmPath },
+      );
+
+      const tests = (result.item as { tests?: Array<{ command: string; scope?: string }> }).tests ?? [];
+      expect(tests).toEqual([
+        expect.objectContaining({
+          command: 'node -e "process.env.FOO=\\"bar\\""',
+          scope: "project",
+        }),
+      ]);
+    });
+  });
+
   it("validates --replace-tests requirements and preserves clear/value conflict behavior", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-replace-tests-validation");

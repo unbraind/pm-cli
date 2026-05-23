@@ -758,7 +758,7 @@ export const PLAN_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--body" },
   { flag: "--claim" },
   { flag: "--from-search", aliases: ["--from_search"] },
-  { flag: "--step-title", aliases: ["--step_title"] },
+  { flag: "--step-title", aliases: ["--step", "--step_title"] },
   { flag: "--step-body", aliases: ["--step_body"] },
   { flag: "--step-owner", aliases: ["--step_owner"] },
   { flag: "--step-status", aliases: ["--step_status"] },

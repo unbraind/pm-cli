@@ -134,6 +134,76 @@ describe("runCreate", () => {
     });
   });
 
+  it("accepts cmd as a structured --test alias without corrupting linked test commands", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "create-linked-test-cmd-alias",
+          test: ["CMD=node --version,SCOPE=project,note=cmd alias"],
+        }),
+        { path: context.pmPath },
+      );
+
+      expect(result.item.tests).toEqual([
+        expect.objectContaining({
+          command: "node --version",
+          scope: "project",
+          note: "cmd alias",
+        }),
+      ]);
+      expect(result.item.tests?.some((entry) => entry.command.includes("cmd="))).toBe(false);
+    });
+  });
+
+  it("rejects unknown structured --test keys instead of storing them as commands", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-linked-test-unknown-key",
+            test: ["cmd=node --version,name=smoke"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--test does not recognize key \"name\""),
+      });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-linked-test-command-conflict",
+            test: ["command=node --version,cmd=node --help"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--test command and cmd must match"),
+      });
+    });
+  });
+
+  it("keeps bare create --test commands containing equals signs working", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "create-linked-test-bare-equals",
+          test: ['node -e "process.env.FOO=\\"bar\\""'],
+        }),
+        { path: context.pmPath },
+      );
+
+      expect(result.item.tests).toEqual([
+        expect.objectContaining({
+          command: 'node -e "process.env.FOO=\\"bar\\""',
+          scope: "project",
+        }),
+      ]);
+    });
+  });
+
   it("derives a blocked_by dependency from --blocked-by when it references an existing item", async () => {
     await withTempPmPath(async (context) => {
       const blocker = await runCreate(

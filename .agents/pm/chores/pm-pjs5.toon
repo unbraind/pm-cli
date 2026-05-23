@@ -6,10 +6,13 @@ status: closed
 priority: 1
 tags[5]: code-quality,dedup,history,redaction,restore
 created_at: "2026-05-22T19:00:05.247Z"
-updated_at: "2026-05-22T21:16:21.435Z"
+updated_at: "2026-05-23T09:22:34.803Z"
 author: codex-duplication-audit
 acceptance_criteria: "History patch path/op normalization and replay helpers are single-sourced; history, restore, and history-redact commands share the common module without changing CLI output; restore/history-redact/history unit tests pass; pnpm build passes."
 parent: pm-rnpb
+resolution: Resolution metadata backfilled during active tracker hygiene; existing closure comments and history remain the detailed source of truth.
+expected_result: "Closed item has explicit resolution, expected_result, and actual_result metadata so pm validate can confirm closure hygiene."
+actual_result: Metadata fields backfilled without changing the closed status or implementation history.
 comments[1]{created_at,author,text}:
   "2026-05-22T20:27:17.295Z",claude-code-agent,"2026-05-22: Being addressed alongside pm-85hm. Extracting shared replay/patch mechanics (ReplayDocument, EMPTY_REPLAY_DOCUMENT, replayHash, normalizeReplayPatchPath/Ops, toReplayDocument, and a tryApply core) into src/core/history/replay.ts, consumed by history.ts, restore.ts, history-redact.ts, and the new history-repair.ts. Per-command error-formatting wrappers stay local by design to preserve exact CLI error contracts (restore's rich patch-failure context, redact's op-tag, history's generic message)."
 files[3]{path,scope,note}:

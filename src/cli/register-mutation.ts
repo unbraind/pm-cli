@@ -456,6 +456,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--from-search <value>", "Record the search query that led to plan creation")
     .option("--from_search <value>", "Alias for --from-search")
     .option("--step-title <value>", "Step title for add-step / update-step")
+    .option("--step <value>", "Alias for --step-title")
     .option("--step_title <value>", "Alias for --step-title")
     .option("--step-body <value>", "Step body text")
     .option("--step_body <value>", "Alias for --step-body")
@@ -548,6 +549,7 @@ export function registerMutationCommands(program: Command): void {
         ["blocked_by", "blockedBy"],
         ["resume_context", "resumeContext"],
         ["from_search", "fromSearch"],
+        ["step", "stepTitle"],
         ["step_title", "stepTitle"],
         ["step_body", "stepBody"],
         ["step_owner", "stepOwner"],

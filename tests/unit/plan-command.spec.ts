@@ -98,6 +98,25 @@ describe("runPlan command family", () => {
         },
       });
       expect(projected.next_actions).toEqual(expect.arrayContaining([expect.stringContaining("approve")]));
+
+      const stepsProjection = await runPlan({
+        subcommand: "show",
+        id: planId,
+        options: { fields: "id,title,steps" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(stepsProjection.plan).toEqual({
+        id: planId,
+        title: "Test Plan",
+        steps: [
+          expect.objectContaining({
+            id: "plan-step-001",
+            title: "project me",
+            status: "pending",
+          }),
+        ],
+      });
+
       await expect(
         runPlan({
           subcommand: "show",
