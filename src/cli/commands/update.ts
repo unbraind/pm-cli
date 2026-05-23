@@ -47,6 +47,8 @@ import type {
   CalendarEvent,
   Comment,
   Dependency,
+  ItemFormat,
+  ItemFrontMatter,
   ItemStatus,
   LinkedDoc,
   LinkedFile,
@@ -1062,6 +1064,61 @@ function reconcileBlockedByDependency(
   return { dependencies: next.length > 0 ? next : undefined, changed: true };
 }
 
+// pm-kyd6: resolve the --blocked-by target before the synchronous mutate
+// callback so a real blocker can also become a `blocked_by` dependency edge.
+// Returns undefined when blocked_by is being cleared, omitted, or unresolvable.
+async function resolveBlockedByDependencyTarget(
+  blockedByOption: string | undefined,
+  blockedByCleared: boolean,
+  pmRoot: string,
+  idPrefix: string,
+  itemFormat: ItemFormat,
+  typeToFolder: Record<string, string>,
+): Promise<string | undefined> {
+  if (blockedByOption === undefined || blockedByCleared) {
+    return undefined;
+  }
+  const blockedByValue = blockedByOption.trim();
+  if (blockedByValue.length === 0) {
+    return undefined;
+  }
+  const located = await locateItem(pmRoot, normalizeItemId(blockedByValue, idPrefix), idPrefix, itemFormat, typeToFolder);
+  return located?.id;
+}
+
+// pm-kyd6: apply the reconciled blocked_by dependency edge to the item metadata
+// and record the `dependencies` change. Kept out of the mutate callback so the
+// large runUpdate function stays under the static-quality complexity budget.
+function applyBlockedByDependencyEdge(
+  metadata: ItemFrontMatter,
+  previousBlockedBy: string | undefined,
+  resolvedBlockedById: string | undefined,
+  idPrefix: string,
+  nowIsoValue: string,
+  author: string,
+  changedFields: string[],
+): void {
+  const reconciled = reconcileBlockedByDependency(
+    metadata.dependencies,
+    previousBlockedBy,
+    resolvedBlockedById,
+    idPrefix,
+    nowIsoValue,
+    author,
+  );
+  if (!reconciled.changed) {
+    return;
+  }
+  if (reconciled.dependencies === undefined) {
+    delete metadata.dependencies;
+  } else {
+    metadata.dependencies = reconciled.dependencies;
+  }
+  if (!changedFields.includes("dependencies")) {
+    changedFields.push("dependencies");
+  }
+}
+
 function fileKey(value: Pick<LinkedFile, "path" | "scope">): string {
   return `${value.path}::${value.scope}`;
 }
@@ -1490,24 +1547,16 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     }
   }
 
-  // pm-kyd6: resolve the --blocked-by target before the synchronous mutate
-  // callback so a real blocker can also become a `blocked_by` dependency edge.
-  let resolvedBlockedByDependencyId: string | undefined;
-  if (options.blockedBy !== undefined && !clearFrontMatterKeys.has("blocked_by")) {
-    const blockedByValue = options.blockedBy.trim();
-    if (blockedByValue.length > 0) {
-      const blockedByLocated = await locateItem(
-        pmRoot,
-        normalizeItemId(blockedByValue, settings.id_prefix),
-        settings.id_prefix,
-        settings.item_format,
-        typeRegistry.type_to_folder,
-      );
-      if (blockedByLocated) {
-        resolvedBlockedByDependencyId = blockedByLocated.id;
-      }
-    }
-  }
+  // pm-kyd6: resolve the --blocked-by target up front (async) so the sync
+  // mutate callback can mirror create.ts and add a `blocked_by` dependency edge.
+  const resolvedBlockedByDependencyId = await resolveBlockedByDependencyTarget(
+    options.blockedBy,
+    clearFrontMatterKeys.has("blocked_by"),
+    pmRoot,
+    settings.id_prefix,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+  );
 
   const fieldFlags: Record<string, boolean> = {
     title: options.title !== undefined,
@@ -2043,24 +2092,15 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         }
         changedFields.push("blocked_by");
         // pm-kyd6: keep the dependency graph in sync with the blocked_by scalar.
-        const reconciled = reconcileBlockedByDependency(
-          document.metadata.dependencies,
+        applyBlockedByDependencyEdge(
+          document.metadata,
           previousBlockedBy,
           resolvedBlockedByDependencyId,
           settings.id_prefix,
           nowIso,
           author,
+          changedFields,
         );
-        if (reconciled.changed) {
-          if (reconciled.dependencies === undefined) {
-            delete document.metadata.dependencies;
-          } else {
-            document.metadata.dependencies = reconciled.dependencies;
-          }
-          if (!changedFields.includes("dependencies")) {
-            changedFields.push("dependencies");
-          }
-        }
       }
       if (options.blockedReason !== undefined || clearFrontMatterKeys.has("blocked_reason")) {
         if (clearFrontMatterKeys.has("blocked_reason")) {

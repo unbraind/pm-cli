@@ -6,8 +6,10 @@ status: open
 priority: 2
 tags[0]:
 created_at: "2026-05-23T03:43:24.111Z"
-updated_at: "2026-05-23T04:09:50.362Z"
+updated_at: "2026-05-23T04:18:33.981Z"
 author: claude-code-agent
+comments[1]{created_at,author,text}:
+  "2026-05-23T04:18:33.981Z",claude-code-agent,"PR #45 opened (branch agent-ux-deps-graph-batch-20260523, commit 398fb079). Full local gate green: 1473 tests / 100% coverage; check-secrets clean; manual temp-dir smoke for all 8 findings passed. Awaiting CI + AI-bot review (>=15min) before merge. Follow-up pm-swie filed for the update/create --test parser consistency."
 plan_mode: approved
 plan_scope: "Fix update --blocked-by deps-graph asymmetry (pm-kyd6); close-lifecycle clarity C3/C4, search degraded-mode labeling S1, test --add key validation B2, did-you-mean U2, --list alias U3 (pm-fu5d); calendar instant-event + schedule-less warning + compound times (pm-uzmf/CAL1). Re-verify secret hygiene (pm-xk39) and close completed history-repair plan (pm-c3dx). Specialized sub-agents track their own work in pm."
 plan_harness: claude-code
