@@ -6,13 +6,13 @@ status: closed
 priority: 0
 tags[5]: changelog,ci,packages,release,sdk
 created_at: "2026-05-23T20:25:40.368Z"
-updated_at: "2026-05-23T23:29:42.605Z"
+updated_at: "2026-05-23T23:45:25.863Z"
 author: codex-pm-changelog
 parent: pm-59gj
 resolution: "Installed latest npm pm-changelog 2026.5.24-1, fixed pm-cli npm package runtime dependency installation for extension SDK imports, wired CI/release changelog checks to install and use the package, generated CHANGELOG.pm.md through pm changelog generate, filed upstream pm-changelog#4 for package sourcemap warnings, and verified linked package, changelog, release, and dogfood gates."
 expected_result: pm-cli installs and loads the latest npm pm-changelog package without manual changelog scripts; pm-changelog can generate the repository changelog; CI/CD release gates verify the package-generated changelog and npm/npx/bun release path.
 actual_result: "Latest npm pm-changelog installs and loads with changelog generate active; CHANGELOG.pm.md is generated and checked through the package command; CI/release scripts refresh the package before generation; package doctor, linked tests, static release slice, run-gates slice, and package-first dogfood passed."
-comments[18]{created_at,author,text}:
+comments[19]{created_at,author,text}:
   "2026-05-23T20:25:40.368Z",codex-pm-changelog,"Duplicate check: searched for 'pm-changelog changelog package release CI'. Existing package-first lineage pm-59gj is canonical; no dedicated open pm-changelog integration item existed, so this child task tracks the requested work."
   "2026-05-23T20:25:59.418Z",codex-pm-changelog,"Baseline before install: pm package explore/manage/doctor in project scope reported zero project packages and ok=true; npm latest for pm-changelog is 2026.5.23-1 with @unbrained/pm-cli peer >=2026.5.14."
   "2026-05-23T20:26:49.874Z",codex-pm-changelog,"Issue found: installed pm-changelog exposes help/contracts, but runtime generation failed: pm changelog generate --stdout --title 'pm CLI Changelog' --release-version Unreleased --status closed --group-by version exits with extension_command_handler_failed. Investigating whether this is package handler logic or SDK surface."
@@ -31,6 +31,7 @@ comments[18]{created_at,author,text}:
   "2026-05-23T23:22:09.219Z",codex-changelog-integration,"Verification evidence: pnpm dogfood:package-first passed in /tmp/pm-dogfood-5xm1rL with 84 commands; semantic dogfood skipped because PM_DOGFOOD_SEMANTIC was not set."
   "2026-05-23T23:26:31.113Z",codex-changelog-integration,"Upstream package issue filed: unbraind/pm-changelog#4 tracks published sourcemaps that point to missing source files. This is package-side packaging hygiene; pm-cli continues using the published package as-is."
   "2026-05-23T23:27:11.080Z",codex-changelog-integration,"Verification evidence: release-readiness-runtime focused test passed after reverting accidental CHANGELOG.md rewrite: 32 tests passed."
+  "2026-05-23T23:45:25.863Z",codex-changelog-integration,"Evidence update after GitHub CI: static gate failed on pm-changelog@2026.5.24-1 because the published docs included a host-specific absolute path. Filed upstream pm-changelog#5, fixed and published pm-changelog@2026.5.24-2 via package release workflow, reinstalled latest in this repo, and local static slice now passes: pnpm version:check && pnpm changelog:pm:check && pnpm security:scan && pnpm quality:static && npm pack --dry-run."
 files[11]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Project package manager state now records pm-changelog as an installed managed package
   .agents/pm/extensions/pm-changelog,project,Installed fixed pm-changelog 2026.5.23-2 from GitHub main commit a99e8ff

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+- Remove host-specific path from published docs (pmc-sz4m)
+
 ## v2026.05.24-1
 
 ### Other

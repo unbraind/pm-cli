@@ -2,7 +2,7 @@ import { defineExtension, listAllFrontMatter } from "@unbrained/pm-cli/sdk";
 import { createChangelog, mergeChangelog, writeChangelog } from "./generator.js";
 export default defineExtension({
     name: "pm-changelog",
-    version: "2026.5.24-1",
+    version: "2026.5.24-2",
     activate(api) {
         api.registerCommand({
             name: "changelog generate",

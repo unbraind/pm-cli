@@ -98,10 +98,11 @@ Use a clean folder to prove pm package installation:
 
 ```bash
 npm run build
+package_root="$PWD"
 tmp="$(mktemp -d)"
 cd "$tmp"
 pm init --json
-pm install /home/steve/container/pm-packages/pm-changelog --project --json
+pm install "$package_root" --project --json
 pm package doctor --project --json --detail deep
 pm create --type task --title "Verify pm-changelog install" --description "Smoke test" --status closed --json
 pm changelog generate --output CHANGELOG.md --release-version smoke --date 2026-05-24 --json
