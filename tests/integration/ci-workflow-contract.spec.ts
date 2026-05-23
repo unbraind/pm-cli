@@ -44,10 +44,19 @@ function expectContainsNone(content: string, blockedSnippets: string[]): void {
   }
 }
 
+function extractWorkflowJob(content: string, jobName: string): string {
+  const match = content.match(new RegExp(`\\n  ${jobName}:\\n[\\s\\S]*?(?=\\n  [a-zA-Z0-9_-]+:\\n|\\n?$)`));
+  if (!match) {
+    throw new Error(`Expected workflow job ${jobName} to exist`);
+  }
+  return match[0];
+}
+
 describe("GitHub workflow contract", () => {
   it("keeps CI matrix and quality-gate steps aligned with release requirements", async () => {
     const ciPath = path.resolve(repoRoot, ".github/workflows/ci.yml");
     const ciWorkflow = normalizeWorkflow(await readFile(ciPath, "utf8"));
+    const runtimeSmokeJob = extractWorkflowJob(ciWorkflow, "build-test");
 
     expectContainsAll(ciWorkflow, [
       "on:",
@@ -68,7 +77,7 @@ describe("GitHub workflow contract", () => {
       "build-test:",
       "gates:",
       "name: Build foundation (Ubuntu, Node 20)",
-      "name: Test (${{ matrix.os }}, Node ${{ matrix.node }})",
+      "name: Runtime smoke (${{ matrix.os }}, Node ${{ matrix.node }})",
       "name: Gates (${{ matrix.gate }})",
       "needs: build-foundation",
       "gate:",
@@ -82,11 +91,6 @@ describe("GitHub workflow contract", () => {
       "if: matrix.gate == 'static'",
       "if: matrix.gate == 'compat'",
       "if: matrix.gate == 'smokes'",
-      "matrix:",
-      "include: >-",
-      "github.event_name == 'pull_request'",
-      '[{"os":"ubuntu-latest","node":20},{"os":"macos-latest","node":20}]',
-      '[{"os":"ubuntu-latest","node":20},{"os":"macos-latest","node":20},{"os":"ubuntu-latest","node":22},{"os":"ubuntu-latest","node":24}]',
       PINNED_ACTIONS.checkout,
       PINNED_ACTIONS.pnpmSetup,
       PINNED_ACTIONS.setupNode,
@@ -95,15 +99,11 @@ describe("GitHub workflow contract", () => {
       ".cache/tsbuildinfo",
       ".cache/vitest",
       "key: pm-cli-validation-cache-${{ runner.os }}-node20-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}",
-      "key: pm-cli-validation-cache-${{ runner.os }}-node${{ matrix.node }}-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}",
-      "pm-cli-validation-cache-${{ runner.os }}-node${{ matrix.node }}-",
       "pm-cli-validation-cache-${{ runner.os }}-",
       "name: Restore LanceDB and Sentry caches",
       ".agents/pm/search/lancedb",
       "~/.cache/sentry-cli",
       "key: pm-cli-observability-cache-${{ runner.os }}-node20-${{ hashFiles('pnpm-lock.yaml', '.agents/pm/settings.json', '.agents/pm/**/*.toon', '.agents/pm/**/*.md', 'src/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts') }}",
-      "key: pm-cli-observability-cache-${{ runner.os }}-node${{ matrix.node }}-${{ hashFiles('pnpm-lock.yaml', '.agents/pm/settings.json', '.agents/pm/**/*.toon', '.agents/pm/**/*.md', 'src/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts') }}",
-      "pm-cli-observability-cache-${{ runner.os }}-node${{ matrix.node }}-",
       "pm-cli-observability-cache-${{ runner.os }}-",
       "name: Upload dist artifact",
       "name: dist-node20-ubuntu",
@@ -112,11 +112,9 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.downloadArtifact,
       "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1",
       "name: Download dist artifact",
-      "name: Dist artifact smoke check",
+      "name: Dist artifact version smoke",
       "run: node dist/cli.js --version",
       "run: pnpm build",
-      "if: matrix.os != 'ubuntu-latest' || matrix.node != 20",
-      "run: pnpm test",
       "pnpm version:check",
       "pnpm security:scan",
       "run: pnpm typecheck",
@@ -132,7 +130,29 @@ describe("GitHub workflow contract", () => {
       "path: coverage",
       "if-no-files-found: ignore",
     ]);
-    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(2);
+    expectContainsAll(runtimeSmokeJob, [
+      "name: Runtime smoke (${{ matrix.os }}, Node ${{ matrix.node }})",
+      "needs: build-foundation",
+      "runs-on: ${{ matrix.os }}",
+      "node-version: ${{ matrix.node }}",
+      PINNED_ACTIONS.checkout,
+      PINNED_ACTIONS.setupNode,
+      PINNED_ACTIONS.downloadArtifact,
+      "name: Dist artifact version smoke",
+      "run: node dist/cli.js --version",
+    ]);
+    expect(runtimeSmokeJob).toMatch(
+      /matrix:\n\s+include:\n\s+- os: ubuntu-latest\n\s+node: 20\n\s+- os: macos-latest\n\s+node: 20\n\s+- os: ubuntu-latest\n\s+node: 22\n\s+- os: ubuntu-latest\n\s+node: 24/,
+    );
+    expectContainsNone(runtimeSmokeJob, [
+      "pnpm/action-setup",
+      "cache: pnpm",
+      "actions/cache",
+      "pnpm install",
+      "pnpm test",
+    ]);
+    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(1);
+    expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(ciWorkflow, PUBLISH_OR_RELEASE_PATTERNS);
