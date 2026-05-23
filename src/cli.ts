@@ -12,7 +12,12 @@ function enableNodeCompileCache(): void {
   if (typeof enableCompileCache !== "function" || process.env.PM_CLI_DISABLE_COMPILE_CACHE === "1") {
     return;
   }
-  const cacheDir = process.env.PM_CLI_COMPILE_CACHE_DIR ?? path.join(os.tmpdir(), "pm-cli-node-compile-cache");
+  const userCacheKey =
+    typeof process.getuid === "function"
+      ? String(process.getuid())
+      : os.userInfo().username.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const cacheDir =
+    process.env.PM_CLI_COMPILE_CACHE_DIR ?? path.join(os.tmpdir(), `pm-cli-node-compile-cache-${userCacheKey}`);
   try {
     enableCompileCache(cacheDir);
   } catch {
