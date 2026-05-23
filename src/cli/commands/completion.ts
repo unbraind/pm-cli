@@ -68,6 +68,7 @@ const COMPLETION_SHELL_CHOICES = `${COMPLETION_FLAGS} bash zsh fish`;
 const GUIDE_TOPIC_CHOICES = joinCompletionValues(listGuideTopicIds());
 
 const MUTATION_FLAGS = "--author --message --force --json --quiet --path --no-extensions --no-pager --profile --help";
+const DELETE_MUTATION_FLAGS = "--dry-run --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help";
 const CLOSE_MUTATION_FLAGS = "--author --message --validate-close --force --json --quiet --path --no-extensions --no-pager --profile --help";
 const RELEASE_MUTATION_FLAGS =
   "--allow-audit-release --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help";
@@ -280,7 +281,10 @@ export function generateBashScript(
     "    release)",
     `      COMPREPLY=(${compgen(RELEASE_MUTATION_FLAGS)})`,
     "      ;;",
-    "    claim|delete|restore|start-task|pause-task)",
+    "    delete)",
+    `      COMPREPLY=(${compgen(DELETE_MUTATION_FLAGS)})`,
+    "      ;;",
+    "    claim|restore|start-task|pause-task)",
     `      COMPREPLY=(${compgen(MUTATION_FLAGS)})`,
     "      ;;",
     "    completion)",
@@ -949,6 +953,7 @@ _pm() {
             '--author[Set the default mutation author for this project]:author' \\
             '--agent-guidance[Agent guidance mode]:mode:(ask add skip status)' \\
             '--with-packages[Install bundled first-party packages during initialization]' \\
+            '--verbose[Include the full resolved settings tree in init output]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -961,6 +966,7 @@ _pm() {
             '--author[Set the default mutation author for this project]:author' \\
             '--agent-guidance[Agent guidance mode]:mode:(ask add skip status)' \\
             '--with-packages[Install bundled first-party packages during initialization]' \\
+            '--verbose[Include the full resolved settings tree in init output]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -995,6 +1001,15 @@ _pm() {
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--allow-audit-release[Allow non-owner release handoffs without requiring --force]' \\
+            '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        delete)
+          _arguments \\
+            '--dry-run[Preview the item file that would be deleted without mutating]' \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1653,11 +1668,12 @@ complete -c pm -n '__fish_seen_subcommand_from append' -l message -d 'History me
 complete -c pm -n '__fish_seen_subcommand_from append' -l force -d 'Force override'
 
 # close flags
-complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task' -l author -d 'Mutation author' -r
-complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task' -l message -d 'History message' -r
-complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task' -l force -d 'Force override'
+complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task delete' -l author -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task delete' -l message -d 'History message' -r
+complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task delete' -l force -d 'Force override'
 complete -c pm -n '__fish_seen_subcommand_from close close-task' -l validate-close -d 'Validate closure metadata mode' -r -a 'off warn strict'
 complete -c pm -n '__fish_seen_subcommand_from release' -l allow-audit-release -d 'Allow non-owner release handoffs without requiring --force'
+complete -c pm -n '__fish_seen_subcommand_from delete' -l dry-run -d 'Preview the item file that would be deleted without mutating'
 
 # validate flags
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-metadata -d 'Run metadata completeness checks'
@@ -1680,6 +1696,7 @@ complete -c pm -n '__fish_seen_subcommand_from init' -s y -l yes -d 'Alias for -
 complete -c pm -n '__fish_seen_subcommand_from init' -l author -d 'Set the default mutation author for this project' -r
 complete -c pm -n '__fish_seen_subcommand_from init' -l agent-guidance -d 'Agent guidance mode' -r -a 'ask add skip status'
 complete -c pm -n '__fish_seen_subcommand_from init' -l with-packages -d 'Install bundled first-party packages during initialization'
+complete -c pm -n '__fish_seen_subcommand_from init' -l verbose -d 'Include the full resolved settings tree in init output'
 complete -c pm -n '__fish_seen_subcommand_from config' -l criterion -d 'Criteria value for definition-of-done metadata-required-fields or lifecycle pattern keys (repeatable for set)' -r
 complete -c pm -n '__fish_seen_subcommand_from config' -l clear-criteria -d 'Clear config criteria-list key values'
 complete -c pm -n '__fish_seen_subcommand_from config' -l format -d 'Item format for item-format key' -r -a 'toon'

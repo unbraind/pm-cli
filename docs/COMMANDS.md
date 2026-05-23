@@ -88,11 +88,12 @@ Shortest agent-friendly create (positional title + defaults to `Task` type):
 
 ```bash
 pm create "Document command contracts"
-pm create "Fix login bug" --type Issue --priority 1
+pm create "Fix login bug" --type Issue --priority high
 ```
 
 `pm create` defaults `--type` to `settings.governance.create_default_type` (falling back to `Task`).
 Pass `--create-mode strict` to require an explicit `--type` flag for governance-controlled flows.
+Priority accepts either `0..4` or the equivalent names `critical`, `high`, `medium`, `low`, and `minimal`.
 
 Minimal progressive create with explicit fields:
 
@@ -124,10 +125,22 @@ Update existing work:
 
 ```bash
 pm update <id> --status in_progress --message "Start implementation"
-pm update <id> --deadline +1d --estimate 120
+pm update <id> --priority medium --deadline +1d --estimate 120
 pm update <id> --parent <parent-id>
 pm append <id> --body "Detailed implementation notes."
 ```
+
+## Templates
+
+After `pm install templates --project`, `pm templates` lists both saved templates and built-in starters:
+
+```bash
+pm templates
+pm templates show bug
+pm create --template bug --title "Fix search regression"
+```
+
+Built-ins are `bug`, `feature`, `spike`, and `chore`. A saved template with the same name overrides the built-in.
 
 Use `pm close <id> "<reason>"` instead of `pm update --status closed`.
 

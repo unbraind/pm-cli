@@ -19,6 +19,43 @@ const TEMPLATE_OPTION_REPEATABLE_KEY_SET = new Set<string>(TEMPLATE_OPTION_REPEA
 
 type TemplateOptionValue = string | string[];
 export type CreateTemplateOptions = Record<string, TemplateOptionValue>;
+export type TemplateSource = "builtin" | "user";
+
+const BUILTIN_TEMPLATE_TIMESTAMP = "1970-01-01T00:00:00.000Z";
+const BUILTIN_TEMPLATES: Readonly<Record<string, CreateTemplateOptions>> = {
+  bug: {
+    type: "Issue",
+    priority: "1",
+    tags: "bug",
+    acceptanceCriteria: "Bug no longer reproduces with the steps below and a regression test guards it.",
+    expectedResult: "Describe the correct behavior.",
+    actualResult: "Describe the observed (buggy) behavior.",
+    body: "## Repro steps\n1. \n2. \n3. \n\n## Expected\n\n## Actual\n",
+  },
+  feature: {
+    type: "Feature",
+    priority: "2",
+    tags: "feature",
+    acceptanceCriteria: "Feature is shipped behind agreed scope with tests and docs updated.",
+    whyNow: "Explain why this is worth doing now (impact / urgency).",
+    body: "## Goal\n\n## Why now\n\n## Out of scope\n",
+  },
+  spike: {
+    type: "Task",
+    priority: "2",
+    tags: "spike",
+    estimatedMinutes: "120",
+    acceptanceCriteria: "Timeboxed investigation complete; findings and a recommendation are recorded.",
+    body: "## Question to answer\n\n## Timebox\n2h\n\n## Findings\n\n## Recommendation\n",
+  },
+  chore: {
+    type: "Chore",
+    priority: "3",
+    tags: "chore",
+    acceptanceCriteria: "Maintenance task done with no behavior change and green checks.",
+    body: "## What\n\n## Why\n",
+  },
+};
 
 interface StoredCreateTemplateDocument {
   name: string;
@@ -38,10 +75,13 @@ export interface TemplatesSaveResult {
 export interface TemplatesListResult {
   templates: string[];
   count: number;
+  builtin_templates: string[];
+  user_templates: string[];
 }
 
 export interface TemplatesShowResult {
   name: string;
+  source: TemplateSource;
   created_at: string;
   updated_at: string;
   path: string;
@@ -86,6 +126,10 @@ function extractTemplateOptions(rawOptions: Record<string, unknown>): CreateTemp
       continue;
     }
     if (TEMPLATE_OPTION_REPEATABLE_KEY_SET.has(key)) {
+      if (typeof value === "string") {
+        next[key] = [value];
+        continue;
+      }
       if (!Array.isArray(value)) {
         continue;
       }
@@ -157,6 +201,36 @@ function parseStoredTemplateDocument(raw: string, normalizedName: string): Store
   };
 }
 
+function builtinTemplateDocument(normalizedName: string): StoredCreateTemplateDocument | null {
+  const options = BUILTIN_TEMPLATES[normalizedName];
+  if (!options) {
+    return null;
+  }
+  return {
+    name: normalizedName,
+    created_at: BUILTIN_TEMPLATE_TIMESTAMP,
+    updated_at: BUILTIN_TEMPLATE_TIMESTAMP,
+    options: sortTemplateOptions({ ...options }),
+  };
+}
+
+interface ResolvedTemplateDocument {
+  document: StoredCreateTemplateDocument;
+  source: TemplateSource;
+}
+
+async function resolveTemplateDocument(pmRoot: string, normalizedName: string): Promise<ResolvedTemplateDocument> {
+  const raw = await readFileIfExists(templatePath(pmRoot, normalizedName));
+  if (raw !== null) {
+    return { document: parseStoredTemplateDocument(raw, normalizedName), source: "user" };
+  }
+  const builtin = builtinTemplateDocument(normalizedName);
+  if (builtin) {
+    return { document: builtin, source: "builtin" };
+  }
+  throw new PmCliError(`Template "${normalizedName}" not found`, EXIT_CODE.NOT_FOUND);
+}
+
 async function readStoredTemplateDocument(pmRoot: string, normalizedName: string): Promise<StoredCreateTemplateDocument> {
   const raw = await readFileIfExists(templatePath(pmRoot, normalizedName));
   if (raw === null) {
@@ -167,8 +241,8 @@ async function readStoredTemplateDocument(pmRoot: string, normalizedName: string
 
 export async function loadCreateTemplateOptions(pmRoot: string, rawTemplateName: string): Promise<CreateTemplateOptions> {
   const normalizedName = normalizeTemplateName(rawTemplateName);
-  const stored = await readStoredTemplateDocument(pmRoot, normalizedName);
-  return stored.options;
+  const { document } = await resolveTemplateDocument(pmRoot, normalizedName);
+  return document.options;
 }
 
 export async function runTemplatesSave(
@@ -209,22 +283,32 @@ export async function runTemplatesSave(
   };
 }
 
+async function readUserTemplateNames(pmRoot: string): Promise<string[]> {
+  const dirPath = templatesDirectory(pmRoot);
+  if (!(await pathExists(dirPath))) {
+    return [];
+  }
+  const entries = await fs.readdir(dirPath);
+  return entries
+    .filter((entry) => entry.toLowerCase().endsWith(TEMPLATE_FILE_EXTENSION))
+    .map((entry) => entry.slice(0, -TEMPLATE_FILE_EXTENSION.length))
+    .filter((entry) => TEMPLATE_NAME_PATTERN.test(entry));
+}
+
 export async function runTemplatesList(global: GlobalOptions): Promise<TemplatesListResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureTrackerInitialized(pmRoot);
-  const dirPath = templatesDirectory(pmRoot);
-  if (!(await pathExists(dirPath))) {
-    return { templates: [], count: 0 };
-  }
-  const entries = await fs.readdir(dirPath);
-  const templates = entries
-    .filter((entry) => entry.toLowerCase().endsWith(TEMPLATE_FILE_EXTENSION))
-    .map((entry) => entry.slice(0, -TEMPLATE_FILE_EXTENSION.length))
-    .filter((entry) => TEMPLATE_NAME_PATTERN.test(entry))
-    .sort((left, right) => left.localeCompare(right));
+  const userTemplates = await readUserTemplateNames(pmRoot);
+  const userTemplateSet = new Set<string>(userTemplates);
+  const builtinTemplates = Object.keys(BUILTIN_TEMPLATES).filter((name) => !userTemplateSet.has(name));
+  const sortedUser = [...userTemplates].sort((left, right) => left.localeCompare(right));
+  const sortedBuiltin = [...builtinTemplates].sort((left, right) => left.localeCompare(right));
+  const templates = [...new Set([...sortedUser, ...sortedBuiltin])].sort((left, right) => left.localeCompare(right));
   return {
     templates,
     count: templates.length,
+    builtin_templates: sortedBuiltin,
+    user_templates: sortedUser,
   };
 }
 
@@ -232,12 +316,13 @@ export async function runTemplatesShow(rawTemplateName: string, global: GlobalOp
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   await ensureTrackerInitialized(pmRoot);
   const normalizedName = normalizeTemplateName(rawTemplateName);
-  const stored = await readStoredTemplateDocument(pmRoot, normalizedName);
+  const { document, source } = await resolveTemplateDocument(pmRoot, normalizedName);
   return {
-    name: stored.name,
-    created_at: stored.created_at,
-    updated_at: stored.updated_at,
-    path: templatePath(pmRoot, normalizedName),
-    options: stored.options,
+    name: document.name,
+    source,
+    created_at: document.created_at,
+    updated_at: document.updated_at,
+    path: source === "builtin" ? `builtin:${normalizedName}` : templatePath(pmRoot, normalizedName),
+    options: document.options,
   };
 }

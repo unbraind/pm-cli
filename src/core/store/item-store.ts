@@ -462,7 +462,8 @@ export async function deleteItem(params: {
   author: string;
   message?: string;
   force?: boolean;
-}): Promise<{ item: ItemFrontMatter; changedFields: string[]; warnings: string[] }> {
+  dryRun?: boolean;
+}): Promise<{ item: ItemFrontMatter; changedFields: string[]; warnings: string[]; targetPath?: string }> {
   const typeToFolder = resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations()).type_to_folder;
   const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix, params.settings.item_format, typeToFolder);
   if (!located) {
@@ -543,6 +544,15 @@ export async function deleteItem(params: {
       if (overrideRecord.skip_delete === true) {
         skipDelete = true;
       }
+    }
+
+    if (params.dryRun === true) {
+      return {
+        item: beforeDocument.metadata,
+        changedFields: ["deleted"],
+        targetPath: effectiveItemPath,
+        warnings: [...parseWarnings, ...historyPolicy.warnings, ...serviceDeleteOverride.warnings],
+      };
     }
 
     if (!skipDelete) {

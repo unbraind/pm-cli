@@ -59,6 +59,33 @@ function makeGuidanceMessage(params: Omit<GuidanceMessage, "type">): GuidanceMes
   };
 }
 
+interface PackageCommandHint {
+  /** Published package name shown to the user (e.g. @unbrained/pm-guide-shell). */
+  packageName: string;
+  /** Exact CLI command that installs the bundled package by its install alias. */
+  installCommand: string;
+}
+
+// Catalog of command tokens that are provided by optional first-party packages
+// rather than core. When an unknown-command error names one of these, we surface
+// a concrete install hint so agents/humans aren't left guessing. The install
+// command uses the bundled alias accepted by `pm install <alias>` (see
+// packages/pm-*/package.json `pm.aliases` and extension.ts install_command).
+const KNOWN_PACKAGE_COMMAND_HINTS: Readonly<Record<string, PackageCommandHint>> = {
+  guide: { packageName: "@unbrained/pm-guide-shell", installCommand: "pm install guide-shell" },
+  templates: { packageName: "@unbrained/pm-templates", installCommand: "pm install templates" },
+  calendar: { packageName: "@unbrained/pm-calendar", installCommand: "pm install calendar" },
+  cal: { packageName: "@unbrained/pm-calendar", installCommand: "pm install calendar" },
+};
+
+function resolveKnownPackageCommandHint(commandToken: string): PackageCommandHint | undefined {
+  const primary = commandToken.trim().split(/\s+/)[0]?.toLowerCase();
+  if (!primary) {
+    return undefined;
+  }
+  return KNOWN_PACKAGE_COMMAND_HINTS[primary];
+}
+
 function renderList(title: string, entries: string[]): string[] {
   if (entries.length === 0) {
     return [];
@@ -209,6 +236,19 @@ function normalizeContextList(values: string[] | undefined): string[] | undefine
   }
   const normalized = values.map((value) => value.trim()).filter((value) => value.length > 0);
   return normalized.length > 0 ? normalized : undefined;
+}
+
+function dedupeStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    if (seen.has(value)) {
+      continue;
+    }
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
 }
 
 function inferCommandNameFromRecovery(recovery: PmCliErrorRecoveryPayload | undefined): string | undefined {
@@ -644,14 +684,30 @@ function buildCommanderErrorGuidance(
     const commandToken = unknownCommand[1];
     const runtimeExamples = normalizeContextList(context?.unknownCommandExamples);
     const runtimeNextSteps = normalizeContextList(context?.unknownCommandNextSteps);
+    const packageHint = resolveKnownPackageCommandHint(commandToken);
+    const baseExamples = runtimeExamples ?? ["pm --help"];
+    const baseNextSteps = runtimeNextSteps ?? ["Verify spelling and active extensions, then rerun."];
+    if (packageHint) {
+      const installStep = `"${commandToken}" is provided by the ${packageHint.packageName} package. Install it with: ${packageHint.installCommand}`;
+      return makeGuidanceMessage({
+        code: "unknown_command",
+        title: `Unknown command ${commandToken}`,
+        happened: `pm does not expose command path "${commandToken}" in current runtime configuration. It is shipped by the optional ${packageHint.packageName} package.`,
+        required: `Install the ${packageHint.packageName} package, or use a valid command name or subcommand path.`,
+        why: "Command registry includes core commands plus active extension command handlers; package-provided commands appear only after the package is installed.",
+        examples: dedupeStrings([packageHint.installCommand, ...baseExamples]),
+        nextSteps: dedupeStrings([installStep, ...baseNextSteps]),
+        recovery: buildCommanderRecoveryPayload(context),
+      });
+    }
     return makeGuidanceMessage({
       code: "unknown_command",
       title: `Unknown command ${commandToken}`,
       happened: `pm does not expose command path "${commandToken}" in current runtime configuration.`,
       required: "Use a valid command name or subcommand path.",
       why: "Command registry includes core commands plus active extension command handlers.",
-      examples: runtimeExamples ?? ["pm --help"],
-      nextSteps: runtimeNextSteps ?? ["Verify spelling and active extensions, then rerun."],
+      examples: baseExamples,
+      nextSteps: baseNextSteps,
       recovery: buildCommanderRecoveryPayload(context),
     });
   }

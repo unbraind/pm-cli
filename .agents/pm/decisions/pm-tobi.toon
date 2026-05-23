@@ -1,0 +1,29 @@
+id: pm-tobi
+title: Default-safety policy for destructive pm commands (gc keeps delete-by-default; add pm delete --dry-run)
+description: "Resolves pm-5k2w L10. Question: pm gc deletes by default (dry_run:false) while normalize/update-many default to dry-run; pm delete had no preview/dry-run. Decision: (1) KEEP pm gc deleting by default — it is an explicit, opt-in maintenance command a user/agent runs deliberately, output already lists removed targets, and --dry-run is available for preview; flipping its default would be a breaking behavior change for scripts and CI. Mitigation: make the help text state plainly that gc removes files by default and document --dry-run prominently. (2) normalize/update-many KEEP dry-run-by-default — they rewrite many items in place, so preview-first is the safe default. (3) ADD `pm delete --dry-run` (additive, non-breaking) so the single-item destructive path has a preview that reports what would be deleted without mutating; pm delete remains immediate without the flag (existing behavior preserved). Rationale: align safety affordances (every destructive command can be previewed) without changing any existing default behavior."
+type: Decision
+status: closed
+priority: 2
+tags[5]: agent-ux,cli,decision,default-safety,dogfood
+created_at: "2026-05-23T17:08:54.664Z"
+updated_at: "2026-05-23T18:37:54.513Z"
+author: claude-code-agent
+acceptance_criteria: gc help documents delete-by-default + --dry-run; pm delete gains a non-mutating --dry-run that reports the target; no existing default behavior changed; regression tests cover delete --dry-run.
+parent: pm-5k2w
+resolution: "Implemented default-safety decision: kept gc delete-by-default with clearer help and added non-mutating pm delete --dry-run."
+expected_result: Destructive commands retain existing defaults but have clear preview affordances and docs.
+actual_result: pm delete dry-run previews target without history/item mutation; gc help clarifies default delete; contracts/completions/tests/manual dogfood/full release gate passed.
+comments[2]{created_at,author,text}:
+  "2026-05-23T17:50:14.116Z",default-safety-subagent,"Evidence: Implemented L10 default-safety preview. pm delete now accepts --dry-run, returns dry_run:true plus target_path and changed_fields:[deleted], and does not remove the item or append delete history. pm gc --help now states gc deletes matched artifacts by default unless --dry-run is used. Verification passed: node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/unit/gc-command.spec.ts tests/integration/help-runtime.spec.ts (46 tests); pnpm exec tsc -p tsconfig.json --noEmit. Scope note: left shared contracts/completion untouched for coordinator ownership."
+  "2026-05-23T18:37:54.513Z",codex-active-work,"Post-review fix evidence: dry-run delete preview now uses the core deleteItem path for lock, ownership, history-policy, and item_store_delete override preflights, then returns before file/history mutation. target_path is normalized for deterministic CLI JSON output. Focused delete/contracts/completion/priority/init tests and manual temp dogfood passed."
+files[6]{path,scope,note}:
+  src/cli/commands/delete.ts,project,L10 adds non-mutating delete dry-run result
+  src/cli/help-content.ts,project,L10 detailed gc help clarifies delete-by-default policy
+  src/cli/register-mutation.ts,project,L10 wires pm delete --dry-run and skips mutation cache invalidation on preview
+  src/cli/register-operations.ts,project,L10 gc help states delete-by-default and dry-run preview
+  tests/integration/help-runtime.spec.ts,project,Regression coverage for gc help text
+  tests/unit/delete-command.spec.ts,project,Regression coverage for pm delete --dry-run
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/unit/gc-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Default-safety decision implemented: gc delete-by-default remains documented, pm delete --dry-run previews without mutation/history writes, contracts/completions/tests/manual dogfood/full release gate passed."
+body: ""

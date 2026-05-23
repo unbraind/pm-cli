@@ -275,6 +275,85 @@ describe("templates command flows", () => {
     });
   });
 
+  it("ships builtin starter templates so the catalog is non-empty out of the box", async () => {
+    await withTempPmPath(async (context) => {
+      const install = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+
+      const list = context.runCli(["templates", "list", "--json"], { expectJson: true });
+      expect(list.code).toBe(0);
+      const listJson = list.json as { count: number; templates: string[]; builtin_templates: string[]; user_templates: string[] };
+      expect(listJson.count).toBeGreaterThan(0);
+      expect(listJson.templates).toEqual(expect.arrayContaining(["bug", "chore", "feature", "spike"]));
+      expect(listJson.builtin_templates).toEqual(expect.arrayContaining(["bug", "chore", "feature", "spike"]));
+      expect(listJson.user_templates).toEqual([]);
+
+      const show = context.runCli(["templates", "show", "bug", "--json"], { expectJson: true });
+      expect(show.code).toBe(0);
+      const showJson = show.json as { name: string; source: string; options: Record<string, unknown> };
+      expect(showJson.name).toBe("bug");
+      expect(showJson.source).toBe("builtin");
+      expect(showJson.options.type).toBe("Issue");
+    });
+  });
+
+  it("creates from a builtin template without the user saving it first", async () => {
+    await withTempPmPath(async (context) => {
+      const install = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "builtin templated bug",
+          "--description",
+          "builtin templated description",
+          "--template",
+          "bug",
+          "--create-mode",
+          "progressive",
+          "--author",
+          "template-test",
+          "--message",
+          "create from builtin template",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const createdItem = (created.json as { item: Record<string, unknown> }).item;
+      expect(createdItem.type).toBe("Issue");
+      expect(createdItem.priority).toBe(1);
+    });
+  });
+
+  it("lets a user-saved template override the builtin of the same name", async () => {
+    await withTempPmPath(async (context) => {
+      const install = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+
+      const save = context.runCli(
+        ["templates", "save", "bug", "--type", "Task", "--priority", "4", "--tags", "override", "--json"],
+        { expectJson: true },
+      );
+      expect(save.code).toBe(0);
+
+      const list = context.runCli(["templates", "list", "--json"], { expectJson: true });
+      const listJson = list.json as { builtin_templates: string[]; user_templates: string[]; templates: string[] };
+      expect(listJson.user_templates).toContain("bug");
+      expect(listJson.builtin_templates).not.toContain("bug");
+      // "bug" still appears exactly once in the merged catalog.
+      expect(listJson.templates.filter((name) => name === "bug")).toEqual(["bug"]);
+
+      const show = context.runCli(["templates", "show", "bug", "--json"], { expectJson: true });
+      const showJson = show.json as { source: string; options: Record<string, unknown> };
+      expect(showJson.source).toBe("user");
+      expect(showJson.options.type).toBe("Task");
+      expect(showJson.options.tags).toBe("override");
+    });
+  });
+
   it("fails when template does not exist", async () => {
     await withTempPmPath(async (context) => {
       const install = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });

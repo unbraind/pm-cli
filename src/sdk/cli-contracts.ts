@@ -809,6 +809,7 @@ export const INIT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--author" },
   { flag: "--agent-guidance" },
   { flag: "--with-packages" },
+  { flag: "--verbose" },
 ];
 
 export const CONFIG_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -914,6 +915,7 @@ export const RESTORE_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const DELETE_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--dry-run" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--force" },
@@ -2265,7 +2267,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   "update-many": { optional: UPDATE_MANY_CONTRACT_PARAMETER_KEYS },
   normalize: { optional: NORMALIZE_CONTRACT_PARAMETER_KEYS },
   close: { required: ["id", "text"], optional: ["validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
-  delete: { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  delete: { required: ["id"], optional: ["dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   comments: {
     required: ["id"],

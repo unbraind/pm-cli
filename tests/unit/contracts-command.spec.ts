@@ -424,6 +424,7 @@ describe("contracts command runtime", () => {
         (entry) => entry.flag === "--yes",
       ),
     ).toBe(false);
+    expect(initFlags.command_flags?.[0]?.flags.some((entry) => entry.flag === "--verbose")).toBe(true);
 
     const activityFlags = await runContracts(
       { command: "activity", flagsOnly: true },
@@ -613,7 +614,7 @@ describe("contracts command runtime", () => {
           flags: ["--preset", "--defaults", "--author", "--agent-guidance", "--with-packages"],
         },
         { command: "restore", flags: ["--author", "--message", "--force"] },
-        { command: "delete", flags: ["--author", "--message", "--force"] },
+        { command: "delete", flags: ["--dry-run", "--author", "--message", "--force"] },
         {
           command: "test",
           flags: [

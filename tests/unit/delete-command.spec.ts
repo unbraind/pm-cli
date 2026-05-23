@@ -106,6 +106,14 @@ describe("runDelete", () => {
     });
   });
 
+  it("fails with not-found during dry-run preview when item does not exist", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(runDelete("pm-missing", { dryRun: true }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
+    });
+  });
+
   it("deletes the item file and appends delete history", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "delete-open-item");
@@ -130,6 +138,82 @@ describe("runDelete", () => {
 
       const getAfterDelete = context.runCli(["get", id, "--json"], { expectJson: true });
       expect(getAfterDelete.code).toBe(EXIT_CODE.NOT_FOUND);
+    });
+  });
+
+  it("previews delete targets with --dry-run without removing the item or appending history", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "delete-dry-run-item");
+
+      const preview = context.runCli(["delete", id, "--dry-run", "--json", "--author", "preview-author"], {
+        expectJson: true,
+      });
+      expect(preview.code).toBe(0);
+      expect(preview.json).toMatchObject({
+        dry_run: true,
+        changed_fields: ["deleted"],
+        target_path: `tasks/${id}.toon`,
+        warnings: [],
+        item: {
+          id,
+        },
+      });
+
+      await expect(access(itemPathForTask(context, id))).resolves.toBeUndefined();
+      expect(latestDeleteHistoryEntry(context, id)).toBeUndefined();
+
+      const getAfterPreview = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect(getAfterPreview.code).toBe(0);
+    });
+  });
+
+  it("previews delete targets in dry-run mode without mutating item or history", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "delete-dry-run-item");
+      const result = await runDelete(
+        id,
+        {
+          author: "preview-author",
+          message: "Preview delete",
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result).toMatchObject({
+        changed_fields: ["deleted"],
+        dry_run: true,
+        target_path: `tasks/${id}.toon`,
+        warnings: [],
+      });
+      expect(result.item.id).toBe(id);
+      await expect(access(itemPathForTask(context, id))).resolves.toBeUndefined();
+      expect(latestDeleteHistoryEntry(context, id)).toBeUndefined();
+    });
+  });
+
+  it("applies ownership governance in dry-run mode", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "delete-dry-run-assigned-item", { assignee: "foreign-author" });
+
+      setGovernancePreset(context, "default");
+      const warned = await runDelete(id, { author: "preview-author", dryRun: true }, { path: context.pmPath });
+      expect(warned.warnings).toEqual([`ownership_warning:assignee_conflict:${id}:foreign-author`]);
+      await expect(access(itemPathForTask(context, id))).resolves.toBeUndefined();
+
+      setGovernancePreset(context, "minimal");
+      const permissive = await runDelete(id, { author: "preview-author", dryRun: true }, { path: context.pmPath });
+      expect(permissive.warnings).toEqual([]);
+      await expect(access(itemPathForTask(context, id))).resolves.toBeUndefined();
+
+      setGovernancePreset(context, "strict");
+      await expect(runDelete(id, { author: "preview-author", dryRun: true }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.CONFLICT,
+      });
+
+      const forced = await runDelete(id, { author: "preview-author", dryRun: true, force: true }, { path: context.pmPath });
+      expect(forced.warnings).toEqual([]);
+      await expect(access(itemPathForTask(context, id))).resolves.toBeUndefined();
     });
   });
 

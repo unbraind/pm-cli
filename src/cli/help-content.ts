@@ -566,8 +566,8 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     tips: ["Resolution-gap warnings include default `pm update <id> ...` remediation hint templates in check details."],
   },
   gc: {
-    why: "Cleans optional cache artifacts to keep local tracker state tidy.",
-    examples: ["pm gc"],
+    why: "Deletes optional cache artifacts by default to keep local tracker state tidy; use --dry-run to preview targets without deleting files.",
+    examples: ["pm gc --dry-run", "pm gc"],
   },
   claim: {
     why: "Claims an item to signal active ownership and reduce conflicts.",

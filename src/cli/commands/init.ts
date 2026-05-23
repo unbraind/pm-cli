@@ -51,6 +51,56 @@ export interface InitCommandOptions {
   agentGuidance?: string;
 }
 
+/**
+ * Concise projection of an InitResult for the default (toon) renderer. It keeps
+ * every piece of information that only init can surface — the resolved path, id
+ * prefix, governance preset, telemetry capture level, created-directory count,
+ * the full warnings list (including `already_exists:` markers), agent-guidance
+ * summary, and next steps — but replaces the verbose full settings tree (~190
+ * lines) with a compact `settings` summary. Use --verbose for the full tree.
+ */
+export interface InitConciseResult {
+  ok: boolean;
+  path: string;
+  id_prefix: string;
+  governance_preset: GovernancePreset;
+  telemetry: {
+    enabled: boolean;
+    capture_level: string;
+  };
+  output_format: string;
+  created_dirs_count: number;
+  created_dirs: string[];
+  warnings: string[];
+  wizard_used: boolean;
+  installed_packages?: InitInstalledPackagesSummary;
+  next_steps: string[];
+  agent_guidance: InitAgentGuidanceSummary;
+  hint: string;
+}
+
+export function summarizeInitResult(result: InitResult): InitConciseResult {
+  return {
+    ok: result.ok,
+    path: result.path,
+    id_prefix: result.settings.id_prefix,
+    governance_preset: result.governance_preset,
+    telemetry: {
+      enabled: result.settings.telemetry.enabled,
+      capture_level: result.settings.telemetry.capture_level,
+    },
+    output_format: result.settings.output.default_format,
+    created_dirs_count: result.created_dirs.length,
+    created_dirs: result.created_dirs,
+    warnings: result.warnings,
+    wizard_used: result.wizard_used,
+    ...(result.installed_packages ? { installed_packages: result.installed_packages } : {}),
+    next_steps: result.next_steps,
+    agent_guidance: result.agent_guidance,
+    hint: "Re-run with --verbose for the full settings tree.",
+  };
+}
+
 function cloneDefaults(): PmSettings {
   return structuredClone(SETTINGS_DEFAULTS);
 }

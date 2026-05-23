@@ -72,6 +72,22 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("documents gc delete-by-default behavior and dry-run preview", async () => {
+    await withTempPmPath(async (context) => {
+      const compactHelp = context.runCli(["gc", "--help"]);
+      expect(compactHelp.code).toBe(0);
+      const compactHelpText = compactHelp.stdout.replaceAll(/\s+/g, " ");
+      expect(compactHelp.stdout).toContain("Delete optional cache artifacts by default");
+      expect(compactHelp.stdout).toContain("--dry-run");
+      expect(compactHelpText).toContain("without this flag, pm gc deletes matched artifacts");
+
+      const detailedHelp = context.runCli(["gc", "--help", "--explain"]);
+      expect(detailedHelp.code).toBe(0);
+      expect(detailedHelp.stdout).toContain("use --dry-run to preview targets without deleting files");
+      expect(detailedHelp.stdout).toContain("pm gc --dry-run");
+    });
+  });
+
   it("returns non-zero unknown-command guidance for unavailable command help paths", async () => {
     await withTempPmPath(async (context) => {
       const textHelp = context.runCli(["beads", "--help"]);
@@ -213,6 +229,113 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         expect(help.stderr).toContain(`Unknown command ${commandName}`);
         expect(help.stderr).toContain("pm install search-advanced");
       }
+    });
+  });
+
+  it("renders a concise pm init summary by default and the full settings tree only with --verbose/--json", async () => {
+    await withTempPmPath(async (context) => {
+      // Default (toon) output is concise: drops the full settings tree but keeps
+      // path, governance preset, telemetry capture level, and warnings.
+      const concise = context.runCli(["init"]);
+      expect(concise.code).toBe(0);
+      expect(concise.stdout).toContain("id_prefix:");
+      expect(concise.stdout).toContain("governance_preset:");
+      expect(concise.stdout).toContain("capture_level:");
+      expect(concise.stdout).toContain("Re-run with --verbose for the full settings tree.");
+      // already_exists warnings (init-only information) survive in the summary.
+      expect(concise.stdout).toContain("already_exists:");
+      // The verbose-only settings internals are absent.
+      expect(concise.stdout).not.toContain("retention_days");
+      expect(concise.stdout).not.toContain("ownership_enforcement");
+
+      const verbose = context.runCli(["init", "--verbose"]);
+      expect(verbose.code).toBe(0);
+      expect(verbose.stdout).toContain("retention_days");
+      expect(verbose.stdout).toContain("ownership_enforcement");
+      // Verbose tree is substantially larger than the concise default.
+      expect(verbose.stdout.split("\n").length).toBeGreaterThan(concise.stdout.split("\n").length);
+
+      // --json consumers keep the full original InitResult shape.
+      const json = context.runCli(["init", "--json"], { expectJson: true });
+      expect(json.code).toBe(0);
+      const payload = json.json as { settings?: Record<string, unknown>; created_dirs?: unknown };
+      expect(payload.settings).toBeDefined();
+      expect(payload.settings).toHaveProperty("telemetry");
+      expect(payload.settings).toHaveProperty("governance");
+      expect(payload.created_dirs).toBeDefined();
+    });
+  });
+
+  it("hides pure snake_case underscore-duplicate aliases from --help but keeps them parse-functional", async () => {
+    await withTempPmPath(async (context) => {
+      const createHelp = context.runCli(["create", "--help"]);
+      expect(createHelp.code).toBe(0);
+      // Pure snake duplicates are gone from rendered help text.
+      expect(createHelp.stdout).not.toContain("--create_mode");
+      expect(createHelp.stdout).not.toContain("--why_now");
+      expect(createHelp.stdout).not.toContain("--estimated_minutes");
+      expect(createHelp.stdout).not.toContain("--acceptance_criteria");
+      expect(createHelp.stdout).not.toContain("--blocked_by");
+      // Canonical kebab flags remain.
+      expect(createHelp.stdout).toContain("--create-mode");
+      expect(createHelp.stdout).toContain("--blocked-by");
+      // Semantically-distinct aliases stay visible.
+      expect(createHelp.stdout).toContain("--ac ");
+      expect(createHelp.stdout).toContain("--rank ");
+
+      // No leftover "--foo_bar" option lines anywhere in create help.
+      const snakeOptionLines = createHelp.stdout
+        .split("\n")
+        .filter((line) => /^\s+--[a-z]+_[a-z_]+/.test(line));
+      expect(snakeOptionLines).toEqual([]);
+
+      // The hidden alias still parses and sets the same field as the canonical.
+      const created = context.runCli(
+        ["create", "task", "Hidden snake alias parse", "--create_mode", "progressive", "--why_now", "now-rationale", "--json"],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const payload = created.json as { item?: { type?: string; why_now?: string } };
+      expect(payload.item?.type).toBe("Task");
+      expect(payload.item?.why_now).toBe("now-rationale");
+    });
+  });
+
+  it("keeps semantically-distinct aliases visible in lifecycle/validate help", async () => {
+    await withTempPmPath(async (context) => {
+      // --fail-on-warn is an alias for --strict-exit, not a snake duplicate.
+      const validateHelp = context.runCli(["validate", "--help"]);
+      expect(validateHelp.code).toBe(0);
+      expect(validateHelp.stdout).toContain("--fail-on-warn");
+
+      // --local (alias for --project) and --active-only stay visible too.
+      const packageHelp = context.runCli(["package", "--help"]);
+      expect(packageHelp.code).toBe(0);
+      expect(packageHelp.stdout).toContain("--local");
+      expect(packageHelp.stdout).toContain("--fail-on-warn");
+    });
+  });
+
+  it("hides snake aliases on plan/list/aggregate/context while keeping word aliases", async () => {
+    await withTempPmPath(async (context) => {
+      const planHelp = context.runCli(["plan", "--help"]);
+      expect(planHelp.code).toBe(0);
+      expect(planHelp.stdout).not.toContain("--step_title");
+      expect(planHelp.stdout).not.toContain("--materialize_type");
+      // Word aliases (different identifier) stay visible.
+      expect(planHelp.stdout).toContain("--step ");
+      expect(planHelp.stdout).toContain("--decision ");
+
+      for (const command of ["list", "aggregate", "context"] as const) {
+        const help = context.runCli([command, "--help"]);
+        expect(help.code).toBe(0);
+        expect(help.stdout).not.toContain("--assignee_filter");
+        expect(help.stdout).toContain("--assignee-filter");
+      }
+
+      const aggregateHelp = context.runCli(["aggregate", "--help"]);
+      expect(aggregateHelp.stdout).not.toContain("--include_unparented");
+      expect(aggregateHelp.stdout).toContain("--include-unparented");
     });
   });
 

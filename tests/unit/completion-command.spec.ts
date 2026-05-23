@@ -135,15 +135,18 @@ describe("generateBashScript", () => {
     expect(bashScript).toContain("--defaults");
     expect(bashScript).toContain("--yes");
     expect(bashScript).toContain("-y");
+    expect(bashScript).toContain("--verbose");
 
     const zshScript = generateZshScript();
     expect(zshScript).toContain("--agent-guidance[Agent guidance mode]");
     expect(zshScript).toContain("Alias for --defaults");
+    expect(zshScript).toContain("--verbose[");
 
     const fishScript = generateFishScript();
     expect(fishScript).toContain("__fish_seen_subcommand_from init");
     expect(fishScript).toContain("-l agent-guidance");
     expect(fishScript).toContain("-s y -l yes");
+    expect(fishScript).toContain("-l verbose");
   });
 
   it("includes underscore metadata aliases in bash completion output", () => {
@@ -311,6 +314,20 @@ describe("generateBashScript", () => {
     const script = generateBashScript();
     expect(script).toContain("gc)");
     expect(script).toContain("--dry-run --scope");
+  });
+
+  it("includes delete dry-run across completion scripts", () => {
+    const bashScript = generateBashScript();
+    expect(bashScript).toContain("delete)");
+    expect(bashScript).toContain("--dry-run --author --message --force");
+
+    const zshScript = generateZshScript();
+    expect(zshScript).toContain("delete)");
+    expect(zshScript).toContain("--dry-run[Preview the item file that would be deleted without mutating]");
+
+    const fishScript = generateFishScript();
+    expect(fishScript).toContain("__fish_seen_subcommand_from delete");
+    expect(fishScript).toContain("-l dry-run");
   });
 
   it("includes calendar-specific flags", () => {
