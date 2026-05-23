@@ -1,4 +1,4 @@
-import type { Command } from "commander";
+import { Option, type Command } from "commander";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import type { ItemStatus } from "../types/index.js";
@@ -28,6 +28,15 @@ async function loadListQueryCommandsModule(): Promise<ListQueryCommandsModule> {
 }
 
 export function registerListQueryCommands(program: Command): void {
+  // Register a flag and hide it from --help text while keeping it functional as
+  // a parse-time alias. Used for pure snake_case underscore-duplicate aliases
+  // (e.g. --assignee_filter for --assignee-filter) so they no longer bloat
+  // --help output. The option still appears in command.options, so JSON help
+  // and completion are unchanged.
+  function addHiddenOption(command: Command, flags: string, description: string): void {
+    command.addOption(new Option(flags, description).hideHelp());
+  }
+
   function registerListCommand(
     name: string,
     description: string,
@@ -48,7 +57,6 @@ export function registerListQueryCommands(program: Command): void {
       .option("--deadline-after <value>", "Filter by deadline lower bound (ISO/date string or relative)")
       .option("--assignee <value>", "Filter by assignee")
       .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
-      .option("--assignee_filter <value>", "Alias for --assignee-filter")
       .option("--parent <value>", "Filter by parent item ID")
       .option("--sprint <value>", "Filter by sprint")
       .option("--release <value>", "Filter by release")
@@ -95,6 +103,8 @@ export function registerListQueryCommands(program: Command): void {
           printError(`profile:command=${name} took_ms=${Date.now() - startedAt}`);
         }
       });
+    // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
+    addHiddenOption(command, "--assignee_filter <value>", "Alias for --assignee-filter");
   }
 
   registerListCommand("list", "List active items with optional filters.", undefined, true, true, true);
@@ -106,7 +116,7 @@ export function registerListQueryCommands(program: Command): void {
   registerListCommand("list-closed", "List closed items with optional filters.", "closed");
   registerListCommand("list-canceled", "List canceled items with optional filters.", "canceled");
 
-  program
+  const aggregateCommand = program
     .command("aggregate")
     .description("Aggregate grouped item counts for governance queries.")
     .option(
@@ -115,7 +125,6 @@ export function registerListQueryCommands(program: Command): void {
     )
     .option("--count", "Return grouped counts (default behavior)")
     .option("--include-unparented", "Include unparented rows when grouping by parent")
-    .option("--include_unparented", "Alias for --include-unparented")
     .option("--status <value>", "Filter by item status")
     .option("--type <value>", "Filter by item type")
     .option("--tag <value>", "Filter by tag")
@@ -124,10 +133,13 @@ export function registerListQueryCommands(program: Command): void {
     .option("--deadline-after <value>", "Filter by deadline lower bound (ISO/date string or relative)")
     .option("--assignee <value>", "Filter by assignee")
     .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
-    .option("--assignee_filter <value>", "Alias for --assignee-filter")
     .option("--parent <value>", "Filter by parent item ID")
     .option("--sprint <value>", "Filter by sprint")
-    .option("--release <value>", "Filter by release")
+    .option("--release <value>", "Filter by release");
+  // Hidden pure snake_case underscore-duplicate aliases (kept parse-functional).
+  addHiddenOption(aggregateCommand, "--include_unparented", "Alias for --include-unparented");
+  addHiddenOption(aggregateCommand, "--assignee_filter <value>", "Alias for --assignee-filter");
+  aggregateCommand
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
@@ -139,7 +151,7 @@ export function registerListQueryCommands(program: Command): void {
       }
     });
 
-  program
+  const contextCommand = program
     .command("context")
     .alias("ctx")
     .description("Show a token-efficient project context snapshot for next-work decisions.")
@@ -152,7 +164,6 @@ export function registerListQueryCommands(program: Command): void {
     .option("--priority <value>", "Filter by priority")
     .option("--assignee <value>", "Filter by assignee")
     .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
-    .option("--assignee_filter <value>", "Alias for --assignee-filter")
     .option("--sprint <value>", "Filter by sprint")
     .option("--release <value>", "Filter by release")
     .option("--limit <n>", "Limit focus and agenda rows per section")
@@ -160,7 +171,10 @@ export function registerListQueryCommands(program: Command): void {
     .option("--depth <value>", "Context depth: brief|standard|deep (default: settings or brief)")
     .option("--section <value...>", "Include specific sections (repeatable; overrides --depth)")
     .option("--activity-limit <n>", "Limit recent activity entries (default: settings or 10)")
-    .option("--stale-threshold <value>", "Staleness cutoff in days (e.g. 7 or 7d; default: settings or 7)")
+    .option("--stale-threshold <value>", "Staleness cutoff in days (e.g. 7 or 7d; default: settings or 7)");
+  // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
+  addHiddenOption(contextCommand, "--assignee_filter <value>", "Alias for --assignee-filter");
+  contextCommand
     .action(async (options: Record<string, unknown>, actionCommand) => {
       const globalOptions = getGlobalOptions(actionCommand);
       const startedAt = Date.now();

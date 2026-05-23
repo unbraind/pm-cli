@@ -1,6 +1,7 @@
-import type { Command } from "commander";
+import { Option, type Command } from "commander";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { isPureSnakeCaseAlias } from "../core/shared/option-alias-visibility.js";
 import {
   CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
   UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
@@ -28,6 +29,21 @@ async function loadMutationCommandsModule(): Promise<MutationCommandsModule> {
   return mutationCommandsModulePromise;
 }
 
+/**
+ * Register a flag and hide it from `--help` text while keeping it fully
+ * functional as a parse-time alias. The option still appears in
+ * `command.options`, so the JSON help payload and shell completion (which read
+ * from the contracts/commander option list, not the rendered text) are
+ * unchanged — only commander's text `--help` omits it.
+ */
+function addHiddenOption(command: Command, flags: string, description: string, repeatable: boolean): void {
+  const option = new Option(flags, description).hideHelp();
+  if (repeatable) {
+    option.argParser(collect);
+  }
+  command.addOption(option);
+}
+
 function registerCommanderOptionContracts(command: Command, contracts: CommanderOptionRegistrationContract[]): void {
   for (const contract of contracts) {
     if (contract.required) {
@@ -38,7 +54,12 @@ function registerCommanderOptionContracts(command: Command, contracts: Commander
       command.option(contract.option, contract.description);
     }
     for (const aliasContract of contract.aliasOptions ?? []) {
-      if (contract.repeatable) {
+      // Hide pure snake_case underscore-duplicate aliases (e.g. --create_mode
+      // for --create-mode) from --help, but keep semantically-distinct aliases
+      // (e.g. --ac for --acceptance-criteria) visible.
+      if (isPureSnakeCaseAlias(contract.option, aliasContract.option)) {
+        addHiddenOption(command, aliasContract.option, aliasContract.description, contract.repeatable === true);
+      } else if (contract.repeatable) {
         command.option(aliasContract.option, aliasContract.description, collect);
       } else {
         command.option(aliasContract.option, aliasContract.description);
@@ -119,10 +140,11 @@ export function registerMutationCommands(program: Command): void {
     .option("--clear-events", "Clear events")
     .option("--clear-type-options", "Clear type options")
     .option("--allow-audit-update", "Allow non-owner metadata-only audit updates without requiring --force")
-    .option("--allow_audit_update", "Alias for --allow-audit-update")
     .option("--allow-audit-dep-update", "Allow non-owner append-only dependency updates without requiring --force")
-    .option("--allow_audit_dep_update", "Alias for --allow-audit-dep-update")
-    .option("--force", "Force ownership override")
+    .option("--force", "Force ownership override");
+  addHiddenOption(updateCommand, "--allow_audit_update", "Alias for --allow-audit-update", false);
+  addHiddenOption(updateCommand, "--allow_audit_dep_update", "Alias for --allow-audit-dep-update", false);
+  updateCommand
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
@@ -135,7 +157,7 @@ export function registerMutationCommands(program: Command): void {
       }
     });
 
-  program
+  const updateManyCommand = program
     .command("update-many")
     .description("Bulk-update matched items with dry-run plans and rollback checkpoints.")
     .option("--filter-status <value>", "Filter by status before applying updates")
@@ -146,7 +168,6 @@ export function registerMutationCommands(program: Command): void {
     .option("--filter-deadline-after <value>", "Filter by deadline lower bound before applying updates")
     .option("--filter-assignee <value>", "Filter by assignee before applying updates")
     .option("--filter-assignee-filter <value>", "Filter assignee presence: assigned|unassigned before applying updates")
-    .option("--filter-assignee_filter <value>", "Alias for --filter-assignee-filter")
     .option("--filter-parent <value>", "Filter by parent item ID before applying updates")
     .option("--filter-sprint <value>", "Filter by sprint before applying updates")
     .option("--filter-release <value>", "Filter by release before applying updates")
@@ -164,12 +185,9 @@ export function registerMutationCommands(program: Command): void {
     .option("--tags <value>", "Set comma-separated tags")
     .option("--deadline <value>", "Set deadline (ISO/date string or relative)")
     .option("--estimate, --estimated-minutes <value>", "Set estimated minutes")
-    .option("--estimated_minutes <value>", "Alias for --estimated-minutes")
     .option("--acceptance-criteria <value>", "Set acceptance criteria")
-    .option("--acceptance_criteria <value>", "Alias for --acceptance-criteria")
     .option("--ac <value>", "Alias for --acceptance-criteria")
     .option("--definition-of-ready <value>", "Set definition of ready")
-    .option("--definition_of_ready <value>", "Alias for --definition-of-ready")
     .option("--order <value>", "Set planning order/rank integer")
     .option("--rank <value>", "Alias for --order")
     .option("--goal <value>", "Set goal identifier")
@@ -178,7 +196,6 @@ export function registerMutationCommands(program: Command): void {
     .option("--impact <value>", "Set business impact summary")
     .option("--outcome <value>", "Set expected outcome summary")
     .option("--why-now <value>", "Set why-now rationale")
-    .option("--why_now <value>", "Alias for --why-now")
     .option("--assignee <value>", "Set assignee")
     .option("--parent <value>", "Set parent item ID")
     .option("--reviewer <value>", "Set reviewer")
@@ -187,32 +204,22 @@ export function registerMutationCommands(program: Command): void {
     .option("--sprint <value>", "Set sprint identifier")
     .option("--release <value>", "Set release identifier")
     .option("--blocked-by <value>", "Set blocked-by item ID or reason")
-    .option("--blocked_by <value>", "Alias for --blocked-by")
     .option("--blocked-reason <value>", "Set blocked reason")
-    .option("--blocked_reason <value>", "Alias for --blocked-reason")
     .option("--unblock-note <value>", "Set unblock rationale note")
-    .option("--unblock_note <value>", "Alias for --unblock-note")
     .option("--reporter <value>", "Set issue reporter")
     .option("--severity <value>", "Set issue severity")
     .option("--environment <value>", "Set issue environment context")
     .option("--repro-steps <value>", "Set issue reproduction steps")
-    .option("--repro_steps <value>", "Alias for --repro-steps")
     .option("--resolution <value>", "Set issue resolution summary")
     .option("--expected-result <value>", "Set issue expected behavior")
-    .option("--expected_result <value>", "Alias for --expected-result")
     .option("--actual-result <value>", "Set issue observed behavior")
-    .option("--actual_result <value>", "Alias for --actual-result")
     .option("--affected-version <value>", "Set affected version identifier")
-    .option("--affected_version <value>", "Alias for --affected-version")
     .option("--fixed-version <value>", "Set fixed version identifier")
-    .option("--fixed_version <value>", "Alias for --fixed-version")
     .option("--component <value>", "Set issue component ownership")
     .option("--regression <value>", "Set regression marker: true|false|1|0")
     .option("--customer-impact <value>", "Set customer impact summary")
-    .option("--customer_impact <value>", "Alias for --customer-impact")
     .option("--dep <value>", "Add dependency entry id=<id>,kind=<kind>,author=<author>,created_at=<timestamp>", collect)
     .option("--dep-remove <value>", "Remove dependency entries by id/kind/author/timestamp signature", collect)
-    .option("--dep_remove <value>", "Alias for --dep-remove", collect)
     .option("--replace-deps", "Atomically replace dependency entries with provided --dep values")
     .option("--replace-tests", "Atomically replace linked tests with provided --test values")
     .option("--comment <value>", "Add comment seed author=<value>,created_at=<iso|now>,text=<value>", collect)
@@ -224,7 +231,6 @@ export function registerMutationCommands(program: Command): void {
     .option("--reminder <value>", "Add reminder entry at=<iso|relative>|date=<iso|relative>,text=<text>|title=<text>", collect)
     .option("--event <value>", "Add event entry start=<iso|relative>,end=<iso|relative>,recur_*", collect)
     .option("--type-option <value>", "Set type options key=value (repeatable)", collect)
-    .option("--type_option <value>", "Alias for --type-option", collect)
     .option("--unset <field>", "Clear scalar metadata field by name (repeatable)", collect)
     .option("--clear-deps", "Clear dependency entries")
     .option("--clear-comments", "Clear comments")
@@ -237,12 +243,39 @@ export function registerMutationCommands(program: Command): void {
     .option("--clear-events", "Clear events")
     .option("--clear-type-options", "Clear type options")
     .option("--allow-audit-update", "Allow non-owner metadata-only audit updates without requiring --force")
-    .option("--allow_audit_update", "Alias for --allow-audit-update")
     .option("--allow-audit-dep-update", "Allow non-owner append-only dependency updates without requiring --force")
-    .option("--allow_audit_dep_update", "Alias for --allow-audit-dep-update")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "Mutation message")
-    .option("--force", "Force ownership override")
+    .option("--force", "Force ownership override");
+  // Hidden pure snake_case underscore-duplicate aliases (kept parse-functional,
+  // omitted from --help to save agent context).
+  for (const [flags, description] of [
+    ["--filter-assignee_filter <value>", "Alias for --filter-assignee-filter"],
+    ["--estimated_minutes <value>", "Alias for --estimated-minutes"],
+    ["--acceptance_criteria <value>", "Alias for --acceptance-criteria"],
+    ["--definition_of_ready <value>", "Alias for --definition-of-ready"],
+    ["--why_now <value>", "Alias for --why-now"],
+    ["--blocked_by <value>", "Alias for --blocked-by"],
+    ["--blocked_reason <value>", "Alias for --blocked-reason"],
+    ["--unblock_note <value>", "Alias for --unblock-note"],
+    ["--repro_steps <value>", "Alias for --repro-steps"],
+    ["--expected_result <value>", "Alias for --expected-result"],
+    ["--actual_result <value>", "Alias for --actual-result"],
+    ["--affected_version <value>", "Alias for --affected-version"],
+    ["--fixed_version <value>", "Alias for --fixed-version"],
+    ["--customer_impact <value>", "Alias for --customer-impact"],
+    ["--allow_audit_update", "Alias for --allow-audit-update"],
+    ["--allow_audit_dep_update", "Alias for --allow-audit-dep-update"],
+  ] as const) {
+    addHiddenOption(updateManyCommand, flags, description, false);
+  }
+  for (const [flags, description] of [
+    ["--dep_remove <value>", "Alias for --dep-remove"],
+    ["--type_option <value>", "Alias for --type-option"],
+  ] as const) {
+    addHiddenOption(updateManyCommand, flags, description, true);
+  }
+  updateManyCommand
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
@@ -350,6 +383,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--force", "Force ownership override")
+    .option("--dry-run", "Preview the item file that would be deleted without mutating")
     .description("Delete an item and record the change in history.")
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
@@ -359,8 +393,11 @@ export function registerMutationCommands(program: Command): void {
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
         force: Boolean(options.force),
+        dryRun: options.dryRun === true,
       }, globalOptions);
-      await invalidateSearchCachesForMutation(globalOptions, result);
+      if (result.dry_run !== true) {
+        await invalidateSearchCachesForMutation(globalOptions, result);
+      }
       printResult(result, globalOptions);
       if (globalOptions.profile) {
         printError(`profile:command=delete took_ms=${Date.now() - startedAt}`);
@@ -446,75 +483,86 @@ export function registerMutationCommands(program: Command): void {
     .option("--related <value>", "Related pm item ids (repeatable, csv-friendly)", collect)
     .option("--blocks <value>", "Pm item ids this plan blocks (repeatable, csv-friendly)", collect)
     .option("--blocked-by <value>", "Pm item ids that block this plan (repeatable, csv-friendly)", collect)
-    .option("--blocked_by <value>", "Alias for --blocked-by", collect)
     .option("--harness <value>", "Plan harness provenance: codex|claude-code|cursor|generic")
     .option("--mode <value>", "Plan mode: draft|research|review|approved|executing|paused|completed|superseded")
     .option("--resume-context <value>", "Compact context summary for a future stateless agent")
-    .option("--resume_context <value>", "Alias for --resume-context")
     .option("--tags <value>", "Comma-separated tags")
     .option("--priority <value>", "Priority 0-4")
     .option("--body <value>", "Plan item body")
     .option("--claim", "Claim the plan on create for the author")
     .option("--from-search <value>", "Record the search query that led to plan creation")
-    .option("--from_search <value>", "Alias for --from-search")
     .option("--step-title <value>", "Step title for add-step / update-step")
     .option("--step <value>", "Alias for --step-title")
-    .option("--step_title <value>", "Alias for --step-title")
     .option("--step-body <value>", "Step body text")
-    .option("--step_body <value>", "Alias for --step-body")
     .option("--step-owner <value>", "Step owner")
-    .option("--step_owner <value>", "Alias for --step-owner")
     .option("--step-status <value>", "Step status: pending|in_progress|completed|blocked|skipped|superseded")
-    .option("--step_status <value>", "Alias for --step-status")
     .option("--step-evidence <value>", "Step evidence text (used by update-step/complete-step)")
-    .option("--step_evidence <value>", "Alias for --step-evidence")
     .option("--step-blocked-reason <value>", "Step blocked reason (required when blocking)")
-    .option("--step_blocked_reason <value>", "Alias for --step-blocked-reason")
     .option("--step-replacement <value>", "Replacement reference for a superseded step")
-    .option("--step_replacement <value>", "Alias for --step-replacement")
     .option("--depends-on <value>", "Pm item ids the step depends on (repeatable, csv-friendly)", collect)
-    .option("--depends_on <value>", "Alias for --depends-on", collect)
     .option("--link <value>", "Pm item id to link (repeatable, csv-friendly)", collect)
     .option("--link-kind <value>", "Link kind: related|blocks|blocked_by|depends_on|discovered_from|implements|verifies|supersedes")
-    .option("--link_kind <value>", "Alias for --link-kind")
     .option("--link-note <value>", "Optional note for the link")
-    .option("--link_note <value>", "Alias for --link-note")
     .option("--promote-to-item-dep", "Also add the linked id as a top-level item dependency when linking")
-    .option("--promote_to_item_dep", "Alias for --promote-to-item-dep")
     .option("--allow-multiple-active", "Allow multiple steps to be in_progress at once")
-    .option("--allow_multiple_active", "Alias for --allow-multiple-active")
     .option("--file <value>", "Step linked file path=<value>[,scope=project|global,note=<text>] (repeatable)", collect)
     .option("--test <value>", "Step linked test command=<value>[,path=<value>,note=<text>] (repeatable)", collect)
     .option("--doc <value>", "Step linked doc path=<value>[,scope=project|global,note=<text>] (repeatable)", collect)
     .option("--decision-text <value>", "Decision log entry text")
     .option("--decision <value>", "Alias for --decision-text")
-    .option("--decision_text <value>", "Alias for --decision-text")
     .option("--decision-rationale <value>", "Decision log entry rationale")
-    .option("--decision_rationale <value>", "Alias for --decision-rationale")
     .option("--decision-evidence <value>", "Decision log entry evidence")
-    .option("--decision_evidence <value>", "Alias for --decision-evidence")
     .option("--discovery-text <value>", "Discovery log entry text")
     .option("--discovery <value>", "Alias for --discovery-text")
-    .option("--discovery_text <value>", "Alias for --discovery-text")
     .option("--validation-text <value>", "Validation log entry text")
     .option("--validation <value>", "Alias for --validation-text")
-    .option("--validation_text <value>", "Alias for --validation-text")
     .option("--validation-command <value>", "Validation log entry command")
-    .option("--validation_command <value>", "Alias for --validation-command")
     .option("--validation-expected <value>", "Validation log entry expected outcome")
-    .option("--validation_expected <value>", "Alias for --validation-expected")
     .option("--depth <value>", "Show depth: brief|standard|deep (default: brief)")
     .option("--fields <value>", "Comma-separated field projection for show output")
     .option("--steps <value>", "Comma-separated step ids/orders for materialize")
     .option("--materialize-type <value>", "Item type for materialized steps (default: Task)")
-    .option("--materialize_type <value>", "Alias for --materialize-type")
     .option("--materialize-parent <value>", "Parent item id for materialized children (default: the plan)")
-    .option("--materialize_parent <value>", "Alias for --materialize-parent")
     .option("--materialize-tags <value>", "Comma-separated tags for materialized children")
-    .option("--materialize_tags <value>", "Alias for --materialize-tags")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "Mutation message")
-    .option("--force", "Force ownership override")
+    .option("--force", "Force ownership override");
+  // Hidden pure snake_case underscore-duplicate aliases (kept parse-functional,
+  // omitted from --help to save agent context).
+  for (const [flags, description] of [
+    ["--resume_context <value>", "Alias for --resume-context"],
+    ["--from_search <value>", "Alias for --from-search"],
+    ["--step_title <value>", "Alias for --step-title"],
+    ["--step_body <value>", "Alias for --step-body"],
+    ["--step_owner <value>", "Alias for --step-owner"],
+    ["--step_status <value>", "Alias for --step-status"],
+    ["--step_evidence <value>", "Alias for --step-evidence"],
+    ["--step_blocked_reason <value>", "Alias for --step-blocked-reason"],
+    ["--step_replacement <value>", "Alias for --step-replacement"],
+    ["--link_kind <value>", "Alias for --link-kind"],
+    ["--link_note <value>", "Alias for --link-note"],
+    ["--promote_to_item_dep", "Alias for --promote-to-item-dep"],
+    ["--allow_multiple_active", "Alias for --allow-multiple-active"],
+    ["--decision_text <value>", "Alias for --decision-text"],
+    ["--decision_rationale <value>", "Alias for --decision-rationale"],
+    ["--decision_evidence <value>", "Alias for --decision-evidence"],
+    ["--discovery_text <value>", "Alias for --discovery-text"],
+    ["--validation_text <value>", "Alias for --validation-text"],
+    ["--validation_command <value>", "Alias for --validation-command"],
+    ["--validation_expected <value>", "Alias for --validation-expected"],
+    ["--materialize_type <value>", "Alias for --materialize-type"],
+    ["--materialize_parent <value>", "Alias for --materialize-parent"],
+    ["--materialize_tags <value>", "Alias for --materialize-tags"],
+  ] as const) {
+    addHiddenOption(planCommand, flags, description, false);
+  }
+  for (const [flags, description] of [
+    ["--blocked_by <value>", "Alias for --blocked-by"],
+    ["--depends_on <value>", "Alias for --depends-on"],
+  ] as const) {
+    addHiddenOption(planCommand, flags, description, true);
+  }
+  planCommand
     .action(async (subcommand: string | undefined, id: string | undefined, stepRef: string | undefined, reorderToken: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
@@ -680,18 +728,20 @@ export function registerMutationCommands(program: Command): void {
       }
     });
 
-  program
+  const schemaCommand = program
     .command("schema")
     .argument("[subcommand]", "Schema subcommand: add-type")
     .argument("[name]", "Custom item type name (for add-type)")
     .option("--description <text>", "Human description for the custom item type")
     .option("--default-status <status>", "Default status hint recorded for the custom item type")
-    .option("--default_status <status>", "Alias for --default-status")
     .option("--folder <dir>", "Storage folder for items of this custom type")
     .option("--alias <name>", "Alias for the custom type (repeatable, csv-friendly)", collect)
     .option("--author <value>", "Mutation author")
     .option("--force", "Force ownership/lock override")
-    .description("Manage config-driven runtime schema: register custom item types into .agents/pm/schema/types.json.")
+    .description("Manage config-driven runtime schema: register custom item types into .agents/pm/schema/types.json.");
+  // Hidden pure snake_case underscore-duplicate alias.
+  addHiddenOption(schemaCommand, "--default_status <status>", "Alias for --default-status", false);
+  schemaCommand
     .action(async (
       subcommand: string | undefined,
       name: string | undefined,

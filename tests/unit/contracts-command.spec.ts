@@ -613,7 +613,7 @@ describe("contracts command runtime", () => {
           flags: ["--preset", "--defaults", "--author", "--agent-guidance", "--with-packages"],
         },
         { command: "restore", flags: ["--author", "--message", "--force"] },
-        { command: "delete", flags: ["--author", "--message", "--force"] },
+        { command: "delete", flags: ["--dry-run", "--author", "--message", "--force"] },
         {
           command: "test",
           flags: [

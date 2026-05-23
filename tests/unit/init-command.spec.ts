@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { runInit } from "../../src/cli/commands/init.js";
+import { runInit, summarizeInitResult } from "../../src/cli/commands/init.js";
 import { PM_REQUIRED_SUBDIRS } from "../../src/core/shared/constants.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks, type ExtensionHookRegistry } from "../../src/core/extensions/index.js";
 import { readSettings } from "../../src/core/store/settings.js";
@@ -38,6 +38,49 @@ describe("runInit", () => {
           expect(result.created_dirs).toContain(expectedPath);
         }
       }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("summarizes an init result into a concise projection without the full settings tree", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-summary-"));
+    try {
+      const result = await runInit("acme", { path: tempRoot }, { defaults: true });
+      const summary = summarizeInitResult(result);
+
+      // Drops the verbose settings tree but keeps the surfaced essentials.
+      expect(summary).not.toHaveProperty("settings");
+      expect(summary.ok).toBe(true);
+      expect(summary.path).toBe(tempRoot);
+      expect(summary.id_prefix).toBe("acme-");
+      expect(summary.governance_preset).toBe(result.governance_preset);
+      expect(summary.telemetry).toEqual({
+        enabled: result.settings.telemetry.enabled,
+        capture_level: result.settings.telemetry.capture_level,
+      });
+      expect(summary.output_format).toBe(result.settings.output.default_format);
+      expect(summary.created_dirs_count).toBe(result.created_dirs.length);
+      expect(summary.created_dirs).toEqual(result.created_dirs);
+      // No init-only information is lost: all warnings (including already_exists)
+      // and next steps survive into the concise summary.
+      expect(summary.warnings).toEqual(result.warnings);
+      expect(summary.warnings).toContain(`already_exists:${tempRoot}`);
+      expect(summary.next_steps).toEqual(result.next_steps);
+      expect(summary.agent_guidance).toEqual(result.agent_guidance);
+      expect(summary.hint).toContain("--verbose");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("carries an installed-packages summary into the concise projection when present", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-summary-pkgs-"));
+    try {
+      const result = await runInit("pm", { path: tempRoot }, { defaults: true, withPackages: true });
+      const summary = summarizeInitResult(result);
+      expect(summary.installed_packages).toEqual(result.installed_packages);
+      expect(summary.installed_packages?.installed_all).toBe(true);
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

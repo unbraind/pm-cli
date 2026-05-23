@@ -8,6 +8,7 @@ import {
 } from "../../core/item/parent-reference-policy.js";
 import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
 import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
+import { resolvePriority } from "../../core/item/priority.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import {
   canonicalizeCommandOptionKey,
@@ -1433,11 +1434,7 @@ function selectAuthor(explicitAuthor: string | undefined, settingsAuthor: string
 }
 
 function ensurePriority(rawPriority: string): 0 | 1 | 2 | 3 | 4 {
-  const parsed = parseOptionalNumber(rawPriority, "priority (expected 0..4: 0=critical, 1=high, 2=medium, 3=low, 4=minimal)");
-  if (![0, 1, 2, 3, 4].includes(parsed)) {
-    throw new PmCliError("Priority must be 0..4 (0=critical, 1=high, 2=medium, 3=low, 4=minimal)", EXIT_CODE.USAGE);
-  }
-  return parsed as 0 | 1 | 2 | 3 | 4;
+  return resolvePriority(rawPriority);
 }
 
 function mergeCreateOptionsWithTemplate(

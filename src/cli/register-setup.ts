@@ -341,11 +341,12 @@ export function registerSetupCommands(program: Command): void {
     .option("--author <value>", "Set the default mutation author for this project")
     .option("--agent-guidance <mode>", "Agent guidance mode: ask|add|skip|status")
     .option("--with-packages", "Install all bundled first-party packages during initialization")
+    .option("--verbose", "Include the full resolved settings tree in the output (default output is a concise summary)")
     .description("Initialize pm storage and defaults for the current workspace.")
     .action(async (prefix: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runInit } = await loadSetupCommandsModule();
+      const { runInit, summarizeInitResult } = await loadSetupCommandsModule();
       const result = await runInit(
         prefix,
         globalOptions,
@@ -357,7 +358,11 @@ export function registerSetupCommands(program: Command): void {
           withPackages: options.withPackages === true,
         },
       );
-      printResult(result, globalOptions);
+      // Default (toon) output is a concise summary to minimize agent token cost.
+      // --json consumers and --verbose both receive the full settings tree.
+      const verbose = options.verbose === true;
+      const emitFullTree = verbose || globalOptions.json === true;
+      printResult(emitFullTree ? result : summarizeInitResult(result), globalOptions);
       if (globalOptions.profile) {
         printError(`profile:command=init took_ms=${Date.now() - startedAt}`);
       }

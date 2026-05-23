@@ -40,9 +40,11 @@ pm create --create-mode progressive \
   --description "..." \
   --type Epic \
   --status open \
-  --priority 1 \
+  --priority high \
   --comment "author=$PM_AUTHOR,created_at=now,text=Duplicate check evidence: ..."
 ```
+
+Priority accepts either numeric `0..4` or named aliases `critical`, `high`, `medium`, `low`, and `minimal`.
 
 Create hierarchy from broad to narrow: `Epic` -> `Feature` -> `Task` or `Issue`. Use `--parent <id>` for child items.
 

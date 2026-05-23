@@ -27,7 +27,7 @@ export { runHealth } from "./health.js";
 export { runHistory } from "./history.js";
 export { runHistoryRedact, type HistoryRedactCommandOptions, type HistoryRedactResult } from "./history-redact.js";
 export { runHistoryRepair, type HistoryRepairCommandOptions, type HistoryRepairResult } from "./history-repair.js";
-export { runInit } from "./init.js";
+export { runInit, summarizeInitResult, type InitConciseResult } from "./init.js";
 export { runLearnings } from "./learnings.js";
 export { runList, type ListOptions } from "./list.js";
 export { runNotes } from "./notes.js";

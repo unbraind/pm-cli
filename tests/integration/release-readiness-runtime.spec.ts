@@ -252,20 +252,14 @@ const ISSUE_METADATA_CREATE_FLAG_TOKENS = [
   "--severity",
   "--environment",
   "--repro-steps",
-  "--repro_steps",
   "--resolution",
   "--expected-result",
-  "--expected_result",
   "--actual-result",
-  "--actual_result",
   "--affected-version",
-  "--affected_version",
   "--fixed-version",
-  "--fixed_version",
   "--component",
   "--regression",
   "--customer-impact",
-  "--customer_impact",
 ];
 
 const ISSUE_METADATA_UPDATE_FLAG_TOKENS = [...ISSUE_METADATA_CREATE_FLAG_TOKENS];
@@ -617,10 +611,10 @@ describe("release readiness runtime coverage", () => {
         expect(help.stdout).toContain(flag);
       }
       expect(help.stdout).toContain("--estimated-minutes");
-      expect(help.stdout).toContain("--estimated_minutes");
-      expect(help.stdout).toContain("--acceptance_criteria");
+      expect(help.stdout).not.toContain("--estimated_minutes");
+      expect(help.stdout).not.toContain("--acceptance_criteria");
       expect(help.stdout).toContain("--definition-of-ready");
-      expect(help.stdout).toContain("--definition_of_ready");
+      expect(help.stdout).not.toContain("--definition_of_ready");
       expect(help.stdout).toContain("--order");
       expect(help.stdout).toContain("--rank");
       expect(help.stdout).toContain("--goal");
@@ -629,9 +623,9 @@ describe("release readiness runtime coverage", () => {
       expect(help.stdout).toContain("--impact");
       expect(help.stdout).toContain("--outcome");
       expect(help.stdout).toContain("--why-now");
-      expect(help.stdout).toContain("--why_now");
+      expect(help.stdout).not.toContain("--why_now");
       expect(help.stdout).toContain("--unblock-note");
-      expect(help.stdout).toContain("--unblock_note");
+      expect(help.stdout).not.toContain("--unblock_note");
       expect(help.stdout).toContain("low|med|medium|high|critical");
       expect(help.stdout).toContain("--confidence");
       for (const flag of ISSUE_METADATA_CREATE_FLAG_TOKENS) {
@@ -669,10 +663,10 @@ describe("release readiness runtime coverage", () => {
         expect(help.stdout).toContain(flag);
       }
       expect(help.stdout).toContain("--estimated-minutes");
-      expect(help.stdout).toContain("--estimated_minutes");
-      expect(help.stdout).toContain("--acceptance_criteria");
+      expect(help.stdout).not.toContain("--estimated_minutes");
+      expect(help.stdout).not.toContain("--acceptance_criteria");
       expect(help.stdout).toContain("--definition-of-ready");
-      expect(help.stdout).toContain("--definition_of_ready");
+      expect(help.stdout).not.toContain("--definition_of_ready");
       expect(help.stdout).toContain("--order");
       expect(help.stdout).toContain("--rank");
       expect(help.stdout).toContain("--goal");
@@ -681,10 +675,10 @@ describe("release readiness runtime coverage", () => {
       expect(help.stdout).toContain("--impact");
       expect(help.stdout).toContain("--outcome");
       expect(help.stdout).toContain("--why-now");
-      expect(help.stdout).toContain("--why_now");
+      expect(help.stdout).not.toContain("--why_now");
       expect(help.stdout).toContain("--unblock-note");
-      expect(help.stdout).toContain("--unblock_note");
-      expect(help.stdout).toContain("--dep_remove");
+      expect(help.stdout).not.toContain("--unblock_note");
+      expect(help.stdout).not.toContain("--dep_remove");
       expect(help.stdout).toContain("low|med|medium|high|critical");
       expect(help.stdout).toContain("--confidence");
       for (const flag of ISSUE_METADATA_UPDATE_FLAG_TOKENS) {
@@ -700,9 +694,9 @@ describe("release readiness runtime coverage", () => {
       for (const flag of REQUIRED_UPDATE_MANY_FLAGS) {
         expect(help.stdout).toContain(flag);
       }
-      expect(help.stdout).toContain("--dep_remove");
-      expect(help.stdout).toContain("--type_option");
-      expect(help.stdout).toContain("--allow_audit_update");
+      expect(help.stdout).not.toContain("--dep_remove");
+      expect(help.stdout).not.toContain("--type_option");
+      expect(help.stdout).not.toContain("--allow_audit_update");
       expect(help.stdout).toContain("--confidence");
       for (const flag of ISSUE_METADATA_UPDATE_FLAG_TOKENS) {
         expect(help.stdout).toContain(flag);
@@ -1404,7 +1398,7 @@ describe("release readiness runtime coverage", () => {
         { expectJson: true },
       );
       expect(deleteResult.code).toBe(0);
-      expectTopLevelKeyOrder(deleteResult.json, ["item", "changed_fields", "warnings"]);
+      expectTopLevelKeyOrder(deleteResult.json, ["item", "changed_fields", "dry_run", "warnings"]);
     });
   }, 120_000);
 

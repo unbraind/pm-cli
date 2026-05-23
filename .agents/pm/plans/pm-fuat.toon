@@ -1,0 +1,91 @@
+id: pm-fuat
+title: "CLI ergonomics polish: concise init, help alias collapse, named priorities, package install hints, starter templates, delete dry-run"
+description: "Coordinates the remaining pm-5k2w low-severity backlog into one PR. Two specialized sub-agents (help-output-ergonomics, cli-input-ergonomics) own disjoint file sets; coordinator owns shared files (CHANGELOG, docs, completion, contracts), the L10 default-safety Decision, integration, full test/coverage gate, and the manual temp dogfood. Strong theme: reduce agent-facing CLI token cost and remove naive-input footguns. Links pm-5k2w."
+type: Plan
+status: closed
+priority: 2
+tags[3]: agent-ux,cli,token-efficiency
+created_at: "2026-05-23T17:07:40.015Z"
+updated_at: "2026-05-23T18:17:49.234Z"
+author: claude-code-agent
+resolution: "Completed combined CLI ergonomics plan: concise init, hidden pure snake help aliases, named priorities, package install hints, starter templates, delete dry-run/default-safety, templates dedup integration, shared contracts/completions/docs, manual dogfood, and full release gate."
+expected_result: All plan steps completed with tests/docs/contracts updated and no feature regressions.
+actual_result: All six steps completed; manual dogfood and full release gate passed with 100% coverage and required Sentry/telemetry.
+comments[3]{created_at,author,text}:
+  "2026-05-23T17:50:14.107Z",default-safety-subagent,"L10 evidence from default-safety sub-agent: implemented delete dry-run and gc help clarification in scoped files. Focused verification passed: node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/unit/gc-command.spec.ts tests/integration/help-runtime.spec.ts (46 tests); pnpm exec tsc -p tsconfig.json --noEmit. Handoff: shared contracts/completion remain coordinator-owned if pm contracts/completions should surface delete --dry-run in the integration PR."
+  "2026-05-23T17:56:09.772Z",codex-active-work,"Integration evidence: coordinator added shared docs/changelog plus delete --dry-run contracts/completions after sub-agent lanes. Focused suite passed: 10 files / 203 tests, then post-contract subset passed: 4 files / 143 tests; tsc --noEmit passed. Manual isolated dogfood at /tmp/pm-manual-ergonomics-xTi6M0/project verified init 60 lines vs 193 verbose, hidden --why_now parse, priority high=>1, guide install hint, templates builtin count=4, user template override, delete --dry-run non-mutating target tasks/pm-jwl1.toon, gc --dry-run preview count=5, and delete contracts include --dry-run."
+  "2026-05-23T18:15:38.793Z",codex-active-work,"Final gate evidence: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json passed. Checks ok: build, typecheck, docs-skills, static quality, coverage 104 files / 1568 tests at 100% statements/branches/functions/lines, version policy, secret scan, npx packed smoke (packages=8), package-first dogfood (84 commands), npm pack dry-run, compatibility from 2026.5.18 with validation/health ok, and Sentry/telemetry gate with Sentry critical=0 high=0 total=0 and telemetry finish_error_rate_pct=2.66."
+files[13]{path,scope,note}:
+  CHANGELOG.md,project,"changelog for CLI ergonomics,templates,and default-safety PR"
+  docs/AGENT_GUIDE.md,project,agent guide priority alias docs
+  docs/COMMANDS.md,project,agent-facing priority and templates docs
+  src/cli/commands/completion.ts,project,delete dry-run shell completion
+  src/cli/commands/delete.ts,project,"L10 default-safety implementation: delete preview"
+  src/cli/help-content.ts,project,L10 detailed gc help
+  src/cli/register-mutation.ts,project,L10 command registration for delete dry-run
+  src/cli/register-operations.ts,project,L10 gc default-safety help
+  src/sdk/cli-contracts.ts,project,delete dry-run static contract
+  tests/integration/help-runtime.spec.ts,project,L10 gc help regression
+  tests/unit/completion-command.spec.ts,project,completion regression for delete dry-run
+  tests/unit/contracts-command.spec.ts,project,contract regression for delete dry-run
+  tests/unit/delete-command.spec.ts,project,L10 delete dry-run regression
+tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "manual temp dogfood via dist/cli.js in isolated PM_PATH/PM_GLOBAL_PATH for init,aliases,priorities,package hints,templates,delete dry-run,gc dry-run",null,project,180,null,null,null,null,null,null,null,null,null,null,null,manual dogfood passed at /tmp/pm-manual-ergonomics-xTi6M0/project
+  node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json,null,project,2400,null,null,null,null,null,null,null,null,null,null,null,"full release gate passed with 100 percent coverage,package dogfood,compatibility,secret scan,and required sentry/telemetry"
+  node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/unit/gc-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/delete-command.spec.ts tests/unit/gc-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/templates-command.spec.ts tests/unit/priority.spec.ts tests/unit/option-alias-visibility.spec.ts tests/unit/error-guidance.spec.ts tests/unit/init-command.spec.ts tests/integration/help-runtime.spec.ts --reporter=dot,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused integration regression suite for combined CLI ergonomics PR
+  pnpm exec tsc -p tsconfig.json --noEmit,null,project,240,null,null,null,null,null,null,null,null,null,null,null,typecheck after contract/completion integration
+close_reason: "Completed combined CLI ergonomics plan: concise init, hidden pure snake help aliases, named priorities, package install hints, starter templates, delete dry-run/default-safety, shared contracts/completions/docs, manual dogfood, and full release gate all passed."
+plan_mode: approved
+plan_steps[6]:
+  - id: plan-step-001
+    order: 1
+    title: L1 — concise `pm init` default output with `--verbose` for the full settings tree (cuts ~193-line default)
+    status: completed
+    created_at: "2026-05-23T17:07:40.023Z"
+    updated_at: "2026-05-23T17:26:02.142Z"
+    evidence: L1 done by help-output-subagent. pm init default output cut 193->60 lines via summarizeInitResult() (path/prefix/governance/telemetry/created_dirs_count/all warnings/next_steps); full tree behind --verbose (193 lines) and preserved for --json. Verified in temp dir + init-command.spec green.
+    completed_at: "2026-05-23T17:26:02.142Z"
+    linked_items[1]{id,kind}:
+      pm-5k2w,related
+  - id: plan-step-002
+    order: 2
+    title: L4 — collapse auto-generated snake_case option aliases in `--help` (stop listing --foo_bar separately; cuts ~25% of every help screen)
+    status: completed
+    created_at: "2026-05-23T17:07:52.403Z"
+    updated_at: "2026-05-23T17:26:08.572Z"
+    evidence: "L4 done by help-output-subagent. Pure snake_case underscore-duplicate aliases now hidden from commander --help via Option().hideHelp() (rule: hide iff alias long-flag == kebab flag with -/_ swapped; semantic aliases --fail-on-warn/--local/--active-only/--ac/--rank stay visible). New pure helper src/core/shared/option-alias-visibility.ts (100% covered, in vitest include). create --help 108->92 lines, 0 snake lines; verified --create_mode/--why_now still parse; --fail-on-warn still shown. help-runtime + option-alias-visibility specs green (52 tests)."
+    completed_at: "2026-05-23T17:26:08.572Z"
+  - id: plan-step-003
+    order: 3
+    title: L8 — accept named priority aliases (critical/high/medium/low/minimal ↔ 0..4) on create/update via a shared resolver; consistent wording
+    status: completed
+    created_at: "2026-05-23T17:07:56.060Z"
+    updated_at: "2026-05-23T17:39:41.443Z"
+    evidence: "L8 done by cli-input-subagent. Shared resolvePriority() in src/core/item/priority.ts (100% covered, in vitest include); maps critical/high/medium/low/minimal<->0..4 case-insensitive, numeric 0..4 unchanged, invalid throws USAGE listing both forms. create+update ensurePriority() delegate. Verified: high->1, Critical->0, 3->3, update minimal->4, bogus->helpful error. No accept/reject regression vs old (old already enforced 0..4)."
+    completed_at: "2026-05-23T17:39:41.443Z"
+  - id: plan-step-004
+    order: 4
+    title: "L7 — install hint when invoking a known-but-uninstalled package command (guide/templates/calendar): point to `pm install <pkg>` instead of bare 'Unknown command'"
+    status: completed
+    created_at: "2026-05-23T17:07:59.592Z"
+    updated_at: "2026-05-23T17:39:46.745Z"
+    evidence: "L7 done by cli-input-subagent. error-guidance.ts unknown_command branch now resolves a KNOWN_PACKAGE_COMMAND_HINTS catalog (guide->@unbrained/pm-guide-shell via `pm install guide-shell`; templates->@unbrained/pm-templates; calendar+cal->@unbrained/pm-calendar) and weaves the install command + package name into title/happened/required/examples/next_steps. Existing guidance fields preserved; unknown non-package tokens unchanged. Verified: `pm guide` and `pm cal` (uninstalled) now print the package + install hint."
+    completed_at: "2026-05-23T17:39:46.745Z"
+  - id: plan-step-005
+    order: 5
+    title: L9 — ship starter templates in the pm-templates package so `pm templates` returns a non-empty catalog out of the box
+    status: completed
+    created_at: "2026-05-23T17:08:03.388Z"
+    updated_at: "2026-05-23T17:39:52.998Z"
+    evidence: "L9 done by cli-input-subagent. packages/pm-templates runtime.ts + hand-maintained runtime.js mirror now ship 4 builtin starter templates (bug=Issue, feature=Feature, spike=Task timeboxed, chore=Chore). runTemplatesList returns {templates,count,builtin_templates,user_templates}; runTemplatesShow returns source:builtin|user; user-saved templates override same-name builtins; builtins usable in create-from-template without saving. Verified after `pm install templates`: pm templates -> count:4; templates show bug -> source:builtin with useful scaffold."
+    completed_at: "2026-05-23T17:39:52.998Z"
+  - id: plan-step-006
+    order: 6
+    title: "L10 — default-safety Decision: add `pm delete --dry-run`, clarify gc deletes-by-default in help; keep gc/destructive defaults documented (coordinator owns)"
+    status: completed
+    created_at: "2026-05-23T17:08:07.251Z"
+    updated_at: "2026-05-23T17:50:50.183Z"
+    evidence: "L10 implemented by default-safety sub-agent: pm delete --dry-run previews target_path without removing item or appending delete history; gc help states delete-by-default and dry-run preview. Verified focused delete/gc/help suite (46 tests) and tsc --noEmit green. Shared contracts/completion left for coordinator ownership."
+    completed_at: "2026-05-23T17:50:50.183Z"
+body: ""

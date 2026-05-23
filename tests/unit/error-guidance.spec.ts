@@ -125,6 +125,40 @@ describe("pm cli error guidance context plumbing", () => {
     expect(guidance).not.toContain("pm todos --help");
   });
 
+  it("adds a concrete install hint for known package-provided commands", () => {
+    const guideEnvelope = formatCommanderErrorForJson("unknown command 'guide'", "help", "Task|Issue", 2, {
+      unknownCommandExamples: ["pm --help"],
+      unknownCommandNextSteps: ["Verify spelling and active extensions, then rerun."],
+    });
+    expect(guideEnvelope.code).toBe("unknown_command");
+    expect(guideEnvelope.detail).toContain("@unbrained/pm-guide-shell");
+    expect(guideEnvelope.examples).toContain("pm install guide-shell");
+    expect(guideEnvelope.next_steps?.some((step) => step.includes("pm install guide-shell"))).toBe(true);
+    expect(guideEnvelope.next_steps).toContain("Verify spelling and active extensions, then rerun.");
+
+    const templatesGuidance = formatCommanderErrorForDisplay("unknown command 'templates'", "help", "Task|Issue");
+    expect(templatesGuidance).toContain("@unbrained/pm-templates");
+    expect(templatesGuidance).toContain("pm install templates");
+
+    const calGuidance = formatCommanderErrorForDisplay("unknown command 'cal'", "help", "Task|Issue");
+    expect(calGuidance).toContain("@unbrained/pm-calendar");
+    expect(calGuidance).toContain("pm install calendar");
+
+    const calendarEnvelope = formatCommanderErrorForJson("unknown command 'calendar'", "help", "Task|Issue", 2);
+    expect(calendarEnvelope.examples).toContain("pm install calendar");
+  });
+
+  it("does not add a package install hint for genuinely unknown commands", () => {
+    const envelope = formatCommanderErrorForJson("unknown command 'frobnicate'", "help", "Task|Issue", 2, {
+      unknownCommandExamples: ["pm --help"],
+      unknownCommandNextSteps: ["Verify spelling and active extensions, then rerun."],
+    });
+    expect(envelope.code).toBe("unknown_command");
+    expect(envelope.detail).not.toContain("@unbrained/");
+    expect(envelope.examples).toEqual(["pm --help"]);
+    expect(envelope.next_steps).toEqual(["Verify spelling and active extensions, then rerun."]);
+  });
+
   it("normalizes commander required-option labels before building retry guidance", () => {
     const envelope = formatCommanderErrorForJson(
       "error: required option '--description, -d <value>' not specified",

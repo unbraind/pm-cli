@@ -313,6 +313,20 @@ describe("generateBashScript", () => {
     expect(script).toContain("--dry-run --scope");
   });
 
+  it("includes delete dry-run across completion scripts", () => {
+    const bashScript = generateBashScript();
+    expect(bashScript).toContain("delete)");
+    expect(bashScript).toContain("--dry-run --author --message --force");
+
+    const zshScript = generateZshScript();
+    expect(zshScript).toContain("delete)");
+    expect(zshScript).toContain("--dry-run[Preview the item file that would be deleted without mutating]");
+
+    const fishScript = generateFishScript();
+    expect(fishScript).toContain("__fish_seen_subcommand_from delete");
+    expect(fishScript).toContain("-l dry-run");
+  });
+
   it("includes calendar-specific flags", () => {
     const script = generateBashScript();
     expect(script).toContain("calendar|cal");

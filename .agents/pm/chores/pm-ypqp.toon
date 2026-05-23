@@ -2,15 +2,31 @@ id: pm-ypqp
 title: Deduplicate templates package runtime and legacy command implementation
 description: "Duplicate audit 2026-05-22: jscpd found src/cli/commands/templates.ts and packages/pm-templates/extensions/templates/runtime.ts carry nearly the same template normalization, option parsing, stored-template document parsing, reading, create execution, and list/apply branches. Representative clones include templates.ts:13-89 vs runtime.ts:63-138, templates.ts:89-113 vs runtime.ts:142-166, templates.ts:134-168 vs runtime.ts:180-214, and templates.ts:171-243 vs runtime.ts:211-283. Search found closed extraction item pm-2fgn and open package-first parent pm-59gj, but no active follow-up for this code drift. Fix by making the package runtime call a shared implementation or moving the legacy command to the package-backed runtime path, while preserving standalone package smoke behavior."
 type: Chore
-status: open
+status: closed
 priority: 1
 tags[4]: code-quality,dedup,packages,templates
 created_at: "2026-05-22T18:59:30.799Z"
-updated_at: "2026-05-22T19:00:50.695Z"
+updated_at: "2026-05-23T18:17:50.947Z"
 author: codex-duplication-audit
 acceptance_criteria: "Template name normalization, stored-template parsing, create-option mapping, and apply/list execution are single-sourced; src command and package runtime no longer diverge on template semantics; package smoke tests, templates unit tests, and pnpm build pass."
 parent: pm-rnpb
-files[2]{path,scope,note}:
+resolution: Removed templates runtime duplication by making core templates command the single source and package runtime delegate through SDK.
+expected_result: Template normalization/parsing/loading/list/show behavior is single-sourced while package smoke behavior remains intact.
+actual_result: "Core owns builtins and template parsing; package runtime delegates; templates tests, manual dogfood, and full release gate passed."
+comments[2]{created_at,author,text}:
+  "2026-05-23T17:46:02.570Z",templates-dedup-subagent,"Investigation note: current diff already adds builtin starter templates to package runtime/tests; core src/cli/commands/templates.ts still owns older stored-template parsing and loadCreateTemplateOptions. Scoped plan is to make src/cli/commands/templates.ts the single source including builtin behavior, then reduce package runtime ts/js to SDK-runtime delegation so standalone package behavior still loads through PM_CLI_PACKAGE_ROOT."
+  "2026-05-23T17:49:28.219Z",templates-dedup-subagent,"Evidence: implemented templates dedup lane. src/cli/commands/templates.ts now owns builtin starter templates, template name normalization, stored-template parsing, option extraction, list/show resolution, and loadCreateTemplateOptions. packages/pm-templates/extensions/templates/runtime.ts and runtime.js now delegate save/list/show/loadCreateTemplateOptions to dist/sdk/index.js, preserving PM_CLI_PACKAGE_ROOT standalone loading while removing duplicated parser/normalizer code. Verification passed: node scripts/run-tests.mjs test -- tests/unit/templates-command.spec.ts (9 tests), pnpm build, pnpm exec tsc --noEmit, and linked pm test run test-local-mpin6hym-vc41rl passed all 3 commands."
+files[4]{path,scope,note}:
+  packages/pm-templates/extensions/templates/runtime.js,project,compiled package runtime delegation mirror
   packages/pm-templates/extensions/templates/runtime.ts,project,package runtime duplicate
   src/cli/commands/templates.ts,project,legacy template command duplicate
+  tests/unit/templates-command.spec.ts,project,existing package/core template regression coverage for builtin and override behavior
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/templates-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm exec tsc --noEmit,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpin6hym-vc41rl,test,passed,"2026-05-23T17:48:02.496Z","2026-05-23T17:48:14.062Z","2026-05-23T17:48:14.062Z",null,null,2,0,0,null,null,null
+  test-local-mpin7qrs-ye7vyj,test,passed,"2026-05-23T17:48:57.272Z","2026-05-23T17:49:12.136Z","2026-05-23T17:49:12.137Z",null,null,3,0,0,null,null,null
+close_reason: "Templates runtime duplication removed: core templates command is single source for parsing/builtins/loadCreateTemplateOptions and package runtime delegates through SDK; templates tests, build, typecheck, manual dogfood, and full release gate passed."
 body: ""
