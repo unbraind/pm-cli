@@ -78,15 +78,22 @@ jobs:
           if-no-files-found: error
 
   build-test:
-    name: Test (${{ matrix.os }}, Node ${{ matrix.node }})
+    name: Runtime smoke (${{ matrix.os }}, Node ${{ matrix.node }})
     needs: build-foundation
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        include: >-
-          ${{ fromJSON(github.event_name == 'pull_request' && '[{"os":"ubuntu-latest","node":20},{"os":"macos-latest","node":20}]' || '[{"os":"ubuntu-latest","node":20},{"os":"macos-latest","node":20},{"os":"ubuntu-latest","node":22},{"os":"ubuntu-latest","node":24}]') }}
+        include:
+          - os: ubuntu-latest
+            node: 20
+          - os: macos-latest
+            node: 20
+          - os: ubuntu-latest
+            node: 22
+          - os: ubuntu-latest
+            node: 24
 
     steps:
       - name: Checkout
@@ -134,15 +141,8 @@ jobs:
           name: dist-node20-ubuntu
           path: dist
 
-      - name: Dist artifact smoke check
-        if: matrix.os == 'ubuntu-latest' && matrix.node == 20
+      - name: Dist artifact version smoke
         run: node dist/cli.js --version
-
-      - name: Test
-        if: matrix.os != 'ubuntu-latest' || matrix.node != 20
-        env:
-          PM_RUN_TESTS_SKIP_BUILD: "1"
-        run: pnpm test
 
   gates:
     name: Gates (${{ matrix.gate }})

@@ -6,8 +6,11 @@ status: closed
 priority: 2
 tags[0]:
 created_at: "2026-05-23T11:36:26.851Z"
-updated_at: "2026-05-23T13:07:28.656Z"
+updated_at: "2026-05-23T16:00:14.733Z"
 author: claude-code-agent
+resolution: "Completed: pm schema add-type and invalid-type error hint plan fully executed."
+expected_result: "The add-type plan delivers command implementation, wiring, docs, tests, dogfood, and review hardening."
+actual_result: "All six plan steps are marked completed with evidence; PR #49 merged after full gate, manual dogfood, and AI-review fixes."
 close_reason: "Plan complete — all 6 steps executed and shipped via PR #49 (squash-merged to main as 7ef3c3b7). Delivered pm schema add-type + discoverable invalid-type hint with full wiring, docs, 100% coverage (1528 tests), and two rounds of AI-review hardening (alias collision guards, atomic-write cleanup, MCP top-level args, hook-warning surfacing, no-op --message removal, shell-safe escaping). Implements pm-e1va."
 plan_mode: draft
 plan_scope: "Add a `pm schema add-type` mutation command that registers custom item types into .agents/pm/schema/types.json, and make the create/update invalid-type error point agents to it. Part (a) merge already shipped; this slice delivers (b) the register CLI and (c) the discoverable error."

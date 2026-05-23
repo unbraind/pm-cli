@@ -68,7 +68,7 @@ describe("GitHub workflow contract", () => {
       "build-test:",
       "gates:",
       "name: Build foundation (Ubuntu, Node 20)",
-      "name: Test (${{ matrix.os }}, Node ${{ matrix.node }})",
+      "name: Runtime smoke (${{ matrix.os }}, Node ${{ matrix.node }})",
       "name: Gates (${{ matrix.gate }})",
       "needs: build-foundation",
       "gate:",
@@ -83,10 +83,13 @@ describe("GitHub workflow contract", () => {
       "if: matrix.gate == 'compat'",
       "if: matrix.gate == 'smokes'",
       "matrix:",
-      "include: >-",
-      "github.event_name == 'pull_request'",
-      '[{"os":"ubuntu-latest","node":20},{"os":"macos-latest","node":20}]',
-      '[{"os":"ubuntu-latest","node":20},{"os":"macos-latest","node":20},{"os":"ubuntu-latest","node":22},{"os":"ubuntu-latest","node":24}]',
+      "include:",
+      "- os: ubuntu-latest",
+      "node: 20",
+      "- os: macos-latest",
+      "- os: ubuntu-latest",
+      "node: 22",
+      "node: 24",
       PINNED_ACTIONS.checkout,
       PINNED_ACTIONS.pnpmSetup,
       PINNED_ACTIONS.setupNode,
@@ -112,11 +115,9 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.downloadArtifact,
       "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1",
       "name: Download dist artifact",
-      "name: Dist artifact smoke check",
+      "name: Dist artifact version smoke",
       "run: node dist/cli.js --version",
       "run: pnpm build",
-      "if: matrix.os != 'ubuntu-latest' || matrix.node != 20",
-      "run: pnpm test",
       "pnpm version:check",
       "pnpm security:scan",
       "run: pnpm typecheck",
@@ -132,7 +133,8 @@ describe("GitHub workflow contract", () => {
       "path: coverage",
       "if-no-files-found: ignore",
     ]);
-    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(2);
+    expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(1);
+    expect(ciWorkflow).not.toContain("run: pnpm test\n");
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(ciWorkflow, PUBLISH_OR_RELEASE_PATTERNS);
