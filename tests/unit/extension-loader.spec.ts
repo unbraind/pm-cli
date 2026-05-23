@@ -21,6 +21,7 @@ import {
   type ExtensionManifest,
 } from "../../src/core/extensions/loader.js";
 import { readSettings } from "../../src/core/store/settings.js";
+import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 async function createExtension(
@@ -29,18 +30,13 @@ async function createExtension(
   manifest: Partial<ExtensionManifest> | null,
   entrySource?: string,
 ): Promise<void> {
-  const extensionDir = path.join(root, directory);
-  await mkdir(extensionDir, { recursive: true });
-
-  if (manifest !== null) {
-    await writeFile(path.join(extensionDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
-  }
-
-  if (entrySource !== undefined && manifest?.entry) {
-    const entryPath = path.join(extensionDir, manifest.entry);
-    await mkdir(path.dirname(entryPath), { recursive: true });
-    await writeFile(entryPath, entrySource, "utf8");
-  }
+  await writeTestExtension({
+    root,
+    directory,
+    manifest,
+    entryFilename: typeof manifest?.entry === "string" ? manifest.entry : "index.mjs",
+    entrySource: entrySource ?? null,
+  });
 }
 
 async function loadSettings(context: TempPmContext) {

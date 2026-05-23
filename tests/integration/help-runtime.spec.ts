@@ -1,19 +1,9 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { writeTestExtension } from "../helpers/extensions.js";
+import { expectJsonErrorEnvelope, parseJsonErrorEnvelope } from "../helpers/jsonErrorEnvelope.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
-
-async function createProjectExtension(
-  pmPath: string,
-  directory: string,
-  manifest: Record<string, unknown>,
-  entrySource: string,
-): Promise<void> {
-  const extensionRoot = path.join(pmPath, "extensions", directory);
-  await mkdir(extensionRoot, { recursive: true });
-  await writeFile(path.join(extensionRoot, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
-  await writeFile(path.join(extensionRoot, "index.mjs"), entrySource, "utf8");
-}
 
 function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict"): void {
   const result = context.runCli(["config", "project", "set", "governance-preset", "--policy", preset, "--json"], {
@@ -101,13 +91,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
       const jsonHelp = context.runCli(["beads", "--help", "--json"]);
       expect(jsonHelp.code).toBe(2);
-      const envelope = JSON.parse(jsonHelp.stderr) as {
-        code: string;
-        title: string;
-        exit_code: number;
-        examples?: string[];
-        recovery?: { attempted_command?: string; normalized_args?: string[] };
-      };
+      const envelope = parseJsonErrorEnvelope(jsonHelp.stderr);
       expect(envelope.code).toBe("unknown_command");
       expect(envelope.title).toContain("Unknown command beads");
       expect(envelope.exit_code).toBe(2);
@@ -141,16 +125,18 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("applies help_format service overrides for commander usage errors", async () => {
     await withTempPmPath(async (context) => {
-      await createProjectExtension(
-        context.pmPath,
-        "help-format-service",
-        {
+      await writeTestExtension({
+        root: context.pmPath,
+        placement: "projectRoot",
+        directory: "help-format-service",
+        manifest: {
           name: "help-format-service",
           version: "1.0.0",
           entry: "./index.mjs",
           capabilities: ["services"],
         },
-        [
+        entryFilename: "index.mjs",
+        entrySource: [
           "export default {",
           "  activate(api) {",
           "    api.registerService('help_format', (context) => {",
@@ -162,7 +148,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
           "};",
           "",
         ].join("\n"),
-      );
+      });
 
       const usage = context.runCli(["list-open", "--bogus"]);
       expect(usage.code).toBe(2);
@@ -436,16 +422,18 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
   it("surfaces extension command schema details in help output and JSON payloads", async () => {
     await withTempPmPath(async (context) => {
-      await createProjectExtension(
-        context.pmPath,
-        "migrate-asset-help",
-        {
+      await writeTestExtension({
+        root: context.pmPath,
+        placement: "projectRoot",
+        directory: "migrate-asset-help",
+        manifest: {
           name: "migrate-asset-help",
           version: "1.0.0",
           entry: "./index.mjs",
           capabilities: ["commands", "schema"],
         },
-        [
+        entryFilename: "index.mjs",
+        entrySource: [
           "export default {",
           "  activate(api) {",
           "    api.registerCommand({",
@@ -473,7 +461,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
           "};",
           "",
         ].join("\n"),
-      );
+      });
 
       const textHelp = context.runCli(["migrate-asset", "--help"]);
       expect(textHelp.code).toBe(0);
@@ -534,24 +522,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
         "--json",
       ]);
       expect(usage.code).toBe(2);
-      const envelope = JSON.parse(usage.stderr) as {
-        type: string;
-        code: string;
-        title: string;
-        detail: string;
-        required: string;
-        exit_code: number;
-        examples?: string[];
-        next_steps?: string[];
-        recovery?: {
-          attempted_command?: string;
-          normalized_args?: string[];
-          provided_fields?: string[];
-          missing?: string[];
-          suggested_retry?: string;
-        };
-      };
-      expect(envelope).toMatchObject({
+      const envelope = expectJsonErrorEnvelope(usage.stderr, {
         type: "urn:pm-cli:error:missing_required_option",
         code: "missing_required_option",
         title: "Missing required option --type <value>",
@@ -593,14 +564,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
       const usage = context.runCli(["update", itemId ?? "", "--reminder", "text=missing-at", "--json"]);
       expect(usage.code).toBe(2);
-      const envelope = JSON.parse(usage.stderr) as {
-        code: string;
-        recovery?: {
-          provided_fields?: string[];
-          missing?: string[];
-          suggested_retry?: string;
-        };
-      };
+      const envelope = parseJsonErrorEnvelope(usage.stderr);
       expect(envelope.code).toBe("invalid_argument_value");
       expect(envelope.recovery?.provided_fields).toEqual(expect.arrayContaining(["--json", "--reminder"]));
       expect(envelope.recovery?.missing ?? []).not.toContain("--reminder");
@@ -670,15 +634,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
       const usage = context.runCli(["create", "--title", "Asset title", "--description", "Asset description", "--type", "Asset", "--json"]);
       expect(usage.code).toBe(2);
-      const envelope = JSON.parse(usage.stderr) as {
-        type: string;
-        code: string;
-        title: string;
-        detail: string;
-        required: string;
-        exit_code: number;
-      };
-      expect(envelope).toMatchObject({
+      const envelope = expectJsonErrorEnvelope(usage.stderr, {
         type: "urn:pm-cli:error:missing_required_option",
         code: "missing_required_option",
         title: "Missing required options",
@@ -774,12 +730,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
       const blocked = context.runCli(["comments", id, "--add", "audit note", "--author", "owner-b", "--json"]);
       expect(blocked.code).toBe(4);
-      const blockedEnvelope = JSON.parse(blocked.stderr) as {
-        code: string;
-        required: string;
-        next_steps?: string[];
-      };
-      expect(blockedEnvelope.code).toBe("ownership_conflict");
+      const blockedEnvelope = expectJsonErrorEnvelope(blocked.stderr, { code: "ownership_conflict" });
       expect(blockedEnvelope.required).toContain("--allow-audit-comment");
       expect(blockedEnvelope.next_steps?.some((step) => step.includes("--allow-audit-comment"))).toBe(true);
 
@@ -820,12 +771,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
       const blockedNote = context.runCli(["notes", id, "--add", "audit note", "--author", "owner-b", "--json"]);
       expect(blockedNote.code).toBe(4);
-      const blockedNoteEnvelope = JSON.parse(blockedNote.stderr) as {
-        code: string;
-        required: string;
-        next_steps?: string[];
-      };
-      expect(blockedNoteEnvelope.code).toBe("ownership_conflict");
+      const blockedNoteEnvelope = expectJsonErrorEnvelope(blockedNote.stderr, { code: "ownership_conflict" });
       expect(blockedNoteEnvelope.required).toContain("--allow-audit-note");
       expect(blockedNoteEnvelope.required).toContain("--allow-audit-comment");
       expect(blockedNoteEnvelope.next_steps?.some((step) => step.includes("--allow-audit-note"))).toBe(true);
@@ -848,12 +794,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
       const blockedLearning = context.runCli(["learnings", id, "--add", "audit learning", "--author", "owner-b", "--json"]);
       expect(blockedLearning.code).toBe(4);
-      const blockedLearningEnvelope = JSON.parse(blockedLearning.stderr) as {
-        code: string;
-        required: string;
-        next_steps?: string[];
-      };
-      expect(blockedLearningEnvelope.code).toBe("ownership_conflict");
+      const blockedLearningEnvelope = expectJsonErrorEnvelope(blockedLearning.stderr, { code: "ownership_conflict" });
       expect(blockedLearningEnvelope.required).toContain("--allow-audit-learning");
       expect(blockedLearningEnvelope.required).toContain("--allow-audit-comment");
       expect(blockedLearningEnvelope.next_steps?.some((step) => step.includes("--allow-audit-learning"))).toBe(true);
@@ -906,12 +847,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
       const blocked = context.runCli(["release", id, "--author", "owner-b", "--json"]);
       expect(blocked.code).toBe(4);
-      const blockedEnvelope = JSON.parse(blocked.stderr) as {
-        code: string;
-        required: string;
-        next_steps?: string[];
-      };
-      expect(blockedEnvelope.code).toBe("ownership_conflict");
+      const blockedEnvelope = expectJsonErrorEnvelope(blocked.stderr, { code: "ownership_conflict" });
       expect(blockedEnvelope.required).toContain("--allow-audit-release");
       expect(blockedEnvelope.next_steps?.some((step) => step.includes("--allow-audit-release"))).toBe(true);
 
@@ -981,16 +917,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
 
       const jsonConflict = context.runCli(["update", id, "--status", "in_progress", "--author", "owner-b", "--json"]);
       expect(jsonConflict.code).toBe(4);
-      const envelope = JSON.parse(jsonConflict.stderr) as {
-        type: string;
-        code: string;
-        title: string;
-        detail: string;
-        required: string;
-        exit_code: number;
-        next_steps?: string[];
-      };
-      expect(envelope).toMatchObject({
+      const envelope = expectJsonErrorEnvelope(jsonConflict.stderr, {
         type: "urn:pm-cli:error:ownership_conflict",
         code: "ownership_conflict",
         title: "Ownership conflict",

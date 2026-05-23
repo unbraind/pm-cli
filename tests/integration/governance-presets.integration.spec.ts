@@ -1,37 +1,9 @@
-import { spawnSync } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { runDirectDistCli } from "../helpers/cliRunner.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
-
-interface CliInvocationResult {
-  code: number | null;
-  stdout: string;
-  stderr: string;
-  json?: unknown;
-}
-
-function distCliPath(): string {
-  return path.resolve(process.cwd(), "dist/cli.js");
-}
-
-function runDistCli(args: string[], env: NodeJS.ProcessEnv, expectJson = false): CliInvocationResult {
-  const completed = spawnSync(process.execPath, [distCliPath(), ...args], {
-    cwd: process.cwd(),
-    env,
-    encoding: "utf8",
-  });
-  const result: CliInvocationResult = {
-    code: completed.status,
-    stdout: completed.stdout ?? "",
-    stderr: completed.stderr ?? "",
-  };
-  if (expectJson && result.stdout.trim().length > 0) {
-    result.json = JSON.parse(result.stdout);
-  }
-  return result;
-}
 
 function createCliEnv(tempRoot: string): NodeJS.ProcessEnv {
   return {
@@ -52,7 +24,7 @@ describe("governance presets", () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-governance-init-minimal-"));
     try {
       const env = createCliEnv(tempRoot);
-      const init = runDistCli(["init", "--json", "--preset", "minimal"], env, true);
+      const init = runDirectDistCli(["init", "--json", "--preset", "minimal"], { env, expectJson: true });
       expect(init.code).toBe(0);
       const payload = init.json as {
         governance_preset: string;
@@ -85,7 +57,7 @@ describe("governance presets", () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-governance-init-strict-"));
     try {
       const env = createCliEnv(tempRoot);
-      const init = runDistCli(["init", "--json", "--preset", "strict"], env, true);
+      const init = runDirectDistCli(["init", "--json", "--preset", "strict"], { env, expectJson: true });
       expect(init.code).toBe(0);
       const payload = init.json as {
         governance_preset: string;

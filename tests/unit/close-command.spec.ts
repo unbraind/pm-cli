@@ -5,67 +5,24 @@ import { describe, expect, it } from "vitest";
 import { runClose } from "../../src/cli/commands/close.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
+import { createTestItemId, type TestItemStatus } from "../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 interface CreateTaskOptions {
-  status?: "draft" | "open" | "in_progress" | "blocked" | "closed" | "canceled";
+  status?: TestItemStatus;
   assignee?: string;
   parent?: string;
 }
 
 function createTask(context: TempPmContext, title: string, options: CreateTaskOptions = {}): string {
-  const created = context.runCli(
-    [
-      "create",
-      "--json",
-      "--title",
-      title,
-      "--description",
-      `${title} description`,
-      "--type",
-      "Task",
-      "--status",
-      options.status ?? "open",
-      "--priority",
-      "1",
-      "--tags",
-      "close,unit",
-      "--body",
-      "",
-      "--deadline",
-      "none",
-      "--estimate",
-      "20",
-      "--acceptance-criteria",
-      `${title} acceptance`,
-      "--author",
-      "seed-author",
-      "--message",
-      `Create ${title}`,
-      "--assignee",
-      options.assignee ?? "none",
-      "--parent",
-      options.parent ?? "none",
-      "--dep",
-      "none",
-      "--comment",
-      "none",
-      "--note",
-      "none",
-      "--learning",
-      "none",
-      "--file",
-      "none",
-      "--test",
-      "none",
-      "--doc",
-      "none",
-    ],
-    { expectJson: true },
-  );
-
-  expect(created.code).toBe(0);
-  return (created.json as { item: { id: string } }).item.id;
+  return createTestItemId(context, {
+    title,
+    status: options.status,
+    tags: "close,unit",
+    estimate: "20",
+    assignee: options.assignee,
+    parent: options.parent ?? "none",
+  });
 }
 
 function latestCloseAuthor(context: TempPmContext, id: string): string | undefined {

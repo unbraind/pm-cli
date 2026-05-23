@@ -1,25 +1,16 @@
-import { spawnSync } from "node:child_process";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
+import { runDirectDistCli, type DirectCliRunResult } from "./cliRunner.js";
 
-export interface CliRunResult {
-  code: number | null;
-  stdout: string;
-  stderr: string;
-  json?: unknown;
-}
+export type CliRunResult = DirectCliRunResult;
 
 export interface TempPmContext {
   tempRoot: string;
   pmPath: string;
   env: NodeJS.ProcessEnv;
   runCli: (args: string[], options?: { expectJson?: boolean; cwd?: string; input?: string }) => CliRunResult;
-}
-
-function distCliPath(): string {
-  return path.resolve(process.cwd(), "dist/cli.js");
 }
 
 const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
@@ -192,24 +183,12 @@ function runNodeCli(
   options?: { expectJson?: boolean; cwd?: string; input?: string },
 ): CliRunResult {
   const normalizedArgs = normalizeLegacyCreateArgsForTests(args);
-  const completed = spawnSync(process.execPath, [distCliPath(), ...normalizedArgs], {
-    cwd: options?.cwd ?? process.cwd(),
+  return runDirectDistCli(normalizedArgs, {
+    cwd: options?.cwd,
     env,
-    encoding: "utf8",
     input: options?.input,
+    expectJson: options?.expectJson,
   });
-
-  const result: CliRunResult = {
-    code: completed.status,
-    stdout: completed.stdout ?? "",
-    stderr: completed.stderr ?? "",
-  };
-
-  if (options?.expectJson && result.stdout.trim()) {
-    result.json = JSON.parse(result.stdout);
-  }
-
-  return result;
 }
 
 async function removeTempRoot(tempRoot: string): Promise<void> {

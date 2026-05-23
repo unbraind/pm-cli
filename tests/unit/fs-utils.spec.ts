@@ -1,5 +1,4 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -10,19 +9,11 @@ import {
   removeFileIfExists,
   writeFileAtomic,
 } from "../../src/core/fs/fs-utils.js";
-
-async function withTempDir(run: (tempDir: string) => Promise<void>): Promise<void> {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "pm-cli-fs-utils-"));
-  try {
-    await run(tempDir);
-  } finally {
-    await fs.rm(tempDir, { recursive: true, force: true });
-  }
-}
+import { withTempDir } from "../helpers/temp.js";
 
 describe("core/fs/fs-utils", () => {
   it("creates directories and resolves path existence", async () => {
-    await withTempDir(async (tempDir) => {
+    await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
       const nestedDir = path.join(tempDir, "a", "b", "c");
       const missingPath = path.join(tempDir, "missing.txt");
 
@@ -34,7 +25,7 @@ describe("core/fs/fs-utils", () => {
   });
 
   it("returns nullable file reads and rethrows non-ENOENT read errors", async () => {
-    await withTempDir(async (tempDir) => {
+    await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
       const filePath = path.join(tempDir, "item.txt");
       const missingPath = path.join(tempDir, "missing.txt");
       const directoryPath = path.join(tempDir, "dir");
@@ -55,7 +46,7 @@ describe("core/fs/fs-utils", () => {
   });
 
   it("writes files atomically and appends newline-terminated lines", async () => {
-    await withTempDir(async (tempDir) => {
+    await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
       const filePath = path.join(tempDir, "nested", "history.log");
 
       await writeFileAtomic(filePath, "first\n");
@@ -70,7 +61,7 @@ describe("core/fs/fs-utils", () => {
   });
 
   it("removes files safely while preserving non-ENOENT unlink errors", async () => {
-    await withTempDir(async (tempDir) => {
+    await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
       const filePath = path.join(tempDir, "remove-me.txt");
       const missingPath = path.join(tempDir, "missing.txt");
       const directoryPath = path.join(tempDir, "dir");

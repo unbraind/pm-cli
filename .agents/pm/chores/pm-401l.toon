@@ -2,18 +2,27 @@ id: pm-401l
 title: Extract shared direct CLI spawn helper for integration tests
 description: "Duplicate audit 2026-05-22: tests duplicate direct dist CLI resolution/spawn helpers. Representative copies are tests/integration/cli.integration.spec.ts:8 distCliPath, tests/integration/governance-presets.integration.spec.ts:15 distCliPath and :19 runDistCli, plus existing helper-like logic in tests/helpers/withTempPmPath.ts:21 distCliPath and :189 runNodeCli. This repeats process.execPath + dist/cli.js resolution + stdout/stderr/status capture and sometimes JSON parsing."
 type: Chore
-status: open
+status: in_progress
 priority: 3
 tags[4]: cli,code-quality,dedup,tests
 created_at: "2026-05-22T19:17:12.795Z"
-updated_at: "2026-05-22T19:17:12.795Z"
+updated_at: "2026-05-23T19:22:27.553Z"
+assignee: codex-dead-code-pr
 author: codex-duplicate-audit
 acceptance_criteria: A shared direct CLI runner/distCliPath helper exists for tests that need raw process execution; integration specs use it instead of local copies; stdout/stderr/status and JSON parsing behavior remain explicit; targeted integration tests and pnpm build pass.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-05-22T19:17:12.795Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'distCliPath runDistCli direct CLI spawn helper tests' found no active exact item; pm-eltf is item factories, not raw CLI process helpers."
-files[3]{path,scope,note}:
+  "2026-05-23T19:14:37.707Z",codex-cli-error-helper-agent,"Start: inspecting duplicated dist CLI spawn helpers in tests/helpers/withTempPmPath.ts, tests/integration/cli.integration.spec.ts, tests/integration/governance-presets.integration.spec.ts, and raw dist runs in release/help runtime specs; plan is to add/reuse a shared direct dist runner with stdout/stderr/status plus env/cwd/stdin support, then migrate clear call sites only."
+  "2026-05-23T19:22:03.629Z",codex-cli-error-helper-agent,"Evidence: pnpm build passed. Focused verification passed: node scripts/run-tests.mjs test -- tests/integration/governance-presets.integration.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts => 4 files passed, 139 tests passed, duration 188.26s. Implemented shared direct dist CLI runner and migrated local direct-runner clones plus clear raw dist stdin/non-owner calls; left shell pipeline spawn local because it specifically verifies bash pipefail/EPIPE behavior."
+  "2026-05-23T19:22:27.553Z",codex-dead-code-pr,"Evidence: shared direct dist CLI runner is used by withTempPmPath plus CLI/governance integration specs; focused combined suite passed 498 tests."
+files[5]{path,scope,note}:
+  tests/helpers/cliRunner.ts,project,shared direct dist CLI runner
+  tests/helpers/withTempPmPath.ts,project,existing raw CLI helper surface
   tests/integration/cli.integration.spec.ts,project,distCliPath clone
   tests/integration/governance-presets.integration.spec.ts,project,runDistCli clone
-  tests/helpers/withTempPmPath.ts,project,existing raw CLI helper surface
+  tests/integration/release-readiness-runtime.spec.ts,project,reviewed raw EPIPE shell pipeline; left shell-specific spawn local
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/governance-presets.integration.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
 body: ""

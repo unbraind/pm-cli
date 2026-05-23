@@ -1,5 +1,4 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -11,6 +10,7 @@ import {
   startTelemetryCommand,
   waitForPendingFlush,
 } from "../../src/core/telemetry/runtime.js";
+import { withTempGlobalRoot as withTempGlobalRootHelper } from "../helpers/temp.js";
 
 const originalGlobalPath = process.env.PM_GLOBAL_PATH;
 const originalFetch = globalThis.fetch;
@@ -32,16 +32,12 @@ function telemetryQueuePath(globalRoot: string): string {
 }
 
 async function withTempGlobalRoot(run: (globalRoot: string) => Promise<void>): Promise<void> {
-  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-cli-telemetry-runtime-test-"));
-  const globalRoot = path.join(tempRoot, ".pm-cli");
-  process.env.PM_GLOBAL_PATH = globalRoot;
-  delete process.env.PM_TELEMETRY_DISABLED;
-  delete process.env.PM_NO_TELEMETRY;
-  try {
+  await withTempGlobalRootHelper("pm-cli-telemetry-runtime-test-", async (globalRoot) => {
+    process.env.PM_GLOBAL_PATH = globalRoot;
+    delete process.env.PM_TELEMETRY_DISABLED;
+    delete process.env.PM_NO_TELEMETRY;
     await run(globalRoot);
-  } finally {
-    await fs.rm(tempRoot, { recursive: true, force: true });
-  }
+  });
 }
 
 async function waitForFetchCalls(fetchMock: { mock: { calls: unknown[] } }, count: number): Promise<void> {

@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { runExtension, parseExtensionInstallSource, readManagedExtensionState } from "../../src/cli/commands/extension.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
+import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
@@ -100,22 +101,13 @@ describe("extension command runtime", () => {
   it("executes extension reload with cache-busted runtime diagnostics", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "reload-source-ext");
-      await mkdir(sourceDir, { recursive: true });
-      await writeFile(
-        path.join(sourceDir, "manifest.json"),
-        `${JSON.stringify(
-          {
-            name: "reload-source-ext",
-            version: "1.0.0",
-            entry: "./index.js",
-            capabilities: ["commands"],
-          },
-          null,
-          2,
-        )}\n`,
-        "utf8",
-      );
-      await writeFile(path.join(sourceDir, "index.js"), "export default { activate() {} };\n", "utf8");
+      await writeTestExtension({
+        root: sourceDir,
+        name: "reload-source-ext",
+        manifestOverrides: {
+          entry: "./index.js",
+        },
+      });
 
       await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
       const reloaded = await runExtension(undefined, { reload: true, watch: true, project: true }, { path: context.pmPath });
@@ -549,7 +541,7 @@ describe("extension command runtime", () => {
       const tempPackageRoot = await mkdtemp(path.join(context.tempRoot, "pm-bundled-root-"));
       const bundledBeadsPackage = path.join(tempPackageRoot, "packages", "pm-beads");
       const bundledBeadsDir = path.join(bundledBeadsPackage, "extensions", "beads");
-      await mkdir(bundledBeadsDir, { recursive: true });
+      await mkdir(bundledBeadsPackage, { recursive: true });
       await writeFile(
         path.join(bundledBeadsPackage, "package.json"),
         JSON.stringify(
@@ -565,21 +557,7 @@ describe("extension command runtime", () => {
         ),
         "utf8",
       );
-      await writeFile(
-        path.join(bundledBeadsDir, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "env-beads-ext",
-            version: "1.0.0",
-            entry: "index.js",
-            capabilities: ["commands"],
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(path.join(bundledBeadsDir, "index.js"), "export default { activate() {} };", "utf8");
+      await writeTestExtension({ root: bundledBeadsDir, name: "env-beads-ext" });
 
       const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
       process.env[PM_PACKAGE_ROOT_ENV] = tempPackageRoot;
@@ -611,7 +589,7 @@ describe("extension command runtime", () => {
       const tempPackageRoot = await mkdtemp(path.join(context.tempRoot, "pm-bundled-root-"));
       const bundledPackage = path.join(tempPackageRoot, "packages", "pm-custom");
       const bundledExtension = path.join(bundledPackage, "extensions", "custom");
-      await mkdir(bundledExtension, { recursive: true });
+      await mkdir(bundledPackage, { recursive: true });
       await writeFile(
         path.join(bundledPackage, "package.json"),
         JSON.stringify(
@@ -633,21 +611,7 @@ describe("extension command runtime", () => {
         ),
         "utf8",
       );
-      await writeFile(
-        path.join(bundledExtension, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "custom-package-ext",
-            version: "1.0.0",
-            entry: "index.js",
-            capabilities: ["commands"],
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(path.join(bundledExtension, "index.js"), "export default { activate() {} };", "utf8");
+      await writeTestExtension({ root: bundledExtension, name: "custom-package-ext" });
 
       const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
       process.env[PM_PACKAGE_ROOT_ENV] = tempPackageRoot;
@@ -742,23 +706,13 @@ describe("extension command runtime", () => {
   it("installs, explores, manages, toggles activation, and uninstalls a local extension", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "sample-source-ext");
-      await mkdir(sourceDir, { recursive: true });
-      await writeFile(
-        path.join(sourceDir, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "sample-ext",
-            version: "1.0.0",
-            entry: "index.js",
-            priority: 50,
-            capabilities: ["commands"],
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(path.join(sourceDir, "index.js"), "export default { activate() {} };", "utf8");
+      await writeTestExtension({
+        root: sourceDir,
+        name: "sample-ext",
+        manifestOverrides: {
+          priority: 50,
+        },
+      });
 
       const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
       expect(install.action).toBe("install");
@@ -926,21 +880,14 @@ describe("extension command runtime", () => {
   it("installs in place when source is already in extension root", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.pmPath, "extensions", "inline-ext");
-      await mkdir(sourceDir, { recursive: true });
-      await writeFile(
-        path.join(sourceDir, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "inline-ext",
-            version: "1.0.0",
-            entry: "index.js",
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(path.join(sourceDir, "index.js"), "export default { activate() {} };", "utf8");
+      await writeTestExtension({
+        root: sourceDir,
+        manifest: {
+          name: "inline-ext",
+          version: "1.0.0",
+          entry: "index.js",
+        },
+      });
 
       const install = await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
       expect(install.details).toMatchObject({
@@ -952,22 +899,7 @@ describe("extension command runtime", () => {
   it("marks unmanaged discovered extensions as skipped_unmanaged during manage", async () => {
     await withTempPmPath(async (context) => {
       const unmanagedDir = path.join(context.pmPath, "extensions", "manual-unmanaged");
-      await mkdir(unmanagedDir, { recursive: true });
-      await writeFile(
-        path.join(unmanagedDir, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "manual-unmanaged",
-            version: "1.0.0",
-            entry: "index.js",
-            capabilities: ["commands"],
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+      await writeTestExtension({ root: unmanagedDir, name: "manual-unmanaged" });
 
       const manage = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
       const extensions = (manage.details.extensions as Array<Record<string, unknown>>) ?? [];
@@ -1007,22 +939,7 @@ describe("extension command runtime", () => {
   it("treats bundled-style unmanaged extensions as informational by default", async () => {
     await withTempPmPath(async (context) => {
       const unmanagedDir = path.join(context.pmPath, "extensions", "builtin-informational");
-      await mkdir(unmanagedDir, { recursive: true });
-      await writeFile(
-        path.join(unmanagedDir, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "builtin-informational-ext",
-            version: "1.0.0",
-            entry: "index.js",
-            capabilities: ["commands"],
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+      await writeTestExtension({ root: unmanagedDir, name: "builtin-informational-ext" });
 
       const manage = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
       const triage = manage.details.triage as {
@@ -1040,22 +957,7 @@ describe("extension command runtime", () => {
   it("adopts unmanaged extensions via manage --fix-managed-state", async () => {
     await withTempPmPath(async (context) => {
       const unmanagedDir = path.join(context.pmPath, "extensions", "manual-fix-managed");
-      await mkdir(unmanagedDir, { recursive: true });
-      await writeFile(
-        path.join(unmanagedDir, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "manual-fix-managed",
-            version: "1.0.0",
-            entry: "index.js",
-            capabilities: ["commands"],
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+      await writeTestExtension({ root: unmanagedDir, name: "manual-fix-managed" });
 
       const manage = await runExtension(
         undefined,
@@ -1092,22 +994,7 @@ describe("extension command runtime", () => {
   it("keeps top-level warnings aligned with triage warning semantics for manage and doctor", async () => {
     await withTempPmPath(async (context) => {
       const unmanagedDir = path.join(context.pmPath, "extensions", "manual-parity");
-      await mkdir(unmanagedDir, { recursive: true });
-      await writeFile(
-        path.join(unmanagedDir, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "manual-parity",
-            version: "1.0.0",
-            entry: "index.js",
-            capabilities: ["commands"],
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+      await writeTestExtension({ root: unmanagedDir, name: "manual-parity" });
 
       const manage = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
       const manageTriage = manage.details.triage as { warning_codes: string[] };
@@ -1124,22 +1011,7 @@ describe("extension command runtime", () => {
   it("adopts existing unmanaged extensions into managed local metadata without reinstalling", async () => {
     await withTempPmPath(async (context) => {
       const unmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt");
-      await mkdir(unmanagedDir, { recursive: true });
-      await writeFile(
-        path.join(unmanagedDir, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "manual-adopt",
-            version: "1.0.0",
-            entry: "index.js",
-            capabilities: ["commands"],
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+      await writeTestExtension({ root: unmanagedDir, name: "manual-adopt" });
 
       const adopt = await runExtension("manual-adopt", { adopt: true, project: true }, { path: context.pmPath });
       expect(adopt.action).toBe("adopt");
@@ -1171,22 +1043,7 @@ describe("extension command runtime", () => {
   it("returns already_managed when adopt targets a managed extension", async () => {
     await withTempPmPath(async (context) => {
       const unmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt-repeat");
-      await mkdir(unmanagedDir, { recursive: true });
-      await writeFile(
-        path.join(unmanagedDir, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "manual-adopt-repeat",
-            version: "1.0.0",
-            entry: "index.js",
-            capabilities: ["commands"],
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+      await writeTestExtension({ root: unmanagedDir, name: "manual-adopt-repeat" });
 
       await runExtension("manual-adopt-repeat", { adopt: true, project: true }, { path: context.pmPath });
       const secondAdopt = await runExtension("manual-adopt-repeat", { adopt: true, project: true }, { path: context.pmPath });
@@ -1203,22 +1060,7 @@ describe("extension command runtime", () => {
   it("supports GitHub provenance metadata when adopting unmanaged extensions", async () => {
     await withTempPmPath(async (context) => {
       const unmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt-gh");
-      await mkdir(unmanagedDir, { recursive: true });
-      await writeFile(
-        path.join(unmanagedDir, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "manual-adopt-gh",
-            version: "1.0.0",
-            entry: "index.js",
-            capabilities: ["commands"],
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(path.join(unmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+      await writeTestExtension({ root: unmanagedDir, name: "manual-adopt-gh" });
 
       const adopt = await runExtension(
         "manual-adopt-gh",
@@ -1258,38 +1100,8 @@ describe("extension command runtime", () => {
     await withTempPmPath(async (context) => {
       const firstUnmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt-all-a");
       const secondUnmanagedDir = path.join(context.pmPath, "extensions", "manual-adopt-all-b");
-      await mkdir(firstUnmanagedDir, { recursive: true });
-      await mkdir(secondUnmanagedDir, { recursive: true });
-      await writeFile(
-        path.join(firstUnmanagedDir, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "manual-adopt-all-a",
-            version: "1.0.0",
-            entry: "index.js",
-            capabilities: ["commands"],
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(
-        path.join(secondUnmanagedDir, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "manual-adopt-all-b",
-            version: "1.0.0",
-            entry: "index.js",
-            capabilities: ["commands"],
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(path.join(firstUnmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
-      await writeFile(path.join(secondUnmanagedDir, "index.js"), "export default { activate() {} };", "utf8");
+      await writeTestExtension({ root: firstUnmanagedDir, name: "manual-adopt-all-a" });
+      await writeTestExtension({ root: secondUnmanagedDir, name: "manual-adopt-all-b" });
 
       const manageBefore = await runExtension(undefined, { manage: true, project: true }, { path: context.pmPath });
       const triageBefore = manageBefore.details.triage as { update_health_partial?: unknown };
@@ -1330,26 +1142,15 @@ describe("extension command runtime", () => {
   it("runs extension doctor in summary/deep modes and supports doctor subcommand target syntax", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "doctor-source-ext");
-      await mkdir(sourceDir, { recursive: true });
-      await writeFile(
-        path.join(sourceDir, "manifest.json"),
-        JSON.stringify(
-          {
-            name: "doctor-ext",
-            version: "1.0.0",
-            entry: "index.js",
-            capabilities: ["schema"],
-          },
-          null,
-          2,
-        ),
-        "utf8",
-      );
-      await writeFile(
-        path.join(sourceDir, "index.js"),
-        "export function activate(api) { api.registerItemTypes([{ name: \"DoctorAsset\", folder: \"doctor-assets\" }]); }\n",
-        "utf8",
-      );
+      await writeTestExtension({
+        root: sourceDir,
+        name: "doctor-ext",
+        manifestOverrides: {
+          capabilities: ["schema"],
+        },
+        entrySource:
+          "export function activate(api) { api.registerItemTypes([{ name: \"DoctorAsset\", folder: \"doctor-assets\" }]); }\n",
+      });
       await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
 
       const summaryDoctor = await runExtension(undefined, { doctor: true, project: true }, { path: context.pmPath });

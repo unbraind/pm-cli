@@ -12,6 +12,7 @@ import {
 } from "../../src/cli/commands/test.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
+import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 afterEach(() => {
@@ -19,55 +20,11 @@ afterEach(() => {
 });
 
 function createTask(context: TempPmContext, title: string): string {
-  const result = context.runCli(
-    [
-      "create",
-      "--json",
-      "--title",
-      title,
-      "--description",
-      `${title} description`,
-      "--type",
-      "Task",
-      "--status",
-      "open",
-      "--priority",
-      "1",
-      "--tags",
-      "testing",
-      "--body",
-      "",
-      "--deadline",
-      "none",
-      "--estimate",
-      "10",
-      "--acceptance-criteria",
-      `${title} acceptance`,
-      "--author",
-      "test-author",
-      "--message",
-      `Create ${title}`,
-      "--assignee",
-      "none",
-      "--dep",
-      "none",
-      "--comment",
-      "none",
-      "--note",
-      "none",
-      "--learning",
-      "none",
-      "--file",
-      "none",
-      "--test",
-      "none",
-      "--doc",
-      "none",
-    ],
-    { expectJson: true },
-  );
-  expect(result.code).toBe(0);
-  return (result.json as { item: { id: string } }).item.id;
+  return createTestItemId(context, {
+    title,
+    tags: "testing",
+    author: "test-author",
+  });
 }
 
 async function latestHistoryAuthor(pmPath: string, id: string): Promise<string> {

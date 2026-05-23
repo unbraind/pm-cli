@@ -1,32 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 function createTask(context: TempPmContext, title: string): string {
-  const created = context.runCli(
-    [
-      "create",
-      "--json",
-      "--title",
-      title,
-      "--description",
-      `${title} description`,
-      "--type",
-      "Task",
-      "--status",
-      "open",
-      "--priority",
-      "1",
-      "--create-mode",
-      "progressive",
-      "--message",
-      `Create ${title}`,
-    ],
-    { expectJson: true },
-  );
-  expect(created.code).toBe(0);
-  const payload = created.json as { item?: { id?: string } };
-  expect(typeof payload.item?.id).toBe("string");
-  return payload.item?.id ?? "";
+  return createTestItemId(context, {
+    title,
+    createMode: "progressive",
+    tags: "lifecycle,alias",
+  });
 }
 
 describe("task lifecycle aliases", () => {

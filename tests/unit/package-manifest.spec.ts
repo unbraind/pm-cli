@@ -9,28 +9,13 @@ import {
   readPmPackageManifest,
 } from "../../src/core/packages/manifest.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { writeTestExtension } from "../helpers/extensions.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 async function createExtension(root: string, name: string): Promise<string> {
-  const extensionRoot = path.join(root, name);
-  await mkdir(extensionRoot, { recursive: true });
-  await writeFile(
-    path.join(extensionRoot, "manifest.json"),
-    JSON.stringify(
-      {
-        name,
-        version: "1.0.0",
-        entry: "index.js",
-        capabilities: ["commands"],
-      },
-      null,
-      2,
-    ),
-    "utf8",
-  );
-  await writeFile(path.join(extensionRoot, "index.js"), "export default { activate() {} };\n", "utf8");
-  return extensionRoot;
+  const fixture = await writeTestExtension({ root, directory: name, name });
+  return fixture.extensionRoot;
 }
 
 describe("pm package manifest model", () => {

@@ -2,21 +2,28 @@ id: pm-7tug
 title: Extract shared temporary-directory lifecycle helpers for tests
 description: "Duplicate audit 2026-05-22: test files locally repeat mkdtemp(path.join(os.tmpdir(), prefix)), callback execution, and rm(..., { recursive: true, force: true }) cleanup. Representative helpers are tests/unit/fs-utils.spec.ts:14 withTempDir, tests/unit/search-cache.spec.ts:15 withTempDir, tests/unit/config-command.spec.ts:20 withTempRoot, tests/unit/settings-store.spec.ts:12 withTempRoot, tests/unit/telemetry-runtime.spec.ts:34 withTempGlobalRoot, and tests/unit/telemetry-consent.spec.ts:9 withTempGlobalRoot. This is distinct from pm-ibyi legacy settings fixtures and pm-eltf item factories."
 type: Chore
-status: open
+status: in_progress
 priority: 3
 tags[4]: code-quality,dedup,fixtures,tests
 created_at: "2026-05-22T19:17:40.595Z"
-updated_at: "2026-05-22T19:17:40.595Z"
+updated_at: "2026-05-23T19:22:27.412Z"
+assignee: codex-dead-code-pr
 author: codex-duplicate-audit
 acceptance_criteria: Generic withTempDir and specialized withTempGlobalRoot/withTempRoot helpers live under tests/helpers; affected tests consume them instead of local lifecycle copies; cleanup remains force-recursive and safe; targeted tests and pnpm build pass.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-05-22T19:17:40.595Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'temporary directory withTempDir withTempRoot withTempGlobalRoot lifecycle helper tests' found no active exact item; pm-ibyi covers legacy settings fixture content, not temp-directory lifecycle."
-files[6]{path,scope,note}:
+  "2026-05-23T19:14:26.327Z",codex-test-helper-agent,"Start: inspecting temp directory lifecycle helper duplication in fs-utils, search-cache, config-command, settings-store, and telemetry specs; will add shared withTempDir/withTempRoot/withTempGlobalRoot helpers and migrate clear local mkdtemp/rm blocks."
+  "2026-05-23T19:21:38.663Z",codex-test-helper-agent,"Evidence: added tests/helpers/temp.ts and migrated temp lifecycle setup in fs-utils, search-cache, config-command, settings-store, telemetry-consent, and telemetry-runtime specs. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/notes-learnings-command.spec.ts tests/unit/close-command.spec.ts tests/unit/delete-command.spec.ts tests/unit/restore-command.spec.ts tests/unit/test-command.spec.ts tests/unit/validate-command.spec.ts tests/integration/task-lifecycle-aliases.spec.ts tests/unit/fs-utils.spec.ts tests/unit/search-cache.spec.ts tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/telemetry-consent.spec.ts tests/unit/telemetry-runtime.spec.ts => 14 files passed, 233 tests passed, duration 96.27s."
+  "2026-05-23T19:22:27.412Z",codex-dead-code-pr,"Evidence: shared temp lifecycle helper is used across config/settings/fs/search-cache/telemetry specs; focused combined suite passed 498 tests and diff check passed."
+files[7]{path,scope,note}:
+  tests/helpers/temp.ts,project,shared temp directory/root/global-root lifecycle helpers
+  tests/unit/config-command.spec.ts,project,withTempRoot clone
   tests/unit/fs-utils.spec.ts,project,withTempDir clone
   tests/unit/search-cache.spec.ts,project,withTempDir clone
-  tests/unit/config-command.spec.ts,project,withTempRoot clone
   tests/unit/settings-store.spec.ts,project,withTempRoot clone
-  tests/unit/telemetry-runtime.spec.ts,project,withTempGlobalRoot clone
   tests/unit/telemetry-consent.spec.ts,project,withTempGlobalRoot clone
+  tests/unit/telemetry-runtime.spec.ts,project,withTempGlobalRoot clone
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/fs-utils.spec.ts tests/unit/search-cache.spec.ts tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/telemetry-consent.spec.ts tests/unit/telemetry-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
 body: ""

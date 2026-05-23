@@ -9,59 +9,16 @@ import { runInit } from "../../src/cli/commands/init.js";
 import { runValidate } from "../../src/cli/commands/validate.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
+import { createTestItemId } from "../helpers/itemFactory.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 function createTask(context: TempPmContext, title: string): string {
-  const created = context.runCli(
-    [
-      "create",
-      "--json",
-      "--title",
-      title,
-      "--description",
-      `${title} description`,
-      "--type",
-      "Task",
-      "--status",
-      "open",
-      "--priority",
-      "1",
-      "--tags",
-      "validate,unit",
-      "--body",
-      "",
-      "--deadline",
-      "none",
-      "--estimate",
-      "15",
-      "--acceptance-criteria",
-      `${title} acceptance`,
-      "--author",
-      "seed-author",
-      "--message",
-      `Create ${title}`,
-      "--assignee",
-      "none",
-      "--dep",
-      "none",
-      "--comment",
-      "none",
-      "--note",
-      "none",
-      "--learning",
-      "none",
-      "--file",
-      "none",
-      "--test",
-      "none",
-      "--doc",
-      "none",
-    ],
-    { expectJson: true },
-  );
-  expect(created.code).toBe(0);
-  return (created.json as { item: { id: string } }).item.id;
+  return createTestItemId(context, {
+    title,
+    tags: "validate,unit",
+    estimate: "15",
+  });
 }
 
 function seedDependencyCycle(context: TempPmContext): [string, string, string] {
