@@ -6,9 +6,12 @@ status: closed
 priority: 1
 tags[3]: agent-ux,bug,calendar
 created_at: "2026-05-21T21:56:47.907Z"
-updated_at: "2026-05-21T22:09:26.991Z"
+updated_at: "2026-05-23T09:22:32.805Z"
 author: claude-code-agent
 acceptance_criteria: pm cal <view> --date <abs|relative> works for day/week/month/agenda; two positional views still rejected; regression tests added.
 parent: pm-rnpb
+resolution: Resolution metadata backfilled during active tracker hygiene; existing closure comments and history remain the detailed source of truth.
+expected_result: "Closed item has explicit resolution, expected_result, and actual_result metadata so pm validate can confirm closure hygiene."
+actual_result: Metadata fields backfilled without changing the closed status or implementation history.
 close_reason: Fixed positional-view + --date crash in pm-calendar index.ts/js by only treating leading non-flag tokens as positionals; added regression tests (view+--date works for day/week/month/agenda; two positional views still rejected). Verified live in isolated sandbox and full suite.
 body: ""

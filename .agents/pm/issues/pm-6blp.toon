@@ -6,9 +6,12 @@ status: closed
 priority: 2
 tags[0]:
 created_at: "2026-05-22T15:44:33.944Z"
-updated_at: "2026-05-22T19:30:46.545Z"
+updated_at: "2026-05-23T09:22:26.219Z"
 author: maintainer-agent
 parent: pm-rnpb
+resolution: Resolution metadata backfilled during active tracker hygiene; existing closure comments and history remain the detailed source of truth.
+expected_result: "Closed item has explicit resolution, expected_result, and actual_result metadata so pm validate can confirm closure hygiene."
+actual_result: Metadata fields backfilled without changing the closed status or implementation history.
 comments[2]{created_at,author,text}:
   "2026-05-22T19:21:55.096Z",codex-plan-worker-20260522,"Plan: inspect src/cli/commands/plan.ts and focused plan/MCP tests; reproduce the three reported plan UX/correctness failures where possible; patch only plan command behavior; add focused regression coverage for materialize dependency direction, --steps all selection, and --decision/--discovery/--validation compatibility or did-you-mean handling; run linked focused tests plus build if type coverage requires it."
   "2026-05-22T19:30:32.503Z",codex-plan-worker-20260522,"Evidence: implemented pm plan materialize and text alias fixes.\n\nBehavior changed: --steps all now materializes every plan step; materialize no longer adds reverse top-level child dependencies from the Plan to generated items, preserving step-level implements links and avoiding lifecycle dependency cycles; decision/discovery/validation now accept shorthand option keys for MCP/programmatic calls plus CLI flags --decision/--discovery/--validation, with plan contracts advertising those aliases.\n\nVerification: npm install -g . (up to date); pm --version 2026.5.18; node -v v25.9.0; pnpm -v 10.33.0; pnpm build passed; pm test --run passed for node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts (17 tests) and tests/unit/plan-command.spec.ts (24 tests); direct CLI probe pm plan decision <id> --decision \"pick alias\" --json exited 0; node dist/cli.js contracts --command plan --flags-only --json shows --decision/--discovery/--validation aliases; git diff --check passed.\n\nNote: CLI shorthand support required narrow parser/contract edits in src/cli/register-mutation.ts and src/sdk/cli-contracts.ts because Commander rejected --decision before src/cli/commands/plan.ts could run.\n"

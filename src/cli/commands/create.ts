@@ -47,6 +47,7 @@ import {
   parseRegressionInput,
 } from "./metadata-normalizers.js";
 import { resolveEventEndAt } from "./event-validation-messages.js";
+import { looksLikeStructuredLinkedTestEntry, normalizeStructuredLinkedTestEntry } from "./linked-test-entry.js";
 import type {
   CalendarEvent,
   Comment,
@@ -830,26 +831,8 @@ export function parseTests(raw: string[] | undefined): { values: LinkedTest[] | 
   assertNoLegacyNoneTokens(raw, "--test", "Use --clear-tests to clear linked tests.");
   const values = raw.map((entry) => {
     const trimmedEntry = entry.trim();
-    const kv = looksLikeStructuredEntry(trimmedEntry, [
-      "command",
-      "path",
-      "scope",
-      "timeout",
-      "timeout_seconds",
-      "pm_context_mode",
-      "env_set",
-      "env_clear",
-      "shared_host_safe",
-      "assert_stdout_contains",
-      "assert_stdout_regex",
-      "assert_stderr_contains",
-      "assert_stderr_regex",
-      "assert_stdout_min_lines",
-      "assert_json_field_equals",
-      "assert_json_field_gte",
-      "note",
-    ])
-      ? parseCsvKv(entry, "--test")
+    const kv = looksLikeStructuredLinkedTestEntry(trimmedEntry)
+      ? normalizeStructuredLinkedTestEntry(parseCsvKv(entry, "--test"), "--test")
       : { command: trimmedEntry };
     const command = parseOptionalString(kv.command);
     const filePath = parseOptionalString(kv.path);

@@ -15,6 +15,7 @@ import { getSettingsPath, ITEM_FILE_EXTENSIONS, resolveGlobalPmRoot, resolvePmRo
 import { readSettings } from "../../core/store/settings.js";
 import { appendTrackedTestRunSummary } from "../../core/test/item-test-run-tracking.js";
 import { runInit } from "./init.js";
+import { looksLikeStructuredLinkedTestEntry, normalizeStructuredLinkedTestEntry } from "./linked-test-entry.js";
 import { SCOPE_VALUES } from "../../types/index.js";
 import type { LinkedTest, LinkScope } from "../../types/index.js";
 
@@ -1015,68 +1016,12 @@ function getRuntimeSafetySkipReason(command: string): string | undefined {
   return 'Linked test command skipped: Linked test commands must not invoke "pm test-all"; this creates recursive orchestration.';
 }
 
-function looksLikeStructuredLinkedTestEntry(raw: string): boolean {
-  if (raw.startsWith("```") || raw.includes("\n")) {
-    return true;
-  }
-  return /^(?:[-*+]\s+)?(?:command|cmd|path|scope|timeout|timeout_seconds|pm_context_mode|env_set|env_clear|shared_host_safe|assert_stdout_contains|assert_stdout_regex|assert_stderr_contains|assert_stderr_regex|assert_stdout_min_lines|assert_json_field_equals|assert_json_field_gte|note)\s*[:=]/i.test(raw);
-}
-
-// Keys accepted inside a structured --add entry. `cmd` is an alias for
-// `command`; everything else maps 1:1 to a LinkedTest field. Listed in the
-// order surfaced to the user when an unknown key is rejected.
-const STRUCTURED_LINKED_TEST_ADD_KEYS = [
-  "command",
-  "cmd",
-  "path",
-  "scope",
-  "timeout",
-  "timeout_seconds",
-  "pm_context_mode",
-  "env_set",
-  "env_clear",
-  "shared_host_safe",
-  "assert_stdout_contains",
-  "assert_stdout_regex",
-  "assert_stderr_contains",
-  "assert_stderr_regex",
-  "assert_stdout_min_lines",
-  "assert_json_field_equals",
-  "assert_json_field_gte",
-  "note",
-] as const;
-
-const STRUCTURED_LINKED_TEST_ADD_KEY_SET = new Set<string>(STRUCTURED_LINKED_TEST_ADD_KEYS);
-
-// Normalize a parsed structured --add entry: reject unknown keys (silently
-// storing them as part of the command corrupts the linked test) and fold the
-// `cmd` alias into `command`.
-function normalizeStructuredAddEntry(kv: Record<string, string>): Record<string, string> {
-  const unknownKeys = Object.keys(kv).filter((key) => !STRUCTURED_LINKED_TEST_ADD_KEY_SET.has(key.toLowerCase()));
-  if (unknownKeys.length > 0) {
-    throw new PmCliError(
-      `--add does not recognize key${unknownKeys.length > 1 ? "s" : ""} ${unknownKeys
-        .map((key) => `"${key}"`)
-        .join(", ")}. Allowed keys: ${STRUCTURED_LINKED_TEST_ADD_KEYS.join(", ")}.`,
-      EXIT_CODE.USAGE,
-    );
-  }
-  if (kv.cmd !== undefined) {
-    if (kv.command !== undefined && kv.command.trim() !== kv.cmd.trim()) {
-      throw new PmCliError("--add command and cmd must match when both are provided", EXIT_CODE.USAGE);
-    }
-    const { cmd, ...rest } = kv;
-    return { ...rest, command: rest.command ?? cmd };
-  }
-  return kv;
-}
-
 function parseAddEntries(raw: string[] | undefined): LinkedTest[] {
   if (!raw) return [];
   return raw.map((entry) => {
     const trimmed = entry.trim();
     const kv = looksLikeStructuredLinkedTestEntry(trimmed)
-      ? normalizeStructuredAddEntry(parseCsvKv(entry, "--add"))
+      ? normalizeStructuredLinkedTestEntry(parseCsvKv(entry, "--add"), "--add")
       : { command: trimmed };
     const command = kv.command?.trim() || undefined;
     const filePath = kv.path?.trim() || undefined;

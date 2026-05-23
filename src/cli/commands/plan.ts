@@ -731,7 +731,7 @@ async function planShow(
   const depth = asDepth(options.depth);
   const fields = parsePlanFields(options.fields);
   const { document, itemId } = await readPlanItem(ctx, id);
-  const fullPlan = projectPlan(document.metadata, depth);
+  const fullPlan = projectPlan(document.metadata, fields === null ? depth : "deep");
   const plan = fields === null ? fullPlan : projectPlanForFields(fullPlan, fields);
   return {
     action: "show",

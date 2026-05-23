@@ -6,7 +6,7 @@ status: open
 priority: 1
 tags[5]: history,pm-cli,privacy,redaction,security
 created_at: "2026-05-03T13:34:41.813Z"
-updated_at: "2026-05-22T20:29:16.384Z"
+updated_at: "2026-05-23T09:04:51.295Z"
 author: codex-audit
 acceptance_criteria: A supported pm command can redact configured literals/patterns from item files and history streams; history drift validation remains meaningful after redaction; redaction operations are themselves auditable; secret scans can include history streams without false failures from known private operations paths.
 parent: pm-rnpb
@@ -15,7 +15,7 @@ expected_result: Expected closure outcome normalized from closed status; existin
 actual_result: Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-03T13:34:41.813Z",codex-audit,null
-comments[21]{created_at,author,text}:
+comments[23]{created_at,author,text}:
   "2026-05-03T13:34:41.813Z",codex-audit,"Duplicate-check evidence: pm search history stream redaction command redact private path history drift --limit 10 found only closed history/security items; current audit discovered remaining private remote paths in historical JSONL streams after current item docs were sanitized."
   "2026-05-09T11:21:19.310Z",codex-agent,"2026-05-09 duplicate-check evidence: pm search tracker history privacy redaction private paths --limit 10 found this existing item as the canonical match. Current scan found no raw IP/password/token values in non-history tracked files; current pm item files only mention Sentry token variable names, but historical JSONL streams still include private remote paths from older telemetry operations. Do not hand-edit history; implement audited redaction support or migrate history safely."
   "2026-05-09T11:46:59.452Z",codex-agent,"Evidence 2026-05-09: privacy scan confirmed current tracked source/docs/workflows and current item files do not contain raw host/IP/password/token values from this request, but older append-only history streams still contain private infrastructure paths. This remains open because current pm policy forbids direct history rewrites; next work must add an audited redaction command or equivalent safe migration."
@@ -37,14 +37,17 @@ comments[21]{created_at,author,text}:
   "2026-05-17T19:01:26.400Z",claude-code-agent,"Session 14 (2026-05-17) audit: history-redact command verified working (pm history-redact --help renders, --literal/--regex/--dry-run flags present, default replacement [redacted]). check-secrets.mjs passes cleanly. However, `pm validate --check-history-drift` still reports 35 drifted items (13 hash + 34 chain mismatches) including pm-xk39 itself. The COMMAND is shipped; the legacy DRIFT cleanup is a separate operational task that does not block the command's acceptance criteria but needs a follow-up item to actually run history-redact / migration over the 35 streams."
   "2026-05-21T17:40:19.200Z",codex-gpt5,"Evidence 2026-05-21: privacy sub-agent found no raw credentials, but identified three legacy history entries with private operations topology details. Used pm history-redact, not direct JSONL edits, to redact pm-ny6y Caddy routing details, pm-r9ei telemetry topology/local evidence path details, and pm-vhdc remote health command details. Verification passed: pm history pm-ny6y --verify, pm history pm-r9ei --verify, pm history pm-vhdc --verify, and node scripts/check-secrets.mjs."
   "2026-05-22T20:29:16.384Z",claude-privacy-subagent,"Privacy/secret-leak sub-agent audit 2026-05-22 (claude-privacy-subagent). SCOPE: git-tracked files only (2087 total; 1675 under .agents/), incl 700+ history JSONL streams and all .toon items. RESULTS: (1) node scripts/check-secrets.mjs => exit 0, 'No credential-like secrets detected'. (2) gitignore confirmed: 'git ls-files scripts/prod' and 'git ls-files .env' both EMPTY (untracked). (3) IPv4 scan: ZERO real/private IPs in tracked files; only IPv4-shaped token across entire .agents tree is 127.0.0.1 (6x, localhost). Historical 16-file private-IP leak (pm-2326/pm-ny6y) confirmed already remediated to public domain names. (4) /home//Users absolute paths: ZERO in .agents; the only /home/ hits are test fixtures in tests/*.spec.ts asserting redaction logic (excluded by check-secrets excludeFiles ^tests/). (5) API tokens/keys: ZERO matches for AKIA/ghp_/gho_/sk-/sntrys_/sntryu_/glpat-/xox_/[pattern]/Bearer/npm_ anywhere in tracked files or .agents. (6) password/secret assignments: ZERO real hits. (7) Hostnames: pm-cli.unbrained.dev (13x, public telemetry API - intentional config, also in src/core/shared/constants.ts:201) and pm.unbrained.dev (5x, public Grafana hostname referenced in audit evidence) - both public DNS, NOT secrets, NO credentials attached. /tmp/pm-*-audit paths are ephemeral, non-sensitive. CANDIDATES & CLASSIFICATION: Total candidates examined ~6 unique. REAL_SECRET=0. FALSE_POSITIVE=all: [a] src/core/sentry/instrument.ts:129 Sentry DSN https://bf7...@o4510...ingest.de.sentry.io/4511... = client-side public ingest key (ships in npm package; grants event-send only, no data read); NOT in check-secrets ruleset (which only flags sntryu_/sntrys_ API tokens) = INTENTIONAL public config. [b] *.unbrained.dev hostnames = public infra DNS = intentional config. [c] [pattern] in tests/*.spec.ts = test fixtures. [d] 127.0.0.1 = localhost. REDACTIONS PERFORMED: NONE (no confirmed real secret in any tracked file). VERDICT: CLEAN. No files modified."
+  "2026-05-23T08:27:46.890Z",codex-audit-2026-05-23,"Evidence: Used pm history-redact pm-rnpb to replace an absolute checkout path in the dogfood proposal with <repo>; command reported entries_changed=1, replacements=2, verify_ok=true. Rerunning node scripts/check-secrets.mjs and pm history pm-rnpb --verify."
+  "2026-05-23T09:04:51.295Z",codex-observability-subagent-2026-05-23,"Privacy/history hygiene evidence 2026-05-23: tracked-file secret scan and changed history stream verification completed without source edits. Sanitized commands/results: node scripts/check-secrets.mjs => PASS, no credential-like secrets detected in tracked files. git diff --name-only -- .agents/pm/history => changed streams pm-rnpb, pm-swie, pm-xk39. pm history pm-rnpb --verify => ok=true entries=485 current_matches_latest=true. pm history pm-swie --verify => ok=true entries=8 current_matches_latest=true. pm history pm-xk39 --verify => ok=true entries=57 current_matches_latest=true. No new tracked secret found; no history-redact workflow needed in this pass."
 notes[1]{created_at,author,text}:
   "2026-05-17T12:23:36.671Z",codex-agent,"history-redact uses deterministic replay + hash recomputation for every entry, then appends a no-op history_redact audit marker to keep the operation itself discoverable in history output."
 learnings[1]{created_at,author,text}:
   "2026-05-17T12:23:38.188Z",codex-agent,"Release security scans flag concrete /home examples even in docs/contracts examples; prefer [redacted_path_prefix] placeholders in public command docs and schema examples."
-files[35]{path,scope,note}:
+files[37]{path,scope,note}:
   .agents/pm/chores/pm-tq1.toon,project,item-test-command-redaction-local-package-path
   .agents/pm/epics/pm-54d.toon,project,epic-comment-redaction-global-install-path
   .agents/pm/extensions/.managed-extensions.json,project,managed-extension-source-location-redaction
+  .agents/pm/features/pm-rnpb.toon,project,redact checkout path from dogfood evidence
   .agents/pm/history/pm-54d.jsonl,project,history-stream-redaction-global-install-path
   .agents/pm/history/pm-cakn.jsonl,project,history-stream-redaction-analysis-paths
   .agents/pm/history/pm-f3q4.jsonl,project,history-stream-redaction-global-install-path
@@ -53,6 +56,7 @@ files[35]{path,scope,note}:
   .agents/pm/history/pm-mb4n.jsonl,project,history-stream-redaction-host-user-literal
   .agents/pm/history/pm-ny6y.jsonl,project,history-stream-redaction-telemetry-stack-paths
   .agents/pm/history/pm-r9ei.jsonl,project,history-stream-redaction-dashboard-paths
+  .agents/pm/history/pm-rnpb.jsonl,project,audited redaction of checkout path in history stream
   .agents/pm/history/pm-tq1.jsonl,project,history-stream-redaction-local-package-path
   .agents/pm/history/pm-vhdc.jsonl,project,history-stream-redaction-remote-paths
   .agents/pm/history/pm-xk39.jsonl,project,history-stream-redaction-scope-text

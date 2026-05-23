@@ -6,9 +6,12 @@ status: closed
 priority: 2
 tags[0]:
 created_at: "2026-05-22T15:44:32.363Z"
-updated_at: "2026-05-22T19:36:32.565Z"
+updated_at: "2026-05-23T09:22:23.145Z"
 author: maintainer-agent
 parent: pm-rnpb
+resolution: Resolution metadata backfilled during active tracker hygiene; existing closure comments and history remain the detailed source of truth.
+expected_result: "Closed item has explicit resolution, expected_result, and actual_result metadata so pm validate can confirm closure hygiene."
+actual_result: Metadata fields backfilled without changing the closed status or implementation history.
 comments[3]{created_at,author,text}:
   "2026-05-22T19:21:10.496Z",codex-validate-worker-20260522,"Implementation plan: separate hard validation failures from warning-only checks so top-level ok stays true for warnings; keep warnings visible via has_warnings/warnings; compact metadata and resolution ID arrays by default while preserving counts and truncation markers; add focused validate regression coverage and run an isolated temp-project validate smoke."
   "2026-05-22T19:25:17.430Z",codex-validate-worker-20260522,"Evidence: focused regression passed: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/unit/contracts-command.spec.ts (57 tests). Manual isolated temp-project smoke passed using node dist/cli.js: validate --check-resolution now returns ok=true and has_warnings=true for warning-only missing resolution; validate --check-resolution --strict-exit still exits non-zero as expected."

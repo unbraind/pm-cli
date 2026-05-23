@@ -737,6 +737,13 @@ describe("contracts command runtime", () => {
           check.flags.map((flag) => expect.objectContaining({ flag })),
         ),
       );
+      if (check.command === "plan") {
+        expect(parityResult.command_flags?.[0]?.flags).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ flag: "--step-title", aliases: expect.arrayContaining(["--step"]) }),
+          ]),
+        );
+      }
     }
 
     const availabilityOnly = await runContracts(
