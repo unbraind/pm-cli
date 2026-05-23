@@ -623,6 +623,22 @@ function sortManagedEntries(entries: ManagedExtensionRecord[]): ManagedExtension
   });
 }
 
+function managedExtensionSourcesEquivalent(left: ManagedExtensionSource, right: ManagedExtensionSource): boolean {
+  if (left.kind !== right.kind || left.input !== right.input || left.location !== right.location) {
+    return false;
+  }
+  if (left.kind === "npm" && right.kind === "npm") {
+    return left.package === right.package && left.version === right.version;
+  }
+  if (left.kind === "github" && right.kind === "github") {
+    return left.repository === right.repository && left.ref === right.ref && left.subpath === right.subpath && left.commit === right.commit;
+  }
+  if (left.kind === "builtin" && right.kind === "builtin") {
+    return left.name === right.name;
+  }
+  return true;
+}
+
 function normalizeManagedState(raw: unknown): ManagedExtensionState | null {
   if (typeof raw !== "object" || raw === null) {
     return null;
@@ -1287,6 +1303,7 @@ async function resolveNpmSourceDirectory(source: NpmInstallSource): Promise<{
     const packed = parsePackedNpmPackage(packStdout, packDirectory);
     await execFileAsync("tar", ["-xzf", packed.tarball, "-C", extractDirectory], { encoding: "utf8" });
     const packageRoot = path.join(extractDirectory, "package");
+    await installNpmPackageRuntimeDependencies(packageRoot);
     const directory = await resolvePackageExtensionDirectory(packageRoot, source.input);
     return {
       directory,
@@ -1300,6 +1317,62 @@ async function resolveNpmSourceDirectory(source: NpmInstallSource): Promise<{
     await fs.rm(tempRoot, { recursive: true, force: true });
     throw error;
   }
+}
+
+async function installNpmPackageRuntimeDependencies(packageRoot: string): Promise<void> {
+  const packageJsonPath = path.join(packageRoot, "package.json");
+  if (!(await pathExists(packageJsonPath))) {
+    return;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await fs.readFile(packageJsonPath, "utf8")) as unknown;
+  } catch {
+    return;
+  }
+  if (typeof parsed !== "object" || parsed === null) {
+    return;
+  }
+
+  const manifest = parsed as { dependencies?: unknown; optionalDependencies?: unknown; peerDependencies?: unknown };
+  const dependencySpecs = runtimeDependencyInstallSpecs(manifest);
+  if (dependencySpecs.length === 0) {
+    return;
+  }
+
+  const runtimeOnlyManifest = { ...(parsed as Record<string, unknown>) };
+  delete runtimeOnlyManifest.devDependencies;
+  await fs.writeFile(packageJsonPath, `${JSON.stringify(runtimeOnlyManifest, null, 2)}\n`, "utf8");
+  await Promise.all([
+    fs.rm(path.join(packageRoot, "package-lock.json"), { force: true }),
+    fs.rm(path.join(packageRoot, "npm-shrinkwrap.json"), { force: true }),
+  ]);
+
+  await runNpmCommand(
+    ["install", "--ignore-scripts", "--no-audit", "--fund=false", "--package-lock=false", "--no-save", ...dependencySpecs],
+    packageRoot,
+  );
+}
+
+function runtimeDependencyInstallSpecs(manifest: {
+  dependencies?: unknown;
+  optionalDependencies?: unknown;
+  peerDependencies?: unknown;
+}): string[] {
+  const specs = new Map<string, string>();
+  for (const dependencyMap of [manifest.dependencies, manifest.optionalDependencies, manifest.peerDependencies]) {
+    if (typeof dependencyMap !== "object" || dependencyMap === null) {
+      continue;
+    }
+    for (const [name, version] of Object.entries(dependencyMap)) {
+      if (typeof version !== "string" || version.trim().length === 0 || specs.has(name)) {
+        continue;
+      }
+      specs.set(name, `${name}@${version.trim()}`);
+    }
+  }
+  return [...specs.values()];
 }
 
 async function resolvePackageExtensionDirectory(packageRoot: string, sourceLabel: string): Promise<string> {
@@ -2580,6 +2653,10 @@ export async function runExtension(
       const existingManagedEntry = managedStateRead.state.entries.find(
         (entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name),
       );
+      const sourceUnchanged =
+        existingManagedEntry !== undefined &&
+        existingManagedEntry.manifest_version === validated.manifest.version &&
+        managedExtensionSourcesEquivalent(existingManagedEntry.source, sourceRecord);
       const managedState = upsertManagedEntry(managedStateRead.state, {
         name: validated.manifest.name,
         directory: destinationDirectoryName,
@@ -2588,7 +2665,7 @@ export async function runExtension(
         manifest_entry: validated.manifest.entry,
         capabilities: [...validated.manifest.capabilities],
         installed_at: existingManagedEntry?.installed_at ?? now,
-        updated_at: now,
+        updated_at: sourceUnchanged ? existingManagedEntry.updated_at : now,
         source: sourceRecord,
       });
       await writeManagedExtensionState(resolvedRoots.selected_root, managedState);

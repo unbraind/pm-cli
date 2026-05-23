@@ -6,12 +6,13 @@ status: closed
 priority: 1
 tags[4]: bug,changelog,package,upstream
 created_at: "2026-05-23T20:27:39.801Z"
-updated_at: "2026-05-23T21:21:43.846Z"
+updated_at: "2026-05-23T23:27:37.821Z"
 author: codex-pm-changelog
 parent: pm-7811
 severity: high
 environment: pm-cli repository with 5.4 MB pm list-all --json output
 repro_steps: "Install pm-changelog 2026.5.23-1 with pm install npm:pm-changelog --project, then run pm changelog generate --stdout --status closed --group-by version."
+resolution: pm-changelog large tracker JSON handling was fixed upstream and verified through the installed package; this item was closed after the generated changelog check passed.
 expected_result: The extension command generates changelog output or uses a streaming/input path for large trackers.
 actual_result: Command fails with extension_command_handler_failed; direct spawnSync reproduction reports spawnSync pm ENOBUFS.
 affected_version: 2026.5.23-1

@@ -1,11 +1,8 @@
-import { existsSync, realpathSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { defineExtension, listAllFrontMatter } from "@unbrained/pm-cli/sdk";
 import { createChangelog, mergeChangelog, writeChangelog } from "./generator.js";
-const defineExtension = ((extension) => extension);
 export default defineExtension({
     name: "pm-changelog",
-    version: "0.1.0",
+    version: "2026.5.24-1",
     activate(api) {
         api.registerCommand({
             name: "changelog generate",
@@ -51,7 +48,6 @@ export default defineExtension({
                     ?.split(",")
                     .map((status) => status.trim())
                     .filter(Boolean);
-                const listAllFrontMatter = await loadListAllFrontMatter();
                 const items = await listAllFrontMatter(ctx.pm_root);
                 const generationOptions = {
                     items,
@@ -104,27 +100,5 @@ function stringOption(options, kebabKey, camelKey) {
 }
 function booleanOption(options, kebabKey, camelKey) {
     return Boolean(options[kebabKey] ?? options[camelKey]);
-}
-async function loadListAllFrontMatter() {
-    try {
-        const sdk = await import("@unbrained/pm-cli/sdk");
-        return sdk.listAllFrontMatter;
-    }
-    catch (error) {
-        const currentCli = process.argv[1];
-        const candidates = [
-            typeof currentCli === "string" ? resolve(dirname(currentCli), "sdk", "index.js") : undefined,
-            typeof currentCli === "string" ? resolve(dirname(realpathSync(currentCli)), "sdk", "index.js") : undefined,
-        ].filter((candidate) => typeof candidate === "string");
-        for (const candidate of candidates) {
-            if (!existsSync(candidate))
-                continue;
-            const sdk = await import(pathToFileURL(candidate).href);
-            if (typeof sdk.listAllFrontMatter === "function") {
-                return sdk.listAllFrontMatter;
-            }
-        }
-        throw error;
-    }
 }
 //# sourceMappingURL=extension.js.map

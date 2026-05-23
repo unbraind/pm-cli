@@ -126,8 +126,8 @@ function run() {
 
     console.log(`npx packed package smoke passed (${version}, packages=${packages.length}).`);
   } finally {
-    rmSync(tarball, { force: true });
-    rmSync(tempRoot, { recursive: true, force: true });
+    rmSync(tarball, { force: true, maxRetries: 5, retryDelay: 100 });
+    rmSync(tempRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 }
 

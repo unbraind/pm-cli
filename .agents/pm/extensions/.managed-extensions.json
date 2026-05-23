@@ -1,33 +1,26 @@
 {
   "version": 1,
-  "updated_at": "2026-05-23T21:20:10.643Z",
+  "updated_at": "2026-05-23T23:30:38.681Z",
   "entries": [
     {
       "name": "pm-changelog",
       "directory": "pm-changelog",
       "scope": "project",
-      "manifest_version": "2026.5.23-5",
+      "manifest_version": "2026.5.24-1",
       "manifest_entry": "./dist/extension.js",
       "capabilities": [
         "commands",
         "schema"
       ],
       "installed_at": "2026-05-23T20:26:03.509Z",
-      "updated_at": "2026-05-23T21:20:05.314Z",
+      "updated_at": "2026-05-23T22:44:43.047Z",
       "source": {
-        "kind": "github",
-        "input": "unbraind/pm-changelog",
-        "location": ".",
-        "repository": "https://github.com/unbraind/pm-changelog.git",
-        "owner": "unbraind",
-        "repo": "pm-changelog",
-        "ref": "main",
-        "subpath": ".",
-        "commit": "f5ebc23c7e3dbc9d41ac687b14826fe5632e9d1a"
-      },
-      "last_update_check_at": "2026-05-23T21:20:10.271Z",
-      "last_update_remote_commit": "f5ebc23c7e3dbc9d41ac687b14826fe5632e9d1a",
-      "update_available": false
+        "kind": "npm",
+        "input": "npm:pm-changelog",
+        "location": "package",
+        "package": "pm-changelog",
+        "version": "2026.5.24-1"
+      }
     }
   ]
 }

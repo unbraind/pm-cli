@@ -1,5 +1,50 @@
 # Changelog
 
+## v2026.05.24-1
+
+### Other
+
+- Published npm package missed runtime pm SDK dependency (pmc-xif2)
+
+## v2026.05.24
+
+### Other
+
+- Release workflow used UTC date for local 2026-05-24 release (pmc-e1jy)
+
+## v2026.05.23-7
+
+### Added
+
+- Restructure documentation for agent progressive disclosure (pmc-nuci)
+- Use official pm SDK without local extension shims (pmc-0jm1)
+
+### Security
+
+- Verify release readiness with GitHub npm pm and history checks (pmc-scof)
+
+### Other
+
+- Production readiness refresh for pm-changelog v2026.05.23-7 (pmc-t7ie)
+- Convert test source to typed TypeScript (pmc-yzeq)
+
+## v2026.05.23-6
+
+### Added
+
+- Enable scheduled npm and GitHub auto release workflow (pmc-mklv)
+
+### Other
+
+- Verify pm-changelog release workflow and package install path (pmc-6zxg)
+- Refresh production readiness governance for v2026.05.23-6 (pmc-l1h7)
+
+## v2026.05.23-5
+
+### Other
+
+- Production release readiness pass for pm-changelog 2026.5.23-5 (pmc-qjl9)
+
 ## v2026.05.23-2
 
 ### Fixed

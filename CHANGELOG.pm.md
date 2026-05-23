@@ -4,9 +4,6 @@
 
 ### Added
 
-- Dogfood 2026-05-21 follow-ups: test --add key validation, semantic-fallback labeling, close active-children info, stale blocker on close (pm-fu5d)
-- pm schema add-type CLI + invalid-type error hint \(pm-e1va\) (pm-fy8o)
-- Config-driven custom item types: wire schema/types.json into runtime schema (pm-e1va)
 - pm health output stays large even with --brief/--skip flags; add a true one-line summary mode (pm-nbht)
 - Reduce default verbosity of pm activity/history CLI output and add a compact mode to pm history (pm-3pbs)
 - Add pm plan list subcommand or did-you-mean to pm list --type Plan (pm-zpa5)
@@ -33,7 +30,6 @@
 - pm claim --if-available \(skip when held\) — reduce 533 ownership\_conflict events (pm-d4bo)
 - pm get/show: did-you-mean suggestions for unknown IDs \(telemetry: 233 hits/30d\) (pm-99x5)
 - pm init footer + bundle calendar so cal/templates are discoverable (pm-8wwl)
-- pm update with no fields should noop-succeed, not fail \(telemetry: 128 hits/30d\) (pm-7cup)
 - Auto-route pm update --status closed --close-reason to pm close \(telemetry: 248 hits/30d\) (pm-12ib)
 - Add --with-packages flag to pm init for one-shot package install (pm-hosd)
 - Publish package gallery and marketplace metadata (pm-2b3l)
@@ -49,7 +45,6 @@
 - Docs: Add practical SDK extension examples (pm-7k9o)
 - Code Quality: Extract shared primitives module (pm-5na9)
 - Agent UX: Add --brief output mode and context suggestions (pm-32si)
-- Feature: Telemetry Pipeline Audit - Fully Operational (pm-jkip)
 - Agent-optimized documentation structure (pm-r9gu)
 - Feature: Core commands verified - all 10 types and lifecycle (pm-qwe2)
 - Feature: SDK & Extension System Audit - Comprehensive (pm-qdha)
@@ -115,10 +110,8 @@
 - Sentry PM-CLI-R/PM-CLI-S: undefined-status .trim and undefined-tags .join crashes \(fixed in HEAD, mark resolvedInNextRelease\) (pm-d7us)
 - pm test --add causes immediate history drift via null timeout\_seconds (pm-er4q)
 - Add regression coverage for pm init agent guidance workflows (pm-0nia)
-- MCP pm\_context crashes on caller-supplied projection flags \(compact/brief/fields/includeBody\) (pm-xy02)
 - auto-release.yml workflow\_dispatch silently overrides explicit push=false to true (pm-qa2h)
 - pm install exits 0 on error \(CRITICAL agent-blocker\) (pm-naiv)
-- CLI silently corrupts --tags '\["a","b"\]' JSON-array input \(agent-unfriendly\) (pm-klqo)
 - pm bare command silent exit 0 — no help shown (pm-8rj2)
 - Fix CSV status filter and multi-status support in pm list (pm-ziv0)
 - Fix TOON array-of-objects continuation lines double-indent (pm-ps85)
@@ -148,7 +141,6 @@
 
 ### Security
 
-- Harden secret-scan guardrail for GitHub token prefixes and local credential hygiene (pm-h4zb)
 - 2026-05-02 Full PM CLI Audit: Build Fix, Security, Performance, Telemetry (pm-nnhi)
 - 2026-05-09 latest-build full pm CLI dogfood audit and remediation (pm-m35h)
 - Security/privacy leakage gate - redact host/IP/token from tracked files (pm-m0fh)
@@ -156,7 +148,6 @@
 - Execute latest dogfood audit and targeted fixes (pm-mm3h)
 - Enhance check-secrets.mjs with private IP detection rule (pm-daft)
 - Chore: 2026-05-02 Phase 3 Audit - IP scrub, dogfood, analysis tooling (pm-2326)
-- Issue: Private IP address in committed pm task files (pm-xk8b)
 - 2026-05-02 Full PM CLI Audit Phase 2: Dead Code Removal, Security Enhancement, Sentry Optimization (pm-kkmo)
 - Rewrite README and public documentation (pm-1sb2)
 - Documentation overhaul and public docs safety (pm-3042)
@@ -165,6 +156,7 @@
 
 ### Other
 
+- Install and validate pm-changelog package (pm-7811)
 - Linked test sandbox cleanup can fail with ENOTEMPTY (pm-u43m)
 - Extract shared direct CLI spawn helper for integration tests (pm-401l)
 - Extract shared JSON error-envelope test assertions (pm-alqo)
@@ -174,7 +166,6 @@
 - Deduplicate templates package runtime and legacy command implementation (pm-ypqp)
 - Calendar agent ergonomics: equal start/end rejected; schedule-less Event items invisible (pm-uzmf)
 - history-repair command + legacy drift cleanup + replay dedup (pm-c3dx)
-- Auto daily release silently skips releasable commits when CHANGELOG \[Unreleased\] is empty (pm-ot8r)
 - Session 2026-05-23: agent-UX + deps-graph integrity batch \(multi-agent\) (pm-uz25)
 - Deduplicate history, restore, and redaction replay helpers (pm-pjs5)
 - pm plan: materialize creates dependency cycle; decision/discovery/validation flag mismatch; --steps all unsupported (pm-6blp)
@@ -183,7 +174,6 @@
 - pm create --blocked-by stores free-text metadata, not a dependency edge or blocked status \(agent-confusing\) (pm-orrl)
 - MCP pm\_comments returns full comment history \(no default limit\) — token bloat on long-lived items (pm-6vfg)
 - MCP pm\_run activity defaults to verbose raw history-patch dump \(token waste for agents\) (pm-8jd3)
-- Dogfood 2026-05-20: CLI/agent-UX consistency fixes \(append text forms, scope errors, --list parity, command typo suggestions\) (pm-atsv)
 - MCP pm\_search defaults to full item bodies, blowing past agent token limits (pm-qrxs)
 - Opt CI JavaScript actions into Node 24 runtime (pm-1lef)
 - Suppress benign extension\_service\_override\_collision when calendar+guide-shell both bundled (pm-5u9z)
@@ -282,7 +272,6 @@
 - 2026-04-26 comprehensive dogfood audit stabilization (pm-mb4n)
 - Project tracker validation hygiene warnings remain (pm-e0b5)
 - 2026-05-01 Full PM CLI Dogfood Audit v2 (pm-2eb3)
-- 2026-05-02 Full Audit: All Systems Verified (pm-ss8d)
 - Lower Sentry tracesSampleRate from 1.0 to 0.2 for free plan quota (pm-wvhs)
 - 2026-05-01 Full PM CLI Audit Implementation (pm-twpc)
 - Telemetry queue timeout: 21 events stuck with flush timeout (pm-sgmb)
@@ -294,7 +283,6 @@
 - Telemetry: Backfill legacy source\_context (pm-dqer)
 - Telemetry: Create Grafana dashboard (pm-6js7)
 - Docs: Create telemetry stack runbook (pm-2lbp)
-- Verify remote telemetry stack receives events and data flows to \[redacted\_monitoring\_ui\] (pm-g8gj)
 - Chore: Prune stuck telemetry queue entries (pm-wrbo)
 - Epic: 2026-04-28 Full PM CLI Dogfood Audit (pm-wg1d)
 - Decision: PM CLI audit confirms production readiness (pm-unbq)
@@ -306,7 +294,6 @@
 - Calendar audit: all views verified working, reminders and deadlines render correctly (pm-71sj)
 - Templates command: document correct invocation syntax \(positional vs --name\) (pm-6y6i)
 - Extension system audit: install/manage/doctor/activate lifecycle fully working (pm-3s52)
-- Telemetry pipeline verified: all \[redacted\_service\_count\] services healthy, E2E event ingestion working (pm-3akm)
 - Chore: Telemetry queue steady-state has 100 pending entries (pm-2gmr)
 - 2026-04-30 Full PM CLI Dogfood Audit (pm-23me)
 - Priority --priority error message missing 0..4 range and semantic labels (pm-1h7w)
@@ -556,7 +543,6 @@
 - Structured Error Guidance and Diagnostics (pm-frk8)
 - Exit/output and subprocess runtime hardening (pm-axlr)
 - Implement flexible deadline/date parser behavior (pm-lau3)
-- Canonical status alias normalization across CLI surfaces (pm-1r6p)
 - Compatibility docs and verification hardening (pm-tob5)
 - Flexible parser and stdin ingestion foundation (pm-e7fd)
 - SDK publishing and stability contract (pm-oga6)
@@ -714,7 +700,6 @@
 - M5 follow-up: enforce mandatory extension migration write gate (pm-2p5x)
 - M5 follow-up: report pending extension migrations in health (pm-42oa)
 - M5 follow-up: dispatch lock lifecycle hooks (pm-671u)
-- M3 follow-up: harden activity when history directory is missing (pm-er7n)
 - M5 follow-up: isolate hook execution contexts (pm-3ses)
 - M5 follow-up: Extension API registration surface baseline (pm-iuzs)
 - M5 follow-up: dispatch onWrite hooks for create and restore (pm-f3q4)

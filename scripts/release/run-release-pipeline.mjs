@@ -336,6 +336,7 @@ function runPipeline() {
     const npm = commandFor("npm");
     runCommand(npm, ["version", "--no-git-tag-version", targetVersion]);
     runCommand(process.execPath, ["scripts/release/changelog-promote.mjs", "--version", targetVersion]);
+    runCommand(process.execPath, ["dist/cli.js", "install", "npm:pm-changelog", "--project"]);
     runCommand(process.execPath, [
       "dist/cli.js",
       "changelog",

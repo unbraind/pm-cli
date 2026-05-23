@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -206,6 +206,100 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           },
         },
       });
+    });
+  });
+
+  it("installs runtime dependencies for packed npm package extensions", async () => {
+    await withTempPmPath(async (context) => {
+      const sdkRoot = path.join(context.tempRoot, "fake-pm-sdk");
+      await mkdir(path.join(sdkRoot, "dist"), { recursive: true });
+      await writeFile(
+        path.join(sdkRoot, "package.json"),
+        JSON.stringify(
+          {
+            name: "@unbrained/pm-cli",
+            version: "999.0.0-test",
+            type: "module",
+            exports: {
+              "./sdk": "./dist/sdk.js",
+            },
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(path.join(sdkRoot, "dist", "sdk.js"), "export function defineExtension(extension) { return extension; }\n", "utf8");
+      const sdkPackOutput = execFileSync("npm", ["pack", sdkRoot, "--json", "--pack-destination", context.tempRoot], {
+        encoding: "utf8",
+      });
+      const sdkPack = JSON.parse(sdkPackOutput) as Array<{ filename: string }>;
+      const sdkTarball = sdkPack[0]?.filename;
+      expect(sdkTarball).toBeTruthy();
+
+      const packageRoot = path.join(context.tempRoot, "npm-package-with-deps");
+      await mkdir(path.join(packageRoot, "dist"), { recursive: true });
+      await mkdir(path.join(packageRoot, "vendor"), { recursive: true });
+      await writeFile(
+        path.join(packageRoot, "manifest.json"),
+        JSON.stringify(
+          {
+            name: "npm-package-with-deps",
+            version: "1.0.0",
+            entry: "./dist/extension.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(
+        path.join(packageRoot, "package.json"),
+        JSON.stringify(
+          {
+            name: "pm-test-npm-package-with-deps",
+            version: "1.0.0",
+            type: "module",
+            files: ["dist", "manifest.json", "vendor"],
+            pm: {
+              extensions: ["."],
+            },
+            dependencies: {
+              "@unbrained/pm-cli": `file:vendor/${sdkTarball}`,
+            },
+            devDependencies: {
+              "@unbrained/pm-cli": `file:vendor/${sdkTarball}`,
+            },
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeFile(
+        path.join(packageRoot, "dist", "extension.js"),
+        [
+          'import { defineExtension } from "@unbrained/pm-cli/sdk";',
+          "export default defineExtension({",
+          "  activate(api) {",
+          "    api.registerCommand({ name: 'npm sdk smoke', run: () => ({ ok: true }) });",
+          "  }",
+          "});",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await writeFile(path.join(packageRoot, "vendor", sdkTarball), await readFile(path.join(context.tempRoot, sdkTarball)));
+
+      const installSpec = `pm-test-npm-package-with-deps@file:${packageRoot}`;
+      const install = context.runCli(["install", `npm:${installSpec}`, "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+
+      const doctor = context.runCli(["package", "doctor", "--project", "--json", "--detail", "deep"], { expectJson: true });
+      expect(doctor.code).toBe(0);
+      expect((doctor.json as { warnings?: string[] }).warnings ?? []).not.toContain("extension_load_failed:npm-package-with-deps");
+      expect(JSON.stringify(doctor.json)).toContain("npm sdk smoke");
     });
   });
 
