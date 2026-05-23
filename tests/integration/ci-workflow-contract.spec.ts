@@ -152,7 +152,7 @@ describe("GitHub workflow contract", () => {
       "pnpm test",
     ]);
     expect(ciWorkflow.match(/PM_RUN_TESTS_SKIP_BUILD: "1"/g)?.length).toBe(1);
-    expect(ciWorkflow).not.toContain("run: pnpm test\n");
+    expect(ciWorkflow).not.toMatch(/^\s*run: pnpm test\s*$/m);
     expect(ciWorkflow).not.toContain("Sandboxed PM regression");
 
     expectContainsNone(ciWorkflow, PUBLISH_OR_RELEASE_PATTERNS);
