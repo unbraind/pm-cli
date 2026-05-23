@@ -1,7 +1,29 @@
 #!/usr/bin/env node
 import fs from "node:fs";
+import * as nodeModule from "node:module";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+function enableNodeCompileCache(): void {
+  const enableCompileCache = nodeModule.enableCompileCache as
+    | ((cacheDir?: string) => { status?: number; message?: string })
+    | undefined;
+  if (typeof enableCompileCache !== "function" || process.env.PM_CLI_DISABLE_COMPILE_CACHE === "1") {
+    return;
+  }
+  const userCacheKey =
+    typeof process.getuid === "function"
+      ? String(process.getuid())
+      : os.userInfo().username.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const cacheDir =
+    process.env.PM_CLI_COMPILE_CACHE_DIR ?? path.join(os.tmpdir(), `pm-cli-node-compile-cache-${userCacheKey}`);
+  try {
+    enableCompileCache(cacheDir);
+  } catch {
+    // Compile caching is a startup optimization only; never block CLI execution.
+  }
+}
 
 function findPackageJson(startPath: string): string | undefined {
   let current = path.dirname(path.resolve(startPath));
@@ -20,7 +42,8 @@ function findPackageJson(startPath: string): string | undefined {
 
 function printFastVersionIfRequested(): boolean {
   const args = process.argv.slice(2);
-  if (args.length !== 1 || (args[0] !== "--version" && args[0] !== "-V")) {
+  const versionArgs = args.filter((arg) => arg !== "--no-extensions");
+  if (versionArgs.length !== 1 || (versionArgs[0] !== "--version" && versionArgs[0] !== "-V")) {
     return false;
   }
   const packageJsonPath = findPackageJson(fileURLToPath(import.meta.url));
@@ -40,5 +63,6 @@ function printFastVersionIfRequested(): boolean {
 }
 
 if (!printFastVersionIfRequested()) {
+  enableNodeCompileCache();
   await import("./cli/main.js");
 }
