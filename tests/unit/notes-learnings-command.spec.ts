@@ -7,6 +7,7 @@ import { runLearnings } from "../../src/cli/commands/learnings.js";
 import { runNotes } from "../../src/cli/commands/notes.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
+import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 afterEach(() => {
@@ -30,55 +31,11 @@ const TARGETS: LogCommandTarget[] = [
 ];
 
 function createTask(context: TempPmContext, title: string): string {
-  const created = context.runCli(
-    [
-      "create",
-      "--json",
-      "--title",
-      title,
-      "--description",
-      `${title} description`,
-      "--type",
-      "Task",
-      "--status",
-      "open",
-      "--priority",
-      "1",
-      "--tags",
-      "notes-learnings,unit",
-      "--body",
-      "",
-      "--deadline",
-      "none",
-      "--estimate",
-      "10",
-      "--acceptance-criteria",
-      `${title} acceptance`,
-      "--author",
-      "seed-author",
-      "--message",
-      `Create ${title}`,
-      "--assignee",
-      "none",
-      "--dep",
-      "none",
-      "--comment",
-      "none",
-      "--note",
-      "none",
-      "--learning",
-      "none",
-      "--file",
-      "none",
-      "--test",
-      "none",
-      "--doc",
-      "none",
-    ],
-    { expectJson: true },
-  );
-  expect(created.code).toBe(0);
-  return (created.json as { item: { id: string } }).item.id;
+  return createTestItemId(context, {
+    title,
+    tags: "notes-learnings,unit",
+    estimate: "10",
+  });
 }
 
 function setGovernancePreset(context: TempPmContext, preset: "minimal" | "default" | "strict"): void {

@@ -6,6 +6,7 @@ import { PmCliError } from "../../src/core/shared/errors.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import type { GlobalOptions } from "../../src/core/shared/command-types.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
+import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const GLOBAL_OPTIONS: GlobalOptions = {
@@ -14,22 +15,6 @@ const GLOBAL_OPTIONS: GlobalOptions = {
   noExtensions: false,
   profile: false,
 };
-
-async function createProjectExtension(
-  pmPath: string,
-  directory: string,
-  manifest: Record<string, unknown>,
-  entrySource: string,
-): Promise<void> {
-  const extensionRoot = path.join(pmPath, "extensions", directory);
-  await mkdir(extensionRoot, { recursive: true });
-  await writeFile(
-    path.join(extensionRoot, "manifest.json"),
-    `${JSON.stringify(manifest, null, 2)}\n`,
-    "utf8",
-  );
-  await writeFile(path.join(extensionRoot, "index.mjs"), entrySource, "utf8");
-}
 
 describe("contracts command runtime", () => {
   it("returns schema, actions, command flags, and alias surfaces", async () => {
@@ -861,16 +846,18 @@ describe("contracts command runtime", () => {
 
   it("keeps installed extension actions visible in runtime-only mode", async () => {
     await withTempPmPath(async (context) => {
-      await createProjectExtension(
-        context.pmPath,
-        "beads-contract-action",
-        {
+      await writeTestExtension({
+        root: context.pmPath,
+        placement: "projectRoot",
+        directory: "beads-contract-action",
+        manifest: {
           name: "beads-contract-action",
           version: "1.0.0",
           entry: "./index.mjs",
           capabilities: ["commands", "schema"],
         },
-        [
+        entryFilename: "index.mjs",
+        entrySource: [
           "export default {",
           "  activate(api) {",
           "    api.registerCommand({",
@@ -883,7 +870,7 @@ describe("contracts command runtime", () => {
           "};",
           "",
         ].join("\n"),
-      );
+      });
 
       const result = await runContracts(
         {
@@ -947,16 +934,18 @@ describe("contracts command runtime", () => {
 
   it("merges active extension command/action schemas into contracts output", async () => {
     await withTempPmPath(async (context) => {
-      await createProjectExtension(
-        context.pmPath,
-        "migrate-asset-contracts",
-        {
+      await writeTestExtension({
+        root: context.pmPath,
+        placement: "projectRoot",
+        directory: "migrate-asset-contracts",
+        manifest: {
           name: "migrate-asset-contracts",
           version: "1.0.0",
           entry: "./index.mjs",
           capabilities: ["commands", "schema"],
         },
-        [
+        entryFilename: "index.mjs",
+        entrySource: [
           "export default {",
           "  activate(api) {",
           "    api.registerCommand({",
@@ -987,7 +976,7 @@ describe("contracts command runtime", () => {
           "};",
           "",
         ].join("\n"),
-      );
+      });
 
       const result = await runContracts(
         {
@@ -1093,16 +1082,18 @@ describe("contracts command runtime", () => {
 
   it("deduplicates extension schema branches by action while preserving command aliases", async () => {
     await withTempPmPath(async (context) => {
-      await createProjectExtension(
-        context.pmPath,
-        "alias-action-contracts",
-        {
+      await writeTestExtension({
+        root: context.pmPath,
+        placement: "projectRoot",
+        directory: "alias-action-contracts",
+        manifest: {
           name: "alias-action-contracts",
           version: "1.0.0",
           entry: "./index.mjs",
           capabilities: ["commands", "schema"],
         },
-        [
+        entryFilename: "index.mjs",
+        entrySource: [
           "const flags = [{ long: '--view', value_name: 'value', value_type: 'string', description: 'View.' }];",
           "export default {",
           "  activate(api) {",
@@ -1112,7 +1103,7 @@ describe("contracts command runtime", () => {
           "};",
           "",
         ].join("\n"),
-      );
+      });
 
       const result = await runContracts(
         { action: "alias-action", schemaOnly: true },

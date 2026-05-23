@@ -1,5 +1,4 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runConfig } from "../../src/cli/commands/config.js";
@@ -10,21 +9,13 @@ import { getItemPath, getSettingsPath } from "../../src/core/store/paths.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import type { ItemDocument } from "../../src/types/index.js";
 import type { GlobalOptions } from "../../src/core/shared/command-types.js";
+import { withTempRoot } from "../helpers/temp.js";
 
 const DEFAULT_GLOBAL_OPTIONS: GlobalOptions = {
   json: false,
   quiet: false,
   profile: false,
 };
-
-async function withTempRoot(run: (tempRoot: string) => Promise<void>): Promise<void> {
-  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-cli-config-command-test-"));
-  try {
-    await run(tempRoot);
-  } finally {
-    await fs.rm(tempRoot, { recursive: true, force: true });
-  }
-}
 
 describe("runConfig", () => {
   const originalGlobalPath = process.env.PM_GLOBAL_PATH;
@@ -38,7 +29,7 @@ describe("runConfig", () => {
   });
 
   it("returns project definition-of-done criteria from initialized settings", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       const settings = structuredClone(SETTINGS_DEFAULTS);
       settings.workflow.definition_of_done = ["tests pass"];
@@ -60,7 +51,7 @@ describe("runConfig", () => {
   });
 
   it("lists config keys with metadata and current values", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       const settings = structuredClone(SETTINGS_DEFAULTS);
       settings.workflow.definition_of_done = ["tests pass"];
@@ -108,7 +99,7 @@ describe("runConfig", () => {
   });
 
   it("exports resolved config snapshot values", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       const settings = structuredClone(SETTINGS_DEFAULTS);
       settings.workflow.definition_of_done = ["tests pass"];
@@ -176,7 +167,7 @@ describe("runConfig", () => {
   });
 
   it("gets and sets governance preset and knob policies", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -235,7 +226,7 @@ describe("runConfig", () => {
   });
 
   it("persists sorted deduplicated project definition-of-done criteria", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -258,7 +249,7 @@ describe("runConfig", () => {
   });
 
   it("reports unchanged false when set criteria already match stored order", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       const settings = structuredClone(SETTINGS_DEFAULTS);
       settings.workflow.definition_of_done = ["linked files/tests/docs present", "tests pass"];
@@ -280,7 +271,7 @@ describe("runConfig", () => {
   });
 
   it("writes global definition-of-done criteria using PM_GLOBAL_PATH", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       process.env.PM_GLOBAL_PATH = path.join(tempRoot, ".pm-cli-global");
 
       const result = await runConfig(
@@ -303,7 +294,7 @@ describe("runConfig", () => {
   });
 
   it("rejects empty set criteria", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -321,7 +312,7 @@ describe("runConfig", () => {
   });
 
   it("supports clearing definition-of-done criteria with --clear-criteria", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       const settings = structuredClone(SETTINGS_DEFAULTS);
       settings.workflow.definition_of_done = ["linked files/tests/docs present", "tests pass"];
@@ -355,7 +346,7 @@ describe("runConfig", () => {
   });
 
   it("requires initialized project settings", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
 
       await expect(
@@ -367,7 +358,7 @@ describe("runConfig", () => {
   });
 
   it("validates scope action and key values", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -396,7 +387,7 @@ describe("runConfig", () => {
   });
 
   it("sets and gets project item-format and migrates item files to the configured format", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
       const legacySettingsPath = path.join(pmRoot, "settings.json");
@@ -450,7 +441,7 @@ describe("runConfig", () => {
   });
 
   it("requires --format when setting item-format and validates allowed values", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -473,7 +464,7 @@ describe("runConfig", () => {
   });
 
   it("gets and sets history missing-stream policy", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -511,7 +502,7 @@ describe("runConfig", () => {
   });
 
   it("requires --policy when setting history missing-stream policy and validates values", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -542,7 +533,7 @@ describe("runConfig", () => {
   });
 
   it("gets and sets sprint-release format policy", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -580,7 +571,7 @@ describe("runConfig", () => {
   });
 
   it("requires --policy when setting sprint-release format policy and validates values", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -611,7 +602,7 @@ describe("runConfig", () => {
   });
 
   it("gets and sets parent-reference policy", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -649,7 +640,7 @@ describe("runConfig", () => {
   });
 
   it("requires --policy when setting parent-reference policy and validates values", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -680,7 +671,7 @@ describe("runConfig", () => {
   });
 
   it("gets and sets metadata-validation profile policy", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -718,7 +709,7 @@ describe("runConfig", () => {
   });
 
   it("requires supported --policy values when setting metadata-validation profile", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -749,7 +740,7 @@ describe("runConfig", () => {
   });
 
   it("gets and sets metadata-required fields list", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -787,7 +778,7 @@ describe("runConfig", () => {
   });
 
   it("validates metadata-required fields criteria values", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -842,7 +833,7 @@ describe("runConfig", () => {
   });
 
   it("gets and sets lifecycle pattern criteria lists", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -895,7 +886,7 @@ describe("runConfig", () => {
   });
 
   it("validates lifecycle pattern criteria operations", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -926,7 +917,7 @@ describe("runConfig", () => {
   });
 
   it("gets and sets telemetry tracking policy", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
 
@@ -979,7 +970,7 @@ describe("runConfig", () => {
   });
 
   it("treats legacy settings without item_format as changed when explicitly setting default format", async () => {
-    await withTempRoot(async (tempRoot) => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
       const legacySettings = { ...structuredClone(SETTINGS_DEFAULTS) } as Record<string, unknown>;
       delete legacySettings.item_format;

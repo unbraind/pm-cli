@@ -26,19 +26,8 @@ import {
   writeFileAtomic,
 } from "../../src/sdk/index.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
+import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
-
-async function createProjectExtension(
-  pmPath: string,
-  directory: string,
-  manifest: Record<string, unknown>,
-  entrySource: string,
-): Promise<void> {
-  const extensionRoot = path.join(pmPath, "extensions", directory);
-  await mkdir(extensionRoot, { recursive: true });
-  await writeFile(path.join(extensionRoot, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
-  await writeFile(path.join(extensionRoot, "index.mjs"), entrySource, "utf8");
-}
 
 describe("public sdk entrypoint", () => {
   it("exposes deterministic capability names", () => {
@@ -225,22 +214,24 @@ describe("public sdk entrypoint", () => {
 
   it("includes extension-registered item types in runtime workspace contracts", async () => {
     await withTempPmPath(async ({ pmPath }) => {
-      await createProjectExtension(
-        pmPath,
-        "workspace-contract-ext",
-        {
+      await writeTestExtension({
+        root: pmPath,
+        placement: "projectRoot",
+        directory: "workspace-contract-ext",
+        manifest: {
           name: "workspace-contract-ext",
           version: "1.0.0",
           entry: "./index.mjs",
           capabilities: ["schema"],
         },
-        [
+        entryFilename: "index.mjs",
+        entrySource: [
           "export function activate(api) {",
           "  api.registerItemTypes([{ name: 'ExperimentRun', folder: 'experiment-runs' }]);",
           "}",
           "",
         ].join("\n"),
-      );
+      });
 
       const workspaceContracts = await getWorkspaceContracts(pmPath);
       expect(workspaceContracts.types).toEqual(expect.arrayContaining(["Task", "ExperimentRun"]));

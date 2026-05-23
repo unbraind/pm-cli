@@ -1,5 +1,4 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -9,17 +8,10 @@ import {
   SEARCH_CACHE_ARTIFACT_PATHS,
 } from "../../src/core/search/cache.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
+import { createTestItemId } from "../helpers/itemFactory.js";
+import { withTempDir } from "../helpers/temp.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
-
-async function withTempDir(run: (tempDir: string) => Promise<void>): Promise<void> {
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "pm-cli-search-cache-"));
-  try {
-    await run(tempDir);
-  } finally {
-    await fs.rm(tempDir, { recursive: true, force: true });
-  }
-}
 
 function createSeedItem(
   context: TempPmContext,
@@ -27,60 +19,23 @@ function createSeedItem(
   dep: string = "none",
   seedLogs: boolean = true,
 ): string {
-  const result = context.runCli(
-    [
-      "create",
-      "--json",
-      "--title",
-      title,
-      "--description",
-      `${title} description`,
-      "--type",
-      "Task",
-      "--status",
-      "open",
-      "--priority",
-      "1",
-      "--tags",
-      "search,cache",
-      "--body",
-      `${title} body`,
-      "--deadline",
-      "none",
-      "--estimate",
-      "10",
-      "--acceptance-criteria",
-      "Mutation refresh updates semantic vectors",
-      "--author",
-      "unit-test",
-      "--message",
-      "Create search cache test item",
-      "--assignee",
-      "none",
-      "--dep",
-      dep,
-      "--comment",
-      seedLogs ? "author=unit-test,created_at=now,text=seed-comment" : "none",
-      "--note",
-      seedLogs ? "author=unit-test,created_at=now,text=seed-note" : "none",
-      "--learning",
-      seedLogs ? "author=unit-test,created_at=now,text=seed-learning" : "none",
-      "--file",
-      "none",
-      "--test",
-      "none",
-      "--doc",
-      "none",
-    ],
-    { expectJson: true },
-  );
-  expect(result.code).toBe(0);
-  return (result.json as { item: { id: string } }).item.id;
+  return createTestItemId(context, {
+    title,
+    tags: "search,cache",
+    body: `${title} body`,
+    acceptanceCriteria: "Mutation refresh updates semantic vectors",
+    author: "unit-test",
+    message: "Create search cache test item",
+    dep,
+    comment: seedLogs ? "author=unit-test,created_at=now,text=seed-comment" : "none",
+    note: seedLogs ? "author=unit-test,created_at=now,text=seed-note" : "none",
+    learning: seedLogs ? "author=unit-test,created_at=now,text=seed-learning" : "none",
+  });
 }
 
 describe("core/search/cache", () => {
   it("invalidates known search cache artifacts when present", async () => {
-    await withTempDir(async (pmRoot) => {
+    await withTempDir("pm-cli-search-cache-", async (pmRoot) => {
       await fs.mkdir(path.join(pmRoot, "index"), { recursive: true });
       await fs.mkdir(path.join(pmRoot, "search"), { recursive: true });
       await fs.writeFile(path.join(pmRoot, "index", "manifest.json"), '{"ok":true}\n', "utf8");
@@ -96,7 +51,7 @@ describe("core/search/cache", () => {
   });
 
   it("returns deterministic empty invalidation when artifacts do not exist", async () => {
-    await withTempDir(async (pmRoot) => {
+    await withTempDir("pm-cli-search-cache-", async (pmRoot) => {
       const result = await invalidateSearchCacheArtifacts(pmRoot);
       expect(result.invalidated).toEqual([]);
       expect(result.warnings).toEqual([]);
@@ -104,7 +59,7 @@ describe("core/search/cache", () => {
   });
 
   it("collects non-fatal warnings when artifact removal fails", async () => {
-    await withTempDir(async (pmRoot) => {
+    await withTempDir("pm-cli-search-cache-", async (pmRoot) => {
       await fs.mkdir(path.join(pmRoot, "index", "manifest.json"), { recursive: true });
       await fs.mkdir(path.join(pmRoot, "search"), { recursive: true });
       await fs.writeFile(path.join(pmRoot, "search", "embeddings.jsonl"), '{"id":"x"}\n', "utf8");
@@ -129,7 +84,7 @@ describe("core/search/cache", () => {
   });
 
   it("returns deterministic settings-not-initialized warning when PM root lacks settings", async () => {
-    await withTempDir(async (pmRoot) => {
+    await withTempDir("pm-cli-search-cache-", async (pmRoot) => {
       const result = await refreshSemanticEmbeddingsForMutatedItems(pmRoot, ["pm-missing"]);
       expect(result).toEqual({
         refreshed: [],
@@ -140,7 +95,7 @@ describe("core/search/cache", () => {
   });
 
   it("returns deterministic settings-read warning when settings path is unreadable", async () => {
-    await withTempDir(async (pmRoot) => {
+    await withTempDir("pm-cli-search-cache-", async (pmRoot) => {
       await fs.mkdir(path.join(pmRoot, "settings.json"), { recursive: true });
       const result = await refreshSemanticEmbeddingsForMutatedItems(pmRoot, ["pm-missing"]);
       expect(result.refreshed).toEqual([]);

@@ -3,6 +3,7 @@ import { access, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { expectJsonErrorEnvelope, parseJsonErrorEnvelope } from "../helpers/jsonErrorEnvelope.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -66,22 +67,6 @@ function expectTopLevelKeyOrder(value: unknown, expectedKeys: string[]): void {
   expect(value).toBeTypeOf("object");
   expect(value).not.toBeNull();
   expect(Object.keys(value as Record<string, unknown>)).toEqual(expectedKeys);
-}
-
-interface JsonErrorEnvelope {
-  type: string;
-  code: string;
-  title: string;
-  detail: string;
-  required: string;
-  exit_code: number;
-  why?: string;
-  examples?: string[];
-  next_steps?: string[];
-}
-
-function parseJsonErrorEnvelope(stderr: string): JsonErrorEnvelope {
-  return JSON.parse(stderr) as JsonErrorEnvelope;
 }
 
 function isValidCalendarDate(year: number, month: number, day: number): boolean {
@@ -383,8 +368,7 @@ describe("release readiness runtime coverage", () => {
       const missingSourcePath = path.join(context.tempRoot, "missing-before-install.jsonl");
       const missingBeads = context.runCli(["beads", "import", "--json", "--file", missingSourcePath]);
       expect(missingBeads.code).toBe(2);
-      const missingEnvelope = parseJsonErrorEnvelope(missingBeads.stderr);
-      expect(missingEnvelope).toMatchObject({
+      expectJsonErrorEnvelope(missingBeads.stderr, {
         code: "unknown_command",
         exit_code: 2,
       });
@@ -481,8 +465,7 @@ describe("release readiness runtime coverage", () => {
       const usageResult = context.runCli(["create", "--quiet", "--json"]);
       expect(usageResult.code).toBe(2);
       expect(usageResult.stdout.trim()).toBe("");
-      const usageEnvelope = parseJsonErrorEnvelope(usageResult.stderr);
-      expect(usageEnvelope).toMatchObject({
+      expectJsonErrorEnvelope(usageResult.stderr, {
         code: "missing_required_option",
         exit_code: 2,
       });
@@ -490,8 +473,7 @@ describe("release readiness runtime coverage", () => {
       const notFoundResult = context.runCli(["get", "pm-does-not-exist", "--quiet", "--json"]);
       expect(notFoundResult.code).toBe(3);
       expect(notFoundResult.stdout.trim()).toBe("");
-      const notFoundEnvelope = parseJsonErrorEnvelope(notFoundResult.stderr);
-      expect(notFoundEnvelope).toMatchObject({
+      expectJsonErrorEnvelope(notFoundResult.stderr, {
         code: "item_not_found",
         exit_code: 3,
       });
@@ -1463,8 +1445,7 @@ describe("release readiness runtime coverage", () => {
 
       const usageResult = context.runCli(["create", "--json"]);
       expect(usageResult.code).toBe(2);
-      const usageEnvelope = parseJsonErrorEnvelope(usageResult.stderr);
-      expect(usageEnvelope).toMatchObject({
+      const usageEnvelope = expectJsonErrorEnvelope(usageResult.stderr, {
         type: "urn:pm-cli:error:missing_required_option",
         code: "missing_required_option",
         exit_code: 2,
@@ -1473,8 +1454,7 @@ describe("release readiness runtime coverage", () => {
 
       const notFoundResult = context.runCli(["get", "pm-does-not-exist", "--json"]);
       expect(notFoundResult.code).toBe(3);
-      const notFoundEnvelope = parseJsonErrorEnvelope(notFoundResult.stderr);
-      expect(notFoundEnvelope).toMatchObject({
+      const notFoundEnvelope = expectJsonErrorEnvelope(notFoundResult.stderr, {
         type: "urn:pm-cli:error:item_not_found",
         code: "item_not_found",
         exit_code: 3,

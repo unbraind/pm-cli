@@ -3,27 +3,9 @@ import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { splitFrontMatter } from "../../src/core/item/item-format.js";
+import { distCliPath, runDirectDistCli } from "../helpers/cliRunner.js";
+import { expectJsonErrorEnvelope, parseJsonErrorEnvelope } from "../helpers/jsonErrorEnvelope.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
-
-function distCliPath(): string {
-  return path.resolve(process.cwd(), "dist/cli.js");
-}
-
-interface JsonErrorEnvelope {
-  type: string;
-  code: string;
-  title: string;
-  detail: string;
-  required: string;
-  exit_code: number;
-  why?: string;
-  examples?: string[];
-  next_steps?: string[];
-}
-
-function parseJsonErrorEnvelope(stderr: string): JsonErrorEnvelope {
-  return JSON.parse(stderr) as JsonErrorEnvelope;
-}
 
 describe("CLI integration (sandboxed PM_PATH)", () => {
   it("accepts --list as an alias for --explore on package and extension (pm-fu5d U3)", async () => {
@@ -2823,15 +2805,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(addCommentFileJson.comments.at(-1)?.author).toBe("integration-test");
 
       const stdinMarkdown = "### Stdin Markdown Comment\n\n- step one\n- step two\n";
-      const addCommentStdin = spawnSync(
-        process.execPath,
-        [distCliPath(), "comments", id, "--stdin", "--json", "--author", "integration-test", "--message", "Add stdin comment"],
-        {
-          cwd: process.cwd(),
-          env: context.env,
-          encoding: "utf8",
-          input: stdinMarkdown,
-        },
+      const addCommentStdin = runDirectDistCli(
+        ["comments", id, "--stdin", "--json", "--author", "integration-test", "--message", "Add stdin comment"],
+        { env: context.env, stdin: stdinMarkdown },
       );
       expect(addCommentStdin.status).toBe(0);
       const addCommentStdinJson = JSON.parse(addCommentStdin.stdout) as { comments: Array<{ text: string; author: string }> };
@@ -4201,8 +4177,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const missingGet = context.runCli(["get", "pm-missing", "--json"]);
       expect(missingGet.code).toBe(3);
-      const missingGetEnvelope = parseJsonErrorEnvelope(missingGet.stderr);
-      expect(missingGetEnvelope).toMatchObject({
+      const missingGetEnvelope = expectJsonErrorEnvelope(missingGet.stderr, {
         code: "item_not_found",
         exit_code: 3,
       });
@@ -5572,8 +5547,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const imported = context.runCli(["beads", "import", "--json", "--file", path.join(context.tempRoot, "missing.jsonl")]);
       expect(imported.code).toBe(1);
-      const importedEnvelope = parseJsonErrorEnvelope(imported.stderr);
-      expect(importedEnvelope).toMatchObject({
+      const importedEnvelope = expectJsonErrorEnvelope(imported.stderr, {
         code: "command_failed",
         exit_code: 1,
       });
@@ -5603,8 +5577,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const disabled = context.runCli(["--no-extensions", "beads", "import", "--json", "--file", sourcePath]);
       expect(disabled.code).toBe(2);
-      const disabledEnvelope = parseJsonErrorEnvelope(disabled.stderr);
-      expect(disabledEnvelope).toMatchObject({
+      expectJsonErrorEnvelope(disabled.stderr, {
         code: "unknown_command",
         exit_code: 2,
       });
@@ -5620,16 +5593,14 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
 
       const importDisabled = context.runCli(["--no-extensions", "todos", "import", "--json", "--folder", todosFolder]);
       expect(importDisabled.code).toBe(2);
-      const importDisabledEnvelope = parseJsonErrorEnvelope(importDisabled.stderr);
-      expect(importDisabledEnvelope).toMatchObject({
+      expectJsonErrorEnvelope(importDisabled.stderr, {
         code: "unknown_command",
         exit_code: 2,
       });
 
       const exportDisabled = context.runCli(["--no-extensions", "todos", "export", "--json", "--folder", todosFolder]);
       expect(exportDisabled.code).toBe(2);
-      const exportDisabledEnvelope = parseJsonErrorEnvelope(exportDisabled.stderr);
-      expect(exportDisabledEnvelope).toMatchObject({
+      expectJsonErrorEnvelope(exportDisabled.stderr, {
         code: "unknown_command",
         exit_code: 2,
       });
@@ -5865,15 +5836,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       const claim = context.runCli(["claim", id, "--json"], { expectJson: true });
       expect(claim.code).toBe(0);
 
-      const otherAssignee = spawnSync(
-        process.execPath,
-        [distCliPath(), "update", id, "--json", "--status", "blocked", "--author", "other", "--message", "Try update"],
-        {
-          cwd: process.cwd(),
-          env: context.env,
-          encoding: "utf8",
-        },
-      );
+      const otherAssignee = runDirectDistCli(["update", id, "--json", "--status", "blocked", "--author", "other", "--message", "Try update"], {
+        env: context.env,
+      });
       expect(otherAssignee.status).toBe(4);
       expect(otherAssignee.stderr).toContain("assigned to");
     });

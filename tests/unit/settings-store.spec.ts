@@ -1,5 +1,4 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
@@ -8,15 +7,12 @@ import { normalizeRuntimeSchemaSettings } from "../../src/core/schema/runtime-sc
 import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { getSettingsPath } from "../../src/core/store/paths.js";
 import { readSettings, readSettingsWithMetadata, resolveGovernanceKnobs, serializeSettings, writeSettings } from "../../src/core/store/settings.js";
+import { withTempRoot } from "../helpers/temp.js";
 
-async function withTempRoot(run: (pmRoot: string) => Promise<void>): Promise<void> {
-  const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-cli-settings-test-"));
-  const pmRoot = path.join(tempRoot, ".agents", "pm");
-  try {
-    await run(pmRoot);
-  } finally {
-    await fs.rm(tempRoot, { recursive: true, force: true });
-  }
+async function withTempPmRoot(run: (pmRoot: string) => Promise<void>): Promise<void> {
+  await withTempRoot("pm-cli-settings-test-", async (tempRoot) => {
+    await run(path.join(tempRoot, ".agents", "pm"));
+  });
 }
 
 function expectOrderedObjectKeys(value: unknown, expectedKeys: string[]): void {
@@ -31,7 +27,7 @@ describe("core/store/settings", () => {
   });
 
   it("returns cloned defaults when settings file is missing", async () => {
-    await withTempRoot(async (pmRoot) => {
+    await withTempPmRoot(async (pmRoot) => {
       const settings = await readSettings(pmRoot);
       expect(settings).toEqual(SETTINGS_DEFAULTS);
       expect(settings).not.toBe(SETTINGS_DEFAULTS);
@@ -41,7 +37,7 @@ describe("core/store/settings", () => {
   });
 
   it("falls back to defaults when settings JSON is invalid", async () => {
-    await withTempRoot(async (pmRoot) => {
+    await withTempPmRoot(async (pmRoot) => {
       const settingsPath = getSettingsPath(pmRoot);
       await fs.mkdir(path.dirname(settingsPath), { recursive: true });
       await fs.writeFile(settingsPath, "{ invalid-json", "utf8");
@@ -55,7 +51,7 @@ describe("core/store/settings", () => {
   });
 
   it("falls back to defaults when settings object fails schema validation", async () => {
-    await withTempRoot(async (pmRoot) => {
+    await withTempPmRoot(async (pmRoot) => {
       const settingsPath = getSettingsPath(pmRoot);
       await fs.mkdir(path.dirname(settingsPath), { recursive: true });
       await fs.writeFile(settingsPath, JSON.stringify({ version: 1 }), "utf8");
@@ -69,7 +65,7 @@ describe("core/store/settings", () => {
   });
 
   it("merges defaults when legacy settings omit workflow block", async () => {
-    await withTempRoot(async (pmRoot) => {
+    await withTempPmRoot(async (pmRoot) => {
       const settingsPath = getSettingsPath(pmRoot);
       await fs.mkdir(path.dirname(settingsPath), { recursive: true });
       await fs.writeFile(
@@ -108,7 +104,7 @@ describe("core/store/settings", () => {
   });
 
   it("writes deterministic settings content and reads it back", async () => {
-    await withTempRoot(async (pmRoot) => {
+    await withTempPmRoot(async (pmRoot) => {
       const custom = structuredClone(SETTINGS_DEFAULTS);
       custom.id_prefix = "zz-";
       custom.author_default = "settings-author";
@@ -237,7 +233,7 @@ describe("core/store/settings", () => {
   });
 
   it("reports whether item_format was explicitly selected in settings JSON", async () => {
-    await withTempRoot(async (pmRoot) => {
+    await withTempPmRoot(async (pmRoot) => {
       const settingsPath = getSettingsPath(pmRoot);
       await fs.mkdir(path.dirname(settingsPath), { recursive: true });
       await fs.writeFile(
@@ -284,7 +280,7 @@ describe("core/store/settings", () => {
   });
 
   it("treats non-object settings payloads as lacking explicit item_format selection", async () => {
-    await withTempRoot(async (pmRoot) => {
+    await withTempPmRoot(async (pmRoot) => {
       const settingsPath = getSettingsPath(pmRoot);
       await fs.mkdir(path.dirname(settingsPath), { recursive: true });
       await fs.writeFile(settingsPath, "[]\n", "utf8");
@@ -295,7 +291,7 @@ describe("core/store/settings", () => {
   });
 
   it("dispatches active onRead/onWrite hooks for settings read and write", async () => {
-    await withTempRoot(async (pmRoot) => {
+    await withTempPmRoot(async (pmRoot) => {
       const events: string[] = [];
       const hooks: ExtensionHookRegistry = {
         beforeCommand: [],
@@ -334,7 +330,7 @@ describe("core/store/settings", () => {
   });
 
   it("normalizes item type command option policies deterministically", async () => {
-    await withTempRoot(async (pmRoot) => {
+    await withTempPmRoot(async (pmRoot) => {
       const settings = structuredClone(SETTINGS_DEFAULTS);
       settings.item_types.definitions = [
         {

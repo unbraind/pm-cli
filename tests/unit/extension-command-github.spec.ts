@@ -1,7 +1,7 @@
-import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { writeTestExtensionSync } from "../helpers/extensions.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const { execFileMock } = vi.hoisted(() => ({
@@ -17,22 +17,14 @@ vi.mock("node:child_process", async (importOriginal) => {
 });
 
 function writeMockExtension(targetDir: string, name: string): void {
-  mkdirSync(targetDir, { recursive: true });
-  writeFileSync(
-    path.join(targetDir, "manifest.json"),
-    JSON.stringify(
-      {
-        name,
-        version: "1.0.0",
-        entry: "index.js",
-        capabilities: ["commands", "schema"],
-      },
-      null,
-      2,
-    ),
-    "utf8",
-  );
-  writeFileSync(path.join(targetDir, "index.js"), "export default { activate() {} };", "utf8");
+  writeTestExtensionSync({
+    root: targetDir,
+    name,
+    manifestOverrides: {
+      capabilities: ["commands", "schema"],
+    },
+    entrySource: "export default { activate() {} };",
+  });
 }
 
 function installGitMock(): void {

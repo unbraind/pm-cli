@@ -12,6 +12,7 @@ import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import type { HistoryEntry, ItemMetadata } from "../../src/types.js";
 import { readJsonFixture } from "../helpers/fixtures.js";
+import { createTestItemId, type TestItemStatus } from "../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 interface RestoreCreateSeedFixture {
@@ -37,55 +38,26 @@ interface RestoreCreateSeedFixture {
 const restoreCreateSeedFixture = readJsonFixture<RestoreCreateSeedFixture>("restore", "create-seed.json");
 
 function createRestoreFixture(context: TempPmContext, title: string): string {
-  const created = context.runCli(
-    [
-      "create",
-      "--json",
-      "--title",
-      title,
-      "--description",
-      `${title} description`,
-      "--type",
-      "Task",
-      "--status",
-      restoreCreateSeedFixture.status,
-      "--priority",
-      restoreCreateSeedFixture.priority,
-      "--tags",
-      restoreCreateSeedFixture.tags,
-      "--body",
-      restoreCreateSeedFixture.body,
-      "--deadline",
-      restoreCreateSeedFixture.deadline,
-      "--estimate",
-      restoreCreateSeedFixture.estimate,
-      "--acceptance-criteria",
-      restoreCreateSeedFixture.acceptance_criteria,
-      "--author",
-      restoreCreateSeedFixture.author,
-      "--message",
-      restoreCreateSeedFixture.message,
-      "--assignee",
-      restoreCreateSeedFixture.assignee,
-      "--dep",
-      restoreCreateSeedFixture.dep,
-      "--comment",
-      restoreCreateSeedFixture.comment,
-      "--note",
-      restoreCreateSeedFixture.note,
-      "--learning",
-      restoreCreateSeedFixture.learning,
-      "--file",
-      restoreCreateSeedFixture.file,
-      "--test",
-      restoreCreateSeedFixture.test,
-      "--doc",
-      restoreCreateSeedFixture.doc,
-    ],
-    { expectJson: true },
-  );
-  expect(created.code).toBe(0);
-  const id = (created.json as { item: { id: string } }).item.id;
+  const id = createTestItemId(context, {
+    title,
+    status: restoreCreateSeedFixture.status as TestItemStatus,
+    priority: restoreCreateSeedFixture.priority,
+    tags: restoreCreateSeedFixture.tags,
+    body: restoreCreateSeedFixture.body,
+    deadline: restoreCreateSeedFixture.deadline,
+    estimate: restoreCreateSeedFixture.estimate,
+    acceptanceCriteria: restoreCreateSeedFixture.acceptance_criteria,
+    author: restoreCreateSeedFixture.author,
+    message: restoreCreateSeedFixture.message,
+    assignee: restoreCreateSeedFixture.assignee,
+    dep: restoreCreateSeedFixture.dep,
+    comment: restoreCreateSeedFixture.comment,
+    note: restoreCreateSeedFixture.note,
+    learning: restoreCreateSeedFixture.learning,
+    file: restoreCreateSeedFixture.file,
+    test: restoreCreateSeedFixture.test,
+    doc: restoreCreateSeedFixture.doc,
+  });
 
   const update = context.runCli(
     [
