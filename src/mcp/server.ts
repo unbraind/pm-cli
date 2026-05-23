@@ -47,6 +47,7 @@ import {
   runNotes,
   runPlan,
   runRelease,
+  runSchemaAddType,
   runSearch,
   runStats,
   runTest,
@@ -584,6 +585,32 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
         options: options as never,
         global,
       });
+    }
+    case "schema": {
+      // subcommand/name are top-level fields in the published action contract,
+      // so accept them from args first and fall back to options for parity.
+      const subcommand = readString(args, "subcommand") ?? readRequiredString(options, "subcommand");
+      if (subcommand.trim().toLowerCase() !== "add-type") {
+        throw new PmCliError(`Unknown pm schema subcommand "${subcommand}". Allowed: add-type`, 64);
+      }
+      const aliasSource = args.alias ?? options.alias;
+      const aliases = aliasSource === undefined ? undefined : readStringArray(aliasSource);
+      return runSchemaAddType(
+        readString(args, "name") ?? readString(options, "name"),
+        {
+          description: readString(args, "description") ?? readString(options, "description"),
+          defaultStatus:
+            readString(args, "defaultStatus") ??
+            readString(args, "default_status") ??
+            readString(options, "defaultStatus") ??
+            readString(options, "default_status"),
+          folder: readString(args, "folder") ?? readString(options, "folder"),
+          alias: aliases,
+          author: readString(args, "author") ?? readString(options, "author"),
+          force: args.force === true || options.force === true,
+        },
+        global,
+      );
     }
     case "stats":
       return runStats(global);

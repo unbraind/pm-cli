@@ -181,6 +181,7 @@ export const PM_CORE_COMMAND_NAMES = [
   "history",
   "history-redact",
   "history-repair",
+  "schema",
   "activity",
   "restore",
   "update",
@@ -262,6 +263,7 @@ export const PM_TOOL_ACTIONS = [
   "history",
   "history-redact",
   "history-repair",
+  "schema",
   "activity",
   "restore",
   "update",
@@ -739,6 +741,15 @@ export const HISTORY_REPAIR_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--dry-run" },
   { flag: "--author" },
   { flag: "--message" },
+  { flag: "--force" },
+];
+
+export const SCHEMA_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--description" },
+  { flag: "--default-status", aliases: ["--default_status"] },
+  { flag: "--folder" },
+  { flag: "--alias" },
+  { flag: "--author" },
   { flag: "--force" },
 ];
 
@@ -1543,6 +1554,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(HISTORY_REDACT_FLAG_CONTRACTS);
     case "history-repair":
       return withSubcommandGlobalFlags(HISTORY_REPAIR_FLAG_CONTRACTS);
+    case "schema":
+      return withSubcommandGlobalFlags(SCHEMA_FLAG_CONTRACTS);
     case "plan":
       return withSubcommandGlobalFlags(PLAN_FLAG_CONTRACTS);
     case "activity":
@@ -1824,6 +1837,10 @@ const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   file: { type: "string" },
   preserveSourceIds: { type: "boolean" },
   folder: { type: "string" },
+  subcommand: { type: "string" },
+  name: { type: "string" },
+  defaultStatus: { type: "string" },
+  alias: { type: "array", items: { type: "string" } },
   text: { type: "string" },
   add: { type: "array", items: { type: "string" } },
   addGlob: { type: "array", items: { type: "string" } },
@@ -2181,6 +2198,11 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     required: ["id"],
     optional: ["dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
   },
+  schema: {
+    required: ["subcommand", "name"],
+    // No --message: schema add-type writes a config file, not item history.
+    optional: ["description", "defaultStatus", "folder", "alias", "author", "force"],
+  },
   plan: {
     required: ["subcommand"],
     optional: [
@@ -2505,6 +2527,22 @@ const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; examples
   type: {
     description: "Item type name from the active runtime type registry.",
     examples: ["Task", "Feature"],
+  },
+  subcommand: {
+    description: "Subcommand for the schema action.",
+    examples: ["add-type"],
+  },
+  name: {
+    description: "Custom item type name to register (for schema add-type).",
+    examples: ["Spike"],
+  },
+  defaultStatus: {
+    description: "Default status hint recorded for a custom item type.",
+    examples: ["open"],
+  },
+  alias: {
+    description: "Aliases for the custom item type (repeatable).",
+    examples: [["spike", "research"]],
   },
   preset: {
     description: "Governance preset for initialization flows.",

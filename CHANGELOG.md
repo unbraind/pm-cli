@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`pm schema add-type <Name>`** registers a config-driven custom item type into `.agents/pm/schema/types.json` (shape `{ "definitions": [...] }`) so agents can use `pm create <Name> "..."` for project-specific work categories without hand-editing settings (pm-e1va). Flags: `--description`, `--default-status`, `--folder`, repeatable `--alias`, plus `--author`/`--force` governance and `--json`. The command is an idempotent UPSERT keyed on the type name (case-insensitive, merges aliases, overrides supplied fields), refuses to redefine built-in types (Chore, Decision, Epic, Event, Feature, Issue, Meeting, Milestone, Plan, Reminder, Task), rejects aliases (or a new type name) that would collide with a built-in or another registered type so `pm create --type` never resolves ambiguously, and emits a machine envelope reporting the registered type and the file path.
+
 ### Changed
+- The invalid-type error from `pm create`/`pm update` now appends a discoverable hint pointing agents at the new registration command: `To register a custom type, run: pm schema add-type "X" (writes .agents/pm/schema/types.json).` (pm-e1va).
 - Daily release automation now fails loudly when source, package, script, or workflow changes exist since the last tag but `CHANGELOG.md` has an empty `[Unreleased]` section. The JSON result includes `changelog_required_files` and a deterministic `release_changelog_required:source_or_package_changes_without_unreleased_entry` warning so agents can fix the release blocker without reading the full workflow log.
 
 ## [2026.5.23] - 2026-05-23

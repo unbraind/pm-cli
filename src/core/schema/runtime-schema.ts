@@ -424,7 +424,7 @@ function readWorkflowFromSchemaFile(parsed: unknown): RuntimeWorkflowDefinition 
   return record as RuntimeWorkflowDefinition;
 }
 
-function filePathForSchemaSection(pmRoot: string, configuredPath: string | undefined, fallbackPath: string): string {
+export function filePathForSchemaSection(pmRoot: string, configuredPath: string | undefined, fallbackPath: string): string {
   const normalized = configuredPath?.trim() || fallbackPath;
   if (path.isAbsolute(normalized)) {
     return normalized;

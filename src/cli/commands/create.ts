@@ -20,6 +20,7 @@ import {
   validateTypeOptions,
 } from "../../core/item/type-registry.js";
 import { acquireLock } from "../../core/lock/lock.js";
+import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
 import { collectRuntimeCreateFieldValues } from "../../core/schema/runtime-field-values.js";
 import {
   type RuntimeFieldRegistry,
@@ -1579,7 +1580,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const resolvedTypeName = resolveTypeName(resolvedOptions.type, typeRegistry);
   if (!resolvedTypeName) {
     throw new PmCliError(
-      `Invalid type value "${resolvedOptions.type}". Allowed: ${typeRegistry.types.join(", ")}`,
+      buildInvalidTypeError(resolvedOptions.type, typeRegistry.types),
       EXIT_CODE.USAGE,
     );
   }
