@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import {
   commandFor,
   fail,
@@ -78,8 +79,59 @@ function getChangedFilesSince(lastTag) {
     .filter((line) => line.length > 0);
 }
 
-function isReleaseRelevantPath(filePath) {
+export function isReleaseRelevantPath(filePath) {
   return !filePath.startsWith(".agents/pm/");
+}
+
+export function isChangelogRequiredPath(filePath) {
+  return (
+    filePath === "package.json" ||
+    filePath === "pnpm-lock.yaml" ||
+    filePath === "tsconfig.json" ||
+    filePath === "tsconfig.packages.json" ||
+    filePath.startsWith("src/") ||
+    filePath.startsWith("packages/") ||
+    filePath.startsWith("plugins/") ||
+    filePath.startsWith("bin/") ||
+    filePath.startsWith("scripts/") ||
+    filePath.startsWith(".github/workflows/")
+  );
+}
+
+export function buildEmptyChangelogResult({ lastTag, commitsSinceLastTag, releaseRelevantFiles }) {
+  const changelogRequiredFiles = releaseRelevantFiles.filter(isChangelogRequiredPath);
+  const requiresChangelog = changelogRequiredFiles.length > 0;
+  const warning =
+    "release_changelog_required:source_or_package_changes_without_unreleased_entry";
+  return {
+    ok: !requiresChangelog,
+    skipped: true,
+    reason: "changelog_unreleased_empty",
+    last_tag: lastTag,
+    commits_since_last_tag: commitsSinceLastTag,
+    release_relevant_files: releaseRelevantFiles,
+    ...(requiresChangelog ? { changelog_required_files: changelogRequiredFiles, warnings: [warning] } : {}),
+  };
+}
+
+function writeEmptyChangelogResult(result, outputJson) {
+  if (outputJson) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  } else if (result.ok === true) {
+    console.log("CHANGELOG.md [Unreleased] has no promotable content. Skipping release pipeline.");
+  } else {
+    const files = result.changelog_required_files.join(", ");
+    console.error(
+      "::error title=CHANGELOG [Unreleased] is empty::Source/package changes exist since the last release tag but CHANGELOG.md has no promotable [Unreleased] entry.",
+    );
+    console.error(
+      `CHANGELOG.md [Unreleased] is empty, but releasable files changed since ${result.last_tag ?? "the first commit"}: ${files}`,
+    );
+    console.error("Add a concise CHANGELOG.md [Unreleased] entry or confirm the changes are intentionally unreleasable.");
+  }
+  if (result.ok !== true) {
+    process.exit(1);
+  }
 }
 
 function readUnreleasedChangelogBody() {
@@ -234,19 +286,12 @@ function runPipeline() {
 
   const unreleasedBody = readUnreleasedChangelogBody();
   if (unreleasedBody.length === 0) {
-    const result = {
-      ok: true,
-      skipped: true,
-      reason: "changelog_unreleased_empty",
-      last_tag: lastTag,
-      commits_since_last_tag: commitsSinceLastTag,
-      release_relevant_files: releaseRelevantFiles,
-    };
-    if (outputJson) {
-      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-    } else {
-      console.log("CHANGELOG.md [Unreleased] has no promotable content. Skipping release pipeline.");
-    }
+    const result = buildEmptyChangelogResult({
+      lastTag,
+      commitsSinceLastTag,
+      releaseRelevantFiles,
+    });
+    writeEmptyChangelogResult(result, outputJson);
     return;
   }
 
@@ -358,4 +403,6 @@ function runPipeline() {
   }
 }
 
-runPipeline();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  runPipeline();
+}

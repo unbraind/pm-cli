@@ -70,6 +70,8 @@ The pipeline performs:
 4. release note generation from changelog + pm evidence
 5. commit and tag creation (plus optional push)
 
+If commits since the last tag touch source, package, script, or workflow files, an empty `[Unreleased]` section is a release blocker. The pipeline exits nonzero and reports `changelog_required_files` plus `release_changelog_required:source_or_package_changes_without_unreleased_entry` so the missing release note is visible in automation instead of becoming a green no-op.
+
 ## Local Release Parity Checklist
 
 1. Confirm or compute the version.

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Daily release automation now fails loudly when source, package, script, or workflow changes exist since the last tag but `CHANGELOG.md` has an empty `[Unreleased]` section. The JSON result includes `changelog_required_files` and a deterministic `release_changelog_required:source_or_package_changes_without_unreleased_entry` warning so agents can fix the release blocker without reading the full workflow log.
+
 ## [2026.5.23] - 2026-05-23
 
 ### Fixed
