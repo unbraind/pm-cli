@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.23] - 2026-05-23
+
 ### Fixed
 - **`pm update --blocked-by` now records a `blocked_by` dependency edge** (matching `pm create`), so `pm deps` reflects the blocker and "what is blocking me" answers are correct instead of returning an empty graph (pm-kyd6). `--unset blocked-by` removes the edge and re-pointing it replaces the stale edge, keeping the `blocked_by` scalar and the dependency graph consistent.
 - `pm test --add` now rejects unknown keys (e.g. `name=`) with an allowed-key list instead of silently storing the whole `key=value,...` string as the command, and accepts `cmd` as an alias for `command` (pm-fu5d B2).
