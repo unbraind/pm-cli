@@ -2,15 +2,17 @@ id: pm-401l
 title: Extract shared direct CLI spawn helper for integration tests
 description: "Duplicate audit 2026-05-22: tests duplicate direct dist CLI resolution/spawn helpers. Representative copies are tests/integration/cli.integration.spec.ts:8 distCliPath, tests/integration/governance-presets.integration.spec.ts:15 distCliPath and :19 runDistCli, plus existing helper-like logic in tests/helpers/withTempPmPath.ts:21 distCliPath and :189 runNodeCli. This repeats process.execPath + dist/cli.js resolution + stdout/stderr/status capture and sometimes JSON parsing."
 type: Chore
-status: in_progress
+status: closed
 priority: 3
 tags[4]: cli,code-quality,dedup,tests
 created_at: "2026-05-22T19:17:12.795Z"
-updated_at: "2026-05-23T19:22:27.553Z"
-assignee: codex-dead-code-pr
+updated_at: "2026-05-23T19:58:56.606Z"
 author: codex-duplicate-audit
 acceptance_criteria: A shared direct CLI runner/distCliPath helper exists for tests that need raw process execution; integration specs use it instead of local copies; stdout/stderr/status and JSON parsing behavior remain explicit; targeted integration tests and pnpm build pass.
 parent: pm-rnpb
+resolution: Shared direct dist CLI runner extracted and merged in PR #52.
+expected_result: CLI integration tests keep direct dist execution behavior while reducing local runner duplication.
+actual_result: "tests/helpers/cliRunner.ts centralizes direct dist runs; Gemini feedback added spawn-error and JSON parse context; focused tests, full release gate, manual dogfood, GitHub checks, and AI review follow-up passed."
 comments[4]{created_at,author,text}:
   "2026-05-22T19:17:12.795Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'distCliPath runDistCli direct CLI spawn helper tests' found no active exact item; pm-eltf is item factories, not raw CLI process helpers."
   "2026-05-23T19:14:37.707Z",codex-cli-error-helper-agent,"Start: inspecting duplicated dist CLI spawn helpers in tests/helpers/withTempPmPath.ts, tests/integration/cli.integration.spec.ts, tests/integration/governance-presets.integration.spec.ts, and raw dist runs in release/help runtime specs; plan is to add/reuse a shared direct dist runner with stdout/stderr/status plus env/cwd/stdin support, then migrate clear call sites only."
@@ -25,4 +27,5 @@ files[5]{path,scope,note}:
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/integration/governance-presets.integration.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Shared direct dist CLI runner extracted and raw process execution tests migrated; PR #52 merged with Gemini feedback applied and GitHub checks green.
 body: ""

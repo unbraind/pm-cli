@@ -2,15 +2,17 @@ id: pm-j15d
 title: Extract shared extension fixture writer for tests
 description: "Duplicate audit 2026-05-22: extension/package tests repeat fixture creation for manifest.json plus trivial index.js/index.mjs entrypoints. Representative copies include tests/integration/help-runtime.spec.ts:6 createProjectExtension, tests/unit/sdk-index.spec.ts:31 createProjectExtension, tests/unit/contracts-command.spec.ts:18 createProjectExtension, tests/unit/extension-loader.spec.ts:26 createExtension, tests/unit/extension-command-github.spec.ts:19 writeMockExtension, tests/unit/package-manifest.spec.ts:15 createExtension, and many inline manifest/index writes in tests/unit/extension-command.spec.ts. Existing pm-eltf covers item factories, not extension fixture setup."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[4]: code-quality,dedup,extensions,tests
 created_at: "2026-05-22T19:17:37.412Z"
-updated_at: "2026-05-23T19:22:50.965Z"
-assignee: codex-extension-fixture-agent
+updated_at: "2026-05-23T19:58:49.531Z"
 author: codex-duplicate-audit
 acceptance_criteria: "A shared writeTestExtension/createTestExtension helper supports project/global/source roots, entry filename, capabilities, and custom entry source; repeated local extension fixture writers are removed where they do not clarify test intent; extension/package tests and pnpm build pass."
 parent: pm-rnpb
+resolution: Shared extension fixture helper extracted and merged in PR #52.
+expected_result: Extension/package tests keep the same behavior while duplicate manifest and entrypoint fixture setup is centralized.
+actual_result: "tests/helpers/extensions.ts now backs representative extension fixtures; focused tests, full release gate, manual dogfood, GitHub checks, and AI review follow-up passed."
 comments[4]{created_at,author,text}:
   "2026-05-22T19:17:37.412Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'writeTestExtension createProjectExtension extension fixture manifest test helper' and broad helper search found no active exact item; pm-eltf is scoped to createTask/createSeedItem item factories."
   "2026-05-23T19:14:15.978Z",codex-extension-fixture-agent,"Start: inspecting existing extension/package fixture duplication in tests/integration/help-runtime.spec.ts, tests/unit/sdk-index.spec.ts, tests/unit/contracts-command.spec.ts, tests/unit/extension-loader.spec.ts, tests/unit/extension-command-github.spec.ts, tests/unit/package-manifest.spec.ts, and clear inline clones in tests/unit/extension-command.spec.ts; will add a shared tests/helpers fixture writer and migrate scoped call sites only."
@@ -29,4 +31,5 @@ tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/unit/sdk-index.spec.ts tests/unit/contracts-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/extension-command-github.spec.ts tests/unit/package-manifest.spec.ts tests/unit/extension-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Shared extension fixture helper extracted and representative extension/package tests migrated; PR #52 merged with local release gate and GitHub checks green.
 body: ""

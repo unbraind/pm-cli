@@ -2,15 +2,17 @@ id: pm-alqo
 title: Extract shared JSON error-envelope test assertions
 description: "Duplicate audit 2026-05-22: integration specs duplicate JSON error-envelope parsing and assertions. Representative copies: tests/integration/cli.integration.spec.ts:12 JsonErrorEnvelope and :24 parseJsonErrorEnvelope; tests/integration/release-readiness-runtime.spec.ts:71 JsonErrorEnvelope and :83 parseJsonErrorEnvelope; tests/integration/help-runtime.spec.ts repeats raw JSON.parse(stderr) envelope assertions around :88, :414, :473, :550, :654, :700, :728, :786, and :861."
 type: Chore
-status: in_progress
+status: closed
 priority: 3
 tags[4]: code-quality,dedup,errors,tests
 created_at: "2026-05-22T19:17:15.687Z"
-updated_at: "2026-05-23T19:22:26.080Z"
-assignee: codex-dead-code-pr
+updated_at: "2026-05-23T19:58:54.886Z"
 author: codex-duplicate-audit
 acceptance_criteria: A shared parseJsonErrorEnvelope and/or expectJsonError helper covers stderr JSON envelope assertions; repeated local envelope types/parsers are removed; tests still assert code/type/exit_code/detail/next_steps where relevant; targeted integration tests and pnpm build pass.
 parent: pm-rnpb
+resolution: Shared JSON error-envelope assertions extracted and merged in PR #52.
+expected_result: Error envelope tests assert the same stderr JSON contract through a common helper.
+actual_result: "tests/helpers/jsonErrorEnvelope.ts backs representative JSON error assertions; focused tests, full release gate, manual dogfood, GitHub checks, and AI review follow-up passed."
 comments[4]{created_at,author,text}:
   "2026-05-22T19:17:15.687Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'JsonErrorEnvelope parseJsonErrorEnvelope stderr JSON error envelope integration tests' found no active exact item; pm-eltf does not cover stderr contract assertions."
   "2026-05-23T19:14:37.725Z",codex-cli-error-helper-agent,"Start: inspecting duplicated stderr JSON error-envelope parsing/assertions in cli, release-readiness, and help runtime integration specs; plan is to add shared parseJsonErrorEnvelope/expectJsonErrorEnvelope helpers and migrate safe repeated assertions while keeping detailed field checks explicit."
@@ -24,4 +26,5 @@ files[4]{path,scope,note}:
 tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/integration/governance-presets.integration.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/cli.integration.spec.ts,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Shared JSON error-envelope assertion helper extracted and integration specs migrated; PR #52 merged with Gemini feedback applied and GitHub checks green.
 body: ""

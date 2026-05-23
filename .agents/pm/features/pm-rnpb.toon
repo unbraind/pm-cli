@@ -2,20 +2,19 @@ id: pm-rnpb
 title: "Latest CLI quality, SDK, telemetry, search, and calendar remediation"
 description: "Latest full manual audit and remediation pass for pm CLI speed, SDK/extensibility, agent UX, calendar, semantic search/indexing, telemetry/Sentry, CI/CD, privacy hygiene, and temporary-project dogfooding."
 type: Feature
-status: in_progress
+status: open
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-23T19:41:00.564Z"
+updated_at: "2026-05-23T19:59:20.858Z"
 deadline: "2026-06-01T00:00:00.000Z"
-assignee: codex-dead-code-pr
 author: codex-audit
 estimated_minutes: 300
 acceptance_criteria: Audit findings are actionable and deduplicated; changed files and verification commands are linked; temporary dogfood project validates core workflows; any discovered bugs with safe fixes are remediated and tested.
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[224]{created_at,author,text}:
+comments[225]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -240,6 +239,7 @@ comments[224]{created_at,author,text}:
   "2026-05-23T19:29:33.814Z",codex-dead-code-pr,"Final local gate evidence: node scripts/release/run-gates.mjs --json --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 passed. Results: build ok, typecheck ok, docs-skills ok, static quality ok, coverage 104 files / 1568 tests / 100 percent statements branches functions lines, version policy ok, secret scan ok, npx packed-package smoke ok, package-first dogfood 84 workflows ok, npm pack dry-run ok, compatibility check from base 2026.5.18 ok, Sentry/telemetry required gate ok with Sentry critical=0 high=0 total=0 and telemetry finish_error_rate_pct=2.62."
   "2026-05-23T19:32:03.856Z",codex-dead-code-pr,"PR evidence: opened PR #52 Deduplicate test fixture helper stacks at https://github.com/unbraind/pm-cli/pull/52 from branch dedupe-test-fixture-helpers after local full release gate passed. Starting required >=15 minute AI-review wait and GitHub check watch before merge."
   "2026-05-23T19:41:00.564Z",codex-dead-code-pr,"AI review response on PR #52: Gemini recommended hardening the shared CLI runner around spawn/JSON parse failures and avoiding implicit global PM_GLOBAL_PATH mutation in the temp helper. Applied changes in tests/helpers/cliRunner.ts, tests/helpers/temp.ts, tests/unit/telemetry-runtime.spec.ts, and tests/unit/telemetry-consent.spec.ts. Focused verification passed: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts tests/unit/telemetry-consent.spec.ts tests/integration/governance-presets.integration.spec.ts tests/integration/cli.integration.spec.ts --reporter=dot => 4 files / 95 tests; pnpm exec tsc --noEmit -p tsconfig.json passed; git diff --check passed."
+  "2026-05-23T19:57:14.477Z",codex-dead-code-pr,"Merge evidence: PR #52 Deduplicate test fixture helper stacks merged into main at 2026-05-23T19:56:46Z as merge commit 0743fff697fc2570f998f98c619c50c0fdcbdad0. Final PR head 2a186cd9 had all GitHub checks green: build foundation, runtime smoke on ubuntu/macos, coverage, typecheck, static, compat, smokes, CodeRabbit status; Sourcery was rate-limited/skipped. Gemini actionable feedback was applied before merge. Closing completed child chores pm-j15d, pm-eltf, pm-7tug, pm-alqo, and pm-401l; parent pm-rnpb remains open."
 notes[2]{created_at,author,text}:
   "2026-05-17T07:36:59.474Z",codex-agent,"Design note 2026-05-17: unfiltered pm contracts default now intentionally omits three heavy sections (schema oneOf union, command_flags, commander_aliases) and emits explicit omitted_reason markers; --full restores complete schema and alias/flag surfaces for tooling that needs maximal detail."
   "2026-05-17T08:33:25.981Z",codex-agent,"Design note 2026-05-17: default brief projection was intentionally scoped to bare 'pm list' instead of all list-* commands to preserve existing automation contracts while still cutting agent token usage on the highest-frequency exploratory list call."
