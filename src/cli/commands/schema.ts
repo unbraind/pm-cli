@@ -1,7 +1,7 @@
-import fs from "node:fs/promises";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { acquireLock } from "../../core/lock/lock.js";
 import {
+  assertAliasesAvailable,
   buildInvalidTypeHint,
   normalizeAddTypeInput,
   parseItemTypesFile,
@@ -103,18 +103,15 @@ export async function runSchemaAddType(
     } catch (error) {
       throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.GENERIC_FAILURE);
     }
-    upsert = upsertItemType(parsed, normalized);
-    const serialized = serializeItemTypesFile(upsert.file);
     try {
-      await writeFileAtomic(typesPath, serialized);
+      assertAliasesAvailable(normalized, parsed);
     } catch (error) {
-      if (previousRaw === null) {
-        await fs.rm(typesPath, { force: true });
-      } else {
-        await writeFileAtomic(typesPath, previousRaw);
-      }
-      throw error;
+      throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
     }
+    upsert = upsertItemType(parsed, normalized);
+    // writeFileAtomic writes to a temp file then renames, so a failure leaves the
+    // existing types.json untouched; no manual rollback is needed.
+    await writeFileAtomic(typesPath, serializeItemTypesFile(upsert.file));
     warnings.push(
       ...(await runActiveOnWriteHooks({
         path: typesPath,

@@ -9,6 +9,7 @@ import {
 import {
   collect,
   extractUpdateManyMutationOptionSource,
+  formatHookWarnings,
   getGlobalOptions,
   invalidateSearchCachesForMutation,
   normalizeCreateOptions,
@@ -746,6 +747,11 @@ export function registerMutationCommands(program: Command): void {
         printResult(result, globalOptions);
       } else if (!globalOptions.quiet) {
         writeStdout(`${formatSchemaAddTypeHuman(result)}\n`);
+        // Surface extension on-write hook diagnostics so policy/enforcement
+        // warnings are visible without forcing --json.
+        if (result.warnings.length > 0) {
+          printError(`schema add-type warnings: ${formatHookWarnings(result.warnings)}`);
+        }
       }
       if (globalOptions.profile) {
         printError(`profile:command=schema took_ms=${Date.now() - startedAt}`);

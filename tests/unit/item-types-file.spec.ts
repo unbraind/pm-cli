@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  assertAliasesAvailable,
   buildInvalidTypeError,
   buildInvalidTypeHint,
   matchBuiltinTypeName,
@@ -63,6 +64,59 @@ describe("normalizeAddTypeInput", () => {
 
   it("throws when colliding with a built-in type", () => {
     expect(() => normalizeAddTypeInput({ name: "task" })).toThrow(/Cannot redefine built-in item type "Task"/);
+  });
+
+  it("throws when an alias collides with a built-in type", () => {
+    expect(() => normalizeAddTypeInput({ name: "Spike", aliases: ["Task"] })).toThrow(
+      /Alias "Task" collides with built-in item type "Task"/,
+    );
+  });
+});
+
+describe("assertAliasesAvailable", () => {
+  const existing = {
+    definitions: [
+      { name: "Gateway", aliases: ["gate", "checkpoint"] } as Record<string, unknown>,
+      { name: "Spike", aliases: ["research"] } as Record<string, unknown>,
+      { name: "Bare" } as Record<string, unknown>, // valid name, no aliases array
+      { name: "Messy", aliases: ["", "  ", 7, "from-messy"] } as unknown as Record<string, unknown>, // malformed alias entries
+      { notName: true } as unknown as { name: string },
+    ],
+  } as never;
+
+  it("passes when no alias or name collides with another definition", () => {
+    expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["defect"] }, existing)).not.toThrow();
+  });
+
+  it("indexes definitions without aliases and skips malformed alias entries", () => {
+    // "Bare" (no aliases) and the blank/non-string entries on "Messy" are tolerated;
+    // only the well-formed "from-messy" alias is registered as taken.
+    expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["bare-ish"] }, existing)).not.toThrow();
+    expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["from-messy"] }, existing)).toThrow(
+      /Alias "from-messy" already maps to existing item type "Messy"/,
+    );
+  });
+
+  it("ignores tokens belonging to the same-named definition (idempotent re-run)", () => {
+    expect(() => assertAliasesAvailable({ name: "spike", aliases: ["research"] }, existing)).not.toThrow();
+  });
+
+  it("throws when an alias maps to another definition's canonical name", () => {
+    expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["gateway"] }, existing)).toThrow(
+      /Alias "gateway" already maps to existing item type "Gateway"/,
+    );
+  });
+
+  it("throws when an alias maps to another definition's alias", () => {
+    expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["checkpoint"] }, existing)).toThrow(
+      /Alias "checkpoint" already maps to existing item type "Gateway"/,
+    );
+  });
+
+  it("throws when the new type name collides with another definition's alias", () => {
+    expect(() => assertAliasesAvailable({ name: "research", aliases: [] }, existing)).toThrow(
+      /Type name "research" collides with an alias of existing item type "Spike"/,
+    );
   });
 });
 

@@ -87,13 +87,60 @@ export function normalizeAddTypeInput(raw: RawAddTypeInput): NormalizedAddTypeIn
   const description = raw.description?.trim();
   const defaultStatus = raw.defaultStatus?.trim();
   const folder = raw.folder?.trim();
+  const aliases = dedupeAliases(raw.aliases ?? []);
+  for (const alias of aliases) {
+    const aliasBuiltin = matchBuiltinTypeName(alias);
+    if (aliasBuiltin) {
+      throw new Error(
+        `Alias "${alias}" collides with built-in item type "${aliasBuiltin}". Built-in types are reserved: ${BUILTIN_ITEM_TYPE_VALUES.join(", ")}.`,
+      );
+    }
+  }
   return {
     name,
     description: description && description.length > 0 ? description : undefined,
     defaultStatus: defaultStatus && defaultStatus.length > 0 ? defaultStatus : undefined,
     folder: folder && folder.length > 0 ? folder : undefined,
-    aliases: dedupeAliases(raw.aliases ?? []),
+    aliases,
   };
+}
+
+/**
+ * Throws when the requested name or any alias collides (case-insensitively)
+ * with the canonical name or an alias of a DIFFERENT existing definition.
+ * Such collisions would make `pm create`/`pm update --type` resolve
+ * ambiguously (the runtime registry keys a single lowercase alias map), so
+ * they are rejected. Tokens belonging to the same-named definition being
+ * upserted are ignored, keeping re-runs idempotent.
+ */
+export function assertAliasesAvailable(input: NormalizedAddTypeInput, existing: ItemTypesFile): void {
+  const selfLower = input.name.toLowerCase();
+  const taken = new Map<string, string>();
+  for (const definition of existing.definitions) {
+    if (typeof definition.name !== "string") {
+      continue;
+    }
+    const definitionName = definition.name.trim();
+    if (definitionName.length === 0 || definitionName.toLowerCase() === selfLower) {
+      continue;
+    }
+    taken.set(definitionName.toLowerCase(), definitionName);
+    for (const alias of definition.aliases ?? []) {
+      if (typeof alias === "string" && alias.trim().length > 0) {
+        taken.set(alias.trim().toLowerCase(), definitionName);
+      }
+    }
+  }
+  const nameOwner = taken.get(selfLower);
+  if (nameOwner) {
+    throw new Error(`Type name "${input.name}" collides with an alias of existing item type "${nameOwner}".`);
+  }
+  for (const alias of input.aliases) {
+    const owner = taken.get(alias.toLowerCase());
+    if (owner) {
+      throw new Error(`Alias "${alias}" already maps to existing item type "${owner}".`);
+    }
+  }
 }
 
 /**

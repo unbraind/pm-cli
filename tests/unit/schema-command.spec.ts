@@ -93,6 +93,24 @@ describe("schema add-type command", () => {
     });
   });
 
+  it("rejects an alias that collides with a built-in type", async () => {
+    await withTempPmPath(async (context) => {
+      const add = context.runCli(["schema", "add-type", "Spike", "--alias", "task"]);
+      expect(add.code).not.toBe(0);
+      expect(add.stderr).toContain('Alias "task" collides with built-in item type "Task"');
+    });
+  });
+
+  it("rejects an alias that already maps to another custom type", async () => {
+    await withTempPmPath(async (context) => {
+      const first = context.runCli(["schema", "add-type", "Gateway", "--alias", "gate"]);
+      expect(first.code).toBe(0);
+      const clash = context.runCli(["schema", "add-type", "Spike", "--alias", "gate"]);
+      expect(clash.code).not.toBe(0);
+      expect(clash.stderr).toContain('Alias "gate" already maps to existing item type "Gateway"');
+    });
+  });
+
   it("errors with allowed subcommands when no/unknown subcommand is given", async () => {
     await withTempPmPath(async (context) => {
       const none = context.runCli(["schema"]);
