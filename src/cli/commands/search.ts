@@ -1019,7 +1019,15 @@ interface SemanticQueryContext {
   vectorQueryTimeoutMs?: number;
 }
 
-async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promise<SearchHit[]> {
+interface SemanticQueryResult {
+  hits: SearchHit[];
+  // Number of documents that were actually matched against the embedding/vector
+  // corpus. When this is 0 the semantic/hybrid query ran successfully but had
+  // nothing embedded to compare against, so the ranking is effectively lexical.
+  embeddedItems: number;
+}
+
+async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promise<SemanticQueryResult> {
   const semanticLimit = context.limit ?? context.maxResults;
   const embeddingOptions = context.embeddingTimeoutMs !== undefined ? { timeout_ms: context.embeddingTimeoutMs } : {};
   const vectorQueryOptions = context.vectorQueryTimeoutMs !== undefined ? { timeout_ms: context.vectorQueryTimeoutMs } : {};
@@ -1054,10 +1062,17 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
   }
   const filteredById = new Map(context.filteredDocuments.map((document) => [document.metadata.id, document]));
   const { semanticHits, semanticScores } = buildSemanticHits(vectorHits, filteredById);
+  // semanticScores only contains documents that had a vector match within the
+  // current candidate set; its size is the count of items actually embedded and
+  // compared. When 0, the semantic stage contributed nothing.
+  const embeddedItems = semanticScores.size;
   if (context.requestedMode === "semantic") {
-    return semanticHits;
+    return { hits: semanticHits, embeddedItems };
   }
-  return combineHybridHits(filteredById, semanticScores, context.keywordHits, context.hybridSemanticWeight);
+  return {
+    hits: combineHybridHits(filteredById, semanticScores, context.keywordHits, context.hybridSemanticWeight),
+    embeddedItems,
+  };
 }
 
 async function loadDocuments(
@@ -1293,7 +1308,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
           vectorResolution,
           extensionVectorAdapter !== null,
         );
-        hits = await computeSemanticOrHybridHits({
+        const semanticResult = await computeSemanticOrHybridHits({
           requestedMode: effectiveMode,
           query,
           filteredDocuments,
@@ -1312,6 +1327,15 @@ export async function runSearch(query: string, options: SearchOptions, global: G
               }
             : {}),
         });
+        hits = semanticResult.hits;
+        // The semantic/hybrid query ran without error, but nothing was embedded
+        // to compare against (empty vector corpus, e.g. Ollama auto-default with
+        // no reindex). Results are effectively lexical/keyword even though the
+        // reported mode stays semantic/hybrid — surface a machine-readable
+        // warning so agents do not mistake this for true vector ranking.
+        if (semanticResult.embeddedItems === 0) {
+          warnings.push(`search_${effectiveMode}_degraded:no_embedded_items:results_are_lexical`);
+        }
       }
     } catch (error: unknown) {
       // Any semantic/hybrid attempt that fails (backend down, timeout, or the

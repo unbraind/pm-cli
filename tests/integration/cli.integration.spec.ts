@@ -26,6 +26,18 @@ function parseJsonErrorEnvelope(stderr: string): JsonErrorEnvelope {
 }
 
 describe("CLI integration (sandboxed PM_PATH)", () => {
+  it("accepts --list as an alias for --explore on package and extension (pm-fu5d U3)", async () => {
+    await withTempPmPath(async (context) => {
+      const packageList = context.runCli(["package", "--list", "--json"], { expectJson: true });
+      expect(packageList.code).toBe(0);
+      expect((packageList.json as { action: string }).action).toBe("explore");
+
+      const extensionList = context.runCli(["extension", "--list", "--json"], { expectJson: true });
+      expect(extensionList.code).toBe(0);
+      expect((extensionList.json as { action: string }).action).toBe("explore");
+    });
+  });
+
   it("installs package sources through root install and package aliases", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "sample-package");

@@ -232,6 +232,47 @@ describe("runClose", () => {
     });
   });
 
+  it("emits an informational closed_with_active_children note under minimal governance (C3)", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createTask(context, "close-parent-minimal-gov");
+      const childId = createTask(context, "close-child-minimal-gov", { parent: parentId });
+      const result = await runClose(
+        parentId,
+        "close parent under minimal governance",
+        {
+          validateClose: "off",
+        },
+        { path: context.pmPath },
+      );
+      const item = result.item as Record<string, unknown>;
+      expect(item.status).toBe("closed");
+      // Off mode never blocks, but still surfaces the orphaning risk.
+      expect(result.warnings).toContain(`closed_with_active_children:${parentId}:${childId}`);
+      expect(result.warnings).not.toContain(`close_validation_active_children:${parentId}:${childId}`);
+    });
+  });
+
+  it("clears stale blocked_by metadata and dependency edge on terminal close (C4)", async () => {
+    await withTempPmPath(async (context) => {
+      const blockerId = createTask(context, "close-c4-blocker");
+      const blockedId = createTask(context, "close-c4-blocked");
+      const updated = context.runCli(
+        ["update", blockedId, "--blocked-by", blockerId, "--blocked-reason", "waiting on blocker", "--json"],
+        { expectJson: true },
+      );
+      expect(updated.code).toBe(0);
+
+      const result = await runClose(blockedId, "blocker resolved, work done", {}, { path: context.pmPath });
+      const item = result.item as Record<string, unknown>;
+      expect(item.status).toBe("closed");
+      expect(item.blocked_by).toBeUndefined();
+      expect(item.blocked_reason).toBeUndefined();
+      expect(item.dependencies).toBeUndefined();
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["blocked_by", "blocked_reason", "dependencies"]));
+      expect(result.warnings).toContain(`closed_cleared_blocked_by:${blockedId}:${blockerId}`);
+    });
+  });
+
   it("rejects terminal items unless forced and supports unknown author fallback", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-terminal-item", { status: "closed" });

@@ -39,7 +39,10 @@ import {
   parseConfidenceInput,
   parseRegressionInput,
 } from "./metadata-normalizers.js";
-import { EVENT_END_AFTER_START_MESSAGE } from "./event-validation-messages.js";
+import {
+  EVENT_END_AFTER_START_MESSAGE,
+  EVENT_END_DURATION_MUTUALLY_EXCLUSIVE_MESSAGE,
+} from "./event-validation-messages.js";
 import type {
   CalendarEvent,
   Comment,
@@ -797,6 +800,38 @@ function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowVal
   };
 }
 
+function resolveEventEndAt(
+  startAt: string,
+  endRaw: string | undefined,
+  durationRaw: string | undefined,
+  referenceDate: Date,
+): string | undefined {
+  if (endRaw && durationRaw) {
+    throw new PmCliError(EVENT_END_DURATION_MUTUALLY_EXCLUSIVE_MESSAGE, EXIT_CODE.USAGE);
+  }
+  if (durationRaw) {
+    // Reuse the relative-offset parser with startAt as the reference so duration=2h means startAt + 2h.
+    const normalizedDuration = durationRaw.startsWith("+") ? durationRaw : `+${durationRaw}`;
+    const endAt = resolveIsoOrRelative(normalizedDuration, new Date(startAt), "event.duration");
+    if (endAt <= startAt) {
+      throw new PmCliError(EVENT_END_AFTER_START_MESSAGE, EXIT_CODE.USAGE);
+    }
+    return endAt;
+  }
+  if (!endRaw) {
+    return undefined;
+  }
+  const endAt = resolveIsoOrRelative(endRaw, referenceDate, "event.end");
+  if (endAt < startAt) {
+    throw new PmCliError(EVENT_END_AFTER_START_MESSAGE, EXIT_CODE.USAGE);
+  }
+  // Equal start/end collapses to an instant event (drop end) instead of being rejected.
+  if (endAt === startAt) {
+    return undefined;
+  }
+  return endAt;
+}
+
 function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
   return raw.map((entry) => {
     const kv = parseCsvKv(entry, "--event");
@@ -806,10 +841,8 @@ function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
     }
     const startAt = resolveIsoOrRelative(startRaw, nowValue, "event.start");
     const endRaw = kv.end?.trim();
-    const endAt = endRaw ? resolveIsoOrRelative(endRaw, nowValue, "event.end") : undefined;
-    if (endAt && endAt <= startAt) {
-      throw new PmCliError(EVENT_END_AFTER_START_MESSAGE, EXIT_CODE.USAGE);
-    }
+    const durationRaw = kv.duration?.trim();
+    const endAt = resolveEventEndAt(startAt, endRaw, durationRaw, nowValue);
 
     const titleRaw = kv.title;
     const descriptionRaw = kv.description;
@@ -994,6 +1027,39 @@ function parseDependencyRemovals(raw: string[] | undefined, prefix: string): Dep
 
 function dependencyKey(value: Pick<Dependency, "id" | "kind" | "source_kind">): string {
   return `${value.id}::${value.kind}::${value.source_kind ?? ""}`;
+}
+
+// pm-kyd6: `--blocked-by` writes the `blocked_by` scalar, but the dependency
+// graph (`pm deps`) is built only from the `dependencies` array. Mirror the
+// behaviour create.ts already has so the metadata and the graph agree: a
+// resolvable blocker also gets a `blocked_by` dependency edge, clearing the
+// scalar removes that edge, and re-pointing it replaces the prior edge.
+function reconcileBlockedByDependency(
+  current: Dependency[] | undefined,
+  previousBlockedBy: string | undefined,
+  nextBlockedById: string | undefined,
+  prefix: string,
+  nowIsoValue: string,
+  author: string,
+): { dependencies: Dependency[] | undefined; changed: boolean } {
+  let next = [...(current ?? [])];
+  let changed = false;
+  const previousId = previousBlockedBy ? normalizeItemId(previousBlockedBy.trim(), prefix) : undefined;
+  if (previousId && previousId !== nextBlockedById) {
+    const filtered = next.filter((dep) => !(dep.kind === "blocked_by" && dep.id === previousId));
+    if (filtered.length !== next.length) {
+      next = filtered;
+      changed = true;
+    }
+  }
+  if (nextBlockedById && !next.some((dep) => dep.kind === "blocked_by" && dep.id === nextBlockedById)) {
+    next.push({ id: nextBlockedById, kind: "blocked_by", created_at: nowIsoValue, author });
+    changed = true;
+  }
+  if (!changed) {
+    return { dependencies: current, changed: false };
+  }
+  return { dependencies: next.length > 0 ? next : undefined, changed: true };
 }
 
 function fileKey(value: Pick<LinkedFile, "path" | "scope">): string {
@@ -1421,6 +1487,25 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     if (!parentLocated) {
       const normalizedParentId = normalizeItemId(resolvedParentValue, settings.id_prefix);
       parentReferenceWarnings.push(...validateMissingParentReference(normalizedParentId, parentReferencePolicy).warnings);
+    }
+  }
+
+  // pm-kyd6: resolve the --blocked-by target before the synchronous mutate
+  // callback so a real blocker can also become a `blocked_by` dependency edge.
+  let resolvedBlockedByDependencyId: string | undefined;
+  if (options.blockedBy !== undefined && !clearFrontMatterKeys.has("blocked_by")) {
+    const blockedByValue = options.blockedBy.trim();
+    if (blockedByValue.length > 0) {
+      const blockedByLocated = await locateItem(
+        pmRoot,
+        normalizeItemId(blockedByValue, settings.id_prefix),
+        settings.id_prefix,
+        settings.item_format,
+        typeRegistry.type_to_folder,
+      );
+      if (blockedByLocated) {
+        resolvedBlockedByDependencyId = blockedByLocated.id;
+      }
     }
   }
 
@@ -1950,12 +2035,32 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         changedFields.push("release");
       }
       if (options.blockedBy !== undefined || clearFrontMatterKeys.has("blocked_by")) {
+        const previousBlockedBy = document.metadata.blocked_by;
         if (clearFrontMatterKeys.has("blocked_by")) {
           delete document.metadata.blocked_by;
         } else {
           document.metadata.blocked_by = options.blockedBy!.trim();
         }
         changedFields.push("blocked_by");
+        // pm-kyd6: keep the dependency graph in sync with the blocked_by scalar.
+        const reconciled = reconcileBlockedByDependency(
+          document.metadata.dependencies,
+          previousBlockedBy,
+          resolvedBlockedByDependencyId,
+          settings.id_prefix,
+          nowIso,
+          author,
+        );
+        if (reconciled.changed) {
+          if (reconciled.dependencies === undefined) {
+            delete document.metadata.dependencies;
+          } else {
+            document.metadata.dependencies = reconciled.dependencies;
+          }
+          if (!changedFields.includes("dependencies")) {
+            changedFields.push("dependencies");
+          }
+        }
       }
       if (options.blockedReason !== undefined || clearFrontMatterKeys.has("blocked_reason")) {
         if (clearFrontMatterKeys.has("blocked_reason")) {

@@ -1721,17 +1721,17 @@ describe("runCreate", () => {
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
 
-      await expect(
-        runCreate(
-          baseCreateOptions({
-            event: ["start=2026-03-04T10:00:00.000Z,end=2026-03-04T10:00:00.000Z"],
-          }),
-          { path: context.pmPath },
-        ),
-      ).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.USAGE,
-        message: expect.stringContaining("equal start/end timestamps are invalid"),
+      const instantEventResult = await runCreate(
+        baseCreateOptions({
+          event: ["start=2026-03-04T10:00:00.000Z,end=2026-03-04T10:00:00.000Z,title=instant"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(instantEventResult.item.events?.[0]).toMatchObject({
+        start_at: "2026-03-04T10:00:00.000Z",
+        title: "instant",
       });
+      expect(instantEventResult.item.events?.[0]?.end_at).toBeUndefined();
 
       await expect(
         runCreate(
@@ -1842,6 +1842,92 @@ describe("runCreate", () => {
           { path: context.pmPath },
         ),
       ).rejects.toThrow("Compound relative expressions like +3d+1h are not supported");
+    });
+  });
+
+  it("treats equal start/end as an instant event and rejects end earlier than start", async () => {
+    await withTempPmPath(async (context) => {
+      const instant = await runCreate(
+        baseCreateOptions({
+          event: ["start=2026-03-04T10:00:00.000Z,end=2026-03-04T10:00:00.000Z,title=instant"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(instant.item.events?.[0]).toMatchObject({ start_at: "2026-03-04T10:00:00.000Z", title: "instant" });
+      expect(instant.item.events?.[0]?.end_at).toBeUndefined();
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            event: ["start=2026-03-04T10:00:00.000Z,end=2026-03-04T09:00:00.000Z"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("end must be strictly after start"),
+      });
+    });
+  });
+
+  it("supports duration= to derive event end and rejects end+duration together", async () => {
+    await withTempPmPath(async (context) => {
+      const withDuration = await runCreate(
+        baseCreateOptions({
+          event: ["start=2026-03-04T10:00:00.000Z,duration=2h,title=meeting"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(withDuration.item.events?.[0]).toMatchObject({
+        start_at: "2026-03-04T10:00:00.000Z",
+        end_at: "2026-03-04T12:00:00.000Z",
+        title: "meeting",
+      });
+
+      const withPlusDuration = await runCreate(
+        baseCreateOptions({
+          event: ["start=2026-03-04T10:00:00.000Z,duration=+1d,title=allhands"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(withPlusDuration.item.events?.[0]?.end_at).toBe("2026-03-05T10:00:00.000Z");
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            event: ["start=2026-03-04T10:00:00.000Z,end=2026-03-04T11:00:00.000Z,duration=2h"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("mutually exclusive"),
+      });
+    });
+  });
+
+  it("warns when creating an Event item with no attached schedule", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "schedule-less-event",
+          description: "event with no time set",
+          type: "Event",
+        }),
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toEqual([`event_without_schedule:${result.item.id}:no_time_set`]);
+
+      const scheduled = await runCreate(
+        baseCreateOptions({
+          title: "scheduled-event",
+          description: "event with a time",
+          type: "Event",
+          event: ["start=2026-03-04T10:00:00.000Z,title=kickoff"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(scheduled.warnings).toEqual([]);
     });
   });
 

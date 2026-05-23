@@ -1,0 +1,73 @@
+id: pm-uz25
+title: "Session 2026-05-23: agent-UX + deps-graph integrity batch (multi-agent)"
+description: "Fix update --blocked-by deps-graph asymmetry (pm-kyd6); close-lifecycle clarity C3/C4, search degraded-mode labeling S1, test --add key validation B2, did-you-mean U2, --list alias U3 (pm-fu5d); calendar instant-event + schedule-less warning + compound times (pm-uzmf/CAL1). Re-verify secret hygiene (pm-xk39) and close completed history-repair plan (pm-c3dx). Specialized sub-agents track their own work in pm."
+type: Plan
+status: open
+priority: 2
+tags[0]:
+created_at: "2026-05-23T03:43:24.111Z"
+updated_at: "2026-05-23T04:09:50.362Z"
+author: claude-code-agent
+plan_mode: approved
+plan_scope: "Fix update --blocked-by deps-graph asymmetry (pm-kyd6); close-lifecycle clarity C3/C4, search degraded-mode labeling S1, test --add key validation B2, did-you-mean U2, --list alias U3 (pm-fu5d); calendar instant-event + schedule-less warning + compound times (pm-uzmf/CAL1). Re-verify secret hygiene (pm-xk39) and close completed history-repair plan (pm-c3dx). Specialized sub-agents track their own work in pm."
+plan_harness: claude-code
+plan_steps[6]:
+  - id: plan-step-001
+    order: 1
+    title: "pm-kyd6: update --blocked-by adds/removes a blocked_by dependency edge (mirror create.ts) so pm deps shows it [ME]"
+    status: completed
+    created_at: "2026-05-23T03:43:41.817Z"
+    updated_at: "2026-05-23T03:48:19.024Z"
+    evidence: "update.ts: added reconcileBlockedByDependency() + pre-mutate locateItem resolution; --blocked-by now adds a blocked_by dependency edge (mirrors create.ts), --unset blocked-by removes it, repoint replaces stale edge. Manual temp-dir smoke: edge_count 1 on set, 0 on clear. Added 3 regression tests to update-command.spec.ts (all green)."
+    completed_at: "2026-05-23T03:48:19.024Z"
+    linked_items[1]{id,kind}:
+      pm-kyd6,implements
+  - id: plan-step-002
+    order: 2
+    title: "pm-fu5d C3/C4: close emits closed_with_active_children info + clears stale blocked_by/blocked_reason on terminal close [ME]"
+    status: completed
+    created_at: "2026-05-23T03:44:21.336Z"
+    updated_at: "2026-05-23T03:50:35.836Z"
+    evidence: "close.ts: (C3) always scan active children; under validate-close off emit informational closed_with_active_children warning (never blocks). (C4) on terminal close clear scalar blocked_by + blocked_reason + blocked_by dependency edges (keeps kyd6 invariant), annotate via closed_cleared_blocked_by. Manual smoke verified both; 2 new regression tests; close-command.spec 11/11 green."
+    completed_at: "2026-05-23T03:50:35.836Z"
+    linked_items[1]{id,kind}:
+      pm-fu5d,implements
+  - id: plan-step-003
+    order: 3
+    title: "pm-fu5d U2/U3: did-you-mean for unknown options + --list alias for --explore on package/extension [ME]"
+    status: completed
+    created_at: "2026-05-23T03:44:26.348Z"
+    updated_at: "2026-05-23T03:55:03.504Z"
+    evidence: "U2: root cause was LIST_FILTER_FLAG_CONTRACTS missing --status (the one gap vs pm list --help); added it so the existing never-block typo normalization now resolves --statuss->--status (consistent with all other list flags). U3: added --list option as alias for --explore on package/extension (register-setup.ts readBoolean(explore,list) + option + EXTENSION_FLAG_CONTRACTS entry). Tests: bootstrap-args U2 unit + cli.integration U3; both green. Manual smoke confirmed."
+    completed_at: "2026-05-23T03:55:03.504Z"
+    linked_items[1]{id,kind}:
+      pm-fu5d,implements
+  - id: plan-step-004
+    order: 4
+    title: "pm-fu5d S1+B2: search degraded/lexical labeling (embedded_items=0) + test --add unknown-key validation & cmd alias [SUB-AGENT query-ux]"
+    status: completed
+    created_at: "2026-05-23T03:44:30.329Z"
+    updated_at: "2026-05-23T04:01:58.376Z"
+    evidence: "query-ux-subagent (general-purpose) delivered S1+B2 within bounded files (search.ts/test.ts + specs). Coordinator-verified: tsc clean, search+test specs 73/73 green, diff stayed in-scope. S1: computeSemanticOrHybridHits returns embeddedItems; runSearch pushes search_<mode>_degraded:no_embedded_items:results_are_lexical when 0 (additive, never blocks, mode unchanged). B2: cmd alias for command + normalizeStructuredAddEntry rejects unknown keys (e.g. name=) with allowed-key list; bare commands incl ones with = unchanged. Sub-agent recommended CHANGELOG entries (coordinator will apply centrally)."
+    completed_at: "2026-05-23T04:01:58.376Z"
+    linked_items[1]{id,kind}:
+      pm-fu5d,implements
+  - id: plan-step-005
+    order: 5
+    title: "pm-uzmf + CAL1: calendar instant-event (equal start/end), schedule-less Event warning, compound relative times/duration [SUB-AGENT calendar-ux]"
+    status: completed
+    created_at: "2026-05-23T03:44:35.995Z"
+    updated_at: "2026-05-23T04:09:49.551Z"
+    evidence: "calendar-ux-subagent delivered pm-uzmf(1+2)+CAL1 within bounded files (create.ts/update.ts/event-validation-messages.ts + specs); claimed+released pm-uzmf, commented both items. Coordinator-verified: tsc clean, create+update+calendar specs 111/111 green, scope correct, kyd6 regions untouched. Equal start/end -> instant event (end dropped); duration=<rel> via resolveEventEndAt reusing relative parser (mutually exclusive with end); schedule-less Event create warning event_without_schedule:<id>:no_time_set. Deferred compound +1d+2h / minute durations (need shared time.ts; duration= satisfies CAL1). CHANGELOG entries to apply centrally."
+    completed_at: "2026-05-23T04:09:49.551Z"
+    linked_items[1]{id,kind}:
+      pm-uzmf,implements
+  - id: plan-step-006
+    order: 6
+    title: "Verify+ship: secret re-audit (pm-xk39), full build+100% coverage gate, manual temp-dir dogfood, telemetry/Sentry check; CHANGELOG; commit/push/PR; AI-bot review; merge; close pm-c3dx"
+    status: in_progress
+    created_at: "2026-05-23T03:44:40.999Z"
+    updated_at: "2026-05-23T04:09:50.362Z"
+    linked_items[1]{id,kind}:
+      pm-xk39,related
+body: ""

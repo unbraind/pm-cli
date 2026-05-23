@@ -46,7 +46,10 @@ import {
   parseConfidenceInput,
   parseRegressionInput,
 } from "./metadata-normalizers.js";
-import { EVENT_END_AFTER_START_MESSAGE } from "./event-validation-messages.js";
+import {
+  EVENT_END_AFTER_START_MESSAGE,
+  EVENT_END_DURATION_MUTUALLY_EXCLUSIVE_MESSAGE,
+} from "./event-validation-messages.js";
 import type {
   CalendarEvent,
   Comment,
@@ -1017,6 +1020,38 @@ function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowVal
   };
 }
 
+function resolveEventEndAt(
+  startAt: string,
+  endRaw: string | undefined,
+  durationRaw: string | undefined,
+  referenceDate: Date,
+): string | undefined {
+  if (endRaw && durationRaw) {
+    throw new PmCliError(EVENT_END_DURATION_MUTUALLY_EXCLUSIVE_MESSAGE, EXIT_CODE.USAGE);
+  }
+  if (durationRaw) {
+    // Reuse the relative-offset parser with startAt as the reference so duration=2h means startAt + 2h.
+    const normalizedDuration = durationRaw.startsWith("+") ? durationRaw : `+${durationRaw}`;
+    const endAt = resolveIsoOrRelative(normalizedDuration, new Date(startAt), "event.duration");
+    if (endAt <= startAt) {
+      throw new PmCliError(EVENT_END_AFTER_START_MESSAGE, EXIT_CODE.USAGE);
+    }
+    return endAt;
+  }
+  if (!endRaw) {
+    return undefined;
+  }
+  const endAt = resolveIsoOrRelative(endRaw, referenceDate, "event.end");
+  if (endAt < startAt) {
+    throw new PmCliError(EVENT_END_AFTER_START_MESSAGE, EXIT_CODE.USAGE);
+  }
+  // Equal start/end collapses to an instant event (drop end) instead of being rejected.
+  if (endAt === startAt) {
+    return undefined;
+  }
+  return endAt;
+}
+
 function parseEvents(raw: string[] | undefined, nowValue: string): { values: CalendarEvent[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   assertNoLegacyNoneTokens(raw, "--event", "Use --clear-events to clear linked events.");
@@ -1029,10 +1064,8 @@ function parseEvents(raw: string[] | undefined, nowValue: string): { values: Cal
     }
     const startAt = resolveIsoOrRelative(startRaw, referenceDate, "event.start");
     const endRaw = parseOptionalString(kv.end)?.trim();
-    const endAt = endRaw ? resolveIsoOrRelative(endRaw, referenceDate, "event.end") : undefined;
-    if (endAt && endAt <= startAt) {
-      throw new PmCliError(EVENT_END_AFTER_START_MESSAGE, EXIT_CODE.USAGE);
-    }
+    const durationRaw = parseOptionalString(kv.duration)?.trim();
+    const endAt = resolveEventEndAt(startAt, endRaw, durationRaw, referenceDate);
 
     const titleRaw = parseOptionalString(kv.title);
     const descriptionRaw = parseOptionalString(kv.description);
@@ -1978,6 +2011,10 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const parentReferencePolicy = settings.validation.parent_reference;
   const sprintReleasePolicy = settings.validation.sprint_release_format;
   const validationWarnings: string[] = [];
+  // Event-type items with no attached schedule never surface on the calendar; warn (never block).
+  if (type.toLowerCase() === "event" && (events.values === undefined || events.values.length === 0)) {
+    validationWarnings.push(`event_without_schedule:${id}:no_time_set`);
+  }
   if (parent !== undefined) {
     parent = normalizeParentReferenceValue(parent);
     const parentLocated = await locateItem(pmRoot, parent, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);

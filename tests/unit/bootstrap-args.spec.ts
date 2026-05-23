@@ -228,6 +228,20 @@ describe("normalizeBootstrapInvocation", () => {
     );
   });
 
+  it("normalizes the list --status typo now that it is in the filter contract (pm-fu5d U2)", () => {
+    const normalized = normalizeBootstrapInvocation(["list", "--statuss", "open"]);
+    expect(normalized.argv).toEqual(["list", "--status", "open"]);
+    expect(normalized.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          from: "--statuss",
+          to: ["--status"],
+          reason: "flag_typo",
+        }),
+      ]),
+    );
+  });
+
   it("promotes bare key=value and key:value tokens to canonical flags", () => {
     const normalized = normalizeBootstrapInvocation(["create", "title=Hello", "description:World", "type=Task"]);
     expect(normalized.argv).toEqual(["create", "--title", "Hello", "--description", "World", "--type", "Task"]);

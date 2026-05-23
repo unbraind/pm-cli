@@ -6,7 +6,10 @@ status: open
 priority: 2
 tags[0]:
 created_at: "2026-05-22T15:44:30.773Z"
-updated_at: "2026-05-22T15:44:30.773Z"
+updated_at: "2026-05-23T03:48:21.098Z"
+assignee: claude-code-agent
 author: maintainer-agent
 parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-23T03:48:21.098Z",claude-code-agent,"FIXED (pm-uz25 step 1). Root cause: pm deps builds the graph only from the dependencies[] array, but update.ts --blocked-by wrote only the scalar blocked_by field (create.ts already added the edge; update.ts was asymmetric). Fix in src/cli/commands/update.ts: (1) new reconcileBlockedByDependency() helper; (2) resolve the --blocked-by target via locateItem before the synchronous mutate callback; (3) in the blocked_by mutate block, add a {kind:'blocked_by'} dependency edge when the target resolves, remove it on --unset blocked-by, and replace the stale edge on repoint. Verified by manual temp-dir smoke (edge_count 1->0) and 3 regression tests in update-command.spec.ts. update.ts is coverage-excluded so the 100% gate is unaffected."
 body: ""
