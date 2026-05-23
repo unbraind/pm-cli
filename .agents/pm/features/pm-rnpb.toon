@@ -6,16 +6,15 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-23T10:06:56.111Z"
+updated_at: "2026-05-23T10:14:37.483Z"
 deadline: "2026-06-01T00:00:00.000Z"
-assignee: codex-extensive-audit
 author: codex-audit
 estimated_minutes: 300
 acceptance_criteria: Audit findings are actionable and deduplicated; changed files and verification commands are linked; temporary dogfood project validates core workflows; any discovered bugs with safe fixes are remediated and tested.
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[212]{created_at,author,text}:
+comments[213]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -228,6 +227,7 @@ comments[212]{created_at,author,text}:
   "2026-05-23T09:51:22.355Z",codex-extensive-audit,"PR evidence 2026-05-23: opened PR #46 Improve linked-test parser consistency and Plan projections from branch linked-test-plan-agent-ux-polish at https://github.com/unbraind/pm-cli/pull/46 after clean rebase on origin/main and post-rebase full release gate. Beginning required >=15 minute AI-review wait and GitHub check watch before any merge."
   "2026-05-23T10:02:18.497Z",codex-extensive-audit,"AI review response 2026-05-23: Gemini feedback on PR #46 suggested precompiling the structured linked-test detection regex at module scope. Applied in src/cli/commands/linked-test-entry.ts by building STRUCTURED_LINKED_TEST_ENTRY_PATTERN once and reusing it in looksLikeStructuredLinkedTestEntry. Focused regression passed: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/unit/test-command.spec.ts tests/unit/plan-command.spec.ts tests/unit/contracts-command.spec.ts --reporter=dot => 5 files / 187 tests passed."
   "2026-05-23T10:06:56.111Z",codex-extensive-audit,"Post-review final gate 2026-05-23: after applying Gemini's regex precompile feedback, reran node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json. Passed: build, typecheck, docs-skills, static quality, coverage 100 files / 1484 tests / 100%, version policy 2026.5.23, secret scan, npx packed-package smoke, package-first dogfood 84 workflows, npm pack dry-run, compatibility check from base 2026.5.18, and required Sentry/telemetry gate with Sentry critical=0 high=0 total=0 and telemetry finish_error_rate_pct=3.08, failures_without_error_code_rows=0."
+  "2026-05-23T10:14:18.812Z",codex-extensive-audit,"Merge evidence 2026-05-23: PR #46 merged into main at 2026-05-23T10:13:45Z as merge commit df5b2c2274ca24b0d7913d54798d94699da49b10. Final PR head fb62eac4 had all GitHub checks green: CI build foundation, ubuntu Node 20 tests, macOS Node 20 tests, coverage gate, typecheck, static, compat, smokes, CodeRabbit status, and Sourcery status. Codex review found no major issues; Gemini actionable regex-precompile feedback was applied before merge; CodeRabbit and Sourcery review text remained rate-limited/no actionable feedback. Local post-merge pm validate --check-resolution --check-history-drift returned ok with no warnings."
 notes[2]{created_at,author,text}:
   "2026-05-17T07:36:59.474Z",codex-agent,"Design note 2026-05-17: unfiltered pm contracts default now intentionally omits three heavy sections (schema oneOf union, command_flags, commander_aliases) and emits explicit omitted_reason markers; --full restores complete schema and alias/flag surfaces for tooling that needs maximal detail."
   "2026-05-17T08:33:25.981Z",codex-agent,"Design note 2026-05-17: default brief projection was intentionally scoped to bare 'pm list' instead of all list-* commands to preserve existing automation contracts while still cutting agent token usage on the highest-frequency exploratory list call."
