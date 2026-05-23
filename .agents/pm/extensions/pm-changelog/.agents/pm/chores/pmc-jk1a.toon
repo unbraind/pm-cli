@@ -1,0 +1,48 @@
+id: pmc-jk1a
+title: Final release verification and npm publication audit
+description: "Continue the pm-changelog production-readiness pass by rerunning release gates, temp-folder install verification, strict pm validation, GitHub release checks, changelog self-generation, git commit/push state, and npm publication/auth status."
+type: Chore
+status: closed
+priority: 0
+tags[4]: governance,npm,release,verification
+created_at: "2026-05-23T19:54:40.012Z"
+updated_at: "2026-05-23T19:56:01.967Z"
+deadline: "2026-05-23T00:00:00.000Z"
+author: codex
+estimated_minutes: 45
+acceptance_criteria: "- npm run release:check passes after final changelog generation.\\n- Clean temporary project verifies local package install and changelog generation.\\n- pm validate has no file-link warnings for source files after governance links are updated.\\n- GitHub repository and release v0.1.0 are verified with gh.\\n- npm registry auth and package visibility are checked and the publication blocker is updated if auth is still unavailable.\\n- All intentional changes are committed and pushed, or the remaining external blocker is documented."
+reviewer: steve
+risk: medium
+confidence: high
+sprint: 2026-05-release
+release: 0.1.0
+resolution: "Final verification passed for release gates, strict pm validation, GitHub release metadata, and clean temp-folder local package install. npm publication remains externally blocked because this shell has no npm registry authentication and no npm token environment variables."
+expected_result: All local and GitHub-controlled release checks pass; npm publication completes only when valid npm registry credentials are configured.
+actual_result: "npm run release:check passed; pm validate returned ok=true with zero warnings; clean temp project /tmp/pm-changelog-final-AMwXqp installed the local package and generated a changelog containing the smoke item; gh release v0.1.0 is public and non-draft; npm publish --access public failed with ENEEDAUTH."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pmc-ysps,related,"2026-05-23T19:54:40.012Z",codex,null
+comments[3]{created_at,author,text}:
+  "2026-05-23T19:54:40.012Z",codex,Continuation pass started after confirming main is clean and GitHub release v0.1.0 already exists.
+  "2026-05-23T19:55:52.721Z",codex,"author=codex,created_at=now,text=Release gate passed with 16 tests, production audit found 0 vulnerabilities, npm pack dry-run produced a 25-file package, and changelog:check was current before final governance closure."
+  "2026-05-23T19:55:52.721Z",codex,Temp smoke rerun used explicit output /tmp/pm-changelog-final-AMwXqp/CHANGELOG.md and verified the generated markdown contains Ship final changelog smoke.
+notes[2]{created_at,author,text}:
+  "2026-05-23T19:54:40.012Z",codex,Release gates must be rerun after final changelog regeneration because closing this item intentionally changes tracker input.
+  "2026-05-23T19:55:52.721Z",codex,"Using pm --path changes tracker root,not shell cwd for extension output paths; temp verification should pass an absolute output path or run from the temp directory."
+learnings[2]{created_at,author,text}:
+  "2026-05-23T19:54:40.012Z",codex,"Strict Chore creation in this pm project requires assignee,body,comment,dep,learning,message,and note at creation time."
+  "2026-05-23T19:55:52.721Z",codex,"npm publish --dry-run can pass without auth,but real npm publish still requires npm login or an authorized automation token before package upload."
+files[6]{path,scope,note}:
+  src/cli.ts,project,standalone CLI entrypoint covered by final verification
+  src/extension.ts,project,pm extension command runtime covered by final verification
+  src/index.ts,project,public API export surface covered by final verification
+  src/types.ts,project,public TypeScript types covered by final verification
+  package.json,project,release scripts and npm metadata
+  CHANGELOG.md,project,self-generated release notes
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "gh release view v0.1.0 --json tagName,isDraft,isPrerelease,publishedAt,url",null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+  "npm run release:check",null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+  tempdir pm init && pm install local package && pm changelog generate,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  README.md,project,install and release verification documentation
+close_reason: Final verification is complete for all locally controllable release readiness work; npm publication remains blocked by missing registry authentication and is documented in pmc-ek6t.
+body: "## Scope\\n\\nThis item records the final continuation pass requested for pm-changelog after the initial release-readiness work. It covers local release gates, independent install verification, pm governance validation, GitHub release/repository verification, and npm publication status.\\n\\n## Constraints\\n\\nThe package can be validated, committed, pushed, and released on GitHub from this machine. npm publication requires npm registry credentials authorized to create or publish the unscoped pm-changelog package name."

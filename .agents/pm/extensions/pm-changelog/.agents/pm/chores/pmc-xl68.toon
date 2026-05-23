@@ -1,0 +1,32 @@
+id: pmc-xl68
+title: Document pm governance for the package lifecycle
+description: "Maintain a complete pm hierarchy for release readiness, including epics, features, tasks, issues, chores, linked artifacts, acceptance criteria, tests, and closure evidence."
+type: Chore
+status: closed
+priority: 1
+tags[3]: documentation,governance,pm
+created_at: "2026-05-23T19:20:01.740Z"
+updated_at: "2026-05-23T19:24:09.478Z"
+deadline: "2026-05-23T00:00:00.000Z"
+author: codex
+estimated_minutes: 30
+acceptance_criteria: "- pm list-all shows a complete hierarchy for release work.\n- pm validate reports no blocking metadata, lifecycle, resolution, command-reference, or history drift problems for package items.\n- Closure notes summarize real evidence instead of generic done statements.\n- Changelog generation consumes the closed pm items."
+parent: pmc-ysps
+reviewer: steve
+risk: low
+confidence: high
+sprint: 2026-05-release
+release: 0.1.0
+resolution: "Created and maintained a strict pm hierarchy for release readiness with parent epic, features, task, issue, chore items, linked artifacts, acceptance criteria, evidence, and command references."
+expected_result: "pm governance records are complete, traceable, and pass strict validation for package release work."
+actual_result: "pm validate core checks passed with ok=true across metadata, resolution, lifecycle, command references, and history drift for 7 items; no warnings returned for those checks."
+comments[1]{created_at,author,text}:
+  "2026-05-23T19:24:04.879Z",codex,"Validation command: pm validate --json --check-metadata --check-resolution --check-lifecycle --check-command-references --check-history-drift --strict-exit."
+files[1]{path,scope,note}:
+  package.json,project,null
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  pm validate --json,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  README.md,project,null
+close_reason: pm governance hierarchy and strict core validation are complete for the release-readiness work.
+body: "Governance expectations:\n- The release work is traceable from a parent epic to each release-readiness concern.\n- Each item has owner, reviewer, risk, confidence, sprint, release, files/docs/tests, and acceptance criteria.\n- Items are closed only after the related evidence exists.\n- pm validate is run at the end and warnings are reviewed."

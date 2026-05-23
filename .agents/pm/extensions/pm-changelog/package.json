@@ -1,0 +1,106 @@
+{
+  "name": "pm-changelog",
+  "version": "2026.5.23-2",
+  "description": "Generate CHANGELOG.md files from pm-cli items for local and CI usage",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unbraind/pm-changelog.git"
+  },
+  "bugs": {
+    "url": "https://github.com/unbraind/pm-changelog/issues"
+  },
+  "homepage": "https://github.com/unbraind/pm-changelog#readme",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js",
+      "default": "./dist/cli.js"
+    },
+    "./extension": {
+      "types": "./dist/extension.d.ts",
+      "import": "./dist/extension.js",
+      "default": "./dist/extension.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "pm-changelog": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "manifest.json",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit",
+    "changelog": "node dist/cli.js --mode replace --output CHANGELOG.md --group-by release",
+    "changelog:check": "node dist/cli.js --mode replace --output CHANGELOG.md --group-by release --check",
+    "audit:prod": "npm audit --omit=dev",
+    "pack:dry-run": "npm pack --dry-run",
+    "prepack": "npm run build",
+    "release:check": "npm run check && npm test && npm run audit:prod && npm run pack:dry-run && npm run changelog:check",
+    "test": "npm run build && node --test"
+  },
+  "pm": {
+    "aliases": [
+      "changelog"
+    ],
+    "extensions": [
+      "."
+    ],
+    "catalog": {
+      "display_name": "Changelog Generator",
+      "category": "release",
+      "summary": "Generate CHANGELOG.md and release notes from completed pm items in local scripts, GitHub Actions, and CI runners.",
+      "tags": [
+        "automation",
+        "changelog",
+        "github-actions",
+        "release-notes"
+      ],
+      "links": {
+        "docs": "https://github.com/unbraind/pm-changelog#readme",
+        "npm": "https://www.npmjs.com/package/pm-changelog",
+        "repository": "https://github.com/unbraind/pm-changelog",
+        "report": "https://github.com/unbraind/pm-changelog/issues"
+      }
+    },
+    "docs": [
+      "README.md",
+      "CHANGELOG.md"
+    ],
+    "examples": [
+      "README.md"
+    ]
+  },
+  "peerDependencies": {
+    "@unbrained/pm-cli": ">=2026.5.14"
+  },
+  "devDependencies": {
+    "@types/node": "^25.8.0",
+    "@unbrained/pm-cli": "^2026.5.14",
+    "typescript": "^6.0.3"
+  },
+  "keywords": [
+    "pm-cli",
+    "pm-package",
+    "changelog",
+    "release-notes",
+    "github-actions",
+    "ci"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

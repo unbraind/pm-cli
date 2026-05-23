@@ -1,0 +1,35 @@
+id: pmc-91po
+title: Audit git history for private data exposure
+description: "Review every commit reachable from all refs for credential-like literals, private key filenames, env files, and other secret-bearing artifacts before public release."
+type: Issue
+status: closed
+priority: 0
+tags[3]: history,release,security
+created_at: "2026-05-23T19:19:07.254Z"
+updated_at: "2026-05-23T19:22:50.153Z"
+deadline: "2026-05-23T00:00:00.000Z"
+author: codex
+estimated_minutes: 45
+acceptance_criteria: "- Full reachable git history is scanned, not only the working tree.\n- Any confirmed private data finding is remediated before release.\n- Synthetic security test fixtures are documented as false positives.\n- Final release notes record the secret scan result."
+parent: pmc-ysps
+reviewer: steve
+risk: high
+confidence: high
+sprint: 2026-05-release
+release: 0.1.0
+reporter: codex
+severity: high
+environment: local git repository all refs
+repro_steps: Run git grep over git rev-list --all and enumerate historical filenames for secret-bearing patterns.
+resolution: Completed full reachable-history secret scan and filename audit; no confirmed private data was found.
+expected_result: "All commits reachable from every ref contain no private credentials, private keys, env files, or secret-bearing artifacts."
+actual_result: "Pattern scan matched only sanitizer code that clears URL passwords and a synthetic test fixture URL containing token=secret; historical filename audit returned no env, key, credential, token, or secret files."
+component: repository-security
+comments[1]{created_at,author,text}:
+  "2026-05-23T19:22:35.063Z",codex,"Commands executed: git grep over 1e9bb8caf3f39f0fe76d2b5325bed95067eef3f7\n5436bf223298bda8d05a8d98eff5f4ad79ba5d89\n8fb2eacaa8567f4fe6b1db7dcff6c4c0aae06110\n1be6beaf23f06af750587fe9e3068598c6fed940\n853e5f2c7a1efb5966eb1b87b0e9110a8e00bd05\na1f30619a75bbccbe2e9cf3a89fa63c4c0f01246\n441450befce63281be1644119e5f7023652df99b\n95ed298148277f75ea7653e9442182b4ab9c5944\n776a497b0f56ec02444190ff91dd3ca787180879\n1ebacabaeba7133b8059a6067e2404ab6a2417aa\nf01a8110893d34957a4141faba072f4d6c862242 with common token/key/password patterns; historical filename enumeration with env/key/credential/secret/token pattern matching."
+files[1]{path,scope,note}:
+  test/generator.test.mjs,project,null
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "git grep -n -I -E \"secret-patterns\" $(git rev-list --all) && historical filename secret-pattern scan",null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: History scan found no confirmed private data; only intentional sanitizer fixtures and password-clearing code matched.
+body: "Audit approach:\n- Search every revision with git grep for common token, private-key, password, secret, and credential patterns.\n- Enumerate filenames across all revisions looking for env files, private keys, credentials, token files, and secret material.\n- Treat test fixture words such as token=secret as non-findings when they are synthetic and intentionally used to verify sanitization behavior."

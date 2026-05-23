@@ -69,6 +69,8 @@
     "smoke:claude-plugin": "node scripts/smoke-claude-plugin.mjs",
     "version:check": "node scripts/release-version.mjs check",
     "version:next": "node scripts/release-version.mjs next",
+    "changelog:pm": "node dist/cli.js changelog generate --output CHANGELOG.pm.md --title \"pm Tracker Changelog\" --group-by release --status closed",
+    "changelog:pm:check": "node dist/cli.js changelog generate --output CHANGELOG.pm.md --title \"pm Tracker Changelog\" --group-by release --status closed --check",
     "release:notes": "node scripts/generate-release-notes.mjs",
     "release:changelog": "node scripts/release/changelog-promote.mjs",
     "release:gates": "node scripts/release/run-gates.mjs --telemetry-mode best-effort",

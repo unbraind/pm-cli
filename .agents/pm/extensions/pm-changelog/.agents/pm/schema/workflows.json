@@ -1,0 +1,10 @@
+{
+  "workflow": {
+    "draft_status": "draft",
+    "open_status": "open",
+    "in_progress_status": "in_progress",
+    "blocked_status": "blocked",
+    "close_status": "closed",
+    "canceled_status": "canceled"
+  }
+}

@@ -1,0 +1,63 @@
+id: pmc-ry1j
+title: Post-release production readiness continuation audit
+description: "Continuation pass requested on 2026-05-23 to re-verify pm-changelog production readiness after npm publication, including release gates, temp-folder pm install behavior, GitHub state, changelog self-generation, npm installability, and final commit/push state."
+type: Chore
+status: closed
+priority: 0
+tags[3]: governance,release,verification
+created_at: "2026-05-23T20:05:46.615Z"
+updated_at: "2026-05-23T20:17:55.922Z"
+deadline: "2026-05-23T00:00:00.000Z"
+author: codex
+estimated_minutes: 60
+acceptance_criteria: "- npm run release:check passes from the repository checkout.\\n- Clean temp folder verifies pm install npm:pm-changelog --project and pm changelog generate.\\n- GitHub repository and release metadata are verified with gh using free features only.\\n- npm registry exposes the current package version and package contents are installable.\\n- pm health and strict validation pass after this continuation audit is documented.\\n- Any intentional changelog or pm governance changes are committed and pushed."
+reviewer: steve
+risk: medium
+confidence: high
+sprint: 2026-05-release
+release: v2026.05.23
+resolution: "Completed date-based production release v2026.05.23 with npm-compatible package version 2026.5.23, deterministic pm-release grouped changelog generation, passing release gates, strict pm validation, public npm publication, public GitHub release, and clean temp-folder pm install verification."
+expected_result: "pm-changelog remains production-ready, public, installable via pm install npm:pm-changelog --project, and governed by valid pm records."
+actual_result: "All checked release gates passed under package version 2026.5.23; npm exposes 2026.5.23 as latest; GitHub release v2026.05.23 is public and latest; clean temp project /tmp/pm-changelog-date-lTmdf1 installed npm:pm-changelog, generated a changelog containing Verify date release npm install, package doctor returned ok=true with zero warnings, and the installed extension version is 2026.5.23."
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pmc-ysps,related,"2026-05-23T20:05:46.615Z",codex,null
+comments[12]{created_at,author,text}:
+  "2026-05-23T20:05:46.615Z",codex,Continuation audit started after pm validate showed the previous release hierarchy is closed and healthy.
+  "2026-05-23T20:07:12.268Z",codex,"GitHub evidence: gh release view v0.1.0 reports tag v0.1.0, published 2026-05-23T19:35:03Z, non-draft and non-prerelease. gh repo view reports PUBLIC visibility, main default branch, Issues enabled, Wiki and Projects disabled, README homepage, and release-related topics."
+  "2026-05-23T20:07:12.268Z",codex,"npm evidence: npm view pm-changelog reports version=0.1.0, dist-tags.latest=0.1.0, license=MIT, repository=git+https://github.com/unbraind/pm-changelog.git."
+  "2026-05-23T20:07:12.268Z",codex,"Release gate evidence: npm run release:check passed on 2026-05-23 with TypeScript check, 16 node:test tests, production npm audit with 0 vulnerabilities, npm pack dry-run producing 25 files, and changelog:check reporting CHANGELOG.md up to date."
+  "2026-05-23T20:07:12.268Z",codex,"Temp install evidence: clean project /tmp/pm-changelog-prod-fPCquv ran pm init, pm install npm:pm-changelog --project, created and closed a smoke item, generated CHANGELOG.md with item_count=1, rg found Verify production npm install, and pm package doctor returned ok=true with zero warnings."
+  "2026-05-23T20:08:57.696Z",codex,"Release scope update: because the continuation audit added a new committed changelog/governance artifact after v0.1.0, the final public release target is promoted to patch version 0.1.1 so npm and GitHub releases match repository HEAD."
+  "2026-05-23T20:14:52.148Z",codex,"Release scope corrected per maintainer direction: pm-changelog now follows pm CLI date-based release versioning. npm metadata uses SemVer-compatible 2026.5.23, while GitHub tag/release naming uses v2026.05.23."
+  "2026-05-23T20:15:54.488Z",codex,"Changelog script update: npm run changelog and npm run changelog:check now use --group-by release with replace mode so CHANGELOG.md is rebuilt deterministically from pm release metadata, including v2026.05.23."
+  "2026-05-23T20:15:54.488Z",codex,"Package metadata update: package.json, package-lock.json, and manifest.json now use npm-compatible date version 2026.5.23. The public GitHub tag/release target is v2026.05.23."
+  "2026-05-23T20:17:55.914Z",codex,"Final GitHub evidence: git tag v2026.05.23 was pushed to origin with main, and gh release create published https://github.com/unbraind/pm-changelog/releases/tag/v2026.05.23 as the latest release."
+  "2026-05-23T20:17:55.914Z",codex,"Final npm-source install evidence: clean project /tmp/pm-changelog-date-lTmdf1 ran pm init, pm install npm:pm-changelog --project, generated CHANGELOG.md with item_count=1 for Verify date release npm install, pm package doctor returned ok=true with zero warnings, and installed extension package.json reported version 2026.5.23."
+  "2026-05-23T20:17:55.914Z",codex,"Final publication evidence: npm publish completed for pm-changelog@2026.5.23 using a temporary npm config, npm view reports latest=2026.5.23, and npm registry lists versions 0.1.0 and 2026.5.23."
+notes[4]{created_at,author,text}:
+  "2026-05-23T20:05:46.615Z",codex,This pass should not reopen prior release items; it records fresh evidence against the already-published package.
+  "2026-05-23T20:07:12.268Z",codex,An earlier temp harness at /tmp/pm-changelog-prod-fOTUwq failed because it used an unsupported pm create flag and guessed an internal managed package path; the corrected set -e smoke at /tmp/pm-changelog-prod-fPCquv is the accepted verification evidence.
+  "2026-05-23T20:08:57.696Z",codex,The 0.1.1 patch release contains release governance and changelog evidence only; runtime package code is unchanged from the verified 0.1.0 build.
+  "2026-05-23T20:14:52.148Z",codex,"Npm package versions cannot include a leading v or zero-padded numeric components, so package.json uses 2026.5.23 and the public Git tag/release uses v2026.05.23."
+learnings[2]{created_at,author,text}:
+  "2026-05-23T20:05:46.615Z",codex,A separate continuation chore keeps post-publication verification auditable without altering the original release epic closure evidence.
+  "2026-05-23T20:07:12.268Z",codex,"For npm-source pm package verification, use the installed extension command and pm package doctor instead of relying on a guessed managed node_modules path."
+files[5]{path,scope,note}:
+  package.json,project,release scripts and npm metadata
+  CHANGELOG.md,project,self-generated changelog artifact
+  README.md,project,documents date-based release versioning
+  manifest.json,project,pm package manifest version follows npm-compatible date version
+  package-lock.json,project,locked package version follows npm-compatible date version
+tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "clean temp pm install npm:pm-changelog --project",null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+  gh release create v2026.05.23,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+  "gh release view v0.1.0 --json tagName,isDraft,isPrerelease,publishedAt,url",null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+  npm publish --access public for package version 2026.5.23,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+  "npm run release:check",null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+  "npm run release:check with package version 2026.5.23",null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+  npm view pm-changelog version dist-tags.latest license repository.url --json,null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+  "set -e tempdir; pm init; pm install npm:pm-changelog --project; pm changelog generate",null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  README.md,project,install and release verification docs
+close_reason: "Continuation audit completed with release, npm, GitHub, temp install, changelog, package doctor, pm validation, commit, and push evidence recorded."
+body: "This item records the current continuation audit separately from the original 0.1.0 release epic so the new verification evidence is traceable. Scope includes package metadata, GitHub repository state, npm registry visibility, pm package installability, release scripts, self-generated changelog, strict pm validation, and repository cleanliness."

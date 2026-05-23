@@ -104,6 +104,9 @@ jobs:
       - name: Static quality gate
         run: pnpm quality:static
 
+      - name: Verify generated pm changelog
+        run: pnpm changelog:pm:check
+
       - name: Compatibility migration gate
         timeout-minutes: 6
         run: node scripts/release/compatibility-check.mjs --json

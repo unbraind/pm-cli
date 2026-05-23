@@ -336,6 +336,19 @@ function runPipeline() {
     const npm = commandFor("npm");
     runCommand(npm, ["version", "--no-git-tag-version", targetVersion]);
     runCommand(process.execPath, ["scripts/release/changelog-promote.mjs", "--version", targetVersion]);
+    runCommand(process.execPath, [
+      "dist/cli.js",
+      "changelog",
+      "generate",
+      "--output",
+      "CHANGELOG.pm.md",
+      "--title",
+      "pm Tracker Changelog",
+      "--group-by",
+      "release",
+      "--status",
+      "closed",
+    ]);
   }
 
   const gates = runReleaseGates({
@@ -367,7 +380,7 @@ function runPipeline() {
       GIT_COMMITTER_NAME: author,
       GIT_COMMITTER_EMAIL: authorEmail,
     };
-    git(["add", "package.json", "CHANGELOG.md"]);
+    git(["add", "package.json", "CHANGELOG.md", "CHANGELOG.pm.md"]);
     runCommand("git", [
       "commit",
       "-m",

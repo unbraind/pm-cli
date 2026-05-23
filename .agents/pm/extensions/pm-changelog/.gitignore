@@ -1,0 +1,7 @@
+node_modules/
+*.tgz
+.DS_Store
+.env
+.agents/pm/locks/
+.agents/pm/runtime/
+.agents/pm/search/

@@ -1,0 +1,51 @@
+{
+  "statuses": [
+    {
+      "id": "draft",
+      "roles": [
+        "draft"
+      ]
+    },
+    {
+      "id": "open",
+      "roles": [
+        "active",
+        "default_open"
+      ]
+    },
+    {
+      "id": "in_progress",
+      "aliases": [
+        "in-progress"
+      ],
+      "roles": [
+        "active"
+      ]
+    },
+    {
+      "id": "blocked",
+      "roles": [
+        "blocked"
+      ]
+    },
+    {
+      "id": "closed",
+      "roles": [
+        "terminal",
+        "terminal_done",
+        "default_close"
+      ]
+    },
+    {
+      "id": "canceled",
+      "aliases": [
+        "cancelled"
+      ],
+      "roles": [
+        "terminal",
+        "terminal_canceled",
+        "default_cancel"
+      ]
+    }
+  ]
+}

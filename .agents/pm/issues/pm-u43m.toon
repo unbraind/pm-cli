@@ -1,0 +1,30 @@
+id: pm-u43m
+title: Linked test sandbox cleanup can fail with ENOTEMPTY
+description: pm test --run can report failure after linked commands pass because linked-test sandbox cleanup removes /tmp/pm-linked-test-* without retries. The failure was reproduced twice as ENOTEMPTY on the schema directory while validating pm-changelog integration.
+type: Issue
+status: closed
+priority: 1
+tags[3]: cleanup,linked-test,tests
+created_at: "2026-05-23T20:44:49.461Z"
+updated_at: "2026-05-23T20:50:32.434Z"
+author: codex-pm-changelog
+parent: pm-7811
+severity: medium
+resolution: "Linked-test sandbox cleanup now retries recursive removal, matching other temp cleanup paths."
+expected_result: "pm test --run exits 0 when linked commands pass, even if the OS briefly keeps sandbox directories busy."
+actual_result: pm test pm-7811 --run and pm test pm-u43m --run both passed after reinstalling the patched CLI; focused test-command unit suite passed 40 tests.
+component: linked-test
+comments[1]{created_at,author,text}:
+  "2026-05-23T20:50:19.678Z",codex-pm-changelog,"Evidence: patched linked-test sandbox cleanup to use fs.rm maxRetries/retryDelay. Reproduced previous ENOTEMPTY before reinstalling patched CLI, then reran pm test for pm-7811 and pm-u43m successfully after npm install -g .; focused node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts passed 40 tests."
+files[1]{path,scope,note}:
+  src/cli/commands/test.ts,project,Retry linked-test sandbox cleanup to avoid ENOTEMPTY after successful commands
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,60,tracker,null,null,null,null,null,null,null,null,null,null,null
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpitiu71-0v5lqn,test,passed,"2026-05-23T20:45:43.652Z","2026-05-23T20:45:47.485Z","2026-05-23T20:45:47.485Z",null,null,2,0,0,null,null,null
+  test-local-mpitm87d-d0qvp8,test,passed,"2026-05-23T20:48:21.109Z","2026-05-23T20:48:25.609Z","2026-05-23T20:48:25.609Z",null,null,2,0,0,null,null,null
+  test-local-mpitn60c-qie9hx,test,passed,"2026-05-23T20:49:04.710Z","2026-05-23T20:49:09.420Z","2026-05-23T20:49:09.420Z",null,null,2,0,0,null,null,null
+close_reason: Fixed linked-test sandbox cleanup retry and verified linked pm tests plus focused test-command suite.
+body: ""

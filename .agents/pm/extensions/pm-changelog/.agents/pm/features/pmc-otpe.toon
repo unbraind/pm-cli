@@ -1,0 +1,34 @@
+id: pmc-otpe
+title: Harden npm package metadata and CI release gates
+description: "Ensure pm-changelog has complete package metadata, an explicit MIT license, deterministic TypeScript emission, and CI checks that catch release regressions before merge."
+type: Feature
+status: closed
+priority: 0
+tags[3]: ci,npm,release
+created_at: "2026-05-23T19:18:47.720Z"
+updated_at: "2026-05-23T19:22:28.220Z"
+deadline: "2026-05-23T00:00:00.000Z"
+author: codex
+estimated_minutes: 60
+acceptance_criteria: "- LICENSE exists and matches the MIT declaration in package.json.\n- npm scripts expose release:check, audit:prod, and pack:dry-run.\n- CI runs type check, tests, production audit, package dry-run, and changelog check using free GitHub Actions features.\n- TypeScript does not emit dist output when compilation has errors."
+parent: pmc-ysps
+reviewer: steve
+risk: low
+confidence: high
+sprint: 2026-05-release
+release: 0.1.0
+resolution: "Added LICENSE, release verification npm scripts, strict TypeScript emit policy, and expanded GitHub Actions CI release gates."
+expected_result: "Release metadata, compiler policy, and CI gates meet production-readiness requirements and are reproducible from npm scripts."
+actual_result: "Repository now has MIT license text, release:check/audit:prod/pack:dry-run scripts, noEmitOnError=true, and CI jobs for type check, tests, production audit, package dry-run, and changelog check."
+comments[1]{created_at,author,text}:
+  "2026-05-23T19:22:06.162Z",codex,"Verification evidence: npm run check passed after changes; npm test and release:check will run after changelog regeneration."
+files[3]{path,scope,note}:
+  package.json,project,null
+  tsconfig.json,project,null
+  .github/workflows/ci.yml,project,null
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "npm run release:check",null,project,null,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  LICENSE,project,null
+close_reason: Release metadata and CI hardening implemented; verification evidence recorded and final release gate covers this path.
+body: "Implementation notes:\n- Add repository license text matching package.json.\n- Add release verification scripts for type-checking, tests, production dependency audit, package dry-run, and changelog freshness.\n- Expand GitHub Actions CI to run the same release gates on push and pull requests.\n- Keep dist tracked because pm package installs from GitHub must work without a build step."

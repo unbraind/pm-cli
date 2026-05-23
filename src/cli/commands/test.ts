@@ -2016,7 +2016,7 @@ export async function runLinkedTests(
       });
     }
   } finally {
-    await rm(sandboxRoot, { recursive: true, force: true });
+    await rm(sandboxRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
   }
   return results;
 }

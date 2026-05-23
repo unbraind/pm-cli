@@ -188,6 +188,7 @@ jobs:
         if: matrix.gate == 'static'
         run: |
           pnpm version:check
+          pnpm changelog:pm:check
           pnpm security:scan
           pnpm quality:static
           npm pack --dry-run
