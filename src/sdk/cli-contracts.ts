@@ -750,7 +750,6 @@ export const SCHEMA_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--folder" },
   { flag: "--alias" },
   { flag: "--author" },
-  { flag: "--message" },
   { flag: "--force" },
 ];
 
@@ -2201,7 +2200,8 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   },
   schema: {
     required: ["subcommand", "name"],
-    optional: ["description", "defaultStatus", "folder", "alias", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+    // No --message: schema add-type writes a config file, not item history.
+    optional: ["description", "defaultStatus", "folder", "alias", "author", "force"],
   },
   plan: {
     required: ["subcommand"],

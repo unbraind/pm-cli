@@ -260,7 +260,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--dry-run --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    schema)",
-    `      COMPREPLY=(${compgen("add-type --description --default-status --folder --alias --author --message --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("add-type --description --default-status --folder --alias --author --force --json --quiet --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    plan)",
     `      COMPREPLY=(${compgen(`${PLAN_SUBCOMMANDS_LIST} ${PLAN_FLAGS}`)})`,
@@ -773,7 +773,6 @@ _pm() {
             '--folder[Storage folder for items of this custom type]:dir' \\
             '--alias[Alias for the custom type (repeatable)]:name' \\
             '--author[Mutation author]:author' \\
-            '--message[Mutation message]:message' \\
             '--force[Force ownership/lock override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1539,7 +1538,6 @@ complete -c pm -n '__fish_seen_subcommand_from schema' -l default-status -d 'Def
 complete -c pm -n '__fish_seen_subcommand_from schema' -l folder -d 'Storage folder for items of this custom type' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l alias -d 'Alias for the custom type (repeatable)' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l author -d 'Mutation author' -r
-complete -c pm -n '__fish_seen_subcommand_from schema' -l message -d 'Mutation message' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l force -d 'Force ownership/lock override'
 complete -c pm -n '__fish_seen_subcommand_from plan' -a 'create show add-step update-step complete-step block-step reorder-step remove-step link unlink decision discovery validation resume approve materialize' -d 'Plan subcommand'
 complete -c pm -n '__fish_seen_subcommand_from plan' -l title -d 'Plan title' -r

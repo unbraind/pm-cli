@@ -3,6 +3,7 @@ import {
   assertAliasesAvailable,
   buildInvalidTypeError,
   buildInvalidTypeHint,
+  escapeForDoubleQuotes,
   matchBuiltinTypeName,
   normalizeAddTypeInput,
   parseItemTypesFile,
@@ -80,6 +81,7 @@ describe("assertAliasesAvailable", () => {
       { name: "Spike", aliases: ["research"] } as Record<string, unknown>,
       { name: "Bare" } as Record<string, unknown>, // valid name, no aliases array
       { name: "Messy", aliases: ["", "  ", 7, "from-messy"] } as unknown as Record<string, unknown>, // malformed alias entries
+      { name: "Weird", aliases: "notanarray" } as unknown as Record<string, unknown>, // non-array aliases value
       { notName: true } as unknown as { name: string },
     ],
   } as never;
@@ -88,10 +90,11 @@ describe("assertAliasesAvailable", () => {
     expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["defect"] }, existing)).not.toThrow();
   });
 
-  it("indexes definitions without aliases and skips malformed alias entries", () => {
-    // "Bare" (no aliases) and the blank/non-string entries on "Messy" are tolerated;
-    // only the well-formed "from-messy" alias is registered as taken.
+  it("tolerates definitions without aliases, malformed entries, and non-array aliases", () => {
+    // "Bare" (no aliases), blank/non-string entries on "Messy", and the non-array
+    // "Weird".aliases are all tolerated; only well-formed string aliases are taken.
     expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["bare-ish"] }, existing)).not.toThrow();
+    expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["notanarray"] }, existing)).not.toThrow();
     expect(() => assertAliasesAvailable({ name: "Bug", aliases: ["from-messy"] }, existing)).toThrow(
       /Alias "from-messy" already maps to existing item type "Messy"/,
     );
@@ -243,6 +246,13 @@ describe("upsertItemType", () => {
     expect(result.definition).not.toHaveProperty("aliases");
   });
 
+  it("tolerates a non-array persisted aliases value on the existing definition", () => {
+    const file = { definitions: [{ name: "Spike", aliases: "corrupt" } as unknown as { name: string }] };
+    const result = upsertItemType(file as never, { name: "Spike", aliases: ["research"] });
+    expect(result.replaced).toBe(true);
+    expect(result.definition.aliases).toEqual(["research"]);
+  });
+
   it("ignores definitions whose name is not a string when locating an existing entry", () => {
     const file = { definitions: [{ notName: true } as unknown as { name: string }, { name: "Spike" }] };
     const result = upsertItemType(file, { name: "Spike", aliases: [] });
@@ -258,6 +268,16 @@ describe("serializeItemTypesFile", () => {
   });
 });
 
+describe("escapeForDoubleQuotes", () => {
+  it("escapes shell-significant characters for a double-quoted context", () => {
+    expect(escapeForDoubleQuotes('a"b`c$d\\e')).toBe('a\\"b\\`c\\$d\\\\e');
+  });
+
+  it("leaves plain text unchanged", () => {
+    expect(escapeForDoubleQuotes("Spike")).toBe("Spike");
+  });
+});
+
 describe("buildInvalidTypeHint", () => {
   it("produces a copy-pasteable hint with the trimmed name", () => {
     expect(buildInvalidTypeHint("  Spike  ")).toBe(
@@ -268,6 +288,12 @@ describe("buildInvalidTypeHint", () => {
   it("falls back to the raw name when trimming produces an empty string", () => {
     expect(buildInvalidTypeHint("   ")).toBe(
       'To register a custom type, run: pm schema add-type "   " (writes .agents/pm/schema/types.json).',
+    );
+  });
+
+  it("escapes shell-significant characters in the name so the command stays copy-pasteable", () => {
+    expect(buildInvalidTypeHint('Wei"rd$')).toBe(
+      'To register a custom type, run: pm schema add-type "Wei\\"rd\\$" (writes .agents/pm/schema/types.json).',
     );
   });
 });

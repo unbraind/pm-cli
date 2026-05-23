@@ -3,6 +3,7 @@ import { acquireLock } from "../../core/lock/lock.js";
 import {
   assertAliasesAvailable,
   buildInvalidTypeHint,
+  escapeForDoubleQuotes,
   normalizeAddTypeInput,
   parseItemTypesFile,
   serializeItemTypesFile,
@@ -141,7 +142,7 @@ export function formatSchemaAddTypeHuman(result: SchemaAddTypeResult): string {
   const verb = result.replaced ? "Updated" : "Registered";
   const aliasSuffix =
     result.type.aliases && result.type.aliases.length > 0 ? ` (aliases: ${result.type.aliases.join(", ")})` : "";
-  return `${verb} custom item type "${result.type.name}"${aliasSuffix} in ${result.file.path}. Run: pm create ${result.type.name} "<title>"`;
+  return `${verb} custom item type "${result.type.name}"${aliasSuffix} in ${result.file.path}. Run: pm create "${escapeForDoubleQuotes(result.type.name)}" "<title>"`;
 }
 
 /**

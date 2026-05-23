@@ -690,7 +690,6 @@ export function registerMutationCommands(program: Command): void {
     .option("--folder <dir>", "Storage folder for items of this custom type")
     .option("--alias <name>", "Alias for the custom type (repeatable, csv-friendly)", collect)
     .option("--author <value>", "Mutation author")
-    .option("--message <value>", "Mutation message")
     .option("--force", "Force ownership/lock override")
     .description("Manage config-driven runtime schema: register custom item types into .agents/pm/schema/types.json.")
     .action(async (

@@ -81,7 +81,7 @@ describe("schema add-type command", () => {
       expect(add.code).toBe(0);
       expect(add.stdout).toContain('Registered custom item type "Spike"');
       expect(add.stdout).toContain("aliases: spike");
-      expect(add.stdout).toContain('pm create Spike "<title>"');
+      expect(add.stdout).toContain('pm create "Spike" "<title>"');
     });
   });
 

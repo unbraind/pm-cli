@@ -53,6 +53,24 @@ export function matchBuiltinTypeName(name: string): string | undefined {
   return BUILTIN_NAME_LOOKUP.get(name.trim().toLowerCase());
 }
 
+/**
+ * Coerces a persisted `aliases` value into a string array, tolerating malformed
+ * data (a non-array, or an array containing non-string entries) without throwing
+ * or exploding a stray string into character aliases.
+ */
+function coerceAliasArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : [];
+}
+
+/**
+ * Escapes a value for safe interpolation inside a double-quoted shell string so
+ * suggested copy-pasteable commands stay well-formed for names containing
+ * `"`, `` ` ``, `$`, or `\`.
+ */
+export function escapeForDoubleQuotes(value: string): string {
+  return value.replace(/[\\"`$]/g, (char) => `\\${char}`);
+}
+
 function dedupeAliases(values: Iterable<string>): string[] {
   const seen = new Map<string, string>();
   for (const value of values) {
@@ -125,8 +143,8 @@ export function assertAliasesAvailable(input: NormalizedAddTypeInput, existing: 
       continue;
     }
     taken.set(definitionName.toLowerCase(), definitionName);
-    for (const alias of definition.aliases ?? []) {
-      if (typeof alias === "string" && alias.trim().length > 0) {
+    for (const alias of coerceAliasArray(definition.aliases)) {
+      if (alias.trim().length > 0) {
         taken.set(alias.trim().toLowerCase(), definitionName);
       }
     }
@@ -215,7 +233,7 @@ export function upsertItemType(file: ItemTypesFile, input: NormalizedAddTypeInpu
   );
   const existing = existingIndex >= 0 ? definitions[existingIndex] : undefined;
 
-  const mergedAliases = dedupeAliases([...(existing?.aliases ?? []), ...input.aliases]);
+  const mergedAliases = dedupeAliases([...coerceAliasArray(existing?.aliases), ...input.aliases]);
 
   const next: ItemTypeDefinition = {
     ...(existing ?? {}),
@@ -268,7 +286,7 @@ export function serializeItemTypesFile(file: ItemTypesFile): string {
  */
 export function buildInvalidTypeHint(name: string): string {
   const safeName = name.trim().length > 0 ? name.trim() : name;
-  return `To register a custom type, run: pm schema add-type "${safeName}" (writes .agents/pm/schema/types.json).`;
+  return `To register a custom type, run: pm schema add-type "${escapeForDoubleQuotes(safeName)}" (writes .agents/pm/schema/types.json).`;
 }
 
 /**
