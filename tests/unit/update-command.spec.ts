@@ -4,6 +4,7 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runUpdate } from "../../src/cli/commands/update.js";
+import { runDeps } from "../../src/cli/commands/deps.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -344,7 +345,9 @@ describe("runUpdate", () => {
         { path: context.pmPath },
       );
 
-      expect(result.warnings).toEqual([]);
+      // --blocked-by here targets a non-existent item, so the scalar is still
+      // recorded but the kyd6 reconciler surfaces the unresolved-blocker warning.
+      expect(result.warnings).toEqual(["blocked_by_unresolved:pm-blocking-next"]);
       expect(result.changed_fields).toEqual(
         expect.arrayContaining([
           "title",
@@ -1500,16 +1503,13 @@ describe("runUpdate", () => {
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
 
-      await expect(
-        runUpdate(
-          id,
-          { event: ["start=2026-03-03T12:00:00.000Z,end=2026-03-03T12:00:00.000Z"] },
-          { path: context.pmPath },
-        ),
-      ).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.USAGE,
-        message: expect.stringContaining("equal start/end timestamps are invalid"),
-      });
+      const instantUpdate = await runUpdate(
+        id,
+        { event: ["start=2026-03-03T12:00:00.000Z,end=2026-03-03T12:00:00.000Z,title=instant"], message: "instant event" },
+        { path: context.pmPath },
+      );
+      expect(instantUpdate.item.events?.[0]).toMatchObject({ start_at: "2026-03-03T12:00:00.000Z", title: "instant" });
+      expect(instantUpdate.item.events?.[0]?.end_at).toBeUndefined();
 
       await expect(
         runUpdate(
@@ -1600,6 +1600,53 @@ describe("runUpdate", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
         message: expect.stringContaining('Invalid event.end value "+3d+1h"'),
+      });
+    });
+  });
+
+  it("treats equal start/end as instant and supports duration= on event update", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-event-instant-duration");
+
+      const instant = await runUpdate(
+        id,
+        { event: ["start=2026-03-03T12:00:00.000Z,end=2026-03-03T12:00:00.000Z,title=instant"], message: "instant" },
+        { path: context.pmPath },
+      );
+      expect(instant.item.events?.[0]).toMatchObject({ start_at: "2026-03-03T12:00:00.000Z", title: "instant" });
+      expect(instant.item.events?.[0]?.end_at).toBeUndefined();
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,end=2026-03-03T11:00:00.000Z"], message: "earlier end" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("end must be strictly after start"),
+      });
+
+      const withDuration = await runUpdate(
+        id,
+        { event: ["start=2026-03-03T12:00:00.000Z,duration=3h,title=window"], message: "duration window" },
+        { path: context.pmPath },
+      );
+      expect(withDuration.item.events?.[0]).toMatchObject({
+        start_at: "2026-03-03T12:00:00.000Z",
+        end_at: "2026-03-03T15:00:00.000Z",
+        title: "window",
+      });
+
+      await expect(
+        runUpdate(
+          id,
+          { event: ["start=2026-03-03T12:00:00.000Z,end=2026-03-03T13:00:00.000Z,duration=2h"], message: "both" },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("mutually exclusive"),
       });
     });
   });
@@ -1892,6 +1939,123 @@ describe("runUpdate", () => {
       expect(updated.changed_fields).toContain("body");
       const loaded = context.runCli(["get", id, "--json"], { expectJson: true });
       expect((loaded.json as { body: string }).body).toBe("body from stdin token");
+    });
+  });
+
+  describe("--blocked-by dependency graph (pm-kyd6)", () => {
+    it("creates a blocked_by dependency edge so pm deps reflects the blocker", async () => {
+      await withTempPmPath(async (context) => {
+        const blockerId = createTask(context, "kyd6-blocker");
+        const blockedId = createTask(context, "kyd6-blocked");
+
+        const updated = await runUpdate(
+          blockedId,
+          { blockedBy: blockerId, message: "block on upstream" },
+          { path: context.pmPath },
+        );
+
+        expect(updated.changed_fields).toContain("blocked_by");
+        expect(updated.changed_fields).toContain("dependencies");
+        const item = updated.item as { blocked_by?: string; dependencies?: { id: string; kind: string }[] };
+        expect(item.blocked_by).toBe(blockerId);
+        expect(item.dependencies).toEqual([
+          expect.objectContaining({ id: blockerId, kind: "blocked_by" }),
+        ]);
+
+        const graph = await runDeps(blockedId, { format: "graph" }, { path: context.pmPath });
+        expect(graph.edge_count).toBe(1);
+        expect(graph.graph?.edges).toEqual([
+          { from: blockedId, to: blockerId, kind: "blocked_by" },
+        ]);
+      });
+    });
+
+    it("removes the blocked_by edge when the blocker is cleared", async () => {
+      await withTempPmPath(async (context) => {
+        const blockerId = createTask(context, "kyd6-clear-blocker");
+        const blockedId = createTask(context, "kyd6-clear-blocked");
+        await runUpdate(blockedId, { blockedBy: blockerId }, { path: context.pmPath });
+
+        const cleared = await runUpdate(
+          blockedId,
+          { unset: ["blocked-by"], message: "unblock" },
+          { path: context.pmPath },
+        );
+
+        expect(cleared.changed_fields).toContain("blocked_by");
+        expect(cleared.changed_fields).toContain("dependencies");
+        const item = cleared.item as { blocked_by?: string; dependencies?: unknown[] };
+        expect(item.blocked_by).toBeUndefined();
+        expect(item.dependencies).toBeUndefined();
+
+        const graph = await runDeps(blockedId, { format: "graph" }, { path: context.pmPath });
+        expect(graph.edge_count).toBe(0);
+      });
+    });
+
+    it("warns (never blocks) when --blocked-by points at a non-existent item", async () => {
+      await withTempPmPath(async (context) => {
+        const blockedId = createTask(context, "kyd6-unresolved-blocked");
+        const updated = await runUpdate(
+          blockedId,
+          { blockedBy: "pm-doesnotexist", message: "block on a ghost" },
+          { path: context.pmPath },
+        );
+
+        // Scalar is still recorded (forward-reference allowed, mirrors create.ts),
+        // but no edge is fabricated and the mismatch is surfaced as a warning.
+        const item = updated.item as { blocked_by?: string; dependencies?: unknown[] };
+        expect(item.blocked_by).toBe("pm-doesnotexist");
+        expect(item.dependencies).toBeUndefined();
+        expect(updated.warnings).toContain("blocked_by_unresolved:pm-doesnotexist");
+      });
+    });
+
+    it("repoints the edge to the new blocker without leaving the stale one", async () => {
+      await withTempPmPath(async (context) => {
+        const firstBlocker = createTask(context, "kyd6-first-blocker");
+        const secondBlocker = createTask(context, "kyd6-second-blocker");
+        const blockedId = createTask(context, "kyd6-repoint-blocked");
+        await runUpdate(blockedId, { blockedBy: firstBlocker }, { path: context.pmPath });
+
+        const repointed = await runUpdate(
+          blockedId,
+          { blockedBy: secondBlocker, message: "repoint blocker" },
+          { path: context.pmPath },
+        );
+
+        const item = repointed.item as { dependencies?: { id: string; kind: string }[] };
+        const blockedByEdges = (item.dependencies ?? []).filter((dep) => dep.kind === "blocked_by");
+        expect(blockedByEdges).toEqual([
+          expect.objectContaining({ id: secondBlocker, kind: "blocked_by" }),
+        ]);
+      });
+    });
+
+    it("drops manually added stale blocked_by edges when setting a scalar blocker", async () => {
+      await withTempPmPath(async (context) => {
+        const staleBlocker = createTask(context, "kyd6-stale-blocker");
+        const activeBlocker = createTask(context, "kyd6-active-blocker");
+        const blockedId = createTask(context, "kyd6-stale-edge-blocked");
+        await runUpdate(
+          blockedId,
+          { dep: [`id=${staleBlocker},kind=blocked_by`], message: "seed stale blocker edge" },
+          { path: context.pmPath },
+        );
+
+        const updated = await runUpdate(
+          blockedId,
+          { blockedBy: activeBlocker, message: "set scalar blocker" },
+          { path: context.pmPath },
+        );
+
+        const item = updated.item as { blocked_by?: string; dependencies?: { id: string; kind: string }[] };
+        expect(item.blocked_by).toBe(activeBlocker);
+        const blockedByEdges = (item.dependencies ?? []).filter((dep) => dep.kind === "blocked_by");
+        expect(blockedByEdges).toEqual([
+          expect.objectContaining({ id: activeBlocker, kind: "blocked_by" }),
+        ]);
+      });
     });
   });
 });

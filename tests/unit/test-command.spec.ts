@@ -502,6 +502,70 @@ describe("runTest", () => {
     });
   });
 
+  it("accepts cmd as an alias for command in structured --add entries", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "cmd-alias-test");
+      const result = await runTest(
+        id,
+        { add: ["cmd=node --version,scope=project,note=cmd alias"], message: "seed cmd alias" },
+        { path: context.pmPath },
+      );
+      const entry = result.tests.find((test) => test.note === "cmd alias");
+      expect(entry?.command).toBe("node --version");
+      // The whole pair must NOT be stored as the command (the original bug).
+      expect(result.tests.some((test) => test.command.includes("cmd="))).toBe(false);
+      expect(result.tests.some((test) => test.command.includes("name="))).toBe(false);
+    });
+  });
+
+  it("keeps comma-containing command payloads working with the cmd alias", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "cmd-alias-comma-test");
+      const result = await runTest(
+        id,
+        { add: ["cmd=node -e \"console.log('a,b')\",scope=project,note=cmd comma alias"], message: "seed cmd comma alias" },
+        { path: context.pmPath },
+      );
+
+      const entry = result.tests.find((test) => test.note === "cmd comma alias");
+      expect(entry?.command).toBe("node -e \"console.log('a,b')\"");
+    });
+  });
+
+  it("rejects structured --add entries that use an unknown key instead of silently storing the command", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "unknown-key-test");
+      // The original bug: `cmd=...,name=...` was stored verbatim as the command
+      // because `name` was unrecognized. Now this must error loudly.
+      await expect(
+        runTest(id, { add: ["cmd=node --version,name=smoke"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runTest(id, { add: ["command=node --version,bogus=1,scope=project"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      // command/cmd conflict is rejected.
+      await expect(
+        runTest(id, { add: ["command=node --version,cmd=node --help"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      // No test entries should have been stored from the rejected payloads.
+      const listed = context.runCli(["test", id, "--list", "--json"], { expectJson: true });
+      const payload = listed.json as { count?: number };
+      expect(payload.count).toBe(0);
+    });
+  });
+
+  it("keeps bare commands containing = working without key validation", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "bare-command-with-equals");
+      const result = await runTest(
+        id,
+        { add: ["node scripts/run-tests.mjs test --reporter=dot"], message: "seed bare command" },
+        { path: context.pmPath },
+      );
+      expect(result.tests.some((test) => test.command === "node scripts/run-tests.mjs test --reporter=dot")).toBe(true);
+    });
+  });
+
   it("preserves history hash chain after tests_add round-trip through TOON", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "history-drift-tests-add");

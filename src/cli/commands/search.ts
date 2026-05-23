@@ -1019,7 +1019,15 @@ interface SemanticQueryContext {
   vectorQueryTimeoutMs?: number;
 }
 
-async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promise<SearchHit[]> {
+interface SemanticQueryResult {
+  hits: SearchHit[];
+  // Number of documents returned by the vector stage for this query after the
+  // current metadata filters. When this is 0 the semantic/hybrid query ran
+  // successfully, but vector ranking contributed nothing to the returned hits.
+  vectorMatchCount: number;
+}
+
+async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promise<SemanticQueryResult> {
   const semanticLimit = context.limit ?? context.maxResults;
   const embeddingOptions = context.embeddingTimeoutMs !== undefined ? { timeout_ms: context.embeddingTimeoutMs } : {};
   const vectorQueryOptions = context.vectorQueryTimeoutMs !== undefined ? { timeout_ms: context.vectorQueryTimeoutMs } : {};
@@ -1054,10 +1062,14 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
   }
   const filteredById = new Map(context.filteredDocuments.map((document) => [document.metadata.id, document]));
   const { semanticHits, semanticScores } = buildSemanticHits(vectorHits, filteredById);
+  const vectorMatchCount = semanticScores.size;
   if (context.requestedMode === "semantic") {
-    return semanticHits;
+    return { hits: semanticHits, vectorMatchCount };
   }
-  return combineHybridHits(filteredById, semanticScores, context.keywordHits, context.hybridSemanticWeight);
+  return {
+    hits: combineHybridHits(filteredById, semanticScores, context.keywordHits, context.hybridSemanticWeight),
+    vectorMatchCount,
+  };
 }
 
 async function loadDocuments(
@@ -1293,7 +1305,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
           vectorResolution,
           extensionVectorAdapter !== null,
         );
-        hits = await computeSemanticOrHybridHits({
+        const semanticResult = await computeSemanticOrHybridHits({
           requestedMode: effectiveMode,
           query,
           filteredDocuments,
@@ -1312,6 +1324,19 @@ export async function runSearch(query: string, options: SearchOptions, global: G
               }
             : {}),
         });
+        hits = semanticResult.hits;
+        // The semantic/hybrid query ran without error, but vector ranking
+        // contributed no hits for this query/filter set. Pure semantic mode would
+        // otherwise return an empty set, so degrade to the locally computed
+        // keyword hits (hybrid already blends them in) and warn so agents do not
+        // mistake them for true vector ranking. The reported mode is left
+        // unchanged; the warning is the signal.
+        if (semanticResult.vectorMatchCount === 0) {
+          if (effectiveMode === "semantic") {
+            hits = keywordHits;
+          }
+          warnings.push(`search_${effectiveMode}_degraded:no_vector_matches:results_are_lexical`);
+        }
       }
     } catch (error: unknown) {
       // Any semantic/hybrid attempt that fails (backend down, timeout, or the

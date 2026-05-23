@@ -114,8 +114,10 @@ export async function runClose(
   const author = toAuthor(options.author, settings.author_default);
   const closeReason = ensureCloseReason(closeReasonText);
   const validateCloseMode = parseValidateCloseMode(options.validateClose) ?? settings.governance.close_validation_default;
-  const activeChildIds =
-    validateCloseMode === "off" ? [] : await findActiveChildIds(pmRoot, settings, id, statusRegistry);
+  // C3 (pm-fu5d): scan for active children even under minimal governance so
+  // closing a parent is never silently orphaning — off mode emits an
+  // informational note instead of the warn/strict validation warning.
+  const activeChildIds = await findActiveChildIds(pmRoot, settings, id, statusRegistry);
 
   const result = await mutateItem({
     pmRoot,
@@ -150,6 +152,10 @@ export async function runClose(
           }
           mutationWarnings.push(`close_validation_active_children:${document.metadata.id}:${activeChildIds.join(",")}`);
         }
+      } else if (activeChildIds.length > 0) {
+        // C3: minimal governance (validate-close off) should still tell the
+        // agent it just closed a parent with open children, without blocking.
+        mutationWarnings.push(`closed_with_active_children:${document.metadata.id}:${activeChildIds.join(",")}`);
       }
 
       document.metadata.status = statusRegistry.close_status;
@@ -159,6 +165,39 @@ export async function runClose(
       if (document.metadata.assignee !== undefined) {
         delete document.metadata.assignee;
         changedFields.push("assignee");
+      }
+
+      // C4 (pm-fu5d): a terminal item is no longer blocked. Clear every active
+      // blocker signal independently — scalar blocked_by, blocked_reason, and the
+      // blocked_by dependency edges (kept consistent with the kyd6 invariant) —
+      // even if only some are present (e.g. an orphaned edge or a stale
+      // blocked_reason left by manual edits), so closed work stops surfacing in
+      // blockers views, and annotate the cleanup.
+      const previousBlockedBy =
+        typeof document.metadata.blocked_by === "string" ? document.metadata.blocked_by.trim() : "";
+      const existingDeps = document.metadata.dependencies ?? [];
+      const blockedByEdge = existingDeps.find((dep) => dep.kind === "blocked_by");
+      const hadBlockedReason = document.metadata.blocked_reason !== undefined;
+      if (previousBlockedBy.length > 0 || blockedByEdge !== undefined || hadBlockedReason) {
+        if (previousBlockedBy.length > 0) {
+          delete document.metadata.blocked_by;
+          changedFields.push("blocked_by");
+        }
+        if (hadBlockedReason) {
+          delete document.metadata.blocked_reason;
+          changedFields.push("blocked_reason");
+        }
+        if (blockedByEdge !== undefined) {
+          const remainingDeps = existingDeps.filter((dep) => dep.kind !== "blocked_by");
+          if (remainingDeps.length > 0) {
+            document.metadata.dependencies = remainingDeps;
+          } else {
+            delete document.metadata.dependencies;
+          }
+          changedFields.push("dependencies");
+        }
+        const reportedBlocker = previousBlockedBy || blockedByEdge?.id || "unknown";
+        mutationWarnings.push(`closed_cleared_blocked_by:${document.metadata.id}:${reportedBlocker}`);
       }
 
       return {

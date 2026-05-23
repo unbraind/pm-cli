@@ -313,6 +313,7 @@ export function isPmExtensionPolicySurfaceContract(value: string): value is PmEx
 }
 
 export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  { param: "status", flag: "--status" },
   { param: "type", flag: "--type" },
   { param: "tag", flag: "--tag" },
   { param: "priority", flag: "--priority" },
@@ -579,6 +580,7 @@ export const GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--status" },
   { flag: "--type" },
   { flag: "--tag" },
   { flag: "--priority" },
@@ -822,6 +824,7 @@ export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--install" },
   { flag: "--uninstall" },
   { flag: "--explore" },
+  { flag: "--list" },
   { flag: "--manage" },
   { flag: "--reload" },
   { flag: "--watch" },

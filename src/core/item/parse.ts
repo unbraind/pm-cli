@@ -5,6 +5,7 @@ const STDIN_TOKEN = "-";
 const CONTINUABLE_VALUE_KEYS = new Set([
   "actual_result",
   "body",
+  "cmd",
   "command",
   "customer_impact",
   "description",

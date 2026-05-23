@@ -39,11 +39,13 @@ import {
   parseConfidenceInput,
   parseRegressionInput,
 } from "./metadata-normalizers.js";
-import { EVENT_END_AFTER_START_MESSAGE } from "./event-validation-messages.js";
+import { resolveEventEndAt } from "./event-validation-messages.js";
 import type {
   CalendarEvent,
   Comment,
   Dependency,
+  ItemFormat,
+  ItemFrontMatter,
   ItemStatus,
   LinkedDoc,
   LinkedFile,
@@ -806,10 +808,8 @@ function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
     }
     const startAt = resolveIsoOrRelative(startRaw, nowValue, "event.start");
     const endRaw = kv.end?.trim();
-    const endAt = endRaw ? resolveIsoOrRelative(endRaw, nowValue, "event.end") : undefined;
-    if (endAt && endAt <= startAt) {
-      throw new PmCliError(EVENT_END_AFTER_START_MESSAGE, EXIT_CODE.USAGE);
-    }
+    const durationRaw = kv.duration?.trim();
+    const endAt = resolveEventEndAt(startAt, endRaw, durationRaw, nowValue);
 
     const titleRaw = kv.title;
     const descriptionRaw = kv.description;
@@ -994,6 +994,88 @@ function parseDependencyRemovals(raw: string[] | undefined, prefix: string): Dep
 
 function dependencyKey(value: Pick<Dependency, "id" | "kind" | "source_kind">): string {
   return `${value.id}::${value.kind}::${value.source_kind ?? ""}`;
+}
+
+// pm-kyd6: `--blocked-by` writes the `blocked_by` scalar, but the dependency
+// graph (`pm deps`) is built only from the `dependencies` array. Mirror the
+// behaviour create.ts already has so the metadata and the graph agree: a
+// resolvable blocker also gets a `blocked_by` dependency edge, clearing the
+// scalar removes that edge, and re-pointing it replaces the prior edge.
+function reconcileBlockedByDependency(
+  current: Dependency[] | undefined,
+  nextBlockedById: string | undefined,
+  nowIsoValue: string,
+  author: string,
+): { dependencies: Dependency[] | undefined; changed: boolean } {
+  let next = [...(current ?? [])];
+  let changed = false;
+  const filtered = next.filter((dep) => dep.kind !== "blocked_by" || dep.id === nextBlockedById);
+  if (filtered.length !== next.length) {
+    next = filtered;
+    changed = true;
+  }
+  if (nextBlockedById && !next.some((dep) => dep.kind === "blocked_by" && dep.id === nextBlockedById)) {
+    next.push({ id: nextBlockedById, kind: "blocked_by", created_at: nowIsoValue, author });
+    changed = true;
+  }
+  if (!changed) {
+    return { dependencies: current, changed: false };
+  }
+  return { dependencies: next.length > 0 ? next : undefined, changed: true };
+}
+
+// pm-kyd6: resolve the --blocked-by target before the synchronous mutate
+// callback so a real blocker can also become a `blocked_by` dependency edge.
+// `id` is set when the target resolves; `unresolved` carries the raw value when
+// --blocked-by points at an item that does not exist (the scalar is still set,
+// mirroring create.ts and the never-block missing-parent behaviour, but the
+// caller surfaces a warning so the metadata/graph mismatch is visible).
+async function resolveBlockedByDependencyTarget(
+  blockedByOption: string | undefined,
+  blockedByCleared: boolean,
+  pmRoot: string,
+  idPrefix: string,
+  itemFormat: ItemFormat,
+  typeToFolder: Record<string, string>,
+): Promise<{ id?: string; unresolved?: string }> {
+  if (blockedByOption === undefined || blockedByCleared) {
+    return {};
+  }
+  const blockedByValue = blockedByOption.trim();
+  if (blockedByValue.length === 0) {
+    return {};
+  }
+  const located = await locateItem(pmRoot, normalizeItemId(blockedByValue, idPrefix), idPrefix, itemFormat, typeToFolder);
+  return located ? { id: located.id } : { unresolved: blockedByValue };
+}
+
+// pm-kyd6: apply the reconciled blocked_by dependency edge to the item metadata
+// and record the `dependencies` change. Kept out of the mutate callback so the
+// large runUpdate function stays under the static-quality complexity budget.
+function applyBlockedByDependencyEdge(
+  metadata: ItemFrontMatter,
+  resolvedBlockedById: string | undefined,
+  nowIsoValue: string,
+  author: string,
+  changedFields: string[],
+): void {
+  const reconciled = reconcileBlockedByDependency(
+    metadata.dependencies,
+    resolvedBlockedById,
+    nowIsoValue,
+    author,
+  );
+  if (!reconciled.changed) {
+    return;
+  }
+  if (reconciled.dependencies === undefined) {
+    delete metadata.dependencies;
+  } else {
+    metadata.dependencies = reconciled.dependencies;
+  }
+  if (!changedFields.includes("dependencies")) {
+    changedFields.push("dependencies");
+  }
 }
 
 function fileKey(value: Pick<LinkedFile, "path" | "scope">): string {
@@ -1422,6 +1504,21 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       const normalizedParentId = normalizeItemId(resolvedParentValue, settings.id_prefix);
       parentReferenceWarnings.push(...validateMissingParentReference(normalizedParentId, parentReferencePolicy).warnings);
     }
+  }
+
+  // pm-kyd6: resolve the --blocked-by target up front (async) so the sync
+  // mutate callback can mirror create.ts and add a `blocked_by` dependency edge.
+  const blockedByResolution = await resolveBlockedByDependencyTarget(
+    options.blockedBy,
+    clearFrontMatterKeys.has("blocked_by"),
+    pmRoot,
+    settings.id_prefix,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+  );
+  const resolvedBlockedByDependencyId = blockedByResolution.id;
+  if (blockedByResolution.unresolved !== undefined) {
+    parentReferenceWarnings.push(`blocked_by_unresolved:${blockedByResolution.unresolved}`);
   }
 
   const fieldFlags: Record<string, boolean> = {
@@ -1956,6 +2053,14 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           document.metadata.blocked_by = options.blockedBy!.trim();
         }
         changedFields.push("blocked_by");
+        // pm-kyd6: keep the dependency graph in sync with the blocked_by scalar.
+        applyBlockedByDependencyEdge(
+          document.metadata,
+          resolvedBlockedByDependencyId,
+          nowIso,
+          author,
+          changedFields,
+        );
       }
       if (options.blockedReason !== undefined || clearFrontMatterKeys.has("blocked_reason")) {
         if (clearFrontMatterKeys.has("blocked_reason")) {

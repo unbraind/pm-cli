@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **`pm update --blocked-by` now records a `blocked_by` dependency edge** (matching `pm create`), so `pm deps` reflects the blocker and "what is blocking me" answers are correct instead of returning an empty graph (pm-kyd6). `--unset blocked-by` removes the edge and re-pointing it replaces the stale edge, keeping the `blocked_by` scalar and the dependency graph consistent.
+- `pm test --add` now rejects unknown keys (e.g. `name=`) with an allowed-key list instead of silently storing the whole `key=value,...` string as the command, and accepts `cmd` as an alias for `command` (pm-fu5d B2).
+- `pm list --statuss` (and similar near-miss typos) now auto-corrects to `--status`: the `--status` filter was missing from the list flag contract that powers the never-block typo normalizer, so it alone could not be suggested/corrected (pm-fu5d U2).
 - Crash: `pm context`, `pm list`, and `pm aggregate` no longer throw `Cannot read properties of undefined (reading 'trim')` when a status filter resolves an undefined token (Sentry PM-CLI-R; `normalizeStatusToken` now type-guards its input).
 - Crash: keyword and hybrid `pm search` no longer throw `Cannot read properties of undefined (reading 'join')` on items without reminders/events/dependencies (Sentry PM-CLI-S; reminder/event corpus builders tolerate missing arrays).
 - Crash: global option resolution guards against Commander command objects lacking `optsWithGlobals` (Sentry PM-CLI-T).
@@ -17,9 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Performance: removed the `zod` dependency from the settings hot path.** `settings.json` is now validated by a dependency-free validator that mirrors the previous schema exactly (type checks, required/optional fields, integer/positive constraints, literal unions, unknown-key stripping, all-or-nothing failure). Importing the settings module dropped from ~157ms to ~14ms, cutting the single largest startup cost off **every** command: `pm --help` ~227ms→~140ms and `pm list` ~540ms→~340ms (~38% faster) on the maintainer machine. One fewer runtime dependency.
 - `pm update --status closed|canceled` now auto-routes to the close/cancel flow instead of erroring, so agents that conflate `update` and `close` are never blocked (the most frequent real CLI error in telemetry).
 - Semantic and hybrid `pm search` degrade gracefully to keyword retrieval, with a clear label, when no embedding model is reachable — they never block.
+- `pm close` now clears the stale active blocker (`blocked_by`/`blocked_reason` scalars and the matching `blocked_by` dependency edges) on terminal transition and annotates it via `closed_cleared_blocked_by:<id>:<blocker>`, so completed work stops surfacing in blockers views (pm-fu5d C4).
+- `pm close` under minimal governance (validate-close off) now emits an informational `closed_with_active_children:<id>:<children>` warning when closing a parent with open children — it still never blocks, but no longer silently orphans them (pm-fu5d C3).
+- Equal `--event` start/end timestamps are now treated as an instant event (end dropped) instead of being rejected; an end earlier than start is still rejected (pm-uzmf).
 - Improved agent read-path token efficiency across `get`/`list`/`context` outputs.
 
 ### Added
+- `--event duration=<relative>` (e.g. `duration=2h`, `duration=+1d`) on `pm create`/`pm update` derives the event end from start; mutually exclusive with an explicit `end`. A zero-length duration collapses to an instant event, matching the equal start/end behaviour (pm-uzmf / pm-fu5d CAL1).
+- `pm package` / `pm extension --list` as an alias for `--explore` (pm-fu5d U3).
+- `pm search --mode semantic|hybrid` emits `search_<mode>_degraded:no_vector_matches:results_are_lexical` when vector ranking contributes no hits, so agents can tell results are effectively lexical even though the reported mode stays semantic/hybrid (pm-fu5d S1).
+- `pm create` emits an `event_without_schedule:<id>:no_time_set` warning for Event-type items created with no schedule, so schedule-less Events that never appear on the calendar are surfaced at creation (never blocks) (pm-uzmf).
 - `pm create <type> <title>` positional form and close-via-update auto-routing for agent ergonomics.
 - **`pm history-repair <id>`** — a first-class, audited command that re-anchors a drifted history chain so `pm health` / `pm validate --check-history-drift` return ok. It deterministically replays the stream, recomputes every before/after hash, repairs legacy patch ops that no longer strictly apply (`replace`→`add` on first-write paths; skips unresolvable array-shape ops), reconciles the latest hash with the on-disk item document, and appends an auditable `history_repair` marker. It never modifies item content, supports `--dry-run`/`--author`/`--message`/`--force` with the same ownership/lock governance as `history-redact`, and is a safe no-op on a clean stream. Exposed via the CLI, the MCP `history-repair` action, SDK contracts, and shell completions. This is the missing peer to `history-redact` (which only re-anchors a chain when a redaction match occurs), so cleanly-drifted legacy streams could never be repaired before.
 

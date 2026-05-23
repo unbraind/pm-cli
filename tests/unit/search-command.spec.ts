@@ -674,6 +674,133 @@ describe("runSearch", () => {
     }
   });
 
+  it("warns that semantic results are effectively lexical when vector matching contributes no hits", async () => {
+    const semanticItem = makeFrontMatter({
+      id: "pm-empty-corpus",
+      title: "vector extension",
+    });
+    listAllFrontMatterMock.mockResolvedValue([semanticItem]);
+    readFileMock.mockResolvedValue(serializeDocument(semanticItem, "semantic body"));
+    readSettingsMock.mockResolvedValue({
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        adapter: "ext-vector",
+      },
+    } as unknown as { id_prefix: string });
+    activeExtensionRegistrations = createExtensionRegistrations();
+    (activeExtensionRegistrations.vector_store_adapters as Array<Record<string, unknown>>).push({
+      layer: "project",
+      name: "vector-ext",
+      definition: { name: "ext-vector" },
+      runtime_definition: {
+        name: "ext-vector",
+        // Empty vector matches: the query runs successfully but vector ranking
+        // contributes nothing for this query/filter set.
+        query: () => [],
+      },
+    });
+
+    const fetchMock = vi.fn(async (url: unknown) => {
+      if (!String(url).includes("/v1/embeddings")) {
+        throw new Error(`Unexpected fetch target: ${String(url)}`);
+      }
+      return {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => ({
+          data: [{ index: 0, embedding: [0.1, 0.2] }],
+        }),
+        text: async () => "",
+      } as unknown as Response;
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      // Semantic: ran without error, but no vector matches => mode stays semantic,
+      // a degraded warning flags the lexical fallback, and the (now genuinely
+      // lexical) keyword hits are returned so the agent still gets results.
+      const semanticResult = await runSearch("vector", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      expect(semanticResult.mode).toBe("semantic");
+      expect(semanticResult.warnings).toContain("search_semantic_degraded:no_vector_matches:results_are_lexical");
+      expect(semanticResult.count).toBe(1);
+      expect(semanticResult.items[0].item.id).toBe("pm-empty-corpus");
+
+      // Hybrid still surfaces keyword hits but flags the degraded semantic stage.
+      const hybridResult = await runSearch("vector", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      expect(hybridResult.mode).toBe("hybrid");
+      expect(hybridResult.warnings).toContain("search_hybrid_degraded:no_vector_matches:results_are_lexical");
+      expect(hybridResult.count).toBe(1);
+      expect(hybridResult.items[0].item.id).toBe("pm-empty-corpus");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("does not warn about degraded vector matching when semantic matches exist", async () => {
+    const semanticItem = makeFrontMatter({
+      id: "pm-corpus-present",
+      title: "vector extension",
+    });
+    listAllFrontMatterMock.mockResolvedValue([semanticItem]);
+    readFileMock.mockResolvedValue(serializeDocument(semanticItem, "semantic body"));
+    readSettingsMock.mockResolvedValue({
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        adapter: "ext-vector",
+      },
+    } as unknown as { id_prefix: string });
+    activeExtensionRegistrations = createExtensionRegistrations();
+    (activeExtensionRegistrations.vector_store_adapters as Array<Record<string, unknown>>).push({
+      layer: "project",
+      name: "vector-ext",
+      definition: { name: "ext-vector" },
+      runtime_definition: {
+        name: "ext-vector",
+        query: () => [{ id: "pm-corpus-present", score: 0.87 }],
+      },
+    });
+
+    const fetchMock = vi.fn(async (url: unknown) => {
+      if (!String(url).includes("/v1/embeddings")) {
+        throw new Error(`Unexpected fetch target: ${String(url)}`);
+      }
+      return {
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => ({ data: [{ index: 0, embedding: [0.1, 0.2] }] }),
+        text: async () => "",
+      } as unknown as Response;
+    });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = fetchMock as unknown as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const result = await runSearch("vector", { mode: "semantic" }, { path: "/tmp/pm-search" });
+      expect(result.mode).toBe("semantic");
+      expect(result.count).toBe(1);
+      expect(result.warnings ?? []).not.toContain("search_semantic_degraded:no_vector_matches:results_are_lexical");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("degrades to keyword when extension vector adapter query fails without built-in fallback", async () => {
     const semanticItem = makeFrontMatter({
       id: "pm-vector-adapter-fail",

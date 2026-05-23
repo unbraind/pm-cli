@@ -55,7 +55,7 @@ function normalizeExtensionOptions(
     scaffold: readBoolean("scaffold"),
     install: isForcedAction("install") || readBoolean("install"),
     uninstall: isForcedAction("uninstall") || readBoolean("uninstall"),
-    explore: isForcedAction("explore") || readBoolean("explore"),
+    explore: isForcedAction("explore") || readBoolean("explore", "list"),
     manage: isForcedAction("manage") || readBoolean("manage"),
     reload: isForcedAction("reload") || readBoolean("reload"),
     doctor: isForcedAction("doctor") || readBoolean("doctor"),
@@ -173,6 +173,7 @@ function registerLifecycleCommand(
     .option("--install", `Install ${noun} from local path, bundled alias, npm: source, wildcard, or GitHub source`)
     .option("--uninstall", `Uninstall an installed ${noun}`)
     .option("--explore", `List discovered ${plural} in selected scope`)
+    .option("--list", "Alias for --explore")
     .option("--manage", `List managed ${plural} with update-check metadata`)
     .option("--reload", `Reload ${plural} with cache-busted module imports`)
     .option("--watch", "Use watch mode with --reload")

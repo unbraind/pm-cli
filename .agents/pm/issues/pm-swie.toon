@@ -1,0 +1,13 @@
+id: pm-swie
+title: "pm update/create --test shares the B2 silent key-corruption (no cmd alias, no unknown-key rejection)"
+description: "Follow-up discovered while fixing pm-fu5d B2 (2026-05-23, pm-uz25). The B2 fix hardened the `pm test --add` parser (src/cli/commands/test.ts parseAddEntries): it now accepts `cmd` as an alias for `command` and rejects unknown keys (e.g. `name=`) instead of silently storing the whole `key=value,...` string as the command. BUT `pm update --test` and `pm create --test` use a SEPARATE parser (`parseTests` in update.ts / create.ts) that still has the original silent-corruption behaviour: e.g. `pm update <id> --test 'cmd=npm test,scope=project'` stores the literal string `cmd=npm test,scope=project` as the command, and unknown keys are not rejected. Fix: apply the same cmd->command alias + unknown-key validation to the parseTests path so the three linked-test entry points behave consistently. Both update.ts and create.ts are coverage-excluded; add regression tests. Low/med severity (silent data corruption, but the documented `pm test --add` path is now correct)."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,consistency,dogfood,tests
+created_at: "2026-05-23T04:17:38.412Z"
+updated_at: "2026-05-23T04:17:38.412Z"
+author: claude-code-agent
+acceptance_criteria: "pm update --test and pm create --test accept cmd as an alias for command and reject unknown structured keys with a clear error, matching pm test --add; regression tests added; no agent-blocking for bare commands."
+parent: pm-rnpb
+body: ""
