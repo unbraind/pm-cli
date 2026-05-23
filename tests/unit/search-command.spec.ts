@@ -724,16 +724,20 @@ describe("runSearch", () => {
 
     try {
       const { runSearch } = await import("../../src/cli/commands/search.js");
-      // Semantic: ran without error, but no embedded items => mode stays semantic
-      // yet a degraded warning flags the results as effectively lexical.
+      // Semantic: ran without error, but no embedded items => mode stays semantic,
+      // a degraded warning flags the lexical fallback, and the (now genuinely
+      // lexical) keyword hits are returned so the agent still gets results.
       const semanticResult = await runSearch("vector", { mode: "semantic" }, { path: "/tmp/pm-search" });
       expect(semanticResult.mode).toBe("semantic");
       expect(semanticResult.warnings).toContain("search_semantic_degraded:no_embedded_items:results_are_lexical");
+      expect(semanticResult.count).toBe(1);
+      expect(semanticResult.items[0].item.id).toBe("pm-empty-corpus");
 
       // Hybrid still surfaces keyword hits but flags the degraded semantic stage.
       const hybridResult = await runSearch("vector", { mode: "hybrid" }, { path: "/tmp/pm-search" });
       expect(hybridResult.mode).toBe("hybrid");
       expect(hybridResult.warnings).toContain("search_hybrid_degraded:no_embedded_items:results_are_lexical");
+      expect(hybridResult.count).toBe(1);
     } finally {
       globalThis.fetch = originalFetch;
     }

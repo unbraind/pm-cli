@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved agent read-path token efficiency across `get`/`list`/`context` outputs.
 
 ### Added
-- `--event duration=<relative>` (e.g. `duration=2h`, `duration=+1d`) on `pm create`/`pm update` derives the event end from start; mutually exclusive with an explicit `end` (pm-fu5d CAL1).
+- `--event duration=<relative>` (e.g. `duration=2h`, `duration=+1d`) on `pm create`/`pm update` derives the event end from start; mutually exclusive with an explicit `end`. A zero-length duration collapses to an instant event, matching the equal start/end behaviour (pm-uzmf / pm-fu5d CAL1).
 - `pm package` / `pm extension --list` as an alias for `--explore` (pm-fu5d U3).
 - `pm search --mode semantic|hybrid` emits `search_<mode>_degraded:no_embedded_items:results_are_lexical` when the embedding corpus is empty, so agents can tell results are effectively lexical even though the reported mode stays semantic/hybrid (pm-fu5d S1).
 - `pm create` emits an `event_without_schedule:<id>:no_time_set` warning for Event-type items created with no schedule, so schedule-less Events that never appear on the calendar are surfaced at creation (never blocks) (pm-uzmf).

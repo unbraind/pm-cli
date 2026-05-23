@@ -345,7 +345,9 @@ describe("runUpdate", () => {
         { path: context.pmPath },
       );
 
-      expect(result.warnings).toEqual([]);
+      // --blocked-by here targets a non-existent item, so the scalar is still
+      // recorded but the kyd6 reconciler surfaces the unresolved-blocker warning.
+      expect(result.warnings).toEqual(["blocked_by_unresolved:pm-blocking-next"]);
       expect(result.changed_fields).toEqual(
         expect.arrayContaining([
           "title",
@@ -1988,6 +1990,24 @@ describe("runUpdate", () => {
 
         const graph = await runDeps(blockedId, { format: "graph" }, { path: context.pmPath });
         expect(graph.edge_count).toBe(0);
+      });
+    });
+
+    it("warns (never blocks) when --blocked-by points at a non-existent item", async () => {
+      await withTempPmPath(async (context) => {
+        const blockedId = createTask(context, "kyd6-unresolved-blocked");
+        const updated = await runUpdate(
+          blockedId,
+          { blockedBy: "pm-doesnotexist", message: "block on a ghost" },
+          { path: context.pmPath },
+        );
+
+        // Scalar is still recorded (forward-reference allowed, mirrors create.ts),
+        // but no edge is fabricated and the mismatch is surfaced as a warning.
+        const item = updated.item as { blocked_by?: string; dependencies?: unknown[] };
+        expect(item.blocked_by).toBe("pm-doesnotexist");
+        expect(item.dependencies).toBeUndefined();
+        expect(updated.warnings).toContain("blocked_by_unresolved:pm-doesnotexist");
       });
     });
 

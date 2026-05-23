@@ -39,10 +39,7 @@ import {
   parseConfidenceInput,
   parseRegressionInput,
 } from "./metadata-normalizers.js";
-import {
-  EVENT_END_AFTER_START_MESSAGE,
-  EVENT_END_DURATION_MUTUALLY_EXCLUSIVE_MESSAGE,
-} from "./event-validation-messages.js";
+import { resolveEventEndAt } from "./event-validation-messages.js";
 import type {
   CalendarEvent,
   Comment,
@@ -802,38 +799,6 @@ function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowVal
   };
 }
 
-function resolveEventEndAt(
-  startAt: string,
-  endRaw: string | undefined,
-  durationRaw: string | undefined,
-  referenceDate: Date,
-): string | undefined {
-  if (endRaw && durationRaw) {
-    throw new PmCliError(EVENT_END_DURATION_MUTUALLY_EXCLUSIVE_MESSAGE, EXIT_CODE.USAGE);
-  }
-  if (durationRaw) {
-    // Reuse the relative-offset parser with startAt as the reference so duration=2h means startAt + 2h.
-    const normalizedDuration = durationRaw.startsWith("+") ? durationRaw : `+${durationRaw}`;
-    const endAt = resolveIsoOrRelative(normalizedDuration, new Date(startAt), "event.duration");
-    if (endAt <= startAt) {
-      throw new PmCliError(EVENT_END_AFTER_START_MESSAGE, EXIT_CODE.USAGE);
-    }
-    return endAt;
-  }
-  if (!endRaw) {
-    return undefined;
-  }
-  const endAt = resolveIsoOrRelative(endRaw, referenceDate, "event.end");
-  if (endAt < startAt) {
-    throw new PmCliError(EVENT_END_AFTER_START_MESSAGE, EXIT_CODE.USAGE);
-  }
-  // Equal start/end collapses to an instant event (drop end) instead of being rejected.
-  if (endAt === startAt) {
-    return undefined;
-  }
-  return endAt;
-}
-
 function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
   return raw.map((entry) => {
     const kv = parseCsvKv(entry, "--event");
@@ -1066,7 +1031,10 @@ function reconcileBlockedByDependency(
 
 // pm-kyd6: resolve the --blocked-by target before the synchronous mutate
 // callback so a real blocker can also become a `blocked_by` dependency edge.
-// Returns undefined when blocked_by is being cleared, omitted, or unresolvable.
+// `id` is set when the target resolves; `unresolved` carries the raw value when
+// --blocked-by points at an item that does not exist (the scalar is still set,
+// mirroring create.ts and the never-block missing-parent behaviour, but the
+// caller surfaces a warning so the metadata/graph mismatch is visible).
 async function resolveBlockedByDependencyTarget(
   blockedByOption: string | undefined,
   blockedByCleared: boolean,
@@ -1074,16 +1042,16 @@ async function resolveBlockedByDependencyTarget(
   idPrefix: string,
   itemFormat: ItemFormat,
   typeToFolder: Record<string, string>,
-): Promise<string | undefined> {
+): Promise<{ id?: string; unresolved?: string }> {
   if (blockedByOption === undefined || blockedByCleared) {
-    return undefined;
+    return {};
   }
   const blockedByValue = blockedByOption.trim();
   if (blockedByValue.length === 0) {
-    return undefined;
+    return {};
   }
   const located = await locateItem(pmRoot, normalizeItemId(blockedByValue, idPrefix), idPrefix, itemFormat, typeToFolder);
-  return located?.id;
+  return located ? { id: located.id } : { unresolved: blockedByValue };
 }
 
 // pm-kyd6: apply the reconciled blocked_by dependency edge to the item metadata
@@ -1549,7 +1517,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
 
   // pm-kyd6: resolve the --blocked-by target up front (async) so the sync
   // mutate callback can mirror create.ts and add a `blocked_by` dependency edge.
-  const resolvedBlockedByDependencyId = await resolveBlockedByDependencyTarget(
+  const blockedByResolution = await resolveBlockedByDependencyTarget(
     options.blockedBy,
     clearFrontMatterKeys.has("blocked_by"),
     pmRoot,
@@ -1557,6 +1525,10 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     settings.item_format,
     typeRegistry.type_to_folder,
   );
+  const resolvedBlockedByDependencyId = blockedByResolution.id;
+  if (blockedByResolution.unresolved !== undefined) {
+    parentReferenceWarnings.push(`blocked_by_unresolved:${blockedByResolution.unresolved}`);
+  }
 
   const fieldFlags: Record<string, boolean> = {
     title: options.title !== undefined,
@@ -2084,7 +2056,8 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         changedFields.push("release");
       }
       if (options.blockedBy !== undefined || clearFrontMatterKeys.has("blocked_by")) {
-        const previousBlockedBy = document.metadata.blocked_by;
+        const previousBlockedBy =
+          typeof document.metadata.blocked_by === "string" ? document.metadata.blocked_by : undefined;
         if (clearFrontMatterKeys.has("blocked_by")) {
           delete document.metadata.blocked_by;
         } else {

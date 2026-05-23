@@ -1330,10 +1330,15 @@ export async function runSearch(query: string, options: SearchOptions, global: G
         hits = semanticResult.hits;
         // The semantic/hybrid query ran without error, but nothing was embedded
         // to compare against (empty vector corpus, e.g. Ollama auto-default with
-        // no reindex). Results are effectively lexical/keyword even though the
-        // reported mode stays semantic/hybrid — surface a machine-readable
-        // warning so agents do not mistake this for true vector ranking.
+        // no reindex). Pure semantic mode would otherwise return an empty set, so
+        // degrade to the locally computed keyword hits (hybrid already blends
+        // them in) — making the results genuinely lexical — and warn so agents do
+        // not mistake them for true vector ranking. The reported mode is left
+        // unchanged; the warning is the signal.
         if (semanticResult.embeddedItems === 0) {
+          if (effectiveMode === "semantic") {
+            hits = keywordHits;
+          }
           warnings.push(`search_${effectiveMode}_degraded:no_embedded_items:results_are_lexical`);
         }
       }

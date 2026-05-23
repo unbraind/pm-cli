@@ -1903,6 +1903,17 @@ describe("runCreate", () => {
         exitCode: EXIT_CODE.USAGE,
         message: expect.stringContaining("mutually exclusive"),
       });
+
+      // A zero-length duration collapses to an instant event, matching equal
+      // explicit start/end (no longer rejected).
+      const zeroDuration = await runCreate(
+        baseCreateOptions({
+          event: ["start=2026-03-04T10:00:00.000Z,duration=0h,title=instant"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(zeroDuration.item.events?.[0]?.start_at).toBe("2026-03-04T10:00:00.000Z");
+      expect(zeroDuration.item.events?.[0]?.end_at).toBeUndefined();
     });
   });
 

@@ -313,6 +313,7 @@ export function isPmExtensionPolicySurfaceContract(value: string): value is PmEx
 }
 
 export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  { param: "status", flag: "--status" },
   { param: "type", flag: "--type" },
   { param: "tag", flag: "--tag" },
   { param: "priority", flag: "--priority" },

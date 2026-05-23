@@ -273,6 +273,42 @@ describe("runClose", () => {
     });
   });
 
+  it("clears a stale blocked_reason on close even when blocked_by is absent (C4)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "close-c4-reason-only");
+      const updated = context.runCli(
+        ["update", id, "--blocked-reason", "lingering reason without a blocker", "--json"],
+        { expectJson: true },
+      );
+      expect(updated.code).toBe(0);
+
+      const result = await runClose(id, "done despite stale reason", {}, { path: context.pmPath });
+      const item = result.item as Record<string, unknown>;
+      expect(item.blocked_reason).toBeUndefined();
+      expect(result.changed_fields).toContain("blocked_reason");
+      expect(result.warnings).toContain(`closed_cleared_blocked_by:${id}:unknown`);
+    });
+  });
+
+  it("clears an orphan blocked_by dependency edge on close even without the scalar (C4)", async () => {
+    await withTempPmPath(async (context) => {
+      const blockerId = createTask(context, "close-c4-orphan-blocker");
+      const blockedId = createTask(context, "close-c4-orphan-blocked");
+      // Add a blocked_by dependency edge directly (no scalar blocked_by set).
+      const updated = context.runCli(
+        ["update", blockedId, "--dep", `id=${blockerId},kind=blocked_by`, "--json"],
+        { expectJson: true },
+      );
+      expect(updated.code).toBe(0);
+
+      const result = await runClose(blockedId, "done, drop orphan edge", {}, { path: context.pmPath });
+      const item = result.item as Record<string, unknown>;
+      expect(item.dependencies).toBeUndefined();
+      expect(result.changed_fields).toContain("dependencies");
+      expect(result.warnings).toContain(`closed_cleared_blocked_by:${blockedId}:${blockerId}`);
+    });
+  });
+
   it("rejects terminal items unless forced and supports unknown author fallback", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-terminal-item", { status: "closed" });
