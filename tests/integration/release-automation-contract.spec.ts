@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -120,6 +120,88 @@ describe("release automation contract", () => {
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
+  });
+
+  it("fails empty changelog skips when releasable code changed", async () => {
+    const pipelineModule = (await import(
+      pathToFileURL(path.join(repoRoot, "scripts/release/run-release-pipeline.mjs")).href
+    )) as {
+      buildEmptyChangelogResult(input: {
+        lastTag: string;
+        commitsSinceLastTag: number;
+        releaseRelevantFiles: string[];
+      }): {
+        ok: boolean;
+        skipped: boolean;
+        reason: string;
+        release_relevant_files: string[];
+        changelog_required_files?: string[];
+        warnings?: string[];
+      };
+      isChangelogRequiredPath(filePath: string): boolean;
+    };
+
+    expect(pipelineModule.isChangelogRequiredPath("src/cli/main.ts")).toBe(true);
+    expect(pipelineModule.isChangelogRequiredPath("packages/pm-todos/package.json")).toBe(true);
+    expect(pipelineModule.isChangelogRequiredPath("scripts/dogfood-package-first.mjs")).toBe(true);
+    expect(pipelineModule.isChangelogRequiredPath("docs/README.md")).toBe(false);
+
+    const result = pipelineModule.buildEmptyChangelogResult({
+      lastTag: "v2026.5.22",
+      commitsSinceLastTag: 3,
+      releaseRelevantFiles: ["docs/README.md", "src/cli/main.ts"],
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      skipped: true,
+      reason: "changelog_unreleased_empty",
+      changelog_required_files: ["src/cli/main.ts"],
+      warnings: ["release_changelog_required:source_or_package_changes_without_unreleased_entry"],
+    });
+  });
+
+  it("keeps empty changelog skips clean for non-releasable docs-only changes", async () => {
+    const pipelineModule = (await import(
+      pathToFileURL(path.join(repoRoot, "scripts/release/run-release-pipeline.mjs")).href
+    )) as {
+      buildEmptyChangelogResult(input: {
+        lastTag: string;
+        commitsSinceLastTag: number;
+        releaseRelevantFiles: string[];
+      }): {
+        ok: boolean;
+        skipped: boolean;
+        reason: string;
+        changelog_required_files?: string[];
+        warnings?: string[];
+      };
+    };
+
+    const result = pipelineModule.buildEmptyChangelogResult({
+      lastTag: "v2026.5.22",
+      commitsSinceLastTag: 1,
+      releaseRelevantFiles: ["docs/README.md"],
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      skipped: true,
+      reason: "changelog_unreleased_empty",
+    });
+    expect(result.changelog_required_files).toBeUndefined();
+    expect(result.warnings).toBeUndefined();
+  });
+
+  it("keeps tracker-only changes outside release relevance", async () => {
+    const pipelineModule = (await import(
+      pathToFileURL(path.join(repoRoot, "scripts/release/run-release-pipeline.mjs")).href
+    )) as {
+      isReleaseRelevantPath(filePath: string): boolean;
+    };
+
+    expect(pipelineModule.isReleaseRelevantPath(".agents/pm/tasks/pm-example.md")).toBe(false);
+    expect(pipelineModule.isReleaseRelevantPath("src/cli/main.ts")).toBe(true);
   });
 
   it("keeps release pipeline and gate scripts discoverable through help output", () => {
