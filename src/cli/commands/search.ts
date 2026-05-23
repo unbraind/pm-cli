@@ -1021,10 +1021,10 @@ interface SemanticQueryContext {
 
 interface SemanticQueryResult {
   hits: SearchHit[];
-  // Number of documents that were actually matched against the embedding/vector
-  // corpus. When this is 0 the semantic/hybrid query ran successfully but had
-  // nothing embedded to compare against, so the ranking is effectively lexical.
-  embeddedItems: number;
+  // Number of documents returned by the vector stage for this query after the
+  // current metadata filters. When this is 0 the semantic/hybrid query ran
+  // successfully, but vector ranking contributed nothing to the returned hits.
+  vectorMatchCount: number;
 }
 
 async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promise<SemanticQueryResult> {
@@ -1062,16 +1062,13 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
   }
   const filteredById = new Map(context.filteredDocuments.map((document) => [document.metadata.id, document]));
   const { semanticHits, semanticScores } = buildSemanticHits(vectorHits, filteredById);
-  // semanticScores only contains documents that had a vector match within the
-  // current candidate set; its size is the count of items actually embedded and
-  // compared. When 0, the semantic stage contributed nothing.
-  const embeddedItems = semanticScores.size;
+  const vectorMatchCount = semanticScores.size;
   if (context.requestedMode === "semantic") {
-    return { hits: semanticHits, embeddedItems };
+    return { hits: semanticHits, vectorMatchCount };
   }
   return {
     hits: combineHybridHits(filteredById, semanticScores, context.keywordHits, context.hybridSemanticWeight),
-    embeddedItems,
+    vectorMatchCount,
   };
 }
 
@@ -1328,18 +1325,17 @@ export async function runSearch(query: string, options: SearchOptions, global: G
             : {}),
         });
         hits = semanticResult.hits;
-        // The semantic/hybrid query ran without error, but nothing was embedded
-        // to compare against (empty vector corpus, e.g. Ollama auto-default with
-        // no reindex). Pure semantic mode would otherwise return an empty set, so
-        // degrade to the locally computed keyword hits (hybrid already blends
-        // them in) — making the results genuinely lexical — and warn so agents do
-        // not mistake them for true vector ranking. The reported mode is left
+        // The semantic/hybrid query ran without error, but vector ranking
+        // contributed no hits for this query/filter set. Pure semantic mode would
+        // otherwise return an empty set, so degrade to the locally computed
+        // keyword hits (hybrid already blends them in) and warn so agents do not
+        // mistake them for true vector ranking. The reported mode is left
         // unchanged; the warning is the signal.
-        if (semanticResult.embeddedItems === 0) {
+        if (semanticResult.vectorMatchCount === 0) {
           if (effectiveMode === "semantic") {
             hits = keywordHits;
           }
-          warnings.push(`search_${effectiveMode}_degraded:no_embedded_items:results_are_lexical`);
+          warnings.push(`search_${effectiveMode}_degraded:no_vector_matches:results_are_lexical`);
         }
       }
     } catch (error: unknown) {

@@ -2031,5 +2031,31 @@ describe("runUpdate", () => {
         ]);
       });
     });
+
+    it("drops manually added stale blocked_by edges when setting a scalar blocker", async () => {
+      await withTempPmPath(async (context) => {
+        const staleBlocker = createTask(context, "kyd6-stale-blocker");
+        const activeBlocker = createTask(context, "kyd6-active-blocker");
+        const blockedId = createTask(context, "kyd6-stale-edge-blocked");
+        await runUpdate(
+          blockedId,
+          { dep: [`id=${staleBlocker},kind=blocked_by`], message: "seed stale blocker edge" },
+          { path: context.pmPath },
+        );
+
+        const updated = await runUpdate(
+          blockedId,
+          { blockedBy: activeBlocker, message: "set scalar blocker" },
+          { path: context.pmPath },
+        );
+
+        const item = updated.item as { blocked_by?: string; dependencies?: { id: string; kind: string }[] };
+        expect(item.blocked_by).toBe(activeBlocker);
+        const blockedByEdges = (item.dependencies ?? []).filter((dep) => dep.kind === "blocked_by");
+        expect(blockedByEdges).toEqual([
+          expect.objectContaining({ id: activeBlocker, kind: "blocked_by" }),
+        ]);
+      });
+    });
   });
 });

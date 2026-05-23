@@ -518,6 +518,20 @@ describe("runTest", () => {
     });
   });
 
+  it("keeps comma-containing command payloads working with the cmd alias", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "cmd-alias-comma-test");
+      const result = await runTest(
+        id,
+        { add: ["cmd=node -e \"console.log('a,b')\",scope=project,note=cmd comma alias"], message: "seed cmd comma alias" },
+        { path: context.pmPath },
+      );
+
+      const entry = result.tests.find((test) => test.note === "cmd comma alias");
+      expect(entry?.command).toBe("node -e \"console.log('a,b')\"");
+    });
+  });
+
   it("rejects structured --add entries that use an unknown key instead of silently storing the command", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "unknown-key-test");

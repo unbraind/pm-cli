@@ -1003,21 +1003,16 @@ function dependencyKey(value: Pick<Dependency, "id" | "kind" | "source_kind">): 
 // scalar removes that edge, and re-pointing it replaces the prior edge.
 function reconcileBlockedByDependency(
   current: Dependency[] | undefined,
-  previousBlockedBy: string | undefined,
   nextBlockedById: string | undefined,
-  prefix: string,
   nowIsoValue: string,
   author: string,
 ): { dependencies: Dependency[] | undefined; changed: boolean } {
   let next = [...(current ?? [])];
   let changed = false;
-  const previousId = previousBlockedBy ? normalizeItemId(previousBlockedBy.trim(), prefix) : undefined;
-  if (previousId && previousId !== nextBlockedById) {
-    const filtered = next.filter((dep) => !(dep.kind === "blocked_by" && dep.id === previousId));
-    if (filtered.length !== next.length) {
-      next = filtered;
-      changed = true;
-    }
+  const filtered = next.filter((dep) => dep.kind !== "blocked_by" || dep.id === nextBlockedById);
+  if (filtered.length !== next.length) {
+    next = filtered;
+    changed = true;
   }
   if (nextBlockedById && !next.some((dep) => dep.kind === "blocked_by" && dep.id === nextBlockedById)) {
     next.push({ id: nextBlockedById, kind: "blocked_by", created_at: nowIsoValue, author });
@@ -1059,18 +1054,14 @@ async function resolveBlockedByDependencyTarget(
 // large runUpdate function stays under the static-quality complexity budget.
 function applyBlockedByDependencyEdge(
   metadata: ItemFrontMatter,
-  previousBlockedBy: string | undefined,
   resolvedBlockedById: string | undefined,
-  idPrefix: string,
   nowIsoValue: string,
   author: string,
   changedFields: string[],
 ): void {
   const reconciled = reconcileBlockedByDependency(
     metadata.dependencies,
-    previousBlockedBy,
     resolvedBlockedById,
-    idPrefix,
     nowIsoValue,
     author,
   );
@@ -2056,8 +2047,6 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         changedFields.push("release");
       }
       if (options.blockedBy !== undefined || clearFrontMatterKeys.has("blocked_by")) {
-        const previousBlockedBy =
-          typeof document.metadata.blocked_by === "string" ? document.metadata.blocked_by : undefined;
         if (clearFrontMatterKeys.has("blocked_by")) {
           delete document.metadata.blocked_by;
         } else {
@@ -2067,9 +2056,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         // pm-kyd6: keep the dependency graph in sync with the blocked_by scalar.
         applyBlockedByDependencyEdge(
           document.metadata,
-          previousBlockedBy,
           resolvedBlockedByDependencyId,
-          settings.id_prefix,
           nowIso,
           author,
           changedFields,
