@@ -46,6 +46,10 @@ const LEGACY_BUNDLED_PACKAGE_ALIASES: Record<string, { package_directory: string
   },
 };
 const BUNDLED_PACKAGE_INSTALL_ALL_TARGETS = new Set(["*", "all"]);
+const EXTENSION_INSTALL_COPY_ATTEMPTS = 3;
+const EXTENSION_INSTALL_LOCK_ATTEMPTS = 120;
+const EXTENSION_INSTALL_LOCK_DELAY_MS = 250;
+const EXTENSION_INSTALL_LOCK_STALE_MS = 120_000;
 
 interface BundledPackageEntry {
   alias: string;
@@ -497,6 +501,93 @@ function normalizeManagedDirectoryName(name: string): string {
     throw new PmCliError("Extension manifest name must resolve to a non-empty directory name.", EXIT_CODE.USAGE);
   }
   return normalized;
+}
+
+function isRetriableExtensionInstallCopyError(error: unknown): boolean {
+  if (typeof error !== "object" || error === null || !("code" in error)) {
+    return false;
+  }
+  const code = (error as { code?: unknown }).code;
+  return code === "EEXIST" || code === "ENOTEMPTY" || code === "ENOENT";
+}
+
+function isErrnoCode(error: unknown, code: string): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === code;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+export async function copyExtensionDirectoryForInstall(
+  sourceDirectory: string,
+  destinationDirectory: string,
+  copyDirectory: typeof fs.cp = fs.cp,
+): Promise<void> {
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= EXTENSION_INSTALL_COPY_ATTEMPTS; attempt += 1) {
+    try {
+      if (await pathExists(destinationDirectory)) {
+        await fs.rm(destinationDirectory, { recursive: true, force: true });
+      }
+      await copyDirectory(sourceDirectory, destinationDirectory, { recursive: true, force: true });
+      return;
+    } catch (error: unknown) {
+      if (!isRetriableExtensionInstallCopyError(error) || attempt === EXTENSION_INSTALL_COPY_ATTEMPTS) {
+        throw error;
+      }
+      lastError = error;
+    }
+  }
+}
+
+async function withExtensionInstallLock<T>(
+  settingsRoot: string,
+  destinationDirectoryName: string,
+  run: () => Promise<T>,
+): Promise<T> {
+  const lockRoot = path.join(settingsRoot, "runtime", "extension-install-locks");
+  const lockPath = path.join(lockRoot, `${destinationDirectoryName}.lock`);
+  await fs.mkdir(lockRoot, { recursive: true });
+
+  let acquired = false;
+  for (let attempt = 1; attempt <= EXTENSION_INSTALL_LOCK_ATTEMPTS; attempt += 1) {
+    try {
+      await fs.mkdir(lockPath);
+      acquired = true;
+      await fs.writeFile(
+        path.join(lockPath, "owner.json"),
+        `${JSON.stringify({ pid: process.pid, created_at: nowIso(), destination: destinationDirectoryName }, null, 2)}\n`,
+        "utf8",
+      );
+      break;
+    } catch (error: unknown) {
+      if (!isErrnoCode(error, "EEXIST")) {
+        throw error;
+      }
+      const stat = await fs.stat(lockPath).catch(() => null);
+      if (stat && Date.now() - stat.mtimeMs > EXTENSION_INSTALL_LOCK_STALE_MS) {
+        await fs.rm(lockPath, { recursive: true, force: true });
+        continue;
+      }
+      await sleep(EXTENSION_INSTALL_LOCK_DELAY_MS);
+    }
+  }
+
+  if (!acquired) {
+    throw new PmCliError(
+      `Timed out waiting for extension install lock for "${destinationDirectoryName}".`,
+      EXIT_CODE.CONFLICT,
+    );
+  }
+
+  try {
+    return await run();
+  } finally {
+    await fs.rm(lockPath, { recursive: true, force: true }).catch(() => undefined);
+  }
 }
 
 function parseExtensionManifest(raw: unknown): ExtensionManifest | null {
@@ -2590,98 +2681,97 @@ export async function runExtension(
       ref: options.ref,
     });
     const resolvedSource = await resolveInstallSource(installSource);
-    const settings = await readSettings(resolvedRoots.settings_root);
-    const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
-    warnings.push(...managedStateRead.warnings);
     try {
       const validated = await validateExtensionDirectory(resolvedSource.directory);
       const destinationDirectoryName = normalizeManagedDirectoryName(validated.manifest.name);
-      const destinationDirectory = path.join(resolvedRoots.selected_root, destinationDirectoryName);
-      const destinationExists = await pathExists(destinationDirectory);
-      const installInPlace = await areDirectoriesEquivalent(validated.directory, destinationDirectory);
+      return await withExtensionInstallLock(resolvedRoots.settings_root, destinationDirectoryName, async () => {
+        const settings = await readSettings(resolvedRoots.settings_root);
+        const managedStateRead = await readManagedExtensionState(resolvedRoots.selected_root);
+        warnings.push(...managedStateRead.warnings);
+        const destinationDirectory = path.join(resolvedRoots.selected_root, destinationDirectoryName);
+        const destinationExists = await pathExists(destinationDirectory);
+        const installInPlace = await areDirectoriesEquivalent(validated.directory, destinationDirectory);
 
-      await fs.mkdir(resolvedRoots.selected_root, { recursive: true });
-      if (!installInPlace) {
-        if (destinationExists) {
-          await fs.rm(destinationDirectory, { recursive: true, force: true });
+        await fs.mkdir(resolvedRoots.selected_root, { recursive: true });
+        if (!installInPlace) {
+          await copyExtensionDirectoryForInstall(validated.directory, destinationDirectory);
         }
-        await fs.cp(validated.directory, destinationDirectory, { recursive: true, force: true });
-      }
 
-      const sourceRecord: ManagedExtensionSource =
-        bundledAliasName
-          ? {
-              kind: "builtin",
-              input: bundledAliasName,
-              location: bundledAliasName,
-              name: bundledAliasName,
-            }
-          : installSource.kind === "local"
-          ? {
-              kind: "local",
-              input: installSource.input,
-              location: installSource.absolute_path,
-            }
-          : installSource.kind === "npm"
+        const sourceRecord: ManagedExtensionSource =
+          bundledAliasName
             ? {
-                kind: "npm",
-                input: installSource.input,
-                location: resolvedSource.resolved_subpath ?? ".",
-                package: resolvedSource.npm_package,
-                version: resolvedSource.npm_version,
+                kind: "builtin",
+                input: bundledAliasName,
+                location: bundledAliasName,
+                name: bundledAliasName,
               }
-            : {
-              kind: "github",
-              input: installSource.input,
-              location: resolvedSource.resolved_subpath ?? installSource.subpath ?? ".",
-              repository: installSource.repository,
-              owner: installSource.owner,
-              repo: installSource.repo,
-              ref: installSource.ref,
-              subpath: resolvedSource.resolved_subpath ?? installSource.subpath,
-              commit: resolvedSource.commit,
-            };
+            : installSource.kind === "local"
+            ? {
+                kind: "local",
+                input: installSource.input,
+                location: installSource.absolute_path,
+              }
+            : installSource.kind === "npm"
+              ? {
+                  kind: "npm",
+                  input: installSource.input,
+                  location: resolvedSource.resolved_subpath ?? ".",
+                  package: resolvedSource.npm_package,
+                  version: resolvedSource.npm_version,
+                }
+              : {
+                kind: "github",
+                input: installSource.input,
+                location: resolvedSource.resolved_subpath ?? installSource.subpath ?? ".",
+                repository: installSource.repository,
+                owner: installSource.owner,
+                repo: installSource.repo,
+                ref: installSource.ref,
+                subpath: resolvedSource.resolved_subpath ?? installSource.subpath,
+                commit: resolvedSource.commit,
+              };
 
-      const now = nowIso();
-      const existingManagedEntry = managedStateRead.state.entries.find(
-        (entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name),
-      );
-      const sourceUnchanged =
-        existingManagedEntry !== undefined &&
-        existingManagedEntry.manifest_version === validated.manifest.version &&
-        managedExtensionSourcesEquivalent(existingManagedEntry.source, sourceRecord);
-      const managedState = upsertManagedEntry(managedStateRead.state, {
-        name: validated.manifest.name,
-        directory: destinationDirectoryName,
-        scope,
-        manifest_version: validated.manifest.version,
-        manifest_entry: validated.manifest.entry,
-        capabilities: [...validated.manifest.capabilities],
-        installed_at: existingManagedEntry?.installed_at ?? now,
-        updated_at: sourceUnchanged ? existingManagedEntry.updated_at : now,
-        source: sourceRecord,
-      });
-      await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
-
-      const activationChanged = ensureActivated(settings, validated.manifest.name);
-      if (activationChanged) {
-        await writeSettings(resolvedRoots.settings_root, settings, "settings:write");
-      }
-
-      return withResult({
-        extension: {
+        const now = nowIso();
+        const existingManagedEntry = managedStateRead.state.entries.find(
+          (entry) => normalizeExtensionNameForMatch(entry.name) === normalizeExtensionNameForMatch(validated.manifest.name),
+        );
+        const sourceUnchanged =
+          existingManagedEntry !== undefined &&
+          existingManagedEntry.manifest_version === validated.manifest.version &&
+          managedExtensionSourcesEquivalent(existingManagedEntry.source, sourceRecord);
+        const managedState = upsertManagedEntry(managedStateRead.state, {
           name: validated.manifest.name,
-          version: validated.manifest.version,
-          entry: validated.manifest.entry,
-          capabilities: validated.manifest.capabilities,
           directory: destinationDirectoryName,
-        },
-        source: sourceRecord,
-        destination_path: destinationDirectory,
-        overwritten: destinationExists && !installInPlace,
-        installed_in_place: installInPlace,
-        activated: true,
-        settings_changed: activationChanged,
+          scope,
+          manifest_version: validated.manifest.version,
+          manifest_entry: validated.manifest.entry,
+          capabilities: [...validated.manifest.capabilities],
+          installed_at: existingManagedEntry?.installed_at ?? now,
+          updated_at: sourceUnchanged ? existingManagedEntry.updated_at : now,
+          source: sourceRecord,
+        });
+        await writeManagedExtensionState(resolvedRoots.selected_root, managedState);
+
+        const activationChanged = ensureActivated(settings, validated.manifest.name);
+        if (activationChanged) {
+          await writeSettings(resolvedRoots.settings_root, settings, "settings:write");
+        }
+
+        return withResult({
+          extension: {
+            name: validated.manifest.name,
+            version: validated.manifest.version,
+            entry: validated.manifest.entry,
+            capabilities: validated.manifest.capabilities,
+            directory: destinationDirectoryName,
+          },
+          source: sourceRecord,
+          destination_path: destinationDirectory,
+          overwritten: destinationExists && !installInPlace,
+          installed_in_place: installInPlace,
+          activated: true,
+          settings_changed: activationChanged,
+        });
       });
     } finally {
       if (resolvedSource.cleanup) {

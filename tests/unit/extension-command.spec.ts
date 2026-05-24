@@ -1,9 +1,14 @@
 import { spawnSync } from "node:child_process";
-import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp as fsPromisesCp, mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runExtension, parseExtensionInstallSource, readManagedExtensionState } from "../../src/cli/commands/extension.js";
+import {
+  copyExtensionDirectoryForInstall,
+  runExtension,
+  parseExtensionInstallSource,
+  readManagedExtensionState,
+} from "../../src/cli/commands/extension.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { writeTestExtension } from "../helpers/extensions.js";
@@ -894,6 +899,33 @@ describe("extension command runtime", () => {
         installed_in_place: true,
       });
     });
+  });
+
+  it("retries when an extension install copy races with an existing destination", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-copy-race-"));
+    try {
+      const sourceDir = path.join(tempRoot, "source");
+      const destinationDir = path.join(tempRoot, "destination");
+      await writeTestExtension({
+        root: sourceDir,
+        name: "race-ext",
+      });
+
+      let attempts = 0;
+      const raceError = Object.assign(new Error("EEXIST: file already exists, mkdir"), { code: "EEXIST" });
+      await copyExtensionDirectoryForInstall(sourceDir, destinationDir, async (source, destination, options) => {
+        attempts += 1;
+        if (attempts === 1) {
+          throw raceError;
+        }
+        await fsPromisesCp(source, destination, options);
+      });
+
+      expect(attempts).toBe(2);
+      await expect(readFile(path.join(destinationDir, "manifest.json"), "utf8")).resolves.toContain("race-ext");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
   });
 
   it("marks unmanaged discovered extensions as skipped_unmanaged during manage", async () => {

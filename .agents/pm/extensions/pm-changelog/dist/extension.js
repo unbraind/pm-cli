@@ -2,7 +2,7 @@ import { defineExtension, listAllFrontMatter } from "@unbrained/pm-cli/sdk";
 import { createChangelog, mergeChangelog, writeChangelog } from "./generator.js";
 export default defineExtension({
     name: "pm-changelog",
-    version: "2026.5.24-6",
+    version: "2026.5.24-9",
     activate(api) {
         api.registerCommand({
             name: "changelog generate",
@@ -29,6 +29,7 @@ export default defineExtension({
                 { long: "--mode", value_name: "mode", description: "replace or prepend existing changelog (default: replace)" },
                 { long: "--include-empty", description: "Emit an empty release section when no items match" },
                 { long: "--include-links", description: "Include item URLs in generated entries (default: false)" },
+                { long: "--item-url-base", value_name: "url", description: "Make item IDs clickable links to .toon files under the base URL" },
                 { long: "--check", description: "Do not write; report whether the changelog would change" },
             ],
             async run(ctx) {
@@ -60,6 +61,7 @@ export default defineExtension({
                     groupBy,
                     includeEmpty: booleanOption(ctx.options, "include-empty", "includeEmpty"),
                     includeLinks: booleanOption(ctx.options, "include-links", "includeLinks"),
+                    itemUrlBase: stringOption(ctx.options, "item-url-base", "itemUrlBase"),
                 };
                 const generated = createChangelog(generationOptions);
                 if (stdout) {

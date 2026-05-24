@@ -83,70 +83,6 @@ export function isReleaseRelevantPath(filePath) {
   return !filePath.startsWith(".agents/pm/");
 }
 
-export function isChangelogRequiredPath(filePath) {
-  return (
-    filePath === "package.json" ||
-    filePath === "pnpm-lock.yaml" ||
-    filePath === "tsconfig.json" ||
-    filePath === "tsconfig.packages.json" ||
-    filePath.startsWith("src/") ||
-    filePath.startsWith("packages/") ||
-    filePath.startsWith("plugins/") ||
-    filePath.startsWith("bin/") ||
-    filePath.startsWith("scripts/") ||
-    filePath.startsWith(".github/workflows/")
-  );
-}
-
-export function buildEmptyChangelogResult({ lastTag, commitsSinceLastTag, releaseRelevantFiles }) {
-  const changelogRequiredFiles = releaseRelevantFiles.filter(isChangelogRequiredPath);
-  const requiresChangelog = changelogRequiredFiles.length > 0;
-  const warning =
-    "release_changelog_required:source_or_package_changes_without_unreleased_entry";
-  return {
-    ok: !requiresChangelog,
-    skipped: true,
-    reason: "changelog_unreleased_empty",
-    last_tag: lastTag,
-    commits_since_last_tag: commitsSinceLastTag,
-    release_relevant_files: releaseRelevantFiles,
-    ...(requiresChangelog ? { changelog_required_files: changelogRequiredFiles, warnings: [warning] } : {}),
-  };
-}
-
-function writeEmptyChangelogResult(result, outputJson) {
-  if (outputJson) {
-    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-  } else if (result.ok === true) {
-    console.log("CHANGELOG.md [Unreleased] has no promotable content. Skipping release pipeline.");
-  } else {
-    const files = result.changelog_required_files.join(", ");
-    console.error(
-      "::error title=CHANGELOG [Unreleased] is empty::Source/package changes exist since the last release tag but CHANGELOG.md has no promotable [Unreleased] entry.",
-    );
-    console.error(
-      `CHANGELOG.md [Unreleased] is empty, but releasable files changed since ${result.last_tag ?? "the first commit"}: ${files}`,
-    );
-    console.error("Add a concise CHANGELOG.md [Unreleased] entry or confirm the changes are intentionally unreleasable.");
-  }
-  if (result.ok !== true) {
-    process.exit(1);
-  }
-}
-
-function readUnreleasedChangelogBody() {
-  const changelogPath = path.join(repoRoot, "CHANGELOG.md");
-  const changelogContent = readFileSync(changelogPath, "utf8").replaceAll("\r\n", "\n");
-  const lines = changelogContent.split("\n");
-  const unreleasedIndex = lines.findIndex((line) => line.startsWith("## [Unreleased]"));
-  if (unreleasedIndex === -1) {
-    fail('CHANGELOG.md is missing the "## [Unreleased]" section.');
-  }
-  const nextSectionIndex = lines.findIndex((line, index) => index > unreleasedIndex && line.startsWith("## ["));
-  const unreleasedBodyLines = lines.slice(unreleasedIndex + 1, nextSectionIndex === -1 ? undefined : nextSectionIndex);
-  return unreleasedBodyLines.join("\n").trim();
-}
-
 function listTodayTags(todayKey) {
   const result = git(["tag", "--list", `v${todayKey}*`]);
   return result.stdout
@@ -202,6 +138,27 @@ function parseCalendarVersion(version) {
 function readPackageVersion() {
   const packageJson = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
   return packageJson.version;
+}
+
+function extractGeneratedChangelogSection(changelog, heading) {
+  const lines = changelog.replaceAll("\r\n", "\n").split("\n");
+  const start = lines.findIndex((line) =>
+    line.startsWith(`## [${heading}]`) || line.startsWith(`## ${heading}`)
+  );
+  if (start === -1) {
+    return null;
+  }
+  const end = lines.findIndex((line, index) => index > start && /^##\s+/.test(line));
+  return lines.slice(start + 1, end === -1 ? undefined : end).join("\n").trim();
+}
+
+function ensureGeneratedReleaseSectionHasContent(version) {
+  const changelogPath = path.join(repoRoot, "CHANGELOG.md");
+  const changelog = readFileSync(changelogPath, "utf8");
+  const section = extractGeneratedChangelogSection(changelog, version);
+  if (!section) {
+    fail(`Generated CHANGELOG.md is missing a non-empty section for ${version}.`);
+  }
 }
 
 function runReleaseGates(options) {
@@ -284,17 +241,6 @@ function runPipeline() {
     return;
   }
 
-  const unreleasedBody = readUnreleasedChangelogBody();
-  if (unreleasedBody.length === 0) {
-    const result = buildEmptyChangelogResult({
-      lastTag,
-      commitsSinceLastTag,
-      releaseRelevantFiles,
-    });
-    writeEmptyChangelogResult(result, outputJson);
-    return;
-  }
-
   const todayKey = utcDateKey();
   const tagsToday = listTodayTags(todayKey);
   if (!allowSameDayRelease && tagsToday.length > 0) {
@@ -335,21 +281,25 @@ function runPipeline() {
   if (!dryRun) {
     const npm = commandFor("npm");
     runCommand(npm, ["version", "--no-git-tag-version", targetVersion]);
-    runCommand(process.execPath, ["scripts/release/changelog-promote.mjs", "--version", targetVersion]);
     runCommand(process.execPath, ["dist/cli.js", "install", "npm:pm-changelog", "--project"]);
     runCommand(process.execPath, [
       "dist/cli.js",
       "changelog",
       "generate",
       "--output",
-      "CHANGELOG.pm.md",
+      "CHANGELOG.md",
       "--title",
-      "pm Tracker Changelog",
+      "Changelog",
+      "--release-version",
+      targetVersion,
       "--group-by",
       "release",
       "--status",
       "closed",
+      "--item-url-base",
+      "https://github.com/unbraind/pm-cli/blob/main/.agents/pm",
     ]);
+    ensureGeneratedReleaseSectionHasContent(targetVersion);
   }
 
   const gates = runReleaseGates({
@@ -381,7 +331,7 @@ function runPipeline() {
       GIT_COMMITTER_NAME: author,
       GIT_COMMITTER_EMAIL: authorEmail,
     };
-    git(["add", "package.json", "CHANGELOG.md", "CHANGELOG.pm.md"]);
+    git(["add", "package.json", "CHANGELOG.md"]);
     runCommand("git", [
       "commit",
       "-m",

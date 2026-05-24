@@ -1,6 +1,6 @@
 {
   "name": "pm-changelog",
-  "version": "2026.5.24-6",
+  "version": "2026.5.24-9",
   "description": "Generate CHANGELOG.md files from pm-cli items for local and CI usage",
   "repository": {
     "type": "git",
@@ -45,8 +45,8 @@
     "build": "tsc",
     "check": "tsc --noEmit",
     "build:test": "tsc -p tsconfig.test.json",
-    "changelog": "node dist/cli.js --mode replace --output CHANGELOG.md --group-by release",
-    "changelog:check": "node dist/cli.js --mode replace --output CHANGELOG.md --group-by release --check",
+    "changelog": "node dist/cli.js --mode replace --output CHANGELOG.md --group-by release --item-url-base https://github.com/unbraind/pm-changelog/blob/main/.agents/pm",
+    "changelog:check": "node dist/cli.js --mode replace --output CHANGELOG.md --group-by release --item-url-base https://github.com/unbraind/pm-changelog/blob/main/.agents/pm --check",
     "audit:prod": "npm audit --omit=dev",
     "pack:dry-run": "npm pack --dry-run",
     "prepack": "npm run build",

@@ -20,6 +20,7 @@ async function main() {
             groupBy: options.groupBy,
             includeEmpty: options.includeEmpty,
             includeLinks: options.includeLinks,
+            itemUrlBase: options.itemUrlBase,
             mode: options.mode,
             check: options.check,
         });
@@ -52,6 +53,7 @@ async function main() {
         groupBy: options.groupBy,
         includeEmpty: options.includeEmpty,
         includeLinks: options.includeLinks,
+        itemUrlBase: options.itemUrlBase,
     });
     const existing = options.mode === "prepend" && existsSync(outputPath)
         ? readFileSync(outputPath, "utf-8")
@@ -180,6 +182,9 @@ function parseArgs(args) {
             case "--no-links":
                 options.includeLinks = false;
                 break;
+            case "--item-url-base":
+                options.itemUrlBase = requireValue(args, ++i, arg);
+                break;
             default:
                 throw new Error(`Unknown option: ${arg}`);
         }
@@ -300,6 +305,7 @@ Options:
       --mode <mode>         replace or prepend existing changelog (default: replace)
       --include-empty       Emit an empty release section when no items match
       --include-links       Include item URLs in generated entries (default: false)
+      --item-url-base <url> Make item IDs clickable links: [pmc-abc]({url}/pmc-abc.toon)
 `);
 }
 main().catch((error) => {

@@ -99,11 +99,13 @@ function resolveTagDate(tag) {
 
 function extractChangelogSection(changelog, heading) {
   const lines = changelog.replaceAll("\r\n", "\n").split("\n");
-  const start = lines.findIndex((line) => line.startsWith(`## [${heading}]`));
+  const start = lines.findIndex((line) =>
+    line.startsWith(`## [${heading}]`) || line.startsWith(`## ${heading}`)
+  );
   if (start === -1) {
     return null;
   }
-  const end = lines.findIndex((line, index) => index > start && line.startsWith("## ["));
+  const end = lines.findIndex((line, index) => index > start && /^##\s+/.test(line));
   return lines.slice(start + 1, end === -1 ? undefined : end).join("\n").trim();
 }
 

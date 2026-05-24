@@ -113,6 +113,15 @@ Generate one section per `release` metadata value:
 npx pm-changelog --group-by release --mode prepend --output CHANGELOG.md
 ```
 
+Make pm item IDs clickable links to their `.toon` files on GitHub:
+
+```bash
+npx pm-changelog --group-by release --mode replace \
+  --item-url-base https://github.com/owner/repo/blob/main/.agents/pm
+```
+
+Each item entry becomes a link: `- Fix something ([pmc-abc](https://github.com/owner/repo/blob/main/.agents/pm/issues/pmc-abc.toon))`. The type subdirectory (`issues/`, `tasks/`, `chores/`, `features/`, `epics/`) is resolved automatically from the item's type.
+
 ## Options
 
 | Option | Default | Description |
@@ -138,6 +147,7 @@ npx pm-changelog --group-by release --mode prepend --output CHANGELOG.md
 | `--github-step-summary` | false | Append generated markdown to `$GITHUB_STEP_SUMMARY` |
 | `--include-empty` | false | Emit an empty section when no items match |
 | `--include-links` | false | Include item `url` values in generated entries |
+| `--item-url-base <url>` | - | Make item IDs clickable links to their `.toon` files; point to `.agents/pm` in the repo (e.g. `https://github.com/owner/repo/blob/main/.agents/pm`). The type subdirectory (`issues/`, `tasks/`, `chores/`, etc.) is derived automatically from each item's type. |
 
 ## TypeScript API
 
@@ -156,6 +166,7 @@ const result = writeChangelog({
   groupBy: "release",
   since: process.env.CHANGELOG_SINCE,
   includeLinks: false,
+  itemUrlBase: "https://github.com/owner/repo/blob/main/.agents/pm",
 });
 
 console.log({
@@ -169,3 +180,5 @@ console.log({
 Use `version` when a runner is generating one release section from the current job context. Use `groupBy: "release"` or `--group-by release` when pm items already carry release metadata and a runner should rebuild multiple sections in one pass.
 
 Item links are omitted by default so public CI jobs do not accidentally publish private tracker URLs. Pass `--include-links` or `includeLinks: true` only when item URLs are safe to expose. When links are included, credentials, query strings, and fragments are stripped before markdown is emitted.
+
+Pass `--item-url-base` or `itemUrlBase` to make item IDs themselves clickable links pointing directly to the `.toon` files in the repository. The tool derives the correct type subdirectory (`issues/`, `tasks/`, `chores/`, `features/`, `epics/`) from each item's type automatically — no configuration per type is needed.
