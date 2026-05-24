@@ -2,6 +2,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { resolveAuthor } from "../../src/core/shared/author.js";
 import { isPathWithinDirectory } from "../../src/core/fs/path-utils.js";
+import { createLazyModule } from "../../src/core/shared/lazy-module.js";
 
 describe("core/shared/author: resolveAuthor", () => {
   it("returns the candidate when provided", () => {
@@ -72,5 +73,34 @@ describe("core/fs/path-utils: isPathWithinDirectory", () => {
 
   it("returns false for an absolute path outside the directory", () => {
     expect(isPathWithinDirectory("/some/dir", "/other/path")).toBe(false);
+  });
+});
+
+describe("core/shared/lazy-module: createLazyModule", () => {
+  it("calls the importer on first access and returns the module", async () => {
+    let callCount = 0;
+    const sentinel = { value: 42 };
+    const load = createLazyModule(async () => {
+      callCount++;
+      return sentinel;
+    });
+    const result = await load();
+    expect(result).toBe(sentinel);
+    expect(callCount).toBe(1);
+  });
+
+  it("returns the same promise on subsequent calls without re-importing", async () => {
+    let callCount = 0;
+    const load = createLazyModule(async () => {
+      callCount++;
+      return { value: callCount };
+    });
+    const p1 = load();
+    const p2 = load();
+    expect(p1).toBe(p2);
+    await p1;
+    expect(callCount).toBe(1);
+    await load();
+    expect(callCount).toBe(1);
   });
 });

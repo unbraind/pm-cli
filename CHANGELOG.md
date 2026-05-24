@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pm delete --dry-run` previews the item file that would be deleted without mutating item storage or history, giving the single-item destructive path the same preview affordance as broader maintenance commands (pm-tobi / pm-5k2w).
 
 ### Changed
+- Extract shared `scanHistoryDrift` core function to `src/core/history/drift-scan.ts`; health and validate commands compose format-specific outputs from the single scan (pm-qsk8)
+- Extract `createLazyModule` helper to `src/core/shared/lazy-module.ts`; replace nullable-promise-cache boilerplate in 5 CLI registration files (pm-c98b)
+- Replace 70-line inline copy of `FRONT_MATTER_KEY_ORDER` in `shared-constants-errors.spec.ts` with structural sentinel-ordering and uniqueness assertions that catch real contract changes without needing a manual update (pm-8fx3)
 - Extract shared `resolveAuthor` mutation-author helper to `src/core/shared/author.ts`; eliminate 10+ identical copies across command files (pm-xh0y)
 - Extract shared `isPathWithinDirectory` path-containment helper to `src/core/fs/path-utils.ts`; deduplicate across manifest, loader, extension, files, and search modules (pm-dpzc)
 - Update npm devDependencies to latest minor/patch: `@sentry/cli` 3.4.3, `@toon-format/toon` 2.3.0, `@types/node` 25.9.1, `@vitest/coverage-v8` 4.1.7, `tsx` 4.22.3, `vitest` 4.1.7 (pm-a2g6)

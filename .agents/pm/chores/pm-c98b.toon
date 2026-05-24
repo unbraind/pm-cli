@@ -2,11 +2,11 @@ id: pm-c98b
 title: Deduplicate lazy dynamic-import cache boilerplate in CLI registration
 description: "Duplicate audit 2026-05-22: CLI registration modules repeatedly hand-roll nullable promise caches and import wrappers. Representative copies: src/cli/main.ts:227-242 loadSetupRegistrationModule, src/cli/register-mutation.ts:22, src/cli/register-list-query.ts:23, src/cli/register-operations.ts:21, and src/cli/register-setup.ts:15. Existing searches found closed main.ts decomposition and cache items, but no active item for the core CLI lazy-import helper pattern."
 type: Chore
-status: open
+status: in_progress
 priority: 3
 tags[4]: cli,code-quality,dedup,startup
 created_at: "2026-05-22T19:16:54.832Z"
-updated_at: "2026-05-22T19:16:54.832Z"
+updated_at: "2026-05-24T00:45:53.441Z"
 author: codex-duplicate-audit
 acceptance_criteria: A small shared lazy-module/once-import helper owns the nullable promise cache pattern; registration module import boundaries and startup behavior stay unchanged; focused CLI registration/startup tests and pnpm build pass.
 parent: pm-rnpb

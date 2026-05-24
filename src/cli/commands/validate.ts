@@ -6,7 +6,7 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { hashDocument } from "../../core/history/history.js";
+import { scanHistoryDrift } from "../../core/history/drift-scan.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
@@ -21,10 +21,9 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
-import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { HistoryEntry, ItemMetadata, ValidateMetadataProfile, ValidateMetadataRequiredField } from "../../types/index.js";
-import { verifyHistoryChain } from "./history.js";
+import type { ValidateMetadataProfile, ValidateMetadataRequiredField } from "../../types/index.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
 
 type ValidateCheckName = "metadata" | "resolution" | "lifecycle" | "files" | "command_references" | "history_drift";
@@ -1204,63 +1203,9 @@ async function buildFilesCheck(
 }
 
 async function buildHistoryDriftCheck(pmRoot: string, items: ItemWithBody[]): Promise<{ check: ValidateCheck; warnings: string[] }> {
-  const missingStreams: string[] = [];
-  const unreadableStreams: string[] = [];
-  const hashMismatches: string[] = [];
-  const chainMismatches: string[] = [];
-
-  for (const item of items) {
-    const historyPath = getHistoryPath(pmRoot, item.id);
-    let latestAfterHash: string | null = null;
-    try {
-      const raw = await fs.readFile(historyPath, "utf8");
-      if (raw.trim().length === 0) {
-        missingStreams.push(item.id);
-        continue;
-      }
-      const entries: HistoryEntry[] = [];
-      for (const line of raw.split(/\r?\n/)) {
-        const trimmed = line.trim();
-        if (trimmed.length === 0) {
-          continue;
-        }
-        const parsed = JSON.parse(trimmed) as HistoryEntry;
-        if (typeof parsed.after_hash !== "string" || parsed.after_hash.trim().length === 0) {
-          throw new Error("missing after_hash");
-        }
-        entries.push(parsed);
-        latestAfterHash = parsed.after_hash;
-      }
-      const chainVerification = verifyHistoryChain(entries);
-      if (!chainVerification.ok) {
-        chainMismatches.push(item.id);
-      }
-    } catch (error: unknown) {
-      if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT") {
-        missingStreams.push(item.id);
-      } else {
-        unreadableStreams.push(item.id);
-      }
-      continue;
-    }
-    /* c8 ignore start -- defensive guard for future history schema changes. */
-    if (!latestAfterHash) {
-      missingStreams.push(item.id);
-      continue;
-    }
-    /* c8 ignore stop */
-    const { body, ...frontMatter } = item;
-    const currentHash = hashDocument({
-      metadata: frontMatter as ItemMetadata,
-      body,
-    });
-    if (currentHash !== latestAfterHash) {
-      hashMismatches.push(item.id);
-    }
-  }
-
-  const driftedItems = [...new Set([...missingStreams, ...unreadableStreams, ...hashMismatches, ...chainMismatches])].sort((a, b) =>
-    a.localeCompare(b),
+  const { missingStreams, unreadableStreams, hashMismatches, chainMismatches, driftedItems } = await scanHistoryDrift(
+    pmRoot,
+    items,
   );
   const warnings: string[] = [];
   if (missingStreams.length > 0) {
@@ -1276,7 +1221,6 @@ async function buildHistoryDriftCheck(pmRoot: string, items: ItemWithBody[]): Pr
     warnings.push(`validate_history_drift_chain_mismatches:${chainMismatches.length}`);
   }
   const summarizedDrifted = summarizeList(driftedItems);
-
   return {
     check: {
       name: "history_drift",

@@ -11,8 +11,8 @@ import {
   type LoadedExtension,
   type UnknownExtensionCapabilityWarningDetails,
 } from "../../core/extensions/loader.js";
-import { hashDocument } from "../../core/history/history.js";
 import { enforceHistoryStreamPolicyForItems } from "../../core/history/history-stream-policy.js";
+import { scanHistoryDrift } from "../../core/history/drift-scan.js";
 import {
   readVectorizationStatusLedger,
   refreshSemanticEmbeddingsForMutatedItems,
@@ -29,7 +29,6 @@ import { nowIso } from "../../core/shared/time.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { listAllFrontMatter, listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import {
-  getHistoryPath,
   getItemFormatFromPath,
   getSettingsPath,
   ITEM_FILE_EXTENSIONS,
@@ -37,9 +36,8 @@ import {
   resolvePmRoot,
 } from "../../core/store/paths.js";
 import { readSettingsWithMetadata } from "../../core/store/settings.js";
-import type { HistoryEntry, ItemFormat, ItemMetadata, PmSettings } from "../../types/index.js";
+import type { ItemFormat, ItemMetadata, PmSettings } from "../../types/index.js";
 import { readManagedExtensionState } from "./extension.js";
-import { verifyHistoryChain } from "./history.js";
 
 type HealthStatus = "ok" | "warn";
 type MigrationRuntimeStatus = "pending" | "failed" | "applied";
@@ -1200,62 +1198,9 @@ async function buildHistoryDriftCheck(
   pmRoot: string,
   items: ItemWithBody[],
 ): Promise<{ check: HealthCheck; warnings: string[] }> {
-  const missingStreams: string[] = [];
-  const unreadableStreams: string[] = [];
-  const hashMismatches: string[] = [];
-  const chainMismatches: string[] = [];
-
-  for (const item of items) {
-    const historyPath = getHistoryPath(pmRoot, item.id);
-    let latestAfterHash: string | null = null;
-    try {
-      const raw = await fs.readFile(historyPath, "utf8");
-      if (raw.trim().length === 0) {
-        missingStreams.push(item.id);
-        continue;
-      }
-      const lines = raw.split(/\r?\n/);
-      const entries: HistoryEntry[] = [];
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.length === 0) {
-          continue;
-        }
-        const parsed = JSON.parse(trimmed) as HistoryEntry;
-        if (typeof parsed.after_hash !== "string" || parsed.after_hash.trim().length === 0) {
-          throw new Error("missing after_hash");
-        }
-        entries.push(parsed);
-        latestAfterHash = parsed.after_hash;
-      }
-      const chainVerification = verifyHistoryChain(entries);
-      if (!chainVerification.ok) {
-        chainMismatches.push(item.id);
-      }
-    } catch (error: unknown) {
-      if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT") {
-        missingStreams.push(item.id);
-      } else {
-        unreadableStreams.push(item.id);
-      }
-      continue;
-    }
-    if (!latestAfterHash) {
-      missingStreams.push(item.id);
-      continue;
-    }
-    const { body, ...frontMatter } = item;
-    const currentHash = hashDocument({
-      metadata: frontMatter,
-      body,
-    });
-    if (latestAfterHash !== currentHash) {
-      hashMismatches.push(item.id);
-    }
-  }
-
-  const driftedItems = [...new Set([...missingStreams, ...unreadableStreams, ...hashMismatches, ...chainMismatches])].sort((a, b) =>
-    a.localeCompare(b),
+  const { missingStreams, unreadableStreams, hashMismatches, chainMismatches, driftedItems } = await scanHistoryDrift(
+    pmRoot,
+    items,
   );
   const warnings = [
     ...missingStreams.map((id) => `history_drift_missing_stream:${id}`),
@@ -1263,7 +1208,6 @@ async function buildHistoryDriftCheck(
     ...hashMismatches.map((id) => `history_drift_hash_mismatch:${id}`),
     ...chainMismatches.map((id) => `history_drift_chain_mismatch:${id}`),
   ];
-
   return {
     check: {
       name: "history_drift",
