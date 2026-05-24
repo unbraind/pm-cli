@@ -1,4 +1,4 @@
-import { decode as decodeToon, encode as encodeToon } from "@toon-format/toon";
+import { encode as encodeToon } from "@toon-format/toon";
 import type {
   CalendarEvent,
   Comment,
@@ -29,6 +29,7 @@ import {
   RECURRENCE_FREQUENCY_VALUES,
   RECURRENCE_WEEKDAY_VALUES,
   STATUS_VALUES,
+  weekdayOrderIndex,
 } from "../../types/index.js";
 import { coerceRuntimeFieldValue } from "../schema/runtime-field-values.js";
 import {
@@ -38,6 +39,7 @@ import {
   type RuntimeStatusRegistry,
 } from "../schema/runtime-schema.js";
 import { normalizeStatusInput } from "./status.js";
+import { decodeToonItemContent } from "./toon-decode.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { findFirstMergeConflictMarker } from "../shared/conflict-markers.js";
 import { PmCliError } from "../shared/errors.js";
@@ -95,10 +97,6 @@ function runtimeFieldRequiredForType(definition: RuntimeFieldRegistry["definitio
     return true;
   }
   return definition.required_types.map((value) => value.toLowerCase()).includes(typeName.trim().toLowerCase());
-}
-
-function weekdayOrderIndex(value: (typeof RECURRENCE_WEEKDAY_VALUES)[number]): number {
-  return RECURRENCE_WEEKDAY_VALUES.indexOf(value);
 }
 
 function validationError(message: string): never {
@@ -1218,7 +1216,12 @@ function parseToonItemDocument(
 ): ItemDocument {
   let parsed: unknown;
   try {
-    parsed = decodeToon(content);
+    // decodeToonItemContent transparently recovers documents that the upstream
+    // strict decoder rejects (bracketed-token-then-colon inside a quoted value;
+    // see toon-decode.ts). The recovery is lossless, so it stays silent rather
+    // than emitting a per-read warning that would perpetually flip pm health
+    // red for legacy files. The behavior is pinned by toon-decode.spec.ts.
+    parsed = decodeToonItemContent(content).value;
   } catch {
     validationError("TOON item document is not valid TOON");
   }

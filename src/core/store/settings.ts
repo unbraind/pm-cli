@@ -9,6 +9,7 @@ import {
 } from "../schema/runtime-schema.js";
 import { getSettingsPath } from "./paths.js";
 import { orderObject } from "../shared/serialization.js";
+import { normalizeItemTypeDefinition } from "../item/item-type-definition.js";
 import type {
   ExtensionSandboxProfile,
   ExtensionPolicyMode,
@@ -16,9 +17,7 @@ import type {
   ExtensionPolicySettings,
   ExtensionTrustMode,
   GovernanceSettings,
-  ItemTypeCommandOptionPolicy,
   ItemTypeDefinition,
-  ItemTypeOptionDefinition,
   PmSettings,
   GovernancePreset,
   ValidateMetadataRequiredField,
@@ -285,82 +284,6 @@ function normalizeValidationPatternList(values: string[] | undefined): string[] 
   return [...new Set((values ?? []).map((value) => value.trim().toLowerCase()).filter((value) => value.length > 0))].sort(
     (left, right) => left.localeCompare(right),
   );
-}
-
-function normalizeItemTypeOptionDefinition(option: ItemTypeOptionDefinition): ItemTypeOptionDefinition | null {
-  const key = option.key.trim();
-  if (key.length === 0) {
-    return null;
-  }
-  const values = normalizeStringList(option.values);
-  const aliases = normalizeStringList(option.aliases);
-  const description = option.description?.trim();
-  return {
-    key,
-    values,
-    required: option.required === true ? true : undefined,
-    aliases: aliases.length > 0 ? aliases : undefined,
-    description: description && description.length > 0 ? description : undefined,
-  };
-}
-
-function normalizeItemTypeCommandOptionPolicy(
-  policy: ItemTypeCommandOptionPolicy,
-): ItemTypeCommandOptionPolicy | null {
-  const option = policy.option.trim();
-  if (option.length === 0) {
-    return null;
-  }
-  return {
-    command: policy.command,
-    option,
-    required: policy.required,
-    visible: policy.visible,
-    enabled: policy.enabled,
-  };
-}
-
-function normalizeItemTypeDefinition(definition: ItemTypeDefinition): ItemTypeDefinition | null {
-  const name = definition.name.trim();
-  if (name.length === 0) {
-    return null;
-  }
-  const hasRequiredCreateFields = definition.required_create_fields !== undefined;
-  const hasRequiredCreateRepeatables = definition.required_create_repeatables !== undefined;
-  const hasOptions = definition.options !== undefined;
-  const hasCommandOptionPolicies = definition.command_option_policies !== undefined;
-  const folder = definition.folder?.trim();
-  const aliases = normalizeStringList(definition.aliases);
-  const requiredCreateFields = normalizeStringList(definition.required_create_fields);
-  const requiredCreateRepeatables = normalizeStringList(definition.required_create_repeatables);
-  const options = (definition.options ?? [])
-    .map((option) => normalizeItemTypeOptionDefinition(option))
-    .filter((option): option is ItemTypeOptionDefinition => option !== null)
-    .sort((left, right) => left.key.localeCompare(right.key));
-  const commandOptionPolicies = (() => {
-    const dedupedByKey = new Map<string, ItemTypeCommandOptionPolicy>();
-    for (const policy of definition.command_option_policies ?? []) {
-      const normalized = normalizeItemTypeCommandOptionPolicy(policy);
-      if (!normalized) {
-        continue;
-      }
-      dedupedByKey.set(`${normalized.command}:${normalized.option.toLowerCase()}`, normalized);
-    }
-    return [...dedupedByKey.values()].sort((left, right) =>
-      left.command === right.command
-        ? left.option.localeCompare(right.option)
-        : left.command.localeCompare(right.command),
-    );
-  })();
-  return {
-    name,
-    folder: folder && folder.length > 0 ? folder : undefined,
-    aliases: aliases.length > 0 ? aliases : undefined,
-    required_create_fields: hasRequiredCreateFields ? requiredCreateFields : undefined,
-    required_create_repeatables: hasRequiredCreateRepeatables ? requiredCreateRepeatables : undefined,
-    options: hasOptions ? options : undefined,
-    command_option_policies: hasCommandOptionPolicies ? commandOptionPolicies : undefined,
-  };
 }
 
 export function normalizeItemTypeDefinitions(definitions: ItemTypeDefinition[] | undefined): ItemTypeDefinition[] {

@@ -1,4 +1,4 @@
-import { normalizeStatusInput } from "../../core/item/status.js";
+import { isTerminalStatus, normalizeStatusInput } from "../../core/item/status.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -144,7 +144,10 @@ function parseThreshold(raw: string | undefined): number | undefined {
 }
 
 function isTerminal(status: ItemStatus): boolean {
-  const normalized = normalizeStatusInput(status, dedupeStatusRegistry ?? undefined) ?? status;
+  if (dedupeStatusRegistry) {
+    return isTerminalStatus(status, dedupeStatusRegistry);
+  }
+  const normalized = normalizeStatusInput(status) ?? status;
   return dedupeTerminalStatuses.has(normalized);
 }
 

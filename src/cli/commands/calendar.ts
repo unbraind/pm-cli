@@ -17,7 +17,7 @@ import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus, ItemType, RecurrenceRule } from "../../types/index.js";
-import { RECURRENCE_WEEKDAY_VALUES } from "../../types/index.js";
+import { RECURRENCE_WEEKDAY_VALUES, weekdayOrderIndex } from "../../types/index.js";
 
 export const CALENDAR_VIEW_VALUES = ["agenda", "day", "week", "month"] as const;
 export type CalendarView = (typeof CALENDAR_VIEW_VALUES)[number];
@@ -134,10 +134,6 @@ const DEFAULT_RECURRENCE_LOOKAHEAD_DAYS = 365;
 const DEFAULT_RECURRENCE_LOOKBACK_DAYS = 365;
 const DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS = 28;
 const MAX_RECURRENCE_OCCURRENCES = 1000;
-
-function weekdayOrderIndex(value: (typeof RECURRENCE_WEEKDAY_VALUES)[number]): number {
-  return RECURRENCE_WEEKDAY_VALUES.indexOf(value);
-}
 
 function parseNonNegativeInteger(raw: string | undefined, label: string): number | undefined {
   if (raw === undefined) return undefined;

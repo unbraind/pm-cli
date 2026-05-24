@@ -1,0 +1,23 @@
+id: pm-iqgj
+title: "Recover 16 unreadable TOON item files: strict decoder mis-parses bracketed tokens followed by a colon inside quoted text fields"
+description: "Root cause: the upstream @toon-format/toon 2.3.0 decoder (latest) has a round-trip bug. parseArrayHeaderLine scans the WHOLE line for an opening bracket when the key is unquoted, so a quoted scalar VALUE that contains a bracketed token immediately followed by a colon (e.g. a redacted endpoint marker, an Unreleased changelog marker, a 'med' severity tag, or a sntr-style pattern) is mis-detected as a 'key[N]:' array header. Because pm calls decode in the library default strict mode, parseBracketSegment then throws 'Invalid array length', and parseToonItemDocument converts that to 'TOON item document is not valid TOON'. The library's own encode() emits exactly this ambiguous (but otherwise correctly double-quoted) form, so it cannot round-trip its own output. Impact: 16 closed item files currently fail to load (item_list_item_read_failed) and are excluded from pm list/get/search and the pm-changelog generator (item_count 782 vs ~820 checked by validate). Confirmed non-strict decode reads all 16 correctly: full body text and comments arrays are preserved, and a valid file parses identically under strict vs non-strict. Fix: parseToonItemDocument tries strict decode first, then falls back to lenient decode on failure (preserving strict duplicate-key protection for normal files), surfaced via onWarning. Add a pure helper + tests."
+type: Issue
+status: open
+priority: 2
+tags[1]: store
+created_at: "2026-05-24T06:34:21.946Z"
+updated_at: "2026-05-24T07:00:10.677Z"
+assignee: claude-code-agent
+author: claude-code-agent
+estimated_minutes: 90
+acceptance_criteria: All 16 previously-unreadable items load via pm get/list/search; pm list emits zero item_list_item_read_failed warnings; valid files still parse strictly (duplicate-key protection retained for the non-bracket case); a focused unit test covers a bracketed-token-then-colon body round-trip; pnpm build and coverage gate pass; pm-changelog item_count rises to include recovered closed items.
+parent: pm-rnpb
+comments[2]{created_at,author,text}:
+  "2026-05-24T06:36:34.360Z",claude-code-agent,"Root cause confirmed and fixed. Added src/core/item/toon-decode.ts with decodeToonItemContent(): try strict decode, fall back to lenient on failure, rethrow strict error if lenient also fails. Wired into parseToonItemDocument (item-format.ts) which now emits onWarning 'toon_item_decoded_with_lenient_fallback' on the fallback path. Verified against freshly-built dist: all 16 previously-unreadable items now load (16/16), pm list emits zero item_list_item_read_failed warnings, and a valid file parses identically under strict vs non-strict (duplicate-key protection retained for normal docs). New module added to vitest include for 100% coverage; item-format.ts is already in both include+exclude (not gated)."
+  "2026-05-24T07:00:10.677Z",claude-code-agent,"COORDINATOR VERIFIED 2026-05-24: full coverage gate green (108 files, 1621 tests, 100% stmts/branch/funcs/lines), static-quality-gate passed, typecheck clean, secret-scan clean. Recovery is SILENT (no health-flipping warning) — pm health now ok:true (was ok:false from 16 read failures); pm validate ok:true checked_items 837 (was 820); 16/16 items load. Dogfooded in temp repo: created an item with a bracketed-token-then-colon description, read it back byte-identical, zero read-failed warnings. Downstream pm-changelog generator gap tracked separately as pm-hybj (bundled stale SDK)."
+files[4]{path,scope,note}:
+  src/core/item/item-format.ts,project,null
+  src/core/item/toon-decode.ts,project,null
+  tests/unit/toon-decode.spec.ts,project,null
+  vitest.config.ts,project,null
+body: ""

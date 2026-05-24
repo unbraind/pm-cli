@@ -6,16 +6,21 @@ status: open
 priority: 3
 tags[3]: code-quality,dedup,status
 created_at: "2026-05-22T19:16:34.739Z"
-updated_at: "2026-05-22T19:16:34.739Z"
+updated_at: "2026-05-24T07:00:12.520Z"
+assignee: terminal-status-dedup
 author: codex-duplicate-audit
 acceptance_criteria: Shared runtime status helpers normalize configured statuses and test terminal membership; list/search/context/close/dedupe-audit use those helpers; custom status registry behavior remains covered; focused status/list/search tests and pnpm build pass.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-05-22T19:16:34.739Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'terminal status statusRegistry terminal_statuses isTerminal normalizeStatusInput' found closed historical status items and no active exact dedup item."
-files[5]{path,scope,note}:
+  "2026-05-24T06:43:07.905Z",terminal-status-dedup,"DONE (terminal-status-dedup): Extracted two shared runtime status helpers into src/core/item/status.ts: normalizeStatusForRegistry(status, registry) = normalizeStatusInput(status, registry) ?? status, and isTerminalStatus(status, registry) = registry.terminal_statuses.has(normalizeStatusForRegistry(status, registry)). These preserve the exact prior semantics (registry-aware normalization with raw-value fallback). Replaced the duplicated local isTerminal/normalizeStatusForRegistry blocks in 5 command files: list.ts (removed local isTerminal, 3 call sites -> isTerminalStatus), search.ts (removed local isTerminal, 2 call sites; dropped now-unused normalizeStatusInput import), close.ts (removed local isTerminal, 2 call sites; dropped now-unused ItemStatus import), context.ts (removed local normalizeStatusForRegistry + isTerminal, now imported from status.ts; 1 isTerminal call site -> isTerminalStatus), dedupe-audit.ts (local isTerminal now delegates to isTerminalStatus when dedupeStatusRegistry is set, preserving the module-state default-set fallback for the unreachable null path). status.ts is already in vitest.config.ts include (100% gated) so NO new include line is required. Extended tests/unit/status-normalization.spec.ts with describe blocks for normalizeStatusForRegistry (known/alias/raw-fallback) and isTerminalStatus (built-in terminal closed+canceled, non-terminal open+in_progress, custom registry terminal+alias+non-terminal, raw-fallback for unknown/blank) using resolveRuntimeStatusRegistry over SETTINGS_DEFAULTS.schema and a custom schema. tsc --noEmit: exit 0. Focused tests: 6 spec files (status-normalization, list/search/context/close/dedupe-audit command specs) all pass = 96 tests. Coordinator: CHANGELOG ### Changed bullet -> 'Extract shared isTerminalStatus/normalizeStatusForRegistry helpers to src/core/item/status.ts; deduplicate runtime terminal-status checks across list/search/context/close/dedupe-audit commands (pm-i04b)'."
+  "2026-05-24T07:00:12.520Z",claude-code-agent,"COORDINATOR VERIFIED 2026-05-24: combined full coverage gate green (1621 tests, 100%), static-quality-gate passed (clones gone), typecheck clean. Dogfooded list/search/context/close terminal-status flows in temp repo — all correct."
+files[7]{path,scope,note}:
+  src/cli/commands/close.ts,project,terminal check clone
+  src/cli/commands/context.ts,project,status normalize terminal clone
+  src/cli/commands/dedupe-audit.ts,project,terminal check clone
   src/cli/commands/list.ts,project,isTerminal clone
   src/cli/commands/search.ts,project,isTerminal clone
-  src/cli/commands/context.ts,project,status normalize terminal clone
-  src/cli/commands/close.ts,project,terminal check clone
-  src/cli/commands/dedupe-audit.ts,project,terminal check clone
+  src/core/item/status.ts,project,null
+  tests/unit/status-normalization.spec.ts,project,null
 body: ""

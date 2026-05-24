@@ -7,6 +7,11 @@ import type {
   PmSettings,
 } from "../../types/index.js";
 import { ITEM_TYPE_VALUES } from "../../types/index.js";
+import {
+  normalizeItemTypeDefinition as normalizeSharedItemTypeDefinition,
+  normalizeItemTypeStringList,
+  strictPolicyCommand,
+} from "./item-type-definition.js";
 
 export const DEFAULT_REQUIRED_CREATE_FIELDS = [
   "title",
@@ -323,12 +328,6 @@ export interface ItemTypeRegistry {
   alias_to_type: Record<string, string>;
 }
 
-function normalizeList(values: string[] | undefined): string[] {
-  return [...new Set((values ?? []).map((value) => value.trim()).filter((value) => value.length > 0))].sort((left, right) =>
-    left.localeCompare(right),
-  );
-}
-
 function normalizeCommandOptionToken(value: string): string {
   return value.trim().replace(/^--+/, "").toLowerCase();
 }
@@ -373,89 +372,11 @@ function toDefaultFolder(name: string): string {
   return normalized.endsWith("s") ? normalized : `${normalized}s`;
 }
 
-function normalizeOptionDefinition(option: ItemTypeOptionDefinition): ItemTypeOptionDefinition | null {
-  const key = option.key.trim();
-  if (key.length === 0) {
-    return null;
-  }
-  return {
-    key,
-    values: normalizeList(option.values),
-    required: option.required === true ? true : undefined,
-    aliases: (() => {
-      const aliases = normalizeList(option.aliases);
-      return aliases.length > 0 ? aliases : undefined;
-    })(),
-    description: (() => {
-      const description = option.description?.trim();
-      return description && description.length > 0 ? description : undefined;
-    })(),
-  };
-}
-
-function normalizeCommandOptionPolicyDefinition(
-  policy: ItemTypeCommandOptionPolicy,
-): ItemTypeCommandOptionPolicy | null {
-  const normalizedCommand = policy.command.trim().toLowerCase();
-  if (normalizedCommand !== "create" && normalizedCommand !== "update") {
-    return null;
-  }
-  const option = policy.option.trim();
-  if (option.length === 0) {
-    return null;
-  }
-  return {
-    command: normalizedCommand,
-    option,
-    required: policy.required,
-    visible: policy.visible,
-    enabled: policy.enabled,
-  };
-}
-
+// Runtime registry consumes untrusted extension/file definitions, so it uses the
+// strict policy-command resolver (trim + lowercase, reject non-create/update). All
+// other normalization is single-sourced from ./item-type-definition.ts (pm-v798).
 function normalizeTypeDefinition(definition: ItemTypeDefinition): ItemTypeDefinition | null {
-  const name = definition.name.trim();
-  if (name.length === 0) {
-    return null;
-  }
-  const hasRequiredCreateFields = definition.required_create_fields !== undefined;
-  const hasRequiredCreateRepeatables = definition.required_create_repeatables !== undefined;
-  const hasOptions = definition.options !== undefined;
-  const hasCommandOptionPolicies = definition.command_option_policies !== undefined;
-  const folder = definition.folder?.trim();
-  const options = (definition.options ?? [])
-    .map((option) => normalizeOptionDefinition(option))
-    .filter((option): option is ItemTypeOptionDefinition => option !== null)
-    .sort((left, right) => left.key.localeCompare(right.key));
-  const commandOptionPolicies = (() => {
-    const dedupedByKey = new Map<string, ItemTypeCommandOptionPolicy>();
-    for (const policy of definition.command_option_policies ?? []) {
-      const normalized = normalizeCommandOptionPolicyDefinition(policy);
-      if (!normalized) {
-        continue;
-      }
-      dedupedByKey.set(`${normalized.command}:${normalized.option.toLowerCase()}`, normalized);
-    }
-    return [...dedupedByKey.values()].sort((left, right) =>
-      left.command === right.command
-        ? left.option.localeCompare(right.option)
-        : left.command.localeCompare(right.command),
-    );
-  })();
-  return {
-    name,
-    folder: folder && folder.length > 0 ? folder : undefined,
-    aliases: (() => {
-      const aliases = normalizeList(definition.aliases);
-      return aliases.length > 0 ? aliases : undefined;
-    })(),
-    required_create_fields: hasRequiredCreateFields ? normalizeList(definition.required_create_fields) : undefined,
-    required_create_repeatables: hasRequiredCreateRepeatables
-      ? normalizeList(definition.required_create_repeatables)
-      : undefined,
-    options: hasOptions ? options : undefined,
-    command_option_policies: hasCommandOptionPolicies ? commandOptionPolicies : undefined,
-  };
+  return normalizeSharedItemTypeDefinition(definition, { resolvePolicyCommand: strictPolicyCommand });
 }
 
 function coerceTypeDefinitionFromUnknown(raw: unknown): ItemTypeDefinition | null {
@@ -548,13 +469,16 @@ function applyTypeDefinitions(
     const existing = target.get(lowerName);
     const keepName = existing?.name ?? normalizedDefinition.name;
     const folder = normalizedDefinition.folder ?? existing?.folder ?? toDefaultFolder(keepName);
-    const aliases = normalizeList([...(existing?.aliases ?? []), ...(normalizedDefinition.aliases ?? [])]);
+    const aliases = normalizeItemTypeStringList([
+      ...(existing?.aliases ?? []),
+      ...(normalizedDefinition.aliases ?? []),
+    ]);
     const requiredCreateFields = normalizedDefinition.required_create_fields
-      ? normalizeList(normalizedDefinition.required_create_fields)
+      ? normalizeItemTypeStringList(normalizedDefinition.required_create_fields)
       : existing?.required_create_fields ??
         (preserveBuiltinDefaults ? [...DEFAULT_REQUIRED_CREATE_FIELDS] : []);
     const requiredCreateRepeatables = normalizedDefinition.required_create_repeatables
-      ? normalizeList(normalizedDefinition.required_create_repeatables)
+      ? normalizeItemTypeStringList(normalizedDefinition.required_create_repeatables)
       : existing?.required_create_repeatables ??
         (preserveBuiltinDefaults ? [...DEFAULT_REQUIRED_CREATE_REPEATABLES] : []);
     const options = normalizedDefinition.options

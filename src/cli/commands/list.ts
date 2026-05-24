@@ -1,6 +1,6 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { normalizeStatusInput } from "../../core/item/status.js";
+import { isTerminalStatus, normalizeStatusInput } from "../../core/item/status.js";
 import { resolveItemTypeRegistry, type ItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseIntegerLimit, parsePriority, parseType } from "../shared-parsers.js";
 import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
@@ -77,14 +77,9 @@ export interface ListResult {
   warnings?: string[];
 }
 
-function isTerminal(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
-  const normalized = normalizeStatusInput(status, statusRegistry) ?? status;
-  return statusRegistry.terminal_statuses.has(normalized);
-}
-
 function compareDefaultSort(left: ListedItem, right: ListedItem, statusRegistry: RuntimeStatusRegistry): number {
-  const leftTerminal = isTerminal(left.status, statusRegistry);
-  const rightTerminal = isTerminal(right.status, statusRegistry);
+  const leftTerminal = isTerminalStatus(left.status, statusRegistry);
+  const rightTerminal = isTerminalStatus(right.status, statusRegistry);
   if (leftTerminal !== rightTerminal) {
     return leftTerminal ? 1 : -1;
   }
@@ -291,7 +286,7 @@ function applyFilters(
 
   return items.filter((item) => {
     if (statusSet && !statusSet.has(item.status)) return false;
-    if (options.excludeTerminal && isTerminal(item.status, statusRegistry)) return false;
+    if (options.excludeTerminal && isTerminalStatus(item.status, statusRegistry)) return false;
     if (typeFilter && item.type !== typeFilter) return false;
     if (tagFilter && !item.tags.includes(tagFilter)) return false;
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
