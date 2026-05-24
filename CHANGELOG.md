@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pm delete --dry-run` previews the item file that would be deleted without mutating item storage or history, giving the single-item destructive path the same preview affordance as broader maintenance commands (pm-tobi / pm-5k2w).
 
 ### Changed
+- Update npm devDependencies to latest minor/patch: `@sentry/cli` 3.4.3, `@toon-format/toon` 2.3.0, `@types/node` 25.9.1, `@vitest/coverage-v8` 4.1.7, `tsx` 4.22.3, `vitest` 4.1.7 (pm-a2g6)
 - The invalid-type error from `pm create`/`pm update` now appends a discoverable hint pointing agents at the new registration command: `To register a custom type, run: pm schema add-type "X" (writes .agents/pm/schema/types.json).` (pm-e1va).
 - Daily release automation now fails loudly when source, package, script, or workflow changes exist since the last tag but `CHANGELOG.md` has an empty `[Unreleased]` section. The JSON result includes `changelog_required_files` and a deterministic `release_changelog_required:source_or_package_changes_without_unreleased_entry` warning so agents can fix the release blocker without reading the full workflow log.
 - `pm init` now prints a concise default summary while preserving the full settings tree behind `--verbose`; `--json` output is unchanged for machine consumers (pm-fuat / pm-5k2w).
