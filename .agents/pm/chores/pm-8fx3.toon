@@ -6,10 +6,13 @@ status: closed
 priority: 3
 tags[4]: code-quality,dedup,serialization,tests
 created_at: "2026-05-22T19:09:00.475Z"
-updated_at: "2026-05-24T01:02:26.599Z"
+updated_at: "2026-05-24T01:53:14.366Z"
 author: codex-dup-audit
 acceptance_criteria: shared-constants tests no longer inline-copy the entire FRONT_MATTER_KEY_ORDER array; the replacement still catches accidental front-matter ordering or missing required keys; serialization/release-readiness expectations remain deterministic; focused shared-constants tests and pnpm build pass.
 parent: pm-rnpb
+resolution: Closed by replacing the copied front-matter key-order literal with focused contract assertions.
+expected_result: Shared-constants tests preserve front-matter ordering guarantees without duplicating the full production key-order array.
+actual_result: Item closed after the duplicate literal was removed and focused shared-constants/build verification passed.
 comments[1]{created_at,author,text}:
   "2026-05-22T19:09:25.448Z",codex-dup-audit,"Duplicate-check evidence: before creating, searched existing items for FRONT_MATTER_KEY_ORDER/shared constants/key-order test duplication. Existing pm-why9 covers runtime-schema vs constants defaults, not front-matter key-order contract literals. jscpd and manual inspection confirmed constants.ts:46-115 duplicates shared-constants-errors.spec.ts:53-122."
 files[2]{path,scope,note}:

@@ -3,6 +3,13 @@ import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  limitAnnotationEntries,
+  parseAnnotationTextInput,
+  readAnnotationEntries,
+  runAnnotationCommand,
+  wrapOwnershipConflict,
+} from "../../src/cli/commands/annotation-command.js";
 import { runComments } from "../../src/cli/commands/comments.js";
 import { runCommentsAudit } from "../../src/cli/commands/comments-audit.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
@@ -30,6 +37,62 @@ function setGovernancePreset(context: TempPmContext, preset: "minimal" | "defaul
 }
 
 describe("runComments", () => {
+  it("covers shared annotation helper edge branches", async () => {
+    expect(limitAnnotationEntries(["a", "b"], undefined)).toEqual(["a", "b"]);
+    expect(limitAnnotationEntries(["a", "b"], 0)).toEqual([]);
+    expect(parseAnnotationTextInput("   ")).toBe("");
+    expect(parseAnnotationTextInput("plain text")).toBe("plain text");
+    expect(parseAnnotationTextInput("text:")).toBe("text:");
+    expect(parseAnnotationTextInput("text=hello,scope:project")).toBe("text=hello,scope:project");
+    expect(parseAnnotationTextInput("text:", { stripPlainTextPrefix: true })).toBe("text:");
+    expect(readAnnotationEntries({ comments: "not-array" }, "comments")).toEqual([]);
+    expect(readAnnotationEntries({ comments: [{ text: "ok" }] }, "comments")).toEqual([{ text: "ok" }]);
+
+    const nonConflict = new Error("not an ownership conflict");
+    expect(() =>
+      wrapOwnershipConflict(nonConflict, {
+        required: "required",
+        examples: [],
+        nextSteps: [],
+      }),
+    ).toThrow(nonConflict);
+
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-shared-helper-edges");
+      const metaWithoutLimit = await runComments(id, { includeMeta: true }, { path: context.pmPath });
+      expect(metaWithoutLimit).toMatchObject({
+        count: 0,
+        total_count: 0,
+        returned_count: 0,
+        has_more: false,
+      });
+      expect(metaWithoutLimit).not.toHaveProperty("limit");
+
+      await expect(
+        runAnnotationCommand<"comments", { created_at: string; author: string; text: string }>(
+          id,
+          {},
+          { path: context.pmPath },
+          {
+            input: { mode: "add" },
+            collectionKey: "comments",
+            op: "comment_add",
+            parseText: (raw) => raw,
+            allowAuditBypass: false,
+            conflictGuidance: {
+              required: "required",
+              examples: [],
+              nextSteps: [],
+            },
+          },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "--add text cannot be empty",
+      });
+    });
+  });
+
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-comments-not-init-"));
     try {

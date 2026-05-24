@@ -7,6 +7,7 @@ import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { resolveAuthor } from "../../core/shared/author.js";
+import { wrapOwnershipConflict } from "./annotation-command.js";
 
 export interface ClaimResult {
   item: Record<string, unknown>;
@@ -124,23 +125,14 @@ export async function runRelease(
       },
     });
   } catch (error: unknown) {
-    if (
-      error instanceof PmCliError &&
-      error.exitCode === EXIT_CODE.CONFLICT &&
-      error.message.includes("is assigned to") &&
-      error.message.includes("Use --force to override")
-    ) {
-      throw new PmCliError(error.message, error.exitCode, {
-        code: "ownership_conflict",
-        required: "For audited non-owner handoffs, prefer --allow-audit-release before considering --force.",
-        examples: ['pm release pm-a1b2 --author "reviewer" --allow-audit-release'],
-        nextSteps: [
-          "Use --allow-audit-release for append-only release handoffs that only clear assignee metadata.",
-          "Use --force only when an explicit override is approved for broader ownership conflicts.",
-        ],
-      });
-    }
-    throw error;
+    wrapOwnershipConflict(error, {
+      required: "For audited non-owner handoffs, prefer --allow-audit-release before considering --force.",
+      examples: ['pm release pm-a1b2 --author "reviewer" --allow-audit-release'],
+      nextSteps: [
+        "Use --allow-audit-release for append-only release handoffs that only clear assignee metadata.",
+        "Use --force only when an explicit override is approved for broader ownership conflicts.",
+      ],
+    });
   }
 
   return {
