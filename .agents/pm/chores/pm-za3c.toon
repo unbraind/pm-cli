@@ -2,16 +2,27 @@ id: pm-za3c
 title: Deduplicate item-store mutation and delete lifecycle setup
 description: "Duplicate audit 2026-05-22: jscpd found src/core/store/item-store.ts repeats the locate/read/lock/ownership-conflict setup in mutateItem and deleteItem. Representative clone: item-store.ts:298-322 vs item-store.ts:466-490, with the same registry resolution, locateItem, buildItemNotFoundError, acquireLock, readLocatedItem, assignee trim, governance lookup, and strict/warn ownership handling. Existing pm-ols6 covers CLI command ownership-conflict guidance wrappers, and pm-why9 covers CLI parser blocks/item-record casts, but no active item covers this core store lifecycle duplication. Fix by extracting shared helpers for locating and locking an item plus evaluating ownership conflict, while keeping mutate/delete-specific history and hook behavior explicit."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[4]: code-quality,dedup,ownership,store
 created_at: "2026-05-22T19:08:26.625Z"
-updated_at: "2026-05-22T19:09:25.392Z"
+updated_at: "2026-05-24T08:21:33.053Z"
 author: codex-dup-audit
 acceptance_criteria: mutateItem and deleteItem share one core locate/read/lock/ownership setup path; strict and warn ownership behavior stays unchanged; delete-specific and mutate-specific history/hook behavior remains explicit; focused item-store tests and pnpm build pass.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+resolution: mutateItem and deleteItem now share prepareLockedItem for locate/read/lock/ownership setup while keeping mutation/delete history and service override behavior explicit.
+expected_result: "Core store lifecycle duplication is removed without changing strict/warn ownership behavior, dry-run delete behavior, lock release, history writes, or rollback paths."
+actual_result: "Focused linked tests passed (6 files / 120 tests), manual temp-project lifecycle dogfood passed, and full release gate passed with 108 files / 1623 tests / 100% coverage plus package-first dogfood and Sentry/telemetry required gate."
+comments[4]{created_at,author,text}:
   "2026-05-22T19:09:25.392Z",codex-dup-audit,"Duplicate-check evidence: before creating, searched existing items for mutateItem/deleteItem/item-store/ownership/lock duplicates. Relevant open items pm-ols6 and pm-why9 cover CLI guidance/parser duplication, not core item-store locate/read/lock setup. jscpd and manual inspection confirmed item-store.ts:298-322 duplicates item-store.ts:466-490."
+  "2026-05-24T08:09:24.169Z",codex-active-work,"Implementation evidence: extracted prepareLockedItem plus bypassesAssigneeConflict inside src/core/store/item-store.ts so mutateItem and deleteItem share item-type registry resolution, locate/not-found handling, lock acquisition, readLocatedItem parsing, governance ownership strict/warn handling, and lock release on preparation errors. Mutate/delete write, history, hook, dry-run, rollback, and service override paths remain explicit in their callers. Verification so far: npx tsc --noEmit -p tsconfig.json passed; PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- item-store.spec.ts delete-command.spec.ts update-command.spec.ts comments-command.spec.ts notes-learnings-command.spec.ts claim-command.spec.ts passed 6 files / 120 tests."
+  "2026-05-24T08:13:22.649Z",codex-active-work,"Manual dogfood evidence: in temp project /tmp/pm-item-store-dogfood-SJkygD with isolated PM_GLOBAL_PATH /tmp/pm-item-store-global-cLBp8r, node dist/cli.js init/create/claim/update/delete exercised the shared prepareLockedItem path. Strict governance rejected cross-author update with exit 4 ownership conflict; --force update succeeded; warn governance delete --dry-run emitted ownership_warning:assignee_conflict:pm-6y9k:owner-a and kept the item; forced delete succeeded. Also installed npm:pm-changelog, package doctor --detail deep returned ok=true, and changelog generate included a separate closed smoke item pm-uwh8. A first dogfood attempt used invalid config syntax (extra value arg) and correctly returned invalid_command_usage; rerun used config project set governance-ownership-enforcement --policy <strict|warn> from runtime help/contracts."
+  "2026-05-24T08:14:08.306Z",codex-active-work,"Gate evidence: pnpm build passed; node scripts/release/static-quality-gate.mjs --json passed with only the existing under-threshold runtime-schema/constants duplicate chunk; pnpm security:scan passed with no credential-like secrets. Linked pm test rerun passed in schema sandbox: 6 files / 120 tests."
 files[1]{path,scope,note}:
   src/core/store/item-store.ts,project,mutateItem/deleteItem lifecycle setup clone
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- item-store.spec.ts delete-command.spec.ts update-command.spec.ts comments-command.spec.ts notes-learnings-command.spec.ts claim-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpji3txy-c5d53z,test,passed,"2026-05-24T08:13:22.647Z","2026-05-24T08:13:57.718Z","2026-05-24T08:13:57.718Z",null,null,1,0,0,null,null,null
+close_reason: "Implemented shared prepareLockedItem lifecycle setup for mutateItem/deleteItem with focused tests, static/security/build gates, and manual temp-project dogfood passing."
 body: ""

@@ -132,6 +132,7 @@
 
 ### Removed
 
+- Deduplicate item-store mutation and delete lifecycle setup (pm-za3c)
 - CLI ergonomics polish: concise init, help alias collapse, named priorities, package install hints, starter templates, delete dry-run (pm-fuat)
 - Default-safety policy for destructive pm commands \(gc keeps delete-by-default; add pm delete --dry-run\) (pm-tobi)
 - Remove dead code: command-aware.ts module, 5 orphaned exported functions, unused undici dependency (pm-b7do)
@@ -158,6 +159,9 @@
 
 ### Other
 
+- Deduplicate recurrence weekday ordering helper (pm-max1)
+- Deduplicate item-type definition normalization across settings and registry (pm-v798)
+- Deduplicate runtime terminal-status checks across query commands (pm-i04b)
 - Centralize audit ownership-conflict guidance (pm-ols6)
 - Deduplicate comments, notes, and learnings command stacks (pm-9y8q)
 - Deduplicate mutation author fallback resolution across commands (pm-xh0y)

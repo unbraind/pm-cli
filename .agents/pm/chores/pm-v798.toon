@@ -2,15 +2,17 @@ id: pm-v798
 title: Deduplicate item-type definition normalization across settings and registry
 description: "Duplicate audit 2026-05-22: the repo static quality gate with --duplicate-window 10 found the command-option-policy normalization block duplicated between src/core/item/type-registry.ts:430-443 and src/core/store/settings.ts:340-353. Manual inspection shows the surrounding normalizeTypeDefinition/normalizeItemTypeDefinition functions also repeat the same name trim, optional folder handling, aliases, required_create_fields, required_create_repeatables, options normalization, command_option_policies dedupe key, and stable sort semantics. Search found pm-e1va for schema/types.json runtime loading and pm-why9 for CLI parser/default-status duplication, but no active item for single-sourcing item-type definition normalization itself. Fix by extracting a shared item-type definition normalizer/factory that both settings persistence and runtime registry consume, with adapters only where each layer truly differs."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[4]: code-quality,dedup,item-types,schema
 created_at: "2026-05-22T19:04:18.221Z"
-updated_at: "2026-05-24T07:02:49.830Z"
-assignee: item-type-norm-dedup
+updated_at: "2026-05-24T08:21:15.321Z"
 author: codex-duplication-audit
 acceptance_criteria: "Settings and runtime registry use one shared normalization path for ItemTypeDefinition objects; command_option_policies dedupe/sort semantics are tested once and consumed by both callers; behavior stays compatible for blank names, optional aliases, folder trimming, required_create_* fields, options, and policy arrays; focused settings/type-registry tests plus pnpm build pass."
 parent: pm-rnpb
+resolution: Shared item-type definition normalizer now serves settings persistence and runtime registry normalization.
+expected_result: Settings and registry share one tested normalization path while preserving policy-command adapter differences.
+actual_result: "PR #58 merged src/core/item/item-type-definition.ts, adapter usage, and focused tests with green CI."
 comments[5]{created_at,author,text}:
   "2026-05-22T19:05:02.964Z",codex-duplication-audit,"Evidence: duplicate-check searches before creation included 'duplicate duplicated duplication repeated copy-paste code logic tests text', 'Deduplicate', 'item type registry settings default definitions custom item types duplicate', plus reads of pm-e1va and pm-why9. Similar existing items cover schema/types runtime loading and default status/workflow duplication, but not the duplicated ItemTypeDefinition normalization logic in settings.ts and type-registry.ts. Static scan evidence: node scripts/release/static-quality-gate.mjs --duplicate-window 10 --max-duplicate-chunks 200 --json reported src/core/item/type-registry.ts:434 vs src/core/store/settings.ts:344."
   "2026-05-24T06:43:02.440Z",item-type-norm-dedup,"START: claimed pm-v798. Diffed normalizeTypeDefinition (type-registry.ts:416-459) vs normalizeItemTypeDefinition (settings.ts:323-364). Only genuine layer difference: policy-command handling. Registry validates+lowercases command (untrusted extension/file input, rejects non-create/update); settings keeps the already-validated typed command verbatim. normalizeList === normalizeStringList byte-for-byte; option + policy dedupe/sort identical. Extracting a shared normalizer with an injected ResolvePolicyCommand adapter."
@@ -20,4 +22,5 @@ comments[5]{created_at,author,text}:
 files[2]{path,scope,note}:
   src/core/item/type-registry.ts,project,runtime item-type normalization clone
   src/core/store/settings.ts,project,settings item-type normalization clone
+close_reason: "Closed after merged PR #58 (501fb16f) landed the shared item-type definition normalizer, tests, and green GitHub checks; tracker item had remained open after merge."
 body: ""
