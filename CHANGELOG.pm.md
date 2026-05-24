@@ -156,6 +156,7 @@
 
 ### Other
 
+- Deduplicate front-matter key-order contract literals in tests (pm-8fx3)
 - Install and validate pm-changelog package (pm-7811)
 - Linked test sandbox cleanup can fail with ENOTEMPTY (pm-u43m)
 - Extract shared direct CLI spawn helper for integration tests (pm-401l)
