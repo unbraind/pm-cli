@@ -1,0 +1,432 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+import fg from "fast-glob";
+import { pathExists } from "../../core/fs/fs-utils.js";
+import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { createStdinTokenResolver, parseCsvKv } from "../../core/item/parse.js";
+import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import type { GlobalOptions } from "../../core/shared/command-types.js";
+import { PmCliError } from "../../core/shared/errors.js";
+import { listAllFrontMatter, locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
+import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
+import { readSettings } from "../../core/store/settings.js";
+import { SCOPE_VALUES } from "../../types/index.js";
+import { resolveAuthor } from "../../core/shared/author.js";
+import type { LinkScope } from "../../types/index.js";
+
+export type LinkedArtifact = {
+  path: string;
+  scope: LinkScope;
+  note?: string;
+};
+
+export interface LinkedArtifactCommandOptions {
+  add?: string[];
+  addGlob?: string[];
+  remove?: string[];
+  migrate?: string[];
+  list?: boolean;
+  appendStable?: boolean;
+  validatePaths?: boolean;
+  audit?: boolean;
+  author?: string;
+  message?: string;
+  force?: boolean;
+}
+
+export interface PathMigration {
+  from: string;
+  to: string;
+}
+
+export interface AddGlobEntry {
+  pattern: string;
+  scope: LinkScope;
+  note?: string;
+}
+
+export interface LinkedPathValidation {
+  checked: number;
+  existing_files: string[];
+  missing_paths: string[];
+  non_file_paths: string[];
+}
+
+export interface LinkedPathAuditEntry {
+  path: string;
+  linked_by_count: number;
+  linked_item_ids: string[];
+}
+
+export interface LinkedArtifactResult {
+  id: string;
+  changed: boolean;
+  count: number;
+  migrations_applied?: number;
+  validation?: LinkedPathValidation;
+  audit?: LinkedPathAuditEntry[];
+  artifacts: LinkedArtifact[];
+}
+
+/**
+ * Configuration that adapts the shared linked-artifact command core to a
+ * specific resource kind (files or docs) while preserving every behavioral
+ * detail of the original twin implementations.
+ */
+export interface LinkedArtifactKindConfig {
+  /** Metadata key under which the artifacts are stored (e.g. "files" | "docs"). */
+  metadataKey: "files" | "docs";
+  /** Mutation op recorded in history (e.g. "files_add" | "docs_add"). */
+  op: "files_add" | "docs_add";
+  /** Noun used in the "bare <noun> path" --add usage error (e.g. "file" | "doc"). */
+  bareNoun: "file" | "doc";
+  /**
+   * Whether this kind honors the append-stable option. files supports it;
+   * docs always sorts and must never expose append-stable behavior.
+   */
+  supportsAppendStable: boolean;
+}
+
+export function ensureScope(raw: string | undefined): LinkScope {
+  const value = (raw ?? "project") as LinkScope;
+  if (!SCOPE_VALUES.includes(value)) {
+    throw new PmCliError(
+      `Invalid scope "${raw}". Valid scopes: ${SCOPE_VALUES.join(", ")} (default: project).`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return value;
+}
+
+export function looksLikeStructuredPathEntry(raw: string): boolean {
+  if (raw.startsWith("```") || raw.includes("\n")) {
+    return true;
+  }
+  return /^(?:[-*+]\s+)?(?:path|scope|note)\s*[:=]/i.test(raw);
+}
+
+export function parseAddEntries(raw: string[] | undefined, bareNoun: "file" | "doc"): LinkedArtifact[] {
+  if (!raw) return [];
+  return raw.map((entry) => {
+    const trimmed = entry.trim();
+    const kv = looksLikeStructuredPathEntry(trimmed) ? parseCsvKv(entry, "--add") : { path: trimmed };
+    if (!kv.path) {
+      throw new PmCliError(`--add requires path=<value> or a bare ${bareNoun} path`, EXIT_CODE.USAGE);
+    }
+    return {
+      path: kv.path,
+      scope: ensureScope(kv.scope),
+      note: kv.note?.trim() || undefined,
+    };
+  });
+}
+
+export function parseAddGlobEntries(raw: string[] | undefined): AddGlobEntry[] {
+  if (!raw) return [];
+  return raw.map((entry) => {
+    const trimmed = entry.trim();
+    if (!trimmed) {
+      throw new PmCliError("--add-glob requires a glob pattern value", EXIT_CODE.USAGE);
+    }
+    if (trimmed.includes("=") || /^(?:[-*+]\s+)?(?:pattern|glob|path)\s*[:=]/i.test(trimmed) || trimmed.startsWith("```")) {
+      const kv = parseCsvKv(trimmed, "--add-glob");
+      const pattern = kv.pattern?.trim() || kv.glob?.trim() || kv.path?.trim();
+      if (!pattern) {
+        throw new PmCliError("--add-glob key/value form requires pattern=<glob>", EXIT_CODE.USAGE);
+      }
+      return {
+        pattern,
+        scope: ensureScope(kv.scope),
+        note: kv.note?.trim() || undefined,
+      };
+    }
+    return {
+      pattern: trimmed,
+      scope: "project",
+    };
+  });
+}
+
+export function parseRemoveEntries(raw: string[] | undefined): string[] {
+  if (!raw) return [];
+  return raw.map((entry) => {
+    const trimmed = entry.trim();
+    if (!trimmed) {
+      throw new PmCliError("--remove requires a path value", EXIT_CODE.USAGE);
+    }
+    if (trimmed.includes("=") || /^(?:[-*+]\s+)?path\s*[:=]/i.test(trimmed) || trimmed.startsWith("```")) {
+      const kv = parseCsvKv(trimmed, "--remove");
+      if (!kv.path) {
+        throw new PmCliError("--remove key/value form requires path=<value>", EXIT_CODE.USAGE);
+      }
+      return kv.path;
+    }
+    return trimmed;
+  });
+}
+
+export function parseMigrateEntries(raw: string[] | undefined): PathMigration[] {
+  if (!raw) return [];
+  return raw.map((entry) => {
+    const kv = parseCsvKv(entry, "--migrate");
+    const from = kv.from?.trim();
+    const to = kv.to?.trim();
+    if (!from || !to) {
+      throw new PmCliError("--migrate requires from=<value> and to=<value>", EXIT_CODE.USAGE);
+    }
+    return { from, to };
+  });
+}
+
+export function applyPathMigrations(artifactPath: string, migrations: PathMigration[]): string {
+  let next = artifactPath;
+  for (const migration of migrations) {
+    if (next.startsWith(migration.from)) {
+      next = `${migration.to}${next.slice(migration.from.length)}`;
+    }
+  }
+  return next;
+}
+
+export function normalizeLinkedPath(value: string): string {
+  return value.split(path.sep).join("/");
+}
+
+export async function expandAddGlobEntries(entries: AddGlobEntry[]): Promise<LinkedArtifact[]> {
+  const expanded: LinkedArtifact[] = [];
+  for (const entry of entries) {
+    const absolutePattern = path.isAbsolute(entry.pattern);
+    const matches = await fg(entry.pattern, {
+      cwd: process.cwd(),
+      absolute: absolutePattern,
+      onlyFiles: true,
+      dot: true,
+      unique: true,
+      followSymbolicLinks: true,
+    });
+    const sortedMatches = [...new Set(matches.map((match) => normalizeLinkedPath(path.normalize(match))))].sort((left, right) =>
+      left.localeCompare(right),
+    );
+    for (const matchedPath of sortedMatches) {
+      expanded.push({
+        path: matchedPath,
+        scope: entry.scope,
+        note: entry.note,
+      });
+    }
+  }
+  return expanded;
+}
+
+export function artifactKey(value: Pick<LinkedArtifact, "path" | "scope">): string {
+  return `${value.path}::${value.scope}`;
+}
+
+export function sortLinkedArtifacts(artifacts: LinkedArtifact[]): LinkedArtifact[] {
+  return [...artifacts].sort((left, right) => {
+    const byPath = left.path.localeCompare(right.path);
+    if (byPath !== 0) return byPath;
+    return left.scope.localeCompare(right.scope);
+  });
+}
+
+export function dedupeLinkedArtifacts(artifacts: LinkedArtifact[]): LinkedArtifact[] {
+  return [...new Map(artifacts.map((entry) => [artifactKey(entry), entry])).values()].map((entry) => ({
+    ...entry,
+    note: entry.note?.trim() || undefined,
+  }));
+}
+
+export async function validateLinkedPaths(paths: string[]): Promise<LinkedPathValidation> {
+  const uniquePaths = [...new Set(paths)].sort((left, right) => left.localeCompare(right));
+  const existingFiles: string[] = [];
+  const missingPaths: string[] = [];
+  const nonFilePaths: string[] = [];
+  for (const relativePath of uniquePaths) {
+    const resolvedPath = path.isAbsolute(relativePath) ? relativePath : path.resolve(process.cwd(), relativePath);
+    try {
+      const stats = await fs.stat(resolvedPath);
+      if (stats.isFile()) {
+        existingFiles.push(relativePath);
+      } else {
+        nonFilePaths.push(relativePath);
+      }
+    } catch (error: unknown) {
+      if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT") {
+        missingPaths.push(relativePath);
+        continue;
+      }
+      nonFilePaths.push(relativePath);
+    }
+  }
+  return {
+    checked: uniquePaths.length,
+    existing_files: existingFiles,
+    missing_paths: missingPaths,
+    non_file_paths: nonFilePaths,
+  };
+}
+
+export function buildLinkedPathAudit(
+  paths: string[],
+  allItems: Array<{ id: string; artifacts?: LinkedArtifact[] }>,
+): LinkedPathAuditEntry[] {
+  const index = new Map<string, Set<string>>();
+  for (const item of allItems) {
+    for (const linkedArtifact of item.artifacts ?? []) {
+      const seen = index.get(linkedArtifact.path) ?? new Set<string>();
+      seen.add(item.id);
+      index.set(linkedArtifact.path, seen);
+    }
+  }
+  return [...new Set(paths)]
+    .sort((left, right) => left.localeCompare(right))
+    .map((linkedPath) => {
+      const linkedIds = [...(index.get(linkedPath) ?? new Set<string>())].sort((left, right) => left.localeCompare(right));
+      return {
+        path: linkedPath,
+        linked_by_count: linkedIds.length,
+        linked_item_ids: linkedIds,
+      };
+    });
+}
+
+/**
+ * Shared linked-artifact list/mutate command core used by runFiles and runDocs.
+ * The kind config selects metadata key, op, bare-path noun, and whether
+ * append-stable ordering is honored, preserving each twin's exact semantics.
+ */
+export async function runLinkedArtifacts(
+  id: string,
+  options: LinkedArtifactCommandOptions,
+  global: GlobalOptions,
+  config: LinkedArtifactKindConfig,
+): Promise<LinkedArtifactResult> {
+  const { metadataKey } = config;
+  const stdinResolver = createStdinTokenResolver();
+  const pmRoot = resolvePmRoot(process.cwd(), global.path);
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
+  }
+  const settings = await readSettings(pmRoot);
+  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const resolvedAdds = await stdinResolver.resolveList(options.add, "--add");
+  const resolvedAddGlobs = await stdinResolver.resolveList(options.addGlob, "--add-glob");
+  const resolvedRemoves = await stdinResolver.resolveList(options.remove, "--remove");
+  const resolvedMigrations = await stdinResolver.resolveList(options.migrate, "--migrate");
+  const parsedAdds = parseAddEntries(resolvedAdds, config.bareNoun);
+  const addGlobs = parseAddGlobEntries(resolvedAddGlobs);
+  const expandedGlobAdds = await expandAddGlobEntries(addGlobs);
+  const adds = [...parsedAdds, ...expandedGlobAdds];
+  const removes = parseRemoveEntries(resolvedRemoves);
+  const migrations = parseMigrateEntries(resolvedMigrations);
+  const shouldMutate = adds.length > 0 || removes.length > 0 || migrations.length > 0;
+
+  const collectAuditItems = async (): Promise<Array<{ id: string; artifacts?: LinkedArtifact[] }>> =>
+    (await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema)).map((entry) => ({
+      id: entry.id,
+      artifacts: (entry as Record<string, unknown>)[metadataKey] as LinkedArtifact[] | undefined,
+    }));
+
+  if (!shouldMutate) {
+    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+    if (!located) {
+      throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
+    }
+    const loaded = await readLocatedItem(located, { schema: settings.schema });
+    const artifacts = ((loaded.document.metadata as Record<string, unknown>)[metadataKey] as LinkedArtifact[] | undefined) ?? [];
+    return {
+      id: located.id,
+      artifacts,
+      changed: false,
+      count: artifacts.length,
+      validation: options.validatePaths ? await validateLinkedPaths(artifacts.map((entry) => entry.path)) : undefined,
+      audit: options.audit ? buildLinkedPathAudit(artifacts.map((entry) => entry.path), await collectAuditItems()) : undefined,
+    };
+  }
+
+  const author = resolveAuthor(options.author, settings.author_default);
+  const result = await mutateItem({
+    pmRoot,
+    settings,
+    id,
+    op: config.op,
+    author,
+    message: options.message,
+    force: options.force,
+    mutate(document) {
+      const metadata = document.metadata as Record<string, unknown>;
+      const next = [...((metadata[metadataKey] as LinkedArtifact[] | undefined) ?? [])];
+      let migrationCount = 0;
+      if (migrations.length > 0) {
+        for (let index = 0; index < next.length; index += 1) {
+          const migratedPath = applyPathMigrations(next[index].path, migrations);
+          if (migratedPath !== next[index].path) {
+            next[index] = { ...next[index], path: migratedPath };
+            migrationCount += 1;
+          }
+        }
+      }
+      const migratedAdds = adds.map((entry) => {
+        const migratedPath = applyPathMigrations(entry.path, migrations);
+        if (migratedPath !== entry.path) {
+          migrationCount += 1;
+        }
+        return {
+          ...entry,
+          path: migratedPath,
+        };
+      });
+      const migratedRemoves = removes.map((entry) => applyPathMigrations(entry, migrations));
+      for (const add of migratedAdds) {
+        const exists = next.some((entry) => entry.path === add.path && entry.scope === add.scope);
+        if (!exists) {
+          next.push(add);
+        }
+      }
+      if (migratedRemoves.length > 0) {
+        for (let i = next.length - 1; i >= 0; i -= 1) {
+          if (migratedRemoves.includes(next[i].path)) {
+            next.splice(i, 1);
+          }
+        }
+      }
+      const deduped = dedupeLinkedArtifacts(next);
+      const normalized = config.supportsAppendStable && options.appendStable ? deduped : sortLinkedArtifacts(deduped);
+      if (normalized.length > 0) {
+        metadata[metadataKey] = normalized;
+      } else {
+        delete metadata[metadataKey];
+      }
+      return { changedFields: [metadataKey], warnings: migrationCount > 0 ? [`path_migrations_applied:${migrationCount}`] : [] };
+    },
+  });
+
+  const artifacts = ((result.item as Record<string, unknown>)[metadataKey] as LinkedArtifact[] | undefined) ?? [];
+  const migrationWarning = result.warnings.find((warning) => warning.startsWith("path_migrations_applied:"));
+  const migrationCount = migrationWarning ? Number(migrationWarning.split(":")[1] ?? "0") : 0;
+  const allItems = options.audit ? await collectAuditItems() : [];
+  return {
+    id: result.item.id,
+    artifacts,
+    changed: true,
+    count: artifacts.length,
+    migrations_applied: migrationCount > 0 ? migrationCount : undefined,
+    validation: options.validatePaths ? await validateLinkedPaths(artifacts.map((entry) => entry.path)) : undefined,
+    audit: options.audit ? buildLinkedPathAudit(artifacts.map((entry) => entry.path), allItems) : undefined,
+  };
+}
+
+/**
+ * Re-key the generic `artifacts` field to the resource-specific name (files/docs)
+ * while preserving the original key order and presence so kind-specific result
+ * shapes (and their deterministic JSON key ordering) stay byte-identical.
+ */
+export function renameArtifactsResultKey(result: LinkedArtifactResult, key: "files" | "docs"): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [field, value] of Object.entries(result)) {
+    out[field === "artifacts" ? key : field] = value;
+  }
+  return out;
+}

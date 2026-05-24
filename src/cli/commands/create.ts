@@ -49,7 +49,20 @@ import {
   parseRegressionInput,
 } from "./metadata-normalizers.js";
 import { resolveEventEndAt } from "./event-validation-messages.js";
+import { assertNoLegacyNoneToken, assertNoLegacyNoneTokens, isLegacyNoneToken } from "./legacy-none-tokens.js";
+import {
+  parseLinkedTestAssertionEqualsMap,
+  parseLinkedTestAssertionGteMap,
+  parseLinkedTestBoolean,
+  parseLinkedTestContextMode,
+  parseLinkedTestEnvClear,
+  parseLinkedTestEnvSet,
+  parseLinkedTestMinLines,
+  parseLinkedTestRegexList,
+  parseLinkedTestStringList,
+} from "./linked-test-parsers.js";
 import { looksLikeStructuredLinkedTestEntry, normalizeStructuredLinkedTestEntry } from "./linked-test-entry.js";
+import { ensureEnumValue, parseEventBoolean, parseRecurrenceRule } from "./recurrence-parsers.js";
 import type {
   CalendarEvent,
   Comment,
@@ -61,17 +74,13 @@ import type {
   LinkedFile,
   LinkedTest,
   LogNote,
-  RecurrenceRule,
   Reminder,
 } from "../../types/index.js";
 import {
   DEPENDENCY_KIND_VALUES,
   ISSUE_SEVERITY_VALUES,
-  RECURRENCE_FREQUENCY_VALUES,
-  RECURRENCE_WEEKDAY_VALUES,
   RISK_VALUES,
   SCOPE_VALUES,
-  weekdayOrderIndex,
 } from "../../types/index.js";
 
 export interface CreateCommandOptions {
@@ -157,7 +166,6 @@ type ScheduleCreatePreset = "lightweight";
 const SCHEDULE_CREATE_PRESET_VALUES = ["lightweight"] as const;
 const SCHEDULE_CREATE_PRESET_TYPES = new Set(["Reminder", "Meeting", "Event"]);
 const LOG_SEED_ALLOWED_KEYS = new Set(["author", "created_at", "text"]);
-const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
 
 interface CreateUnsetFieldDefinition {
   optionKey: string;
@@ -313,16 +321,6 @@ function buildInvalidLogSeedKeysMessage(
   );
 }
 
-function ensureEnumValue<T extends string>(value: string, allowed: readonly T[], label: string): T {
-  if (!allowed.includes(value as T)) {
-    throw new PmCliError(
-      `Invalid ${label} value "${value}". Allowed: ${allowed.join(", ")}`,
-      EXIT_CODE.USAGE,
-    );
-  }
-  return value as T;
-}
-
 function parseStatusValue(value: string, statusRegistry: RuntimeStatusRegistry): ItemStatus {
   const normalized = normalizeStatusInput(value, statusRegistry);
   if (!normalized) {
@@ -341,33 +339,6 @@ function parseCreatedAt(value: string | undefined, currentIso: string): string {
     throw new PmCliError(`Invalid created_at timestamp "${value}"`, EXIT_CODE.USAGE);
   }
   return new Date(parsed).toISOString();
-}
-
-function isLegacyNoneToken(value: string | undefined): boolean {
-  if (value === undefined) {
-    return false;
-  }
-  return LEGACY_NONE_TOKENS.has(value.trim().toLowerCase());
-}
-
-function assertNoLegacyNoneToken(value: string | undefined, flag: string, replacementHint?: string): void {
-  if (!isLegacyNoneToken(value)) {
-    return;
-  }
-  const suffix = replacementHint ? ` ${replacementHint}` : "";
-  throw new PmCliError(`${flag} no longer accepts "none" or "null".${suffix}`.trim(), EXIT_CODE.USAGE);
-}
-
-function assertNoLegacyNoneTokens(values: string[] | undefined, flag: string, replacementHint?: string): void {
-  if (!values || values.length === 0) {
-    return;
-  }
-  const hasLegacyToken = values.some((value) => isLegacyNoneToken(value));
-  if (!hasLegacyToken) {
-    return;
-  }
-  const suffix = replacementHint ? ` ${replacementHint}` : "";
-  throw new PmCliError(`${flag} no longer accepts "none" or "null".${suffix}`.trim(), EXIT_CODE.USAGE);
 }
 
 interface LegacyNoneCollectionNormalizationDefinition {
@@ -628,203 +599,6 @@ export function parseFiles(raw: string[] | undefined): { values: LinkedFile[] | 
   return { values, explicitEmpty: false };
 }
 
-const LINKED_TEST_PROTECTED_ENV_KEYS = new Set(["PM_PATH", "PM_GLOBAL_PATH", "FORCE_COLOR"]);
-const LINKED_TEST_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
-const LINKED_TEST_PM_CONTEXT_MODE_VALUES = ["schema", "tracker", "auto"] as const;
-
-function parseLinkedTestEnvSet(raw: string | undefined, optionName: string): Record<string, string> | undefined {
-  const normalized = parseOptionalString(raw);
-  if (!normalized) {
-    return undefined;
-  }
-  const assignments = normalized
-    .split(/[;\n]/)
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-  if (assignments.length === 0) {
-    throw new PmCliError(`${optionName} env_set must include at least one KEY=VALUE assignment`, EXIT_CODE.USAGE);
-  }
-  const envSet: Record<string, string> = {};
-  for (const assignment of assignments) {
-    const separatorIndex = assignment.indexOf("=");
-    if (separatorIndex <= 0) {
-      throw new PmCliError(
-        `${optionName} env_set entries must use KEY=VALUE and be separated by semicolons. Example: env_set=PORT=0;PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    const key = assignment.slice(0, separatorIndex).trim();
-    const value = assignment.slice(separatorIndex + 1);
-    if (!LINKED_TEST_ENV_NAME_PATTERN.test(key)) {
-      throw new PmCliError(`${optionName} env_set key "${key}" is invalid`, EXIT_CODE.USAGE);
-    }
-    if (LINKED_TEST_PROTECTED_ENV_KEYS.has(key.toUpperCase())) {
-      throw new PmCliError(`${optionName} env_set key "${key}" is reserved for sandbox safety`, EXIT_CODE.USAGE);
-    }
-    envSet[key] = value;
-  }
-  return Object.keys(envSet).length > 0 ? envSet : undefined;
-}
-
-function parseLinkedTestEnvClear(raw: string | undefined, optionName: string): string[] | undefined {
-  const normalized = parseOptionalString(raw);
-  if (!normalized) {
-    return undefined;
-  }
-  const keys = [...new Set(normalized.split(/[;,\n]/).map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
-  if (keys.length === 0) {
-    throw new PmCliError(`${optionName} env_clear must include at least one environment variable name`, EXIT_CODE.USAGE);
-  }
-  for (const key of keys) {
-    if (!LINKED_TEST_ENV_NAME_PATTERN.test(key)) {
-      throw new PmCliError(`${optionName} env_clear key "${key}" is invalid`, EXIT_CODE.USAGE);
-    }
-    if (LINKED_TEST_PROTECTED_ENV_KEYS.has(key.toUpperCase())) {
-      throw new PmCliError(`${optionName} env_clear key "${key}" is reserved for sandbox safety`, EXIT_CODE.USAGE);
-    }
-  }
-  return keys;
-}
-
-function parseLinkedTestBoolean(raw: string | undefined, optionName: string, fieldLabel: string): boolean | undefined {
-  const normalized = parseOptionalString(raw);
-  if (!normalized) {
-    return undefined;
-  }
-  const value = normalized.trim().toLowerCase();
-  if (value === "true" || value === "1" || value === "yes") {
-    return true;
-  }
-  if (value === "false" || value === "0" || value === "no") {
-    return false;
-  }
-  throw new PmCliError(`${optionName} ${fieldLabel} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
-}
-
-function parseLinkedTestContextMode(
-  raw: string | undefined,
-  optionName: string,
-): LinkedTest["pm_context_mode"] | undefined {
-  const normalized = parseOptionalString(raw);
-  if (!normalized) {
-    return undefined;
-  }
-  const value = normalized.trim().toLowerCase();
-  if ((LINKED_TEST_PM_CONTEXT_MODE_VALUES as readonly string[]).includes(value)) {
-    return value as LinkedTest["pm_context_mode"];
-  }
-  throw new PmCliError(
-    `${optionName} pm_context_mode must be one of: ${LINKED_TEST_PM_CONTEXT_MODE_VALUES.join(", ")}`,
-    EXIT_CODE.USAGE,
-  );
-}
-
-function parseLinkedTestStringList(raw: string | undefined): string[] | undefined {
-  const normalized = parseOptionalString(raw);
-  if (!normalized) {
-    return undefined;
-  }
-  const values = [...new Set(normalized.split(/[;\n]/).map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
-  return values.length > 0 ? values : undefined;
-}
-
-function parseLinkedTestRegexList(raw: string | undefined, optionName: string, fieldLabel: string): string[] | undefined {
-  const values = parseLinkedTestStringList(raw);
-  if (!values || values.length === 0) {
-    return undefined;
-  }
-  for (const pattern of values) {
-    try {
-      // Validate syntax early so malformed assertions fail at mutation time.
-      new RegExp(pattern, "m");
-    } catch (error: unknown) {
-      throw new PmCliError(
-        `${optionName} ${fieldLabel} includes invalid regex "${pattern}": ${error instanceof Error ? error.message : String(error)}`,
-        EXIT_CODE.USAGE,
-      );
-    }
-  }
-  return values;
-}
-
-function parseLinkedTestMinLines(raw: string | undefined, optionName: string): number | undefined {
-  const normalized = parseOptionalString(raw);
-  if (!normalized) {
-    return undefined;
-  }
-  const parsed = parseOptionalNumber(normalized, "assert_stdout_min_lines");
-  if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new PmCliError(`${optionName} assert_stdout_min_lines must be an integer >= 0`, EXIT_CODE.USAGE);
-  }
-  return parsed;
-}
-
-function parseLinkedTestAssertionEqualsMap(raw: string | undefined, optionName: string): Record<string, string> | undefined {
-  const normalized = parseOptionalString(raw);
-  if (!normalized) {
-    return undefined;
-  }
-  const assignments = normalized
-    .split(/[;\n]/)
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-  if (assignments.length === 0) {
-    throw new PmCliError(`${optionName} assert_json_field_equals must include at least one path=value assignment`, EXIT_CODE.USAGE);
-  }
-  const values: Record<string, string> = {};
-  for (const assignment of assignments) {
-    const separatorIndex = assignment.indexOf("=");
-    if (separatorIndex <= 0) {
-      throw new PmCliError(
-        `${optionName} assert_json_field_equals entries must use path=value and be separated by semicolons`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    const key = assignment.slice(0, separatorIndex).trim();
-    const value = assignment.slice(separatorIndex + 1).trim();
-    if (key.length === 0 || value.length === 0) {
-      throw new PmCliError(`${optionName} assert_json_field_equals entries must include non-empty path and value`, EXIT_CODE.USAGE);
-    }
-    values[key] = value;
-  }
-  return Object.keys(values).length > 0 ? values : undefined;
-}
-
-function parseLinkedTestAssertionGteMap(raw: string | undefined, optionName: string): Record<string, number> | undefined {
-  const normalized = parseOptionalString(raw);
-  if (!normalized) {
-    return undefined;
-  }
-  const assignments = normalized
-    .split(/[;\n]/)
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-  if (assignments.length === 0) {
-    throw new PmCliError(`${optionName} assert_json_field_gte must include at least one path=value assignment`, EXIT_CODE.USAGE);
-  }
-  const values: Record<string, number> = {};
-  for (const assignment of assignments) {
-    const separatorIndex = assignment.indexOf("=");
-    if (separatorIndex <= 0) {
-      throw new PmCliError(
-        `${optionName} assert_json_field_gte entries must use path=value and be separated by semicolons`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    const key = assignment.slice(0, separatorIndex).trim();
-    const valueRaw = assignment.slice(separatorIndex + 1).trim();
-    if (key.length === 0 || valueRaw.length === 0) {
-      throw new PmCliError(`${optionName} assert_json_field_gte entries must include non-empty path and value`, EXIT_CODE.USAGE);
-    }
-    const value = Number.parseFloat(valueRaw);
-    if (!Number.isFinite(value)) {
-      throw new PmCliError(`${optionName} assert_json_field_gte value for "${key}" must be numeric`, EXIT_CODE.USAGE);
-    }
-    values[key] = value;
-  }
-  return Object.keys(values).length > 0 ? values : undefined;
-}
-
 export function parseTests(raw: string[] | undefined): { values: LinkedTest[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   assertNoLegacyNoneTokens(raw, "--test", "Use --clear-tests to clear linked tests.");
@@ -908,97 +682,6 @@ function parseReminders(raw: string[] | undefined, nowValue: string): { values: 
   return { values, explicitEmpty: false };
 }
 
-function parseEventBoolean(value: string, flag: string): boolean {
-  const normalized = value.trim().toLowerCase();
-  if (normalized === "true" || normalized === "1" || normalized === "yes") {
-    return true;
-  }
-  if (normalized === "false" || normalized === "0" || normalized === "no") {
-    return false;
-  }
-  throw new PmCliError(`${flag} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
-}
-
-function parseDelimitedList(raw: string | undefined): string[] {
-  if (!raw) {
-    return [];
-  }
-  return raw
-    .split("|")
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0);
-}
-
-function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowValue: Date): RecurrenceRule | undefined {
-  const freqRaw = parseOptionalString(kv.recur_freq)?.trim();
-  const intervalRaw = parseOptionalString(kv.recur_interval)?.trim();
-  const countRaw = parseOptionalString(kv.recur_count)?.trim();
-  const untilRaw = parseOptionalString(kv.recur_until)?.trim();
-  const byWeekdayRaw = parseOptionalString(kv.recur_by_weekday)?.trim();
-  const byMonthDayRaw = parseOptionalString(kv.recur_by_month_day)?.trim();
-  const exdatesRaw = parseOptionalString(kv.recur_exdates)?.trim();
-
-  const recurrenceInputsProvided = [freqRaw, intervalRaw, countRaw, untilRaw, byWeekdayRaw, byMonthDayRaw, exdatesRaw].some(
-    (value) => value !== undefined,
-  );
-  if (!recurrenceInputsProvided) {
-    return undefined;
-  }
-  if (!freqRaw) {
-    throw new PmCliError("--event recurrence fields require recur_freq=<daily|weekly|monthly|yearly>", EXIT_CODE.USAGE);
-  }
-
-  const freq = ensureEnumValue(freqRaw.toLowerCase(), RECURRENCE_FREQUENCY_VALUES, "event recurrence frequency");
-  const interval = intervalRaw !== undefined ? parseOptionalNumber(intervalRaw, "event recur_interval") : undefined;
-  if (interval !== undefined && (!Number.isInteger(interval) || interval < 1)) {
-    throw new PmCliError("--event recur_interval must be an integer >= 1", EXIT_CODE.USAGE);
-  }
-  const count = countRaw !== undefined ? parseOptionalNumber(countRaw, "event recur_count") : undefined;
-  if (count !== undefined && (!Number.isInteger(count) || count < 1)) {
-    throw new PmCliError("--event recur_count must be an integer >= 1", EXIT_CODE.USAGE);
-  }
-  const until = untilRaw ? resolveIsoOrRelative(untilRaw, nowValue, "event.recur_until") : undefined;
-  if (until && until < startAt) {
-    throw new PmCliError("--event recur_until must be at or after start", EXIT_CODE.USAGE);
-  }
-
-  const byWeekday = Array.from(
-    new Set(
-      parseDelimitedList(byWeekdayRaw).map((value) => ensureEnumValue(value.toLowerCase(), RECURRENCE_WEEKDAY_VALUES, "event weekday")),
-    ),
-  ).sort(
-    (left, right) =>
-      weekdayOrderIndex(left as (typeof RECURRENCE_WEEKDAY_VALUES)[number]) -
-      weekdayOrderIndex(right as (typeof RECURRENCE_WEEKDAY_VALUES)[number]),
-  );
-
-  const byMonthDay = Array.from(
-    new Set(
-      parseDelimitedList(byMonthDayRaw).map((value) => {
-        const day = parseOptionalNumber(value, "event recur_by_month_day");
-        if (!Number.isInteger(day) || day < 1 || day > 31) {
-          throw new PmCliError("--event recur_by_month_day values must be integers 1..31", EXIT_CODE.USAGE);
-        }
-        return day;
-      }),
-    ),
-  ).sort((left, right) => left - right);
-
-  const exdates = Array.from(
-    new Set(parseDelimitedList(exdatesRaw).map((value) => resolveIsoOrRelative(value, nowValue, "event.recur_exdates"))),
-  ).sort((left, right) => left.localeCompare(right));
-
-  return {
-    freq,
-    interval,
-    count,
-    until,
-    by_weekday: byWeekday.length > 0 ? byWeekday : undefined,
-    by_month_day: byMonthDay.length > 0 ? byMonthDay : undefined,
-    exdates: exdates.length > 0 ? exdates : undefined,
-  };
-}
-
 function parseEvents(raw: string[] | undefined, nowValue: string): { values: CalendarEvent[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   assertNoLegacyNoneTokens(raw, "--event", "Use --clear-events to clear linked events.");
@@ -1036,7 +719,7 @@ function parseEvents(raw: string[] | undefined, nowValue: string): { values: Cal
     }
 
     const allDayRaw = parseOptionalString(kv.all_day)?.trim();
-    const recurrence = parseRecurrenceRule(kv, startAt, referenceDate);
+    const recurrence = parseRecurrenceRule(kv, startAt, referenceDate, "defined");
 
     return {
       start_at: startAt,

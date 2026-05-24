@@ -4,6 +4,14 @@
 
 ### Other
 
+- Deduplicate Beads and Todos package adapter runtimes ([pm-ybfj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ybfj.toon))
+- Deduplicate bundled package runtime option parsing helpers ([pm-y5u0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-y5u0.toon))
+- Code dedup: extract shared CLI parser blocks and consolidate item-record casts ([pm-why9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-why9.toon))
+- Deduplicate files/docs linked-resource command implementations ([pm-jzf4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-jzf4.toon))
+- Deduplicate Claude and Codex plugin MCP wrappers and smoke flows ([pm-js0r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-js0r.toon))
+- Extract shared legacy settings test fixtures ([pm-ibyi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ibyi.toon))
+- Extract reusable semantic HTTP mock fixtures ([pm-gvk2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gvk2.toon))
+- Deduplicate beads/todos index.ts package-runtime loader \(install-safe mechanism needed\) ([pm-wwa7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-wwa7.toon))
 - Generate full historical CHANGELOG.md through pm-changelog ([pm-afl9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-afl9.toon))
 - Verify and repair pm-changelog-generated main CHANGELOG release alignment ([pm-5baq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5baq.toon))
 - Handle concurrent project package installs without EEXIST ([pm-hw6z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hw6z.toon))

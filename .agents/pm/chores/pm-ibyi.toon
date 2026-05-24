@@ -2,16 +2,21 @@ id: pm-ibyi
 title: Extract shared legacy settings test fixtures
 description: "Duplicate audit 2026-05-22: jscpd found tests/unit/settings-store.spec.ts repeats large legacy settings JSON fixtures inside the same spec. Representative clone: settings-store.spec.ts:82-104 vs settings-store.spec.ts:251-273, with repeated output/search/providers/vector_store defaults plus only small workflow/item_format scenario differences. Existing pm-v798 covers production item-type normalization and pm-axd1 covers extension policy defaults, but no active item covers settings-store fixture duplication. Fix by adding a local helper such as writeLegacySettings(pmRoot, overrides) or legacySettingsFixture(overrides), so tests express only the missing/explicit fields under test."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[4]: code-quality,dedup,settings,tests
 created_at: "2026-05-22T19:08:43.774Z"
-updated_at: "2026-05-22T19:09:25.444Z"
+updated_at: "2026-05-24T22:52:37.238Z"
 author: codex-dup-audit
 acceptance_criteria: settings-store specs use a shared legacy settings fixture builder with explicit per-test overrides; behavior under test remains visible for omitted workflow and item_format metadata cases; settings-store tests and pnpm build pass.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+resolution: "Added legacySettingsFixture(overrides) + writeLegacySettings(pmRoot, overrides) helpers in settings-store.spec.ts; migrated the workflow-omit and item_format-explicitness tests so each expresses only its scenario field via overrides. 11 tests pass; build green."
+expected_result: Legacy settings test fixtures are centralized without changing settings behavior.
+actual_result: Shared settings-store fixtures are in place and full release gate passed after the combined dedup refactor.
+comments[2]{created_at,author,text}:
   "2026-05-22T19:09:25.444Z",codex-dup-audit,"Duplicate-check evidence: before creating, searched existing items for settings-store legacy settings fixtures and readSettingsWithMetadata duplication. Relevant open items pm-v798 and pm-axd1 cover production normalization/defaults, not repeated settings-store test JSON. jscpd and manual inspection confirmed settings-store.spec.ts:82-104 duplicates settings-store.spec.ts:251-273."
+  "2026-05-24T22:16:30.930Z",claude-code-agent,"Added local helpers legacySettingsFixture(overrides) + writeLegacySettings(pmRoot, overrides) to settings-store.spec.ts. Base fixture omits later-added keys (workflow/item_format) so each test expresses only its scenario: 'merges defaults when legacy settings omit workflow' uses the bare base (no overrides); 'reports whether item_format was explicitly selected' adds { workflow: { definition_of_done: [] } } as an override. Both fixtures previously duplicated ~28 lines of output/search/providers/vector_store defaults; now collapsed to one builder. Key order in the written JSON for the second test changes (workflow now last) but both tests only JSON.parse via readSettings/readSettingsWithMetadata (order-independent); no raw-order assertion exists. 11 tests pass; build green. No assertion changes."
 files[1]{path,scope,note}:
   tests/unit/settings-store.spec.ts,project,repeated legacy settings JSON fixture
+close_reason: "Extracted shared legacy settings test fixtures (legacySettingsFixture/writeLegacySettings); migrated duplicated fixtures; 11 tests pass, build green."
 body: ""

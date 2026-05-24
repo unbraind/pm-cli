@@ -33,6 +33,8 @@ async function loadRuntimeBundle() {
       typeof sdkLoaded.runTestRunsStop === "function" &&
       typeof sdkLoaded.runTestRunsResume === "function" &&
       typeof sdkLoaded.PmCliError === "function" &&
+      typeof sdkLoaded.readStringOption === "function" &&
+      typeof sdkLoaded.readBooleanOption === "function" &&
       typeof sdkLoaded.EXIT_CODE === "object" &&
       sdkLoaded.EXIT_CODE !== null
     ) {
@@ -48,40 +50,6 @@ async function loadRuntimeBundle() {
   );
 }
 
-function readStringOption(options, key, aliases = []) {
-  const keys = [key, ...aliases];
-  for (const candidate of keys) {
-    const value = options[candidate];
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value;
-    }
-  }
-  return undefined;
-}
-
-function readBooleanOption(options, key, aliases = []) {
-  const keys = [key, ...aliases];
-  for (const candidate of keys) {
-    const value = options[candidate];
-    if (value === undefined) {
-      continue;
-    }
-    if (typeof value === "boolean") {
-      return value;
-    }
-    if (typeof value === "string") {
-      const normalized = value.trim().toLowerCase();
-      if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on") {
-        return true;
-      }
-      if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off") {
-        return false;
-      }
-    }
-  }
-  return undefined;
-}
-
 function requireRunId(bundle, commandName, args) {
   const runId = args[0];
   if (typeof runId === "string" && runId.trim().length > 0) {
@@ -94,8 +62,8 @@ export async function runTestRunsListPackage(options, global) {
   const bundle = await ensureRuntimeBundle();
   return bundle.sdk.runTestRunsList(
     {
-      status: readStringOption(options, "status"),
-      limit: readStringOption(options, "limit"),
+      status: bundle.sdk.readStringOption(options, "status"),
+      limit: bundle.sdk.readStringOption(options, "limit"),
     },
     global,
   );
@@ -111,8 +79,8 @@ export async function runTestRunsLogsPackage(args, options, global) {
   return bundle.sdk.runTestRunsLogs(
     requireRunId(bundle, "test-runs logs", args),
     {
-      stream: readStringOption(options, "stream"),
-      tail: readStringOption(options, "tail"),
+      stream: bundle.sdk.readStringOption(options, "stream"),
+      tail: bundle.sdk.readStringOption(options, "tail"),
     },
     global,
   );
@@ -123,7 +91,7 @@ export async function runTestRunsStopPackage(args, options, global) {
   return bundle.sdk.runTestRunsStop(
     requireRunId(bundle, "test-runs stop", args),
     {
-      force: readBooleanOption(options, "force") === true,
+      force: bundle.sdk.readBooleanOption(options, "force") === true,
     },
     global,
   );
@@ -134,7 +102,7 @@ export async function runTestRunsResumePackage(args, options, global) {
   return bundle.sdk.runTestRunsResume(
     requireRunId(bundle, "test-runs resume", args),
     {
-      author: readStringOption(options, "author"),
+      author: bundle.sdk.readStringOption(options, "author"),
       noExtensions: global.noExtensions === true,
     },
     global,

@@ -29,7 +29,9 @@ async function loadGovernanceModule() {
     if (
       typeof loaded.runDedupeAudit === "function" &&
       typeof loaded.runCommentsAudit === "function" &&
-      typeof loaded.runNormalize === "function"
+      typeof loaded.runNormalize === "function" &&
+      typeof loaded.readStringOption === "function" &&
+      typeof loaded.readBooleanOption === "function"
     ) {
       return loaded;
     }
@@ -41,41 +43,8 @@ async function loadGovernanceModule() {
   );
 }
 
-function readStringOption(options, key, aliases = []) {
-  const keys = [key, ...aliases];
-  for (const candidate of keys) {
-    const value = options[candidate];
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value;
-    }
-  }
-  return undefined;
-}
-
-function readBooleanOption(options, key, aliases = []) {
-  const keys = [key, ...aliases];
-  for (const candidate of keys) {
-    const value = options[candidate];
-    if (value === undefined) {
-      continue;
-    }
-    if (typeof value === "boolean") {
-      return value;
-    }
-    if (typeof value === "string") {
-      const normalized = value.trim().toLowerCase();
-      if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on") {
-        return true;
-      }
-      if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off") {
-        return false;
-      }
-    }
-  }
-  return undefined;
-}
-
-function normalizeDedupeAuditOptions(raw) {
+function normalizeDedupeAuditOptions(sdk, raw) {
+  const readStringOption = sdk.readStringOption;
   return {
     mode: readStringOption(raw, "mode"),
     status: readStringOption(raw, "status"),
@@ -94,7 +63,9 @@ function normalizeDedupeAuditOptions(raw) {
   };
 }
 
-function normalizeCommentsAuditOptions(raw) {
+function normalizeCommentsAuditOptions(sdk, raw) {
+  const readStringOption = sdk.readStringOption;
+  const readBooleanOption = sdk.readBooleanOption;
   return {
     status: readStringOption(raw, "status"),
     type: readStringOption(raw, "type"),
@@ -112,7 +83,9 @@ function normalizeCommentsAuditOptions(raw) {
   };
 }
 
-function normalizeNormalizeOptions(raw) {
+function normalizeNormalizeOptions(sdk, raw) {
+  const readStringOption = sdk.readStringOption;
+  const readBooleanOption = sdk.readBooleanOption;
   return {
     status: readStringOption(raw, "filterStatus", ["filter_status", "status"]),
     list: {
@@ -145,15 +118,15 @@ function normalizeNormalizeOptions(raw) {
 
 export async function runDedupeAuditPackage(options, global) {
   const module = await ensureGovernanceModule();
-  return module.runDedupeAudit(normalizeDedupeAuditOptions(options), global);
+  return module.runDedupeAudit(normalizeDedupeAuditOptions(module, options), global);
 }
 
 export async function runCommentsAuditPackage(options, global) {
   const module = await ensureGovernanceModule();
-  return module.runCommentsAudit(normalizeCommentsAuditOptions(options), global);
+  return module.runCommentsAudit(normalizeCommentsAuditOptions(module, options), global);
 }
 
 export async function runNormalizePackage(options, global) {
   const module = await ensureGovernanceModule();
-  return module.runNormalize(normalizeNormalizeOptions(options), global);
+  return module.runNormalize(normalizeNormalizeOptions(module, options), global);
 }

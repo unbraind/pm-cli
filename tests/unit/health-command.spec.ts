@@ -7,6 +7,7 @@ import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/co
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
+import { installFailingFetchMock, installSemanticFetchMock } from "../helpers/semanticFetchMock.js";
 
 const initialDisableAutoDefaults = process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;
 
@@ -536,31 +537,7 @@ describe("runHealth", () => {
       settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
-      const fetchCalls: string[] = [];
-      globalThis.fetch = (async (url: unknown) => {
-        const target = String(url);
-        fetchCalls.push(target);
-        if (target.endsWith("/v1/embeddings")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ data: [{ index: 0, embedding: [0.1, 0.2] }] }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        if (target.endsWith("/collections/pm_items/points?wait=true")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ result: { status: "acknowledged" } }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        throw new Error(`Unexpected fetch target: ${target}`);
-      }) as typeof globalThis.fetch;
+      const semanticMock = installSemanticFetchMock();
 
       try {
         const health = await runHealth({ path: context.pmPath });
@@ -580,12 +557,12 @@ describe("runHealth", () => {
             warnings: [],
           },
         });
-        expect(fetchCalls).toEqual([
+        expect(semanticMock.calls).toEqual([
           "https://api.example.test/v1/embeddings",
           "https://qdrant.example.test:6333/collections/pm_items/points?wait=true",
         ]);
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });
@@ -766,14 +743,7 @@ describe("runHealth", () => {
       settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
-      globalThis.fetch = (async () => ({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-        json: async () => ({}),
-        text: async () => "embedding unavailable",
-      })) as typeof globalThis.fetch;
+      const semanticMock = installFailingFetchMock({ text: "embedding unavailable" });
 
       try {
         const health = await runHealth({ path: context.pmPath });
@@ -788,7 +758,7 @@ describe("runHealth", () => {
           stale_items_after: [itemId],
         });
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });

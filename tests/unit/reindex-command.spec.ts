@@ -12,6 +12,7 @@ import { createEmptyExtensionRegistrationRegistry } from "../../src/core/extensi
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
+import { embeddingsResponse, fakeResponse, installSemanticFetchMock } from "../helpers/semanticFetchMock.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 function createSeedItem(context: TempPmContext, title: string, body: string, withSeeds: boolean): string {
@@ -201,38 +202,8 @@ describe("runReindex", () => {
       settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
-      const fetchCalls: string[] = [];
-      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-        const target = String(url);
-        fetchCalls.push(target);
-        if (target.endsWith("/v1/embeddings")) {
-          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string[] | string };
-          const inputCount = Array.isArray(body.input) ? body.input.length : 1;
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({
-              data: Array.from({ length: inputCount }, (_, index) => ({
-                index,
-                embedding: [index + 0.1, index + 0.2],
-              })),
-            }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        if (target.endsWith("/collections/pm_items/points?wait=true")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ result: { status: "acknowledged" } }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        throw new Error(`Unexpected fetch target: ${target}`);
-      }) as typeof globalThis.fetch;
+      const semanticMock = installSemanticFetchMock();
+      const fetchCalls = semanticMock.calls;
 
       try {
         const semanticResult = await runReindex({ mode: "semantic" }, { path: context.pmPath });
@@ -303,7 +274,7 @@ describe("runReindex", () => {
           "https://qdrant.example.test:6333/collections/pm_items/points?wait=true",
         ]);
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });
@@ -392,38 +363,8 @@ describe("runReindex", () => {
       });
       setActiveExtensionRegistrations(registrations);
 
-      const originalFetch = globalThis.fetch;
-      const fetchCalls: string[] = [];
-      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-        const target = String(url);
-        fetchCalls.push(target);
-        if (target.endsWith("/v1/embeddings")) {
-          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string[] };
-          const count = Array.isArray(body.input) ? body.input.length : 1;
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({
-              data: Array.from({ length: count }, (_value, index) => ({
-                index,
-                embedding: [index + 0.1, index + 0.2],
-              })),
-            }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        if (target.endsWith("/collections/pm_items/points?wait=true")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ result: { status: "acknowledged" } }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        throw new Error(`Unexpected fetch target: ${target}`);
-      }) as typeof globalThis.fetch;
+      const semanticMock = installSemanticFetchMock();
+      const fetchCalls = semanticMock.calls;
 
       try {
         const result = await runReindex({ mode: "semantic" }, { path: context.pmPath });
@@ -435,7 +376,7 @@ describe("runReindex", () => {
           "https://qdrant.example.test:6333/collections/pm_items/points?wait=true",
         ]);
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });
@@ -454,47 +395,16 @@ describe("runReindex", () => {
       settings.search.scanner_max_batch_retries = 1;
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
       let embeddingAttempts = 0;
-      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-        const target = String(url);
-        if (target.endsWith("/v1/embeddings")) {
+      const semanticMock = installSemanticFetchMock({
+        embeddings: ({ inputCount }) => {
           embeddingAttempts += 1;
           if (embeddingAttempts === 1) {
-            return {
-              ok: false,
-              status: 503,
-              statusText: "Service Unavailable",
-              json: async () => ({}),
-              text: async () => "retry me",
-            } as unknown as Response;
+            return fakeResponse({ ok: false, status: 503, statusText: "Service Unavailable", text: "retry me" });
           }
-          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string[] | string };
-          const inputCount = Array.isArray(body.input) ? body.input.length : 1;
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({
-              data: Array.from({ length: inputCount }, (_entry, index) => ({
-                index,
-                embedding: [index + 0.1, index + 0.2],
-              })),
-            }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        if (target.endsWith("/collections/pm_items/points?wait=true")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ result: { status: "acknowledged" } }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        throw new Error(`Unexpected fetch target: ${target}`);
-      }) as typeof globalThis.fetch;
+          return embeddingsResponse(inputCount);
+        },
+      });
 
       try {
         const result = await runReindex({ mode: "semantic" }, { path: context.pmPath });
@@ -502,7 +412,7 @@ describe("runReindex", () => {
         expect(result.warnings).toContain("search_embedding_batch_retry_succeeded:batch=1:attempt=2:size=2");
         expect(embeddingAttempts).toBe(3);
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });
@@ -517,38 +427,8 @@ describe("runReindex", () => {
       settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
-      const embeddedInputLengths: number[] = [];
-      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-        const target = String(url);
-        if (target.endsWith("/v1/embeddings")) {
-          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string[] | string };
-          const inputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
-          embeddedInputLengths.push(...inputs.map((input) => input.length));
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({
-              data: inputs.map((_input, index) => ({
-                index,
-                embedding: [index + 0.1, index + 0.2],
-              })),
-            }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        if (target.endsWith("/collections/pm_items/points?wait=true")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ result: { status: "acknowledged" } }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        throw new Error(`Unexpected fetch target: ${target}`);
-      }) as typeof globalThis.fetch;
+      const semanticMock = installSemanticFetchMock();
+      const embeddedInputLengths = semanticMock.inputLengths;
 
       try {
         const result = await runReindex({ mode: "semantic" }, { path: context.pmPath });
@@ -557,7 +437,7 @@ describe("runReindex", () => {
         expect(embeddedInputLengths[0]).toBeGreaterThan(300);
         expect(embeddedInputLengths[0]).toBeLessThanOrEqual(8_000);
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });
@@ -677,42 +557,13 @@ describe("runReindex", () => {
       settings.search.embedding_batch_size = 2;
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
       const originalIsTTY = process.stderr.isTTY;
       Object.defineProperty(process.stderr, "isTTY", {
         value: false,
         configurable: true,
       });
       const stderrWriteSpy = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
-      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-        const target = String(url);
-        if (target.endsWith("/v1/embeddings")) {
-          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string[] | string };
-          const inputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({
-              data: inputs.map((_input, index) => ({
-                index,
-                embedding: [index + 0.1, index + 0.2],
-              })),
-            }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        if (target.endsWith("/collections/pm_items/points?wait=true")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ result: { status: "acknowledged" } }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        throw new Error(`Unexpected fetch target: ${target}`);
-      }) as typeof globalThis.fetch;
+      const semanticMock = installSemanticFetchMock();
 
       try {
         const result = await runReindex({ mode: "semantic", progress: true }, { path: context.pmPath });
@@ -729,7 +580,7 @@ describe("runReindex", () => {
         expect(stderrOutput).toContain("[pm reindex] embedding_batch_complete batch=1/2 size=2 completed_inputs=2/3");
         expect(stderrOutput).toContain("[pm reindex] embedding_batch_complete batch=2/2 size=1 completed_inputs=3/3");
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
         Object.defineProperty(process.stderr, "isTTY", {
           value: originalIsTTY,
           configurable: true,

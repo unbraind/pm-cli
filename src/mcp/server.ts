@@ -16,6 +16,7 @@ import {
 import { pathExists } from "../core/fs/fs-utils.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { asRecordClone } from "../core/shared/primitives.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import {
@@ -251,10 +252,6 @@ const TOOLS: ToolDefinition[] = [
   },
 ];
 
-function asRecord(value: unknown): Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value) ? { ...value } as Record<string, unknown> : {};
-}
-
 function readString(args: Record<string, unknown>, key: string): string | undefined {
   const value = args[key];
   return typeof value === "string" && value.trim().length > 0 ? value : undefined;
@@ -337,7 +334,7 @@ function normalizeOptionsArrays(
 }
 
 function optionsWithAuthor(args: Record<string, unknown>, action?: string): Record<string, unknown> {
-  const options = normalizeOptionsArrays(asRecord(args.options), action);
+  const options = normalizeOptionsArrays(asRecordClone(args.options), action);
   const author = readString(args, "author");
   return author && options.author === undefined ? { ...options, author } : options;
 }
@@ -697,13 +694,13 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
     return { tools: TOOLS };
   }
   if (request.method === "tools/call") {
-    const params = asRecord(request.params);
+    const params = asRecordClone(request.params);
     const name = readRequiredString(params, "name");
     const handler = HANDLERS[name];
     if (!handler) {
       throw new PmCliError(`Unknown pm MCP tool: ${name}`, 64);
     }
-    const args = asRecord(params.arguments);
+    const args = asRecordClone(params.arguments);
     const result = await withCwd(args.cwd, () => handler(args));
     return resultContent(result);
   }

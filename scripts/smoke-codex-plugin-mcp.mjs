@@ -1,74 +1,15 @@
 #!/usr/bin/env node
-import { spawn } from "node:child_process";
-import { mkdtemp, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import path from "node:path";
-import readline from "node:readline";
+import { startPluginMcpSmoke } from "./plugin-mcp-smoke-harness.mjs";
 
 const repoRoot = process.cwd();
 const serverPath = path.join(repoRoot, "dist", "mcp", "server.js");
-const tmpRoot = await mkdtemp(path.join(tmpdir(), "pm-codex-mcp-"));
 
-const child = spawn(process.execPath, [serverPath], {
-  cwd: tmpRoot,
-  env: {
-    ...process.env,
-    PM_AUTHOR: "codex-smoke",
-    PM_GLOBAL_PATH: path.join(tmpRoot, ".pm-global"),
-  },
-  stdio: ["pipe", "pipe", "pipe"],
+const { tmpRoot, request, callTool, dispose } = await startPluginMcpSmoke({
+  serverPath,
+  author: "codex-smoke",
+  tmpPrefix: "pm-codex-mcp-",
 });
-
-const rl = readline.createInterface({ input: child.stdout, crlfDelay: Infinity });
-const pending = new Map();
-let nextId = 1;
-let stderr = "";
-
-child.stderr.on("data", (chunk) => {
-  stderr += chunk.toString();
-});
-
-rl.on("line", (line) => {
-  if (!line.trim()) return;
-  const message = JSON.parse(line);
-  const waiter = pending.get(message.id);
-  if (!waiter) return;
-  pending.delete(message.id);
-  if (message.error) {
-    waiter.reject(new Error(message.error.message));
-  } else {
-    waiter.resolve(message.result);
-  }
-});
-
-function request(method, params = {}) {
-  const id = nextId++;
-  child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`);
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      pending.delete(id);
-      reject(new Error(`Timed out waiting for ${method}`));
-    }, 15000);
-    pending.set(id, {
-      resolve(value) {
-        clearTimeout(timeout);
-        resolve(value);
-      },
-      reject(error) {
-        clearTimeout(timeout);
-        reject(error);
-      },
-    });
-  });
-}
-
-async function callTool(name, args = {}) {
-  const response = await request("tools/call", { name, arguments: args });
-  if (response.isError) {
-    throw new Error(response.content?.[0]?.text ?? `${name} failed`);
-  }
-  return response.structuredContent?.result ?? JSON.parse(response.content[0].text);
-}
 
 try {
   await request("initialize", {
@@ -119,10 +60,5 @@ try {
   await callTool("pm_validate", { cwd: tmpRoot, options: { checkResolution: true } });
   console.log(`Codex plugin MCP smoke passed for ${id}`);
 } finally {
-  child.stdin.end();
-  child.kill();
-  await rm(tmpRoot, { recursive: true, force: true });
-  if (stderr.trim()) {
-    console.error(stderr.trim());
-  }
+  await dispose();
 }

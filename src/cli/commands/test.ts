@@ -16,6 +16,21 @@ import { readSettings } from "../../core/store/settings.js";
 import { appendTrackedTestRunSummary } from "../../core/test/item-test-run-tracking.js";
 import { runInit } from "./init.js";
 import { looksLikeStructuredLinkedTestEntry, normalizeStructuredLinkedTestEntry } from "./linked-test-entry.js";
+import {
+  LINKED_TEST_ENV_NAME_PATTERN,
+  LINKED_TEST_PM_CONTEXT_MODE_VALUES as PM_CONTEXT_MODE_VALUES,
+  LINKED_TEST_PROTECTED_ENV_KEYS,
+  parseLinkedTestAssertionEqualsMap,
+  parseLinkedTestAssertionGteMap,
+  parseLinkedTestBoolean as parseLinkedTestBooleanValue,
+  parseLinkedTestContextMode as parseLinkedTestContextModeValue,
+  parseLinkedTestEnvClear as parseLinkedTestEnvClearValue,
+  parseLinkedTestEnvSet as parseLinkedTestEnvSetValue,
+  parseLinkedTestMinLines,
+  parseLinkedTestRegexList,
+  parseLinkedTestStringList,
+  type LinkedTestPmContextMode,
+} from "./linked-test-parsers.js";
 import { SCOPE_VALUES } from "../../types/index.js";
 import type { LinkedTest, LinkScope } from "../../types/index.js";
 
@@ -23,10 +38,6 @@ const TEST_OUTPUT_MAX_BUFFER_BYTES = 20 * 1024 * 1024;
 const DEFAULT_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = 3000;
 const DEFAULT_LINKED_TEST_HEARTBEAT_INTERVAL_MS = 10000;
 const MAX_LINKED_TEST_COMMAND_LABEL_LENGTH = 120;
-const LINKED_TEST_PROTECTED_ENV_KEYS = new Set(["PM_PATH", "PM_GLOBAL_PATH", "FORCE_COLOR"]);
-const LINKED_TEST_ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
-const PM_CONTEXT_MODE_VALUES = ["schema", "tracker", "auto"] as const;
-type LinkedTestPmContextMode = (typeof PM_CONTEXT_MODE_VALUES)[number];
 type ResolvedLinkedTestPmContextMode = Exclude<LinkedTestPmContextMode, "auto">;
 const LINKED_TEST_TRACKER_DIRS_TO_SKIP = new Set(["locks", "extensions", "runtime"]);
 const LINKED_TEST_ITEM_COUNT_DIRS_TO_SKIP = new Set(["history", "index", "search", "extensions", "locks", "runtime"]);
@@ -273,191 +284,6 @@ function ensureScope(raw: string | undefined): LinkScope {
     throw new PmCliError(`Invalid scope "${raw}"`, EXIT_CODE.USAGE);
   }
   return value;
-}
-
-function parseLinkedTestBooleanValue(raw: string | undefined, optionName: string, fieldLabel: string): boolean | undefined {
-  if (!raw || raw.trim().length === 0) {
-    return undefined;
-  }
-  const normalized = raw.trim().toLowerCase();
-  if (normalized === "true" || normalized === "1" || normalized === "yes") {
-    return true;
-  }
-  if (normalized === "false" || normalized === "0" || normalized === "no") {
-    return false;
-  }
-  throw new PmCliError(`${optionName} ${fieldLabel} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
-}
-
-function parseLinkedTestEnvSetValue(raw: string | undefined, optionName: string): Record<string, string> | undefined {
-  if (!raw || raw.trim().length === 0) {
-    return undefined;
-  }
-  const assignments = raw
-    .split(/[;\n]/)
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-  if (assignments.length === 0) {
-    throw new PmCliError(`${optionName} env_set must include at least one KEY=VALUE assignment`, EXIT_CODE.USAGE);
-  }
-  const envSet: Record<string, string> = {};
-  for (const assignment of assignments) {
-    const separatorIndex = assignment.indexOf("=");
-    if (separatorIndex <= 0) {
-      throw new PmCliError(
-        `${optionName} env_set entries must use KEY=VALUE and be separated by semicolons. Example: env_set=PORT=0;PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    const key = assignment.slice(0, separatorIndex).trim();
-    const value = assignment.slice(separatorIndex + 1);
-    if (!LINKED_TEST_ENV_NAME_PATTERN.test(key)) {
-      throw new PmCliError(`${optionName} env_set key "${key}" is invalid`, EXIT_CODE.USAGE);
-    }
-    if (LINKED_TEST_PROTECTED_ENV_KEYS.has(key.toUpperCase())) {
-      throw new PmCliError(`${optionName} env_set key "${key}" is reserved for sandbox safety`, EXIT_CODE.USAGE);
-    }
-    envSet[key] = value;
-  }
-  return Object.keys(envSet).length > 0 ? envSet : undefined;
-}
-
-function parseLinkedTestEnvClearValue(raw: string | undefined, optionName: string): string[] | undefined {
-  if (!raw || raw.trim().length === 0) {
-    return undefined;
-  }
-  const values = [...new Set(raw.split(/[;,\n]/).map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
-  if (values.length === 0) {
-    throw new PmCliError(`${optionName} env_clear must include at least one environment variable name`, EXIT_CODE.USAGE);
-  }
-  for (const key of values) {
-    if (!LINKED_TEST_ENV_NAME_PATTERN.test(key)) {
-      throw new PmCliError(`${optionName} env_clear key "${key}" is invalid`, EXIT_CODE.USAGE);
-    }
-    if (LINKED_TEST_PROTECTED_ENV_KEYS.has(key.toUpperCase())) {
-      throw new PmCliError(`${optionName} env_clear key "${key}" is reserved for sandbox safety`, EXIT_CODE.USAGE);
-    }
-  }
-  return values;
-}
-
-function parseLinkedTestStringList(raw: string | undefined): string[] | undefined {
-  if (!raw || raw.trim().length === 0) {
-    return undefined;
-  }
-  const values = [...new Set(raw.split(/[;\n]/).map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
-  return values.length > 0 ? values : undefined;
-}
-
-function parseLinkedTestRegexList(raw: string | undefined, optionName: string, fieldLabel: string): string[] | undefined {
-  const values = parseLinkedTestStringList(raw);
-  if (!values || values.length === 0) {
-    return undefined;
-  }
-  for (const pattern of values) {
-    try {
-      // Validate syntax when linked-test metadata is added.
-      new RegExp(pattern, "m");
-    } catch (error: unknown) {
-      throw new PmCliError(
-        `${optionName} ${fieldLabel} includes invalid regex "${pattern}": ${error instanceof Error ? error.message : String(error)}`,
-        EXIT_CODE.USAGE,
-      );
-    }
-  }
-  return values;
-}
-
-function parseLinkedTestMinLines(raw: string | undefined, optionName: string): number | undefined {
-  if (!raw || raw.trim().length === 0) {
-    return undefined;
-  }
-  const parsed = parseOptionalNumber(raw, "assert_stdout_min_lines");
-  if (!Number.isInteger(parsed) || parsed < 0) {
-    throw new PmCliError(`${optionName} assert_stdout_min_lines must be an integer >= 0`, EXIT_CODE.USAGE);
-  }
-  return parsed;
-}
-
-function parseLinkedTestAssertionEqualsMap(raw: string | undefined, optionName: string): Record<string, string> | undefined {
-  if (!raw || raw.trim().length === 0) {
-    return undefined;
-  }
-  const assignments = raw
-    .split(/[;\n]/)
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-  if (assignments.length === 0) {
-    throw new PmCliError(`${optionName} assert_json_field_equals must include at least one path=value assignment`, EXIT_CODE.USAGE);
-  }
-  const values: Record<string, string> = {};
-  for (const assignment of assignments) {
-    const separatorIndex = assignment.indexOf("=");
-    if (separatorIndex <= 0) {
-      throw new PmCliError(
-        `${optionName} assert_json_field_equals entries must use path=value and be separated by semicolons`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    const key = assignment.slice(0, separatorIndex).trim();
-    const value = assignment.slice(separatorIndex + 1).trim();
-    if (key.length === 0 || value.length === 0) {
-      throw new PmCliError(`${optionName} assert_json_field_equals entries must include non-empty path and value`, EXIT_CODE.USAGE);
-    }
-    values[key] = value;
-  }
-  return Object.keys(values).length > 0 ? values : undefined;
-}
-
-function parseLinkedTestAssertionGteMap(raw: string | undefined, optionName: string): Record<string, number> | undefined {
-  if (!raw || raw.trim().length === 0) {
-    return undefined;
-  }
-  const assignments = raw
-    .split(/[;\n]/)
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-  if (assignments.length === 0) {
-    throw new PmCliError(`${optionName} assert_json_field_gte must include at least one path=value assignment`, EXIT_CODE.USAGE);
-  }
-  const values: Record<string, number> = {};
-  for (const assignment of assignments) {
-    const separatorIndex = assignment.indexOf("=");
-    if (separatorIndex <= 0) {
-      throw new PmCliError(
-        `${optionName} assert_json_field_gte entries must use path=value and be separated by semicolons`,
-        EXIT_CODE.USAGE,
-      );
-    }
-    const key = assignment.slice(0, separatorIndex).trim();
-    const valueRaw = assignment.slice(separatorIndex + 1).trim();
-    if (key.length === 0 || valueRaw.length === 0) {
-      throw new PmCliError(`${optionName} assert_json_field_gte entries must include non-empty path and value`, EXIT_CODE.USAGE);
-    }
-    const value = Number.parseFloat(valueRaw);
-    if (!Number.isFinite(value)) {
-      throw new PmCliError(`${optionName} assert_json_field_gte value for "${key}" must be numeric`, EXIT_CODE.USAGE);
-    }
-    values[key] = value;
-  }
-  return Object.keys(values).length > 0 ? values : undefined;
-}
-
-function parseLinkedTestContextModeValue(
-  raw: string | undefined,
-  optionName: string,
-): LinkedTest["pm_context_mode"] | undefined {
-  if (!raw || raw.trim().length === 0) {
-    return undefined;
-  }
-  const normalized = raw.trim().toLowerCase();
-  if ((PM_CONTEXT_MODE_VALUES as readonly string[]).includes(normalized)) {
-    return normalized as LinkedTest["pm_context_mode"];
-  }
-  throw new PmCliError(
-    `${optionName} pm_context_mode must be one of: ${PM_CONTEXT_MODE_VALUES.join(", ")}`,
-    EXIT_CODE.USAGE,
-  );
 }
 
 function parsePmContextMode(raw: string | undefined): LinkedTestPmContextMode {

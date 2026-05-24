@@ -5,6 +5,7 @@ import { pathExists } from "../fs/fs-utils.js";
 import { isPathWithinDirectory } from "../fs/path-utils.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import type { GlobalOptions } from "../shared/command-types.js";
+import { asRecordLoose } from "../shared/primitives.js";
 import type { PmSettings } from "../../types/index.js";
 import {
   KNOWN_EXTENSION_CAPABILITIES,
@@ -1048,7 +1049,7 @@ function parseManifest(raw: unknown): ExtensionManifest | null {
 
   let provenance: ExtensionManifest["provenance"] | undefined;
   if ("provenance" in candidate && candidate.provenance !== undefined && candidate.provenance !== null) {
-    const provenanceRecord = asRecord(candidate.provenance);
+    const provenanceRecord = asRecordLoose(candidate.provenance);
     if (!provenanceRecord) {
       return null;
     }
@@ -1083,7 +1084,7 @@ function parseManifest(raw: unknown): ExtensionManifest | null {
 
   let permissions: ExtensionManifest["permissions"] | undefined;
   if ("permissions" in candidate && candidate.permissions !== undefined && candidate.permissions !== null) {
-    const permissionsRecord = asRecord(candidate.permissions);
+    const permissionsRecord = asRecordLoose(candidate.permissions);
     if (!permissionsRecord) {
       return null;
     }
@@ -1139,13 +1140,6 @@ function parseManifest(raw: unknown): ExtensionManifest | null {
     capabilities,
     legacy_capability_aliases: legacyCapabilityAliases.length > 0 ? legacyCapabilityAliases : undefined,
   };
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (typeof value !== "object" || value === null) {
-    return null;
-  }
-  return value as Record<string, unknown>;
 }
 
 function shouldEnable(name: string, enabled: Set<string>, disabled: Set<string>): boolean {
@@ -1569,7 +1563,7 @@ export async function loadExtensions(options: DiscoverExtensionsOptions): Promis
 type HookName = keyof ExtensionHookRegistry;
 
 function resolveActivatableExtension(module: unknown): ActivatableExtension | null {
-  const moduleRecord = asRecord(module);
+  const moduleRecord = asRecordLoose(module);
   if (!moduleRecord) {
     return null;
   }
@@ -1580,7 +1574,7 @@ function resolveActivatableExtension(module: unknown): ActivatableExtension | nu
     };
   }
 
-  const defaultExport = asRecord(moduleRecord.default);
+  const defaultExport = asRecordLoose(moduleRecord.default);
   if (defaultExport && typeof defaultExport.activate === "function") {
     return {
       activate: defaultExport.activate as ActivatableExtension["activate"],

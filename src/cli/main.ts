@@ -43,7 +43,7 @@ import {
 } from "../core/schema/runtime-schema.js";
 import { EXIT_CODE, resolveTelemetryErrorCategory, type TelemetryErrorCategory } from "../core/shared/constants.js";
 import { PmCliError, type PmCliErrorContext, type PmCliErrorRecoveryPayload } from "../core/shared/errors.js";
-import { toNonEmptyStringOrUndefined } from "../core/shared/primitives.js";
+import { asRecordOrNull, toNonEmptyStringOrUndefined } from "../core/shared/primitives.js";
 import { printError, printResult, writeStdout } from "../core/output/output.js";
 import { maybeRunFirstUseTelemetryPrompt } from "../core/telemetry/consent.js";
 import {
@@ -287,13 +287,6 @@ function buildPmCliRecoveryContext(
   };
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return null;
-  }
-  return value as Record<string, unknown>;
-}
-
 function readRecordString(record: Record<string, unknown> | null, ...keys: string[]): string | undefined {
   if (!record) {
     return undefined;
@@ -398,7 +391,7 @@ function inferPostActionFailureMessage(result: Record<string, unknown> | null): 
   const runResults = result?.run_results;
   if (Array.isArray(runResults)) {
     const failedRuns = runResults.filter((entry) => {
-      const row = asRecord(entry);
+      const row = asRecordOrNull(entry);
       return row?.status === "failed";
     }).length;
     if (failedRuns > 0) {
@@ -429,7 +422,7 @@ function inferPostActionErrorCode(ok: boolean, exitCode: number): string | undef
 }
 
 function buildPostActionTelemetryOutcome(): TelemetryCommandOutcome {
-  const result = asRecord(getActiveCommandResult());
+  const result = asRecordOrNull(getActiveCommandResult());
   const processExitCode =
     typeof process.exitCode === "number" && Number.isFinite(process.exitCode)
       ? Math.max(0, Math.trunc(process.exitCode))

@@ -8,6 +8,8 @@ interface GovernanceRuntimeSdkModule {
   runDedupeAudit: (options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
   runCommentsAudit: (options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
   runNormalize: (options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
+  readStringOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => string | undefined;
+  readBooleanOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => boolean | undefined;
 }
 
 let governanceModule: GovernanceRuntimeSdkModule | null = null;
@@ -37,7 +39,9 @@ async function loadGovernanceModule(): Promise<GovernanceRuntimeSdkModule> {
     if (
       typeof loaded.runDedupeAudit === "function" &&
       typeof loaded.runCommentsAudit === "function" &&
-      typeof loaded.runNormalize === "function"
+      typeof loaded.runNormalize === "function" &&
+      typeof loaded.readStringOption === "function" &&
+      typeof loaded.readBooleanOption === "function"
     ) {
       return loaded as GovernanceRuntimeSdkModule;
     }
@@ -49,41 +53,11 @@ async function loadGovernanceModule(): Promise<GovernanceRuntimeSdkModule> {
   );
 }
 
-function readStringOption(options: Record<string, unknown>, key: string, aliases: string[] = []): string | undefined {
-  const keys = [key, ...aliases];
-  for (const candidate of keys) {
-    const value = options[candidate];
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value;
-    }
-  }
-  return undefined;
-}
-
-function readBooleanOption(options: Record<string, unknown>, key: string, aliases: string[] = []): boolean | undefined {
-  const keys = [key, ...aliases];
-  for (const candidate of keys) {
-    const value = options[candidate];
-    if (value === undefined) {
-      continue;
-    }
-    if (typeof value === "boolean") {
-      return value;
-    }
-    if (typeof value === "string") {
-      const normalized = value.trim().toLowerCase();
-      if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on") {
-        return true;
-      }
-      if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off") {
-        return false;
-      }
-    }
-  }
-  return undefined;
-}
-
-function normalizeDedupeAuditOptions(raw: Record<string, unknown>): Record<string, unknown> {
+function normalizeDedupeAuditOptions(
+  sdk: GovernanceRuntimeSdkModule,
+  raw: Record<string, unknown>,
+): Record<string, unknown> {
+  const readStringOption = sdk.readStringOption;
   return {
     mode: readStringOption(raw, "mode"),
     status: readStringOption(raw, "status"),
@@ -102,7 +76,12 @@ function normalizeDedupeAuditOptions(raw: Record<string, unknown>): Record<strin
   };
 }
 
-function normalizeCommentsAuditOptions(raw: Record<string, unknown>): Record<string, unknown> {
+function normalizeCommentsAuditOptions(
+  sdk: GovernanceRuntimeSdkModule,
+  raw: Record<string, unknown>,
+): Record<string, unknown> {
+  const readStringOption = sdk.readStringOption;
+  const readBooleanOption = sdk.readBooleanOption;
   return {
     status: readStringOption(raw, "status"),
     type: readStringOption(raw, "type"),
@@ -120,7 +99,12 @@ function normalizeCommentsAuditOptions(raw: Record<string, unknown>): Record<str
   };
 }
 
-function normalizeNormalizeOptions(raw: Record<string, unknown>): Record<string, unknown> {
+function normalizeNormalizeOptions(
+  sdk: GovernanceRuntimeSdkModule,
+  raw: Record<string, unknown>,
+): Record<string, unknown> {
+  const readStringOption = sdk.readStringOption;
+  const readBooleanOption = sdk.readBooleanOption;
   return {
     status: readStringOption(raw, "filterStatus", ["filter_status", "status"]),
     list: {
@@ -156,7 +140,7 @@ export async function runDedupeAuditPackage(
   global: GlobalOptions,
 ): Promise<unknown> {
   const module = await ensureGovernanceModule();
-  return module.runDedupeAudit(normalizeDedupeAuditOptions(options), global);
+  return module.runDedupeAudit(normalizeDedupeAuditOptions(module, options), global);
 }
 
 export async function runCommentsAuditPackage(
@@ -164,7 +148,7 @@ export async function runCommentsAuditPackage(
   global: GlobalOptions,
 ): Promise<unknown> {
   const module = await ensureGovernanceModule();
-  return module.runCommentsAudit(normalizeCommentsAuditOptions(options), global);
+  return module.runCommentsAudit(normalizeCommentsAuditOptions(module, options), global);
 }
 
 export async function runNormalizePackage(
@@ -172,5 +156,5 @@ export async function runNormalizePackage(
   global: GlobalOptions,
 ): Promise<unknown> {
   const module = await ensureGovernanceModule();
-  return module.runNormalize(normalizeNormalizeOptions(options), global);
+  return module.runNormalize(normalizeNormalizeOptions(module, options), global);
 }

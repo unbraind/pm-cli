@@ -2,17 +2,24 @@ id: pm-js0r
 title: Deduplicate Claude and Codex plugin MCP wrappers and smoke flows
 description: "Duplicate audit 2026-05-22: jscpd found duplicated plugin wrapper and smoke logic across Claude and Codex plugin surfaces. scripts/smoke-claude-plugin.mjs:93-145 duplicates scripts/smoke-codex-plugin-mcp.mjs:16-68, and both scripts share the same callTool/spawn/server readiness shape again at smoke-claude-plugin.mjs:250-258 vs smoke-codex-plugin-mcp.mjs:120-128. The installed plugin entrypoints also duplicate wrappers: plugins/pm-claude/scripts/pm-mcp-server.mjs:10-28, 41-62 vs plugins/pm-codex/scripts/pm-mcp-server.mjs:2-20, 35-56. Existing pm-ash0 covers naming convergence and pm-0c9q covers native Codex plugin creation, but no active item tracks the shared smoke/wrapper implementation. Fix by extracting a reusable plugin MCP smoke harness and a shared wrapper template or generated entrypoint."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[5]: code-quality,dedup,mcp,plugins,smoke
 created_at: "2026-05-22T19:00:28.887Z"
-updated_at: "2026-05-22T19:01:14.772Z"
+updated_at: "2026-05-24T22:52:39.180Z"
 author: codex-duplication-audit
 acceptance_criteria: "Claude and Codex smoke scripts share server startup, JSON-RPC callTool, readiness, and cleanup helpers; plugin pm-mcp-server wrappers are generated from or import one shared template; both plugin smoke commands still pass; pnpm build passes."
 parent: pm-rnpb
+resolution: Extracted scripts/plugin-mcp-smoke-harness.mjs (shared startPluginMcpSmoke for both smoke scripts) and scripts/gen-plugin-mcp-wrappers.mjs (single-template generator that writes both plugin pm-mcp-server.mjs wrappers; generator chosen over runtime import because plugins ship standalone). Both wrappers now identical; both smoke commands + build pass.
+expected_result: Claude and Codex plugin MCP wrappers and smoke flows share generated/harnessed sources without breaking standalone plugin launchers.
+actual_result: "Plugin wrappers are generated from scripts/gen-plugin-mcp-wrappers.mjs, smoke scripts use a shared harness, wrapper check passed, and full release gate passed."
+comments[2]{created_at,author,text}:
+  "2026-05-24T22:10:07.809Z",claude-code-agent,"Deduplicated plugin MCP wrappers + smoke flows. (1) Wrappers: plugins are SHIPPED standalone and run scripts/pm-mcp-server.mjs relative to plugin root (per each .mcp.json: ${CLAUDE_PLUGIN_ROOT}/scripts/... and ./scripts/...), so a runtime cross-plugin import would break a cached/standalone install. Used a GENERATOR (scripts/gen-plugin-mcp-wrappers.mjs) that writes both wrappers from one template; both wrappers now byte-identical (unified npx --package= form + depth 10 + identical comment header). Generator has --check mode for drift gating. (2) Smoke: extracted scripts/plugin-mcp-smoke-harness.mjs (startPluginMcpSmoke: spawn + JSON-RPC request/callTool + readiness + dispose cleanup), imported by both smoke scripts (they run from repo root, not shipped in plugins/). Both smoke commands pass: smoke:claude-plugin (pm-ft1k) and smoke:codex-plugin (pm-ma3z); pnpm build passes. Net: codex wrapper npx args changed positional -> --package= (functionally equivalent for npx; matches docs/Claude wrapper); depth 8->10 (strictly more permissive). No assertion changes."
+  "2026-05-24T22:38:46.445Z",codex-subagent-dedup,"Subagent plugin MCP review evidence: plugin wrappers are generated from scripts/gen-plugin-mcp-wrappers.mjs and node scripts/gen-plugin-mcp-wrappers.mjs --check passed; scripts/plugin-mcp-smoke-harness.mjs is used by both smoke scripts and not imported by shipped plugin launchers. No high-risk dead wrapper import found in the pm-js0r surface."
 files[4]{path,scope,note}:
   plugins/pm-claude/scripts/pm-mcp-server.mjs,project,plugin wrapper clone
   plugins/pm-codex/scripts/pm-mcp-server.mjs,project,plugin wrapper clone
   scripts/smoke-claude-plugin.mjs,project,plugin smoke helper clone
   scripts/smoke-codex-plugin-mcp.mjs,project,plugin smoke helper clone
+close_reason: Deduplicated plugin MCP wrappers (single-template generator) and smoke flows (shared harness); both smoke commands + build pass.
 body: ""

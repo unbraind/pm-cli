@@ -1,5 +1,6 @@
 import path from "node:path";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
+import { DEFAULT_STATUS_DEFINITIONS, DEFAULT_WORKFLOW_DEFINITION } from "../shared/constants.js";
 import {
   RUNTIME_FIELD_COMMAND_VALUES,
   RUNTIME_FIELD_TYPE_VALUES,
@@ -27,43 +28,12 @@ export const DEFAULT_RUNTIME_SCHEMA_FILE_PATHS = Object.freeze({
   workflows: "schema/workflows.json",
 });
 
-export const DEFAULT_RUNTIME_WORKFLOW: RuntimeWorkflowDefinition = Object.freeze({
-  draft_status: "draft",
-  open_status: "open",
-  in_progress_status: "in_progress",
-  blocked_status: "blocked",
-  close_status: "closed",
-  canceled_status: "canceled",
-});
+// Default lifecycle status model and workflow role mapping live in
+// src/core/shared/constants.ts as the single source of truth (also referenced
+// by SETTINGS_DEFAULTS). Re-exported here under the historical names.
+export const DEFAULT_RUNTIME_WORKFLOW: RuntimeWorkflowDefinition = DEFAULT_WORKFLOW_DEFINITION;
 
-export const DEFAULT_RUNTIME_STATUS_DEFINITIONS: ReadonlyArray<RuntimeStatusDefinition> = Object.freeze([
-  {
-    id: "draft",
-    roles: ["draft"],
-  },
-  {
-    id: "open",
-    roles: ["active", "default_open"],
-  },
-  {
-    id: "in_progress",
-    aliases: ["in-progress"],
-    roles: ["active"],
-  },
-  {
-    id: "blocked",
-    roles: ["blocked"],
-  },
-  {
-    id: "closed",
-    roles: ["terminal", "terminal_done", "default_close"],
-  },
-  {
-    id: "canceled",
-    aliases: ["cancelled"],
-    roles: ["terminal", "terminal_canceled", "default_cancel"],
-  },
-]);
+export const DEFAULT_RUNTIME_STATUS_DEFINITIONS: ReadonlyArray<RuntimeStatusDefinition> = DEFAULT_STATUS_DEFINITIONS;
 
 const DEFAULT_RUNTIME_FIELD_COMMANDS: RuntimeFieldCommand[] = ["create", "update"];
 

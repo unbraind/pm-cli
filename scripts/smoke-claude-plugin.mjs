@@ -12,18 +12,14 @@
  * 6. Session-start hook script runs without errors
  * 7. Marketplace plugin name matches plugin.json name
  */
-import { spawn } from "node:child_process";
-import { mkdtemp, rm, stat } from "node:fs/promises";
-import { tmpdir } from "node:os";
 import path from "node:path";
-import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
+import { startPluginMcpSmoke } from "./plugin-mcp-smoke-harness.mjs";
 
 const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const launcherPath = path.join(repoRoot, "plugins", "pm-claude", "scripts", "pm-mcp-server.mjs");
 const sessionStartPath = path.join(repoRoot, "plugins", "pm-claude", "hooks", "session-start.mjs");
-const tmpRoot = await mkdtemp(path.join(tmpdir(), "pm-claude-smoke-"));
 
 // Verify plugin files exist
 const pluginFiles = [
@@ -86,66 +82,11 @@ if (marketplacePluginName !== pluginJson.name) {
 }
 console.log(`Manifest names: marketplace="${rootMarketplace.name}" plugin="${pluginJson.name}" (consistent)`);
 
-const child = spawn(process.execPath, [launcherPath], {
-  cwd: tmpRoot,
-  env: {
-    ...process.env,
-    PM_AUTHOR: "claude-smoke",
-    PM_GLOBAL_PATH: path.join(tmpRoot, ".pm-global"),
-  },
-  stdio: ["pipe", "pipe", "pipe"],
+const { tmpRoot, request, callTool, dispose } = await startPluginMcpSmoke({
+  serverPath: launcherPath,
+  author: "claude-smoke",
+  tmpPrefix: "pm-claude-smoke-",
 });
-
-const rl = readline.createInterface({ input: child.stdout, crlfDelay: Infinity });
-const pending = new Map();
-let nextId = 1;
-let stderr = "";
-
-child.stderr.on("data", (chunk) => {
-  stderr += chunk.toString();
-});
-
-rl.on("line", (line) => {
-  if (!line.trim()) return;
-  const message = JSON.parse(line);
-  const waiter = pending.get(message.id);
-  if (!waiter) return;
-  pending.delete(message.id);
-  if (message.error) {
-    waiter.reject(new Error(message.error.message));
-  } else {
-    waiter.resolve(message.result);
-  }
-});
-
-function request(method, params = {}) {
-  const id = nextId++;
-  child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`);
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      pending.delete(id);
-      reject(new Error(`Timed out waiting for ${method}`));
-    }, 15000);
-    pending.set(id, {
-      resolve(value) {
-        clearTimeout(timeout);
-        resolve(value);
-      },
-      reject(error) {
-        clearTimeout(timeout);
-        reject(error);
-      },
-    });
-  });
-}
-
-async function callTool(name, args = {}) {
-  const response = await request("tools/call", { name, arguments: args });
-  if (response.isError) {
-    throw new Error(`${name} returned isError: ${response.content?.[0]?.text ?? "unknown"}`);
-  }
-  return response.structuredContent?.result ?? JSON.parse(response.content[0].text);
-}
 
 try {
   // 1. Initialize and check instructions
@@ -249,10 +190,5 @@ try {
 
   console.log(`\nClaude Code plugin smoke passed for ${id}`);
 } finally {
-  child.stdin.end();
-  child.kill();
-  await rm(tmpRoot, { recursive: true, force: true });
-  if (stderr.trim()) {
-    console.error(stderr.trim());
-  }
+  await dispose();
 }

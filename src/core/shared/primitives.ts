@@ -35,3 +35,43 @@ export function toErrorMessage(error: unknown): string {
   }
   return String(error);
 }
+
+/**
+ * Narrow a value to a plain object, returning `null` for non-objects,
+ * `null`, and arrays. Returns the original reference (no clone).
+ *
+ * Matches the historical `asRecord` in src/cli/main.ts.
+ */
+export function asRecordOrNull(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+/**
+ * Narrow a value to a plain object, returning `null` only for non-objects and
+ * `null` while accepting arrays (arrays are objects). Returns the original
+ * reference (no clone).
+ *
+ * Matches the historical `asRecord` in src/core/extensions/loader.ts, which
+ * intentionally omits the array guard.
+ */
+export function asRecordLoose(value: unknown): Record<string, unknown> | null {
+  if (typeof value !== "object" || value === null) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+}
+
+/**
+ * Narrow a value to a plain object, returning an empty object for non-objects,
+ * `null`, and arrays. Returns a shallow clone of the source object.
+ *
+ * Matches the historical `asRecord` in src/mcp/server.ts.
+ */
+export function asRecordClone(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? ({ ...value } as Record<string, unknown>)
+    : {};
+}

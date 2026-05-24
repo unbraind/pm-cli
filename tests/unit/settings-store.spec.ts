@@ -15,6 +15,48 @@ async function withTempPmRoot(run: (pmRoot: string) => Promise<void>): Promise<v
   });
 }
 
+/**
+ * Base legacy settings JSON shared by the merge/explicitness specs. The block
+ * deliberately omits later-added keys (e.g. `workflow`, `item_format`) so each
+ * test can express only the scenario field under test via `overrides`. Keys can
+ * be added through `overrides`; the object is serialized with `JSON.stringify`,
+ * so the base never carries fields a given test means to leave absent.
+ */
+function legacySettingsFixture(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    version: 1,
+    id_prefix: "pm-",
+    author_default: "legacy",
+    locks: { ttl_seconds: 1800 },
+    output: { default_format: "toon" },
+    extensions: { enabled: [], disabled: [] },
+    search: {
+      score_threshold: 0,
+      hybrid_semantic_weight: 0.7,
+      max_results: 50,
+      embedding_model: "",
+      embedding_batch_size: 32,
+      scanner_max_batch_retries: 3,
+    },
+    providers: {
+      openai: { base_url: "", api_key: "", model: "" },
+      ollama: { base_url: "", model: "" },
+    },
+    vector_store: {
+      qdrant: { url: "", api_key: "" },
+      lancedb: { path: "" },
+    },
+    ...overrides,
+  };
+}
+
+/** Write a legacy settings JSON fixture (see `legacySettingsFixture`) to `pmRoot`. */
+async function writeLegacySettings(pmRoot: string, overrides: Record<string, unknown> = {}): Promise<void> {
+  const settingsPath = getSettingsPath(pmRoot);
+  await fs.mkdir(path.dirname(settingsPath), { recursive: true });
+  await fs.writeFile(settingsPath, JSON.stringify(legacySettingsFixture(overrides)), "utf8");
+}
+
 function expectOrderedObjectKeys(value: unknown, expectedKeys: string[]): void {
   expect(value).toBeTypeOf("object");
   expect(value).not.toBeNull();
@@ -66,36 +108,8 @@ describe("core/store/settings", () => {
 
   it("merges defaults when legacy settings omit workflow block", async () => {
     await withTempPmRoot(async (pmRoot) => {
-      const settingsPath = getSettingsPath(pmRoot);
-      await fs.mkdir(path.dirname(settingsPath), { recursive: true });
-      await fs.writeFile(
-        settingsPath,
-        JSON.stringify({
-          version: 1,
-          id_prefix: "pm-",
-          author_default: "legacy",
-          locks: { ttl_seconds: 1800 },
-          output: { default_format: "toon" },
-          extensions: { enabled: [], disabled: [] },
-          search: {
-            score_threshold: 0,
-            hybrid_semantic_weight: 0.7,
-            max_results: 50,
-            embedding_model: "",
-            embedding_batch_size: 32,
-            scanner_max_batch_retries: 3,
-          },
-          providers: {
-            openai: { base_url: "", api_key: "", model: "" },
-            ollama: { base_url: "", model: "" },
-          },
-          vector_store: {
-            qdrant: { url: "", api_key: "" },
-            lancedb: { path: "" },
-          },
-        }),
-        "utf8",
-      );
+      // Base fixture omits the workflow block; defaults should be merged in.
+      await writeLegacySettings(pmRoot);
 
       const settings = await readSettings(pmRoot);
       expect(settings.author_default).toBe("legacy");
@@ -234,37 +248,8 @@ describe("core/store/settings", () => {
 
   it("reports whether item_format was explicitly selected in settings JSON", async () => {
     await withTempPmRoot(async (pmRoot) => {
-      const settingsPath = getSettingsPath(pmRoot);
-      await fs.mkdir(path.dirname(settingsPath), { recursive: true });
-      await fs.writeFile(
-        settingsPath,
-        JSON.stringify({
-          version: 1,
-          id_prefix: "pm-",
-          author_default: "legacy",
-          locks: { ttl_seconds: 1800 },
-          output: { default_format: "toon" },
-          workflow: { definition_of_done: [] },
-          extensions: { enabled: [], disabled: [] },
-          search: {
-            score_threshold: 0,
-            hybrid_semantic_weight: 0.7,
-            max_results: 50,
-            embedding_model: "",
-            embedding_batch_size: 32,
-            scanner_max_batch_retries: 3,
-          },
-          providers: {
-            openai: { base_url: "", api_key: "", model: "" },
-            ollama: { base_url: "", model: "" },
-          },
-          vector_store: {
-            qdrant: { url: "", api_key: "" },
-            lancedb: { path: "" },
-          },
-        }),
-        "utf8",
-      );
+      // Includes the workflow block but no item_format, so explicitness is false.
+      await writeLegacySettings(pmRoot, { workflow: { definition_of_done: [] } });
 
       const legacyRead = await readSettingsWithMetadata(pmRoot);
       expect(legacyRead.settings.item_format).toBe("toon");
