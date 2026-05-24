@@ -1,8 +1,9 @@
 import { defineExtension, listAllFrontMatter } from "@unbrained/pm-cli/sdk";
 import { createChangelog, mergeChangelog, writeChangelog } from "./generator.js";
+import { resolveReleaseContext } from "./release-context.js";
 export default defineExtension({
     name: "pm-changelog",
-    version: "2026.5.24-9",
+    version: "2026.5.24-11",
     activate(api) {
         api.registerCommand({
             name: "changelog generate",
@@ -11,6 +12,7 @@ export default defineExtension({
             examples: [
                 "pm changelog generate",
                 "pm changelog generate --release-version 1.2.0",
+                "pm changelog generate --release-version-from-package --since-previous-tag --until-release-tag",
                 "pm changelog generate --output RELEASE_NOTES.md --since 2026-05-01",
                 "pm changelog generate --stdout --group-by release",
                 "pm changelog generate --stdout --group-by milestone",
@@ -21,9 +23,12 @@ export default defineExtension({
                 { long: "--stdout", description: "Return markdown instead of writing a file" },
                 { long: "--title", value_name: "text", description: "Changelog title (default: Changelog)" },
                 { long: "--release-version", value_name: "version", description: "Release/version heading (default: Unreleased)" },
+                { long: "--release-version-from-package", description: "Read release/version heading from nearest package.json" },
                 { long: "--date", value_name: "date", description: "Release date (default: today)" },
                 { long: "--since", value_name: "date", description: "Include items changed on or after this date" },
+                { long: "--since-previous-tag", description: "Derive --since from the previous git tag" },
                 { long: "--until", value_name: "date", description: "Include items changed on or before this date" },
+                { long: "--until-release-tag", description: "Derive --until from the current release tag when it exists" },
                 { long: "--status", value_name: "list", description: "Comma-separated statuses (default: closed)" },
                 { long: "--group-by", value_name: "mode", description: "version, release, or milestone (default: version)" },
                 { long: "--mode", value_name: "mode", description: "replace or prepend existing changelog (default: replace)" },
@@ -49,14 +54,23 @@ export default defineExtension({
                     ?.split(",")
                     .map((status) => status.trim())
                     .filter(Boolean);
+                const releaseContext = resolveReleaseContext({
+                    cwd: process.cwd(),
+                    version: stringOption(ctx.options, "release-version", "releaseVersion"),
+                    versionFromPackage: booleanOption(ctx.options, "release-version-from-package", "releaseVersionFromPackage"),
+                    since: ctx.options["since"],
+                    sincePreviousTag: booleanOption(ctx.options, "since-previous-tag", "sincePreviousTag"),
+                    until: ctx.options["until"],
+                    untilReleaseTag: booleanOption(ctx.options, "until-release-tag", "untilReleaseTag"),
+                });
                 const items = await listAllFrontMatter(ctx.pm_root);
                 const generationOptions = {
                     items,
                     title: ctx.options["title"],
-                    version: stringOption(ctx.options, "release-version", "releaseVersion"),
+                    version: releaseContext.version,
                     date: ctx.options["date"],
-                    since: ctx.options["since"],
-                    until: ctx.options["until"],
+                    since: releaseContext.since,
+                    until: releaseContext.until,
                     includeStatuses: statuses,
                     groupBy,
                     includeEmpty: booleanOption(ctx.options, "include-empty", "includeEmpty"),

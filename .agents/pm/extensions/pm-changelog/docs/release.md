@@ -25,7 +25,7 @@ The workflow skips publishing when there are no commits after the latest release
 - Computes the next date-based tag in the configured release timezone, currently `Europe/Vienna`.
 - Updates `package.json`, `package-lock.json`, `manifest.json`, and `src/extension.ts`.
 - Rebuilds `dist/`.
-- Generates `CHANGELOG.md` with `pm-changelog` itself.
+- Generates or refreshes the current `CHANGELOG.md` release section with `pm-changelog` itself while preserving older release sections.
 - Runs release checks.
 - Commits release files.
 - Publishes to npm with provenance.
