@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.5.24-14 - 2026-05-24
+
+### Other
+
+- Batch git tag timestamp lookup for full-history changelog ([pmc-99tc](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-99tc.toon))
+
 ## 2026.5.24-13 - 2026-05-24
 
 ### Other
