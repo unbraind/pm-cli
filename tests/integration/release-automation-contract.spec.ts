@@ -155,6 +155,12 @@ describe("release automation contract", () => {
     expect(workflow).toContain("pnpm changelog:pm:check");
   });
 
+  it("keeps CI changelog checks on a tag-aware checkout", async () => {
+    const workflow = await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+    expect(workflow).toContain("fetch-depth: 0");
+    expect(workflow).toContain("pnpm changelog:pm:check");
+  });
+
   it("keeps release-note tracker evidence bounded by existing release tags", async () => {
     const releaseNotesSource = await readFile(path.join(repoRoot, "scripts/generate-release-notes.mjs"), "utf8");
     expect(releaseNotesSource).toContain("const currentDate = resolveTagDate(currentTag)");
