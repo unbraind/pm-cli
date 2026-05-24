@@ -141,6 +141,8 @@
 
 ### Security
 
+- Update npm dependencies: minor version bumps \(sentry/cli, toon, node types, vitest, tsx\) (pm-a2g6)
+- Deduplicate path containment helpers across package and extension code (pm-dpzc)
 - 2026-05-02 Full PM CLI Audit: Build Fix, Security, Performance, Telemetry (pm-nnhi)
 - 2026-05-09 latest-build full pm CLI dogfood audit and remediation (pm-m35h)
 - Security/privacy leakage gate - redact host/IP/token from tracked files (pm-m0fh)
@@ -156,6 +158,9 @@
 
 ### Other
 
+- Deduplicate lazy dynamic-import cache boilerplate in CLI registration (pm-c98b)
+- Deduplicate health and validate history-drift checks (pm-qsk8)
+- Deduplicate mutation author fallback resolution across commands (pm-xh0y)
 - Deduplicate front-matter key-order contract literals in tests (pm-8fx3)
 - Install and validate pm-changelog package (pm-7811)
 - Linked test sandbox cleanup can fail with ENOTEMPTY (pm-u43m)
