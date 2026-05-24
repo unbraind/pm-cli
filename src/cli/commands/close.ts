@@ -1,5 +1,5 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
-import { normalizeStatusInput } from "../../core/item/status.js";
+import { isTerminalStatus } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -8,7 +8,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { listAllFrontMatter, mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
-import type { ItemFrontMatter, ItemStatus } from "../../types/index.js";
+import type { ItemFrontMatter } from "../../types/index.js";
 
 export interface CloseCommandOptions {
   author?: string;
@@ -35,11 +35,6 @@ function ensureCloseReason(reasonText: string): string {
     throw new PmCliError("Close reason text must not be empty", EXIT_CODE.USAGE);
   }
   return reason;
-}
-
-function isTerminal(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
-  const normalized = normalizeStatusInput(status, statusRegistry) ?? status;
-  return statusRegistry.terminal_statuses.has(normalized);
 }
 
 type ValidateCloseMode = "off" | "warn" | "strict";
@@ -93,7 +88,7 @@ async function findActiveChildIds(
     settings.schema,
   );
   return items
-    .filter((item) => item.parent === parentId && !isTerminal(item.status, statusRegistry))
+    .filter((item) => item.parent === parentId && !isTerminalStatus(item.status, statusRegistry))
     .map((item) => item.id)
     .sort((left, right) => left.localeCompare(right));
 }
@@ -128,7 +123,7 @@ export async function runClose(
     message: options.message,
     force: options.force,
     mutate(document) {
-      if (isTerminal(document.metadata.status, statusRegistry) && !options.force) {
+      if (isTerminalStatus(document.metadata.status, statusRegistry) && !options.force) {
         throw new PmCliError(`Item ${document.metadata.id} is already terminal; use --force to close again.`, EXIT_CODE.CONFLICT);
       }
       const mutationWarnings: string[] = [];

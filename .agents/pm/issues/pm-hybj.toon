@@ -1,0 +1,20 @@
+id: pm-hybj
+title: pm-changelog generator silently drops items the bundled @unbrained/pm-cli SDK cannot read
+description: "Discovered while verifying pm-changelog after the pm-iqgj TOON read fix. The pm-changelog extension reads items via listAllFrontMatter imported from @unbrained/pm-cli/sdk, which correctly delegates to pm core parseItemDocument (now fixed by pm-iqgj). HOWEVER, the installed extension resolves that import to its OWN bundled node_modules/@unbrained/pm-cli (the package lists @unbrained/pm-cli in BOTH dependencies and peerDependencies, so npm installs a local copy that shadows the host). That bundled SDK is a published pm-cli version WITHOUT the read fix, so it still throws on bracketed-token-then-colon item files and silently skips them. Net effect: closed item total is 798 but the generator processes exactly 782 (798 minus the 16 pm-iqgj-recovered files). Normal items are unaffected. pm-changelog has NO code bug; its delegation is correct. Root cause is fixed in pm-cli core/SDK by pm-iqgj; full propagation requires (a) a pm-cli release containing the fix and (b) pm-changelog rebuilding against it. Durable hardening option to evaluate in the pm-changelog repo: drop @unbrained/pm-cli from dependencies (keep it as peerDependency + devDependency) so the extension uses the HOST SDK instead of a shadowing bundled copy - but this must be verified against the extension loader module resolution (related closed work: pm-1etl, pm-qfuq) before changing, since the host pm-cli may not be node-resolvable from the extension directory."
+type: Issue
+status: open
+priority: 2
+tags[1]: telemetry
+created_at: "2026-05-24T06:57:51.663Z"
+updated_at: "2026-05-24T07:02:51.595Z"
+author: claude-code-agent
+estimated_minutes: 45
+acceptance_criteria: "pm-changelog generator includes all closed items readable by the current pm core (item_count equals total closed count); the bundled-SDK shadowing is either eliminated (host SDK used) or documented as release-gated; no regression to changelog:pm:check."
+parent: pm-rnpb
+blocked_by: pm-iqgj
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-iqgj,blocked_by,"2026-05-24T06:58:03.546Z",claude-code-agent,null
+comments[2]{created_at,author,text}:
+  "2026-05-24T06:58:06.206Z",claude-code-agent,"Evidence: total closed=798, generator item_count=782, delta=16 = exactly the pm-iqgj-recovered files (pm-3akm/ss8d/1r6p... none present in CHANGELOG.pm.md while normal closed items pm-qsk8/c98b/xh0y/dpzc are). Extension dir has node_modules/@unbrained/pm-cli (bundled). Root-cause fix shipped in this PR via pm-iqgj (src/core/item/toon-decode.ts + parseToonItemDocument); this issue tracks propagation/hardening only and is blocked_by pm-iqgj."
+  "2026-05-24T07:02:51.595Z",claude-code-agent,Submitted in PR #58 (branch recover-unreadable-toon-items-and-dedup-core-helpers).
+body: ""

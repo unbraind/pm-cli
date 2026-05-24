@@ -113,6 +113,15 @@ export type RecurrenceFrequency = (typeof RECURRENCE_FREQUENCY_VALUES)[number];
 export const RECURRENCE_WEEKDAY_VALUES = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 export type RecurrenceWeekday = (typeof RECURRENCE_WEEKDAY_VALUES)[number];
 
+/**
+ * Canonical week-order index for a recurrence weekday (mon=0 .. sun=6).
+ * Shared by item serialization, create/update parsing, and calendar expansion
+ * so weekday ordering cannot drift between those modules.
+ */
+export function weekdayOrderIndex(value: RecurrenceWeekday): number {
+  return RECURRENCE_WEEKDAY_VALUES.indexOf(value);
+}
+
 export interface Dependency {
   id: string;
   kind: DependencyKind;

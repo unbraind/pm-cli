@@ -71,6 +71,7 @@ import {
   RECURRENCE_WEEKDAY_VALUES,
   RISK_VALUES,
   SCOPE_VALUES,
+  weekdayOrderIndex,
 } from "../../types/index.js";
 
 export interface CreateCommandOptions {
@@ -508,10 +509,6 @@ function parseCreateUnsetTargets(
   }
 
   return { frontMatterKeys, optionKeys };
-}
-
-function weekdayOrderIndex(value: (typeof RECURRENCE_WEEKDAY_VALUES)[number]): number {
-  return RECURRENCE_WEEKDAY_VALUES.indexOf(value);
 }
 
 function parseDependencies(

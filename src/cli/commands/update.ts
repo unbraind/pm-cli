@@ -62,6 +62,7 @@ import {
   RECURRENCE_FREQUENCY_VALUES,
   RECURRENCE_WEEKDAY_VALUES,
   RISK_VALUES,
+  weekdayOrderIndex,
 } from "../../types/index.js";
 import { parseDocs, parseFiles, parseLogSeed, parseTests } from "./create.js";
 
@@ -685,10 +686,6 @@ function parseStatus(value: string, statusRegistry: RuntimeStatusRegistry): Item
     throw new PmCliError(`Invalid --status value "${value}". Allowed: ${allowedStatuses.join(", ")}`, EXIT_CODE.USAGE);
   }
   return normalized;
-}
-
-function weekdayOrderIndex(value: (typeof RECURRENCE_WEEKDAY_VALUES)[number]): number {
-  return RECURRENCE_WEEKDAY_VALUES.indexOf(value);
 }
 
 function parseReminderEntries(raw: string[], nowValue: Date): Reminder[] {

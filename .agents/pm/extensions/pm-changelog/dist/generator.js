@@ -202,10 +202,38 @@ function groupSectionsByMetadata(items, field, fallback) {
         group.push(item);
         grouped.set(key, group);
     }
-    return Array.from(grouped.entries()).map(([heading, groupedItems]) => ({
-        heading,
-        items: groupedItems,
-    }));
+    return Array.from(grouped.entries())
+        .map(([heading, groupedItems]) => ({ heading, items: groupedItems }))
+        .sort((a, b) => compareVersionHeadings(a.heading, b.heading, fallback));
+}
+function compareVersionHeadings(a, b, fallback) {
+    if (a === fallback)
+        return -1;
+    if (b === fallback)
+        return 1;
+    return compareVersionStrings(b, a);
+}
+function compareVersionStrings(a, b) {
+    const normalize = (v) => v.replace(/^v/, "");
+    const segmentsA = normalize(a).split(/[.\-]/);
+    const segmentsB = normalize(b).split(/[.\-]/);
+    const len = Math.max(segmentsA.length, segmentsB.length);
+    for (let i = 0; i < len; i++) {
+        const sa = segmentsA[i] ?? "";
+        const sb = segmentsB[i] ?? "";
+        const na = parseInt(sa, 10);
+        const nb = parseInt(sb, 10);
+        if (!Number.isNaN(na) && !Number.isNaN(nb)) {
+            if (na !== nb)
+                return na - nb;
+        }
+        else {
+            const cmp = sa.localeCompare(sb);
+            if (cmp !== 0)
+                return cmp;
+        }
+    }
+    return 0;
 }
 function buildVersionHeading(version, date) {
     const heading = version?.trim() || "Unreleased";

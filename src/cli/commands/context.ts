@@ -2,7 +2,7 @@ import { SETTINGS_DEFAULTS, EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { compareTimestampStrings, nowIso } from "../../core/shared/time.js";
-import { normalizeStatusInput } from "../../core/item/status.js";
+import { isTerminalStatus, normalizeStatusForRegistry, normalizeStatusInput } from "../../core/item/status.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -325,10 +325,6 @@ function parseStaleThresholdDays(raw: string | undefined, settings: ContextSetti
 // Status helpers
 // ---------------------------------------------------------------------------
 
-function normalizeStatusForRegistry(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): ItemStatus {
-  return normalizeStatusInput(status, statusRegistry) ?? status;
-}
-
 function statusRank(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): number {
   const normalizedStatus = normalizeStatusForRegistry(status, statusRegistry);
   const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry);
@@ -343,10 +339,6 @@ function statusRank(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): 
   if (statusRegistry.blocked_statuses.has(normalizedStatus)) return 5;
   if (statusRegistry.terminal_statuses.has(normalizedStatus)) return 7;
   return 6;
-}
-
-function isTerminal(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
-  return statusRegistry.terminal_statuses.has(normalizeStatusForRegistry(status, statusRegistry));
 }
 
 function isClosedStatus(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
@@ -1010,7 +1002,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
     itemMap.set(item.id, item);
   }
 
-  const allNonTerminal = allItems.filter((item) => !isTerminal(item.status, statusRegistry));
+  const allNonTerminal = allItems.filter((item) => !isTerminalStatus(item.status, statusRegistry));
 
   const has = (section: ContextSectionName) => sectionsIncluded.includes(section);
 

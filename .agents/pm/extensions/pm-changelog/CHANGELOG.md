@@ -1,6 +1,19 @@
 # Changelog
 
-## Unreleased
+## v2026.05.24-6
+
+### Fixed
+
+- Changelog sections out of version order when items have different updated\_at times (pmc-36lr)
+
+## v2026.05.24-5
+
+### Other
+
+- Run full release gate and temp install verification 2026-05-24 session 2 (pmc-ws4p)
+- Production readiness verification 2026-05-24 session 2 (pmc-9tmr)
+
+## v2026.05.24-3
 
 ### Fixed
 
@@ -8,6 +21,7 @@
 
 ### Other
 
+- Production readiness pass 2026-05-24 session (pmc-96zn)
 - Published package sourcemaps point to missing source files (pmc-l9z0)
 
 ## v2026.05.24-2

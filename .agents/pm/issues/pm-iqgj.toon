@@ -1,0 +1,33 @@
+id: pm-iqgj
+title: "Recover 16 unreadable TOON item files: strict decoder mis-parses bracketed tokens followed by a colon inside quoted text fields"
+description: "Root cause: the upstream @toon-format/toon 2.3.0 decoder has a round-trip bug. parseArrayHeaderLine scans the whole line for an opening bracket when the key is unquoted, so a quoted scalar value that contains a bracketed token followed by a colon (e.g. a redacted endpoint marker, an Unreleased changelog marker, a med severity tag, or a sntr-style pattern) is mis-detected as a key[N]: array header. Because pm calls decode in strict mode, parseBracketSegment throws Invalid array length and parseToonItemDocument reports invalid TOON even though the library encoder emitted the quoted scalar. Impact: 16 closed item files failed to load and were excluded from pm list/get/search. Fix: parseToonItemDocument uses decodeToonItemContent, which tries strict decode first; only after failure it escapes '[' inside quoted scalar values as unicode escapes and retries strict decode. The decoded value remains byte-for-byte equivalent while duplicate-key, array-length, tab-indentation, and other strict protections remain enforced. Recovery is silent (no health-flipping warning)."
+type: Issue
+status: closed
+priority: 2
+tags[1]: store
+created_at: "2026-05-24T06:34:21.946Z"
+updated_at: "2026-05-24T07:50:27.105Z"
+author: claude-code-agent
+estimated_minutes: 90
+acceptance_criteria: All 16 previously-unreadable items load via pm get/list/search; pm list emits zero item_list_item_read_failed warnings; valid files still parse strictly (duplicate-key protection retained for the non-bracket case); a focused unit test covers a bracketed-token-then-colon body round-trip; pnpm build and coverage gate pass; pm-changelog item_count rises to include recovered closed items.
+parent: pm-rnpb
+comments[5]{created_at,author,text}:
+  "2026-05-24T06:36:34.360Z",claude-code-agent,"Root cause confirmed and fixed. Added src/core/item/toon-decode.ts with decodeToonItemContent(): try strict decode, fall back to lenient on failure, rethrow strict error if lenient also fails. Wired into parseToonItemDocument (item-format.ts); recovery is intentionally silent (no onWarning) to keep pm health green for legacy files. Verified against freshly-built dist: all 16 previously-unreadable items now load (16/16), pm list emits zero item_list_item_read_failed warnings, and a valid file parses identically under strict vs non-strict (duplicate-key protection retained for normal docs). New module added to vitest include for 100% coverage; item-format.ts is already in both include+exclude (not gated)."
+  "2026-05-24T07:00:10.677Z",claude-code-agent,"COORDINATOR VERIFIED 2026-05-24: full coverage gate green (108 files, 1621 tests, 100% stmts/branch/funcs/lines), static-quality-gate passed, typecheck clean, secret-scan clean. Recovery is SILENT (no health-flipping warning) — pm health now ok:true (was ok:false from 16 read failures); pm validate ok:true checked_items 837 (was 820); 16/16 items load. Dogfooded in temp repo: created an item with a bracketed-token-then-colon description, read it back byte-identical, zero read-failed warnings. Downstream pm-changelog generator gap tracked separately as pm-hybj (bundled stale SDK)."
+  "2026-05-24T07:02:44.239Z",claude-code-agent,Submitted in PR #58 (branch recover-unreadable-toon-items-and-dedup-core-helpers).
+  "2026-05-24T07:11:26.402Z",claude-code-agent,"PR #58 review follow-up: (1) Codex P1 addressed — the lenient fallback is now GATED to the specific upstream bracket mis-parse error signatures (Invalid array length / between bracket segment and colon / between bracket and fields segment) instead of all strict failures, so genuine strict errors (duplicate sibling keys -> last-write-wins, tabs-in-indentation, unterminated strings) keep failing and strict validation is fully preserved. Added a regression test proving 'a:1\\na:2' still throws Duplicate sibling key (no silent LWW). (2) Gemini medium addressed — corrected the earlier description/comment that said onWarning is emitted; recovery is intentionally silent. Re-verified: 16/16 items still recover with the gate; 5/5 toon-decode tests pass."
+  "2026-05-24T07:42:52.445Z",codex-review-fix,"Evidence: PR #58 review follow-up replaces the lenient fallback with a strict escaped retry. decodeToonItemContent now retries strict mode only after escaping '[' inside quoted scalar values, so duplicate-key and array-length strict invariants remain enforced even when the recovery path engages. Updated toon-decode tests cover valid strict decode, recovered scalar bracket decode, non-bracket strict failures, duplicate-key failure after escaped retry, malformed retry error propagation, and parseItemDocument silent recovery. Local verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/toon-decode.spec.ts (6 tests); pnpm typecheck; pnpm quality:static; pnpm security:scan; node scripts/run-tests.mjs coverage (108 files, 1623 tests, 100% coverage). pm health --check-only --summary ok:true. pm validate --check-resolution ok:true; history-drift warning is isolated to pre-existing pm-iqgj entry_11 before this follow-up, and current item hash matches latest history entry."
+files[5]{path,scope,note}:
+  CHANGELOG.md,project,PR review follow-up changelog wording for strict escaped retry
+  src/core/item/item-format.ts,project,null
+  src/core/item/toon-decode.ts,project,null
+  tests/unit/toon-decode.spec.ts,project,null
+  vitest.config.ts,project,null
+tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,360,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/toon-decode.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Fixed in PR #58 through strict scalar-bracket TOON recovery: no lenient decode path remains, strict duplicate-key/array-length invariants are covered by tests, local gates and refreshed GitHub checks are green, and Codex/CodeRabbit found no remaining major issues."
+body: ""

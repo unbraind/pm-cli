@@ -349,12 +349,6 @@
 - Agent-First CLI UX v3 follow-up (pm-pfn8)
 - External audit follow-up: unresolved UX and dependency visualization gaps (pm-iswo)
 
-## 2026.5.2
-
-### Other
-
-- Release @unbrained/pm-cli 2026.5.2 (pm-5jw8)
-
 ## vnext
 
 ### Added
@@ -813,6 +807,35 @@
 - Calendar parity phase 2: events and recurrence (pm-vdrn)
 - TOON item storage migration (pm-bckz)
 
+## 2026.5.2
+
+### Other
+
+- Release @unbrained/pm-cli 2026.5.2 (pm-5jw8)
+
+## v2026.3.12
+
+### Other
+
+- Release @unbrained/pm-cli 2026.3.12 (pm-lz4m)
+
+## v0.1.1
+
+### Added
+
+- Add pm completion command for bash/zsh/fish shell completion (pm-7hx6)
+
+## v0.1.0
+
+### Added
+
+- Add README badges and update CONTRIBUTING.md to reference docs/ (pm-x4f9)
+- Add Node 25 to nightly CI and create docs/ architecture+extension guides (pm-aa6w)
+
+### Security
+
+- Add npm provenance attestation to release workflow (pm-mwap)
+
 ## v0.1
 
 ### Added
@@ -855,26 +878,3 @@
 - Implement include-body retrieval in list command pipeline (pm-vsux)
 - Differentiate pm list \(active-only\) from pm list-all \(all items\) (pm-zzt1)
 - List JSON Body Projection Contract (pm-0lbm)
-
-## v0.1.0
-
-### Added
-
-- Add README badges and update CONTRIBUTING.md to reference docs/ (pm-x4f9)
-- Add Node 25 to nightly CI and create docs/ architecture+extension guides (pm-aa6w)
-
-### Security
-
-- Add npm provenance attestation to release workflow (pm-mwap)
-
-## v2026.3.12
-
-### Other
-
-- Release @unbrained/pm-cli 2026.3.12 (pm-lz4m)
-
-## v0.1.1
-
-### Added
-
-- Add pm completion command for bash/zsh/fish shell completion (pm-7hx6)

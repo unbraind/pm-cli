@@ -26,7 +26,7 @@ import {
 import { buildEventCorpus, buildPlanFlatCorpus, buildReminderCorpus } from "../../core/search/corpus.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
-import { normalizeStatusInput } from "../../core/item/status.js";
+import { isTerminalStatus } from "../../core/item/status.js";
 import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
 import {
   resolveRuntimeFieldRegistry,
@@ -199,11 +199,6 @@ type ExtensionVectorAdapter = {
 };
 
 
-
-function isTerminal(status: ItemStatus, statusRegistry: RuntimeStatusRegistry): boolean {
-  const normalized = normalizeStatusInput(status, statusRegistry) ?? status;
-  return statusRegistry.terminal_statuses.has(normalized);
-}
 
 interface SearchModeContext {
   hasProvider: boolean;
@@ -662,8 +657,8 @@ function sortHits(items: SearchHit[], statusRegistry: RuntimeStatusRegistry): Se
   return [...items].sort((a, b) => {
     const byScore = b.score - a.score;
     if (byScore !== 0) return byScore;
-    const aTerminal = isTerminal(a.item.status, statusRegistry);
-    const bTerminal = isTerminal(b.item.status, statusRegistry);
+    const aTerminal = isTerminalStatus(a.item.status, statusRegistry);
+    const bTerminal = isTerminalStatus(b.item.status, statusRegistry);
     if (aTerminal !== bTerminal) {
       return aTerminal ? 1 : -1;
     }

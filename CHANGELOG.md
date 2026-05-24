@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pm init` now prints a concise default summary while preserving the full settings tree behind `--verbose`; `--json` output is unchanged for machine consumers (pm-fuat / pm-5k2w).
 - Rendered text help now hides pure snake_case duplicates of kebab-case long flags while keeping those aliases parse-functional and present in machine-readable contracts/completions (pm-fuat / pm-5k2w).
 - `pm gc` help now states that cache artifacts are deleted by default unless `--dry-run` is passed; the runtime default is unchanged for compatibility (pm-tobi / pm-5k2w).
+- Extract shared `isTerminalStatus`/`normalizeStatusForRegistry` helpers to `src/core/item/status.ts`; deduplicate runtime terminal-status checks across the `list`, `search`, `context`, `close`, and `dedupe-audit` commands while preserving registry-aware normalization with raw-value fallback (pm-i04b).
+- Extract shared recurrence `weekdayOrderIndex` helper to `src/types.ts`; deduplicate four identical copies across item serialization, `create`/`update` parsing, and calendar expansion (pm-max1).
+- Extract shared item-type definition normalizer to `src/core/item/item-type-definition.ts`; single-source name/folder/alias/required-field/option/command-option-policy normalization and dedupe-sort semantics across the runtime registry and settings persistence, with the only layer-specific divergence (strict vs pass-through policy-command resolution) injected via an adapter (pm-v798).
+
+### Fixed
+- **Recover 16 unreadable item files** caused by an upstream `@toon-format/toon` 2.3.0 round-trip bug: its strict decoder mis-parses a quoted scalar value containing a bracketed token immediately followed by a colon (e.g. `[Unreleased]:`, `[med]:`) as a `key`+bracket+colon array header and throws `Invalid array length`, even though the library's own encoder emits that form. `parseToonItemDocument` now decodes via `src/core/item/toon-decode.ts`, which tries strict first and, only after failure, retries strict decoding with scalar-value brackets escaped so duplicate-key, array-length, and other strict protections remain enforced. Affected items load again across `pm get`/`list`/`search` with no `item_list_item_read_failed` warnings (pm-iqgj).
 
 ## [2026.5.23] - 2026-05-23
 
