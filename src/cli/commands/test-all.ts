@@ -12,6 +12,7 @@ import { listAllFrontMatter } from "../../core/store/item-store.js";
 import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { appendTrackedTestRunSummary } from "../../core/test/item-test-run-tracking.js";
+import { resolveAuthor } from "../../core/shared/author.js";
 import type { ItemStatus, LinkedTest } from "../../types/index.js";
 import {
   countFailureCategories,
@@ -99,12 +100,6 @@ function parseNonNegativeInteger(raw: string | undefined, flag: string): number 
     throw new PmCliError(`${flag} must be a non-negative integer`, EXIT_CODE.USAGE);
   }
   return parsed;
-}
-
-function resolveTrackingAuthor(fallback: string): string {
-  const candidate = process.env.PM_AUTHOR ?? fallback;
-  const trimmed = candidate.trim();
-  return trimmed.length > 0 ? trimmed : "unknown";
 }
 
 function resolveTrackedRunId(): string {
@@ -237,7 +232,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
   const runStartedAt = nowIso();
   const trackingEnabled = settings.testing.record_results_to_items === true;
   const trackingRunId = resolveTrackedRunId();
-  const trackingAuthor = resolveTrackingAuthor(settings.author_default);
+  const trackingAuthor = resolveAuthor(undefined, settings.author_default);
   const trackingAttemptRaw = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT?.trim();
   const trackingParsedAttempt = trackingAttemptRaw ? Number.parseInt(trackingAttemptRaw, 10) : Number.NaN;
   const trackingResumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM?.trim();

@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
+import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import {
   resolveRegisteredSearchProvider,
@@ -492,14 +493,6 @@ function collectLinkedPaths(item: ItemFrontMatter): Array<{ scope: "project" | "
   return [...deduped.values()];
 }
 
-function isPathWithinRoot(root: string, resolvedPath: string): boolean {
-  const relative = path.relative(root, resolvedPath);
-  if (relative.length === 0) {
-    return true;
-  }
-  return !relative.startsWith("..") && !path.isAbsolute(relative);
-}
-
 interface ContainmentRoot {
   resolved: string;
   realpath: string;
@@ -546,7 +539,7 @@ async function loadLinkedCorpus(
       continue;
     }
     const resolved = path.resolve(containmentRoot.resolved, linkedPath.path);
-    if (!isPathWithinRoot(containmentRoot.resolved, resolved)) {
+    if (!isPathWithinDirectory(containmentRoot.resolved, resolved)) {
       continue;
     }
     let linkedRealpath: string;
@@ -555,7 +548,7 @@ async function loadLinkedCorpus(
     } catch {
       continue;
     }
-    if (!isPathWithinRoot(containmentRoot.realpath, linkedRealpath)) {
+    if (!isPathWithinDirectory(containmentRoot.realpath, linkedRealpath)) {
       continue;
     }
     try {

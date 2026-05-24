@@ -10,6 +10,7 @@ import { toErrorMessage } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { resolveAuthor } from "../../core/shared/author.js";
 import type { ItemStatus } from "../../types/index.js";
 import { runList, type ListOptions, type ListedItem } from "./list.js";
 import { runRestore } from "./restore.js";
@@ -501,12 +502,6 @@ function hasListFilters(list: ListOptions, status: string | undefined): boolean 
 }
 
 
-function resolveCheckpointAuthor(update: UpdateCommandOptions): string {
-  const candidate = update.author ?? process.env.PM_AUTHOR ?? "unknown";
-  const normalized = candidate.trim();
-  return normalized.length > 0 ? normalized : "unknown";
-}
-
 function ensureCheckpointShape(value: unknown, checkpointId: string): UpdateManyCheckpoint {
   if (!value || typeof value !== "object") {
     throw new PmCliError(`Checkpoint ${checkpointId} is invalid`, EXIT_CODE.GENERIC_FAILURE);
@@ -696,7 +691,7 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
       schema_version: UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION,
       id: checkpointId,
       created_at: nowValue,
-      author: resolveCheckpointAuthor(options.update),
+      author: resolveAuthor(options.update.author, "unknown"),
       status_filter: statusFilter ?? null,
       list_filters: listed.filters,
       update_options: updateSummary,
