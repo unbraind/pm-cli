@@ -2,15 +2,19 @@ id: pm-jpfc
 title: Release @unbrained/pm-cli 2026.5.24
 description: "Publish the merged 2026-05-24 fixes through the tag-driven GitHub release workflow, verify npm/npx/bunx/GitHub release surfaces, and record release evidence."
 type: Chore
-status: in_progress
+status: closed
 priority: 0
 tags[3]: npm,pm-cli,release
 created_at: "2026-05-24T10:35:44.711Z"
-updated_at: "2026-05-24T11:42:59.973Z"
-assignee: codex-release
+updated_at: "2026-05-24T11:51:19.942Z"
 author: codex-release
 parent: pm-rnpb
-comments[11]{created_at,author,text}:
+release: 2026.5.24
+resolution: Published @unbrained/pm-cli 2026.5.24 through the tag-driven GitHub Release workflow after refreshing and verifying the npm token.
+expected_result: "A signed npm package, latest npm dist-tag, GitHub Release, Sentry release metadata, and npx/bunx execution all verify for 2026.5.24."
+actual_result: Release workflow 26360300582 passed; npm latest is 2026.5.24; npx and bunx print 2026.5.24; GitHub release v2026.5.24 exists; Sentry release pm-cli@2026.5.24 exists.
+fixed_version: 2026.5.24
+comments[12]{created_at,author,text}:
   "2026-05-24T10:36:39.110Z",codex-release,"Release preparation note: initial dry-run command refused to run because the working tree contained the newly created release tracker item; committing tracker setup first so the release pipeline can enforce its clean-tree guard."
   "2026-05-24T10:40:59.740Z",codex-release,"Evidence: pnpm release:pipeline:dry-run passed for 2026.5.24. Gate details included build, typecheck, docs/skills, static quality, coverage 108 files / 1623 tests / 100%, version policy, security scan, packed npx smoke, package-first dogfood 84 commands, npm pack, and release-note generation."
   "2026-05-24T10:53:00.086Z",codex-release,"Release workflow failure: GitHub run 26359132490 failed before npm publish at Reliability threshold gate. Logs show SENTRY_AUTH_TOKEN was present but issue lookup returned sentry_api_403; SENTRY_PERSONAL_ADMIN_TOKEN was empty. This matches the documented split where release upload tokens may not have issue-read scope and the issue-threshold gate should skip without the personal admin token."
@@ -22,6 +26,7 @@ comments[11]{created_at,author,text}:
   "2026-05-24T11:17:17.268Z",codex-release,"Fix verification: focused workflow contract test passed after adding explicit token cleanup before npm publish: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts (1 file, 4 tests)."
   "2026-05-24T11:29:39.596Z",codex-release,"Release remediation: official npm Trusted Publishing docs now require npm CLI 11.5.1+ and Node 22.14+. The release workflow was still on Node 20, which explains the ENEEDAUTH fallback after removing token auth. Updating release.yml to Node 24 and documenting/contract-testing that runtime floor before retagging v2026.5.24."
   "2026-05-24T11:42:59.973Z",codex-release,"Credential remediation: loaded the updated local NPM_TOKEN from ~/.bashrc without printing it, verified npm whoami returns unbrained, package status for @unbrained/pm-cli is public, and collaborators show unbrained read-write. Updated GitHub NPM_TOKEN in both the release environment and repository scope. Switching release workflow back to explicit NODE_AUTH_TOKEN so the refreshed token can publish with provenance."
+  "2026-05-24T11:51:03.577Z",codex-release,"Release success: GitHub Release run 26360300582 completed green in 6m39s. Gates passed: secret scan, build, typecheck, docs/skills, coverage, static quality, pm changelog, compatibility migration, reliability threshold, Sentry sourcemap upload, npm pack, npx tarball smoke, package-first dogfood, release notes, npm publish, published-package verification, GitHub Release creation, and release metadata verification. Independent checks: npm view @unbrained/pm-cli@2026.5.24 returned version 2026.5.24 with integrity sha512-hvNL0IV1WQzxfJpcDm1ar++GqPv1dqNz1dXbx/zQezZWjPMQ2NokCn54QzvElQKlGJ+Cyxr4UAn+QNSDgrW8fg== and unpacked size 7850695; npm latest is 2026.5.24; npx and bunx both print 2026.5.24; GitHub release is https://github.com/unbraind/pm-cli/releases/tag/v2026.5.24; pnpm release:verify-published reports Published release 2026.5.24 verified; sentry-cli releases info shows pm-cli@2026.5.24 exists."
 files[5]{path,scope,note}:
   .github/workflows/release.yml,project,Fix release reliability gate to require personal admin token for Sentry issue reads
   CHANGELOG.md,project,Release changelog promotion
@@ -33,4 +38,5 @@ tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   "pnpm release:pipeline:dry-run",null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Read-only local release parity pipeline before mutating release prep
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,Release source of truth for tag-driven publish
+close_reason: "Released @unbrained/pm-cli 2026.5.24 and verified npm, npx, bunx, GitHub Release, Sentry metadata, and release workflow checks."
 body: ""
