@@ -4,7 +4,7 @@ description: "Plan for pm-85hm: ship audited history-repair (re-anchor) command,
 type: Plan
 status: closed
 priority: 0
-tags[0]:
+tags: []
 created_at: "2026-05-22T20:27:40.121Z"
 updated_at: "2026-05-23T16:00:10.832Z"
 author: claude-code-agent

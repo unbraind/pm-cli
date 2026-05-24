@@ -4,7 +4,7 @@ description: "Dogfood 2026-05-22 HIGH (agent UX + token): on a healthy project, 
 type: Chore
 status: closed
 priority: 2
-tags[0]:
+tags: []
 created_at: "2026-05-22T15:44:32.363Z"
 updated_at: "2026-05-23T09:22:23.145Z"
 author: maintainer-agent

@@ -2,11 +2,11 @@ id: pm-dpzc
 title: Deduplicate path containment helpers across package and extension code
 description: "Duplicate audit 2026-05-22: path containment logic is repeated across package and extension boundaries. src/core/packages/manifest.ts:225 defines isPathWithinDirectory; src/cli/commands/extension.ts:541 and src/core/extensions/loader.ts:1160 define the same containment plus canonical realpath wrapper logic. Existing searches found closed sandbox work and open contract-list items, but no active item for filesystem boundary helper duplication."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[5]: code-quality,dedup,extensions,packages,security
 created_at: "2026-05-22T19:16:32.934Z"
-updated_at: "2026-05-22T19:16:32.934Z"
+updated_at: "2026-05-24T01:20:41.841Z"
 author: codex-duplicate-audit
 acceptance_criteria: "A shared path containment/canonical containment helper is used by package manifest validation, extension install/doctor, and extension loader paths; path traversal/security semantics remain unchanged; focused package/extension tests and pnpm build pass."
 parent: pm-rnpb
@@ -16,4 +16,5 @@ files[3]{path,scope,note}:
   src/core/packages/manifest.ts,project,isPathWithinDirectory clone
   src/cli/commands/extension.ts,project,canonical containment clone
   src/core/extensions/loader.ts,project,canonical containment clone
+close_reason: "Extracted isPathWithinDirectory to src/core/fs/path-utils.ts, deduplicated across manifest/loader/extension/files/search. Merged via PR #55."
 body: ""

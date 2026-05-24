@@ -2,13 +2,14 @@ id: pm-a2g6
 title: "Update npm dependencies: minor version bumps (sentry/cli, toon, node types, vitest, tsx)"
 description: "6 packages have minor-version updates as of 2026-05-24: @sentry/cli 3.4.2->3.4.3, @toon-format/toon 2.2.0->2.3.0, @types/node 25.8.0->25.9.1, @vitest/coverage-v8 4.1.6->4.1.7, tsx 4.22.1->4.22.3, vitest 4.1.6->4.1.7. All are patch/minor bumps in dev or CLI dependencies. Dependabot has flagged vulnerabilities in vite, undici, brace-expansion, picomatch, minimatch, rollup which are transitive dev-deps; audit whether any direct dep update resolves them."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[3]: chore,dependencies,security
 created_at: "2026-05-24T00:41:44.704Z"
-updated_at: "2026-05-24T01:11:53.571Z"
+updated_at: "2026-05-24T01:22:52.910Z"
 author: claude-code-agent
 parent: pm-rnpb
 comments[1]{created_at,author,text}:
   "2026-05-24T01:11:53.571Z",claude-code-agent,"PR created: https://github.com/unbraind/pm-cli/pull/56. Packages updated: @sentry/cli 3.4.3, @toon-format/toon 2.3.0, @types/node 25.9.1, @vitest/coverage-v8 4.1.7, tsx 4.22.3, vitest 4.1.7"
+close_reason: Updated all 6 devDependencies via PR #56 (merged to main 2026-05-24). pnpm audit confirms 0 vulnerabilities after updates.
 body: ""
