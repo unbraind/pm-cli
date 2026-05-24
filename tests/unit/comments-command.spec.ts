@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   limitAnnotationEntries,
   parseAnnotationTextInput,
+  readAnnotationEntries,
   runAnnotationCommand,
   wrapOwnershipConflict,
 } from "../../src/cli/commands/annotation-command.js";
@@ -44,6 +45,8 @@ describe("runComments", () => {
     expect(parseAnnotationTextInput("text:")).toBe("text:");
     expect(parseAnnotationTextInput("text=hello,scope:project")).toBe("text=hello,scope:project");
     expect(parseAnnotationTextInput("text:", { stripPlainTextPrefix: true })).toBe("text:");
+    expect(readAnnotationEntries({ comments: "not-array" }, "comments")).toEqual([]);
+    expect(readAnnotationEntries({ comments: [{ text: "ok" }] }, "comments")).toEqual([{ text: "ok" }]);
 
     const nonConflict = new Error("not an ownership conflict");
     expect(() =>

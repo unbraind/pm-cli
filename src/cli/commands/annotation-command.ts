@@ -63,6 +63,11 @@ export function limitAnnotationEntries<TEntry>(values: TEntry[], limit: number |
   return values.slice(Math.max(0, values.length - limit));
 }
 
+export function readAnnotationEntries<TEntry>(source: Record<string, unknown>, collectionKey: string): TEntry[] {
+  const value = source[collectionKey];
+  return Array.isArray(value) ? (value as TEntry[]) : [];
+}
+
 export function parseAnnotationTextInput(raw: string, options: { stripPlainTextPrefix?: boolean } = {}): string {
   const trimmed = raw.trim();
   if (!trimmed) {
@@ -127,7 +132,7 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
       throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
     }
     const loaded = await readLocatedItem(located, { schema: settings.schema });
-    const allEntries = ((loaded.document.metadata[config.collectionKey] ?? []) as TEntry[]);
+    const allEntries = readAnnotationEntries<TEntry>(loaded.document.metadata, config.collectionKey);
     return renderAnnotationResult(located.id, config.collectionKey, allEntries, limit, options.includeMeta === true);
   }
 
@@ -149,7 +154,7 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
       force: options.force,
       bypassAssigneeConflict: config.allowAuditBypass,
       mutate(document) {
-        const entries = ((document.metadata[config.collectionKey] ?? []) as TEntry[]);
+        const entries = readAnnotationEntries<TEntry>(document.metadata, config.collectionKey);
         entries.push({
           created_at: nowIso(),
           author,
@@ -163,7 +168,7 @@ export async function runAnnotationCommand<TKey extends string, TEntry extends A
     wrapOwnershipConflict(error, config.conflictGuidance);
   }
 
-  const allEntries = result.item[config.collectionKey] as TEntry[];
+  const allEntries = readAnnotationEntries<TEntry>(result.item, config.collectionKey);
   return renderAnnotationResult(result.item.id, config.collectionKey, allEntries, limit, options.includeMeta === true);
 }
 
