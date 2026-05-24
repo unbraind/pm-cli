@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Fixed
+
+- Production readiness refresh for pm-changelog sourcemap fix (pmc-pm02)
+
+### Other
+
+- Published package sourcemaps point to missing source files (pmc-l9z0)
+
+## v2026.05.24-2
+
 ### Security
 
 - Remove host-specific path from published docs (pmc-sz4m)
