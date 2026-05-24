@@ -37,6 +37,13 @@ describe("release automation contract", () => {
     expect(packageJson.scripts?.["release:verify-published"]).toBe(
       "node scripts/release/verify-published-release.mjs",
     );
+    expect(packageJson.scripts?.["changelog:pm:install"]).toBe(
+      "node dist/cli.js install npm:pm-changelog --project",
+    );
+    expect(packageJson.scripts?.["changelog:pm"]).toContain("changelog:pm:install");
+    expect(packageJson.scripts?.["changelog:pm"]).toContain("changelog generate");
+    expect(packageJson.scripts?.["changelog:pm:check"]).toContain("changelog:pm:install");
+    expect(packageJson.scripts?.["changelog:pm:check"]).toContain("--check");
   });
 
   it("keeps auto-release workflow aligned with one-per-day and manual override controls", async () => {
@@ -226,6 +233,22 @@ describe("release automation contract", () => {
     expect(verifyPublishedHelp.status).toBe(0);
     expect(verifyPublishedHelp.stdout).toContain("--skip-github-release");
     expect(verifyPublishedHelp.stdout).toContain("npm registry metadata");
+  });
+
+  it("keeps pm-changelog install and CHANGELOG.pm.md generation wired into the release pipeline", async () => {
+    const pipelineSource = await readFile(
+      path.join(repoRoot, "scripts/release/run-release-pipeline.mjs"),
+      "utf8",
+    );
+    expect(pipelineSource).toContain("npm:pm-changelog");
+    expect(pipelineSource).toContain("changelog");
+    expect(pipelineSource).toContain("CHANGELOG.pm.md");
+    expect(pipelineSource).toContain('"add", "package.json", "CHANGELOG.md", "CHANGELOG.pm.md"');
+  });
+
+  it("keeps release workflow pm-changelog verification step present", async () => {
+    const workflow = await readFile(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
+    expect(workflow).toContain("pnpm changelog:pm:check");
   });
 
   it("keeps release workflow public verification delegated to the local script", async () => {
