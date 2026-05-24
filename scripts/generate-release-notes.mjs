@@ -137,12 +137,15 @@ function loadPmItems() {
   }
 }
 
-function formatPmSummary(items, sinceIso) {
+function formatPmSummary(items, sinceIso, untilIso) {
   const since = sinceIso ? Date.parse(sinceIso) : Number.NEGATIVE_INFINITY;
+  const until = untilIso ? Date.parse(untilIso) : Number.POSITIVE_INFINITY;
   const changed = items
     .filter((item) => {
-      const updated = typeof item.updated_at === "string" ? Date.parse(item.updated_at) : Number.NaN;
-      return Number.isFinite(updated) && updated >= since;
+      const timestampSource = item.closed_at ?? item.updated_at ?? item.created_at;
+      const timestamp = typeof timestampSource === "string" ? Date.parse(timestampSource) : Number.NaN;
+      const status = typeof item.status === "string" ? item.status : "unknown";
+      return status === "closed" && Number.isFinite(timestamp) && timestamp > since && timestamp <= until;
     })
     .sort((left, right) => {
       const priorityDelta = Number(left.priority ?? 99) - Number(right.priority ?? 99);
@@ -151,7 +154,7 @@ function formatPmSummary(items, sinceIso) {
     });
 
   if (changed.length === 0) {
-    return ["No pm tracker items were updated in the selected release window."];
+    return ["No closed pm tracker items were updated in the selected release window."];
   }
 
   const byType = new Map();
@@ -162,7 +165,7 @@ function formatPmSummary(items, sinceIso) {
   }
 
   const lines = [
-    `Updated pm items in release window: ${changed.length}`,
+    `Closed pm items in release window: ${changed.length}`,
     `By type: ${[...byType.entries()].map(([key, value]) => `${key}=${value}`).join(", ")}`,
     `By status: ${[...byStatus.entries()].map(([key, value]) => `${key}=${value}`).join(", ")}`,
     "",
@@ -211,8 +214,9 @@ function buildNotes({ version, previousTag }) {
   const currentTag = `v${version}`;
   const resolvedPreviousTag = previousTag ?? resolvePreviousTag(currentTag);
   const previousDate = resolveTagDate(resolvedPreviousTag);
+  const currentDate = resolveTagDate(currentTag);
   const { items, warning } = loadPmItems();
-  const pmLines = warning ? [warning] : formatPmSummary(items, previousDate);
+  const pmLines = warning ? [warning] : formatPmSummary(items, previousDate, currentDate);
 
   return [
     `# @unbrained/pm-cli ${version}`,

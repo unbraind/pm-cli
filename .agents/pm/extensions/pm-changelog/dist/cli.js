@@ -3,8 +3,10 @@ import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { stdin } from "node:process";
 import { createChangelog, mergeChangelog, parsePmItemsJson, readPmItems, writeChangelog, } from "./generator.js";
+import { resolveReleaseContext } from "./release-context.js";
 async function main() {
     const options = parseArgs(process.argv.slice(2));
+    applyReleaseContext(options);
     const items = await loadItems(options);
     const outputPath = resolve(options.output);
     if (!options.stdout) {
@@ -98,6 +100,9 @@ function parseArgs(args) {
         check: false,
         githubOutput: false,
         githubStepSummary: false,
+        versionFromPackage: false,
+        sincePreviousTag: false,
+        untilReleaseTag: false,
     };
     for (let i = 0; i < args.length; i++) {
         const arg = args[i];
@@ -151,14 +156,23 @@ function parseArgs(args) {
             case "--version":
                 options.version = requireValue(args, ++i, arg);
                 break;
+            case "--release-version-from-package":
+                options.versionFromPackage = true;
+                break;
             case "--date":
                 options.date = requireValue(args, ++i, arg);
                 break;
             case "--since":
                 options.since = requireValue(args, ++i, arg);
                 break;
+            case "--since-previous-tag":
+                options.sincePreviousTag = true;
+                break;
             case "--until":
                 options.until = requireValue(args, ++i, arg);
+                break;
+            case "--until-release-tag":
+                options.untilReleaseTag = true;
                 break;
             case "--status":
             case "--statuses":
@@ -190,6 +204,22 @@ function parseArgs(args) {
         }
     }
     return options;
+}
+function applyReleaseContext(options) {
+    if (!options.versionFromPackage && !options.sincePreviousTag && !options.untilReleaseTag)
+        return;
+    const context = resolveReleaseContext({
+        cwd: options.pmCwd ? resolve(options.pmCwd) : process.cwd(),
+        version: options.version,
+        versionFromPackage: options.versionFromPackage,
+        since: options.since,
+        sincePreviousTag: options.sincePreviousTag,
+        until: options.until,
+        untilReleaseTag: options.untilReleaseTag,
+    });
+    options.version = context.version;
+    options.since = context.since;
+    options.until = context.until;
 }
 async function loadItems(options) {
     if (options.stdin) {
@@ -297,9 +327,13 @@ Options:
       --pm-cwd <dir>        Working directory for running pm
       --title <text>        Changelog title (default: Changelog)
       --version <version>   Version heading (default: Unreleased)
+      --release-version-from-package
+                            Read version heading from nearest package.json
       --date <date>         Release date (default: today)
       --since <date>        Include items changed on or after this date
+      --since-previous-tag  Derive --since from the previous git tag
       --until <date>        Include items changed on or before this date
+      --until-release-tag   Derive --until from the current release tag when it exists
       --status <list>       Comma-separated statuses (default: closed)
       --group-by <mode>     version, release, or milestone (default: version)
       --mode <mode>         replace or prepend existing changelog (default: replace)

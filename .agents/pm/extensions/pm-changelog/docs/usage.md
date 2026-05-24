@@ -27,6 +27,7 @@ Common extension commands:
 pm changelog generate --release-version 1.2.0 --output CHANGELOG.md
 pm changelog generate --stdout --group-by milestone
 pm changelog generate --stdout --group-by release
+pm changelog generate --release-version-from-package --since-previous-tag --until-release-tag
 pm changelog generate --mode prepend --release-version "$GITHUB_REF_NAME"
 pm changelog generate --check --mode prepend --release-version "$GITHUB_REF_NAME"
 ```
@@ -135,9 +136,12 @@ Each item entry becomes a link: `- Fix something ([pmc-abc](https://github.com/o
 | `--pm-arg <arg>` | - | Extra argument passed before `list-all --json`; repeat for multiple args |
 | `--pm-cwd <dir>` | - | Working directory for running pm |
 | `--version <version>` | `Unreleased` | Version heading for the standalone CLI |
+| `--release-version-from-package` | false | Read the version heading from the nearest `package.json` |
 | `--date <date>` | today | Release date |
 | `--since <date>` | - | Include items changed on or after date |
+| `--since-previous-tag` | false | Derive `--since` from the previous git tag. If the current release tag exists, the previous tag before it is used; otherwise the latest tag before `HEAD` is used. |
 | `--until <date>` | - | Include items changed on or before date |
+| `--until-release-tag` | false | Derive `--until` from the current release tag when it exists (`v<version>` or `<version>`). Useful after a release tag has been created so post-release tracker changes do not move the published section. |
 | `--status <list>` | `closed` | Comma-separated statuses |
 | `--group-by <mode>` | `version` | `version`, `release`, or `milestone` |
 | `--mode <mode>` | `replace` | `replace` or `prepend` existing changelog |
@@ -178,6 +182,12 @@ console.log({
 ```
 
 Use `version` when a runner is generating one release section from the current job context. Use `groupBy: "release"` or `--group-by release` when pm items already carry release metadata and a runner should rebuild multiple sections in one pass.
+
+For date-based release projects, prefer the package-owned release context flags instead of wrapper scripts:
+
+```bash
+pm changelog generate --release-version-from-package --since-previous-tag --until-release-tag --output CHANGELOG.md
+```
 
 Item links are omitted by default so public CI jobs do not accidentally publish private tracker URLs. Pass `--include-links` or `includeLinks: true` only when item URLs are safe to expose. When links are included, credentials, query strings, and fragments are stripped before markdown is emitted.
 

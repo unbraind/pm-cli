@@ -41,6 +41,10 @@ describe("release automation contract", () => {
     expect(packageJson.scripts?.["changelog:pm"]).toContain("changelog:pm:install");
     expect(packageJson.scripts?.["changelog:pm"]).toContain("changelog generate");
     expect(packageJson.scripts?.["changelog:pm"]).toContain("CHANGELOG.md");
+    expect(packageJson.scripts?.["changelog:pm"]).toContain("--mode prepend");
+    expect(packageJson.scripts?.["changelog:pm"]).toContain("--release-version-from-package");
+    expect(packageJson.scripts?.["changelog:pm"]).toContain("--since-previous-tag");
+    expect(packageJson.scripts?.["changelog:pm"]).toContain("--until-release-tag");
     expect(packageJson.scripts?.["changelog:pm"]).toContain("--item-url-base");
     expect(packageJson.scripts?.["changelog:pm:check"]).toContain("changelog:pm:install");
     expect(packageJson.scripts?.["changelog:pm:check"]).toContain("--check");
@@ -137,7 +141,10 @@ describe("release automation contract", () => {
     expect(pipelineSource).toContain("changelog");
     expect(pipelineSource).toContain("CHANGELOG.md");
     expect(pipelineSource).toContain("--item-url-base");
+    expect(pipelineSource).toContain("--mode");
+    expect(pipelineSource).toContain("prepend");
     expect(pipelineSource).toContain("--release-version");
+    expect(pipelineSource).toContain("--since-previous-tag");
     expect(pipelineSource).toContain("ensureGeneratedReleaseSectionHasContent(targetVersion)");
     expect(pipelineSource).toContain('"add", "package.json", "CHANGELOG.md"');
     expect(pipelineSource).not.toContain("CHANGELOG.pm.md");
@@ -146,6 +153,21 @@ describe("release automation contract", () => {
   it("keeps release workflow pm-changelog verification step present", async () => {
     const workflow = await readFile(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
     expect(workflow).toContain("pnpm changelog:pm:check");
+  });
+
+  it("keeps CI changelog checks on a tag-aware checkout", async () => {
+    const workflow = await readFile(path.join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+    expect(workflow).toContain("fetch-depth: 0");
+    expect(workflow).toContain("pnpm changelog:pm:check");
+  });
+
+  it("keeps release-note tracker evidence bounded by existing release tags", async () => {
+    const releaseNotesSource = await readFile(path.join(repoRoot, "scripts/generate-release-notes.mjs"), "utf8");
+    expect(releaseNotesSource).toContain("const currentDate = resolveTagDate(currentTag)");
+    expect(releaseNotesSource).toContain("formatPmSummary(items, previousDate, currentDate)");
+    expect(releaseNotesSource).toContain("item.closed_at ?? item.updated_at ?? item.created_at");
+    expect(releaseNotesSource).toContain('status === "closed"');
+    expect(releaseNotesSource).toContain("timestamp > since && timestamp <= until");
   });
 
   it("keeps release workflow public verification delegated to the local script", async () => {
