@@ -12,6 +12,8 @@ import { listAllFrontMatter, locateItem, mutateItem, readLocatedItem } from "../
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { SCOPE_VALUES } from "../../types/index.js";
+import { resolveAuthor } from "../../core/shared/author.js";
+import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
 import type { ItemDocument, LinkedFile, LinkScope } from "../../types/index.js";
 
 export interface FilesCommandOptions {
@@ -103,12 +105,6 @@ interface TextReference {
 interface RawPathReference {
   field: string;
   value: string;
-}
-
-function resolveAuthor(candidate: string | undefined, fallback: string): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? fallback;
-  const trimmed = resolved.trim();
-  return trimmed || "unknown";
 }
 
 function ensureScope(raw: string | undefined): LinkScope {
@@ -220,10 +216,6 @@ function normalizeCandidatePathForOutput(value: string): string {
   return normalizeLinkedPath(path.normalize(value));
 }
 
-function isPathInside(parentPath: string, childPath: string): boolean {
-  const relative = path.relative(parentPath, childPath);
-  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
-}
 
 async function realpathForContainment(inputPath: string): Promise<string> {
   try {
@@ -412,7 +404,7 @@ async function resolveDiscoveredFile(
     realpathForContainment(projectRoot),
     realpathForContainment(absolutePath),
   ]);
-  if (isPathInside(canonicalProjectRoot, canonicalAbsolutePath)) {
+  if (isPathWithinDirectory(canonicalProjectRoot, canonicalAbsolutePath)) {
     const relativePath = path.relative(canonicalProjectRoot, canonicalAbsolutePath);
     if (!relativePath || relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
       return undefined;

@@ -22,6 +22,7 @@ import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../co
 import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { resolveAuthor } from "../../core/shared/author.js";
 import type { HistoryEntry, HistoryPatchOp, ItemDocument, ItemMetadata } from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
 
@@ -55,12 +56,6 @@ export interface RestoreResult {
   };
   changed_fields: string[];
   warnings: string[];
-}
-
-function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
-  const trimmed = resolved.trim();
-  return trimmed || "unknown";
 }
 
 function ensureReplayTarget(target: string, history: HistoryEntry[]): ResolvedRestoreTarget {
@@ -362,7 +357,7 @@ export async function runRestore(
     );
   }
 
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   const releaseLock = await acquireLock(
     pmRoot,
     resolvedId,

@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { pathExists } from "../fs/fs-utils.js";
+import { isPathWithinDirectory } from "../fs/path-utils.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import type { GlobalOptions } from "../shared/command-types.js";
 import type { PmSettings } from "../../types/index.js";
@@ -1155,14 +1156,6 @@ function shouldEnable(name: string, enabled: Set<string>, disabled: Set<string>)
     return true;
   }
   return enabled.has(name);
-}
-
-function isPathWithinDirectory(directory: string, targetPath: string): boolean {
-  const relative = path.relative(directory, targetPath);
-  if (relative.length === 0) {
-    return true;
-  }
-  return !relative.startsWith("..") && !path.isAbsolute(relative);
 }
 
 async function isCanonicalPathWithinDirectory(directory: string, targetPath: string): Promise<boolean> {

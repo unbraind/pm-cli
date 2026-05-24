@@ -22,6 +22,7 @@ import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../co
 import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings, resolveGovernanceKnobs } from "../../core/store/settings.js";
+import { resolveAuthor } from "../../core/shared/author.js";
 import type { HistoryEntry, HistoryPatchOp, ItemDocument } from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
 
@@ -99,12 +100,6 @@ export interface HistoryRedactResult {
   };
   warnings: string[];
   generated_at: string;
-}
-
-function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
-  const trimmed = resolved.trim();
-  return trimmed.length > 0 ? trimmed : "unknown";
 }
 
 function normalizeStringArrayInput(value: string[] | string | undefined): string[] {
@@ -498,7 +493,7 @@ export async function runHistoryRedact(
     (currentItemPath ?? null) !== (nextItemPath ?? null) ||
     (currentItemRaw ?? null) !== (nextItemRaw ?? null);
 
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
   const redactionMessage =
     typeof options.message === "string" && options.message.trim().length > 0
       ? options.message

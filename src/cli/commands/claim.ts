@@ -6,6 +6,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { resolveAuthor } from "../../core/shared/author.js";
 
 export interface ClaimResult {
   item: Record<string, unknown>;
@@ -32,12 +33,6 @@ export interface ClaimMutationOptions {
 
 export interface ReleaseMutationOptions extends ClaimMutationOptions {
   allowAuditRelease?: boolean;
-}
-
-function resolveAuthor(candidate: string | undefined, fallback: string): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? fallback;
-  const trimmed = resolved.trim();
-  return trimmed || "unknown";
 }
 
 export async function runClaim(

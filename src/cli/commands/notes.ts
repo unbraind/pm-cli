@@ -11,6 +11,7 @@ import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { parseLimit } from "../shared-parsers.js";
 import type { LogNote } from "../../types/index.js";
+import { resolveAuthor } from "../../core/shared/author.js";
 
 export interface NotesCommandOptions {
   add?: string;
@@ -26,12 +27,6 @@ export interface NotesResult {
   id: string;
   notes: LogNote[];
   count: number;
-}
-
-function resolveAuthor(candidate: string | undefined, fallback: string): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? fallback;
-  const trimmed = resolved.trim();
-  return trimmed || "unknown";
 }
 
 function limitNotes(values: LogNote[], limit: number | undefined): LogNote[] {

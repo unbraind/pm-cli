@@ -2,6 +2,7 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { resolveAuthor } from "../../core/shared/author.js";
 import { createStdinTokenResolver } from "../../core/item/parse.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
@@ -20,11 +21,6 @@ export interface AppendResult {
   changed_fields: string[];
 }
 
-function resolveAuthor(candidate: string | undefined, defaultAuthor: string): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
-  const trimmed = resolved.trim();
-  return trimmed || "unknown";
-}
 
 export async function runAppend(id: string, options: AppendCommandOptions, global: GlobalOptions): Promise<AppendResult> {
   if (options.body === undefined) {
