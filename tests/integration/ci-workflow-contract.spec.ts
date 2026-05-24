@@ -241,6 +241,7 @@ describe("GitHub workflow contract", () => {
       "run: pnpm typecheck",
       "run: pnpm test:coverage",
       "run: pnpm quality:static",
+      "run: pnpm changelog:pm:check",
       "run: node scripts/release/compatibility-check.mjs --json",
       "node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --max-critical 10 --max-high 20",
       "name: Upload Sentry sourcemaps",
