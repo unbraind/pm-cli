@@ -18,9 +18,17 @@ describe("decodeToonItemContent", () => {
     expect(result.value).toMatchObject({ body: "POST [redacted_endpoint]: HTTP 200, accepted:1" });
   });
 
-  it("rethrows the strict error when the lenient retry also fails", () => {
-    // An unterminated quote is malformed in both strict and lenient modes.
-    expect(() => decodeToonItemContent('title: "unterminated')).toThrow(/Unterminated string/);
+  it("does NOT fall back for non-bracket strict errors, preserving strict validation", () => {
+    // Duplicate sibling keys are a strict error that lenient mode would silently
+    // resolve last-write-wins. The fallback is gated to the bracket mis-parse, so
+    // this must still throw rather than silently accept a last-write-wins value.
+    expect(() => decodeToonItemContent("a: 1\na: 2")).toThrow(/Duplicate sibling key/);
+  });
+
+  it("rethrows the strict bracket error when the gated lenient retry also fails", () => {
+    // Line 1 trips the bracket mis-parse (so the fallback engages), but line 2 is
+    // malformed in lenient mode too, so the original strict error is surfaced.
+    expect(() => decodeToonItemContent('a: "p[x]: y"\nb: "unterminated')).toThrow(/Invalid array length/);
   });
 });
 
