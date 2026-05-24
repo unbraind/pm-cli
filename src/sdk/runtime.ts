@@ -21,6 +21,20 @@ export {
 export { pathExists, readFileIfExists, removeFileIfExists, writeFileAtomic } from "../core/fs/fs-utils.js";
 export { appendHistoryEntry, createHistoryEntry } from "../core/history/history.js";
 export { generateItemId, normalizeItemId, normalizeRawItemId } from "../core/item/id.js";
+export { readBooleanOption, readCsvListOption, readStringOption } from "./package-runtime-options.js";
+export {
+  commitImportedItem,
+  emptyImportedDocument,
+  ensureTrackerInitialized,
+  selectImportAuthor,
+  toEstimatedMinutesValue,
+  toImportPriority,
+  toImportStatus,
+  toImportTags,
+  toNonEmptyImportString,
+  type CommitImportedItemParams,
+  type CommitImportedItemResult,
+} from "./package-import-adapters.js";
 export {
   canonicalDocument,
   normalizeFrontMatter,

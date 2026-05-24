@@ -7,35 +7,32 @@ import {
   ISSUE_SEVERITY_VALUES,
   PmCliError,
   RISK_VALUES,
-  acquireLock,
-  appendHistoryEntry,
   canonicalDocument,
-  createHistoryEntry,
+  commitImportedItem,
   generateItemId,
   getActiveExtensionRegistrations,
-  getHistoryPath,
   getItemPath,
-  getSettingsPath,
   listAllFrontMatter,
   locateItem,
   normalizeFrontMatter,
   normalizeItemId,
-  normalizeStatusInput,
   nowIso,
-  parseTags,
-  pathExists,
   readLocatedItem,
   readSettings,
-  removeFileIfExists,
   resolveItemTypeRegistry,
   resolvePmRoot,
   runActiveOnReadHooks,
   runActiveOnWriteHooks,
-  serializeItemDocument,
+  selectImportAuthor,
   splitFrontMatter,
+  ensureTrackerInitialized,
+  toEstimatedMinutesValue,
+  toImportPriority,
+  toImportStatus,
+  toImportTags,
+  toNonEmptyImportString,
   writeFileAtomic,
   type GlobalOptions,
-  type ItemDocument,
   type ItemMetadata,
   type ItemStatus,
   type ItemType,
@@ -92,16 +89,14 @@ interface TodosImportRuntime {
 
 type ImportCandidateResult = { id: string; writeWarnings: string[] } | { warning: string };
 
+// Shared, behavior-identical value coercers are sourced from the SDK adapter
+// surface; package-specific mappings (lenient timestamps, type-name resolution,
+// confidence/enum coercion) stay local below.
+const toNonEmptyString = toNonEmptyImportString;
+const toEstimatedMinutes = toEstimatedMinutesValue;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function toNonEmptyString(value: unknown): string | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 function toIsoString(value: unknown): string | undefined {
@@ -114,19 +109,6 @@ function toIsoString(value: unknown): string | undefined {
     return undefined;
   }
   return new Date(timestamp).toISOString();
-}
-
-function toEstimatedMinutes(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
-    return value;
-  }
-  if (typeof value === "string" && value.trim().length > 0) {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed) && parsed >= 0) {
-      return parsed;
-    }
-  }
-  return undefined;
 }
 
 function toInteger(value: unknown): number | undefined {
@@ -142,18 +124,7 @@ function toInteger(value: unknown): number | undefined {
   return undefined;
 }
 
-function toPriority(value: unknown): PriorityValue {
-  if (typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 4) {
-    return value as PriorityValue;
-  }
-  if (typeof value === "string" && value.trim().length > 0) {
-    const parsed = Number(value);
-    if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 4) {
-      return parsed as PriorityValue;
-    }
-  }
-  return 2;
-}
+const toPriority: (value: unknown) => PriorityValue = toImportPriority;
 
 function toConfidence(value: unknown): ItemMetadata["confidence"] | undefined {
   if (typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100) {
@@ -221,19 +192,7 @@ function toBoolean(value: unknown): boolean | undefined {
   return undefined;
 }
 
-function toTags(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    const tags = value
-      .filter((entry): entry is string => typeof entry === "string")
-      .map((entry) => entry.trim().toLowerCase())
-      .filter((entry) => entry.length > 0);
-    return Array.from(new Set(tags)).sort((left, right) => left.localeCompare(right));
-  }
-  if (typeof value === "string") {
-    return parseTags(value);
-  }
-  return [];
-}
+const toTags = toImportTags;
 
 function toItemType(value: unknown, typeNames: string[]): ItemType {
   const normalized = toNonEmptyString(value)?.toLowerCase();
@@ -249,40 +208,12 @@ function toItemType(value: unknown, typeNames: string[]): ItemType {
   return fallbackType;
 }
 
-function toStatus(value: unknown): ItemStatus {
-  const normalized = toNonEmptyString(value);
-  if (normalized) {
-    const canonical = normalizeStatusInput(normalized);
-    if (canonical) {
-      return canonical;
-    }
-  }
-  return "open";
-}
-
-function selectAuthor(explicitAuthor: string | undefined, settingsAuthor: string): string {
-  const candidate = explicitAuthor ?? process.env.PM_AUTHOR ?? settingsAuthor;
-  const trimmed = candidate.trim();
-  return trimmed.length > 0 ? trimmed : "unknown";
-}
-
-function ensureInitHasRun(pmRoot: string): Promise<void> {
-  return pathExists(getSettingsPath(pmRoot)).then((exists) => {
-    if (!exists) {
-      throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
-    }
-  });
-}
+const toStatus: (value: unknown) => ItemStatus = toImportStatus;
+const selectAuthor = selectImportAuthor;
+const ensureInitHasRun = ensureTrackerInitialized;
 
 function normalizeBody(body: string): string {
   return body.replace(/^\n+/, "").replace(/\s+$/, "");
-}
-
-function emptyDocument(): ItemDocument {
-  return {
-    metadata: {} as ItemMetadata,
-    body: "",
-  };
 }
 
 function resolveFolderPath(rawPath: string): string {
@@ -417,49 +348,21 @@ async function importTodoCandidate(candidate: ParsedTodoCandidate, runtime: Todo
     body: candidate.body,
   });
 
-  const historyPath = getHistoryPath(runtime.pmRoot, id);
-  let writeWarnings: string[] = [];
-  try {
-    const releaseLock = await acquireLock(runtime.pmRoot, id, runtime.settings.locks.ttl_seconds, runtime.author);
-    try {
-      await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: "toon" }));
-      try {
-        const historyEntry = createHistoryEntry({
-          nowIso: nowIso(),
-          author: runtime.author,
-          op: "import",
-          before: emptyDocument(),
-          after: afterDocument,
-          message: runtime.message,
-        });
-        await appendHistoryEntry(historyPath, historyEntry);
-        writeWarnings = [
-          ...(await runActiveOnWriteHooks({
-            path: itemPath,
-            scope: "project",
-            op: "import",
-          })),
-          ...(await runActiveOnWriteHooks({
-            path: historyPath,
-            scope: "project",
-            op: "import:history",
-          })),
-        ];
-      } catch (error: unknown) {
-        await removeFileIfExists(itemPath);
-        throw error;
-      }
-    } finally {
-      await releaseLock();
-    }
-  } catch (error: unknown) {
-    if (error instanceof PmCliError && error.exitCode === EXIT_CODE.CONFLICT) {
-      return { warning: `todos_import_lock_conflict:${id}` };
-    }
-    throw error;
+  const commit = await commitImportedItem({
+    pmRoot: runtime.pmRoot,
+    id,
+    itemPath,
+    document: afterDocument,
+    author: runtime.author,
+    message: runtime.message,
+    settings: runtime.settings,
+    conflictWarningPrefix: "todos_import_lock_conflict",
+  });
+  if (!commit.committed) {
+    return { warning: commit.conflictWarning };
   }
 
-  return { id, writeWarnings };
+  return { id, writeWarnings: commit.writeWarnings };
 }
 
 export async function runTodosImport(options: TodosImportOptions, global: GlobalOptions): Promise<TodosImportResult> {

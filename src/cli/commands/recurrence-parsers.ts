@@ -1,0 +1,139 @@
+import { parseOptionalNumber } from "../../core/item/parse.js";
+import { EXIT_CODE } from "../../core/shared/constants.js";
+import { PmCliError } from "../../core/shared/errors.js";
+import { resolveIsoOrRelative } from "../../core/shared/time.js";
+import {
+  RECURRENCE_FREQUENCY_VALUES,
+  RECURRENCE_WEEKDAY_VALUES,
+  weekdayOrderIndex,
+} from "../../types/index.js";
+import type { RecurrenceRule } from "../../types/index.js";
+
+/**
+ * Shared calendar recurrence/event parsing helpers used by the `create` and
+ * `update` commands. Extracted verbatim from create.ts and update.ts (pm-why9).
+ *
+ * `parseEventBoolean`, `parseDelimitedList`, and `ensureEnumValue` were
+ * byte-identical between the two commands (update spelled `ensureEnumValue` as
+ * `ensureEnum`).
+ *
+ * `parseRecurrenceRule` was identical apart from the recur_interval/recur_count
+ * "provided" guard: create used `intervalRaw !== undefined` (an empty
+ * `recur_interval=` is parsed and rejected), while update used the truthy
+ * `intervalRaw ?` (an empty value is skipped). That distinction is preserved
+ * via the `emptyNumericGuard` option so both call sites keep their exact
+ * behaviour, including error strings.
+ */
+
+export function parseEventBoolean(value: string, flag: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "true" || normalized === "1" || normalized === "yes") {
+    return true;
+  }
+  if (normalized === "false" || normalized === "0" || normalized === "no") {
+    return false;
+  }
+  throw new PmCliError(`${flag} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
+}
+
+export function parseDelimitedList(raw: string | undefined): string[] {
+  if (!raw) {
+    return [];
+  }
+  return raw
+    .split("|")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+}
+
+export function ensureEnumValue<T extends string>(value: string, allowed: readonly T[], label: string): T {
+  if (!allowed.includes(value as T)) {
+    throw new PmCliError(`Invalid ${label} value "${value}". Allowed: ${allowed.join(", ")}`, EXIT_CODE.USAGE);
+  }
+  return value as T;
+}
+
+/**
+ * `"defined"` parses `recur_interval=`/`recur_count=` (empty values), matching
+ * the historical `create` behaviour. `"truthy"` skips empty values, matching
+ * the historical `update` behaviour.
+ */
+export type RecurrenceEmptyNumericGuard = "defined" | "truthy";
+
+export function parseRecurrenceRule(
+  kv: Record<string, string>,
+  startAt: string,
+  nowValue: Date,
+  emptyNumericGuard: RecurrenceEmptyNumericGuard,
+): RecurrenceRule | undefined {
+  const freqRaw = kv.recur_freq?.trim();
+  const intervalRaw = kv.recur_interval?.trim();
+  const countRaw = kv.recur_count?.trim();
+  const untilRaw = kv.recur_until?.trim();
+  const byWeekdayRaw = kv.recur_by_weekday?.trim();
+  const byMonthDayRaw = kv.recur_by_month_day?.trim();
+  const exdatesRaw = kv.recur_exdates?.trim();
+
+  const recurrenceInputsProvided = [freqRaw, intervalRaw, countRaw, untilRaw, byWeekdayRaw, byMonthDayRaw, exdatesRaw].some(
+    (value) => value !== undefined,
+  );
+  if (!recurrenceInputsProvided) {
+    return undefined;
+  }
+  if (!freqRaw) {
+    throw new PmCliError("--event recurrence fields require recur_freq=<daily|weekly|monthly|yearly>", EXIT_CODE.USAGE);
+  }
+
+  const numericProvided = (raw: string | undefined): boolean =>
+    emptyNumericGuard === "defined" ? raw !== undefined : Boolean(raw);
+
+  const freq = ensureEnumValue(freqRaw.toLowerCase(), RECURRENCE_FREQUENCY_VALUES, "event recurrence frequency");
+  const interval = numericProvided(intervalRaw) ? parseOptionalNumber(intervalRaw as string, "event recur_interval") : undefined;
+  if (interval !== undefined && (!Number.isInteger(interval) || interval < 1)) {
+    throw new PmCliError("--event recur_interval must be an integer >= 1", EXIT_CODE.USAGE);
+  }
+  const count = numericProvided(countRaw) ? parseOptionalNumber(countRaw as string, "event recur_count") : undefined;
+  if (count !== undefined && (!Number.isInteger(count) || count < 1)) {
+    throw new PmCliError("--event recur_count must be an integer >= 1", EXIT_CODE.USAGE);
+  }
+  const until = untilRaw ? resolveIsoOrRelative(untilRaw, nowValue, "event.recur_until") : undefined;
+  if (until && until < startAt) {
+    throw new PmCliError("--event recur_until must be at or after start", EXIT_CODE.USAGE);
+  }
+
+  const byWeekday = Array.from(
+    new Set(
+      parseDelimitedList(byWeekdayRaw).map((value) => ensureEnumValue(value.toLowerCase(), RECURRENCE_WEEKDAY_VALUES, "event weekday")),
+    ),
+  ).sort(
+    (left, right) =>
+      weekdayOrderIndex(left as (typeof RECURRENCE_WEEKDAY_VALUES)[number]) -
+      weekdayOrderIndex(right as (typeof RECURRENCE_WEEKDAY_VALUES)[number]),
+  );
+
+  const byMonthDay = Array.from(
+    new Set(
+      parseDelimitedList(byMonthDayRaw).map((value) => {
+        const day = parseOptionalNumber(value, "event recur_by_month_day");
+        if (!Number.isInteger(day) || day < 1 || day > 31) {
+          throw new PmCliError("--event recur_by_month_day values must be integers 1..31", EXIT_CODE.USAGE);
+        }
+        return day;
+      }),
+    ),
+  ).sort((left, right) => left - right);
+
+  const exdates = Array.from(
+    new Set(parseDelimitedList(exdatesRaw).map((value) => resolveIsoOrRelative(value, nowValue, "event.recur_exdates"))),
+  ).sort((left, right) => left.localeCompare(right));
+
+  return {
+    freq,
+    interval,
+    count,
+    until,
+    by_weekday: byWeekday.length > 0 ? byWeekday : undefined,
+    by_month_day: byMonthDay.length > 0 ? byMonthDay : undefined,
+    exdates: exdates.length > 0 ? exdates : undefined,
+  };
+}

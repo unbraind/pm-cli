@@ -17,6 +17,8 @@ interface SearchRuntimeSdkModule {
   PmCliError: new (message: string, exitCode?: number) => Error;
   runSearch: (query: string, options: SearchOptions, global: GlobalOptions) => Promise<SearchResult>;
   runReindex: (options: ReindexOptions, global: GlobalOptions) => Promise<ReindexResult>;
+  readStringOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => string | undefined;
+  readBooleanOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => boolean | undefined;
 }
 
 const sdk = await loadSearchSdkModule();
@@ -25,6 +27,8 @@ const {
   PmCliError,
   runSearch,
   runReindex,
+  readStringOption,
+  readBooleanOption,
 } = sdk;
 
 async function loadSearchSdkModule(): Promise<SearchRuntimeSdkModule> {
@@ -41,6 +45,8 @@ async function loadSearchSdkModule(): Promise<SearchRuntimeSdkModule> {
       typeof loaded.runSearch === "function" &&
       typeof loaded.runReindex === "function" &&
       typeof loaded.PmCliError === "function" &&
+      typeof loaded.readStringOption === "function" &&
+      typeof loaded.readBooleanOption === "function" &&
       typeof loaded.EXIT_CODE === "object" &&
       loaded.EXIT_CODE !== null
     ) {
@@ -52,43 +58,6 @@ async function loadSearchSdkModule(): Promise<SearchRuntimeSdkModule> {
   throw new Error(
     `builtin-search-advanced failed to load SDK runtime exports from ${modulePath}.`,
   );
-}
-
-function readStringOption(options: Record<string, unknown>, key: string, aliases: string[] = []): string | undefined {
-  const keys = [key, ...aliases];
-  for (const candidate of keys) {
-    const value = options[candidate];
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value;
-    }
-  }
-  return undefined;
-}
-
-const BOOLEAN_TRUE_VALUES = new Set(["true", "1", "yes", "on"]);
-const BOOLEAN_FALSE_VALUES = new Set(["false", "0", "no", "off"]);
-
-function readBooleanOption(options: Record<string, unknown>, key: string, aliases: string[] = []): boolean | undefined {
-  const keys = [key, ...aliases];
-  for (const candidate of keys) {
-    const value = options[candidate];
-    if (value === undefined) {
-      continue;
-    }
-    if (typeof value === "boolean") {
-      return value;
-    }
-    if (typeof value === "string") {
-      const normalized = value.trim().toLowerCase();
-      if (BOOLEAN_TRUE_VALUES.has(normalized)) {
-        return true;
-      }
-      if (BOOLEAN_FALSE_VALUES.has(normalized)) {
-        return false;
-      }
-    }
-  }
-  return undefined;
 }
 
 const SEARCH_VALUE_FLAGS = new Set([

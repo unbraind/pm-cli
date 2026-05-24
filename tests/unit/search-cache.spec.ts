@@ -12,6 +12,12 @@ import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempDir } from "../helpers/temp.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
+import {
+  embeddingsResponse,
+  fakeResponse,
+  installFailingFetchMock,
+  installSemanticFetchMock,
+} from "../helpers/semanticFetchMock.js";
 
 function createSeedItem(
   context: TempPmContext,
@@ -144,60 +150,20 @@ describe("core/search/cache", () => {
       settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
-      const fetchCalls: string[] = [];
-      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-        const target = String(url);
-        fetchCalls.push(target);
-        if (target.endsWith("/v1/embeddings")) {
-          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string | string[] };
-          const inputCount = Array.isArray(body.input) ? body.input.length : 1;
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({
-              data: Array.from({ length: inputCount }, (_entry, index) => ({
-                index,
-                embedding: [index + 0.1, index + 0.2],
-              })),
-            }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        if (target.endsWith("/collections/pm_items/points?wait=true")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ result: { status: "acknowledged" } }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        if (target.endsWith("/collections/pm_items/points/delete?wait=true")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ result: { status: "acknowledged" } }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        throw new Error(`Unexpected fetch target: ${target}`);
-      }) as typeof globalThis.fetch;
+      const semanticMock = installSemanticFetchMock();
 
       try {
         const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, [itemId, "pm-missing", itemId]);
         expect(result.refreshed).toEqual([itemId]);
         expect(result.skipped).toEqual([]);
         expect(result.warnings).toEqual([]);
-        expect(fetchCalls).toEqual([
+        expect(semanticMock.calls).toEqual([
           "https://api.example.test/v1/embeddings",
           "https://qdrant.example.test:6333/collections/pm_items/points?wait=true",
           "https://qdrant.example.test:6333/collections/pm_items/points/delete?wait=true",
         ]);
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });
@@ -210,31 +176,16 @@ describe("core/search/cache", () => {
       settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
-      const fetchCalls: string[] = [];
-      globalThis.fetch = (async (url: unknown) => {
-        const target = String(url);
-        fetchCalls.push(target);
-        if (target.endsWith("/collections/pm_items/points/delete?wait=true")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ result: { status: "acknowledged" } }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        throw new Error(`Unexpected fetch target: ${target}`);
-      }) as typeof globalThis.fetch;
+      const semanticMock = installSemanticFetchMock();
 
       try {
         const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, ["pm-missing", "pm-missing"]);
         expect(result.refreshed).toEqual([]);
         expect(result.skipped).toEqual([]);
         expect(result.warnings).toEqual([]);
-        expect(fetchCalls).toEqual(["https://qdrant.example.test:6333/collections/pm_items/points/delete?wait=true"]);
+        expect(semanticMock.calls).toEqual(["https://qdrant.example.test:6333/collections/pm_items/points/delete?wait=true"]);
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });
@@ -248,29 +199,7 @@ describe("core/search/cache", () => {
       settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
-      globalThis.fetch = (async (url: unknown) => {
-        const target = String(url);
-        if (target.endsWith("/v1/embeddings")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ data: [{ index: 0, embedding: [0.1, 0.2] }] }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        if (target.endsWith("/collections/pm_items/points?wait=true")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ result: { status: "acknowledged" } }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        throw new Error(`Unexpected fetch target: ${target}`);
-      }) as typeof globalThis.fetch;
+      const semanticMock = installSemanticFetchMock();
 
       try {
         const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, [itemId]);
@@ -278,7 +207,7 @@ describe("core/search/cache", () => {
         expect(result.skipped).toEqual([]);
         expect(result.warnings).toEqual([]);
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });
@@ -299,33 +228,8 @@ describe("core/search/cache", () => {
       settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
-      const inputLengths: number[] = [];
-      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-        const target = String(url);
-        if (target.endsWith("/v1/embeddings")) {
-          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string | string[] };
-          const inputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
-          inputLengths.push(...inputs.map((entry) => entry.length));
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ data: inputs.map((_entry, index) => ({ index, embedding: [index + 0.1, index + 0.2] })) }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        if (target.endsWith("/collections/pm_items/points?wait=true")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ result: { status: "acknowledged" } }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        throw new Error(`Unexpected fetch target: ${target}`);
-      }) as typeof globalThis.fetch;
+      const semanticMock = installSemanticFetchMock();
+      const inputLengths = semanticMock.inputLengths;
 
       try {
         const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, [itemId]);
@@ -335,7 +239,7 @@ describe("core/search/cache", () => {
         expect(inputLengths[0]).toBeGreaterThan(300);
         expect(inputLengths[0]).toBeLessThanOrEqual(8_000);
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });
@@ -350,36 +254,7 @@ describe("core/search/cache", () => {
       settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
-      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-        const target = String(url);
-        if (target.endsWith("/v1/embeddings")) {
-          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string | string[] };
-          const inputCount = Array.isArray(body.input) ? body.input.length : 1;
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({
-              data: Array.from({ length: inputCount }, (_entry, index) => ({
-                index,
-                embedding: [index + 0.1, index + 0.2],
-              })),
-            }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        if (target.endsWith("/collections/pm_items/points?wait=true")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ result: { status: "acknowledged" } }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        throw new Error(`Unexpected fetch target: ${target}`);
-      }) as typeof globalThis.fetch;
+      const semanticMock = installSemanticFetchMock();
 
       try {
         const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, [itemB, itemA]);
@@ -387,7 +262,7 @@ describe("core/search/cache", () => {
         expect(result.skipped).toEqual([]);
         expect(result.warnings).toEqual([]);
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });
@@ -401,14 +276,7 @@ describe("core/search/cache", () => {
       settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
-      globalThis.fetch = (async () => ({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-        json: async () => ({}),
-        text: async () => "embedding service down",
-      })) as typeof globalThis.fetch;
+      const semanticMock = installFailingFetchMock({ text: "embedding service down" });
 
       try {
         const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, [itemId]);
@@ -417,7 +285,7 @@ describe("core/search/cache", () => {
         expect(result.warnings).toHaveLength(1);
         expect(result.warnings[0]).toContain("search_semantic_refresh_failed:");
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });
@@ -434,47 +302,16 @@ describe("core/search/cache", () => {
       settings.search.scanner_max_batch_retries = 1;
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
       let embeddingAttempts = 0;
-      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-        const target = String(url);
-        if (target.endsWith("/v1/embeddings")) {
+      const semanticMock = installSemanticFetchMock({
+        embeddings: ({ inputCount }) => {
           embeddingAttempts += 1;
           if (embeddingAttempts === 1) {
-            return {
-              ok: false,
-              status: 500,
-              statusText: "Internal Server Error",
-              json: async () => ({}),
-              text: async () => "transient failure",
-            } as unknown as Response;
+            return fakeResponse({ ok: false, status: 500, statusText: "Internal Server Error", text: "transient failure" });
           }
-          const body = JSON.parse(String(init?.body ?? "{}")) as { input?: string | string[] };
-          const inputCount = Array.isArray(body.input) ? body.input.length : 1;
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({
-              data: Array.from({ length: inputCount }, (_entry, index) => ({
-                index,
-                embedding: [index + 0.1, index + 0.2],
-              })),
-            }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        if (target.endsWith("/collections/pm_items/points?wait=true")) {
-          return {
-            ok: true,
-            status: 200,
-            statusText: "OK",
-            json: async () => ({ result: { status: "acknowledged" } }),
-            text: async () => "",
-          } as unknown as Response;
-        }
-        throw new Error(`Unexpected fetch target: ${target}`);
-      }) as typeof globalThis.fetch;
+          return embeddingsResponse(inputCount);
+        },
+      });
 
       try {
         const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, [itemA, itemB]);
@@ -483,7 +320,7 @@ describe("core/search/cache", () => {
         expect(result.warnings).toContain("search_embedding_batch_retry_succeeded:batch=1:attempt=2:size=1");
         expect(embeddingAttempts).toBe(3);
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });
@@ -496,14 +333,7 @@ describe("core/search/cache", () => {
       settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
       await writeSettings(context.pmPath, settings);
 
-      const originalFetch = globalThis.fetch;
-      globalThis.fetch = (async () => ({
-        ok: false,
-        status: 500,
-        statusText: "Internal Server Error",
-        json: async () => ({}),
-        text: async () => "delete failed",
-      })) as typeof globalThis.fetch;
+      const semanticMock = installFailingFetchMock({ text: "delete failed" });
 
       try {
         const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, ["pm-missing"]);
@@ -512,7 +342,7 @@ describe("core/search/cache", () => {
         expect(result.warnings).toHaveLength(1);
         expect(result.warnings[0]).toContain("search_semantic_refresh_delete_failed:");
       } finally {
-        globalThis.fetch = originalFetch;
+        semanticMock.restore();
       }
     });
   });

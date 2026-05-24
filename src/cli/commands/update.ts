@@ -42,6 +42,8 @@ import {
   parseRegressionInput,
 } from "./metadata-normalizers.js";
 import { resolveEventEndAt } from "./event-validation-messages.js";
+import { assertNoLegacyNoneToken, assertNoLegacyNoneTokens, isLegacyNoneToken } from "./legacy-none-tokens.js";
+import { ensureEnumValue as ensureEnum, parseEventBoolean, parseRecurrenceRule } from "./recurrence-parsers.js";
 import type {
   CalendarEvent,
   Comment,
@@ -53,16 +55,12 @@ import type {
   LinkedFile,
   LinkedTest,
   LogNote,
-  RecurrenceRule,
   Reminder,
 } from "../../types/index.js";
 import {
   DEPENDENCY_KIND_VALUES,
   ISSUE_SEVERITY_VALUES,
-  RECURRENCE_FREQUENCY_VALUES,
-  RECURRENCE_WEEKDAY_VALUES,
   RISK_VALUES,
-  weekdayOrderIndex,
 } from "../../types/index.js";
 import { parseDocs, parseFiles, parseLogSeed, parseTests } from "./create.js";
 
@@ -147,8 +145,6 @@ export interface UpdateResult {
   warnings: string[];
   audit_update?: boolean;
 }
-
-const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
 
 interface UpdateUnsetFieldDefinition {
   optionKey: string;
@@ -311,33 +307,6 @@ function toAuthor(candidate: string | undefined, defaultAuthor: string): string 
   const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
   const trimmed = resolved.trim();
   return trimmed || "unknown";
-}
-
-function isLegacyNoneToken(value: string | undefined): boolean {
-  if (value === undefined) {
-    return false;
-  }
-  return LEGACY_NONE_TOKENS.has(value.trim().toLowerCase());
-}
-
-function assertNoLegacyNoneToken(value: string | undefined, flag: string, replacementHint?: string): void {
-  if (!isLegacyNoneToken(value)) {
-    return;
-  }
-  const suffix = replacementHint ? ` ${replacementHint}` : "";
-  throw new PmCliError(`${flag} no longer accepts "none" or "null".${suffix}`.trim(), EXIT_CODE.USAGE);
-}
-
-function assertNoLegacyNoneTokens(values: string[] | undefined, flag: string, replacementHint?: string): void {
-  if (!values || values.length === 0) {
-    return;
-  }
-  const hasLegacyToken = values.some((value) => isLegacyNoneToken(value));
-  if (!hasLegacyToken) {
-    return;
-  }
-  const suffix = replacementHint ? ` ${replacementHint}` : "";
-  throw new PmCliError(`${flag} no longer accepts "none" or "null".${suffix}`.trim(), EXIT_CODE.USAGE);
 }
 
 interface LegacyNoneCollectionNormalizationDefinition {
@@ -672,13 +641,6 @@ function enforceAllowAuditUpdateScope(options: UpdateCommandOptions, clearFrontM
   }
 }
 
-function ensureEnum<T extends string>(value: string, allowed: readonly T[], label: string): T {
-  if (!allowed.includes(value as T)) {
-    throw new PmCliError(`Invalid ${label} value "${value}". Allowed: ${allowed.join(", ")}`, EXIT_CODE.USAGE);
-  }
-  return value as T;
-}
-
 function parseStatus(value: string, statusRegistry: RuntimeStatusRegistry): ItemStatus {
   const normalized = normalizeStatusInput(value, statusRegistry);
   if (!normalized) {
@@ -701,101 +663,6 @@ function parseReminderEntries(raw: string[], nowValue: Date): Reminder[] {
       text: textRaw,
     };
   });
-}
-
-function parseEventBoolean(value: string, flag: string): boolean {
-  const normalized = value.trim().toLowerCase();
-  if (normalized === "true" || normalized === "1" || normalized === "yes") {
-    return true;
-  }
-  if (normalized === "false" || normalized === "0" || normalized === "no") {
-    return false;
-  }
-  throw new PmCliError(`${flag} must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
-}
-
-function parseDelimitedList(raw: string | undefined): string[] {
-  if (!raw) {
-    return [];
-  }
-  return raw
-    .split("|")
-    .map((value) => value.trim())
-    .filter((value) => value.length > 0);
-}
-
-function parseRecurrenceRule(kv: Record<string, string>, startAt: string, nowValue: Date): RecurrenceRule | undefined {
-  const freqRaw = kv.recur_freq?.trim();
-  const intervalRaw = kv.recur_interval?.trim();
-  const countRaw = kv.recur_count?.trim();
-  const untilRaw = kv.recur_until?.trim();
-  const byWeekdayRaw = kv.recur_by_weekday?.trim();
-  const byMonthDayRaw = kv.recur_by_month_day?.trim();
-  const exdatesRaw = kv.recur_exdates?.trim();
-
-  const recurrenceInputsProvided = [freqRaw, intervalRaw, countRaw, untilRaw, byWeekdayRaw, byMonthDayRaw, exdatesRaw].some(
-    (value) => value !== undefined,
-  );
-  if (!recurrenceInputsProvided) {
-    return undefined;
-  }
-  if (!freqRaw) {
-    throw new PmCliError("--event recurrence fields require recur_freq=<daily|weekly|monthly|yearly>", EXIT_CODE.USAGE);
-  }
-
-  const freq = ensureEnum(freqRaw.toLowerCase(), RECURRENCE_FREQUENCY_VALUES, "event recurrence frequency");
-  const interval = intervalRaw ? parseOptionalNumber(intervalRaw, "event recur_interval") : undefined;
-  if (interval !== undefined && (!Number.isInteger(interval) || interval < 1)) {
-    throw new PmCliError("--event recur_interval must be an integer >= 1", EXIT_CODE.USAGE);
-  }
-  const count = countRaw ? parseOptionalNumber(countRaw, "event recur_count") : undefined;
-  if (count !== undefined && (!Number.isInteger(count) || count < 1)) {
-    throw new PmCliError("--event recur_count must be an integer >= 1", EXIT_CODE.USAGE);
-  }
-  const until = untilRaw ? resolveIsoOrRelative(untilRaw, nowValue, "event.recur_until") : undefined;
-  if (until && until < startAt) {
-    throw new PmCliError("--event recur_until must be at or after start", EXIT_CODE.USAGE);
-  }
-
-  const byWeekday = Array.from(
-    new Set(
-      parseDelimitedList(byWeekdayRaw)
-        .map((value) => ensureEnum(value.toLowerCase(), RECURRENCE_WEEKDAY_VALUES, "event weekday")),
-    ),
-  ).sort(
-    (left, right) =>
-      weekdayOrderIndex(left as (typeof RECURRENCE_WEEKDAY_VALUES)[number]) -
-      weekdayOrderIndex(right as (typeof RECURRENCE_WEEKDAY_VALUES)[number]),
-  );
-
-  const byMonthDay = Array.from(
-    new Set(
-      parseDelimitedList(byMonthDayRaw)
-        .map((value) => {
-          const day = parseOptionalNumber(value, "event recur_by_month_day");
-          if (!Number.isInteger(day) || day < 1 || day > 31) {
-            throw new PmCliError("--event recur_by_month_day values must be integers 1..31", EXIT_CODE.USAGE);
-          }
-          return day;
-        }),
-    ),
-  ).sort((left, right) => left - right);
-
-  const exdates = Array.from(
-    new Set(
-      parseDelimitedList(exdatesRaw).map((value) => resolveIsoOrRelative(value, nowValue, "event.recur_exdates")),
-    ),
-  ).sort((left, right) => left.localeCompare(right));
-
-  return {
-    freq,
-    interval,
-    count,
-    until,
-    by_weekday: byWeekday.length > 0 ? byWeekday : undefined,
-    by_month_day: byMonthDay.length > 0 ? byMonthDay : undefined,
-    exdates: exdates.length > 0 ? exdates : undefined,
-  };
 }
 
 function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
@@ -833,7 +700,7 @@ function parseEventEntries(raw: string[], nowValue: Date): CalendarEvent[] {
     }
 
     const allDayRaw = kv.all_day?.trim();
-    const recurrence = parseRecurrenceRule(kv, startAt, nowValue);
+    const recurrence = parseRecurrenceRule(kv, startAt, nowValue, "truthy");
 
     return {
       start_at: startAt,
@@ -1676,6 +1543,31 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       const warnings: string[] = [];
       let activeTypeName = resolveTypeName(document.metadata.type, typeRegistry) ?? document.metadata.type;
 
+      // Declarative set-or-clear helpers for the many string scalar fields that
+      // share an identical shape: set from `--flag` (optionally transformed) or
+      // delete when `--unset <field>` was requested, then record the change.
+      // Each call is placed in the same position the inline block occupied so
+      // the order of `changedFields` is preserved exactly (pm-why9).
+      const metadataRecord = document.metadata as unknown as Record<string, unknown>;
+      const setOrClearScalar = (
+        optionValue: string | undefined,
+        metadataKey: string,
+        transform: (value: string) => unknown,
+      ): void => {
+        if (optionValue === undefined && !clearFrontMatterKeys.has(metadataKey)) {
+          return;
+        }
+        if (clearFrontMatterKeys.has(metadataKey)) {
+          delete metadataRecord[metadataKey];
+        } else {
+          metadataRecord[metadataKey] = transform(optionValue as string);
+        }
+        changedFields.push(metadataKey);
+      };
+      const setOrClearTrimScalar = (optionValue: string | undefined, metadataKey: string): void => {
+        setOrClearScalar(optionValue, metadataKey, (value) => value.trim());
+      };
+
       if (options.title !== undefined) {
         document.metadata.title = options.title;
         changedFields.push("title");
@@ -1882,41 +1774,12 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         document.metadata.tags = clearFrontMatterKeys.has("tags") ? [] : parseTags(options.tags!);
         changedFields.push("tags");
       }
-      if (options.deadline !== undefined || clearFrontMatterKeys.has("deadline")) {
-        if (clearFrontMatterKeys.has("deadline")) {
-          delete document.metadata.deadline;
-        } else {
-          document.metadata.deadline = resolveIsoOrRelative(options.deadline!, new Date(), "deadline");
-        }
-        changedFields.push("deadline");
-      }
-      if (options.estimatedMinutes !== undefined || clearFrontMatterKeys.has("estimated_minutes")) {
-        if (clearFrontMatterKeys.has("estimated_minutes")) {
-          delete document.metadata.estimated_minutes;
-        } else {
-          document.metadata.estimated_minutes = parseOptionalNumber(
-            options.estimatedMinutes!,
-            "estimated-minutes",
-          );
-        }
-        changedFields.push("estimated_minutes");
-      }
-      if (options.acceptanceCriteria !== undefined || clearFrontMatterKeys.has("acceptance_criteria")) {
-        if (clearFrontMatterKeys.has("acceptance_criteria")) {
-          delete document.metadata.acceptance_criteria;
-        } else {
-          document.metadata.acceptance_criteria = options.acceptanceCriteria;
-        }
-        changedFields.push("acceptance_criteria");
-      }
-      if (options.definitionOfReady !== undefined || clearFrontMatterKeys.has("definition_of_ready")) {
-        if (clearFrontMatterKeys.has("definition_of_ready")) {
-          delete document.metadata.definition_of_ready;
-        } else {
-          document.metadata.definition_of_ready = options.definitionOfReady!.trim();
-        }
-        changedFields.push("definition_of_ready");
-      }
+      setOrClearScalar(options.deadline, "deadline", (value) => resolveIsoOrRelative(value, nowValue, "deadline"));
+      setOrClearScalar(options.estimatedMinutes, "estimated_minutes", (value) =>
+        parseOptionalNumber(value, "estimated-minutes"),
+      );
+      setOrClearScalar(options.acceptanceCriteria, "acceptance_criteria", (value) => value);
+      setOrClearTrimScalar(options.definitionOfReady, "definition_of_ready");
       const orderRaw = options.order ?? options.rank;
       if (orderRaw !== undefined || clearFrontMatterKeys.has("order")) {
         if (clearFrontMatterKeys.has("order")) {
@@ -1930,54 +1793,12 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         }
         changedFields.push("order");
       }
-      if (options.goal !== undefined || clearFrontMatterKeys.has("goal")) {
-        if (clearFrontMatterKeys.has("goal")) {
-          delete document.metadata.goal;
-        } else {
-          document.metadata.goal = options.goal!.trim();
-        }
-        changedFields.push("goal");
-      }
-      if (options.objective !== undefined || clearFrontMatterKeys.has("objective")) {
-        if (clearFrontMatterKeys.has("objective")) {
-          delete document.metadata.objective;
-        } else {
-          document.metadata.objective = options.objective!.trim();
-        }
-        changedFields.push("objective");
-      }
-      if (options.value !== undefined || clearFrontMatterKeys.has("value")) {
-        if (clearFrontMatterKeys.has("value")) {
-          delete document.metadata.value;
-        } else {
-          document.metadata.value = options.value!.trim();
-        }
-        changedFields.push("value");
-      }
-      if (options.impact !== undefined || clearFrontMatterKeys.has("impact")) {
-        if (clearFrontMatterKeys.has("impact")) {
-          delete document.metadata.impact;
-        } else {
-          document.metadata.impact = options.impact!.trim();
-        }
-        changedFields.push("impact");
-      }
-      if (options.outcome !== undefined || clearFrontMatterKeys.has("outcome")) {
-        if (clearFrontMatterKeys.has("outcome")) {
-          delete document.metadata.outcome;
-        } else {
-          document.metadata.outcome = options.outcome!.trim();
-        }
-        changedFields.push("outcome");
-      }
-      if (options.whyNow !== undefined || clearFrontMatterKeys.has("why_now")) {
-        if (clearFrontMatterKeys.has("why_now")) {
-          delete document.metadata.why_now;
-        } else {
-          document.metadata.why_now = options.whyNow!.trim();
-        }
-        changedFields.push("why_now");
-      }
+      setOrClearTrimScalar(options.goal, "goal");
+      setOrClearTrimScalar(options.objective, "objective");
+      setOrClearTrimScalar(options.value, "value");
+      setOrClearTrimScalar(options.impact, "impact");
+      setOrClearTrimScalar(options.outcome, "outcome");
+      setOrClearTrimScalar(options.whyNow, "why_now");
       if (options.assignee !== undefined || clearFrontMatterKeys.has("assignee")) {
         if (clearFrontMatterKeys.has("assignee")) {
           delete document.metadata.assignee;
@@ -1997,30 +1818,9 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         }
         changedFields.push("parent");
       }
-      if (options.reviewer !== undefined || clearFrontMatterKeys.has("reviewer")) {
-        if (clearFrontMatterKeys.has("reviewer")) {
-          delete document.metadata.reviewer;
-        } else {
-          document.metadata.reviewer = options.reviewer!.trim();
-        }
-        changedFields.push("reviewer");
-      }
-      if (options.risk !== undefined || clearFrontMatterKeys.has("risk")) {
-        if (clearFrontMatterKeys.has("risk")) {
-          delete document.metadata.risk;
-        } else {
-          document.metadata.risk = ensureEnum(normalizeRiskInput(options.risk!), RISK_VALUES, "risk");
-        }
-        changedFields.push("risk");
-      }
-      if (options.confidence !== undefined || clearFrontMatterKeys.has("confidence")) {
-        if (clearFrontMatterKeys.has("confidence")) {
-          delete document.metadata.confidence;
-        } else {
-          document.metadata.confidence = parseConfidenceInput(options.confidence!);
-        }
-        changedFields.push("confidence");
-      }
+      setOrClearTrimScalar(options.reviewer, "reviewer");
+      setOrClearScalar(options.risk, "risk", (value) => ensureEnum(normalizeRiskInput(value), RISK_VALUES, "risk"));
+      setOrClearScalar(options.confidence, "confidence", (value) => parseConfidenceInput(value));
       if (options.sprint !== undefined || clearFrontMatterKeys.has("sprint")) {
         if (clearFrontMatterKeys.has("sprint")) {
           delete document.metadata.sprint;
@@ -2057,118 +1857,22 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
           changedFields,
         );
       }
-      if (options.blockedReason !== undefined || clearFrontMatterKeys.has("blocked_reason")) {
-        if (clearFrontMatterKeys.has("blocked_reason")) {
-          delete document.metadata.blocked_reason;
-        } else {
-          document.metadata.blocked_reason = options.blockedReason!.trim();
-        }
-        changedFields.push("blocked_reason");
-      }
-      if (options.unblockNote !== undefined || clearFrontMatterKeys.has("unblock_note")) {
-        if (clearFrontMatterKeys.has("unblock_note")) {
-          delete document.metadata.unblock_note;
-        } else {
-          document.metadata.unblock_note = options.unblockNote!.trim();
-        }
-        changedFields.push("unblock_note");
-      }
-      if (options.reporter !== undefined || clearFrontMatterKeys.has("reporter")) {
-        if (clearFrontMatterKeys.has("reporter")) {
-          delete document.metadata.reporter;
-        } else {
-          document.metadata.reporter = options.reporter!.trim();
-        }
-        changedFields.push("reporter");
-      }
-      if (options.severity !== undefined || clearFrontMatterKeys.has("severity")) {
-        if (clearFrontMatterKeys.has("severity")) {
-          delete document.metadata.severity;
-        } else {
-          document.metadata.severity = ensureEnum(normalizeSeverityInput(options.severity!), ISSUE_SEVERITY_VALUES, "severity");
-        }
-        changedFields.push("severity");
-      }
-      if (options.environment !== undefined || clearFrontMatterKeys.has("environment")) {
-        if (clearFrontMatterKeys.has("environment")) {
-          delete document.metadata.environment;
-        } else {
-          document.metadata.environment = options.environment!.trim();
-        }
-        changedFields.push("environment");
-      }
-      if (options.reproSteps !== undefined || clearFrontMatterKeys.has("repro_steps")) {
-        if (clearFrontMatterKeys.has("repro_steps")) {
-          delete document.metadata.repro_steps;
-        } else {
-          document.metadata.repro_steps = options.reproSteps!.trim();
-        }
-        changedFields.push("repro_steps");
-      }
-      if (options.resolution !== undefined || clearFrontMatterKeys.has("resolution")) {
-        if (clearFrontMatterKeys.has("resolution")) {
-          delete document.metadata.resolution;
-        } else {
-          document.metadata.resolution = options.resolution!.trim();
-        }
-        changedFields.push("resolution");
-      }
-      if (options.expectedResult !== undefined || clearFrontMatterKeys.has("expected_result")) {
-        if (clearFrontMatterKeys.has("expected_result")) {
-          delete document.metadata.expected_result;
-        } else {
-          document.metadata.expected_result = options.expectedResult!.trim();
-        }
-        changedFields.push("expected_result");
-      }
-      if (options.actualResult !== undefined || clearFrontMatterKeys.has("actual_result")) {
-        if (clearFrontMatterKeys.has("actual_result")) {
-          delete document.metadata.actual_result;
-        } else {
-          document.metadata.actual_result = options.actualResult!.trim();
-        }
-        changedFields.push("actual_result");
-      }
-      if (options.affectedVersion !== undefined || clearFrontMatterKeys.has("affected_version")) {
-        if (clearFrontMatterKeys.has("affected_version")) {
-          delete document.metadata.affected_version;
-        } else {
-          document.metadata.affected_version = options.affectedVersion!.trim();
-        }
-        changedFields.push("affected_version");
-      }
-      if (options.fixedVersion !== undefined || clearFrontMatterKeys.has("fixed_version")) {
-        if (clearFrontMatterKeys.has("fixed_version")) {
-          delete document.metadata.fixed_version;
-        } else {
-          document.metadata.fixed_version = options.fixedVersion!.trim();
-        }
-        changedFields.push("fixed_version");
-      }
-      if (options.component !== undefined || clearFrontMatterKeys.has("component")) {
-        if (clearFrontMatterKeys.has("component")) {
-          delete document.metadata.component;
-        } else {
-          document.metadata.component = options.component!.trim();
-        }
-        changedFields.push("component");
-      }
-      if (options.regression !== undefined || clearFrontMatterKeys.has("regression")) {
-        if (clearFrontMatterKeys.has("regression")) {
-          delete document.metadata.regression;
-        } else {
-          document.metadata.regression = parseRegressionInput(options.regression!);
-        }
-        changedFields.push("regression");
-      }
-      if (options.customerImpact !== undefined || clearFrontMatterKeys.has("customer_impact")) {
-        if (clearFrontMatterKeys.has("customer_impact")) {
-          delete document.metadata.customer_impact;
-        } else {
-          document.metadata.customer_impact = options.customerImpact!.trim();
-        }
-        changedFields.push("customer_impact");
-      }
+      setOrClearTrimScalar(options.blockedReason, "blocked_reason");
+      setOrClearTrimScalar(options.unblockNote, "unblock_note");
+      setOrClearTrimScalar(options.reporter, "reporter");
+      setOrClearScalar(options.severity, "severity", (value) =>
+        ensureEnum(normalizeSeverityInput(value), ISSUE_SEVERITY_VALUES, "severity"),
+      );
+      setOrClearTrimScalar(options.environment, "environment");
+      setOrClearTrimScalar(options.reproSteps, "repro_steps");
+      setOrClearTrimScalar(options.resolution, "resolution");
+      setOrClearTrimScalar(options.expectedResult, "expected_result");
+      setOrClearTrimScalar(options.actualResult, "actual_result");
+      setOrClearTrimScalar(options.affectedVersion, "affected_version");
+      setOrClearTrimScalar(options.fixedVersion, "fixed_version");
+      setOrClearTrimScalar(options.component, "component");
+      setOrClearScalar(options.regression, "regression", (value) => parseRegressionInput(value));
+      setOrClearTrimScalar(options.customerImpact, "customer_impact");
       if (options.reminder !== undefined || clearFrontMatterKeys.has("reminders")) {
         if (clearFrontMatterKeys.has("reminders")) {
           delete document.metadata.reminders;

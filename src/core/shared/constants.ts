@@ -1,4 +1,57 @@
-import type { BuiltinItemType, GovernancePreset, GovernanceSettings, ItemFrontMatter, PmSettings } from "../../types/index.js";
+import type {
+  BuiltinItemType,
+  GovernancePreset,
+  GovernanceSettings,
+  ItemFrontMatter,
+  PmSettings,
+  RuntimeStatusDefinition,
+  RuntimeWorkflowDefinition,
+} from "../../types/index.js";
+
+/**
+ * Canonical default lifecycle status model and workflow role mapping.
+ *
+ * Single source of truth: `SETTINGS_DEFAULTS.schema` references these, and
+ * `src/core/schema/runtime-schema.ts` re-exports them as
+ * `DEFAULT_RUNTIME_STATUS_DEFINITIONS` / `DEFAULT_RUNTIME_WORKFLOW`.
+ */
+export const DEFAULT_STATUS_DEFINITIONS: ReadonlyArray<RuntimeStatusDefinition> = Object.freeze([
+  {
+    id: "draft",
+    roles: ["draft"],
+  },
+  {
+    id: "open",
+    roles: ["active", "default_open"],
+  },
+  {
+    id: "in_progress",
+    aliases: ["in-progress"],
+    roles: ["active"],
+  },
+  {
+    id: "blocked",
+    roles: ["blocked"],
+  },
+  {
+    id: "closed",
+    roles: ["terminal", "terminal_done", "default_close"],
+  },
+  {
+    id: "canceled",
+    aliases: ["cancelled"],
+    roles: ["terminal", "terminal_canceled", "default_cancel"],
+  },
+]);
+
+export const DEFAULT_WORKFLOW_DEFINITION: RuntimeWorkflowDefinition = Object.freeze({
+  draft_status: "draft",
+  open_status: "open",
+  in_progress_status: "in_progress",
+  blocked_status: "blocked",
+  close_status: "closed",
+  canceled_status: "canceled",
+});
 
 export const PM_DIRNAME = ".agents/pm";
 export const SETTINGS_FILENAME = "settings.json";
@@ -156,6 +209,10 @@ export const DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS = {
   actual_result: ["closed and recorded", "work completed", "work completed and recorded"],
 } as const;
 
+function cloneOptionalArray<T>(values: readonly T[] | undefined): T[] | undefined {
+  return values ? [...values] : undefined;
+}
+
 export const SETTINGS_DEFAULTS: PmSettings = {
   version: 1,
   id_prefix: "pm-",
@@ -220,43 +277,13 @@ export const SETTINGS_DEFAULTS: PmSettings = {
       fields: "schema/fields.json",
       workflows: "schema/workflows.json",
     },
-    statuses: [
-      {
-        id: "draft",
-        roles: ["draft"],
-      },
-      {
-        id: "open",
-        roles: ["active", "default_open"],
-      },
-      {
-        id: "in_progress",
-        aliases: ["in-progress"],
-        roles: ["active"],
-      },
-      {
-        id: "blocked",
-        roles: ["blocked"],
-      },
-      {
-        id: "closed",
-        roles: ["terminal", "terminal_done", "default_close"],
-      },
-      {
-        id: "canceled",
-        aliases: ["cancelled"],
-        roles: ["terminal", "terminal_canceled", "default_cancel"],
-      },
-    ],
+    statuses: DEFAULT_STATUS_DEFINITIONS.map((definition) => ({
+      ...definition,
+      aliases: cloneOptionalArray(definition.aliases),
+      roles: cloneOptionalArray(definition.roles),
+    })),
     fields: [],
-    workflow: {
-      draft_status: "draft",
-      open_status: "open",
-      in_progress_status: "in_progress",
-      blocked_status: "blocked",
-      close_status: "closed",
-      canceled_status: "canceled",
-    },
+    workflow: { ...DEFAULT_WORKFLOW_DEFINITION },
     unknown_field_policy: "allow",
   },
   extensions: {

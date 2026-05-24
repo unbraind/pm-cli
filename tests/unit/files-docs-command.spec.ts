@@ -5,6 +5,7 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runDocs } from "../../src/cli/commands/docs.js";
 import { runFiles, runFilesDiscover } from "../../src/cli/commands/files.js";
+import { buildLinkedPathAudit, parseAddGlobEntries, validateLinkedPaths } from "../../src/cli/commands/linked-artifacts.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -383,7 +384,53 @@ describe("runFiles", () => {
       );
       expect(rerun.files.some((entry) => entry.path === "docs/new/file-one.md")).toBe(true);
       expect(rerun.migrations_applied ?? 0).toBe(0);
+
+      const migratedAdd = await runFiles(
+        sourceId,
+        {
+          add: ["path=docs/old/added-later.md,scope=project"],
+          migrate: ["from=docs/old/,to=docs/new/"],
+          message: "migrate newly added linked file",
+        },
+        { path: context.pmPath },
+      );
+      expect(migratedAdd.files.some((entry) => entry.path === "docs/new/added-later.md")).toBe(true);
+      expect(migratedAdd.migrations_applied ?? 0).toBe(1);
     });
+  });
+
+  it("classifies existing files, directories, missing paths, and stat failures during validation", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-linked-path-validation-"));
+    try {
+      const filePath = path.join(tempRoot, "linked.md");
+      const dirPath = path.join(tempRoot, "linked-dir");
+      await writeFile(filePath, "linked", "utf8");
+      await mkdir(dirPath);
+
+      const validation = await validateLinkedPaths([filePath, dirPath, path.join(tempRoot, "missing.md"), "bad\0path"]);
+
+      expect(validation.existing_files).toContain(filePath);
+      expect(validation.missing_paths).toContain(path.join(tempRoot, "missing.md"));
+      expect(validation.non_file_paths).toEqual(expect.arrayContaining([dirPath, "bad\0path"]));
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("covers linked-artifact parser and audit empty branches", () => {
+    expect(parseAddGlobEntries(["pattern=src/**/*.ts,scope=project,note=   "])).toEqual([
+      { pattern: "src/**/*.ts", scope: "project", note: undefined },
+    ]);
+
+    const audit = buildLinkedPathAudit(
+      ["linked.md", "unlinked.md"],
+      [{ id: "pm-empty" }, { id: "pm-linked", artifacts: [{ path: "linked.md", scope: "project" }] }],
+    );
+
+    expect(audit).toEqual([
+      { path: "linked.md", linked_by_count: 1, linked_item_ids: ["pm-linked"] },
+      { path: "unlinked.md", linked_by_count: 0, linked_item_ids: [] },
+    ]);
   });
 
   it("supports append-stable mode to preserve order and append new entries", async () => {

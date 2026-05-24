@@ -12,6 +12,8 @@ interface RuntimeSdkModule {
   runTestRunsLogs: (runId: string, options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
   runTestRunsStop: (runId: string, options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
   runTestRunsResume: (runId: string, options: Record<string, unknown>, global: GlobalOptions) => Promise<unknown>;
+  readStringOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => string | undefined;
+  readBooleanOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => boolean | undefined;
 }
 
 interface RuntimeBundle {
@@ -49,6 +51,8 @@ async function loadRuntimeBundle(): Promise<RuntimeBundle> {
       typeof sdkLoaded.runTestRunsStop === "function" &&
       typeof sdkLoaded.runTestRunsResume === "function" &&
       typeof sdkLoaded.PmCliError === "function" &&
+      typeof sdkLoaded.readStringOption === "function" &&
+      typeof sdkLoaded.readBooleanOption === "function" &&
       typeof sdkLoaded.EXIT_CODE === "object" &&
       sdkLoaded.EXIT_CODE !== null
     ) {
@@ -62,40 +66,6 @@ async function loadRuntimeBundle(): Promise<RuntimeBundle> {
   throw new Error(
     `builtin-linked-test-adapters failed to load test-runs SDK runtime exports from ${modulePath}.`,
   );
-}
-
-function readStringOption(options: Record<string, unknown>, key: string, aliases: string[] = []): string | undefined {
-  const keys = [key, ...aliases];
-  for (const candidate of keys) {
-    const value = options[candidate];
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value;
-    }
-  }
-  return undefined;
-}
-
-function readBooleanOption(options: Record<string, unknown>, key: string, aliases: string[] = []): boolean | undefined {
-  const keys = [key, ...aliases];
-  for (const candidate of keys) {
-    const value = options[candidate];
-    if (value === undefined) {
-      continue;
-    }
-    if (typeof value === "boolean") {
-      return value;
-    }
-    if (typeof value === "string") {
-      const normalized = value.trim().toLowerCase();
-      if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on") {
-        return true;
-      }
-      if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off") {
-        return false;
-      }
-    }
-  }
-  return undefined;
 }
 
 function requireRunId(bundle: RuntimeBundle, commandName: string, args: string[]): string {
@@ -113,8 +83,8 @@ export async function runTestRunsListPackage(
   const bundle = await ensureRuntimeBundle();
   return bundle.sdk.runTestRunsList(
     {
-      status: readStringOption(options, "status"),
-      limit: readStringOption(options, "limit"),
+      status: bundle.sdk.readStringOption(options, "status"),
+      limit: bundle.sdk.readStringOption(options, "limit"),
     },
     global,
   );
@@ -134,8 +104,8 @@ export async function runTestRunsLogsPackage(
   return bundle.sdk.runTestRunsLogs(
     requireRunId(bundle, "test-runs logs", args),
     {
-      stream: readStringOption(options, "stream"),
-      tail: readStringOption(options, "tail"),
+      stream: bundle.sdk.readStringOption(options, "stream"),
+      tail: bundle.sdk.readStringOption(options, "tail"),
     },
     global,
   );
@@ -150,7 +120,7 @@ export async function runTestRunsStopPackage(
   return bundle.sdk.runTestRunsStop(
     requireRunId(bundle, "test-runs stop", args),
     {
-      force: readBooleanOption(options, "force") === true,
+      force: bundle.sdk.readBooleanOption(options, "force") === true,
     },
     global,
   );
@@ -165,7 +135,7 @@ export async function runTestRunsResumePackage(
   return bundle.sdk.runTestRunsResume(
     requireRunId(bundle, "test-runs resume", args),
     {
-      author: readStringOption(options, "author"),
+      author: bundle.sdk.readStringOption(options, "author"),
       noExtensions: global.noExtensions === true,
     },
     global,

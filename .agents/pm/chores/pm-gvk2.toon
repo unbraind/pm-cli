@@ -2,18 +2,23 @@ id: pm-gvk2
 title: Extract reusable semantic HTTP mock fixtures
 description: "Duplicate audit 2026-05-22: semantic/vector tests duplicate globalThis.fetch stubs for OpenAI embeddings and Qdrant upsert responses. The repeated mock block appears in tests/unit/health-command.spec.ts:539, tests/unit/reindex-command.spec.ts:204, and tests/unit/search-cache.spec.ts, including the same /v1/embeddings and /collections/pm_items/points?wait=true response handling. This is separate from the broader shared item factory duplication because it is domain-specific semantic infrastructure with enough behavior to drift. Fix by adding a focused helper such as installSemanticFetchMock({ embeddings, qdrantStatus, captureCalls }) and migrating health/reindex/search-cache tests to it."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[3]: dedup,search,tests
 created_at: "2026-05-22T18:54:31.857Z"
-updated_at: "2026-05-22T18:54:31.857Z"
+updated_at: "2026-05-24T22:52:35.294Z"
 author: codex-duplicate-audit
 acceptance_criteria: "Semantic tests share one typed HTTP mock fixture for embeddings and Qdrant responses; tests can still customize input-count embeddings and failure paths; duplicated global fetch setup/restore blocks are removed from health, reindex, and search-cache specs; targeted semantic/search tests pass."
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+resolution: "Extracted tests/helpers/semanticFetchMock.ts (installSemanticFetchMock + response builders + installFailingFetchMock); migrated health-command/reindex-command/search-cache specs off duplicated inline OpenAI/Qdrant fetch stubs. Customization (input-count embeddings, retry/failure paths) preserved. 63 tests pass; build green."
+expected_result: Semantic HTTP mock fixtures are shared and no duplicated mock setup remains in affected tests.
+actual_result: Shared semanticFetchMock helper is linked in the refactor branch and focused/static/full release gates passed.
+comments[2]{created_at,author,text}:
   "2026-05-22T18:54:31.857Z",codex-duplicate-audit,"Duplicate-check evidence: searched tracker for Qdrant/fetch mock duplication. Results only showed broad pm-rnpb and closed vector-store work; no open item tracks the duplicated test HTTP mocks. Scan found overlapping 10-12 line windows in health, reindex, and search-cache specs."
+  "2026-05-24T22:15:29.169Z",claude-code-agent,"Added tests/helpers/semanticFetchMock.ts: installSemanticFetchMock({embeddings, qdrantUpsert, qdrantDelete}) routing /v1/embeddings + /collections/pm_items/points{,/delete}?wait=true, returning {calls, inputLengths, restore}; plus fakeResponse/embeddingsResponse/qdrantAckResponse builders and installFailingFetchMock for whole-fetch failure paths. Migrated all 3 specs: health-command (2 semantic blocks; left the 'fetch must not be called' guard + non-semantic fetchMock untouched), reindex-command (5 blocks incl. retry-then-success via embeddings callback + fakeResponse, and input-length capture via mock.inputLengths), search-cache (8 blocks incl. delete-only, retry, 2 failure paths). Tests still customize input-count embeddings (default) and failure/retry paths. Net: removed ~430 lines of duplicated inline fetch stubs across the 3 specs. Result: 3 files passed, 63 tests passed; build green. No assertion changes."
 files[3]{path,scope,note}:
   tests/unit/health-command.spec.ts,project,semantic fetch mock clone
   tests/unit/reindex-command.spec.ts,project,semantic fetch mock clone
   tests/unit/search-cache.spec.ts,project,semantic fetch mock clone
+close_reason: "Extracted shared semantic HTTP mock fixtures (tests/helpers/semanticFetchMock.ts) and migrated all 3 specs; 63 tests pass, build green."
 body: ""

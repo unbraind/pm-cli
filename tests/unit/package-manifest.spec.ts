@@ -1,4 +1,5 @@
 import { access, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -391,6 +392,8 @@ describe("pm package manifest model", () => {
 
   it("ships TypeScript-authored sources for first-party package entrypoints", async () => {
     await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.ts"))).resolves.toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime-loader.ts"))).resolves
+      .toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.ts"))).resolves.toBeUndefined();
@@ -417,14 +420,27 @@ describe("pm package manifest model", () => {
     await expect(access(path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "runtime.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.ts"))).resolves.toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime-loader.ts"))).resolves
+      .toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime.ts"))).resolves.toBeUndefined();
+  });
+
+  it("keeps generated package runtime loaders in sync", () => {
+    expect(() =>
+      execFileSync(process.execPath, [path.join(repoRoot, "scripts", "gen-package-runtime-loaders.mjs"), "--check"], {
+        cwd: repoRoot,
+        stdio: "pipe",
+      }),
+    ).not.toThrow();
   });
 
   it("keeps shipped package sources on the public SDK surface", async () => {
     const packageSourceFiles = [
       path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.ts"),
+      path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime-loader.ts"),
       path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.ts"),
       path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.js"),
+      path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime-loader.js"),
       path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.js"),
       path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.ts"),
       path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.ts"),
@@ -451,8 +467,10 @@ describe("pm package manifest model", () => {
       path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "index.js"),
       path.join(repoRoot, "packages", "pm-templates", "extensions", "templates", "runtime.js"),
       path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.ts"),
+      path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime-loader.ts"),
       path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime.ts"),
       path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "index.js"),
+      path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime-loader.js"),
       path.join(repoRoot, "packages", "pm-todos", "extensions", "todos", "runtime.js"),
     ];
 
@@ -467,11 +485,15 @@ describe("pm package manifest model", () => {
           source.includes('"dist", "sdk", "runtime.js"');
         expect(referencesDistSdk).toBe(true);
       }
-      if (sourceFile.endsWith(".ts")) {
+      if (sourceFile.endsWith(".ts") && !sourceFile.endsWith("runtime-loader.ts")) {
         const referencesSrcSdk =
           source.includes("../../../../src/sdk/index.js") ||
           source.includes("../../../../src/sdk/runtime.js");
         expect(referencesSrcSdk).toBe(true);
+      }
+      if (sourceFile.endsWith("runtime-loader.ts") || sourceFile.endsWith("runtime-loader.js")) {
+        expect(source).not.toContain("../../../../src/sdk/");
+        expect(source).not.toContain("../../../../dist/sdk/");
       }
     }
   });

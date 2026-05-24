@@ -39,6 +39,9 @@ interface RuntimeSdkModule {
     schema?: unknown,
   ) => Promise<Array<{ metadata: { tags?: string[] } }>>;
   getActiveExtensionRegistrations: () => unknown;
+  readStringOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => string | undefined;
+  readBooleanOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => boolean | undefined;
+  readCsvListOption: (options: Record<string, unknown>, key: string, aliases?: string[]) => string[];
 }
 
 interface RuntimeBundle {
@@ -82,7 +85,10 @@ async function loadRuntimeBundle(): Promise<RuntimeBundle> {
       typeof sdkLoaded.resolveRuntimeStatusRegistry === "function" &&
       typeof sdkLoaded.resolveRuntimeFieldRegistry === "function" &&
       typeof sdkLoaded.listAllFrontMatter === "function" &&
-      typeof sdkLoaded.getActiveExtensionRegistrations === "function"
+      typeof sdkLoaded.getActiveExtensionRegistrations === "function" &&
+      typeof sdkLoaded.readStringOption === "function" &&
+      typeof sdkLoaded.readBooleanOption === "function" &&
+      typeof sdkLoaded.readCsvListOption === "function"
     ) {
       return {
         sdk: sdkLoaded as RuntimeSdkModule,
@@ -96,52 +102,12 @@ async function loadRuntimeBundle(): Promise<RuntimeBundle> {
   );
 }
 
-function readStringOption(options: Record<string, unknown>, key: string, aliases: string[] = []): string | undefined {
-  const keys = [key, ...aliases];
-  for (const candidate of keys) {
-    const value = options[candidate];
-    if (typeof value === "string" && value.trim().length > 0) {
-      return value;
-    }
-  }
-  return undefined;
-}
-
-function readBooleanOption(options: Record<string, unknown>, key: string, aliases: string[] = []): boolean | undefined {
-  const keys = [key, ...aliases];
-  for (const candidate of keys) {
-    const value = options[candidate];
-    if (value === undefined) {
-      continue;
-    }
-    if (typeof value === "boolean") {
-      return value;
-    }
-    if (typeof value === "string") {
-      const normalized = value.trim().toLowerCase();
-      if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on") {
-        return true;
-      }
-      if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off") {
-        return false;
-      }
-    }
-  }
-  return undefined;
-}
-
-function readCsvListOption(options: Record<string, unknown>, key: string, aliases: string[] = []): string[] {
-  const value = readStringOption(options, key, aliases);
-  if (!value) {
-    return [];
-  }
-  return value
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-}
-
-function normalizeGuideOptions(args: string[], options: Record<string, unknown>): Record<string, unknown> {
+function normalizeGuideOptions(
+  bundle: RuntimeBundle,
+  args: string[],
+  options: Record<string, unknown>,
+): Record<string, unknown> {
+  const { readStringOption, readBooleanOption } = bundle.sdk;
   const topicFromArgs = args[0];
   return {
     topic: readStringOption(options, "topic") ?? (typeof topicFromArgs === "string" && topicFromArgs.trim().length > 0 ? topicFromArgs : undefined),
@@ -151,12 +117,13 @@ function normalizeGuideOptions(args: string[], options: Record<string, unknown>)
   };
 }
 
-function normalizeCompletionOptions(args: string[], options: Record<string, unknown>): {
+function normalizeCompletionOptions(bundle: RuntimeBundle, args: string[], options: Record<string, unknown>): {
   shell: string;
   itemTypes: string[];
   tags: string[];
   eagerTags: boolean;
 } {
+  const { readStringOption, readBooleanOption, readCsvListOption } = bundle.sdk;
   const shellFromOptions = readStringOption(options, "shell");
   const shellFromArgs = typeof args[0] === "string" && args[0].trim().length > 0 ? args[0].trim() : undefined;
   return {
@@ -243,7 +210,7 @@ export async function runGuidePackage(
   global: GlobalOptions,
 ): Promise<unknown> {
   const bundle = await ensureRuntimeBundle();
-  return bundle.sdk.runGuide(normalizeGuideOptions(args, options), global);
+  return bundle.sdk.runGuide(normalizeGuideOptions(bundle, args, options), global);
 }
 
 export async function runCompletionPackage(
@@ -252,7 +219,7 @@ export async function runCompletionPackage(
   global: GlobalOptions,
 ): Promise<unknown> {
   const bundle = await ensureRuntimeBundle();
-  const normalized = normalizeCompletionOptions(args, options);
+  const normalized = normalizeCompletionOptions(bundle, args, options);
   const runtimeConfig = await buildCompletionRuntimeConfig(bundle, global);
   return bundle.sdk.runCompletion(
     normalized.shell,

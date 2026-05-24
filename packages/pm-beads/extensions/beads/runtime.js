@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { DEPENDENCY_KIND_VALUES, EXIT_CODE, PmCliError, acquireLock, appendHistoryEntry, canonicalDocument, createHistoryEntry, generateItemId, getActiveExtensionRegistrations, getHistoryPath, getItemPath, getSettingsPath, isTimestampLiteral, locateItem, normalizeFrontMatter, normalizeItemId, normalizeRawItemId, normalizeStatusInput, nowIso, parseTags, pathExists, readSettings, removeFileIfExists, resolveItemTypeRegistry, resolvePmRoot, runActiveOnReadHooks, runActiveOnWriteHooks, serializeItemDocument, writeFileAtomic, } from "../../../../dist/sdk/index.js";
+import { DEPENDENCY_KIND_VALUES, EXIT_CODE, PmCliError, canonicalDocument, commitImportedItem, generateItemId, getActiveExtensionRegistrations, getItemPath, isTimestampLiteral, locateItem, normalizeFrontMatter, normalizeItemId, normalizeRawItemId, nowIso, pathExists, readSettings, resolveItemTypeRegistry, resolvePmRoot, runActiveOnReadHooks, ensureTrackerInitialized, selectImportAuthor, toEstimatedMinutesValue, toImportPriority, toImportStatus, toImportTags, toNonEmptyImportString, } from "../../../../dist/sdk/index.js";
 const PRIMARY_AUTO_DISCOVERY_FILES = [
     ".beads/issues.jsonl",
     "issues.jsonl",
@@ -9,13 +9,13 @@ const UNSAFE_AUTO_DISCOVERY_FILES = [
     ".beads/sync_base.jsonl",
     "sync_base.jsonl",
 ];
-function toNonEmptyString(value) {
-    if (typeof value !== "string") {
-        return undefined;
-    }
-    const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : undefined;
-}
+// Shared, behavior-identical value coercers are sourced from the SDK adapter
+// surface; package-specific mappings (timestamps, item types, dependencies,
+// linked artifacts) stay local below.
+const toNonEmptyString = toNonEmptyImportString;
+const toEstimatedMinutes = toEstimatedMinutesValue;
+const toPriority = toImportPriority;
+const toTags = toImportTags;
 function toIsoString(value) {
     const raw = toNonEmptyString(value);
     if (!raw) {
@@ -25,44 +25,6 @@ function toIsoString(value) {
         return undefined;
     }
     return raw;
-}
-function toEstimatedMinutes(value) {
-    if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
-        return value;
-    }
-    if (typeof value === "string" && value.trim().length > 0) {
-        const parsed = Number(value);
-        if (Number.isFinite(parsed) && parsed >= 0) {
-            return parsed;
-        }
-    }
-    return undefined;
-}
-function toPriority(value) {
-    const fallback = 2;
-    if (typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 4) {
-        return value;
-    }
-    if (typeof value === "string" && value.trim().length > 0) {
-        const parsed = Number(value);
-        if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 4) {
-            return parsed;
-        }
-    }
-    return fallback;
-}
-function toTags(value) {
-    if (Array.isArray(value)) {
-        const tags = value
-            .filter((entry) => typeof entry === "string")
-            .map((entry) => entry.trim().toLowerCase())
-            .filter((entry) => entry.length > 0);
-        return Array.from(new Set(tags)).sort((left, right) => left.localeCompare(right));
-    }
-    if (typeof value === "string") {
-        return parseTags(value);
-    }
-    return [];
 }
 function toItemType(value) {
     const raw = toNonEmptyString(value);
@@ -86,16 +48,7 @@ function toItemType(value) {
             return { type: "Task", sourceType: raw };
     }
 }
-function toStatus(value) {
-    const normalized = toNonEmptyString(value);
-    if (normalized) {
-        const canonical = normalizeStatusInput(normalized);
-        if (canonical) {
-            return canonical;
-        }
-    }
-    return "open";
-}
+const toStatus = toImportStatus;
 function toDependencyKind(value) {
     const raw = toNonEmptyString(value);
     const normalized = raw?.toLowerCase();
@@ -332,24 +285,8 @@ function toLinkedDocs(value) {
     }
     return docs.length > 0 ? docs : undefined;
 }
-function selectAuthor(explicitAuthor, settingsAuthor) {
-    const candidate = explicitAuthor ?? process.env.PM_AUTHOR ?? settingsAuthor;
-    const trimmed = candidate.trim();
-    return trimmed.length > 0 ? trimmed : "unknown";
-}
-function ensureInitHasRun(pmRoot) {
-    return pathExists(getSettingsPath(pmRoot)).then((exists) => {
-        if (!exists) {
-            throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
-        }
-    });
-}
-function emptyDocument() {
-    return {
-        metadata: {},
-        body: "",
-    };
-}
+const selectAuthor = selectImportAuthor;
+const ensureInitHasRun = ensureTrackerInitialized;
 function resolveInputPath(rawPath) {
     return path.isAbsolute(rawPath) ? rawPath : path.resolve(process.cwd(), rawPath);
 }
@@ -515,48 +452,22 @@ export async function runBeadsImport(options, global) {
             continue;
         }
         const itemPath = getItemPath(pmRoot, type, id, "toon", typeRegistry.type_to_folder);
-        const historyPath = getHistoryPath(pmRoot, id);
-        try {
-            const releaseLock = await acquireLock(pmRoot, id, settings.locks.ttl_seconds, author);
-            try {
-                await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: "toon" }));
-                try {
-                    const entry = createHistoryEntry({
-                        nowIso: nowIso(),
-                        author,
-                        op: "import",
-                        before: emptyDocument(),
-                        after: afterDocument,
-                        message,
-                    });
-                    await appendHistoryEntry(historyPath, entry);
-                    warnings.push(...(await runActiveOnWriteHooks({
-                        path: itemPath,
-                        scope: "project",
-                        op: "import",
-                    })), ...(await runActiveOnWriteHooks({
-                        path: historyPath,
-                        scope: "project",
-                        op: "import:history",
-                    })));
-                }
-                catch (error) {
-                    await removeFileIfExists(itemPath);
-                    throw error;
-                }
-            }
-            finally {
-                await releaseLock();
-            }
+        const commit = await commitImportedItem({
+            pmRoot,
+            id,
+            itemPath,
+            document: afterDocument,
+            author,
+            message,
+            settings,
+            conflictWarningPrefix: "beads_import_lock_conflict",
+        });
+        if (!commit.committed) {
+            warnings.push(commit.conflictWarning);
+            skipped += 1;
+            continue;
         }
-        catch (error) {
-            if (error instanceof PmCliError && error.exitCode === EXIT_CODE.CONFLICT) {
-                warnings.push(`beads_import_lock_conflict:${id}`);
-                skipped += 1;
-                continue;
-            }
-            throw error;
-        }
+        warnings.push(...commit.writeWarnings);
         ids.push(id);
         imported += 1;
     }
