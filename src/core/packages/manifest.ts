@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathExists } from "../fs/fs-utils.js";
+import { isPathWithinDirectory } from "../fs/path-utils.js";
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 
@@ -220,14 +221,6 @@ export async function readPmPackageManifest(packageRoot: string): Promise<PmPack
     resources: normalizePackageResourceMap(pmManifest),
     catalog: normalizePackageCatalogMetadata(pmManifestRecord.catalog),
   };
-}
-
-function isPathWithinDirectory(directory: string, targetPath: string): boolean {
-  const relative = path.relative(directory, targetPath);
-  if (relative.length === 0) {
-    return true;
-  }
-  return !relative.startsWith("..") && !path.isAbsolute(relative);
 }
 
 async function listExtensionManifestDirectories(parentDirectory: string): Promise<string[]> {
