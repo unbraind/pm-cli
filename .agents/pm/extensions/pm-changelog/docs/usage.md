@@ -28,6 +28,7 @@ pm changelog generate --release-version 1.2.0 --output CHANGELOG.md
 pm changelog generate --stdout --group-by milestone
 pm changelog generate --stdout --group-by release
 pm changelog generate --release-version-from-package --since-previous-tag --until-release-tag
+pm changelog generate --all-release-tags --mode replace
 pm changelog generate --mode prepend --release-version "$GITHUB_REF_NAME"
 pm changelog generate --check --mode prepend --release-version "$GITHUB_REF_NAME"
 ```
@@ -121,6 +122,15 @@ npx pm-changelog --group-by release --mode replace \
   --item-url-base https://github.com/owner/repo/blob/main/.agents/pm
 ```
 
+Rebuild the full changelog from actual git release tags:
+
+```bash
+npx pm-changelog --all-release-tags --mode replace --output CHANGELOG.md \
+  --item-url-base https://github.com/owner/repo/blob/main/.agents/pm
+```
+
+`--all-release-tags` creates a newest-first `Unreleased` section for closed items after the latest tag, then one section per matching git tag. Release section dates come from the tag commit timestamp, and item assignment uses each item's `closed_at`, `updated_at`, then `created_at` timestamp.
+
 Each item entry becomes a link: `- Fix something ([pmc-abc](https://github.com/owner/repo/blob/main/.agents/pm/issues/pmc-abc.toon))`. The type subdirectory (`issues/`, `tasks/`, `chores/`, `features/`, `epics/`) is resolved automatically from the item's type.
 
 ## Options
@@ -142,6 +152,8 @@ Each item entry becomes a link: `- Fix something ([pmc-abc](https://github.com/o
 | `--since-previous-tag` | false | Derive `--since` from the previous git tag. If the current release tag exists, the previous tag before it is used; otherwise the latest tag before `HEAD` is used. |
 | `--until <date>` | - | Include items changed on or before date |
 | `--until-release-tag` | false | Derive `--until` from the current release tag when it exists (`v<version>` or `<version>`). Useful after a release tag has been created so post-release tracker changes do not move the published section. |
+| `--all-release-tags` | false | Rebuild full changelog history from git release tag windows, including an `Unreleased` section for post-latest-tag closed items. |
+| `--release-tag-pattern <glob>` | `v*` | Git tag glob used by `--all-release-tags`. |
 | `--status <list>` | `closed` | Comma-separated statuses |
 | `--group-by <mode>` | `version` | `version`, `release`, or `milestone` |
 | `--mode <mode>` | `replace` | `replace` or `prepend` existing changelog |
@@ -182,6 +194,8 @@ console.log({
 ```
 
 Use `version` when a runner is generating one release section from the current job context. Use `groupBy: "release"` or `--group-by release` when pm items already carry release metadata and a runner should rebuild multiple sections in one pass.
+
+Use `--all-release-tags` for a full project `CHANGELOG.md` that should reflect actual git/npm release history. Use the single-release `--release-version-from-package --since-previous-tag --until-release-tag` path for release note jobs that only publish the current tag section.
 
 For date-based release projects, prefer the package-owned release context flags instead of wrapper scripts:
 

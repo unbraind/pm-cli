@@ -1764,7 +1764,7 @@ describe("release readiness runtime coverage", () => {
   it("keeps release governance docs present with expected baseline markers", async () => {
     const requiredDocs = [
       { path: "LICENSE", marker: "MIT License" },
-      { path: "CHANGELOG.md", marker: "## [Unreleased]" },
+      { path: "CHANGELOG.md", marker: "## Unreleased" },
       { path: "CONTRIBUTING.md", marker: "node scripts/run-tests.mjs coverage" },
       { path: "SECURITY.md", marker: "## Reporting a Vulnerability" },
       { path: "CODE_OF_CONDUCT.md", marker: "## Our Standards" },

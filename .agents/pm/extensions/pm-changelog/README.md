@@ -12,6 +12,12 @@ pm install npm:pm-changelog --project
 pm changelog generate --mode prepend --output CHANGELOG.md
 ```
 
+Rebuild a full project changelog from git release tags:
+
+```bash
+pm changelog generate --all-release-tags --mode replace --output CHANGELOG.md
+```
+
 Standalone npm usage:
 
 ```bash

@@ -1,6 +1,6 @@
 {
   "name": "pm-changelog",
-  "version": "2026.5.24-11",
+  "version": "2026.5.24-13",
   "description": "Generate CHANGELOG.md files from pm-cli items for local and CI usage",
   "repository": {
     "type": "git",

@@ -1,3 +1,4 @@
+import type { ChangelogReleaseWindow } from "./types.js";
 export interface ReleaseContextOptions {
     cwd?: string;
     version?: string;
@@ -7,6 +8,11 @@ export interface ReleaseContextOptions {
     until?: string;
     untilReleaseTag?: boolean;
 }
+export interface ReleaseTagHistoryOptions {
+    cwd?: string;
+    tagPattern?: string;
+    includeUnreleased?: boolean;
+}
 export interface ReleaseContext {
     version?: string;
     since?: string;
@@ -15,4 +21,5 @@ export interface ReleaseContext {
     previousTag?: string;
 }
 export declare function resolveReleaseContext(options: ReleaseContextOptions): ReleaseContext;
+export declare function resolveReleaseTagWindows(options?: ReleaseTagHistoryOptions): ChangelogReleaseWindow[];
 //# sourceMappingURL=release-context.d.ts.map
