@@ -67,7 +67,7 @@ The pipeline performs:
 
 1. change detection + one-release-per-day guard
 2. version bump
-3. latest `pm-changelog` install and main changelog refresh through package-owned release generation; CI checks the full-history `--all-release-tags` changelog, while the release pipeline prepares the pending tag section before tag creation
+3. latest `pm-changelog` install and main changelog refresh through package-owned full-history generation; the release pipeline passes `--release-version` with `--all-release-tags` so the pending release section matches post-tag CI checks
 4. strict gates (build, typecheck, docs/skills freshness, coverage, static quality, compatibility, security, smoke checks, reliability gate)
 5. release note generation from changelog + pm evidence
 6. commit and tag creation (plus optional push)

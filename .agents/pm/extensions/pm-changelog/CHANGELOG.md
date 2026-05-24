@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.5.24-15 - 2026-05-24
+
+### Other
+
+- Stabilize full-history release windows for release automation ([pmc-s1c1](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-s1c1.toon))
+
 ## 2026.5.24-14 - 2026-05-24
 
 ### Other

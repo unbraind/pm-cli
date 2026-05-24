@@ -3,7 +3,7 @@ import { createChangelog, mergeChangelog, writeChangelog } from "./generator.js"
 import { resolveReleaseContext, resolveReleaseTagWindows } from "./release-context.js";
 export default defineExtension({
     name: "pm-changelog",
-    version: "2026.5.24-14",
+    version: "2026.5.24-15",
     activate(api) {
         api.registerCommand({
             name: "changelog generate",
@@ -58,11 +58,12 @@ export default defineExtension({
                     .map((status) => status.trim())
                     .filter(Boolean);
                 const allReleaseTags = booleanOption(ctx.options, "all-release-tags", "allReleaseTags");
+                const releaseVersion = stringOption(ctx.options, "release-version", "releaseVersion");
                 const releaseContext = allReleaseTags
                     ? { version: undefined, since: undefined, until: undefined }
                     : resolveReleaseContext({
                         cwd: process.cwd(),
-                        version: stringOption(ctx.options, "release-version", "releaseVersion"),
+                        version: releaseVersion,
                         versionFromPackage: booleanOption(ctx.options, "release-version-from-package", "releaseVersionFromPackage"),
                         since: ctx.options["since"],
                         sincePreviousTag: booleanOption(ctx.options, "since-previous-tag", "sincePreviousTag"),
@@ -73,6 +74,8 @@ export default defineExtension({
                     ? resolveReleaseTagWindows({
                         cwd: process.cwd(),
                         tagPattern: stringOption(ctx.options, "release-tag-pattern", "releaseTagPattern"),
+                        pendingVersion: releaseVersion,
+                        pendingTimestamp: stringOption(ctx.options, "until", "until") ?? stringOption(ctx.options, "date", "date"),
                     })
                     : undefined;
                 const items = await listAllFrontMatter(ctx.pm_root);

@@ -140,9 +140,9 @@ describe("release automation contract", () => {
     expect(pipelineSource).toContain("CHANGELOG.md");
     expect(pipelineSource).toContain("--item-url-base");
     expect(pipelineSource).toContain("--mode");
-    expect(pipelineSource).toContain("prepend");
+    expect(pipelineSource).toContain("replace");
     expect(pipelineSource).toContain("--release-version");
-    expect(pipelineSource).toContain("--since-previous-tag");
+    expect(pipelineSource).toContain("--all-release-tags");
     expect(pipelineSource).toContain("ensureGeneratedReleaseSectionHasContent(targetVersion)");
     expect(pipelineSource).toContain('"add", "package.json", "CHANGELOG.md"');
     expect(pipelineSource).not.toContain("CHANGELOG.pm.md");

@@ -330,6 +330,38 @@
 
 - Release @unbrained/pm-cli after 2026.5.4 ([pm-0rjf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-0rjf.toon))
 
+## 2026.5.5 - 2026-05-05
+
+No changes.
+
+## 2026.5.4 - 2026-05-04
+
+No changes.
+
+## 2026.5.3-8 - 2026-05-04
+
+No changes.
+
+## 2026.5.3-7 - 2026-05-03
+
+No changes.
+
+## 2026.5.3-6 - 2026-05-03
+
+No changes.
+
+## 2026.5.3-5 - 2026-05-03
+
+No changes.
+
+## 2026.5.3-4 - 2026-05-03
+
+No changes.
+
+## 2026.5.3-3 - 2026-05-03
+
+No changes.
+
 ## 2026.5.3-2 - 2026-05-03
 
 ### Other
@@ -973,3 +1005,11 @@
 - Agent-optimized calendar and reminders ([pm-qh3p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-qh3p.toon))
 - TOON item storage migration ([pm-bckz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-bckz.toon))
 - Code/test/docs for create log-seed ambiguity guard ([pm-l5tr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-l5tr.toon))
+
+## 2026.3.12 - 2026-03-12
+
+No changes.
+
+## 2026.3.9 - 2026-03-09
+
+No changes.

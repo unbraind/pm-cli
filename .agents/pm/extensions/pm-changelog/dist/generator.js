@@ -34,6 +34,10 @@ export function createChangelog(options) {
     }
     for (const section of sections) {
         lines.push(`## ${section.heading}`, "");
+        if (section.items.length === 0) {
+            lines.push("No changes.", "");
+            continue;
+        }
         const grouped = groupByCategory(section.items);
         for (const category of CATEGORY_ORDER) {
             const categoryItems = grouped.get(category);
@@ -176,12 +180,10 @@ function filterItemsByStatus(options) {
 }
 function buildSections(items, options) {
     if (options.releaseWindows && options.releaseWindows.length > 0) {
-        return options.releaseWindows
-            .map((window) => ({
+        return options.releaseWindows.map((window) => ({
             heading: window.heading,
             items: filterItemsByTime(items, window),
-        }))
-            .filter((section) => options.includeEmpty || section.items.length > 0);
+        }));
     }
     if (options.groupBy === "release" && !options.version) {
         return groupSectionsByMetadata(items, "release", "Unreleased");

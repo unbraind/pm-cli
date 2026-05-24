@@ -12,6 +12,8 @@ export interface ReleaseTagHistoryOptions {
     cwd?: string;
     tagPattern?: string;
     includeUnreleased?: boolean;
+    pendingVersion?: string;
+    pendingTimestamp?: string;
 }
 export interface ReleaseContext {
     version?: string;
