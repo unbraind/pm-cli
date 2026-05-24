@@ -6,21 +6,24 @@ status: in_progress
 priority: 0
 tags[3]: npm,pm-cli,release
 created_at: "2026-05-24T10:35:44.711Z"
-updated_at: "2026-05-24T10:53:33.739Z"
+updated_at: "2026-05-24T11:00:14.617Z"
 assignee: codex-release
 author: codex-release
 parent: pm-rnpb
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-05-24T10:36:39.110Z",codex-release,"Release preparation note: initial dry-run command refused to run because the working tree contained the newly created release tracker item; committing tracker setup first so the release pipeline can enforce its clean-tree guard."
   "2026-05-24T10:40:59.740Z",codex-release,"Evidence: pnpm release:pipeline:dry-run passed for 2026.5.24. Gate details included build, typecheck, docs/skills, static quality, coverage 108 files / 1623 tests / 100%, version policy, security scan, packed npx smoke, package-first dogfood 84 commands, npm pack, and release-note generation."
   "2026-05-24T10:53:00.086Z",codex-release,"Release workflow failure: GitHub run 26359132490 failed before npm publish at Reliability threshold gate. Logs show SENTRY_AUTH_TOKEN was present but issue lookup returned sentry_api_403; SENTRY_PERSONAL_ADMIN_TOKEN was empty. This matches the documented split where release upload tokens may not have issue-read scope and the issue-threshold gate should skip without the personal admin token."
   "2026-05-24T10:53:33.739Z",codex-release,"Fix: updated .github/workflows/release.yml so the reliability issue-threshold gate skips when SENTRY_PERSONAL_ADMIN_TOKEN is absent, even if SENTRY_AUTH_TOKEN exists for sourcemap upload. Focused shell check with SENTRY_AUTH_TOKEN=dummy and no personal token skips successfully."
-files[4]{path,scope,note}:
+  "2026-05-24T11:00:14.617Z",codex-release,"Fix verification: focused workflow contract test passed after updating tests/integration/ci-workflow-contract.spec.ts for the new SENTRY_PERSONAL_ADMIN_TOKEN skip message: PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts (1 file, 4 tests)."
+files[5]{path,scope,note}:
   .github/workflows/release.yml,project,Fix release reliability gate to require personal admin token for Sentry issue reads
   CHANGELOG.md,project,Release changelog promotion
   CHANGELOG.pm.md,project,pm-changelog generated tracker changelog
   package.json,project,Release version and scripts
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/integration/ci-workflow-contract.spec.ts,project,Update release workflow contract for personal-token-only Sentry issue gate
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Focused workflow contract coverage after release gate fix
   "pnpm release:pipeline:dry-run",null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Read-only local release parity pipeline before mutating release prep
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,Release source of truth for tag-driven publish

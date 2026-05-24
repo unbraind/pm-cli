@@ -247,7 +247,7 @@ describe("GitHub workflow contract", () => {
       "name: Upload Sentry sourcemaps",
       "SENTRY_AUTH_TOKEN",
       "SENTRY_PERSONAL_ADMIN_TOKEN",
-      "No Sentry token is configured",
+      "SENTRY_PERSONAL_ADMIN_TOKEN is not configured",
       "SENTRY_AUTH_TOKEN is not configured",
       "pnpm sentry:inject",
       "pnpm sentry:upload",
