@@ -28,6 +28,10 @@ export interface GenerateChangelogOptions {
     groupBy?: ChangelogGroupBy;
     includeEmpty?: boolean;
     includeLinks?: boolean;
+    /** Base URL used to construct clickable links for pm item IDs.
+     * When set, each item ID in the changelog becomes a hyperlink:
+     * `[pmc-abc]({itemUrlBase}/pmc-abc.toon)` */
+    itemUrlBase?: string;
 }
 export interface GeneratedChangelog {
     markdown: string;

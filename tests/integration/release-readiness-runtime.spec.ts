@@ -1629,7 +1629,6 @@ describe("release readiness runtime coverage", () => {
     expect(packageJson.scripts?.["version:next"]).toBe("node scripts/release-version.mjs next");
     expect(packageJson.scripts?.["quality:static"]).toBe("node scripts/release/static-quality-gate.mjs");
     expect(packageJson.scripts?.["quality:docs-skills"]).toBe("node scripts/release/docs-skills-gate.mjs");
-    expect(packageJson.scripts?.["release:changelog"]).toBe("node scripts/release/changelog-promote.mjs");
     expect(packageJson.scripts?.["release:gates"]).toBe("node scripts/release/run-gates.mjs --telemetry-mode best-effort");
     expect(packageJson.scripts?.["release:pipeline"]).toBe("node scripts/release/run-release-pipeline.mjs");
     expect(packageJson.scripts?.["release:pipeline:dry-run"]).toBe(
@@ -1765,7 +1764,7 @@ describe("release readiness runtime coverage", () => {
   it("keeps release governance docs present with expected baseline markers", async () => {
     const requiredDocs = [
       { path: "LICENSE", marker: "MIT License" },
-      { path: "CHANGELOG.md", marker: "## [Unreleased]" },
+      { path: "CHANGELOG.md", marker: "## Unreleased" },
       { path: "CONTRIBUTING.md", marker: "node scripts/run-tests.mjs coverage" },
       { path: "SECURITY.md", marker: "## Reporting a Vulnerability" },
       { path: "CODE_OF_CONDUCT.md", marker: "## Our Standards" },
@@ -1790,7 +1789,6 @@ describe("release readiness runtime coverage", () => {
       "scripts/install.sh",
       "scripts/install.ps1",
       "scripts/release-version.mjs",
-      "scripts/release/changelog-promote.mjs",
       "scripts/release/compatibility-check.mjs",
       "scripts/release/docs-skills-gate.mjs",
       "scripts/release/static-quality-gate.mjs",
@@ -1838,10 +1836,6 @@ describe("release readiness runtime coverage", () => {
     expect(releaseVersionScript).toContain("YYYY.M.D");
     expect(releaseVersionScript).toContain("verify-next");
 
-    const changelogPromoteScript = await readRepoText("scripts/release/changelog-promote.mjs");
-    expect(changelogPromoteScript).toContain("## [Unreleased]");
-    expect(changelogPromoteScript).toContain("--version");
-
     const compatibilityScript = await readRepoText("scripts/release/compatibility-check.mjs");
     expect(compatibilityScript).toContain("latest published");
     expect(compatibilityScript).toContain("PM_PATH");
@@ -1862,7 +1856,8 @@ describe("release readiness runtime coverage", () => {
     expect(releasePipelineScript).toContain("allow-same-day-release");
     expect(releasePipelineScript).toContain("release_already_cut_today");
     expect(releasePipelineScript).toContain("tracker_only_changes_since_last_tag");
-    expect(releasePipelineScript).toContain("changelog_unreleased_empty");
+    expect(releasePipelineScript).toContain("pm-changelog");
+    expect(releasePipelineScript).toContain("--item-url-base");
     expect(releasePipelineScript).toContain(".agents/pm/");
     expect(releasePipelineScript).toContain("run-release-pipeline");
 
