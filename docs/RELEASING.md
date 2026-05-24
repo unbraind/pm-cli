@@ -35,12 +35,12 @@ pnpm version:check
 
 ## One-Time Setup
 
-- Use npm Trusted Publishing for `.github/workflows/release.yml` so GitHub-hosted release jobs publish with short-lived OIDC credentials. Keep `id-token: write`, `npm publish --access public --provenance`, and the package repository URL aligned with npm's Trusted Publisher configuration. Do not force `NODE_AUTH_TOKEN` in the publish step when Trusted Publishing is configured, because a stale or under-scoped token can shadow OIDC and fail the publish.
+- Use npm Trusted Publishing for `.github/workflows/release.yml` so GitHub-hosted release jobs publish with short-lived OIDC credentials. Keep `id-token: write`, Node 24 or newer, npm 11.5.1 or newer, `npm publish --access public --provenance`, and the package repository URL aligned with npm's Trusted Publisher configuration. Do not force `NODE_AUTH_TOKEN` in the publish step when Trusted Publishing is configured, because a stale or under-scoped token can shadow OIDC and fail the publish.
 - Add `SENTRY_AUTH_TOKEN` as an optional GitHub Environment or repository secret when Sentry release creation and sourcemap upload should run. Add `SENTRY_PERSONAL_ADMIN_TOKEN` only when the GitHub-hosted Sentry issue-threshold gate should read unresolved issues; CI-scoped release tokens may not have issue-read scope. The release workflow skips Sentry upload cleanly when `SENTRY_AUTH_TOKEN` is absent and skips the GitHub-hosted issue-threshold gate when `SENTRY_PERSONAL_ADMIN_TOKEN` is absent; local maintainers should still run the token-backed Sentry gate before release.
 - Keep any `release` environment compatible with free GitHub features. This repository is public, so environment secrets and tag/branch deployment rules are compatible with the free GitHub path; do not add paid-only release gates.
 - Ensure `GITHUB_TOKEN` has `contents: write` for GitHub Release creation.
 - Keep `package.json` repository, homepage, and bugs URLs aligned with `https://github.com/unbraind/pm-cli`.
-- Keep npm publishing compatible with provenance. The release workflow must keep `id-token: write`, a GitHub-hosted runner, and `npm publish --access public --provenance`; npm Trusted Publishing supplies the publisher identity through OIDC.
+- Keep npm publishing compatible with provenance. The release workflow must keep `id-token: write`, a GitHub-hosted runner, Node 24 or newer, npm 11.5.1 or newer, and `npm publish --access public --provenance`; npm Trusted Publishing supplies the publisher identity through OIDC.
 
 ## Automated Daily Driver
 

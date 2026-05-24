@@ -44,7 +44,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
 
@@ -54,9 +54,9 @@ jobs:
           path: |
             .cache/tsbuildinfo
             .cache/vitest
-          key: pm-cli-validation-cache-${{ runner.os }}-node20-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}
+          key: pm-cli-validation-cache-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', 'tsconfig*.json', 'vitest.config.ts', 'src/**/*.ts', 'tests/**/*.ts', 'packages/**/*.ts') }}
           restore-keys: |
-            pm-cli-validation-cache-${{ runner.os }}-node20-
+            pm-cli-validation-cache-${{ runner.os }}-node24-
             pm-cli-validation-cache-${{ runner.os }}-
 
       - name: Restore LanceDB and Sentry caches
@@ -65,9 +65,9 @@ jobs:
           path: |
             .agents/pm/search/lancedb
             ~/.cache/sentry-cli
-          key: pm-cli-observability-cache-${{ runner.os }}-node20-${{ hashFiles('pnpm-lock.yaml', '.agents/pm/settings.json', '.agents/pm/**/*.toon', '.agents/pm/**/*.md', 'src/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts') }}
+          key: pm-cli-observability-cache-${{ runner.os }}-node24-${{ hashFiles('pnpm-lock.yaml', '.agents/pm/settings.json', '.agents/pm/**/*.toon', '.agents/pm/**/*.md', 'src/**/*.ts', 'scripts/**/*.mjs', 'tests/**/*.ts') }}
           restore-keys: |
-            pm-cli-observability-cache-${{ runner.os }}-node20-
+            pm-cli-observability-cache-${{ runner.os }}-node24-
             pm-cli-observability-cache-${{ runner.os }}-
 
       - name: Install dependencies
