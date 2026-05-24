@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2026.5.24] - 2026-05-24
+
 ### Added
 - Contract tests now assert that the `pm-changelog` install, generate, and stage steps remain in `run-release-pipeline.mjs`, and that the `Verify generated pm changelog` step (`pnpm changelog:pm:check`) remains in `release.yml`, preventing silent regression if the integration is removed.
 - **`pm schema add-type <Name>`** registers a config-driven custom item type into `.agents/pm/schema/types.json` (shape `{ "definitions": [...] }`) so agents can use `pm create <Name> "..."` for project-specific work categories without hand-editing settings (pm-e1va). Flags: `--description`, `--default-status`, `--folder`, repeatable `--alias`, plus `--author`/`--force` governance and `--json`. The command is an idempotent UPSERT keyed on the type name (case-insensitive, merges aliases, overrides supplied fields), refuses to redefine built-in types (Chore, Decision, Epic, Event, Feature, Issue, Meeting, Milestone, Plan, Reminder, Task), rejects aliases (or a new type name) that would collide with a built-in or another registered type so `pm create --type` never resolves ambiguously, and emits a machine envelope reporting the registered type and the file path.
