@@ -262,7 +262,6 @@ describe("GitHub workflow contract", () => {
       PINNED_ACTIONS.setupBun,
       "npm publish --access public --provenance",
       "is already published; skipping npm publish.",
-      "NPM_TOKEN",
       "node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-github-release --json",
       "node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-package --json",
       "uses: softprops/action-gh-release@218a0cad87d638dff9a0383acf010108077227f3",

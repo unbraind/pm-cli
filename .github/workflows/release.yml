@@ -183,8 +183,6 @@ jobs:
             exit 0
           fi
           npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Verify published package on npm, npx, and bunx
         timeout-minutes: 8
