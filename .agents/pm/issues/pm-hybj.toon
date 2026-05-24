@@ -6,7 +6,7 @@ status: open
 priority: 2
 tags[1]: telemetry
 created_at: "2026-05-24T06:57:51.663Z"
-updated_at: "2026-05-24T06:58:06.206Z"
+updated_at: "2026-05-24T07:02:51.595Z"
 author: claude-code-agent
 estimated_minutes: 45
 acceptance_criteria: "pm-changelog generator includes all closed items readable by the current pm core (item_count equals total closed count); the bundled-SDK shadowing is either eliminated (host SDK used) or documented as release-gated; no regression to changelog:pm:check."
@@ -14,6 +14,7 @@ parent: pm-rnpb
 blocked_by: pm-iqgj
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-iqgj,blocked_by,"2026-05-24T06:58:03.546Z",claude-code-agent,null
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-24T06:58:06.206Z",claude-code-agent,"Evidence: total closed=798, generator item_count=782, delta=16 = exactly the pm-iqgj-recovered files (pm-3akm/ss8d/1r6p... none present in CHANGELOG.pm.md while normal closed items pm-qsk8/c98b/xh0y/dpzc are). Extension dir has node_modules/@unbrained/pm-cli (bundled). Root-cause fix shipped in this PR via pm-iqgj (src/core/item/toon-decode.ts + parseToonItemDocument); this issue tracks propagation/hardening only and is blocked_by pm-iqgj."
+  "2026-05-24T07:02:51.595Z",claude-code-agent,Submitted in PR #58 (branch recover-unreadable-toon-items-and-dedup-core-helpers).
 body: ""
