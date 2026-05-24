@@ -6,14 +6,17 @@ status: in_progress
 priority: 0
 tags[3]: npm,pm-cli,release
 created_at: "2026-05-24T10:35:44.711Z"
-updated_at: "2026-05-24T10:40:59.740Z"
+updated_at: "2026-05-24T10:53:33.739Z"
 assignee: codex-release
 author: codex-release
 parent: pm-rnpb
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-05-24T10:36:39.110Z",codex-release,"Release preparation note: initial dry-run command refused to run because the working tree contained the newly created release tracker item; committing tracker setup first so the release pipeline can enforce its clean-tree guard."
   "2026-05-24T10:40:59.740Z",codex-release,"Evidence: pnpm release:pipeline:dry-run passed for 2026.5.24. Gate details included build, typecheck, docs/skills, static quality, coverage 108 files / 1623 tests / 100%, version policy, security scan, packed npx smoke, package-first dogfood 84 commands, npm pack, and release-note generation."
-files[3]{path,scope,note}:
+  "2026-05-24T10:53:00.086Z",codex-release,"Release workflow failure: GitHub run 26359132490 failed before npm publish at Reliability threshold gate. Logs show SENTRY_AUTH_TOKEN was present but issue lookup returned sentry_api_403; SENTRY_PERSONAL_ADMIN_TOKEN was empty. This matches the documented split where release upload tokens may not have issue-read scope and the issue-threshold gate should skip without the personal admin token."
+  "2026-05-24T10:53:33.739Z",codex-release,"Fix: updated .github/workflows/release.yml so the reliability issue-threshold gate skips when SENTRY_PERSONAL_ADMIN_TOKEN is absent, even if SENTRY_AUTH_TOKEN exists for sourcemap upload. Focused shell check with SENTRY_AUTH_TOKEN=dummy and no personal token skips successfully."
+files[4]{path,scope,note}:
+  .github/workflows/release.yml,project,Fix release reliability gate to require personal admin token for Sentry issue reads
   CHANGELOG.md,project,Release changelog promotion
   CHANGELOG.pm.md,project,pm-changelog generated tracker changelog
   package.json,project,Release version and scripts

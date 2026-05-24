@@ -113,11 +113,10 @@ jobs:
 
       - name: Reliability threshold gate
         env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_PERSONAL_ADMIN_TOKEN: ${{ secrets.SENTRY_PERSONAL_ADMIN_TOKEN }}
         run: |
-          if [ -z "${SENTRY_PERSONAL_ADMIN_TOKEN:-}" ] && [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then
-            echo "No Sentry token is configured; skipping Sentry issue threshold gate."
+          if [ -z "${SENTRY_PERSONAL_ADMIN_TOKEN:-}" ]; then
+            echo "SENTRY_PERSONAL_ADMIN_TOKEN is not configured; skipping Sentry issue threshold gate."
             exit 0
           fi
           node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode off --max-critical 10 --max-high 20
