@@ -6,12 +6,17 @@ status: closed
 priority: 3
 tags[3]: cli,code-quality,dedup
 created_at: "2026-05-22T19:16:14.504Z"
-updated_at: "2026-05-24T01:20:37.767Z"
+updated_at: "2026-05-24T01:53:23.693Z"
 author: codex-duplicate-audit
 acceptance_criteria: One shared helper owns mutation author resolution; command modules consume it without behavior changes; PM_AUTHOR/settings.author_default/unknown fallback semantics stay covered by focused command tests; pnpm build passes.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+resolution: Closed by extracting the shared mutation author resolver.
+expected_result: "Mutation commands use one helper for explicit author, PM_AUTHOR, settings default, trim, and unknown fallback semantics."
+actual_result: resolveAuthor was extracted to src/core/shared/author.ts and adopted across the mutation commands in PR #55.
+comments[3]{created_at,author,text}:
   "2026-05-22T19:16:14.504Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'author fallback resolveAuthor mutation author PM_AUTHOR settings.author_default' and pm search 'shared author helper resolve mutation author fallback' found no active exact item; pm-9y8q is scoped to comments/notes/learnings stacks, not cross-command author fallback."
+  "2026-05-24T01:29:17.055Z",codex-ownership-specialist,"Investigation note: ownership/author-helper specialist explorer pass starting. Scope: inspect mutation author resolution and ownership conflict guidance across append/comments/notes/learnings/files/docs/delete/history-redact/claim plus shared CLI helpers; no file edits."
+  "2026-05-24T01:30:36.447Z",codex-ownership-specialist,"Investigation finding: author helper already exists at src/core/shared/author.ts with stable precedence explicit --author, PM_AUTHOR, settings.author_default, trimmed non-empty, then unknown. Proposed follow-up is adoption-only: replace remaining local toAuthor/selectAuthor/resolveAuthor clones in close/update/create/plan/test/schema/history-repair with the shared helper, without changing CLI output. For mutation commands inspected here, append/comments/notes/learnings/files/docs/delete/history-redact/claim already import the shared helper."
 files[5]{path,scope,note}:
   src/cli/commands/append.ts,project,resolveAuthor clone
   src/cli/commands/comments.ts,project,resolveAuthor clone

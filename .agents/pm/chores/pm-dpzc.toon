@@ -6,10 +6,13 @@ status: closed
 priority: 2
 tags[5]: code-quality,dedup,extensions,packages,security
 created_at: "2026-05-22T19:16:32.934Z"
-updated_at: "2026-05-24T01:20:41.841Z"
+updated_at: "2026-05-24T01:53:20.109Z"
 author: codex-duplicate-audit
 acceptance_criteria: "A shared path containment/canonical containment helper is used by package manifest validation, extension install/doctor, and extension loader paths; path traversal/security semantics remain unchanged; focused package/extension tests and pnpm build pass."
 parent: pm-rnpb
+resolution: Closed by extracting shared path containment helpers.
+expected_result: Package and extension path boundary checks share one helper without weakening traversal protection.
+actual_result: "isPathWithinDirectory moved to src/core/fs/path-utils.ts and was adopted across package, extension, files, and search paths via PR #55."
 comments[1]{created_at,author,text}:
   "2026-05-22T19:16:32.934Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'path containment isPathWithinDirectory canonical path extension package loader manifest' found pm-w98k for extension contract lists, not filesystem boundary validation; no active exact helper-dedup item found."
 files[3]{path,scope,note}:

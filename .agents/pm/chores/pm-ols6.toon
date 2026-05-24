@@ -2,19 +2,30 @@ id: pm-ols6
 title: Centralize audit ownership-conflict guidance
 description: "Duplicate audit 2026-05-22: append-only/audit override commands repeat the same ownership-conflict catch predicate and guidance wrapping. Representative blocks are in src/cli/commands/learnings.ts:122, src/cli/commands/notes.ts:118, src/cli/commands/comments.ts:196, and src/cli/commands/claim.ts:131. Each checks PmCliError conflict text, then throws a new PmCliError with code ownership_conflict plus command-specific required/examples/nextSteps. This is not included in pm-why9's CLI parser/update-table scope. Fix by extracting a helper that recognizes mutateItem assignee conflicts and formats command-specific audit guidance without changing current messages."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[3]: code-quality,dedup,ownership
 created_at: "2026-05-22T18:54:47.501Z"
-updated_at: "2026-05-22T18:54:47.501Z"
+updated_at: "2026-05-24T01:58:51.740Z"
 author: codex-duplicate-audit
 acceptance_criteria: "A shared helper owns the assignee-conflict recognition and PmCliError wrapping; comments, notes, learnings, and release/claim audit override paths keep their current user-facing guidance; tests cover at least one command-specific message and one pass-through non-conflict error; pnpm build and targeted command tests pass."
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+resolution: Closed by extracting the shared ownership conflict wrapper.
+expected_result: Append-only audit commands and release share the ownership-conflict predicate and wrapping while keeping command-specific guidance text.
+actual_result: "wrapOwnershipConflict now centralizes the predicate/wrapping; comments, notes, learnings, and release use it; focused tests, manual dogfood, validate, and full release gate passed."
+comments[5]{created_at,author,text}:
   "2026-05-22T18:54:47.501Z",codex-duplicate-audit,"Duplicate-check evidence: searched tracker for ownership/allow-audit conflict dedup. Existing pm-why9 does not mention this path; no specific open item found. Code scan found the same catch predicate across comments, notes, learnings, and claim/release logic."
-files[4]{path,scope,note}:
+  "2026-05-24T01:29:17.010Z",codex-ownership-specialist,"Investigation note: ownership/author-helper specialist explorer pass starting. Scope: inspect mutation author resolution and ownership conflict guidance across append/comments/notes/learnings/files/docs/delete/history-redact/claim plus shared CLI helpers; no file edits."
+  "2026-05-24T01:30:36.491Z",codex-ownership-specialist,"Investigation finding: propose shared helper wrapOwnershipConflict(error, guidance) in CLI/shared layer. Recognition must stay exactly: PmCliError + EXIT_CODE.CONFLICT + message contains 'is assigned to' and 'Use --force to override'. It should rethrow non-matches unchanged and wrap matches with code=ownership_conflict plus command-owned required/examples/nextSteps. Stable current command semantics: comments require --allow-audit-comment; notes require --allow-audit-note with legacy --allow-audit-comment; learnings require --allow-audit-learning with legacy --allow-audit-comment; release requires --allow-audit-release. Keep existing required/example/nextSteps text byte-for-byte unless a separate UX item changes it."
+  "2026-05-24T01:36:09.589Z",codex-active-work,"Evidence: ownership conflict recognition and PmCliError guidance wrapping now lives in wrapOwnershipConflict inside src/cli/commands/annotation-command.ts. comments/notes/learnings and release keep command-specific required/examples/nextSteps text while sharing the exact conflict predicate. Focused tests passed: comments-command, notes-learnings-command, and help-runtime specs (62 tests)."
+  "2026-05-24T01:58:26.554Z",codex-active-work,"Final verification evidence: shared ownership conflict wrapper is covered by focused ownership tests plus final release gate. node scripts/release/run-gates.mjs passed with 105 files / 1583 tests / 100 percent coverage, secret scan, compatibility, package dogfood, and required Sentry/telemetry gate (critical=0 high=2, telemetry error rate=2.94, missing error-code rows=0)."
+files[5]{path,scope,note}:
+  src/cli/commands/annotation-command.ts,project,shared ownership conflict wrapper
+  src/cli/commands/claim.ts,project,duplicated conflict guidance
+  src/cli/commands/comments.ts,project,duplicated conflict guidance
   src/cli/commands/learnings.ts,project,duplicated conflict guidance
   src/cli/commands/notes.ts,project,duplicated conflict guidance
-  src/cli/commands/comments.ts,project,duplicated conflict guidance
-  src/cli/commands/claim.ts,project,duplicated conflict guidance
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  PM_RUN_TESTS_SKIP_BUILD=1 node scripts/run-tests.mjs test -- tests/unit/comments-command.spec.ts tests/unit/notes-learnings-command.spec.ts tests/integration/help-runtime.spec.ts --reporter=dot,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented shared ownership conflict guidance wrapper and verified command-specific guidance through focused tests, manual dogfood, and full release gate."
 body: ""

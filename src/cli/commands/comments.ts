@@ -1,18 +1,10 @@
 import { readFile } from "node:fs/promises";
-import { pathExists } from "../../core/fs/fs-utils.js";
-import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { nowIso } from "../../core/shared/time.js";
-import { createStdinTokenResolver, parseCsvKv } from "../../core/item/parse.js";
-import { locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
-import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings } from "../../core/store/settings.js";
-import { parseLimit } from "../shared-parsers.js";
+import { createStdinTokenResolver } from "../../core/item/parse.js";
 import type { Comment } from "../../types/index.js";
-import { resolveAuthor } from "../../core/shared/author.js";
+import { parseAnnotationTextInput, runAnnotationCommand } from "./annotation-command.js";
 
 export interface CommentsCommandOptions {
   add?: string;
@@ -36,42 +28,10 @@ export interface CommentsResult {
   limit?: number;
 }
 
-function limitComments(values: Comment[], limit: number | undefined): Comment[] {
-  if (limit === undefined) return values;
-  if (limit === 0) return [];
-  return values.slice(Math.max(0, values.length - limit));
-}
-
-function parseCommentTextInput(raw: string): string {
-  const trimmed = raw.trim();
-  if (!trimmed) {
-    return "";
-  }
-  const textPrefixMatch = /^(?:[-*+]\s*)?text\s*[:=]/i.exec(trimmed);
-  if (textPrefixMatch && !trimmed.startsWith("```")) {
-    const text = trimmed.slice(textPrefixMatch[0].length).trim();
-    return text || trimmed;
-  }
-  const looksStructured = /^(?:[-*+]\s*)?text\s*[:=]/im.test(trimmed) || trimmed.startsWith("```");
-  if (!looksStructured) {
-    return trimmed;
-  }
-  try {
-    const kv = parseCsvKv(trimmed, "--add");
-    const keys = Object.keys(kv).map((key) => key.trim().toLowerCase());
-    if (keys.some((key) => key !== "text")) {
-      return trimmed;
-    }
-    const text = kv.text?.trim();
-    return text || trimmed;
-  } catch {
-    return trimmed;
-  }
-}
-
 interface ResolvedCommentInput {
   mode: "list" | "add" | "stdin" | "file";
   value?: string;
+  emptyFlag?: string;
 }
 
 function isErrnoError(error: unknown): error is NodeJS.ErrnoException {
@@ -97,6 +57,7 @@ async function resolveCommentInput(
     return {
       mode: "add",
       value: addInput ?? "",
+      emptyFlag: "--add",
     };
   }
   if (hasStdin) {
@@ -104,6 +65,7 @@ async function resolveCommentInput(
     return {
       mode: "stdin",
       value: stdinInput ?? "",
+      emptyFlag: "--stdin",
     };
   }
   const filePath = options.file?.trim() ?? "";
@@ -115,6 +77,7 @@ async function resolveCommentInput(
     return {
       mode: "file",
       value: fileInput,
+      emptyFlag: "--file",
     };
   } catch (error: unknown) {
     if (isErrnoError(error) && error.code === "ENOENT") {
@@ -127,101 +90,28 @@ async function resolveCommentInput(
 
 export async function runComments(id: string, options: CommentsCommandOptions, global: GlobalOptions): Promise<CommentsResult> {
   const stdinResolver = createStdinTokenResolver();
-  const pmRoot = resolvePmRoot(process.cwd(), global.path);
-  if (!(await pathExists(getSettingsPath(pmRoot)))) {
-    throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
-  }
-  const settings = await readSettings(pmRoot);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const limit = parseLimit(options.limit);
   const commentInput = await resolveCommentInput(options, stdinResolver);
 
-  if (commentInput.mode === "list") {
-    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
-    if (!located) {
-      throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
-    }
-    const loaded = await readLocatedItem(located, { schema: settings.schema });
-    const allComments = loaded.document.metadata.comments ?? [];
-    const comments = limitComments(allComments, limit);
-    return {
-      id: located.id,
-      comments,
-      count: comments.length,
-      ...(options.includeMeta === true
-        ? {
-            total_count: allComments.length,
-            returned_count: comments.length,
-            has_more: comments.length < allComments.length,
-            ...(limit !== undefined ? { limit } : {}),
-          }
-        : {}),
-    };
-  }
-
-  const author = resolveAuthor(options.author, settings.author_default);
-  const text = commentInput.mode === "add" ? parseCommentTextInput(commentInput.value ?? "") : (commentInput.value ?? "");
-  if (!text.trim()) {
-    const inputFlag = commentInput.mode === "add" ? "--add" : commentInput.mode === "stdin" ? "--stdin" : "--file";
-    throw new PmCliError(`${inputFlag} text cannot be empty`, EXIT_CODE.USAGE);
-  }
-
-  let result: Awaited<ReturnType<typeof mutateItem>>;
-  try {
-    result = await mutateItem({
-      pmRoot,
-      settings,
-      id,
-      op: "comment_add",
-      author,
-      message: options.message,
-      force: options.force,
-      bypassAssigneeConflict: Boolean(options.allowAuditComment),
-      mutate(document) {
-        const comments = document.metadata.comments ?? [];
-        comments.push({
-          created_at: nowIso(),
-          author,
-          text,
-        });
-        document.metadata.comments = comments;
-        return { changedFields: ["comments"] };
-      },
-    });
-  } catch (error: unknown) {
-    if (
-      error instanceof PmCliError &&
-      error.exitCode === EXIT_CODE.CONFLICT &&
-      error.message.includes("is assigned to") &&
-      error.message.includes("Use --force to override")
-    ) {
-      throw new PmCliError(error.message, error.exitCode, {
-        code: "ownership_conflict",
-        required:
-          "For append-only comment audits on another owner's item, prefer --allow-audit-comment before considering --force.",
-        examples: ['pm comments pm-a1b2 --add "audit note" --author "reviewer" --allow-audit-comment'],
-        nextSteps: [
-          "Retry with --allow-audit-comment for append-only audits that do not mutate item metadata beyond comments.",
-          "Use --force only when an ownership override is explicitly approved.",
-        ],
-      });
-    }
-    throw error;
-  }
-
-  const allComments = result.item.comments as Comment[];
-  const comments = limitComments(allComments, limit);
-  return {
-    id: result.item.id,
-    comments,
-    count: comments.length,
-    ...(options.includeMeta === true
-      ? {
-          total_count: allComments.length,
-          returned_count: comments.length,
-          has_more: comments.length < allComments.length,
-          ...(limit !== undefined ? { limit } : {}),
-        }
-      : {}),
-  };
+  return runAnnotationCommand<"comments", Comment>(id, options, global, {
+    input: {
+      ...commentInput,
+      value:
+        commentInput.mode === "add"
+          ? parseAnnotationTextInput(commentInput.value ?? "", { stripPlainTextPrefix: true })
+          : (commentInput.value ?? ""),
+    },
+    collectionKey: "comments",
+    op: "comment_add",
+    parseText: (raw) => raw,
+    allowAuditBypass: Boolean(options.allowAuditComment),
+    conflictGuidance: {
+      required:
+        "For append-only comment audits on another owner's item, prefer --allow-audit-comment before considering --force.",
+      examples: ['pm comments pm-a1b2 --add "audit note" --author "reviewer" --allow-audit-comment'],
+      nextSteps: [
+        "Retry with --allow-audit-comment for append-only audits that do not mutate item metadata beyond comments.",
+        "Use --force only when an ownership override is explicitly approved.",
+      ],
+    },
+  });
 }

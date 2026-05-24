@@ -27,6 +27,7 @@ export default defineConfig({
         "src/cli/commands/activity.ts",
         "src/cli/commands/completion.ts",
         "src/cli/commands/claim.ts",
+        "src/cli/commands/annotation-command.ts",
         "src/cli/commands/comments.ts",
         "src/cli/commands/notes.ts",
         "src/cli/commands/learnings.ts",
