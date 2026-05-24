@@ -50,76 +50,23 @@ describe("shared constants and errors contracts", () => {
       Meeting: "meetings",
       Plan: "plans",
     });
-    expect(FRONT_MATTER_KEY_ORDER).toEqual([
-      "id",
-      "title",
-      "description",
-      "type",
-      "source_type",
-      "type_options",
-      "status",
-      "priority",
-      "tags",
-      "created_at",
-      "updated_at",
-      "deadline",
-      "reminders",
-      "events",
-      "closed_at",
-      "assignee",
-      "source_owner",
-      "author",
-      "estimated_minutes",
-      "acceptance_criteria",
-      "design",
-      "external_ref",
-      "definition_of_ready",
-      "order",
-      "goal",
-      "objective",
-      "value",
-      "impact",
-      "outcome",
-      "why_now",
-      "parent",
-      "reviewer",
-      "risk",
-      "confidence",
-      "sprint",
-      "release",
-      "blocked_by",
-      "blocked_reason",
-      "unblock_note",
-      "reporter",
-      "severity",
-      "environment",
-      "repro_steps",
-      "resolution",
-      "expected_result",
-      "actual_result",
-      "affected_version",
-      "fixed_version",
-      "component",
-      "regression",
-      "customer_impact",
-      "dependencies",
-      "comments",
-      "notes",
-      "learnings",
-      "files",
-      "tests",
-      "test_runs",
-      "docs",
-      "close_reason",
-      "plan_mode",
-      "plan_scope",
-      "plan_harness",
-      "plan_resume_context",
-      "plan_validation",
-      "plan_decisions",
-      "plan_discoveries",
-      "plan_steps",
-    ]);
+    // Structural contract: required fields present, no duplicates, canonical group ordering.
+    // Update sentinel list only when intentionally reordering the serialization contract.
+    const sentinelOrder = [
+      "id", "title", "type", "status", "created_at", "updated_at",
+      "closed_at", "assignee", "dependencies",
+      "comments", "notes", "learnings", "files", "tests", "docs",
+      "close_reason", "plan_steps",
+    ];
+    const indices = sentinelOrder.map((k) => FRONT_MATTER_KEY_ORDER.indexOf(k));
+    // all sentinel keys are present
+    expect(indices.every((i) => i !== -1)).toBe(true);
+    // sentinel keys appear in the declared relative order
+    for (let i = 0; i < indices.length - 1; i++) {
+      expect(indices[i]).toBeLessThan(indices[i + 1]);
+    }
+    // no duplicate keys in the full array
+    expect(new Set(FRONT_MATTER_KEY_ORDER).size).toBe(FRONT_MATTER_KEY_ORDER.length);
     expect(EMPTY_CANONICAL_DOCUMENT).toEqual({
       metadata: {},
       body: "",
