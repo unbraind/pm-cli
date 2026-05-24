@@ -165,8 +165,9 @@ describe("release automation contract", () => {
     const releaseNotesSource = await readFile(path.join(repoRoot, "scripts/generate-release-notes.mjs"), "utf8");
     expect(releaseNotesSource).toContain("const currentDate = resolveTagDate(currentTag)");
     expect(releaseNotesSource).toContain("formatPmSummary(items, previousDate, currentDate)");
+    expect(releaseNotesSource).toContain("item.closed_at ?? item.updated_at ?? item.created_at");
     expect(releaseNotesSource).toContain('status === "closed"');
-    expect(releaseNotesSource).toContain("updated >= since && updated <= until");
+    expect(releaseNotesSource).toContain("timestamp > since && timestamp <= until");
   });
 
   it("keeps release workflow public verification delegated to the local script", async () => {

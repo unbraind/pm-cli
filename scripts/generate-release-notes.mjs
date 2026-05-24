@@ -142,9 +142,10 @@ function formatPmSummary(items, sinceIso, untilIso) {
   const until = untilIso ? Date.parse(untilIso) : Number.POSITIVE_INFINITY;
   const changed = items
     .filter((item) => {
-      const updated = typeof item.updated_at === "string" ? Date.parse(item.updated_at) : Number.NaN;
+      const timestampSource = item.closed_at ?? item.updated_at ?? item.created_at;
+      const timestamp = typeof timestampSource === "string" ? Date.parse(timestampSource) : Number.NaN;
       const status = typeof item.status === "string" ? item.status : "unknown";
-      return status === "closed" && Number.isFinite(updated) && updated >= since && updated <= until;
+      return status === "closed" && Number.isFinite(timestamp) && timestamp > since && timestamp <= until;
     })
     .sort((left, right) => {
       const priorityDelta = Number(left.priority ?? 99) - Number(right.priority ?? 99);
