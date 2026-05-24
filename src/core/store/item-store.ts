@@ -282,23 +282,57 @@ export async function buildItemNotFoundError(
   return new PmCliError(`Item ${badId} not found`, EXIT_CODE.NOT_FOUND, { nextSteps });
 }
 
-export async function mutateItem(params: {
+function bypassesAssigneeConflict(
+  op: string,
+  bypassAssigneeConflict?: boolean,
+): boolean {
+  return (
+    op === "claim" ||
+    (bypassAssigneeConflict === true &&
+      (op === "comment_add" ||
+        op === "note_add" ||
+        op === "learning_add" ||
+        op === "release" ||
+        op === "update" ||
+        op === "update_audit"))
+  );
+}
+
+async function prepareLockedItem(params: {
   pmRoot: string;
   settings: PmSettings;
   id: string;
   op: string;
   author: string;
-  message?: string;
   force?: boolean;
   bypassAssigneeConflict?: boolean;
   typeToFolder?: Record<string, string>;
-  mutate: (document: ItemDocument) => { changedFields: string[]; warnings?: string[] };
-}): Promise<{ item: ItemFrontMatter; body: string; changedFields: string[]; warnings: string[] }> {
+}): Promise<{
+  typeToFolder: Record<string, string>;
+  located: LocatedItem;
+  originalRaw: string;
+  document: ItemDocument;
+  warnings: string[];
+  releaseLock: () => Promise<void>;
+}> {
   const typeToFolder =
-    params.typeToFolder ?? resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations()).type_to_folder;
-  const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix, params.settings.item_format, typeToFolder);
+    params.typeToFolder ??
+    resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations())
+      .type_to_folder;
+  const located = await locateItem(
+    params.pmRoot,
+    params.id,
+    params.settings.id_prefix,
+    params.settings.item_format,
+    typeToFolder,
+  );
   if (!located) {
-    throw await buildItemNotFoundError(params.pmRoot, params.id, params.settings.id_prefix, typeToFolder);
+    throw await buildItemNotFoundError(
+      params.pmRoot,
+      params.id,
+      params.settings.id_prefix,
+      typeToFolder,
+    );
   }
 
   const releaseLock = await acquireLock(
@@ -311,26 +345,19 @@ export async function mutateItem(params: {
   );
 
   try {
-    const parseWarnings: string[] = [];
+    const warnings: string[] = [];
     const { raw: originalRaw, document } = await readLocatedItem(located, {
       schema: params.settings.schema,
-      warnings: parseWarnings,
+      warnings,
     });
 
     const assigned = document.metadata.assignee?.trim();
     const governance = resolveGovernanceKnobs(params.settings);
-    const bypassAssigneeConflict =
-      params.op === "claim" ||
-      ((
-        params.op === "comment_add" ||
-        params.op === "note_add" ||
-        params.op === "learning_add" ||
-        params.op === "release" ||
-        params.op === "update" ||
-        params.op === "update_audit"
-      ) &&
-        params.bypassAssigneeConflict === true);
-    const hasOwnershipConflict = assigned && assigned !== params.author && !params.force && !bypassAssigneeConflict;
+    const hasOwnershipConflict =
+      assigned &&
+      assigned !== params.author &&
+      !params.force &&
+      !bypassesAssigneeConflict(params.op, params.bypassAssigneeConflict);
     if (hasOwnershipConflict) {
       if (governance.ownership_enforcement === "strict") {
         throw new PmCliError(
@@ -339,9 +366,66 @@ export async function mutateItem(params: {
         );
       }
       if (governance.ownership_enforcement === "warn") {
-        parseWarnings.push(`ownership_warning:assignee_conflict:${located.id}:${assigned}`);
+        warnings.push(
+          `ownership_warning:assignee_conflict:${located.id}:${assigned}`,
+        );
       }
     }
+
+    return {
+      typeToFolder,
+      located,
+      originalRaw,
+      document,
+      warnings,
+      releaseLock,
+    };
+  } catch (error: unknown) {
+    await releaseLock();
+    throw error;
+  }
+}
+
+export async function mutateItem(params: {
+  pmRoot: string;
+  settings: PmSettings;
+  id: string;
+  op: string;
+  author: string;
+  message?: string;
+  force?: boolean;
+  bypassAssigneeConflict?: boolean;
+  typeToFolder?: Record<string, string>;
+  mutate: (document: ItemDocument) => {
+    changedFields: string[];
+    warnings?: string[];
+  };
+}): Promise<{
+  item: ItemFrontMatter;
+  body: string;
+  changedFields: string[];
+  warnings: string[];
+}> {
+  const prepared = await prepareLockedItem({
+    pmRoot: params.pmRoot,
+    settings: params.settings,
+    id: params.id,
+    op: params.op,
+    author: params.author,
+    force: params.force,
+    bypassAssigneeConflict: params.bypassAssigneeConflict,
+    typeToFolder: params.typeToFolder,
+  });
+  const {
+    typeToFolder,
+    located,
+    originalRaw,
+    document,
+    warnings: parseWarnings,
+    releaseLock,
+  } = prepared;
+
+  try {
     const historyPolicy = await enforceHistoryStreamPolicyForItem({
       pmRoot: params.pmRoot,
       settings: params.settings,
@@ -382,7 +466,11 @@ export async function mutateItem(params: {
     let effectiveTargetItemPath = targetItemPath;
     let effectiveSerializedAfter = serializedAfter;
     let skipItemWrite = false;
-    if (serviceWriteOverride.handled && typeof serviceWriteOverride.result === "object" && serviceWriteOverride.result !== null) {
+    if (
+      serviceWriteOverride.handled &&
+      typeof serviceWriteOverride.result === "object" &&
+      serviceWriteOverride.result !== null
+    ) {
       const overrideRecord = serviceWriteOverride.result as {
         target_item_path?: unknown;
         contents?: unknown;
@@ -464,42 +552,17 @@ export async function deleteItem(params: {
   force?: boolean;
   dryRun?: boolean;
 }): Promise<{ item: ItemFrontMatter; changedFields: string[]; warnings: string[]; targetPath?: string }> {
-  const typeToFolder = resolveItemTypeRegistry(params.settings, getActiveExtensionRegistrations()).type_to_folder;
-  const located = await locateItem(params.pmRoot, params.id, params.settings.id_prefix, params.settings.item_format, typeToFolder);
-  if (!located) {
-    throw await buildItemNotFoundError(params.pmRoot, params.id, params.settings.id_prefix, typeToFolder);
-  }
-
-  const releaseLock = await acquireLock(
-    params.pmRoot,
-    located.id,
-    params.settings.locks.ttl_seconds,
-    params.author,
-    Boolean(params.force),
-    params.settings.governance.force_required_for_stale_lock,
-  );
+  const prepared = await prepareLockedItem({
+    pmRoot: params.pmRoot,
+    settings: params.settings,
+    id: params.id,
+    op: "delete",
+    author: params.author,
+    force: params.force,
+  });
+  const { located, originalRaw, document, warnings: parseWarnings, releaseLock } = prepared;
 
   try {
-    const parseWarnings: string[] = [];
-    const { raw: originalRaw, document } = await readLocatedItem(located, {
-      schema: params.settings.schema,
-      warnings: parseWarnings,
-    });
-
-    const assigned = document.metadata.assignee?.trim();
-    const governance = resolveGovernanceKnobs(params.settings);
-    const hasOwnershipConflict = assigned && assigned !== params.author && !params.force;
-    if (hasOwnershipConflict) {
-      if (governance.ownership_enforcement === "strict") {
-        throw new PmCliError(
-          `Item ${located.id} is assigned to ${assigned}. Use --force to override.`,
-          EXIT_CODE.CONFLICT,
-        );
-      }
-      if (governance.ownership_enforcement === "warn") {
-        parseWarnings.push(`ownership_warning:assignee_conflict:${located.id}:${assigned}`);
-      }
-    }
     const historyPolicy = await enforceHistoryStreamPolicyForItem({
       pmRoot: params.pmRoot,
       settings: params.settings,

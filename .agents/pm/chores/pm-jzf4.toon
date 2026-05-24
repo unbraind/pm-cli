@@ -6,10 +6,12 @@ status: open
 priority: 2
 tags[3]: code-quality,dedup,linked-resources
 created_at: "2026-05-22T18:59:13.028Z"
-updated_at: "2026-05-22T19:00:50.893Z"
+updated_at: "2026-05-24T08:07:46.759Z"
 author: codex-duplication-audit
 acceptance_criteria: "files/docs command behavior is driven by one shared implementation with kind-specific adapters; duplicate parsing, add/remove/list, dedupe/sort, and render logic is removed from docs.ts/files.ts; existing files/docs unit and integration coverage passes; pnpm build passes."
 parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-24T08:07:46.759Z",linked-resource-dedup-lane,"Investigation plan from linked-resource-dedup-lane: zero-behavior-change extraction should introduce a shared linked artifact core, likely src/cli/commands/linked-artifacts.ts, used by runFiles and runDocs while leaving files discover in files.ts. Extract shared helpers for ensureScope/default project scope, structured path detection, parseAddEntries with kind-specific bare-path noun in the error message, parseAddGlobEntries, parseRemoveEntries, parseMigrateEntries/applyPathMigrations, expandAddGlobEntries, key/sort/dedupe with note trimming, validateLinkedPaths, buildLinkedPathAudit, and the common runLinkedArtifacts mutation/list flow parameterized by metadata key files|docs, op files_add|docs_add, result field files|docs, and optional appendStable ordering. Keep wrappers in files.ts/docs.ts exporting current option/result names. Risk points: docs currently always sorts and has no appendStable option, so do not accidentally add append-stable docs behavior; preserve exact error strings (bare file path vs bare doc path), implicit scope=project and explicit scope=global semantics, stdin token resolution, glob cwd/path normalization, remove-by-path matching regardless of scope, migration warning/count semantics, validation/audit payload names/order, changed=true for mutation attempts, metadata deletion when empty, author/message/force ownership flow, and search-cache invalidation behavior in register-mutation. Focused tests after refactor: node scripts/run-tests.mjs test -- tests/unit/files-docs-command.spec.ts; node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"keeps repeated files/docs add flows stable across subsequent commands\"; node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts -t \"add-glob\"; pnpm build. Scope estimate: medium, 1 new core module plus thin wrappers, no command/contract/docs changes expected."
 files[2]{path,scope,note}:
   src/cli/commands/docs.ts,project,duplicated linked-docs command body
   src/cli/commands/files.ts,project,duplicated linked-files command body
