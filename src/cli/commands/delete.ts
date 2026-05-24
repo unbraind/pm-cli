@@ -6,6 +6,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { deleteItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { resolveAuthor } from "../../core/shared/author.js";
 
 export interface DeleteCommandOptions {
   author?: string;
@@ -22,12 +23,6 @@ export interface DeleteResult {
   warnings: string[];
 }
 
-function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
-  const trimmed = resolved.trim();
-  return trimmed || "unknown";
-}
-
 export async function runDelete(id: string, options: DeleteCommandOptions, global: GlobalOptions): Promise<DeleteResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -35,7 +30,7 @@ export async function runDelete(id: string, options: DeleteCommandOptions, globa
   }
 
   const settings = await readSettings(pmRoot);
-  const author = toAuthor(options.author, settings.author_default);
+  const author = resolveAuthor(options.author, settings.author_default);
 
   const result = await deleteItem({
     pmRoot,

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Contract tests now assert that the `pm-changelog` install, generate, and stage steps remain in `run-release-pipeline.mjs`, and that the `Verify generated pm changelog` step (`pnpm changelog:pm:check`) remains in `release.yml`, preventing silent regression if the integration is removed.
 - **`pm schema add-type <Name>`** registers a config-driven custom item type into `.agents/pm/schema/types.json` (shape `{ "definitions": [...] }`) so agents can use `pm create <Name> "..."` for project-specific work categories without hand-editing settings (pm-e1va). Flags: `--description`, `--default-status`, `--folder`, repeatable `--alias`, plus `--author`/`--force` governance and `--json`. The command is an idempotent UPSERT keyed on the type name (case-insensitive, merges aliases, overrides supplied fields), refuses to redefine built-in types (Chore, Decision, Epic, Event, Feature, Issue, Meeting, Milestone, Plan, Reminder, Task), rejects aliases (or a new type name) that would collide with a built-in or another registered type so `pm create --type` never resolves ambiguously, and emits a machine envelope reporting the registered type and the file path.
 - `pm create` and `pm update` now accept named priority aliases (`critical`, `high`, `medium`, `low`, `minimal`) in addition to numeric `0..4`, with one shared validation message for bad values (pm-fuat / pm-5k2w).
 - Unknown package-owned commands such as `pm guide`, `pm templates`, `pm calendar`, and `pm cal` now include concrete first-party install hints instead of only reporting an unknown command (pm-fuat / pm-5k2w).
@@ -15,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `pm delete --dry-run` previews the item file that would be deleted without mutating item storage or history, giving the single-item destructive path the same preview affordance as broader maintenance commands (pm-tobi / pm-5k2w).
 
 ### Changed
+- Extract shared `resolveAuthor` mutation-author helper to `src/core/shared/author.ts`; eliminate 10+ identical copies across command files (pm-xh0y)
+- Extract shared `isPathWithinDirectory` path-containment helper to `src/core/fs/path-utils.ts`; deduplicate across manifest, loader, extension, files, and search modules (pm-dpzc)
 - The invalid-type error from `pm create`/`pm update` now appends a discoverable hint pointing agents at the new registration command: `To register a custom type, run: pm schema add-type "X" (writes .agents/pm/schema/types.json).` (pm-e1va).
 - Daily release automation now fails loudly when source, package, script, or workflow changes exist since the last tag but `CHANGELOG.md` has an empty `[Unreleased]` section. The JSON result includes `changelog_required_files` and a deterministic `release_changelog_required:source_or_package_changes_without_unreleased_entry` warning so agents can fix the release blocker without reading the full workflow log.
 - `pm init` now prints a concise default summary while preserving the full settings tree behind `--verbose`; `--json` output is unchanged for machine consumers (pm-fuat / pm-5k2w).

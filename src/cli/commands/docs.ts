@@ -12,6 +12,7 @@ import { listAllFrontMatter, locateItem, mutateItem, readLocatedItem } from "../
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { SCOPE_VALUES } from "../../types/index.js";
+import { resolveAuthor } from "../../core/shared/author.js";
 import type { LinkedDoc, LinkScope } from "../../types/index.js";
 
 export interface DocsCommandOptions {
@@ -59,12 +60,6 @@ export interface DocsResult {
   migrations_applied?: number;
   validation?: LinkedPathValidation;
   audit?: LinkedPathAuditEntry[];
-}
-
-function resolveAuthor(candidate: string | undefined, fallback: string): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? fallback;
-  const trimmed = resolved.trim();
-  return trimmed || "unknown";
 }
 
 function ensureScope(raw: string | undefined): LinkScope {

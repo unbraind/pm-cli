@@ -12,6 +12,7 @@ import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { parseLimit } from "../shared-parsers.js";
 import type { Comment } from "../../types/index.js";
+import { resolveAuthor } from "../../core/shared/author.js";
 
 export interface CommentsCommandOptions {
   add?: string;
@@ -33,12 +34,6 @@ export interface CommentsResult {
   returned_count?: number;
   has_more?: boolean;
   limit?: number;
-}
-
-function resolveAuthor(candidate: string | undefined, fallback: string): string {
-  const resolved = candidate ?? process.env.PM_AUTHOR ?? fallback;
-  const trimmed = resolved.trim();
-  return trimmed || "unknown";
 }
 
 function limitComments(values: Comment[], limit: number | undefined): Comment[] {

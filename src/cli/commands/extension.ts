@@ -15,6 +15,7 @@ import {
   type UnknownExtensionCapabilityWarningDetails,
 } from "../../core/extensions/loader.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
 import {
   PM_PACKAGE_RESOURCE_KINDS,
   collectPackageExtensionDirectories,
@@ -536,14 +537,6 @@ function parseExtensionManifest(raw: unknown): ExtensionManifest | null {
     priority,
     capabilities,
   };
-}
-
-function isPathWithinDirectory(directory: string, targetPath: string): boolean {
-  const relative = path.relative(directory, targetPath);
-  if (relative.length === 0) {
-    return true;
-  }
-  return !relative.startsWith("..") && !path.isAbsolute(relative);
 }
 
 async function isCanonicalPathWithinDirectory(directory: string, targetPath: string): Promise<boolean> {
