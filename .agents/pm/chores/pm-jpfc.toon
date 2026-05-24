@@ -1,0 +1,23 @@
+id: pm-jpfc
+title: Release @unbrained/pm-cli 2026.5.24
+description: "Publish the merged 2026-05-24 fixes through the tag-driven GitHub release workflow, verify npm/npx/bunx/GitHub release surfaces, and record release evidence."
+type: Chore
+status: in_progress
+priority: 0
+tags[3]: npm,pm-cli,release
+created_at: "2026-05-24T10:35:44.711Z"
+updated_at: "2026-05-24T10:36:39.110Z"
+assignee: codex-release
+author: codex-release
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-24T10:36:39.110Z",codex-release,"Release preparation note: initial dry-run command refused to run because the working tree contained the newly created release tracker item; committing tracker setup first so the release pipeline can enforce its clean-tree guard."
+files[3]{path,scope,note}:
+  CHANGELOG.md,project,Release changelog promotion
+  CHANGELOG.pm.md,project,pm-changelog generated tracker changelog
+  package.json,project,Release version and scripts
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm release:pipeline:dry-run",null,project,1200,null,null,null,null,null,null,null,null,null,null,null,Read-only local release parity pipeline before mutating release prep
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,Release source of truth for tag-driven publish
+body: ""
