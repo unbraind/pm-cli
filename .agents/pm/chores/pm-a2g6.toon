@@ -6,7 +6,9 @@ status: in_progress
 priority: 2
 tags[3]: chore,dependencies,security
 created_at: "2026-05-24T00:41:44.704Z"
-updated_at: "2026-05-24T00:42:48.478Z"
+updated_at: "2026-05-24T01:11:53.571Z"
 author: claude-code-agent
 parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-24T01:11:53.571Z",claude-code-agent,"PR created: https://github.com/unbraind/pm-cli/pull/56. Packages updated: @sentry/cli 3.4.3, @toon-format/toon 2.3.0, @types/node 25.9.1, @vitest/coverage-v8 4.1.7, tsx 4.22.3, vitest 4.1.7"
 body: ""
