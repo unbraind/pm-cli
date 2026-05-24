@@ -2,12 +2,11 @@ id: pm-iqgj
 title: "Recover 16 unreadable TOON item files: strict decoder mis-parses bracketed tokens followed by a colon inside quoted text fields"
 description: "Root cause: the upstream @toon-format/toon 2.3.0 decoder has a round-trip bug. parseArrayHeaderLine scans the whole line for an opening bracket when the key is unquoted, so a quoted scalar value that contains a bracketed token followed by a colon (e.g. a redacted endpoint marker, an Unreleased changelog marker, a med severity tag, or a sntr-style pattern) is mis-detected as a key[N]: array header. Because pm calls decode in strict mode, parseBracketSegment throws Invalid array length and parseToonItemDocument reports invalid TOON even though the library encoder emitted the quoted scalar. Impact: 16 closed item files failed to load and were excluded from pm list/get/search. Fix: parseToonItemDocument uses decodeToonItemContent, which tries strict decode first; only after failure it escapes '[' inside quoted scalar values as unicode escapes and retries strict decode. The decoded value remains byte-for-byte equivalent while duplicate-key, array-length, tab-indentation, and other strict protections remain enforced. Recovery is silent (no health-flipping warning)."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[1]: store
 created_at: "2026-05-24T06:34:21.946Z"
-updated_at: "2026-05-24T07:42:52.445Z"
-assignee: codex-review-fix
+updated_at: "2026-05-24T07:50:27.105Z"
 author: claude-code-agent
 estimated_minutes: 90
 acceptance_criteria: All 16 previously-unreadable items load via pm get/list/search; pm list emits zero item_list_item_read_failed warnings; valid files still parse strictly (duplicate-key protection retained for the non-bracket case); a focused unit test covers a bracketed-token-then-colon body round-trip; pnpm build and coverage gate pass; pm-changelog item_count rises to include recovered closed items.
@@ -30,4 +29,5 @@ tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Fixed in PR #58 through strict scalar-bracket TOON recovery: no lenient decode path remains, strict duplicate-key/array-length invariants are covered by tests, local gates and refreshed GitHub checks are green, and Codex/CodeRabbit found no remaining major issues."
 body: ""
