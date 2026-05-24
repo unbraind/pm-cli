@@ -4,35 +4,39 @@ import { decodeToonItemContent } from "../../src/core/item/toon-decode.js";
 import { parseItemDocument } from "../../src/core/item/item-format.js";
 
 describe("decodeToonItemContent", () => {
-  it("decodes valid TOON via the strict path without the lenient fallback", () => {
+  it("decodes valid TOON via the strict path without the scalar-bracket escape", () => {
     const result = decodeToonItemContent('title: "Hello"\npriority: 2');
-    expect(result.usedLenientFallback).toBe(false);
+    expect(result.usedScalarBracketEscape).toBe(false);
     expect(result.value).toMatchObject({ title: "Hello", priority: 2 });
   });
 
-  it("recovers a quoted value containing a bracketed-token-then-colon via the lenient fallback", () => {
+  it("recovers a quoted value containing a bracketed-token-then-colon via strict escaped retry", () => {
     // Reproduces the upstream round-trip bug: the strict decoder mis-detects
     // the bracket in the quoted value as a "key[N]:" array header and throws.
     const result = decodeToonItemContent('body: "POST [redacted_endpoint]: HTTP 200, accepted:1"');
-    expect(result.usedLenientFallback).toBe(true);
+    expect(result.usedScalarBracketEscape).toBe(true);
     expect(result.value).toMatchObject({ body: "POST [redacted_endpoint]: HTTP 200, accepted:1" });
   });
 
-  it("does NOT fall back for non-bracket strict errors, preserving strict validation", () => {
-    // Duplicate sibling keys are a strict error that lenient mode would silently
-    // resolve last-write-wins. The fallback is gated to the bracket mis-parse, so
-    // this must still throw rather than silently accept a last-write-wins value.
+  it("does NOT retry unchanged content for non-bracket strict errors", () => {
     expect(() => decodeToonItemContent("a: 1\na: 2")).toThrow(/Duplicate sibling key/);
+    expect(() => decodeToonItemContent("tags[2]: one")).toThrow(/Expected 2 inline array items/);
   });
 
-  it("rethrows the strict bracket error when the gated lenient retry also fails", () => {
-    // Line 1 trips the bracket mis-parse (so the fallback engages), but line 2 is
-    // malformed in lenient mode too, so the original strict error is surfaced.
-    expect(() => decodeToonItemContent('a: "p[x]: y"\nb: "unterminated')).toThrow(/Invalid array length/);
+  it("still enforces strict-only invariants after the escaped retry engages", () => {
+    // The bracketed scalar causes the escaped retry to run, but duplicate keys
+    // must still fail because the retry stays in strict mode.
+    expect(() => decodeToonItemContent('body: "POST [redacted_endpoint]: HTTP 200"\na: 1\na: 2')).toThrow(
+      /Duplicate sibling key/,
+    );
+  });
+
+  it("surfaces escaped strict retry errors for genuinely malformed documents", () => {
+    expect(() => decodeToonItemContent('a: "p[x]: y"\nb: "unterminated')).toThrow(/Unterminated string/);
   });
 });
 
-describe("parseItemDocument lenient TOON recovery", () => {
+describe("parseItemDocument TOON scalar-bracket recovery", () => {
   it("recovers an item document whose body contains a bracketed-token-then-colon silently", () => {
     const warnings: string[] = [];
     const document = parseItemDocument(

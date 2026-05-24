@@ -1,66 +1,73 @@
 import { decode as decodeToon } from "@toon-format/toon";
 
-import { toErrorMessage } from "../shared/primitives.js";
-
 export interface ToonDecodeResult {
   /** The decoded TOON document. */
   value: unknown;
-  /** True when strict decode failed for the known parser bug and the lenient retry was used. */
-  usedLenientFallback: boolean;
+  /** True when the strict decode required the scalar-bracket escape workaround. */
+  usedScalarBracketEscape: boolean;
 }
 
 /**
- * Error-message fragments emitted by the upstream `@toon-format/toon` strict
- * decoder when its array-header detection mis-reads a quoted scalar value that
- * contains a bracketed token followed by a colon (e.g. `"...[redacted]: x"`,
- * `"...[Unreleased]: x"`, `"...[med]: x"`). These are the only strict failures
- * we work around; every other strict error (duplicate sibling keys, tabs in
- * indentation, unterminated strings, etc.) must keep failing so strict
- * validation semantics are preserved.
+ * Escape `[` as `\u005b` inside quoted scalar values so the upstream
+ * `@toon-format/toon` strict decoder cannot mis-read them.
+ *
+ * The upstream bug: the strict decoder's array-header detection scans the whole
+ * line for an opening bracket when the key is unquoted, so a quoted scalar value
+ * that contains a bracketed token followed (anywhere later on the line) by a
+ * colon, e.g. `body: "POST [redacted]: ok"` or `desc: "sntr[ysu]_ ... :"`, is
+ * mis-detected as a `key`+bracket+colon array header and throws. The library's
+ * own `encode()` emits exactly this otherwise-correctly-quoted form, so strict
+ * decode cannot read the encoder's own output for such values.
+ *
+ * A line is treated as a scalar `key: value` (not an array header) only when its
+ * `": "` key/value separator occurs before the first `[`; array-header lines
+ * (`tags[3]:`, `comments[6]{...}:`) have the bracket first and are left
+ * untouched, as are non-string (unquoted) values. Within a matched quoted value
+ * every `[` becomes `\u005b`, which the decoder unescapes back to `[`, so the
+ * decoded value is byte-for-byte identical. Crucially, this neutralises only the
+ * bracket trigger and nothing else, so the retry stays in strict mode and every
+ * other strict invariant (duplicate sibling keys, array-count mismatches, tabs
+ * in indentation, ...) is still enforced.
  */
-const BRACKET_MISPARSE_SIGNATURES = [
-  "Invalid array length",
-  "between bracket segment and colon",
-  "between bracket and fields segment",
-] as const;
-
-function isBracketColonMisparse(error: unknown): boolean {
-  const message = toErrorMessage(error);
-  return BRACKET_MISPARSE_SIGNATURES.some((signature) => message.includes(signature));
+function escapeBracketsInQuotedScalars(content: string): string {
+  return content
+    .split("\n")
+    .map((line) => {
+      const separatorIndex = line.indexOf(": ");
+      const bracketIndex = line.indexOf("[");
+      if (separatorIndex === -1 || bracketIndex === -1 || bracketIndex < separatorIndex) {
+        return line;
+      }
+      const key = line.slice(0, separatorIndex + 2);
+      const value = line.slice(separatorIndex + 2);
+      if (!value.startsWith('"')) {
+        return line;
+      }
+      return key + value.replaceAll("[", "\\u005b");
+    })
+    .join("\n");
 }
 
 /**
- * Decode a TOON item document, working around an upstream `@toon-format/toon`
- * round-trip bug.
+ * Decode a TOON item document, working around the upstream bracket mis-parse
+ * bug described in {@link escapeBracketsInQuotedScalars}.
  *
- * The strict decoder's array-header detection scans the whole line for an
- * opening bracket when the key is unquoted, so a quoted scalar VALUE that
- * contains a bracketed token immediately followed by a colon is mis-detected as
- * a `key`+bracket+colon array header and throws. The library's own `encode()`
- * emits exactly this otherwise-correctly-quoted form, so strict decode cannot
- * read the encoder's own output for such values.
- *
- * In lenient mode the same mis-detection does not throw — the line falls back
- * to a scalar key/value, which round-trips the original string correctly. We
- * therefore try strict first (retaining duplicate-key and other strict
- * protections for normal documents) and fall back to lenient decode ONLY when
- * strict fails with one of the bracket mis-parse signatures. Any other strict
- * error — including the duplicate-sibling-key conflicts that lenient mode would
- * silently resolve last-write-wins — is rethrown unchanged. If the gated
- * lenient retry also fails the document is genuinely malformed, so the original
- * strict error is surfaced.
+ * Strict decode is attempted first (the fast path for all well-formed
+ * documents). Only if it fails is the scalar-bracket escape applied and strict
+ * decode retried, so the workaround never relaxes strict validation; it only
+ * removes the specific trigger. If the escaped content is identical to the
+ * original (no quoted-scalar bracket to neutralise) the original strict error is
+ * surfaced unchanged; if the retry itself fails the document has a genuine
+ * problem beyond the bracket bug and that error propagates.
  */
 export function decodeToonItemContent(content: string): ToonDecodeResult {
   try {
-    return { value: decodeToon(content), usedLenientFallback: false };
+    return { value: decodeToon(content), usedScalarBracketEscape: false };
   } catch (strictError) {
-    if (!isBracketColonMisparse(strictError)) {
+    const escaped = escapeBracketsInQuotedScalars(content);
+    if (escaped === content) {
       throw strictError;
     }
-    try {
-      return { value: decodeToon(content, { strict: false }), usedLenientFallback: true };
-    } catch {
-      throw strictError;
-    }
+    return { value: decodeToon(escaped), usedScalarBracketEscape: true };
   }
 }
