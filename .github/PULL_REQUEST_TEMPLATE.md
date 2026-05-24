@@ -26,7 +26,7 @@
 - [ ] `pnpm smoke:npx` passes (packaged npx executable smoke test)
 - [ ] All linked pm item files/tests/docs are updated
 - [ ] Relevant user-facing docs updated if behavior changed; pm data/runtime tests remain the source of truth
-- [ ] CHANGELOG.md updated under `[Unreleased]`
+- [ ] CHANGELOG.md regenerated with `pnpm changelog:pm`
 - [ ] No manual edits to `.agents/pm/**` (only via `pm` commands)
 
 ## Test evidence

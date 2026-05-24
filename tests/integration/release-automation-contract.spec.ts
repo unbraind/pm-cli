@@ -41,10 +41,8 @@ describe("release automation contract", () => {
     expect(packageJson.scripts?.["changelog:pm"]).toContain("changelog:pm:install");
     expect(packageJson.scripts?.["changelog:pm"]).toContain("changelog generate");
     expect(packageJson.scripts?.["changelog:pm"]).toContain("CHANGELOG.md");
-    expect(packageJson.scripts?.["changelog:pm"]).toContain("--mode prepend");
-    expect(packageJson.scripts?.["changelog:pm"]).toContain("--release-version-from-package");
-    expect(packageJson.scripts?.["changelog:pm"]).toContain("--since-previous-tag");
-    expect(packageJson.scripts?.["changelog:pm"]).toContain("--until-release-tag");
+    expect(packageJson.scripts?.["changelog:pm"]).toContain("--mode replace");
+    expect(packageJson.scripts?.["changelog:pm"]).toContain("--all-release-tags");
     expect(packageJson.scripts?.["changelog:pm"]).toContain("--item-url-base");
     expect(packageJson.scripts?.["changelog:pm:check"]).toContain("changelog:pm:install");
     expect(packageJson.scripts?.["changelog:pm:check"]).toContain("--check");
@@ -142,9 +140,9 @@ describe("release automation contract", () => {
     expect(pipelineSource).toContain("CHANGELOG.md");
     expect(pipelineSource).toContain("--item-url-base");
     expect(pipelineSource).toContain("--mode");
-    expect(pipelineSource).toContain("prepend");
+    expect(pipelineSource).toContain("replace");
     expect(pipelineSource).toContain("--release-version");
-    expect(pipelineSource).toContain("--since-previous-tag");
+    expect(pipelineSource).toContain("--all-release-tags");
     expect(pipelineSource).toContain("ensureGeneratedReleaseSectionHasContent(targetVersion)");
     expect(pipelineSource).toContain('"add", "package.json", "CHANGELOG.md"');
     expect(pipelineSource).not.toContain("CHANGELOG.pm.md");

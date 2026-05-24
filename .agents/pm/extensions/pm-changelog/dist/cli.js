@@ -3,7 +3,7 @@ import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { stdin } from "node:process";
 import { createChangelog, mergeChangelog, parsePmItemsJson, readPmItems, writeChangelog, } from "./generator.js";
-import { resolveReleaseContext } from "./release-context.js";
+import { resolveReleaseContext, resolveReleaseTagWindows } from "./release-context.js";
 async function main() {
     const options = parseArgs(process.argv.slice(2));
     applyReleaseContext(options);
@@ -18,6 +18,7 @@ async function main() {
             date: options.date,
             since: options.since,
             until: options.until,
+            releaseWindows: options.releaseWindows,
             includeStatuses: options.statuses,
             groupBy: options.groupBy,
             includeEmpty: options.includeEmpty,
@@ -51,6 +52,7 @@ async function main() {
         date: options.date,
         since: options.since,
         until: options.until,
+        releaseWindows: options.releaseWindows,
         includeStatuses: options.statuses,
         groupBy: options.groupBy,
         includeEmpty: options.includeEmpty,
@@ -103,6 +105,8 @@ function parseArgs(args) {
         versionFromPackage: false,
         sincePreviousTag: false,
         untilReleaseTag: false,
+        allReleaseTags: false,
+        releaseTagPattern: "v*",
     };
     for (let i = 0; i < args.length; i++) {
         const arg = args[i];
@@ -174,6 +178,12 @@ function parseArgs(args) {
             case "--until-release-tag":
                 options.untilReleaseTag = true;
                 break;
+            case "--all-release-tags":
+                options.allReleaseTags = true;
+                break;
+            case "--release-tag-pattern":
+                options.releaseTagPattern = requireValue(args, ++i, arg);
+                break;
             case "--status":
             case "--statuses":
                 options.statuses = requireValue(args, ++i, arg)
@@ -206,6 +216,15 @@ function parseArgs(args) {
     return options;
 }
 function applyReleaseContext(options) {
+    if (options.allReleaseTags) {
+        options.releaseWindows = resolveReleaseTagWindows({
+            cwd: options.pmCwd ? resolve(options.pmCwd) : process.cwd(),
+            tagPattern: options.releaseTagPattern,
+            pendingVersion: options.version,
+            pendingTimestamp: options.until ?? options.date,
+        });
+        return;
+    }
     if (!options.versionFromPackage && !options.sincePreviousTag && !options.untilReleaseTag)
         return;
     const context = resolveReleaseContext({
@@ -334,6 +353,9 @@ Options:
       --since-previous-tag  Derive --since from the previous git tag
       --until <date>        Include items changed on or before this date
       --until-release-tag   Derive --until from the current release tag when it exists
+      --all-release-tags    Rebuild full history from git release tag windows
+      --release-tag-pattern <glob>
+                            Git tag glob for --all-release-tags (default: v*)
       --status <list>       Comma-separated statuses (default: closed)
       --group-by <mode>     version, release, or milestone (default: version)
       --mode <mode>         replace or prepend existing changelog (default: replace)

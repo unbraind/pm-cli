@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026.5.24-15 - 2026-05-24
+
+### Other
+
+- Stabilize full-history release windows for release automation ([pmc-s1c1](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-s1c1.toon))
+
+## 2026.5.24-14 - 2026-05-24
+
+### Other
+
+- Batch git tag timestamp lookup for full-history changelog ([pmc-99tc](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-99tc.toon))
+
+## 2026.5.24-13 - 2026-05-24
+
+### Other
+
+- Support full historical changelog generation from git release tags ([pmc-qm7s](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-qm7s.toon))
+
+## 2026.5.24-12 - 2026-05-24
+
 ## 2026.5.24-11 - 2026-05-24
 
 ### Other
