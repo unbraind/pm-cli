@@ -149,7 +149,6 @@ export default defineConfig({
         "src/cli/commands/history.ts",
         "src/cli/commands/init.ts",
         "src/cli/commands/learnings.ts",
-        "src/cli/commands/linked-artifacts.ts",
         "src/cli/commands/list.ts",
         "src/cli/commands/notes.ts",
         "src/cli/commands/reindex.ts",

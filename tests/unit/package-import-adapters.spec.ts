@@ -70,9 +70,13 @@ describe("package import adapter primitives", () => {
       try {
         delete process.env.PM_AUTHOR;
         expect(selectImportAuthor("alice", "settings-author")).toBe("alice");
+        expect(selectImportAuthor(" alice ", "settings-author")).toBe("alice");
         expect(selectImportAuthor(undefined, "settings-author")).toBe("settings-author");
         process.env.PM_AUTHOR = "env-author";
         expect(selectImportAuthor(undefined, "settings-author")).toBe("env-author");
+        expect(selectImportAuthor("   ", "settings-author")).toBe("env-author");
+        process.env.PM_AUTHOR = "   ";
+        expect(selectImportAuthor("   ", "settings-author")).toBe("settings-author");
         expect(selectImportAuthor("   ", "   ")).toBe("unknown");
       } finally {
         if (previous === undefined) {

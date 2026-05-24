@@ -105,9 +105,16 @@ export function toImportStatus(value: unknown): ItemStatus {
  * falling back to "unknown".
  */
 export function selectImportAuthor(explicitAuthor: string | undefined, settingsAuthor: string): string {
-  const candidate = explicitAuthor ?? process.env.PM_AUTHOR ?? settingsAuthor;
-  const trimmed = candidate.trim();
-  return trimmed.length > 0 ? trimmed : "unknown";
+  const explicit = explicitAuthor?.trim();
+  if (explicit && explicit.length > 0) {
+    return explicit;
+  }
+  const envAuthor = process.env.PM_AUTHOR?.trim();
+  if (envAuthor && envAuthor.length > 0) {
+    return envAuthor;
+  }
+  const settings = settingsAuthor.trim();
+  return settings.length > 0 ? settings : "unknown";
 }
 
 /**

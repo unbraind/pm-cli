@@ -11,8 +11,8 @@ describe("package runtime option helpers", () => {
       expect(readStringOption({ status: "open" }, "status")).toBe("open");
     });
 
-    it("trims-checks but preserves the original value", () => {
-      expect(readStringOption({ status: "  open  " }, "status")).toBe("  open  ");
+    it("returns normalized trimmed strings", () => {
+      expect(readStringOption({ status: "  open  " }, "status")).toBe("open");
     });
 
     it("skips empty/whitespace strings and falls through to aliases", () => {

@@ -124,6 +124,7 @@ export function parseLinkedTestRegexList(raw: string | undefined, optionName: st
   for (const pattern of values) {
     try {
       // Validate regex syntax early so malformed assertions fail at parse time.
+      // User-provided, per-item patterns only run during local CLI validation.
       new RegExp(pattern, "m");
     } catch (error: unknown) {
       throw new PmCliError(

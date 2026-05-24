@@ -34,7 +34,8 @@ const PACKAGES = [
 ];
 
 function renderTypeScriptLoader(config) {
-  return `import path from "node:path";
+  return `import { existsSync } from "node:fs";
+import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 /**
@@ -50,6 +51,19 @@ const PACKAGE_NAME = "${config.packageName}";
 const DIAGNOSTIC_NAME = "${config.diagnosticName}";
 
 export type PackageRuntimeModule = Record<string, unknown>;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isMissingRuntimeModuleError(error: unknown, modulePath: string): boolean {
+  if (!isRecord(error) || error.code !== "ERR_MODULE_NOT_FOUND") {
+    return false;
+  }
+  const message = typeof error.message === "string" ? error.message : "";
+  const moduleUrl = pathToFileURL(modulePath).href;
+  return message.includes(modulePath) || message.includes(moduleUrl);
+}
 
 function resolvePackageRootCandidates(): string[] {
   const candidates: string[] = [];
@@ -77,20 +91,30 @@ export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> 
     ];
     for (const modulePath of modulePaths) {
       attempted.push(modulePath);
+      if (!existsSync(modulePath)) {
+        continue;
+      }
       try {
         return await import(pathToFileURL(modulePath).href) as PackageRuntimeModule;
-      } catch {
-        // Try the next package-root candidate.
+      } catch (error: unknown) {
+        if (isMissingRuntimeModuleError(error, modulePath)) {
+          continue;
+        }
+        throw error;
       }
     }
   }
 
   const localRuntimePath = path.join(CURRENT_EXTENSION_ROOT, "runtime.js");
   attempted.push(localRuntimePath);
-  try {
-    return await import(pathToFileURL(localRuntimePath).href) as PackageRuntimeModule;
-  } catch {
-    // Fall through to the diagnostic below.
+  if (existsSync(localRuntimePath)) {
+    try {
+      return await import(pathToFileURL(localRuntimePath).href) as PackageRuntimeModule;
+    } catch (error: unknown) {
+      if (!isMissingRuntimeModuleError(error, localRuntimePath)) {
+        throw error;
+      }
+    }
   }
 
   throw new Error(
@@ -102,7 +126,8 @@ export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> 
 }
 
 function renderJavaScriptLoader(config) {
-  return `import path from "node:path";
+  return `import { existsSync } from "node:fs";
+import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 /**
@@ -116,6 +141,19 @@ const CURRENT_EXTENSION_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const EXTENSION_NAME = "${config.extensionName}";
 const PACKAGE_NAME = "${config.packageName}";
 const DIAGNOSTIC_NAME = "${config.diagnosticName}";
+
+function isRecord(value) {
+  return typeof value === "object" && value !== null;
+}
+
+function isMissingRuntimeModuleError(error, modulePath) {
+  if (!isRecord(error) || error.code !== "ERR_MODULE_NOT_FOUND") {
+    return false;
+  }
+  const message = typeof error.message === "string" ? error.message : "";
+  const moduleUrl = pathToFileURL(modulePath).href;
+  return message.includes(modulePath) || message.includes(moduleUrl);
+}
 
 function resolvePackageRootCandidates() {
   const candidates = [];
@@ -143,20 +181,30 @@ export async function loadPackageRuntimeModule() {
     ];
     for (const modulePath of modulePaths) {
       attempted.push(modulePath);
+      if (!existsSync(modulePath)) {
+        continue;
+      }
       try {
         return await import(pathToFileURL(modulePath).href);
-      } catch {
-        // Try the next package-root candidate.
+      } catch (error) {
+        if (isMissingRuntimeModuleError(error, modulePath)) {
+          continue;
+        }
+        throw error;
       }
     }
   }
 
   const localRuntimePath = path.join(CURRENT_EXTENSION_ROOT, "runtime.js");
   attempted.push(localRuntimePath);
-  try {
-    return await import(pathToFileURL(localRuntimePath).href);
-  } catch {
-    // Fall through to the diagnostic below.
+  if (existsSync(localRuntimePath)) {
+    try {
+      return await import(pathToFileURL(localRuntimePath).href);
+    } catch (error) {
+      if (!isMissingRuntimeModuleError(error, localRuntimePath)) {
+        throw error;
+      }
+    }
   }
 
   throw new Error(

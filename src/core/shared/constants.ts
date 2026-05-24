@@ -209,6 +209,10 @@ export const DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS = {
   actual_result: ["closed and recorded", "work completed", "work completed and recorded"],
 } as const;
 
+function cloneOptionalArray<T>(values: readonly T[] | undefined): T[] | undefined {
+  return values ? [...values] : undefined;
+}
+
 export const SETTINGS_DEFAULTS: PmSettings = {
   version: 1,
   id_prefix: "pm-",
@@ -273,7 +277,11 @@ export const SETTINGS_DEFAULTS: PmSettings = {
       fields: "schema/fields.json",
       workflows: "schema/workflows.json",
     },
-    statuses: [...DEFAULT_STATUS_DEFINITIONS],
+    statuses: DEFAULT_STATUS_DEFINITIONS.map((definition) => ({
+      ...definition,
+      aliases: cloneOptionalArray(definition.aliases),
+      roles: cloneOptionalArray(definition.roles),
+    })),
     fields: [],
     workflow: { ...DEFAULT_WORKFLOW_DEFINITION },
     unknown_field_policy: "allow",

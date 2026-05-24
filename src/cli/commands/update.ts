@@ -1774,7 +1774,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         document.metadata.tags = clearFrontMatterKeys.has("tags") ? [] : parseTags(options.tags!);
         changedFields.push("tags");
       }
-      setOrClearScalar(options.deadline, "deadline", (value) => resolveIsoOrRelative(value, new Date(), "deadline"));
+      setOrClearScalar(options.deadline, "deadline", (value) => resolveIsoOrRelative(value, nowValue, "deadline"));
       setOrClearScalar(options.estimatedMinutes, "estimated_minutes", (value) =>
         parseOptionalNumber(value, "estimated-minutes"),
       );

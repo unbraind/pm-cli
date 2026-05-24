@@ -25,7 +25,7 @@ export function readStringOption(
   for (const candidate of keys) {
     const value = options[candidate];
     if (typeof value === "string" && value.trim().length > 0) {
-      return value;
+      return value.trim();
     }
   }
   return undefined;

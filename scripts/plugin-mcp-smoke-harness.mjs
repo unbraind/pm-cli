@@ -59,7 +59,16 @@ export async function startPluginMcpSmoke({
 
   rl.on("line", (line) => {
     if (!line.trim()) return;
-    const message = JSON.parse(line);
+    let message;
+    try {
+      message = JSON.parse(line);
+    } catch {
+      stderr += `[mcp-smoke] ignored non-JSON stdout: ${line}\n`;
+      return;
+    }
+    if (!message || typeof message !== "object" || !("id" in message)) {
+      return;
+    }
     const waiter = pending.get(message.id);
     if (!waiter) return;
     pending.delete(message.id);

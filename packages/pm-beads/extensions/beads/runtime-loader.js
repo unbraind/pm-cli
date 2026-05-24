@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -12,6 +13,19 @@ const CURRENT_EXTENSION_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const EXTENSION_NAME = "beads";
 const PACKAGE_NAME = "pm-beads";
 const DIAGNOSTIC_NAME = "beads";
+
+function isRecord(value) {
+  return typeof value === "object" && value !== null;
+}
+
+function isMissingRuntimeModuleError(error, modulePath) {
+  if (!isRecord(error) || error.code !== "ERR_MODULE_NOT_FOUND") {
+    return false;
+  }
+  const message = typeof error.message === "string" ? error.message : "";
+  const moduleUrl = pathToFileURL(modulePath).href;
+  return message.includes(modulePath) || message.includes(moduleUrl);
+}
 
 function resolvePackageRootCandidates() {
   const candidates = [];
@@ -39,20 +53,30 @@ export async function loadPackageRuntimeModule() {
     ];
     for (const modulePath of modulePaths) {
       attempted.push(modulePath);
+      if (!existsSync(modulePath)) {
+        continue;
+      }
       try {
         return await import(pathToFileURL(modulePath).href);
-      } catch {
-        // Try the next package-root candidate.
+      } catch (error) {
+        if (isMissingRuntimeModuleError(error, modulePath)) {
+          continue;
+        }
+        throw error;
       }
     }
   }
 
   const localRuntimePath = path.join(CURRENT_EXTENSION_ROOT, "runtime.js");
   attempted.push(localRuntimePath);
-  try {
-    return await import(pathToFileURL(localRuntimePath).href);
-  } catch {
-    // Fall through to the diagnostic below.
+  if (existsSync(localRuntimePath)) {
+    try {
+      return await import(pathToFileURL(localRuntimePath).href);
+    } catch (error) {
+      if (!isMissingRuntimeModuleError(error, localRuntimePath)) {
+        throw error;
+      }
+    }
   }
 
   throw new Error(

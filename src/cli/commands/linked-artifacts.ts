@@ -405,7 +405,7 @@ export async function runLinkedArtifacts(
 
   const artifacts = ((result.item as Record<string, unknown>)[metadataKey] as LinkedArtifact[] | undefined) ?? [];
   const migrationWarning = result.warnings.find((warning) => warning.startsWith("path_migrations_applied:"));
-  const migrationCount = migrationWarning ? Number(migrationWarning.split(":")[1] ?? "0") : 0;
+  const migrationCount = migrationWarning ? Number(migrationWarning.slice("path_migrations_applied:".length)) : 0;
   const allItems = options.audit ? await collectAuditItems() : [];
   return {
     id: result.item.id,

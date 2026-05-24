@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_STATUS_DEFINITIONS,
   EMPTY_CANONICAL_DOCUMENT,
   EXIT_CODE,
   FRONT_MATTER_KEY_ORDER,
@@ -115,6 +116,15 @@ describe("shared constants and errors contracts", () => {
         path: "",
       },
     });
+  });
+
+  it("does not share mutable status defaults with the canonical registry", () => {
+    const firstDefault = SETTINGS_DEFAULTS.schema.statuses[0];
+    const firstCanonical = DEFAULT_STATUS_DEFINITIONS[0];
+
+    expect(firstDefault).toEqual(firstCanonical);
+    expect(firstDefault).not.toBe(firstCanonical);
+    expect(firstDefault.roles).not.toBe(firstCanonical.roles);
   });
 
   it("keeps canonical exit code mapping", () => {

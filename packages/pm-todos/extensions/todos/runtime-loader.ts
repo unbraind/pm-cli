@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -14,6 +15,19 @@ const PACKAGE_NAME = "pm-todos";
 const DIAGNOSTIC_NAME = "todos";
 
 export type PackageRuntimeModule = Record<string, unknown>;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isMissingRuntimeModuleError(error: unknown, modulePath: string): boolean {
+  if (!isRecord(error) || error.code !== "ERR_MODULE_NOT_FOUND") {
+    return false;
+  }
+  const message = typeof error.message === "string" ? error.message : "";
+  const moduleUrl = pathToFileURL(modulePath).href;
+  return message.includes(modulePath) || message.includes(moduleUrl);
+}
 
 function resolvePackageRootCandidates(): string[] {
   const candidates: string[] = [];
@@ -41,20 +55,30 @@ export async function loadPackageRuntimeModule(): Promise<PackageRuntimeModule> 
     ];
     for (const modulePath of modulePaths) {
       attempted.push(modulePath);
+      if (!existsSync(modulePath)) {
+        continue;
+      }
       try {
         return await import(pathToFileURL(modulePath).href) as PackageRuntimeModule;
-      } catch {
-        // Try the next package-root candidate.
+      } catch (error: unknown) {
+        if (isMissingRuntimeModuleError(error, modulePath)) {
+          continue;
+        }
+        throw error;
       }
     }
   }
 
   const localRuntimePath = path.join(CURRENT_EXTENSION_ROOT, "runtime.js");
   attempted.push(localRuntimePath);
-  try {
-    return await import(pathToFileURL(localRuntimePath).href) as PackageRuntimeModule;
-  } catch {
-    // Fall through to the diagnostic below.
+  if (existsSync(localRuntimePath)) {
+    try {
+      return await import(pathToFileURL(localRuntimePath).href) as PackageRuntimeModule;
+    } catch (error: unknown) {
+      if (!isMissingRuntimeModuleError(error, localRuntimePath)) {
+        throw error;
+      }
+    }
   }
 
   throw new Error(
