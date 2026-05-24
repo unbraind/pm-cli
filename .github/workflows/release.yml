@@ -175,6 +175,8 @@ jobs:
 
       - name: Publish to npm
         timeout-minutes: 5
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
           VERSION="${RELEASE_TAG#v}"
@@ -182,8 +184,6 @@ jobs:
             echo "@unbrained/pm-cli@${VERSION} is already published; skipping npm publish."
             exit 0
           fi
-          unset NODE_AUTH_TOKEN NPM_TOKEN
-          npm config delete //registry.npmjs.org/:_authToken --userconfig "${NPM_CONFIG_USERCONFIG}" || true
           npm publish --access public --provenance
 
       - name: Verify published package on npm, npx, and bunx
