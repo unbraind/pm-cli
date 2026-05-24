@@ -19,15 +19,11 @@ import {
   printResult,
   writeStdout,
 } from "./registration-helpers.js";
+import { createLazyModule } from "../core/shared/lazy-module.js";
 
 type MutationCommandsModule = typeof import("./commands/index.js");
 
-let mutationCommandsModulePromise: Promise<MutationCommandsModule> | null = null;
-
-async function loadMutationCommandsModule(): Promise<MutationCommandsModule> {
-  mutationCommandsModulePromise ??= import("./commands/index.js");
-  return mutationCommandsModulePromise;
-}
+const loadMutationCommandsModule = createLazyModule<MutationCommandsModule>(() => import("./commands/index.js"));
 
 /**
  * Register a flag and hide it from `--help` text while keeping it fully

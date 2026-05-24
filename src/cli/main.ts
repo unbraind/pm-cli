@@ -104,6 +104,7 @@ import type { registerSetupCommands as RegisterSetupCommandsFn } from "./registe
 import type { registerListQueryCommands as RegisterListQueryCommandsFn } from "./register-list-query.js";
 import type { registerMutationCommands as RegisterMutationCommandsFn } from "./register-mutation.js";
 import type { registerOperationCommands as RegisterOperationCommandsFn } from "./register-operations.js";
+import { createLazyModule } from "../core/shared/lazy-module.js";
 import {
   type ExtensionCommandHelpDescriptor,
   normalizeExtensionCommandPath,
@@ -219,30 +220,10 @@ type OperationRegistrationModule = {
   registerOperationCommands: typeof RegisterOperationCommandsFn;
 };
 
-let setupRegistrationModulePromise: Promise<SetupRegistrationModule> | null = null;
-let listQueryRegistrationModulePromise: Promise<ListQueryRegistrationModule> | null = null;
-let mutationRegistrationModulePromise: Promise<MutationRegistrationModule> | null = null;
-let operationRegistrationModulePromise: Promise<OperationRegistrationModule> | null = null;
-
-async function loadSetupRegistrationModule(): Promise<SetupRegistrationModule> {
-  setupRegistrationModulePromise ??= import("./register-setup.js");
-  return setupRegistrationModulePromise;
-}
-
-async function loadListQueryRegistrationModule(): Promise<ListQueryRegistrationModule> {
-  listQueryRegistrationModulePromise ??= import("./register-list-query.js");
-  return listQueryRegistrationModulePromise;
-}
-
-async function loadMutationRegistrationModule(): Promise<MutationRegistrationModule> {
-  mutationRegistrationModulePromise ??= import("./register-mutation.js");
-  return mutationRegistrationModulePromise;
-}
-
-async function loadOperationRegistrationModule(): Promise<OperationRegistrationModule> {
-  operationRegistrationModulePromise ??= import("./register-operations.js");
-  return operationRegistrationModulePromise;
-}
+const loadSetupRegistrationModule = createLazyModule<SetupRegistrationModule>(() => import("./register-setup.js"));
+const loadListQueryRegistrationModule = createLazyModule<ListQueryRegistrationModule>(() => import("./register-list-query.js"));
+const loadMutationRegistrationModule = createLazyModule<MutationRegistrationModule>(() => import("./register-mutation.js"));
+const loadOperationRegistrationModule = createLazyModule<OperationRegistrationModule>(() => import("./register-operations.js"));
 
 function describeUnknownError(error: unknown): string {
   if (error instanceof PmCliError) {

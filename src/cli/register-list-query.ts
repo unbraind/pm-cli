@@ -17,15 +17,11 @@ import {
   resolveActivityStreamMode,
   writeStdout,
 } from "./registration-helpers.js";
+import { createLazyModule } from "../core/shared/lazy-module.js";
 
 type ListQueryCommandsModule = typeof import("./commands/index.js");
 
-let listQueryCommandsModulePromise: Promise<ListQueryCommandsModule> | null = null;
-
-async function loadListQueryCommandsModule(): Promise<ListQueryCommandsModule> {
-  listQueryCommandsModulePromise ??= import("./commands/index.js");
-  return listQueryCommandsModulePromise;
-}
+const loadListQueryCommandsModule = createLazyModule<ListQueryCommandsModule>(() => import("./commands/index.js"));
 
 export function registerListQueryCommands(program: Command): void {
   // Register a flag and hide it from --help text while keeping it functional as

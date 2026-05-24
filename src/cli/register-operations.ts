@@ -15,15 +15,11 @@ import {
   printError,
   printResult,
 } from "./registration-helpers.js";
+import { createLazyModule } from "../core/shared/lazy-module.js";
 
 type OperationCommandsModule = typeof import("./commands/index.js");
 
-let operationCommandsModulePromise: Promise<OperationCommandsModule> | null = null;
-
-async function loadOperationCommandsModule(): Promise<OperationCommandsModule> {
-  operationCommandsModulePromise ??= import("./commands/index.js");
-  return operationCommandsModulePromise;
-}
+const loadOperationCommandsModule = createLazyModule<OperationCommandsModule>(() => import("./commands/index.js"));
 
 export function registerOperationCommands(program: Command): void {
   program

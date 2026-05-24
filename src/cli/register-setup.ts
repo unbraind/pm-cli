@@ -9,15 +9,11 @@ import {
   printError,
   printResult,
 } from "./registration-helpers.js";
+import { createLazyModule } from "../core/shared/lazy-module.js";
 
 type SetupCommandsModule = typeof import("./commands/index.js");
 
-let setupCommandsModulePromise: Promise<SetupCommandsModule> | null = null;
-
-async function loadSetupCommandsModule(): Promise<SetupCommandsModule> {
-  setupCommandsModulePromise ??= import("./commands/index.js");
-  return setupCommandsModulePromise;
-}
+const loadSetupCommandsModule = createLazyModule<SetupCommandsModule>(() => import("./commands/index.js"));
 
 type ExtensionSubcommandAction =
   | "init"
