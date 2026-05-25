@@ -2,8 +2,13 @@
 
 ## Unreleased
 
+### Changed
+
+- Deduplicate item/metadata to record widening casts behind a shared toItemRecord helper ([pm-p5if](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p5if.toon))
+
 ### Other
 
+- Docs hygiene: stop shipping PRD.md in npm package, dedupe PRD<-\>docs, slim CHANGELOG, reconcile marketplace.json ([pm-rjgh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-rjgh.toon))
 - Single-source extension capability and policy-surface contract lists ([pm-w98k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-w98k.toon))
 - Single-source Codex plugin docs tool surface ([pm-d97r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-d97r.toon))
 - Single-source extension governance policy defaults ([pm-axd1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-axd1.toon))

@@ -1,5 +1,6 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { toItemRecord } from "../../core/item/item-record.js";
 import { isTerminalStatus, normalizeStatusInput } from "../../core/item/status.js";
 import { resolveItemTypeRegistry, type ItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseIntegerLimit, parsePriority, parseType } from "../shared-parsers.js";
@@ -376,7 +377,7 @@ function readListFieldValue(item: ListedItem, field: string): unknown {
   if (normalized.length === 0) {
     return null;
   }
-  const itemRecord = item as unknown as Record<string, unknown>;
+  const itemRecord = toItemRecord(item);
   if (Object.prototype.hasOwnProperty.call(itemRecord, normalized)) {
     return itemRecord[normalized] ?? null;
   }

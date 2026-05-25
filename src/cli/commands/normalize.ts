@@ -1,4 +1,5 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { toItemRecord } from "../../core/item/item-record.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import {
@@ -216,7 +217,7 @@ function buildNormalizePlan(
   const updates: UpdateCommandOptions = {};
   const changes: NormalizePlannedChange[] = [];
   const unsetFields = new Set<string>();
-  const itemRecord = item as unknown as Record<string, unknown>;
+  const itemRecord = toItemRecord(item);
 
   if (!isTerminalStatus(item, statusRegistry)) {
     for (const definition of ACTIVE_CLEAR_FIELD_RULES) {

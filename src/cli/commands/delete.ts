@@ -3,6 +3,7 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { toItemRecord } from "../../core/item/item-record.js";
 import { deleteItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -44,7 +45,7 @@ export async function runDelete(id: string, options: DeleteCommandOptions, globa
   const targetPath = result.targetPath ? path.relative(pmRoot, result.targetPath).split(path.sep).join("/") : undefined;
 
   return {
-    item: result.item as unknown as Record<string, unknown>,
+    item: toItemRecord(result.item),
     changed_fields: result.changedFields,
     dry_run: options.dryRun === true,
     ...(targetPath ? { target_path: targetPath } : {}),

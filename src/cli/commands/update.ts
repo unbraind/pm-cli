@@ -9,6 +9,7 @@ import {
   validateTypeOptions,
 } from "../../core/item/type-registry.js";
 import { normalizeItemId } from "../../core/item/id.js";
+import { toItemRecord } from "../../core/item/item-record.js";
 import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
 import {
   normalizeParentReferenceValue,
@@ -1466,7 +1467,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     }
     const { document } = await readLocatedItem(located, { schema: settings.schema });
     return {
-      item: document.metadata as unknown as Record<string, unknown>,
+      item: toItemRecord(document.metadata),
       changed_fields: [],
       warnings: ["noop_no_update_fields"],
     };
@@ -1548,7 +1549,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       // delete when `--unset <field>` was requested, then record the change.
       // Each call is placed in the same position the inline block occupied so
       // the order of `changedFields` is preserved exactly (pm-why9).
-      const metadataRecord = document.metadata as unknown as Record<string, unknown>;
+      const metadataRecord = toItemRecord(document.metadata);
       const setOrClearScalar = (
         optionValue: string | undefined,
         metadataKey: string,
@@ -1894,10 +1895,10 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (!clearFrontMatterKeys.has(definition.metadata_key)) {
           continue;
         }
-        if ((document.metadata as Record<string, unknown>)[definition.metadata_key] === undefined) {
+        if (metadataRecord[definition.metadata_key] === undefined) {
           continue;
         }
-        delete (document.metadata as Record<string, unknown>)[definition.metadata_key];
+        delete metadataRecord[definition.metadata_key];
         changedFields.push(definition.metadata_key);
       }
 
@@ -1906,16 +1907,16 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (clearFrontMatterKeys.has(fieldKey)) {
           continue;
         }
-        if (JSON.stringify((document.metadata as Record<string, unknown>)[fieldKey]) === JSON.stringify(fieldValue)) {
+        if (JSON.stringify(metadataRecord[fieldKey]) === JSON.stringify(fieldValue)) {
           continue;
         }
-        (document.metadata as Record<string, unknown>)[fieldKey] = fieldValue;
+        metadataRecord[fieldKey] = fieldValue;
         changedFields.push(fieldKey);
       }
 
       try {
         applyRegisteredItemFieldDefaultsAndValidation(
-          document.metadata as unknown as Record<string, unknown>,
+          metadataRecord,
           getActiveExtensionRegistrations(),
         );
       } catch (error: unknown) {
@@ -1927,7 +1928,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   });
 
   return {
-    item: result.item as unknown as Record<string, unknown>,
+    item: toItemRecord(result.item),
     changed_fields: result.changedFields,
     warnings: [...parentReferenceWarnings, ...result.warnings],
     ...(options.allowAuditUpdate === true || options.allowAuditDepUpdate === true ? { audit_update: true } : {}),

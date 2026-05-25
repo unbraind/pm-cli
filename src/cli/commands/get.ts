@@ -1,5 +1,6 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
+import { toItemRecord } from "../../core/item/item-record.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { resolveRuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../../core/shared/constants.js";
@@ -155,7 +156,7 @@ function validateGetFields(fields: string[] | null, runtimeMetadataKeys: Iterabl
 }
 
 function projectItemForFields(item: ItemFrontMatter, fields: string[]): Partial<ItemFrontMatter> {
-  const source = item as unknown as Record<string, unknown>;
+  const source = toItemRecord(item);
   const projected: Record<string, unknown> = {};
   for (const field of fields) {
     const normalized = field.startsWith("item.") ? field.slice("item.".length) : field;

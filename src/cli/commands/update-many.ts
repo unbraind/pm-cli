@@ -1,6 +1,7 @@
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
+import { toItemRecord } from "../../core/item/item-record.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -413,7 +414,7 @@ function buildCollectionMutationPlans(row: Record<string, unknown>, update: Upda
 }
 
 function buildPlannedItemDiff(item: ListedItem, update: UpdateCommandOptions): PlannedItemDiff {
-  const row = item as unknown as Record<string, unknown>;
+  const row = toItemRecord(item);
   const changes: PlannedChange[] = [];
   for (const [optionKey, itemKey] of Object.entries(UPDATE_OPTION_TO_ITEM_KEY) as Array<[keyof UpdateCommandOptions, string]>) {
     const candidate = update[optionKey];
