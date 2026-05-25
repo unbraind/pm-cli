@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-25T10:55:08.658Z"
+updated_at: "2026-05-25T11:08:48.451Z"
 deadline: "2026-06-01T00:00:00.000Z"
 assignee: codex-dedupe-agent
 author: codex-audit
@@ -15,7 +15,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[279]{created_at,author,text}:
+comments[280]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -295,6 +295,7 @@ comments[279]{created_at,author,text}:
   "2026-05-25T10:39:16.487Z",codex-reliability-agent,"PR #67 feedback loop: CI static gate failed because pm-changelog --check detected drift after tracker closure metadata updates. Regenerated CHANGELOG.md with pm changelog generate (same parameters as CI), re-ran changelog --check (unchanged) and pnpm quality:static (pass). Preparing follow-up push to update PR checks."
   "2026-05-25T10:47:23.591Z",codex-reliability-agent,"AI bot feedback loop iteration 2 on PR #67: applied actionable reliability fixes (history-repair snapshot ordering + in-process helper serialization/safe restoration/env semantics), re-ran focused regressions and static quality gate, all green before push."
   "2026-05-25T10:55:08.658Z",codex-reliability-agent,"Merge evidence: PR #67 (https://github.com/unbraind/pm-cli/pull/67) is merged into main as bdbba9fe. Reliability continuation scope delivered (pm-uer0 closed, pm-7rlp foundation advanced), stale completed items normalized/closed with metadata, and gates/checks all green."
+  "2026-05-25T11:08:48.451Z",codex-reliability-agent,"Post-merge tracker sync completed on main: commit 15c0c80b records pm-uer0 closure/release + pm-7rlp handoff notes, and commit 3c738fca re-syncs CHANGELOG.md for deterministic pm-changelog checks after those metadata updates. Working tree is clean on main."
 notes[2]{created_at,author,text}:
   "2026-05-17T07:36:59.474Z",codex-agent,"Design note 2026-05-17: unfiltered pm contracts default now intentionally omits three heavy sections (schema oneOf union, command_flags, commander_aliases) and emits explicit omitted_reason markers; --full restores complete schema and alias/flag surfaces for tooling that needs maximal detail."
   "2026-05-17T08:33:25.981Z",codex-agent,"Design note 2026-05-17: default brief projection was intentionally scoped to bare 'pm list' instead of all list-* commands to preserve existing automation contracts while still cutting agent token usage on the highest-frequency exploratory list call."
