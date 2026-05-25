@@ -41,31 +41,44 @@ describe("CLI in-process runner integration", () => {
       expect(created.code).toBe(0);
       const createdId = (created.json as { item: { id: string } }).item.id;
       const sentinelEnvKey = "PM_INPROCESS_SENTINEL";
+      const hadSentinelBefore = Object.prototype.hasOwnProperty.call(process.env, sentinelEnvKey);
+      const sentinelBefore = process.env[sentinelEnvKey];
       const cwdBefore = process.cwd();
+      const argvBefore = [...process.argv];
       const nestedCwd = path.join(context.tempRoot, "nested-cwd");
       await mkdir(nestedCwd, { recursive: true });
-      delete process.env[sentinelEnvKey];
       context.env[sentinelEnvKey] = "set-only-during-inprocess-run";
+      try {
+        const [listOpen, fetched] = await Promise.all([
+          context.runCliInProcess(["list-open", "--json", "--limit", "20"], {
+            expectJson: true,
+            cwd: nestedCwd,
+          }),
+          context.runCliInProcess(["get", createdId, "--json"], { expectJson: true }),
+        ]);
 
-      const [listOpen, fetched] = await Promise.all([
-        context.runCliInProcess(["list-open", "--json", "--limit", "20"], {
-          expectJson: true,
-          cwd: nestedCwd,
-        }),
-        context.runCliInProcess(["get", createdId, "--json"], { expectJson: true }),
-      ]);
-
-      expect(listOpen.code).toBe(0);
-      expect(fetched.code).toBe(0);
-      const openIds = ((listOpen.json as { items?: Array<{ id?: string }> }).items ?? [])
-        .map((entry) => entry.id)
-        .filter((value): value is string => typeof value === "string");
-      expect(openIds).toContain(createdId);
-      expect((fetched.json as { item: { id: string } }).item.id).toBe(createdId);
-      expect(process.cwd()).toBe(cwdBefore);
-      expect(process.env[sentinelEnvKey]).toBeUndefined();
-
-      delete context.env[sentinelEnvKey];
+        expect(listOpen.code).toBe(0);
+        expect(fetched.code).toBe(0);
+        const openIds = ((listOpen.json as { items?: Array<{ id?: string }> }).items ?? [])
+          .map((entry) => entry.id)
+          .filter((value): value is string => typeof value === "string");
+        expect(openIds).toContain(createdId);
+        expect((fetched.json as { item: { id: string } }).item.id).toBe(createdId);
+        expect(process.cwd()).toBe(cwdBefore);
+        expect(process.argv).toEqual(argvBefore);
+        expect(process.env[sentinelEnvKey]).toBe(sentinelBefore);
+      } finally {
+        delete context.env[sentinelEnvKey];
+        if (hadSentinelBefore) {
+          if (sentinelBefore === undefined) {
+            delete process.env[sentinelEnvKey];
+          } else {
+            process.env[sentinelEnvKey] = sentinelBefore;
+          }
+        } else {
+          delete process.env[sentinelEnvKey];
+        }
+      }
     });
   });
 });
