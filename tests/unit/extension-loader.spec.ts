@@ -55,6 +55,17 @@ async function loadSettings(context: TempPmContext) {
 }
 
 describe("extension loader", () => {
+  it("creates independent extension policy defaults", () => {
+    const first = createDefaultExtensionGovernancePolicy();
+    const second = createDefaultExtensionGovernancePolicy();
+
+    first.allowed_extensions.push("first-only");
+    first.extension_overrides.push({ name: "first-override" });
+
+    expect(second.allowed_extensions).toEqual([]);
+    expect(second.extension_overrides).toEqual([]);
+  });
+
   it("resolves project and global extension roots from PM paths", async () => {
     await withTempPmPath(async (context) => {
       const roots = resolveExtensionRoots(context.pmPath);

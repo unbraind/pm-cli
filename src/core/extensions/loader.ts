@@ -189,7 +189,7 @@ interface NormalizedExtensionPolicy {
   warnings: string[];
 }
 
-const DEFAULT_EXTENSION_POLICY: ExtensionGovernancePolicy = createDefaultExtensionGovernancePolicy();
+const DEFAULT_EXTENSION_POLICY: ExtensionGovernancePolicy = Object.freeze(createDefaultExtensionGovernancePolicy());
 
 let extensionReloadEpoch = 0;
 

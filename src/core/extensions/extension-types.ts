@@ -90,29 +90,27 @@ export interface ExtensionRuntimePermissionDeclaration {
 export type ExtensionPolicyOverride = ExtensionPolicyOverrideSettings;
 export type ExtensionGovernancePolicy = ExtensionPolicySettings;
 
-const DEFAULT_EXTENSION_GOVERNANCE_POLICY_TEMPLATE = Object.freeze({
-  mode: "off",
-  trust_mode: "off",
-  require_provenance: false,
-  trusted_extensions: [],
-  default_sandbox_profile: "none",
-  allowed_extensions: [],
-  blocked_extensions: [],
-  allowed_capabilities: [],
-  blocked_capabilities: [],
-  allowed_surfaces: [],
-  blocked_surfaces: [],
-  allowed_commands: [],
-  blocked_commands: [],
-  allowed_actions: [],
-  blocked_actions: [],
-  allowed_services: [],
-  blocked_services: [],
-  extension_overrides: [],
-} satisfies ExtensionGovernancePolicy);
-
 export function createDefaultExtensionGovernancePolicy(): ExtensionGovernancePolicy {
-  return structuredClone(DEFAULT_EXTENSION_GOVERNANCE_POLICY_TEMPLATE);
+  return {
+    mode: "off",
+    trust_mode: "off",
+    require_provenance: false,
+    trusted_extensions: [],
+    default_sandbox_profile: "none",
+    allowed_extensions: [],
+    blocked_extensions: [],
+    allowed_capabilities: [],
+    blocked_capabilities: [],
+    allowed_surfaces: [],
+    blocked_surfaces: [],
+    allowed_commands: [],
+    blocked_commands: [],
+    allowed_actions: [],
+    blocked_actions: [],
+    allowed_services: [],
+    blocked_services: [],
+    extension_overrides: [],
+  };
 }
 
 export type ExtensionLayer = "global" | "project";
