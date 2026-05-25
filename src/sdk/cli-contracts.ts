@@ -2043,7 +2043,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   init: { optional: ["prefix", "preset", "defaults", "author", "agentGuidance", "withPackages"] },
   config: {
     required: ["scope", "configAction"],
-    optional: ["key", "criterion", "clearCriteria", "format", "policy"],
+    optional: ["key", "value", "criterion", "clearCriteria", "format", "policy"],
   },
   "extension-init": { required: ["target"], optional: ["scope"] },
   "extension-install": {

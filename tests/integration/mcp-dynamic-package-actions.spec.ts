@@ -4,6 +4,34 @@ import { handleRequest } from "../../src/mcp/server.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("MCP dynamic package actions", () => {
+  it("routes config positional value through the MCP action runner", async () => {
+    await withTempPmPath(async (context) => {
+      const telemetry = await handleRequest({
+        jsonrpc: "2.0",
+        id: 10,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: {
+            path: context.pmPath,
+            action: "config",
+            configAction: "set",
+            key: "telemetry-tracking",
+            value: "off",
+            options: {},
+          },
+        },
+      });
+
+      expect(telemetry?.isError).not.toBe(true);
+      const telemetryResult = (telemetry?.structuredContent as {
+        result?: { policy?: string; changed?: boolean };
+      } | undefined)?.result;
+      expect(telemetryResult?.policy).toBe("disabled");
+      expect(telemetryResult?.changed).toBe(true);
+    });
+  });
+
   it("normalizes scalar update log fields and defaults list output to compact", async () => {
     await withTempPmPath(async (context) => {
       const create = context.runCli([

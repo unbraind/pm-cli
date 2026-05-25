@@ -1857,8 +1857,9 @@ describe("release readiness runtime coverage", () => {
     expect(releasePipelineScript).toContain("tracker_only_changes_since_last_tag");
     expect(releasePipelineScript).toContain("pm-changelog");
     expect(releasePipelineScript).toContain("--item-url-base");
-    expect(releasePipelineScript).toContain(".agents/pm/");
     expect(releasePipelineScript).toContain("run-release-pipeline");
+    const releaseRelevanceScript = await readRepoText("scripts/release/release-relevance.mjs");
+    expect(releaseRelevanceScript).toContain(".agents/pm/");
 
     const verifyPublishedScript = await readRepoText("scripts/release/verify-published-release.mjs");
     expect(verifyPublishedScript).toContain("verify-published-release");

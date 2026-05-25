@@ -1,4 +1,5 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { resolveConfigPositionalValue } from "../../core/config/positional-value.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { normalizeParentReferencePolicy } from "../../core/item/parent-reference-policy.js";
 import { normalizeSprintReleaseFormatPolicy } from "../../core/item/sprint-release-format.js";
@@ -229,6 +230,13 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
   context: ["context"],
 };
 
+// Canonical kebab-case forms (first alias entry per key). Used for the invalid-key
+// hint so agents see ~21 keys instead of all ~45 kebab+snake variants; snake_case
+// forms stay fully accepted as input via CONFIG_KEY_VALUES/normalizeKey.
+const CANONICAL_CONFIG_KEYS: readonly string[] = (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map(
+  (candidate) => CONFIG_KEY_ALIASES[candidate][0],
+);
+
 const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   definition_of_done: "Definition of Done criteria list.",
   item_format: "Default item file format.",
@@ -368,7 +376,7 @@ function normalizeKey(value: string): ConfigKey {
     return "definition_of_done";
   }
   throw new PmCliError(
-    `Invalid config key "${value}". Supported: ${CONFIG_KEY_VALUES.join(", ")}`,
+    `Invalid config key "${value}". Supported: ${CANONICAL_CONFIG_KEYS.join(", ")} (underscore variants also accepted)`,
     EXIT_CODE.USAGE,
   );
 }
@@ -511,6 +519,37 @@ function normalizeGovernanceForceRequiredForStaleLockPolicy(
     "Config set governance-force-required-for-stale-lock requires --policy with one of: enabled, disabled",
     EXIT_CODE.USAGE,
   );
+}
+
+function normalizePolicyForConflict(key: ConfigKey | undefined, value: string): string {
+  switch (key) {
+    case "history_missing_stream_policy":
+      return normalizeHistoryMissingStreamPolicy(value);
+    case "sprint_release_format_policy":
+      return normalizeSprintReleaseFormatPolicy(value);
+    case "parent_reference_policy":
+    case "governance_parent_reference_policy":
+      return normalizeParentReferencePolicy(value);
+    case "metadata_validation_profile":
+    case "governance_metadata_validation_profile":
+      return normalizeValidateMetadataProfile(value);
+    case "governance_preset":
+      return normalizeGovernancePreset(value);
+    case "governance_ownership_enforcement":
+      return normalizeGovernanceOwnershipEnforcement(value);
+    case "governance_create_mode_default":
+      return normalizeGovernanceCreateModeDefault(value);
+    case "governance_close_validation_default":
+      return normalizeGovernanceCloseValidationDefault(value);
+    case "governance_force_required_for_stale_lock":
+      return normalizeGovernanceForceRequiredForStaleLockPolicy(value);
+    case "test_result_tracking":
+      return normalizeTestResultTrackingPolicy(value);
+    case "telemetry_tracking":
+      return normalizeTelemetryTrackingPolicy(value);
+    default:
+      return value.trim().toLowerCase().replaceAll("-", "_");
+  }
 }
 
 const METADATA_REQUIRED_FIELD_ALIAS_MAP: Record<string, ValidateMetadataRequiredField> = {
@@ -832,16 +871,87 @@ async function applyContextConfig(
   }, warnings);
 }
 
+/**
+ * Route an intuitive `pm config set <key> <value>` positional value onto the typed
+ * flag it belongs to (--format/--policy/--criterion), applying enabled/disabled
+ * synonyms. Returns the (possibly augmented) options. The typed-flag forms keep
+ * working exactly as before: a positional value is only injected when its flag was
+ * not already supplied, and a conflicting explicit flag is a clear error.
+ */
+function applyPositionalValue(
+  action: ConfigAction,
+  keyValue: string | undefined,
+  normalizedKey: ConfigKey | undefined,
+  valueValue: string | undefined,
+  options: ConfigCommandOptions,
+): ConfigCommandOptions {
+  if (valueValue === undefined) {
+    return options;
+  }
+  if (action !== "set") {
+    throw new PmCliError(
+      `Config action "${action}" does not accept a positional value. Only "set" takes <value>.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (typeof keyValue !== "string" || keyValue.trim().length === 0) {
+    throw new PmCliError('Config action "set" requires <key> before a positional <value>.', EXIT_CODE.USAGE);
+  }
+
+  const routed = resolveConfigPositionalValue(normalizedKey ?? keyValue, valueValue);
+  if (!routed.routable) {
+    throw new PmCliError(routed.reason, EXIT_CODE.USAGE);
+  }
+
+  if (routed.flag === "criterion") {
+    if (options.criterion !== undefined && options.criterion.length > 0) {
+      throw new PmCliError(
+        `Config set ${keyValue} received both positional value "${valueValue}" and --criterion. Pass criteria via --criterion only when supplying more than one value.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    return { ...options, criterion: routed.values };
+  }
+
+  if (routed.flag === "format") {
+    if (
+      options.format !== undefined &&
+      normalizeItemFormat(options.format) !== normalizeItemFormat(routed.value)
+    ) {
+      throw new PmCliError(
+        `Config set ${keyValue} received both positional value "${valueValue}" and --format "${options.format}". Pass only one.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    return { ...options, format: routed.value };
+  }
+
+  // policy flag (--policy)
+  if (
+    options.policy !== undefined &&
+    normalizePolicyForConflict(normalizedKey, options.policy) !==
+      normalizePolicyForConflict(normalizedKey, routed.value)
+  ) {
+    throw new PmCliError(
+      `Config set ${keyValue} received both positional value "${valueValue}" and --policy "${options.policy}". Pass only one.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return { ...options, policy: routed.value };
+}
+
 export async function runConfig(
   scopeValue: string,
   actionValue: string,
   keyValue: string | undefined,
   options: ConfigCommandOptions,
   global: GlobalOptions,
+  valueValue?: string,
 ): Promise<ConfigResult> {
   const scope = normalizeScope(scopeValue);
   const action = normalizeAction(actionValue);
   const key = normalizeKeyForAction(action, keyValue);
+  options = applyPositionalValue(action, keyValue, key, valueValue, options);
   const target = await resolveSettingsTarget(scope, global);
   const { settings, metadata, warnings: settingsReadWarnings } = await readSettingsWithMetadata(target.pmRoot);
   const warnings = normalizeWarnings(settingsReadWarnings);

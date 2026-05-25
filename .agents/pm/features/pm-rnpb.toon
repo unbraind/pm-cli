@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-25T08:11:20.980Z"
+updated_at: "2026-05-25T09:30:54.907Z"
 deadline: "2026-06-01T00:00:00.000Z"
 assignee: codex-dedupe-agent
 author: codex-audit
@@ -15,7 +15,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[267]{created_at,author,text}:
+comments[273]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -283,6 +283,12 @@ comments[267]{created_at,author,text}:
   "2026-05-25T00:49:05.971Z",codex-dedupe-agent,"PR update evidence: pushed review-fix commit 4ce16f74 addressing Gemini extension policy feedback. Focused canonical extension contract/default regression passed with 74 tests. Added PR comment explaining the valid fix and why CodeRabbit's .agents/pm history warning is a false positive for pm-generated tracker history."
   "2026-05-25T07:36:02.989Z",claude-code-agent,"PR #65 opened: 'Deduplicate item-record casts and tighten docs/package hygiene' (branch chore/docs-hygiene-and-item-record-cast-dedupe, commit 94e2e2a9). Combines closed children pm-p5if (toItemRecord cast dedup, 16 sites/13 files) + pm-rjgh (PRD.md unpublished + marketplace.json reconcile). Full release gate green locally (1740 tests/100% coverage, Sentry critical=0/high=4, telemetry err 2.49%). Required >=15-minute AI-review window started at 2026-05-25T07:36:01Z; will hold for CodeRabbit/Sourcery/Gemini feedback, fix anything raised, ensure all GitHub checks green, then merge to main. https://github.com/unbraind/pm-cli/pull/65"
   "2026-05-25T08:11:20.953Z",claude-code-agent,"PR #65 MERGED to main (merge commit 62007849) 2026-05-25. All GitHub checks green (build/docs/typecheck/static/coverage 1741 tests 100%/compat/smokes across ubuntu+macos Node 20/22/24); CodeRabbit re-reviewed and passed; Gemini medium finding (reuse metadataRecord) and CodeRabbit marketplace-assertion nitpick both addressed in follow-up commit 1ae62cb2; Sourcery hit its weekly diff-char rate limit (no review). Post-merge live verification: Sentry access_ok critical=0 high=4 (recent data returned); telemetry required-mode ok finish_error_rate 2.49% with 0 missing-error-code rows (real-time pipeline confirmed). Shipped: pm-p5if (toItemRecord cast dedup, now 21 inline casts removed incl. review follow-up) + pm-rjgh (PRD.md unpublished, marketplace.json reconciled + drift-lock test). pm-mbdu stays open for the 3 files still >2000 LOC (extension/loader/cli-contracts barrel splits)."
+  "2026-05-25T08:40:43.697Z",codex-gh-triage,"GitHub/dependency/security triage 2026-05-25: gh issue/pr lists show no open issues or PRs. Current local branch fix/auto-release-build-ordering-and-config-set-ux has no remote branch and no PR yet; HEAD is main 125774a0. Recent GitHub blockers: Auto Release run 26387640606 fails before build with missing dist/cli.js (covered by pm-yf8t); Nightly run 26390994985 fails only on Windows Node 20 test leg with npm ENOENT, check-secrets SyntaxError, release-automation SyntaxError, and package runtime-loader generated-file drift; Dependabot github_actions run 26384310873 fails updating softprops/action-gh-release with dependabot unknown_error, while npm_and_yarn update succeeded. Security/deps: pnpm audit --json clean (0 vulns, 281 deps), pnpm outdated --format json {}, pnpm security:scan clean, repo security-advisories API [], vulnerability-alerts endpoint enabled; dependabot/code/secret alert list endpoints returned 404/inaccessible from this token."
+  "2026-05-25T08:41:02.526Z",codex-impl-review,"Cross-cutting implementation-review note: current diff keeps config positional value exposed in CLI help and MCP/SDK schema, and focused/manual smoke passed. Residual contract-drift risk is test coverage: no automated test currently drives the new value field through the MCP pm_run config path, so future SDK/MCP changes could regress it without failing the focused config tests."
+  "2026-05-25T08:56:50.716Z",codex-dedupe-agent,"Verification evidence: focused regression suite passed (7 files / 77 tests) after splitting CLI config coverage; manual temp config smoke passed init, config set telemetry-tracking off, config project set item-format toon, config set definition-of-done, and shortened bogus-key error; semantic temp-project dogfood passed 86 workflows; pm-changelog latest installed as 2026.5.24-15 and CHANGELOG.md --check stayed unchanged over 825 closed items; health/validate passed with no history drift; full release gate passed with 117 files / 1761 tests / 100% coverage, static quality, secret scan, npx smoke, package dogfood, compatibility, Sentry critical=0 high=4 within threshold, telemetry finish_error_rate_pct=2.48."
+  "2026-05-25T09:05:22.487Z",codex-dedupe-agent,"Fresh full release gate evidence after scanner-library hardening: node scripts/release/run-gates.mjs --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --json passed. Coverage 117 files / 1761 tests / 100% statements branches functions lines. Security scan passed with no credential-like secrets. Package-first dogfood passed in /tmp with 84 commands. Compatibility check passed against base 2026.5.24. Sentry gate passed with critical=0 high=4 total=4 within thresholds; telemetry required mode passed with finish_error_rate_pct=2.48 and missing error-code rows=0."
+  "2026-05-25T09:13:00.417Z",codex-dedupe-agent,"PR evidence: opened PR #66 Fix auto-release build order and config value flows at https://github.com/unbraind/pm-cli/pull/66 from branch codex/auto-release-config-windows. Native git push repeatedly failed with GitHub receive-pack HTTP 500 for new objects, so the branch was published using gh api Git Data endpoints from the verified local tree. Starting required >=15 minute AI-review wait and GitHub check watch before merge."
+  "2026-05-25T09:30:54.907Z",codex-dedupe-agent,"Review feedback handling for PR #66: after the required 15-minute wait, GitHub checks were green and bots reviewed commit f90746fe. Accepted valid feedback by normalizing positional-vs-explicit config conflicts before comparison, allowing equivalent uppercase/hyphen/synonym values; simplifying scripts/check-secrets.mjs to import only scanContent; and optimizing check-secrets line lookup with precomputed line starts. CodeRabbit .agents/pm direct-edit comments are false positives because all tracker changes in this run were created by pm CLI commands. Verification passed: node scripts/run-tests.mjs test -- tests/unit/config-command.spec.ts tests/unit/config-positional-value.spec.ts tests/unit/check-secrets.spec.ts tests/integration/config-positional-cli.integration.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts --reporter=dot (5 files, 58 tests) plus node scripts/check-secrets.mjs and git diff --check."
 notes[2]{created_at,author,text}:
   "2026-05-17T07:36:59.474Z",codex-agent,"Design note 2026-05-17: unfiltered pm contracts default now intentionally omits three heavy sections (schema oneOf union, command_flags, commander_aliases) and emits explicit omitted_reason markers; --full restores complete schema and alias/flag surfaces for tooling that needs maximal detail."
   "2026-05-17T08:33:25.981Z",codex-agent,"Design note 2026-05-17: default brief projection was intentionally scoped to bare 'pm list' instead of all list-* commands to preserve existing automation contracts while still cutting agent token usage on the highest-frequency exploratory list call."
@@ -290,7 +296,8 @@ learnings[3]{created_at,author,text}:
   "2026-05-17T07:37:01.283Z",codex-agent,"Durable learning: strict 100% branch coverage is valuable for agent UX changes because nullable fallback expressions can silently introduce uncovered impossible branches; prefer explicit state predicates over defensive null coalescing in logically constrained paths."
   "2026-05-17T08:33:31.156Z",codex-agent,"Durable learning: when adding default terse projections for agent UX, preserve semantic override paths (include-body, explicit full/compact/fields) so feature-level defaults do not silently drop required payloads in existing workflows."
   "2026-05-22T15:44:58.334Z",maintainer-agent,"Startup perf: the single biggest CLI startup cost was importing zod (~85ms) eagerly via settings.ts, which is on the hot read path of nearly every command (list/get/search/context/create/update all readSettings). zod was used in exactly ONE file. Replacing it with a dependency-free validator (src/core/store/settings-validator.ts) that mirrors safeParse exactly cut settings import 157ms->14ms and every command ~38% (--help 227->140ms, list 540->340ms). Lesson: profile per-module import cost (node --input-type=module timing each import) before assuming the bottleneck is your own code; a single eager dep on the hot path dominates."
-files[105]{path,scope,note}:
+files[113]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,auto-release build before pm-changelog generation
   .github/workflows/ci.yml,project,CI smoke gate runs package-first dogfood
   .github/workflows/docs.yml,project,lightweight-docs-only-ci-gate
   .github/workflows/release.yml,project,release-docs-skills-gate
@@ -314,6 +321,7 @@ files[105]{path,scope,note}:
   scripts/gen-package-runtime-loaders.mjs,project,"review fix: generated runtime loaders rethrow runtime/evaluation failures"
   scripts/plugin-mcp-smoke-harness.mjs,project,"review fix: tolerate malformed non-JSON child stdout"
   scripts/release/docs-skills-gate.mjs,project,retry temporary cleanup to avoid ENOTEMPTY release-gate false failure
+  scripts/release/release-relevance.mjs,project,pure release relevance helper for tests
   scripts/release/run-gates.mjs,project,release gates run package-first dogfood
   scripts/release/run-release-pipeline.mjs,project,skip auto-release when CHANGELOG Unreleased has no promotable content
   scripts/release/sentry-telemetry-gate.mjs,project,fallback to authenticated Sentry CLI when release gate API token access fails
@@ -323,6 +331,7 @@ files[105]{path,scope,note}:
   src/cli/commands/activity.ts,project,harden activity output for malformed legacy history rows
   src/cli/commands/claim.ts,project,claim skipped response coverage and claimed_by branch hardening
   src/cli/commands/completion.ts,project,Add get projection flags to shell completions
+  src/cli/commands/config.ts,project,config positional value routing
   src/cli/commands/contracts.ts,project,use compact flag contracts in command surface
   src/cli/commands/create.ts,project,event date alias for create
   src/cli/commands/docs.ts,project,type support for docs list option
@@ -348,6 +357,7 @@ files[105]{path,scope,note}:
   src/cli/register-operations.ts,project,contracts help text clarifies --full heavy surfaces
   src/cli/register-setup.ts,project,init flags for defaults and author
   src/cli/registration-helpers.ts,project,null
+  src/core/config/positional-value.ts,project,pure config positional router
   src/core/extensions/extension-types.ts,project,canonical extension contract constants and default governance policy factory
   src/core/extensions/loader.ts,project,chain output_format service overrides for package renderers
   src/core/item/status.ts,project,null-safe malformed legacy status normalization
@@ -368,12 +378,16 @@ files[105]{path,scope,note}:
   tests/integration/ci-workflow-contract.spec.ts,project,workflow contract covers dogfood and Sentry token fallback
   tests/integration/claude-plugin-contract.spec.ts,project,plugin MCP tool list regression
   tests/integration/cli.integration.spec.ts,project,init defaults author regression
+  tests/integration/config-positional-cli.integration.spec.ts,project,CLI parser config positional regression split from large integration file
   tests/integration/help-runtime.spec.ts,project,help coverage for keyword-first search mode flags
   tests/integration/mcp-dynamic-package-actions.spec.ts,project,MCP get projection and plan stepRef regression
+  tests/integration/release-automation-contract.spec.ts,project,auto-release ordering and release relevance regressions
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness guard for nonblocking sentry startup
   tests/unit/check-secrets.spec.ts,project,line-number regression for secret scanner review
   tests/unit/claim-command.spec.ts,project,claim if-available and takeover warning regression coverage
   tests/unit/completion-command.spec.ts,project,bash completion regression for health fast-path flags
+  tests/unit/config-command.spec.ts,project,runConfig positional routing coverage
+  tests/unit/config-positional-value.spec.ts,project,pure router coverage
   tests/unit/contracts-command.spec.ts,project,regression for canonical flag surface with aliases
   tests/unit/create-command.spec.ts,project,create event date alias regression
   tests/unit/embedding-batches.spec.ts,project,regression for oversized ollama embedding input truncation
@@ -396,7 +410,7 @@ files[105]{path,scope,note}:
   tests/unit/shared-constants-errors.spec.ts,project,review regression coverage for status default cloning
   tests/unit/update-command.spec.ts,project,update event date alias regression
   vitest.config.ts,project,coverage include list covers new search corpus helper
-tests[64]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[66]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   "manual temp-project smoke: init; install local pm-todos; install npm:local pm-beads; package doctor deep; beads import; todos export; health; validate",null,project,300,null,null,null,null,null,null,null,null,null,null,null,manual temp directory runtime-loader smoke
   node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,tracked secret and path leak guardrail
   node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,isolated temp-project dogfood harness
@@ -412,6 +426,8 @@ tests[64]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,s
   node scripts/run-tests.mjs test -- tests/integration/help-runtime.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/contracts-command.spec.ts tests/unit/search-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused help/contracts/search runtime parity regression
   node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/claim-command.spec.ts tests/unit/update-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/config-positional-value.spec.ts tests/unit/config-command.spec.ts tests/integration/cli.integration.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/package-manifest.spec.ts tests/unit/check-secrets.spec.ts --reporter=dot,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused release config and Windows CI regressions
+  node scripts/run-tests.mjs test -- tests/unit/config-positional-value.spec.ts tests/unit/config-command.spec.ts tests/integration/config-positional-cli.integration.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/package-manifest.spec.ts tests/unit/check-secrets.spec.ts --reporter=dot,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused release config and Windows CI regressions after test split
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused package/install contract alias regression
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused contracts and runtime flag parity regression
   node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/unit/search-command.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,focused contracts/search runtime parity regression
