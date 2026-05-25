@@ -68,6 +68,16 @@ describe("release automation contract", () => {
     expect(workflow).toContain("SENTRY_PERSONAL_ADMIN_TOKEN");
   });
 
+  it("builds dist before the auto-release pipeline consumes dist/cli.js", async () => {
+    const workflow = await readFile(path.join(repoRoot, ".github/workflows/auto-release.yml"), "utf8");
+    expect(workflow).toContain("pnpm build");
+    const buildIndex = workflow.indexOf("pnpm build");
+    const pipelineIndex = workflow.indexOf("scripts/release/run-release-pipeline.mjs");
+    expect(buildIndex).toBeGreaterThanOrEqual(0);
+    expect(pipelineIndex).toBeGreaterThanOrEqual(0);
+    expect(buildIndex).toBeLessThan(pipelineIndex);
+  });
+
   it("allows the external Sentry gate to be disabled in unauthenticated automation", () => {
     const env = { ...process.env };
     delete env.SENTRY_AUTH_TOKEN;
@@ -97,12 +107,13 @@ describe("release automation contract", () => {
 
   it("keeps tracker-only changes outside release relevance", async () => {
     const pipelineModule = (await import(
-      pathToFileURL(path.join(repoRoot, "scripts/release/run-release-pipeline.mjs")).href
+      pathToFileURL(path.join(repoRoot, "scripts/release/release-relevance.mjs")).href
     )) as {
       isReleaseRelevantPath(filePath: string): boolean;
     };
 
     expect(pipelineModule.isReleaseRelevantPath(".agents/pm/tasks/pm-example.md")).toBe(false);
+    expect(pipelineModule.isReleaseRelevantPath(".agents\\pm\\tasks\\pm-example.md")).toBe(false);
     expect(pipelineModule.isReleaseRelevantPath("src/cli/main.ts")).toBe(true);
   });
 

@@ -1,0 +1,18 @@
+id: pm-mf4j
+title: Add pm config set positional value form and shorten the invalid config-key error
+description: "Agent-UX polish (subset of pm-5k2w M5). (1) pm config set <key> <value> now accepts the value positionally and routes it to the correct typed flag (--policy/--format/--criterion) by key, with off/on/true/false -> disabled/enabled synonyms for boolean policy keys; the typed-flag forms still work and conflicting flag+positional is a clear error. (2) The invalid config-key error now lists only the ~21 canonical kebab keys plus '(underscore variants also accepted)' instead of all ~45 kebab+snake forms, cutting token cost for agents. Pure routing logic in src/core/config/positional-value.ts (100% covered); MCP+SDK contract parity added. Implemented by config-ux-subagent under pm-5k2w."
+type: Chore
+status: open
+priority: 2
+tags[5]: agent-ux,cli,config,polish,token-efficiency
+created_at: "2026-05-25T08:35:07.204Z"
+updated_at: "2026-05-25T08:56:50.675Z"
+assignee: claude-code-agent
+author: claude-code-agent
+parent: pm-5k2w
+comments[4]{created_at,author,text}:
+  "2026-05-25T08:40:57.999Z",codex-gh-triage,"GitHub/dependency/security triage addendum 2026-05-25: no GitHub issue/PR/dependency/security blocker found for the config UX work. Open repo issues=0, open PRs=0, current branch has no remote branch/PR yet, pnpm audit/outdated/security:scan are clean. Only relevant caution is shared branch CI: latest Nightly run 26390994985 fails on Windows Node 20 from existing test/runtime-loader issues unrelated to config UX; ensure config-focused tests plus the broader branch gate run before PR."
+  "2026-05-25T08:41:02.456Z",codex-impl-review,"Implementation-review evidence: reviewed current uncommitted config positional-value, SDK/MCP contract, docs, and tests diff only. Focused tests passed (3 files, 55 tests) and manual temp PM_PATH smoke passed for config set telemetry-tracking off, config project set item-format toon, and config set definition-of-done. Finding/test gap: automated coverage exercises the pure router/runConfig path, but not the commander shorthand or MCP pm_run value path; add regression coverage for config set <key> <value> through the CLI entrypoint and MCP config action."
+  "2026-05-25T08:43:00.519Z",codex-dedupe-agent,"Implementation note: addressed implementation-review sub-agent gap by adding real CLI parser coverage for config set <key> <value> and MCP pm_run config value coverage in addition to pure helper/runConfig unit coverage."
+  "2026-05-25T08:56:50.675Z",codex-dedupe-agent,"Coordinator verification: config positional value work now has pure helper, runConfig, real CLI parser, and MCP pm_run coverage. Manual temp config smoke passed the intended positional flows plus shortened invalid-key error. Full release gate passed after test split."
+body: ""

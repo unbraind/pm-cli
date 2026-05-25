@@ -215,6 +215,10 @@ export async function loadPackageRuntimeModule() {
 `;
 }
 
+function normalizeGeneratedText(content) {
+  return content.replace(/\r\n/g, "\n");
+}
+
 async function main() {
   const check = process.argv.includes("--check");
   let drift = false;
@@ -239,7 +243,7 @@ async function main() {
         } catch {
           current = "";
         }
-        if (current !== output.content) {
+        if (normalizeGeneratedText(current) !== normalizeGeneratedText(output.content)) {
           drift = true;
           console.error(`Out of sync: ${path.relative(repoRoot, output.target)}`);
         }

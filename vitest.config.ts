@@ -60,6 +60,7 @@ export default defineConfig({
         "src/cli/commands/linked-test-parsers.ts",
         "src/cli/commands/recurrence-parsers.ts",
         "src/cli/extension-command-options.ts",
+        "src/core/config/positional-value.ts",
         "src/core/extensions/index.ts",
         "src/core/extensions/item-fields.ts",
         "src/core/extensions/loader.ts",

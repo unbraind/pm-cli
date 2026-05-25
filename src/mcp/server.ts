@@ -523,6 +523,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
         readString(args, "key") ?? readString(options, "key"),
         options,
         global,
+        readString(args, "value") ?? readString(options, "value"),
       );
     case "activity": {
       const activityOptions = { ...options } as Parameters<typeof runActivity>[0] & { full?: unknown };

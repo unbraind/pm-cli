@@ -21,6 +21,21 @@ pm config project set item-format --format toon
 pm config project set test-result-tracking --policy enabled
 ```
 
+`config set <key> <value>` also accepts the value as a positional argument; pm routes
+it to the right typed flag based on the key (so `--policy`/`--format`/`--criterion`
+remain optional for single values):
+
+```bash
+pm config set telemetry-tracking off          # off|on|true|false map to disabled|enabled
+pm config set item-format toon                # same as --format toon
+pm config set governance-preset strict        # same as --policy strict
+pm config set definition-of-done "Tests pass" # same as --criterion "Tests pass"
+```
+
+The `context` key has no single value and still uses `--default-depth`,
+`--activity-limit`, `--stale-threshold-days`, and `--section-<name>` flags. Use
+`--criterion` (repeatable) to set more than one criteria-list value at once.
+
 Scopes:
 
 - `project` updates `.agents/pm/settings.json`.

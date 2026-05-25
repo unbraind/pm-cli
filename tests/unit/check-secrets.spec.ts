@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 // @ts-expect-error - plain ESM script without type declarations
-import { RULES, scanContent } from "../../scripts/check-secrets.mjs";
+import { RULES, scanContent } from "../../scripts/check-secrets-lib.mjs";
 
 function rulesFor(file: string, content: string): string[] {
   return scanContent(file, content).map((finding: { rule: string }) => finding.rule);

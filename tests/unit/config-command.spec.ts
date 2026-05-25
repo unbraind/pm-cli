@@ -989,4 +989,179 @@ describe("runConfig", () => {
       expect(result.has_explicit_item_format).toBe(true);
     });
   });
+
+  describe("positional value routing for config set", () => {
+    it("routes a positional value to --policy with enabled/disabled synonyms", async () => {
+      await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+        const pmRoot = path.join(tempRoot, ".agents", "pm");
+        await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+        const off = await runConfig(
+          "project",
+          "set",
+          "telemetry-tracking",
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          "off",
+        );
+        expect(off.policy).toBe("disabled");
+        expect((await readSettings(pmRoot)).telemetry.enabled).toBe(false);
+
+        const on = await runConfig(
+          "project",
+          "set",
+          "telemetry-tracking",
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          "enabled",
+        );
+        expect(on.policy).toBe("enabled");
+        expect((await readSettings(pmRoot)).telemetry.enabled).toBe(true);
+      });
+    });
+
+    it("routes a positional value to --format for item-format", async () => {
+      await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+        const pmRoot = path.join(tempRoot, ".agents", "pm");
+        await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+        const result = await runConfig(
+          "project",
+          "set",
+          "item-format",
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          "toon",
+        );
+        expect(result.format).toBe("toon");
+      });
+    });
+
+    it("routes a positional value to --criterion for criteria-list keys", async () => {
+      await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+        const pmRoot = path.join(tempRoot, ".agents", "pm");
+        await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+        const result = await runConfig(
+          "project",
+          "set",
+          "definition-of-done",
+          {},
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          "Tests pass",
+        );
+        expect(result.criteria).toEqual(["Tests pass"]);
+      });
+    });
+
+    it("does not override an explicit typed flag when it matches", async () => {
+      await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+        const pmRoot = path.join(tempRoot, ".agents", "pm");
+        await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+        const result = await runConfig(
+          "project",
+          "set",
+          "telemetry-tracking",
+          { policy: "disabled" },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          "off",
+        );
+        expect(result.policy).toBe("disabled");
+      });
+    });
+
+    it("errors when a positional value conflicts with an explicit typed flag", async () => {
+      await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+        const pmRoot = path.join(tempRoot, ".agents", "pm");
+        await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+        await expect(
+          runConfig(
+            "project",
+            "set",
+            "telemetry-tracking",
+            { policy: "enabled" },
+            { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+            "off",
+          ),
+        ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+
+        await expect(
+          runConfig(
+            "project",
+            "set",
+            "item-format",
+            { format: "json" },
+            { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+            "toon",
+          ),
+        ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+
+        await expect(
+          runConfig(
+            "project",
+            "set",
+            "definition-of-done",
+            { criterion: ["A"] },
+            { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+            "B",
+          ),
+        ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      });
+    });
+
+    it("rejects a positional value for context with a flag hint", async () => {
+      await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+        const pmRoot = path.join(tempRoot, ".agents", "pm");
+        await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+        await expect(
+          runConfig("project", "set", "context", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }, "deep"),
+        ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      });
+    });
+
+    it("rejects a positional value for non-set actions", async () => {
+      await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+        const pmRoot = path.join(tempRoot, ".agents", "pm");
+        await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+        await expect(
+          runConfig("project", "get", "telemetry-tracking", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }, "off"),
+        ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      });
+    });
+
+    it("rejects a positional value when no key is provided", async () => {
+      await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+        const pmRoot = path.join(tempRoot, ".agents", "pm");
+        await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+        await expect(
+          runConfig("project", "set", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }, "off"),
+        ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      });
+    });
+
+    it("shows a shortened invalid-key error listing canonical kebab forms", async () => {
+      await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+        const pmRoot = path.join(tempRoot, ".agents", "pm");
+        await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+        let caught: unknown;
+        try {
+          await runConfig("project", "get", "bogus-key", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
+        } catch (error) {
+          caught = error;
+        }
+        expect(caught).toBeInstanceOf(PmCliError);
+        const message = (caught as PmCliError).message;
+        expect(message).toContain("underscore variants also accepted");
+        expect(message).toContain("telemetry-tracking");
+        // The shortened list must NOT include the snake_case duplicates.
+        expect(message).not.toContain("telemetry_tracking");
+      });
+    });
+  });
 });

@@ -15,6 +15,7 @@ import {
   runCommand,
   utcDateKey,
 } from "./utils.mjs";
+import { isReleaseRelevantPath } from "./release-relevance.mjs";
 
 function usage() {
   console.log(`Usage:
@@ -77,10 +78,6 @@ function getChangedFilesSince(lastTag) {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
-}
-
-export function isReleaseRelevantPath(filePath) {
-  return !filePath.startsWith(".agents/pm/");
 }
 
 function listTodayTags(todayKey) {
