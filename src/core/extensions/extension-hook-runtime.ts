@@ -84,12 +84,20 @@ export async function runOnIndexHooks(hooks: ExtensionHookRegistry, context: OnI
  * multi-line stack noise or unbounded payloads.
  */
 function describeHandlerError(error: unknown): string {
-  const raw =
-    error instanceof Error && typeof error.message === "string"
-      ? error.message
-      : typeof error === "string"
-        ? error
-        : "";
+  let raw = "";
+  if (error instanceof Error && typeof error.message === "string") {
+    raw = error.message;
+  } else if (typeof error === "string") {
+    raw = error;
+  } else if (
+    typeof error === "object" &&
+    error !== null &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    // Extensions may throw plain/serialized objects that carry a message but do
+    // not inherit from the base Error class.
+    raw = (error as { message: string }).message;
+  }
   const normalized = raw.replace(/\s+/gu, " ").trim();
   if (normalized.length === 0) {
     return "";

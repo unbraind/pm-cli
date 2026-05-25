@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import { collectPackageExtensionDirectories } from "../../../core/packages/manifest.js";
 import { pathExists } from "../../../core/fs/fs-utils.js";
+import { isPathWithinDirectory } from "../../../core/fs/path-utils.js";
 import { EXIT_CODE } from "../../../core/shared/constants.js";
 import { PmCliError } from "../../../core/shared/errors.js";
 
@@ -191,6 +192,13 @@ async function resolveLocalNpmPackagePath(spec: string): Promise<string | null> 
     // Registry package specs are not URLs.
   }
 
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(spec)) {
+    const absolutePath = path.resolve(process.cwd(), spec);
+    if (await pathExists(absolutePath)) {
+      return absolutePath;
+    }
+  }
+
   return null;
 }
 
@@ -369,6 +377,11 @@ async function resolveGithubSourceDirectory(cloneDirectory: string, source: Gith
 
   for (const candidate of candidatePaths) {
     const absolute = path.resolve(cloneDirectory, candidate);
+    if (!isPathWithinDirectory(cloneDirectory, absolute)) {
+      // source.subpath is user-controlled; never resolve a manifest outside the
+      // cloned repository (path-traversal guard).
+      continue;
+    }
     if (await pathExists(path.join(absolute, "manifest.json"))) {
       return { directory: absolute, resolved_subpath: candidate };
     }
@@ -448,4 +461,3 @@ export async function areDirectoriesEquivalent(left: string, right: string): Pro
   const [leftRealPath, rightRealPath] = await Promise.all([fs.realpath(left), fs.realpath(right)]);
   return leftRealPath === rightRealPath;
 }
-

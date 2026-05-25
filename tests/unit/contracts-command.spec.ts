@@ -222,6 +222,60 @@ describe("contracts command runtime", () => {
     expect(oneOf[0]?.properties).toHaveProperty("full");
   });
 
+  it("assigns allowAuditUpdate only to update-family action schemas", async () => {
+    const createResult = await runContracts(
+      {
+        action: "create",
+        schemaOnly: true,
+      },
+      GLOBAL_OPTIONS,
+    );
+    const updateResult = await runContracts(
+      {
+        action: "update",
+        schemaOnly: true,
+      },
+      GLOBAL_OPTIONS,
+    );
+    const createSchema = (createResult.schema?.oneOf ?? [])[0] as { properties?: Record<string, unknown> } | undefined;
+    const updateSchema = (updateResult.schema?.oneOf ?? [])[0] as { properties?: Record<string, unknown> } | undefined;
+
+    expect(createSchema?.properties).not.toHaveProperty("allowAuditUpdate");
+    expect(updateSchema?.properties).toHaveProperty("allowAuditUpdate");
+  });
+
+  it("accepts health and validate diagnostic flags in action schemas", async () => {
+    const healthResult = await runContracts(
+      {
+        action: "health",
+        schemaOnly: true,
+      },
+      GLOBAL_OPTIONS,
+    );
+    const validateResult = await runContracts(
+      {
+        action: "validate",
+        schemaOnly: true,
+      },
+      GLOBAL_OPTIONS,
+    );
+    const healthSchema = (healthResult.schema?.oneOf ?? [])[0] as { properties?: Record<string, unknown> } | undefined;
+    const validateSchema = (validateResult.schema?.oneOf ?? [])[0] as { properties?: Record<string, unknown> } | undefined;
+
+    expect(healthSchema?.properties).toEqual(
+      expect.objectContaining({
+        skipVectors: expect.objectContaining({ type: "boolean" }),
+        skipIntegrity: expect.objectContaining({ type: "boolean" }),
+        skipDrift: expect.objectContaining({ type: "boolean" }),
+      }),
+    );
+    expect(validateSchema?.properties).toEqual(
+      expect.objectContaining({
+        verboseDiagnostics: expect.objectContaining({ type: "boolean" }),
+      }),
+    );
+  });
+
   it("emits a usable plan action schema for strict clients", async () => {
     const result = await runContracts(
       {

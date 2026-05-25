@@ -1,5 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { EXIT_CODE } from "../../../core/shared/constants.js";
+import { PmCliError } from "../../../core/shared/errors.js";
 import { nowIso } from "../../../core/shared/time.js";
 import { normalizeExtensionNameForMatch, normalizeStringList } from "./shared.js";
 import type { ExtensionScope } from "../extension.js";
@@ -180,11 +182,10 @@ export async function readManagedExtensionState(extensionsRoot: string): Promise
     const parsed = JSON.parse(raw) as unknown;
     const normalized = normalizeManagedState(parsed);
     if (!normalized) {
-      return {
-        path: statePath,
-        state: fallback,
-        warnings: [`extension_manager_state_invalid_schema:${statePath}`],
-      };
+      throw new PmCliError(
+        `Managed extension state file "${statePath}" has an invalid schema. Repair or remove it before mutating extension state.`,
+        EXIT_CODE.GENERIC_FAILURE,
+      );
     }
     return {
       path: statePath,
@@ -192,6 +193,9 @@ export async function readManagedExtensionState(extensionsRoot: string): Promise
       warnings: [],
     };
   } catch (error: unknown) {
+    if (error instanceof PmCliError) {
+      throw error;
+    }
     if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT") {
       return {
         path: statePath,
@@ -199,11 +203,10 @@ export async function readManagedExtensionState(extensionsRoot: string): Promise
         warnings: [],
       };
     }
-    return {
-      path: statePath,
-      state: fallback,
-      warnings: [`extension_manager_state_read_failed:${statePath}`],
-    };
+    throw new PmCliError(
+      `Managed extension state file "${statePath}" could not be read. Repair or remove it before mutating extension state.`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
   }
 }
 

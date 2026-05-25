@@ -1,0 +1,30 @@
+id: pm-ll50
+title: Address pre-existing extension/SDK issues surfaced by PR #69 review (CodeRabbit)
+description: "PR #69 was a pure barrel-split + error-surfacing change; CodeRabbit/Gemini reviewed the relocated code and surfaced PRE-EXISTING issues (all present on main before the split). PR #69 fixed the contained high-value ones (describeHandlerError non-Error objects; GitHub subpath path-traversal guard; reject ./.. managed dir names; bare Windows pm.cmd/pm.exe detection; missing health/validate schema props skipVectors/skipIntegrity/skipDrift/verboseDiagnostics). REMAINING (deferred to keep that PR focused; behavior-changing or contract-test-affecting): (1) src/cli/commands/extension/doctor.ts ~L147: package-vocabulary remediation commands generate 'pm package install'/'pm package adopt-all' but resolveAction() only accepts bare package targets for doctor/reload/catalog/init/explore/manage/list — remediation points users at erroring commands. (2) src/cli/commands/extension/install-sources.ts ~L194: cwd-relative npm specs like 'npm:packages/foo' fall through to npm pack as registry specs even when the dir exists locally; treat existing cwd-relative dirs as local. (3) src/cli/commands/extension/managed-state.ts ~L207: on schema/parse/read failure returns createEmptyManagedExtensionState() which install/manage/adopt then upsert+write, silently dropping all previously-managed entries after a transient read error; surface a hard failure or a non-persistable error state. (4) src/cli/commands/extension/scaffold.ts ~L189: writes scaffold files as it goes and only fails on first conflict, leaving partial package.json/extensions/ on EXIT_CODE.CONFLICT; do a read-only preflight conflict pass then write all-or-nothing. (5) src/sdk/cli-contracts/tool-option-contracts.ts L134: allowAuditUpdate sits in TOOL_CREATE_OPTION_CONTRACTS but the --allow-audit-update flag belongs to the update family; generated create schema accepts an unintended field and update schema rejects a valid one — move it to TOOL_UPDATE_OPTION_CONTRACTS and re-verify contract tests. Each needs regression tests."
+type: Chore
+status: closed
+priority: 2
+tags[5]: agent-ux,bug,code-quality,extensions,sdk
+created_at: "2026-05-25T14:21:15.991Z"
+updated_at: "2026-05-25T17:43:31.784Z"
+author: claude-code-agent
+parent: pm-rnpb
+resolution: Implemented all remaining valid PR #69 reviewer threads with regression coverage.
+expected_result: "Package remediation text, npm path resolution, managed-state safety, scaffold conflict handling, and update action schema contracts match the current CLI behavior."
+actual_result: "Package doctor remediation uses flag-form commands, existing cwd-relative npm specs resolve as local packages, invalid managed state fails before mutation, scaffold conflicts are preflighted, and allowAuditUpdate is only in update-family schemas."
+comments[1]{created_at,author,text}:
+  "2026-05-25T17:43:09.823Z",codex,"Evidence: addressed remaining live PR #69 reviewer threads: package doctor remediation now uses flag-form commands, cwd-relative npm package specs resolve locally when present, invalid managed state hard-fails before mutation, scaffold writes are preflighted, and allowAuditUpdate moved to update schemas. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts; pm test pm-ll50 --run --progress; node scripts/run-tests.mjs coverage; pnpm changelog:pm:check; pnpm quality:static; pnpm quality:docs-skills; pnpm typecheck."
+files[7]{path,scope,note}:
+  src/cli/commands/extension/doctor.ts,project,Use valid flag-form package remediation commands
+  src/cli/commands/extension/install-sources.ts,project,Resolve existing cwd-relative npm specs as local packages
+  src/cli/commands/extension/managed-state.ts,project,Hard-fail invalid or unreadable managed state before mutation
+  src/cli/commands/extension/scaffold.ts,project,Preflight scaffold conflicts before write phase
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,Move allowAuditUpdate to update action contracts
+  tests/unit/contracts-command.spec.ts,project,Regression coverage for allowAuditUpdate schema placement
+  tests/unit/extension-command.spec.ts,project,"Regression coverage for package remediation,local npm specs,managed state failure,and scaffold preflight"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mplhr24h-hdixqj,test,passed,"2026-05-25T17:38:39.626Z","2026-05-25T17:39:34.145Z","2026-05-25T17:39:34.145Z",null,null,1,0,0,null,null,null
+close_reason: All remaining valid PR #69 reviewer threads implemented with regression coverage and full gates passing.
+body: ""

@@ -131,7 +131,6 @@ export const TOOL_CREATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "clearReminders", flag: "--clear-reminders" },
   { param: "clearEvents", flag: "--clear-events" },
   { param: "clearTypeOptions", flag: "--clear-type-options" },
-  { param: "allowAuditUpdate", flag: "--allow-audit-update" },
 ];
 
 export const TOOL_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
@@ -173,6 +172,7 @@ export const TOOL_UPDATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "clearReminders", flag: "--clear-reminders" },
   { param: "clearEvents", flag: "--clear-events" },
   { param: "clearTypeOptions", flag: "--clear-type-options" },
+  { param: "allowAuditUpdate", flag: "--allow-audit-update" },
   { param: "allowAuditDepUpdate", flag: "--allow-audit-dep-update" },
 ];
 

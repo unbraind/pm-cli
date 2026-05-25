@@ -9,6 +9,8 @@ import {
   parseExtensionInstallSource,
   readManagedExtensionState,
 } from "../../src/cli/commands/extension.js";
+import { resolveInstallSource } from "../../src/cli/commands/extension/install-sources.js";
+import { buildExtensionTriageSummary } from "../../src/cli/commands/extension/doctor.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { writeTestExtension } from "../helpers/extensions.js";
@@ -231,6 +233,21 @@ describe("extension command runtime", () => {
       await writeFile(path.join(conflictPath, "manifest.json"), '{"name":"conflict-ext","entry":"./main.js"}\n', "utf8");
       await expect(runExtension(conflictPath, { init: true, project: true }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.CONFLICT,
+      });
+    });
+  });
+
+  it("preflights scaffold conflicts before writing any scaffold files", async () => {
+    await withTempPmPath(async (context) => {
+      const conflictPath = path.join(context.tempRoot, "partial-conflict");
+      await mkdir(conflictPath, { recursive: true });
+      await writeFile(path.join(conflictPath, "index.js"), "conflicting entrypoint\n", "utf8");
+
+      await expect(runExtension(conflictPath, { init: true, project: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.CONFLICT,
+      });
+      await expect(readFile(path.join(conflictPath, "manifest.json"), "utf8")).rejects.toMatchObject({
+        code: "ENOENT",
       });
     });
   });
@@ -686,7 +703,7 @@ describe("extension command runtime", () => {
     });
   });
 
-  it("reads managed extension state fallback and invalid schema warnings", async () => {
+  it("reads managed extension state fallback and hard-fails invalid persisted state", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-state-"));
     try {
       const emptyState = await readManagedExtensionState(tempRoot);
@@ -695,15 +712,51 @@ describe("extension command runtime", () => {
 
       const statePath = path.join(tempRoot, ".managed-extensions.json");
       await writeFile(statePath, JSON.stringify({ version: 2, entries: [] }, null, 2), "utf8");
-      const invalidState = await readManagedExtensionState(tempRoot);
-      expect(invalidState.state.entries).toEqual([]);
-      expect(invalidState.warnings).toEqual([`extension_manager_state_invalid_schema:${statePath}`]);
+      await expect(readManagedExtensionState(tempRoot)).rejects.toMatchObject({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+      });
 
       await writeFile(statePath, "{not-json", "utf8");
-      const malformedState = await readManagedExtensionState(tempRoot);
-      expect(malformedState.state.entries).toEqual([]);
-      expect(malformedState.warnings).toEqual([`extension_manager_state_read_failed:${statePath}`]);
+      await expect(readManagedExtensionState(tempRoot)).rejects.toMatchObject({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+      });
     } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("resolves existing cwd-relative npm package specs as local package sources", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-npm-local-"));
+    const previousCwd = process.cwd();
+    try {
+      const packageRoot = path.join(tempRoot, "packages", "local-package");
+      const extensionRoot = path.join(packageRoot, "extensions", "local-package");
+      await writeTestExtension({ root: extensionRoot, name: "local-package" });
+      await writeFile(
+        path.join(packageRoot, "package.json"),
+        `${JSON.stringify(
+          {
+            name: "pm-local-package",
+            version: "0.1.0",
+            type: "module",
+            pm: {
+              extensions: ["extensions/local-package"],
+            },
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      process.chdir(tempRoot);
+      const source = parseExtensionInstallSource("npm:packages/local-package");
+      expect(source.kind).toBe("npm");
+      const resolved = await resolveInstallSource(source);
+      expect(resolved.directory).toBe(extensionRoot);
+      expect(resolved.npm_package).toBe("pm-local-package");
+    } finally {
+      process.chdir(previousCwd);
       await rm(tempRoot, { recursive: true, force: true });
     }
   });
@@ -1283,6 +1336,35 @@ describe("extension command runtime", () => {
       );
       expect(Array.isArray(deep.warning_codes)).toBe(true);
     });
+  });
+
+  it("uses flag-form package commands in package doctor remediation", () => {
+    const summary = buildExtensionTriageSummary(
+      "project",
+      ["extension_manifest_missing:manual-package"],
+      [
+        {
+          name: "manual-package",
+          directory: "/tmp/manual-package",
+          version: "1.0.0",
+          entry: "./index.js",
+          scope: "project",
+          managed: false,
+          enabled: true,
+          active: true,
+          runtime_active: true,
+          activation_status: "active",
+          update_check_status: "skipped_unmanaged",
+          update_check_reason: "unmanaged",
+        },
+      ],
+      { vocabulary: "package" },
+    );
+
+    expect(summary.remediation.join(" ")).toContain("pm package --explore --project");
+    expect(summary.remediation.join(" ")).toContain("pm package --adopt-all --project");
+    expect(summary.remediation.join(" ")).toContain("pm package --install --project <source>");
+    expect(summary.remediation.join(" ")).not.toContain("pm package install");
   });
 
   it("reports extension governance policy diagnostics in doctor output", async () => {

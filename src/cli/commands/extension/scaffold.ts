@@ -163,24 +163,31 @@ export async function scaffoldExtensionProject(
     createdDirectory = true;
   }
 
+  for (const [relativePath, content] of Object.entries(scaffoldFiles)) {
+    const absolutePath = path.join(targetPath, relativePath);
+    if (!(await pathExists(absolutePath))) {
+      continue;
+    }
+    const existingContent = await fs.readFile(absolutePath, "utf8");
+    if (existingContent !== content) {
+      throw new PmCliError(
+        `Scaffold file "${relativePath}" already exists with different content in "${targetPath}". Choose a new target path or remove conflicting files.`,
+        EXIT_CODE.CONFLICT,
+      );
+    }
+  }
+
   const files: ExtensionScaffoldFileResult[] = [];
   for (const [relativePath, content] of Object.entries(scaffoldFiles)) {
     const absolutePath = path.join(targetPath, relativePath);
-    await fs.mkdir(path.dirname(absolutePath), { recursive: true });
     if (await pathExists(absolutePath)) {
-      const existingContent = await fs.readFile(absolutePath, "utf8");
-      if (existingContent !== content) {
-        throw new PmCliError(
-          `Scaffold file "${relativePath}" already exists with different content in "${targetPath}". Choose a new target path or remove conflicting files.`,
-          EXIT_CODE.CONFLICT,
-        );
-      }
       files.push({
         path: relativePath,
         status: "unchanged",
       });
       continue;
     }
+    await fs.mkdir(path.dirname(absolutePath), { recursive: true });
     await fs.writeFile(absolutePath, content, "utf8");
     files.push({
       path: relativePath,

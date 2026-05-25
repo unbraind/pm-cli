@@ -67,7 +67,14 @@ export function firstPmSubcommand(args: string[]): string | undefined {
 }
 
 export function isPmExecutableToken(token: string): boolean {
-  return token === "pm" || token.endsWith("/pm") || token.endsWith("/pm.cmd") || token.endsWith("/pm.exe");
+  return (
+    token === "pm" ||
+    token === "pm.cmd" ||
+    token === "pm.exe" ||
+    token.endsWith("/pm") ||
+    token.endsWith("/pm.cmd") ||
+    token.endsWith("/pm.exe")
+  );
 }
 
 export function normalizePackageSpecifier(token: string): string {

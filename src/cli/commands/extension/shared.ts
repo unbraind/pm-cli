@@ -34,6 +34,11 @@ export function normalizeManagedDirectoryName(name: string): string {
   if (normalized.length === 0) {
     throw new PmCliError("Extension manifest name must resolve to a non-empty directory name.", EXIT_CODE.USAGE);
   }
+  if (normalized === "." || normalized === "..") {
+    // Manifest-controlled input must resolve to a dedicated child directory, never
+    // the extensions root itself or its parent (path-traversal guard).
+    throw new PmCliError("Extension manifest name must not resolve to \".\" or \"..\".", EXIT_CODE.USAGE);
+  }
   return normalized;
 }
 

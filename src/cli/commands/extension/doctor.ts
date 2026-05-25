@@ -143,7 +143,7 @@ function summarizePolicyWarnings(warnings: string[]): {
 }
 
 function lifecycleFlagCommand(options: ExtensionCommandOptions, action: string): string {
-  return options.vocabulary === "package" ? `pm package ${action}` : `pm extension --${action}`;
+  return options.vocabulary === "package" ? `pm package --${action}` : `pm extension --${action}`;
 }
 
 export function classifyDoctorLoadFailureWarnings(loadFailures: Array<{ name: string; error: string }>): string[] {
