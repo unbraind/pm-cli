@@ -6,14 +6,15 @@ status: in_progress
 priority: 3
 tags[4]: code-quality,concurrency,history,locking
 created_at: "2026-05-22T21:06:47.968Z"
-updated_at: "2026-05-25T10:19:48.120Z"
+updated_at: "2026-05-25T10:22:51.401Z"
 assignee: codex-reliability-agent
 author: claude-code-agent
 parent: pm-rnpb
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-05-25T10:00:16.815Z",codex-reliability-agent,Execution start 2026-05-25 under combined reliability PR scope with pm-7rlp. Duplicate-check evidence recorded (context/search/list-open/list-in-progress) and canonical item reuse confirmed; no new item created. Claim taken and status moved to in_progress before code edits.
   "2026-05-25T10:08:51.624Z",codex-reliability-agent,"Implementation complete: hardened TOCTOU read-then-lock windows uniformly across history-redact/history-repair/restore by snapshotting pre-lock history/item raw state and re-verifying under lock before any write. Commands now fail fast with EXIT_CODE.CONFLICT and retry guidance when the target history stream or item changed while waiting for lock, preventing stale rewrite commits. Regression coverage added in tests/unit/history-activity-command.spec.ts, tests/unit/history-repair-command.spec.ts, and tests/unit/restore-command.spec.ts via acquireLock spy mutation hooks. Verification: node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/restore-command.spec.ts --reporter=dot (3 files, 43 tests passed)."
   "2026-05-25T10:19:48.120Z",codex-reliability-agent,"Post-implementation verification 2026-05-25: lock-window stale-snapshot conflict regressions pass and full release gate passes after integration split. Manual temp-dir reliability walkthrough also exercised history-redact apply, history verify, forced drift + history-repair, restore to version 1, package install doctor, close/release, all successful with verification ok after redact and after repair."
+  "2026-05-25T10:22:51.401Z",codex-reliability-agent,"PR #67 includes the lock-window hardening implementation and regression coverage. Waiting required >=15 minute AI review window, then applying any bot feedback before merge/closure."
 files[6]{path,scope,note}:
   src/cli/commands/history-redact.ts,project,lock-window snapshot verification before write
   src/cli/commands/history-repair.ts,project,lock-window snapshot verification before write
