@@ -2917,6 +2917,45 @@ describe("extension loader", () => {
       handled: false,
       result: null,
       warnings: ["extension_command_handler_failed:project:handler-boom-ext:beads import"],
+      errorMessage: "boom",
+    });
+  });
+
+  it("surfaces the message from non-Error objects thrown by a command handler", async () => {
+    const registry = {
+      overrides: [],
+      handlers: [
+        {
+          layer: "project" as const,
+          name: "handler-object-ext",
+          command: "beads import",
+          run: () => {
+            // Extensions may throw a plain/serialized object that carries a message
+            // but does not inherit from Error.
+            throw { message: "plain-object-boom", code: "E_CUSTOM" };
+          },
+        },
+      ],
+    };
+
+    expect(
+      await runCommandHandler(registry, {
+        command: "beads import",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project",
+      }),
+    ).toEqual({
+      handled: false,
+      result: null,
+      warnings: ["extension_command_handler_failed:project:handler-object-ext:beads import"],
+      errorMessage: "plain-object-boom",
     });
   });
 

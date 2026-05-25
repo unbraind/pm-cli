@@ -1,0 +1,32 @@
+id: pm-qhu4
+title: Harden extension install against path traversal and fill missing health/validate MCP schema props
+description: "Pre-existing issues surfaced during PR #69 review and fixed in the same PR: (1) SECURITY: GitHub install subpath (user-controlled, may contain ..) could resolve a manifest.json outside the cloned repo via path.resolve — added an isPathWithinDirectory containment guard in resolveGithubSourceDirectory. (2) SECURITY: normalizeManagedDirectoryName accepted '.' and '..' (they survive the slug regex), letting manifest-controlled input target the extensions root or its parent — now rejected. (3) isPmExecutableToken missed bare Windows 'pm.cmd'/'pm.exe' tokens in linked-test command detection — added. (4) AGENT SCHEMA: PM_TOOL_PARAMETER_PROPERTIES lacked skipVectors/skipIntegrity/skipDrift/verboseDiagnostics although the health/validate action contracts reference them; with additionalProperties:false the generated MCP/SDK schemas rejected those valid options — added the property definitions. Regression tests added (extension-shared-helpers, linked-command-detection, extension-loader non-Error throw)."
+type: Issue
+status: closed
+priority: 1
+tags[4]: agent-ux,bug,extensions,security
+created_at: "2026-05-25T14:26:37.113Z"
+updated_at: "2026-05-25T17:43:31.778Z"
+author: claude-code-agent
+parent: pm-rnpb
+resolution: "Implemented PR #69 security, schema, linked-test, and handler error-surfacing fixes with focused regression coverage."
+expected_result: "Reviewer-identified high-value extension install, schema, linked-test, and handler error cases are blocked or surfaced clearly."
+actual_result: "Path traversal candidates are contained, dot/dot-dot managed names are rejected, bare Windows pm executables are detected, health/validate schemas include their diagnostic flags, and non-Error handler messages are surfaced."
+comments[1]{created_at,author,text}:
+  "2026-05-25T17:43:09.815Z",codex,"Evidence: addressed PR #69 reviewer fixes for GitHub subpath containment, managed directory traversal names, Windows pm executable detection, health/validate schema properties, and non-Error handler message surfacing. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extension-shared-helpers.spec.ts tests/unit/linked-command-detection.spec.ts; pm test pm-qhu4 --run --progress; node scripts/run-tests.mjs coverage; pnpm changelog:pm:check; pnpm quality:static; pnpm quality:docs-skills; pnpm typecheck."
+files[9]{path,scope,note}:
+  src/cli/commands/extension/install-sources.ts,project,GitHub subpath containment guard and cwd-relative npm package source handling
+  src/cli/commands/extension/shared.ts,project,Reject managed extension directory names that normalize to dot or dot-dot
+  src/cli/commands/test/linked-command-detection.ts,project,Detect bare Windows pm.cmd and pm.exe tokens in linked tests
+  src/core/extensions/extension-hook-runtime.ts,project,Surface message fields from non-Error thrown handler objects
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Add health/validate diagnostic parameter schema properties
+  tests/unit/contracts-command.spec.ts,project,Regression coverage for health/validate action schemas
+  tests/unit/extension-loader.spec.ts,project,Regression coverage for non-Error handler message surfacing
+  tests/unit/extension-shared-helpers.spec.ts,project,Regression coverage for managed directory traversal names
+  tests/unit/linked-command-detection.spec.ts,project,Regression coverage for bare Windows pm executable names
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/extension-loader.spec.ts tests/unit/extension-shared-helpers.spec.ts tests/unit/linked-command-detection.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mplhr2rn-fgh1b5,test,passed,"2026-05-25T17:38:39.603Z","2026-05-25T17:39:34.980Z","2026-05-25T17:39:34.980Z",null,null,1,0,0,null,null,null
+close_reason: PR #69 reviewer security/schema/token/error-surfacing fixes implemented with regression coverage and full gates passing.
+body: ""

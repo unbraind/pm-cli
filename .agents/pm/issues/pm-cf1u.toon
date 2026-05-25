@@ -1,0 +1,12 @@
+id: pm-cf1u
+title: Repeated loose-mapped --tag flags silently keep only the last value (agent-unfriendly)
+description: "Dogfood 2026-05-25: 'pm create issue X --tag a --tag b --tag c' silently persists only the LAST tag (c). Root cause: the canonical flag is --tags (single comma-separated value); --tag is accepted via the loose-option parser (main.ts allowUnknownOption(true) + normalization) and mapped onto the scalar tags option, so repeated occurrences overwrite instead of accumulating. No warning is emitted. Agents commonly use the repeatable-flag convention (--tag a --tag b) seen in many CLIs, so they end up with silent data loss. This is DISTINCT from pm-klqo (--tags JSON-array corruption, closed) and pm-swie (--test key corruption, closed): those fixed parseTags/parseTests value parsing; this is about the loose-option mapping accumulating repeated occurrences of comma-list flags. Fix proposal: when the loose-option layer maps a repeated near-miss of a comma-list option (tags/skills/blockedBy/etc.), accumulate the union of values rather than overwriting; alternatively emit a one-line warning on silent overwrite. Acceptance: 'pm create X --tag a --tag b' yields tags [a,b]; documented '--tags a,b' unchanged; regression tests cover repeated singular + plural mix. Low/med severity (documented --tags a,b,c works)."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,bug,dx
+created_at: "2026-05-25T13:57:21.660Z"
+updated_at: "2026-05-25T13:57:21.660Z"
+author: claude-code-agent
+parent: pm-rnpb
+body: ""

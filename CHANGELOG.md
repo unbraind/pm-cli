@@ -8,14 +8,18 @@
 
 ### Changed
 
+- Split large command files exceeding 2000 LOC ([pm-mbdu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mbdu.toon))
 - Deduplicate item/metadata to record widening casts behind a shared toItemRecord helper ([pm-p5if](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p5if.toon))
 
 ### Fixed
 
+- Address pre-existing extension/SDK issues surfaced by PR \#69 review \(CodeRabbit\) ([pm-ll50](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ll50.toon))
+- Surface extension command handler error messages instead of opaque extension\_command\_handler\_failed code ([pm-zwl7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zwl7.toon))
 - Fix Auto Release failure: build dist before pm-changelog generation runs ([pm-yf8t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yf8t.toon))
 
 ### Security
 
+- Harden extension install against path traversal and fill missing health/validate MCP schema props ([pm-qhu4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qhu4.toon))
 - Add audited history-stream redaction command ([pm-xk39](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-xk39.toon))
 
 ### Other

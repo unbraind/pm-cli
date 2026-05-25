@@ -1,0 +1,19 @@
+id: pm-zwl7
+title: Surface extension command handler error messages instead of opaque extension_command_handler_failed code
+description: "When an extension command handler throws, src/core/extensions/loader.ts:2869-2882 catches the error and discards error.message, returning only a generic warning code extension_command_handler_failed:<layer>:<name>:<command>. src/cli/main.ts:922 then surfaces just that code with a generic 'Adjust command input or tracker state and retry' hint. Agents and CI cannot see WHY the handler failed. Concrete impact: the 2026-05-25 CI static-gate failure on main commit 15c0c80b printed only 'extension_command_handler_failed:project:pm-changelog:changelog generate' while the real, actionable cause from pm-changelog was 'Changelog is out of date: CHANGELOG.md'. Fix: capture a sanitized, length-bounded handler error message in the warning and surface it in the PmCliError so agents/CI get the real cause. Token-efficient agent UX win."
+type: Issue
+status: closed
+priority: 1
+tags[4]: agent-ux,bug,dx,extensions
+created_at: "2026-05-25T13:02:24.692Z"
+updated_at: "2026-05-25T13:59:35.050Z"
+author: claude-code-agent
+parent: pm-rnpb
+resolution: "Added optional errorMessage to CommandHandlerResult; runCommandHandler normalizes the caught handler error (single-line, 300-char bounded) into it; main.ts appends the cause to the PmCliError detail. Telemetry stays redacted (warning code unchanged; outcome.error already sanitized). Verified end-to-end with pm-changelog and a synthetic failing extension."
+expected_result: "Agents/CI see the real handler failure cause (e.g. 'Changelog is out of date: <path>') alongside the extension_command_handler_failed code."
+actual_result: "Before: only the opaque 'extension_command_handler_failed:project:pm-changelog:changelog generate' code was shown. After: the cause message is appended to the error detail (also present in --json envelope detail)."
+comments[2]{created_at,author,text}:
+  "2026-05-25T13:05:54.131Z",claude-code-agent,"Implemented: (1) added optional errorMessage to CommandHandlerResult (extension-types.ts); (2) runCommandHandler now normalizes the caught handler error via describeHandlerError (single-line, 300-char bounded) and returns it as errorMessage (loader.ts); (3) main.ts appends the cause to the PmCliError detail. Telemetry path already sanitizes outcome.error via sanitizeString(captureLevel), so no path leakage to telemetry; console shows the user's own path which is expected. Verified before/after with pm changelog generate --check: now prints 'Changelog is out of date: <path>'. Tests updated in extension-loader.spec.ts + cli.integration.spec.ts; both pass, build green."
+  "2026-05-25T13:59:35.050Z",claude-code-agent,"Shipped in PR #69: https://github.com/unbraind/pm-cli/pull/69 (with pm-mbdu)."
+close_reason: "Extension handler error surfacing implemented, tested (unit + integration), and verified end-to-end; full release gate green."
+body: ""
