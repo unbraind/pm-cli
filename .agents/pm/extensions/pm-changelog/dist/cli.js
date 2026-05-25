@@ -233,7 +233,7 @@ function applyReleaseContext(options) {
         });
         return;
     }
-    if (!options.versionFromPackage && !options.sincePreviousTag && !options.untilReleaseTag)
+    if (!options.version && !options.versionFromPackage && !options.sincePreviousTag && !options.untilReleaseTag)
         return;
     const context = resolveReleaseContext({
         cwd: options.pmCwd ? resolve(options.pmCwd) : process.cwd(),
@@ -245,6 +245,7 @@ function applyReleaseContext(options) {
         untilReleaseTag: options.untilReleaseTag,
     });
     options.version = context.version;
+    options.date = options.date ?? context.date;
     options.since = context.since;
     options.until = context.until;
 }
@@ -356,7 +357,7 @@ Options:
       --version <version>   Version heading (default: Unreleased)
       --release-version-from-package
                             Read version heading from nearest package.json
-      --date <date>         Release date (default: today)
+      --date <date>         Release date (default: resolved tag date when available, otherwise today)
       --since <date>        Include items changed on or after this date
       --since-previous-tag  Derive --since from the previous git tag
       --until <date>        Include items changed on or before this date

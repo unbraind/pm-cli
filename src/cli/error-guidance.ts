@@ -45,6 +45,7 @@ export interface CommanderGuidanceContext {
   normalizedInvocationArgs?: string[];
   providedOptionFlags?: string[];
   unknownOptionSuggestions?: string[];
+  unknownOptionOtherCommands?: string[];
   suggestedRetryCommand?: string;
 }
 
@@ -656,9 +657,13 @@ function buildCommanderErrorGuidance(
         }),
       });
     }
+    const otherCommands = normalizeContextList(context?.unknownOptionOtherCommands);
     const nextSteps = [
       "Run command help to confirm the exact option contracts for this command path.",
       ...(suggestions && suggestions.length > 0 ? [`Nearest supported options: ${suggestions.join(", ")}`] : []),
+      ...(otherCommands
+        ? [`${optionName} is a valid option on: ${otherCommands.join(", ")}. If you meant one of those, run that command instead.`]
+        : []),
       ...(retryCommand ? [`Replay with suggested correction: ${retryCommand}`] : []),
     ];
     const examples = [

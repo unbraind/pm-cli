@@ -110,8 +110,11 @@ pm release <item-id>
 | Materialize plan steps | `pm plan materialize <plan-id> --steps plan-step-002 --materialize-type Task` |
 | Dependencies | `pm deps <id> --format tree` |
 | Local docs routing | `pm install guide-shell --project`, then `pm guide <topic>` |
+| Compact mutation echo | `pm --no-changed-fields create "..."` (drops the redundant `changed_fields` array, keeps `changed_field_count`) |
 
 Default TOON output is preferred for model-readable loops. Use `--json` only when strict parsing is needed.
+
+Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_close`, and `pm_run` for `append`/`update-many`) are already compact by default: they return `changed_field_count` instead of the full `changed_fields` array. Pass `options.full=true` only when you need the explicit field-level delta.
 
 ## Guide Routing for Agents
 

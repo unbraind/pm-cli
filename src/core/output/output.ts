@@ -5,10 +5,13 @@ import {
   setActiveCommandResult,
 } from "../extensions/index.js";
 import { EXIT_CODE } from "../shared/constants.js";
+import { projectMutationResult } from "./mutation-projection.js";
 
 export interface OutputOptions {
   json?: boolean;
   quiet?: boolean;
+  /** When true, mutation results drop the verbose changed_fields array (keeps changed_field_count). */
+  noChangedFields?: boolean;
   defaultOutputFormat?: "toon" | "json";
   command?: string;
   commandArgs?: string[];
@@ -256,7 +259,8 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
 }
 
 export function printResult(result: unknown, options: OutputOptions): void {
-  const rendered = formatOutput(result, options);
+  const projected = options.noChangedFields ? projectMutationResult(result, { changedFields: "compact" }) : result;
+  const rendered = formatOutput(projected, options);
   if (options.quiet) {
     return;
   }

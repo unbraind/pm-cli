@@ -1,0 +1,42 @@
+id: pm-70mi
+title: "Agent-UX combined PR: compact mutation output (pm-ch59) + smarter unknown-flag recovery (pm-8nyc)"
+description: "Combined PR delivering two agent-UX/token-efficiency items under pm-rnpb. (A) pm-ch59: shared mutation-result projection helper that drops the verbose changed_fields array (keeps changed_field_count) — wired to a CLI --no-changed-fields global flag and made the MCP agent path compact-by-default unless options.full. (B) pm-8nyc: prefix/abbreviation-aware nearest-flag suggestions, cross-command flag awareness hints (e.g. --type valid on list/search/get), and --sort value aliases (updated->updated_at, created->created_at) for list/list-all. Each implemented by a specialized sub-agent tracking work via pm comments; integrated, full-coverage gated, dogfooded, changelog regenerated via pm-changelog, shipped as one PR with green CI + AI bot review."
+type: Plan
+status: open
+priority: 2
+tags[4]: agent-ux,dogfood,dx,pm-cli
+created_at: "2026-05-25T23:04:50.517Z"
+updated_at: "2026-05-25T23:19:49.190Z"
+author: claude-code-agent
+parent: pm-rnpb
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,parent,"2026-05-25T23:04:50.517Z",null,null
+plan_mode: approved
+plan_steps[3]:
+  - id: plan-step-001
+    order: 1
+    title: "pm-ch59: shared mutation-result projection helper + CLI --no-changed-fields flag + MCP compact-by-default"
+    status: completed
+    created_at: "2026-05-25T23:04:55.423Z"
+    updated_at: "2026-05-25T23:13:11.095Z"
+    evidence: "mutation-projection.ts helper + CLI --no-changed-fields global flag + MCP compact-by-default (create/update/close/append/update-many) shipped; tests green (mutation-projection.spec, output.spec, mcp-dynamic-package-actions.spec); manual temp-dir smoke confirmed compact + backward-compatible default."
+    completed_at: "2026-05-25T23:13:11.095Z"
+    linked_items[1]{id,kind}:
+      pm-ch59,implements
+  - id: plan-step-002
+    order: 2
+    title: "pm-8nyc: prefix/abbrev-aware flag suggestions + cross-command flag awareness + list --sort aliases"
+    status: completed
+    created_at: "2026-05-25T23:04:59.286Z"
+    updated_at: "2026-05-25T23:19:37.435Z"
+    evidence: "Cross-command flag awareness + prefix/abbrev suggestions + list --sort aliases + --add-tags semantic map shipped; tests green (list-command, error-guidance, help-runtime); manual temp-dir smoke confirmed --type/--fields cross-command hints, --desc->--description, --sort updated->updated_at."
+    completed_at: "2026-05-25T23:19:37.435Z"
+    linked_items[1]{id,kind}:
+      pm-8nyc,implements
+  - id: plan-step-003
+    order: 3
+    title: "Integrate, verify (full coverage gate + static + secrets), dogfood in temp dir, refresh pm-changelog, regenerate CHANGELOG, ship PR + bot review + merge"
+    status: in_progress
+    created_at: "2026-05-25T23:05:03.486Z"
+    updated_at: "2026-05-25T23:19:49.190Z"
+body: ""

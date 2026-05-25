@@ -163,6 +163,7 @@ export function compactFlagAliasContracts(flagContracts: CliFlagContract[]): Cli
 export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--json" },
   { flag: "--quiet" },
+  { flag: "--no-changed-fields" },
   { flag: "--path" },
   { flag: "--no-extensions" },
   { flag: "--no-pager" },

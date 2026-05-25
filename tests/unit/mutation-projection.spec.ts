@@ -1,0 +1,45 @@
+import { describe, expect, it } from "vitest";
+import { projectMutationResult } from "../../src/core/output/mutation-projection.js";
+
+describe("projectMutationResult", () => {
+  it("returns the result unchanged in full mode (default)", () => {
+    const result = { item: { id: "pm-a1b2" }, changed_fields: ["id", "title"], warnings: [] };
+    expect(projectMutationResult(result)).toBe(result);
+    expect(projectMutationResult(result, { changedFields: "full" })).toBe(result);
+  });
+
+  it("replaces changed_fields with changed_field_count in compact mode", () => {
+    const result = { item: { id: "pm-a1b2" }, changed_fields: ["id", "title", "status"], warnings: [] };
+    const projected = projectMutationResult(result, { changedFields: "compact" }) as Record<string, unknown>;
+    expect(projected).not.toBe(result);
+    expect(projected.changed_fields).toBeUndefined();
+    expect(projected.changed_field_count).toBe(3);
+    expect(projected.item).toEqual({ id: "pm-a1b2" });
+    expect(projected.warnings).toEqual([]);
+    // Original is not mutated.
+    expect(result.changed_fields).toEqual(["id", "title", "status"]);
+  });
+
+  it("reports a zero count for an empty changed_fields array", () => {
+    const projected = projectMutationResult({ changed_fields: [] }, { changedFields: "compact" }) as Record<
+      string,
+      unknown
+    >;
+    expect(projected.changed_field_count).toBe(0);
+    expect(projected.changed_fields).toBeUndefined();
+  });
+
+  it("leaves objects without a changed_fields array untouched in compact mode", () => {
+    const noField = { item: { id: "pm-a1b2" } };
+    expect(projectMutationResult(noField, { changedFields: "compact" })).toBe(noField);
+    const nonArray = { changed_fields: "nope" };
+    expect(projectMutationResult(nonArray, { changedFields: "compact" })).toBe(nonArray);
+  });
+
+  it("returns non-object inputs unchanged in compact mode", () => {
+    expect(projectMutationResult(null, { changedFields: "compact" })).toBeNull();
+    expect(projectMutationResult("text", { changedFields: "compact" })).toBe("text");
+    const arr = ["changed_fields"];
+    expect(projectMutationResult(arr, { changedFields: "compact" })).toBe(arr);
+  });
+});

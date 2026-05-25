@@ -66,7 +66,7 @@ export function registerListQueryCommands(program: Command): void {
         "--fields <value>",
         "Render custom comma-separated list fields (mutually exclusive with --compact/--brief/--full; valid: --fields id,title)",
       )
-      .option("--sort <value>", "Sort field: priority|deadline|updated_at|created_at|title|parent")
+      .option("--sort <value>", "Sort field: priority|deadline|updated_at|created_at|title|parent (aliases: updated, created)")
       .option("--order <value>", "Sort order: asc|desc (requires --sort)")
       .option("--stream", "Emit line-delimited JSON rows (requires --json)")
       .action(async (options: Record<string, unknown>, actionCommand) => {

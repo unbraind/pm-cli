@@ -146,6 +146,30 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("hints when an unknown option is valid on other commands", async () => {
+    await withTempPmPath(async (context) => {
+      const result = context.runCli(["test-all", "--type", "Task", "--json"]);
+      expect(result.code).toBe(2);
+      const envelope = parseJsonErrorEnvelope(result.stderr);
+      expect(envelope.code).toBe("unknown_option");
+      expect(envelope.next_steps).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("--type is a valid option on: create, list, list-all"),
+        ]),
+      );
+    });
+  });
+
+  it("suggests the full flag for an abbreviated unknown option", async () => {
+    await withTempPmPath(async (context) => {
+      const result = context.runCli(["create", "--title", "Abbrev probe", "--type", "Task", "--desc", "x", "--json"]);
+      expect(result.code).toBe(2);
+      const envelope = parseJsonErrorEnvelope(result.stderr);
+      expect(envelope.code).toBe("unknown_option");
+      expect(envelope.next_steps).toEqual(expect.arrayContaining(["Nearest supported options: --description"]));
+    });
+  });
+
   it("omits nearest-command suggestions for unrelated unknown commands", async () => {
     await withTempPmPath(async (context) => {
       const result = context.runCli(["xyz"]);

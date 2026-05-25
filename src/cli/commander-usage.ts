@@ -9,7 +9,7 @@ import {
   getActiveExtensionRegistrations,
   runActiveServiceOverride,
 } from "../core/extensions/index.js";
-import { resolveSubcommandFlagContractsForCommand } from "../sdk/cli-contracts.js";
+import { PM_CORE_COMMAND_NAMES, resolveSubcommandFlagContractsForCommand } from "../sdk/cli-contracts.js";
 import {
   type CommanderGuidanceContext,
   formatCommanderErrorForDisplay,
@@ -70,6 +70,18 @@ const SEMANTIC_UNKNOWN_OPTION_SUGGESTIONS: Record<string, Record<string, string[
     "--body": ["--add"],
     "--text": ["--add"],
     "--learning": ["--add"],
+  },
+  // Tag mutations are single --tags flags; agents transferring additive tag verbs
+  // ("--add-tag(s)") from other tools should be pointed at the canonical flag.
+  update: {
+    "--add-tags": ["--tags"],
+    "--add-tag": ["--tags"],
+    "--tag": ["--tags"],
+  },
+  create: {
+    "--add-tags": ["--tags"],
+    "--add-tag": ["--tags"],
+    "--tag": ["--tags"],
   },
 };
 
@@ -196,20 +208,32 @@ function suggestNearestLongFlags(unknownOption: string, knownFlags: string[]): s
     return [];
   }
   const unknownComparable = toComparableFlag(unknownOption);
+  if (unknownComparable.length === 0) {
+    return [];
+  }
   const maxDistance = unknownComparable.length >= 8 ? 2 : 1;
-  const candidates: Array<{ flag: string; distance: number }> = [];
+  // rank 0 = abbreviation/prefix match (e.g. --desc -> --description), rank 1 = edit-distance typo.
+  const candidates: Array<{ flag: string; rank: number; distance: number }> = [];
   for (const flag of knownFlags) {
-    const distance = levenshteinDistanceWithinLimit(unknownComparable, toComparableFlag(flag), maxDistance);
-    if (distance === null) {
+    const flagComparable = toComparableFlag(flag);
+    if (flagComparable === unknownComparable) {
       continue;
     }
-    if (distance <= 0) {
+    if (unknownComparable.length >= 3 && flagComparable.startsWith(unknownComparable)) {
+      candidates.push({ flag, rank: 0, distance: flagComparable.length - unknownComparable.length });
       continue;
     }
-    candidates.push({ flag, distance });
+    const distance = levenshteinDistanceWithinLimit(unknownComparable, flagComparable, maxDistance);
+    if (distance === null || distance <= 0) {
+      continue;
+    }
+    candidates.push({ flag, rank: 1, distance });
   }
   return candidates
     .sort((left, right) => {
+      if (left.rank !== right.rank) {
+        return left.rank - right.rank;
+      }
       if (left.distance !== right.distance) {
         return left.distance - right.distance;
       }
@@ -217,6 +241,59 @@ function suggestNearestLongFlags(unknownOption: string, knownFlags: string[]): s
     })
     .map((entry) => entry.flag)
     .slice(0, 3);
+}
+
+let crossCommandFlagIndexCache: Map<string, string[]> | undefined;
+
+// Alias/shortcut command names that duplicate a canonical command. Excluding them
+// keeps cross-command flag hints focused on the primary commands an agent should use.
+const CROSS_COMMAND_FLAG_EXCLUSIONS = new Set<string>([
+  "ctx",
+  "packages",
+  "list-draft",
+  "list-open",
+  "list-in-progress",
+  "list-blocked",
+  "list-closed",
+  "list-canceled",
+  "start-task",
+  "pause-task",
+  "close-task",
+  "help",
+]);
+
+// Index of long flag -> command names that accept it (in declaration order), so an
+// unknown flag on one command can be recognised as valid elsewhere (e.g. --type is
+// rejected on test-all but valid on create/list). Built once from core command contracts.
+function getCrossCommandFlagIndex(): Map<string, string[]> {
+  if (crossCommandFlagIndexCache) {
+    return crossCommandFlagIndexCache;
+  }
+  const index = new Map<string, string[]>();
+  for (const command of PM_CORE_COMMAND_NAMES) {
+    if (CROSS_COMMAND_FLAG_EXCLUSIONS.has(command)) {
+      continue;
+    }
+    for (const flag of collectKnownLongFlags(command)) {
+      const commands = index.get(flag) ?? [];
+      commands.push(command);
+      index.set(flag, commands);
+    }
+  }
+  crossCommandFlagIndexCache = index;
+  return crossCommandFlagIndexCache;
+}
+
+function findOtherCommandsForFlag(unknownOption: string, currentCommand: string | undefined): string[] {
+  if (!unknownOption.startsWith("--")) {
+    return [];
+  }
+  const commands = getCrossCommandFlagIndex().get(normalizeLongFlag(unknownOption));
+  if (!commands) {
+    return [];
+  }
+  const normalizedCurrent = currentCommand?.trim().toLowerCase();
+  return commands.filter((command) => command !== normalizedCurrent).slice(0, 3);
 }
 
 function rewriteUnknownOptionArgv(argv: string[], unknownOption: string, replacementFlag: string): string[] | undefined {
@@ -362,6 +439,9 @@ export async function resolveCommanderUsageContext(
           ...suggestNearestLongFlags(unknownOptionMatch[1], collectKnownLongFlags(commandName)),
         ])
       : undefined;
+  const unknownOptionOtherCommands = unknownOptionMatch
+    ? findOtherCommandsForFlag(unknownOptionMatch[1], commandName)
+    : [];
   let suggestedRetryCommand: string | undefined;
   if (unknownOptionMatch && unknownOptionSuggestions && unknownOptionSuggestions.length > 0) {
     const rewritten = rewriteUnknownOptionArgv(invocationArgv, unknownOptionMatch[1], unknownOptionSuggestions[0]);
@@ -387,6 +467,7 @@ export async function resolveCommanderUsageContext(
     normalizedInvocationArgs: [...invocationArgv],
     providedOptionFlags,
     unknownOptionSuggestions,
+    unknownOptionOtherCommands: unknownOptionOtherCommands.length > 0 ? unknownOptionOtherCommands : undefined,
     suggestedRetryCommand,
     ...(unknownCommandGuidance ?? {}),
   };
@@ -408,6 +489,7 @@ export async function formatCommanderUsageMessage(
     normalizedInvocationArgs,
     providedOptionFlags,
     unknownOptionSuggestions,
+    unknownOptionOtherCommands,
     suggestedRetryCommand,
   } = usageContext;
   const formatted = formatCommanderErrorForDisplay(message, commandName, allowedTypes, {
@@ -417,6 +499,7 @@ export async function formatCommanderUsageMessage(
     normalizedInvocationArgs,
     providedOptionFlags,
     unknownOptionSuggestions,
+    unknownOptionOtherCommands,
     suggestedRetryCommand,
   });
   const serviceOverride = await runActiveServiceOverride("help_format", {
@@ -448,6 +531,7 @@ export async function formatCommanderUsageJson(
       normalizedInvocationArgs: usageContext.normalizedInvocationArgs,
       providedOptionFlags: usageContext.providedOptionFlags,
       unknownOptionSuggestions: usageContext.unknownOptionSuggestions,
+      unknownOptionOtherCommands: usageContext.unknownOptionOtherCommands,
       suggestedRetryCommand: usageContext.suggestedRetryCommand,
     },
   );

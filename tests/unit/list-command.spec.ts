@@ -592,6 +592,22 @@ describe("runList", () => {
     });
   });
 
+  it("accepts updated/created sort field aliases and rejects unknown sort fields with the alias hint", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, { title: "Alpha", status: "open", priority: "0", tags: "sort,alias", deadline: "+1d" });
+
+      const byUpdated = await runList(undefined, { sort: "updated", order: "desc" }, { path: context.pmPath });
+      expect(byUpdated.sorting).toEqual({ sort: "updated_at", order: "desc" });
+
+      const byCreated = await runList(undefined, { sort: "created", order: "asc" }, { path: context.pmPath });
+      expect(byCreated.sorting).toEqual({ sort: "created_at", order: "asc" });
+
+      await expect(runList(undefined, { sort: "bogus" }, { path: context.pmPath })).rejects.toThrow(
+        /Sort field must be one of .*aliases: updated->updated_at/,
+      );
+    });
+  });
+
   it("validates projection and sort option combinations", async () => {
     await withTempPmPath(async (context) => {
       createItem(context, {

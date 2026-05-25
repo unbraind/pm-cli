@@ -102,6 +102,25 @@ describe("pm cli error guidance context plumbing", () => {
     ]);
   });
 
+  it("surfaces nearest options and cross-command flag hints for unknown options", () => {
+    const envelope = formatCommanderErrorForJson("unknown option '--type'", "test-all", "Task|Issue", 2, {
+      unknownOptionSuggestions: ["--tag"],
+      unknownOptionOtherCommands: ["create", "list", "list-all"],
+    });
+    expect(envelope.code).toBe("unknown_option");
+    expect(envelope.next_steps).toEqual(
+      expect.arrayContaining([
+        "Nearest supported options: --tag",
+        "--type is a valid option on: create, list, list-all. If you meant one of those, run that command instead.",
+      ]),
+    );
+
+    const guidance = formatCommanderErrorForDisplay("unknown option '--type'", "test-all", "Task|Issue", {
+      unknownOptionOtherCommands: ["create", "list", "list-all"],
+    });
+    expect(guidance).toContain("--type is a valid option on: create, list, list-all");
+  });
+
   it("applies runtime unknown-command guidance examples for commander errors", () => {
     const envelope = formatCommanderErrorForJson("unknown command 'beads'", "help", "Task|Issue", 2, {
       unknownCommandExamples: ["pm --help", "pm list-open --help", "pm context --help"],

@@ -119,6 +119,12 @@ describe("core/output/output", () => {
 
     printError("boom");
     expect(stderrSpy).toHaveBeenCalledWith("boom\n");
+
+    stdoutSpy.mockClear();
+    printResult({ item: { id: "pm-a1b2" }, changed_fields: ["id", "title", "status"] }, { json: true, noChangedFields: true });
+    const compactRendered = stdoutSpy.mock.calls.map((call) => String(call[0])).join("");
+    expect(compactRendered).not.toContain("changed_fields");
+    expect(compactRendered).toContain("\"changed_field_count\": 3");
   });
 
   it("suppresses synchronous stdout EPIPE and preserves success exit semantics", () => {

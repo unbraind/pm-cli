@@ -80,6 +80,14 @@ pm dedupe-audit --mode parent_scope --limit 20
 
 Use `context` first for a compact active-work snapshot. Use `search` when the request names a concept, component, or prior issue.
 
+`--sort` accepts `priority|deadline|updated_at|created_at|title|parent`, plus the convenience aliases `updated` (→ `updated_at`) and `created` (→ `created_at`):
+
+```bash
+pm list-all --sort updated --order desc
+```
+
+When a flag is rejected with `Unknown option`, the error guidance now suggests the nearest supported flag (including abbreviations like `--desc` → `--description`) and notes when the flag is valid on a different command (for example `--type` on `test-all` points to `create`/`list`).
+
 ## Create and Update
 
 Shortest agent-friendly create (positional title + defaults to `Task` type):
@@ -129,6 +137,14 @@ pm update <id> --priority medium --deadline +1d --estimate 120
 pm update <id> --parent <parent-id>
 pm append <id> --body "Detailed implementation notes."
 ```
+
+Mutation commands (`create`/`update`/`close`/`append`/...) echo a `changed_fields` array. In high-volume agent loops that array is mostly redundant with the item echo above it, so pass the global `--no-changed-fields` flag to replace it with a compact `changed_field_count`:
+
+```bash
+pm --no-changed-fields create "Probe item"   # output keeps changed_field_count, drops the array
+```
+
+Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_close`/`pm_run` append/update-many) are compact by default; pass `options.full=true` to restore the full `changed_fields` delta.
 
 ## Templates
 
