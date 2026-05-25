@@ -127,6 +127,23 @@ describe("Claude Code plugin contract", () => {
     const pmClaudePlugin = plugins.find((p) => p.name === "pm-claude");
     expect(pmClaudePlugin, "marketplace.json must contain pm-claude plugin").toBeTruthy();
     expect(pmClaudePlugin?.source).toBe("./plugins/pm-claude");
+
+    // Reconciled manifest fields (see pm-rjgh): root marketplace.json carries the
+    // same metadata/category surface as .claude-plugin/marketplace.json.
+    const metadata = marketplaceJson.metadata as Record<string, unknown>;
+    expect(metadata, "marketplace.json must carry a metadata block").toBeTruthy();
+    expect(typeof metadata.description).toBe("string");
+    expect(metadata.version).toBe(pmClaudePlugin?.version);
+    expect(pmClaudePlugin?.category).toBe("productivity");
+  });
+
+  it("keeps root and .claude-plugin marketplace manifests in sync (no drift)", async () => {
+    const rootMarketplace = await readJson(path.join(repoRoot, "marketplace.json"));
+    const claudePluginMarketplace = await readJson(path.join(repoRoot, ".claude-plugin", "marketplace.json"));
+    expect(
+      rootMarketplace,
+      "marketplace.json and .claude-plugin/marketplace.json must stay reconciled",
+    ).toEqual(claudePluginMarketplace);
   });
 
   it("has valid MCP server .mcp.json with pm-mcp server", async () => {

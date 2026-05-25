@@ -1895,10 +1895,10 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (!clearFrontMatterKeys.has(definition.metadata_key)) {
           continue;
         }
-        if ((document.metadata as Record<string, unknown>)[definition.metadata_key] === undefined) {
+        if (metadataRecord[definition.metadata_key] === undefined) {
           continue;
         }
-        delete (document.metadata as Record<string, unknown>)[definition.metadata_key];
+        delete metadataRecord[definition.metadata_key];
         changedFields.push(definition.metadata_key);
       }
 
@@ -1907,16 +1907,16 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (clearFrontMatterKeys.has(fieldKey)) {
           continue;
         }
-        if (JSON.stringify((document.metadata as Record<string, unknown>)[fieldKey]) === JSON.stringify(fieldValue)) {
+        if (JSON.stringify(metadataRecord[fieldKey]) === JSON.stringify(fieldValue)) {
           continue;
         }
-        (document.metadata as Record<string, unknown>)[fieldKey] = fieldValue;
+        metadataRecord[fieldKey] = fieldValue;
         changedFields.push(fieldKey);
       }
 
       try {
         applyRegisteredItemFieldDefaultsAndValidation(
-          toItemRecord(document.metadata),
+          metadataRecord,
           getActiveExtensionRegistrations(),
         );
       } catch (error: unknown) {
