@@ -2,11 +2,12 @@ import { chmod, mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promise
 import os from "node:os";
 import path from "node:path";
 import jsonPatch from "fast-json-patch";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runRestore } from "../../src/cli/commands/restore.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import type { ExtensionHookRegistry } from "../../src/core/extensions/loader.js";
 import { createHistoryEntry } from "../../src/core/history/history.js";
+import * as lockModule from "../../src/core/lock/lock.js";
 import { stableStringify, sha256Hex } from "../../src/core/shared/serialization.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
@@ -268,6 +269,38 @@ describe("runRestore", () => {
       await expect(runRestore(id, "1", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
+    });
+  });
+
+  it("rejects restore when history changes before lock acquisition", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createRestoreFixture(context, "Restore Lock Window");
+      const historyFile = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const originalAcquireLock = lockModule.acquireLock;
+      let mutated = false;
+      const lockSpy = vi.spyOn(lockModule, "acquireLock").mockImplementation(async (...args) => {
+        if (!mutated) {
+          mutated = true;
+          const raw = await readFile(historyFile, "utf8");
+          await writeFile(historyFile, `${raw}\n`, "utf8");
+        }
+        return originalAcquireLock(...(args as Parameters<typeof lockModule.acquireLock>));
+      });
+
+      try {
+        await expect(
+          runRestore(
+            id,
+            "1",
+            { author: "test-author" },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.CONFLICT,
+        });
+      } finally {
+        lockSpy.mockRestore();
+      }
     });
   });
 

@@ -1,11 +1,12 @@
 import { appendFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { runActivity } from "../../src/cli/commands/activity.js";
 import { readHistoryEntries, runHistory } from "../../src/cli/commands/history.js";
 import { runHistoryRedact } from "../../src/cli/commands/history-redact.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks, type ExtensionHookRegistry } from "../../src/core/extensions/index.js";
+import * as lockModule from "../../src/core/lock/lock.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -298,6 +299,47 @@ describe("runHistory and runActivity", () => {
       await expect(runHistoryRedact(id, {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
+    });
+  });
+
+  it("rejects history-redact when the history stream changes before lock acquisition", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Redact Lock Window");
+      const leakedToken = "token-lock-window";
+      context.runCli(
+        ["append", id, "--json", "--body", `secret ${leakedToken}`, "--author", "test-author", "--message", "append token"],
+        { expectJson: true },
+      );
+
+      const historyFile = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const originalAcquireLock = lockModule.acquireLock;
+      let mutated = false;
+      const lockSpy = vi.spyOn(lockModule, "acquireLock").mockImplementation(async (...args) => {
+        if (!mutated) {
+          mutated = true;
+          const raw = await readFile(historyFile, "utf8");
+          await writeFile(historyFile, `${raw}\n`, "utf8");
+        }
+        return originalAcquireLock(...(args as Parameters<typeof lockModule.acquireLock>));
+      });
+
+      try {
+        await expect(
+          runHistoryRedact(
+            id,
+            {
+              literal: leakedToken,
+              replacement: "[redacted_token]",
+              author: "test-author",
+            },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.CONFLICT,
+        });
+      } finally {
+        lockSpy.mockRestore();
+      }
     });
   });
 

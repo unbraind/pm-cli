@@ -2,11 +2,27 @@ id: pm-uer0
 title: Harden read-then-lock window uniformly across history-redact/restore/history-repair
 description: "Surfaced by CodeRabbit review on PR #44 (history-repair). history-redact, restore, and history-repair all read the history stream + on-disk item and compute the rewrite/reconciliation BEFORE acquiring the per-item lock, then acquire the lock only around the atomic write. This leaves a small TOCTOU window where a concurrent mutation between read and lock could let the command write a rewrite computed against stale state. The atomic write + rollback protects file integrity, and concurrent same-item history rewrites are rare, so this is low severity. If addressed, do it uniformly across all three commands (acquire the lock before the initial read, or re-read+re-verify under the lock before writing) rather than diverging one command from its siblings."
 type: Chore
-status: open
+status: in_progress
 priority: 3
 tags[4]: code-quality,concurrency,history,locking
 created_at: "2026-05-22T21:06:47.968Z"
-updated_at: "2026-05-22T21:06:47.968Z"
+updated_at: "2026-05-25T10:47:22.601Z"
+assignee: codex-reliability-agent
 author: claude-code-agent
 parent: pm-rnpb
+comments[5]{created_at,author,text}:
+  "2026-05-25T10:00:16.815Z",codex-reliability-agent,Execution start 2026-05-25 under combined reliability PR scope with pm-7rlp. Duplicate-check evidence recorded (context/search/list-open/list-in-progress) and canonical item reuse confirmed; no new item created. Claim taken and status moved to in_progress before code edits.
+  "2026-05-25T10:08:51.624Z",codex-reliability-agent,"Implementation complete: hardened TOCTOU read-then-lock windows uniformly across history-redact/history-repair/restore by snapshotting pre-lock history/item raw state and re-verifying under lock before any write. Commands now fail fast with EXIT_CODE.CONFLICT and retry guidance when the target history stream or item changed while waiting for lock, preventing stale rewrite commits. Regression coverage added in tests/unit/history-activity-command.spec.ts, tests/unit/history-repair-command.spec.ts, and tests/unit/restore-command.spec.ts via acquireLock spy mutation hooks. Verification: node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/restore-command.spec.ts --reporter=dot (3 files, 43 tests passed)."
+  "2026-05-25T10:19:48.120Z",codex-reliability-agent,"Post-implementation verification 2026-05-25: lock-window stale-snapshot conflict regressions pass and full release gate passes after integration split. Manual temp-dir reliability walkthrough also exercised history-redact apply, history verify, forced drift + history-repair, restore to version 1, package install doctor, close/release, all successful with verification ok after redact and after repair."
+  "2026-05-25T10:22:51.401Z",codex-reliability-agent,"PR #67 includes the lock-window hardening implementation and regression coverage. Waiting required >=15 minute AI review window, then applying any bot feedback before merge/closure."
+  "2026-05-25T10:47:22.601Z",codex-reliability-agent,"Addressed P1 concurrency feedback by capturing historyRawBeforeLock before parsing history entries in history-repair, eliminating the stale-compute/new-snapshot ordering gap. Focused lock-window regression passed."
+files[6]{path,scope,note}:
+  src/cli/commands/history-redact.ts,project,lock-window snapshot verification before write
+  src/cli/commands/history-repair.ts,project,lock-window snapshot verification before write
+  src/cli/commands/restore.ts,project,lock-window snapshot verification before write
+  tests/unit/history-activity-command.spec.ts,project,history-redact stale snapshot conflict regression
+  tests/unit/history-repair-command.spec.ts,project,history-repair stale snapshot conflict regression
+  tests/unit/restore-command.spec.ts,project,restore stale snapshot conflict regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/history-activity-command.spec.ts tests/unit/history-repair-command.spec.ts tests/unit/restore-command.spec.ts --reporter=dot,null,project,600,null,null,null,null,null,null,null,null,null,null,null,lock-window stale snapshot regressions
 body: ""

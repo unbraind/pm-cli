@@ -1,6 +1,9 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { runHistoryRepair } from "../../src/cli/commands/history-repair.js";
+import * as lockModule from "../../src/core/lock/lock.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 function createItem(context: TempPmContext, title: string): string {
@@ -92,6 +95,42 @@ describe("history-repair command", () => {
       const missing = context.runCli(["history-repair", "pm-zzzz", "--json"]);
       expect(missing.code).not.toBe(0);
       expect(missing.stdout + missing.stderr).toContain("not found");
+    });
+  });
+
+  it("rejects history-repair when the item changes before lock acquisition", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Repair lock window");
+      expect(context.runCli(["update", id, "--status", "in_progress"]).code).toBe(0);
+      await tamperChain(historyPath(context, id));
+
+      const itemFile = itemPath(context, id);
+      const originalAcquireLock = lockModule.acquireLock;
+      let mutated = false;
+      const lockSpy = vi.spyOn(lockModule, "acquireLock").mockImplementation(async (...args) => {
+        if (!mutated) {
+          mutated = true;
+          const raw = await readFile(itemFile, "utf8");
+          await writeFile(itemFile, raw.replace("drift target", "drift changed-before-lock"), "utf8");
+        }
+        return originalAcquireLock(...(args as Parameters<typeof lockModule.acquireLock>));
+      });
+
+      try {
+        await expect(
+          runHistoryRepair(
+            id,
+            {
+              author: "test-author",
+            },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject({
+          exitCode: EXIT_CODE.CONFLICT,
+        });
+      } finally {
+        lockSpy.mockRestore();
+      }
     });
   });
 });

@@ -1,6 +1,6 @@
 import jsonPatch from "fast-json-patch";
 import fs from "node:fs/promises";
-import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
+import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { appendHistoryEntry, createHistoryEntry } from "../../core/history/history.js";
 import {
   EMPTY_REPLAY_DOCUMENT,
@@ -335,6 +335,7 @@ export async function runRestore(
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const subject = await resolveRestoreSubject(pmRoot, id, settings, typeRegistry.type_to_folder);
   const resolvedId = subject.id;
+  const historyRawBeforeLock = await readFileIfExists(subject.historyPath);
   const history = await readHistoryEntries(subject.historyPath, resolvedId);
   if (history.length === 0) {
     throw new PmCliError(`No history exists for ${resolvedId}; restore is unavailable.`, EXIT_CODE.NOT_FOUND);
@@ -356,6 +357,8 @@ export async function runRestore(
       EXIT_CODE.GENERIC_FAILURE,
     );
   }
+  const loadedItemBeforeLock = subject.located ? await readLocatedItem(subject.located, { schema: settings.schema }) : null;
+  const currentItemRawBeforeLock = loadedItemBeforeLock?.raw ?? null;
 
   const author = resolveAuthor(options.author, settings.author_default);
   const releaseLock = await acquireLock(
@@ -368,14 +371,32 @@ export async function runRestore(
   );
 
   try {
-    const existingItemPath = subject.located?.itemPath ?? null;
+    const historyRawUnderLock = await readFileIfExists(subject.historyPath);
+    if (historyRawUnderLock !== historyRawBeforeLock) {
+      throw new PmCliError(
+        `History for ${resolvedId} changed while waiting for lock; retry restore.`,
+        EXIT_CODE.CONFLICT,
+      );
+    }
+    const locatedUnderLock = await locateItem(
+      pmRoot,
+      resolvedId,
+      settings.id_prefix,
+      settings.item_format,
+      typeRegistry.type_to_folder,
+    );
+    const loadedItemUnderLock = locatedUnderLock ? await readLocatedItem(locatedUnderLock, { schema: settings.schema }) : null;
+    if ((loadedItemUnderLock?.raw ?? null) !== currentItemRawBeforeLock) {
+      throw new PmCliError(`Item ${resolvedId} changed while waiting for lock; retry restore.`, EXIT_CODE.CONFLICT);
+    }
+
+    const existingItemPath = locatedUnderLock?.itemPath ?? null;
     const itemFormat = "toon";
     let resolvedCurrentDocument: ItemDocument;
     let resolvedOriginalRaw: string | null = null;
-    if (subject.located) {
-      const loaded = await readLocatedItem(subject.located, { schema: settings.schema });
-      resolvedCurrentDocument = loaded.document;
-      resolvedOriginalRaw = loaded.raw;
+    if (loadedItemUnderLock) {
+      resolvedCurrentDocument = loadedItemUnderLock.document;
+      resolvedOriginalRaw = loadedItemUnderLock.raw;
     } else {
       resolvedCurrentDocument = replayCurrentDocument(history);
     }

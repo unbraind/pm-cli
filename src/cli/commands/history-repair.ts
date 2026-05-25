@@ -16,7 +16,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
-import { readLocatedItem } from "../../core/store/item-store.js";
+import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings, resolveGovernanceKnobs } from "../../core/store/settings.js";
 import type { HistoryEntry, HistoryPatchOp } from "../../types/index.js";
@@ -79,6 +79,7 @@ export async function runHistoryRepair(
   if (!(await pathExists(subject.historyPath))) {
     throw new PmCliError(`No history stream exists for ${subject.id}.`, EXIT_CODE.NOT_FOUND);
   }
+  const historyRawBeforeLock = await readFileIfExists(subject.historyPath);
   const historyEntries = await readHistoryEntries(subject.historyPath, subject.id);
   if (historyEntries.length === 0) {
     throw new PmCliError(`No history entries exist for ${subject.id}; nothing to repair.`, EXIT_CODE.USAGE);
@@ -95,6 +96,7 @@ export async function runHistoryRepair(
   const loadedItem = subject.located
     ? await readLocatedItem(subject.located, { schema: settings.schema })
     : null;
+  const currentItemRawBeforeLock = loadedItem?.raw ?? null;
   if (loadedItem) {
     // Use the shared canonical replay form so reconciliation hashing matches the
     // semantics pm validate/health use for the on-disk item (avoids hash divergence).
@@ -189,14 +191,36 @@ export async function runHistoryRepair(
       settings.governance.force_required_for_stale_lock,
     );
     try {
-      const previousHistoryRaw = await readFileIfExists(subject.historyPath);
+      const historyRawUnderLock = await readFileIfExists(subject.historyPath);
+      if (historyRawUnderLock !== historyRawBeforeLock) {
+        throw new PmCliError(
+          `History for ${subject.id} changed while waiting for lock; retry history-repair.`,
+          EXIT_CODE.CONFLICT,
+        );
+      }
+      const locatedUnderLock = await locateItem(
+        pmRoot,
+        subject.id,
+        settings.id_prefix,
+        settings.item_format,
+        typeRegistry.type_to_folder,
+      );
+      const loadedItemUnderLock = locatedUnderLock
+        ? await readLocatedItem(locatedUnderLock, { schema: settings.schema })
+        : null;
+      if ((loadedItemUnderLock?.raw ?? null) !== currentItemRawBeforeLock) {
+        throw new PmCliError(
+          `Item ${subject.id} changed while waiting for lock; retry history-repair.`,
+          EXIT_CODE.CONFLICT,
+        );
+      }
       try {
         await writeFileAtomic(subject.historyPath, historyEntriesToRaw(rewrittenEntries));
       } catch (error) {
-        if (previousHistoryRaw === null) {
+        if (historyRawUnderLock === null) {
           await fs.rm(subject.historyPath, { force: true });
         } else {
-          await writeFileAtomic(subject.historyPath, previousHistoryRaw);
+          await writeFileAtomic(subject.historyPath, historyRawUnderLock);
         }
         throw error;
       }
