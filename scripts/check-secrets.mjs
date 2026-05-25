@@ -4,7 +4,6 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-export { RULES, scanContent } from "./check-secrets-lib.mjs";
 import { scanContent } from "./check-secrets-lib.mjs";
 
 function fail(message) {

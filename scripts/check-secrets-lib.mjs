@@ -38,18 +38,33 @@ export const RULES = [
   },
 ];
 
-function lineNumberFromIndex(content, index) {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) {
-    if (content.charCodeAt(i) === 10) {
-      line += 1;
+function lineStartIndexes(content) {
+  const starts = [0];
+  for (let index = 0; index < content.length; index += 1) {
+    if (content.charCodeAt(index) === 10) {
+      starts.push(index + 1);
     }
   }
-  return line;
+  return starts;
+}
+
+function lineNumberFromIndex(starts, index) {
+  let low = 0;
+  let high = starts.length - 1;
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    if (starts[mid] <= index) {
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+  return high + 1;
 }
 
 export function scanContent(file, content) {
   const findings = [];
+  const lineStarts = lineStartIndexes(content);
   for (const rule of RULES) {
     if (rule.includeFiles && !rule.includeFiles.test(file)) {
       continue;
@@ -64,7 +79,7 @@ export function scanContent(file, content) {
       findings.push({
         file,
         rule: rule.name,
-        line: lineNumberFromIndex(content, index),
+        line: lineNumberFromIndex(lineStarts, index),
       });
     }
   }

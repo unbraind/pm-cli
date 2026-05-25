@@ -1071,6 +1071,43 @@ describe("runConfig", () => {
       });
     });
 
+    it("accepts equivalent explicit typed flags after normalization", async () => {
+      await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+        const pmRoot = path.join(tempRoot, ".agents", "pm");
+        await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+        const format = await runConfig(
+          "project",
+          "set",
+          "item-format",
+          { format: "TOON" },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          "toon",
+        );
+        expect(format.format).toBe("toon");
+
+        const telemetry = await runConfig(
+          "project",
+          "set",
+          "telemetry-tracking",
+          { policy: "DISABLED" },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          "off",
+        );
+        expect(telemetry.policy).toBe("disabled");
+
+        const closeValidation = await runConfig(
+          "project",
+          "set",
+          "governance-close-validation-default",
+          { policy: "DISABLED" },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          "off",
+        );
+        expect(closeValidation.policy).toBe("off");
+      });
+    });
+
     it("errors when a positional value conflicts with an explicit typed flag", async () => {
       await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
         const pmRoot = path.join(tempRoot, ".agents", "pm");

@@ -521,6 +521,37 @@ function normalizeGovernanceForceRequiredForStaleLockPolicy(
   );
 }
 
+function normalizePolicyForConflict(key: ConfigKey | undefined, value: string): string {
+  switch (key) {
+    case "history_missing_stream_policy":
+      return normalizeHistoryMissingStreamPolicy(value);
+    case "sprint_release_format_policy":
+      return normalizeSprintReleaseFormatPolicy(value);
+    case "parent_reference_policy":
+    case "governance_parent_reference_policy":
+      return normalizeParentReferencePolicy(value);
+    case "metadata_validation_profile":
+    case "governance_metadata_validation_profile":
+      return normalizeValidateMetadataProfile(value);
+    case "governance_preset":
+      return normalizeGovernancePreset(value);
+    case "governance_ownership_enforcement":
+      return normalizeGovernanceOwnershipEnforcement(value);
+    case "governance_create_mode_default":
+      return normalizeGovernanceCreateModeDefault(value);
+    case "governance_close_validation_default":
+      return normalizeGovernanceCloseValidationDefault(value);
+    case "governance_force_required_for_stale_lock":
+      return normalizeGovernanceForceRequiredForStaleLockPolicy(value);
+    case "test_result_tracking":
+      return normalizeTestResultTrackingPolicy(value);
+    case "telemetry_tracking":
+      return normalizeTelemetryTrackingPolicy(value);
+    default:
+      return value.trim().toLowerCase().replaceAll("-", "_");
+  }
+}
+
 const METADATA_REQUIRED_FIELD_ALIAS_MAP: Record<string, ValidateMetadataRequiredField> = {
   author: "author",
   acceptance_criteria: "acceptance_criteria",
@@ -850,6 +881,7 @@ async function applyContextConfig(
 function applyPositionalValue(
   action: ConfigAction,
   keyValue: string | undefined,
+  normalizedKey: ConfigKey | undefined,
   valueValue: string | undefined,
   options: ConfigCommandOptions,
 ): ConfigCommandOptions {
@@ -866,7 +898,7 @@ function applyPositionalValue(
     throw new PmCliError('Config action "set" requires <key> before a positional <value>.', EXIT_CODE.USAGE);
   }
 
-  const routed = resolveConfigPositionalValue(keyValue, valueValue);
+  const routed = resolveConfigPositionalValue(normalizedKey ?? keyValue, valueValue);
   if (!routed.routable) {
     throw new PmCliError(routed.reason, EXIT_CODE.USAGE);
   }
@@ -882,7 +914,10 @@ function applyPositionalValue(
   }
 
   if (routed.flag === "format") {
-    if (options.format !== undefined && options.format !== routed.value) {
+    if (
+      options.format !== undefined &&
+      normalizeItemFormat(options.format) !== normalizeItemFormat(routed.value)
+    ) {
       throw new PmCliError(
         `Config set ${keyValue} received both positional value "${valueValue}" and --format "${options.format}". Pass only one.`,
         EXIT_CODE.USAGE,
@@ -892,7 +927,11 @@ function applyPositionalValue(
   }
 
   // policy flag (--policy)
-  if (options.policy !== undefined && options.policy !== routed.value) {
+  if (
+    options.policy !== undefined &&
+    normalizePolicyForConflict(normalizedKey, options.policy) !==
+      normalizePolicyForConflict(normalizedKey, routed.value)
+  ) {
     throw new PmCliError(
       `Config set ${keyValue} received both positional value "${valueValue}" and --policy "${options.policy}". Pass only one.`,
       EXIT_CODE.USAGE,
@@ -912,7 +951,7 @@ export async function runConfig(
   const scope = normalizeScope(scopeValue);
   const action = normalizeAction(actionValue);
   const key = normalizeKeyForAction(action, keyValue);
-  options = applyPositionalValue(action, keyValue, valueValue, options);
+  options = applyPositionalValue(action, keyValue, key, valueValue, options);
   const target = await resolveSettingsTarget(scope, global);
   const { settings, metadata, warnings: settingsReadWarnings } = await readSettingsWithMetadata(target.pmRoot);
   const warnings = normalizeWarnings(settingsReadWarnings);
