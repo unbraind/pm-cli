@@ -73,6 +73,20 @@ const SEMANTIC_UNKNOWN_OPTION_SUGGESTIONS: Record<string, Record<string, string[
   },
 };
 
+function getSemanticUnknownOptionSuggestions(commandName: string, unknownOption: string): string[] {
+  const commandSuggestions = SEMANTIC_UNKNOWN_OPTION_SUGGESTIONS[commandName];
+  if (!commandSuggestions) {
+    return [];
+  }
+  const normalizedUnknown = normalizeLongFlag(unknownOption);
+  for (const [flag, suggestions] of Object.entries(commandSuggestions)) {
+    if (normalizeLongFlag(flag) === normalizedUnknown) {
+      return suggestions;
+    }
+  }
+  return [];
+}
+
 export interface CommanderUsageContext extends CommanderGuidanceContext {
   message: string;
   commandName: string | undefined;
@@ -344,7 +358,7 @@ export async function resolveCommanderUsageContext(
   const unknownOptionSuggestions =
     unknownOptionMatch && commandName
       ? dedupeStrings([
-          ...(SEMANTIC_UNKNOWN_OPTION_SUGGESTIONS[commandName]?.[normalizeLongFlag(unknownOptionMatch[1])] ?? []),
+          ...getSemanticUnknownOptionSuggestions(commandName, unknownOptionMatch[1]),
           ...suggestNearestLongFlags(unknownOptionMatch[1], collectKnownLongFlags(commandName)),
         ])
       : undefined;

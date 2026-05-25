@@ -359,6 +359,9 @@ async function loadLanceDbLocalTable(storePath: string, table: string): Promise<
 
   const cached = lanceDbLocalTables.get(key);
   if (cached && !snapshotStats) {
+    if (cached.mtimeMs === null && cached.size === null && cached.records.size === 0) {
+      return cached.records;
+    }
     const loaded = new Map<string, VectorRecord>();
     lanceDbLocalTables.set(key, { records: loaded, mtimeMs: null, size: null });
     return loaded;
