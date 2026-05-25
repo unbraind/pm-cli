@@ -268,7 +268,12 @@ export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
   return [...argv.slice(0, extensionIndex + 1), forcedActionFlag, ...argv.slice(extensionIndex + 2)];
 }
 
-type BootstrapNormalizationReason = "legacy_extension_action" | "flag_alias" | "flag_typo" | "bare_key_value";
+type BootstrapNormalizationReason =
+  | "legacy_extension_action"
+  | "flag_alias"
+  | "flag_typo"
+  | "bare_key_value"
+  | "list_merge";
 type BootstrapNormalizationConfidence = "high" | "medium";
 
 export interface BootstrapNormalizationEvent {
@@ -288,6 +293,7 @@ interface FlagLookup {
   canonicalByNormalized: Map<string, string | null>;
   canonicalByCompact: Map<string, string | null>;
   canonicalComparables: Array<{ canonicalFlag: string; comparable: string }>;
+  listCanonicalFlags: Set<string>;
 }
 
 function normalizeFlagKeyToken(raw: string): string {
@@ -340,6 +346,7 @@ function buildFlagLookup(commandName: string | undefined): FlagLookup {
   const canonicalByNormalized = new Map<string, string | null>();
   const canonicalByCompact = new Map<string, string | null>();
   const canonicalComparablesMap = new Map<string, string>();
+  const listCanonicalFlags = new Set<string>();
   for (const contract of contracts) {
     const longCandidates = collectLongFlagCandidates(contract);
     if (longCandidates.length === 0) {
@@ -354,6 +361,9 @@ function buildFlagLookup(commandName: string | undefined): FlagLookup {
     if (!canonicalComparablesMap.has(canonicalFlag)) {
       canonicalComparablesMap.set(canonicalFlag, comparable);
     }
+    if (contract.list === true) {
+      listCanonicalFlags.add(canonicalFlag);
+    }
   }
   return {
     canonicalByNormalized,
@@ -362,6 +372,7 @@ function buildFlagLookup(commandName: string | undefined): FlagLookup {
       canonicalFlag,
       comparable,
     })),
+    listCanonicalFlags,
   };
 }
 
@@ -464,6 +475,154 @@ function normalizeLongOptionToken(
   };
 }
 
+// Global option flags whose value may legitimately begin with "--" (commander
+// accepts such values). Their value token must not be reinterpreted as a list
+// flag during coalescing. `--path <dir>` is the documented case; other globals
+// (--json/--quiet/--no-extensions/--no-pager/--profile) are boolean.
+const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>(["--path"]);
+
+function splitCanonicalListToken(token: string): { flag: string; inlineValue?: string } | null {
+  if (!token.startsWith("--")) {
+    return null;
+  }
+  const equalsIndex = token.indexOf("=");
+  if (equalsIndex < 0) {
+    return { flag: token };
+  }
+  return {
+    flag: token.slice(0, equalsIndex),
+    inlineValue: token.slice(equalsIndex + 1),
+  };
+}
+
+/**
+ * Coalesce repeated occurrences of comma-separated list flags into a single
+ * `--flag=v1,v2,v3` token anchored at the FIRST occurrence. Without this,
+ * Commander treats these flags as scalars and silently keeps only the last
+ * value (data loss). Both `--flag value` and `--flag=value` forms are merged;
+ * a value-less occurrence is preserved untouched, and a `--` terminator stops
+ * coalescing (remainder is passed through verbatim).
+ *
+ * `valueConsumingFlags` lists option flags (e.g. global `--path`) whose value
+ * may itself begin with `--`. Their value token is emitted verbatim so a
+ * list-flag-looking value (`--path --tags`) is never reinterpreted as a flag
+ * nor allowed to swallow the following command/positional token.
+ */
+export function coalesceRepeatedListFlags(
+  argv: string[],
+  listFlags: Set<string>,
+  valueConsumingFlags: Set<string> = new Set(),
+): { argv: string[]; events: BootstrapNormalizationEvent[] } {
+  if (listFlags.size === 0) {
+    return { argv: [...argv], events: [] };
+  }
+
+  interface ListFlagSlot {
+    outputIndex: number;
+    originalTokens: string[];
+    values: string[];
+    occurrences: number;
+  }
+
+  const result: (string | null)[] = [];
+  const slots = new Map<string, ListFlagSlot>();
+  let index = 0;
+  while (index < argv.length) {
+    const token = argv[index];
+    if (token === "--") {
+      result.push(...argv.slice(index));
+      break;
+    }
+    // A value-consuming option in space form owns the next token as its value,
+    // even when that value begins with "--". Emit both verbatim so the value is
+    // never misread as a list-flag occurrence.
+    if (valueConsumingFlags.has(token)) {
+      result.push(token);
+      const next = argv[index + 1];
+      if (typeof next === "string" && next !== "--") {
+        result.push(next);
+        index += 2;
+      } else {
+        index += 1;
+      }
+      continue;
+    }
+    const parsed = splitCanonicalListToken(token);
+    if (!parsed || !listFlags.has(parsed.flag)) {
+      result.push(token);
+      index += 1;
+      continue;
+    }
+
+    // Determine this occurrence's value (if any) and how many argv tokens it
+    // consumes. Only treat the next token as a value when it is not a flag.
+    let value: string | undefined;
+    let consumed = 1;
+    if (parsed.inlineValue !== undefined) {
+      value = parsed.inlineValue;
+    } else {
+      const next = argv[index + 1];
+      if (typeof next === "string" && next !== "--" && !next.startsWith("-")) {
+        value = next;
+        consumed = 2;
+      }
+    }
+
+    if (value === undefined) {
+      // Value-less occurrence: leave untouched, do not coalesce.
+      result.push(token);
+      index += consumed;
+      continue;
+    }
+
+    const originalTokens = argv.slice(index, index + consumed);
+    const existing = slots.get(parsed.flag);
+    if (existing) {
+      existing.values.push(value);
+      existing.occurrences += 1;
+    } else {
+      const slot: ListFlagSlot = {
+        outputIndex: result.length,
+        originalTokens,
+        values: [value],
+        occurrences: 1,
+      };
+      slots.set(parsed.flag, slot);
+      // Reserve the anchor position; finalized after the walk so we know the
+      // full merged value (or restore the original tokens for single uses).
+      result.push(null);
+    }
+    index += consumed;
+  }
+
+  const events: BootstrapNormalizationEvent[] = [];
+  const splices: Array<{ outputIndex: number; tokens: string[] }> = [];
+  for (const [flag, slot] of slots) {
+    if (slot.occurrences >= 2) {
+      const mergedToken = `${flag}=${slot.values.join(",")}`;
+      splices.push({ outputIndex: slot.outputIndex, tokens: [mergedToken] });
+      events.push({
+        from: `${flag} (x${slot.occurrences})`,
+        to: [mergedToken],
+        reason: "list_merge",
+        confidence: "high",
+      });
+    } else {
+      // Single occurrence: restore the original token form verbatim.
+      splices.push({ outputIndex: slot.outputIndex, tokens: slot.originalTokens });
+    }
+  }
+
+  // Apply anchor splices from the end so earlier indices stay valid when a
+  // single-occurrence anchor expands back into two tokens.
+  splices.sort((a, b) => b.outputIndex - a.outputIndex);
+  for (const splice of splices) {
+    result.splice(splice.outputIndex, 1, ...splice.tokens);
+  }
+
+  return { argv: result as string[], events };
+}
+
 export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocationNormalizationResult {
   const trace: BootstrapNormalizationEvent[] = [];
   const legacyNormalized = normalizeLegacyExtensionActionSyntax(argv);
@@ -513,8 +672,16 @@ export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocatio
     }
     normalizedArgv.push(token);
   }
+  const coalesced = coalesceRepeatedListFlags(
+    normalizedArgv,
+    lookup.listCanonicalFlags,
+    GLOBAL_VALUE_CONSUMING_FLAGS,
+  );
+  for (const event of coalesced.events) {
+    trace.push(event);
+  }
   return {
-    argv: normalizedArgv,
+    argv: coalesced.argv,
     commandName,
     trace,
   };

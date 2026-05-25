@@ -119,6 +119,8 @@ pm create \
   --message "Create restore replay issue"
 ```
 
+Repeated singular/plural list flags now accumulate, so `--tag a --tag b` is equivalent to `--tags a,b` (the same holds for `--status` and `--fields` on read commands). Earlier versions silently kept only the last value.
+
 Update existing work:
 
 ```bash
