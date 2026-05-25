@@ -2917,6 +2917,7 @@ describe("extension loader", () => {
       handled: false,
       result: null,
       warnings: ["extension_command_handler_failed:project:handler-boom-ext:beads import"],
+      errorMessage: "boom",
     });
   });
 

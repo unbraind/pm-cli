@@ -772,6 +772,13 @@ export interface CommandHandlerResult {
   handled: boolean;
   result: unknown;
   warnings: string[];
+  /**
+   * Human-readable, single-line, length-bounded message describing why an
+   * extension command handler failed. Surfaced to the user/CI so the real cause
+   * (e.g. "Changelog is out of date: CHANGELOG.md") is visible instead of only
+   * the opaque `extension_command_handler_failed` warning code.
+   */
+  errorMessage?: string;
 }
 
 export interface ParserOverrideResult {

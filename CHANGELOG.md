@@ -8,10 +8,12 @@
 
 ### Changed
 
+- Split large command files exceeding 2000 LOC ([pm-mbdu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mbdu.toon))
 - Deduplicate item/metadata to record widening casts behind a shared toItemRecord helper ([pm-p5if](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p5if.toon))
 
 ### Fixed
 
+- Surface extension command handler error messages instead of opaque extension\_command\_handler\_failed code ([pm-zwl7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zwl7.toon))
 - Fix Auto Release failure: build dist before pm-changelog generation runs ([pm-yf8t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yf8t.toon))
 
 ### Security

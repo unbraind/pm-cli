@@ -919,8 +919,10 @@ async function runRequiredExtensionCommand(
   if (!extensionCommandResult.handled) {
     if (extensionCommandResult.warnings.length > 0) {
       const warningCode = extensionCommandResult.warnings[0];
+      const cause = extensionCommandResult.errorMessage?.trim();
+      const causeSuffix = cause ? ` ${cause}` : "";
       throw new PmCliError(
-        `Command "${commandPath}" failed in extension handler (${warningCode}).`,
+        `Command "${commandPath}" failed in extension handler (${warningCode}).${causeSuffix}`,
         EXIT_CODE.GENERIC_FAILURE,
       );
     }

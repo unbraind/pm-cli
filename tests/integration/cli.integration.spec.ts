@@ -5650,6 +5650,8 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(importedEnvelope.detail).toContain(
         "extension_command_handler_failed:project:beads-command-handler-fail-ext:beads import",
       );
+      // The underlying handler error message is surfaced so agents/CI see the real cause.
+      expect(importedEnvelope.detail).toContain("handler-boom");
     });
   });
 
