@@ -42,32 +42,9 @@ pm-cli/ (repo root)
 
 The MCP server itself lives at `src/mcp/server.ts` (compiled to `dist/mcp/server.js`) and is bundled with the npm package as the `pm-mcp` binary.
 
-## MCP Server Tools
+## Capability Inventory
 
-The server exposes 18 native tools that call pm library functions directly:
-
-| Tool | pm Operation | Key Args |
-|------|-------------|----------|
-| `pm_context` | `pm context` | `options.limit`, `options.depth` |
-| `pm_search` | `pm search` | `query` (required), `options.limit` |
-| `pm_list` | `pm list` | `options.status`, `options.type`, `options.limit` |
-| `pm_get` | `pm get` | `id` (required) |
-| `pm_create` | `pm create` | `options.title`, `options.description`, `options.type` |
-| `pm_update` | `pm update` | `id` (required), `options.*` |
-| `pm_claim` | `pm claim` | `id` (required), `force` |
-| `pm_release` | `pm release` | `id` (required), `force` |
-| `pm_close` | `pm close` | `id` (required), `reason` (required) |
-| `pm_comments` | `pm comments` | `id` (required), `options.add` |
-| `pm_files` | `pm files` | `id` (required), `options.add`, `options.remove` |
-| `pm_docs` | `pm docs` | `id` (required), `options.add`, `options.remove` |
-| `pm_test` | `pm test` | `id` (required), `options.add`, `options.run` |
-| `pm_validate` | `pm validate` | `options.checkResolution`, `options.checkFiles` |
-| `pm_health` | `pm health` | `options.checkOnly` |
-| `pm_contracts` | `pm contracts` | `options.command`, `options.json` |
-| `pm_plan` | `pm plan` | `options.subcommand`, `id`, `stepRef` |
-| `pm_run` | any pm action | `action` (required), `id`, `query`, `reason`, `options.*` |
-
-All tools accept `cwd` (workspace directory), `path` (pm data root override), and `author` (mutation author).
+The canonical user-facing inventory for MCP tools, slash commands, skills, subagents, and `pm_run` actions lives in [`plugins/pm-claude/README.md`](../plugins/pm-claude/README.md). This page focuses on architecture, launcher behavior, and smoke-test expectations so capability counts do not drift between docs.
 
 ## Installation Methods
 
@@ -80,7 +57,7 @@ Add the pm-cli GitHub repo as a marketplace source, then install:
 /plugin install pm-claude@pm
 ```
 
-This clones the repo, reads `.claude-plugin/marketplace.json` at the root, installs the plugin from `./plugins/pm-claude/`, and configures the MCP server, 5 skills, 9 slash commands, and the session hook automatically.
+This clones the repo, reads `.claude-plugin/marketplace.json` at the root, installs the plugin from `./plugins/pm-claude/`, and configures the MCP server, skills, slash commands, subagents, and the session hook automatically.
 
 ### 2. Global MCP via Claude Code CLI (MCP tools only)
 
@@ -146,7 +123,7 @@ node scripts/smoke-claude-plugin.mjs
 pnpm smoke:claude-plugin
 ```
 
-Verifies: file structure (23 files), manifest name consistency, MCP initialize, 18 tools present, full workflow (init → create → claim → update → link files/docs/tests → get → context → search → validate → health), and session-start hook.
+Verifies: plugin file structure, manifest name consistency, MCP initialize, 18 tools present, full workflow (init → create → claim → update → link files/docs/tests → get → context → search → validate → health), and session-start hook.
 
 ### MCP server smoke test
 

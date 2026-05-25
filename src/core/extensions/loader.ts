@@ -12,10 +12,12 @@ import {
   KNOWN_EXTENSION_POLICY_MODES,
   KNOWN_EXTENSION_POLICY_SURFACES,
   KNOWN_EXTENSION_SANDBOX_PROFILES,
+  KNOWN_EXTENSION_SERVICE_NAMES,
   KNOWN_EXTENSION_TRUST_MODES,
   EXTENSION_CAPABILITY_CONTRACT_VERSION,
   EXTENSION_CAPABILITY_LEGACY_ALIASES,
   EXTENSION_CAPABILITY_CONTRACT,
+  createDefaultExtensionGovernancePolicy,
   type ExtensionCapability,
   type ExtensionPolicyMode,
   type ExtensionPolicySurface,
@@ -187,26 +189,7 @@ interface NormalizedExtensionPolicy {
   warnings: string[];
 }
 
-const DEFAULT_EXTENSION_POLICY: ExtensionGovernancePolicy = Object.freeze({
-  mode: "off",
-  trust_mode: "off",
-  require_provenance: false,
-  trusted_extensions: [],
-  default_sandbox_profile: "none",
-  allowed_extensions: [],
-  blocked_extensions: [],
-  allowed_capabilities: [],
-  blocked_capabilities: [],
-  allowed_surfaces: [],
-  blocked_surfaces: [],
-  allowed_commands: [],
-  blocked_commands: [],
-  allowed_actions: [],
-  blocked_actions: [],
-  allowed_services: [],
-  blocked_services: [],
-  extension_overrides: [],
-});
+const DEFAULT_EXTENSION_POLICY: ExtensionGovernancePolicy = createDefaultExtensionGovernancePolicy();
 
 let extensionReloadEpoch = 0;
 
@@ -1618,19 +1601,8 @@ function isOutputRendererFormat(value: string): value is OutputRendererFormat {
   return value === "toon" || value === "json";
 }
 
-const EXTENSION_SERVICE_NAMES: readonly ExtensionServiceName[] = [
-  "output_format",
-  "error_format",
-  "help_format",
-  "lock_acquire",
-  "lock_release",
-  "history_append",
-  "item_store_write",
-  "item_store_delete",
-];
-
 function isExtensionServiceName(value: string): value is ExtensionServiceName {
-  return EXTENSION_SERVICE_NAMES.includes(value as ExtensionServiceName);
+  return KNOWN_EXTENSION_SERVICE_NAMES.includes(value as ExtensionServiceName);
 }
 
 function assertHookHandler(hookName: string, hook: unknown): void {
@@ -2303,7 +2275,7 @@ function createExtensionApi(
     assertExtensionCapability(extension, "services", "registerService");
     const normalizedService = String(service).trim().toLowerCase();
     if (!isExtensionServiceName(normalizedService)) {
-      throw new TypeError(`registerService service must be one of: ${EXTENSION_SERVICE_NAMES.join(", ")}`);
+      throw new TypeError(`registerService service must be one of: ${KNOWN_EXTENSION_SERVICE_NAMES.join(", ")}`);
     }
     if (!allowRegistration("services.override", "registerService", "services", { service: normalizedService })) {
       return;

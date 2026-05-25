@@ -9,7 +9,7 @@ Native pm CLI integration for Claude Code. Use pm project management tools direc
 | **18 MCP tools** | Full pm surface: context, search, list, get, create, update, claim, release, close, comments, files, docs, test, validate, health, contracts, plan + `pm_run` for everything else |
 | **5 skills** | `pm-workflow`, `pm-developer`, `pm-release`, `pm-audit`, `pm-planner` — auto-loaded as Claude Code skills |
 | **14 slash commands** | Full lifecycle coverage — status, start, close, triage, audit, search, new, list, calendar, developer, planner, release, workflow, init |
-| **3 subagents** | `pm-coordinator` (batch/multi-item), `pm-triage-agent` (duplicate-safe item creation), `pm-verification-agent` (evidence + close readiness), and a `pm-delivery-chain` orchestrator |
+| **4 subagents** | `pm-coordinator` (batch/multi-item), `pm-triage-agent` (duplicate-safe item creation), `pm-verification-agent` (evidence + close readiness), and `pm-delivery-chain` (orchestrated delivery) |
 | **Hybrid TUI tracking** | pm items sync to Claude Code's task panel — pm is the persistent store, the task panel is the live session view |
 | **Session hook** | Injects active pm item summary at session start when pm is initialized (uses native modules, no CLI required) |
 
@@ -29,7 +29,7 @@ claude plugin marketplace add /path/to/pm-cli
 # claude plugin marketplace add unbraind/pm-cli
 ```
 
-This installs all 18 MCP tools, 5 skills, 14 slash commands, 3 subagents, hybrid TUI tracking, and the session hook in one step.
+This installs all 18 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and the session hook in one step.
 
 ### Option B: Legacy marketplace alias (also works)
 

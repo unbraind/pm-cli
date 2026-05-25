@@ -2,19 +2,26 @@ id: pm-2awd
 title: Single-source extension manifest and policy examples in docs
 description: "Duplicate audit 2026-05-22: docs/EXTENSIONS.md embeds extension manifest and policy examples that duplicate runnable example files. Manifest v2 provenance/sandbox/permissions/capabilities examples appear in docs/EXTENSIONS.md:145-170 and docs/examples/policy-restricted-extension/manifest.json:1-21 plus docs/examples/starter-extension/manifest.json:1-32; policy config examples appear in docs/EXTENSIONS.md:193-217 and docs/examples/policy-restricted-extension/README.md:26-59. Existing pm-w98k covers source-code extension contract constants and pm-axd1 covers production/test default objects, not docs/example snippet drift."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[4]: dedup,docs,examples,extensions
 created_at: "2026-05-22T19:18:35.275Z"
-updated_at: "2026-05-22T19:18:35.275Z"
+updated_at: "2026-05-25T00:23:21.136Z"
 author: codex-duplicate-audit
 acceptance_criteria: docs/EXTENSIONS.md either links to runnable example manifests/configs or embeds snippets generated/checked from those files; extension example docs no longer drift from runnable files; docs-skills gate and example/package checks pass.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+resolution: Completed in the combined extension/plugin dedupe PR by removing duplicated literals or routing duplicated documentation to canonical sources while preserving behavior.
+expected_result: "Extension contracts/defaults and plugin documentation inventories have single maintained sources, existing runtime behavior remains intact, and focused plus full release verification passes."
+actual_result: "Canonical extension constants/defaults, plugin docs routing, smoke coverage, contract equality regression, package-owned changelog update, manual temp-project smoke, package dogfood, and full release gate all passed."
+comments[2]{created_at,author,text}:
   "2026-05-22T19:18:35.275Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'extension manifest policy examples docs EXTENSIONS policy-restricted starter manifest duplicated' found adjacent pm-w98k/pm-axd1 but no active item for docs/example snippet duplication."
+  "2026-05-24T23:56:06.582Z",codex-docs-dedupe-lane,"Evidence from docs/plugin single-source lane (read-only, 2026-05-25): docs/EXTENSIONS.md embeds a minimal extension layout, v1 manifest, v2 manifest, capabilities list, and extensions.policy JSON. Runnable example files provide the actual executable references: docs/examples/starter-extension/manifest.json declares all capabilities with sandbox_profile none and writable permissions; docs/examples/policy-restricted-extension/manifest.json declares commands/hooks/services with sandbox_profile restricted and read-only-ish permissions; docs/examples/policy-restricted-extension/README.md contains the richer enforce policy example including trusted_extensions, blocked_surfaces services.override, blocked_services output_format, and extension_overrides. Drift found: docs/EXTENSIONS.md policy snippet omits fields present in the runnable policy example (trusted_extensions, extension_overrides) and uses blocked_surfaces commands.override while the runnable example uses services.override; the v2 manifest snippet is illustrative but no longer matches either runnable manifest exactly. Recommendation: make docs/examples/starter-extension/manifest.json and docs/examples/policy-restricted-extension/* canonical for complete manifests/policy configs; keep docs/EXTENSIONS.md as API/reference with tiny illustrative snippets plus explicit links to runnable examples. Smallest edit: replace long v2 manifest/policy JSON in docs/EXTENSIONS.md with reduced excerpts or \"see runnable example\" links, and add a one-line rule that snippets are illustrative while example files are source of truth. Validation commands to wire: pnpm quality:docs-skills, pnpm build, pm contracts --schema-only --json, pm contracts --command extension --flags-only --json, and a sandbox install/doctor of starter + policy examples with isolated PM_PATH/PM_GLOBAL_PATH or node scripts/run-tests.mjs if an existing extension example test target is available.\n"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm quality:docs-skills",null,project,300,null,null,null,null,null,null,null,null,null,null,null,docs-skills gate
 docs[4]{path,scope,note}:
   docs/examples/policy-restricted-extension/manifest.json,project,runnable manifest duplicate
   docs/examples/policy-restricted-extension/README.md,project,policy config duplicate
   docs/examples/starter-extension/manifest.json,project,runnable manifest duplicate
   docs/EXTENSIONS.md,project,inline manifest and policy snippets
+close_reason: "Completed in combined extension/plugin dedupe PR: canonicalized duplicated extension contract/default sources or routed duplicated plugin/docs inventory to one source. Evidence is recorded on the item and parent pm-rnpb; focused tests, docs/plugin checks, manual temp-project smoke, package dogfood, full release gate, changelog check, GitHub/dependency/security checks, and Sentry/telemetry checks passed."
 body: ""

@@ -52,18 +52,4 @@ Run the pm planning loop using native MCP tools. Argument: `$ARGUMENTS` (optiona
 
 ## Living plan mode (`pm_plan`)
 
-If the user wants a Codex-style ExecPlan / Claude Plan Mode / Cursor plan-and-edit flow rather than a flat backlog, use the built-in `Plan` item type via the `pm_plan` MCP tool. It records ordered steps, evidence, decisions, discoveries, validation, and supports materializing steps into real Tasks/Features.
-
-```json
-{ "tool": "pm_plan", "args": { "options": { "subcommand": "create", "title": "Plan title", "scope": "What this plan changes", "harness": "claude-code", "parent": "pm-epic1", "claim": true } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "add-step", "stepTitle": "Read affected files", "dependsOn": "pm-task1" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "stepRef": "plan-step-001", "options": { "subcommand": "complete-step", "stepEvidence": "files reviewed" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "approve" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "materialize", "steps": "plan-step-002,plan-step-003", "materializeType": "Task" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "show", "depth": "deep" } } }
-```
-
-Resume a plan after compaction:
-```json
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "resume", "resumeContext": "step 2 in progress; tests still failing on retry path" } } }
-```
+If the user wants a Codex-style ExecPlan / Claude Plan Mode / Cursor plan-and-edit flow rather than a flat backlog, use the built-in `Plan` item type via the `pm_plan` MCP tool. The canonical lifecycle recipe lives in [Command Reference: Plan Workflow](../../../docs/COMMANDS.md#plan-workflow); this slash command should add only Claude-specific context such as `harness: "claude-code"` and concise `resumeContext` after compaction.

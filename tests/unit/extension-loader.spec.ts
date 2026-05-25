@@ -20,6 +20,10 @@ import {
   runOnWriteHooks,
   type ExtensionManifest,
 } from "../../src/core/extensions/loader.js";
+import {
+  createDefaultExtensionGovernancePolicy,
+  type ExtensionGovernancePolicy,
+} from "../../src/core/extensions/extension-types.js";
 import { readSettings } from "../../src/core/store/settings.js";
 import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -37,6 +41,13 @@ async function createExtension(
     entryFilename: typeof manifest?.entry === "string" ? manifest.entry : "index.mjs",
     entrySource: entrySource ?? null,
   });
+}
+
+function createTestExtensionPolicy(overrides: Partial<ExtensionGovernancePolicy> = {}): ExtensionGovernancePolicy {
+  return {
+    ...createDefaultExtensionGovernancePolicy(),
+    ...overrides,
+  };
 }
 
 async function loadSettings(context: TempPmContext) {
@@ -155,7 +166,7 @@ describe("extension loader", () => {
       );
 
       const settings = await loadSettings(context);
-      settings.extensions.policy = {
+      settings.extensions.policy = createTestExtensionPolicy({
         mode: "enforce",
         allowed_extensions: ["policy-allowed-ext"],
         blocked_extensions: [],
@@ -164,7 +175,7 @@ describe("extension loader", () => {
         allowed_surfaces: [],
         blocked_surfaces: [],
         extension_overrides: [],
-      };
+      });
 
       const discovery = await discoverExtensions({
         pmRoot: context.pmPath,
@@ -196,7 +207,7 @@ describe("extension loader", () => {
       );
 
       const settings = await loadSettings(context);
-      settings.extensions.policy = {
+      settings.extensions.policy = createTestExtensionPolicy({
         mode: "warn",
         allowed_extensions: [],
         blocked_extensions: [],
@@ -205,7 +216,7 @@ describe("extension loader", () => {
         allowed_surfaces: [],
         blocked_surfaces: [],
         extension_overrides: [],
-      };
+      });
 
       const discovery = await discoverExtensions({
         pmRoot: context.pmPath,
@@ -269,7 +280,7 @@ describe("extension loader", () => {
       );
 
       const settings = await loadSettings(context);
-      settings.extensions.policy = {
+      settings.extensions.policy = createTestExtensionPolicy({
         mode: "off",
         trust_mode: "enforce",
         require_provenance: true,
@@ -288,7 +299,7 @@ describe("extension loader", () => {
         allowed_services: [],
         blocked_services: [],
         extension_overrides: [],
-      };
+      });
 
       const discovery = await discoverExtensions({
         pmRoot: context.pmPath,
@@ -329,7 +340,7 @@ describe("extension loader", () => {
       );
 
       const settings = await loadSettings(context);
-      settings.extensions.policy = {
+      settings.extensions.policy = createTestExtensionPolicy({
         mode: "enforce",
         trust_mode: "off",
         require_provenance: false,
@@ -348,7 +359,7 @@ describe("extension loader", () => {
         allowed_services: [],
         blocked_services: [],
         extension_overrides: [],
-      };
+      });
 
       const discovery = await discoverExtensions({
         pmRoot: context.pmPath,
@@ -771,7 +782,7 @@ describe("extension loader", () => {
       discovered: [],
       effective: [],
       warnings: [],
-      policy: {
+      policy: createTestExtensionPolicy({
         mode: "enforce",
         allowed_extensions: [],
         blocked_extensions: [],
@@ -780,7 +791,7 @@ describe("extension loader", () => {
         allowed_surfaces: [],
         blocked_surfaces: ["commands.handler"],
         extension_overrides: [],
-      },
+      }),
       loaded: [
         {
           layer: "project",
@@ -841,7 +852,7 @@ describe("extension loader", () => {
       discovered: [],
       effective: [],
       warnings: [],
-      policy: {
+      policy: createTestExtensionPolicy({
         mode: "enforce",
         trust_mode: "off",
         require_provenance: false,
@@ -860,7 +871,7 @@ describe("extension loader", () => {
         allowed_services: [],
         blocked_services: ["output_format"],
         extension_overrides: [],
-      },
+      }),
       loaded: [
         {
           layer: "project",

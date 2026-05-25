@@ -12,11 +12,11 @@ Restart Codex and install **pm CLI** from the `pm CLI Local` marketplace.
 
 ## What It Provides
 
-- `pm-mcp` MCP server for structured pm operations without invoking the `pm` shell command
-- narrow tools for common loops: context, search, list, get, create, update, claim, release, close, comments, files, docs, tests, validate, health, contracts, and guide
-- `pm_run` for the rest of the pm surface, including calendar, activity, aggregate, dedupe-audit, normalize, reindex, extensions, templates, history, stats, gc, and test-runs controls
-- skills for native tracking, audits, and release workflows
-- command prompts for start, close, and audit flows
+The canonical tool, skill, command, and safety inventory lives in the plugin README:
+
+- [pm CLI Codex Plugin](../plugins/pm-codex/README.md)
+
+Keep this page as the public docs router so the MCP tool/action list has one maintained source.
 
 ## Native MCP Notes
 

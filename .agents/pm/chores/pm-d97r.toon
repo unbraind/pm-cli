@@ -2,17 +2,24 @@ id: pm-d97r
 title: Single-source Codex plugin docs tool surface
 description: "Duplicate audit 2026-05-22: Codex plugin docs repeat install/tool-surface text with hand-maintained action lists in docs/CODEX_PLUGIN.md:13-33 and plugins/pm-codex/README.md:3-33. Both describe what the plugin provides, install steps, MCP launcher fallback, narrow tools, pm_run actions, and safety guidance, but docs/CODEX_PLUGIN.md:16-17 and plugins/pm-codex/README.md:24-26 differ in named tools/actions. Existing pm-js0r is implementation wrapper/smoke dedup and pm-rjgh does not cover Codex plugin docs."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[4]: codex,dedup,docs,plugins
 created_at: "2026-05-22T19:18:01.426Z"
-updated_at: "2026-05-22T19:18:01.426Z"
+updated_at: "2026-05-25T00:23:28.069Z"
 author: codex-duplicate-audit
 acceptance_criteria: plugins/pm-codex/README.md or another chosen source is canonical for detailed tool/action inventory; docs/CODEX_PLUGIN.md becomes a short route or generated mirror; listed tools/actions match actual plugin surfaces; docs-skills gate and plugin docs checks pass.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+resolution: Completed in the combined extension/plugin dedupe PR by removing duplicated literals or routing duplicated documentation to canonical sources while preserving behavior.
+expected_result: "Extension contracts/defaults and plugin documentation inventories have single maintained sources, existing runtime behavior remains intact, and focused plus full release verification passes."
+actual_result: "Canonical extension constants/defaults, plugin docs routing, smoke coverage, contract equality regression, package-owned changelog update, manual temp-project smoke, package dogfood, and full release gate all passed."
+comments[2]{created_at,author,text}:
   "2026-05-22T19:18:01.426Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'Codex plugin docs tool surface pm_run action list CODEX_PLUGIN README duplicate' found adjacent pm-js0r/pm-0c9q but no active docs-surface dedup item."
+  "2026-05-24T23:55:41.716Z",codex-docs-dedupe-lane,"Evidence from docs/plugin single-source lane (read-only, 2026-05-25): actual Codex plugin inventory from disk is plugins/pm-codex/.codex-plugin/plugin.json + .mcp.json, 3 command prompts (pm-audit, pm-close-task, pm-start-task), 3 skills (pm-auditor, pm-native, pm-release), script launcher, and asset. Actual MCP server source exposes 18 tools: pm_run plus pm_context, pm_search, pm_list, pm_get, pm_create, pm_update, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_test, pm_validate, pm_health, pm_contracts, pm_plan. Drift found: docs/CODEX_PLUGIN.md lists a narrow \"guide\" concept but not pm_plan by name; plugins/pm-codex/README.md has the accurate narrow tool names but its pm_run action prose is hand-maintained and omits core actions supported by src/mcp/server.ts (delete, deps, files-discover, config, package/install/upgrade, update-many, history-repair, schema, etc.) while including package-owned dynamic actions. Recommendation: make plugins/pm-codex/README.md the canonical user-facing plugin page; make docs/CODEX_PLUGIN.md a short install/router page that links to ../plugins/pm-codex/README.md and to src/mcp/server.ts or docs/COMMANDS.md#machine-contracts for exact runtime tool/action contracts. Smallest edit: remove the duplicated \"What It Provides\" inventory from docs/CODEX_PLUGIN.md or replace it with one sentence plus link; in plugin README keep exact narrow tool list, but describe pm_run as \"core + dynamically installed package actions; inspect via pm contracts/tools/list\" rather than enumerating every action.\n"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm smoke:codex-plugin",null,project,300,null,null,null,null,null,null,null,null,null,null,null,Codex plugin MCP smoke
 docs[2]{path,scope,note}:
   docs/CODEX_PLUGIN.md,project,duplicated tool surface
   plugins/pm-codex/README.md,project,canonical candidate with differing action list
+close_reason: "Completed in combined extension/plugin dedupe PR: canonicalized duplicated extension contract/default sources or routed duplicated plugin/docs inventory to one source. Evidence is recorded on the item and parent pm-rnpb; focused tests, docs/plugin checks, manual temp-project smoke, package dogfood, full release gate, changelog check, GitHub/dependency/security checks, and Sentry/telemetry checks passed."
 body: ""

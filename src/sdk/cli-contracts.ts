@@ -22,6 +22,14 @@ import {
   PLAN_STEP_LINK_KIND_VALUES,
   PLAN_STEP_STATUS_VALUES,
 } from "../types/index.js";
+import {
+  KNOWN_EXTENSION_CAPABILITIES,
+  KNOWN_EXTENSION_POLICY_MODES,
+  KNOWN_EXTENSION_POLICY_SURFACES,
+  KNOWN_EXTENSION_SANDBOX_PROFILES,
+  KNOWN_EXTENSION_SERVICE_NAMES,
+  KNOWN_EXTENSION_TRUST_MODES,
+} from "../core/extensions/extension-types.js";
 
 export interface CliFlagContract {
   flag: string;
@@ -42,61 +50,22 @@ export interface ToolOptionFlagContract {
   booleanish?: boolean;
 }
 
-export const PM_EXTENSION_CAPABILITY_CONTRACTS = [
-  "commands",
-  "renderers",
-  "hooks",
-  "schema",
-  "importers",
-  "search",
-  "parser",
-  "preflight",
-  "services",
-] as const;
+export const PM_EXTENSION_CAPABILITY_CONTRACTS = [...KNOWN_EXTENSION_CAPABILITIES] as const;
 
 export type PmExtensionCapabilityContract = (typeof PM_EXTENSION_CAPABILITY_CONTRACTS)[number];
 
-export const PM_EXTENSION_SERVICE_NAME_CONTRACTS = [
-  "output_format",
-  "error_format",
-  "help_format",
-  "lock_acquire",
-  "lock_release",
-  "history_append",
-  "item_store_write",
-  "item_store_delete",
-] as const;
+export const PM_EXTENSION_SERVICE_NAME_CONTRACTS = [...KNOWN_EXTENSION_SERVICE_NAMES] as const;
 
 export type PmExtensionServiceNameContract = (typeof PM_EXTENSION_SERVICE_NAME_CONTRACTS)[number];
 
-export const PM_EXTENSION_POLICY_MODE_CONTRACTS = ["off", "warn", "enforce"] as const;
+export const PM_EXTENSION_POLICY_MODE_CONTRACTS = [...KNOWN_EXTENSION_POLICY_MODES] as const;
 export type PmExtensionPolicyModeContract = (typeof PM_EXTENSION_POLICY_MODE_CONTRACTS)[number];
-export const PM_EXTENSION_TRUST_MODE_CONTRACTS = ["off", "warn", "enforce"] as const;
+export const PM_EXTENSION_TRUST_MODE_CONTRACTS = [...KNOWN_EXTENSION_TRUST_MODES] as const;
 export type PmExtensionTrustModeContract = (typeof PM_EXTENSION_TRUST_MODE_CONTRACTS)[number];
-export const PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS = ["none", "restricted", "strict"] as const;
+export const PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS = [...KNOWN_EXTENSION_SANDBOX_PROFILES] as const;
 export type PmExtensionSandboxProfileContract = (typeof PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS)[number];
 
-export const PM_EXTENSION_POLICY_SURFACE_CONTRACTS = [
-  "commands.override",
-  "commands.handler",
-  "hooks.beforecommand",
-  "hooks.aftercommand",
-  "hooks.onwrite",
-  "hooks.onread",
-  "hooks.onindex",
-  "schema.flags",
-  "schema.itemfields",
-  "schema.itemtypes",
-  "schema.migrations",
-  "parser.override",
-  "preflight.override",
-  "services.override",
-  "renderers.override",
-  "importers.importer",
-  "importers.exporter",
-  "search.provider",
-  "search.vectorstore",
-] as const;
+export const PM_EXTENSION_POLICY_SURFACE_CONTRACTS = [...KNOWN_EXTENSION_POLICY_SURFACES] as const;
 export type PmExtensionPolicySurfaceContract = (typeof PM_EXTENSION_POLICY_SURFACE_CONTRACTS)[number];
 
 function normalizeUniqueStringList(values: Iterable<string>): string[] {
