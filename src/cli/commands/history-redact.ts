@@ -443,6 +443,7 @@ export async function runHistoryRedact(
   if (!(await pathExists(subject.historyPath))) {
     throw new PmCliError(`No history stream exists for ${subject.id}.`, EXIT_CODE.NOT_FOUND);
   }
+  const historyRawBeforeLock = await readFileIfExists(subject.historyPath);
   const historyEntries = await readHistoryEntries(subject.historyPath, subject.id);
   if (historyEntries.length === 0) {
     throw new PmCliError(`No history entries exist for ${subject.id}; nothing to redact.`, EXIT_CODE.USAGE);
@@ -551,7 +552,29 @@ export async function runHistoryRedact(
       settings.governance.force_required_for_stale_lock,
     );
     try {
-      const previousHistoryRaw = await readFileIfExists(subject.historyPath);
+      const historyRawUnderLock = await readFileIfExists(subject.historyPath);
+      if (historyRawUnderLock !== historyRawBeforeLock) {
+        throw new PmCliError(
+          `History for ${subject.id} changed while waiting for lock; retry history-redact.`,
+          EXIT_CODE.CONFLICT,
+        );
+      }
+      const locatedUnderLock = await locateItem(
+        pmRoot,
+        subject.id,
+        settings.id_prefix,
+        settings.item_format,
+        typeRegistry.type_to_folder,
+      );
+      const loadedItemUnderLock = locatedUnderLock
+        ? await readLocatedItem(locatedUnderLock, { schema: settings.schema })
+        : null;
+      if ((loadedItemUnderLock?.raw ?? null) !== (currentItemRaw ?? null)) {
+        throw new PmCliError(
+          `Item ${subject.id} changed while waiting for lock; retry history-redact.`,
+          EXIT_CODE.CONFLICT,
+        );
+      }
       const affectedItemPaths = new Set<string>();
       if (currentItemPath) {
         affectedItemPaths.add(currentItemPath);
@@ -573,10 +596,10 @@ export async function runHistoryRedact(
         }
         await writeFileAtomic(subject.historyPath, historyEntriesToRaw(rewrittenEntries));
       } catch (error) {
-        if (previousHistoryRaw === null) {
+        if (historyRawUnderLock === null) {
           await fs.rm(subject.historyPath, { force: true });
         } else {
-          await writeFileAtomic(subject.historyPath, previousHistoryRaw);
+          await writeFileAtomic(subject.historyPath, historyRawUnderLock);
         }
         for (const itemPath of affectedItemPaths) {
           const snapshot = itemSnapshots.get(itemPath);

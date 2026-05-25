@@ -64,5 +64,6 @@ function printFastVersionIfRequested(): boolean {
 
 if (!printFastVersionIfRequested()) {
   enableNodeCompileCache();
-  await import("./cli/main.js");
+  const { runPmCli } = await import("./cli/main.js");
+  await runPmCli(process.argv.slice(2));
 }

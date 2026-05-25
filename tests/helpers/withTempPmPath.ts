@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { runDirectDistCli, type DirectCliRunResult } from "./cliRunner.js";
+import { runDirectDistCli, runInProcessDistCli, type DirectCliRunResult } from "./cliRunner.js";
 
 export type CliRunResult = DirectCliRunResult;
 
@@ -11,6 +11,7 @@ export interface TempPmContext {
   pmPath: string;
   env: NodeJS.ProcessEnv;
   runCli: (args: string[], options?: { expectJson?: boolean; cwd?: string; input?: string }) => CliRunResult;
+  runCliInProcess: (args: string[], options?: { expectJson?: boolean; cwd?: string }) => Promise<CliRunResult>;
 }
 
 const LEGACY_NONE_TOKENS = new Set(["none", "null"]);
@@ -191,6 +192,19 @@ function runNodeCli(
   });
 }
 
+async function runNodeCliInProcess(
+  env: NodeJS.ProcessEnv,
+  args: string[],
+  options?: { expectJson?: boolean; cwd?: string },
+): Promise<CliRunResult> {
+  const normalizedArgs = normalizeLegacyCreateArgsForTests(args);
+  return runInProcessDistCli(normalizedArgs, {
+    cwd: options?.cwd,
+    env,
+    expectJson: options?.expectJson,
+  });
+}
+
 async function removeTempRoot(tempRoot: string): Promise<void> {
   let lastError: unknown;
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -226,6 +240,8 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
 
   const runCli = (args: string[], options?: { expectJson?: boolean; cwd?: string }): CliRunResult =>
     runNodeCli(env, args, options);
+  const runCliInProcess = (args: string[], options?: { expectJson?: boolean; cwd?: string }): Promise<CliRunResult> =>
+    runNodeCliInProcess(env, args, options);
 
   const previousEnv = {
     PM_PATH: process.env.PM_PATH,
@@ -255,6 +271,7 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
       pmPath,
       env,
       runCli,
+      runCliInProcess,
     });
   } finally {
     if (previousEnv.PM_PATH === undefined) {

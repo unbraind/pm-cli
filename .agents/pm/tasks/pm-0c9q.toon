@@ -2,15 +2,18 @@ id: pm-0c9q
 title: Create native Codex plugin for pm CLI
 description: "Create and harden native Pi package integration for pm CLI, including extension tooling, installable package metadata, skills, prompts/workflows, docs, and tests."
 type: Task
-status: open
+status: closed
 priority: 0
 tags[6]: agent-ux,codex,mcp,plugin,pm-cli,skills
 created_at: "2026-05-09T15:54:11.396Z"
-updated_at: "2026-05-17T09:45:30.260Z"
+updated_at: "2026-05-25T10:21:16.135Z"
 author: codex-agent
 acceptance_criteria: Pi can install the package via local/package source; native pm tool covers pm CLI feature actions without shelling out to pm; bundled skills/prompts/resources are discovered by Pi; tests verify action mapping and package/resource shape; docs explain installation and workflows.
 parent: pm-rnpb
-comments[15]{created_at,author,text}:
+resolution: Shipped native Codex plugin + pm-mcp integration and verified runtime smoke behavior.
+expected_result: Codex plugin resources and MCP execution should be installable and operational from the repository package.
+actual_result: Smoke and recorded tests confirm plugin/MCP behavior; open status was stale and item is now closed with metadata.
+comments[16]{created_at,author,text}:
   "2026-05-09T15:54:11.396Z",codex-agent,"Duplicate-check evidence: ran pm context --limit 10,pm search codex plugin native mcp extension --limit 10,pm list-open --limit 20,and pm list-in-progress --limit 20. Existing pm-4z9m is docs/skills modernization and does not package a Codex plugin/MCP server,so this is net-new child scope under pm-rnpb."
   "2026-05-09T16:10:37.829Z",codex-agent,"Evidence: implemented native Codex plugin with pm-mcp MCP server, repo marketplace, bundled skills/commands/docs, and package inclusion. Verification passed: codex plugin marketplace add <repo-root> on Codex 0.130.0; pm-mcp initialize; native MCP smoke; pm linked tests (focused packaging suite, smoke, build); full coverage 89 files/1242 tests with 100%; quality:static; quality:docs-skills; check-secrets; npm pack --dry-run includes dist/mcp and plugin files. pm validate/health only report pre-existing history drift warnings on pm-54d, pm-f3q4, pm-fdla, pm-mb4n, pm-tq1."
   "2026-05-09T16:43:27.587Z",pi-agent,"Evidence: implemented official installable Pi package manifest and native Pi extension at pi/extensions/pm-cli/index.js. The extension imports dist/pi/native.js and calls pm command modules directly instead of shelling out to pm; added Pi skills/prompts/docs and removed legacy project-local CLI wrapper. Verified: pnpm build; focused native Pi tests; pnpm quality:docs-skills; pnpm quality:static; node scripts/run-tests.mjs coverage (89 files, 1234 tests, 100% coverage); pnpm security:scan; npm pack --dry-run includes pi resources and dist/pi/native.js; local Pi install smoke via PI_OFFLINE=1 pi install -l . and pi -e . /pm-actions exited 0."
@@ -26,6 +29,7 @@ comments[15]{created_at,author,text}:
   "2026-05-09T23:36:51.972Z",pi-agent,"Final proof run for repeated Codex schema report: directory is .pi (no pi/), pi.getAllTools reports pm at index 7 with parameters.type=object from .pi/extensions/pm-cli/index.js, and before_provider_request for openai-codex shows every serialized tool has paramType=object; pm specifically has required=[action], no oneOf/anyOf. The Codex call no longer fails invalid_function_parameters; it proceeds to model/account support validation."
   "2026-05-09T23:43:05.045Z",pi-agent,"Evidence after user clarified pi/ rename was intentional to disable the broken extension: added a before_provider_request guard in the .pi extension that patches any serialized pm tool payload whose parameters are missing or non-object, covering the exact Codex tools[n].parameters type None failure even if Pi/provider conversion drops the schema. Verified .pi active and no pi/ directory, pnpm build, focused Pi/release tests (35 passed), docs-skills, static quality, npm pack includes .pi resources, and openai-codex provider payload summary shows all tools paramType=object with pm paramType=object required=[action] no oneOf/anyOf; request proceeds past schema validation to model/account validation."
   "2026-05-10T00:07:36.264Z",pi-agent,"Evidence: restored active project extension directory to .pi (pi/ absent), kept package manifest/docs on .pi resources, hardened pm Pi tool schema with provider-compatible root type=object plus defensive before_provider_request patch for top-level and function-style tool payloads, and updated contract regression expectations. Read latest Pi README/extensions/SDK/providers docs before validation. Verification passed: npm install -g .; pm --version 2026.5.6; pnpm build; focused tests (48 passed); pm linked tests all passed including coverage 89 files/1236 tests with 100%; docs-skills gate; static quality gate; npm pack --dry-run includes .pi resources; live Pi smoke with .pi auto-discovered extension and zai/glm-5.1 executed pm tool action=context limit=1 and returned DONE. pm validate --check-resolution --check-history-drift reports only pre-existing history drift warnings on pm-54d, pm-f3q4, pm-fdla, pm-mb4n, pm-tq1."
+  "2026-05-25T10:10:45.822Z",codex-reliability-agent,"Closure evidence 2026-05-25: native Codex plugin/MCP functionality remains healthy on main. smoke-codex-plugin-mcp passed in this run, docs/routes and plugin assets are present, and existing linked tests for plugin packaging/contracts remain recorded."
 files[14]{path,scope,note}:
   .agents/plugins/marketplace.json,project,repo plugin marketplace
   docs/CODEX_PLUGIN.md,project,Codex plugin docs
@@ -57,4 +61,5 @@ test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resum
   test-local-moz0jvtq-469j3j,test,passed,"2026-05-10T00:01:34.391Z","2026-05-10T00:07:10.047Z","2026-05-10T00:07:10.047Z",null,null,6,0,0,null,null,null
 docs[1]{path,scope,note}:
   docs/CODEX_PLUGIN.md,project,native Codex plugin install and tool docs
+close_reason: Native Codex plugin scope is implemented and currently verified by smoke/test evidence; open status was stale.
 body: ""

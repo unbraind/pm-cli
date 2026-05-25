@@ -1536,9 +1536,8 @@ function shouldRegisterRuntimeSchemaFlags(invocationArgv: string[]): boolean {
   return RUNTIME_SCHEMA_FLAG_BOOTSTRAP_COMMANDS.has(commandName);
 }
 
-const bootstrapInvocation = normalizeBootstrapInvocation(process.argv.slice(2));
-
-async function main(): Promise<void> {
+export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promise<void> {
+  const bootstrapInvocation = normalizeBootstrapInvocation(rawArgv);
   const invocationArgv = bootstrapInvocation.argv;
   const invocationProcessArgv = [process.argv[0], process.argv[1], ...invocationArgv];
   const isBareInvocation = invocationArgv.length === 0;
@@ -1881,5 +1880,3 @@ async function main(): Promise<void> {
     process.exitCode = EXIT_CODE.GENERIC_FAILURE;
   }
 }
-
-void main();

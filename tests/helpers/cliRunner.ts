@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 export interface DirectCliRunOptions {
   cwd?: string;
@@ -45,4 +46,133 @@ export function runDirectDistCli(args: string[], options: DirectCliRunOptions = 
     }
   }
   return result;
+}
+
+function chunkToString(chunk: unknown, encoding?: BufferEncoding): string {
+  if (typeof chunk === "string") {
+    return chunk;
+  }
+  if (chunk instanceof Uint8Array) {
+    return Buffer.from(chunk).toString(encoding ?? "utf8");
+  }
+  if (chunk === undefined || chunk === null) {
+    return "";
+  }
+  return String(chunk);
+}
+
+function applyEnvOverride(env: NodeJS.ProcessEnv | undefined): () => void {
+  if (!env) {
+    return () => {};
+  }
+  const keys = new Set<string>([...Object.keys(process.env), ...Object.keys(env)]);
+  const previous = new Map<string, string | undefined>();
+  for (const key of keys) {
+    previous.set(key, process.env[key]);
+    const next = env[key];
+    if (next === undefined) {
+      delete process.env[key];
+    } else {
+      process.env[key] = next;
+    }
+  }
+  return () => {
+    for (const key of keys) {
+      const prior = previous.get(key);
+      if (prior === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = prior;
+      }
+    }
+  };
+}
+
+export async function runInProcessDistCli(
+  args: string[],
+  options: DirectCliRunOptions = {},
+): Promise<DirectCliRunResult> {
+  if (options.input !== undefined || options.stdin !== undefined) {
+    throw new Error("runInProcessDistCli does not support stdin input.");
+  }
+
+  const mainModuleUrl = pathToFileURL(path.resolve(process.cwd(), "dist/cli/main.js"));
+  const cacheBustedUrl = `${mainModuleUrl.href}?inprocess=${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const loaded = (await import(cacheBustedUrl)) as {
+    runPmCli?: (argv: string[]) => Promise<void>;
+  };
+  if (typeof loaded.runPmCli !== "function") {
+    throw new Error(`dist main module does not export runPmCli: ${cacheBustedUrl}`);
+  }
+
+  let stdout = "";
+  let stderr = "";
+  const restoreEnv = applyEnvOverride(options.env);
+  const previousArgv = process.argv;
+  const previousExitCode = process.exitCode;
+  const previousCwd = process.cwd();
+  const previousStdoutWrite = process.stdout.write;
+  const previousStderrWrite = process.stderr.write;
+
+  process.argv = [process.argv[0], distCliPath(), ...args];
+  process.exitCode = undefined;
+  if (options.cwd) {
+    process.chdir(options.cwd);
+  }
+
+  (process.stdout as unknown as { write: typeof process.stdout.write }).write = ((chunk, encoding, callback) => {
+    const normalizedEncoding = typeof encoding === "string" ? (encoding as BufferEncoding) : undefined;
+    stdout += chunkToString(chunk, normalizedEncoding);
+    if (typeof encoding === "function") {
+      encoding();
+    } else if (typeof callback === "function") {
+      callback();
+    }
+    return true;
+  }) as typeof process.stdout.write;
+
+  (process.stderr as unknown as { write: typeof process.stderr.write }).write = ((chunk, encoding, callback) => {
+    const normalizedEncoding = typeof encoding === "string" ? (encoding as BufferEncoding) : undefined;
+    stderr += chunkToString(chunk, normalizedEncoding);
+    if (typeof encoding === "function") {
+      encoding();
+    } else if (typeof callback === "function") {
+      callback();
+    }
+    return true;
+  }) as typeof process.stderr.write;
+
+  let capturedError: Error | undefined;
+  try {
+    await loaded.runPmCli(args);
+  } catch (error: unknown) {
+    capturedError = error instanceof Error ? error : new Error(String(error));
+  } finally {
+    const status = process.exitCode ?? (capturedError ? 1 : 0);
+    (process.stdout as unknown as { write: typeof process.stdout.write }).write = previousStdoutWrite;
+    (process.stderr as unknown as { write: typeof process.stderr.write }).write = previousStderrWrite;
+    process.argv = previousArgv;
+    process.exitCode = previousExitCode;
+    if (options.cwd) {
+      process.chdir(previousCwd);
+    }
+    restoreEnv();
+
+    const result: DirectCliRunResult = {
+      code: status,
+      status,
+      stdout,
+      stderr,
+      ...(capturedError ? { error: capturedError } : {}),
+    };
+    if (options.expectJson && result.stdout.trim().length > 0) {
+      try {
+        result.json = JSON.parse(result.stdout);
+      } catch (error) {
+        const preview = result.stdout.slice(0, 500);
+        throw new Error(`Failed to parse in-process CLI JSON stdout for args ${JSON.stringify(args)}: ${String(error)}\nstdout: ${preview}`);
+      }
+    }
+    return result;
+  }
 }
