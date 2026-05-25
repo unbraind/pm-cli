@@ -310,6 +310,24 @@ describe("normalizeBootstrapInvocation", () => {
     expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(false);
   });
 
+  it("does not reinterpret a --path value beginning with -- as a list flag (pm-cf1u, codex P2)", () => {
+    // `--path` accepts values starting with "--"; coalescing must not treat the
+    // value as a list flag nor swallow the following command token.
+    const normalized = normalizeBootstrapInvocation([
+      "--path",
+      "--tags",
+      "create",
+      "issue",
+      "X",
+      "--tags",
+      "a",
+      "--tags",
+      "b",
+    ]);
+    expect(normalized.argv).toEqual(["--path", "--tags", "create", "issue", "X", "--tags=a,b"]);
+    expect(normalized.commandName).toBe("create");
+  });
+
   it("stops coalescing at a -- terminator (pm-cf1u)", () => {
     const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tags", "a", "--", "--tags", "b"]);
     expect(normalized.argv).toEqual(["create", "issue", "X", "--tags", "a", "--", "--tags", "b"]);

@@ -475,6 +475,12 @@ function normalizeLongOptionToken(
   };
 }
 
+// Global option flags whose value may legitimately begin with "--" (commander
+// accepts such values). Their value token must not be reinterpreted as a list
+// flag during coalescing. `--path <dir>` is the documented case; other globals
+// (--json/--quiet/--no-extensions/--no-pager/--profile) are boolean.
+const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>(["--path"]);
+
 function splitCanonicalListToken(token: string): { flag: string; inlineValue?: string } | null {
   if (!token.startsWith("--")) {
     return null;
@@ -496,10 +502,16 @@ function splitCanonicalListToken(token: string): { flag: string; inlineValue?: s
  * value (data loss). Both `--flag value` and `--flag=value` forms are merged;
  * a value-less occurrence is preserved untouched, and a `--` terminator stops
  * coalescing (remainder is passed through verbatim).
+ *
+ * `valueConsumingFlags` lists option flags (e.g. global `--path`) whose value
+ * may itself begin with `--`. Their value token is emitted verbatim so a
+ * list-flag-looking value (`--path --tags`) is never reinterpreted as a flag
+ * nor allowed to swallow the following command/positional token.
  */
 export function coalesceRepeatedListFlags(
   argv: string[],
   listFlags: Set<string>,
+  valueConsumingFlags: Set<string> = new Set(),
 ): { argv: string[]; events: BootstrapNormalizationEvent[] } {
   if (listFlags.size === 0) {
     return { argv: [...argv], events: [] };
@@ -520,6 +532,20 @@ export function coalesceRepeatedListFlags(
     if (token === "--") {
       result.push(...argv.slice(index));
       break;
+    }
+    // A value-consuming option in space form owns the next token as its value,
+    // even when that value begins with "--". Emit both verbatim so the value is
+    // never misread as a list-flag occurrence.
+    if (valueConsumingFlags.has(token)) {
+      result.push(token);
+      const next = argv[index + 1];
+      if (typeof next === "string" && next !== "--") {
+        result.push(next);
+        index += 2;
+      } else {
+        index += 1;
+      }
+      continue;
     }
     const parsed = splitCanonicalListToken(token);
     if (!parsed || !listFlags.has(parsed.flag)) {
@@ -646,7 +672,11 @@ export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocatio
     }
     normalizedArgv.push(token);
   }
-  const coalesced = coalesceRepeatedListFlags(normalizedArgv, lookup.listCanonicalFlags);
+  const coalesced = coalesceRepeatedListFlags(
+    normalizedArgv,
+    lookup.listCanonicalFlags,
+    GLOBAL_VALUE_CONSUMING_FLAGS,
+  );
   for (const event of coalesced.events) {
     trace.push(event);
   }
