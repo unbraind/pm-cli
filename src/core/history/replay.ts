@@ -1,6 +1,7 @@
 import jsonPatch from "fast-json-patch";
 import { FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { canonicalDocument } from "../item/item-format.js";
+import { toItemRecord } from "../item/item-record.js";
 import { orderObject, sha256Hex, stableStringify } from "../shared/serialization.js";
 import { hashDocument } from "./history.js";
 import type { HistoryEntry, HistoryPatchOp, ItemDocument, ItemMetadata } from "../../types/index.js";
@@ -65,7 +66,7 @@ export function toReplayDocument(document: ItemDocument): ReplayDocument {
   }
   const canonical = canonicalDocument(document);
   return {
-    metadata: orderObject(canonical.metadata as unknown as Record<string, unknown>, FRONT_MATTER_KEY_ORDER),
+    metadata: orderObject(toItemRecord(canonical.metadata), FRONT_MATTER_KEY_ORDER),
     body: canonical.body,
   };
 }

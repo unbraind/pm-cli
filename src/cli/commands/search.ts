@@ -26,6 +26,7 @@ import {
 import { buildEventCorpus, buildPlanFlatCorpus, buildReminderCorpus } from "../../core/search/corpus.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
+import { toItemRecord } from "../../core/item/item-record.js";
 import { isTerminalStatus } from "../../core/item/status.js";
 import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
 import {
@@ -1148,11 +1149,11 @@ function readSearchFieldValue(hit: SearchHit, field: string): unknown {
     if (itemKey.length === 0) {
       return null;
     }
-    const itemRecord = hit.item as unknown as Record<string, unknown>;
+    const itemRecord = toItemRecord(hit.item);
     return itemRecord[itemKey] ?? null;
   }
   const hitRecord = hit as unknown as Record<string, unknown>;
-  const itemRecord = hit.item as unknown as Record<string, unknown>;
+  const itemRecord = toItemRecord(hit.item);
   if (Object.prototype.hasOwnProperty.call(itemRecord, normalized)) {
     return itemRecord[normalized] ?? null;
   }

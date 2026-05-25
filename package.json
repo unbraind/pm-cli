@@ -44,7 +44,6 @@
     "CODE_OF_CONDUCT.md",
     "LICENSE",
     "AGENTS.md",
-    "PRD.md",
     "docs/**",
     ".claude-plugin/**",
     "plugins/**",

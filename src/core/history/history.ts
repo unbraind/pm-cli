@@ -3,6 +3,7 @@ import { FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { runActiveServiceOverride } from "../extensions/index.js";
 import { appendLineAtomic } from "../fs/fs-utils.js";
 import { canonicalDocument } from "../item/item-format.js";
+import { toItemRecord } from "../item/item-record.js";
 import { orderObject, sha256Hex, stableStringify } from "../shared/serialization.js";
 import type { HistoryEntry, HistoryPatchOp, ItemDocument } from "../../types/index.js";
 
@@ -92,7 +93,7 @@ function canonicalHashDocument(document: ItemDocument): { front_matter: Record<s
     };
   }
   const canonical = canonicalDocument(document);
-  const orderedFrontMatter = orderObject(canonical.metadata as unknown as Record<string, unknown>, FRONT_MATTER_KEY_ORDER);
+  const orderedFrontMatter = orderObject(toItemRecord(canonical.metadata), FRONT_MATTER_KEY_ORDER);
   return {
     front_matter: orderedFrontMatter,
     body: canonical.body,
@@ -108,7 +109,7 @@ function canonicalPatchDocument(document: ItemDocument): { metadata: Record<stri
     };
   }
   const canonical = canonicalDocument(document);
-  const orderedMetadata = orderObject(canonical.metadata as unknown as Record<string, unknown>, FRONT_MATTER_KEY_ORDER);
+  const orderedMetadata = orderObject(toItemRecord(canonical.metadata), FRONT_MATTER_KEY_ORDER);
   return {
     metadata: orderedMetadata,
     body: canonical.body,

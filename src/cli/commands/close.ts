@@ -1,4 +1,5 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { toItemRecord } from "../../core/item/item-record.js";
 import { isTerminalStatus } from "../../core/item/status.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
@@ -203,7 +204,7 @@ export async function runClose(
   });
 
   return {
-    item: result.item as unknown as Record<string, unknown>,
+    item: toItemRecord(result.item),
     changed_fields: result.changedFields,
     warnings: result.warnings,
   };

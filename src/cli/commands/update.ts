@@ -9,6 +9,7 @@ import {
   validateTypeOptions,
 } from "../../core/item/type-registry.js";
 import { normalizeItemId } from "../../core/item/id.js";
+import { toItemRecord } from "../../core/item/item-record.js";
 import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
 import {
   normalizeParentReferenceValue,
@@ -1466,7 +1467,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     }
     const { document } = await readLocatedItem(located, { schema: settings.schema });
     return {
-      item: document.metadata as unknown as Record<string, unknown>,
+      item: toItemRecord(document.metadata),
       changed_fields: [],
       warnings: ["noop_no_update_fields"],
     };
@@ -1548,7 +1549,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       // delete when `--unset <field>` was requested, then record the change.
       // Each call is placed in the same position the inline block occupied so
       // the order of `changedFields` is preserved exactly (pm-why9).
-      const metadataRecord = document.metadata as unknown as Record<string, unknown>;
+      const metadataRecord = toItemRecord(document.metadata);
       const setOrClearScalar = (
         optionValue: string | undefined,
         metadataKey: string,
@@ -1915,7 +1916,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
 
       try {
         applyRegisteredItemFieldDefaultsAndValidation(
-          document.metadata as unknown as Record<string, unknown>,
+          toItemRecord(document.metadata),
           getActiveExtensionRegistrations(),
         );
       } catch (error: unknown) {
@@ -1927,7 +1928,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   });
 
   return {
-    item: result.item as unknown as Record<string, unknown>,
+    item: toItemRecord(result.item),
     changed_fields: result.changedFields,
     warnings: [...parentReferenceWarnings, ...result.warnings],
     ...(options.allowAuditUpdate === true || options.allowAuditDepUpdate === true ? { audit_update: true } : {}),

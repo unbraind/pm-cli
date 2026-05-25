@@ -3,6 +3,7 @@ import { resolveRuntimeStatusRegistry, statusIsTerminal } from "../../core/schem
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { toItemRecord } from "../../core/item/item-record.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -81,7 +82,7 @@ export async function runClaim(
   });
 
   return {
-    item: result.item as unknown as Record<string, unknown>,
+    item: toItemRecord(result.item),
     claimed_by: skipped && previousAssignee !== null ? previousAssignee : author,
     previous_assignee: previousAssignee,
     forced: force,
@@ -136,7 +137,7 @@ export async function runRelease(
   }
 
   return {
-    item: result.item as unknown as Record<string, unknown>,
+    item: toItemRecord(result.item),
     released_by: author,
     previous_assignee: previousAssignee,
     audit_release: options.allowAuditRelease === true,

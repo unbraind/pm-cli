@@ -3,6 +3,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { resolveAuthor } from "../../core/shared/author.js";
+import { toItemRecord } from "../../core/item/item-record.js";
 import { createStdinTokenResolver } from "../../core/item/parse.js";
 import { mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
@@ -55,7 +56,7 @@ export async function runAppend(id: string, options: AppendCommandOptions, globa
   });
 
   return {
-    item: result.item as unknown as Record<string, unknown>,
+    item: toItemRecord(result.item),
     appended: appended.length > 0 ? appended : "",
     changed_fields: result.changedFields,
   };
