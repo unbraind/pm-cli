@@ -46,6 +46,8 @@ pm create --create-mode progressive \
 
 Priority accepts either numeric `0..4` or named aliases `critical`, `high`, `medium`, `low`, and `minimal`.
 
+Repeated singular/plural list flags accumulate, so `--tag a --tag b` is equivalent to `--tags a,b` (same for `--status` and `--fields` on read commands). You no longer have to pre-join values into one comma list.
+
 Create hierarchy from broad to narrow: `Epic` -> `Feature` -> `Task` or `Issue`. Use `--parent <id>` for child items.
 
 3. **Claim**

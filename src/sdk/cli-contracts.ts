@@ -87,6 +87,13 @@ export interface CliFlagContract {
   description?: string;
   required?: boolean;
   repeatable?: boolean;
+  /**
+   * Comma-separated multi-value flag whose repeated occurrences should
+   * accumulate (e.g. `--tag a --tag b` ≡ `--tags a,b`). Argv normalization
+   * coalesces repeats of these into one comma-joined token to avoid
+   * scalar keep-last data loss in Commander.
+   */
+  list?: boolean;
   value_name?: string;
   value_type?: "string" | "number" | "boolean";
 }
@@ -169,7 +176,7 @@ export const GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--status" },
+  { flag: "--status", list: true },
   { flag: "--type" },
   { flag: "--tag" },
   { flag: "--priority" },
@@ -186,7 +193,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--compact" },
   { flag: "--brief" },
   { flag: "--full" },
-  { flag: "--fields" },
+  { flag: "--fields", list: true },
   { flag: "--sort" },
   { flag: "--order" },
   { flag: "--include-body" },
@@ -194,7 +201,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const AGGREGATE_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--group-by" },
+  { flag: "--group-by", list: true },
   { flag: "--count" },
   { flag: "--include-unparented" },
   { flag: "--include_unparented" },
@@ -351,7 +358,7 @@ export const PLAN_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--harness" },
   { flag: "--mode" },
   { flag: "--resume-context", aliases: ["--resume_context"] },
-  { flag: "--tags" },
+  { flag: "--tags", list: true },
   { flag: "--priority" },
   { flag: "--body" },
   { flag: "--claim" },
@@ -380,7 +387,7 @@ export const PLAN_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--validation-command", aliases: ["--validation_command"] },
   { flag: "--validation-expected", aliases: ["--validation_expected"] },
   { flag: "--depth" },
-  { flag: "--fields" },
+  { flag: "--fields", list: true },
   { flag: "--steps" },
   { flag: "--materialize-type", aliases: ["--materialize_type"] },
   { flag: "--materialize-parent", aliases: ["--materialize_parent"] },
@@ -637,7 +644,7 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--schedule_preset" },
   { short: "-s", flag: "--status" },
   { short: "-p", flag: "--priority" },
-  { flag: "--tags" },
+  { flag: "--tags", list: true },
   { short: "-b", flag: "--body" },
   { flag: "--deadline" },
   { flag: "--estimate" },
@@ -723,7 +730,7 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--close_reason" },
   { short: "-p", flag: "--priority" },
   { flag: "--type" },
-  { flag: "--tags" },
+  { flag: "--tags", list: true },
   { flag: "--deadline" },
   { flag: "--estimate" },
   { flag: "--estimated-minutes" },
@@ -831,7 +838,7 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { short: "-b", flag: "--body" },
   { short: "-p", flag: "--priority" },
   { flag: "--type" },
-  { flag: "--tags" },
+  { flag: "--tags", list: true },
   { flag: "--deadline" },
   { flag: "--estimate" },
   { flag: "--estimated-minutes" },
@@ -993,7 +1000,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
 export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--depth" },
   { flag: "--full" },
-  { flag: "--fields" },
+  { flag: "--fields", list: true },
 ];
 
 export const GUIDE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1018,7 +1025,7 @@ export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--phrase-exact" },
   { flag: "--compact" },
   { flag: "--full" },
-  { flag: "--fields" },
+  { flag: "--fields", list: true },
   { flag: "--limit" },
   { flag: "--type" },
   { flag: "--tag" },

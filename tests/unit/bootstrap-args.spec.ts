@@ -6,6 +6,7 @@ import {
   parseBootstrapCommandName,
   normalizeLegacyExtensionActionSyntax,
   normalizeBootstrapInvocation,
+  coalesceRepeatedListFlags,
   parseBootstrapTypeValue,
 } from "../../src/cli/bootstrap-args.js";
 
@@ -252,6 +253,111 @@ describe("normalizeBootstrapInvocation", () => {
     const normalized = normalizeBootstrapInvocation(["comments", "pm-a1b2", "--add", "text=should stay literal"]);
     expect(normalized.argv).toEqual(["comments", "pm-a1b2", "--add", "text=should stay literal"]);
     expect(normalized.trace).toHaveLength(0);
+  });
+
+  it("accumulates repeated singular --tag typo occurrences into one --tags token (pm-cf1u)", () => {
+    const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tag", "a", "--tag", "b", "--tag", "c"]);
+    expect(normalized.argv).toEqual(["create", "issue", "X", "--tags=a,b,c"]);
+    expect(normalized.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          from: "--tags (x3)",
+          to: ["--tags=a,b,c"],
+          reason: "list_merge",
+          confidence: "high",
+        }),
+      ]),
+    );
+  });
+
+  it("accumulates repeated canonical plural --tags occurrences (pm-cf1u)", () => {
+    const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tags", "a", "--tags", "b"]);
+    expect(normalized.argv).toEqual(["create", "issue", "X", "--tags=a,b"]);
+    expect(normalized.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ from: "--tags (x2)", to: ["--tags=a,b"], reason: "list_merge" }),
+      ]),
+    );
+  });
+
+  it("accumulates repeated list-filter --status occurrences (pm-cf1u)", () => {
+    const normalized = normalizeBootstrapInvocation(["list", "--status", "open", "--status", "closed"]);
+    expect(normalized.argv).toEqual(["list", "--status=open,closed"]);
+    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(true);
+  });
+
+  it("accumulates repeated --fields occurrences for get (pm-cf1u)", () => {
+    const normalized = normalizeBootstrapInvocation(["get", "pm-1", "--fields", "id", "--fields", "title"]);
+    expect(normalized.argv).toEqual(["get", "pm-1", "--fields=id,title"]);
+    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(true);
+  });
+
+  it("merges mixed space and inline list flag forms into one token (pm-cf1u)", () => {
+    const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tags", "x", "--tags=y,z"]);
+    expect(normalized.argv).toEqual(["create", "issue", "X", "--tags=x,y,z"]);
+    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(true);
+  });
+
+  it("leaves a single list flag occurrence unchanged with no list_merge event (pm-cf1u)", () => {
+    const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tags", "only"]);
+    expect(normalized.argv).toEqual(["create", "issue", "X", "--tags", "only"]);
+    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(false);
+  });
+
+  it("does not merge repeated non-list scalar flags such as --title (pm-cf1u)", () => {
+    const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--title", "A", "--title", "B"]);
+    expect(normalized.argv).toEqual(["create", "issue", "X", "--title", "A", "--title", "B"]);
+    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(false);
+  });
+
+  it("stops coalescing at a -- terminator (pm-cf1u)", () => {
+    const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tags", "a", "--", "--tags", "b"]);
+    expect(normalized.argv).toEqual(["create", "issue", "X", "--tags", "a", "--", "--tags", "b"]);
+    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(false);
+  });
+});
+
+describe("coalesceRepeatedListFlags", () => {
+  it("returns argv unchanged when no list flags are configured", () => {
+    const result = coalesceRepeatedListFlags(["--tags", "a", "--tags", "b"], new Set());
+    expect(result.argv).toEqual(["--tags", "a", "--tags", "b"]);
+    expect(result.events).toHaveLength(0);
+  });
+
+  it("merges multiple list flags independently in one pass", () => {
+    const result = coalesceRepeatedListFlags(
+      ["--tags", "a", "--status", "open", "--tags", "b", "--status", "closed"],
+      new Set(["--tags", "--status"]),
+    );
+    expect(result.argv).toEqual(["--tags=a,b", "--status=open,closed"]);
+    expect(result.events).toHaveLength(2);
+    expect(result.events.every((entry) => entry.reason === "list_merge")).toBe(true);
+  });
+
+  it("preserves the relative order of the first occurrence", () => {
+    const result = coalesceRepeatedListFlags(
+      ["before", "--tags", "a", "middle", "--tags", "b", "after"],
+      new Set(["--tags"]),
+    );
+    expect(result.argv).toEqual(["before", "--tags=a,b", "middle", "after"]);
+  });
+
+  it("leaves a value-less trailing list flag untouched", () => {
+    const result = coalesceRepeatedListFlags(["--tags", "a", "--tags"], new Set(["--tags"]));
+    expect(result.argv).toEqual(["--tags", "a", "--tags"]);
+    expect(result.events).toHaveLength(0);
+  });
+
+  it("does not treat a following flag as a value", () => {
+    const result = coalesceRepeatedListFlags(["--tags", "--full"], new Set(["--tags"]));
+    expect(result.argv).toEqual(["--tags", "--full"]);
+    expect(result.events).toHaveLength(0);
+  });
+
+  it("passes the remainder verbatim after a -- terminator", () => {
+    const result = coalesceRepeatedListFlags(["--tags", "a", "--", "--tags", "b"], new Set(["--tags"]));
+    expect(result.argv).toEqual(["--tags", "a", "--", "--tags", "b"]);
+    expect(result.events).toHaveLength(0);
   });
 });
 

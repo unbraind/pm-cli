@@ -1,0 +1,14 @@
+id: pm-8nyc
+title: Unknown-option errors give no 'did you mean' suggestion; --body (valid on create) is rejected on comments/notes/learnings with only generic advice
+description: "Repro: PM_AUTHOR=x pm comments pm-xxxx --body 'my update'. Observed (exit=2): 'Error: Unknown option --body ... What is required: Use supported options only, or move option to the correct subcommand. Examples: pm comments --help'. No suggestion of the actual correct flag (--add, or the positional [text] form). This is an easy agent trap because --body IS a real, canonical flag on pm create (-b, --body, shown in contracts), so an agent reasonably transfers it to comments/notes/learnings and gets stuck. Expected: when an unknown --flag is a near-miss of (or alias-equivalent to) a supported flag on this command, emit 'did you mean --add?'. Bootstrap already does silent typo-correction for some cases (e.g. --titl -> --title, --Title -> --title both accepted), but it does NOT fire for --body->--add (different word) or for transpositions (--titel rejected) / abbreviations (--desc rejected), and when it can't auto-fix it gives no suggestion. Severity: low-medium (agent friction; recoverable via --help but costs a round-trip). Scope note: existing did-you-mean items are for unknown IDs (pm-99x5), install aliases (pm-uuee), and plan subcommands (pm-zpa5) -- none cover unknown OPTION flags."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,dogfood,dx
+created_at: "2026-05-25T18:30:50.653Z"
+updated_at: "2026-05-25T18:31:00.383Z"
+author: dogfood-agent
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-25T18:31:00.383Z",dogfood-agent,"Dedup checks run against real tracker (no PM_PATH override) on 2026-05-25 before filing: (1) pm search 'did you mean unknown option flag suggestion near miss' --limit 12 -> pm-99x5(closed: did-you-mean for unknown IDs), pm-zpa5(closed: did-you-mean for pm list --type Plan), pm-uuee(closed: did-you-mean for install aliases), pm-ixi1(closed: stop listing provided --flag as missing), pm-bzyr(closed: required-option error guidance) -- NONE cover near-miss suggestions for unknown OPTION flags. (2) pm search 'comments body flag inconsistent add' --limit 10 -> pm-cvwi(closed: comments shorthand compatibility/docs parity) and pm-9y8q(closed: dedupe comments/notes/learnings stacks) -- these establish the positional [text]/--add shorthand but do not add a did-you-mean for --body or cross-command flag confusion. (3) pm list --status open --limit 30 -> pm-59gj,pm-gt82,pm-3cbk (unrelated). (4) pm list --status in-progress -> pm-rnpb,pm-7rlp,pm-cf1u (unrelated). Conclusion: no open or recently-closed item covers did-you-mean for unknown option flags. Filed new under pm-rnpb."
+body: ""
