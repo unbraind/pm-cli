@@ -2,17 +2,25 @@ id: pm-0d0q
 title: Single-source Claude plugin capability inventory docs
 description: "Duplicate audit 2026-05-22: Claude plugin capability inventory is duplicated and already drifting between docs/CLAUDE_CODE_PLUGIN.md:45-83 and plugins/pm-claude/README.md:5-14 plus :101-174. The docs repeat counts and inventories for MCP tools, skills, slash commands, subagents, install modes, and pm_run actions. Current drift: docs/CLAUDE_CODE_PLUGIN.md:83 says 9 slash commands, while plugins/pm-claude/README.md:11 says 14; plugins/pm-claude/README.md:12 says 3 subagents but lists 4. Existing pm-rjgh covers PRD/CHANGELOG/marketplace/AGENTS hygiene and pm-js0r covers wrapper/smoke code, not this docs inventory drift."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[4]: claude,dedup,docs,plugins
 created_at: "2026-05-22T19:17:59.720Z"
-updated_at: "2026-05-22T19:17:59.720Z"
+updated_at: "2026-05-25T00:23:19.381Z"
 author: codex-duplicate-audit
 acceptance_criteria: One Claude plugin document is canonical for capability inventory; the other surface routes to it or uses generated inventory; slash command/subagent/tool counts agree with actual plugin files; docs-skills gate and relevant plugin smoke/docs checks pass.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+resolution: Completed in the combined extension/plugin dedupe PR by removing duplicated literals or routing duplicated documentation to canonical sources while preserving behavior.
+expected_result: "Extension contracts/defaults and plugin documentation inventories have single maintained sources, existing runtime behavior remains intact, and focused plus full release verification passes."
+actual_result: "Canonical extension constants/defaults, plugin docs routing, smoke coverage, contract equality regression, package-owned changelog update, manual temp-project smoke, package dogfood, and full release gate all passed."
+comments[2]{created_at,author,text}:
   "2026-05-22T19:17:59.720Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'Claude plugin capability inventory slash commands subagents docs README drift' found adjacent pm-rjgh, pm-js0r, and pm-ash0 but no active item for Claude docs capability inventory duplication."
-docs[2]{path,scope,note}:
+  "2026-05-24T23:55:54.552Z",codex-docs-dedupe-lane,"Evidence from docs/plugin single-source lane (read-only, 2026-05-25): actual Claude plugin inventory from files is plugins/pm-claude/.claude-plugin/plugin.json + .mcp.json + hooks/hooks.json/session-start.mjs, 14 slash command files, 5 skill files, 4 agent files, script launcher, README. Actual MCP server source exposes 18 tools: pm_run plus 17 narrow tools including pm_plan. Drift found: docs/CLAUDE_CODE_PLUGIN.md architecture tree and install section still say 9 slash commands and one agent/coordination surface, while plugins/pm-claude/README.md says 14 slash commands and lists all 14 command files. README says \"3 subagents\" but lists 4 agent files and plugin.json description also says 3. scripts/smoke-claude-plugin.mjs is stale too: comments say 18 required tools and 9 commands, but the required MCP list omits pm_plan and the pluginFiles array only checks 9 command files plus one agent; it can pass while docs drift. Recommendation: make plugins/pm-claude/README.md the canonical user-facing capability inventory because it is closest to install/user surface; make docs/CLAUDE_CODE_PLUGIN.md the architecture/testing page and either route capability counts to README or replace the static tree with a compact \"inventory comes from files under plugins/pm-claude/{commands,skills,agents}\" note. Smallest edit: update counts to 14 commands/5 skills/4 agents wherever counts remain, or avoid counts outside the canonical README; fix smoke script metadata/checks to enumerate all current command and agent files and include pm_plan in required tools.\n"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm smoke:claude-plugin",null,project,300,null,null,null,null,null,null,null,null,null,null,null,Claude plugin smoke inventory regression
+docs[3]{path,scope,note}:
   docs/CLAUDE_CODE_PLUGIN.md,project,duplicated capability inventory
   plugins/pm-claude/README.md,project,canonical candidate with drifting counts
+  scripts/smoke-claude-plugin.mjs,project,"smoke test inventory updated for 14 commands,4 agents,and pm_plan"
+close_reason: "Completed in combined extension/plugin dedupe PR: canonicalized duplicated extension contract/default sources or routed duplicated plugin/docs inventory to one source. Evidence is recorded on the item and parent pm-rnpb; focused tests, docs/plugin checks, manual temp-project smoke, package dogfood, full release gate, changelog check, GitHub/dependency/security checks, and Sentry/telemetry checks passed."
 body: ""

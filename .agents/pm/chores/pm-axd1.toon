@@ -2,18 +2,26 @@ id: pm-axd1
 title: Single-source extension governance policy defaults
 description: "Duplicate audit 2026-05-22: the extension governance policy shape/default list is hand-maintained in multiple places. DEFAULT_SETTINGS embeds extensions.policy in src/core/shared/constants.ts:265, DEFAULT_EXTENSION_POLICY repeats the same shape in src/core/extensions/loader.ts:188, and test fixtures retype the full object in tests/unit/extension-loader.spec.ts:276 plus other extension-loader cases. The repeated allowed/blocked extension/capability/surface/command/action/service arrays make future policy fields easy to add in one place and miss elsewhere. Existing open item pm-5k2w mentions default-safety/doc-validator drift broadly, but not this concrete code/test duplication; pm-why9 only covers status/workflow defaults, not extension policy defaults. Fix by exporting/reusing one default factory or normalizer fixture for production code and tests."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[3]: code-quality,dedup,extensions
 created_at: "2026-05-22T18:55:03.151Z"
-updated_at: "2026-05-22T18:55:03.151Z"
+updated_at: "2026-05-25T00:23:26.282Z"
 author: codex-duplicate-audit
 acceptance_criteria: Extension policy defaults come from one exported source or factory; loader/settings normalization and tests consume that source instead of retyping the full policy object; adding a policy key requires one production default update and focused tests; extension-loader/settings tests and pnpm build pass.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+resolution: Completed in the combined extension/plugin dedupe PR by removing duplicated literals or routing duplicated documentation to canonical sources while preserving behavior.
+expected_result: "Extension contracts/defaults and plugin documentation inventories have single maintained sources, existing runtime behavior remains intact, and focused plus full release verification passes."
+actual_result: "Canonical extension constants/defaults, plugin docs routing, smoke coverage, contract equality regression, package-owned changelog update, manual temp-project smoke, package dogfood, and full release gate all passed."
+comments[2]{created_at,author,text}:
   "2026-05-22T18:55:03.151Z",codex-duplicate-audit,"Duplicate-check evidence: searched tracker for extension policy defaults and allow/block lists. Only broad pm-5k2w and closed extension-system items appeared; no open specific item tracks this duplication. rg confirmed repeated full policy shapes in constants, loader, and extension-loader fixtures."
-files[3]{path,scope,note}:
-  src/core/shared/constants.ts,project,DEFAULT_SETTINGS extension policy default
+  "2026-05-24T23:56:05.420Z",codex-code-dedupe-lane,"Evidence from code-duplication lane: read-only investigation only; no source edits. Inspected governance defaults and policy surfaces in src/core/extensions/extension-types.ts, src/core/shared/constants.ts, src/core/extensions/loader.ts, and tests/unit/extension-loader.spec.ts. Finding: governance policy defaults are duplicated as SETTINGS_DEFAULTS.extensions.policy in src/core/shared/constants.ts:289-311 and private DEFAULT_EXTENSION_POLICY in src/core/extensions/loader.ts:190-209. The runtime path normalizes settings policy at loader.ts:296-390, serializes at loader.ts:393-432, and hydrates load-result policy fallback at loader.ts:435-484. Safest single-source approach: add a canonical default/factory in src/core/extensions/extension-types.ts, preferably createDefaultExtensionGovernancePolicy() returning fresh arrays and the current values. Then use that factory in SETTINGS_DEFAULTS.extensions.policy and in loader fallback instead of separate literals. This avoids shared mutable array references and preserves existing serialized runtime shape/order. If a readonly DEFAULT_EXTENSION_GOVERNANCE_POLICY is also exported, still clone/factory it at use sites. Policy surfaces should remain canonical in KNOWN_EXTENSION_POLICY_SURFACES and SDK contracts should derive PM_EXTENSION_POLICY_SURFACE_CONTRACTS from it. Risks: import direction should be extension-types -> no constants import, constants.ts may import extension-types without creating a value cycle; preserve settings-store structuredClone expectations; preserve exact warning strings for unknown surfaces/capabilities and service registration TypeError order. Focused verification run: node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/contracts-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/shared-constants-errors.spec.ts => 4 files passed, 73 tests passed. Static evidence: rg found the duplicate default-policy blocks and policy-surface contract lists; jscpd scoped scan completed but only reported small intra-file clones in extension-types.ts, so grep evidence is more relevant for this literal/default duplication."
+files[4]{path,scope,note}:
+  src/core/extensions/extension-types.ts,project,default extension governance policy factory
   src/core/extensions/loader.ts,project,DEFAULT_EXTENSION_POLICY duplicate
+  src/core/shared/constants.ts,project,DEFAULT_SETTINGS extension policy default
   tests/unit/extension-loader.spec.ts,project,retyped policy fixtures
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/unit/settings-store.spec.ts tests/unit/shared-constants-errors.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused extension policy defaults regression
+close_reason: "Completed in combined extension/plugin dedupe PR: canonicalized duplicated extension contract/default sources or routed duplicated plugin/docs inventory to one source. Evidence is recorded on the item and parent pm-rnpb; focused tests, docs/plugin checks, manual temp-project smoke, package dogfood, full release gate, changelog check, GitHub/dependency/security checks, and Sentry/telemetry checks passed."
 body: ""

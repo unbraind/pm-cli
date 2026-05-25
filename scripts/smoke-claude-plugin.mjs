@@ -34,7 +34,7 @@ const pluginFiles = [
   "plugins/pm-claude/skills/pm-release/SKILL.md",
   "plugins/pm-claude/skills/pm-audit/SKILL.md",
   "plugins/pm-claude/skills/pm-planner/SKILL.md",
-  // Commands (9 total)
+  // Commands (14 total)
   "plugins/pm-claude/commands/pm-status.md",
   "plugins/pm-claude/commands/pm-start-task.md",
   "plugins/pm-claude/commands/pm-close-task.md",
@@ -44,6 +44,11 @@ const pluginFiles = [
   "plugins/pm-claude/commands/pm-new.md",
   "plugins/pm-claude/commands/pm-list.md",
   "plugins/pm-claude/commands/pm-calendar.md",
+  "plugins/pm-claude/commands/pm-developer.md",
+  "plugins/pm-claude/commands/pm-init.md",
+  "plugins/pm-claude/commands/pm-planner.md",
+  "plugins/pm-claude/commands/pm-release.md",
+  "plugins/pm-claude/commands/pm-workflow.md",
   // Hooks
   "plugins/pm-claude/hooks/hooks.json",
   "plugins/pm-claude/hooks/session-start.mjs",
@@ -51,6 +56,9 @@ const pluginFiles = [
   "plugins/pm-claude/scripts/pm-mcp-server.mjs",
   "plugins/pm-claude/README.md",
   "plugins/pm-claude/agents/pm-coordinator.md",
+  "plugins/pm-claude/agents/pm-delivery-chain.md",
+  "plugins/pm-claude/agents/pm-triage-agent.md",
+  "plugins/pm-claude/agents/pm-verification-agent.md",
   // Legacy root marketplace.json (backwards compat)
   "marketplace.json",
 ];
@@ -110,7 +118,7 @@ try {
     "pm_run", "pm_context", "pm_search", "pm_list", "pm_get",
     "pm_create", "pm_update", "pm_claim", "pm_release", "pm_close",
     "pm_comments", "pm_files", "pm_docs", "pm_test",
-    "pm_validate", "pm_health", "pm_contracts",
+    "pm_validate", "pm_health", "pm_contracts", "pm_plan",
   ];
   for (const name of required) {
     if (!toolNames.has(name)) {

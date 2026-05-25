@@ -4,8 +4,24 @@ import { describe, expect, it } from "vitest";
 import { runContracts } from "../../src/cli/commands/contracts.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import {
+  KNOWN_EXTENSION_CAPABILITIES,
+  KNOWN_EXTENSION_POLICY_MODES,
+  KNOWN_EXTENSION_POLICY_SURFACES,
+  KNOWN_EXTENSION_SANDBOX_PROFILES,
+  KNOWN_EXTENSION_SERVICE_NAMES,
+  KNOWN_EXTENSION_TRUST_MODES,
+} from "../../src/core/extensions/extension-types.js";
 import type { GlobalOptions } from "../../src/core/shared/command-types.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
+import {
+  PM_EXTENSION_CAPABILITY_CONTRACTS,
+  PM_EXTENSION_POLICY_MODE_CONTRACTS,
+  PM_EXTENSION_POLICY_SURFACE_CONTRACTS,
+  PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS,
+  PM_EXTENSION_SERVICE_NAME_CONTRACTS,
+  PM_EXTENSION_TRUST_MODE_CONTRACTS,
+} from "../../src/sdk/cli-contracts.js";
 import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -116,6 +132,18 @@ describe("contracts command runtime", () => {
         breaking_strategy: "versioned_breaking",
       },
     });
+    expect(result.extension_contracts?.capabilities).toEqual([...KNOWN_EXTENSION_CAPABILITIES]);
+    expect(result.extension_contracts?.services).toEqual([...KNOWN_EXTENSION_SERVICE_NAMES]);
+    expect(result.extension_contracts?.policy_modes).toEqual([...KNOWN_EXTENSION_POLICY_MODES]);
+    expect(result.extension_contracts?.policy_surfaces).toEqual([...KNOWN_EXTENSION_POLICY_SURFACES]);
+    expect(result.extension_contracts?.trust_modes).toEqual([...KNOWN_EXTENSION_TRUST_MODES]);
+    expect(result.extension_contracts?.sandbox_profiles).toEqual([...KNOWN_EXTENSION_SANDBOX_PROFILES]);
+    expect(PM_EXTENSION_CAPABILITY_CONTRACTS).toEqual(KNOWN_EXTENSION_CAPABILITIES);
+    expect(PM_EXTENSION_SERVICE_NAME_CONTRACTS).toEqual(KNOWN_EXTENSION_SERVICE_NAMES);
+    expect(PM_EXTENSION_POLICY_MODE_CONTRACTS).toEqual(KNOWN_EXTENSION_POLICY_MODES);
+    expect(PM_EXTENSION_POLICY_SURFACE_CONTRACTS).toEqual(KNOWN_EXTENSION_POLICY_SURFACES);
+    expect(PM_EXTENSION_TRUST_MODE_CONTRACTS).toEqual(KNOWN_EXTENSION_TRUST_MODES);
+    expect(PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS).toEqual(KNOWN_EXTENSION_SANDBOX_PROFILES);
   });
 
   it("supports schema-only mode with action filtering", async () => {

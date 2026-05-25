@@ -1,4 +1,9 @@
-import type { ItemDocument, PmSettings } from "../../types/index.js";
+import type {
+  ExtensionPolicyOverrideSettings,
+  ExtensionPolicySettings,
+  ItemDocument,
+  PmSettings,
+} from "../../types/index.js";
 import type { GlobalOptions } from "../shared/command-types.js";
 
 export const KNOWN_EXTENSION_CAPABILITIES = [
@@ -54,6 +59,18 @@ export const KNOWN_EXTENSION_POLICY_SURFACES = [
 ] as const;
 export type ExtensionPolicySurface = (typeof KNOWN_EXTENSION_POLICY_SURFACES)[number];
 
+export const KNOWN_EXTENSION_SERVICE_NAMES = [
+  "output_format",
+  "error_format",
+  "help_format",
+  "lock_acquire",
+  "lock_release",
+  "history_append",
+  "item_store_write",
+  "item_store_delete",
+] as const;
+export type ExtensionServiceName = (typeof KNOWN_EXTENSION_SERVICE_NAMES)[number];
+
 export interface ExtensionProvenanceMetadata {
   source?: string;
   signature?: string;
@@ -70,43 +87,30 @@ export interface ExtensionRuntimePermissionDeclaration {
   process_spawn?: boolean;
 }
 
-export interface ExtensionPolicyOverride {
-  name: string;
-  disabled?: boolean;
-  require_trusted?: boolean;
-  require_provenance?: boolean;
-  sandbox_profile?: ExtensionSandboxProfile;
-  allowed_capabilities?: string[];
-  blocked_capabilities?: string[];
-  allowed_surfaces?: string[];
-  blocked_surfaces?: string[];
-  allowed_commands?: string[];
-  blocked_commands?: string[];
-  allowed_actions?: string[];
-  blocked_actions?: string[];
-  allowed_services?: string[];
-  blocked_services?: string[];
-}
+export type ExtensionPolicyOverride = ExtensionPolicyOverrideSettings;
+export type ExtensionGovernancePolicy = ExtensionPolicySettings;
 
-export interface ExtensionGovernancePolicy {
-  mode: ExtensionPolicyMode;
-  trust_mode: ExtensionTrustMode;
-  require_provenance: boolean;
-  trusted_extensions: string[];
-  default_sandbox_profile: ExtensionSandboxProfile;
-  allowed_extensions: string[];
-  blocked_extensions: string[];
-  allowed_capabilities: string[];
-  blocked_capabilities: string[];
-  allowed_surfaces: string[];
-  blocked_surfaces: string[];
-  allowed_commands: string[];
-  blocked_commands: string[];
-  allowed_actions: string[];
-  blocked_actions: string[];
-  allowed_services: string[];
-  blocked_services: string[];
-  extension_overrides: ExtensionPolicyOverride[];
+export function createDefaultExtensionGovernancePolicy(): ExtensionGovernancePolicy {
+  return {
+    mode: "off",
+    trust_mode: "off",
+    require_provenance: false,
+    trusted_extensions: [],
+    default_sandbox_profile: "none",
+    allowed_extensions: [],
+    blocked_extensions: [],
+    allowed_capabilities: [],
+    blocked_capabilities: [],
+    allowed_surfaces: [],
+    blocked_surfaces: [],
+    allowed_commands: [],
+    blocked_commands: [],
+    allowed_actions: [],
+    blocked_actions: [],
+    allowed_services: [],
+    blocked_services: [],
+    extension_overrides: [],
+  };
 }
 
 export type ExtensionLayer = "global" | "project";
@@ -295,16 +299,6 @@ export interface PreflightOverrideDelta extends ParserOverrideDelta {
   run_extension_migrations?: boolean;
   enforce_mandatory_migration_gate?: boolean;
 }
-
-export type ExtensionServiceName =
-  | "output_format"
-  | "error_format"
-  | "help_format"
-  | "lock_acquire"
-  | "lock_release"
-  | "history_append"
-  | "item_store_write"
-  | "item_store_delete";
 
 export interface ServiceOverrideContext {
   service: ExtensionServiceName;

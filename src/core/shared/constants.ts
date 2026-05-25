@@ -7,6 +7,7 @@ import type {
   RuntimeStatusDefinition,
   RuntimeWorkflowDefinition,
 } from "../../types/index.js";
+import { createDefaultExtensionGovernancePolicy } from "../extensions/extension-types.js";
 
 /**
  * Canonical default lifecycle status model and workflow role mapping.
@@ -289,26 +290,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   extensions: {
     enabled: [],
     disabled: [],
-    policy: {
-      mode: "off",
-      trust_mode: "off",
-      require_provenance: false,
-      trusted_extensions: [],
-      default_sandbox_profile: "none",
-      allowed_extensions: [],
-      blocked_extensions: [],
-      allowed_capabilities: [],
-      blocked_capabilities: [],
-      allowed_surfaces: [],
-      blocked_surfaces: [],
-      allowed_commands: [],
-      blocked_commands: [],
-      allowed_actions: [],
-      blocked_actions: [],
-      allowed_services: [],
-      blocked_services: [],
-      extension_overrides: [],
-    },
+    policy: createDefaultExtensionGovernancePolicy(),
   },
   search: {
     score_threshold: 0,

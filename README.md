@@ -23,15 +23,7 @@
 
 Full documentation starts at [docs/README.md](docs/README.md).
 
-Install the optional guide package when an agent should stay inside terminal context for local docs routing:
-
-```bash
-pm install guide-shell --project
-pm guide
-pm guide quickstart
-pm guide commands --depth standard
-pm guide skills --depth deep --format markdown
-```
+For optional in-terminal docs routing, use the canonical [guide topic map](docs/README.md#guide-topic-map).
 
 ## Install
 
@@ -57,7 +49,7 @@ For Claude Code, install the native plugin (no `pm` CLI required):
 /plugin install pm-cli@pm
 ```
 
-This registers 18 MCP tools, 5 workflow skills, 14 slash commands, 3 subagents, hybrid TUI tracking, and a session-start context hook — all without shelling out to the `pm` CLI.
+This registers 18 MCP tools, 5 workflow skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and a session-start context hook — all without shelling out to the `pm` CLI.
 
 `pm` packages use the same package-first vocabulary:
 

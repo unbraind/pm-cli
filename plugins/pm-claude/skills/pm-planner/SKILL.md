@@ -113,34 +113,16 @@ Set via `pm_create` with `acceptanceCriteria` field or `pm_update` with `options
 
 ## Built-in Plan workflow (`pm_plan` / `pm plan`)
 
-For durable Codex-style ExecPlans, Claude-style Plan Mode, and Cursor-style editable checklists, pm exposes a first-class `Plan` item type plus a `pm plan` command family. Plans are stored as normal pm items under `.agents/pm/plans/`, get the full history hash chain, dependencies, search corpus, and lifecycle tooling.
+For durable Codex-style ExecPlans, Claude-style Plan Mode, and Cursor-style editable checklists, pm exposes a first-class `Plan` item type plus a `pm plan` command family. Use [Command Reference: Plan Workflow](../../../../docs/COMMANDS.md#plan-workflow) as the canonical lifecycle recipe; this skill keeps only Claude-specific routing notes.
 
 ### When to use `pm plan` vs. `pm_create` + tasks
 
 - `pm plan` — when you need a **living, resumable plan** with ordered steps, evidence, decisions, discoveries, validation, and the option to later materialize selected steps as real Tasks. Best for plan-then-execute workflows.
 - `pm_create` (Epic/Feature/Task) — when the work is already decomposed and you just need persistent backlog items.
 
-### Lifecycle (call via `pm_plan` MCP tool)
+### Claude MCP routing
 
-```json
-{ "tool": "pm_plan", "args": { "options": { "subcommand": "create", "title": "Refactor lock retry", "scope": "Improve retry semantics", "harness": "claude-code", "parent": "pm-epic1", "related": "pm-rel1,pm-rel2", "claim": true } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "add-step", "stepTitle": "Read lock.ts", "stepBody": "Understand retry path", "dependsOn": "pm-task1" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "stepRef": "plan-step-001", "options": { "subcommand": "update-step", "stepStatus": "in_progress", "stepEvidence": "started reading lock.ts" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "stepRef": "plan-step-001", "options": { "subcommand": "complete-step", "stepEvidence": "lock.ts read; retry path captured" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "decision", "decisionText": "Use exponential backoff", "decisionRationale": "Avoid thundering herd" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "discovery", "discoveryText": "Found existing util in src/util/retry.ts" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "validation", "validationText": "Coverage gate stays at 100%", "validationCommand": "node scripts/run-tests.mjs coverage" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "approve" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "materialize", "steps": "plan-step-002", "materializeType": "Task", "materializeParent": "pm-epic1" } } }
-```
-
-### Progressive-disclosure reads
-
-```json
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "show", "depth": "brief" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "show", "depth": "standard" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "show", "depth": "deep" } } }
-```
+Call the same lifecycle through the `pm_plan` MCP tool. Use `harness: "claude-code"` on creation, `subcommand: "show"` with `depth: "brief"` for low-token reads, and `subcommand: "resume"` after compaction or handoff.
 
 ### Harness mapping cheatsheet
 

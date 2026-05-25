@@ -58,21 +58,9 @@ Most tools accept:
 
 ## Plan workflow (`pm_plan`)
 
-Codex-style living ExecPlans are first-class via the `Plan` item type and the `pm_plan` MCP tool. Plans persist ordered steps, evidence, decisions, discoveries, validation, and resume context so a future stateless agent can pick up the work.
+Codex-style living ExecPlans are first-class via the `Plan` item type and the `pm_plan` MCP tool. Use [Command Reference: Plan Workflow](../../../../docs/COMMANDS.md#plan-workflow) as the canonical lifecycle recipe; this skill keeps only Codex-specific routing notes.
 
 Use `pm_plan` for plan-then-execute workflows; use `pm_create` with type Task/Feature/Epic for already-decomposed backlog work.
-
-```json
-{ "tool": "pm_plan", "args": { "options": { "subcommand": "create", "title": "Refactor lock retry", "scope": "Improve retry semantics under load", "harness": "codex", "parent": "pm-epic1", "claim": true } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "add-step", "stepTitle": "Read lock.ts", "dependsOn": "pm-task1" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "stepRef": "plan-step-001", "options": { "subcommand": "update-step", "stepStatus": "in_progress", "stepEvidence": "started reading lock.ts" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "stepRef": "plan-step-001", "options": { "subcommand": "complete-step", "stepEvidence": "lock.ts read; retry path captured" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "decision", "decisionText": "Use exponential backoff", "decisionRationale": "Avoid thundering herd" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "approve" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "materialize", "steps": "plan-step-002", "materializeType": "Task", "materializeParent": "pm-epic1" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "resume", "resumeContext": "step 2 pending, deps verified" } } }
-{ "tool": "pm_plan", "args": { "id": "pm-plan1", "options": { "subcommand": "show", "depth": "deep" } } }
-```
 
 Invariants:
 

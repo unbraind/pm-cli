@@ -4,6 +4,13 @@
 
 ### Other
 
+- Single-source extension capability and policy-surface contract lists ([pm-w98k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-w98k.toon))
+- Single-source Codex plugin docs tool surface ([pm-d97r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-d97r.toon))
+- Single-source extension governance policy defaults ([pm-axd1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-axd1.toon))
+- Single-source guide-shell routing snippets across docs ([pm-48vd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-48vd.toon))
+- Single-source Plan workflow examples across plugin docs ([pm-3y56](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3y56.toon))
+- Single-source extension manifest and policy examples in docs ([pm-2awd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2awd.toon))
+- Single-source Claude plugin capability inventory docs ([pm-0d0q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-0d0q.toon))
 - Deduplicate Beads and Todos package adapter runtimes ([pm-ybfj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ybfj.toon))
 - Deduplicate bundled package runtime option parsing helpers ([pm-y5u0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-y5u0.toon))
 - Code dedup: extract shared CLI parser blocks and consolidate item-record casts ([pm-why9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-why9.toon))

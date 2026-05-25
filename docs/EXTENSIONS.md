@@ -130,44 +130,10 @@ export default defineExtension({
 
 ## Extension Manifest
 
-Manifest v1 is supported:
+Runnable manifest examples are the source of truth:
 
-```json
-{
-  "name": "my-ext",
-  "version": "0.1.0",
-  "entry": "./index.js",
-  "priority": 100,
-  "capabilities": ["commands"]
-}
-```
-
-Manifest v2 is recommended when governance, trust, or sandbox metadata matters:
-
-```json
-{
-  "name": "my-ext",
-  "version": "0.2.0",
-  "entry": "./index.js",
-  "priority": 100,
-  "manifest_version": 2,
-  "trusted": true,
-  "provenance": {
-    "source": "github://org/repo/path",
-    "verified": true
-  },
-  "sandbox_profile": "restricted",
-  "permissions": {
-    "fs_read": true,
-    "fs_write": false,
-    "network": false,
-    "env_read": true,
-    "env_write": false,
-    "process_spawn": false
-  },
-  "capabilities": ["commands", "schema"]
-}
-```
+- [starter extension manifest](examples/starter-extension/manifest.json)
+- [policy-restricted manifest](examples/policy-restricted-extension/manifest.json)
 
 Rules:
 
@@ -190,32 +156,7 @@ Supported capabilities:
 
 ## Governance Policy
 
-Governance policy is configured in `settings.json` under `extensions.policy`:
-
-```json
-{
-  "extensions": {
-    "policy": {
-      "mode": "enforce",
-      "trust_mode": "warn",
-      "require_provenance": true,
-      "default_sandbox_profile": "restricted",
-      "allowed_extensions": [],
-      "blocked_extensions": [],
-      "allowed_capabilities": [],
-      "blocked_capabilities": ["services"],
-      "allowed_surfaces": [],
-      "blocked_surfaces": ["commands.override"],
-      "allowed_commands": [],
-      "blocked_commands": ["dangerous command"],
-      "allowed_actions": [],
-      "blocked_actions": [],
-      "allowed_services": [],
-      "blocked_services": []
-    }
-  }
-}
-```
+Governance policy is configured in `settings.json` under `extensions.policy`. The runnable [policy-restricted example](examples/policy-restricted-extension/README.md) owns the complete policy snippet and expected behavior.
 
 Policy modes:
 

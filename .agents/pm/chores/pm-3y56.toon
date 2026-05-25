@@ -2,18 +2,26 @@ id: pm-3y56
 title: Single-source Plan workflow examples across plugin docs
 description: "Duplicate audit 2026-05-22: Plan workflow examples are repeated across plugins/pm-claude/skills/pm-planner/SKILL.md:114-143, plugins/pm-codex/skills/pm-native/SKILL.md:59-75, and plugins/pm-claude/commands/pm-planner.md:53-69. The snippets describe pm_plan purpose and JSON lifecycle examples for create/add-step/update/complete/decision/approve/materialize/show/resume, but diverge by harness, included subcommands, and example fields. Closed pm-aqat exposed Plan workflow surfaces but does not track deduplicating copied plugin examples."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[4]: dedup,docs,plan,plugins
 created_at: "2026-05-22T19:18:21.800Z"
-updated_at: "2026-05-22T19:18:21.800Z"
+updated_at: "2026-05-25T00:23:22.836Z"
 author: codex-duplicate-audit
 acceptance_criteria: A canonical Plan workflow recipe exists in docs or shared plugin reference; Claude/Codex skills and commands keep only harness-specific deltas and link to the recipe; examples stay valid against current plan contracts; docs-skills gate and focused plugin docs checks pass.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+resolution: Completed in the combined extension/plugin dedupe PR by removing duplicated literals or routing duplicated documentation to canonical sources while preserving behavior.
+expected_result: "Extension contracts/defaults and plugin documentation inventories have single maintained sources, existing runtime behavior remains intact, and focused plus full release verification passes."
+actual_result: "Canonical extension constants/defaults, plugin docs routing, smoke coverage, contract equality regression, package-owned changelog update, manual temp-project smoke, package dogfood, and full release gate all passed."
+comments[2]{created_at,author,text}:
   "2026-05-22T19:18:21.800Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'Plan workflow examples pm_plan planner skill command duplicated plugin docs' found closed Plan implementation items and no active docs-example dedup item."
-docs[3]{path,scope,note}:
+  "2026-05-24T23:56:28.488Z",codex-docs-dedupe-lane,"Evidence from docs/plugin single-source lane (read-only, 2026-05-25): Plan examples are duplicated in plugins/pm-claude/skills/pm-planner/SKILL.md, plugins/pm-claude/commands/pm-planner.md, plugins/pm-codex/skills/pm-native/SKILL.md, and docs/COMMANDS.md#plan-workflow. The MCP server contract lists pm_plan subcommands as create|show|add-step|update-step|complete-step|block-step|reorder-step|remove-step|link|unlink|decision|discovery|validation|resume|approve|materialize. Drift found: Claude skill has the fullest lifecycle (decision/discovery/validation/show depths) but omits block/reorder/remove/link/unlink in examples; Codex skill has a shorter lifecycle with resume but omits discovery/validation/show variants; Claude slash command has the shortest create/add/complete/approve/materialize/show/resume set. Recommendation: make docs/COMMANDS.md#plan-workflow canonical for CLI-level Plan workflow and exact subcommand examples; create or keep one shared plugin-facing recipe only if needed, then reduce Claude/Codex skills/commands to harness-specific deltas (`harness: claude-code` vs `codex`, MCP JSON shape, when to use pm_plan). Smallest edit: in plugin skills/commands, replace the copied lifecycle blocks with 3-5 lines: when to use pm_plan, harness-specific create example, and link to docs/COMMANDS.md#plan-workflow for complete lifecycle. Validation commands to wire: pm contracts --command plan --flags-only --json, pm contracts --json (or MCP tools/list via plugin smoke), pnpm quality:docs-skills, pnpm smoke:claude-plugin, pnpm smoke:codex-plugin, plus rg -n \"pm_plan|pm plan\" plugins/pm-claude/skills/pm-planner/SKILL.md plugins/pm-claude/commands/pm-planner.md plugins/pm-codex/skills/pm-native/SKILL.md docs/COMMANDS.md to verify only canonical page contains the full lifecycle list.\n"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  pm contracts --command plan --flags-only --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,Plan contract surface probe
+docs[4]{path,scope,note}:
+  docs/COMMANDS.md,project,canonical Plan workflow lifecycle recipe
   plugins/pm-claude/commands/pm-planner.md,project,Plan example clone
   plugins/pm-claude/skills/pm-planner/SKILL.md,project,Plan example clone
   plugins/pm-codex/skills/pm-native/SKILL.md,project,Plan example clone
+close_reason: "Completed in combined extension/plugin dedupe PR: canonicalized duplicated extension contract/default sources or routed duplicated plugin/docs inventory to one source. Evidence is recorded on the item and parent pm-rnpb; focused tests, docs/plugin checks, manual temp-project smoke, package dogfood, full release gate, changelog check, GitHub/dependency/security checks, and Sentry/telemetry checks passed."
 body: ""

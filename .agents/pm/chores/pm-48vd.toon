@@ -2,20 +2,27 @@ id: pm-48vd
 title: Single-source guide-shell routing snippets across docs
 description: "Duplicate audit 2026-05-22: guide-shell routing snippets are copied with small variations across README.md:26-34, docs/README.md:7-15, docs/AGENT_GUIDE.md:112-121, AGENTS.md:17-23, and docs/COMMANDS.md:3-11. Each tells agents to install guide-shell and run pm guide topics, but the topic lists differ (skills, sdk, release, --json), making guide-topic changes easy to miss. Existing pm-rjgh includes AGENTS tightening but not the repeated guide-shell snippets across all entrypoints."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[3]: dedup,docs,guide-shell
 created_at: "2026-05-22T19:18:23.375Z"
-updated_at: "2026-05-22T19:18:23.375Z"
+updated_at: "2026-05-25T00:23:24.563Z"
 author: codex-duplicate-audit
 acceptance_criteria: One docs entrypoint owns the canonical guide-shell snippet; other pages use short pointers or task-specific single commands; guide topic examples stay aligned with runtime contracts; docs-skills gate passes.
 parent: pm-rnpb
-comments[1]{created_at,author,text}:
+resolution: Completed in the combined extension/plugin dedupe PR by removing duplicated literals or routing duplicated documentation to canonical sources while preserving behavior.
+expected_result: "Extension contracts/defaults and plugin documentation inventories have single maintained sources, existing runtime behavior remains intact, and focused plus full release verification passes."
+actual_result: "Canonical extension constants/defaults, plugin docs routing, smoke coverage, contract equality regression, package-owned changelog update, manual temp-project smoke, package dogfood, and full release gate all passed."
+comments[2]{created_at,author,text}:
   "2026-05-22T19:18:23.375Z",codex-duplicate-audit,"Duplicate-check evidence: pm search 'guide-shell routing snippets README docs AGENT_GUIDE COMMANDS pm guide duplicated' found broad parent/docs history but no active exact item for guide-shell snippet dedup."
+  "2026-05-24T23:56:16.723Z",codex-docs-dedupe-lane,"Evidence from docs/plugin single-source lane (read-only, 2026-05-25): guide-shell routing text is repeated across README.md, docs/README.md, docs/AGENT_GUIDE.md, docs/COMMANDS.md, and AGENTS.md. Current topic drift: README uses guide, quickstart, commands, skills; docs/README uses guide, quickstart, commands, sdk, release and owns the full Guide Topic Map; docs/AGENT_GUIDE uses guide, quickstart, commands, skills, release; docs/COMMANDS uses only commands; AGENTS.md uses generic pm guide <topic>. Recommendation: docs/README.md should be canonical for guide-shell installation and the topic map because it is the docs index and already maps guide topics to primary docs. AGENTS.md and README.md should keep only a short prerequisite plus either `pm guide` or a task-specific one-liner; docs/AGENT_GUIDE.md should route agents to docs/README.md#guide-topic-map for the full topic list and keep only workflows/skills examples if needed; docs/COMMANDS.md should keep only `pm guide commands --depth standard` as task-specific. Smallest edit: remove repeated multi-line topic lists outside docs/README.md and replace with relative links to docs/README.md#guide-topic-map / README-compatible anchors. Validation commands to wire: pnpm quality:docs-skills (it explicitly checks required guide markers and guide topic routing), pnpm build, and focused grep/link check such as rg -n \"pm guide|guide-shell\" README.md AGENTS.md docs/README.md docs/AGENT_GUIDE.md docs/COMMANDS.md to confirm only docs/README owns the full topic list.\n"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm quality:docs-skills",null,project,300,null,null,null,null,null,null,null,null,null,null,null,docs-skills gate
 docs[5]{path,scope,note}:
   AGENTS.md,project,guide-shell snippet copy
   docs/AGENT_GUIDE.md,project,guide-shell snippet copy
   docs/COMMANDS.md,project,guide-shell snippet copy
   docs/README.md,project,canonical guide-shell snippet candidate
   README.md,project,guide-shell snippet copy
+close_reason: "Completed in combined extension/plugin dedupe PR: canonicalized duplicated extension contract/default sources or routed duplicated plugin/docs inventory to one source. Evidence is recorded on the item and parent pm-rnpb; focused tests, docs/plugin checks, manual temp-project smoke, package dogfood, full release gate, changelog check, GitHub/dependency/security checks, and Sentry/telemetry checks passed."
 body: ""

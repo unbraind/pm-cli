@@ -113,16 +113,7 @@ Default TOON output is preferred for model-readable loops. Use `--json` only whe
 
 ## Guide Routing for Agents
 
-Use `pm guide` as the local progressive-disclosure router after installing the optional `guide-shell` package:
-
-```bash
-pm install guide-shell --project
-pm guide
-pm guide quickstart
-pm guide commands --depth standard
-pm guide skills --depth deep --format markdown
-pm guide release --json
-```
+Use the canonical [guide topic map](README.md#guide-topic-map) when local in-CLI documentation routing is useful.
 
 ## Ownership Rules
 

@@ -6,15 +6,13 @@ This is a task-oriented command guide. For exact flags, use runtime help because
 pm <command> --help
 pm <command> --help --json
 pm contracts --command <command> --flags-only --json
-pm install guide-shell --project
-pm guide commands --depth standard
 ```
 
 ## Agent Quick Context
 
 - Prefer `pm context`, `pm search`, and narrow list commands before mutation.
 - Prefer TOON for reading and `--json` for strict parsing.
-- Use `pm install guide-shell --project` before `pm guide <topic>` when local docs routing is needed.
+- Use the [guide topic map](README.md#guide-topic-map) when optional `pm guide` local docs routing is needed.
 - Use `pm contracts` for machine clients.
 - Every mutation writes history.
 
