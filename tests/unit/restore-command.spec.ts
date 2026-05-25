@@ -297,7 +297,44 @@ describe("runRestore", () => {
           ),
         ).rejects.toMatchObject<PmCliError>({
           exitCode: EXIT_CODE.CONFLICT,
+          message: expect.stringContaining(`History for ${id} changed while waiting for lock; retry restore.`),
         });
+      } finally {
+        lockSpy.mockRestore();
+      }
+    });
+  });
+
+  it("rejects restore when the item changes before lock acquisition", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createRestoreFixture(context, "Restore Item Lock Window");
+      const itemFile = path.join(context.pmPath, "tasks", `${id}.toon`);
+      const historyFile = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const historyRawBefore = await readFile(historyFile, "utf8");
+      const originalAcquireLock = lockModule.acquireLock;
+      let mutated = false;
+      const lockSpy = vi.spyOn(lockModule, "acquireLock").mockImplementation(async (...args) => {
+        if (!mutated) {
+          mutated = true;
+          const raw = await readFile(itemFile, "utf8");
+          await writeFile(itemFile, raw.replace("second body section", "second body section changed-before-lock"), "utf8");
+        }
+        return originalAcquireLock(...(args as Parameters<typeof lockModule.acquireLock>));
+      });
+
+      try {
+        await expect(
+          runRestore(
+            id,
+            "1",
+            { author: "test-author" },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.CONFLICT,
+          message: expect.stringContaining(`Item ${id} changed while waiting for lock; retry restore.`),
+        });
+        expect(await readFile(historyFile, "utf8")).toBe(historyRawBefore);
       } finally {
         lockSpy.mockRestore();
       }

@@ -336,7 +336,57 @@ describe("runHistory and runActivity", () => {
           ),
         ).rejects.toMatchObject<PmCliError>({
           exitCode: EXIT_CODE.CONFLICT,
+          message: expect.stringContaining(`History for ${id} changed while waiting for lock; retry history-redact.`),
         });
+        const historyRaw = await readFile(historyFile, "utf8");
+        expect(historyRaw).toContain(leakedToken);
+        expect(historyRaw).not.toContain("[redacted_token]");
+      } finally {
+        lockSpy.mockRestore();
+      }
+    });
+  });
+
+  it("rejects history-redact when the item changes before lock acquisition", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Redact Item Lock Window");
+      const leakedToken = "token-lock-window-item";
+      context.runCli(
+        ["append", id, "--json", "--body", `secret ${leakedToken}`, "--author", "test-author", "--message", "append token"],
+        { expectJson: true },
+      );
+
+      const historyFile = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const itemFile = path.join(context.pmPath, "tasks", `${id}.toon`);
+      const originalAcquireLock = lockModule.acquireLock;
+      let mutated = false;
+      const lockSpy = vi.spyOn(lockModule, "acquireLock").mockImplementation(async (...args) => {
+        if (!mutated) {
+          mutated = true;
+          const raw = await readFile(itemFile, "utf8");
+          await writeFile(itemFile, raw.replace(`secret ${leakedToken}`, `secret ${leakedToken}-changed`), "utf8");
+        }
+        return originalAcquireLock(...(args as Parameters<typeof lockModule.acquireLock>));
+      });
+
+      try {
+        await expect(
+          runHistoryRedact(
+            id,
+            {
+              literal: leakedToken,
+              replacement: "[redacted_token]",
+              author: "test-author",
+            },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.CONFLICT,
+          message: expect.stringContaining(`Item ${id} changed while waiting for lock; retry history-redact.`),
+        });
+        const historyRaw = await readFile(historyFile, "utf8");
+        expect(historyRaw).toContain(leakedToken);
+        expect(historyRaw).not.toContain("[redacted_token]");
       } finally {
         lockSpy.mockRestore();
       }

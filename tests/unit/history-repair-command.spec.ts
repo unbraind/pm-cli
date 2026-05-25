@@ -105,6 +105,8 @@ describe("history-repair command", () => {
       await tamperChain(historyPath(context, id));
 
       const itemFile = itemPath(context, id);
+      const historyFile = historyPath(context, id);
+      const historyRawBefore = await readFile(historyFile, "utf8");
       const originalAcquireLock = lockModule.acquireLock;
       let mutated = false;
       const lockSpy = vi.spyOn(lockModule, "acquireLock").mockImplementation(async (...args) => {
@@ -127,7 +129,50 @@ describe("history-repair command", () => {
           ),
         ).rejects.toMatchObject({
           exitCode: EXIT_CODE.CONFLICT,
+          message: expect.stringContaining(`Item ${id} changed while waiting for lock; retry history-repair.`),
         });
+        expect(await readFile(historyFile, "utf8")).toBe(historyRawBefore);
+        expect(await readFile(itemFile, "utf8")).toContain("drift changed-before-lock");
+      } finally {
+        lockSpy.mockRestore();
+      }
+    });
+  });
+
+  it("rejects history-repair when history changes before lock acquisition", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Repair history lock window");
+      expect(context.runCli(["update", id, "--status", "in_progress"]).code).toBe(0);
+      await tamperChain(historyPath(context, id));
+
+      const historyFile = historyPath(context, id);
+      const itemFile = itemPath(context, id);
+      const itemRawBefore = await readFile(itemFile, "utf8");
+      const originalAcquireLock = lockModule.acquireLock;
+      let mutated = false;
+      const lockSpy = vi.spyOn(lockModule, "acquireLock").mockImplementation(async (...args) => {
+        if (!mutated) {
+          mutated = true;
+          const raw = await readFile(historyFile, "utf8");
+          await writeFile(historyFile, `${raw}\n`, "utf8");
+        }
+        return originalAcquireLock(...(args as Parameters<typeof lockModule.acquireLock>));
+      });
+
+      try {
+        await expect(
+          runHistoryRepair(
+            id,
+            {
+              author: "test-author",
+            },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject({
+          exitCode: EXIT_CODE.CONFLICT,
+          message: expect.stringContaining(`History for ${id} changed while waiting for lock; retry history-repair.`),
+        });
+        expect(await readFile(itemFile, "utf8")).toBe(itemRawBefore);
       } finally {
         lockSpy.mockRestore();
       }
