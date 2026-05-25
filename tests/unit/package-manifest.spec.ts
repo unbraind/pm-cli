@@ -476,7 +476,8 @@ describe("pm package manifest model", () => {
       const source = await readFile(modulePath, "utf8");
       const capabilitiesMatch = source.match(/capabilities:\s*(\[[^\]]*\])/);
       expect(capabilitiesMatch?.[1], modulePath).toBeDefined();
-      const moduleCapabilities = JSON.parse(capabilitiesMatch?.[1]?.replace(/'/g, "\"") ?? "[]") as unknown;
+      const capabilitiesLiteral = capabilitiesMatch?.[1]?.replace(/'/g, "\"").replace(/,\s*\]/g, "]") ?? "[]";
+      const moduleCapabilities = JSON.parse(capabilitiesLiteral) as unknown;
       expect(moduleCapabilities, modulePath).toEqual(manifest.capabilities);
     }
   });

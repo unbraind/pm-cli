@@ -283,16 +283,7 @@ export function buildUnknownCommandGuidanceFromRuntime(
 }
 
 function dedupeStrings(values: string[]): string[] {
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const value of values) {
-    if (seen.has(value)) {
-      continue;
-    }
-    seen.add(value);
-    result.push(value);
-  }
-  return result;
+  return Array.from(new Set(values));
 }
 
 export function resolveChildCommandByToken(parent: Command, token: string): Command | undefined {

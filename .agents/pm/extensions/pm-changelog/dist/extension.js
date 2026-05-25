@@ -3,7 +3,7 @@ import { createChangelog, mergeChangelog, writeChangelog } from "./generator.js"
 import { resolveReleaseContext, resolveReleaseTagWindows } from "./release-context.js";
 export default defineExtension({
     name: "pm-changelog",
-    version: "2026.5.24-15",
+    version: "2026.5.25",
     activate(api) {
         api.registerCommand({
             name: "changelog generate",

@@ -217,8 +217,16 @@ function parseArgs(args) {
 }
 function applyReleaseContext(options) {
     if (options.allReleaseTags) {
+        const cwd = options.pmCwd ? resolve(options.pmCwd) : process.cwd();
+        if (options.versionFromPackage && !options.version) {
+            const context = resolveReleaseContext({
+                cwd,
+                versionFromPackage: true,
+            });
+            options.version = context.version;
+        }
         options.releaseWindows = resolveReleaseTagWindows({
-            cwd: options.pmCwd ? resolve(options.pmCwd) : process.cwd(),
+            cwd,
             tagPattern: options.releaseTagPattern,
             pendingVersion: options.version,
             pendingTimestamp: options.until ?? options.date,

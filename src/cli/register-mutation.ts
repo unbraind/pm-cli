@@ -762,7 +762,12 @@ export function registerMutationCommands(program: Command): void {
           },
         );
       }
-      const aliases = Array.isArray(options.alias) ? (options.alias as string[]) : undefined;
+      const aliases =
+        typeof options.alias === "string"
+          ? [options.alias]
+          : Array.isArray(options.alias)
+            ? (options.alias as string[])
+            : undefined;
       const defaultStatus =
         typeof options.defaultStatus === "string"
           ? options.defaultStatus
