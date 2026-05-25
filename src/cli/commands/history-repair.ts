@@ -79,11 +79,11 @@ export async function runHistoryRepair(
   if (!(await pathExists(subject.historyPath))) {
     throw new PmCliError(`No history stream exists for ${subject.id}.`, EXIT_CODE.NOT_FOUND);
   }
+  const historyRawBeforeLock = await readFileIfExists(subject.historyPath);
   const historyEntries = await readHistoryEntries(subject.historyPath, subject.id);
   if (historyEntries.length === 0) {
     throw new PmCliError(`No history entries exist for ${subject.id}; nothing to repair.`, EXIT_CODE.USAGE);
   }
-  const historyRawBeforeLock = await readFileIfExists(subject.historyPath);
 
   const chainBefore = verifyHistoryChain(historyEntries);
   const reanchor = reanchorHistoryEntries(historyEntries);

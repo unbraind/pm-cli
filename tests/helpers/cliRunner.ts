@@ -65,7 +65,7 @@ function applyEnvOverride(env: NodeJS.ProcessEnv | undefined): () => void {
   if (!env) {
     return () => {};
   }
-  const keys = new Set<string>([...Object.keys(process.env), ...Object.keys(env)]);
+  const keys = new Set<string>(Object.keys(env));
   const previous = new Map<string, string | undefined>();
   for (const key of keys) {
     previous.set(key, process.env[key]);
@@ -88,6 +88,23 @@ function applyEnvOverride(env: NodeJS.ProcessEnv | undefined): () => void {
   };
 }
 
+let inProcessCliRunQueue: Promise<void> = Promise.resolve();
+
+async function withInProcessCliLock<T>(operation: () => Promise<T>): Promise<T> {
+  let release: (() => void) | null = null;
+  const hold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const waitTurn = inProcessCliRunQueue;
+  inProcessCliRunQueue = inProcessCliRunQueue.then(() => hold);
+  await waitTurn;
+  try {
+    return await operation();
+  } finally {
+    release?.();
+  }
+}
+
 export async function runInProcessDistCli(
   args: string[],
   options: DirectCliRunOptions = {},
@@ -95,68 +112,71 @@ export async function runInProcessDistCli(
   if (options.input !== undefined || options.stdin !== undefined) {
     throw new Error("runInProcessDistCli does not support stdin input.");
   }
-
-  const mainModuleUrl = pathToFileURL(path.resolve(process.cwd(), "dist/cli/main.js"));
-  const cacheBustedUrl = `${mainModuleUrl.href}?inprocess=${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  const loaded = (await import(cacheBustedUrl)) as {
-    runPmCli?: (argv: string[]) => Promise<void>;
-  };
-  if (typeof loaded.runPmCli !== "function") {
-    throw new Error(`dist main module does not export runPmCli: ${cacheBustedUrl}`);
-  }
-
-  let stdout = "";
-  let stderr = "";
-  const restoreEnv = applyEnvOverride(options.env);
-  const previousArgv = process.argv;
-  const previousExitCode = process.exitCode;
-  const previousCwd = process.cwd();
-  const previousStdoutWrite = process.stdout.write;
-  const previousStderrWrite = process.stderr.write;
-
-  process.argv = [process.argv[0], distCliPath(), ...args];
-  process.exitCode = undefined;
-  if (options.cwd) {
-    process.chdir(options.cwd);
-  }
-
-  (process.stdout as unknown as { write: typeof process.stdout.write }).write = ((chunk, encoding, callback) => {
-    const normalizedEncoding = typeof encoding === "string" ? (encoding as BufferEncoding) : undefined;
-    stdout += chunkToString(chunk, normalizedEncoding);
-    if (typeof encoding === "function") {
-      encoding();
-    } else if (typeof callback === "function") {
-      callback();
+  return withInProcessCliLock(async () => {
+    const mainModuleUrl = pathToFileURL(path.resolve(process.cwd(), "dist/cli/main.js"));
+    const cacheBustedUrl = `${mainModuleUrl.href}?inprocess=${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const loaded = (await import(cacheBustedUrl)) as {
+      runPmCli?: (argv: string[]) => Promise<void>;
+    };
+    if (typeof loaded.runPmCli !== "function") {
+      throw new Error(`dist main module does not export runPmCli: ${cacheBustedUrl}`);
     }
-    return true;
-  }) as typeof process.stdout.write;
 
-  (process.stderr as unknown as { write: typeof process.stderr.write }).write = ((chunk, encoding, callback) => {
-    const normalizedEncoding = typeof encoding === "string" ? (encoding as BufferEncoding) : undefined;
-    stderr += chunkToString(chunk, normalizedEncoding);
-    if (typeof encoding === "function") {
-      encoding();
-    } else if (typeof callback === "function") {
-      callback();
-    }
-    return true;
-  }) as typeof process.stderr.write;
+    let stdout = "";
+    let stderr = "";
+    let status = 0;
+    let capturedError: Error | undefined;
+    const restoreEnv = applyEnvOverride(options.env);
+    const previousArgv = process.argv;
+    const previousExitCode = process.exitCode;
+    const previousCwd = process.cwd();
+    const previousStdoutWrite = process.stdout.write;
+    const previousStderrWrite = process.stderr.write;
 
-  let capturedError: Error | undefined;
-  try {
-    await loaded.runPmCli(args);
-  } catch (error: unknown) {
-    capturedError = error instanceof Error ? error : new Error(String(error));
-  } finally {
-    const status = process.exitCode ?? (capturedError ? 1 : 0);
-    (process.stdout as unknown as { write: typeof process.stdout.write }).write = previousStdoutWrite;
-    (process.stderr as unknown as { write: typeof process.stderr.write }).write = previousStderrWrite;
-    process.argv = previousArgv;
-    process.exitCode = previousExitCode;
-    if (options.cwd) {
-      process.chdir(previousCwd);
+    try {
+      process.argv = [process.argv[0], distCliPath(), ...args];
+      process.exitCode = undefined;
+      if (options.cwd) {
+        process.chdir(options.cwd);
+      }
+
+      (process.stdout as unknown as { write: typeof process.stdout.write }).write = ((chunk, encoding, callback) => {
+        const normalizedEncoding = typeof encoding === "string" ? (encoding as BufferEncoding) : undefined;
+        stdout += chunkToString(chunk, normalizedEncoding);
+        if (typeof encoding === "function") {
+          encoding();
+        } else if (typeof callback === "function") {
+          callback();
+        }
+        return true;
+      }) as typeof process.stdout.write;
+
+      (process.stderr as unknown as { write: typeof process.stderr.write }).write = ((chunk, encoding, callback) => {
+        const normalizedEncoding = typeof encoding === "string" ? (encoding as BufferEncoding) : undefined;
+        stderr += chunkToString(chunk, normalizedEncoding);
+        if (typeof encoding === "function") {
+          encoding();
+        } else if (typeof callback === "function") {
+          callback();
+        }
+        return true;
+      }) as typeof process.stderr.write;
+
+      await loaded.runPmCli(args);
+      status = process.exitCode ?? 0;
+    } catch (error: unknown) {
+      capturedError = error instanceof Error ? error : new Error(String(error));
+      status = process.exitCode ?? 1;
+    } finally {
+      (process.stdout as unknown as { write: typeof process.stdout.write }).write = previousStdoutWrite;
+      (process.stderr as unknown as { write: typeof process.stderr.write }).write = previousStderrWrite;
+      process.argv = previousArgv;
+      process.exitCode = previousExitCode;
+      if (options.cwd) {
+        process.chdir(previousCwd);
+      }
+      restoreEnv();
     }
-    restoreEnv();
 
     const result: DirectCliRunResult = {
       code: status,
@@ -174,5 +194,5 @@ export async function runInProcessDistCli(
       }
     }
     return result;
-  }
+  });
 }

@@ -6,7 +6,7 @@ status: in_progress
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-25T10:39:16.487Z"
+updated_at: "2026-05-25T10:47:23.591Z"
 deadline: "2026-06-01T00:00:00.000Z"
 assignee: codex-dedupe-agent
 author: codex-audit
@@ -15,7 +15,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[277]{created_at,author,text}:
+comments[278]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -293,6 +293,7 @@ comments[277]{created_at,author,text}:
   "2026-05-25T10:19:49.187Z",codex-reliability-agent,"Verification summary 2026-05-25 reliability continuation branch: full release gate passed (1766 tests, 100% coverage) after static-gate compliant split of new in-process parity test file; manual temporary-directory reliability scenario passed end-to-end including history-redact/history-repair/restore and package doctor. GitHub snapshot before PR: open issues=0, open PRs=0, dependabot alerts open=0; remaining failed scheduled historical runs are pre-fix Nightly/Auto Release entries already captured in lineage."
   "2026-05-25T10:22:52.449Z",codex-reliability-agent,"PR #67 opened for combined reliability continuation and stale-item normalization: https://github.com/unbraind/pm-cli/pull/67. Beginning required AI-review wait window and follow-up review-fix loop before merge."
   "2026-05-25T10:39:16.487Z",codex-reliability-agent,"PR #67 feedback loop: CI static gate failed because pm-changelog --check detected drift after tracker closure metadata updates. Regenerated CHANGELOG.md with pm changelog generate (same parameters as CI), re-ran changelog --check (unchanged) and pnpm quality:static (pass). Preparing follow-up push to update PR checks."
+  "2026-05-25T10:47:23.591Z",codex-reliability-agent,"AI bot feedback loop iteration 2 on PR #67: applied actionable reliability fixes (history-repair snapshot ordering + in-process helper serialization/safe restoration/env semantics), re-ran focused regressions and static quality gate, all green before push."
 notes[2]{created_at,author,text}:
   "2026-05-17T07:36:59.474Z",codex-agent,"Design note 2026-05-17: unfiltered pm contracts default now intentionally omits three heavy sections (schema oneOf union, command_flags, commander_aliases) and emits explicit omitted_reason markers; --full restores complete schema and alias/flag surfaces for tooling that needs maximal detail."
   "2026-05-17T08:33:25.981Z",codex-agent,"Design note 2026-05-17: default brief projection was intentionally scoped to bare 'pm list' instead of all list-* commands to preserve existing automation contracts while still cutting agent token usage on the highest-frequency exploratory list call."
