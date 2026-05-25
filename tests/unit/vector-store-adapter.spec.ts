@@ -1164,6 +1164,16 @@ describe("LanceDB local snapshot persistence", () => {
         5,
       );
       expect(afterDelete).toEqual([]);
+
+      const afterRepeatedMissingSnapshotQuery = await executeVectorQuery(
+        {
+          name: "lancedb",
+          path: storePath,
+        },
+        [1, 0],
+        5,
+      );
+      expect(afterRepeatedMissingSnapshotQuery).toEqual([]);
     } finally {
       await rm(sandboxRoot, { recursive: true, force: true });
     }
