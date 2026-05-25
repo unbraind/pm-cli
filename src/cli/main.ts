@@ -1616,14 +1616,25 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
       setActiveExtensionServices(bootstrapSnapshot?.services ?? { overrides: [] });
     }
 
-    if (error instanceof PmCliError) {
-      const enrichedContext = buildPmCliRecoveryContext(error.context, invocationArgv, error.message);
-      const classification = classifyPmCliError(error.message, enrichedContext);
+    const numericExitCode =
+      typeof error === "object" && error !== null && "exitCode" in error
+        ? (error as { exitCode?: unknown }).exitCode
+        : undefined;
+    const hasCommanderCode = typeof error === "object" && error !== null && "code" in error;
+    if (
+      error instanceof PmCliError ||
+      (!hasCommanderCode && typeof numericExitCode === "number" && Number.isFinite(numericExitCode))
+    ) {
+      const errorMessage = describeUnknownError(error);
+      const exitCode = error instanceof PmCliError ? error.exitCode : Math.max(0, Math.trunc(numericExitCode as number));
+      const context = error instanceof PmCliError ? error.context : undefined;
+      const enrichedContext = buildPmCliRecoveryContext(context, invocationArgv, errorMessage);
+      const classification = classifyPmCliError(errorMessage, enrichedContext);
       const { errorCategory, commandResolution } = await emitTelemetryCommandError({
         command: attemptedCommand,
         errorCode: classification.code,
         errorMessage: classification.detail,
-        exitCode: error.exitCode,
+        exitCode,
         options: {
           bootstrap_global_options: bootstrapGlobal,
         },
@@ -1634,36 +1645,36 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
         command: attemptedCommand,
         error_code: classification.code,
         error_category: errorCategory,
-        exit_code: error.exitCode,
+        exit_code: exitCode,
         error_message: classification.detail,
         command_resolution: commandResolution,
         resolution_stage: "execute",
         source_context: activeTelemetryCommandContext?.source_context,
       });
-      sentryFinishCommandSpan(false, error.message, {
+      sentryFinishCommandSpan(false, errorMessage, {
         error_code: classification.code,
         error_category: errorCategory,
-        exit_code: error.exitCode,
+        exit_code: exitCode,
         command_resolution: commandResolution,
         resolution_stage: "execute",
       });
       await runAndClearAfterCommandHooks({
         ok: false,
-        error: error.message,
-        exit_code: error.exitCode,
+        error: errorMessage,
+        exit_code: exitCode,
         error_code: classification.code,
         error_category: errorCategory,
         command_resolution: commandResolution,
         resolution_stage: "execute",
       });
-      sentryCaptureCliError(error);
+      sentryCaptureCliError(error instanceof Error ? error : new Error(errorMessage));
       if (jsonErrors) {
-        printError(JSON.stringify(formatPmCliErrorForJson(error.message, error.exitCode, enrichedContext), null, 2));
+        printError(JSON.stringify(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext), null, 2));
       } else {
-        printError(formatPmCliErrorForDisplay(error.message, enrichedContext));
+        printError(formatPmCliErrorForDisplay(errorMessage, enrichedContext));
       }
       await sentryFlush();
-      process.exitCode = error.exitCode;
+      process.exitCode = exitCode;
       return;
     }
 

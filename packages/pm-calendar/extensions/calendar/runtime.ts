@@ -99,6 +99,7 @@ function readPayloadGlobalOptions(payload: unknown): GlobalOptions {
 
 export async function runCalendarPackage(options: CalendarOptions, global: GlobalOptions): Promise<CalendarResult> {
   const loaded = await ensureCalendarCoreModule();
+  loaded.resolveCalendarOutputFormat(options, global);
   return loaded.runCalendar(options, global);
 }
 

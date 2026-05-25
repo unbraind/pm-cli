@@ -114,6 +114,38 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("suggests common command aliases from live telemetry mistakes", async () => {
+    await withTempPmPath(async (context) => {
+      const show = context.runCli(["show", "pm-a1b2", "--json"]);
+      expect(show.code).toBe(2);
+      expect(show.stderr).toContain("Unknown command show");
+      expect(show.stderr).toContain("Did you mean: get");
+
+      const comment = context.runCli(["comment", "pm-a1b2", "hello", "--json"]);
+      expect(comment.code).toBe(2);
+      expect(comment.stderr).toContain("Unknown command comment");
+      expect(comment.stderr).toContain("Did you mean: comments");
+    });
+  });
+
+  it("suggests semantic option replacements for append-style commands", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "--title", "Comment target", "--type", "Task", "--json"], {
+        expectJson: true,
+      });
+      expect(created.code).toBe(0);
+      const itemId = (created.json as { item?: { id?: string } }).item?.id;
+      expect(itemId).toBeDefined();
+
+      const result = context.runCli(["comments", itemId ?? "", "--body", "comment body", "--json"]);
+      expect(result.code).toBe(2);
+      const envelope = parseJsonErrorEnvelope(result.stderr);
+      expect(envelope.code).toBe("unknown_option");
+      expect(envelope.next_steps).toEqual(expect.arrayContaining(["Nearest supported options: --add"]));
+      expect(envelope.recovery?.suggested_retry).toContain("--add");
+    });
+  });
+
   it("omits nearest-command suggestions for unrelated unknown commands", async () => {
     await withTempPmPath(async (context) => {
       const result = context.runCli(["xyz"]);

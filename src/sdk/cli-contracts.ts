@@ -291,8 +291,6 @@ export const FILES_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--remove" },
   { flag: "--migrate" },
   { flag: "--list" },
-  { flag: "--apply" },
-  { flag: "--note" },
   { flag: "--append-stable" },
   { flag: "--validate-paths" },
   { flag: "--audit" },
@@ -1132,10 +1130,6 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(CREATE_FLAG_CONTRACTS);
     case "aggregate":
       return withSubcommandGlobalFlags(AGGREGATE_FLAG_CONTRACTS);
-    case "dedupe-audit":
-      return withSubcommandGlobalFlags(DEDUPE_AUDIT_FLAG_CONTRACTS);
-    case "comments-audit":
-      return withSubcommandGlobalFlags(COMMENTS_AUDIT_FLAG_CONTRACTS);
     case "calendar":
       return withSubcommandGlobalFlags(CALENDAR_FLAG_CONTRACTS);
     case "context":
@@ -1162,8 +1156,6 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(UPDATE_FLAG_CONTRACTS);
     case "update-many":
       return withSubcommandGlobalFlags(UPDATE_MANY_FLAG_CONTRACTS);
-    case "normalize":
-      return withSubcommandGlobalFlags(NORMALIZE_FLAG_CONTRACTS);
     case "close":
       return withSubcommandGlobalFlags(CLOSE_FLAG_CONTRACTS);
     case "delete":
@@ -1186,8 +1178,6 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(TEST_FLAG_CONTRACTS);
     case "test-all":
       return withSubcommandGlobalFlags(TEST_ALL_FLAG_CONTRACTS);
-    case "test-runs":
-      return withSubcommandGlobalFlags(TEST_RUNS_FLAG_CONTRACTS);
     case "health":
       return withSubcommandGlobalFlags(HEALTH_FLAG_CONTRACTS);
     case "validate":
@@ -1206,10 +1196,6 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(PAUSE_TASK_FLAG_CONTRACTS);
     case "close-task":
       return withSubcommandGlobalFlags(CLOSE_TASK_FLAG_CONTRACTS);
-    case "guide":
-      return withSubcommandGlobalFlags(GUIDE_FLAG_CONTRACTS);
-    case "completion":
-      return withSubcommandGlobalFlags(COMPLETION_FLAG_CONTRACTS);
     default:
       return withSubcommandGlobalFlags([]);
   }

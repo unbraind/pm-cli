@@ -23,9 +23,28 @@ describe("sentry helpers", () => {
     expect(shouldCaptureCliError(new PmCliError("Item is locked", EXIT_CODE.CONFLICT))).toBe(false);
   });
 
+  it("does not capture extension usage errors with CLI exit codes as Sentry exceptions", () => {
+    const usageError = Object.assign(new Error("Calendar accepts at most one positional view"), {
+      exitCode: EXIT_CODE.USAGE,
+    });
+    const notFoundError = Object.assign(new Error("Extension command unavailable"), {
+      exitCode: EXIT_CODE.NOT_FOUND,
+    });
+
+    expect(shouldCaptureCliError(usageError)).toBe(false);
+    expect(shouldCaptureCliError(notFoundError)).toBe(false);
+  });
+
   it("captures unexpected errors for Sentry triage", () => {
     expect(shouldCaptureCliError(new Error("unexpected crash"))).toBe(true);
     expect(shouldCaptureCliError("unexpected non-error throw")).toBe(true);
+    expect(
+      shouldCaptureCliError(
+        Object.assign(new Error("dependency failed"), {
+          exitCode: EXIT_CODE.DEPENDENCY_FAILED,
+        }),
+      ),
+    ).toBe(true);
   });
 });
 

@@ -48,6 +48,31 @@ const OPTIONAL_PACKAGE_INSTALL_HINTS: Record<string, string> = {
   todos: "todos",
 };
 
+const COMMON_COMMAND_ALIASES: Record<string, string[]> = {
+  comment: ["comments"],
+  note: ["notes"],
+  learning: ["learnings"],
+  show: ["get"],
+};
+
+const SEMANTIC_UNKNOWN_OPTION_SUGGESTIONS: Record<string, Record<string, string[]>> = {
+  comments: {
+    "--body": ["--add"],
+    "--text": ["--add"],
+    "--comment": ["--add"],
+  },
+  notes: {
+    "--body": ["--add"],
+    "--text": ["--add"],
+    "--note": ["--add"],
+  },
+  learnings: {
+    "--body": ["--add"],
+    "--text": ["--add"],
+    "--learning": ["--add"],
+  },
+};
+
 export interface CommanderUsageContext extends CommanderGuidanceContext {
   message: string;
   commandName: string | undefined;
@@ -234,12 +259,17 @@ export function buildUnknownCommandGuidanceFromRuntime(
     })
     .map((entry) => entry.commandPath);
 
+  const aliasCandidates = (COMMON_COMMAND_ALIASES[primaryToken] ?? []).filter((aliasPath) =>
+    commandPaths.includes(aliasPath),
+  );
+  const combinedCandidates = dedupeStrings([...aliasCandidates, ...rankedCandidates]);
+
   const fallbackTopLevel = [...new Set(commandPaths.map((commandPath) => commandPath.split(" ")[0]).filter((segment) => segment.length > 0))];
   fallbackTopLevel.sort((left, right) => left.localeCompare(right));
-  const suggestedPaths = (rankedCandidates.length > 0 ? rankedCandidates : fallbackTopLevel).slice(0, 3);
+  const suggestedPaths = (combinedCandidates.length > 0 ? combinedCandidates : fallbackTopLevel).slice(0, 3);
   const examples = [...new Set(["pm --help", ...suggestedPaths.map((path) => `pm ${path} --help`)])];
   const optionalPackageHint = resolveOptionalPackageInstallHint(normalizedUnknown);
-  const didYouMean = rankedCandidates.length > 0 ? `Did you mean: ${rankedCandidates.slice(0, 3).join(", ")}?` : null;
+  const didYouMean = combinedCandidates.length > 0 ? `Did you mean: ${combinedCandidates.slice(0, 3).join(", ")}?` : null;
 
   return {
     unknownCommandExamples: examples,
@@ -250,6 +280,19 @@ export function buildUnknownCommandGuidanceFromRuntime(
       ...(optionalPackageHint ? [optionalPackageHint] : []),
     ],
   };
+}
+
+function dedupeStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    if (seen.has(value)) {
+      continue;
+    }
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
 }
 
 export function resolveChildCommandByToken(parent: Command, token: string): Command | undefined {
@@ -309,7 +352,10 @@ export async function resolveCommanderUsageContext(
   const unknownOptionMatch = message.match(/unknown option '([^']+)'/i);
   const unknownOptionSuggestions =
     unknownOptionMatch && commandName
-      ? suggestNearestLongFlags(unknownOptionMatch[1], collectKnownLongFlags(commandName))
+      ? dedupeStrings([
+          ...(SEMANTIC_UNKNOWN_OPTION_SUGGESTIONS[commandName]?.[normalizeLongFlag(unknownOptionMatch[1])] ?? []),
+          ...suggestNearestLongFlags(unknownOptionMatch[1], collectKnownLongFlags(commandName)),
+        ])
       : undefined;
   let suggestedRetryCommand: string | undefined;
   if (unknownOptionMatch && unknownOptionSuggestions && unknownOptionSuggestions.length > 0) {

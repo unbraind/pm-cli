@@ -28,6 +28,11 @@
       "import": "./dist/sdk/index.js",
       "default": "./dist/sdk/index.js"
     },
+    "./sdk/runtime": {
+      "types": "./dist/sdk/runtime.d.ts",
+      "import": "./dist/sdk/runtime.js",
+      "default": "./dist/sdk/runtime.js"
+    },
     "./cli": {
       "types": "./dist/cli/main.d.ts",
       "import": "./dist/cli/main.js",

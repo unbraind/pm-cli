@@ -1,5 +1,5 @@
 import type { PmSettings } from "../../types/index.js";
-import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import {
   executeSearchJsonRequest,
@@ -102,7 +102,13 @@ type VectorSettingsInput = {
 const DEFAULT_COLLECTION = "pm_items";
 const LANCE_DB_LOCAL_SNAPSHOT_DIR = ".pm-cli-local-vectors";
 const LANCE_DB_LOCAL_SNAPSHOT_VERSION = 1;
-const lanceDbLocalTables = new Map<string, Map<string, VectorRecord>>();
+interface LanceDbLocalTableCacheEntry {
+  records: Map<string, VectorRecord>;
+  mtimeMs: number | null;
+  size: number | null;
+}
+
+const lanceDbLocalTables = new Map<string, LanceDbLocalTableCacheEntry>();
 
 function normalizeVector(value: unknown): number[] {
   if (!isFiniteNumberArray(value) || value.length === 0) {
@@ -340,12 +346,32 @@ function parseLanceDbSnapshot(snapshotPath: string, expectedTable: string, raw: 
 
 async function loadLanceDbLocalTable(storePath: string, table: string): Promise<Map<string, VectorRecord>> {
   const key = getLanceDbLocalTableKey(storePath, table);
-  const cached = lanceDbLocalTables.get(key);
-  if (cached) {
-    return cached;
+  const snapshotPath = getLanceDbSnapshotPath(storePath, table);
+  let snapshotStats: { mtimeMs: number; size: number } | null = null;
+  try {
+    const stats = await stat(snapshotPath);
+    snapshotStats = { mtimeMs: stats.mtimeMs, size: stats.size };
+  } catch (error) {
+    if (!isNodeErrorWithCode(error, "ENOENT")) {
+      throw error;
+    }
   }
 
-  const snapshotPath = getLanceDbSnapshotPath(storePath, table);
+  const cached = lanceDbLocalTables.get(key);
+  if (cached && !snapshotStats) {
+    const loaded = new Map<string, VectorRecord>();
+    lanceDbLocalTables.set(key, { records: loaded, mtimeMs: null, size: null });
+    return loaded;
+  }
+  if (
+    cached &&
+    snapshotStats &&
+    cached.mtimeMs === snapshotStats.mtimeMs &&
+    cached.size === snapshotStats.size
+  ) {
+    return cached.records;
+  }
+
   let loaded = new Map<string, VectorRecord>();
   try {
     const raw = await readFile(snapshotPath, "utf8");
@@ -355,7 +381,11 @@ async function loadLanceDbLocalTable(storePath: string, table: string): Promise<
       throw error;
     }
   }
-  lanceDbLocalTables.set(key, loaded);
+  lanceDbLocalTables.set(key, {
+    records: loaded,
+    mtimeMs: snapshotStats?.mtimeMs ?? null,
+    size: snapshotStats?.size ?? null,
+  });
   return loaded;
 }
 
@@ -630,7 +660,13 @@ export async function executeVectorUpsert(
       table.set(record.id, record);
     }
     await persistLanceDbLocalTable(lanceDbStore.path, upsertBody.table, table);
-    lanceDbLocalTables.set(key, table);
+    const snapshotPath = getLanceDbSnapshotPath(lanceDbStore.path, upsertBody.table);
+    const snapshotStats = await stat(snapshotPath);
+    lanceDbLocalTables.set(key, {
+      records: table,
+      mtimeMs: snapshotStats.mtimeMs,
+      size: snapshotStats.size,
+    });
     return { status: "ok" };
   }
   const timeoutMs = normalizeSearchHttpTimeoutMs(options.timeout_ms, "Vector request");
@@ -673,7 +709,13 @@ export async function executeVectorDelete(
     if (table.size === 0) {
       lanceDbLocalTables.delete(key);
     } else {
-      lanceDbLocalTables.set(key, table);
+      const snapshotPath = getLanceDbSnapshotPath(lanceDbStore.path, deleteBody.table);
+      const snapshotStats = await stat(snapshotPath);
+      lanceDbLocalTables.set(key, {
+        records: table,
+        mtimeMs: snapshotStats.mtimeMs,
+        size: snapshotStats.size,
+      });
     }
     return { status: "ok" };
   }

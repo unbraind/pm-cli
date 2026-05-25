@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, readFile, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -583,6 +583,30 @@ describe("executeVectorQuery", () => {
     ).rejects.toThrow("Vector request timeout must be a positive finite number");
   });
 
+  const itOnPosix = process.platform === "win32" ? it.skip : it;
+
+  itOnPosix("surfaces unexpected LanceDB local snapshot stat failures", async () => {
+    const localRoot = await mkdtemp(join(tmpdir(), "lancedb-stat-failure-"));
+    const snapshotDir = join(localRoot, LANCE_DB_SNAPSHOT_DIR);
+    await mkdir(snapshotDir, { recursive: true });
+    await chmod(snapshotDir, 0o000);
+    try {
+      await expect(
+        executeVectorQuery(
+          {
+            name: "lancedb",
+            path: localRoot,
+          },
+          [1, 0],
+          3,
+        ),
+      ).rejects.toMatchObject({ code: "EACCES" });
+    } finally {
+      await chmod(snapshotDir, 0o700).catch(() => {});
+      await rm(localRoot, { recursive: true, force: true });
+    }
+  });
+
   it("normalizes query execution, HTTP, parse, and shape failures", async () => {
     await expect(
       executeVectorQuery(
@@ -1101,6 +1125,45 @@ describe("LanceDB local snapshot persistence", () => {
       expect(reloadedHits[0]?.score).toBeCloseTo(0.9939, 3);
       expect(reloadedHits[1]?.score).toBeCloseTo(0.2425, 3);
       expect(reloadedHits[0]?.payload).toEqual({ kind: "Task" });
+    } finally {
+      await rm(sandboxRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reloads local snapshots when the backing file is deleted by another process", async () => {
+    const sandboxRoot = await mkdtemp(join(tmpdir(), "pm-cli-lancedb-store-"));
+    const storePath = join(sandboxRoot, "store");
+    const snapshotPath = join(resolve(storePath), LANCE_DB_SNAPSHOT_DIR, "pm_items.json");
+    try {
+      await executeVectorUpsert(
+        {
+          name: "lancedb",
+          path: storePath,
+        },
+        [{ id: "pm-a1", vector: [1, 0] }],
+      );
+
+      const beforeDelete = await executeVectorQuery(
+        {
+          name: "lancedb",
+          path: storePath,
+        },
+        [1, 0],
+        5,
+      );
+      expect(beforeDelete.map((hit) => hit.id)).toEqual(["pm-a1"]);
+
+      await unlink(snapshotPath);
+
+      const afterDelete = await executeVectorQuery(
+        {
+          name: "lancedb",
+          path: storePath,
+        },
+        [1, 0],
+        5,
+      );
+      expect(afterDelete).toEqual([]);
     } finally {
       await rm(sandboxRoot, { recursive: true, force: true });
     }

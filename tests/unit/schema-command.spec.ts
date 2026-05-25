@@ -85,6 +85,23 @@ describe("schema add-type command", () => {
     });
   });
 
+  it("accepts a custom type name shorthand when schema options make add-type intent clear", async () => {
+    await withTempPmPath(async (context) => {
+      const add = context.runCli(["schema", "Experiment", "--description", "Try a new approach", "--alias", "exp", "--json"], {
+        expectJson: true,
+      });
+      expect(add.code).toBe(0);
+      expect(add.json).toMatchObject({
+        action: "add-type",
+        type: {
+          name: "Experiment",
+          description: "Try a new approach",
+          aliases: ["exp"],
+        },
+      });
+    });
+  });
+
   it("refuses to redefine a built-in type", async () => {
     await withTempPmPath(async (context) => {
       const add = context.runCli(["schema", "add-type", "Task"]);

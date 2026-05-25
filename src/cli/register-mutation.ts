@@ -726,7 +726,7 @@ export function registerMutationCommands(program: Command): void {
 
   const schemaCommand = program
     .command("schema")
-    .argument("[subcommand]", "Schema subcommand: add-type")
+    .argument("[subcommand]", "Schema subcommand: add-type, or a custom item type name shorthand")
     .argument("[name]", "Custom item type name (for add-type)")
     .option("--description <text>", "Human description for the custom item type")
     .option("--default-status <status>", "Default status hint recorded for the custom item type")
@@ -747,7 +747,8 @@ export function registerMutationCommands(program: Command): void {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const { runSchemaAddType, formatSchemaAddTypeHuman, SCHEMA_SUBCOMMANDS } = await loadMutationCommandsModule();
-      const normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
+      let normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
+      let typeName = name;
       if (!normalizedSubcommand) {
         throw new PmCliError(
           `pm schema requires a subcommand. Allowed: ${SCHEMA_SUBCOMMANDS.join(", ")}`,
@@ -761,13 +762,6 @@ export function registerMutationCommands(program: Command): void {
           },
         );
       }
-      if (!SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number])) {
-        throw new PmCliError(
-          `Unknown pm schema subcommand "${subcommand}". Allowed: ${SCHEMA_SUBCOMMANDS.join(", ")}`,
-          EXIT_CODE.USAGE,
-          { code: "unknown_subcommand" },
-        );
-      }
       const aliases = Array.isArray(options.alias) ? (options.alias as string[]) : undefined;
       const defaultStatus =
         typeof options.defaultStatus === "string"
@@ -775,8 +769,28 @@ export function registerMutationCommands(program: Command): void {
           : typeof options.default_status === "string"
             ? (options.default_status as string)
             : undefined;
+      const usedAddTypeOption =
+        typeof options.description === "string" ||
+        typeof defaultStatus === "string" ||
+        typeof options.folder === "string" ||
+        (aliases?.length ?? 0) > 0;
+      if (
+        !SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number]) &&
+        typeName === undefined &&
+        usedAddTypeOption
+      ) {
+        typeName = subcommand;
+        normalizedSubcommand = "add-type";
+      }
+      if (!SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number])) {
+        throw new PmCliError(
+          `Unknown pm schema subcommand "${subcommand}". Allowed: ${SCHEMA_SUBCOMMANDS.join(", ")}`,
+          EXIT_CODE.USAGE,
+          { code: "unknown_subcommand" },
+        );
+      }
       const result = await runSchemaAddType(
-        name,
+        typeName,
         {
           description: typeof options.description === "string" ? options.description : undefined,
           defaultStatus,
