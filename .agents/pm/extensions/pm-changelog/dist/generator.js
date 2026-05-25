@@ -32,7 +32,17 @@ export function createChangelog(options) {
             itemCount: items.length,
         };
     }
-    for (const section of sections) {
+    const visibleSections = options.includeEmpty
+        ? sections
+        : sections.filter((section) => section.items.length > 0);
+    if (visibleSections.length === 0) {
+        return {
+            markdown: lines.join("\n").trimEnd() + "\n",
+            sections,
+            itemCount: 0,
+        };
+    }
+    for (const section of visibleSections) {
         lines.push(`## ${section.heading}`, "");
         if (section.items.length === 0) {
             lines.push("No changes.", "");
@@ -53,7 +63,7 @@ export function createChangelog(options) {
     return {
         markdown: lines.join("\n").trimEnd() + "\n",
         sections,
-        itemCount: sections.reduce((sum, section) => sum + section.items.length, 0),
+        itemCount: visibleSections.reduce((sum, section) => sum + section.items.length, 0),
     };
 }
 export function mergeChangelog(existingMarkdown, generatedMarkdown, options = {}) {
@@ -180,10 +190,7 @@ function filterItemsByStatus(options) {
 }
 function buildSections(items, options) {
     if (options.releaseWindows && options.releaseWindows.length > 0) {
-        return options.releaseWindows.map((window) => ({
-            heading: window.heading,
-            items: filterItemsByTime(items, window),
-        }));
+        return assignItemsToReleaseWindows(items, options.releaseWindows);
     }
     if (options.groupBy === "release" && !options.version) {
         return groupSectionsByMetadata(items, "release", "Unreleased");
@@ -197,6 +204,42 @@ function buildSections(items, options) {
             items,
         },
     ];
+}
+function assignItemsToReleaseWindows(items, windows) {
+    const buckets = new Map();
+    for (const window of windows)
+        buckets.set(window.heading, []);
+    const releaseIndex = new Map();
+    for (const window of windows) {
+        if (!window.releaseTag)
+            continue;
+        const key = normalizeReleaseKey(window.releaseTag);
+        if (!key || releaseIndex.has(key))
+            continue;
+        releaseIndex.set(key, window.heading);
+    }
+    const remaining = [];
+    for (const item of items) {
+        const releaseField = getStringField(item, "release");
+        const key = releaseField ? normalizeReleaseKey(releaseField) : "";
+        const heading = key ? releaseIndex.get(key) : undefined;
+        if (heading) {
+            buckets.get(heading).push(item);
+            continue;
+        }
+        remaining.push(item);
+    }
+    for (const window of windows) {
+        const filtered = filterItemsByTime(remaining, window);
+        buckets.get(window.heading).push(...filtered);
+    }
+    return windows.map((window) => ({
+        heading: window.heading,
+        items: buckets.get(window.heading) ?? [],
+    }));
+}
+function normalizeReleaseKey(value) {
+    return value.trim().replace(/^v/i, "").toLowerCase();
 }
 function filterItemsByTime(items, window) {
     const since = window.since ? Date.parse(window.since) : undefined;

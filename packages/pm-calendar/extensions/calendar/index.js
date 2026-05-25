@@ -31,6 +31,12 @@ const calendarFlags = [
   { long: "--format", value_name: "value", value_type: "string", description: "Calendar output override: markdown|toon|json." },
 ];
 
+function usageError(message) {
+  const error = new Error(message);
+  error.exitCode = 2;
+  return error;
+}
+
 function calendarCommand(name) {
   return {
     name,
@@ -47,7 +53,7 @@ function calendarCommand(name) {
       const positionalArgs = firstFlagIndex === -1 ? context.args : context.args.slice(0, firstFlagIndex);
       const positionalView = positionalArgs[0]?.trim();
       if (positionalArgs.length > 1) {
-        throw new Error("Calendar accepts at most one positional view: agenda|day|week|month.");
+        throw usageError("Calendar accepts at most one positional view: agenda|day|week|month.");
       }
       return runCalendarPackage(
         {

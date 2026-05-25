@@ -235,6 +235,41 @@ function describeUnknownError(error: unknown): string {
   return "Unknown failure";
 }
 
+function readThrownExitCode(error: unknown): number | undefined {
+  if (typeof error !== "object" || error === null || !("exitCode" in error)) {
+    return undefined;
+  }
+  const exitCode = (error as { exitCode?: unknown }).exitCode;
+  return typeof exitCode === "number" && Number.isFinite(exitCode) ? exitCode : undefined;
+}
+
+function normalizeThrownExitCode(exitCode: number): number {
+  const normalized = Math.trunc(exitCode);
+  return normalized > EXIT_CODE.SUCCESS ? normalized : EXIT_CODE.GENERIC_FAILURE;
+}
+
+function isCommanderError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof (error as { code?: unknown }).code === "string" &&
+    (error as { code: string }).code.startsWith("commander.")
+  );
+}
+
+function wrapThrownErrorForSentry(error: unknown, message: string): Error {
+  if (error instanceof Error) {
+    return error;
+  }
+  const wrapped = new Error(message) as Error & { exitCode?: number };
+  const exitCode = readThrownExitCode(error);
+  if (exitCode !== undefined) {
+    wrapped.exitCode = normalizeThrownExitCode(exitCode);
+  }
+  return wrapped;
+}
+
 function renderAttemptedCommand(argv: string[]): string {
   return renderPmCommand(argv);
 }
@@ -1616,14 +1651,21 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
       setActiveExtensionServices(bootstrapSnapshot?.services ?? { overrides: [] });
     }
 
-    if (error instanceof PmCliError) {
-      const enrichedContext = buildPmCliRecoveryContext(error.context, invocationArgv, error.message);
-      const classification = classifyPmCliError(error.message, enrichedContext);
+    const numericExitCode = readThrownExitCode(error);
+    if (
+      error instanceof PmCliError ||
+      (!isCommanderError(error) && typeof numericExitCode === "number" && Number.isFinite(numericExitCode))
+    ) {
+      const errorMessage = describeUnknownError(error);
+      const exitCode = error instanceof PmCliError ? error.exitCode : normalizeThrownExitCode(numericExitCode as number);
+      const context = error instanceof PmCliError ? error.context : undefined;
+      const enrichedContext = buildPmCliRecoveryContext(context, invocationArgv, errorMessage);
+      const classification = classifyPmCliError(errorMessage, enrichedContext);
       const { errorCategory, commandResolution } = await emitTelemetryCommandError({
         command: attemptedCommand,
         errorCode: classification.code,
         errorMessage: classification.detail,
-        exitCode: error.exitCode,
+        exitCode,
         options: {
           bootstrap_global_options: bootstrapGlobal,
         },
@@ -1634,36 +1676,36 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
         command: attemptedCommand,
         error_code: classification.code,
         error_category: errorCategory,
-        exit_code: error.exitCode,
+        exit_code: exitCode,
         error_message: classification.detail,
         command_resolution: commandResolution,
         resolution_stage: "execute",
         source_context: activeTelemetryCommandContext?.source_context,
       });
-      sentryFinishCommandSpan(false, error.message, {
+      sentryFinishCommandSpan(false, errorMessage, {
         error_code: classification.code,
         error_category: errorCategory,
-        exit_code: error.exitCode,
+        exit_code: exitCode,
         command_resolution: commandResolution,
         resolution_stage: "execute",
       });
       await runAndClearAfterCommandHooks({
         ok: false,
-        error: error.message,
-        exit_code: error.exitCode,
+        error: errorMessage,
+        exit_code: exitCode,
         error_code: classification.code,
         error_category: errorCategory,
         command_resolution: commandResolution,
         resolution_stage: "execute",
       });
-      sentryCaptureCliError(error);
+      sentryCaptureCliError(wrapThrownErrorForSentry(error, errorMessage));
       if (jsonErrors) {
-        printError(JSON.stringify(formatPmCliErrorForJson(error.message, error.exitCode, enrichedContext), null, 2));
+        printError(JSON.stringify(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext), null, 2));
       } else {
-        printError(formatPmCliErrorForDisplay(error.message, enrichedContext));
+        printError(formatPmCliErrorForDisplay(errorMessage, enrichedContext));
       }
       await sentryFlush();
-      process.exitCode = error.exitCode;
+      process.exitCode = exitCode;
       return;
     }
 
@@ -1882,3 +1924,10 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
     process.exitCode = EXIT_CODE.GENERIC_FAILURE;
   }
 }
+
+export const _testOnly = {
+  isCommanderError,
+  normalizeThrownExitCode,
+  readThrownExitCode,
+  wrapThrownErrorForSentry,
+};

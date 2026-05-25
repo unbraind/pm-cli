@@ -129,7 +129,9 @@ npx pm-changelog --all-release-tags --mode replace --output CHANGELOG.md \
   --item-url-base https://github.com/owner/repo/blob/main/.agents/pm
 ```
 
-`--all-release-tags` creates a newest-first `Unreleased` section for closed items after the latest tag, then one section per matching git tag. Release section dates come from the tag commit timestamp, and item assignment uses each item's `closed_at`, `updated_at`, then `created_at` timestamp.
+`--all-release-tags` creates a newest-first `Unreleased` section for closed items after the latest tag, then one section per matching git tag. Release section dates come from the tag commit timestamp. Items with a `release` field whose value matches a known tag (`v2026.05.24-7`, `2026.05.24-7`, etc.) are bucketed into that tag's section regardless of timestamps; items without a matching `release` field fall back to each item's `closed_at`, `updated_at`, then `created_at` timestamp. Empty release windows are omitted unless `--include-empty` is passed.
+
+Pair `--all-release-tags` with `--release-version-from-package` (or `--version v<x>`) to insert a section for the pending release before the tag is created — for example during CI when bumping `package.json` ahead of `git tag`.
 
 Each item entry becomes a link: `- Fix something ([pmc-abc](https://github.com/owner/repo/blob/main/.agents/pm/issues/pmc-abc.toon))`. The type subdirectory (`issues/`, `tasks/`, `chores/`, `features/`, `epics/`) is resolved automatically from the item's type.
 
@@ -161,7 +163,7 @@ Each item entry becomes a link: `- Fix something ([pmc-abc](https://github.com/o
 | `--check` | false | Do not write; exit 1 if the output file would change |
 | `--github-output` | false | Write summary fields to `$GITHUB_OUTPUT` |
 | `--github-step-summary` | false | Append generated markdown to `$GITHUB_STEP_SUMMARY` |
-| `--include-empty` | false | Emit an empty section when no items match |
+| `--include-empty` | false | Emit an empty section when no items match. When using `--all-release-tags`, empty release windows are omitted by default; pass this flag to keep them as `No changes.` sections. |
 | `--include-links` | false | Include item `url` values in generated entries |
 | `--item-url-base <url>` | - | Make item IDs clickable links to their `.toon` files; point to `.agents/pm` in the repo (e.g. `https://github.com/owner/repo/blob/main/.agents/pm`). The type subdirectory (`issues/`, `tasks/`, `chores/`, etc.) is derived automatically from each item's type. |
 

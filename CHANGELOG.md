@@ -49,7 +49,6 @@
 - Verify and repair pm-changelog-generated main CHANGELOG release alignment ([pm-5baq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5baq.toon))
 - Handle concurrent project package installs without EEXIST ([pm-hw6z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hw6z.toon))
 - pm-changelog generator silently drops items the bundled @unbrained/pm-cli SDK cannot read ([pm-hybj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hybj.toon))
-- Release @unbrained/pm-cli 2026.5.24 ([pm-jpfc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-jpfc.toon))
 
 ## 2026.5.24 - 2026-05-24
 
@@ -84,6 +83,7 @@
 
 ### Other
 
+- Release @unbrained/pm-cli 2026.5.24 ([pm-jpfc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-jpfc.toon))
 - Recover 16 unreadable TOON item files: strict decoder mis-parses bracketed tokens followed by a colon inside quoted text fields ([pm-iqgj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-iqgj.toon))
 - Deduplicate recurrence weekday ordering helper ([pm-max1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-max1.toon))
 - Deduplicate item-type definition normalization across settings and registry ([pm-v798](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-v798.toon))
@@ -128,7 +128,6 @@
 ### Other
 
 - Audited history-repair \(re-anchor\) command + clear legacy history drift so pm health is ok ([pm-85hm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-85hm.toon))
-- Release @unbrained/pm-cli 2026.5.2 ([pm-5jw8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5jw8.toon))
 - pm create --blocked-by stores free-text metadata, not a dependency edge or blocked status \(agent-confusing\) ([pm-orrl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-orrl.toon))
 - MCP pm\_comments returns full comment history \(no default limit\) — token bloat on long-lived items ([pm-6vfg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6vfg.toon))
 - MCP pm\_run activity defaults to verbose raw history-patch dump \(token waste for agents\) ([pm-8jd3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8jd3.toon))
@@ -371,38 +370,6 @@
 
 - Release @unbrained/pm-cli after 2026.5.4 ([pm-0rjf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-0rjf.toon))
 
-## 2026.5.5 - 2026-05-05
-
-No changes.
-
-## 2026.5.4 - 2026-05-04
-
-No changes.
-
-## 2026.5.3-8 - 2026-05-04
-
-No changes.
-
-## 2026.5.3-7 - 2026-05-03
-
-No changes.
-
-## 2026.5.3-6 - 2026-05-03
-
-No changes.
-
-## 2026.5.3-5 - 2026-05-03
-
-No changes.
-
-## 2026.5.3-4 - 2026-05-03
-
-No changes.
-
-## 2026.5.3-3 - 2026-05-03
-
-No changes.
-
 ## 2026.5.3-2 - 2026-05-03
 
 ### Other
@@ -517,6 +484,7 @@ No changes.
 
 ### Other
 
+- Release @unbrained/pm-cli 2026.5.2 ([pm-5jw8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5jw8.toon))
 - 2026-05-02 Full Audit: All Systems Verified ([pm-ss8d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ss8d.toon))
 - Lower Sentry tracesSampleRate from 1.0 to 0.2 for free plan quota ([pm-wvhs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wvhs.toon))
 - 2026-05-01 Full PM CLI Audit Implementation ([pm-twpc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-twpc.toon))
@@ -840,7 +808,6 @@ No changes.
 - Release readiness maintenance sweep ([pm-r59c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-r59c.toon))
 - Harden settings serialization contract coverage ([pm-gm5l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gm5l.toon))
 - Sync legacy prompt docs with create contract ([pm-h22w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-h22w.toon))
-- Release @unbrained/pm-cli 2026.3.12 ([pm-lz4m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-lz4m.toon))
 - Maintain release readiness 2026-03-09 \(Run 9\) ([pm-7vr0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7vr0.toon))
 - Maintain release readiness 2026-03-09 \(Run 8\) ([pm-2cr5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2cr5.toon))
 - Maintain release readiness 2026-03-09 \(Run 7\) ([pm-zre8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-zre8.toon))
@@ -1049,8 +1016,6 @@ No changes.
 
 ## 2026.3.12 - 2026-03-12
 
-No changes.
+### Other
 
-## 2026.3.9 - 2026-03-09
-
-No changes.
+- Release @unbrained/pm-cli 2026.3.12 ([pm-lz4m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-lz4m.toon))

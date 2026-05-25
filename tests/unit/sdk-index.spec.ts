@@ -6,6 +6,7 @@ import {
   EXTENSION_CAPABILITIES,
   ITEM_TYPE_VALUES,
   PM_PACKAGE_RESOURCE_KINDS,
+  PM_CORE_COMMAND_NAMES,
   PM_PROVIDER_TOOL_PARAMETERS_SCHEMA,
   PM_TOOL_ACTIONS,
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
@@ -96,6 +97,17 @@ describe("public sdk entrypoint", () => {
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS).not.toHaveProperty("reindex");
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS).not.toHaveProperty("normalize");
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS).not.toHaveProperty("test-runs-list");
+    expect(PM_CORE_COMMAND_NAMES).not.toEqual(
+      expect.arrayContaining([
+        "comments-audit",
+        "completion",
+        "dedupe-audit",
+        "guide",
+        "normalize",
+        "reindex",
+        "test-runs",
+      ]),
+    );
 
     expect(PM_TOOL_PARAMETERS_SCHEMA.type).toBe("object");
     expect(PM_TOOL_PARAMETERS_SCHEMA.oneOf).toEqual(

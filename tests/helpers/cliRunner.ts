@@ -65,7 +65,15 @@ function applyEnvOverride(env: NodeJS.ProcessEnv | undefined): () => void {
   if (!env) {
     return () => {};
   }
-  const keys = new Set<string>(Object.keys(env));
+  const keys = new Set<string>();
+  for (const key of Object.keys(env)) {
+    if (env[key] !== process.env[key]) {
+      keys.add(key);
+    }
+  }
+  if (keys.size === 0) {
+    return () => {};
+  }
   const previous = new Map<string, string | undefined>();
   for (const key of keys) {
     previous.set(key, process.env[key]);

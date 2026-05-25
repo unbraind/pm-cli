@@ -1,0 +1,29 @@
+import { describe, expect, it } from "vitest";
+
+import { _testOnly } from "../../src/cli/main.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+
+describe("CLI main error helpers", () => {
+  it("only treats Commander-owned codes as Commander errors", () => {
+    expect(_testOnly.isCommanderError({ code: "commander.unknownOption" })).toBe(true);
+    expect(_testOnly.isCommanderError({ code: "ENOENT", exitCode: EXIT_CODE.NOT_FOUND })).toBe(false);
+    expect(_testOnly.isCommanderError(new Error("plain"))).toBe(false);
+  });
+
+  it("normalizes invalid thrown exit codes to generic failure instead of success", () => {
+    expect(_testOnly.normalizeThrownExitCode(EXIT_CODE.USAGE)).toBe(EXIT_CODE.USAGE);
+    expect(_testOnly.normalizeThrownExitCode(0)).toBe(EXIT_CODE.GENERIC_FAILURE);
+    expect(_testOnly.normalizeThrownExitCode(-1)).toBe(EXIT_CODE.GENERIC_FAILURE);
+  });
+
+  it("preserves non-Error thrown exit codes for Sentry filtering", () => {
+    const wrapped = _testOnly.wrapThrownErrorForSentry(
+      { exitCode: EXIT_CODE.USAGE },
+      "Calendar accepts at most one positional view",
+    ) as Error & { exitCode?: number };
+
+    expect(wrapped).toBeInstanceOf(Error);
+    expect(wrapped.message).toBe("Calendar accepts at most one positional view");
+    expect(wrapped.exitCode).toBe(EXIT_CODE.USAGE);
+  });
+});

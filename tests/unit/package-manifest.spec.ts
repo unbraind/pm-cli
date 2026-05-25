@@ -1,4 +1,4 @@
-import { access, mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
@@ -19,7 +19,38 @@ async function createExtension(root: string, name: string): Promise<string> {
   return fixture.extensionRoot;
 }
 
+async function collectBundledExtensionDirectories(): Promise<string[]> {
+  const packagesRoot = path.join(repoRoot, "packages");
+  const packageEntries = await readdir(packagesRoot, { withFileTypes: true });
+  const extensionDirectories: string[] = [];
+  for (const packageEntry of packageEntries) {
+    if (!packageEntry.isDirectory() || !packageEntry.name.startsWith("pm-")) {
+      continue;
+    }
+    const extensionsRoot = path.join(packagesRoot, packageEntry.name, "extensions");
+    const extensionEntries = await readdir(extensionsRoot, { withFileTypes: true }).catch(() => []);
+    for (const extensionEntry of extensionEntries) {
+      if (extensionEntry.isDirectory()) {
+        extensionDirectories.push(path.join(extensionsRoot, extensionEntry.name));
+      }
+    }
+  }
+  return extensionDirectories.sort();
+}
+
 describe("pm package manifest model", () => {
+  it("publishes the SDK runtime subpath used by bundled package runtimes", async () => {
+    const packageJson = JSON.parse(await readFile(path.join(repoRoot, "package.json"), "utf8")) as {
+      exports?: Record<string, unknown>;
+    };
+
+    expect(packageJson.exports?.["./sdk/runtime"]).toMatchObject({
+      types: "./dist/sdk/runtime.d.ts",
+      import: "./dist/sdk/runtime.js",
+      default: "./dist/sdk/runtime.js",
+    });
+  });
+
   it("reads package.json pm resources as a first-class manifest", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-manifest-"));
     await writeFile(
@@ -432,6 +463,23 @@ describe("pm package manifest model", () => {
         stdio: "pipe",
       }),
     ).not.toThrow();
+  });
+
+  it("keeps shipped extension module manifest capabilities aligned with manifest.json", async () => {
+    const extensionDirectories = await collectBundledExtensionDirectories();
+    expect(extensionDirectories.length).toBeGreaterThan(0);
+
+    for (const extensionDirectory of extensionDirectories) {
+      const manifestPath = path.join(extensionDirectory, "manifest.json");
+      const modulePath = path.join(extensionDirectory, "index.js");
+      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as { capabilities?: unknown };
+      const source = await readFile(modulePath, "utf8");
+      const capabilitiesMatch = source.match(/capabilities:\s*(\[[^\]]*\])/);
+      expect(capabilitiesMatch?.[1], modulePath).toBeDefined();
+      const capabilitiesLiteral = capabilitiesMatch?.[1]?.replace(/'/g, "\"").replace(/,\s*\]/g, "]") ?? "[]";
+      const moduleCapabilities = JSON.parse(capabilitiesLiteral) as unknown;
+      expect(moduleCapabilities, modulePath).toEqual(manifest.capabilities);
+    }
   });
 
   it("keeps shipped package sources on the public SDK surface", async () => {

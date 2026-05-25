@@ -1,6 +1,6 @@
 import { getSentry } from "./instrument.js";
 import { PmCliError } from "../shared/errors.js";
-import type { TelemetryErrorCategory } from "../shared/constants.js";
+import { EXIT_CODE, type TelemetryErrorCategory } from "../shared/constants.js";
 import {
   deriveTelemetryCommandResolution,
   deriveTelemetryCommandTaxonomy,
@@ -206,7 +206,25 @@ export function sentryLogCliUsageError(params: {
 }
 
 export function shouldCaptureCliError(error: unknown): boolean {
-  return !(error instanceof PmCliError);
+  if (error instanceof PmCliError) {
+    return false;
+  }
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "exitCode" in error &&
+    typeof (error as { exitCode?: unknown }).exitCode === "number"
+  ) {
+    const exitCode = Math.trunc((error as { exitCode: number }).exitCode);
+    const expectedExitCodes: ReadonlySet<number> = new Set([
+      EXIT_CODE.SUCCESS,
+      EXIT_CODE.USAGE,
+      EXIT_CODE.NOT_FOUND,
+      EXIT_CODE.CONFLICT,
+    ]);
+    return !expectedExitCodes.has(exitCode);
+  }
+  return true;
 }
 
 export async function sentryFlush(): Promise<void> {

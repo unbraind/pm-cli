@@ -181,6 +181,18 @@ describe("calendar command module", () => {
         },
       });
 
+      const invalidFormat = context.runCli(["calendar", "--format", "xml"]);
+      expect(invalidFormat.code).toBe(2);
+      expect(invalidFormat.stderr).toContain("Calendar format must be one of markdown|toon|json");
+
+      const conflictingFormat = context.runCli(["calendar", "--json", "--format", "markdown"]);
+      expect(conflictingFormat.code).toBe(2);
+      expect(conflictingFormat.stderr).toContain("Cannot combine --json with --format markdown|toon");
+
+      const repeatedViews = context.runCli(["calendar", "agenda", "day", "--json"]);
+      expect(repeatedViews.code).toBe(2);
+      expect(repeatedViews.stderr).toContain("Calendar accepts at most one positional view");
+
       const contracts = context.runCli(
         ["contracts", "--action", "calendar", "--runtime-only", "--schema-only", "--json"],
         { expectJson: true },

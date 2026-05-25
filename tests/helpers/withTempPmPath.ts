@@ -238,7 +238,7 @@ export async function withTempPmPath<T>(callback: (context: TempPmContext) => Pr
     FORCE_COLOR: "0",
   };
 
-  const runCli = (args: string[], options?: { expectJson?: boolean; cwd?: string }): CliRunResult =>
+  const runCli = (args: string[], options?: { expectJson?: boolean; cwd?: string; input?: string }): CliRunResult =>
     runNodeCli(env, args, options);
   const runCliInProcess = (args: string[], options?: { expectJson?: boolean; cwd?: string }): Promise<CliRunResult> =>
     runNodeCliInProcess(env, args, options);
