@@ -1421,6 +1421,7 @@ interface CoreCommandRegistrationSelection {
   listQuery: boolean;
   mutation: boolean;
   operation: boolean;
+  targetCommandName?: string;
 }
 const REGISTER_ALL_CORE_COMMAND_FAMILIES: CoreCommandRegistrationSelection = {
   setup: true,
@@ -1479,6 +1480,7 @@ function resolveCoreCommandRegistrationSelection(
       listQuery: false,
       mutation: false,
       operation: false,
+      targetCommandName: normalizedCommand,
     };
   }
   if (LIST_QUERY_COMMAND_NAMES.has(normalizedCommand)) {
@@ -1487,6 +1489,7 @@ function resolveCoreCommandRegistrationSelection(
       listQuery: true,
       mutation: false,
       operation: false,
+      targetCommandName: normalizedCommand,
     };
   }
   if (MUTATION_COMMAND_NAMES.has(normalizedCommand)) {
@@ -1495,6 +1498,7 @@ function resolveCoreCommandRegistrationSelection(
       listQuery: false,
       mutation: true,
       operation: false,
+      targetCommandName: normalizedCommand,
     };
   }
   if (OPERATION_COMMAND_NAMES.has(normalizedCommand)) {
@@ -1503,6 +1507,7 @@ function resolveCoreCommandRegistrationSelection(
       listQuery: false,
       mutation: false,
       operation: true,
+      targetCommandName: normalizedCommand,
     };
   }
   return REGISTER_ALL_CORE_COMMAND_FAMILIES;
@@ -1526,7 +1531,12 @@ async function registerCoreCommandFamilies(
   if (selection.listQuery) {
     const { registerListQueryCommands } =
       await loadListQueryRegistrationModule();
-    registerListQueryCommands(rootProgram);
+    const commandFilter =
+      typeof selection.targetCommandName === "string" &&
+      LIST_QUERY_COMMAND_NAMES.has(selection.targetCommandName)
+        ? new Set([selection.targetCommandName])
+        : undefined;
+    registerListQueryCommands(rootProgram, commandFilter ? { commandFilter } : undefined);
   }
   if (selection.mutation) {
     const { registerMutationCommands } = await loadMutationRegistrationModule();

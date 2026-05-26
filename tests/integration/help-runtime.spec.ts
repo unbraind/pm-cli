@@ -39,6 +39,40 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("keeps read-only help and usage flows aligned with the in-process runner", async () => {
+    await withTempPmPath(async (context) => {
+      const topLevelHelpSubprocess = context.runCli(["--help"]);
+      const topLevelHelpInProcess = await context.runCliInProcess(["--help"]);
+      expect(topLevelHelpInProcess.code).toBe(topLevelHelpSubprocess.code);
+      expect(topLevelHelpInProcess.stdout).toContain("Usage: pm [options] [command]");
+      expect(topLevelHelpSubprocess.stdout).toContain("Usage: pm [options] [command]");
+
+      const createHelpSubprocess = context.runCli(["create", "--help"]);
+      const createHelpInProcess = await context.runCliInProcess(["create", "--help"]);
+      expect(createHelpInProcess.code).toBe(createHelpSubprocess.code);
+      expect(createHelpInProcess.stdout).toContain("Usage: pm create [options]");
+      expect(createHelpSubprocess.stdout).toContain("Usage: pm create [options]");
+
+      const planHelpSubprocess = context.runCli(["plan", "--help", "--json"], { expectJson: true });
+      const planHelpInProcess = await context.runCliInProcess(["plan", "--help", "--json"], { expectJson: true });
+      expect(planHelpInProcess.code).toBe(planHelpSubprocess.code);
+      expect((planHelpInProcess.json as { format?: string }).format).toBe("pm_help_v1");
+      expect((planHelpSubprocess.json as { format?: string }).format).toBe("pm_help_v1");
+
+      const usageErrorSubprocess = context.runCli(["list-open", "--bogus-flag"]);
+      const usageErrorInProcess = await context.runCliInProcess(["list-open", "--bogus-flag"]);
+      expect(usageErrorInProcess.code).toBe(usageErrorSubprocess.code);
+      expect(usageErrorInProcess.stderr).toContain("--bogus-flag");
+      expect(usageErrorSubprocess.stderr).toContain("--bogus-flag");
+
+      const unknownCommandSubprocess = context.runCli(["xyz"]);
+      const unknownCommandInProcess = await context.runCliInProcess(["xyz"]);
+      expect(unknownCommandInProcess.code).toBe(unknownCommandSubprocess.code);
+      expect(unknownCommandInProcess.stderr).toContain("Unknown command xyz");
+      expect(unknownCommandSubprocess.stderr).toContain("Unknown command xyz");
+    });
+  });
+
   it("reports guide command as optional package surface in bare core mode", async () => {
     await withTempPmPath(async (context) => {
       const help = context.runCli(["guide", "--help"]);
