@@ -452,6 +452,33 @@ describe("built-in extension entrypoints", () => {
     expect(error.message).not.toContain("pm calendar totally-bogus\n");
   });
 
+  it("treats uppercase view names as recognized when generating recovery hints (matches runtime case-insensitive parsing)", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    let captured: unknown;
+    try {
+      await commands[0]!.run({
+        command: "cal",
+        args: ["DAY", "totally-bogus"],
+        options: {},
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+      });
+    } catch (error) {
+      captured = error;
+    }
+
+    const error = captured as { message: string; exitCode: number };
+    expect(error.exitCode).toBe(2);
+    // DAY is a valid view (case-insensitive); only totally-bogus is unknown.
+    expect(error.message).toContain("Unknown view alias(es): totally-bogus");
+    expect(error.message).not.toContain("Unknown view alias(es): DAY");
+    // Recovery hint uses the canonical lowercase form (`day`), not `DAY` or fallback `agenda`.
+    expect(error.message).toContain("pm calendar day");
+    expect(error.message).toContain("--view day --date +7d");
+  });
+
   it("tolerates empty/whitespace-only trailing positionals (shell expansion produces no extras)", async () => {
     const { api, commands } = createCommandOnlyApi();
     activateCalendar(api);

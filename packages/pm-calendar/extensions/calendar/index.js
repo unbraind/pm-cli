@@ -45,8 +45,12 @@ const calendarFlags = [
   { long: "--format", value_name: "value", value_type: "string", description: "Calendar output override: markdown|toon|json." },
 ];
 
-function isCalendarView(arg) {
-  return CALENDAR_VIEW_NAMES.includes(arg);
+// The runtime lowercases `view` before validating (src/cli/commands/calendar.ts),
+// so the unknown-alias / recovery-hint logic must match views case-insensitively
+// or `pm calendar DAY ...` would wrongly flag DAY as unknown.
+function normalizeCalendarView(arg) {
+  const normalized = arg.toLowerCase();
+  return CALENDAR_VIEW_NAMES.includes(normalized) ? normalized : null;
 }
 
 function buildPositionalViewError(positionalArgs) {
@@ -54,10 +58,11 @@ function buildPositionalViewError(positionalArgs) {
   const receivedList = received.join(", ");
   // Check every received positional, not just the tail, so an invalid first
   // positional (e.g. `pm calendar totally-bogus week`) is still surfaced.
-  const extras = received.filter((arg) => !isCalendarView(arg));
-  // Fall back to the first valid view from `received` for the recovery hint;
-  // recommend `agenda` only when none of the positionals are valid view names.
-  const recoveryView = received.find(isCalendarView) ?? "agenda";
+  const extras = received.filter((arg) => normalizeCalendarView(arg) === null);
+  // Fall back to the first valid view from `received` (normalized to canonical
+  // lowercase) for the recovery hint; recommend `agenda` only when none of the
+  // positionals are valid view names.
+  const recoveryView = received.map(normalizeCalendarView).find((view) => view !== null) ?? "agenda";
   const hintLines = [`Calendar accepts at most one positional view (agenda|day|week|month), but received: ${receivedList}.`];
   if (extras.length > 0) {
     hintLines.push(`Unknown view alias(es): ${extras.join(", ")}.`);
