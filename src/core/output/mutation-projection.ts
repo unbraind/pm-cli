@@ -27,7 +27,13 @@ const CHANGED_FIELDS_KEY = "changed_fields";
 const CHANGED_FIELD_COUNT_KEY = "changed_field_count";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+  // Only traverse genuine plain objects so the recursion never rewrites the
+  // prototype of built-ins (Date/RegExp/Map/Set) or class instances into {}.
+  const proto = Object.getPrototypeOf(value);
+  return proto === null || proto === Object.prototype;
 }
 
 function compactChangedFields(value: unknown): unknown {

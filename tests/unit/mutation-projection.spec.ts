@@ -63,6 +63,25 @@ describe("projectMutationResult", () => {
     expect(projectMutationResult(nonArray, { changedFields: "compact" })).toBe(nonArray);
   });
 
+  it("preserves non-plain objects (Date/class instances) instead of mangling them", () => {
+    const created = new Date("2026-05-26T00:00:00.000Z");
+    const result = { item: { id: "pm-a1b2", created }, changed_fields: ["id", "created"] };
+    const projected = projectMutationResult(result, { changedFields: "compact" }) as {
+      item: { created: unknown };
+      changed_field_count: number;
+    };
+    expect(projected.changed_field_count).toBe(2);
+    expect(projected.item.created).toBe(created);
+    expect(projected.item.created).toBeInstanceOf(Date);
+  });
+
+  it("treats null-prototype objects as plain and compacts them", () => {
+    const nullProto = Object.assign(Object.create(null), { changed_fields: ["x", "y"] }) as Record<string, unknown>;
+    const projected = projectMutationResult(nullProto, { changedFields: "compact" }) as Record<string, unknown>;
+    expect(projected.changed_fields).toBeUndefined();
+    expect(projected.changed_field_count).toBe(2);
+  });
+
   it("returns non-object inputs unchanged in compact mode", () => {
     expect(projectMutationResult(null, { changedFields: "compact" })).toBeNull();
     expect(projectMutationResult("text", { changedFields: "compact" })).toBe("text");
