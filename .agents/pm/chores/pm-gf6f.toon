@@ -6,11 +6,13 @@ status: closed
 priority: 1
 tags[4]: bug,ci,nightly,tests
 created_at: "2026-05-26T15:54:20.097Z"
-updated_at: "2026-05-26T15:55:03.548Z"
+updated_at: "2026-05-26T16:22:55.462Z"
 author: claude-code-agent
 parent: pm-rnpb
 resolution: "Fixed Windows execFileSync(npm.cmd) EINVAL with shell:true on win32; fixed macOS realpath mismatch by canonicalizing mkdtemp output; extracted shared extension-policy override builder. All gates green."
 expected_result: Nightly macOS Node 20 and Windows Node 20 cross-platform jobs pass; extension-policy override normalization de-duplicated via shared helper; coverage + static-quality + release gate remain green.
 actual_result: "Targeted tests pass locally (extension-command + cli.integration matchers); extension-loader/settings-store/settings-validator/contracts-command (90 tests) pass; full release gate ok across build/typecheck/docs/static/coverage/version/secrets/npx-smoke/dogfood/npm-pack/compat/sentry-telemetry; coverage 100%; Sentry critical=0 high=5 within threshold; telemetry finish_error_rate_pct=1.95, missing-error-code rows=0; manual temp-dir dogfood happy path verified."
+comments[1]{created_at,author,text}:
+  "2026-05-26T16:22:55.458Z",claude-code-agent,"Merge evidence 2026-05-26: PR #73 squash-merged into main as 60659285 after the required AI-review window. Review results: Codex 'Didn't find any major issues. Chef's kiss'; Gemini 'I have no feedback to provide as the changes are correct and all tests pass'; Sourcery rate-limited (non-blocking); CodeRabbit 10 comments (9 known .agents/pm CLI-generated false positives, 1 incorrect CHANGELOG-link concern -- both .toon and .jsonl exist for pm-gf6f as expected). PR CI fully green: Build foundation, Runtime smokes ubuntu/macOS/Windows x Node 20/22/24, Gates coverage/static/typecheck/compat/smokes, Docs, CodeRabbit -- all pass."
 close_reason: completed
 body: ""
