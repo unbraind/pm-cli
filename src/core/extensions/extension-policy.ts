@@ -7,6 +7,7 @@ import {
   type ExtensionGovernancePolicy,
   type ExtensionLayer,
   type ExtensionPolicyMode,
+  type ExtensionPolicyOverride,
   type ExtensionPolicySurface,
   type ExtensionSandboxProfile,
   type ExtensionTrustMode,
@@ -133,6 +134,51 @@ function toSortedList(values: Iterable<string>): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
 
+function buildExtensionPolicyOverride(
+  rawOverride: ExtensionPolicyOverride,
+): { name: string; normalized: NormalizedExtensionPolicyOverride } | null {
+  const name = normalizePolicyName(rawOverride.name);
+  if (name.length === 0) {
+    return null;
+  }
+  return {
+    name,
+    normalized: {
+      name,
+      disabled: rawOverride.disabled === true,
+      requireTrusted: rawOverride.require_trusted === true,
+      requireProvenance: rawOverride.require_provenance === true,
+      sandboxProfile:
+        rawOverride.sandbox_profile !== undefined
+          ? normalizePolicySandboxProfile(rawOverride.sandbox_profile)
+          : undefined,
+      allowedCapabilities: normalizePolicyStringSet(rawOverride.allowed_capabilities),
+      blockedCapabilities: normalizePolicyStringSet(rawOverride.blocked_capabilities),
+      allowedSurfaces: normalizePolicySurfaceSet(rawOverride.allowed_surfaces),
+      blockedSurfaces: normalizePolicySurfaceSet(rawOverride.blocked_surfaces),
+      allowedCommands: normalizePolicyStringSet(rawOverride.allowed_commands),
+      blockedCommands: normalizePolicyStringSet(rawOverride.blocked_commands),
+      allowedActions: normalizePolicyStringSet(rawOverride.allowed_actions),
+      blockedActions: normalizePolicyStringSet(rawOverride.blocked_actions),
+      allowedServices: normalizePolicyStringSet(rawOverride.allowed_services),
+      blockedServices: normalizePolicyStringSet(rawOverride.blocked_services),
+    },
+  };
+}
+
+function collectExtensionPolicyOverrides(
+  rawOverrides: readonly ExtensionPolicyOverride[] | undefined,
+): Map<string, NormalizedExtensionPolicyOverride> {
+  const overridesByName = new Map<string, NormalizedExtensionPolicyOverride>();
+  for (const rawOverride of rawOverrides ?? []) {
+    const built = buildExtensionPolicyOverride(rawOverride);
+    if (built) {
+      overridesByName.set(built.name, built.normalized);
+    }
+  }
+  return overridesByName;
+}
+
 export function normalizeExtensionPolicy(settings: PmSettings): NormalizedExtensionPolicy {
   const policy = settings.extensions.policy;
   const mode = normalizePolicyMode(policy?.mode);
@@ -152,33 +198,7 @@ export function normalizeExtensionPolicy(settings: PmSettings): NormalizedExtens
   const blockedActions = normalizePolicyStringSet(policy?.blocked_actions);
   const allowedServices = normalizePolicyStringSet(policy?.allowed_services);
   const blockedServices = normalizePolicyStringSet(policy?.blocked_services);
-  const overridesByName = new Map<string, NormalizedExtensionPolicyOverride>();
-  for (const rawOverride of policy?.extension_overrides ?? []) {
-    const name = normalizePolicyName(rawOverride.name);
-    if (name.length === 0) {
-      continue;
-    }
-    overridesByName.set(name, {
-      name,
-      disabled: rawOverride.disabled === true,
-      requireTrusted: rawOverride.require_trusted === true,
-      requireProvenance: rawOverride.require_provenance === true,
-      sandboxProfile:
-        rawOverride.sandbox_profile !== undefined
-          ? normalizePolicySandboxProfile(rawOverride.sandbox_profile)
-          : undefined,
-      allowedCapabilities: normalizePolicyStringSet(rawOverride.allowed_capabilities),
-      blockedCapabilities: normalizePolicyStringSet(rawOverride.blocked_capabilities),
-      allowedSurfaces: normalizePolicySurfaceSet(rawOverride.allowed_surfaces),
-      blockedSurfaces: normalizePolicySurfaceSet(rawOverride.blocked_surfaces),
-      allowedCommands: normalizePolicyStringSet(rawOverride.allowed_commands),
-      blockedCommands: normalizePolicyStringSet(rawOverride.blocked_commands),
-      allowedActions: normalizePolicyStringSet(rawOverride.allowed_actions),
-      blockedActions: normalizePolicyStringSet(rawOverride.blocked_actions),
-      allowedServices: normalizePolicyStringSet(rawOverride.allowed_services),
-      blockedServices: normalizePolicyStringSet(rawOverride.blocked_services),
-    });
-  }
+  const overridesByName = collectExtensionPolicyOverrides(policy?.extension_overrides);
 
   const warnings: string[] = [];
   for (const capability of toSortedList([...allowedCapabilities, ...blockedCapabilities])) {
@@ -273,33 +293,7 @@ export function serializeExtensionPolicy(policy: NormalizedExtensionPolicy): Ext
 }
 
 export function hydrateExtensionPolicy(policy: ExtensionGovernancePolicy): NormalizedExtensionPolicy {
-  const overridesByName = new Map<string, NormalizedExtensionPolicyOverride>();
-  for (const rawOverride of policy.extension_overrides ?? []) {
-    const name = normalizePolicyName(rawOverride.name);
-    if (name.length === 0) {
-      continue;
-    }
-    overridesByName.set(name, {
-      name,
-      disabled: rawOverride.disabled === true,
-      requireTrusted: rawOverride.require_trusted === true,
-      requireProvenance: rawOverride.require_provenance === true,
-      sandboxProfile:
-        rawOverride.sandbox_profile !== undefined
-          ? normalizePolicySandboxProfile(rawOverride.sandbox_profile)
-          : undefined,
-      allowedCapabilities: normalizePolicyStringSet(rawOverride.allowed_capabilities),
-      blockedCapabilities: normalizePolicyStringSet(rawOverride.blocked_capabilities),
-      allowedSurfaces: normalizePolicySurfaceSet(rawOverride.allowed_surfaces),
-      blockedSurfaces: normalizePolicySurfaceSet(rawOverride.blocked_surfaces),
-      allowedCommands: normalizePolicyStringSet(rawOverride.allowed_commands),
-      blockedCommands: normalizePolicyStringSet(rawOverride.blocked_commands),
-      allowedActions: normalizePolicyStringSet(rawOverride.allowed_actions),
-      blockedActions: normalizePolicyStringSet(rawOverride.blocked_actions),
-      allowedServices: normalizePolicyStringSet(rawOverride.allowed_services),
-      blockedServices: normalizePolicyStringSet(rawOverride.blocked_services),
-    });
-  }
+  const overridesByName = collectExtensionPolicyOverrides(policy.extension_overrides);
   return {
     mode: normalizePolicyMode(policy.mode),
     trustMode: normalizePolicyTrustMode(policy.trust_mode),

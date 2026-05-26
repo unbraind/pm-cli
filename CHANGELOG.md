@@ -15,6 +15,7 @@
 
 ### Fixed
 
+- Fix nightly cross-platform reliability: macOS realpath in extension-command test and Windows .cmd spawn EINVAL ([pm-gf6f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gf6f.toon))
 - Repeated loose-mapped --tag flags silently keep only the last value \(agent-unfriendly\) ([pm-cf1u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cf1u.toon))
 - Address pre-existing extension/SDK issues surfaced by PR \#69 review \(CodeRabbit\) ([pm-ll50](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ll50.toon))
 - Surface extension command handler error messages instead of opaque extension\_command\_handler\_failed code ([pm-zwl7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zwl7.toon))

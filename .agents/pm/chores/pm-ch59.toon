@@ -6,9 +6,12 @@ status: closed
 priority: 2
 tags[3]: agent-ux,dogfood,dx
 created_at: "2026-05-25T18:30:34.477Z"
-updated_at: "2026-05-25T23:47:52.695Z"
+updated_at: "2026-05-26T15:55:59.843Z"
 author: dogfood-agent
 parent: pm-rnpb
+resolution: Added --no-changed-fields CLI flag and made MCP mutations compact-by-default by dropping the redundant changed_fields array; saves tokens for agents on every mutation.
+expected_result: Mutations omit the changed_fields list when --no-changed-fields is set; MCP responses default to compact projection without breaking existing JSON consumers.
+actual_result: Shipped projectMutationResult helper and ChangedFieldsOptions; MCP server defaults to compact; full release gate + 1809 tests pass; CI green on PR #72; merged 2026-05-25.
 comments[5]{created_at,author,text}:
   "2026-05-25T18:30:41.628Z",dogfood-agent,"Dedup checks run against real tracker (no PM_PATH override) on 2026-05-25 before filing: (1) pm search 'create update changed_fields verbose suppress quiet flag' --limit 12 -> hits pm-rnpb(in_progress parent), pm-5k2w(init verbosity, closed), pm-swie/pm-ote/pm-j1v7/pm-phob/pm-kpz5/pm-wo8/pm-ysgr/pm-mfza/pm-06t (all unrelated create/update feature work, closed) -- none about output verbosity/changed_fields suppression. (2) pm search 'mutation output quiet compact' -> pm-3pbs (closed) reduces verbosity of pm ACTIVITY/HISTORY and adds compact mode to history, NOT create/update mutations -- scope differs. (3) pm list --status open --limit 30 -> pm-59gj,pm-gt82,pm-3cbk (none related). (4) pm list --status in-progress --limit 20 -> pm-rnpb,pm-7rlp,pm-cf1u (none related). Conclusion: no open or recently-closed item covers suppressing/trimming create/update mutation output. Filed as new under pm-rnpb."
   "2026-05-25T19:47:52.743Z",codex-full-audit,"Full audit confirmation: mutation JSON output remains a real token-efficiency issue and is not solved in this slice. Manual/sub-agent dogfood still shows bulky changed_fields/linked object payloads as a high-value optimization for agents. This pass focused on command recovery, package validation, SDK/package boundary, and vector cache correctness; leave pm-ch59 open for explicit compact mutation-output projection work."

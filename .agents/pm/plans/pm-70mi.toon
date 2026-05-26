@@ -6,9 +6,12 @@ status: closed
 priority: 2
 tags[4]: agent-ux,dogfood,dx,pm-cli
 created_at: "2026-05-25T23:04:50.517Z"
-updated_at: "2026-05-26T15:30:51.313Z"
+updated_at: "2026-05-26T15:56:07.290Z"
 author: claude-code-agent
 parent: pm-rnpb
+resolution: Bundled the pm-ch59 (compact mutation output) and pm-8nyc (smarter unknown-flag recovery) agent-UX deliverables into PR #72 with shared review/dogfood/release-gate evidence.
+expected_result: Single PR ships both improvements; CI/Codex/Gemini reviews pass; release gate stays green; CHANGELOG regenerated from closed items.
+actual_result: PR #72 merged 2026-05-25 with all CI checks green; Codex/Gemini feedback addressed across multiple iterations; CHANGELOG auto-regenerated.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-25T23:04:50.517Z",null,null
 comments[4]{created_at,author,text}:

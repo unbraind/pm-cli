@@ -1,0 +1,16 @@
+id: pm-gf6f
+title: "Fix nightly cross-platform reliability: macOS realpath in extension-command test and Windows .cmd spawn EINVAL"
+description: "Two real nightly failures in run 26439727168 (2026-05-26): (a) macOS Node 20 tests/unit/extension-command.spec.ts:756 -- '/private/var/folders/...' != '/var/folders/...' because resolveInstallSource canonicalizes via fs.realpath while the test compared against the raw mkdtemp path. Fixed by realpathing the temp root after mkdtemp. (b) Windows Node 20 tests/integration/cli.integration.spec.ts:234 -- spawnSync('npm.cmd', ...) EINVAL after Node CVE-2024-27980 hardening required shell:true for .cmd dispatch. Fixed by adding shell:isWindows to the execFileSync options. Also extracts buildExtensionPolicyOverride + collectExtensionPolicyOverrides helpers in src/core/extensions/extension-policy.ts to remove the 25-line override-normalization duplicate between normalizeExtensionPolicy and hydrateExtensionPolicy (jscpd hand-maintained cluster identified in pm-3cbk)."
+type: Chore
+status: closed
+priority: 1
+tags[4]: bug,ci,nightly,tests
+created_at: "2026-05-26T15:54:20.097Z"
+updated_at: "2026-05-26T15:55:03.548Z"
+author: claude-code-agent
+parent: pm-rnpb
+resolution: "Fixed Windows execFileSync(npm.cmd) EINVAL with shell:true on win32; fixed macOS realpath mismatch by canonicalizing mkdtemp output; extracted shared extension-policy override builder. All gates green."
+expected_result: Nightly macOS Node 20 and Windows Node 20 cross-platform jobs pass; extension-policy override normalization de-duplicated via shared helper; coverage + static-quality + release gate remain green.
+actual_result: "Targeted tests pass locally (extension-command + cli.integration matchers); extension-loader/settings-store/settings-validator/contracts-command (90 tests) pass; full release gate ok across build/typecheck/docs/static/coverage/version/secrets/npx-smoke/dogfood/npm-pack/compat/sentry-telemetry; coverage 100%; Sentry critical=0 high=5 within threshold; telemetry finish_error_rate_pct=1.95, missing-error-code rows=0; manual temp-dir dogfood happy path verified."
+close_reason: completed
+body: ""
