@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -273,50 +273,55 @@ function runPipeline() {
   }
 
   if (!dryRun) {
-    const generatedChangelogPath = path.join(tmpdir(), `pm-cli-release-${targetVersion.replaceAll(".", "-")}-changelog.md`);
-    runCommand(process.execPath, ["dist/cli.js", "install", "npm:pm-changelog", "--project"]);
-    runCommand(process.execPath, [
-      "dist/cli.js",
-      "changelog",
-      "generate",
-      "--output",
-      generatedChangelogPath,
-      "--title",
-      "Changelog",
-      "--mode",
-      "replace",
-      "--release-version",
-      targetVersion,
-      "--all-release-tags",
-      "--status",
-      "closed",
-      "--item-url-base",
-      "https://github.com/unbraind/pm-cli/blob/main/.agents/pm",
-    ]);
-    const hasGeneratedSection = ensureGeneratedReleaseSectionHasContent(targetVersion, generatedChangelogPath);
-    if (!hasGeneratedSection) {
-      if (explicitVersion) {
-        fail(`Generated CHANGELOG.md is missing a non-empty section for ${targetVersion}.`);
+    const generatedChangelogDir = mkdtempSync(path.join(tmpdir(), "pm-cli-release-"));
+    const generatedChangelogPath = path.join(generatedChangelogDir, `changelog-${targetVersion.replaceAll(".", "-")}.md`);
+    try {
+      runCommand(process.execPath, ["dist/cli.js", "install", "npm:pm-changelog", "--project"]);
+      runCommand(process.execPath, [
+        "dist/cli.js",
+        "changelog",
+        "generate",
+        "--output",
+        generatedChangelogPath,
+        "--title",
+        "Changelog",
+        "--mode",
+        "replace",
+        "--release-version",
+        targetVersion,
+        "--all-release-tags",
+        "--status",
+        "closed",
+        "--item-url-base",
+        "https://github.com/unbraind/pm-cli/blob/main/.agents/pm",
+      ]);
+      const hasGeneratedSection = ensureGeneratedReleaseSectionHasContent(targetVersion, generatedChangelogPath);
+      if (!hasGeneratedSection) {
+        if (explicitVersion) {
+          fail(`Generated changelog file ${generatedChangelogPath} is missing a non-empty section for ${targetVersion}.`);
+        }
+        const result = {
+          ok: true,
+          skipped: true,
+          reason: "empty_generated_changelog_section_for_target_version",
+          last_tag: lastTag,
+          target_version: targetVersion,
+          commits_since_last_tag: commitsSinceLastTag,
+          release_relevant_files: releaseRelevantFiles,
+        };
+        if (outputJson) {
+          process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+        } else {
+          console.log(`Generated changelog has no non-empty section for ${targetVersion}. Skipping release pipeline.`);
+        }
+        return;
       }
-      const result = {
-        ok: true,
-        skipped: true,
-        reason: "empty_generated_changelog_section_for_target_version",
-        last_tag: lastTag,
-        target_version: targetVersion,
-        commits_since_last_tag: commitsSinceLastTag,
-        release_relevant_files: releaseRelevantFiles,
-      };
-      if (outputJson) {
-        process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-      } else {
-        console.log(`Generated changelog has no non-empty section for ${targetVersion}. Skipping release pipeline.`);
-      }
-      return;
+      const npm = commandFor("npm");
+      runCommand(npm, ["version", "--no-git-tag-version", targetVersion]);
+      writeFileSync(path.join(repoRoot, "CHANGELOG.md"), readFileSync(generatedChangelogPath, "utf8"), "utf8");
+    } finally {
+      rmSync(generatedChangelogDir, { recursive: true, force: true });
     }
-    const npm = commandFor("npm");
-    runCommand(npm, ["version", "--no-git-tag-version", targetVersion]);
-    writeFileSync(path.join(repoRoot, "CHANGELOG.md"), readFileSync(generatedChangelogPath, "utf8"), "utf8");
   }
 
   const gates = runReleaseGates({
