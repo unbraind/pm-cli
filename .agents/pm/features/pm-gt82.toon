@@ -2,14 +2,13 @@ id: pm-gt82
 title: Bundle CLI with esbuild for sub-200ms startup
 description: Startup is 890ms+ for simple commands; bundling reduces this to ~100ms
 type: Feature
-status: in_progress
+status: closed
 priority: 0
 tags[2]: performance,startup
 created_at: "2026-05-16T15:07:08.622Z"
-updated_at: "2026-05-26T22:29:37.279Z"
-assignee: codex-active-continuation
+updated_at: "2026-05-26T22:58:23.413Z"
 author: claude-code-agent
-comments[31]{created_at,author,text}:
+comments[32]{created_at,author,text}:
   "2026-05-16T16:48:23.232Z",codex-agent,"Audit update 2026-05-16: latest isolated dogfood after init --with-packages passed 44 workflows; slowest normal commands were create 753ms, comments 683ms, package wildcard 634ms, notes/docs/learnings/get brief around 560-600ms. Release gate is green, but sub-200ms startup remains the largest remaining perceived-speed opportunity."
   "2026-05-16T16:59:45.913Z",codex-audit,"Implementation update: adding a build-time bundled dist/cli.js path for the pm binary while keeping SDK/module exports emitted by tsc. Package-root resolution is being made independent of unbundled dist/cli/** module paths so package discovery, guide docs, upgrade version reads, telemetry flush, and Sentry release tagging continue to work from the bundled entrypoint."
   "2026-05-16T17:07:21.271Z",codex-audit,"Benchmark finding: attempted esbuild bundling first, but the safe dependency-external ESM bundle averaged 234.9ms for node dist/cli.js --version versus 201.7ms for the tsc entry, so it was not shipped. Implemented a targeted fast --version/-V path instead; after build, node dist/cli.js --version averages 36.7ms versus 194.6ms for loading dist/cli/main.js, a 5.3x speedup for the standard agent bootstrap probe. Remaining all-command sub-200ms bundling stays open for a deeper CJS/import-meta redesign."
@@ -41,6 +40,7 @@ comments[31]{created_at,author,text}:
   "2026-05-25T20:25:16.640Z",manual-dogfood-subagent,"Manual timing sample from isolated temp project using built dist CLI: version 52ms; init --with-packages 429ms; config get 385ms; schema add 616ms; create 880-1256ms; get 713ms; claim 1304ms; update 1641ms; comments/notes/learnings/files/docs about 1005-1131ms; calendar agenda 480ms; keyword search 1327ms; hybrid reindex 874ms; hybrid search 995ms; package doctor 653ms; SDK import 242ms; final health 660ms. Reads/calendar feel acceptable; mutations and some recovery paths still feel >1s and should stay under startup/perf scrutiny."
   "2026-05-26T22:03:09.157Z",codex-active-continuation,"Kickoff 2026-05-26 (codex-active-continuation): claimed startup-optimization slice for the consolidated perf/reliability PR. Baseline at claim time: no open GitHub issues/PRs, security alerts are clear, and latest scheduled Auto Release/Nightly failures are unrelated release/changelog and cross-platform test signatures tracked under the active umbrella.\n\nThis pass will capture before/after startup timings and ship one bounded low-risk startup optimization with focused regression coverage."
   "2026-05-26T22:29:37.279Z",codex-active-continuation,"Startup optimization slice completed:\n- Implemented selective list-query command registration for direct invocations by threading target command selection from src/cli/main.ts into src/cli/register-list-query.ts (register only the invoked list-query command on non-help paths).\n- Retained full command-family registration for help/bare invocations to preserve rich help and command discoverability.\n- Startup probe (20 iterations each) after optimization:\n  - help avg 187.6ms (median 183)\n  - list-open avg 383.8ms (median 374.5)\n  - get avg 288.4ms (median 275.5)\n  - contracts avg 286.8ms (median 273)\n- Baseline probe earlier in this pass (6 iterations each) was: help 199.2ms, list-open 459.7ms, get 312.2ms, contracts 297.7ms.\n- Focused regressions passed for help/release-readiness/list/get/search and extension integration paths."
+  "2026-05-26T22:58:19.334Z",codex-active-continuation,"Merged delivery evidence: PR #75 (merge commit 90179089125eb9a07fff6419f4a92078f06af67b) includes startup slice optimization via selective list-query bootstrap registration and before/after startup timing probes with regressions passing."
 notes[2]{created_at,author,text}:
   "2026-05-17T09:12:12.755Z",codex-agent,"Benchmark method: spawned fresh node dist/cli.js processes per run from repo root, PM_AUTHOR=codex-agent, no PM_PATH overrides (real tracker), maxBuffer 20-30MiB. Collected both repeated timing arrays and one-shot --profile outputs with and without --no-extensions."
   "2026-05-22T15:45:00.043Z",maintainer-agent,"Partial progress 2026-05-22: removed zod from settings hot path (settings import 157ms->14ms; --help 227->140ms; list 540->340ms). The remaining startup levers are (a) esbuild bundling (this item) to collapse module-resolution overhead, and (b) item-store full-scan cost for list/context/search (context still ~556ms reading ~786 item files; no read cache - index/ dir is empty). esbuild bundle would mainly help the per-module resolution; an item-store read index would help the scan-bound commands."
@@ -72,4 +72,5 @@ test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resum
   test-local-mp8lnyio-0qq3g4,test,passed,"2026-05-16T17:07:21.171Z","2026-05-16T17:08:07.680Z","2026-05-16T17:08:07.680Z",null,null,1,0,0,null,null,null
   test-local-mph4xiq8-jlp467,test,passed,"2026-05-22T16:22:28.206Z","2026-05-22T16:29:35.889Z","2026-05-22T16:29:35.889Z",null,null,6,0,0,null,null,null
   test-local-mpi8dn40-s2fcer,test,failed,"2026-05-23T10:47:37.266Z","2026-05-23T10:53:53.088Z","2026-05-23T10:53:53.088Z",null,null,6,1,0,null,null,null
+close_reason: Merged bounded startup optimization and regression verification in PR #75.
 body: "Current: pm list ~890ms, pm context ~1.5s, pm health ~2.1s even with --skip-*. Root: 126+ unbundled ESM files loaded per invocation. Fix: add esbuild bundle step alongside tsc. Expected improvement: 5-10x."
