@@ -2,12 +2,11 @@ id: pm-70mi
 title: "Agent-UX combined PR: compact mutation output (pm-ch59) + smarter unknown-flag recovery (pm-8nyc)"
 description: "Combined PR delivering two agent-UX/token-efficiency items under pm-rnpb. (A) pm-ch59: shared mutation-result projection helper that drops mutation-envelope changed_fields arrays (keeps changed_field_count) — wired to a CLI --no-changed-fields global flag and made the MCP agent path compact-by-default unless the MCP-level fullChangedFields control is set. The projector intentionally preserves non-mutation/user changed_fields metadata. (B) pm-8nyc: prefix/abbreviation-aware nearest-flag suggestions, cross-command flag awareness hints, and --sort value aliases (updated->updated_at, created->created_at) for list/list-all. Integrated, full-coverage gated, dogfooded, changelog regenerated via pm-changelog, shipped as one PR with green CI + AI bot review."
 type: Plan
-status: in_progress
+status: closed
 priority: 2
 tags[4]: agent-ux,dogfood,dx,pm-cli
 created_at: "2026-05-25T23:04:50.517Z"
-updated_at: "2026-05-26T15:11:10.472Z"
-assignee: codex-review-continuation
+updated_at: "2026-05-26T15:19:31.887Z"
 author: claude-code-agent
 parent: pm-rnpb
 dependencies[1]{id,kind,created_at,author,source_kind}:
@@ -25,6 +24,7 @@ tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mpmqsyam-wmffd0,test,failed,"2026-05-26T14:40:28.563Z","2026-05-26T14:40:45.214Z","2026-05-26T14:40:45.214Z",null,null,0,1,0,null,null,null
   test-local-mpmqttt9-302w06,test,passed,"2026-05-26T14:41:10.297Z","2026-05-26T14:41:26.061Z","2026-05-26T14:41:26.061Z",null,null,1,0,0,null,null,null
+close_reason: PR #72 is green after reviewer follow-up; all plan steps complete and evidence recorded.
 plan_mode: approved
 plan_steps[3]:
   - id: plan-step-001
@@ -50,7 +50,9 @@ plan_steps[3]:
   - id: plan-step-003
     order: 3
     title: "Integrate, verify (full coverage gate + static + secrets), dogfood in temp dir, refresh pm-changelog, regenerate CHANGELOG, ship PR + bot review + merge"
-    status: in_progress
+    status: completed
     created_at: "2026-05-25T23:05:03.486Z"
-    updated_at: "2026-05-25T23:19:49.190Z"
+    updated_at: "2026-05-26T15:19:27.455Z"
+    evidence: "PR #72 reviewer follow-up complete: latest commit 1139a3f1, CodeRabbit green, GitHub CI green including coverage/static/typecheck/smokes/runtime, local coverage 1826 tests at 100%."
+    completed_at: "2026-05-26T15:19:27.455Z"
 body: ""
