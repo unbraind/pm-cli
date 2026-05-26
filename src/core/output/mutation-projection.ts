@@ -54,9 +54,10 @@ function compactChangedFields(value: unknown): unknown {
   }
 
   let changed = false;
-  // Preserve the source prototype (null or Object.prototype) so a null-prototype
-  // object is not silently re-parented to Object.prototype during compaction.
-  const projected: Record<string, unknown> = Object.create(Object.getPrototypeOf(value) as object | null);
+  // Preserve the source prototype so a null-prototype object is not silently
+  // re-parented to Object.prototype during compaction. isPlainObject guarantees the
+  // prototype is null or Object.prototype, so a plain {} suffices for the common case.
+  const projected: Record<string, unknown> = Object.getPrototypeOf(value) === null ? Object.create(null) : {};
   for (const [key, entry] of Object.entries(value)) {
     if (key === CHANGED_FIELDS_KEY && Array.isArray(entry)) {
       projected[CHANGED_FIELD_COUNT_KEY] = entry.length;
