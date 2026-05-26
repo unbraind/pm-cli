@@ -88,7 +88,10 @@ function calendarCommand(name: "calendar" | "cal"): CommandDefinition {
       // are true positionals, so a positional view combined with --date/--from/etc.
       // must not be mistaken for multiple positional views.
       const firstFlagIndex = context.args.findIndex((arg) => arg.startsWith("-"));
-      const positionalArgs = firstFlagIndex === -1 ? context.args : context.args.slice(0, firstFlagIndex);
+      const rawPositionalArgs = firstFlagIndex === -1 ? context.args : context.args.slice(0, firstFlagIndex);
+      // Drop empty/whitespace-only positionals (e.g. from `pm calendar agenda ""`
+      // when a shell variable is unset) so the count check stays meaningful.
+      const positionalArgs = rawPositionalArgs.filter((arg) => arg.trim().length > 0);
       const positionalView = positionalArgs[0]?.trim();
       if (positionalArgs.length > 1) {
         throw buildPositionalViewError(positionalArgs);
