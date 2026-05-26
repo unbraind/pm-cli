@@ -4,10 +4,12 @@
 
 ### Added
 
+- Add --no-changed-fields flag and compact MCP mutation output to drop the redundant changed\_fields array ([pm-ch59](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ch59.toon))
 - Add pm config set positional value form and shorten the invalid config-key error ([pm-mf4j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mf4j.toon))
 
 ### Changed
 
+- Improve unknown-option recovery with nearest, abbreviated, and cross-command flag suggestions plus list --sort aliases ([pm-8nyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nyc.toon))
 - Split large command files exceeding 2000 LOC ([pm-mbdu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mbdu.toon))
 - Deduplicate item/metadata to record widening casts behind a shared toItemRecord helper ([pm-p5if](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p5if.toon))
 
@@ -25,6 +27,7 @@
 
 ### Other
 
+- Agent-UX combined PR: compact mutation output \(pm-ch59\) + smarter unknown-flag recovery \(pm-8nyc\) ([pm-70mi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-70mi.toon))
 - Harden read-then-lock window uniformly across history-redact/restore/history-repair ([pm-uer0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-uer0.toon))
 - Create native Codex plugin for pm CLI ([pm-0c9q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0c9q.toon))
 - Unify plugin/MCP naming: pm-cli-claude→pm-claude, pm-cli-codex→pm-codex, pm-cli-native MCP→pm-mcp, packages @unbrained/pm-package-X→@unbrained/pm-X ([pm-ash0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ash0.toon))
@@ -370,7 +373,7 @@
 
 - Release @unbrained/pm-cli after 2026.5.4 ([pm-0rjf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-0rjf.toon))
 
-## 2026.5.3-2 - 2026-05-03
+## 2026.5.3-2 - 2026-05-04
 
 ### Other
 
@@ -1014,7 +1017,7 @@
 - TOON item storage migration ([pm-bckz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-bckz.toon))
 - Code/test/docs for create log-seed ambiguity guard ([pm-l5tr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-l5tr.toon))
 
-## 2026.3.12 - 2026-03-12
+## 2026.3.12 - 2026-03-13
 
 ### Other
 

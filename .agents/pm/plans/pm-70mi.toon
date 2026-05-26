@@ -1,0 +1,59 @@
+id: pm-70mi
+title: "Agent-UX combined PR: compact mutation output (pm-ch59) + smarter unknown-flag recovery (pm-8nyc)"
+description: "Combined PR delivering two agent-UX/token-efficiency items under pm-rnpb. (A) pm-ch59: shared mutation-result projection helper that drops mutation-envelope changed_fields arrays (keeps changed_field_count) — wired to a CLI --no-changed-fields global flag and made the MCP agent path compact-by-default unless the MCP-level fullChangedFields control is set. The projector intentionally preserves non-mutation/user changed_fields metadata. (B) pm-8nyc: prefix/abbreviation-aware nearest-flag suggestions, cross-command flag awareness hints, and --sort value aliases (updated->updated_at, created->created_at) for list/list-all. Integrated, full-coverage gated, dogfooded, changelog regenerated via pm-changelog, shipped as one PR with green CI + AI bot review."
+type: Plan
+status: closed
+priority: 2
+tags[4]: agent-ux,dogfood,dx,pm-cli
+created_at: "2026-05-25T23:04:50.517Z"
+updated_at: "2026-05-26T15:30:51.313Z"
+author: claude-code-agent
+parent: pm-rnpb
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-rnpb,parent,"2026-05-25T23:04:50.517Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-05-26T14:42:06.541Z",codex-review-continuation,"Evidence: addressed latest PR #72 Codex review feedback. Projection now only compacts mutation envelopes plus update-many apply/rollback rows, preserving nested/user changed_fields metadata and non-mutation payloads. MCP full changed_fields control moved to fullChangedFields so mutation options.full is forwarded unchanged. Verification passed: pm linked focused test (34 tests), direct node scripts/run-tests.mjs focused suite (34 tests), pnpm build, pnpm quality:static."
+  "2026-05-26T14:57:25.379Z",codex-review-continuation,"Evidence: fixed remote coverage failure by adding the missing update-many apply rows-without-changed_fields branch regression. Verification passed locally: node scripts/run-tests.mjs coverage (1825 tests, 100% statements/branches/functions/lines)."
+  "2026-05-26T15:11:10.472Z",codex-review-continuation,"Evidence: addressed latest CodeRabbit/Gemini review follow-up. Rows rewrite now preserves null-prototype update-many envelopes, fullChangedFields is reserved from dynamic extension passthrough, and withMutationCompaction accepts missing options. Verification passed: focused mutation/MCP suite (19 tests) and node scripts/run-tests.mjs coverage (1826 tests, 100% statements/branches/functions/lines)."
+  "2026-05-26T15:30:51.313Z",codex-review-continuation,"Final PR #72 readiness: latest head 001fd8c7 has green CI (build, static, typecheck, compat, smokes, coverage, runtime smokes), CodeRabbit passed, review thread fetch reports 11 reviews and 0 active threads, mergeStateStatus CLEAN. Proceeding to merge."
+files[3]{path,scope,note}:
+  src/core/output/mutation-projection.ts,project,"Codex review fix: limit changed_fields projection to mutation envelopes and update-many rows"
+  src/core/output/output.ts,project,Reviewed output no-changed-fields behavior for non-mutation payload preservation
+  src/mcp/server.ts,project,"Codex review fix: MCP full changed_fields control no longer consumes mutation options.full"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/mutation-projection.spec.ts tests/unit/output.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpmqsyam-wmffd0,test,failed,"2026-05-26T14:40:28.563Z","2026-05-26T14:40:45.214Z","2026-05-26T14:40:45.214Z",null,null,0,1,0,null,null,null
+  test-local-mpmqttt9-302w06,test,passed,"2026-05-26T14:41:10.297Z","2026-05-26T14:41:26.061Z","2026-05-26T14:41:26.061Z",null,null,1,0,0,null,null,null
+close_reason: PR #72 is green after reviewer follow-up; all plan steps complete and evidence recorded.
+plan_mode: approved
+plan_steps[3]:
+  - id: plan-step-001
+    order: 1
+    title: "pm-ch59: shared mutation-result projection helper + CLI --no-changed-fields flag + MCP compact-by-default"
+    status: completed
+    created_at: "2026-05-25T23:04:55.423Z"
+    updated_at: "2026-05-25T23:13:11.095Z"
+    evidence: "mutation-projection.ts helper + CLI --no-changed-fields global flag + MCP compact-by-default (create/update/close/append/update-many) shipped; tests green (mutation-projection.spec, output.spec, mcp-dynamic-package-actions.spec); manual temp-dir smoke confirmed compact + backward-compatible default."
+    completed_at: "2026-05-25T23:13:11.095Z"
+    linked_items[1]{id,kind}:
+      pm-ch59,implements
+  - id: plan-step-002
+    order: 2
+    title: "pm-8nyc: prefix/abbrev-aware flag suggestions + cross-command flag awareness + list --sort aliases"
+    status: completed
+    created_at: "2026-05-25T23:04:59.286Z"
+    updated_at: "2026-05-25T23:19:37.435Z"
+    evidence: "Cross-command flag awareness + prefix/abbrev suggestions + list --sort aliases + --add-tags semantic map shipped; tests green (list-command, error-guidance, help-runtime); manual temp-dir smoke confirmed --type/--fields cross-command hints, --desc->--description, --sort updated->updated_at."
+    completed_at: "2026-05-25T23:19:37.435Z"
+    linked_items[1]{id,kind}:
+      pm-8nyc,implements
+  - id: plan-step-003
+    order: 3
+    title: "Integrate, verify (full coverage gate + static + secrets), dogfood in temp dir, refresh pm-changelog, regenerate CHANGELOG, ship PR + bot review + merge"
+    status: completed
+    created_at: "2026-05-25T23:05:03.486Z"
+    updated_at: "2026-05-26T15:19:27.455Z"
+    evidence: "PR #72 reviewer follow-up complete: latest commit 1139a3f1, CodeRabbit green, GitHub CI green including coverage/static/typecheck/smokes/runtime, local coverage 1826 tests at 100%."
+    completed_at: "2026-05-26T15:19:27.455Z"
+body: ""

@@ -1,18 +1,25 @@
 # Changelog
 
+## 2026.05.26 - 2026-05-25
+
+### Fixed
+
+- Fix release tag date drift in changelog checks ([pmc-7dm6](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-7dm6.toon))
+
 ## 2026.05.25 - 2026-05-25
 
 ### Added
 
-- Auto-generate full-history CHANGELOG.md in CI without duplicates ([pmc-iuqg](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/features/pmc-iuqg.toon))
 - Bucket items by release field in full-history changelog ([pmc-dfue](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/features/pmc-dfue.toon))
+- Auto-generate full-history CHANGELOG.md in CI without duplicates ([pmc-iuqg](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/features/pmc-iuqg.toon))
 
 ### Other
 
+- Cut and publish pm-changelog 2026.5.25-1 release to npm and GitHub ([pmc-9wvl](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-9wvl.toon))
 - Production readiness audit and release for pm-changelog 2026-05-25 ([pmc-9mck](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/epics/pmc-9mck.toon))
-- Verify pm-changelog install and CLI work in a clean temp folder ([pmc-3jj2](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-3jj2.toon))
-- Replace inline node -e JavaScript with TypeScript helper ([pmc-vvpy](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/chores/pmc-vvpy.toon))
 - Bump @types/node to ^25.9.1 and rewire CI to full-history changelog ([pmc-w8iu](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/chores/pmc-w8iu.toon))
+- Replace inline node -e JavaScript with TypeScript helper ([pmc-vvpy](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/chores/pmc-vvpy.toon))
+- Verify pm-changelog install and CLI work in a clean temp folder ([pmc-3jj2](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-3jj2.toon))
 
 ## 2026.05.24-15 - 2026-05-24
 

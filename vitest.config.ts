@@ -86,6 +86,7 @@ export default defineConfig({
         "src/core/lock/lock.ts",
         "src/core/lock/index.ts",
         "src/core/output/output.ts",
+        "src/core/output/mutation-projection.ts",
         "src/core/packages/manifest.ts",
         "src/core/schema/item-types-file.ts",
         "src/core/shared/author.ts",

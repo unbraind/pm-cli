@@ -1,6 +1,7 @@
 export interface GlobalOptions {
   json?: boolean;
   quiet?: boolean;
+  noChangedFields?: boolean;
   path?: string;
   noExtensions?: boolean;
   noPager?: boolean;

@@ -9,6 +9,7 @@ describe("registration helpers", () => {
     expect(getGlobalOptions(command)).toEqual({
       json: true,
       quiet: true,
+      noChangedFields: false,
       path: ".pm",
       noExtensions: false,
       noPager: false,

@@ -17,6 +17,7 @@ export interface ReleaseTagHistoryOptions {
 }
 export interface ReleaseContext {
     version?: string;
+    date?: string;
     since?: string;
     until?: string;
     releaseTag?: string;

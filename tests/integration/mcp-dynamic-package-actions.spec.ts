@@ -203,6 +203,81 @@ describe("MCP dynamic package actions", () => {
     });
   });
 
+  it("compacts mutation changed_fields by default and restores them with options.full", async () => {
+    await withTempPmPath(async (context) => {
+      const compactCreate = await handleRequest({
+        jsonrpc: "2.0",
+        id: 30,
+        method: "tools/call",
+        params: {
+          name: "pm_create",
+          arguments: {
+            path: context.pmPath,
+            options: {
+              title: "MCP mutation compaction target",
+              description: "MCP mutation compaction description",
+              type: "Task",
+              author: "mcp-agent",
+            },
+          },
+        },
+      });
+      expect(compactCreate?.isError).not.toBe(true);
+      const compactResult = (compactCreate?.structuredContent as {
+        result?: { item?: { id?: string }; changed_fields?: unknown; changed_field_count?: number };
+      } | undefined)?.result;
+      expect(compactResult?.changed_fields).toBeUndefined();
+      expect(typeof compactResult?.changed_field_count).toBe("number");
+      expect(compactResult?.changed_field_count ?? 0).toBeGreaterThan(0);
+      const id = compactResult?.item?.id as string;
+      expect(id).toBeTruthy();
+
+      const fullUpdate = await handleRequest({
+        jsonrpc: "2.0",
+        id: 31,
+        method: "tools/call",
+        params: {
+          name: "pm_update",
+          arguments: {
+            path: context.pmPath,
+            id,
+            author: "mcp-agent",
+            fullChangedFields: true,
+            options: { status: "in_progress", message: "advance status" },
+          },
+        },
+      });
+      expect(fullUpdate?.isError).not.toBe(true);
+      const fullResult = (fullUpdate?.structuredContent as {
+        result?: { changed_fields?: string[]; changed_field_count?: number };
+      } | undefined)?.result;
+      expect(Array.isArray(fullResult?.changed_fields)).toBe(true);
+      expect(fullResult?.changed_fields).toContain("status");
+      expect(fullResult?.changed_field_count).toBeUndefined();
+
+      const compactUpdateWithFullOption = await handleRequest({
+        jsonrpc: "2.0",
+        id: 32,
+        method: "tools/call",
+        params: {
+          name: "pm_update",
+          arguments: {
+            path: context.pmPath,
+            id,
+            author: "mcp-agent",
+            options: { priority: "1", message: "priority update keeps options.full available", full: true },
+          },
+        },
+      });
+      expect(compactUpdateWithFullOption?.isError).not.toBe(true);
+      const compactUpdateResult = (compactUpdateWithFullOption?.structuredContent as {
+        result?: { changed_fields?: string[]; changed_field_count?: number };
+      } | undefined)?.result;
+      expect(compactUpdateResult?.changed_fields).toBeUndefined();
+      expect(compactUpdateResult?.changed_field_count).toBeGreaterThan(0);
+    });
+  });
+
   it("defaults pm_search output to a compact projection for token efficiency", async () => {
     await withTempPmPath(async (context) => {
       const create = context.runCli([

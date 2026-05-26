@@ -548,6 +548,9 @@ function extractCommandScopedOptions(
   delete scoped.extensions;
   delete scoped.profile;
   delete scoped.pager;
+  // --no-changed-fields is a global output control (commander exposes it as `changedFields`),
+  // not a per-command mutation field; strip it so it never counts as an update input.
+  delete scoped.changedFields;
 
   const looseOptions = parseLooseCommandOptions(commandArgs);
   if (extensionFlagDefinitions.length > 0) {
@@ -1191,6 +1194,7 @@ program
   })
   .option("--json", "Output JSON instead of TOON")
   .option("--quiet", "Suppress stdout output")
+  .option("--no-changed-fields", "Omit the changed_fields array from mutation output (keeps changed_field_count)")
   .option("--path <dir>", "Override PM path for this command")
   .option("--no-extensions", "Disable extension loading")
   .option("--no-pager", "Disable pager integration for help and long output")

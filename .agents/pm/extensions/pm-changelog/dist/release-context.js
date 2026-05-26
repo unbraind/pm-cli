@@ -6,12 +6,14 @@ export function resolveReleaseContext(options) {
     const version = options.version ?? (options.versionFromPackage ? readPackageVersion(cwd) : undefined);
     const releaseTag = version ? findExistingTag(cwd, releaseTagCandidates(version)) : undefined;
     const previousTag = options.sincePreviousTag ? findPreviousTag(cwd, releaseTag) : undefined;
+    const releaseTimestamp = releaseTag ? tryGitCommitTimestamp(cwd, releaseTag) : undefined;
     return {
         version,
+        date: releaseTimestamp ? formatLocalTimestampDate(releaseTimestamp) : undefined,
         releaseTag,
         previousTag,
-        since: options.since ?? (previousTag ? gitCommitTimestamp(cwd, previousTag) : undefined),
-        until: options.until ?? (options.untilReleaseTag && releaseTag ? gitCommitTimestamp(cwd, releaseTag) : undefined),
+        since: options.since ?? (previousTag ? tryGitCommitTimestamp(cwd, previousTag) : undefined),
+        until: options.until ?? (options.untilReleaseTag ? releaseTimestamp : undefined),
     };
 }
 export function resolveReleaseTagWindows(options = {}) {
@@ -33,7 +35,7 @@ export function resolveReleaseTagWindows(options = {}) {
         const tag = orderedTags[index];
         const previous = orderedTags[index + 1];
         windows.push({
-            heading: `${formatTagVersion(tag.name)} - ${formatDate(tag.timestamp)}`,
+            heading: `${formatTagVersion(tag.name)} - ${formatLocalTimestampDate(tag.timestamp)}`,
             releaseTag: tag.name,
             since: previous?.timestamp,
             sinceExclusive: Boolean(previous),
@@ -131,12 +133,8 @@ function parseTagLine(line) {
         return undefined;
     return { name: tagName, timestamp };
 }
-function gitCommitTimestamp(cwd, ref) {
-    const timestamp = runGit(cwd, ["log", "-1", "--format=%cI", ref]);
-    if (!timestamp) {
-        throw new Error(`Could not resolve git timestamp for ${ref}`);
-    }
-    return timestamp;
+function tryGitCommitTimestamp(cwd, ref) {
+    return runGit(cwd, ["log", "-1", "--format=%cI", ref]);
 }
 function runGit(cwd, args) {
     try {
@@ -159,6 +157,12 @@ function formatDate(timestamp) {
     if (Number.isNaN(date.getTime()))
         return timestamp.slice(0, 10);
     return date.toISOString().slice(0, 10);
+}
+function formatLocalTimestampDate(timestamp) {
+    const match = timestamp.match(/^(\d{4}-\d{2}-\d{2})(?:[T\s]|$)/);
+    if (match)
+        return match[1];
+    return formatDate(timestamp);
 }
 function normalizeTimestamp(value) {
     const date = new Date(value);
