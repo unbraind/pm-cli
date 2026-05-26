@@ -75,11 +75,12 @@ describe("projectMutationResult", () => {
     expect(projected.item.created).toBeInstanceOf(Date);
   });
 
-  it("treats null-prototype objects as plain and compacts them", () => {
+  it("compacts null-prototype objects while preserving their prototype", () => {
     const nullProto = Object.assign(Object.create(null), { changed_fields: ["x", "y"] }) as Record<string, unknown>;
     const projected = projectMutationResult(nullProto, { changedFields: "compact" }) as Record<string, unknown>;
     expect(projected.changed_fields).toBeUndefined();
     expect(projected.changed_field_count).toBe(2);
+    expect(Object.getPrototypeOf(projected)).toBeNull();
   });
 
   it("returns non-object inputs unchanged in compact mode", () => {
