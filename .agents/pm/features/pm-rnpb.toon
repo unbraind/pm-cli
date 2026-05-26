@@ -6,7 +6,7 @@ status: closed
 priority: 0
 tags[10]: agent-ux,audit,calendar,ci,dogfood,pm-cli,sdk,search,security,telemetry
 created_at: "2026-05-03T13:20:01.343Z"
-updated_at: "2026-05-26T22:58:32.910Z"
+updated_at: "2026-05-26T22:59:56.418Z"
 deadline: "2026-06-01T00:00:00.000Z"
 author: codex-audit
 estimated_minutes: 300
@@ -14,7 +14,7 @@ acceptance_criteria: Audit findings are actionable and deduplicated; changed fil
 parent: pm-jrjt
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-jrjt,parent,"2026-05-03T13:20:01.343Z",codex-audit,null
-comments[314]{created_at,author,text}:
+comments[315]{created_at,author,text}:
   "2026-05-03T13:20:01.343Z",codex-audit,Parent lineage established under pm-jrjt after duplicate checks found only closed prior audit items.
   "2026-05-09T11:12:26.232Z",codex-agent,"Duplicate check before this pass: pm context --limit 10 --depth standard, pm search dogfood audit extensible sdk calendar semantic search telemetry sentry --limit 10, pm list-open --limit 20, and pm list-in-progress --limit 20. Reusing open feature pm-rnpb; prior same-day task pm-m35h is closed, so no duplicate item created."
   "2026-05-09T11:46:59.430Z",codex-agent,"Evidence 2026-05-09: temp dogfood project exercised init/create/claim/update/files/docs/tests/calendar/context/aggregate/dedupe/search/reindex/extension scaffold/install/doctor/contracts/manage. Fixed search gap discovered there: reminder/event metadata is now in keyword and semantic corpus, and short phrase scoring ranks exact calendar event titles first. Verification passed: focused search/reindex/cache tests, release-readiness/search focused tests, linked pm test, full 100% coverage, static quality gate, CI workflow contract tests, pm health, pm validate, npm pack dry-run, secret scan, live telemetry/Sentry checks, and real hybrid reindex of 679 items."
@@ -329,6 +329,7 @@ comments[314]{created_at,author,text}:
   "2026-05-26T22:29:15.560Z",codex-active-continuation,"Gate evidence (2026-05-26) for consolidated branch:\n- pnpm build: pass\n- pnpm typecheck: pass\n- node scripts/run-tests.mjs coverage: pass (124 files, 1845 tests, 100% statements/branches/functions/lines)\n- pnpm quality:static: pass\n- pnpm changelog:pm:check: pass\n- node scripts/check-secrets.mjs: pass"
   "2026-05-26T22:29:39.156Z",codex-active-continuation,"Release/changelog reliability remediation completed in-repo (no upstream pm-changelog patch required):\n- scripts/release/run-release-pipeline.mjs now generates changelog to a temp file first, checks for a non-empty target release section, and only then applies package version bump + CHANGELOG.md write.\n- When no changelog section exists for auto-selected target version (scheduled/no explicit version), pipeline now exits cleanly with skipped=true and reason=empty_generated_changelog_section_for_target_version instead of failing the workflow.\n- Explicit --version runs remain strict: missing section still hard-fails.\n- Added contract coverage assertion in tests/integration/release-automation-contract.spec.ts for the new skip reason + section-check callsite."
   "2026-05-26T22:58:28.957Z",codex-active-continuation,"Merged umbrella evidence: PR #75 (merge commit 90179089125eb9a07fff6419f4a92078f06af67b) consolidated runner migration, startup optimization, release/changelog reliability fixes, security/gh sweep, and temp-dir dogfood validation; CI checks all passed before merge."
+  "2026-05-26T22:59:56.418Z",codex-active-continuation,"Observability gate probe after merge:\n- Command: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort\n- Result: exit=1 because Sentry threshold policy (max_high=0) is stricter than current project backlog.\n- Sentry payload confirms live recent data is available: critical=0, high=5, total=5, access_ok=true.\n- Telemetry payload is healthy: finish_error_rate_pct=1.94, failures_without_error_code_rows=0, telemetry.ok=true."
 notes[4]{created_at,author,text}:
   "2026-05-17T07:36:59.474Z",codex-agent,"Design note 2026-05-17: unfiltered pm contracts default now intentionally omits three heavy sections (schema oneOf union, command_flags, commander_aliases) and emits explicit omitted_reason markers; --full restores complete schema and alias/flag surfaces for tooling that needs maximal detail."
   "2026-05-17T08:33:25.981Z",codex-agent,"Design note 2026-05-17: default brief projection was intentionally scoped to bare 'pm list' instead of all list-* commands to preserve existing automation contracts while still cutting agent token usage on the highest-frequency exploratory list call."
