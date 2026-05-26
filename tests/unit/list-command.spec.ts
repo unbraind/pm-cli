@@ -605,6 +605,13 @@ describe("runList", () => {
       await expect(runList(undefined, { sort: "bogus" }, { path: context.pmPath })).rejects.toThrow(
         /Sort field must be one of .*aliases: updated->updated_at/,
       );
+
+      // Prototype-chain keys must not resolve to a truthy alias (no prototype pollution).
+      for (const polluted of ["__proto__", "constructor", "toString"]) {
+        await expect(runList(undefined, { sort: polluted }, { path: context.pmPath })).rejects.toThrow(
+          /Sort field must be one of/,
+        );
+      }
     });
   });
 

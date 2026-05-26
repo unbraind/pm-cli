@@ -1,15 +1,19 @@
 /**
  * Shared projection helper for mutation command results.
  *
- * Mutation commands (create/update/close/append/...) return a result object that
- * always carries a `changed_fields` string array. On create this array simply
+ * Mutation commands (create/update/close/append/update-many/...) return result
+ * objects that carry a `changed_fields` string array. On create this array simply
  * re-lists every field the command just set, which the item echo above it already
  * shows, so for high-volume agent loops it is ~50% redundant payload. This helper
  * lets the CLI (`--no-changed-fields`) and the MCP agent path trim that array down
  * to a deterministic `changed_field_count` without losing mutation evidence.
  *
+ * Compaction is applied recursively so nested occurrences are covered too — e.g.
+ * `update-many` reports `changed_fields` per `rows[*]` rather than at the top level.
+ *
  * The helper is intentionally pure and side-effect free so it can be reused from
- * both the output layer and the MCP server, and fully unit covered.
+ * both the output layer and the MCP server, and fully unit covered. When nothing
+ * is compacted it returns the original reference unchanged.
  */
 
 export type ChangedFieldsMode = "full" | "compact";
@@ -26,23 +30,50 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function compactChangedFields(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    let changed = false;
+    const projected = value.map((entry) => {
+      const next = compactChangedFields(entry);
+      if (next !== entry) {
+        changed = true;
+      }
+      return next;
+    });
+    return changed ? projected : value;
+  }
+
+  if (!isPlainObject(value)) {
+    return value;
+  }
+
+  let changed = false;
+  const projected: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (key === CHANGED_FIELDS_KEY && Array.isArray(entry)) {
+      projected[CHANGED_FIELD_COUNT_KEY] = entry.length;
+      changed = true;
+      continue;
+    }
+    const next = compactChangedFields(entry);
+    if (next !== entry) {
+      changed = true;
+    }
+    projected[key] = next;
+  }
+  return changed ? projected : value;
+}
+
 /**
- * Returns a copy of a mutation result with `changed_fields` replaced by
- * `changed_field_count` when compact mode is requested. Inputs without a
- * `changed_fields` array (or non-object inputs, or full mode) are returned
- * unchanged so callers can apply this unconditionally.
+ * Returns a copy of a mutation result with every `changed_fields` array replaced
+ * by `changed_field_count` when compact mode is requested. Inputs without any
+ * `changed_fields` array (or in full mode) are returned unchanged (same reference)
+ * so callers can apply this unconditionally.
  */
 export function projectMutationResult(result: unknown, options: MutationProjectionOptions = {}): unknown {
   const mode = options.changedFields ?? "full";
   if (mode === "full") {
     return result;
   }
-  if (!isPlainObject(result) || !Array.isArray(result[CHANGED_FIELDS_KEY])) {
-    return result;
-  }
-  const { [CHANGED_FIELDS_KEY]: changedFields, ...rest } = result;
-  return {
-    ...rest,
-    [CHANGED_FIELD_COUNT_KEY]: (changedFields as unknown[]).length,
-  };
+  return compactChangedFields(result);
 }

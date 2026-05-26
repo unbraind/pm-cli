@@ -194,20 +194,21 @@ function validateListProjectionFields(projection: ListProjectionConfig, runtimeM
 
 // Convenience aliases so agents/humans who reach for the bare verb form
 // (e.g. `--sort updated`) land on the canonical timestamp fields instead of an error.
-const LIST_SORT_FIELD_ALIASES: Readonly<Record<string, ListSortField>> = {
-  updated: "updated_at",
-  update: "updated_at",
-  modified: "updated_at",
-  created: "created_at",
-  create: "created_at",
-};
+// A Map (not a plain object) avoids prototype-chain lookups for keys like "__proto__".
+const LIST_SORT_FIELD_ALIASES: ReadonlyMap<string, ListSortField> = new Map<string, ListSortField>([
+  ["updated", "updated_at"],
+  ["update", "updated_at"],
+  ["modified", "updated_at"],
+  ["created", "created_at"],
+  ["create", "created_at"],
+]);
 
 function parseSortField(raw: string | undefined): ListSortField | undefined {
   if (raw === undefined) {
     return undefined;
   }
   const normalized = raw.trim().toLowerCase();
-  const aliased = LIST_SORT_FIELD_ALIASES[normalized];
+  const aliased = LIST_SORT_FIELD_ALIASES.get(normalized);
   if (aliased) {
     return aliased;
   }

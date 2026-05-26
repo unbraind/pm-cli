@@ -20,6 +20,33 @@ describe("projectMutationResult", () => {
     expect(result.changed_fields).toEqual(["id", "title", "status"]);
   });
 
+  it("recursively compacts nested changed_fields (e.g. update-many rows)", () => {
+    const result = {
+      mode: "apply",
+      changed_fields: ["a"],
+      rows: [
+        { id: "pm-1", status: "updated", changed_fields: ["status", "priority"] },
+        { id: "pm-2", status: "skipped" },
+      ],
+    };
+    const projected = projectMutationResult(result, { changedFields: "compact" }) as Record<string, unknown>;
+    expect(projected).not.toBe(result);
+    expect(projected.changed_fields).toBeUndefined();
+    expect(projected.changed_field_count).toBe(1);
+    const rows = projected.rows as Array<Record<string, unknown>>;
+    expect(rows).not.toBe(result.rows);
+    expect(rows[0].changed_fields).toBeUndefined();
+    expect(rows[0].changed_field_count).toBe(2);
+    expect(rows[1]).toEqual({ id: "pm-2", status: "skipped" });
+    // Original is not mutated.
+    expect(result.rows[0].changed_fields).toEqual(["status", "priority"]);
+  });
+
+  it("returns the same reference for nested structures with no changed_fields", () => {
+    const result = { mode: "dry_run", rows: [{ id: "pm-1", status: "planned" }] };
+    expect(projectMutationResult(result, { changedFields: "compact" })).toBe(result);
+  });
+
   it("reports a zero count for an empty changed_fields array", () => {
     const projected = projectMutationResult({ changed_fields: [] }, { changedFields: "compact" }) as Record<
       string,
