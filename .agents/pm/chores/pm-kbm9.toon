@@ -6,10 +6,11 @@ status: closed
 priority: 2
 tags[4]: agent-ux,dedupe,history,lock
 created_at: "2026-05-26T19:54:21.036Z"
-updated_at: "2026-05-26T20:14:30.004Z"
+updated_at: "2026-05-26T21:39:14.980Z"
 author: claude-code-agent
 parent: pm-3cbk
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-26T20:14:14.062Z",claude-code-agent,"Implementation 2026-05-26 on branch dedup-history-rewrite-and-calendar-positional-recovery. Extracted src/core/history/history-rewrite.ts (96 LOC, public API: checkHistoryRewriteOwnership(params)->string[] and verifyHistoryRewriteNoDrift(params)->{historyRawUnderLock, locatedUnderLock, loadedItemUnderLock}). Refactored history-redact.ts (668 -> 652 LOC) and history-repair.ts (264 -> 248 LOC) to use the helpers (removed 32 duplicated lines of ownership check + drift re-read + CONFLICT messages). Pruned now-unused imports (resolveGovernanceKnobs from redact, locateItem from repair). Added file to vitest.config.ts include list and shipped tests/unit/history-rewrite.spec.ts with 12 tests covering: null/matching/whitespace assignees, strict/warn/none enforcement, --force override, matching+drifted history+drifted item, and missing-item paths. Full coverage gate at 100% statements/branches/functions/lines (2575/1893/472/2480 across 1839 tests in 124 files)."
+  "2026-05-26T21:39:14.980Z",claude-code-agent,"Merged 2026-05-26 via PR #74 (squash commit accde275). history-rewrite.ts helpers shipped; redact/repair deduped. 4 review rounds clean: Codex 'no major issues' x2; Gemini findings all addressed (filter-all-positionals, defensive metadata optional-chaining, empty-positional upstream filter, case-insensitive view normalization); CodeRabbit 'no actionable comments'."
 close_reason: "Extracted src/core/history/history-rewrite.ts with checkHistoryRewriteOwnership + verifyHistoryRewriteNoDrift; redact -16 LOC, repair -16 LOC, 12 new unit tests, 100% coverage gate green."
 body: ""
