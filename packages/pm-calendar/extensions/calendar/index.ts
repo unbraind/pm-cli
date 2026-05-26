@@ -6,6 +6,21 @@ import type {
 import type { CalendarOptions } from "../../../../src/sdk/runtime.js";
 import { renderCalendarPackageOutput, runCalendarPackage } from "./runtime.js";
 
+const CALENDAR_VIEW_NAMES = ["agenda", "day", "week", "month"] as const;
+
+// Standalone error class so the package stays self-contained when installed
+// outside the pm-cli source tree. The class name "PmCliError" lines up with
+// the Sentry beforeSend filter (isExpectedCliErrorEvent) so usage errors do
+// not leak into Sentry as crashes.
+class PmCliError extends Error {
+  exitCode: number;
+  constructor(message: string, exitCode: number) {
+    super(message);
+    this.name = "PmCliError";
+    this.exitCode = exitCode;
+  }
+}
+
 export const manifest = {
   name: "builtin-calendar",
   version: "0.1.0",
@@ -37,10 +52,36 @@ const calendarFlags = [
   { long: "--format", value_name: "value", value_type: "string", description: "Calendar output override: markdown|toon|json." },
 ] as const;
 
-function usageError(message: string): Error & { exitCode: number } {
-  const error = new Error(message) as Error & { exitCode: number };
-  error.exitCode = 2;
-  return error;
+// The runtime lowercases `view` before validating (src/cli/commands/calendar.ts),
+// so the unknown-alias / recovery-hint logic must match views case-insensitively
+// or `pm calendar DAY ...` would wrongly flag DAY as unknown.
+function normalizeCalendarView(arg: string): (typeof CALENDAR_VIEW_NAMES)[number] | null {
+  const normalized = arg.toLowerCase();
+  return (CALENDAR_VIEW_NAMES as readonly string[]).includes(normalized)
+    ? (normalized as (typeof CALENDAR_VIEW_NAMES)[number])
+    : null;
+}
+
+function buildPositionalViewError(positionalArgs: readonly string[]): PmCliError {
+  const received = positionalArgs.map((arg) => arg.trim()).filter((arg) => arg.length > 0);
+  const receivedList = received.join(", ");
+  // Check every received positional, not just the tail, so an invalid first
+  // positional (e.g. `pm calendar totally-bogus week`) is still surfaced.
+  const extras = received.filter((arg) => normalizeCalendarView(arg) === null);
+  // Fall back to the first valid view from `received` (normalized to canonical
+  // lowercase) for the recovery hint; recommend `agenda` only when none of the
+  // positionals are valid view names.
+  const recoveryView =
+    received.map(normalizeCalendarView).find((view): view is (typeof CALENDAR_VIEW_NAMES)[number] => view !== null) ??
+    "agenda";
+  const hintLines = [`Calendar accepts at most one positional view (agenda|day|week|month), but received: ${receivedList}.`];
+  if (extras.length > 0) {
+    hintLines.push(`Unknown view alias(es): ${extras.join(", ")}.`);
+  }
+  hintLines.push("Use a single view, or pass extra arguments via flags:");
+  hintLines.push(`  pm calendar ${recoveryView}`);
+  hintLines.push(`  pm calendar --view ${recoveryView} --date +7d`);
+  return new PmCliError(hintLines.join("\n"), 2);
 }
 
 function calendarCommand(name: "calendar" | "cal"): CommandDefinition {
@@ -56,10 +97,13 @@ function calendarCommand(name: "calendar" | "cal"): CommandDefinition {
       // are true positionals, so a positional view combined with --date/--from/etc.
       // must not be mistaken for multiple positional views.
       const firstFlagIndex = context.args.findIndex((arg) => arg.startsWith("-"));
-      const positionalArgs = firstFlagIndex === -1 ? context.args : context.args.slice(0, firstFlagIndex);
+      const rawPositionalArgs = firstFlagIndex === -1 ? context.args : context.args.slice(0, firstFlagIndex);
+      // Drop empty/whitespace-only positionals (e.g. from `pm calendar agenda ""`
+      // when a shell variable is unset) so the count check stays meaningful.
+      const positionalArgs = rawPositionalArgs.filter((arg) => arg.trim().length > 0);
       const positionalView = positionalArgs[0]?.trim();
       if (positionalArgs.length > 1) {
-        throw usageError("Calendar accepts at most one positional view: agenda|day|week|month.");
+        throw buildPositionalViewError(positionalArgs);
       }
       return runCalendarPackage(
         {

@@ -1,0 +1,15 @@
+id: pm-kbm9
+title: Dedupe history-redact + history-repair lock+ownership scaffolding
+description: "history-redact.ts (~120 lines) and history-repair.ts (~70 lines) repeat the same read-before-lock -> ownership_enforcement -> acquireLock -> re-read under lock -> drift detection -> execute -> restore-on-error -> release pattern. Extract into src/core/history/history-rewrite.ts as executeHistoryRewriteUnderLock helper. Per pm-3cbk decision: cover the new module 100% and add to vitest.config.ts include (small cohesive module, so include+cover instead of allowlist)."
+type: Chore
+status: closed
+priority: 2
+tags[4]: agent-ux,dedupe,history,lock
+created_at: "2026-05-26T19:54:21.036Z"
+updated_at: "2026-05-26T20:14:30.004Z"
+author: claude-code-agent
+parent: pm-3cbk
+comments[1]{created_at,author,text}:
+  "2026-05-26T20:14:14.062Z",claude-code-agent,"Implementation 2026-05-26 on branch dedup-history-rewrite-and-calendar-positional-recovery. Extracted src/core/history/history-rewrite.ts (96 LOC, public API: checkHistoryRewriteOwnership(params)->string[] and verifyHistoryRewriteNoDrift(params)->{historyRawUnderLock, locatedUnderLock, loadedItemUnderLock}). Refactored history-redact.ts (668 -> 652 LOC) and history-repair.ts (264 -> 248 LOC) to use the helpers (removed 32 duplicated lines of ownership check + drift re-read + CONFLICT messages). Pruned now-unused imports (resolveGovernanceKnobs from redact, locateItem from repair). Added file to vitest.config.ts include list and shipped tests/unit/history-rewrite.spec.ts with 12 tests covering: null/matching/whitespace assignees, strict/warn/none enforcement, --force override, matching+drifted history+drifted item, and missing-item paths. Full coverage gate at 100% statements/branches/functions/lines (2575/1893/472/2480 across 1839 tests in 124 files)."
+close_reason: "Extracted src/core/history/history-rewrite.ts with checkHistoryRewriteOwnership + verifyHistoryRewriteNoDrift; redact -16 LOC, repair -16 LOC, 12 new unit tests, 100% coverage gate green."
+body: ""

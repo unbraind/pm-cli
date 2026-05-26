@@ -407,7 +407,7 @@ describe("built-in extension entrypoints", () => {
     expect(result).toMatchObject({ view: "day" });
   });
 
-  it("still rejects two positional views", async () => {
+  it("still rejects two positional views and surfaces a recovery hint", async () => {
     const { api, commands } = createCommandOnlyApi();
     activateCalendar(api);
 
@@ -419,7 +419,133 @@ describe("built-in extension entrypoints", () => {
         global: globalFlags,
         pm_root: "/tmp/pm",
       }),
-    ).rejects.toThrow("at most one positional view");
+    ).rejects.toMatchObject({
+      name: "PmCliError",
+      exitCode: 2,
+      message: expect.stringContaining("but received: day, week"),
+    });
+  });
+
+  it("flags an invalid first positional and falls back to a valid recovery view", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    let captured: unknown;
+    try {
+      await commands[0]!.run({
+        command: "cal",
+        args: ["totally-bogus", "week"],
+        options: {},
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+      });
+    } catch (error) {
+      captured = error;
+    }
+
+    const error = captured as { message: string; exitCode: number };
+    expect(error.exitCode).toBe(2);
+    expect(error.message).toContain("Unknown view alias(es): totally-bogus");
+    // Recovery hint falls back to the first VALID view (week), not the invalid first positional.
+    expect(error.message).toContain("pm calendar week");
+    expect(error.message).toContain("--view week --date +7d");
+    expect(error.message).not.toContain("pm calendar totally-bogus\n");
+  });
+
+  it("treats uppercase view names as recognized when generating recovery hints (matches runtime case-insensitive parsing)", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    let captured: unknown;
+    try {
+      await commands[0]!.run({
+        command: "cal",
+        args: ["DAY", "totally-bogus"],
+        options: {},
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+      });
+    } catch (error) {
+      captured = error;
+    }
+
+    const error = captured as { message: string; exitCode: number };
+    expect(error.exitCode).toBe(2);
+    // DAY is a valid view (case-insensitive); only totally-bogus is unknown.
+    expect(error.message).toContain("Unknown view alias(es): totally-bogus");
+    expect(error.message).not.toContain("Unknown view alias(es): DAY");
+    // Recovery hint uses the canonical lowercase form (`day`), not `DAY` or fallback `agenda`.
+    expect(error.message).toContain("pm calendar day");
+    expect(error.message).toContain("--view day --date +7d");
+  });
+
+  it("tolerates empty/whitespace-only trailing positionals (shell expansion produces no extras)", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    // pm calendar agenda "" — empty positional from unset shell variable.
+    const result = await commands[0]!.run({
+      command: "cal",
+      args: ["agenda", "", "   "],
+      options: {},
+      global: globalFlags,
+      pm_root: "/tmp/pm",
+    });
+
+    const calls = readRuntimeCalls();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatchObject({ kind: "calendar", options: { view: "agenda" } });
+    expect(result).toMatchObject({ view: "agenda" });
+  });
+
+  it("falls back to 'agenda' when no positional is a recognized view", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    let captured: unknown;
+    try {
+      await commands[0]!.run({
+        command: "cal",
+        args: ["alpha", "beta"],
+        options: {},
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+      });
+    } catch (error) {
+      captured = error;
+    }
+
+    const error = captured as { message: string };
+    expect(error.message).toContain("Unknown view alias(es): alpha, beta");
+    expect(error.message).toContain("pm calendar agenda");
+    expect(error.message).toContain("--view agenda --date +7d");
+  });
+
+  it("flags unknown view aliases when rejecting extra positional args", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    let captured: unknown;
+    try {
+      await commands[0]!.run({
+        command: "cal",
+        args: ["agenda", "totally-bogus"],
+        options: {},
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+      });
+    } catch (error) {
+      captured = error;
+    }
+
+    expect(captured).toBeDefined();
+    const error = captured as { message: string; exitCode: number; name: string };
+    expect(error.name).toBe("PmCliError");
+    expect(error.exitCode).toBe(2);
+    expect(error.message).toContain("but received: agenda, totally-bogus");
+    expect(error.message).toContain("Unknown view alias(es): totally-bogus");
+    expect(error.message).toContain("pm calendar agenda");
+    expect(error.message).toContain("--view agenda --date +7d");
   });
 
   it("registers beads import handler and coerces extension options", async () => {

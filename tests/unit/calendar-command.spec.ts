@@ -192,6 +192,8 @@ describe("calendar command module", () => {
       const repeatedViews = context.runCli(["calendar", "agenda", "day", "--json"]);
       expect(repeatedViews.code).toBe(2);
       expect(repeatedViews.stderr).toContain("Calendar accepts at most one positional view");
+      expect(repeatedViews.stderr).toContain("received: agenda, day");
+      expect(repeatedViews.stderr).toContain("pm calendar agenda");
 
       const contracts = context.runCli(
         ["contracts", "--action", "calendar", "--runtime-only", "--schema-only", "--json"],

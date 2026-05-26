@@ -70,6 +70,7 @@ export default defineConfig({
         "src/core/fs/path-utils.ts",
         "src/core/history/drift-scan.ts",
         "src/core/history/history.ts",
+        "src/core/history/history-rewrite.ts",
         "src/core/history/history-stream-policy.ts",
         "src/core/history/replay.ts",
         "src/core/history/index.ts",
