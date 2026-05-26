@@ -119,6 +119,22 @@ describe("projectMutationResult", () => {
     expect(Object.getPrototypeOf(projected)).toBeNull();
   });
 
+  it("preserves null-prototype update-many envelopes and rows when rows are compacted", () => {
+    const row = Object.assign(Object.create(null), {
+      id: "pm-1",
+      status: "updated",
+      changed_fields: ["status", "priority"],
+    }) as Record<string, unknown>;
+    const result = Object.assign(Object.create(null), { mode: "apply", rows: [row] }) as Record<string, unknown>;
+    const projected = projectMutationResult(result, { changedFields: "compact" }) as Record<string, unknown>;
+    const rows = projected.rows as Array<Record<string, unknown>>;
+
+    expect(Object.getPrototypeOf(projected)).toBeNull();
+    expect(Object.getPrototypeOf(rows[0])).toBeNull();
+    expect(rows[0].changed_fields).toBeUndefined();
+    expect(rows[0].changed_field_count).toBe(2);
+  });
+
   it("returns non-object inputs unchanged in compact mode", () => {
     expect(projectMutationResult(null, { changedFields: "compact" })).toBeNull();
     expect(projectMutationResult("text", { changedFields: "compact" })).toBe("text");

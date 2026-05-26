@@ -6,15 +6,16 @@ status: in_progress
 priority: 2
 tags[4]: agent-ux,dogfood,dx,pm-cli
 created_at: "2026-05-25T23:04:50.517Z"
-updated_at: "2026-05-26T14:57:25.379Z"
+updated_at: "2026-05-26T15:11:10.472Z"
 assignee: codex-review-continuation
 author: claude-code-agent
 parent: pm-rnpb
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-25T23:04:50.517Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-05-26T14:42:06.541Z",codex-review-continuation,"Evidence: addressed latest PR #72 Codex review feedback. Projection now only compacts mutation envelopes plus update-many apply/rollback rows, preserving nested/user changed_fields metadata and non-mutation payloads. MCP full changed_fields control moved to fullChangedFields so mutation options.full is forwarded unchanged. Verification passed: pm linked focused test (34 tests), direct node scripts/run-tests.mjs focused suite (34 tests), pnpm build, pnpm quality:static."
   "2026-05-26T14:57:25.379Z",codex-review-continuation,"Evidence: fixed remote coverage failure by adding the missing update-many apply rows-without-changed_fields branch regression. Verification passed locally: node scripts/run-tests.mjs coverage (1825 tests, 100% statements/branches/functions/lines)."
+  "2026-05-26T15:11:10.472Z",codex-review-continuation,"Evidence: addressed latest CodeRabbit/Gemini review follow-up. Rows rewrite now preserves null-prototype update-many envelopes, fullChangedFields is reserved from dynamic extension passthrough, and withMutationCompaction accepts missing options. Verification passed: focused mutation/MCP suite (19 tests) and node scripts/run-tests.mjs coverage (1826 tests, 100% statements/branches/functions/lines)."
 files[3]{path,scope,note}:
   src/core/output/mutation-projection.ts,project,"Codex review fix: limit changed_fields projection to mutation envelopes and update-many rows"
   src/core/output/output.ts,project,Reviewed output no-changed-fields behavior for non-mutation payload preservation

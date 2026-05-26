@@ -386,7 +386,19 @@ function readStringArray(value: unknown): string[] {
 }
 
 function extensionOptionsFromArgs(args: Record<string, unknown>, options: Record<string, unknown>): Record<string, unknown> {
-  const reserved = new Set(["action", "args", "author", "cwd", "id", "options", "path", "query", "reason", "target"]);
+  const reserved = new Set([
+    "action",
+    "args",
+    "author",
+    "cwd",
+    "fullChangedFields",
+    "id",
+    "options",
+    "path",
+    "query",
+    "reason",
+    "target",
+  ]);
   const passthrough: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(args)) {
     if (!reserved.has(key)) {
@@ -476,11 +488,11 @@ async function withCwd<T>(cwd: unknown, run: () => Promise<T>): Promise<T> {
  * explicitly passes the MCP-level fullChangedFields=true control. Mutation options
  * are forwarded unchanged so runtime fields named `full` remain valid user data.
  */
-function withMutationCompaction(args: Record<string, unknown>, options: Record<string, unknown>): {
+function withMutationCompaction(args: Record<string, unknown>, options?: Record<string, unknown> | null): {
   changedFields: "full" | "compact";
   runnerOptions: Record<string, unknown>;
 } {
-  return { changedFields: args.fullChangedFields === true ? "full" : "compact", runnerOptions: { ...options } };
+  return { changedFields: args.fullChangedFields === true ? "full" : "compact", runnerOptions: { ...(options ?? {}) } };
 }
 
 async function runAction(args: Record<string, unknown>): Promise<unknown> {

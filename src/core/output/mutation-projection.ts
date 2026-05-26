@@ -68,6 +68,14 @@ function isUpdateManyMutationEnvelope(value: Record<string, unknown>): boolean {
   );
 }
 
+function replaceRows(envelope: Record<string, unknown>, rows: unknown[]): Record<string, unknown> {
+  const projected: Record<string, unknown> =
+    Object.getPrototypeOf(envelope) === null ? Object.create(null) : {};
+  Object.assign(projected, envelope);
+  projected[ROWS_KEY] = rows;
+  return projected;
+}
+
 /**
  * Returns a copy of a mutation result with the envelope `changed_fields` arrays
  * replaced by `changed_field_count` when compact mode is requested. Inputs that are
@@ -104,7 +112,7 @@ export function projectMutationResult(result: unknown, options: MutationProjecti
       return row;
     });
     if (rowsChanged) {
-      projected = { ...projected, [ROWS_KEY]: nextRows };
+      projected = replaceRows(projected, nextRows);
       changed = true;
     }
   }
