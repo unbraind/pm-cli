@@ -27,6 +27,7 @@
 
 ### Other
 
+- Agent-UX combined PR: compact mutation output \(pm-ch59\) + smarter unknown-flag recovery \(pm-8nyc\) ([pm-70mi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-70mi.toon))
 - Harden read-then-lock window uniformly across history-redact/restore/history-repair ([pm-uer0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-uer0.toon))
 - Create native Codex plugin for pm CLI ([pm-0c9q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-0c9q.toon))
 - Unify plugin/MCP naming: pm-cli-claude→pm-claude, pm-cli-codex→pm-codex, pm-cli-native MCP→pm-mcp, packages @unbrained/pm-package-X→@unbrained/pm-X ([pm-ash0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ash0.toon))
