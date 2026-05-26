@@ -455,6 +455,88 @@ describe("release readiness runtime coverage", () => {
     });
   });
 
+  it("keeps core read-only command behavior aligned with the in-process runner", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(
+        [
+          "create",
+          "--title",
+          "Runner parity item",
+          "--description",
+          "Read-only in-process parity probe",
+          "--type",
+          "Task",
+          "--create-mode",
+          "progressive",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const createdId = (created.json as { item: { id: string } }).item.id;
+
+      const listOpenSubprocess = context.runCli(["list-open", "--limit", "20", "--json"], { expectJson: true });
+      const listOpenInProcess = await context.runCliInProcess(["list-open", "--limit", "20", "--json"], { expectJson: true });
+      expect(listOpenInProcess.code).toBe(listOpenSubprocess.code);
+      const subprocessListIds = ((listOpenSubprocess.json as { items?: Array<{ id?: string }> }).items ?? [])
+        .map((entry) => entry.id)
+        .filter((id): id is string => typeof id === "string")
+        .sort((left, right) => left.localeCompare(right));
+      const inProcessListIds = ((listOpenInProcess.json as { items?: Array<{ id?: string }> }).items ?? [])
+        .map((entry) => entry.id)
+        .filter((id): id is string => typeof id === "string")
+        .sort((left, right) => left.localeCompare(right));
+      expect(inProcessListIds).toEqual(subprocessListIds);
+      expect(inProcessListIds).toContain(createdId);
+
+      const contextSubprocess = context.runCli(["context", "--limit", "5", "--json"], { expectJson: true });
+      const contextInProcess = await context.runCliInProcess(["context", "--limit", "5", "--json"], { expectJson: true });
+      expect(contextInProcess.code).toBe(contextSubprocess.code);
+      expect((contextInProcess.json as { summary?: { active_items?: number } }).summary?.active_items).toBe(
+        (contextSubprocess.json as { summary?: { active_items?: number } }).summary?.active_items,
+      );
+
+      const searchSubprocess = context.runCli(["search", "Runner parity item", "--limit", "5", "--json"], { expectJson: true });
+      const searchInProcess = await context.runCliInProcess(["search", "Runner parity item", "--limit", "5", "--json"], {
+        expectJson: true,
+      });
+      expect(searchInProcess.code).toBe(searchSubprocess.code);
+      const subprocessSearchIds = ((searchSubprocess.json as { items?: Array<{ id?: string }> }).items ?? [])
+        .map((entry) => entry.id)
+        .filter((id): id is string => typeof id === "string");
+      const inProcessSearchIds = ((searchInProcess.json as { items?: Array<{ id?: string }> }).items ?? [])
+        .map((entry) => entry.id)
+        .filter((id): id is string => typeof id === "string");
+      expect(inProcessSearchIds).toEqual(subprocessSearchIds);
+      expect(inProcessSearchIds).toContain(createdId);
+
+      const getSubprocess = context.runCli(["get", createdId, "--json"], { expectJson: true });
+      const getInProcess = await context.runCliInProcess(["get", createdId, "--json"], { expectJson: true });
+      expect(getInProcess.code).toBe(getSubprocess.code);
+      expect((getInProcess.json as { item?: { id?: string } }).item?.id).toBe(createdId);
+      expect((getSubprocess.json as { item?: { id?: string } }).item?.id).toBe(createdId);
+
+      const contractsSubprocess = context.runCli(["contracts", "--command", "list-open", "--flags-only", "--json"], {
+        expectJson: true,
+      });
+      const contractsInProcess = await context.runCliInProcess(["contracts", "--command", "list-open", "--flags-only", "--json"], {
+        expectJson: true,
+      });
+      expect(contractsInProcess.code).toBe(contractsSubprocess.code);
+      const subprocessFlags =
+        (contractsSubprocess.json as { command_flags?: Array<{ flags?: Array<{ flag?: string }> }> }).command_flags?.[0]?.flags ?? [];
+      const inProcessFlags =
+        (contractsInProcess.json as { command_flags?: Array<{ flags?: Array<{ flag?: string }> }> }).command_flags?.[0]?.flags ?? [];
+      expect(inProcessFlags.map((entry) => entry.flag)).toEqual(subprocessFlags.map((entry) => entry.flag));
+
+      const validateHelpSubprocess = context.runCli(["validate", "--help"]);
+      const validateHelpInProcess = await context.runCliInProcess(["validate", "--help"]);
+      expect(validateHelpInProcess.code).toBe(validateHelpSubprocess.code);
+      expect(validateHelpInProcess.stdout).toContain("Usage: pm validate [options]");
+      expect(validateHelpSubprocess.stdout).toContain("Usage: pm validate [options]");
+    });
+  });
+
   it("keeps --quiet runtime behavior deterministic", async () => {
     await withTempPmPath(async (context) => {
       const successResult = context.runCli(["list-open", "--limit", "1", "--quiet", "--json"]);

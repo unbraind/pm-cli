@@ -154,7 +154,8 @@ describe("release automation contract", () => {
     expect(pipelineSource).toContain("replace");
     expect(pipelineSource).toContain("--release-version");
     expect(pipelineSource).toContain("--all-release-tags");
-    expect(pipelineSource).toContain("ensureGeneratedReleaseSectionHasContent(targetVersion)");
+    expect(pipelineSource).toContain("ensureGeneratedReleaseSectionHasContent(targetVersion, generatedChangelogPath)");
+    expect(pipelineSource).toContain("empty_generated_changelog_section_for_target_version");
     expect(pipelineSource).toContain('"add", "package.json", "CHANGELOG.md"');
     expect(pipelineSource).not.toContain("CHANGELOG.pm.md");
   });
