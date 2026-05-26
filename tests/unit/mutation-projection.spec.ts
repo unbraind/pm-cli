@@ -31,6 +31,7 @@ describe("projectMutationResult", () => {
           item: { metadata: { changed_fields: ["user", "metadata"] } },
         },
         { id: "pm-2", status: "skipped" },
+        null,
       ],
     };
     const projected = projectMutationResult(result, { changedFields: "compact" }) as Record<string, unknown>;
@@ -44,12 +45,18 @@ describe("projectMutationResult", () => {
       "metadata",
     ]);
     expect(rows[1]).toEqual({ id: "pm-2", status: "skipped" });
+    expect(rows[2]).toBeNull();
     // Original is not mutated.
     expect(result.rows[0].changed_fields).toEqual(["status", "priority"]);
   });
 
   it("returns the same reference for nested structures with no changed_fields", () => {
     const result = { mode: "dry_run", rows: [{ id: "pm-1", status: "planned" }] };
+    expect(projectMutationResult(result, { changedFields: "compact" })).toBe(result);
+  });
+
+  it("returns the same reference for update-many apply rows with no changed_fields", () => {
+    const result = { mode: "apply", rows: [{ id: "pm-1", status: "skipped" }] };
     expect(projectMutationResult(result, { changedFields: "compact" })).toBe(result);
   });
 
