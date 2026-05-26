@@ -1,16 +1,28 @@
 id: pm-70mi
 title: "Agent-UX combined PR: compact mutation output (pm-ch59) + smarter unknown-flag recovery (pm-8nyc)"
-description: "Combined PR delivering two agent-UX/token-efficiency items under pm-rnpb. (A) pm-ch59: shared mutation-result projection helper that drops the verbose changed_fields array (keeps changed_field_count) — wired to a CLI --no-changed-fields global flag and made the MCP agent path compact-by-default unless options.full. (B) pm-8nyc: prefix/abbreviation-aware nearest-flag suggestions, cross-command flag awareness hints (e.g. --type valid on list/search/get), and --sort value aliases (updated->updated_at, created->created_at) for list/list-all. Each implemented by a specialized sub-agent tracking work via pm comments; integrated, full-coverage gated, dogfooded, changelog regenerated via pm-changelog, shipped as one PR with green CI + AI bot review."
+description: "Combined PR delivering two agent-UX/token-efficiency items under pm-rnpb. (A) pm-ch59: shared mutation-result projection helper that drops mutation-envelope changed_fields arrays (keeps changed_field_count) — wired to a CLI --no-changed-fields global flag and made the MCP agent path compact-by-default unless the MCP-level fullChangedFields control is set. The projector intentionally preserves non-mutation/user changed_fields metadata. (B) pm-8nyc: prefix/abbreviation-aware nearest-flag suggestions, cross-command flag awareness hints, and --sort value aliases (updated->updated_at, created->created_at) for list/list-all. Integrated, full-coverage gated, dogfooded, changelog regenerated via pm-changelog, shipped as one PR with green CI + AI bot review."
 type: Plan
-status: open
+status: in_progress
 priority: 2
 tags[4]: agent-ux,dogfood,dx,pm-cli
 created_at: "2026-05-25T23:04:50.517Z"
-updated_at: "2026-05-25T23:19:49.190Z"
+updated_at: "2026-05-26T14:42:23.991Z"
+assignee: codex-review-continuation
 author: claude-code-agent
 parent: pm-rnpb
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-rnpb,parent,"2026-05-25T23:04:50.517Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-05-26T14:42:06.541Z",codex-review-continuation,"Evidence: addressed latest PR #72 Codex review feedback. Projection now only compacts mutation envelopes plus update-many apply/rollback rows, preserving nested/user changed_fields metadata and non-mutation payloads. MCP full changed_fields control moved to fullChangedFields so mutation options.full is forwarded unchanged. Verification passed: pm linked focused test (34 tests), direct node scripts/run-tests.mjs focused suite (34 tests), pnpm build, pnpm quality:static."
+files[3]{path,scope,note}:
+  src/core/output/mutation-projection.ts,project,"Codex review fix: limit changed_fields projection to mutation envelopes and update-many rows"
+  src/core/output/output.ts,project,Reviewed output no-changed-fields behavior for non-mutation payload preservation
+  src/mcp/server.ts,project,"Codex review fix: MCP full changed_fields control no longer consumes mutation options.full"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/mutation-projection.spec.ts tests/unit/output.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpmqsyam-wmffd0,test,failed,"2026-05-26T14:40:28.563Z","2026-05-26T14:40:45.214Z","2026-05-26T14:40:45.214Z",null,null,0,1,0,null,null,null
+  test-local-mpmqttt9-302w06,test,passed,"2026-05-26T14:41:10.297Z","2026-05-26T14:41:26.061Z","2026-05-26T14:41:26.061Z",null,null,1,0,0,null,null,null
 plan_mode: approved
 plan_steps[3]:
   - id: plan-step-001

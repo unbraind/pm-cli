@@ -20,23 +20,29 @@ describe("projectMutationResult", () => {
     expect(result.changed_fields).toEqual(["id", "title", "status"]);
   });
 
-  it("recursively compacts nested changed_fields (e.g. update-many rows)", () => {
+  it("compacts mutation envelope and update-many row changed_fields only", () => {
     const result = {
       mode: "apply",
-      changed_fields: ["a"],
       rows: [
-        { id: "pm-1", status: "updated", changed_fields: ["status", "priority"] },
+        {
+          id: "pm-1",
+          status: "updated",
+          changed_fields: ["status", "priority"],
+          item: { metadata: { changed_fields: ["user", "metadata"] } },
+        },
         { id: "pm-2", status: "skipped" },
       ],
     };
     const projected = projectMutationResult(result, { changedFields: "compact" }) as Record<string, unknown>;
     expect(projected).not.toBe(result);
-    expect(projected.changed_fields).toBeUndefined();
-    expect(projected.changed_field_count).toBe(1);
     const rows = projected.rows as Array<Record<string, unknown>>;
     expect(rows).not.toBe(result.rows);
     expect(rows[0].changed_fields).toBeUndefined();
     expect(rows[0].changed_field_count).toBe(2);
+    expect((rows[0].item as { metadata: { changed_fields: string[] } }).metadata.changed_fields).toEqual([
+      "user",
+      "metadata",
+    ]);
     expect(rows[1]).toEqual({ id: "pm-2", status: "skipped" });
     // Original is not mutated.
     expect(result.rows[0].changed_fields).toEqual(["status", "priority"]);
@@ -48,7 +54,7 @@ describe("projectMutationResult", () => {
   });
 
   it("reports a zero count for an empty changed_fields array", () => {
-    const projected = projectMutationResult({ changed_fields: [] }, { changedFields: "compact" }) as Record<
+    const projected = projectMutationResult({ item: { id: "pm-a1b2" }, changed_fields: [] }, { changedFields: "compact" }) as Record<
       string,
       unknown
     >;
@@ -61,6 +67,26 @@ describe("projectMutationResult", () => {
     expect(projectMutationResult(noField, { changedFields: "compact" })).toBe(noField);
     const nonArray = { changed_fields: "nope" };
     expect(projectMutationResult(nonArray, { changedFields: "compact" })).toBe(nonArray);
+    const userPayload = { changed_fields: ["metadata"] };
+    expect(projectMutationResult(userPayload, { changedFields: "compact" })).toBe(userPayload);
+  });
+
+  it("leaves nested user-defined changed_fields metadata untouched", () => {
+    const result = {
+      item: {
+        id: "pm-a1b2",
+        changed_fields: ["user-defined", "metadata"],
+      },
+      changed_fields: ["item"],
+    };
+    const projected = projectMutationResult(result, { changedFields: "compact" }) as {
+      item: { changed_fields: string[] };
+      changed_fields?: string[];
+      changed_field_count?: number;
+    };
+    expect(projected.changed_fields).toBeUndefined();
+    expect(projected.changed_field_count).toBe(1);
+    expect(projected.item.changed_fields).toEqual(["user-defined", "metadata"]);
   });
 
   it("preserves non-plain objects (Date/class instances) instead of mangling them", () => {
@@ -76,7 +102,10 @@ describe("projectMutationResult", () => {
   });
 
   it("compacts null-prototype objects while preserving their prototype", () => {
-    const nullProto = Object.assign(Object.create(null), { changed_fields: ["x", "y"] }) as Record<string, unknown>;
+    const nullProto = Object.assign(Object.create(null), {
+      item: { id: "pm-a1b2" },
+      changed_fields: ["x", "y"],
+    }) as Record<string, unknown>;
     const projected = projectMutationResult(nullProto, { changedFields: "compact" }) as Record<string, unknown>;
     expect(projected.changed_fields).toBeUndefined();
     expect(projected.changed_field_count).toBe(2);

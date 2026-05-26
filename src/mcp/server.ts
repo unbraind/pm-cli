@@ -137,6 +137,11 @@ const TOOLS: ToolDefinition[] = [
         reason: { type: "string", description: "Close reason for action=close." },
         force: { type: "boolean", description: "Force ownership/terminal-state override when supported." },
         options: { type: "object", description: "Underlying pm command options using camelCase keys." },
+        fullChangedFields: {
+          type: "boolean",
+          description:
+            "For mutation actions, return the full changed_fields array instead of the default changed_field_count.",
+        },
       },
       ["action"],
     ),
@@ -179,17 +184,28 @@ const TOOLS: ToolDefinition[] = [
     name: "pm_create",
     description:
       "Create a pm item natively and write pm history. " +
-      "Output is compact by default (changed_fields replaced with changed_field_count for token efficiency); pass options.full=true for the full changed_fields array.",
-    inputSchema: objectSchema({ options: { type: "object", description: "Create options. title and description are required." } }, [
-      "options",
-    ]),
+      "Output is compact by default (changed_fields replaced with changed_field_count for token efficiency); pass fullChangedFields=true for the full changed_fields array.",
+    inputSchema: objectSchema(
+      {
+        fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
+        options: { type: "object", description: "Create options. title and description are required." },
+      },
+      ["options"],
+    ),
   },
   {
     name: "pm_update",
     description:
       "Update pm item metadata/body/dependencies/log seeds natively. " +
-      "Output is compact by default (changed_fields replaced with changed_field_count); pass options.full=true for the full changed_fields delta.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id", "options"]),
+      "Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields delta.",
+    inputSchema: objectSchema(
+      {
+        id: idSchema,
+        fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
+        options: { type: "object" },
+      },
+      ["id", "options"],
+    ),
   },
   {
     name: "pm_claim",
@@ -205,8 +221,16 @@ const TOOLS: ToolDefinition[] = [
     name: "pm_close",
     description:
       "Close a pm item with a reason and optional close validation. " +
-      "Output is compact by default (changed_fields replaced with changed_field_count); pass options.full=true for the full changed_fields array.",
-    inputSchema: objectSchema({ id: idSchema, reason: { type: "string" }, options: { type: "object" } }, ["id", "reason"]),
+      "Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields array.",
+    inputSchema: objectSchema(
+      {
+        id: idSchema,
+        reason: { type: "string" },
+        fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
+        options: { type: "object" },
+      },
+      ["id", "reason"],
+    ),
   },
   {
     name: "pm_comments",
@@ -449,17 +473,14 @@ async function withCwd<T>(cwd: unknown, run: () => Promise<T>): Promise<T> {
  * Mutation tools (create/update/close/append/update-many) return a verbose
  * `changed_fields` array. On the agent path we drop it to a `changed_field_count`
  * by default for token efficiency, restoring the full array only when the caller
- * explicitly passes options.full=true. The `full` flag is consumed here so it is
- * never forwarded to the underlying command runner.
+ * explicitly passes the MCP-level fullChangedFields=true control. Mutation options
+ * are forwarded unchanged so runtime fields named `full` remain valid user data.
  */
-function withMutationCompaction(options: Record<string, unknown>): {
+function withMutationCompaction(args: Record<string, unknown>, options: Record<string, unknown>): {
   changedFields: "full" | "compact";
   runnerOptions: Record<string, unknown>;
 } {
-  const runnerOptions = { ...options };
-  const full = runnerOptions.full === true;
-  delete runnerOptions.full;
-  return { changedFields: full ? "full" : "compact", runnerOptions };
+  return { changedFields: args.fullChangedFields === true ? "full" : "compact", runnerOptions: { ...options } };
 }
 
 async function runAction(args: Record<string, unknown>): Promise<unknown> {
@@ -500,11 +521,11 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runSearch(readRequiredString(args, "query"), searchOptions, global);
     }
     case "create": {
-      const { changedFields, runnerOptions } = withMutationCompaction(options);
+      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
       return projectMutationResult(await runCreate(runnerOptions as never, global), { changedFields });
     }
     case "update": {
-      const { changedFields, runnerOptions } = withMutationCompaction(options);
+      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
       return projectMutationResult(
         await runUpdate(id ?? readRequiredString(runnerOptions, "id"), runnerOptions as never, global),
         { changedFields },
@@ -515,7 +536,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
     case "release":
       return runRelease(id ?? readRequiredString(options, "id"), force, global, options);
     case "close": {
-      const { changedFields, runnerOptions } = withMutationCompaction(options);
+      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
       return projectMutationResult(
         await runClose(
           id ?? readRequiredString(runnerOptions, "id"),
@@ -654,14 +675,14 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
     case "stats":
       return runStats(global);
     case "append": {
-      const { changedFields, runnerOptions } = withMutationCompaction(options);
+      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
       return projectMutationResult(
         await runAppend(id ?? readRequiredString(runnerOptions, "id"), runnerOptions as never, global),
         { changedFields },
       );
     }
     case "update-many": {
-      const { changedFields, runnerOptions } = withMutationCompaction(options);
+      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
       return projectMutationResult(await runUpdateMany(runnerOptions as never, global), { changedFields });
     }
     case "gc":
