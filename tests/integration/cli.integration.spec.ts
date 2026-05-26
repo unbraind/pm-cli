@@ -230,9 +230,11 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         "utf8",
       );
       await writeFile(path.join(sdkRoot, "dist", "sdk.js"), "export function defineExtension(extension) { return extension; }\n", "utf8");
-      const npmBinary = process.platform === "win32" ? "npm.cmd" : "npm";
+      const isWindows = process.platform === "win32";
+      const npmBinary = isWindows ? "npm.cmd" : "npm";
       const sdkPackOutput = execFileSync(npmBinary, ["pack", sdkRoot, "--json", "--pack-destination", context.tempRoot], {
         encoding: "utf8",
+        shell: isWindows,
       });
       const sdkPack = JSON.parse(sdkPackOutput) as Array<{ filename: string }>;
       const sdkTarball = sdkPack[0]?.filename;

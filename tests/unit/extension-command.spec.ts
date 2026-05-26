@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { cp as fsPromisesCp, mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp as fsPromisesCp, mkdtemp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -726,7 +726,7 @@ describe("extension command runtime", () => {
   });
 
   it("resolves existing cwd-relative npm package specs as local package sources", async () => {
-    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-npm-local-"));
+    const tempRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "pm-extension-npm-local-")));
     const previousCwd = process.cwd();
     try {
       const packageRoot = path.join(tempRoot, "packages", "local-package");
