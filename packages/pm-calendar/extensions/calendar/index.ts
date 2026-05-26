@@ -52,17 +52,26 @@ const calendarFlags = [
   { long: "--format", value_name: "value", value_type: "string", description: "Calendar output override: markdown|toon|json." },
 ] as const;
 
+function isCalendarView(arg: string): arg is (typeof CALENDAR_VIEW_NAMES)[number] {
+  return (CALENDAR_VIEW_NAMES as readonly string[]).includes(arg);
+}
+
 function buildPositionalViewError(positionalArgs: readonly string[]): PmCliError {
   const received = positionalArgs.map((arg) => arg.trim()).filter((arg) => arg.length > 0);
   const receivedList = received.join(", ");
-  const extras = received.slice(1).filter((arg) => !CALENDAR_VIEW_NAMES.includes(arg as (typeof CALENDAR_VIEW_NAMES)[number]));
+  // Check every received positional, not just the tail, so an invalid first
+  // positional (e.g. `pm calendar totally-bogus week`) is still surfaced.
+  const extras = received.filter((arg) => !isCalendarView(arg));
+  // Fall back to the first valid view from `received` for the recovery hint;
+  // recommend `agenda` only when none of the positionals are valid view names.
+  const recoveryView = received.find(isCalendarView) ?? "agenda";
   const hintLines = [`Calendar accepts at most one positional view (agenda|day|week|month), but received: ${receivedList}.`];
   if (extras.length > 0) {
     hintLines.push(`Unknown view alias(es): ${extras.join(", ")}.`);
   }
   hintLines.push("Use a single view, or pass extra arguments via flags:");
-  hintLines.push(`  pm calendar ${received[0] ?? "agenda"}`);
-  hintLines.push(`  pm calendar --view ${received[0] ?? "agenda"} --date +7d`);
+  hintLines.push(`  pm calendar ${recoveryView}`);
+  hintLines.push(`  pm calendar --view ${recoveryView} --date +7d`);
   return new PmCliError(hintLines.join("\n"), 2);
 }
 

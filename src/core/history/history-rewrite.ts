@@ -28,7 +28,7 @@ export interface HistoryRewriteOwnershipParams {
  */
 export function checkHistoryRewriteOwnership(params: HistoryRewriteOwnershipParams): string[] {
   if (!params.itemDocument) return [];
-  const assigned = params.itemDocument.metadata.assignee?.trim();
+  const assigned = params.itemDocument.metadata?.assignee?.trim();
   if (!assigned || assigned === params.author || params.force) return [];
 
   const governance = resolveGovernanceKnobs(params.settings);

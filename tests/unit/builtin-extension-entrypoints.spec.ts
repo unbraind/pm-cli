@@ -426,6 +426,55 @@ describe("built-in extension entrypoints", () => {
     });
   });
 
+  it("flags an invalid first positional and falls back to a valid recovery view", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    let captured: unknown;
+    try {
+      await commands[0]!.run({
+        command: "cal",
+        args: ["totally-bogus", "week"],
+        options: {},
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+      });
+    } catch (error) {
+      captured = error;
+    }
+
+    const error = captured as { message: string; exitCode: number };
+    expect(error.exitCode).toBe(2);
+    expect(error.message).toContain("Unknown view alias(es): totally-bogus");
+    // Recovery hint falls back to the first VALID view (week), not the invalid first positional.
+    expect(error.message).toContain("pm calendar week");
+    expect(error.message).toContain("--view week --date +7d");
+    expect(error.message).not.toContain("pm calendar totally-bogus\n");
+  });
+
+  it("falls back to 'agenda' when no positional is a recognized view", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    let captured: unknown;
+    try {
+      await commands[0]!.run({
+        command: "cal",
+        args: ["alpha", "beta"],
+        options: {},
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+      });
+    } catch (error) {
+      captured = error;
+    }
+
+    const error = captured as { message: string };
+    expect(error.message).toContain("Unknown view alias(es): alpha, beta");
+    expect(error.message).toContain("pm calendar agenda");
+    expect(error.message).toContain("--view agenda --date +7d");
+  });
+
   it("flags unknown view aliases when rejecting extra positional args", async () => {
     const { api, commands } = createCommandOnlyApi();
     activateCalendar(api);
