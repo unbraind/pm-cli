@@ -407,7 +407,7 @@ describe("built-in extension entrypoints", () => {
     expect(result).toMatchObject({ view: "day" });
   });
 
-  it("still rejects two positional views", async () => {
+  it("still rejects two positional views and surfaces a recovery hint", async () => {
     const { api, commands } = createCommandOnlyApi();
     activateCalendar(api);
 
@@ -419,7 +419,38 @@ describe("built-in extension entrypoints", () => {
         global: globalFlags,
         pm_root: "/tmp/pm",
       }),
-    ).rejects.toThrow("at most one positional view");
+    ).rejects.toMatchObject({
+      name: "PmCliError",
+      exitCode: 2,
+      message: expect.stringContaining("but received: day, week"),
+    });
+  });
+
+  it("flags unknown view aliases when rejecting extra positional args", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    let captured: unknown;
+    try {
+      await commands[0]!.run({
+        command: "cal",
+        args: ["agenda", "totally-bogus"],
+        options: {},
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+      });
+    } catch (error) {
+      captured = error;
+    }
+
+    expect(captured).toBeDefined();
+    const error = captured as { message: string; exitCode: number; name: string };
+    expect(error.name).toBe("PmCliError");
+    expect(error.exitCode).toBe(2);
+    expect(error.message).toContain("but received: agenda, totally-bogus");
+    expect(error.message).toContain("Unknown view alias(es): totally-bogus");
+    expect(error.message).toContain("pm calendar agenda");
+    expect(error.message).toContain("--view agenda --date +7d");
   });
 
   it("registers beads import handler and coerces extension options", async () => {

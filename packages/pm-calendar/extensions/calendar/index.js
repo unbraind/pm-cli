@@ -1,5 +1,19 @@
 import { renderCalendarPackageOutput, runCalendarPackage } from "./runtime.js";
 
+const CALENDAR_VIEW_NAMES = ["agenda", "day", "week", "month"];
+
+// Standalone error class so the package stays self-contained when installed
+// outside the pm-cli source tree. The class name "PmCliError" lines up with
+// the Sentry beforeSend filter (isExpectedCliErrorEvent) so usage errors do
+// not leak into Sentry as crashes.
+class PmCliError extends Error {
+  constructor(message, exitCode) {
+    super(message);
+    this.name = "PmCliError";
+    this.exitCode = exitCode;
+  }
+}
+
 export const manifest = {
   name: "builtin-calendar",
   version: "0.1.0",
@@ -31,10 +45,18 @@ const calendarFlags = [
   { long: "--format", value_name: "value", value_type: "string", description: "Calendar output override: markdown|toon|json." },
 ];
 
-function usageError(message) {
-  const error = new Error(message);
-  error.exitCode = 2;
-  return error;
+function buildPositionalViewError(positionalArgs) {
+  const received = positionalArgs.map((arg) => arg.trim()).filter((arg) => arg.length > 0);
+  const receivedList = received.join(", ");
+  const extras = received.slice(1).filter((arg) => !CALENDAR_VIEW_NAMES.includes(arg));
+  const hintLines = [`Calendar accepts at most one positional view (agenda|day|week|month), but received: ${receivedList}.`];
+  if (extras.length > 0) {
+    hintLines.push(`Unknown view alias(es): ${extras.join(", ")}.`);
+  }
+  hintLines.push("Use a single view, or pass extra arguments via flags:");
+  hintLines.push(`  pm calendar ${received[0] ?? "agenda"}`);
+  hintLines.push(`  pm calendar --view ${received[0] ?? "agenda"} --date +7d`);
+  return new PmCliError(hintLines.join("\n"), 2);
 }
 
 function calendarCommand(name) {
@@ -53,7 +75,7 @@ function calendarCommand(name) {
       const positionalArgs = firstFlagIndex === -1 ? context.args : context.args.slice(0, firstFlagIndex);
       const positionalView = positionalArgs[0]?.trim();
       if (positionalArgs.length > 1) {
-        throw usageError("Calendar accepts at most one positional view: agenda|day|week|month.");
+        throw buildPositionalViewError(positionalArgs);
       }
       return runCalendarPackage(
         {

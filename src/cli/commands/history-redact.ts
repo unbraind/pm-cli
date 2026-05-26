@@ -2,6 +2,10 @@ import fs from "node:fs/promises";
 import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { createHistoryEntry } from "../../core/history/history.js";
 import {
+  checkHistoryRewriteOwnership,
+  verifyHistoryRewriteNoDrift,
+} from "../../core/history/history-rewrite.js";
+import {
   EMPTY_REPLAY_DOCUMENT,
   historyEntriesToRaw,
   replayHash,
@@ -21,7 +25,7 @@ import { nowIso } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
-import { readSettings, resolveGovernanceKnobs } from "../../core/store/settings.js";
+import { readSettings } from "../../core/store/settings.js";
 import { resolveAuthor } from "../../core/shared/author.js";
 import type { HistoryEntry, HistoryPatchOp, ItemDocument } from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
@@ -527,21 +531,15 @@ export async function runHistoryRedact(
   }
 
   if (!dryRun && changed) {
-    if (currentItemDocument) {
-      const governance = resolveGovernanceKnobs(settings);
-      const assigned = currentItemDocument.metadata.assignee?.trim();
-      if (assigned && assigned !== author && !options.force) {
-        if (governance.ownership_enforcement === "strict") {
-          throw new PmCliError(
-            `Item ${subject.id} is assigned to ${assigned}. Use --force to override.`,
-            EXIT_CODE.CONFLICT,
-          );
-        }
-        if (governance.ownership_enforcement === "warn") {
-          warnings.push(`ownership_warning:assignee_conflict:${subject.id}:${assigned}`);
-        }
-      }
-    }
+    warnings.push(
+      ...checkHistoryRewriteOwnership({
+        itemDocument: currentItemDocument,
+        subjectId: subject.id,
+        author,
+        force: options.force,
+        settings,
+      }),
+    );
 
     const releaseLock = await acquireLock(
       pmRoot,
@@ -552,29 +550,15 @@ export async function runHistoryRedact(
       settings.governance.force_required_for_stale_lock,
     );
     try {
-      const historyRawUnderLock = await readFileIfExists(subject.historyPath);
-      if (historyRawUnderLock !== historyRawBeforeLock) {
-        throw new PmCliError(
-          `History for ${subject.id} changed while waiting for lock; retry history-redact.`,
-          EXIT_CODE.CONFLICT,
-        );
-      }
-      const locatedUnderLock = await locateItem(
+      const { historyRawUnderLock } = await verifyHistoryRewriteNoDrift({
         pmRoot,
-        subject.id,
-        settings.id_prefix,
-        settings.item_format,
-        typeRegistry.type_to_folder,
-      );
-      const loadedItemUnderLock = locatedUnderLock
-        ? await readLocatedItem(locatedUnderLock, { schema: settings.schema })
-        : null;
-      if ((loadedItemUnderLock?.raw ?? null) !== (currentItemRaw ?? null)) {
-        throw new PmCliError(
-          `Item ${subject.id} changed while waiting for lock; retry history-redact.`,
-          EXIT_CODE.CONFLICT,
-        );
-      }
+        subject,
+        settings,
+        typeRegistry,
+        historyRawBeforeLock,
+        currentItemRawBeforeLock: currentItemRaw,
+        operation: "history-redact",
+      });
       const affectedItemPaths = new Set<string>();
       if (currentItemPath) {
         affectedItemPaths.add(currentItemPath);

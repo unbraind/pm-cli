@@ -6,6 +6,21 @@ import type {
 import type { CalendarOptions } from "../../../../src/sdk/runtime.js";
 import { renderCalendarPackageOutput, runCalendarPackage } from "./runtime.js";
 
+const CALENDAR_VIEW_NAMES = ["agenda", "day", "week", "month"] as const;
+
+// Standalone error class so the package stays self-contained when installed
+// outside the pm-cli source tree. The class name "PmCliError" lines up with
+// the Sentry beforeSend filter (isExpectedCliErrorEvent) so usage errors do
+// not leak into Sentry as crashes.
+class PmCliError extends Error {
+  exitCode: number;
+  constructor(message: string, exitCode: number) {
+    super(message);
+    this.name = "PmCliError";
+    this.exitCode = exitCode;
+  }
+}
+
 export const manifest = {
   name: "builtin-calendar",
   version: "0.1.0",
@@ -37,10 +52,18 @@ const calendarFlags = [
   { long: "--format", value_name: "value", value_type: "string", description: "Calendar output override: markdown|toon|json." },
 ] as const;
 
-function usageError(message: string): Error & { exitCode: number } {
-  const error = new Error(message) as Error & { exitCode: number };
-  error.exitCode = 2;
-  return error;
+function buildPositionalViewError(positionalArgs: readonly string[]): PmCliError {
+  const received = positionalArgs.map((arg) => arg.trim()).filter((arg) => arg.length > 0);
+  const receivedList = received.join(", ");
+  const extras = received.slice(1).filter((arg) => !CALENDAR_VIEW_NAMES.includes(arg as (typeof CALENDAR_VIEW_NAMES)[number]));
+  const hintLines = [`Calendar accepts at most one positional view (agenda|day|week|month), but received: ${receivedList}.`];
+  if (extras.length > 0) {
+    hintLines.push(`Unknown view alias(es): ${extras.join(", ")}.`);
+  }
+  hintLines.push("Use a single view, or pass extra arguments via flags:");
+  hintLines.push(`  pm calendar ${received[0] ?? "agenda"}`);
+  hintLines.push(`  pm calendar --view ${received[0] ?? "agenda"} --date +7d`);
+  return new PmCliError(hintLines.join("\n"), 2);
 }
 
 function calendarCommand(name: "calendar" | "cal"): CommandDefinition {
@@ -59,7 +82,7 @@ function calendarCommand(name: "calendar" | "cal"): CommandDefinition {
       const positionalArgs = firstFlagIndex === -1 ? context.args : context.args.slice(0, firstFlagIndex);
       const positionalView = positionalArgs[0]?.trim();
       if (positionalArgs.length > 1) {
-        throw usageError("Calendar accepts at most one positional view: agenda|day|week|month.");
+        throw buildPositionalViewError(positionalArgs);
       }
       return runCalendarPackage(
         {

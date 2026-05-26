@@ -1,0 +1,15 @@
+id: pm-0g2p
+title: Bump @sentry/node 10.53.1 to 10.54.0
+description: Patch release. Update package.json + refresh pnpm-lock. No code changes expected.
+type: Chore
+status: closed
+priority: 3
+tags[2]: dependencies,sentry
+created_at: "2026-05-26T19:54:22.883Z"
+updated_at: "2026-05-26T20:14:31.928Z"
+author: claude-code-agent
+parent: pm-rnpb
+comments[1]{created_at,author,text}:
+  "2026-05-26T20:01:32.372Z",claude-code-agent,"Bumped @sentry/node 10.53.1 -> 10.54.0 via pnpm update (within ^10.51.0 range, package.json range refreshed to ^10.54.0, pnpm-lock.yaml regenerated). 5 packages updated, 46 removed (clean dedupe). No source changes required."
+close_reason: @sentry/node bumped 10.53.1 -> 10.54.0 via pnpm update; pnpm-lock regenerated; full coverage gate passing.
+body: ""
