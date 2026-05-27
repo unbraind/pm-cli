@@ -88,6 +88,36 @@ function mergeFlagStrings(baseFlags: string, runtimeFlags: string[] | undefined)
   return joinCompletionValues(merged);
 }
 
+function normalizeRuntimeCompletionFlags(runtimeFlags: string[] | undefined): string[] {
+  const normalized = (runtimeFlags ?? [])
+    .map((value) => value.trim())
+    .filter((value) => value.startsWith("--") && value.length > 2)
+    .map((value) => `--${value.slice(2).replaceAll("_", "-")}`);
+  return [...new Set(normalized)].sort((left, right) => left.localeCompare(right));
+}
+
+function renderZshRuntimeFieldFlagSpecs(runtimeFlags: string[] | undefined): string {
+  const normalized = normalizeRuntimeCompletionFlags(runtimeFlags);
+  if (normalized.length === 0) {
+    return "";
+  }
+  return `${normalized.map((flag) => `            '${flag}[Runtime schema field flag]:value' \\`).join("\n")}\n`;
+}
+
+function renderFishRuntimeFieldFlagSpecs(commands: string[], runtimeFlags: string[] | undefined): string {
+  const normalizedFlags = normalizeRuntimeCompletionFlags(runtimeFlags).map((flag) => flag.slice(2));
+  if (commands.length === 0 || normalizedFlags.length === 0) {
+    return "";
+  }
+  const lines: string[] = [];
+  for (const command of commands) {
+    for (const flag of normalizedFlags) {
+      lines.push(`complete -c pm -n '__fish_seen_subcommand_from ${command}' -l ${flag} -d 'Runtime schema field flag' -r`);
+    }
+  }
+  return `${lines.join("\n")}\n`;
+}
+
 export function generateBashScript(
   itemTypes: string[] = DEFAULT_ITEM_TYPES,
   tags: string[] = [],
@@ -308,13 +338,22 @@ export function generateZshScript(
   itemTypes: string[] = DEFAULT_ITEM_TYPES,
   tags: string[] = [],
   eagerTagExpansion = false,
+  runtime: CompletionRuntimeConfig = {},
 ): string {
   const cmds = ALL_COMMANDS.map((c) => `'${c}'`).join(" ");
   const typeChoices = itemTypes.join(" ");
+  const statusChoices = joinCompletionValues(runtime.statuses ?? DEFAULT_STATUS_VALUES);
   const guideTopicChoices = GUIDE_TOPIC_CHOICES;
   const tagChoices = joinCompletionValues(tags);
   const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
   const zshTagChoices = useEagerTagExpansion ? tagChoices : '${(f)"$(_pm_tag_choices)"}';
+  const zshListRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.list);
+  const zshCreateRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.create);
+  const zshUpdateRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.update);
+  const zshUpdateManyRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.["update-many"]);
+  const zshSearchRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.search);
+  const zshCalendarRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.calendar);
+  const zshContextRuntimeFieldFlags = renderZshRuntimeFieldFlagSpecs(runtime.command_flags?.context);
   const dynamicTagResolver = useEagerTagExpansion
     ? ""
     : `
@@ -439,7 +478,7 @@ _pm() {
             '--sort[Sort field]:(priority deadline updated_at created_at title parent)' \\
             '--order[Sort order (requires --sort)]:(asc desc)' \\
             '--stream[Emit line-delimited JSON rows (requires --json)]' \\
-            '--json[Output JSON]' \\
+${zshListRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]' \\
             '--path[Override PM path]:path:_files -/'
           ;;
@@ -448,7 +487,7 @@ _pm() {
             '--group-by[Comma-separated group-by fields (supported: parent,type,priority,status,assignee,tags,sprint,release)]:fields' \\
             '--count[Return grouped counts]' \\
             '--include-unparented[Include unparented rows when grouping by parent]' \\
-            '--status[Filter by status]:(draft open in_progress blocked closed canceled)' \\
+            '--status[Filter by status]:(${statusChoices})' \\
             '--type[Filter by item type]:(${typeChoices})' \\
             '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
@@ -467,7 +506,7 @@ _pm() {
             '--mode[Dedupe mode]:(title_exact title_fuzzy parent_scope)' \\
             '--limit[Limit returned duplicate clusters]:number' \\
             '--threshold[Fuzzy mode token similarity threshold between 0 and 1]:number' \\
-            '--status[Filter by status]:(draft open in_progress blocked closed canceled)' \\
+            '--status[Filter by status]:(${statusChoices})' \\
             '--type[Filter by item type]:(${typeChoices})' \\
             '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
@@ -488,7 +527,7 @@ _pm() {
             '--type[Item type]:(${typeChoices})' \\
             '--create-mode[Create required-option policy mode]:(strict progressive)' \\
             '--schedule-preset[Scheduling preset for Reminder/Meeting/Event]:(lightweight)' \\
-            '(-s --status)'{-s,--status}'[Item status]:(draft open in_progress blocked)' \\
+            '(-s --status)'{-s,--status}'[Item status]:(${statusChoices})' \\
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--tags[Comma-separated tags]:tags' \\
             '(-b --body)'{-b,--body}'[Item body]:body' \\
@@ -514,7 +553,7 @@ _pm() {
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--assignee[Assignee]:assignee' \\
-            '--json[Output JSON]' \\
+${zshCreateRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
         update)
@@ -522,7 +561,7 @@ _pm() {
             '(-t --title)'{-t,--title}'[Item title]:title' \\
             '(-d --description)'{-d,--description}'[Item description]:description' \\
             '(-b --body)'{-b,--body}'[Item body]:body' \\
-            '(-s --status)'{-s,--status}'[Item status]:(draft open in_progress blocked canceled)' \\
+            '(-s --status)'{-s,--status}'[Item status]:(${statusChoices})' \\
             '--close-reason[Set close reason]:close_reason' \\
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--type[Item type]:(${typeChoices})' \\
@@ -547,7 +586,7 @@ _pm() {
             '--clear-reminders[Clear reminders]' \\
             '--clear-events[Clear events]' \\
             '--clear-type-options[Clear type options]' \\
-            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
+${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -556,7 +595,7 @@ _pm() {
           ;;
         update-many)
           _arguments \\
-            '--filter-status[Filter by status before applying updates]:(draft open in_progress blocked closed canceled)' \\
+            '--filter-status[Filter by status before applying updates]:(${statusChoices})' \\
             '--filter-type[Filter by type before applying updates]:(${typeChoices})' \\
             '--filter-tag[Filter by tag before applying updates]:(${zshTagChoices})' \\
             '--filter-priority[Filter by priority before applying updates]:(0 1 2 3 4)' \\
@@ -630,7 +669,7 @@ _pm() {
             '--clear-reminders[Clear reminders]' \\
             '--clear-events[Clear events]' \\
             '--clear-type-options[Clear type options]' \\
-            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
+${zshUpdateManyRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner metadata-only audit updates without requiring --force]' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
@@ -639,7 +678,7 @@ _pm() {
           ;;
         normalize)
           _arguments \\
-            '--filter-status[Filter by status before planning or apply]:(draft open in_progress blocked closed canceled)' \\
+            '--filter-status[Filter by status before planning or apply]:(${statusChoices})' \\
             '--filter-type[Filter by type before planning or apply]:(${typeChoices})' \\
             '--filter-tag[Filter by tag before planning or apply]:(${zshTagChoices})' \\
             '--filter-priority[Filter by priority before planning or apply]:(0 1 2 3 4)' \\
@@ -672,12 +711,12 @@ _pm() {
             '--type[Filter by type]:(${typeChoices})' \\
             '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
-            '--status[Filter by status]:(draft open in_progress blocked closed canceled)' \\
+            '--status[Filter by status]:(${statusChoices})' \\
             '--assignee[Filter by assignee]:assignee' \\
             '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--sprint[Filter by sprint]:sprint' \\
             '--release[Filter by release]:release' \\
-            '--include[Include event sources]:(all deadlines reminders events scheduled)' \\
+${zshCalendarRuntimeFieldFlags}            '--include[Include event sources]:(all deadlines reminders events scheduled)' \\
             '--recurrence-lookahead-days[Bound open-ended recurrence lookahead]:days' \\
             '--recurrence-lookback-days[Bound open-ended recurrence lookback]:days' \\
             '--occurrence-limit[Cap occurrences per recurring event]:number' \\
@@ -701,7 +740,7 @@ _pm() {
             '--release[Filter by release]:release' \\
             '--limit[Limit focus and agenda rows per section]:number' \\
             '--format[Output override]:(markdown toon json)' \\
-            '--json[Output JSON]' \\
+${zshContextRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
         guide)
@@ -721,7 +760,7 @@ _pm() {
             '--type[Filter by type]:(${typeChoices})' \\
             '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
-            '--json[Output JSON]' \\
+${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
         reindex)
@@ -1067,7 +1106,7 @@ _pm() {
           ;;
         comments-audit)
           _arguments \\
-            '--status[Filter by item status]:status:(draft open in_progress blocked closed canceled)' \\
+            '--status[Filter by item status]:status:(${statusChoices})' \\
             '--type[Filter by item type]:(${typeChoices})' \\
             '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
@@ -1137,14 +1176,24 @@ export function generateFishScript(
   itemTypes: string[] = DEFAULT_ITEM_TYPES,
   tags: string[] = [],
   eagerTagExpansion = false,
+  runtime: CompletionRuntimeConfig = {},
 ): string {
-  const listCmds = ALL_COMMANDS.filter((command) => command === "list" || command.startsWith("list-")).join(" ");
+  const listCommandNames = ALL_COMMANDS.filter((command) => command === "list" || command.startsWith("list-"));
+  const listCmds = listCommandNames.join(" ");
   const noSubcommandList = ALL_COMMANDS.join(" ");
   const typeChoices = itemTypes.join(" ");
+  const statusChoices = joinCompletionValues(runtime.statuses ?? DEFAULT_STATUS_VALUES);
   const guideTopicChoices = GUIDE_TOPIC_CHOICES;
   const tagChoices = joinCompletionValues(tags);
   const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
   const fishTagChoices = useEagerTagExpansion ? `'${tagChoices}'` : "'(__pm_tag_choices)'";
+  const fishListRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(listCommandNames, runtime.command_flags?.list);
+  const fishCreateRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(["create"], runtime.command_flags?.create);
+  const fishUpdateRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(["update"], runtime.command_flags?.update);
+  const fishUpdateManyRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(["update-many"], runtime.command_flags?.["update-many"]);
+  const fishSearchRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(["search"], runtime.command_flags?.search);
+  const fishCalendarRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(["calendar", "cal"], runtime.command_flags?.calendar);
+  const fishContextRuntimeFieldFlags = renderFishRuntimeFieldFlagSpecs(["context", "ctx"], runtime.command_flags?.context);
   const dynamicTagResolver = useEagerTagExpansion
     ? ""
     : `
@@ -1272,12 +1321,13 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-before -d 'Filter by deadline upper bound (ISO/date string or relative)' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-after  -d 'Filter by deadline lower bound (ISO/date string or relative)' -r
 end
+${fishListRuntimeFieldFlags}
 
 # aggregate flags
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l group-by -d 'Comma-separated group-by fields (supported: parent,type,priority,status,assignee,tags,sprint,release)' -r
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l count -d 'Return grouped counts'
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l include-unparented -d 'Include unparented rows when grouping by parent'
-complete -c pm -n '__fish_seen_subcommand_from aggregate' -l status -d 'Filter by status' -r -a 'draft open in_progress blocked closed canceled'
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l status -d 'Filter by status' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l type -d 'Filter by item type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l tag -d 'Filter by tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
@@ -1293,7 +1343,7 @@ complete -c pm -n '__fish_seen_subcommand_from aggregate' -l release -d 'Filter 
 complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l mode -d 'Dedupe mode' -r -a 'title_exact title_fuzzy parent_scope'
 complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l limit -d 'Limit returned duplicate clusters' -r
 complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l threshold -d 'Fuzzy mode token similarity threshold between 0 and 1' -r
-complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l status -d 'Filter by status' -r -a 'draft open in_progress blocked closed canceled'
+complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l status -d 'Filter by status' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l type -d 'Filter by item type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l tag -d 'Filter by tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from dedupe-audit' -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
@@ -1311,7 +1361,7 @@ complete -c pm -n '__fish_seen_subcommand_from create' -s d -l description      
 complete -c pm -n '__fish_seen_subcommand_from create' -l type                    -d 'Item type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from create' -l create-mode             -d 'Create required-option policy mode' -r -a 'strict progressive'
 complete -c pm -n '__fish_seen_subcommand_from create' -l schedule-preset         -d 'Scheduling preset for Reminder/Meeting/Event' -r -a 'lightweight'
-complete -c pm -n '__fish_seen_subcommand_from create' -s s -l status             -d 'Item status' -r -a 'draft open in_progress blocked'
+complete -c pm -n '__fish_seen_subcommand_from create' -s s -l status             -d 'Item status' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from create' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from create' -l tags                    -d 'Comma-separated tags' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -s b -l body               -d 'Item body' -r
@@ -1335,12 +1385,13 @@ complete -c pm -n '__fish_seen_subcommand_from create' -l clear-docs            
 complete -c pm -n '__fish_seen_subcommand_from create' -l clear-reminders         -d 'Clear reminders'
 complete -c pm -n '__fish_seen_subcommand_from create' -l clear-events            -d 'Clear events'
 complete -c pm -n '__fish_seen_subcommand_from create' -l clear-type-options      -d 'Clear type options'
+${fishCreateRuntimeFieldFlags}
 
 # update flags
 complete -c pm -n '__fish_seen_subcommand_from update' -s t -l title              -d 'Item title' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s d -l description        -d 'Item description' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s b -l body               -d 'Item body' -r
-complete -c pm -n '__fish_seen_subcommand_from update' -s s -l status             -d 'Item status' -r -a 'draft open in_progress blocked canceled'
+complete -c pm -n '__fish_seen_subcommand_from update' -s s -l status             -d 'Item status' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from update' -l close-reason            -d 'Set close reason' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from update' -l type                    -d 'Item type' -r -a '${typeChoices}'
@@ -1370,9 +1421,10 @@ complete -c pm -n '__fish_seen_subcommand_from update' -l allow-audit-update    
 complete -c pm -n '__fish_seen_subcommand_from update' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l force                   -d 'Force override'
+${fishUpdateRuntimeFieldFlags}
 
 # update-many flags
-complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-status           -d 'Filter by status before applying updates' -r -a 'draft open in_progress blocked closed canceled'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-status           -d 'Filter by status before applying updates' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-type             -d 'Filter by type before applying updates' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-tag              -d 'Filter by tag before applying updates' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-priority         -d 'Filter by priority before applying updates' -r -a '0 1 2 3 4'
@@ -1450,9 +1502,10 @@ complete -c pm -n '__fish_seen_subcommand_from update-many' -l allow-audit-updat
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l author                  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l message                 -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l force                   -d 'Force override'
+${fishUpdateManyRuntimeFieldFlags}
 
 # normalize flags
-complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-status           -d 'Filter by status before planning or apply' -r -a 'draft open in_progress blocked closed canceled'
+complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-status           -d 'Filter by status before planning or apply' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-type             -d 'Filter by type before planning or apply' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-tag              -d 'Filter by tag before planning or apply' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from normalize' -l filter-priority         -d 'Filter by priority before planning or apply' -r -a '0 1 2 3 4'
@@ -1479,6 +1532,7 @@ complete -c pm -n '__fish_seen_subcommand_from search' -l limit          -d 'Max
 complete -c pm -n '__fish_seen_subcommand_from search' -l type           -d 'Filter by type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from search' -l tag            -d 'Filter by tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from search' -l priority       -d 'Filter by priority' -r -a '0 1 2 3 4'
+${fishSearchRuntimeFieldFlags}
 
 # calendar flags
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l view      -d 'Calendar view' -r -a 'agenda day week month'
@@ -1490,7 +1544,7 @@ complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l full-period -d '
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l type      -d 'Filter by type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l tag       -d 'Filter by tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l priority  -d 'Filter by priority' -r -a '0 1 2 3 4'
-complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l status    -d 'Filter by status' -r -a 'draft open in_progress blocked closed canceled'
+complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l status    -d 'Filter by status' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l assignee  -d 'Filter by assignee' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l sprint    -d 'Filter by sprint' -r
@@ -1501,6 +1555,7 @@ complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l recurrence-lookb
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l occurrence-limit -d 'Cap occurrences per recurring event' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l limit     -d 'Limit returned events' -r
 complete -c pm -n '__fish_seen_subcommand_from calendar cal' -l format    -d 'Output override' -r -a 'markdown toon json'
+${fishCalendarRuntimeFieldFlags}
 
 # context flags
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l date      -d 'Anchor date/time (ISO/date string or relative)' -r
@@ -1516,6 +1571,7 @@ complete -c pm -n '__fish_seen_subcommand_from context ctx' -l sprint    -d 'Fil
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l release   -d 'Filter by release' -r
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l limit     -d 'Limit focus and agenda rows per section' -r
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l format    -d 'Output override' -r -a 'markdown toon json'
+${fishContextRuntimeFieldFlags}
 
 # guide flags
 complete -c pm -n '__fish_seen_subcommand_from guide' -l list      -d 'Show guide topic index'
@@ -1712,7 +1768,7 @@ complete -c pm -n '__fish_seen_subcommand_from health' -l brief -d 'Emit compact
 complete -c pm -n '__fish_seen_subcommand_from health' -l summary -d 'Emit one-line-style health status with check names and warning count'
 complete -c pm -n '__fish_seen_subcommand_from health' -l strict-exit -d 'Return non-zero exit when health warnings are present'
 complete -c pm -n '__fish_seen_subcommand_from health' -l fail-on-warn -d 'Alias for --strict-exit'
-complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l status -d 'Filter by item status' -r -a 'draft open in_progress blocked closed canceled'
+complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l status -d 'Filter by item status' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l type -d 'Filter by item type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l tag -d 'Filter by tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from comments-audit' -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
@@ -1787,9 +1843,9 @@ export function runCompletion(
   if (validShell === "bash") {
     script = generateBashScript(itemTypes, tags, eagerTagExpansion, runtime);
   } else if (validShell === "zsh") {
-    script = generateZshScript(itemTypes, tags, eagerTagExpansion);
+    script = generateZshScript(itemTypes, tags, eagerTagExpansion, runtime);
   } else {
-    script = generateFishScript(itemTypes, tags, eagerTagExpansion);
+    script = generateFishScript(itemTypes, tags, eagerTagExpansion, runtime);
   }
   return {
     shell: validShell,
