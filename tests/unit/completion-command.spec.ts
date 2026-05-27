@@ -888,6 +888,21 @@ describe("runCompletion", () => {
     expect(fishResult.script).toContain("-l alpha-segment -d 'Runtime schema field flag' -r");
     expect(fishResult.script).toContain("-l customer-segment -d 'Runtime schema field flag' -r");
   });
+
+  it("deduplicates runtime flags after underscore normalization", () => {
+    const runtime = {
+      command_flags: {
+        search: ["  --customer_segment  ", "--customer-segment", "--"],
+      },
+    } satisfies CompletionRuntimeConfig;
+
+    const zshResult = runCompletion("zsh", ["Task"], [], false, runtime);
+    expect((zshResult.script.match(/--customer-segment\[Runtime schema field flag\]:value/g) ?? []).length).toBe(1);
+    expect(zshResult.script).not.toContain("--[Runtime schema field flag]");
+
+    const fishResult = runCompletion("fish", ["Task"], [], false, runtime);
+    expect((fishResult.script.match(/-l customer-segment -d 'Runtime schema field flag' -r/g) ?? []).length).toBe(1);
+  });
 });
 
 describe("pm completion CLI command", () => {

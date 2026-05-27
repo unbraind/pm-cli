@@ -89,9 +89,11 @@ function mergeFlagStrings(baseFlags: string, runtimeFlags: string[] | undefined)
 }
 
 function normalizeRuntimeCompletionFlags(runtimeFlags: string[] | undefined): string[] {
-  return [...new Set((runtimeFlags ?? []).map((value) => value.trim()).filter((value) => value.startsWith("--")))]
-    .map((value) => `--${value.slice(2).replaceAll("_", "-")}`)
-    .sort((left, right) => left.localeCompare(right));
+  const normalized = (runtimeFlags ?? [])
+    .map((value) => value.trim())
+    .filter((value) => value.startsWith("--") && value.length > 2)
+    .map((value) => `--${value.slice(2).replaceAll("_", "-")}`);
+  return [...new Set(normalized)].sort((left, right) => left.localeCompare(right));
 }
 
 function renderZshRuntimeFieldFlagSpecs(runtimeFlags: string[] | undefined): string {
