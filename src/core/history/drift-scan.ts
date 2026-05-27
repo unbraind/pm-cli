@@ -1,5 +1,7 @@
 import fs from "fs/promises";
+import path from "node:path";
 import { getHistoryPath } from "../store/paths.js";
+import { writeFileAtomic } from "../fs/fs-utils.js";
 import { hashDocument } from "./history.js";
 import { verifyHistoryChain } from "./replay.js";
 import type { HistoryEntry, ItemMetadata } from "../../types/index.js";
@@ -12,6 +14,89 @@ export interface DriftScanResult {
   driftedItems: string[];
 }
 
+const DRIFT_CACHE_VERSION = 1;
+const DRIFT_CACHE_FILENAME = "history-drift-cache.json";
+
+interface DriftCacheEntry {
+  mtime_ms: number;
+  size: number;
+  latest_after_hash: string;
+  chain_ok: boolean;
+}
+
+interface DriftCacheEnvelope {
+  version: number;
+  entries: Record<string, DriftCacheEntry>;
+}
+
+function getDriftCachePath(pmRoot: string): string {
+  return path.join(pmRoot, "runtime", DRIFT_CACHE_FILENAME);
+}
+
+async function loadDriftCache(pmRoot: string): Promise<DriftCacheEnvelope | null> {
+  try {
+    const raw = await fs.readFile(getDriftCachePath(pmRoot), "utf8");
+    const parsed = JSON.parse(raw) as DriftCacheEnvelope;
+    if (parsed.version !== DRIFT_CACHE_VERSION || typeof parsed.entries !== "object" || parsed.entries === null) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function isErrno(error: unknown, code: string): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === code;
+}
+
+interface StreamVerification {
+  latestAfterHash: string;
+  chainOk: boolean;
+}
+
+/**
+ * Read and fully verify one history stream's hash chain. Returns null for an
+ * empty/missing stream (caller records it as a missing stream).
+ */
+async function verifyHistoryStream(historyPath: string): Promise<StreamVerification | null> {
+  const raw = await fs.readFile(historyPath, "utf8");
+  if (raw.trim().length === 0) {
+    return null;
+  }
+  const entries: HistoryEntry[] = [];
+  let latestAfterHash: string | null = null;
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (trimmed.length === 0) {
+      continue;
+    }
+    const parsed = JSON.parse(trimmed) as HistoryEntry;
+    if (typeof parsed.after_hash !== "string" || parsed.after_hash.trim().length === 0) {
+      throw new Error("missing after_hash");
+    }
+    entries.push(parsed);
+    latestAfterHash = parsed.after_hash;
+  }
+  /* c8 ignore start -- defensive guard for future history schema changes. */
+  if (!latestAfterHash) {
+    return null;
+  }
+  /* c8 ignore stop */
+  return { latestAfterHash, chainOk: verifyHistoryChain(entries).ok };
+}
+
+/**
+ * Scan every item's history stream for drift (missing/unreadable streams, broken
+ * hash chains, and item/history hash mismatches).
+ *
+ * Full chain re-verification of a 17MB+ history tree is the dominant cost of
+ * `pm health`. We cache the per-stream verification keyed by the history file's
+ * mtime/size: an unchanged file has an identical chain and latest stored hash, so
+ * we skip re-reading and re-hashing it. Item-side changes are still caught every
+ * run because the current document hash is recomputed and compared to the cached
+ * `latest_after_hash`.
+ */
 export async function scanHistoryDrift(
   pmRoot: string,
   items: Array<ItemMetadata & { body: string }>,
@@ -21,53 +106,73 @@ export async function scanHistoryDrift(
   const hashMismatches: string[] = [];
   const chainMismatches: string[] = [];
 
+  const cache = await loadDriftCache(pmRoot);
+  const previousEntries: Record<string, DriftCacheEntry> = cache?.entries ?? {};
+  const nextEntries: Record<string, DriftCacheEntry> = {};
+  let cacheDirty = false;
+
   for (const item of items) {
     const historyPath = getHistoryPath(pmRoot, item.id);
-    let latestAfterHash: string | null = null;
+
+    let stat: Awaited<ReturnType<typeof fs.stat>>;
     try {
-      const raw = await fs.readFile(historyPath, "utf8");
-      if (raw.trim().length === 0) {
-        missingStreams.push(item.id);
-        continue;
-      }
-      const entries: HistoryEntry[] = [];
-      for (const line of raw.split(/\r?\n/)) {
-        const trimmed = line.trim();
-        if (trimmed.length === 0) {
-          continue;
-        }
-        const parsed = JSON.parse(trimmed) as HistoryEntry;
-        if (typeof parsed.after_hash !== "string" || parsed.after_hash.trim().length === 0) {
-          throw new Error("missing after_hash");
-        }
-        entries.push(parsed);
-        latestAfterHash = parsed.after_hash;
-      }
-      const chainVerification = verifyHistoryChain(entries);
-      if (!chainVerification.ok) {
-        chainMismatches.push(item.id);
-      }
+      stat = await fs.stat(historyPath);
     } catch (error: unknown) {
-      if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "ENOENT") {
+      if (isErrno(error, "ENOENT")) {
         missingStreams.push(item.id);
       } else {
         unreadableStreams.push(item.id);
       }
       continue;
     }
-    /* c8 ignore start -- defensive guard for future history schema changes. */
-    if (!latestAfterHash) {
-      missingStreams.push(item.id);
-      continue;
+
+    const cached = previousEntries[item.id];
+    let verification: StreamVerification;
+    if (cached && cached.mtime_ms === stat.mtimeMs && cached.size === stat.size) {
+      verification = { latestAfterHash: cached.latest_after_hash, chainOk: cached.chain_ok };
+    } else {
+      cacheDirty = true;
+      let result: StreamVerification | null;
+      try {
+        result = await verifyHistoryStream(historyPath);
+      } catch {
+        unreadableStreams.push(item.id);
+        continue;
+      }
+      if (!result) {
+        missingStreams.push(item.id);
+        continue;
+      }
+      verification = result;
     }
-    /* c8 ignore stop */
+
+    if (!verification.chainOk) {
+      chainMismatches.push(item.id);
+    }
+    nextEntries[item.id] = {
+      mtime_ms: stat.mtimeMs,
+      size: stat.size,
+      latest_after_hash: verification.latestAfterHash,
+      chain_ok: verification.chainOk,
+    };
+
     const { body, ...frontMatter } = item;
     const currentHash = hashDocument({
       metadata: frontMatter as ItemMetadata,
       body,
     });
-    if (currentHash !== latestAfterHash) {
+    if (currentHash !== verification.latestAfterHash) {
       hashMismatches.push(item.id);
+    }
+  }
+
+  if (cacheDirty || Object.keys(previousEntries).length !== Object.keys(nextEntries).length) {
+    const cachePath = getDriftCachePath(pmRoot);
+    try {
+      await fs.mkdir(path.dirname(cachePath), { recursive: true });
+      await writeFileAtomic(cachePath, JSON.stringify({ version: DRIFT_CACHE_VERSION, entries: nextEntries }));
+    } catch {
+      // Best-effort cache write: a failed persist must never fail a health scan.
     }
   }
 

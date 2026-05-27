@@ -1,0 +1,12 @@
+id: pm-1b96
+title: "Code-quality refactors: split runUpdate/runCreate, cli-contracts barrel, shared dedup helpers, drop dead exports"
+description: "From code-quality audit (pm-jvbt). (1) runUpdate() ~834 lines (update.ts:1102) and runCreate() ~670 lines (create.ts:670) are single mega-functions mixing parse/validate/mutate/output — split into staged sub-steps. (2) cli-contracts.ts is a 1805-LOC monolith of 62 inline exports despite an existing cli-contracts/ subdir — move groups into it. (3) Dedup: shared parseSingleEvent for create.parseEvents vs update.parseEventEntries; splitCommaList() helper for the 7+ hand-rolled [...new Set(split(',').map(trim).filter(len>0))] idioms; toItemMetadata() inverse helper for 9x 'as unknown as ItemMetadata'. (4) Drop unused exports in help-json-payload.ts (9 internal-only) and registration-helpers.ts. (5) Resolve/remove misleading @deprecated on ItemFrontMatter (still used 60+ sites) and front_matter_key."
+type: Chore
+status: open
+priority: 2
+tags[2]: quality,refactor
+created_at: "2026-05-27T18:24:11.482Z"
+updated_at: "2026-05-27T18:24:11.482Z"
+author: maintainer-agent
+parent: pm-th6y
+body: ""

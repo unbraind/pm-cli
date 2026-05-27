@@ -15,7 +15,7 @@ import { resolveItemTypeRegistry } from "../item/type-registry.js";
 import { acquireLock } from "../lock/lock.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { normalizeItemId, normalizeRawItemId } from "../item/id.js";
-import { listAllDocumentsCached } from "./front-matter-cache.js";
+import { listAllDocumentCandidatesCached, listAllDocumentsCached } from "./front-matter-cache.js";
 import { getHistoryPath, getItemFormatFromPath, getItemPath, ITEM_FILE_EXTENSIONS } from "./paths.js";
 import { resolveGovernanceKnobs } from "./settings.js";
 import { nowIso } from "../shared/time.js";
@@ -125,87 +125,18 @@ export async function listAllFrontMatterWithBody(
   warnings?: string[],
   schema?: RuntimeSchemaSettings,
 ): Promise<Array<ItemFrontMatter & { body: string }>> {
-  const documents = await listAllDocuments(pmRoot, preferredFormat, typeToFolder, warnings, schema);
-  return documents.map((document) => ({
-    ...document.metadata,
-    body: document.body,
-  }));
-}
-
-async function listAllDocuments(
-  pmRoot: string,
-  preferredFormat?: ItemFormat,
-  typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
-  warnings?: string[],
-  schema?: RuntimeSchemaSettings,
-): Promise<ItemDocument[]> {
-  const entries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
-  const documentsById = new Map<string, { document: ItemDocument; itemFormat: ItemFormat }>();
-
-  const dirResults = await Promise.all(
-    entries.map(async ([, folder]) => {
-      const dirPath = path.join(pmRoot, folder);
-      try {
-        return { folder, files: await fs.readdir(dirPath) };
-      } catch (error: unknown) {
-        if (!isErrno(error, "ENOENT")) {
-          appendWarning(warnings, `item_list_directory_read_failed:${folder}`);
-        }
-        return { folder, files: [] as string[] };
-      }
-    }),
+  const candidates = await listAllDocumentCandidatesCached(
+    pmRoot,
+    preferredFormat,
+    typeToFolder,
+    warnings,
+    schema,
+    { includeBody: true },
   );
-
-  const readTasks: Array<Promise<{ folder: string; file: string; document: ItemDocument; itemFormat: ItemFormat } | null>> = [];
-  for (const { folder, files } of dirResults) {
-    const dirPath = path.join(pmRoot, folder);
-    for (const file of files.filter((entry) => ITEM_FILE_EXTENSIONS.some((ext) => entry.toLowerCase().endsWith(ext)))) {
-      readTasks.push(
-        (async () => {
-          try {
-            const itemPath = path.join(dirPath, file);
-            const itemFormat = getItemFormatFromPath(itemPath) as ItemFormat;
-            const raw = await fs.readFile(itemPath, "utf8");
-            await runActiveOnReadHooks({ path: itemPath, scope: "project" });
-            const parsed = parseItemDocument(raw, {
-              format: itemFormat,
-              schema,
-              onWarning: (warning) => appendWarning(warnings, warning),
-            });
-            return { folder, file, document: parsed, itemFormat };
-          } catch {
-            appendWarning(warnings, `item_list_item_read_failed:${folder}/${file}`);
-            return null;
-          }
-        })(),
-      );
-    }
-  }
-
-  const results = await Promise.all(readTasks);
-  for (const result of results) {
-    if (!result) continue;
-    const existing = documentsById.get(result.document.metadata.id);
-    if (!existing) {
-      documentsById.set(result.document.metadata.id, {
-        document: result.document,
-        itemFormat: result.itemFormat,
-      });
-      continue;
-    }
-    const shouldReplace = preferredFormat
-      ? result.itemFormat === preferredFormat && existing.itemFormat !== preferredFormat
-      : result.itemFormat === "toon" && existing.itemFormat !== "toon";
-    if (shouldReplace) {
-      documentsById.set(result.document.metadata.id, {
-        document: result.document,
-        itemFormat: result.itemFormat,
-      });
-    }
-  }
-  return [...documentsById.values()]
-    .sort((left, right) => left.document.metadata.id.localeCompare(right.document.metadata.id))
-    .map((entry) => entry.document);
+  return candidates.map((candidate) => ({
+    ...candidate.metadata,
+    body: candidate.body ?? "",
+  }));
 }
 
 async function listKnownItemIds(

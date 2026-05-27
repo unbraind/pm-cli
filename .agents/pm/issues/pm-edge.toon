@@ -1,0 +1,12 @@
+id: pm-edge
+title: "Agent-UX footguns: create-type silent mistype + token-bloat in validate/search output"
+description: "From 2026-05-27 dogfood (pm-gqx7). (1) 'pm create Epic' with no --title silently creates a Task TITLED 'Epic' (sole positional treated as title, typed type ignored) — high-value never-block footgun; when the sole positional exactly matches a known type, create that type with a placeholder title + warning, or hint. (2) 'pm validate' on the minimal preset prints the identical full item-ID array once per missing field (~150 redundant lines) — minimal preset should not warn on reviewer/risk/confidence/sprint/release, and per-field ID lists should be summarized/deduped. (3) 'pm search' output duplicates the projection field list (identical arrays under filters.fields AND projection.fields) plus a full filters block — per-call token bloat."
+type: Issue
+status: open
+priority: 2
+tags[2]: agent-ux,token-efficiency
+created_at: "2026-05-27T18:24:05.498Z"
+updated_at: "2026-05-27T18:24:05.498Z"
+author: maintainer-agent
+parent: pm-th6y
+body: ""

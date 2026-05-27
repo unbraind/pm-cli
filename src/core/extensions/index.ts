@@ -113,6 +113,16 @@ export async function runActiveOnReadHooks(context: OnReadHookContext): Promise<
   return runOnReadHooks(activeExtensionHooks, context);
 }
 
+/**
+ * Synchronous fast-path predicate: true only when at least one onRead hook is
+ * registered. Bulk readers (e.g. the metadata cache scanning hundreds of files)
+ * use this to skip per-file `await runActiveOnReadHooks(...)` calls entirely when
+ * no extension observes reads, avoiding hundreds of needless microtasks.
+ */
+export function hasActiveOnReadHooks(): boolean {
+  return (activeExtensionHooks?.onRead?.length ?? 0) > 0;
+}
+
 export async function runActiveOnIndexHooks(context: OnIndexHookContext): Promise<string[]> {
   if (!activeExtensionHooks) {
     return [];

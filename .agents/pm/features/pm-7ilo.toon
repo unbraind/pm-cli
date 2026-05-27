@@ -1,0 +1,12 @@
+id: pm-7ilo
+title: "Model-agnostic search: provider settable via pm config + docs + index staleness surfacing"
+description: "From search/docs review (pm-a0w4). Core IS model-agnostic (openai+ollama provider types, base_url/model/api_key config-driven; LM Studio/vLLM work via openai provider with custom base_url). Gaps: (C-1) CONFIG_KEY_ALIASES has zero search/provider/embedding keys, so pointing pm at LM Studio/custom OpenAI requires hand-editing settings.json — add CLI config keys. (D-2) CONFIGURATION.md never shows a concrete custom-provider example and never names LM Studio/vLLM — making model-agnostic config undiscoverable. (C-3) No onWrite index hook; semantic/hybrid read a pre-built store and require manual pm reindex — surface index staleness at query time or add incremental on-write indexing. (C-4) CLI search defaults to FULL projection (token-heavy); MCP defaults compact — consider --compact default for CLI."
+type: Feature
+status: open
+priority: 2
+tags[3]: docs,model-agnostic,search
+created_at: "2026-05-27T18:24:09.579Z"
+updated_at: "2026-05-27T18:24:09.579Z"
+author: maintainer-agent
+parent: pm-th6y
+body: ""

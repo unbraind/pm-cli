@@ -1,0 +1,15 @@
+id: pm-a0w4
+title: Calendar + SDK + vector-search + docs review (2026-05-27)
+description: ""
+type: Chore
+status: closed
+priority: 2
+tags[4]: calendar,review,sdk,search
+created_at: "2026-05-27T16:52:57.613Z"
+updated_at: "2026-05-27T17:17:21.140Z"
+author: feature-review-agent
+parent: pm-th6y
+comments[1]{created_at,author,text}:
+  "2026-05-27T17:16:20.189Z",feature-review-agent,"Review complete (read-only). A) CALENDAR: read-only agenda command is solid (UTC recurrence expansion daily/weekly/monthly/yearly with by_weekday/by_month_day/exdates/until/count, never-block degrade). GAPS: (1) timezone stored as free string, never IANA-validated, never applied to date math (all UTC) - calendar.ts:586,860 + create.ts:703-719; (2) Milestone/Meeting item TYPES exist but calendar only surfaces deadline/reminders[]/events[] front-matter, so Milestone/Meeting items never appear unless they also carry a deadline/event (calendar.ts: no milestone/meeting refs); (3) NO ICS/iCalendar export anywhere. B) SDK: public barrel (src/sdk/index.ts + runtime.ts) is comprehensive and cleanly exported; pm package init scaffold + docs/examples/starter-extension use @unbrained/pm-cli/sdk correctly. Minor: scaffold index.js omits defineExtension import (peerDep unused). First-party packages deep-import ../../../../src/sdk + PM_CLI_PACKAGE_ROOT (monorepo artifact, not the 3rd-party path). C) SEARCH: model-agnostic core - providers openai+ollama, model/base_url/api_key fully config-driven, no hardcoded qwen in the request path; openai endpoint normalization handles /v1 & /embeddings so LM Studio/vLLM work via the openai provider. GAPS: (1) pm config set has NO search/provider/embedding/vector_store keys (config.ts CONFIG_KEY_ALIASES) - must hand-edit settings.json; (2) Ollama-only zero-config auto-default (qwen3-embedding:0.6b) - no LM Studio auto-detect (semantic-defaults.ts); (3) NO auto-index on write - semantic needs manual pm reindex; (4) CLI search defaults to FULL projection not compact (search.ts:325). D) DOCS: README excellent progressive disclosure; docs-skills-gate enforces freshness; .agents/skills (4 canonical) vs plugins/pm-claude (5) vs plugins/pm-codex (3) are intentional harness bundles not drift. Minor: CONFIGURATION.md never shows how to configure a custom provider and never names LM Studio; stale .claude/worktrees copy of skills."
+close_reason: "Completed read-only review of calendar, SDK, vector/semantic search, and docs/skills. Prioritized findings recorded in comment; no source modified. Highest-value gaps: search provider not settable via pm config (must hand-edit settings.json), no auto-index on write, calendar timezone is cosmetic-only and Milestone/Meeting types have no calendar surface, no ICS export."
+body: ""

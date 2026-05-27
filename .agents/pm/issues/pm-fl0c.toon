@@ -1,0 +1,12 @@
+id: pm-fl0c
+title: "Minor UX/correctness: test --add wording, dep-kind vocab, same-command did-you-mean, plan materialize, close inline resolution, scaffold defineExtension"
+description: "From dogfood (pm-gqx7) + SDK review (pm-a0w4). (3) 'pm test --add' block message says 'set both PM_PATH and PM_GLOBAL_PATH' but exporting them does NOT satisfy the guard — must be INLINE in the command string (test.ts:659). Fix wording. (4) Dependency kind vocab differs: pm plan uses depends_on but 'pm update --dep kind=depends_on' rejects it (wants blocked_by/blocks/...) — accept depends_on alias or unify. (6) No same-command did-you-mean for flag typos ('pm create --titel'). (10) 'pm plan materialize --steps all' materializes already-completed steps as fresh open Tasks. (11) 'pm close <id> <reason> --resolution' not accepted inline (must update first). (B-1) Generated package scaffold (scaffold.ts:38-56) uses bare 'export function activate(api)' and does not import defineExtension, so its peerDependencies type help is unused — scaffold should use defineExtension like the docs example."
+type: Issue
+status: open
+priority: 2
+tags[1]: agent-ux
+created_at: "2026-05-27T18:24:13.264Z"
+updated_at: "2026-05-27T18:24:13.264Z"
+author: maintainer-agent
+parent: pm-th6y
+body: ""

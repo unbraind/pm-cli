@@ -135,6 +135,16 @@ const TELEMETRY_STATE_RELATIVE_PATH = path.join("runtime", "telemetry", "state.j
 const TELEMETRY_ENDPOINT_PROBE_TIMEOUT_MS = 2_500;
 const TELEMETRY_QUEUE_HIGH_WATER_MARK = 500;
 
+/**
+ * Advisory warnings are surfaced for visibility but never flip overall health to
+ * not-ok. Telemetry is opt-out, non-critical observability: a queued/unreachable
+ * telemetry endpoint or corrupt local telemetry state is not a project-health
+ * failure and must not block agents that gate on `pm health` `ok`.
+ */
+function isAdvisoryHealthWarning(warning: string): boolean {
+  return warning.startsWith("telemetry_");
+}
+
 function warningCode(value: string): string {
   const normalized = value.trim();
   const separator = normalized.indexOf(":");
@@ -1502,8 +1512,13 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     ...hookWarnings,
   ];
   const normalizedWarnings = [...new Set(warnings)];
+  // Telemetry is an opt-out, non-critical observability feature. Its operational
+  // state (queue backlog, unreachable endpoint, corrupt local state) is advisory:
+  // it must never flip overall project health to not-ok. Such warnings are still
+  // surfaced in `warnings` and the telemetry check's own `warn` status.
+  const blockingWarnings = normalizedWarnings.filter((warning) => !isAdvisoryHealthWarning(warning));
   const result: HealthResult = {
-    ok: normalizedWarnings.length === 0,
+    ok: blockingWarnings.length === 0,
     checks,
     warnings: normalizedWarnings,
     generated_at: nowIso(),
