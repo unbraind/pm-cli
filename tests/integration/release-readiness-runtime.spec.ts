@@ -1858,9 +1858,15 @@ describe("release readiness runtime coverage", () => {
   });
 
   it("keeps release governance docs present with expected baseline markers", async () => {
-    const requiredDocs = [
+    const requiredDocs: Array<{ path: string; marker: string | RegExp }> = [
       { path: "LICENSE", marker: "MIT License" },
-      { path: "CHANGELOG.md", marker: "## Unreleased" },
+      // The committed changelog carries "## Unreleased", but the release
+      // pipeline replaces that heading with the cut "## <version> - <date>"
+      // section before the gate suite runs, so accept either form here.
+      {
+        path: "CHANGELOG.md",
+        marker: /^## (Unreleased|\d{4}\.\d{1,2}\.\d{1,2}(?:-\d+)? - \d{4}-\d{2}-\d{2})$/m,
+      },
       { path: "CONTRIBUTING.md", marker: "node scripts/run-tests.mjs coverage" },
       { path: "SECURITY.md", marker: "## Reporting a Vulnerability" },
       { path: "CODE_OF_CONDUCT.md", marker: "## Our Standards" },
@@ -1871,7 +1877,11 @@ describe("release readiness runtime coverage", () => {
       await access(absolutePath);
       const content = await readFile(absolutePath, "utf8");
       expect(content.trim().length).toBeGreaterThan(0);
-      expect(content).toContain(doc.marker);
+      if (doc.marker instanceof RegExp) {
+        expect(content).toMatch(doc.marker);
+      } else {
+        expect(content).toContain(doc.marker);
+      }
     }
   });
 
