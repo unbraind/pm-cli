@@ -1,0 +1,12 @@
+id: pm-xzrx
+title: "Calendar best-practice: honor timezone, surface Milestone/Meeting items, ICS export"
+description: "From calendar review (pm-a0w4). (A-1) event.timezone is stored as a free string but never validated (IANA) or applied to date math — all bucketing/recurrence is UTC, so a 09:00 America/New_York event is treated as 09:00 UTC (create.ts:703-719, calendar.ts:586,860). (A-2) Milestone and Meeting are first-class built-in types but the calendar only seeds from deadline/reminders[]/events[]; a Milestone/Meeting item never appears on the calendar unless it also carries a deadline/--event (calendar.ts:513-600). (A-3) No ICS/iCalendar export for interop. Also E2E: 'pm calendar --format toon' emits plain markdown not TOON; '--schedule-preset lightweight' on a Meeting assigns no date so it never shows."
+type: Feature
+status: open
+priority: 2
+tags[1]: calendar
+created_at: "2026-05-27T18:24:07.684Z"
+updated_at: "2026-05-27T18:24:07.684Z"
+author: maintainer-agent
+parent: pm-th6y
+body: ""

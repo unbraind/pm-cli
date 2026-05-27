@@ -215,7 +215,10 @@ export function registerOperationCommands(program: Command): void {
     .option("--skip-integrity", "Skip item/history file integrity check for a faster run")
     .option("--skip-drift", "Skip history drift hash check for a faster run")
     .option("--full", "Run all checks including slow integrity, drift, and vectorization checks")
-    .option("--strict-exit", "Return non-zero exit when health warnings are present (ok=false)")
+    .option(
+      "--strict-exit",
+      "Return non-zero exit when health is not ok (advisory telemetry warnings are excluded; see warnings[])",
+    )
     .option("--fail-on-warn", "Alias for --strict-exit")
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);

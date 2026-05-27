@@ -1,0 +1,15 @@
+id: pm-4r5t
+title: "Cut list/search latency: skip 4.9MB cache rewrite + drop bodies + onRead short-circuit"
+description: "pm list=400ms, profile shows persistCache=26.5ms (rewrites 4.9MB metadata-cache.json every call even when unchanged), loadCache=23.6ms (4.9MB stores item bodies it does not need for list). Fix: only persist when entries changed; store metadata-only (no body) in the list cache; short-circuit runActiveOnReadHooks when no onRead hooks are registered (currently invoked 858x/call)."
+type: Feature
+status: closed
+priority: 2
+tags[2]: cache,perf
+created_at: "2026-05-27T16:47:45.411Z"
+updated_at: "2026-05-27T18:23:01.185Z"
+author: maintainer-agent
+parent: pm-th6y
+comments[1]{created_at,author,text}:
+  "2026-05-27T18:22:58.408Z",maintainer-agent,"Shipped in src/core/store/front-matter-cache.ts + item-store.ts: (1) split bodies into a separate metadata-cache-bodies.json so metadata-only callers (list/stats/deps/activity/calendar/close/test-all) no longer load body payloads; (2) skip rewriting either cache file when nothing changed (persistCache vanished from the CPU profile); (3) added hasActiveOnReadHooks() so the per-file onRead dispatch (858x/list) is skipped when no extension registers an onRead hook; (4) routed listAllFrontMatterWithBody through the cached candidate path and DELETED the dead non-cached listAllDocuments full re-scan. Measured (warm, 858 items): pm list 401ms -> 310ms (-23%). Atomic writes (writeFileAtomic) make the caches safe under concurrent agents. Tests: front-matter-cache + item-store specs green."
+close_reason: "Cut list/search latency ~23% via body-split metadata cache, skip-unchanged writes, onRead short-circuit, and cached with-body path (removed dead full-rescan)."
+body: ""

@@ -1,10 +1,21 @@
 # Changelog
 
+## 2026.05.27 - 2026-05-27
+
+### Other
+
+- Bump @unbrained/pm-cli SDK to \>=2026.5.24 ([pmc-cfhf](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-cfhf.toon))
+- Align CI+release workflows with peer pm-\* packages \(Node 22 + Bun\) ([pmc-078v](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-078v.toon))
+
 ## 2026.05.26 - 2026-05-25
 
 ### Fixed
 
 - Fix release tag date drift in changelog checks ([pmc-7dm6](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-7dm6.toon))
+
+### Other
+
+- Release readiness hardening for pm-changelog ([pmc-14cx](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-14cx.toon))
 
 ## 2026.05.25 - 2026-05-25
 

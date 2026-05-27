@@ -313,7 +313,8 @@ describe("runHealth", () => {
       );
 
       const health = await runHealth({ path: context.pmPath });
-      expect(health.ok).toBe(false);
+      // Telemetry warnings are advisory: surfaced but never flip overall health.
+      expect(health.ok).toBe(true);
       expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_queue_pending:1"]));
 
       const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
@@ -337,7 +338,8 @@ describe("runHealth", () => {
       globalThis.fetch = fetchMock as unknown as typeof fetch;
       try {
         const health = await runHealth({ path: context.pmPath }, { checkTelemetry: true });
-        expect(health.ok).toBe(false);
+        // Telemetry endpoint probe failures are advisory: surfaced but not blocking.
+        expect(health.ok).toBe(true);
         expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_endpoint_probe_http_status:503"]));
         expect(fetchMock).toHaveBeenCalledTimes(1);
 

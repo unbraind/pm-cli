@@ -1,0 +1,25 @@
+id: pm-gqx7
+title: Manual real-world E2E dogfood of full pm CLI surface (2026-05-27)
+description: ""
+type: Chore
+status: closed
+priority: 2
+tags[2]: dogfood,e2e
+created_at: "2026-05-27T17:23:26.197Z"
+updated_at: "2026-05-27T17:26:52.024Z"
+author: e2e-agent
+parent: pm-th6y
+comments[11]{created_at,author,text}:
+  "2026-05-27T17:23:53.886Z",e2e-agent,"E2E ran full surface in /tmp/pm-e2e-2026-05-27 (init/config/create all types incl custom Spike/plan/calendar/contracts/validate/guide/completion + mistake battery). pm 2026.5.24. Overall the never-block design holds well: cross-command flag hints, allowed-value lists, recovery bundles are excellent."
+  "2026-05-27T17:24:42.364Z",e2e-agent,"P1 FOOTGUN: 'pm create Epic' (single positional, forgot title) silently creates a Task titled 'Epic' (type ignored, defaults Task). Same for any bare type name. Never-block produces garbage items with no warning. Suggest: if the lone positional exactly matches a known type AND no --title given, either error with a hint or create that TYPE with an empty/placeholder title + warning."
+  "2026-05-27T17:24:44.116Z",e2e-agent,"P1 TOKEN-HEAVY: 'pm validate' on minimal-preset young project returns metadata=warn and dumps the SAME full 21-item-id list 7 times (acceptance_criteria/estimated_minutes/reviewer/risk/confidence/sprint/release missing). ~150 redundant lines. minimal preset should not warn on reviewer/risk/confidence/sprint/release, and per-field id lists should be deduped/summarized."
+  "2026-05-27T17:24:45.820Z",e2e-agent,"P2 MISLEADING ERROR: 'pm test --add \"npm test login\"' blocked as not sandbox-safe. Error says 'or explicitly set both PM_PATH and PM_GLOBAL_PATH' but EXPORTING them in shell does NOT work; the env must be INLINE in the linked command string (PM_PATH=.. PM_GLOBAL_PATH=.. npm test). Message should say 'prefix the command with inline PM_PATH=.. PM_GLOBAL_PATH=..' (src/cli/commands/test.ts:659)."
+  "2026-05-27T17:25:42.153Z",e2e-agent,"P2 VOCAB MISMATCH: dependency 'kind' differs across commands. 'pm plan' uses depends_on; 'pm update --dep kind=depends_on' REJECTS it (wants blocked_by/blocks/related/parent/child/...). Same concept, two vocabularies. Agents will guess wrong. Either accept depends_on as alias in update --dep or unify."
+  "2026-05-27T17:25:43.942Z",e2e-agent,"P3 CONFIG KEY NAME MISMATCH: pm init reports output_format: toon, but the config key is item_format/item-format. 'pm config get output_format' errors (valid: item-format). init output label should match the settable key name."
+  "2026-05-27T17:25:45.727Z",e2e-agent,"P3 NO SAME-COMMAND DID-YOU-MEAN: 'pm create --titel x' (1-char typo of --title) gives generic Unknown option + 'run --help'. Cross-command hints fire (e.g. --add belongs to comments), but a close Levenshtein typo of a SAME-command flag gets no 'did you mean --title?'. Adding it would fit the never-block goal (ref pm-8nyc work)."
+  "2026-05-27T17:26:19.066Z",e2e-agent,"P3 SEARCH OUTPUT DUP: 'pm search' echoes the projection field list TWICE (filters.fields AND projection.fields are identical arrays) plus a full filters block. Minor token bloat per search call."
+  "2026-05-27T17:26:20.855Z",e2e-agent,"P4 CALENDAR --format toon is misleading: 'pm calendar agenda --format toon' emits a SHORTER plain-markdown list, not structured TOON; default (no flag) gives richer markdown. Also Meeting created via --schedule-preset lightweight has no date so it never appears on calendar (silent). plan materialize --steps all also materializes already-completed steps into fresh open Tasks (status not carried)."
+  "2026-05-27T17:26:23.024Z",e2e-agent,"P4 'pm close --resolution' not accepted inline (must set via pm update first, then close) — known quirk but a friction point: the obvious agent call 'pm close <id> <reason> --resolution ...' errors. Cross-command hint is good though. Consider accepting --resolution on close as a convenience pass-through."
+  "2026-05-27T17:26:24.973Z",e2e-agent,"POSITIVES: positional create (pm create Task \"title\") + flag forms both work; --tag and --tags both accepted; pm context is excellent agent snapshot; plan family (steps/decision/validation/approve/materialize) clean with next_actions; calendar recurrence works; custom type via schema add-type works end-to-end; activity/stats/aggregate/health compact; error recovery bundles + allowed-value lists are top-tier. Exit codes correct (get bad id=3, unknown opt=2)."
+close_reason: "E2E dogfood complete: full CLI surface exercised in isolated /tmp store; 11 findings recorded as comments (2 P1, 3 P2/P3 schema/UX, several P4 polish, plus positives). No crashes; never-block design largely holds."
+body: ""

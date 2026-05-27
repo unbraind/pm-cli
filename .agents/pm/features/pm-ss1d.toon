@@ -1,0 +1,14 @@
+id: pm-ss1d
+title: Reduce ESM module-resolution startup overhead (~85ms) via core bundling
+description: "CPU profile of pm list shows ~85ms in Node ESM resolution/compilation (compileSourceTextModule, getPackageScopeConfig, realpathSync, defaultResolve, deserializePackageJSON) because dist is unbundled tsc output (~170 files). pm-gt82 explored esbuild bundling but it is NOT the shipped build. Evaluate shipping a bundled core entry (extensions still dynamically imported) to cut per-command + startup cost across the board. Investigate why pm-gt82 bundle did not ship."
+type: Feature
+status: open
+priority: 2
+tags[3]: build,perf,startup
+created_at: "2026-05-27T16:47:51.430Z"
+updated_at: "2026-05-27T18:24:03.615Z"
+author: maintainer-agent
+parent: pm-th6y
+comments[1]{created_at,author,text}:
+  "2026-05-27T18:24:03.615Z",maintainer-agent,"Evidence 2026-05-27: CPU profiles of 'pm get' (249ms) and 'pm list' (345ms) show the per-command cost is ~entirely Node ESM module resolution/compilation (compileSourceTextModule, getPackageScopeConfig, realpathSync, defaultResolve, deserializePackageJSON ~85-90ms) over ~170 unbundled tsc files — there is NO item-specific hot-path cost left in get. pm-gt82 mis-benchmarked the bundle on 'pm --version', which short-circuits in cli.ts BEFORE main.js loads, so the bundle looked slower; real commands (list/get/search/--help) would benefit. Correct approach: esbuild --bundle --splitting --format=esm --platform=node --packages=external (keep node_modules + dynamic extension import() external; --splitting preserves the 4 lazy register-* modules and per-command laziness). esbuild is NOT currently a devDependency. Compile cache (enableCompileCache) is already effective (~1.24x) and does NOT remove resolution cost. This is the single biggest remaining startup lever (~90ms on every command, ~185ms->~110ms startup). Deferred to its own focused PR with extension/MCP/version/sentry-sourcemap verification — too risky to bundle inside the perf+reliability PR."
+body: ""
