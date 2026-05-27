@@ -83,6 +83,23 @@ describe("core/history/drift-scan", () => {
     });
   });
 
+  it("invalidates a cached stream when ctime changes even if mtime and size do not", async () => {
+    await withTempPmPath(async (context) => {
+      const created = createTestItem(context, { title: "Ctime" });
+      const items = await listAllFrontMatterWithBody(context.pmPath);
+      await scanHistoryDrift(context.pmPath, items); // populate cache (records ctime)
+
+      // chmod updates the inode ctime without touching mtime or size, the exact
+      // case where an mtime/size-only key would wrongly trust a stale result.
+      const historyPath = getHistoryPath(context.pmPath, created.id);
+      await fs.chmod(historyPath, 0o600);
+      await fs.chmod(historyPath, 0o644);
+
+      const result = await scanHistoryDrift(context.pmPath, items);
+      expect(result.driftedItems).toEqual([]);
+    });
+  });
+
   it("ignores corrupt or version-mismatched cache files and rescans from scratch", async () => {
     await withTempPmPath(async (context) => {
       createTestItem(context, { title: "Delta" });

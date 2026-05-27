@@ -193,9 +193,12 @@ export async function listAllDocumentCandidatesCached(
             const itemFormat = getItemFormatFromPath(filePath) as ItemFormat;
 
             // Preserve onRead hook semantics even when served from cache, but only
-            // when an extension actually observes reads.
+            // when an extension actually observes reads. Surface hook warnings so
+            // read-hook failures are not silently hidden.
             if (dispatchReadHooks) {
-              await runActiveOnReadHooks({ path: filePath, scope: "project" });
+              for (const warning of await runActiveOnReadHooks({ path: filePath, scope: "project" })) {
+                appendWarning(warnings, warning);
+              }
             }
 
             const cachedEntry = previousEntries[relativePath];

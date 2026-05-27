@@ -19,6 +19,7 @@ const DRIFT_CACHE_FILENAME = "history-drift-cache.json";
 
 interface DriftCacheEntry {
   mtime_ms: number;
+  ctime_ms: number;
   size: number;
   latest_after_hash: string;
   chain_ok: boolean;
@@ -128,7 +129,7 @@ export async function scanHistoryDrift(
 
     const cached = previousEntries[item.id];
     let verification: StreamVerification;
-    if (cached && cached.mtime_ms === stat.mtimeMs && cached.size === stat.size) {
+    if (cached && cached.mtime_ms === stat.mtimeMs && cached.ctime_ms === stat.ctimeMs && cached.size === stat.size) {
       verification = { latestAfterHash: cached.latest_after_hash, chainOk: cached.chain_ok };
     } else {
       cacheDirty = true;
@@ -151,6 +152,7 @@ export async function scanHistoryDrift(
     }
     nextEntries[item.id] = {
       mtime_ms: stat.mtimeMs,
+      ctime_ms: stat.ctimeMs,
       size: stat.size,
       latest_after_hash: verification.latestAfterHash,
       chain_ok: verification.chainOk,
