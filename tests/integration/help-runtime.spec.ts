@@ -204,6 +204,45 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("auto-corrects a single-transposition flag typo (pm-fl0c #6)", async () => {
+    // pm-fl0c #6 (2026-05-28): the bootstrap argv normalizer now treats
+    // adjacent transpositions as distance 1 (OSA Damerau-Levenshtein), so
+    // `pm create --titel "x"` no longer errors with `Unknown option --titel`
+    // — the flag is silently rewritten to `--title` before commander parses.
+    await withTempPmPath(async (context) => {
+      const result = context.runCli(["create", "--titel", "Damerau transposition probe", "--type", "Task", "--json"], { expectJson: true });
+      expect(result.code).toBe(0);
+      const created = (result.json as { item: { title: string } }).item;
+      expect(created.title).toBe("Damerau transposition probe");
+    });
+  });
+
+  it("refuses pm create <type> with no title when the positional matches a known type (pm-edge #1)", async () => {
+    // pm-edge #1 (2026-05-28): when the sole positional matches a known item
+    // type AND no --title is provided, refuse with helpful guidance instead
+    // of silently creating a Task titled with the type name.
+    await withTempPmPath(async (context) => {
+      const result = context.runCli(["create", "Epic", "--json"]);
+      expect(result.code).toBe(2);
+      const envelope = parseJsonErrorEnvelope(result.stderr);
+      expect(envelope.code).toBe("create_positional_type_without_title");
+      expect(envelope.detail).toContain('"Epic" looks like an item type');
+      expect(envelope.examples).toEqual(
+        expect.arrayContaining([expect.stringContaining('pm create Epic "')]),
+      );
+    });
+  });
+
+  it("still creates a Task when the sole positional is plain text (pm-edge #1 regression guard)", async () => {
+    await withTempPmPath(async (context) => {
+      const result = context.runCli(["create", "Regular title with no type collision", "--json"], { expectJson: true });
+      expect(result.code).toBe(0);
+      const created = (result.json as { item: { title: string; type: string } }).item;
+      expect(created.title).toBe("Regular title with no type collision");
+      expect(created.type).toBe("Task");
+    });
+  });
+
   it("omits nearest-command suggestions for unrelated unknown commands", async () => {
     await withTempPmPath(async (context) => {
       const result = context.runCli(["xyz"]);

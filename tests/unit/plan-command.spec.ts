@@ -446,6 +446,87 @@ describe("runPlan command family", () => {
     });
   });
 
+  it("re-running materialize --steps all skips already-materialized steps (pm-fl0c #10)", async () => {
+    await withTempPmPath(async (context) => {
+      const { planId } = await bootstrapPlan(context);
+      await runPlan({
+        subcommand: "add-step",
+        id: planId,
+        options: { stepTitle: "idempotent step", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+
+      const first = await runPlan({
+        subcommand: "materialize",
+        id: planId,
+        options: { steps: "all", materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(first.materialized?.length).toBe(1);
+      const initialId = first.materialized?.[0]?.id;
+
+      await expect(
+        runPlan({
+          subcommand: "materialize",
+          id: planId,
+          options: { steps: "all", materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          global: { ...GLOBAL, path: context.pmPath },
+        }),
+      ).rejects.toMatchObject({
+        exitCode: 3,
+        message: expect.stringContaining("already materialized or completed"),
+      });
+      // Original linked Task still present; we did not create a duplicate.
+      const fresh = context.runCli(["list", "--type", "Task", "--json"], { expectJson: true });
+      const items = (fresh.json as { items: Array<{ id: string }> }).items.map((entry) => entry.id);
+      expect(items.filter((entryId) => entryId === initialId)).toHaveLength(1);
+    });
+  });
+
+  it("explicit --steps ref skip path returns materialize_skipped reasons (pm-fl0c #10)", async () => {
+    await withTempPmPath(async (context) => {
+      const { planId } = await bootstrapPlan(context);
+      await runPlan({
+        subcommand: "add-step",
+        id: planId,
+        options: { stepTitle: "first step", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      await runPlan({
+        subcommand: "add-step",
+        id: planId,
+        options: { stepTitle: "second step", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+
+      // Materialize step 1 explicitly.
+      const initial = await runPlan({
+        subcommand: "materialize",
+        id: planId,
+        options: { steps: "plan-step-001", materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(initial.materialized?.length).toBe(1);
+
+      // Re-target both explicitly; step 1 must be skipped and step 2 materialized.
+      const second = await runPlan({
+        subcommand: "materialize",
+        id: planId,
+        options: { steps: ["plan-step-001", "plan-step-002"], materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(second.materialized?.length).toBe(1);
+      expect(second.materialize_skipped).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ from_step: "plan-step-001", reason: "already_materialized" }),
+        ]),
+      );
+      expect(second.warnings).toEqual(
+        expect.arrayContaining([expect.stringContaining("plan_materialize_skipped:plan-step-001:already_materialized")]),
+      );
+    });
+  });
+
   it("rejects --steps all combined with other materialize refs", async () => {
     await withTempPmPath(async (context) => {
       const { planId } = await bootstrapPlan(context);

@@ -155,8 +155,13 @@ describe("extension command runtime", () => {
         capabilities: ["commands"],
       });
       const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
-      expect(entry).toContain("export function activate(api)");
-      expect(entry).toContain("export default");
+      // pm-fl0c B-1 (2026-05-28): scaffold now emits the documented
+      // `defineExtension({ activate(api) {...} })` shape (matches
+      // docs/EXTENSIONS.md + docs/examples/starter-extension/index.js) so the
+      // generated module gets full TS narrowing on `api`.
+      expect(entry).toContain('import { defineExtension } from "@unbrained/pm-cli/sdk"');
+      expect(entry).toContain("export default defineExtension({");
+      expect(entry).toContain("activate(api)");
       expect(entry).toContain('name: "starter-ext ping"');
 
       const rerun = await runExtension(scaffoldPath, { scaffold: true, project: true }, { path: context.pmPath });
@@ -209,7 +214,12 @@ describe("extension command runtime", () => {
         capabilities: ["commands"],
       });
       const entry = await readFile(path.join(scaffoldPath, "extensions", "starter-package", "index.js"), "utf8");
-      expect(entry).toContain("export function activate(api)");
+      // pm-fl0c B-1 (2026-05-28): package scaffold also uses defineExtension
+      // (the peerDependencies on @unbrained/pm-cli now serve the imported
+      // SDK type, not just a runtime guarantee).
+      expect(entry).toContain('import { defineExtension } from "@unbrained/pm-cli/sdk"');
+      expect(entry).toContain("export default defineExtension({");
+      expect(entry).toContain("activate(api)");
       expect(entry).toContain('name: "starter-package ping"');
 
       const install = await runExtension(scaffoldPath, { install: true, project: true }, { path: context.pmPath });

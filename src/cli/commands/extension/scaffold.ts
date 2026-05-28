@@ -35,23 +35,29 @@ export function buildStarterExtensionScaffoldFiles(
     null,
     2,
   )}\n`;
+  // pm-fl0c B-1 (2026-05-28): emit the documented `defineExtension({...})`
+  // shape so the generated module gets full TypeScript narrowing on the
+  // `activate(api)` signature (matches docs/EXTENSIONS.md, docs/SDK.md and
+  // docs/examples/starter-extension/index.js). The previous shape used a bare
+  // `export function activate(api)` + `export default { activate }` which
+  // worked but left the peerDependencies typing unused.
   const entrypoint = [
-    "export function activate(api) {",
-    "  api.registerCommand({",
-    `    name: ${JSON.stringify(commandName)},`,
-    '    description: "Starter scaffold command. Replace with your own behavior.",',
-    "    run: async (context) => ({",
-    "      ok: true,",
-    `      source: ${JSON.stringify(extensionName)},`,
-    "      command: context.command,",
-    '      message: "Starter extension scaffold is active.",',
-    "    }),",
-    "  });",
-    "}",
+    'import { defineExtension } from "@unbrained/pm-cli/sdk";',
     "",
-    "export default {",
-    "  activate,",
-    "};",
+    "export default defineExtension({",
+    "  activate(api) {",
+    "    api.registerCommand({",
+    `      name: ${JSON.stringify(commandName)},`,
+    '      description: "Starter scaffold command. Replace with your own behavior.",',
+    "      run: async (context) => ({",
+    "        ok: true,",
+    `        source: ${JSON.stringify(extensionName)},`,
+    "        command: context.command,",
+    '        message: "Starter extension scaffold is active.",',
+    "      }),",
+    "    });",
+    "  },",
+    "});",
     "",
   ].join("\n");
   if (vocabulary === "package") {

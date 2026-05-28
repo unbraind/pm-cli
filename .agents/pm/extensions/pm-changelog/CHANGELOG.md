@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.5.27-1 - 2026-05-27
+
+### Added
+
+- Add publish retry + provenance fallback to release workflow ([pmc-ermk](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-ermk.toon))
+
 ## 2026.05.27 - 2026-05-27
 
 ### Other

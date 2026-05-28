@@ -692,8 +692,10 @@ function buildMetadataCheck(
   }
 
   // Zero-suppress counts to reduce agent token cost (telemetry pm-tylj).
+  // Only emit counts for the ACTIVE required fields of the resolved profile so a
+  // looser profile (e.g. core) never reports missing reviewer/risk/sprint/etc.
   const counts: Record<string, number> = {};
-  for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
+  for (const field of metadataPolicy.required_fields) {
     const value = missingByField[field].length;
     if (value > 0) {
       counts[METADATA_COUNT_KEY_BY_FIELD[field]] = value;
@@ -712,8 +714,12 @@ function buildMetadataCheck(
     details.configured_custom_required_fields = [...metadataPolicy.configured_custom_fields];
   }
 
-  // Only emit per-field item_ids/truncated keys when there are missing items.
-  for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
+  // Only emit per-field item_ids/truncated keys for the ACTIVE required fields of
+  // the resolved profile (and only when there are missing items). This stops a
+  // looser profile (e.g. core) from emitting the identical full ID array for
+  // reviewer/risk/confidence/sprint/release that it does not even require
+  // (pm-edge #2 — ~150 redundant lines per validate run on minimal/core).
+  for (const field of metadataPolicy.required_fields) {
     if (missingByField[field].length === 0) {
       continue;
     }

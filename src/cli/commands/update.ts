@@ -792,6 +792,30 @@ function looksLikeStructuredDependencyEntry(raw: string): boolean {
   return /^(?:[-*+]\s+)?(?:id|kind|author|created_at|source_kind)\s*[:=]/i.test(raw);
 }
 
+// pm-fl0c #4 (2026-05-28): `pm plan` accepts `depends_on` as a link kind
+// (`PLAN_STEP_LINK_KIND_VALUES`) but `pm update --dep kind=depends_on` rejected
+// it because `DEPENDENCY_KIND_VALUES` only lists `blocked_by`. The two terms
+// are semantically identical from this side ("X depends on Y" === "X blocked
+// by Y"), so we normalize input here rather than expanding the persisted enum
+// — the stored kind stays canonical (`blocked_by`) and downstream consumers
+// (closing logic, dependency graphs, blockers views) keep working unchanged.
+const DEPENDENCY_KIND_INPUT_ALIASES: Readonly<Record<string, string>> = {
+  depends_on: "blocked_by",
+  "depends-on": "blocked_by",
+};
+
+function normalizeDependencyKindInput(raw: string | undefined): string | undefined {
+  if (typeof raw !== "string") {
+    return raw;
+  }
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    return raw;
+  }
+  const alias = DEPENDENCY_KIND_INPUT_ALIASES[trimmed.toLowerCase()];
+  return alias ?? trimmed;
+}
+
 function parseDependencyAdditions(raw: string[] | undefined, prefix: string, nowIso: string): ParsedDependencyUpdates {
   if (!raw) {
     return { additions: [] };
@@ -801,7 +825,7 @@ function parseDependencyAdditions(raw: string[] | undefined, prefix: string, now
     const trimmedEntry = entry.trim();
     const kv = looksLikeStructuredDependencyEntry(trimmedEntry) ? parseCsvKv(entry, "--dep") : { id: trimmedEntry, kind: "related" };
     const id = kv.id?.trim();
-    const kind = kv.kind?.trim();
+    const kind = normalizeDependencyKindInput(kv.kind?.trim());
     if (!id || !kind) {
       throw new PmCliError("--dep requires id and kind, or a bare item id to add a related dependency", EXIT_CODE.USAGE);
     }
@@ -842,7 +866,7 @@ function parseDependencyRemovals(raw: string[] | undefined, prefix: string): Dep
       if (idRaw.toLowerCase() === "undefined") {
         throw new PmCliError(`--dep-remove id must not use placeholder token "${idRaw}"`, EXIT_CODE.USAGE);
       }
-      const kindRaw = parseOptionalDependencyString(kv.kind);
+      const kindRaw = normalizeDependencyKindInput(parseOptionalDependencyString(kv.kind));
       const sourceKind = parseOptionalDependencyString(kv.source_kind);
       return {
         id: normalizeItemId(idRaw, prefix),

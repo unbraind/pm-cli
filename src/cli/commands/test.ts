@@ -656,7 +656,7 @@ function assertSandboxSafeTestRunnerCommand(command: string): void {
   }
 
   throw new PmCliError(
-    'Linked test runner commands must be sandbox-safe: use "node scripts/run-tests.mjs <test|coverage>" or explicitly set both PM_PATH and PM_GLOBAL_PATH.',
+    'Linked test runner commands must be sandbox-safe: use "node scripts/run-tests.mjs <test|coverage>" or include PM_PATH=... PM_GLOBAL_PATH=... INLINE in the command string (exporting them in your shell environment is not checked). Example: "PM_PATH=/tmp/pm-x PM_GLOBAL_PATH=/tmp/pm-x-g vitest run".',
     EXIT_CODE.USAGE,
   );
 }

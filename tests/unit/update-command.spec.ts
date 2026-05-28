@@ -1917,11 +1917,15 @@ describe("runUpdate", () => {
   it("lists allowed dependency kinds when dependency kind is invalid", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-invalid-dependency-kind");
+      // pm-fl0c #4 (2026-05-28): depends_on is now ACCEPTED as an input alias
+      // for blocked_by (pm plan vocab). Exercise a kind that is truly unknown
+      // ("totally-invalid") so the diagnostic listing all allowed kinds still
+      // surfaces.
       await expect(
         runUpdate(
           id,
           {
-            dep: ["id=dep-invalid,kind=depends_on"],
+            dep: ["id=dep-invalid,kind=totally-invalid"],
           },
           { path: context.pmPath },
         ),
@@ -1929,6 +1933,25 @@ describe("runUpdate", () => {
         exitCode: EXIT_CODE.USAGE,
         message: expect.stringContaining("Allowed:"),
       });
+    });
+  });
+
+  it("accepts depends_on as an input alias for blocked_by (pm-fl0c #4)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-depends-on-alias");
+      const result = await runUpdate(
+        id,
+        {
+          dep: ["id=pm-zzzz,kind=depends_on"],
+        },
+        { path: context.pmPath },
+      );
+      const dependencies = (result.item as { dependencies?: Array<{ kind: string; id: string }> }).dependencies ?? [];
+      expect(dependencies).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: "pm-zzzz", kind: "blocked_by" }),
+        ]),
+      );
     });
   });
 
