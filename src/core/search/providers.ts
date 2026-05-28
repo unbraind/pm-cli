@@ -73,17 +73,28 @@ function normalizeOpenAiEmbeddingsEndpoint(baseUrl: string): string {
   return `${normalizedBaseUrl}/v1/embeddings`;
 }
 
+function resolveSearchEmbeddingModelOverride(settings: ProviderSettingsInput): string | null {
+  // `settings.search.embedding_model` is documented as overriding the
+  // provider-specific model when set (see CONFIG_KEY_ALIASES for
+  // `search_embedding_model` in src/core/config/nested-settings.ts). Each
+  // provider resolver picks this up after its own model is read so the
+  // override applies to whichever built-in is selected.
+  const candidate = (settings as { search?: { embedding_model?: unknown } }).search?.embedding_model;
+  return toNonEmptyString(candidate) || null;
+}
+
 function resolveOpenAiProvider(settings: ProviderSettingsInput): EmbeddingProviderConfig | null {
   const baseUrl = toNonEmptyString(settings.providers?.openai?.base_url);
   const model = toNonEmptyString(settings.providers?.openai?.model);
   if (!baseUrl || !model) {
     return null;
   }
+  const override = resolveSearchEmbeddingModelOverride(settings);
   const apiKey = toNonEmptyString(settings.providers?.openai?.api_key);
   return {
     name: "openai",
     base_url: baseUrl,
-    model,
+    model: override ?? model,
     ...(apiKey ? { api_key: apiKey } : {}),
   };
 }
@@ -94,10 +105,11 @@ function resolveOllamaProvider(settings: ProviderSettingsInput): EmbeddingProvid
   if (!baseUrl || !model) {
     return null;
   }
+  const override = resolveSearchEmbeddingModelOverride(settings);
   return {
     name: "ollama",
     base_url: baseUrl,
-    model,
+    model: override ?? model,
   };
 }
 
@@ -171,8 +183,17 @@ export function resolveEmbeddingProviders(settings: PmSettings | ProviderSetting
   const openAi = resolveOpenAiProvider(settings);
   const ollama = resolveOllamaProvider(settings);
   const available = [openAi, ollama].filter((entry): entry is EmbeddingProviderConfig => entry !== null);
+  // Honor `settings.search.provider` when set: if both built-in providers are
+  // configured, the preferred name wins; otherwise fall back to the first
+  // available entry (preserves the previous tie-break: openai > ollama).
+  const preferredName = toNonEmptyString(
+    (settings as { search?: { provider?: unknown } }).search?.provider,
+  );
+  const preferred = preferredName
+    ? available.find((entry) => entry.name === preferredName)
+    : undefined;
   return {
-    active: available[0] ?? null,
+    active: preferred ?? available[0] ?? null,
     available,
   };
 }

@@ -97,8 +97,14 @@ function decodeValue(value: unknown, seen: WeakSet<object>): unknown {
     }
     seen.add(value as object);
     const source = value as Record<string, unknown>;
-    const result: Record<string, unknown> = {};
+    // Use a null-prototype record + skip the dangerous keys to defend against
+    // prototype pollution if an MCP caller smuggles `__proto__` / `constructor`
+    // / `prototype` as own keys.
+    const result: Record<string, unknown> = Object.create(null);
     for (const [key, entry] of Object.entries(source)) {
+      if (key === "__proto__" || key === "constructor" || key === "prototype") {
+        continue;
+      }
       result[key] = decodeValue(entry, seen);
     }
     return result;

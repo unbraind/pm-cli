@@ -11,8 +11,12 @@
  * - `path` is the dotted JSON path in {@link PmSettings} (e.g. `search.provider`).
  * - `kind` is the value shape: "string" | "integer" | "number" | "ratio"
  *   - "ratio" must be a finite number in [0, 1].
- *   - "integer" must be a finite non-negative integer.
- *   - "number" must be a finite number (may be 0 or positive).
+ *   - "integer" must be a finite non-negative integer. Set `min: 1` for keys
+ *     where the runtime silently falls back when 0 is supplied (e.g. batch
+ *     size, timeout, max-results limits).
+ *   - "number" must be a finite number — negatives ARE allowed (e.g. score
+ *     thresholds may legitimately be negative when a provider normalizes
+ *     scores into a signed range).
  *
  * Adding a key here makes it acceptable to `pm config <scope> set <key> <value>`
  * with no other code changes — the dispatcher walks the dotted path on the
@@ -30,6 +34,13 @@ export interface NestedSettingDescriptor {
   kind: NestedSettingKind;
   /** Short human-facing summary for `pm config list`. */
   summary: string;
+  /**
+   * Optional minimum value for `integer` / `number` kinds. When set,
+   * `parseNestedSettingValue` rejects values strictly below `min`. Useful for
+   * settings where 0 would be silently ignored by the runtime (batch sizes,
+   * timeouts, max-results limits).
+   */
+  min?: number;
 }
 
 /**
@@ -53,12 +64,14 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     key: "search_embedding_batch_size",
     path: "search.embedding_batch_size",
     kind: "integer",
+    min: 1,
     summary: "Number of items embedded per request batch.",
   },
   {
     key: "search_embedding_timeout_ms",
     path: "search.embedding_timeout_ms",
     kind: "integer",
+    min: 1,
     summary: "Per-request embedding timeout in milliseconds.",
   },
   {
@@ -77,6 +90,7 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     key: "search_max_results",
     path: "search.max_results",
     kind: "integer",
+    min: 1,
     summary: "Default upper bound on search hits when --limit is not supplied.",
   },
   {
@@ -216,6 +230,14 @@ export function parseNestedSettingValue(
         error: { message: `Config set ${descriptor.key} requires a non-negative integer, got "${rawValue}"` },
       };
     }
+    if (descriptor.min !== undefined && parsed < descriptor.min) {
+      return {
+        ok: false,
+        error: {
+          message: `Config set ${descriptor.key} requires an integer >= ${descriptor.min}, got "${rawValue}" (the runtime silently ignores 0 here and falls back to the default)`,
+        },
+      };
+    }
     return { ok: true, parsed: { descriptor, value: parsed } };
   }
   if (descriptor.kind === "ratio") {
@@ -227,7 +249,13 @@ export function parseNestedSettingValue(
     }
     return { ok: true, parsed: { descriptor, value: parsed } };
   }
-  // kind === "number"
+  // kind === "number" — negatives are allowed; only apply an explicit `min`.
+  if (descriptor.min !== undefined && parsed < descriptor.min) {
+    return {
+      ok: false,
+      error: { message: `Config set ${descriptor.key} requires a number >= ${descriptor.min}, got "${rawValue}"` },
+    };
+  }
   return { ok: true, parsed: { descriptor, value: parsed } };
 }
 

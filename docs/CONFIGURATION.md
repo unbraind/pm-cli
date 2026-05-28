@@ -157,7 +157,7 @@ pm config project set search_provider ollama
 **OpenAI**:
 
 ```bash
-pm config project set openai_api_key sk-...
+pm config project set openai_api_key '<OPENAI_API_KEY>'
 pm config project set openai_model text-embedding-3-small
 pm config project set search_provider openai
 ```

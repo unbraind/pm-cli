@@ -190,4 +190,20 @@ describe("decodeHtmlEntitiesInOptions", () => {
     const decoded = decodeHtmlEntitiesInOptions(bare);
     expect((decoded as { text: string }).text).toBe("decode <x>");
   });
+
+  it("does not allow __proto__ / constructor / prototype keys to pollute Object.prototype", () => {
+    // Defense in depth: an MCP caller could try to smuggle a __proto__ key
+    // through. The decoder must (a) not assign to Object.prototype and
+    // (b) silently drop these dangerous keys from the rebuilt record.
+    const polluting = JSON.parse(
+      '{"text": "decode &lt;me&gt;", "__proto__": {"polluted": "yes"}, "constructor": {"polluted": "yes"}, "prototype": {"polluted": "yes"}}',
+    ) as Record<string, unknown>;
+    const decoded = decodeHtmlEntitiesInOptions(polluting) as Record<string, unknown>;
+    expect(decoded.text).toBe("decode <me>");
+    expect(decoded.__proto__).toBeUndefined();
+    expect(decoded.constructor).toBeUndefined();
+    expect(decoded.prototype).toBeUndefined();
+    // Object.prototype.polluted should never have been set.
+    expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+  });
 });

@@ -1282,10 +1282,18 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   let hits = keywordHits;
   if (effectiveMode !== "keyword") {
     // Surface vector-index staleness once per query so agents notice when a
-    // refresh is overdue. Only emitted when the user explicitly asked for
-    // semantic/hybrid mode — implicit upgrades fall back silently to keyword
-    // on any failure path below, so we don't want to add noise there.
-    if (modeWasExplicit) {
+    // refresh is overdue. Only emitted when:
+    //   (1) the user explicitly asked for semantic/hybrid mode (implicit
+    //       upgrades fall back silently to keyword on any failure path below
+    //       and shouldn't carry noise), AND
+    //   (2) the BUILT-IN semantic path is what will run — an extension search
+    //       provider has its own indexing lifecycle and the local ledger we
+    //       read is irrelevant to it.
+    const builtInSemanticWillRun =
+      !extensionSearchProvider &&
+      providerResolution.active !== null &&
+      (vectorResolution.active !== null || extensionVectorAdapter !== null);
+    if (modeWasExplicit && builtInSemanticWillRun) {
       await maybeEmitVectorIndexStaleWarning(pmRoot, filteredDocuments, warnings);
     }
     try {

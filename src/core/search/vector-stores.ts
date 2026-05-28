@@ -475,8 +475,17 @@ export function resolveVectorStores(settings: PmSettings | VectorSettingsInput):
   const qdrant = resolveQdrantStore(settings);
   const lancedb = resolveLanceDbStore(settings);
   const available = [qdrant, lancedb].filter((entry): entry is VectorStoreConfig => entry !== null);
+  // Honor `settings.vector_store.adapter` when set: if both built-in stores
+  // are configured, the preferred adapter wins; otherwise fall back to the
+  // first available entry (preserves the previous tie-break: qdrant > lancedb).
+  const preferredName = toNonEmptyString(
+    (settings as { vector_store?: { adapter?: unknown } }).vector_store?.adapter,
+  );
+  const preferred = preferredName
+    ? available.find((entry) => entry.name === preferredName)
+    : undefined;
   return {
-    active: available[0] ?? null,
+    active: preferred ?? available[0] ?? null,
     available,
   };
 }

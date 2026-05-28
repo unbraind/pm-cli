@@ -58,10 +58,13 @@ describe("nested-settings helpers (pm-7ilo)", () => {
       expect(negative.ok).toBe(false);
     });
 
-    it("accepts zero and positive integers", () => {
-      const zero = parseNestedSettingValue(INTEGER_DESCRIPTOR, "0");
-      expect(zero.ok).toBe(true);
-      if (zero.ok) expect(zero.parsed.value).toBe(0);
+    it("accepts positive integers and the descriptor's minimum (when min is set)", () => {
+      // INTEGER_DESCRIPTOR is search_embedding_batch_size which carries min:1,
+      // so the smallest valid value is 1 (not 0 — see "rejects 0 for integers
+      // that have min:1" below).
+      const minimum = parseNestedSettingValue(INTEGER_DESCRIPTOR, "1");
+      expect(minimum.ok).toBe(true);
+      if (minimum.ok) expect(minimum.parsed.value).toBe(1);
       const positive = parseNestedSettingValue(INTEGER_DESCRIPTOR, "32");
       expect(positive.ok).toBe(true);
       if (positive.ok) expect(positive.parsed.value).toBe(32);
@@ -73,11 +76,36 @@ describe("nested-settings helpers (pm-7ilo)", () => {
       if (negative.ok) expect(negative.parsed.value).toBe(-0.25);
     });
 
+    it("applies `min` constraint to number kind when set (synthetic descriptor)", () => {
+      // None of the shipped number descriptors carry `min`, but the validator
+      // supports it so a future descriptor like `learning_rate` with min:0
+      // works. Exercise the branch with a synthetic descriptor.
+      const synthetic = { key: "test_num", path: "x.y", kind: "number" as const, summary: "test", min: 0 };
+      const accepted = parseNestedSettingValue(synthetic, "0.5");
+      expect(accepted.ok).toBe(true);
+      const rejected = parseNestedSettingValue(synthetic, "-0.1");
+      expect(rejected.ok).toBe(false);
+      if (!rejected.ok) expect(rejected.error.message).toContain(">= 0");
+    });
+
     it("rejects ratios outside [0, 1] on both ends", () => {
       const tooLow = parseNestedSettingValue(RATIO_DESCRIPTOR, "-0.1");
       expect(tooLow.ok).toBe(false);
       const tooHigh = parseNestedSettingValue(RATIO_DESCRIPTOR, "1.5");
       expect(tooHigh.ok).toBe(false);
+    });
+
+    it("rejects 0 for integers that have `min: 1` (silently-ignored runtime fallback footgun)", () => {
+      // search_max_results / embedding_batch_size / embedding_timeout_ms all
+      // carry min: 1 because the runtime falls back to the default when 0 is
+      // supplied. Reject explicitly so agents see the error instead of
+      // silently storing a useless value.
+      for (const key of ["search_max_results", "search_embedding_batch_size", "search_embedding_timeout_ms"]) {
+        const descriptor = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === key)!;
+        const result = parseNestedSettingValue(descriptor, "0");
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error.message).toContain(">= 1");
+      }
     });
 
     it("rejects empty / whitespace-only input for numeric kinds (Number('') === 0 footgun)", () => {
