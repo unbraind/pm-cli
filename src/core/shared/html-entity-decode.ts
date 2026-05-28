@@ -98,16 +98,20 @@ function decodeValue(value: unknown, seen: WeakSet<object>): unknown {
     seen.add(value as object);
     const source = value as Record<string, unknown>;
     // Preserve the original prototype so downstream callers can still rely on
-    // standard methods like `.hasOwnProperty` on plain objects. Combine with an
-    // explicit key skip-list for `__proto__` / `constructor` / `prototype` to
-    // defend against prototype pollution if an MCP caller smuggles those keys
-    // as own properties.
+    // standard methods like `.hasOwnProperty` on plain objects.
     const result: Record<string, unknown> = Object.create(Object.getPrototypeOf(value as object));
+    // Use Object.defineProperty (not bracket assignment) for ALL keys so a
+    // smuggled `__proto__` / `constructor` / `prototype` key from an MCP
+    // caller becomes a regular own property — never triggers JS's special
+    // prototype-chain assignment semantics that would otherwise pollute
+    // Object.prototype. This preserves legitimate data while staying safe.
     for (const [key, entry] of Object.entries(source)) {
-      if (key === "__proto__" || key === "constructor" || key === "prototype") {
-        continue;
-      }
-      result[key] = decodeValue(entry, seen);
+      Object.defineProperty(result, key, {
+        value: decodeValue(entry, seen),
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
     }
     return result;
   }

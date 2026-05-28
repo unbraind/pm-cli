@@ -193,23 +193,29 @@ describe("decodeHtmlEntitiesInOptions", () => {
 
   it("does not allow __proto__ / constructor / prototype keys to pollute Object.prototype", () => {
     // Defense in depth: an MCP caller could try to smuggle a __proto__ key
-    // through. The decoder must (a) not assign to Object.prototype and
-    // (b) silently drop these dangerous keys from the rebuilt record's OWN
-    // properties (the inherited prototype-chain values are unchanged).
+    // through. By using Object.defineProperty (instead of `result[key] = ...`)
+    // the decoder writes the value as a regular own property without
+    // triggering JS's special prototype-chain assignment semantics. The
+    // smuggled values are preserved (no silent data loss) but Object.prototype
+    // is unchanged — pollution defended in depth.
     const polluting = JSON.parse(
       '{"text": "decode &lt;me&gt;", "__proto__": {"polluted": "yes"}, "constructor": {"polluted": "yes"}, "prototype": {"polluted": "yes"}}',
     ) as Record<string, unknown>;
     const decoded = decodeHtmlEntitiesInOptions(polluting) as Record<string, unknown>;
     expect(decoded.text).toBe("decode <me>");
-    // None of the dangerous keys exist as OWN properties on the rebuilt record.
-    expect(Object.prototype.hasOwnProperty.call(decoded, "__proto__")).toBe(false);
-    expect(Object.prototype.hasOwnProperty.call(decoded, "constructor")).toBe(false);
-    expect(Object.prototype.hasOwnProperty.call(decoded, "prototype")).toBe(false);
-    // Object.prototype.polluted was never set (the smuggled `polluted` value
-    // didn't leak onto every object in the runtime).
+    // The smuggled keys ARE preserved as own properties — no silent data
+    // loss for legitimate use cases (a settings field literally named
+    // `constructor` works just like any other).
+    expect(Object.prototype.hasOwnProperty.call(decoded, "__proto__")).toBe(true);
+    expect(Object.prototype.hasOwnProperty.call(decoded, "constructor")).toBe(true);
+    expect(Object.prototype.hasOwnProperty.call(decoded, "prototype")).toBe(true);
+    // CRITICAL: Object.prototype.polluted was never set (the smuggled
+    // `polluted` value didn't leak onto every object in the runtime).
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
-    // The decoded record still has standard Object methods available
-    // (regression for the earlier Object.create(null) overreaction).
+    // Bonus: the actual prototype of `decoded` is still Object.prototype
+    // (so .hasOwnProperty etc. work) and was not replaced by the smuggled
+    // `{polluted: "yes"}` object.
+    expect(Object.getPrototypeOf(decoded)).toBe(Object.prototype);
     expect(typeof decoded.hasOwnProperty).toBe("function");
   });
 });
