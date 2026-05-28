@@ -157,10 +157,13 @@ pm config project set search_provider ollama
 **OpenAI**:
 
 ```bash
+pm config project set openai_base_url https://api.openai.com/v1
 pm config project set openai_api_key '<OPENAI_API_KEY>'
 pm config project set openai_model text-embedding-3-small
 pm config project set search_provider openai
 ```
+
+The base URL defaults to empty, so it must be set explicitly even for the canonical OpenAI endpoint.
 
 **LM Studio (OpenAI-compatible)** — point pm at LM Studio's local OpenAI-compatible endpoint:
 
@@ -189,7 +192,7 @@ pm config project set lancedb_path .agents/pm/search/lancedb
 # or, with Qdrant:
 pm config project set vector_store_adapter qdrant
 pm config project set qdrant_url http://localhost:6333
-pm config project set qdrant_api_key <key-if-required>
+pm config project set qdrant_api_key '<QDRANT_API_KEY>'   # omit on unauthenticated dev servers
 ```
 
 After changing any of these, run `pm reindex --mode hybrid` so the vector index reflects the new provider/store. `pm search ... --mode semantic|hybrid` emits a `vector_index_stale` warning when items have been modified since the last reindex.

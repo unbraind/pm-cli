@@ -64,6 +64,16 @@ describe("resolveEmbeddingProviders honors settings.search.provider", () => {
     const resolution = resolveEmbeddingProviders({ ...bothConfigured, search: { embedding_model: "" } });
     expect(resolution.active?.model).toBe("text-embedding-3-small");
   });
+
+  it("matches the preferred provider name case-insensitively", () => {
+    for (const variant of ["Ollama", "OLLAMA", "oLlAmA"]) {
+      const resolution = resolveEmbeddingProviders({
+        ...bothConfigured,
+        search: { provider: variant },
+      });
+      expect(resolution.active?.name).toBe("ollama");
+    }
+  });
 });
 
 describe("resolveVectorStores honors settings.vector_store.adapter", () => {
@@ -101,5 +111,15 @@ describe("resolveVectorStores honors settings.vector_store.adapter", () => {
       vector_store: { ...bothConfigured.vector_store, adapter: "an-extension-adapter" },
     });
     expect(resolution.active?.name).toBe("qdrant");
+  });
+
+  it("matches the preferred adapter name case-insensitively", () => {
+    for (const variant of ["LanceDB", "LANCEDB", "LaNcEdB"]) {
+      const resolution = resolveVectorStores({
+        ...bothConfigured,
+        vector_store: { ...bothConfigured.vector_store, adapter: variant },
+      });
+      expect(resolution.active?.name).toBe("lancedb");
+    }
   });
 });

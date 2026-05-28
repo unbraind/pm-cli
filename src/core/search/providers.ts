@@ -186,11 +186,13 @@ export function resolveEmbeddingProviders(settings: PmSettings | ProviderSetting
   // Honor `settings.search.provider` when set: if both built-in providers are
   // configured, the preferred name wins; otherwise fall back to the first
   // available entry (preserves the previous tie-break: openai > ollama).
+  // Match case-insensitively so "OpenAI" / "Ollama" / "OLLAMA" all work.
   const preferredName = toNonEmptyString(
     (settings as { search?: { provider?: unknown } }).search?.provider,
   );
-  const preferred = preferredName
-    ? available.find((entry) => entry.name === preferredName)
+  const preferredKey = preferredName ? preferredName.toLowerCase() : null;
+  const preferred = preferredKey
+    ? available.find((entry) => entry.name === preferredKey)
     : undefined;
   return {
     active: preferred ?? available[0] ?? null,
