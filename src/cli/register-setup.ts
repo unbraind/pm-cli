@@ -387,6 +387,10 @@ export function registerSetupCommands(program: Command): void {
       "--policy <value>",
       "Policy key values: history-missing-stream-policy=auto_create|strict_error; sprint-release-format-policy=warn|strict_error; parent-reference-policy=warn|strict_error; governance-preset=minimal|default|strict|custom; governance-ownership-enforcement=none|warn|strict; governance-create-mode-default=progressive|strict; governance-close-validation-default=off|warn|strict; governance-parent-reference-policy=warn|strict_error; governance-metadata-validation-profile=core|strict|custom; governance-force-required-for-stale-lock=enabled|disabled; test-result-tracking=enabled|disabled; telemetry-tracking=enabled|disabled",
     )
+    .option(
+      "--value <value>",
+      "Value for nested leaf settings keys (search_provider, openai_base_url, ollama_model, vector_store_adapter, qdrant_url, lancedb_path, etc.). Equivalent to the positional value.",
+    )
     .option("--default-depth <value>", "Context default depth: brief|standard|deep")
     .option("--activity-limit <n>", "Context default activity limit")
     .option("--stale-threshold-days <n>", "Context staleness cutoff in days")
@@ -420,6 +424,7 @@ export function registerSetupCommands(program: Command): void {
           criterion: criteria,
           format: typeof options.format === "string" ? options.format : undefined,
           policy: typeof options.policy === "string" ? options.policy : undefined,
+          value: typeof options.value === "string" ? options.value : undefined,
           clearCriteria: options.clearCriteria === true,
           defaultDepth: typeof options.defaultDepth === "string" ? options.defaultDepth : undefined,
           activityLimit: typeof options.activityLimit === "string" ? options.activityLimit : undefined,

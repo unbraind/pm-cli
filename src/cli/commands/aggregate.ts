@@ -1,6 +1,7 @@
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { splitCommaList } from "../../core/shared/split-comma-list.js";
 import { nowIso } from "../../core/shared/time.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
@@ -103,7 +104,7 @@ function parseGroupBy(raw: string | undefined): AggregateGroupField[] {
   if (value.length === 0) {
     throw new PmCliError("--group-by requires at least one field name", EXIT_CODE.USAGE);
   }
-  const requested = [...new Set(value.split(",").map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
+  const requested = splitCommaList(value);
   if (requested.length === 0) {
     throw new PmCliError("--group-by requires a comma-separated list of fields", EXIT_CODE.USAGE);
   }

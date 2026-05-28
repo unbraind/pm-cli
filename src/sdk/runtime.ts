@@ -54,6 +54,7 @@ export { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../
 export { readSettings } from "../core/store/settings.js";
 export {
   renderCalendarMarkdown,
+  renderCalendarToon,
   resolveCalendarOutputFormat,
   runCalendar,
   type CalendarOptions,

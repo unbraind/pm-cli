@@ -48,14 +48,14 @@ export interface HelpSubcommandSummary {
   description: string;
 }
 
-export function resolveCommandFromPathTokens(root: Command, pathTokens: string[]): Command | null {
+function resolveCommandFromPathTokens(root: Command, pathTokens: string[]): Command | null {
   if (pathTokens.length === 0) {
     return root;
   }
   return findCommandByPath(root, pathTokens);
 }
 
-export function extractOptionValueName(flags: string): string | null {
+function extractOptionValueName(flags: string): string | null {
   const match = flags.match(/[<[]([^>\]]+)[>\]]/);
   if (!match) {
     return null;
@@ -64,7 +64,7 @@ export function extractOptionValueName(flags: string): string | null {
   return value && value.length > 0 ? value : null;
 }
 
-export function readOptionAttributeName(option: unknown): string | null {
+function readOptionAttributeName(option: unknown): string | null {
   const optionRecord = option as {
     attributeName?: (() => string) | string;
   };
@@ -78,7 +78,7 @@ export function readOptionAttributeName(option: unknown): string | null {
   return null;
 }
 
-export function buildOptionAliasMap(options: unknown[]): Map<string, string[]> {
+function buildOptionAliasMap(options: unknown[]): Map<string, string[]> {
   const aliasMap = new Map<string, string[]>();
   for (const option of options) {
     const optionRecord = option as {
@@ -107,7 +107,7 @@ function renderAttemptedCommand(argv: string[]): string {
   return renderPmCommand(argv);
 }
 
-export function buildHelpOptionSummaries(command: Command): HelpOptionSummary[] {
+function buildHelpOptionSummaries(command: Command): HelpOptionSummary[] {
   const options = (command.options ?? []) as unknown[];
   const optionAliasMap = buildOptionAliasMap(options);
   return options.map((option) => {
@@ -154,7 +154,7 @@ export function buildHelpOptionSummaries(command: Command): HelpOptionSummary[] 
   });
 }
 
-export function compactHelpOptionAliases(options: HelpOptionSummary[]): HelpOptionSummary[] {
+function compactHelpOptionAliases(options: HelpOptionSummary[]): HelpOptionSummary[] {
   const canonicalByLong = new Map<string, HelpOptionSummary>();
   const aliasOptions: HelpOptionSummary[] = [];
   for (const option of options) {
@@ -185,7 +185,7 @@ export function compactHelpOptionAliases(options: HelpOptionSummary[]): HelpOpti
   });
 }
 
-export function buildHelpArgumentSummaries(command: Command): HelpArgumentSummary[] {
+function buildHelpArgumentSummaries(command: Command): HelpArgumentSummary[] {
   const commandRecord = command as unknown as {
     registeredArguments?: Array<{
       name?: (() => string) | string;
@@ -225,7 +225,7 @@ export function buildHelpArgumentSummaries(command: Command): HelpArgumentSummar
   });
 }
 
-export function buildHelpSubcommandSummaries(command: Command): HelpSubcommandSummary[] {
+function buildHelpSubcommandSummaries(command: Command): HelpSubcommandSummary[] {
   return command.commands
     .map((entry) => ({
       name: entry.name().trim(),
@@ -235,7 +235,7 @@ export function buildHelpSubcommandSummaries(command: Command): HelpSubcommandSu
     .sort((left, right) => left.name.localeCompare(right.name));
 }
 
-export function buildJsonHelpPayload(
+function buildJsonHelpPayload(
   rootProgram: Command,
   targetCommand: Command,
   argv: string[],
@@ -337,7 +337,7 @@ export async function maybeRenderBootstrapJsonHelp(
   return true;
 }
 
-export function buildCreateUpdatePolicyHelpText(
+function buildCreateUpdatePolicyHelpText(
   commandName: "create" | "update",
   typeRegistry: ReturnType<typeof resolveItemTypeRegistry>,
   argv: string[],

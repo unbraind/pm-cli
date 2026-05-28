@@ -68,6 +68,40 @@ describe("resolvePriority", () => {
     }
   });
 
+  it("accepts native numbers 0..4 from MCP / JSON callers", () => {
+    for (let priority = 0; priority <= 4; priority += 1) {
+      expect(resolvePriority(priority)).toBe(priority);
+    }
+  });
+
+  it("rejects non-integer and out-of-range native numbers", () => {
+    for (const raw of [5, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      let caught: unknown;
+      try {
+        resolvePriority(raw);
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(PmCliError);
+      const err = caught as PmCliError;
+      expect(err.exitCode).toBe(EXIT_CODE.USAGE);
+      expect(err.message).toContain("numbers 0..4");
+    }
+  });
+
+  it("rejects non-string, non-number inputs (defense in depth)", () => {
+    for (const raw of [null, undefined, {}, [], true]) {
+      let caught: unknown;
+      try {
+        resolvePriority(raw as never);
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(PmCliError);
+      expect((caught as PmCliError).exitCode).toBe(EXIT_CODE.USAGE);
+    }
+  });
+
   it("exposes the canonical name->value mapping and accepted-forms hint", () => {
     expect(PRIORITY_NAME_TO_VALUE).toEqual({
       critical: 0,

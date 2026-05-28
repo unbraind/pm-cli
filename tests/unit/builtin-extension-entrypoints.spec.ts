@@ -106,8 +106,14 @@ export function renderCalendarMarkdown() {
   return "# package calendar";
 }
 
+export function renderCalendarToon() {
+  return "view: package calendar\\n";
+}
+
 export function resolveCalendarOutputFormat(options) {
-  return options?.format === "json" ? "json" : "markdown";
+  if (options?.format === "json") return "json";
+  if (options?.format === "toon") return "toon";
+  return "markdown";
 }
 `,
     "utf8",

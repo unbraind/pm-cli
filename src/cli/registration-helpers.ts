@@ -114,7 +114,7 @@ export function collect(value: string, previous: string[] | undefined): string[]
   return next;
 }
 
-export function pushOptionalValueFlag(args: string[], flag: string, value: unknown): void {
+function pushOptionalValueFlag(args: string[], flag: string, value: unknown): void {
   if (typeof value !== "string") {
     return;
   }
@@ -125,13 +125,13 @@ export function pushOptionalValueFlag(args: string[], flag: string, value: unkno
   args.push(flag, trimmed);
 }
 
-export function pushOptionalBooleanFlag(args: string[], flag: string, value: unknown): void {
+function pushOptionalBooleanFlag(args: string[], flag: string, value: unknown): void {
   if (value === true) {
     args.push(flag);
   }
 }
 
-export function pushRepeatableValueFlag(args: string[], flag: string, values: unknown): void {
+function pushRepeatableValueFlag(args: string[], flag: string, values: unknown): void {
   if (!Array.isArray(values)) {
     return;
   }
@@ -402,7 +402,7 @@ export function normalizeUpdateOptions(commandOptions: Record<string, unknown>):
   return normalized;
 }
 
-export const UPDATE_MANY_CONTROL_OPTION_KEYS = new Set<string>([
+const UPDATE_MANY_CONTROL_OPTION_KEYS = new Set<string>([
   "filterStatus",
   "filterType",
   "filterTag",
@@ -494,7 +494,7 @@ export function normalizeAggregateOptions(options: Record<string, unknown>): Agg
   };
 }
 
-export type ListCommandResult = Awaited<ReturnType<typeof runList>>;
+type ListCommandResult = Awaited<ReturnType<typeof runList>>;
 
 export function printListJsonStream(commandName: string, result: ListCommandResult, globalOptions: GlobalOptions): void {
   setActiveCommandResult(result);
@@ -523,7 +523,7 @@ export function printListJsonStream(commandName: string, result: ListCommandResu
   writeStdout(`${JSON.stringify({ type: "end", command: commandName, count: result.count })}\n`);
 }
 
-export type ActivityCommandResult = Awaited<ReturnType<typeof runActivity>>;
+type ActivityCommandResult = Awaited<ReturnType<typeof runActivity>>;
 
 export function printActivityJsonStream(
   result: ActivityCommandResult,

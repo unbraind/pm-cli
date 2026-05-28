@@ -8,6 +8,7 @@ const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 interface CalendarCoreModule {
   runCalendar: (options: CalendarOptions, global: GlobalOptions) => Promise<CalendarResult>;
   renderCalendarMarkdown: (result: CalendarResult) => string;
+  renderCalendarToon: (result: CalendarResult) => string;
   resolveCalendarOutputFormat: (options: CalendarOptions, global: GlobalOptions) => "markdown" | "toon" | "json";
 }
 
@@ -38,6 +39,7 @@ async function loadCalendarCoreModule(): Promise<CalendarCoreModule> {
     if (
       typeof loaded.runCalendar === "function" &&
       typeof loaded.renderCalendarMarkdown === "function" &&
+      typeof loaded.renderCalendarToon === "function" &&
       typeof loaded.resolveCalendarOutputFormat === "function"
     ) {
       return loaded as CalendarCoreModule;
@@ -119,6 +121,10 @@ export function renderCalendarPackageOutput(context: ServiceOverrideContext): st
   }
   if (outputFormat === "json" || readPayloadFormat(context.payload) === "json") {
     return `${JSON.stringify(result, null, 2)}\n`;
+  }
+  if (outputFormat === "toon") {
+    const rendered = calendarCore.renderCalendarToon(result);
+    return rendered.endsWith("\n") ? rendered : `${rendered}\n`;
   }
   return null;
 }

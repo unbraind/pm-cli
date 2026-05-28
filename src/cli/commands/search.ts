@@ -23,7 +23,9 @@ import {
   type VectorStoreConfig,
   type VectorStoreResolution,
 } from "../../core/search/vector-stores.js";
+import { readVectorizationStatusLedger } from "../../core/search/cache.js";
 import { buildEventCorpus, buildPlanFlatCorpus, buildReminderCorpus } from "../../core/search/corpus.js";
+import { collectStaleVectorizationIds } from "../../core/search/staleness.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { toItemRecord } from "../../core/item/item-record.js";
@@ -242,6 +244,42 @@ function buildImplicitSemanticFallbackWarning(error: unknown): string {
 function buildExplicitSemanticFallbackWarning(requestedMode: SearchMode, error: unknown): string {
   const reason = classifyImplicitSemanticFallbackReason(error);
   return `search_${requestedMode}_fallback:${reason}:using_keyword_mode`;
+}
+
+/**
+ * Compare the vectorization-status ledger against the filtered corpus and, when
+ * the vector index is behind, emit a one-line stderr warning plus a structured
+ * `vector_index_stale:N` entry in the JSON warnings array. Best-effort: ledger
+ * read failures fall through silently — the existing semantic/hybrid fallback
+ * paths cover backend errors.
+ */
+async function maybeEmitVectorIndexStaleWarning(
+  pmRoot: string,
+  filteredDocuments: ItemDocument[],
+  warnings: string[],
+): Promise<void> {
+  try {
+    const ledger = await readVectorizationStatusLedger(pmRoot);
+    if (ledger.warnings.length > 0) {
+      warnings.push(...ledger.warnings);
+    }
+    const staleIds = collectStaleVectorizationIds(
+      filteredDocuments.map((document) => ({
+        id: document.metadata.id,
+        updated_at: document.metadata.updated_at,
+      })),
+      ledger.entries,
+    );
+    if (staleIds.length === 0) {
+      return;
+    }
+    warnings.push(`vector_index_stale:${staleIds.length}`);
+    process.stderr.write(
+      `[pm] warning: vector index has ${staleIds.length} stale item${staleIds.length === 1 ? "" : "s"}; run 'pm reindex --mode hybrid' to refresh.\n`,
+    );
+  } catch {
+    // Best-effort: missing/unreadable ledger is not a query-blocking concern.
+  }
 }
 
 function parseMode(raw: string | undefined, _context: SearchModeContext): SearchMode {
@@ -1243,6 +1281,21 @@ export async function runSearch(query: string, options: SearchOptions, global: G
 
   let hits = keywordHits;
   if (effectiveMode !== "keyword") {
+    // Surface vector-index staleness once per query so agents notice when a
+    // refresh is overdue. Only emitted when:
+    //   (1) the user explicitly asked for semantic/hybrid mode (implicit
+    //       upgrades fall back silently to keyword on any failure path below
+    //       and shouldn't carry noise), AND
+    //   (2) the BUILT-IN semantic path is what will run — an extension search
+    //       provider has its own indexing lifecycle and the local ledger we
+    //       read is irrelevant to it.
+    const builtInSemanticWillRun =
+      !extensionSearchProvider &&
+      providerResolution.active !== null &&
+      (vectorResolution.active !== null || extensionVectorAdapter !== null);
+    if (modeWasExplicit && builtInSemanticWillRun) {
+      await maybeEmitVectorIndexStaleWarning(pmRoot, filteredDocuments, warnings);
+    }
     try {
       if (!extensionSearchProvider) {
         requireSemanticDependencies(effectiveMode, providerResolution, vectorResolution, extensionVectorAdapter !== null);

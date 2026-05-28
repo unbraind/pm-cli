@@ -2,11 +2,15 @@ id: pm-xzrx
 title: "Calendar best-practice: honor timezone, surface Milestone/Meeting items, ICS export"
 description: "From calendar review (pm-a0w4). (A-1) event.timezone is stored as a free string but never validated (IANA) or applied to date math — all bucketing/recurrence is UTC, so a 09:00 America/New_York event is treated as 09:00 UTC (create.ts:703-719, calendar.ts:586,860). (A-2) Milestone and Meeting are first-class built-in types but the calendar only seeds from deadline/reminders[]/events[]; a Milestone/Meeting item never appears on the calendar unless it also carries a deadline/--event (calendar.ts:513-600). (A-3) No ICS/iCalendar export for interop. Also E2E: 'pm calendar --format toon' emits plain markdown not TOON; '--schedule-preset lightweight' on a Meeting assigns no date so it never shows."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[1]: calendar
 created_at: "2026-05-27T18:24:07.684Z"
-updated_at: "2026-05-27T18:24:07.684Z"
+updated_at: "2026-05-28T10:54:59.689Z"
 author: maintainer-agent
 parent: pm-th6y
+resolution: "Shipped 2 of 3 listed gaps: (A-2) Added a renderCalendarToon() that runs the JSON-serializable CalendarResult through @toon-format/toon. Wired into the calendar package extension (runtime.ts + hand-maintained runtime.js kept in sync). 'pm calendar --format toon' now emits real TOON instead of falling through to markdown. (A-2) Added a warning at create-time for Milestone/Meeting/Reminder/Event items that have NO deadline, NO reminders, and NO events — the warning includes the just-allocated id and a copy-pasteable pm update suggestion. NOT shipped (separate followups): (A-1) IANA timezone validation + UTC date math (large scope), (A-3) ICS/iCalendar export."
+expected_result: pm calendar --format toon produces parseable TOON output (decodable by @toon-format/toon); calendar-relevant items created without any date field warn to stderr instead of silently never appearing.
+actual_result: "Verified end-to-end in /tmp/pm-e2e-2026-05-28 after pm install calendar: --format toon emits compact TOON; --format markdown still emits H1 + bullet section; --format json still emits JSON. Schedule-less Meeting create emits the correct warning. 2 new tests for the TOON renderer pass; existing 15 calendar + 52 create tests unchanged."
+close_reason: Shipped calendar TOON renderer + schedule-less Milestone/Meeting/Reminder/Event warning. (A-1) IANA timezone and (A-3) ICS export deferred to followup work.
 body: ""

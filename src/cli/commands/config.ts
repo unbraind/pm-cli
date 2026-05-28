@@ -1,5 +1,13 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { resolveConfigPositionalValue } from "../../core/config/positional-value.js";
+import {
+  NESTED_SETTING_DESCRIPTORS,
+  parseNestedSettingValue,
+  readNestedSettingValue,
+  resolveNestedSettingDescriptor,
+  writeNestedSettingValue,
+  type NestedSettingDescriptor,
+} from "../../core/config/nested-settings.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { normalizeParentReferencePolicy } from "../../core/item/parent-reference-policy.js";
 import { normalizeSprintReleaseFormatPolicy } from "../../core/item/sprint-release-format.js";
@@ -137,6 +145,7 @@ export interface ConfigCommandOptions {
   criterion?: string[];
   format?: string;
   policy?: string;
+  value?: string;
   clearCriteria?: boolean;
   defaultDepth?: string;
   activityLimit?: string;
@@ -151,9 +160,16 @@ export interface ConfigCommandOptions {
   sectionTests?: string;
 }
 
+export interface NestedSettingResultValue {
+  key: string;
+  path: string;
+  kind: NestedSettingDescriptor["kind"];
+  value: string | number | null;
+}
+
 export interface ConfigResult {
   scope: ConfigScope;
-  key?: ConfigKey;
+  key?: ConfigKey | string;
   criteria?: string[];
   format?: ItemFormat;
   policy?:
@@ -168,6 +184,8 @@ export interface ConfigResult {
     | GovernanceForceRequiredForStaleLockPolicy
     | TestResultTrackingPolicy
     | TelemetryTrackingPolicy;
+  nested_setting?: NestedSettingResultValue;
+  nested_settings?: NestedSettingResultValue[];
   keys?: ConfigKeyDescriptor[];
   values?: Record<ConfigKey, ConfigValue>;
   count?: number;
@@ -375,8 +393,9 @@ function normalizeKey(value: string): ConfigKey {
     }
     return "definition_of_done";
   }
+  const nestedKeys = NESTED_SETTING_DESCRIPTORS.map((descriptor) => descriptor.key).join(", ");
   throw new PmCliError(
-    `Invalid config key "${value}". Supported: ${CANONICAL_CONFIG_KEYS.join(", ")} (underscore variants also accepted)`,
+    `Invalid config key "${value}". Supported: ${CANONICAL_CONFIG_KEYS.join(", ")} (underscore variants also accepted). Nested leaf settings: ${nestedKeys}.`,
     EXIT_CODE.USAGE,
   );
 }
@@ -882,6 +901,7 @@ function applyPositionalValue(
   action: ConfigAction,
   keyValue: string | undefined,
   normalizedKey: ConfigKey | undefined,
+  nestedSetting: NestedSettingDescriptor | undefined,
   valueValue: string | undefined,
   options: ConfigCommandOptions,
 ): ConfigCommandOptions {
@@ -896,6 +916,17 @@ function applyPositionalValue(
   }
   if (typeof keyValue !== "string" || keyValue.trim().length === 0) {
     throw new PmCliError('Config action "set" requires <key> before a positional <value>.', EXIT_CODE.USAGE);
+  }
+
+  if (nestedSetting) {
+    if (options.value !== undefined && valueValue !== undefined && options.value !== valueValue) {
+      throw new PmCliError(
+        `Config set ${keyValue} received both positional value "${valueValue}" and --value "${options.value}". Pass only one.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    // Pick whichever was supplied; do not overwrite a present --value with undefined.
+    return { ...options, value: valueValue ?? options.value };
   }
 
   const routed = resolveConfigPositionalValue(normalizedKey ?? keyValue, valueValue);
@@ -950,11 +981,72 @@ export async function runConfig(
 ): Promise<ConfigResult> {
   const scope = normalizeScope(scopeValue);
   const action = normalizeAction(actionValue);
-  const key = normalizeKeyForAction(action, keyValue);
-  options = applyPositionalValue(action, keyValue, key, valueValue, options);
+  // Nested leaf settings (search/provider/vector-store) are detected before
+  // normalizeKey so they bypass the ConfigKey union without breaking the
+  // existing key-not-found error path for actually-unknown keys.
+  const nestedSetting =
+    (action === "get" || action === "set") ? resolveNestedSettingDescriptor(keyValue) : undefined;
+  const key = nestedSetting ? undefined : normalizeKeyForAction(action, keyValue);
+  options = applyPositionalValue(action, keyValue, key, nestedSetting, valueValue, options);
   const target = await resolveSettingsTarget(scope, global);
   const { settings, metadata, warnings: settingsReadWarnings } = await readSettingsWithMetadata(target.pmRoot);
   const warnings = normalizeWarnings(settingsReadWarnings);
+
+  if (nestedSetting) {
+    if (action === "get") {
+      const currentValue = readNestedSettingValue(settings, nestedSetting);
+      return withWarnings(
+        {
+          scope,
+          key: nestedSetting.key,
+          nested_setting: {
+            key: nestedSetting.key,
+            path: nestedSetting.path,
+            kind: nestedSetting.kind,
+            value: currentValue,
+          },
+          settings_path: target.settingsPath,
+          changed: false,
+        },
+        warnings,
+      );
+    }
+    // action === "set"
+    const rawValue = options.value;
+    if (typeof rawValue !== "string") {
+      throw new PmCliError(
+        `Config set ${nestedSetting.key} requires a value. Pass it positionally (\`pm config ${scope} set ${nestedSetting.key} <value>\`) or via --value.`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    const parsed = parseNestedSettingValue(nestedSetting, rawValue);
+    if (!parsed.ok) {
+      throw new PmCliError(parsed.error.message, EXIT_CODE.USAGE);
+    }
+    const changed = writeNestedSettingValue(
+      settings as unknown as Record<string, unknown>,
+      nestedSetting,
+      parsed.parsed.value,
+    );
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, `config:set:${nestedSetting.path}`);
+    }
+    return withWarnings(
+      {
+        scope,
+        key: nestedSetting.key,
+        nested_setting: {
+          key: nestedSetting.key,
+          path: nestedSetting.path,
+          kind: nestedSetting.kind,
+          value: parsed.parsed.value,
+        },
+        settings_path: target.settingsPath,
+        changed,
+      },
+      warnings,
+    );
+  }
 
   if (action === "list") {
     const keys = (Object.keys(CONFIG_KEY_ALIASES) as ConfigKey[]).map((candidate) => ({
@@ -970,10 +1062,17 @@ export async function runConfig(
       summary: CONFIG_KEY_SUMMARIES[candidate],
       value: readConfigValue(settings, candidate),
     }));
+    const nestedSettings: NestedSettingResultValue[] = NESTED_SETTING_DESCRIPTORS.map((descriptor) => ({
+      key: descriptor.key,
+      path: descriptor.path,
+      kind: descriptor.kind,
+      value: readNestedSettingValue(settings, descriptor),
+    }));
     return withWarnings(
       {
         scope,
         keys,
+        nested_settings: nestedSettings,
         count: keys.length,
         settings_path: target.settingsPath,
         changed: false,

@@ -1,3 +1,4 @@
+import { encode as encodeToon } from "@toon-format/toon";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { resolveItemTypeRegistry, type ItemTypeRegistry } from "../../core/item/type-registry.js";
@@ -915,6 +916,17 @@ export function renderCalendarMarkdown(result: CalendarResult): string {
     lines.push("");
   }
   return lines.join("\n").replace(/\n+$/, "");
+}
+
+/**
+ * Serializes a CalendarResult as TOON (the project's structured output format).
+ *
+ * The calendar result is JSON-serializable end-to-end (only strings, numbers,
+ * booleans, null, plain objects, and arrays), so the value is fed directly to
+ * `@toon-format/toon`'s encoder.
+ */
+export function renderCalendarToon(result: CalendarResult): string {
+  return encodeToon(result as unknown as Parameters<typeof encodeToon>[0]);
 }
 
 export async function runCalendar(options: CalendarOptions, global: GlobalOptions): Promise<CalendarResult> {

@@ -8,6 +8,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { toErrorMessage } from "../../core/shared/primitives.js";
+import { splitCommaList } from "../../core/shared/split-comma-list.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -333,9 +334,7 @@ function toComparablePreviewValue(optionKey: keyof UpdateCommandOptions, value: 
     return Number.isFinite(parsed) ? parsed : String(value).trim();
   }
   if (optionKey === "tags") {
-    return [...new Set(String(value).split(",").map((entry) => entry.trim()).filter((entry) => entry.length > 0))].sort((a, b) =>
-      a.localeCompare(b),
-    );
+    return splitCommaList(String(value)).sort((a, b) => a.localeCompare(b));
   }
   if (optionKey === "regression") {
     const normalized = String(value).trim().toLowerCase();

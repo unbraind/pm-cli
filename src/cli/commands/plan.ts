@@ -4,6 +4,7 @@ import { resolveItemTypeRegistry, resolveTypeName } from "../../core/item/type-r
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { splitCommaList } from "../../core/shared/split-comma-list.js";
 import { nowIso } from "../../core/shared/time.js";
 import { locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
@@ -164,9 +165,9 @@ function resolveAuthor(candidate: string | undefined, fallback: string): string 
 }
 
 function toArray(value: string | string[] | undefined): string[] {
-  if (Array.isArray(value)) return value.flatMap((entry) => entry.split(",")).map((entry) => entry.trim()).filter(Boolean);
+  if (Array.isArray(value)) return value.flatMap((entry) => splitCommaList(entry, { unique: false }));
   if (typeof value === "string" && value.trim().length > 0) {
-    return value.split(",").map((entry) => entry.trim()).filter(Boolean);
+    return splitCommaList(value, { unique: false });
   }
   return [];
 }

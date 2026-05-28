@@ -6,6 +6,7 @@ import { pathExists } from "../../../core/fs/fs-utils.js";
 import { EXIT_CODE } from "../../../core/shared/constants.js";
 import type { GlobalOptions } from "../../../core/shared/command-types.js";
 import { PmCliError } from "../../../core/shared/errors.js";
+import { splitCommaList } from "../../../core/shared/split-comma-list.js";
 import { resolveExtensionRoots } from "../../../core/extensions/loader.js";
 import { resolvePmRoot } from "../../../core/store/paths.js";
 import { validateExtensionDirectory } from "./shared.js";
@@ -269,7 +270,7 @@ function parsePackageCatalogFields(raw: string | undefined): string[] | undefine
   if (raw === undefined) {
     return undefined;
   }
-  const fields = [...new Set(raw.split(",").map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
+  const fields = splitCommaList(raw);
   if (fields.length === 0) {
     throw new PmCliError("Package catalog --fields requires a comma-separated list of field names", EXIT_CODE.USAGE);
   }

@@ -142,6 +142,61 @@ pm reindex --mode hybrid --progress
 pm health --check-only
 ```
 
+### Custom search providers
+
+pm supports any OpenAI-compatible API or Ollama-style provider via configuration. No code changes needed. Each leaf below can be set with `pm config <scope> set <key> <value>` (the corresponding `settings.json` dotted path is shown in parentheses).
+
+**Ollama** (local, default for offline embedding):
+
+```bash
+pm config project set ollama_base_url http://localhost:11434
+pm config project set ollama_model nomic-embed-text
+pm config project set search_provider ollama
+```
+
+**OpenAI**:
+
+```bash
+pm config project set openai_base_url https://api.openai.com/v1
+pm config project set openai_api_key '<OPENAI_API_KEY>'
+pm config project set openai_model text-embedding-3-small
+pm config project set search_provider openai
+```
+
+The base URL defaults to empty, so it must be set explicitly even for the canonical OpenAI endpoint.
+
+**LM Studio (OpenAI-compatible)** — point pm at LM Studio's local OpenAI-compatible endpoint:
+
+```bash
+pm config project set openai_base_url http://localhost:1234/v1
+pm config project set openai_model nomic-embed-text-v1.5
+pm config project set search_provider openai
+```
+
+Set `openai_api_key` to any non-empty value if LM Studio is configured to require one.
+
+**vLLM (OpenAI-compatible)** — point pm at a vLLM server serving an embedding model:
+
+```bash
+pm config project set openai_base_url http://localhost:8000/v1
+pm config project set openai_model BAAI/bge-large-en-v1.5
+pm config project set search_provider openai
+```
+
+**Vector store** — choose where vector embeddings live. LanceDB is file-backed and zero-setup; Qdrant runs as a service:
+
+```bash
+pm config project set vector_store_adapter lancedb
+pm config project set lancedb_path .agents/pm/search/lancedb
+
+# or, with Qdrant:
+pm config project set vector_store_adapter qdrant
+pm config project set qdrant_url http://localhost:6333
+pm config project set qdrant_api_key '<QDRANT_API_KEY>'   # omit on unauthenticated dev servers
+```
+
+After changing any of these, run `pm reindex --mode hybrid` so the vector index reflects the new provider/store. `pm search ... --mode semantic|hybrid` emits a `vector_index_stale` warning when items have been modified since the last reindex.
+
 ## Custom Item Types
 
 Custom item types can be defined in settings and by extensions. Runtime type resolution affects create/update validation, list/search/calendar filters, completions, and storage folders.
