@@ -7,6 +7,13 @@ import {
   UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS,
   type CommanderOptionRegistrationContract,
 } from "../sdk/cli-contracts.js";
+import { BUILTIN_ITEM_TYPE_VALUES } from "../types/index.js";
+
+// Lowercase set of built-in type names ("epic", "feature", ...) used by the
+// `pm create` positional guard (pm-edge #1, 2026-05-28): if the single
+// positional exactly matches a known type AND no --title was given, we throw
+// instead of silently creating a Task titled with the type name.
+const BUILTIN_TYPE_NAME_LOOKUP = new Set<string>(BUILTIN_ITEM_TYPE_VALUES.map((value) => value.toLowerCase()));
 import {
   collect,
   extractUpdateManyMutationOptionSource,
@@ -100,6 +107,37 @@ export function registerMutationCommands(program: Command): void {
         positionalTitle = secondTitle;
       } else if (typeof typeOrTitle === "string" && typeOrTitle.length > 0) {
         positionalTitle = typeOrTitle;
+      }
+      // pm-edge #1 (2026-05-28): when the sole positional matches a known
+      // item type AND no --title was supplied, refuse early instead of
+      // silently creating a Task titled with the type name (e.g. `pm create
+      // Epic` would previously produce a Task literally titled "Epic"). The
+      // guard fires only for the ambiguous single-positional case so the
+      // documented `pm create <type> <title>` flow stays a never-block.
+      if (
+        positionalType === undefined &&
+        typeof positionalTitle === "string" &&
+        positionalTitle.length > 0 &&
+        options.title === undefined &&
+        options.type === undefined &&
+        BUILTIN_TYPE_NAME_LOOKUP.has(positionalTitle.trim().toLowerCase())
+      ) {
+        const matchedType = positionalTitle.trim();
+        throw new PmCliError(
+          `pm create needs a title — "${matchedType}" looks like an item type, not a title. Use either: pm create ${matchedType} "<title>" or pm create "<title>" --type ${matchedType}.`,
+          EXIT_CODE.USAGE,
+          {
+            code: "create_positional_type_without_title",
+            why: "Without this guard the single positional is used as the title and the type defaults to Task — so the command would silently create a Task literally titled \"" + matchedType + "\".",
+            examples: [
+              `pm create ${matchedType} "Wire up SSO for the agent harness"`,
+              `pm create "Wire up SSO for the agent harness" --type ${matchedType}`,
+            ],
+            nextSteps: [
+              `Re-run with both type and title: pm create ${matchedType} "<title>"`,
+            ],
+          },
+        );
       }
       if (typeof positionalType === "string" && positionalType.length > 0 && options.type === undefined) {
         options.type = positionalType;
@@ -313,7 +351,7 @@ export function registerMutationCommands(program: Command): void {
       }
     });
 
-  program
+  const closeCommand = program
     .command("close")
     .argument("<id>", "Item id")
     .argument("[text]", "Close reason text (alias: --reason)")
@@ -322,8 +360,17 @@ export function registerMutationCommands(program: Command): void {
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--validate-close [mode]", 'Validate closure metadata before close: "off", "warn", or "strict" (default: settings governance preset)')
+    .option("--resolution <value>", "Set the closure resolution summary inline (same field --validate-close strict checks; previously required a prior pm update)")
+    .option("--expected-result <value>", "Set the expected-result note inline (closure validation field)")
+    .option("--actual-result <value>", "Set the actual-result note inline (closure validation field)")
     .option("--force", "Force ownership override")
-    .description("Close an item with a required reason.")
+    .description("Close an item with a required reason.");
+  // pm-fl0c #11 (2026-05-28): expose snake_case aliases alongside the canonical
+  // kebab-case so agents using --expected_result/--actual_result do not get an
+  // Unknown option error; the rendered help stays clean (aliases hidden).
+  addHiddenOption(closeCommand, "--expected_result <value>", "Alias for --expected-result", false);
+  addHiddenOption(closeCommand, "--actual_result <value>", "Alias for --actual-result", false);
+  closeCommand
     .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
@@ -350,6 +397,10 @@ export function registerMutationCommands(program: Command): void {
           },
         );
       }
+      const pickInlineString = (canonical: unknown, snake: unknown): string | undefined => {
+        const value = typeof canonical === "string" ? canonical : typeof snake === "string" ? snake : undefined;
+        return value !== undefined ? value : undefined;
+      };
       const result = await runClose(
         id,
         resolvedText,
@@ -363,6 +414,9 @@ export function registerMutationCommands(program: Command): void {
                 ? options.validateClose
                 : undefined,
           force: Boolean(options.force),
+          resolution: typeof options.resolution === "string" ? options.resolution : undefined,
+          expectedResult: pickInlineString(options.expectedResult, options.expected_result),
+          actualResult: pickInlineString(options.actualResult, options.actual_result),
         },
         globalOptions,
       );

@@ -720,6 +720,14 @@ describe("runTest", () => {
           exitCode: EXIT_CODE.USAGE,
         });
       }
+      // pm-fl0c #3 (2026-05-28): the rejection error MUST tell agents that
+      // env vars need to be INLINE in the command string — exporting them
+      // in the parent shell does not satisfy the guard. Previously the
+      // message said "set both PM_PATH and PM_GLOBAL_PATH" without that
+      // distinction, leading to repeated agent retries.
+      await expect(runTest(id, { add: ["command=pnpm test,scope=project"] }, { path: context.pmPath })).rejects.toMatchObject({
+        message: expect.stringContaining("INLINE in the command string"),
+      });
 
       const safeWithRunner = await runTest(
         id,

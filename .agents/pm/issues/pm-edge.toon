@@ -2,11 +2,17 @@ id: pm-edge
 title: "Agent-UX footguns: create-type silent mistype + token-bloat in validate/search output"
 description: "From 2026-05-27 dogfood (pm-gqx7). (1) 'pm create Epic' with no --title silently creates a Task TITLED 'Epic' (sole positional treated as title, typed type ignored) — high-value never-block footgun; when the sole positional exactly matches a known type, create that type with a placeholder title + warning, or hint. (2) 'pm validate' on the minimal preset prints the identical full item-ID array once per missing field (~150 redundant lines) — minimal preset should not warn on reviewer/risk/confidence/sprint/release, and per-field ID lists should be summarized/deduped. (3) 'pm search' output duplicates the projection field list (identical arrays under filters.fields AND projection.fields) plus a full filters block — per-call token bloat."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[2]: agent-ux,token-efficiency
 created_at: "2026-05-27T18:24:05.498Z"
-updated_at: "2026-05-27T18:24:05.498Z"
+updated_at: "2026-05-28T05:11:27.656Z"
 author: maintainer-agent
 parent: pm-th6y
+resolution: "All three sub-fixes implemented in register-mutation.ts (create-type guard), validate.ts (active required_fields only), list.ts/search.ts (filters block compaction). Smoke-tested in /tmp/pm-e2e."
+expected_result: pm create <Type> with no title refuses with a helpful error; validate minimal preset stops dumping per-field item_ids for non-required fields; list/search filters block no longer duplicates projection.
+actual_result: "Verified all three live in /tmp/pm-e2e: refusal error includes code=create_positional_type_without_title + retry examples; validate --check-metadata only lists item_ids keys for required fields actually missing; list/search filters block now contains only the genuine filters (mode/limit/...) and never repeats projection.fields."
+comments[1]{created_at,author,text}:
+  "2026-05-28T05:10:50.946Z",maintainer-agent,"Implemented all three: (1) pm create &lt;type&gt; with no title now refuses early with a clear PmCliError(code=create_positional_type_without_title) listing both retry shapes (register-mutation.ts +37). (2) validate metadata details now only emit counts and per-field item_ids for the ACTIVE required_fields of the resolved profile (validate.ts +12/-3) — minimal preset no longer dumps the identical full ID array under reviewer/risk/confidence/sprint/release. (3) list/search dropped the duplicated projection.mode and projection.fields keys from the filters block (list.ts/-1, search.ts/-6 across 3 emit paths). Smoke-tested in /tmp/pm-e2e all three."
+close_reason: "Shipped on feat/agent-ux-compact-output-and-mutation-guards (PR pending): create-type guard, validate metadata-required-fields scoping, list/search filters projection-dedup."
 body: ""

@@ -16,6 +16,13 @@ export interface CloseCommandOptions {
   message?: string;
   validateClose?: string;
   force?: boolean;
+  // pm-fl0c #11 (2026-05-28): allow setting the three closure validation
+  // fields inline on `pm close` so agents do not have to issue a prior
+  // `pm update` just to satisfy --validate-close warn|strict. These map 1:1
+  // to ItemFrontMatter.{resolution,expected_result,actual_result}.
+  resolution?: string;
+  expectedResult?: string;
+  actualResult?: string;
 }
 
 export interface CloseResult {
@@ -128,6 +135,21 @@ export async function runClose(
         throw new PmCliError(`Item ${document.metadata.id} is already terminal; use --force to close again.`, EXIT_CODE.CONFLICT);
       }
       const mutationWarnings: string[] = [];
+      // pm-fl0c #11: apply inline closure fields BEFORE the validation pass so
+      // a single `pm close <id> "reason" --resolution "..."` call satisfies
+      // strict validation without a prior pm update. Only meaningful trimmed
+      // text writes; an empty/whitespace value is a no-op rather than a clear.
+      const inlineCloseFields: Array<{ option: string | undefined; key: "resolution" | "expected_result" | "actual_result" }> = [
+        { option: options.resolution, key: "resolution" },
+        { option: options.expectedResult, key: "expected_result" },
+        { option: options.actualResult, key: "actual_result" },
+      ];
+      for (const { option, key } of inlineCloseFields) {
+        if (typeof option !== "string") continue;
+        const trimmed = option.trim();
+        if (trimmed.length === 0) continue;
+        document.metadata[key] = trimmed;
+      }
       if (validateCloseMode !== "off") {
         const missingFields = findMissingCloseValidationFields(document.metadata);
         if (missingFields.length > 0) {
@@ -158,6 +180,11 @@ export async function runClose(
       document.metadata.close_reason = closeReason;
 
       const changedFields = ["status", "close_reason"];
+      for (const { option, key } of inlineCloseFields) {
+        if (typeof option === "string" && option.trim().length > 0) {
+          changedFields.push(key);
+        }
+      }
       if (document.metadata.assignee !== undefined) {
         delete document.metadata.assignee;
         changedFields.push("assignee");

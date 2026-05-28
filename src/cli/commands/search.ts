@@ -801,8 +801,6 @@ function emptySearchResult(
       score_threshold: scoreThreshold,
       hybrid_semantic_weight: mode === "hybrid" ? hybridSemanticWeight : null,
       limit: options.limit ?? null,
-      projection: projection.mode,
-      fields: projectionFields,
     },
     projection: {
       mode: projection.mode,
@@ -1367,8 +1365,6 @@ export async function runSearch(query: string, options: SearchOptions, global: G
       hybrid_semantic_weight: effectiveMode === "hybrid" ? hybridSemanticWeight : null,
       limit: options.limit ?? null,
       runtime_filters: runtimeFieldFilters,
-      projection: projection.mode,
-      fields: projectionFields,
     },
     projection: {
       mode: projection.mode,

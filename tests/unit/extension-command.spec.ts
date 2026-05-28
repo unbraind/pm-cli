@@ -155,8 +155,15 @@ describe("extension command runtime", () => {
         capabilities: ["commands"],
       });
       const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      // pm-fl0c B-1 (2026-05-28) + Codex P2 follow-up: extension-only scaffold
+      // must NOT import `@unbrained/pm-cli/sdk` (no package.json with the dep
+      // → ERR_MODULE_NOT_FOUND when the loader imports the file URL). Instead
+      // it emits the original `export function activate(api)` shape with a
+      // JSDoc @param hint so editors still narrow the api parameter.
+      expect(entry).not.toContain('import { defineExtension }');
+      expect(entry).toContain('@param {import("@unbrained/pm-cli/sdk").ExtensionApi}');
       expect(entry).toContain("export function activate(api)");
-      expect(entry).toContain("export default");
+      expect(entry).toContain("export default {");
       expect(entry).toContain('name: "starter-ext ping"');
 
       const rerun = await runExtension(scaffoldPath, { scaffold: true, project: true }, { path: context.pmPath });
@@ -209,7 +216,12 @@ describe("extension command runtime", () => {
         capabilities: ["commands"],
       });
       const entry = await readFile(path.join(scaffoldPath, "extensions", "starter-package", "index.js"), "utf8");
-      expect(entry).toContain("export function activate(api)");
+      // pm-fl0c B-1 (2026-05-28): package scaffold also uses defineExtension
+      // (the peerDependencies on @unbrained/pm-cli now serve the imported
+      // SDK type, not just a runtime guarantee).
+      expect(entry).toContain('import { defineExtension } from "@unbrained/pm-cli/sdk"');
+      expect(entry).toContain("export default defineExtension({");
+      expect(entry).toContain("activate(api)");
       expect(entry).toContain('name: "starter-package ping"');
 
       const install = await runExtension(scaffoldPath, { install: true, project: true }, { path: context.pmPath });

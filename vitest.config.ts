@@ -105,6 +105,7 @@ export default defineConfig({
         "src/core/shared/conflict-markers.ts",
         "src/core/shared/errors.ts",
         "src/core/shared/lazy-module.ts",
+        "src/core/shared/levenshtein.ts",
         "src/core/shared/option-alias-visibility.ts",
         "src/core/shared/serialization.ts",
         "src/core/shared/time.ts",

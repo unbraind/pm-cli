@@ -57,10 +57,12 @@ function resolvePendingReleaseTag(options, existingTags) {
     return { name: canonical, timestamp };
 }
 function canonicalPendingTagName(candidates, fallback) {
-    const preferred = candidates.find((candidate) => /^v\d{4}\.\d{2}\.\d{2}/.test(candidate))
-        ?? candidates.find((candidate) => candidate.startsWith("v"))
-        ?? fallback;
-    return preferred;
+    // Preserve the caller's version format (the first candidate is the
+    // verbatim `v${version}`). Do not force calendar months/days to a
+    // zero-padded width: downstream consumers (e.g. the pm-cli release
+    // pipeline) key off the unpadded `YYYY.M.D` heading they passed in, so
+    // padding here would emit a `2026.05.27` heading the caller never matches.
+    return candidates.find((candidate) => candidate.startsWith("v")) ?? fallback;
 }
 function readPackageVersion(cwd) {
     const packageJsonPath = findPackageJson(cwd);
@@ -94,7 +96,11 @@ function findExistingTag(cwd, candidates) {
     return undefined;
 }
 function releaseTagCandidates(version) {
-    const trimmed = version.trim();
+    // Normalize away a leading `v` so callers may pass either `2026.5.27` or
+    // `v2026.5.27` without producing a malformed `vv...` candidate. The first
+    // candidate is the canonical (caller-formatted) tag; padded variants are
+    // appended only so we can still resolve legacy zero-padded tags.
+    const trimmed = version.trim().replace(/^v/i, "");
     const candidates = [`v${trimmed}`, trimmed];
     const calendar = trimmed.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})(-.+)?$/);
     if (calendar) {

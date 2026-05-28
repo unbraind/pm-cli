@@ -116,6 +116,11 @@ export interface PlanCommandResult {
   current_step?: PlanStep | undefined;
   next_actions?: string[];
   materialized?: { id: string; type: string; from_step: string }[];
+  // pm-fl0c #10 (2026-05-28): steps that pm plan materialize intentionally
+  // skipped (already-completed or already-materialized via an `implements`
+  // link). Surfacing these makes `--steps all` idempotent without users
+  // having to read history to find out what was done.
+  materialize_skipped?: { from_step: string; reason: "already_completed" | "already_materialized"; existing_id?: string }[];
   warnings: string[];
   generated_at: string;
 }
@@ -392,23 +397,60 @@ function resolveStepRef(steps: PlanStep[], ref: string): PlanStep {
   throw new PmCliError(`Step "${ref}" not found in plan`, EXIT_CODE.NOT_FOUND);
 }
 
-function resolveMaterializeTargets(steps: PlanStep[], refs: string[]): PlanStep[] {
+interface MaterializeTargetResolution {
+  targets: PlanStep[];
+  skipped: { from_step: string; reason: "already_completed" | "already_materialized"; existing_id?: string }[];
+}
+
+// pm-fl0c #10 (2026-05-28): skip steps whose status is "completed" and steps
+// that already have an `implements` link from a prior materialize run, so
+// `pm plan materialize --steps all` is idempotent and never re-creates fresh
+// Tasks for work already tracked. Explicit step refs are still allowed
+// through (the user asked by ID) but the skip-reason is recorded.
+function classifyMaterializeSkip(
+  step: PlanStep,
+): { reason: "already_completed" | "already_materialized"; existing_id?: string } | undefined {
+  if (step.status === "completed") {
+    return { reason: "already_completed" };
+  }
+  const existingImplements = (step.linked_items ?? []).find((link) => link.kind === "implements");
+  if (existingImplements) {
+    return { reason: "already_materialized", existing_id: existingImplements.id };
+  }
+  return undefined;
+}
+
+function resolveMaterializeTargets(steps: PlanStep[], refs: string[]): MaterializeTargetResolution {
   const allRefs = refs.filter((ref) => ref.trim().toLowerCase() === "all");
+  const targets: PlanStep[] = [];
+  const skipped: { from_step: string; reason: "already_completed" | "already_materialized"; existing_id?: string }[] = [];
   if (allRefs.length > 0) {
     if (refs.length > allRefs.length) {
       throw new PmCliError("pm plan materialize --steps all cannot be combined with other step refs", EXIT_CODE.USAGE);
     }
-    return steps.slice().sort((left, right) => left.order - right.order);
+    for (const step of steps.slice().sort((left, right) => left.order - right.order)) {
+      const skip = classifyMaterializeSkip(step);
+      if (skip) {
+        skipped.push({ from_step: step.id, ...skip });
+        continue;
+      }
+      targets.push(step);
+    }
+    return { targets, skipped };
   }
-  const targets: PlanStep[] = [];
   const seen = new Set<string>();
   for (const ref of refs) {
     const step = resolveStepRef(steps, ref);
     if (seen.has(step.id)) continue;
-    targets.push(step);
     seen.add(step.id);
+    const skip = classifyMaterializeSkip(step);
+    if (skip) {
+      skipped.push({ from_step: step.id, ...skip });
+      continue;
+    }
+    targets.push(step);
   }
-  return targets;
+  return { targets, skipped };
 }
 
 function resolvePlanLogText(kind: "decision" | "discovery" | "validation", options: PlanCommandOptions): string | undefined {
@@ -1245,8 +1287,29 @@ async function planMaterialize(
 
   const planRead = await readPlanItem(ctx, id);
   const steps = (planRead.document.metadata.plan_steps ?? []).slice();
-  const targets = resolveMaterializeTargets(steps, stepRefs);
+  const { targets, skipped: materializeSkipped } = resolveMaterializeTargets(steps, stepRefs);
   if (targets.length === 0) {
+    if (materializeSkipped.length > 0) {
+      // PR #78 / Gemini medium follow-up: when every selected step was
+      // already materialized or completed, return a successful no-op
+      // result (exit 0) instead of throwing NOT_FOUND. This makes
+      // `pm plan materialize --steps all` truly idempotent for CI/agent
+      // workflows; the skip reasons + warnings still surface what was
+      // intentionally not redone.
+      const plan = projectPlan(planRead.document.metadata, "standard");
+      return {
+        action: "materialize",
+        plan,
+        materialized: [],
+        materialize_skipped: materializeSkipped,
+        next_actions: nextActionsFor(planRead.itemId, plan),
+        warnings: materializeSkipped.map(
+          (entry) =>
+            `plan_materialize_skipped:${entry.from_step}:${entry.reason}${entry.existing_id ? `:${entry.existing_id}` : ""}`,
+        ),
+        generated_at: nowIso(),
+      };
+    }
     throw new PmCliError("No matching plan steps found for --steps", EXIT_CODE.NOT_FOUND);
   }
 
@@ -1304,8 +1367,12 @@ async function planMaterialize(
     action: "materialize",
     plan,
     materialized,
+    ...(materializeSkipped.length > 0 ? { materialize_skipped: materializeSkipped } : {}),
     next_actions: nextActionsFor(itemId, plan),
-    warnings: [],
+    warnings: materializeSkipped.map(
+      (entry) =>
+        `plan_materialize_skipped:${entry.from_step}:${entry.reason}${entry.existing_id ? `:${entry.existing_id}` : ""}`,
+    ),
     generated_at: nowIso(),
   };
 }

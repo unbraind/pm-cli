@@ -477,7 +477,6 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       fields: options.fields ?? null,
       sort: sortField ?? null,
       order: sortField ? sortOrder : null,
-      projection: projection.mode,
       runtime_filters: runtimeFieldFilters,
     },
     projection: {

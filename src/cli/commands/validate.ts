@@ -692,11 +692,18 @@ function buildMetadataCheck(
   }
 
   // Zero-suppress counts to reduce agent token cost (telemetry pm-tylj).
+  // Only emit counts for the ACTIVE required fields of the resolved profile so a
+  // looser profile (e.g. core) never reports missing reviewer/risk/sprint/etc.
+  // Defensive guards (Gemini high #1, PR #78 follow-up): a future settings
+  // shape could include an unsupported field in required_fields — fall back
+  // to 0 instead of throwing TypeError, and skip writing when the count-key
+  // mapping is undefined.
   const counts: Record<string, number> = {};
-  for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
-    const value = missingByField[field].length;
-    if (value > 0) {
-      counts[METADATA_COUNT_KEY_BY_FIELD[field]] = value;
+  for (const field of metadataPolicy.required_fields) {
+    const value = missingByField[field]?.length ?? 0;
+    const countKey = METADATA_COUNT_KEY_BY_FIELD[field];
+    if (value > 0 && countKey) {
+      counts[countKey] = value;
     }
   }
   const details: Record<string, unknown> = {
@@ -712,17 +719,27 @@ function buildMetadataCheck(
     details.configured_custom_required_fields = [...metadataPolicy.configured_custom_fields];
   }
 
-  // Only emit per-field item_ids/truncated keys when there are missing items.
-  for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
-    if (missingByField[field].length === 0) {
+  // Only emit per-field item_ids/truncated keys for the ACTIVE required fields of
+  // the resolved profile (and only when there are missing items). This stops a
+  // looser profile (e.g. core) from emitting the identical full ID array for
+  // reviewer/risk/confidence/sprint/release that it does not even require
+  // (pm-edge #2 — ~150 redundant lines per validate run on minimal/core).
+  // Defensive guard (Gemini high #2, PR #78 follow-up): same optional-chain
+  // safety as the counts loop above — never throw if a future settings shape
+  // includes an unsupported field.
+  for (const field of metadataPolicy.required_fields) {
+    const missing = missingByField[field];
+    if (!missing || missing.length === 0) {
       continue;
     }
-    const summarized = summarizeList(
-      missingByField[field],
-      verboseDiagnostics ? missingByField[field].length : DIAGNOSTIC_LIST_SUMMARY_LIMIT,
-    );
-    details[METADATA_ITEM_IDS_KEY_BY_FIELD[field]] = summarized.values;
-    details[METADATA_TRUNCATED_KEY_BY_FIELD[field]] = summarized.truncated;
+    const idsKey = METADATA_ITEM_IDS_KEY_BY_FIELD[field];
+    const truncatedKey = METADATA_TRUNCATED_KEY_BY_FIELD[field];
+    if (!idsKey || !truncatedKey) {
+      continue;
+    }
+    const summarized = summarizeList(missing, verboseDiagnostics ? missing.length : DIAGNOSTIC_LIST_SUMMARY_LIMIT);
+    details[idsKey] = summarized.values;
+    details[truncatedKey] = summarized.truncated;
   }
 
   return {

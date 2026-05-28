@@ -154,6 +154,32 @@ describe("runClose", () => {
     });
   });
 
+  it("accepts inline resolution/expected_result/actual_result so --validate-close strict succeeds in one shot (pm-fl0c #11)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "close-inline-closure-fields");
+      const result = await runClose(
+        id,
+        "All AC met",
+        {
+          validateClose: "strict",
+          resolution: "Implemented and merged",
+          expectedResult: "Inline closure flags accepted",
+          actualResult: "Closure validation passes in one call",
+        },
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toEqual([]);
+      const item = result.item as Record<string, unknown>;
+      expect(item.status).toBe("closed");
+      expect(item.resolution).toBe("Implemented and merged");
+      expect(item.expected_result).toBe("Inline closure flags accepted");
+      expect(item.actual_result).toBe("Closure validation passes in one call");
+      expect(result.changed_fields).toEqual(
+        expect.arrayContaining(["status", "close_reason", "resolution", "expected_result", "actual_result"]),
+      );
+    });
+  });
+
   it("uses settings author fallback when option and PM_AUTHOR are unset", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-settings-author");

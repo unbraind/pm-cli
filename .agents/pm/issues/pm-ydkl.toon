@@ -1,0 +1,12 @@
+id: pm-ydkl
+title: pm comments/notes/learnings --add HTML-escapes angle brackets in stored text
+description: "Observed 2026-05-28: passing 'pm comments pm-XXX --add \"... pm create <type> ...\"' stores the text with literal HTML entities &lt;type&gt; instead of preserving < and >. Confirmed on this session's pm-edge/pm-fl0c/pm-th6y comments. Likely a defensive escape applied at append/comment serialization; pm does not render comments as HTML so the escape is unnecessary and harms readability when agents quote shell snippets like 'pm create <type> <title>'. Investigate where the escape happens (probably in core/store/append or a sanitizer hook), and switch to either no-op or a code-fence wrap. Low priority but visible footgun."
+type: Issue
+status: open
+priority: 3
+tags[2]: agent-ux,token-efficiency
+created_at: "2026-05-28T05:13:46.095Z"
+updated_at: "2026-05-28T05:13:46.095Z"
+author: maintainer-agent
+parent: pm-th6y
+body: ""

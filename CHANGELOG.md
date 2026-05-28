@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Minor UX/correctness: test --add wording, dep-kind vocab, same-command did-you-mean, plan materialize, close inline resolution, scaffold defineExtension ([pm-fl0c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-fl0c.toon))
+
+### Other
+
+- Agent-UX footguns: create-type silent mistype + token-bloat in validate/search output ([pm-edge](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-edge.toon))
+
 ## 2026.5.27 - 2026-05-27
 
 ### Added
