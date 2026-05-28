@@ -193,6 +193,15 @@ export function parseNestedSettingValue(
     return { ok: true, parsed: { descriptor, value: trimmed } };
   }
 
+  // Number("") === 0, which would silently accept empty / whitespace-only input
+  // as a valid zero. Reject explicitly so misconfigurations don't slip through.
+  if (trimmed.length === 0) {
+    return {
+      ok: false,
+      error: { message: `Config set ${descriptor.key} requires a non-empty value` },
+    };
+  }
+
   const parsed = Number(trimmed);
   if (!Number.isFinite(parsed)) {
     return {

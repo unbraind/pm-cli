@@ -157,4 +157,37 @@ describe("decodeHtmlEntitiesInOptions", () => {
     arr.push(arr);
     expect(() => decodeHtmlEntitiesInOptions(arr)).not.toThrow();
   });
+
+  it("preserves class instances (Date, RegExp, Map, Set) without stripping prototypes", () => {
+    const now = new Date("2026-05-28T12:00:00Z");
+    const pattern = /abc/i;
+    const collection = new Map<string, string>([["k", "v"]]);
+    const set = new Set(["a", "b"]);
+    const input = {
+      title: "decode &lt;me&gt;",
+      created_at: now,
+      pattern,
+      collection,
+      set,
+    };
+    const decoded = decodeHtmlEntitiesInOptions(input);
+    // Strings still decoded
+    expect((decoded as typeof input).title).toBe("decode <me>");
+    // Class instances pass through with prototype preserved
+    expect((decoded as typeof input).created_at).toBe(now);
+    expect((decoded as typeof input).created_at).toBeInstanceOf(Date);
+    expect((decoded as typeof input).pattern).toBe(pattern);
+    expect((decoded as typeof input).pattern).toBeInstanceOf(RegExp);
+    expect((decoded as typeof input).collection).toBe(collection);
+    expect((decoded as typeof input).collection).toBeInstanceOf(Map);
+    expect((decoded as typeof input).set).toBe(set);
+    expect((decoded as typeof input).set).toBeInstanceOf(Set);
+  });
+
+  it("traverses Object.create(null) (null-proto) objects", () => {
+    const bare = Object.create(null) as Record<string, unknown>;
+    bare.text = "decode &lt;x&gt;";
+    const decoded = decodeHtmlEntitiesInOptions(bare);
+    expect((decoded as { text: string }).text).toBe("decode <x>");
+  });
 });

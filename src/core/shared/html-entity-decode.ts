@@ -42,6 +42,16 @@ export function decodeHtmlEntitiesIfEscaped(input: string): string {
   if (typeof input !== "string") {
     return input;
   }
+  // Activation signal is INTENTIONALLY narrow: only `&lt;` / `&gt;` trigger
+  // decoding. Rationale: the observed MCP-platform behavior only encodes
+  // angle brackets (the characters that risk display-time HTML
+  // misinterpretation upstream). Widening to `&amp;` / `&quot;` / `&#39;`
+  // would risk altering legitimate text that contains those literal token
+  // sequences for unrelated reasons (a URL containing `&amp;`, a snippet
+  // of HTML being intentionally stored as escaped, etc.). If upstream
+  // changes its encoding policy to cover `&` / `"` / `'` standalone, the
+  // signal-guard here will need to be widened in lockstep — covered by
+  // tests `&amp;-only is no-op` and `&quot;-only is no-op`.
   if (!input.includes("&lt;") && !input.includes("&gt;")) {
     return input;
   }
@@ -75,6 +85,13 @@ function decodeValue(value: unknown, seen: WeakSet<object>): unknown {
     return value.map((entry) => decodeValue(entry, seen));
   }
   if (value !== null && typeof value === "object") {
+    // Only traverse plain objects (`{}` and `Object.create(null)` literals).
+    // Class instances (Date, RegExp, Map, Set, Buffer, etc.) and `null`-proto
+    // objects with no proto would lose their prototype and methods if we
+    // rebuilt them as a `Record<string, unknown>` here, so we pass them through.
+    if (!isPlainObject(value)) {
+      return value;
+    }
     if (seen.has(value as object)) {
       return value;
     }
@@ -87,4 +104,9 @@ function decodeValue(value: unknown, seen: WeakSet<object>): unknown {
     return result;
   }
   return value;
+}
+
+function isPlainObject(value: object): boolean {
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
 }

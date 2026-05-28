@@ -80,6 +80,16 @@ describe("nested-settings helpers (pm-7ilo)", () => {
       expect(tooHigh.ok).toBe(false);
     });
 
+    it("rejects empty / whitespace-only input for numeric kinds (Number('') === 0 footgun)", () => {
+      for (const descriptor of [INTEGER_DESCRIPTOR, NUMBER_DESCRIPTOR, RATIO_DESCRIPTOR]) {
+        for (const raw of ["", "   ", "\t\n  "]) {
+          const result = parseNestedSettingValue(descriptor, raw);
+          expect(result.ok).toBe(false);
+          if (!result.ok) expect(result.error.message).toContain("non-empty");
+        }
+      }
+    });
+
     it("accepts boundary ratios 0 and 1", () => {
       expect(parseNestedSettingValue(RATIO_DESCRIPTOR, "0").ok).toBe(true);
       expect(parseNestedSettingValue(RATIO_DESCRIPTOR, "1").ok).toBe(true);

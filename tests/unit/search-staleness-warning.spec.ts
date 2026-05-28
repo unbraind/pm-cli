@@ -49,4 +49,15 @@ describe("collectStaleVectorizationIds", () => {
     ];
     expect(collectStaleVectorizationIds(items, {})).toEqual(["pm-a", "pm-m", "pm-z"]);
   });
+
+  it("tolerates a null / undefined ledger by treating every item as stale", () => {
+    // Defensive — a corrupted, empty, or partially-written ledger should not
+    // crash semantic / hybrid search; it should just flag every item as stale.
+    const items = [
+      { id: "pm-a", updated_at: "x" },
+      { id: "pm-b", updated_at: "y" },
+    ];
+    expect(collectStaleVectorizationIds(items, null)).toEqual(["pm-a", "pm-b"]);
+    expect(collectStaleVectorizationIds(items, undefined)).toEqual(["pm-a", "pm-b"]);
+  });
 });

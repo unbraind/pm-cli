@@ -133,6 +133,66 @@ describe("config nested-setting aliases (pm-7ilo)", () => {
     });
   });
 
+  it("`pm config project set search_provider --value ollama` (no positional) succeeds", async () => {
+    // Regression for the --value flag handling: previously, supplying --value
+    // without a positional triggered a spurious "received both positional and
+    // --value" error AND would have overwritten options.value with undefined.
+    await withTempRoot("pm-cli-7ilo-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const result = await runConfig(
+        "project",
+        "set",
+        "search_provider",
+        { value: "ollama" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+
+      expect(result.nested_setting).toMatchObject({
+        key: "search_provider",
+        path: "search.provider",
+        value: "ollama",
+      });
+    });
+  });
+
+  it("rejects passing both positional value and --value when they differ", async () => {
+    await withTempRoot("pm-cli-7ilo-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      await expect(
+        runConfig(
+          "project",
+          "set",
+          "search_provider",
+          { value: "openai" },
+          { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          "ollama",
+        ),
+      ).rejects.toThrow(/received both positional/);
+    });
+  });
+
+  it("accepts both positional and --value when they're equal", async () => {
+    await withTempRoot("pm-cli-7ilo-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const result = await runConfig(
+        "project",
+        "set",
+        "search_provider",
+        { value: "ollama" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        "ollama",
+      );
+
+      expect(result.nested_setting?.value).toBe("ollama");
+    });
+  });
+
   it("`pm config project list` surfaces nested_settings for discoverability", async () => {
     await withTempRoot("pm-cli-7ilo-aliases-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");

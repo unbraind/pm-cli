@@ -24,11 +24,14 @@ export interface ItemWithUpdatedAt {
  */
 export function collectStaleVectorizationIds<T extends ItemWithUpdatedAt>(
   items: readonly T[],
-  ledgerEntries: Readonly<Record<string, string>>,
+  ledgerEntries: Readonly<Record<string, string>> | null | undefined,
 ): string[] {
+  // Tolerate a missing / corrupted / partially-written ledger by treating
+  // unknown items as stale (the same as having no entry).
+  const entries = ledgerEntries ?? {};
   return items
     .filter((item) => {
-      const trackedUpdatedAt = ledgerEntries[item.id];
+      const trackedUpdatedAt = entries[item.id];
       return trackedUpdatedAt !== item.updated_at;
     })
     .map((item) => item.id)

@@ -13,8 +13,8 @@
 
 ### Fixed
 
+- MCP pm\_create/pm\_update crashed with 'raw.trim is not a function' when priority was sent as a JSON number ([pm-9r7z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9r7z.toon))
 - pm comments/notes/learnings --add HTML-escapes angle brackets in stored text ([pm-ydkl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ydkl.toon))
-- MCP pm\_create/pm\_update crashed with 'raw.trim is not a function' when priority sent as JSON number ([pm-9r7z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9r7z.toon))
 
 ## 2026.5.28 - 2026-05-28
 

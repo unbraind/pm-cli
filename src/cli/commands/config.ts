@@ -919,13 +919,14 @@ function applyPositionalValue(
   }
 
   if (nestedSetting) {
-    if (options.value !== undefined && options.value !== valueValue) {
+    if (options.value !== undefined && valueValue !== undefined && options.value !== valueValue) {
       throw new PmCliError(
         `Config set ${keyValue} received both positional value "${valueValue}" and --value "${options.value}". Pass only one.`,
         EXIT_CODE.USAGE,
       );
     }
-    return { ...options, value: valueValue };
+    // Pick whichever was supplied; do not overwrite a present --value with undefined.
+    return { ...options, value: valueValue ?? options.value };
   }
 
   const routed = resolveConfigPositionalValue(normalizedKey ?? keyValue, valueValue);
