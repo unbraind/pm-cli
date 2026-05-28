@@ -991,7 +991,7 @@ function matchesDependencySelector(value: Dependency, selector: DependencyRemova
   return true;
 }
 
-function ensurePriority(raw: string): 0 | 1 | 2 | 3 | 4 {
+function ensurePriority(raw: string | number): 0 | 1 | 2 | 3 | 4 {
   return resolvePriority(raw);
 }
 

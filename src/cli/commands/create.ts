@@ -21,6 +21,7 @@ import {
   validateTypeOptions,
 } from "../../core/item/type-registry.js";
 import { acquireLock } from "../../core/lock/lock.js";
+import { printError } from "../../core/output/output.js";
 import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
 import { collectRuntimeCreateFieldValues } from "../../core/schema/runtime-field-values.js";
 import {
@@ -1113,7 +1114,7 @@ function selectAuthor(explicitAuthor: string | undefined, settingsAuthor: string
   return trimmed || "unknown";
 }
 
-function ensurePriority(rawPriority: string): 0 | 1 | 2 | 3 | 4 {
+function ensurePriority(rawPriority: string | number): 0 | 1 | 2 | 3 | 4 {
   return resolvePriority(rawPriority);
 }
 
@@ -1641,6 +1642,16 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   if (type.toLowerCase() === "event" && (events.values === undefined || events.values.length === 0)) {
     validationWarnings.push(`event_without_schedule:${id}:no_time_set`);
   }
+  // Calendar-relevant types (Milestone, Meeting, Reminder, Event) with NO deadline AND no
+  // reminders AND no events are invisible on `pm calendar`. Warn (never block) so the agent
+  // can attach a schedule via `pm update`.
+  const calendarRelevantTypes = new Set(["milestone", "meeting", "reminder", "event"]);
+  const hasDeadline = deadline !== undefined;
+  const hasReminders = reminders.values !== undefined && reminders.values.length > 0;
+  const hasEvents = events.values !== undefined && events.values.length > 0;
+  if (calendarRelevantTypes.has(type.toLowerCase()) && !hasDeadline && !hasReminders && !hasEvents) {
+    validationWarnings.push(`calendar_item_without_schedule:${id}:no_deadline_or_reminder_or_event`);
+  }
   if (parent !== undefined) {
     parent = normalizeParentReferenceValue(parent);
     const parentLocated = await locateItem(pmRoot, parent, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
@@ -1885,6 +1896,18 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
 
   const changedFields = buildChangedFields(frontMatter, body, explicitUnsetKeys);
   const outputItem = structuredClone(frontMatter);
+
+  // After the create has committed (so the ID is real and shows up in the suggestion),
+  // emit a single non-blocking stderr hint when the new item would be invisible on `pm
+  // calendar`. The structured `calendar_item_without_schedule:*` warning above is what
+  // automation reads; this stderr line is the human/agent-facing version with a
+  // copy-pasteable `pm update` recipe.
+  if (calendarRelevantTypes.has(type.toLowerCase()) && !hasDeadline && !hasReminders && !hasEvents) {
+    printError(
+      `[pm] warning: ${type} '${id}' has no deadline/reminder/event — it will not appear on the calendar. Add one via 'pm update ${id} --deadline <ISO>' or 'pm update ${id} --event "title|start|end"'.`,
+    );
+  }
+
   return {
     item: outputItem,
     changed_fields: changedFields,

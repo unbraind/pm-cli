@@ -29,6 +29,7 @@ async function loadCalendarCoreModule() {
     if (
       typeof loaded.runCalendar === "function" &&
       typeof loaded.renderCalendarMarkdown === "function" &&
+      typeof loaded.renderCalendarToon === "function" &&
       typeof loaded.resolveCalendarOutputFormat === "function"
     ) {
       return loaded;
@@ -110,6 +111,10 @@ export function renderCalendarPackageOutput(context) {
   }
   if (outputFormat === "json" || readPayloadFormat(context.payload) === "json") {
     return `${JSON.stringify(result, null, 2)}\n`;
+  }
+  if (outputFormat === "toon") {
+    const rendered = calendarCore.renderCalendarToon(result);
+    return rendered.endsWith("\n") ? rendered : `${rendered}\n`;
   }
   return null;
 }

@@ -40,10 +40,20 @@ function priorityUsageError(raw: string): PmCliError {
  * Accepts:
  *   - numeric strings 0,1,2,3,4 (unchanged from prior behavior)
  *   - named levels (critical/high/medium/low/minimal), case-insensitive
+ *   - native numbers 0..4 (arrives via MCP tool calls that JSON-encode priority as a number)
  *
  * Throws a USAGE error listing BOTH accepted forms for anything else.
  */
-export function resolvePriority(raw: string): Priority {
+export function resolvePriority(raw: string | number): Priority {
+  if (typeof raw === "number") {
+    if (Number.isInteger(raw) && raw >= 0 && raw <= 4) {
+      return raw as Priority;
+    }
+    throw priorityUsageError(String(raw));
+  }
+  if (typeof raw !== "string") {
+    throw priorityUsageError(String(raw));
+  }
   const trimmed = raw.trim();
   if (trimmed.length === 0) {
     throw priorityUsageError(raw);

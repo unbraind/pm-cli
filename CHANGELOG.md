@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Calendar best-practice: honor timezone, surface Milestone/Meeting items, ICS export ([pm-xzrx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-xzrx.toon))
+- Model-agnostic search: provider settable via pm config + docs + index staleness surfacing ([pm-7ilo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7ilo.toon))
+
+### Changed
+
+- Code-quality refactors: split runUpdate/runCreate, cli-contracts barrel, shared dedup helpers, drop dead exports ([pm-1b96](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-1b96.toon))
+
+### Fixed
+
+- pm comments/notes/learnings --add HTML-escapes angle brackets in stored text ([pm-ydkl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ydkl.toon))
+- MCP pm\_create/pm\_update crashed with 'raw.trim is not a function' when priority sent as JSON number ([pm-9r7z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9r7z.toon))
+
 ## 2026.5.28 - 2026-05-28
 
 ### Added

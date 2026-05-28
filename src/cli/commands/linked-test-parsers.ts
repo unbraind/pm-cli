@@ -1,6 +1,7 @@
 import { parseOptionalNumber } from "../../core/item/parse.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { splitCommaList } from "../../core/shared/split-comma-list.js";
 import type { LinkedTest } from "../../types/index.js";
 
 /**
@@ -62,7 +63,7 @@ export function parseLinkedTestEnvClear(raw: string | undefined, optionName: str
   if (!raw) {
     return undefined;
   }
-  const keys = [...new Set(raw.split(/[;,\n]/).map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
+  const keys = splitCommaList(raw, { separators: /[;,\n]/ });
   if (keys.length === 0) {
     throw new PmCliError(`${optionName} env_clear must include at least one environment variable name`, EXIT_CODE.USAGE);
   }
@@ -112,7 +113,7 @@ export function parseLinkedTestStringList(raw: string | undefined): string[] | u
   if (!raw) {
     return undefined;
   }
-  const values = [...new Set(raw.split(/[;\n]/).map((entry) => entry.trim()).filter((entry) => entry.length > 0))];
+  const values = splitCommaList(raw, { separators: /[;\n]/ });
   return values.length > 0 ? values : undefined;
 }
 

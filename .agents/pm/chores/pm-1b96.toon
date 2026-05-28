@@ -2,11 +2,15 @@ id: pm-1b96
 title: "Code-quality refactors: split runUpdate/runCreate, cli-contracts barrel, shared dedup helpers, drop dead exports"
 description: "From code-quality audit (pm-jvbt). (1) runUpdate() ~834 lines (update.ts:1102) and runCreate() ~670 lines (create.ts:670) are single mega-functions mixing parse/validate/mutate/output — split into staged sub-steps. (2) cli-contracts.ts is a 1805-LOC monolith of 62 inline exports despite an existing cli-contracts/ subdir — move groups into it. (3) Dedup: shared parseSingleEvent for create.parseEvents vs update.parseEventEntries; splitCommaList() helper for the 7+ hand-rolled [...new Set(split(',').map(trim).filter(len>0))] idioms; toItemMetadata() inverse helper for 9x 'as unknown as ItemMetadata'. (4) Drop unused exports in help-json-payload.ts (9 internal-only) and registration-helpers.ts. (5) Resolve/remove misleading @deprecated on ItemFrontMatter (still used 60+ sites) and front_matter_key."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[2]: quality,refactor
 created_at: "2026-05-27T18:24:11.482Z"
-updated_at: "2026-05-27T18:24:11.482Z"
+updated_at: "2026-05-28T10:54:55.780Z"
 author: maintainer-agent
 parent: pm-th6y
+resolution: "Shipped two of the listed small-scope wins: (1) splitCommaList helper at src/core/shared/split-comma-list.ts consolidating 7 hand-rolled split/trim/filter/dedup idioms (aggregate.ts, linked-test-parsers.ts x2, update-many.ts, plan.ts x2, extension/bundled-catalog.ts). (2) Dropped 16 dead exports across help-json-payload.ts (10) and registration-helpers.ts (6); verified zero external usages of each before downgrading. NOT in this PR (separate followups): runUpdate/runCreate split, cli-contracts barrel move, toItemMetadata helper, parseEvents/parseEventEntries dedup, @deprecated ItemFrontMatter rename."
+expected_result: splitCommaList consolidates 7 sites with no observable semantic change; help-json-payload + registration-helpers no longer expose 16 module-private symbols as public exports; 100% coverage maintained.
+actual_result: "Verified: 1930/1930 unit tests pass at 100% coverage. 14 new tests for splitCommaList cover undefined/null/empty/whitespace/custom-separator/unique-false/sort/sort+dedup. tsc --noEmit clean. update-many.ts retains externally-applied localeCompare to keep exact prior semantics for non-ASCII tags."
+close_reason: "Shipped splitCommaList helper + dropped 16 dead exports; bigger items (runUpdate/runCreate split, cli-contracts barrel, toItemMetadata, parseEvents dedup) deferred to followup PRs."
 body: ""

@@ -19,6 +19,7 @@ import {
 } from "../../core/search/cache.js";
 import { resolveEmbeddingProviders } from "../../core/search/providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
+import { collectStaleVectorizationIds } from "../../core/search/staleness.js";
 import { resolveVectorStores } from "../../core/search/vector-stores.js";
 import { EXIT_CODE, PM_CORE_REQUIRED_SUBDIRS, PM_OPTIONAL_TYPE_SUBDIRS } from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
@@ -726,16 +727,6 @@ async function buildExtensionCheck(
     },
     warnings: extensionWarnings,
   };
-}
-
-function collectStaleVectorizationIds(items: ItemWithBody[], ledgerEntries: Record<string, string>): string[] {
-  return items
-    .filter((item) => {
-      const trackedUpdatedAt = ledgerEntries[item.id];
-      return trackedUpdatedAt !== item.updated_at;
-    })
-    .map((item) => item.id)
-    .sort((left, right) => left.localeCompare(right));
 }
 
 function summarizeList(values: string[], limit: number): { values: string[]; truncated: boolean } {

@@ -17,6 +17,7 @@ import { pathExists } from "../core/fs/fs-utils.js";
 import { projectMutationResult } from "../core/output/mutation-projection.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { decodeHtmlEntitiesInOptions } from "../core/shared/html-entity-decode.js";
 import { asRecordClone } from "../core/shared/primitives.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
@@ -782,7 +783,13 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
     if (!handler) {
       throw new PmCliError(`Unknown pm MCP tool: ${name}`, 64);
     }
-    const args = asRecordClone(params.arguments);
+    // pm-ydkl: defensive HTML-entity decode for free-text fields. Claude / the
+    // Anthropic MCP SDK HTML-encodes `<` / `>` (and friends) in tool arguments
+    // before they reach pm-cli, which would otherwise leak `&lt;type&gt;` into
+    // stored pm comments / notes / item bodies. Direct CLI calls are not
+    // affected; decoding at the MCP boundary normalizes the agent path while
+    // leaving normal text untouched.
+    const args = decodeHtmlEntitiesInOptions(asRecordClone(params.arguments));
     const result = await withCwd(args.cwd, () => handler(args));
     return resultContent(result);
   }
