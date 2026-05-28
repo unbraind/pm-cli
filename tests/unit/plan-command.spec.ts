@@ -465,17 +465,25 @@ describe("runPlan command family", () => {
       expect(first.materialized?.length).toBe(1);
       const initialId = first.materialized?.[0]?.id;
 
-      await expect(
-        runPlan({
-          subcommand: "materialize",
-          id: planId,
-          options: { steps: "all", materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
-          global: { ...GLOBAL, path: context.pmPath },
-        }),
-      ).rejects.toMatchObject({
-        exitCode: 3,
-        message: expect.stringContaining("already materialized or completed"),
+      // PR #78 follow-up: a second --steps all returns a successful no-op
+      // (exit 0) with materialize_skipped populated, so the command is truly
+      // idempotent. Previously this threw NOT_FOUND, which broke agent / CI
+      // pipelines that re-invoke the same script.
+      const noop = await runPlan({
+        subcommand: "materialize",
+        id: planId,
+        options: { steps: "all", materializeType: "Task", author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
       });
+      expect(noop.materialized).toEqual([]);
+      expect(noop.materialize_skipped).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ from_step: "plan-step-001", reason: "already_materialized", existing_id: initialId }),
+        ]),
+      );
+      expect(noop.warnings).toEqual(
+        expect.arrayContaining([expect.stringContaining("plan_materialize_skipped:plan-step-001:already_materialized")]),
+      );
       // Original linked Task still present; we did not create a duplicate.
       const fresh = context.runCli(["list", "--type", "Task", "--json"], { expectJson: true });
       const items = (fresh.json as { items: Array<{ id: string }> }).items.map((entry) => entry.id);

@@ -155,13 +155,15 @@ describe("extension command runtime", () => {
         capabilities: ["commands"],
       });
       const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
-      // pm-fl0c B-1 (2026-05-28): scaffold now emits the documented
-      // `defineExtension({ activate(api) {...} })` shape (matches
-      // docs/EXTENSIONS.md + docs/examples/starter-extension/index.js) so the
-      // generated module gets full TS narrowing on `api`.
-      expect(entry).toContain('import { defineExtension } from "@unbrained/pm-cli/sdk"');
-      expect(entry).toContain("export default defineExtension({");
-      expect(entry).toContain("activate(api)");
+      // pm-fl0c B-1 (2026-05-28) + Codex P2 follow-up: extension-only scaffold
+      // must NOT import `@unbrained/pm-cli/sdk` (no package.json with the dep
+      // → ERR_MODULE_NOT_FOUND when the loader imports the file URL). Instead
+      // it emits the original `export function activate(api)` shape with a
+      // JSDoc @param hint so editors still narrow the api parameter.
+      expect(entry).not.toContain('import { defineExtension }');
+      expect(entry).toContain('@param {import("@unbrained/pm-cli/sdk").ExtensionApi}');
+      expect(entry).toContain("export function activate(api)");
+      expect(entry).toContain("export default {");
       expect(entry).toContain('name: "starter-ext ping"');
 
       const rerun = await runExtension(scaffoldPath, { scaffold: true, project: true }, { path: context.pmPath });

@@ -809,9 +809,6 @@ function normalizeDependencyKindInput(raw: string | undefined): string | undefin
     return raw;
   }
   const trimmed = raw.trim();
-  if (trimmed.length === 0) {
-    return raw;
-  }
   const alias = DEPENDENCY_KIND_INPUT_ALIASES[trimmed.toLowerCase()];
   return alias ?? trimmed;
 }

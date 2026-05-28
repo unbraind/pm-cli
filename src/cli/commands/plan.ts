@@ -1290,13 +1290,25 @@ async function planMaterialize(
   const { targets, skipped: materializeSkipped } = resolveMaterializeTargets(steps, stepRefs);
   if (targets.length === 0) {
     if (materializeSkipped.length > 0) {
-      const skippedSummary = materializeSkipped
-        .map((entry) => `${entry.from_step}(${entry.reason}${entry.existing_id ? ` -> ${entry.existing_id}` : ""})`)
-        .join(", ");
-      throw new PmCliError(
-        `pm plan materialize: every selected step was already materialized or completed (${skippedSummary}). Nothing to do.`,
-        EXIT_CODE.NOT_FOUND,
-      );
+      // PR #78 / Gemini medium follow-up: when every selected step was
+      // already materialized or completed, return a successful no-op
+      // result (exit 0) instead of throwing NOT_FOUND. This makes
+      // `pm plan materialize --steps all` truly idempotent for CI/agent
+      // workflows; the skip reasons + warnings still surface what was
+      // intentionally not redone.
+      const plan = projectPlan(planRead.document.metadata, "standard");
+      return {
+        action: "materialize",
+        plan,
+        materialized: [],
+        materialize_skipped: materializeSkipped,
+        next_actions: nextActionsFor(planRead.itemId, plan),
+        warnings: materializeSkipped.map(
+          (entry) =>
+            `plan_materialize_skipped:${entry.from_step}:${entry.reason}${entry.existing_id ? `:${entry.existing_id}` : ""}`,
+        ),
+        generated_at: nowIso(),
+      };
     }
     throw new PmCliError("No matching plan steps found for --steps", EXIT_CODE.NOT_FOUND);
   }

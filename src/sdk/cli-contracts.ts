@@ -485,6 +485,13 @@ export const CLOSE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--validate-close" },
+  // pm-fl0c #11 (2026-05-28) + Codex P2 follow-up: inline closure-validation
+  // fields. Surface them through the contract so `pm contracts --command
+  // close`, the JSON help payload, and bootstrap flag normalization /
+  // suggestions all stay consistent with the commander registration.
+  { flag: "--resolution" },
+  { flag: "--expected-result", aliases: ["--expected_result"] },
+  { flag: "--actual-result", aliases: ["--actual_result"] },
   { flag: "--force" },
 ];
 
