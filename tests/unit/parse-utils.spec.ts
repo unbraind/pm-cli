@@ -1,6 +1,14 @@
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../src/core/item/parse.js";
+import {
+  applyTagRemovals,
+  collectTagFlagValues,
+  createStdinTokenResolver,
+  mergeAdditiveTags,
+  parseCsvKv,
+  parseOptionalNumber,
+  parseTags,
+} from "../../src/core/item/parse.js";
 import { parseIntegerLimit, parseLimit, parsePriority, parseType } from "../../src/cli/shared-parsers.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 
@@ -22,6 +30,33 @@ describe("core/item/parse", () => {
     expect(parseTags("[]")).toEqual([]);
     // Malformed JSON falls back to CSV semantics so we never regress legacy paths.
     expect(parseTags("[alpha,beta]")).toEqual(["[alpha", "beta]"]);
+  });
+
+  it("collectTagFlagValues normalizes repeated --add-tags / --remove-tags entries", () => {
+    expect(collectTagFlagValues(["BETA", "alpha", " alpha,gamma "])).toEqual(["alpha", "beta", "gamma"]);
+    expect(collectTagFlagValues(undefined)).toEqual([]);
+    expect(collectTagFlagValues([])).toEqual([]);
+    expect(collectTagFlagValues(['["x","y"]'])).toEqual(["x", "y"]);
+    // Non-string entries (defensive against accidental coercion) are skipped.
+    expect(collectTagFlagValues(["alpha", 7 as unknown as string])).toEqual(["alpha"]);
+  });
+
+  it("mergeAdditiveTags appends without losing existing entries and stays sorted/deduped", () => {
+    expect(mergeAdditiveTags(["alpha", "beta"], ["beta", "gamma"])).toEqual(["alpha", "beta", "gamma"]);
+    expect(mergeAdditiveTags([], ["BETA", "alpha"])).toEqual(["alpha", "beta"]);
+    // No-op when no additions provided.
+    expect(mergeAdditiveTags(["alpha"], undefined)).toEqual(["alpha"]);
+    expect(mergeAdditiveTags(["alpha"], [])).toEqual(["alpha"]);
+  });
+
+  it("applyTagRemovals filters tags by additive subtraction without touching others", () => {
+    expect(applyTagRemovals(["alpha", "beta", "gamma"], ["beta"])).toEqual(["alpha", "gamma"]);
+    expect(applyTagRemovals(["alpha"], ["beta"])).toEqual(["alpha"]);
+    // Empty removal input is a no-op (preserves caller order).
+    expect(applyTagRemovals(["alpha", "beta"], undefined)).toEqual(["alpha", "beta"]);
+    expect(applyTagRemovals(["alpha", "beta"], [])).toEqual(["alpha", "beta"]);
+    // CSV entries inside a single --remove-tags value are honoured.
+    expect(applyTagRemovals(["alpha", "beta", "gamma"], ["alpha,gamma"])).toEqual(["beta"]);
   });
 
   it("parses csv key-value values with quoted commas and escaped quotes", () => {

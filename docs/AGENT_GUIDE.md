@@ -48,6 +48,13 @@ Priority accepts either numeric `0..4` or named aliases `critical`, `high`, `med
 
 Repeated singular/plural list flags accumulate, so `--tag a --tag b` is equivalent to `--tags a,b` (same for `--status` and `--fields` on read commands). You no longer have to pre-join values into one comma list.
 
+`--tags` REPLACES the whole tag list. To edit tags without restating the full set, prefer `--add-tags <value>` (adds without replacing) and `--remove-tags <value>` (prunes) on `create`/`update`/`update-many` (both repeatable; CSV or JSON-array). `--remove-tags` is `update`/`update-many` only. Also note `--expected`/`--actual` are short aliases for `--expected-result`/`--actual-result` on these commands, matching `pm close`.
+
+```bash
+pm update <item-id> --add-tags urgent,backend   # keep existing tags, add two
+pm update <item-id> --remove-tags stale          # drop one, keep the rest
+```
+
 Create hierarchy from broad to narrow: `Epic` -> `Feature` -> `Task` or `Issue`. Use `--parent <id>` for child items.
 
 3. **Claim**

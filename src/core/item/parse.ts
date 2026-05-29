@@ -39,6 +39,58 @@ export function parseTags(raw: string): string[] {
   return Array.from(new Set(tags)).sort((a, b) => a.localeCompare(b));
 }
 
+/**
+ * Merge repeated `--add-tags` / `--remove-tags` values into a single normalized
+ * tag list. Each entry can itself be CSV or a JSON array, mirroring the format
+ * accepted by `--tags`. Returns a deterministically sorted, deduped list.
+ */
+export function collectTagFlagValues(values: readonly string[] | undefined): string[] {
+  if (!values || values.length === 0) {
+    return [];
+  }
+  const collected: string[] = [];
+  for (const raw of values) {
+    if (typeof raw !== "string") {
+      continue;
+    }
+    for (const tag of parseTags(raw)) {
+      collected.push(tag);
+    }
+  }
+  return Array.from(new Set(collected)).sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Apply an additive tag mutation to a base tag list. Used by `pm create` and
+ * `pm update` so `--add-tags` extends `--tags` (or the existing tags) without
+ * replacing them. Output is sorted + deduped lowercase, matching `parseTags`.
+ */
+export function mergeAdditiveTags(baseTags: readonly string[], add: readonly string[] | undefined): string[] {
+  if (!add || add.length === 0) {
+    return Array.from(baseTags);
+  }
+  const merged = new Set<string>(baseTags);
+  for (const tag of collectTagFlagValues(add)) {
+    merged.add(tag);
+  }
+  return Array.from(merged).sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Apply a subtractive tag mutation to a base tag list. Used by `pm update` so
+ * `--remove-tags x,y` prunes those entries without rewriting the full set.
+ */
+export function applyTagRemovals(baseTags: readonly string[], remove: readonly string[] | undefined): string[] {
+  if (!remove || remove.length === 0) {
+    return Array.from(baseTags);
+  }
+  const removeSet = new Set(collectTagFlagValues(remove));
+  if (removeSet.size === 0) {
+    return Array.from(baseTags);
+  }
+  return baseTags.filter((tag) => !removeSet.has(tag));
+}
+
 // Agents and MCP callers frequently pass --tags as a JSON array (e.g.
 // `--tags '["a","b"]'`). The MCP server normalizes that upstream, but direct
 // CLI invocations used to write the raw bracket string into front matter,

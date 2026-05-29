@@ -2,13 +2,13 @@ import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { toItemRecord } from "../../core/item/item-record.js";
+import { applyTagRemovals, mergeAdditiveTags, parseTags } from "../../core/item/parse.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { toErrorMessage } from "../../core/shared/primitives.js";
-import { splitCommaList } from "../../core/shared/split-comma-list.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -61,7 +61,6 @@ const UPDATE_OPTION_TO_ITEM_KEY: Partial<Record<keyof UpdateCommandOptions, stri
   closeReason: "close_reason",
   priority: "priority",
   type: "type",
-  tags: "tags",
   deadline: "deadline",
   estimatedMinutes: "estimated_minutes",
   acceptanceCriteria: "acceptance_criteria",
@@ -333,9 +332,6 @@ function toComparablePreviewValue(optionKey: keyof UpdateCommandOptions, value: 
     const parsed = Number(String(value).trim());
     return Number.isFinite(parsed) ? parsed : String(value).trim();
   }
-  if (optionKey === "tags") {
-    return splitCommaList(String(value)).sort((a, b) => a.localeCompare(b));
-  }
   if (optionKey === "regression") {
     const normalized = String(value).trim().toLowerCase();
     if (normalized === "true" || normalized === "1") {
@@ -412,9 +408,43 @@ function buildCollectionMutationPlans(row: Record<string, unknown>, update: Upda
   return changes;
 }
 
+function normalizeExistingTags(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((tag): tag is string => typeof tag === "string");
+}
+
+// Tags support three mutation modes that compose: --tags replaces, --add-tags
+// extends, --remove-tags prunes. Replicate runUpdate's resolution order so the
+// dry-run preview and the apply-mode actionable detection both account for
+// additive/subtractive tag mutations (a --add-tags-only update must NOT be
+// treated as a no-op skip).
+function buildTagMutationPlan(row: Record<string, unknown>, update: UpdateCommandOptions): PlannedChange | undefined {
+  const hasReplace = update.tags !== undefined;
+  const hasAdd = Array.isArray(update.addTags) && update.addTags.length > 0;
+  const hasRemove = Array.isArray(update.removeTags) && update.removeTags.length > 0;
+  if (!hasReplace && !hasAdd && !hasRemove) {
+    return undefined;
+  }
+  const existing = normalizeExistingTags(row.tags);
+  const baseTags = hasReplace ? parseTags(update.tags ?? "") : existing;
+  const withAdditions = mergeAdditiveTags(baseTags, update.addTags);
+  const after = applyTagRemovals(withAdditions, update.removeTags).slice().sort((a, b) => a.localeCompare(b));
+  const before = existing.slice().sort((a, b) => a.localeCompare(b));
+  if (areValuesEqual(before, after)) {
+    return undefined;
+  }
+  return { field: "tags", before: existing, after };
+}
+
 function buildPlannedItemDiff(item: ListedItem, update: UpdateCommandOptions): PlannedItemDiff {
   const row = toItemRecord(item);
   const changes: PlannedChange[] = [];
+  const tagPlan = buildTagMutationPlan(row, update);
+  if (tagPlan) {
+    changes.push(tagPlan);
+  }
   for (const [optionKey, itemKey] of Object.entries(UPDATE_OPTION_TO_ITEM_KEY) as Array<[keyof UpdateCommandOptions, string]>) {
     const candidate = update[optionKey];
     if (candidate === undefined) {

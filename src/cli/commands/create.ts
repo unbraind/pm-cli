@@ -7,7 +7,7 @@ import {
   validateMissingParentReference,
 } from "../../core/item/parent-reference-policy.js";
 import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
-import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
+import { createStdinTokenResolver, mergeAdditiveTags, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import { resolvePriority } from "../../core/item/priority.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import {
@@ -91,6 +91,7 @@ export interface CreateCommandOptions {
   status?: string;
   priority?: string;
   tags?: string;
+  addTags?: string[];
   body?: string;
   deadline?: string;
   estimatedMinutes?: string;
@@ -1550,11 +1551,12 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   let status =
     resolvedOptions.status !== undefined ? parseStatusValue(resolvedOptions.status, statusRegistry) : statusRegistry.open_status;
   const priority = resolvedOptions.priority !== undefined ? ensurePriority(resolvedOptions.priority) : 2;
-  const tags = unsetTargets.frontMatterKeys.has("tags")
+  const baseTags = unsetTargets.frontMatterKeys.has("tags")
     ? []
     : resolvedOptions.tags !== undefined
       ? parseTags(resolvedOptions.tags)
       : [];
+  const tags = mergeAdditiveTags(baseTags, resolvedOptions.addTags);
 
   const deadline = unsetTargets.frontMatterKeys.has("deadline")
     ? undefined

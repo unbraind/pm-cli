@@ -154,6 +154,36 @@ describe("runClose", () => {
     });
   });
 
+  it("pm close accepts --expected and --actual short aliases as commander flags (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "close-short-alias-flags");
+      const result = context.runCli(
+        [
+          "close",
+          id,
+          "Done with short aliases",
+          "--json",
+          "--validate-close",
+          "strict",
+          "--resolution",
+          "Implemented and merged",
+          "--expected",
+          "Short --expected sets expected_result",
+          "--actual",
+          "Short --actual sets actual_result",
+        ],
+        { expectJson: true },
+      );
+      expect(result.code).toBe(0);
+      const payload = result.json as {
+        item: { status: string; expected_result?: string; actual_result?: string };
+      };
+      expect(payload.item.status).toBe("closed");
+      expect(payload.item.expected_result).toBe("Short --expected sets expected_result");
+      expect(payload.item.actual_result).toBe("Short --actual sets actual_result");
+    });
+  });
+
   it("accepts inline resolution/expected_result/actual_result so --validate-close strict succeeds in one shot (pm-fl0c #11)", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-inline-closure-fields");

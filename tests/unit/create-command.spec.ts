@@ -107,6 +107,41 @@ describe("runCreate", () => {
     });
   });
 
+  it("pm create --add-tags extends --tags additively (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        {
+          title: "create-add-tags",
+          description: "additive tag flag on create",
+          type: "Task",
+          createMode: "progressive",
+          tags: "alpha,beta",
+          addTags: ["gamma,delta", "delta"],
+        },
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toEqual([]);
+      expect(result.item.tags).toEqual(["alpha", "beta", "delta", "gamma"]);
+    });
+  });
+
+  it("pm create --add-tags works on its own without --tags (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        {
+          title: "create-add-tags-only",
+          description: "additive tag flag works standalone",
+          type: "Task",
+          createMode: "progressive",
+          addTags: ["alpha,beta"],
+        },
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toEqual([]);
+      expect(result.item.tags).toEqual(["alpha", "beta"]);
+    });
+  });
+
   it("supports progressive create mode for staged minimal creation", async () => {
     await withTempPmPath(async (context) => {
       const result = await runCreate(

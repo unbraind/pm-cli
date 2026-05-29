@@ -16,7 +16,14 @@ import {
   validateMissingParentReference,
 } from "../../core/item/parent-reference-policy.js";
 import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-format.js";
-import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
+import {
+  applyTagRemovals,
+  createStdinTokenResolver,
+  mergeAdditiveTags,
+  parseCsvKv,
+  parseOptionalNumber,
+  parseTags,
+} from "../../core/item/parse.js";
 import { resolvePriority } from "../../core/item/priority.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { collectRuntimeUpdateFieldValues } from "../../core/schema/runtime-field-values.js";
@@ -74,6 +81,8 @@ export interface UpdateCommandOptions {
   priority?: string;
   type?: string;
   tags?: string;
+  addTags?: string[];
+  removeTags?: string[];
   deadline?: string;
   estimatedMinutes?: string;
   acceptanceCriteria?: string;
@@ -1414,6 +1423,8 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     priority: options.priority !== undefined,
     type: options.type !== undefined,
     tags: options.tags !== undefined,
+    addTags: Array.isArray(options.addTags) && options.addTags.length > 0,
+    removeTags: Array.isArray(options.removeTags) && options.removeTags.length > 0,
     deadline: options.deadline !== undefined,
     estimatedMinutes: options.estimatedMinutes !== undefined,
     acceptanceCriteria: options.acceptanceCriteria !== undefined,
@@ -1792,8 +1803,22 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         }
         changedFields.push("docs");
       }
-      if (options.tags !== undefined || clearFrontMatterKeys.has("tags")) {
-        document.metadata.tags = clearFrontMatterKeys.has("tags") ? [] : parseTags(options.tags!);
+      const addTagsValues = options.addTags;
+      const removeTagsValues = options.removeTags;
+      const hasAdditiveTagMutation =
+        (Array.isArray(addTagsValues) && addTagsValues.length > 0) ||
+        (Array.isArray(removeTagsValues) && removeTagsValues.length > 0);
+      if (options.tags !== undefined || clearFrontMatterKeys.has("tags") || hasAdditiveTagMutation) {
+        const baseTags = clearFrontMatterKeys.has("tags")
+          ? []
+          : options.tags !== undefined
+            ? parseTags(options.tags!)
+            : Array.isArray(document.metadata.tags)
+              ? [...(document.metadata.tags as string[])]
+              : [];
+        const withAdditions = mergeAdditiveTags(baseTags, addTagsValues);
+        const finalTags = applyTagRemovals(withAdditions, removeTagsValues);
+        document.metadata.tags = finalTags;
         changedFields.push("tags");
       }
       setOrClearScalar(options.deadline, "deadline", (value) => resolveIsoOrRelative(value, nowValue, "deadline"));
