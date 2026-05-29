@@ -2123,6 +2123,33 @@ describe("runUpdate", () => {
         expect(item.tags).toEqual(["unit", "update"]);
       });
     });
+
+    it("does not mark tags changed when an additive mutation resolves to the existing set", async () => {
+      await withTempPmPath(async (context) => {
+        const id = createTask(context, "tag-noop-changed-fields");
+        // Adding an already-present tag and removing an absent tag are both
+        // no-ops — neither should churn history (changed_fields excludes "tags").
+        const addExisting = await runUpdate(
+          id,
+          { addTags: ["unit"], message: "add already-present tag" },
+          { path: context.pmPath },
+        );
+        expect(addExisting.changed_fields).not.toContain("tags");
+        const removeAbsent = await runUpdate(
+          id,
+          { removeTags: ["ghost"], message: "remove absent tag" },
+          { path: context.pmPath },
+        );
+        expect(removeAbsent.changed_fields).not.toContain("tags");
+        // A genuine addition still records the change.
+        const realAdd = await runUpdate(
+          id,
+          { addTags: ["fresh"], message: "add new tag" },
+          { path: context.pmPath },
+        );
+        expect(realAdd.changed_fields).toContain("tags");
+      });
+    });
   });
 
   describe("--add-tags / --remove-tags CLI alias contracts (pm-1lws)", () => {

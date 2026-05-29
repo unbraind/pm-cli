@@ -61,15 +61,28 @@ export function collectTagFlagValues(values: readonly string[] | undefined): str
 }
 
 /**
+ * Normalize a base tag list to the canonical form pm stores: trimmed,
+ * lowercased, non-empty. Existing front-matter tags are almost always already
+ * canonical (parseTags lowercases on write), but legacy or hand-edited `.toon`
+ * files can carry mixed-case entries — normalizing here keeps additive and
+ * subtractive mutations case-insensitive (so `--add-tags beta` dedupes against
+ * an existing `Beta`, and `--remove-tags alpha` removes an existing `Alpha`).
+ */
+function normalizeBaseTags(baseTags: readonly string[]): string[] {
+  return baseTags.map((tag) => tag.trim().toLowerCase()).filter(Boolean);
+}
+
+/**
  * Apply an additive tag mutation to a base tag list. Used by `pm create` and
  * `pm update` so `--add-tags` extends `--tags` (or the existing tags) without
  * replacing them. Output is sorted + deduped lowercase, matching `parseTags`.
  */
 export function mergeAdditiveTags(baseTags: readonly string[], add: readonly string[] | undefined): string[] {
+  const normalizedBase = normalizeBaseTags(baseTags);
   if (!add || add.length === 0) {
-    return Array.from(baseTags);
+    return Array.from(new Set(normalizedBase)).sort((a, b) => a.localeCompare(b));
   }
-  const merged = new Set<string>(baseTags);
+  const merged = new Set<string>(normalizedBase);
   for (const tag of collectTagFlagValues(add)) {
     merged.add(tag);
   }
@@ -79,16 +92,19 @@ export function mergeAdditiveTags(baseTags: readonly string[], add: readonly str
 /**
  * Apply a subtractive tag mutation to a base tag list. Used by `pm update` so
  * `--remove-tags x,y` prunes those entries without rewriting the full set.
+ * Removal is case-insensitive: both the base list and the removal selectors are
+ * normalized to canonical lowercase before matching.
  */
 export function applyTagRemovals(baseTags: readonly string[], remove: readonly string[] | undefined): string[] {
+  const normalizedBase = Array.from(new Set(normalizeBaseTags(baseTags))).sort((a, b) => a.localeCompare(b));
   if (!remove || remove.length === 0) {
-    return Array.from(baseTags);
+    return normalizedBase;
   }
   const removeSet = new Set(collectTagFlagValues(remove));
   if (removeSet.size === 0) {
-    return Array.from(baseTags);
+    return normalizedBase;
   }
-  return baseTags.filter((tag) => !removeSet.has(tag));
+  return normalizedBase.filter((tag) => !removeSet.has(tag));
 }
 
 // Agents and MCP callers frequently pass --tags as a JSON array (e.g.

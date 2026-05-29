@@ -47,6 +47,11 @@ describe("core/item/parse", () => {
     // No-op when no additions provided.
     expect(mergeAdditiveTags(["alpha"], undefined)).toEqual(["alpha"]);
     expect(mergeAdditiveTags(["alpha"], [])).toEqual(["alpha"]);
+    // Mixed-case existing tags (legacy/hand-edited .toon) are normalized so
+    // additions dedupe case-insensitively instead of producing ["Beta","beta"].
+    expect(mergeAdditiveTags(["Beta"], ["beta"])).toEqual(["beta"]);
+    expect(mergeAdditiveTags(["Alpha", "beta"], undefined)).toEqual(["alpha", "beta"]);
+    expect(mergeAdditiveTags([" Gamma "], ["alpha"])).toEqual(["alpha", "gamma"]);
   });
 
   it("applyTagRemovals filters tags by additive subtraction without touching others", () => {
@@ -57,6 +62,10 @@ describe("core/item/parse", () => {
     expect(applyTagRemovals(["alpha", "beta"], [])).toEqual(["alpha", "beta"]);
     // CSV entries inside a single --remove-tags value are honoured.
     expect(applyTagRemovals(["alpha", "beta", "gamma"], ["alpha,gamma"])).toEqual(["beta"]);
+    // Removal is case-insensitive: mixed-case existing tags are normalized so a
+    // lowercase --remove-tags selector still prunes an uppercase stored tag.
+    expect(applyTagRemovals(["Alpha", "Beta"], ["alpha"])).toEqual(["beta"]);
+    expect(applyTagRemovals(["Alpha", "beta"], undefined)).toEqual(["alpha", "beta"]);
   });
 
   it("parses csv key-value values with quoted commas and escaped quotes", () => {

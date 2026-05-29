@@ -1809,17 +1809,28 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         (Array.isArray(addTagsValues) && addTagsValues.length > 0) ||
         (Array.isArray(removeTagsValues) && removeTagsValues.length > 0);
       if (options.tags !== undefined || clearFrontMatterKeys.has("tags") || hasAdditiveTagMutation) {
+        const originalTags = Array.isArray(document.metadata.tags) ? [...(document.metadata.tags as string[])] : [];
         const baseTags = clearFrontMatterKeys.has("tags")
           ? []
           : options.tags !== undefined
             ? parseTags(options.tags!)
-            : Array.isArray(document.metadata.tags)
-              ? [...(document.metadata.tags as string[])]
-              : [];
+            : originalTags;
         const withAdditions = mergeAdditiveTags(baseTags, addTagsValues);
         const finalTags = applyTagRemovals(withAdditions, removeTagsValues);
-        document.metadata.tags = finalTags;
-        changedFields.push("tags");
+        // An additive/subtractive-only mutation that resolves to the exact
+        // existing tag set is a no-op — skip it so we don't churn history or
+        // updated_at (e.g. `--add-tags <already-present>`). Compare against the
+        // RAW original (not lowercased) so a canonical normalization such as
+        // "Beta" -> "beta" still registers as a real change, matching
+        // update-many's buildTagMutationPlan detection. Explicit --tags / unset
+        // tags always write to preserve their replace/clear intent.
+        const isExplicitTagWrite = options.tags !== undefined || clearFrontMatterKeys.has("tags");
+        const beforeKey = [...originalTags].sort((a, b) => a.localeCompare(b)).join(" ");
+        const afterKey = finalTags.join(" ");
+        if (isExplicitTagWrite || beforeKey !== afterKey) {
+          document.metadata.tags = finalTags;
+          changedFields.push("tags");
+        }
       }
       setOrClearScalar(options.deadline, "deadline", (value) => resolveIsoOrRelative(value, nowValue, "deadline"));
       setOrClearScalar(options.estimatedMinutes, "estimated_minutes", (value) =>
