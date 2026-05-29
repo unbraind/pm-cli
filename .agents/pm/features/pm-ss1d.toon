@@ -2,13 +2,28 @@ id: pm-ss1d
 title: Reduce ESM module-resolution startup overhead (~85ms) via core bundling
 description: "CPU profile of pm list shows ~85ms in Node ESM resolution/compilation (compileSourceTextModule, getPackageScopeConfig, realpathSync, defaultResolve, deserializePackageJSON) because dist is unbundled tsc output (~170 files). pm-gt82 explored esbuild bundling but it is NOT the shipped build. Evaluate shipping a bundled core entry (extensions still dynamically imported) to cut per-command + startup cost across the board. Investigate why pm-gt82 bundle did not ship."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[3]: build,perf,startup
 created_at: "2026-05-27T16:47:51.430Z"
-updated_at: "2026-05-27T18:24:03.615Z"
+updated_at: "2026-05-29T15:45:42.948Z"
 author: maintainer-agent
 parent: pm-th6y
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-05-27T18:24:03.615Z",maintainer-agent,"Evidence 2026-05-27: CPU profiles of 'pm get' (249ms) and 'pm list' (345ms) show the per-command cost is ~entirely Node ESM module resolution/compilation (compileSourceTextModule, getPackageScopeConfig, realpathSync, defaultResolve, deserializePackageJSON ~85-90ms) over ~170 unbundled tsc files — there is NO item-specific hot-path cost left in get. pm-gt82 mis-benchmarked the bundle on 'pm --version', which short-circuits in cli.ts BEFORE main.js loads, so the bundle looked slower; real commands (list/get/search/--help) would benefit. Correct approach: esbuild --bundle --splitting --format=esm --platform=node --packages=external (keep node_modules + dynamic extension import() external; --splitting preserves the 4 lazy register-* modules and per-command laziness). esbuild is NOT currently a devDependency. Compile cache (enableCompileCache) is already effective (~1.24x) and does NOT remove resolution cost. This is the single biggest remaining startup lever (~90ms on every command, ~185ms->~110ms startup). Deferred to its own focused PR with extension/MCP/version/sentry-sourcemap verification — too risky to bundle inside the perf+reliability PR."
+  "2026-05-29T15:32:09.724Z",codex-audit-20260529,"Evidence 2026-05-29: shipped idempotent esbuild core bundling in the build pipeline. Focused gates passed: pnpm build, pnpm typecheck, node scripts/bundle-cli.mjs repeated successfully, and 9-file regression suite passed (332 tests). Current bundled command timings over 5 runs: --version avg 35ms; get pm-th6y --depth brief avg 225ms; list-open --limit 5 avg 302ms; search performance --limit 5 avg 299ms; health summary avg 303ms; contracts flags avg 296ms."
+files[5]{path,scope,note}:
+  package.json,project,Build now runs bundler and publishes bundle script
+  pnpm-lock.yaml,project,Lock esbuild dev dependency
+  scripts/bundle-cli.mjs,project,Shipped esbuild core bundling rewrites dist entry to bundled main
+  tests/integration/release-automation-contract.spec.ts,project,Release automation contract coverage for bundled build script
+  tests/integration/release-readiness-runtime.spec.ts,project,Release readiness coverage for bundled build script and publish files
+tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node dist/cli.js get pm-th6y --depth brief,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/bundle-cli.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/run-gates.mjs --json --telemetry-mode required --max-sentry-critical 10 --max-sentry-high 20 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/unit/completion-command.spec.ts tests/unit/error-guidance.spec.ts tests/unit/drift-scan.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented shipped idempotent esbuild core bundling, verified bundled startup/runtime, and passed focused plus full release gates."
 body: ""

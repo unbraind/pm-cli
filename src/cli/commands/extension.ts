@@ -1,10 +1,12 @@
 import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { activateExtensions, loadExtensions, nextExtensionReloadToken } from "../../core/extensions/index.js";
 import { resolveExtensionRoots } from "../../core/extensions/loader.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
 import { collectPackageExtensionDirectories } from "../../core/packages/manifest.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
@@ -318,20 +320,44 @@ export async function copyExtensionDirectoryForInstall(
   destinationDirectory: string,
   copyDirectory: typeof fs.cp = fs.cp,
 ): Promise<void> {
-  let lastError: unknown = null;
   for (let attempt = 1; attempt <= EXTENSION_INSTALL_COPY_ATTEMPTS; attempt += 1) {
     try {
       if (await pathExists(destinationDirectory)) {
         await fs.rm(destinationDirectory, { recursive: true, force: true });
       }
-      await copyDirectory(sourceDirectory, destinationDirectory, { recursive: true, force: true });
+      await copyExtensionDirectoryWithoutSelfNesting(sourceDirectory, destinationDirectory, copyDirectory);
       return;
     } catch (error: unknown) {
       if (!isRetriableExtensionInstallCopyError(error) || attempt === EXTENSION_INSTALL_COPY_ATTEMPTS) {
         throw error;
       }
-      lastError = error;
+      await sleep(EXTENSION_INSTALL_LOCK_DELAY_MS);
     }
+  }
+}
+
+async function copyExtensionDirectoryWithoutSelfNesting(
+  sourceDirectory: string,
+  destinationDirectory: string,
+  copyDirectory: typeof fs.cp,
+): Promise<void> {
+  const resolvedSource = path.resolve(sourceDirectory);
+  const resolvedDestination = path.resolve(destinationDirectory);
+  if (resolvedSource === resolvedDestination) {
+    return;
+  }
+  if (!isPathWithinDirectory(resolvedSource, resolvedDestination)) {
+    await copyDirectory(sourceDirectory, destinationDirectory, { recursive: true, force: true });
+    return;
+  }
+
+  const stagingRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-extension-copy-"));
+  const stagedDirectory = path.join(stagingRoot, "extension");
+  try {
+    await copyDirectory(sourceDirectory, stagedDirectory, { recursive: true, force: true });
+    await copyDirectory(stagedDirectory, destinationDirectory, { recursive: true, force: true });
+  } finally {
+    await fs.rm(stagingRoot, { recursive: true, force: true });
   }
 }
 

@@ -9,7 +9,7 @@ import {
   parseExtensionInstallSource,
   readManagedExtensionState,
 } from "../../src/cli/commands/extension.js";
-import { resolveInstallSource } from "../../src/cli/commands/extension/install-sources.js";
+import { normalizeNpmLocalFileAliasSpec, resolveInstallSource } from "../../src/cli/commands/extension/install-sources.js";
 import { buildExtensionTriageSummary } from "../../src/cli/commands/extension/doctor.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
@@ -773,6 +773,50 @@ describe("extension command runtime", () => {
     }
   });
 
+  it("normalizes npm file-alias package specs to file URLs before packing", async () => {
+    const tempRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "pm-extension-npm-file-alias-")));
+    const previousCwd = process.cwd();
+    try {
+      const packageRoot = path.join(tempRoot, "packages", "file-alias-package");
+      const extensionRoot = path.join(packageRoot, "extensions", "file-alias-package");
+      await writeTestExtension({ root: extensionRoot, name: "file-alias-package" });
+      await writeFile(
+        path.join(packageRoot, "package.json"),
+        `${JSON.stringify(
+          {
+            name: "pm-file-alias-package",
+            version: "0.2.0",
+            type: "module",
+            pm: {
+              extensions: ["extensions/file-alias-package"],
+            },
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      process.chdir(tempRoot);
+      expect(normalizeNpmLocalFileAliasSpec("pm-file-alias-package@file:packages/file-alias-package")).toMatch(
+        /^pm-file-alias-package@file:\/\//,
+      );
+      const source = parseExtensionInstallSource("npm:pm-file-alias-package@file:packages/file-alias-package");
+      expect(source.kind).toBe("npm");
+      const resolved = await resolveInstallSource(source);
+      try {
+        expect(resolved.npm_package).toBe("pm-file-alias-package");
+        expect(resolved.npm_version).toBe("0.2.0");
+        expect(await readFile(path.join(resolved.directory, "manifest.json"), "utf8")).toContain("file-alias-package");
+      } finally {
+        await resolved.cleanup?.();
+      }
+    } finally {
+      process.chdir(previousCwd);
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it("installs, explores, manages, toggles activation, and uninstalls a local extension", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "sample-source-ext");
@@ -988,6 +1032,25 @@ describe("extension command runtime", () => {
 
       expect(attempts).toBe(2);
       await expect(readFile(path.join(destinationDir, "manifest.json"), "utf8")).resolves.toContain("race-ext");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("stages extension copies when the destination is nested inside the source", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-self-nesting-"));
+    try {
+      const sourceDir = path.join(tempRoot, "source");
+      const destinationDir = path.join(sourceDir, ".agents", "pm", "extensions", "root-ext");
+      await writeTestExtension({
+        root: sourceDir,
+        name: "root-ext",
+      });
+      await mkdir(path.dirname(destinationDir), { recursive: true });
+
+      await copyExtensionDirectoryForInstall(sourceDir, destinationDir);
+
+      await expect(readFile(path.join(destinationDir, "manifest.json"), "utf8")).resolves.toContain("root-ext");
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

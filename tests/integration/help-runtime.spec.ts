@@ -470,7 +470,7 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(help.code).toBe(0);
       expect(help.stdout).toContain("--depth");
       expect(help.stdout).toContain("--fields");
-      expect(help.stdout).toContain("brief|standard|deep");
+      expect(help.stdout).toContain("brief|standard|deep|full");
 
       const created = context.runCli(
         [
@@ -500,6 +500,12 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(payload.item?.id).toBe(id);
       expect(payload.body).toBe("");
       expect(payload.linked?.files).toEqual([]);
+
+      const depthFull = context.runCli(["get", id, "--depth", "full", "--json"], { expectJson: true });
+      expect(depthFull.code).toBe(0);
+      const depthFullPayload = depthFull.json as { item?: { id?: string }; body?: string };
+      expect(depthFullPayload.item?.id).toBe(id);
+      expect(depthFullPayload.body).toBe("");
 
       const fields = context.runCli(["get", id, "--fields", "id,title,status,parent,type", "--json"], { expectJson: true });
       expect(fields.code).toBe(0);

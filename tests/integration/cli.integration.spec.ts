@@ -1,6 +1,7 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import { splitFrontMatter } from "../../src/core/item/item-format.js";
 import { distCliPath, runDirectDistCli } from "../helpers/cliRunner.js";
@@ -295,7 +296,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       );
       await writeFile(path.join(packageRoot, "vendor", sdkTarball), await readFile(path.join(context.tempRoot, sdkTarball)));
 
-      const installSpec = `pm-test-npm-package-with-deps@file:${packageRoot}`;
+      const installSpec = `pm-test-npm-package-with-deps@${pathToFileURL(packageRoot).href}`;
       const install = context.runCli(["install", `npm:${installSpec}`, "--json"], { expectJson: true });
       expect(install.code).toBe(0);
 

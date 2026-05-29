@@ -84,10 +84,13 @@ function parseGetDepth(raw: string | undefined): GetDepth {
     return "deep";
   }
   const normalized = raw.trim().toLowerCase();
+  if (normalized === "full") {
+    return "deep";
+  }
   if (GET_DEPTH_VALUES.includes(normalized as GetDepth)) {
     return normalized as GetDepth;
   }
-  throw new PmCliError("Get --depth must be one of brief|standard|deep", EXIT_CODE.USAGE);
+  throw new PmCliError("Get --depth must be one of brief|standard|deep|full", EXIT_CODE.USAGE);
 }
 
 function projectItemForDepth(item: ItemFrontMatter, depth: GetDepth): Partial<ItemFrontMatter> {

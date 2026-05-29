@@ -53,6 +53,7 @@
     ".claude-plugin/**",
     "plugins/**",
     "packages/pm-*/**",
+    "scripts/bundle-cli.mjs",
     "scripts/finalize-build.mjs",
     "scripts/install.sh",
     "scripts/install.ps1",
@@ -60,7 +61,7 @@
     "marketplace.json"
   ],
   "scripts": {
-    "build": "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/finalize-build.mjs",
+    "build": "node scripts/prepare-build-cache.mjs && tsc -p tsconfig.json && node scripts/bundle-cli.mjs && node scripts/finalize-build.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.packages.json",
     "start": "node dist/cli.js",
     "dev": "tsx src/cli.ts",
@@ -125,13 +126,15 @@
     "@types/node": "^25.9.1",
     "@vitest/coverage-v8": "^4.1.7",
     "c8": "^11.0.0",
+    "esbuild": "0.28.0",
     "tsx": "^4.22.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.7"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "@sentry/cli"
+      "@sentry/cli",
+      "esbuild"
     ],
     "overrides": {
       "rollup": ">=4.59.0",

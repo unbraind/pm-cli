@@ -208,11 +208,31 @@ async function resolveNpmPackSpec(spec: string): Promise<string> {
     return pathToFileURL(localPath).href;
   }
 
+  const localFileAlias = normalizeNpmLocalFileAliasSpec(spec);
+  if (localFileAlias !== spec) {
+    return localFileAlias;
+  }
+
   if (/^[a-z][a-z0-9+.-]*:/i.test(spec)) {
     return spec;
   }
 
   return spec;
+}
+
+export function normalizeNpmLocalFileAliasSpec(spec: string, cwd: string = process.cwd()): string {
+  const marker = "@file:";
+  const markerIndex = spec.lastIndexOf(marker);
+  if (markerIndex <= 0) {
+    return spec;
+  }
+  const packageName = spec.slice(0, markerIndex);
+  const target = spec.slice(markerIndex + marker.length);
+  if (packageName.trim().length === 0 || target.trim().length === 0 || target.startsWith("//")) {
+    return spec;
+  }
+  const absolutePath = path.isAbsolute(target) || path.win32.isAbsolute(target) ? target : path.resolve(cwd, target);
+  return `${packageName}@${pathToFileURL(absolutePath).href}`;
 }
 
 function parsePackedNpmPackage(stdout: string, packDirectory: string): { tarball: string; package?: string; version?: string } {

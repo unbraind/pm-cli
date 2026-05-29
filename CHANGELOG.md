@@ -1,21 +1,26 @@
 # Changelog
 
-## 2026.5.29 - 2026-05-29
+## Unreleased
 
 ### Added
 
+- Reduce ESM module-resolution startup overhead \(~85ms\) via core bundling ([pm-ss1d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ss1d.toon))
 - Calendar best-practice: honor timezone, surface Milestone/Meeting items, ICS export ([pm-xzrx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-xzrx.toon))
 - Model-agnostic search: provider settable via pm config + docs + index staleness surfacing ([pm-7ilo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7ilo.toon))
 
 ### Changed
 
-- pm update doesn't accept --expected/--actual aliases that pm close accepts ([pm-1lws](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1lws.toon))
 - Code-quality refactors: split runUpdate/runCreate, cli-contracts barrel, shared dedup helpers, drop dead exports ([pm-1b96](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-1b96.toon))
 
 ### Fixed
 
+- pm update doesn't accept --expected/--actual aliases that pm close accepts ([pm-1lws](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1lws.toon))
 - MCP pm\_create/pm\_update crashed with 'raw.trim is not a function' when priority was sent as a JSON number ([pm-9r7z](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9r7z.toon))
 - pm comments/notes/learnings --add HTML-escapes angle brackets in stored text ([pm-ydkl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ydkl.toon))
+
+### Other
+
+- CLI perf, simplification, and best-practice remediation \(2026-05-27\) ([pm-th6y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-th6y.toon))
 
 ## 2026.5.28 - 2026-05-28
 
@@ -35,15 +40,15 @@
 
 ### Changed
 
-- Calendar: improve positional view UX \(PM-CLI-Z Sentry\) ([pm-nb68](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nb68.toon))
-- Improve unknown-option recovery with nearest, abbreviated, and cross-command flag suggestions plus list --sort aliases ([pm-8nyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nyc.toon))
 - Split large command files exceeding 2000 LOC ([pm-mbdu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-mbdu.toon))
 - Deduplicate item/metadata to record widening casts behind a shared toItemRecord helper ([pm-p5if](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-p5if.toon))
 
 ### Fixed
 
 - pm health takes 8s and reports ok:false due to blocking telemetry flush to unreachable endpoint ([pm-1lgy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1lgy.toon))
+- Calendar: improve positional view UX \(PM-CLI-Z Sentry\) ([pm-nb68](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nb68.toon))
 - Fix nightly cross-platform reliability: macOS realpath in extension-command test and Windows .cmd spawn EINVAL ([pm-gf6f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-gf6f.toon))
+- Improve unknown-option recovery with nearest, abbreviated, and cross-command flag suggestions plus list --sort aliases ([pm-8nyc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8nyc.toon))
 - Repeated loose-mapped --tag flags silently keep only the last value \(agent-unfriendly\) ([pm-cf1u](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-cf1u.toon))
 - Address pre-existing extension/SDK issues surfaced by PR \#69 review \(CodeRabbit\) ([pm-ll50](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-ll50.toon))
 - Surface extension command handler error messages instead of opaque extension\_command\_handler\_failed code ([pm-zwl7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-zwl7.toon))
@@ -97,19 +102,16 @@
 - pm schema add-type CLI + invalid-type error hint \(pm-e1va\) ([pm-fy8o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-fy8o.toon))
 - Config-driven custom item types: wire schema/types.json into runtime schema ([pm-e1va](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e1va.toon))
 
-### Changed
-
-- pm update --blocked-by does not create a pm deps graph edge ([pm-kyd6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kyd6.toon))
-- pm update/create --test shares the B2 silent key-corruption \(no cmd alias, no unknown-key rejection\) ([pm-swie](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-swie.toon))
-- Agent UX: pm update --status closed, explicit semantic/hybrid search, and pm create <type\> <title\> must never block agents ([pm-j1v7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-j1v7.toon))
-
 ### Fixed
 
 - Recover 16 unreadable TOON item files: strict decoder mis-parses bracketed tokens followed by a colon inside quoted text fields ([pm-iqgj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-iqgj.toon))
 - pm-changelog extension fails on large tracker JSON ([pm-bu50](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bu50.toon))
 - Linked test sandbox cleanup can fail with ENOTEMPTY ([pm-u43m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u43m.toon))
+- pm update --blocked-by does not create a pm deps graph edge ([pm-kyd6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kyd6.toon))
 - Auto daily release silently skips releasable commits when CHANGELOG \[Unreleased\] is empty ([pm-ot8r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ot8r.toon))
+- pm update/create --test shares the B2 silent key-corruption \(no cmd alias, no unknown-key rejection\) ([pm-swie](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-swie.toon))
 - Calendar: pm cal <view\> --date crashes \(positional view + any flag\) ([pm-l292](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l292.toon))
+- Agent UX: pm update --status closed, explicit semantic/hybrid search, and pm create <type\> <title\> must never block agents ([pm-j1v7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-j1v7.toon))
 - pm plan: materialize creates dependency cycle; decision/discovery/validation flag mismatch; --steps all unsupported ([pm-6blp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6blp.toon))
 
 ### Removed
@@ -229,7 +231,6 @@
 - Task: implement update close\_reason flag and reopen auto-clear ([pm-g8jp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-g8jp.toon))
 - Update completion and Pi wrapper for event recurrence flags ([pm-5hbj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5hbj.toon))
 - Pi wrapper all-fields create/update parity ([pm-096j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-096j.toon))
-- Embedding timeout UX: improve ollama feedback for PM-CLI-A/9 ([pm-ibp7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ibp7.toon))
 
 ### Fixed
 
@@ -264,6 +265,7 @@
 - MCP pm\_update --comment string crashes with 'values.map is not a function' ([pm-qeu1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qeu1.toon))
 - Cache item body in metadata cache for fast keyword search ([pm-jw36](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jw36.toon))
 - pm install writes absolute-home-path into tracked .managed-extensions.json ([pm-u83w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-u83w.toon))
+- Embedding timeout UX: improve ollama feedback for PM-CLI-A/9 ([pm-ibp7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ibp7.toon))
 - Perf: pm health takes 2.5s due to vectorization check ([pm-tibg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-tibg.toon))
 - Sentry extension errors: cannot find module and activate failures ([pm-p7av](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p7av.toon))
 - Fix: ENOENT lstat in extension path operations ([pm-bh13](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bh13.toon))
@@ -429,7 +431,6 @@
 - Code quality + architecture review with targeted tests ([pm-lvww](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lvww.toon))
 - main.ts still has 4 extraction candidates \(~1325 lines\) ([pm-sh6o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sh6o.toon))
 - Duplicated parseLimit/parsePriority/parseType across 8+ command files ([pm-hb8t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hb8t.toon))
-- UX: Telemetry shows 84 'No update flags provided' errors - improve guidance ([pm-sh4x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sh4x.toon))
 
 ### Fixed
 
@@ -438,6 +439,7 @@
 - Fix Grafana RabbitMQ queue panel metric selector mismatch ([pm-r9ei](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-r9ei.toon))
 - PmCliError events leaking to Sentry via captureConsoleIntegration ([pm-9iho](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-9iho.toon))
 - Code duplication: toErrorMessage and toNonEmptyString across 5+ files ([pm-540l](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-540l.toon))
+- UX: Telemetry shows 84 'No update flags provided' errors - improve guidance ([pm-sh4x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-sh4x.toon))
 - Project tracker validation hygiene warnings remain ([pm-e0b5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-e0b5.toon))
 
 ### Security
@@ -500,7 +502,6 @@
 ### Changed
 
 - Update-many: improve error message when no mutation flags provided ([pm-twtu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-twtu.toon))
-- Calendar: allow --full-period for agenda view or improve error message ([pm-8qpc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8qpc.toon))
 
 ### Fixed
 
@@ -513,6 +514,7 @@
 - Fix integration test: health check list missing telemetry entry ([pm-hb6x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hb6x.toon))
 - pm templates bare command shows empty output \(should list templates\) ([pm-dc2y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dc2y.toon))
 - pm files --add bare path fails with misleading error \(scope implied required\) ([pm-8r2r](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8r2r.toon))
+- Calendar: allow --full-period for agenda view or improve error message ([pm-8qpc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8qpc.toon))
 - Templates command: document correct invocation syntax \(positional vs --name\) ([pm-6y6i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6y6i.toon))
 - Priority --priority error message missing 0..4 range and semantic labels ([pm-1h7w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1h7w.toon))
 - pm health ok:false for normal telemetry queue draining is non-actionable noise ([pm-gmnh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-gmnh.toon))

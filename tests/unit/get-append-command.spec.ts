@@ -152,6 +152,12 @@ describe("runGet and runAppend", () => {
       expect(explicitFull.linked.files).toHaveLength(1);
       expect(explicitFull.body).toBe("depth body");
 
+      const depthFullAlias = await runGet(id, { path: context.pmPath }, { depth: "full" });
+      expect(depthFullAlias.item.comments).toBeDefined();
+      expect(depthFullAlias.item.notes).toBeDefined();
+      expect(depthFullAlias.linked.files).toHaveLength(1);
+      expect(depthFullAlias.body).toBe("depth body");
+
       const standard = await runGet(id, { path: context.pmPath }, { depth: "standard" });
       expect(standard.item.id).toBe(id);
       expect(standard.item.comments).toBeUndefined();

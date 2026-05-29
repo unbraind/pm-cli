@@ -65,7 +65,9 @@ describe("core/history/drift-scan", () => {
       // Empty stream → treated as a missing stream.
       await fs.writeFile(getHistoryPath(context.pmPath, empty.id), "\n", "utf8");
 
-      // Stat failure that is not ENOENT (parent path component is a file → ENOTDIR).
+      // Parent path component is a file. POSIX reports ENOTDIR for the nested
+      // stream, while Windows reports ENOENT, so assert drift instead of a
+      // platform-specific bucket.
       await fs.writeFile(path.join(context.pmPath, "history", "notdir"), "x", "utf8");
 
       const withSynthetic = [
@@ -77,7 +79,8 @@ describe("core/history/drift-scan", () => {
 
       expect(result.chainMismatches).toContain(broken.id);
       expect(result.unreadableStreams).toContain(unreadable.id);
-      expect(result.unreadableStreams).toContain("notdir/child");
+      expect([...result.missingStreams, ...result.unreadableStreams]).toContain("notdir/child");
+      expect(result.driftedItems).toContain("notdir/child");
       expect(result.missingStreams).toContain(empty.id);
       expect(result.missingStreams).toContain("pm-does-not-exist");
     });

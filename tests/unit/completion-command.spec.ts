@@ -362,11 +362,12 @@ describe("generateBashScript", () => {
 
     const zshScript = generateZshScript();
     expect(zshScript).toContain("get)");
-    expect(zshScript).toContain("--depth[Detail depth]:(brief standard deep)");
+    expect(zshScript).toContain("--depth[Detail depth]:(brief standard deep full)");
     expect(zshScript).toContain("--full[Explicit full item read]");
 
     const fishScript = generateFishScript();
     expect(fishScript).toContain("__fish_seen_subcommand_from get");
+    expect(fishScript).toContain("-l depth -d 'Detail depth' -r -a 'brief standard deep full'");
     expect(fishScript).toContain("-l full -d 'Explicit full item read'");
   });
 

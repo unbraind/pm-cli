@@ -791,7 +791,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         get)
           _arguments \\
-            '--depth[Detail depth]:(brief standard deep)' \\
+            '--depth[Detail depth]:(brief standard deep full)' \\
             '--full[Explicit full item read]' \\
             '--fields[Render custom comma-separated item fields]:fields' \\
             '--json[Output JSON]' \\
@@ -1609,7 +1609,7 @@ complete -c pm -n '__fish_seen_subcommand_from reindex' -l mode -d 'Reindex mode
 complete -c pm -n '__fish_seen_subcommand_from reindex' -l progress -d 'Emit progress updates to stderr'
 
 # get flags
-complete -c pm -n '__fish_seen_subcommand_from get' -l depth -d 'Detail depth' -r -a 'brief standard deep'
+complete -c pm -n '__fish_seen_subcommand_from get' -l depth -d 'Detail depth' -r -a 'brief standard deep full'
 complete -c pm -n '__fish_seen_subcommand_from get' -l full -d 'Explicit full item read'
 complete -c pm -n '__fish_seen_subcommand_from get' -l fields -d 'Render custom comma-separated item fields' -r
 

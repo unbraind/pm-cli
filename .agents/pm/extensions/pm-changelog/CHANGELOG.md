@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.5.29-1 - 2026-05-29
+
+### Fixed
+
+- Classifier misroutes Issues with CLI command-name titles \(update/change\) to Changed not Fixed ([pmc-874d](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-874d.toon))
+
 ## 2026.5.27-1 - 2026-05-27
 
 ### Added

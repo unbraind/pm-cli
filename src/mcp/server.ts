@@ -178,7 +178,7 @@ const TOOLS: ToolDefinition[] = [
       "Read one pm item. Pass options.depth='brief' or options.fields='id,title,status' for low-token inspection.",
     inputSchema: objectSchema({
       id: idSchema,
-      options: { type: "object", description: "Get options such as depth=brief|standard|deep or fields=id,title,status." },
+      options: { type: "object", description: "Get options such as depth=brief|standard|deep|full or fields=id,title,status." },
     }, ["id"]),
   },
   {
