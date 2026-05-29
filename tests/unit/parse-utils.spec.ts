@@ -52,6 +52,10 @@ describe("core/item/parse", () => {
     expect(mergeAdditiveTags(["Beta"], ["beta"])).toEqual(["beta"]);
     expect(mergeAdditiveTags(["Alpha", "beta"], undefined)).toEqual(["alpha", "beta"]);
     expect(mergeAdditiveTags([" Gamma "], ["alpha"])).toEqual(["alpha", "gamma"]);
+    // Defensive: a non-array base (corrupted metadata / external SDK caller)
+    // must not throw — it is treated as an empty base.
+    expect(mergeAdditiveTags(undefined as unknown as string[], ["alpha"])).toEqual(["alpha"]);
+    expect(applyTagRemovals(undefined as unknown as string[], ["alpha"])).toEqual([]);
   });
 
   it("applyTagRemovals filters tags by additive subtraction without touching others", () => {

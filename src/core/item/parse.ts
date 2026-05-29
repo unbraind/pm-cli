@@ -69,9 +69,13 @@ export function collectTagFlagValues(values: readonly string[] | undefined): str
  * an existing `Beta`, and `--remove-tags alpha` removes an existing `Alpha`).
  */
 function normalizeBaseTags(baseTags: readonly string[]): string[] {
-  // Defensive: front-matter parsed from corrupted/hand-edited `.toon` could
-  // surface non-string entries despite the `string[]` type — skip them rather
-  // than throwing on `.trim()`.
+  // Defensive: front-matter parsed from corrupted/hand-edited `.toon` (or an
+  // external SDK caller) could pass a non-array or non-string entries despite
+  // the `string[]` type — guard the array and skip non-strings rather than
+  // throwing on `.filter`/`.trim()`.
+  if (!Array.isArray(baseTags)) {
+    return [];
+  }
   return baseTags
     .filter((tag): tag is string => typeof tag === "string")
     .map((tag) => tag.trim().toLowerCase())
