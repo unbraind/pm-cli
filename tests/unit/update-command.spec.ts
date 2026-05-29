@@ -1914,6 +1914,47 @@ describe("runUpdate", () => {
     });
   });
 
+  it("rejects additive tag mutations in --allow-audit-dep-update scope (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "dep-audit-tag-guard", { assignee: "foreign-assignee" });
+      for (const tagOption of [{ addTags: ["sneaky"] }, { removeTags: ["unit"] }]) {
+        await expect(
+          runUpdate(
+            id,
+            {
+              allowAuditDepUpdate: true,
+              dep: ["id=dep-audit,kind=related"],
+              message: "attempt tag mutation in dep-audit mode",
+              ...tagOption,
+            },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.USAGE,
+          message: expect.stringMatching(/--add-tags|--remove-tags/),
+        });
+      }
+    });
+  });
+
+  it("rejects combining --unset tags with additive tag mutations (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "unset-tags-conflict");
+      await expect(
+        runUpdate(id, { unset: ["tags"], addTags: ["x"], message: "conflict" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot combine --unset tags with --add-tags"),
+      });
+      await expect(
+        runUpdate(id, { unset: ["tags"], removeTags: ["unit"], message: "conflict" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot combine --unset tags with --remove-tags"),
+      });
+    });
+  });
+
   it("lists allowed dependency kinds when dependency kind is invalid", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-invalid-dependency-kind");
@@ -2045,6 +2086,167 @@ describe("runUpdate", () => {
       expect(updated.changed_fields).toContain("body");
       const loaded = context.runCli(["get", id, "--json"], { expectJson: true });
       expect((loaded.json as { body: string }).body).toBe("body from stdin token");
+    });
+  });
+
+  describe("additive tag mutations (pm-1lws)", () => {
+    it("--add-tags extends the existing list without losing prior tags", async () => {
+      await withTempPmPath(async (context) => {
+        const id = createTask(context, "add-tags-extends");
+        // Sanity: createTask seeds tags=["update","unit"].
+        const updated = await runUpdate(
+          id,
+          { addTags: ["fix,security"], message: "extend tags additively" },
+          { path: context.pmPath },
+        );
+        expect(updated.changed_fields).toContain("tags");
+        const item = updated.item as { tags?: string[] };
+        expect(item.tags).toEqual(["fix", "security", "unit", "update"]);
+      });
+    });
+
+    it("--remove-tags prunes entries without touching the rest", async () => {
+      await withTempPmPath(async (context) => {
+        const id = createTask(context, "remove-tags-prunes");
+        const updated = await runUpdate(
+          id,
+          { removeTags: ["unit"], message: "drop one tag" },
+          { path: context.pmPath },
+        );
+        expect(updated.changed_fields).toContain("tags");
+        const item = updated.item as { tags?: string[] };
+        expect(item.tags).toEqual(["update"]);
+      });
+    });
+
+    it("supports combined --tags replace + --add-tags additive + --remove-tags subtraction in one call", async () => {
+      await withTempPmPath(async (context) => {
+        const id = createTask(context, "tags-combined");
+        const updated = await runUpdate(
+          id,
+          {
+            tags: "alpha,beta",
+            addTags: ["gamma"],
+            removeTags: ["beta"],
+            message: "combined tag mutation",
+          },
+          { path: context.pmPath },
+        );
+        const item = updated.item as { tags?: string[] };
+        // --tags replaces first → [alpha,beta], --add-tags adds gamma → [alpha,beta,gamma],
+        // --remove-tags strips beta → [alpha,gamma].
+        expect(item.tags).toEqual(["alpha", "gamma"]);
+      });
+    });
+
+    it("--add-tags accepts CSV inside a single value and repeated --add-tags flags", async () => {
+      await withTempPmPath(async (context) => {
+        const id = createTask(context, "add-tags-csv");
+        const updated = await runUpdate(
+          id,
+          { addTags: ["alpha,beta", "gamma"], message: "csv and repeated" },
+          { path: context.pmPath },
+        );
+        const item = updated.item as { tags?: string[] };
+        expect(item.tags).toEqual(["alpha", "beta", "gamma", "unit", "update"]);
+      });
+    });
+
+    it("--remove-tags is a no-op when the tag is not present", async () => {
+      await withTempPmPath(async (context) => {
+        const id = createTask(context, "remove-tags-noop");
+        const updated = await runUpdate(
+          id,
+          { removeTags: ["nonexistent"], message: "remove nothing" },
+          { path: context.pmPath },
+        );
+        const item = updated.item as { tags?: string[] };
+        expect(item.tags).toEqual(["unit", "update"]);
+      });
+    });
+  });
+
+  describe("--add-tags / --remove-tags CLI alias contracts (pm-1lws)", () => {
+    it("pm update --add-tags flag accepted and extends existing tags", async () => {
+      await withTempPmPath(async (context) => {
+        const id = createTask(context, "cli-add-tags");
+        const result = context.runCli(
+          ["update", id, "--add-tags", "fix,security", "--json", "--message", "extend additively"],
+          { expectJson: true },
+        );
+        expect(result.code).toBe(0);
+        const item = (result.json as { item: { tags?: string[] } }).item;
+        expect(item.tags).toEqual(["fix", "security", "unit", "update"]);
+      });
+    });
+
+    it("pm update --remove-tags flag accepted and strips entries", async () => {
+      await withTempPmPath(async (context) => {
+        const id = createTask(context, "cli-remove-tags");
+        const result = context.runCli(
+          ["update", id, "--remove-tags", "unit", "--json", "--message", "drop one tag"],
+          { expectJson: true },
+        );
+        expect(result.code).toBe(0);
+        const item = (result.json as { item: { tags?: string[] } }).item;
+        expect(item.tags).toEqual(["update"]);
+      });
+    });
+  });
+
+  describe("--expected/--actual short aliases (pm-1lws)", () => {
+    it("pm update accepts --expected and --actual as short forms of --expected-result/--actual-result", async () => {
+      await withTempPmPath(async (context) => {
+        const created = context.runCli(
+          [
+            "create",
+            "--json",
+            "--title",
+            "expected-alias-issue",
+            "--description",
+            "alias test",
+            "--type",
+            "Issue",
+            "--create-mode",
+            "progressive",
+            "--status",
+            "open",
+            "--priority",
+            "1",
+            "--body",
+            "",
+            "--author",
+            "seed-author",
+            "--message",
+            "create alias issue",
+          ],
+          { expectJson: true },
+        );
+        expect(created.code).toBe(0);
+        const issueId = (created.json as { item: { id: string } }).item.id;
+        const updated = context.runCli(
+          [
+            "update",
+            issueId,
+            "--json",
+            "--expected",
+            "alias should set expected_result",
+            "--actual",
+            "alias should set actual_result",
+            "--message",
+            "exercise short aliases",
+          ],
+          { expectJson: true },
+        );
+        expect(updated.code).toBe(0);
+        const payload = updated.json as {
+          changed_fields: string[];
+          item: { expected_result?: string; actual_result?: string };
+        };
+        expect(payload.changed_fields).toEqual(expect.arrayContaining(["expected_result", "actual_result"]));
+        expect(payload.item.expected_result).toBe("alias should set expected_result");
+        expect(payload.item.actual_result).toBe("alias should set actual_result");
+      });
     });
   });
 

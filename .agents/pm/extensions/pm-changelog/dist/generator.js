@@ -366,11 +366,28 @@ function groupByCategory(items) {
     }
     return grouped;
 }
+const BUG_LIKE_ITEM_TYPES = new Set(["issue", "bug", "bugfix", "defect"]);
 function classifyItem(item) {
+    // Strip CLI-flag-like tokens from titles before scanning. Without this, an
+    // item titled "pm <cmd> --add fails..." gets classified as "Added" because
+    // the word "add" matches inside "--add". The pattern:
+    //   - Negative lookbehind on `[\w-]` so in-word hyphens like "non-add" or
+    //     "in-test" stay intact, while flags wrapped in punctuation/quotes
+    //     (`\`--add\``, `(--add)`, `[--add]`) still match.
+    //   - Accepts 1 or 2 leading dashes (covers `-x` POSIX shorts too).
+    //   - First char after the dashes is alnum (lets `--2fa` work).
+    //   - Body is the alnum/underscore/hyphen flag name, optionally followed by
+    //     `=<value>` where value runs to the next whitespace. This wholesale
+    //     strips `--url=https://example.com/add` so URL/path values don't leak
+    //     spurious keyword matches downstream.
+    //
+    // Tags and type still contribute their full token, so an explicit
+    // `feature`/`added` tag still wins regardless of title content.
+    const sanitizedTitle = (item.title ?? "").replace(/(?<![\w-])-{1,2}[a-z0-9][\w-]*(?:=\S*)?/gi, " ");
     const values = [
         item.type,
         ...(item.tags ?? []),
-        item.title,
+        sanitizedTitle,
     ]
         .filter(Boolean)
         .join(" ")
@@ -387,6 +404,12 @@ function classifyItem(item) {
         return "Added";
     if (hasAny(values, ["change", "changed", "refactor", "update", "updated", "improve"])) {
         return "Changed";
+    }
+    // Default by item type: Issue / Bug / Bugfix / Defect → Fixed (most items
+    // of these types are bug reports), so they don't fall through to "Other"
+    // when the title is descriptive but lacks one of the keyword needles above.
+    if (BUG_LIKE_ITEM_TYPES.has((item.type ?? "").toLowerCase())) {
+        return "Fixed";
     }
     return "Other";
 }

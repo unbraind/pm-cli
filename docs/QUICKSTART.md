@@ -93,9 +93,12 @@ pm search "restore lock retry" --limit 10
 pm list-open --limit 20
 pm claim <item-id>
 pm update <item-id> --status in_progress --message "Start implementation"
+pm update <item-id> --add-tags urgent,backend
 ```
 
 Do not create a duplicate item until `context`, `search`, and list commands show no relevant active item.
+
+`--tags` replaces the whole tag list; use `--add-tags <value>` to add tags without replacing them and `--remove-tags <value>` to prune them (both on `update`/`update-many`; `create` supports `--add-tags`). On `create`/`update`/`update-many`, `--expected`/`--actual` are short aliases for `--expected-result`/`--actual-result`.
 
 ## Link Work Artifacts
 

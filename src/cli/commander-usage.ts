@@ -71,16 +71,16 @@ const SEMANTIC_UNKNOWN_OPTION_SUGGESTIONS: Record<string, Record<string, string[
     "--text": ["--add"],
     "--learning": ["--add"],
   },
-  // Tag mutations are single --tags flags; agents transferring additive tag verbs
-  // ("--add-tag(s)") from other tools should be pointed at the canonical flag.
+  // pm update / pm create now accept --add-tags natively, so the singular
+  // --add-tag and the old "--tag" mistype still need to be redirected at the
+  // canonical additive flag (not at --tags, which would silently replace).
   update: {
-    "--add-tags": ["--tags"],
-    "--add-tag": ["--tags"],
+    "--add-tag": ["--add-tags"],
+    "--remove-tag": ["--remove-tags"],
     "--tag": ["--tags"],
   },
   create: {
-    "--add-tags": ["--tags"],
-    "--add-tag": ["--tags"],
+    "--add-tag": ["--add-tags"],
     "--tag": ["--tags"],
   },
 };

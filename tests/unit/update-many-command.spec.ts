@@ -259,6 +259,86 @@ describe("runUpdateMany", () => {
     });
   });
 
+  it("supports --add-tags and --remove-tags from CLI wiring (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTask(context, "bulk-tags-a", { tags: "bulk-tags,legacy" });
+      const secondId = createTask(context, "bulk-tags-b", { tags: "bulk-tags,legacy" });
+
+      const updateResult = context.runCli(
+        [
+          "update-many",
+          "--json",
+          "--filter-tag",
+          "bulk-tags",
+          "--add-tags",
+          "fix,security",
+          "--remove-tags",
+          "legacy",
+          "--message",
+          "bulk additive tag mutation",
+        ],
+        { expectJson: true },
+      );
+      expect(updateResult.code).toBe(0);
+      const updateJson = updateResult.json as { updated_count?: number; failed_count?: number };
+      expect(updateJson.updated_count).toBe(2);
+      expect(updateJson.failed_count).toBe(0);
+
+      const first = context.runCli(["get", firstId, "--json"], { expectJson: true });
+      const second = context.runCli(["get", secondId, "--json"], { expectJson: true });
+      expect((first.json as { item: { tags?: string[] } }).item.tags).toEqual(["bulk-tags", "fix", "security"]);
+      expect((second.json as { item: { tags?: string[] } }).item.tags).toEqual(["bulk-tags", "fix", "security"]);
+    });
+  });
+
+  it("treats --add-tags alone as actionable and previews the tag plan (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTask(context, "addonly-a", { tags: "addonly" });
+      createTask(context, "addonly-b", { tags: "addonly" });
+
+      const dryRun = context.runCli(
+        ["update-many", "--json", "--filter-tag", "addonly", "--add-tags", "batch", "--dry-run"],
+        { expectJson: true },
+      );
+      expect(dryRun.code).toBe(0);
+      const plans = (dryRun.json as { item_plans: Array<{ changes: Array<{ field: string; after: unknown }> }> }).item_plans;
+      const tagChange = plans[0]?.changes.find((change) => change.field === "tags");
+      expect(tagChange?.after).toEqual(["addonly", "batch"]);
+
+      const apply = context.runCli(["update-many", "--json", "--filter-tag", "addonly", "--add-tags", "batch"], {
+        expectJson: true,
+      });
+      expect((apply.json as { updated_count: number; skipped_count: number }).updated_count).toBe(2);
+      const first = context.runCli(["get", firstId, "--json"], { expectJson: true });
+      expect((first.json as { item: { tags?: string[] } }).item.tags).toEqual(["addonly", "batch"]);
+    });
+  });
+
+  it("composes --tags replace with --add-tags additions in one update-many call", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "replace-add", { tags: "old" });
+      const apply = context.runCli(
+        ["update-many", "--json", "--filter-tag", "old", "--tags", "fresh", "--add-tags", "extra"],
+        { expectJson: true },
+      );
+      expect((apply.json as { updated_count: number }).updated_count).toBe(1);
+      const got = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect((got.json as { item: { tags?: string[] } }).item.tags).toEqual(["extra", "fresh"]);
+    });
+  });
+
+  it("skips items when an additive tag mutation is a no-op (tag already present)", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "noop-tag", { tags: "keep" });
+      const apply = context.runCli(["update-many", "--json", "--filter-tag", "keep", "--add-tags", "keep"], {
+        expectJson: true,
+      });
+      const json = apply.json as { updated_count: number; skipped_count: number };
+      expect(json.updated_count).toBe(0);
+      expect(json.skipped_count).toBe(1);
+    });
+  });
+
   it("supports status mutations from CLI --status options", async () => {
     await withTempPmPath(async (context) => {
       const firstId = createTask(context, "bulk-status-a", { tags: "bulk-status" });

@@ -59,6 +59,8 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   closeReason: { type: "string" },
   priority: { anyOf: [{ type: "string" }, { type: "number" }] },
   tags: { type: "string" },
+  addTags: { type: "array", items: { type: "string" } },
+  removeTags: { type: "array", items: { type: "string" } },
   body: { type: "string" },
   deadline: { type: "string" },
   estimate: { anyOf: [{ type: "string" }, { type: "number" }] },
@@ -515,6 +517,14 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   tags: {
     description: "Comma-delimited tag list.",
     examples: ["pm-cli,agent-ux"],
+  },
+  addTags: {
+    description: "Tags to add to the existing list without replacing it. Each entry may be CSV or a JSON array.",
+    examples: [["agent-ux"], ["fix", "security"]],
+  },
+  removeTags: {
+    description: "Tags to remove from the existing list. Each entry may be CSV or a JSON array.",
+    examples: [["stale"], ["legacy", "wontfix"]],
   },
   deadline: {
     description: "ISO/date timestamp or relative offset (+6h/+1d/+2w/+6m).",

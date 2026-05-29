@@ -107,6 +107,41 @@ describe("runCreate", () => {
     });
   });
 
+  it("pm create --add-tags extends --tags additively (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        {
+          title: "create-add-tags",
+          description: "additive tag flag on create",
+          type: "Task",
+          createMode: "progressive",
+          tags: "alpha,beta",
+          addTags: ["gamma,delta", "delta"],
+        },
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toEqual([]);
+      expect(result.item.tags).toEqual(["alpha", "beta", "delta", "gamma"]);
+    });
+  });
+
+  it("pm create --add-tags works on its own without --tags (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        {
+          title: "create-add-tags-only",
+          description: "additive tag flag works standalone",
+          type: "Task",
+          createMode: "progressive",
+          addTags: ["alpha,beta"],
+        },
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toEqual([]);
+      expect(result.item.tags).toEqual(["alpha", "beta"]);
+    });
+  });
+
   it("supports progressive create mode for staged minimal creation", async () => {
     await withTempPmPath(async (context) => {
       const result = await runCreate(
@@ -2067,6 +2102,46 @@ describe("runCreate", () => {
       );
       expect(created.item.type).toBe("Asset");
       expect(created.item.severity).toBeUndefined();
+    });
+  });
+
+  it("counts --add-tags toward a tags command_option_policy (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            command_option_policies: [{ command: "create", option: "tags", enabled: false }],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      // --add-tags must not bypass a policy that disables the tags option.
+      await expect(
+        runCreate(baseCreateOptions({ type: "Asset", tags: undefined, addTags: ["sneaky"] }), { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--tags"),
+      });
+    });
+  });
+
+  it("rejects combining --unset tags with --add-tags on create (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(baseCreateOptions({ tags: undefined, unset: ["tags"], addTags: ["x"] }), { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot combine --unset tags with --add-tags"),
+      });
     });
   });
 

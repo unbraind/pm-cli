@@ -490,8 +490,8 @@ export const CLOSE_FLAG_CONTRACTS: CliFlagContract[] = [
   // close`, the JSON help payload, and bootstrap flag normalization /
   // suggestions all stay consistent with the commander registration.
   { flag: "--resolution" },
-  { flag: "--expected-result", aliases: ["--expected_result"] },
-  { flag: "--actual-result", aliases: ["--actual_result"] },
+  { flag: "--expected-result", aliases: ["--expected_result", "--expected"] },
+  { flag: "--actual-result", aliases: ["--actual_result", "--actual"] },
   { flag: "--force" },
 ];
 
@@ -651,6 +651,11 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { short: "-s", flag: "--status" },
   { short: "-p", flag: "--priority" },
   { flag: "--tags", list: true },
+  // NOT list:true — these use Commander's repeatable collector. Marking them
+  // list:true would make the bootstrap coalescer comma-join repeated
+  // occurrences (`--add-tags '["a","b"]' --add-tags c` -> `["a","b"],c`),
+  // corrupting the JSON-array value form before parseTags sees it.
+  { flag: "--add-tags", aliases: ["--add_tags"] },
   { short: "-b", flag: "--body" },
   { flag: "--deadline" },
   { flag: "--estimate" },
@@ -701,6 +706,8 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--repro_steps" },
   { flag: "--expected_result" },
   { flag: "--actual_result" },
+  { flag: "--expected" },
+  { flag: "--actual" },
   { flag: "--affected_version" },
   { flag: "--fixed_version" },
   { flag: "--dep" },
@@ -737,6 +744,11 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { short: "-p", flag: "--priority" },
   { flag: "--type" },
   { flag: "--tags", list: true },
+  // NOT list:true — Commander's repeatable collector accumulates these, so
+  // bootstrap coalescing must not comma-join repeated occurrences (it would
+  // corrupt JSON-array values like `--add-tags '["a","b"]' --add-tags c`).
+  { flag: "--add-tags", aliases: ["--add_tags"] },
+  { flag: "--remove-tags", aliases: ["--remove_tags"] },
   { flag: "--deadline" },
   { flag: "--estimate" },
   { flag: "--estimated-minutes" },
@@ -787,6 +799,8 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--repro_steps" },
   { flag: "--expected_result" },
   { flag: "--actual_result" },
+  { flag: "--expected" },
+  { flag: "--actual" },
   { flag: "--affected_version" },
   { flag: "--dep" },
   { flag: "--dep-remove" },
@@ -845,6 +859,11 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { short: "-p", flag: "--priority" },
   { flag: "--type" },
   { flag: "--tags", list: true },
+  // NOT list:true — Commander's repeatable collector accumulates these, so
+  // bootstrap coalescing must not comma-join repeated occurrences (it would
+  // corrupt JSON-array values like `--add-tags '["a","b"]' --add-tags c`).
+  { flag: "--add-tags", aliases: ["--add_tags"] },
+  { flag: "--remove-tags", aliases: ["--remove_tags"] },
   { flag: "--deadline" },
   { flag: "--estimate" },
   { flag: "--estimated-minutes" },
@@ -876,8 +895,10 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--resolution" },
   { flag: "--expected-result" },
   { flag: "--expected_result" },
+  { flag: "--expected" },
   { flag: "--actual-result" },
   { flag: "--actual_result" },
+  { flag: "--actual" },
   { flag: "--affected-version" },
   { flag: "--affected_version" },
   { flag: "--fixed-version" },

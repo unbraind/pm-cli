@@ -39,6 +39,84 @@ export function parseTags(raw: string): string[] {
   return Array.from(new Set(tags)).sort((a, b) => a.localeCompare(b));
 }
 
+/**
+ * Merge repeated `--add-tags` / `--remove-tags` values into a single normalized
+ * tag list. Each entry can itself be CSV or a JSON array, mirroring the format
+ * accepted by `--tags`. Returns a deterministically sorted, deduped list.
+ */
+export function collectTagFlagValues(values: readonly string[] | undefined): string[] {
+  if (!Array.isArray(values) || values.length === 0) {
+    return [];
+  }
+  const collected: string[] = [];
+  for (const raw of values) {
+    if (typeof raw !== "string") {
+      continue;
+    }
+    for (const tag of parseTags(raw)) {
+      collected.push(tag);
+    }
+  }
+  return Array.from(new Set(collected)).sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Normalize a base tag list to the canonical form pm stores: trimmed,
+ * lowercased, non-empty. Existing front-matter tags are almost always already
+ * canonical (parseTags lowercases on write), but legacy or hand-edited `.toon`
+ * files can carry mixed-case entries — normalizing here keeps additive and
+ * subtractive mutations case-insensitive (so `--add-tags beta` dedupes against
+ * an existing `Beta`, and `--remove-tags alpha` removes an existing `Alpha`).
+ */
+function normalizeBaseTags(baseTags: readonly string[]): string[] {
+  // Defensive: front-matter parsed from corrupted/hand-edited `.toon` (or an
+  // external SDK caller) could pass a non-array or non-string entries despite
+  // the `string[]` type — guard the array and skip non-strings rather than
+  // throwing on `.filter`/`.trim()`.
+  if (!Array.isArray(baseTags)) {
+    return [];
+  }
+  return baseTags
+    .filter((tag): tag is string => typeof tag === "string")
+    .map((tag) => tag.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+/**
+ * Apply an additive tag mutation to a base tag list. Used by `pm create` and
+ * `pm update` so `--add-tags` extends `--tags` (or the existing tags) without
+ * replacing them. Output is sorted + deduped lowercase, matching `parseTags`.
+ */
+export function mergeAdditiveTags(baseTags: readonly string[], add: readonly string[] | undefined): string[] {
+  const normalizedBase = normalizeBaseTags(baseTags);
+  if (!add || add.length === 0) {
+    return Array.from(new Set(normalizedBase)).sort((a, b) => a.localeCompare(b));
+  }
+  const merged = new Set<string>(normalizedBase);
+  for (const tag of collectTagFlagValues(add)) {
+    merged.add(tag);
+  }
+  return Array.from(merged).sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Apply a subtractive tag mutation to a base tag list. Used by `pm update` so
+ * `--remove-tags x,y` prunes those entries without rewriting the full set.
+ * Removal is case-insensitive: both the base list and the removal selectors are
+ * normalized to canonical lowercase before matching.
+ */
+export function applyTagRemovals(baseTags: readonly string[], remove: readonly string[] | undefined): string[] {
+  const normalizedBase = Array.from(new Set(normalizeBaseTags(baseTags))).sort((a, b) => a.localeCompare(b));
+  if (!remove || remove.length === 0) {
+    return normalizedBase;
+  }
+  const removeSet = new Set(collectTagFlagValues(remove));
+  if (removeSet.size === 0) {
+    return normalizedBase;
+  }
+  return normalizedBase.filter((tag) => !removeSet.has(tag));
+}
+
 // Agents and MCP callers frequently pass --tags as a JSON array (e.g.
 // `--tags '["a","b"]'`). The MCP server normalizes that upstream, but direct
 // CLI invocations used to write the raw bracket string into front matter,

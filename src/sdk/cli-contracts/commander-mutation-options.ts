@@ -32,6 +32,14 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
   { target: "status", keys: ["status"], option: "--status, -s <value>", description: "Item status" },
   { target: "priority", keys: ["priority"], option: "--priority, -p <value>", description: "Priority 0..4" },
   { target: "tags", keys: ["tags"], option: "--tags <value>", description: "Comma-separated tags" },
+  {
+    target: "addTags",
+    keys: ["addTags", "add_tags"],
+    option: "--add-tags <value>",
+    description: "Add tags additively on top of --tags (repeatable; CSV accepted)",
+    repeatable: true,
+    aliasOptions: [{ option: "--add_tags <value>", description: "Alias for --add-tags" }],
+  },
   { target: "body", keys: ["body"], option: "--body, -b <value>", description: "Item markdown body (allow empty string)" },
   { target: "deadline", keys: ["deadline"], option: "--deadline <value>", description: "Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)" },
   {
@@ -125,17 +133,23 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
   { target: "resolution", keys: ["resolution"], option: "--resolution <value>", description: "Issue resolution summary" },
   {
     target: "expectedResult",
-    keys: ["expectedResult", "expected_result"],
+    keys: ["expectedResult", "expected_result", "expected"],
     option: "--expected-result <value>",
     description: "Issue expected behavior",
-    aliasOptions: [{ option: "--expected_result <value>", description: "Alias for --expected-result" }],
+    aliasOptions: [
+      { option: "--expected_result <value>", description: "Alias for --expected-result" },
+      { option: "--expected <value>", description: "Short alias for --expected-result" },
+    ],
   },
   {
     target: "actualResult",
-    keys: ["actualResult", "actual_result"],
+    keys: ["actualResult", "actual_result", "actual"],
     option: "--actual-result <value>",
     description: "Issue observed behavior",
-    aliasOptions: [{ option: "--actual_result <value>", description: "Alias for --actual-result" }],
+    aliasOptions: [
+      { option: "--actual_result <value>", description: "Alias for --actual-result" },
+      { option: "--actual <value>", description: "Short alias for --actual-result" },
+    ],
   },
   {
     target: "affectedVersion",
@@ -263,7 +277,23 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
   },
   { target: "priority", keys: ["priority"], option: "--priority, -p <value>", description: "Set priority" },
   { target: "type", keys: ["type"], option: "--type <value>", description: "Set type" },
-  { target: "tags", keys: ["tags"], option: "--tags <value>", description: "Set comma-separated tags" },
+  { target: "tags", keys: ["tags"], option: "--tags <value>", description: "Set comma-separated tags (replaces existing). Use --add-tags / --remove-tags to mutate additively." },
+  {
+    target: "addTags",
+    keys: ["addTags", "add_tags"],
+    option: "--add-tags <value>",
+    description: "Add tags to the existing list without replacing it (repeatable; CSV accepted)",
+    repeatable: true,
+    aliasOptions: [{ option: "--add_tags <value>", description: "Alias for --add-tags" }],
+  },
+  {
+    target: "removeTags",
+    keys: ["removeTags", "remove_tags"],
+    option: "--remove-tags <value>",
+    description: "Remove tags from the existing list (repeatable; CSV accepted)",
+    repeatable: true,
+    aliasOptions: [{ option: "--remove_tags <value>", description: "Alias for --remove-tags" }],
+  },
   { target: "deadline", keys: ["deadline"], option: "--deadline <value>", description: "Set deadline (ISO/date string or relative)" },
   {
     target: "estimatedMinutes",
@@ -356,17 +386,23 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
   { target: "resolution", keys: ["resolution"], option: "--resolution <value>", description: "Set issue resolution summary" },
   {
     target: "expectedResult",
-    keys: ["expectedResult", "expected_result"],
+    keys: ["expectedResult", "expected_result", "expected"],
     option: "--expected-result <value>",
     description: "Set issue expected behavior",
-    aliasOptions: [{ option: "--expected_result <value>", description: "Alias for --expected-result" }],
+    aliasOptions: [
+      { option: "--expected_result <value>", description: "Alias for --expected-result" },
+      { option: "--expected <value>", description: "Short alias for --expected-result" },
+    ],
   },
   {
     target: "actualResult",
-    keys: ["actualResult", "actual_result"],
+    keys: ["actualResult", "actual_result", "actual"],
     option: "--actual-result <value>",
     description: "Set issue observed behavior",
-    aliasOptions: [{ option: "--actual_result <value>", description: "Alias for --actual-result" }],
+    aliasOptions: [
+      { option: "--actual_result <value>", description: "Alias for --actual-result" },
+      { option: "--actual <value>", description: "Short alias for --actual-result" },
+    ],
   },
   {
     target: "affectedVersion",

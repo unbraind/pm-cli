@@ -129,6 +129,17 @@ pm create \
 
 Repeated singular/plural list flags now accumulate, so `--tag a --tag b` is equivalent to `--tags a,b` (the same holds for `--status` and `--fields` on read commands). Earlier versions silently kept only the last value.
 
+`--tags` REPLACES the whole tag list. To edit tags without restating the full set, use the additive/subtractive flags on `create`/`update`/`update-many`:
+
+- `--add-tags <value>` adds tags to the existing list without replacing it (repeatable; CSV or JSON-array values accepted).
+- `--remove-tags <value>` prunes the given tags from the existing list (repeatable; CSV or JSON-array). Available on `update`/`update-many` only — `create` has no prior tags to remove.
+
+```bash
+pm update pm-abc1 --add-tags urgent,backend     # keeps existing tags, adds two
+pm update pm-abc1 --remove-tags stale            # drops "stale", keeps the rest
+pm create "New backend task" --add-tags backend,p1
+```
+
 Update existing work:
 
 ```bash
@@ -136,6 +147,12 @@ pm update <id> --status in_progress --message "Start implementation"
 pm update <id> --priority medium --deadline +1d --estimate 120
 pm update <id> --parent <parent-id>
 pm append <id> --body "Detailed implementation notes."
+```
+
+`--expected` and `--actual` are short aliases for `--expected-result` and `--actual-result` on `create`/`update`/`update-many`, matching the aliases `pm close` already accepts:
+
+```bash
+pm update <id> --expected "Retry succeeds after backoff" --actual "Retry threw on first attempt"
 ```
 
 Mutation commands (`create`/`update`/`close`/`append`/...) echo a `changed_fields` array. In high-volume agent loops that array is mostly redundant with the item echo above it, so pass the global `--no-changed-fields` flag to replace it with a compact `changed_field_count`:

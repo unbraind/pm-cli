@@ -216,7 +216,9 @@ export function registerMutationCommands(program: Command): void {
     .option("--status, -s <value>", "Set status (use close command for closed)")
     .option("--priority, -p <value>", "Set priority")
     .option("--type <value>", "Set type")
-    .option("--tags <value>", "Set comma-separated tags")
+    .option("--tags <value>", "Set comma-separated tags (replaces existing). Use --add-tags / --remove-tags to mutate additively.")
+    .option("--add-tags <value>", "Add tags additively without replacing existing (repeatable; CSV accepted)", collect)
+    .option("--remove-tags <value>", "Remove tags from the existing list (repeatable; CSV accepted)", collect)
     .option("--deadline <value>", "Set deadline (ISO/date string or relative)")
     .option("--estimate, --estimated-minutes <value>", "Set estimated minutes")
     .option("--acceptance-criteria <value>", "Set acceptance criteria")
@@ -246,7 +248,9 @@ export function registerMutationCommands(program: Command): void {
     .option("--repro-steps <value>", "Set issue reproduction steps")
     .option("--resolution <value>", "Set issue resolution summary")
     .option("--expected-result <value>", "Set issue expected behavior")
+    .option("--expected <value>", "Short alias for --expected-result")
     .option("--actual-result <value>", "Set issue observed behavior")
+    .option("--actual <value>", "Short alias for --actual-result")
     .option("--affected-version <value>", "Set affected version identifier")
     .option("--fixed-version <value>", "Set fixed version identifier")
     .option("--component <value>", "Set issue component ownership")
@@ -306,6 +310,8 @@ export function registerMutationCommands(program: Command): void {
   for (const [flags, description] of [
     ["--dep_remove <value>", "Alias for --dep-remove"],
     ["--type_option <value>", "Alias for --type-option"],
+    ["--add_tags <value>", "Alias for --add-tags"],
+    ["--remove_tags <value>", "Alias for --remove-tags"],
   ] as const) {
     addHiddenOption(updateManyCommand, flags, description, true);
   }
@@ -362,7 +368,9 @@ export function registerMutationCommands(program: Command): void {
     .option("--validate-close [mode]", 'Validate closure metadata before close: "off", "warn", or "strict" (default: settings governance preset)')
     .option("--resolution <value>", "Set the closure resolution summary inline (same field --validate-close strict checks; previously required a prior pm update)")
     .option("--expected-result <value>", "Set the expected-result note inline (closure validation field)")
+    .option("--expected <value>", "Short alias for --expected-result")
     .option("--actual-result <value>", "Set the actual-result note inline (closure validation field)")
+    .option("--actual <value>", "Short alias for --actual-result")
     .option("--force", "Force ownership override")
     .description("Close an item with a required reason.");
   // pm-fl0c #11 (2026-05-28): expose snake_case aliases alongside the canonical
@@ -397,9 +405,13 @@ export function registerMutationCommands(program: Command): void {
           },
         );
       }
-      const pickInlineString = (canonical: unknown, snake: unknown): string | undefined => {
-        const value = typeof canonical === "string" ? canonical : typeof snake === "string" ? snake : undefined;
-        return value !== undefined ? value : undefined;
+      const pickInlineString = (...candidates: unknown[]): string | undefined => {
+        for (const candidate of candidates) {
+          if (typeof candidate === "string") {
+            return candidate;
+          }
+        }
+        return undefined;
       };
       const result = await runClose(
         id,
@@ -415,8 +427,8 @@ export function registerMutationCommands(program: Command): void {
                 : undefined,
           force: Boolean(options.force),
           resolution: typeof options.resolution === "string" ? options.resolution : undefined,
-          expectedResult: pickInlineString(options.expectedResult, options.expected_result),
-          actualResult: pickInlineString(options.actualResult, options.actual_result),
+          expectedResult: pickInlineString(options.expectedResult, options.expected_result, options.expected),
+          actualResult: pickInlineString(options.actualResult, options.actual_result, options.actual),
         },
         globalOptions,
       );

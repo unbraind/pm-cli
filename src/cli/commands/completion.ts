@@ -530,6 +530,7 @@ ${zshListRuntimeFieldFlags}            '--json[Output JSON]' \\
             '(-s --status)'{-s,--status}'[Item status]:(${statusChoices})' \\
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--tags[Comma-separated tags]:tags' \\
+            '--add-tags[Add tags additively without replacing existing]:tags' \\
             '(-b --body)'{-b,--body}'[Item body]:body' \\
             '--deadline[Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)]:deadline' \\
             '--estimate[Estimated minutes]:minutes' \\
@@ -566,6 +567,10 @@ ${zshCreateRuntimeFieldFlags}            '--json[Output JSON]' \\
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--type[Item type]:(${typeChoices})' \\
             '--tags[Comma-separated tags]:tags' \\
+            '--add-tags[Add tags additively without replacing existing]:tags' \\
+            '--remove-tags[Remove tags from the existing list]:tags' \\
+            '--expected[Short alias for --expected-result]:expected_result' \\
+            '--actual[Short alias for --actual-result]:actual_result' \\
             '--comment[Comment seed author=<value>,created_at=<iso|now>,text=<value>]:comment' \\
             '--note[Note seed author=<value>,created_at=<iso|now>,text=<value>]:note' \\
             '--learning[Learning seed author=<value>,created_at=<iso|now>,text=<value>]:learning' \\
@@ -617,6 +622,8 @@ ${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner m
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
             '--type[Item type]:(${typeChoices})' \\
             '--tags[Comma-separated tags]:tags' \\
+            '--add-tags[Add tags additively without replacing existing]:tags' \\
+            '--remove-tags[Remove tags from the existing list]:tags' \\
             '--deadline[Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)]:deadline' \\
             '--estimate[Estimated minutes]:minutes' \\
             '--acceptance-criteria[Acceptance criteria]:criteria' \\
@@ -640,6 +647,8 @@ ${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner m
             '--resolution[Issue resolution summary]:resolution' \\
             '--expected-result[Issue expected behavior]:expected_result' \\
             '--actual-result[Issue observed behavior]:actual_result' \\
+            '--expected[Short alias for --expected-result]:expected_result' \\
+            '--actual[Short alias for --actual-result]:actual_result' \\
             '--affected-version[Affected version identifier]:affected_version' \\
             '--fixed-version[Fixed version identifier]:fixed_version' \\
             '--component[Issue component ownership]:component' \\
@@ -1021,9 +1030,16 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         close)
           _arguments \\
+            '--reason[Closure reason]:reason' \\
+            '--close-reason[Alias for --reason]:close_reason' \\
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--validate-close[Validate closure metadata mode]:(off warn strict)' \\
+            '--resolution[Closure resolution summary]:resolution' \\
+            '--expected-result[Expected behavior note]:expected_result' \\
+            '--actual-result[Observed behavior note]:actual_result' \\
+            '--expected[Short alias for --expected-result]:expected_result' \\
+            '--actual[Short alias for --actual-result]:actual_result' \\
             '--force[Force override]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1364,6 +1380,7 @@ complete -c pm -n '__fish_seen_subcommand_from create' -l schedule-preset       
 complete -c pm -n '__fish_seen_subcommand_from create' -s s -l status             -d 'Item status' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from create' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from create' -l tags                    -d 'Comma-separated tags' -r
+complete -c pm -n '__fish_seen_subcommand_from create' -l add-tags                -d 'Add tags additively without replacing existing' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -s b -l body               -d 'Item body' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l deadline                -d 'Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l estimate                -d 'Estimated minutes' -r
@@ -1395,6 +1412,10 @@ complete -c pm -n '__fish_seen_subcommand_from update' -s s -l status           
 complete -c pm -n '__fish_seen_subcommand_from update' -l close-reason            -d 'Set close reason' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from update' -l type                    -d 'Item type' -r -a '${typeChoices}'
+complete -c pm -n '__fish_seen_subcommand_from update' -l add-tags                -d 'Add tags additively without replacing existing' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l remove-tags             -d 'Remove tags from the existing list' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l expected                -d 'Short alias for --expected-result' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l actual                  -d 'Short alias for --actual-result' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l comment                 -d 'Comment seed author=<value>,created_at=<iso|now>,text=<value>' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l note                    -d 'Note seed author=<value>,created_at=<iso|now>,text=<value>' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -l learning                -d 'Learning seed author=<value>,created_at=<iso|now>,text=<value>' -r
@@ -1446,6 +1467,8 @@ complete -c pm -n '__fish_seen_subcommand_from update-many' -s b -l body        
 complete -c pm -n '__fish_seen_subcommand_from update-many' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l type                    -d 'Item type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l tags                    -d 'Comma-separated tags' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l add-tags                -d 'Add tags additively without replacing existing' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l remove-tags             -d 'Remove tags from the existing list' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l deadline                -d 'Deadline (ISO/date string or relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l estimate                -d 'Estimated minutes' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l acceptance-criteria     -d 'Acceptance criteria' -r
@@ -1469,6 +1492,8 @@ complete -c pm -n '__fish_seen_subcommand_from update-many' -l repro-steps      
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l resolution              -d 'Issue resolution summary' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l expected-result         -d 'Issue expected behavior' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l actual-result           -d 'Issue observed behavior' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l expected                 -d 'Short alias for --expected-result' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l actual                   -d 'Short alias for --actual-result' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l affected-version        -d 'Affected version identifier' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l fixed-version           -d 'Fixed version identifier' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l component               -d 'Issue component ownership' -r
@@ -1730,6 +1755,13 @@ complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-ta
 complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task delete' -l message -d 'History message' -r
 complete -c pm -n '__fish_seen_subcommand_from claim release start-task pause-task close close-task delete' -l force -d 'Force override'
 complete -c pm -n '__fish_seen_subcommand_from close close-task' -l validate-close -d 'Validate closure metadata mode' -r -a 'off warn strict'
+complete -c pm -n '__fish_seen_subcommand_from close' -l reason -d 'Closure reason' -r
+complete -c pm -n '__fish_seen_subcommand_from close' -l close-reason -d 'Alias for --reason' -r
+complete -c pm -n '__fish_seen_subcommand_from close' -l resolution -d 'Closure resolution summary' -r
+complete -c pm -n '__fish_seen_subcommand_from close' -l expected-result -d 'Expected behavior note' -r
+complete -c pm -n '__fish_seen_subcommand_from close' -l actual-result -d 'Observed behavior note' -r
+complete -c pm -n '__fish_seen_subcommand_from close' -l expected -d 'Short alias for --expected-result' -r
+complete -c pm -n '__fish_seen_subcommand_from close' -l actual -d 'Short alias for --actual-result' -r
 complete -c pm -n '__fish_seen_subcommand_from release' -l allow-audit-release -d 'Allow non-owner release handoffs without requiring --force'
 complete -c pm -n '__fish_seen_subcommand_from delete' -l dry-run -d 'Preview the item file that would be deleted without mutating'
 
