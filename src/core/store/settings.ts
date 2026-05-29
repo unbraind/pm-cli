@@ -20,6 +20,7 @@ import type {
   ItemTypeDefinition,
   PmSettings,
   GovernancePreset,
+  SearchMutationRefreshPolicy,
   ValidateMetadataRequiredField,
 } from "../../types/index.js";
 
@@ -88,6 +89,13 @@ export function resolveGovernanceKnobs(
 
 function cloneDefaults(): PmSettings {
   return structuredClone(SETTINGS_DEFAULTS);
+}
+
+function normalizeSearchMutationRefreshPolicy(value: unknown): SearchMutationRefreshPolicy {
+  if (value === "cache_only" || value === "semantic_configured" || value === "semantic_auto") {
+    return value;
+  }
+  return SETTINGS_DEFAULTS.search.mutation_refresh_policy;
 }
 
 function buildFallbackSettingsReadResult(warning?: string): SettingsReadResult {
@@ -367,7 +375,11 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
       disabled: [...settings.extensions.disabled],
       policy: normalizeExtensionPolicySettings(settings.extensions.policy ?? defaults.extensions.policy),
     },
-    search: { ...defaults.search, ...settings.search },
+    search: {
+      ...defaults.search,
+      ...settings.search,
+      mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(settings.search?.mutation_refresh_policy),
+    },
     providers: {
       openai: { ...defaults.providers.openai, ...settings.providers.openai },
       ollama: { ...defaults.providers.ollama, ...settings.providers.ollama },
@@ -413,6 +425,11 @@ export function serializeSettings(settings: PmSettings): string {
       definitions: normalizeItemTypeDefinitions(settings.item_types?.definitions),
     },
     schema: normalizeRuntimeSchemaSettings(settings.schema),
+    search: {
+      ...SETTINGS_DEFAULTS.search,
+      ...settings.search,
+      mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(settings.search?.mutation_refresh_policy),
+    },
     context: {
       default_depth: settings.context?.default_depth ?? SETTINGS_DEFAULTS.context.default_depth,
       activity_limit: settings.context?.activity_limit ?? SETTINGS_DEFAULTS.context.activity_limit,
@@ -577,6 +594,7 @@ export function serializeSettings(settings: PmSettings): string {
     "embedding_timeout_ms",
     "scanner_max_batch_retries",
     "provider",
+    "mutation_refresh_policy",
   ]);
   ordered.providers = orderObject(ordered.providers as Record<string, unknown>, ["openai", "ollama"]);
   (ordered.providers as Record<string, unknown>).openai = orderObject(

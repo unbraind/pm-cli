@@ -34,6 +34,8 @@ export interface NestedSettingDescriptor {
   kind: NestedSettingKind;
   /** Short human-facing summary for `pm config list`. */
   summary: string;
+  /** Optional accepted values for string settings. */
+  choices?: readonly string[];
   /**
    * Optional minimum value for `integer` / `number` kinds. When set,
    * `parseNestedSettingValue` rejects values strictly below `min`. Useful for
@@ -53,6 +55,13 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     path: "search.provider",
     kind: "string",
     summary: "Search embedding provider name (e.g. openai, ollama, or an extension provider).",
+  },
+  {
+    key: "search_mutation_refresh_policy",
+    path: "search.mutation_refresh_policy",
+    kind: "string",
+    choices: ["cache_only", "semantic_configured", "semantic_auto"],
+    summary: "Mutation-time search refresh policy: cache_only, semantic_configured, or semantic_auto.",
   },
   {
     key: "search_embedding_model",
@@ -204,6 +213,14 @@ export function parseNestedSettingValue(
   }
   const trimmed = rawValue.trim();
   if (descriptor.kind === "string") {
+    if (descriptor.choices && !descriptor.choices.includes(trimmed)) {
+      return {
+        ok: false,
+        error: {
+          message: `Config set ${descriptor.key} must be one of ${descriptor.choices.join("|")}, got "${rawValue}"`,
+        },
+      };
+    }
     return { ok: true, parsed: { descriptor, value: trimmed } };
   }
 

@@ -21,6 +21,7 @@ const DEFAULT_GLOBAL_OPTIONS: GlobalOptions = {
 // a missing or misnamed entry breaks this test immediately.
 const EXPECTED_ALIASES: Record<string, string> = {
   search_provider: "search.provider",
+  search_mutation_refresh_policy: "search.mutation_refresh_policy",
   search_embedding_model: "search.embedding_model",
   search_embedding_batch_size: "search.embedding_batch_size",
   search_embedding_timeout_ms: "search.embedding_timeout_ms",
@@ -39,14 +40,14 @@ const EXPECTED_ALIASES: Record<string, string> = {
 };
 
 describe("config nested-setting aliases (pm-7ilo)", () => {
-  it("registers all 16 search/provider/vector-store aliases with the expected settings paths", () => {
+  it("registers all search/provider/vector-store aliases with the expected settings paths", () => {
     const descriptorByKey = new Map(NESTED_SETTING_DESCRIPTORS.map((d) => [d.key, d]));
     for (const [alias, expectedPath] of Object.entries(EXPECTED_ALIASES)) {
       const descriptor = descriptorByKey.get(alias);
       expect(descriptor, `missing nested-setting alias: ${alias}`).toBeDefined();
       expect(descriptor!.path).toBe(expectedPath);
     }
-    expect(Object.keys(EXPECTED_ALIASES)).toHaveLength(16);
+    expect(Object.keys(EXPECTED_ALIASES)).toHaveLength(17);
   });
 
   it("resolves both kebab-case and snake_case forms of each alias", () => {
@@ -201,7 +202,7 @@ describe("config nested-setting aliases (pm-7ilo)", () => {
       const result = await runConfig("project", "list", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
 
       expect(result.nested_settings).toBeDefined();
-      expect(result.nested_settings).toHaveLength(16);
+      expect(result.nested_settings).toHaveLength(17);
       const keys = (result.nested_settings ?? []).map((entry) => entry.key).sort();
       expect(keys).toEqual(Object.keys(EXPECTED_ALIASES).sort());
     });

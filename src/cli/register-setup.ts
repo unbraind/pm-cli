@@ -389,7 +389,7 @@ export function registerSetupCommands(program: Command): void {
     )
     .option(
       "--value <value>",
-      "Value for nested leaf settings keys (search_provider, openai_base_url, ollama_model, vector_store_adapter, qdrant_url, lancedb_path, etc.). Equivalent to the positional value.",
+      "Value for nested leaf settings keys (search_provider, search_mutation_refresh_policy, openai_base_url, ollama_model, vector_store_adapter, qdrant_url, lancedb_path, etc.). Equivalent to the positional value.",
     )
     .option("--default-depth <value>", "Context default depth: brief|standard|deep")
     .option("--activity-limit <n>", "Context default activity limit")

@@ -417,8 +417,53 @@ export async function refreshSearchArtifactsForMutation(
   itemIds: string[],
 ): Promise<SearchMutationArtifactRefreshResult> {
   const invalidation = await invalidateSearchCacheArtifacts(pmRoot);
-  const semanticRefresh = await refreshSemanticEmbeddingsForMutatedItems(pmRoot, itemIds, {
-    apply_runtime_defaults: true,
+  const normalizedItemIds = toUniqueSorted(itemIds);
+  if (normalizedItemIds.length === 0) {
+    return {
+      invalidated: invalidation.invalidated,
+      refreshed: [],
+      skipped: [],
+      warnings: invalidation.warnings,
+    };
+  }
+
+  if (!(await pathExists(getSettingsPath(pmRoot)))) {
+    const semanticRefresh = await refreshSemanticEmbeddingsForMutatedItems(pmRoot, normalizedItemIds);
+    return {
+      invalidated: invalidation.invalidated,
+      refreshed: semanticRefresh.refreshed,
+      skipped: semanticRefresh.skipped,
+      warnings: [...invalidation.warnings, ...semanticRefresh.warnings],
+    };
+  }
+
+  let settings: Awaited<ReturnType<typeof readSettings>>;
+  try {
+    settings = await readSettings(pmRoot);
+  } catch (error: unknown) {
+    return {
+      invalidated: invalidation.invalidated,
+      refreshed: [],
+      skipped: normalizedItemIds,
+      warnings: [
+        ...invalidation.warnings,
+        `search_semantic_refresh_skipped:settings_read_failed:${toErrorMessage(error)}`,
+      ],
+    };
+  }
+
+  if (settings.search.mutation_refresh_policy === "cache_only") {
+    return {
+      invalidated: invalidation.invalidated,
+      refreshed: [],
+      skipped: normalizedItemIds,
+      warnings: invalidation.warnings,
+    };
+  }
+
+  const semanticRefresh = await refreshSemanticEmbeddingsForMutatedItems(pmRoot, normalizedItemIds, {
+    settings,
+    apply_runtime_defaults: settings.search.mutation_refresh_policy === "semantic_auto",
   });
   return {
     invalidated: invalidation.invalidated,

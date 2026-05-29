@@ -382,4 +382,49 @@ describe("core/search/cache", () => {
       expect(result.warnings).toEqual(["search_semantic_refresh_skipped:provider_unconfigured"]);
     });
   });
+
+  it("honors cache-only mutation refresh policy without calling semantic providers", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context, "Cache-only mutation refresh item");
+      const settings = await readSettings(context.pmPath);
+      settings.search.mutation_refresh_policy = "cache_only";
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      await writeSettings(context.pmPath, settings);
+
+      const semanticMock = installFailingFetchMock({ text: "semantic refresh should not run" });
+
+      try {
+        const result = await refreshSearchArtifactsForMutation(context.pmPath, [itemId]);
+        expect(result.refreshed).toEqual([]);
+        expect(result.skipped).toEqual([itemId]);
+        expect(result.warnings).toEqual([]);
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
+
+  it("keeps mutation refresh enabled for explicitly configured semantic search", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context, "Configured mutation refresh item");
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      await writeSettings(context.pmPath, settings);
+
+      const semanticMock = installSemanticFetchMock();
+
+      try {
+        const result = await refreshSearchArtifactsForMutation(context.pmPath, [itemId]);
+        expect(result.refreshed).toEqual([itemId]);
+        expect(result.skipped).toEqual([]);
+        expect(result.warnings).toEqual([]);
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
 });

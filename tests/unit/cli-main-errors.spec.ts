@@ -26,4 +26,24 @@ describe("CLI main error helpers", () => {
     expect(wrapped.message).toBe("Calendar accepts at most one positional view");
     expect(wrapped.exitCode).toBe(EXIT_CODE.USAGE);
   });
+
+  it("keeps expected retry errors off the synchronous Sentry path by default", () => {
+    const previous = process.env.PM_SENTRY_CAPTURE_EXPECTED_ERRORS;
+    try {
+      delete process.env.PM_SENTRY_CAPTURE_EXPECTED_ERRORS;
+      expect(_testOnly.shouldLogHandledErrorToSentry(EXIT_CODE.USAGE)).toBe(false);
+      expect(_testOnly.shouldLogHandledErrorToSentry(EXIT_CODE.NOT_FOUND)).toBe(false);
+      expect(_testOnly.shouldLogHandledErrorToSentry(EXIT_CODE.CONFLICT)).toBe(false);
+      expect(_testOnly.shouldLogHandledErrorToSentry(EXIT_CODE.GENERIC_FAILURE)).toBe(true);
+
+      process.env.PM_SENTRY_CAPTURE_EXPECTED_ERRORS = "1";
+      expect(_testOnly.shouldLogHandledErrorToSentry(EXIT_CODE.USAGE)).toBe(true);
+    } finally {
+      if (previous === undefined) {
+        delete process.env.PM_SENTRY_CAPTURE_EXPECTED_ERRORS;
+      } else {
+        process.env.PM_SENTRY_CAPTURE_EXPECTED_ERRORS = previous;
+      }
+    }
+  });
 });

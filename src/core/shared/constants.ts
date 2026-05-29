@@ -301,6 +301,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
     embedding_timeout_ms: 30_000,
     scanner_max_batch_retries: 3,
     provider: "",
+    mutation_refresh_policy: "semantic_configured",
   },
   providers: {
     openai: {

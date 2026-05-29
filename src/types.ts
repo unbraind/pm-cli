@@ -591,6 +591,8 @@ export interface AgentGuidanceSettings {
   last_checked_files: string[];
 }
 
+export type SearchMutationRefreshPolicy = "cache_only" | "semantic_configured" | "semantic_auto";
+
 export interface PmSettings {
   version: number;
   id_prefix: string;
@@ -649,6 +651,7 @@ export interface PmSettings {
     embedding_timeout_ms: number;
     scanner_max_batch_retries: number;
     provider?: string;
+    mutation_refresh_policy: SearchMutationRefreshPolicy;
     tuning?: {
       title_exact_bonus?: number;
       title_weight?: number;

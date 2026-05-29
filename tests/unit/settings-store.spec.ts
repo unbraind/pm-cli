@@ -220,6 +220,7 @@ describe("core/store/settings", () => {
         "embedding_timeout_ms",
         "scanner_max_batch_retries",
         "provider",
+        "mutation_refresh_policy",
       ]);
 
       const providers = parsed.providers as Record<string, unknown>;

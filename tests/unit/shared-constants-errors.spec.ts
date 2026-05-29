@@ -94,6 +94,7 @@ describe("shared constants and errors contracts", () => {
       embedding_timeout_ms: 30000,
       scanner_max_batch_retries: 3,
       provider: "",
+      mutation_refresh_policy: "semantic_configured",
     });
     expect(SETTINGS_DEFAULTS.providers).toEqual({
       openai: {

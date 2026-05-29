@@ -142,20 +142,34 @@ describe("decodeHtmlEntitiesInOptions", () => {
     expect(decodeHtmlEntitiesInOptions([])).toEqual([]);
   });
 
+  it("reuses reconstructed nodes for repeated object references", () => {
+    const shared = { text: "decode &lt;me&gt;" };
+    const input = { first: shared, second: shared };
+    const decoded = decodeHtmlEntitiesInOptions(input);
+
+    expect(decoded.first).toBe(decoded.second);
+    expect(decoded.first).not.toBe(shared);
+    expect(decoded.first.text).toBe("decode <me>");
+  });
+
   it("does not infinite-loop on cyclic object graphs", () => {
     const cycle: Record<string, unknown> = { text: "decode &lt;me&gt;" };
     cycle.self = cycle;
-    // Defensive: visited-set guards against cycles. We only assert the call
-    // returns without throwing or hanging — the cycle itself is preserved on
-    // the original input (the walker copies a fresh tree but stops descending
-    // when it re-encounters a seen node).
-    expect(() => decodeHtmlEntitiesInOptions(cycle)).not.toThrow();
+    const decoded = decodeHtmlEntitiesInOptions(cycle) as Record<string, unknown>;
+
+    expect(decoded).not.toBe(cycle);
+    expect(decoded.text).toBe("decode <me>");
+    expect(decoded.self).toBe(decoded);
   });
 
   it("does not infinite-loop on cyclic arrays", () => {
     const arr: unknown[] = ["decode &lt;me&gt;"];
     arr.push(arr);
-    expect(() => decodeHtmlEntitiesInOptions(arr)).not.toThrow();
+    const decoded = decodeHtmlEntitiesInOptions(arr);
+
+    expect(decoded).not.toBe(arr);
+    expect(decoded[0]).toBe("decode <me>");
+    expect(decoded[1]).toBe(decoded);
   });
 
   it("preserves class instances (Date, RegExp, Map, Set) without stripping prototypes", () => {

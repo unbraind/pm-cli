@@ -227,12 +227,12 @@ export function shouldCaptureCliError(error: unknown): boolean {
   return true;
 }
 
-export async function sentryFlush(): Promise<void> {
+export async function sentryFlush(timeoutMs = 3000): Promise<void> {
   const Sentry = getSentry();
   if (!Sentry) return;
 
   try {
-    await Sentry.flush(3000);
+    await Sentry.flush(timeoutMs);
   } catch {
     // Sentry flush must never block CLI exit.
   }

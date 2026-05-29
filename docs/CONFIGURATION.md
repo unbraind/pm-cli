@@ -134,9 +134,18 @@ Semantic and hybrid search can use built-in OpenAI-compatible or Ollama provider
 
 For local Ollama or slower embedding providers, tune `search.embedding_batch_size`, `search.embedding_timeout_ms`, and `search.scanner_max_batch_retries` in project config before assuming semantic search is broken. Keyword search remains the fast baseline while semantic indexing catches up.
 
+Mutation commands invalidate keyword search caches immediately. Semantic vector refresh is controlled by `search.mutation_refresh_policy`:
+
+| Policy | Behavior |
+|--------|----------|
+| `semantic_configured` | default; refresh vectors during mutations only when semantic provider/store settings are explicitly configured |
+| `cache_only` | fastest writes; invalidate keyword caches and leave vector refresh to `pm reindex` or `pm health --refresh-vectors` |
+| `semantic_auto` | also apply implicit local Ollama/LanceDB defaults during mutations |
+
 Useful commands:
 
 ```bash
+pm config project set search_mutation_refresh_policy cache_only
 pm search "calendar reminders" --mode hybrid --limit 10
 pm reindex --mode hybrid --progress
 pm health --check-only

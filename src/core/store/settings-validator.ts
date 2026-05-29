@@ -88,6 +88,7 @@ export interface ParsedSettings {
     embedding_timeout_ms?: number;
     scanner_max_batch_retries: number;
     provider?: string;
+    mutation_refresh_policy?: "cache_only" | "semantic_configured" | "semantic_auto";
   };
   providers: {
     openai: { base_url: string; api_key: string; model: string };
@@ -384,6 +385,7 @@ const settingsCheck = vObject({
     embedding_timeout_ms: vOptional(vNumber({ int: true })),
     scanner_max_batch_retries: vNumber({ int: true }),
     provider: vOptional(vString),
+    mutation_refresh_policy: vOptional(vLiteral("cache_only", "semantic_configured", "semantic_auto")),
   }),
   providers: vObject({
     openai: vObject({ base_url: vString, api_key: vString, model: vString }),

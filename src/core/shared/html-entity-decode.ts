@@ -67,22 +67,27 @@ export function decodeHtmlEntitiesIfEscaped(input: string): string {
  *
  * The walker mutates a fresh shallow copy at each level so the caller's input
  * is not modified. Cycles are not expected (MCP arguments arrive as JSON), but
- * a visited-set is used as defensive protection against accidental cycles.
+ * a WeakMap is used as defensive protection against accidental cycles and
+ * repeated references.
  */
 export function decodeHtmlEntitiesInOptions<T>(options: T): T {
-  return decodeValue(options, new WeakSet<object>()) as T;
+  return decodeValue(options, new WeakMap<object, unknown>()) as T;
 }
 
-function decodeValue(value: unknown, seen: WeakSet<object>): unknown {
+function decodeValue(value: unknown, seen: WeakMap<object, unknown>): unknown {
   if (typeof value === "string") {
     return decodeHtmlEntitiesIfEscaped(value);
   }
   if (Array.isArray(value)) {
     if (seen.has(value)) {
-      return value;
+      return seen.get(value);
     }
-    seen.add(value);
-    return value.map((entry) => decodeValue(entry, seen));
+    const result: unknown[] = [];
+    seen.set(value, result);
+    for (const entry of value) {
+      result.push(decodeValue(entry, seen));
+    }
+    return result;
   }
   if (value !== null && typeof value === "object") {
     // Only traverse plain objects (`{}` and `Object.create(null)` literals).
@@ -93,13 +98,13 @@ function decodeValue(value: unknown, seen: WeakSet<object>): unknown {
       return value;
     }
     if (seen.has(value as object)) {
-      return value;
+      return seen.get(value as object);
     }
-    seen.add(value as object);
     const source = value as Record<string, unknown>;
     // Preserve the original prototype so downstream callers can still rely on
     // standard methods like `.hasOwnProperty` on plain objects.
     const result: Record<string, unknown> = Object.create(Object.getPrototypeOf(value as object));
+    seen.set(value as object, result);
     // Use Object.defineProperty (not bracket assignment) for ALL keys so a
     // smuggled `__proto__` / `constructor` / `prototype` key from an MCP
     // caller becomes a regular own property — never triggers JS's special

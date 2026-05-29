@@ -12,6 +12,7 @@ const INTEGER_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "sea
 const NUMBER_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "search_score_threshold")!;
 const RATIO_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "search_hybrid_semantic_weight")!;
 const NESTED_PATH_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "qdrant_url")!;
+const CHOICE_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "search_mutation_refresh_policy")!;
 
 describe("nested-settings helpers (pm-7ilo)", () => {
   describe("resolveNestedSettingDescriptor", () => {
@@ -37,6 +38,16 @@ describe("nested-settings helpers (pm-7ilo)", () => {
       const result = parseNestedSettingValue(STRING_DESCRIPTOR, "  ollama  ");
       expect(result.ok).toBe(true);
       if (result.ok) expect(result.parsed.value).toBe("ollama");
+    });
+
+    it("validates string choices when a descriptor defines them", () => {
+      const accepted = parseNestedSettingValue(CHOICE_DESCRIPTOR, "  semantic_configured  ");
+      expect(accepted.ok).toBe(true);
+      if (accepted.ok) expect(accepted.parsed.value).toBe("semantic_configured");
+
+      const rejected = parseNestedSettingValue(CHOICE_DESCRIPTOR, "always");
+      expect(rejected.ok).toBe(false);
+      if (!rejected.ok) expect(rejected.error.message).toContain("cache_only|semantic_configured|semantic_auto");
     });
 
     it("rejects non-string inputs", () => {

@@ -206,6 +206,13 @@ interface RuntimeExtensionSnapshot {
 
 let runtimeExtensionSnapshotCache: { key: string; snapshot: RuntimeExtensionSnapshot | null } | null = null;
 let activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
+const HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS = 250;
+const EXPECTED_HANDLED_ERROR_EXIT_CODES = new Set<number>([
+  EXIT_CODE.USAGE,
+  EXIT_CODE.NOT_FOUND,
+  EXIT_CODE.CONFLICT,
+]);
+const TRUE_LIKE_ENV_VALUES = new Set(["1", "true", "yes", "on"]);
 
 type SetupRegistrationModule = {
   registerSetupCommands: typeof RegisterSetupCommandsFn;
@@ -532,6 +539,35 @@ async function runAndClearAfterCommandHooks(outcome: TelemetryCommandOutcome): P
 
 async function ensureSentryForErrorReporting(): Promise<void> {
   await ensureSentryInit();
+}
+
+function envFlagEnabled(key: string): boolean {
+  return TRUE_LIKE_ENV_VALUES.has((process.env[key] ?? "").trim().toLowerCase());
+}
+
+function shouldLogHandledErrorToSentry(exitCode: number): boolean {
+  if (envFlagEnabled("PM_SENTRY_CAPTURE_EXPECTED_ERRORS")) {
+    return true;
+  }
+  return !EXPECTED_HANDLED_ERROR_EXIT_CODES.has(Math.trunc(exitCode));
+}
+
+async function maybeLogHandledCliErrorToSentry(params: {
+  command: string;
+  error_code: string;
+  error_category: TelemetryErrorCategory;
+  exit_code: number;
+  error_message: string;
+  command_resolution?: TelemetryCommandResolution;
+  resolution_stage?: TelemetryResolutionStage;
+  source_context?: string;
+}): Promise<boolean> {
+  if (!shouldLogHandledErrorToSentry(params.exit_code)) {
+    return false;
+  }
+  await ensureSentryForErrorReporting();
+  sentryLogCliUsageError(params);
+  return true;
 }
 
 function extractCommandScopedOptions(
@@ -1685,8 +1721,7 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
         },
         resolutionStage: "execute",
       });
-      await ensureSentryForErrorReporting();
-      sentryLogCliUsageError({
+      const loggedHandledErrorToSentry = await maybeLogHandledCliErrorToSentry({
         command: attemptedCommand,
         error_code: classification.code,
         error_category: errorCategory,
@@ -1718,7 +1753,9 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
       } else {
         printError(formatPmCliErrorForDisplay(errorMessage, enrichedContext));
       }
-      await sentryFlush();
+      if (loggedHandledErrorToSentry) {
+        await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
+      }
       process.exitCode = exitCode;
       return;
     }
@@ -1763,8 +1800,7 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
             },
             resolutionStage: "parse",
           });
-          await ensureSentryForErrorReporting();
-          sentryLogCliUsageError({
+          const loggedHandledErrorToSentry = await maybeLogHandledCliErrorToSentry({
             command: unknownToken,
             error_code: classification.code,
             error_category: errorCategory,
@@ -1798,7 +1834,9 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
           } else {
             printError(renderedUsage);
           }
-          await sentryFlush();
+          if (loggedHandledErrorToSentry) {
+            await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
+          }
           process.exitCode = EXIT_CODE.USAGE;
           return;
         }
@@ -1858,8 +1896,7 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
           },
           resolutionStage: "parse",
         });
-        await ensureSentryForErrorReporting();
-        sentryLogCliUsageError({
+        const loggedHandledErrorToSentry = await maybeLogHandledCliErrorToSentry({
           command: attemptedCommand,
           error_code: classification.code,
           error_category: errorCategory,
@@ -1893,7 +1930,9 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
         } else {
           printError(renderedUsage);
         }
-        await sentryFlush();
+        if (loggedHandledErrorToSentry) {
+          await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
+        }
         process.exitCode = EXIT_CODE.USAGE;
         return;
       }
@@ -1943,5 +1982,6 @@ export const _testOnly = {
   isCommanderError,
   normalizeThrownExitCode,
   readThrownExitCode,
+  shouldLogHandledErrorToSentry,
   wrapThrownErrorForSentry,
 };
