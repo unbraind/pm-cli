@@ -16,10 +16,20 @@ const env = {
   PM_PATH: pmPath,
   PM_GLOBAL_PATH: globalPath,
   PM_AUTHOR: "dogfood-agent",
+  PM_TELEMETRY_SOURCE_CONTEXT: process.env.PM_TELEMETRY_SOURCE_CONTEXT || "dogfood",
 };
 const semanticDogfoodEnabled = process.env.PM_DOGFOOD_SEMANTIC === "1";
 
 const timings = [];
+
+function cleanupTempRoot() {
+  try {
+    rmSync(tempRoot, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`Warning: failed to remove dogfood temp root ${tempRoot}: ${message}`);
+  }
+}
 
 function runProcess(label, args, options = {}) {
   const startedAt = Date.now();
@@ -627,6 +637,6 @@ try {
   process.exitCode = 1;
 } finally {
   if (process.env.PM_DOGFOOD_KEEP_TEMP !== "1") {
-    rmSync(tempRoot, { recursive: true, force: true });
+    cleanupTempRoot();
   }
 }
