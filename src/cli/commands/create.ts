@@ -952,6 +952,14 @@ function requireCreateOptionByType(
   };
 
   const hasOptionValue = (optionKey: string): boolean => {
+    // `--add-tags` mutates the same `tags` field as `--tags`, so it must count
+    // toward the `tags` command_option_policy (both the disabled guard and the
+    // required check) — otherwise `--add-tags` would bypass a rule disabling
+    // tags, or fail to satisfy a rule requiring them even though the created
+    // item ends up tagged.
+    if (optionKey === "tags") {
+      return scalarValues.tags !== undefined || (Array.isArray(options.addTags) && options.addTags.length > 0);
+    }
     if (optionKey in scalarValues) {
       return scalarValues[optionKey] !== undefined;
     }
@@ -1551,6 +1559,16 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   let status =
     resolvedOptions.status !== undefined ? parseStatusValue(resolvedOptions.status, statusRegistry) : statusRegistry.open_status;
   const priority = resolvedOptions.priority !== undefined ? ensurePriority(resolvedOptions.priority) : 2;
+  // `--unset tags` clears the field; combining it with `--add-tags` is the same
+  // contradiction that `--unset tags --tags ...` already rejects, so reject it
+  // here rather than silently letting the additions win over the clear.
+  if (
+    unsetTargets.frontMatterKeys.has("tags") &&
+    Array.isArray(resolvedOptions.addTags) &&
+    resolvedOptions.addTags.length > 0
+  ) {
+    throw new PmCliError("Cannot combine --unset tags with --add-tags", EXIT_CODE.USAGE);
+  }
   const baseTags = unsetTargets.frontMatterKeys.has("tags")
     ? []
     : resolvedOptions.tags !== undefined

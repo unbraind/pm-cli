@@ -482,6 +482,8 @@ function enforceAllowAuditUpdateScope(options: UpdateCommandOptions, clearFrontM
     pushIf(options.priority !== undefined, "--priority", disallowedFlags);
     pushIf(options.type !== undefined, "--type", disallowedFlags);
     pushIf(options.tags !== undefined, "--tags", disallowedFlags);
+    pushIf(Array.isArray(options.addTags) && options.addTags.length > 0, "--add-tags", disallowedFlags);
+    pushIf(Array.isArray(options.removeTags) && options.removeTags.length > 0, "--remove-tags", disallowedFlags);
     pushIf(options.deadline !== undefined, "--deadline", disallowedFlags);
     pushIf(options.estimatedMinutes !== undefined, "--estimate", disallowedFlags);
     pushIf(options.acceptanceCriteria !== undefined, "--acceptance-criteria", disallowedFlags);
@@ -1029,7 +1031,14 @@ function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<
   mark("closeReason", options.closeReason !== undefined);
   mark("priority", options.priority !== undefined);
   mark("type", options.type !== undefined);
-  mark("tags", options.tags !== undefined);
+  // `--add-tags` / `--remove-tags` mutate the same `tags` field as `--tags`, so
+  // they count toward the `tags` command_option_policy (disabled + required).
+  mark(
+    "tags",
+    options.tags !== undefined ||
+      (Array.isArray(options.addTags) && options.addTags.length > 0) ||
+      (Array.isArray(options.removeTags) && options.removeTags.length > 0),
+  );
   mark("deadline", options.deadline !== undefined);
   mark("estimatedMinutes", options.estimatedMinutes !== undefined);
   mark("acceptanceCriteria", options.acceptanceCriteria !== undefined);
@@ -1326,6 +1335,17 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       `Cannot combine --unset ${unsetField} with ${commandOptionFlagLabel("update", optionKey)}`,
       EXIT_CODE.USAGE,
     );
+  }
+  // `--add-tags`/`--remove-tags` aren't in the scalar presence map above (they
+  // are repeatable), but combining them with `--unset tags` is the same
+  // contradiction as `--unset tags --tags ...`, so reject it explicitly.
+  if (clearFrontMatterKeys.has("tags")) {
+    if (Array.isArray(options.addTags) && options.addTags.length > 0) {
+      throw new PmCliError("Cannot combine --unset tags with --add-tags", EXIT_CODE.USAGE);
+    }
+    if (Array.isArray(options.removeTags) && options.removeTags.length > 0) {
+      throw new PmCliError("Cannot combine --unset tags with --remove-tags", EXIT_CODE.USAGE);
+    }
   }
 
   const assertNoLegacyScalarToken = (value: string | undefined, optionKey: string): void => {

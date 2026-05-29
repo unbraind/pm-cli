@@ -2105,6 +2105,46 @@ describe("runCreate", () => {
     });
   });
 
+  it("counts --add-tags toward a tags command_option_policy (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            command_option_policies: [{ command: "create", option: "tags", enabled: false }],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      // --add-tags must not bypass a policy that disables the tags option.
+      await expect(
+        runCreate(baseCreateOptions({ type: "Asset", tags: undefined, addTags: ["sneaky"] }), { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--tags"),
+      });
+    });
+  });
+
+  it("rejects combining --unset tags with --add-tags on create (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(baseCreateOptions({ tags: undefined, unset: ["tags"], addTags: ["x"] }), { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot combine --unset tags with --add-tags"),
+      });
+    });
+  });
+
   it("aggregates missing required create options into a deterministic usage error", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");

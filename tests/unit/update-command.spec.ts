@@ -1914,6 +1914,47 @@ describe("runUpdate", () => {
     });
   });
 
+  it("rejects additive tag mutations in --allow-audit-dep-update scope (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "dep-audit-tag-guard", { assignee: "foreign-assignee" });
+      for (const tagOption of [{ addTags: ["sneaky"] }, { removeTags: ["unit"] }]) {
+        await expect(
+          runUpdate(
+            id,
+            {
+              allowAuditDepUpdate: true,
+              dep: ["id=dep-audit,kind=related"],
+              message: "attempt tag mutation in dep-audit mode",
+              ...tagOption,
+            },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.USAGE,
+          message: expect.stringMatching(/--add-tags|--remove-tags/),
+        });
+      }
+    });
+  });
+
+  it("rejects combining --unset tags with additive tag mutations (pm-1lws)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "unset-tags-conflict");
+      await expect(
+        runUpdate(id, { unset: ["tags"], addTags: ["x"], message: "conflict" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot combine --unset tags with --add-tags"),
+      });
+      await expect(
+        runUpdate(id, { unset: ["tags"], removeTags: ["unit"], message: "conflict" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot combine --unset tags with --remove-tags"),
+      });
+    });
+  });
+
   it("lists allowed dependency kinds when dependency kind is invalid", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-invalid-dependency-kind");
