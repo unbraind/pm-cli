@@ -45,7 +45,7 @@ export function parseTags(raw: string): string[] {
  * accepted by `--tags`. Returns a deterministically sorted, deduped list.
  */
 export function collectTagFlagValues(values: readonly string[] | undefined): string[] {
-  if (!values || values.length === 0) {
+  if (!Array.isArray(values) || values.length === 0) {
     return [];
   }
   const collected: string[] = [];
@@ -69,7 +69,13 @@ export function collectTagFlagValues(values: readonly string[] | undefined): str
  * an existing `Beta`, and `--remove-tags alpha` removes an existing `Alpha`).
  */
 function normalizeBaseTags(baseTags: readonly string[]): string[] {
-  return baseTags.map((tag) => tag.trim().toLowerCase()).filter(Boolean);
+  // Defensive: front-matter parsed from corrupted/hand-edited `.toon` could
+  // surface non-string entries despite the `string[]` type — skip them rather
+  // than throwing on `.trim()`.
+  return baseTags
+    .filter((tag): tag is string => typeof tag === "string")
+    .map((tag) => tag.trim().toLowerCase())
+    .filter(Boolean);
 }
 
 /**
