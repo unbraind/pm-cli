@@ -169,10 +169,14 @@ export function resolveNpmCommandName(platform: NodeJS.Platform = process.platfo
   return platform === "win32" ? "npm.cmd" : "npm";
 }
 
+export function shouldRunNpmCommandInShell(platform: NodeJS.Platform = process.platform): boolean {
+  return platform === "win32";
+}
+
 async function runNpmCommand(args: string[], cwd?: string): Promise<string> {
   const npmCommand = resolveNpmCommandName();
   try {
-    const result = await execFileAsync(npmCommand, args, { cwd, encoding: "utf8" });
+    const result = await execFileAsync(npmCommand, args, { cwd, encoding: "utf8", shell: shouldRunNpmCommandInShell() });
     return (result.stdout ?? "").trim();
   } catch (error: unknown) {
     const stderr = typeof error === "object" && error !== null && "stderr" in error ? String((error as { stderr: unknown }).stderr) : "";
