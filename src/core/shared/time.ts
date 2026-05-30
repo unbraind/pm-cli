@@ -98,6 +98,60 @@ function daysInUtcMonth(year: number, monthIndex: number): number {
   return new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
 }
 
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
+// Leading literal calendar date in either hyphenated (`2026-02-30`) or compact
+// (`20260230`) form, optionally followed by a time component. We validate the
+// digits the caller actually typed — not the parsed instant — so timezone
+// offsets never produce a false "impossible date" rejection.
+const LEADING_HYPHEN_DATE = /^(\d{4})-(\d{2})-(\d{2})(?=$|[T ])/;
+const LEADING_COMPACT_DATE = /^(\d{4})(\d{2})(\d{2})(?=$|[T])/;
+
+/**
+ * Reject literal calendar dates whose day cannot exist (e.g. `2026-02-30`, which JS
+ * `Date` silently rolls forward to March 2). Without this, agents that pass an
+ * impossible deadline get a silently-wrong stored date instead of an actionable
+ * error. Only triggers on a leading literal date; relative tokens, "now", and pure
+ * times are untouched. Month 00 / >12 is also rejected with a clear message rather
+ * than falling through to the generic "invalid value" path.
+ */
+function assertRealCalendarDate(originalInput: string, trimmed: string, fieldLabel: string): void {
+  const match = LEADING_HYPHEN_DATE.exec(trimmed) ?? LEADING_COMPACT_DATE.exec(trimmed);
+  if (!match) {
+    return;
+  }
+  const year = Number.parseInt(match[1], 10);
+  const month = Number.parseInt(match[2], 10);
+  const day = Number.parseInt(match[3], 10);
+  const label = fieldLabel.trim().length > 0 ? fieldLabel.trim() : "deadline";
+  if (month < 1 || month > 12) {
+    throw new PmCliError(
+      `Invalid ${label} value "${originalInput}". Month "${match[2]}" is out of range — use a month between 01 and 12.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  const maxDay = daysInUtcMonth(year, month - 1);
+  if (day < 1 || day > maxDay) {
+    throw new PmCliError(
+      `Invalid ${label} value "${originalInput}". ${MONTH_NAMES[month - 1]} ${year} has ${maxDay} days, so day "${match[3]}" does not exist. Use a real YYYY-MM-DD calendar date.`,
+      EXIT_CODE.USAGE,
+    );
+  }
+}
+
 function addUtcMonths(now: Date, amount: number): Date {
   const result = new Date(now.getTime());
   const startDay = result.getUTCDate();
@@ -129,6 +183,8 @@ export function resolveIsoOrRelative(
     const msPerUnit = unit === "h" ? 60 * 60 * 1000 : unit === "d" ? 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
     return new Date(now.getTime() + amount * msPerUnit).toISOString();
   }
+
+  assertRealCalendarDate(input, trimmed, fieldLabel);
 
   const timestamp = parseTimestampWithFallbacks(trimmed);
   if (!Number.isFinite(timestamp)) {

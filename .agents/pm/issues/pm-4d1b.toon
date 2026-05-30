@@ -1,0 +1,13 @@
+id: pm-4d1b
+title: "create rejects common type synonyms (Bug/bug, Change/change) instead of mapping to Issue/Chore"
+description: "Telemetry (14d, real users): pm create with Invalid type value: Bug=16 events + bug=14 (2 installs combined, 30 total) -> agents mean Issue; Change=4 + change=2 -> mean Chore/Feature; also Spike=4, Risk=2, Tsk=2 (likely Task typo). buildInvalidTypeHint (core/schema/item-types-file.ts) only tells agents to register a CUSTOM type — it does NOT alias well-known synonyms. Proposal: add a small case-insensitive synonym table mapping agent-vernacular type words to canonical built-ins (Bug->Issue, Change->Chore, Tsk/Tsk->Task via existing OSA fuzzy) applied in create/update type resolution before the Invalid-type error, OR at minimum surface a did-you-mean for near-misses + Bug/Issue synonym hint. Bug/bug alone is the dominant case. Pure agent-UX; no correctness risk (canonical types unchanged). No Sentry impact (classified as usage error)."
+type: Issue
+status: closed
+priority: 2
+tags[2]: agent-ux,telemetry
+created_at: "2026-05-29T22:52:30.430Z"
+updated_at: "2026-05-30T05:15:28.884Z"
+author: telemetry-agent
+resolution: Fixed
+close_reason: "create now maps common type synonyms (Bug/defect/incident->Issue, enhancement/story->Feature, change->Chore, ticket/todo->Task) to canonical registered types with a note, only as a fallback when the type is not registered. Verified live."
+body: ""

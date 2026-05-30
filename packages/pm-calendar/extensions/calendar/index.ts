@@ -62,6 +62,18 @@ function normalizeCalendarView(arg: string): (typeof CALENDAR_VIEW_NAMES)[number
     : null;
 }
 
+// A positional that looks like a date/time anchor rather than a view name:
+// ISO/hyphenated or compact dates (optionally with a time), the keyword "now",
+// or a relative token (+7d/+6h/+2w/+1m). These are the same forms the runtime's
+// --date parser accepts, so we re-route them to --date instead of hard-erroring
+// "view must be agenda|day|week|month" — `pm calendar 2026-06-15` just works.
+const DATE_LIKE_POSITIONAL =
+  /^(?:\d{4}-\d{2}-\d{2}(?:[T ].*)?|\d{8}(?:T.*)?|now|\+\d+[hdwm])$/i;
+
+function isDateLikePositional(arg: string): boolean {
+  return normalizeCalendarView(arg) === null && DATE_LIKE_POSITIONAL.test(arg);
+}
+
 function buildPositionalViewError(positionalArgs: readonly string[]): PmCliError {
   const received = positionalArgs.map((arg) => arg.trim()).filter((arg) => arg.length > 0);
   const receivedList = received.join(", ");
@@ -105,10 +117,24 @@ function calendarCommand(name: "calendar" | "cal"): CommandDefinition {
       if (positionalArgs.length > 1) {
         throw buildPositionalViewError(positionalArgs);
       }
+      const baseOptions = context.options as CalendarOptions;
+      // Route a date-like positional (`pm calendar 2026-06-15`, `pm calendar +7d`)
+      // to --date with a day view instead of failing as an invalid view name. An
+      // explicit --date or --view always wins so nothing already-specified is lost.
+      if (positionalView && isDateLikePositional(positionalView)) {
+        return runCalendarPackage(
+          {
+            ...baseOptions,
+            ...(baseOptions.date === undefined ? { date: positionalView } : {}),
+            ...(baseOptions.view === undefined ? { view: "day" } : {}),
+          },
+          context.global,
+        );
+      }
       return runCalendarPackage(
         {
-          ...(context.options as CalendarOptions),
-          ...(positionalView && (context.options as CalendarOptions).view === undefined ? { view: positionalView } : {}),
+          ...baseOptions,
+          ...(positionalView && baseOptions.view === undefined ? { view: positionalView } : {}),
         },
         context.global,
       );

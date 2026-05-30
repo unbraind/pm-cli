@@ -7,9 +7,28 @@ import { writeFileAtomic } from "../fs/fs-utils.js";
 import { ITEM_FILE_EXTENSIONS, getItemFormatFromPath } from "./paths.js";
 import type { ItemDocument, ItemFormat, ItemMetadata, ItemType, RuntimeSchemaSettings } from "../../types/index.js";
 
-const CACHE_VERSION = 5;
+const CACHE_VERSION = 6;
 const CACHE_FILENAME = "metadata-cache.json";
 const BODY_CACHE_FILENAME = "metadata-cache-bodies.json";
+const COLLECTIONS_CACHE_FILENAME = "metadata-cache-collections.json";
+
+/**
+ * Heavy "collection" front-matter fields. These arrays dominate the on-disk cache
+ * (e.g. a single item's comment thread can be hundreds of KB) yet the hot list path
+ * (`pm list`, stats, deps, activity, calendar, close) never reads them. They are
+ * stored in a separate collections cache that is parsed only when a caller opts in
+ * (`includeCollections`), keeping the always-loaded light cache an order of magnitude
+ * smaller and its JSON.parse correspondingly cheaper.
+ */
+const HEAVY_METADATA_KEYS = [
+  "comments",
+  "notes",
+  "learnings",
+  "files",
+  "tests",
+  "test_runs",
+  "docs",
+] as const;
 
 interface StatSignature {
   mtime_ms: number;
@@ -26,6 +45,10 @@ interface CachedBody extends StatSignature {
   body: string;
 }
 
+interface CachedCollections extends StatSignature {
+  collections: Record<string, unknown>;
+}
+
 interface CacheEnvelope {
   version: number;
   context_fingerprint: string;
@@ -36,6 +59,44 @@ interface BodyCacheEnvelope {
   version: number;
   context_fingerprint: string;
   bodies: Record<string, CachedBody>;
+}
+
+interface CollectionsCacheEnvelope {
+  version: number;
+  context_fingerprint: string;
+  collections: Record<string, CachedCollections>;
+}
+
+/**
+ * Split parsed front-matter into the light scalar/small fields (everything except the
+ * heavy collection arrays) and the heavy collection fields. Only keys that are actually
+ * present are moved, so an item without comments stays without comments in both tiers.
+ */
+function splitHeavyMetadata(metadata: ItemMetadata): {
+  light: ItemMetadata;
+  heavy: Record<string, unknown>;
+} {
+  const light = { ...metadata } as Record<string, unknown>;
+  const heavy: Record<string, unknown> = {};
+  for (const key of HEAVY_METADATA_KEYS) {
+    if (key in light) {
+      heavy[key] = light[key];
+      delete light[key];
+    }
+  }
+  return { light: light as ItemMetadata, heavy };
+}
+
+/**
+ * Recombine light metadata with cached heavy collection fields. Key order differs from
+ * the on-disk document, but every downstream hash/serialization canonicalizes and
+ * sorts keys (`stableStringify`), so the merged record is byte-identical once hashed.
+ */
+function mergeHeavyMetadata(light: ItemMetadata, heavy: Record<string, unknown> | undefined): ItemMetadata {
+  if (!heavy || Object.keys(heavy).length === 0) {
+    return light;
+  }
+  return { ...light, ...heavy } as ItemMetadata;
 }
 
 export interface CachedDocumentCandidate {
@@ -71,6 +132,10 @@ function getBodyCachePath(pmRoot: string): string {
   return path.join(pmRoot, "runtime", BODY_CACHE_FILENAME);
 }
 
+function getCollectionsCachePath(pmRoot: string): string {
+  return path.join(pmRoot, "runtime", COLLECTIONS_CACHE_FILENAME);
+}
+
 async function loadCache(pmRoot: string): Promise<CacheEnvelope | null> {
   try {
     const raw = await fs.readFile(getCachePath(pmRoot), "utf8");
@@ -97,7 +162,23 @@ async function loadBodyCache(pmRoot: string): Promise<BodyCacheEnvelope | null> 
   }
 }
 
-async function persistCache(cachePath: string, envelope: CacheEnvelope | BodyCacheEnvelope): Promise<void> {
+async function loadCollectionsCache(pmRoot: string): Promise<CollectionsCacheEnvelope | null> {
+  try {
+    const raw = await fs.readFile(getCollectionsCachePath(pmRoot), "utf8");
+    const parsed = JSON.parse(raw) as CollectionsCacheEnvelope;
+    if (parsed.version !== CACHE_VERSION || typeof parsed.collections !== "object" || parsed.collections === null) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+async function persistCache(
+  cachePath: string,
+  envelope: CacheEnvelope | BodyCacheEnvelope | CollectionsCacheEnvelope,
+): Promise<void> {
   await fs.mkdir(path.dirname(cachePath), { recursive: true });
   await writeFileAtomic(cachePath, JSON.stringify(envelope));
 }
@@ -119,6 +200,14 @@ export interface ListCacheOptions {
    * the large body cache entirely; only body consumers (search/reindex) pay for it.
    */
   includeBody?: boolean;
+  /**
+   * When false, heavy collection fields (comments/notes/learnings/files/tests/
+   * test_runs/docs) are neither loaded from nor written to the separate collections
+   * cache, and are absent from the returned metadata. Light-only callers (`pm list`
+   * compact, stats, deps, activity, calendar, close) skip the large collections cache
+   * entirely. Defaults to true so any caller that does read those fields stays correct.
+   */
+  includeCollections?: boolean;
 }
 
 /**
@@ -140,6 +229,7 @@ export async function listAllDocumentCandidatesCached(
   options: ListCacheOptions = {},
 ): Promise<CachedDocumentCandidate[]> {
   const includeBody = options.includeBody !== false;
+  const includeCollections = options.includeCollections !== false;
   const contextFingerprint = computeContextFingerprint(preferredFormat, typeToFolder, schema);
 
   const existingCache = await loadCache(pmRoot);
@@ -149,6 +239,12 @@ export async function listAllDocumentCandidatesCached(
   const existingBodyCache = includeBody ? await loadBodyCache(pmRoot) : null;
   const previousBodies: Record<string, CachedBody> =
     existingBodyCache && existingBodyCache.context_fingerprint === contextFingerprint ? existingBodyCache.bodies : {};
+
+  const existingCollectionsCache = includeCollections ? await loadCollectionsCache(pmRoot) : null;
+  const previousCollections: Record<string, CachedCollections> =
+    existingCollectionsCache && existingCollectionsCache.context_fingerprint === contextFingerprint
+      ? existingCollectionsCache.collections
+      : {};
 
   const entries = Object.entries(typeToFolder) as Array<[ItemType, string]>;
   const dirResults = await Promise.all(
@@ -169,9 +265,11 @@ export async function listAllDocumentCandidatesCached(
   const dispatchReadHooks = hasActiveOnReadHooks();
   const newEntries: Record<string, CachedEntry> = {};
   const newBodies: Record<string, CachedBody> = {};
+  const newCollections: Record<string, CachedCollections> = {};
   const documentsById = new Map<string, { candidate: CachedDocumentCandidate; itemFormat: ItemFormat }>();
   let metadataMiss = false;
   let bodyMiss = false;
+  let collectionsMiss = false;
 
   const parseTasks: Array<Promise<void>> = [];
 
@@ -205,9 +303,14 @@ export async function listAllDocumentCandidatesCached(
             const metadataCached = cachedEntry !== undefined && statMatches(cachedEntry, mtimeMs, ctimeMs, size);
             const cachedBody = previousBodies[relativePath];
             const bodyCached = cachedBody !== undefined && statMatches(cachedBody, mtimeMs, ctimeMs, size);
+            const cachedCollections = previousCollections[relativePath];
+            const collectionsCached =
+              cachedCollections !== undefined && statMatches(cachedCollections, mtimeMs, ctimeMs, size);
 
-            const needRead = !metadataCached || (includeBody && !bodyCached);
-            let metadata: ItemMetadata;
+            const needRead =
+              !metadataCached || (includeBody && !bodyCached) || (includeCollections && !collectionsCached);
+            let lightMetadata: ItemMetadata;
+            let heavyMetadata: Record<string, unknown> | undefined;
             let bodyLength: number;
             let body: string | undefined;
 
@@ -218,32 +321,44 @@ export async function listAllDocumentCandidatesCached(
                 schema,
                 onWarning: (w) => appendWarning(warnings, w),
               });
-              metadata = metadataCached ? cachedEntry.metadata : parsed.metadata;
+              const split = splitHeavyMetadata(parsed.metadata);
+              lightMetadata = metadataCached ? cachedEntry.metadata : split.light;
               bodyLength = metadataCached ? cachedEntry.body_length : parsed.body.length;
               body = includeBody ? parsed.body : undefined;
+              if (includeCollections) {
+                heavyMetadata = collectionsCached ? cachedCollections.collections : split.heavy;
+              }
               if (!metadataCached) {
                 metadataMiss = true;
               }
               if (includeBody && !bodyCached) {
                 bodyMiss = true;
               }
+              if (includeCollections && !collectionsCached) {
+                collectionsMiss = true;
+              }
             } else {
-              metadata = cachedEntry.metadata;
+              lightMetadata = cachedEntry.metadata;
               bodyLength = cachedEntry.body_length;
               body = includeBody ? cachedBody.body : undefined;
+              heavyMetadata = includeCollections && cachedCollections ? cachedCollections.collections : undefined;
             }
 
             newEntries[relativePath] = {
               mtime_ms: mtimeMs,
               ctime_ms: ctimeMs,
               size,
-              metadata,
+              metadata: lightMetadata,
               body_length: bodyLength,
             };
             if (includeBody && body !== undefined) {
               newBodies[relativePath] = { mtime_ms: mtimeMs, ctime_ms: ctimeMs, size, body };
             }
+            if (includeCollections && heavyMetadata !== undefined) {
+              newCollections[relativePath] = { mtime_ms: mtimeMs, ctime_ms: ctimeMs, size, collections: heavyMetadata };
+            }
 
+            const metadata = includeCollections ? mergeHeavyMetadata(lightMetadata, heavyMetadata) : lightMetadata;
             const existing = documentsById.get(metadata.id);
             const candidate: CachedDocumentCandidate = {
               metadata,
@@ -293,6 +408,22 @@ export async function listAllDocumentCandidatesCached(
     }
   }
 
+  if (includeCollections) {
+    const collectionsDirty =
+      collectionsMiss || Object.keys(previousCollections).length !== Object.keys(newCollections).length;
+    if (
+      collectionsDirty ||
+      existingCollectionsCache === null ||
+      existingCollectionsCache.context_fingerprint !== contextFingerprint
+    ) {
+      await persistCache(getCollectionsCachePath(pmRoot), {
+        version: CACHE_VERSION,
+        context_fingerprint: contextFingerprint,
+        collections: newCollections,
+      }).catch(() => {});
+    }
+  }
+
   return [...documentsById.values()]
     .sort((left, right) => left.candidate.metadata.id.localeCompare(right.candidate.metadata.id))
     .map((entry) => entry.candidate);
@@ -307,6 +438,29 @@ export async function listAllDocumentsCached(
 ): Promise<ItemDocument[]> {
   const candidates = await listAllDocumentCandidatesCached(pmRoot, preferredFormat, typeToFolder, warnings, schema, {
     includeBody: false,
+  });
+  return candidates.map((candidate) => ({
+    metadata: candidate.metadata,
+    body: candidate.body ?? "",
+  }));
+}
+
+/**
+ * Light variant of {@link listAllDocumentsCached}: returns metadata WITHOUT the heavy
+ * collection fields (comments/notes/learnings/files/tests/test_runs/docs), skipping the
+ * large collections cache entirely. Only safe for callers that read just the light
+ * scalar/small fields (id/title/status/type/priority/parent/tags/dates/dependencies/…).
+ */
+export async function listAllDocumentsCachedLight(
+  pmRoot: string,
+  preferredFormat: ItemFormat | undefined,
+  typeToFolder: Record<string, string>,
+  warnings: string[] | undefined,
+  schema: RuntimeSchemaSettings | undefined,
+): Promise<ItemDocument[]> {
+  const candidates = await listAllDocumentCandidatesCached(pmRoot, preferredFormat, typeToFolder, warnings, schema, {
+    includeBody: false,
+    includeCollections: false,
   });
   return candidates.map((candidate) => ({
     metadata: candidate.metadata,

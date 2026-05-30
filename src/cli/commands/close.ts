@@ -6,7 +6,7 @@ import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { listAllFrontMatter, mutateItem } from "../../core/store/item-store.js";
+import { listAllFrontMatterLight, mutateItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter } from "../../types/index.js";
@@ -88,7 +88,7 @@ async function findActiveChildIds(
   statusRegistry: RuntimeStatusRegistry,
 ): Promise<string[]> {
   const typeRegistry = resolveItemTypeRegistry(settings);
-  const items = await listAllFrontMatter(
+  const items = await listAllFrontMatterLight(
     pmRoot,
     settings.item_format,
     typeRegistry.type_to_folder,

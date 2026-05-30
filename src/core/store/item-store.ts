@@ -15,7 +15,7 @@ import { resolveItemTypeRegistry } from "../item/type-registry.js";
 import { acquireLock } from "../lock/lock.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { normalizeItemId, normalizeRawItemId } from "../item/id.js";
-import { listAllDocumentCandidatesCached, listAllDocumentsCached } from "./front-matter-cache.js";
+import { listAllDocumentCandidatesCached, listAllDocumentsCached, listAllDocumentsCachedLight } from "./front-matter-cache.js";
 import { getHistoryPath, getItemFormatFromPath, getItemPath, ITEM_FILE_EXTENSIONS } from "./paths.js";
 import { resolveGovernanceKnobs } from "./settings.js";
 import { nowIso } from "../shared/time.js";
@@ -115,6 +115,23 @@ export async function listAllFrontMatter(
   schema?: RuntimeSchemaSettings,
 ): Promise<ItemFrontMatter[]> {
   const documents = await listAllDocumentsCached(pmRoot, preferredFormat, typeToFolder, warnings, schema);
+  return documents.map((document) => document.metadata);
+}
+
+/**
+ * Light variant of {@link listAllFrontMatter}: returns front-matter WITHOUT the heavy
+ * collection fields (comments/notes/learnings/files/tests/test_runs/docs). Skips the
+ * large collections cache so the hot list path stays cheap. Only use for callers that
+ * read just the light scalar/small fields — see {@link listAllDocumentsCachedLight}.
+ */
+export async function listAllFrontMatterLight(
+  pmRoot: string,
+  preferredFormat?: ItemFormat,
+  typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
+  warnings?: string[],
+  schema?: RuntimeSchemaSettings,
+): Promise<ItemFrontMatter[]> {
+  const documents = await listAllDocumentsCachedLight(pmRoot, preferredFormat, typeToFolder, warnings, schema);
   return documents.map((document) => document.metadata);
 }
 

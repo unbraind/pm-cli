@@ -206,6 +206,8 @@ pm config project set qdrant_api_key '<QDRANT_API_KEY>'   # omit on unauthentica
 
 After changing any of these, run `pm reindex --mode hybrid` so the vector index reflects the new provider/store. `pm search ... --mode semantic|hybrid` emits a `vector_index_stale` warning when items have been modified since the last reindex.
 
+**Refresh contract (important for agents):** by default a mutation (`pm create`/`pm update`) does **not** synchronously re-embed the changed item, so a brand-new item is absent from `--mode semantic|hybrid` results until the next `pm reindex`. This keeps writes fast. Control the tradeoff with `search.mutation_refresh_policy`: `cache_only` (never refresh on write — fastest), `semantic_auto` (refresh when implicit Ollama/LanceDB defaults are active), or `semantic_configured` (refresh only when semantic search is explicitly configured). Keyword mode (`--mode keyword`, the default) always reflects writes immediately because it reads items directly.
+
 ## Custom Item Types
 
 Custom item types can be defined in settings and by extensions. Runtime type resolution affects create/update validation, list/search/calendar filters, completions, and storage folders.

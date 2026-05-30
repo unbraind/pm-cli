@@ -14,7 +14,7 @@ import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../../core/shared/constants.j
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
-import { listAllFrontMatter, listAllFrontMatterWithBody } from "../../core/store/item-store.js";
+import { listAllFrontMatter, listAllFrontMatterLight, listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus, ItemType } from "../../types/index.js";
@@ -61,6 +61,19 @@ export type ListSortOrder = (typeof LIST_SORT_ORDER_VALUES)[number];
 
 const DEFAULT_COMPACT_LIST_FIELDS = ["id", "title", "status", "type", "priority", "parent", "updated_at"] as const;
 const BRIEF_LIST_FIELDS = ["id", "status", "type", "title"] as const;
+
+// Heavy collection fields stored in the separate, lazily-loaded collections cache.
+// A projection that selects any of these (or `--full`, which returns items verbatim)
+// must load the full metadata; everything else takes the light path.
+const HEAVY_PROJECTION_FIELDS: ReadonlySet<string> = new Set([
+  "comments",
+  "notes",
+  "learnings",
+  "files",
+  "tests",
+  "test_runs",
+  "docs",
+]);
 
 export interface ListResult {
   items: ListedItem[];
@@ -429,9 +442,21 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   validateListProjectionFields(projection, runtimeFieldRegistry.definitions.map((field) => field.metadata_key));
   const listWarnings: string[] = [];
   const projectionNeedsBody = projection.fields.some((field) => normalizeProjectionField(field) === "body");
-  const items = options.includeBody || projectionNeedsBody
-    ? await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema)
-    : await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
+  // The heavy collection fields are only emitted by `--full` (verbatim items) or an
+  // explicit `--fields <heavy>` selection. Every other projection (default brief,
+  // `--compact`, light `--fields`) reads only light scalar fields, so it takes the
+  // light path that skips the large collections cache (the hot-path JSON.parse win).
+  const projectionNeedsCollections =
+    projection.mode === "full" ||
+    projection.fields.some((field) => HEAVY_PROJECTION_FIELDS.has(normalizeProjectionField(field)));
+  let items: ListedItem[];
+  if (options.includeBody || projectionNeedsBody) {
+    items = await listAllFrontMatterWithBody(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
+  } else if (projectionNeedsCollections) {
+    items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
+  } else {
+    items = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
+  }
   const sortField = parseSortField(options.sort);
   const sortOrder = parseSortOrder(options.order) ?? "asc";
   if (!sortField && options.order !== undefined) {

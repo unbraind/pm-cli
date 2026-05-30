@@ -1,0 +1,13 @@
+id: pm-407c
+title: "Semantic auto-defaults are all-or-nothing: one config leaf disables ALL defaults and hard-errors reindex"
+description: "semantic-defaults.ts hasAnyExplicitSemanticConfiguration returns true if ANY of 10 leaves is set, then applies ZERO defaults. Setting only ollama.base_url (even to the correct default) loses auto ollama.model+lancedb.path+search.embedding_model, and pm reindex then hard-errors. Fix: fill defaults PER-FIELD; only bail when a COMPETING provider/store is configured (openai/qdrant or non-ollama provider/non-lancedb adapter). Verified by vector-search dogfood."
+type: Issue
+status: closed
+priority: 2
+tags[4]: bug,config,search,semantic
+created_at: "2026-05-29T22:28:36.468Z"
+updated_at: "2026-05-30T05:15:07.643Z"
+author: maintainer-agent
+resolution: Fixed in perf/cache-split-and-agent-ux
+close_reason: "Per-field semantic auto-defaults: hasCompetingSemanticConfiguration only bails on a competing provider/store (openai/qdrant or non-ollama/non-lancedb); missing Ollama/LanceDB leaves are filled individually + hardened against partial settings objects (no crash when search/providers parents are absent)."
+body: ""

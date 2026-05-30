@@ -1,0 +1,13 @@
+id: pm-jd3v
+title: Split metadata cache into light + collections tiers to cut list hot-path JSON parse
+description: "On the 873-item dev repo loadCache JSON-parses a 4.98MB metadata-cache.json on every list/stats/deps/activity/calendar. Most bytes are heavy collection fields (comments alone=237KB for pm-rnpb). pm list compact (hot path) only needs id/status/type/title. Follow-on to pm-4r5t body-split: store comments/notes/learnings/files/tests/test_runs/docs in a separate lazily-loaded collections cache; the always-loaded light cache shrinks ~10x, JSON.parse 35ms->~3ms. Audit: light-only=activity/stats/deps/close/test-all/calendar; heavy=list(full/heavy-fields)/validate/health(drift hash)/search-fallback/linked-artifacts(--audit)/SDK."
+type: Issue
+status: closed
+priority: 2
+tags[4]: cache,list,perf,startup
+created_at: "2026-05-29T22:28:11.242Z"
+updated_at: "2026-05-30T05:15:11.856Z"
+author: maintainer-agent
+resolution: Fixed
+close_reason: Split metadata cache into light + lazily-loaded collections tiers; hot list/stats/deps/activity/calendar/close/test-all paths use listAllFrontMatterLight and skip the heavy collections cache.
+body: ""

@@ -4,7 +4,7 @@ import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { listAllFrontMatter } from "../../core/store/item-store.js";
+import { listAllFrontMatterLight } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { Dependency, ItemFrontMatter, ItemStatus, ItemType } from "../../types/index.js";
@@ -262,7 +262,7 @@ export async function runDeps(id: string, options: DepsCommandOptions, global: G
   const summaryOnly = options.summary === true;
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
+  const items = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
   const index = new Map(items.map((item) => [item.id, toIndexedItem(item)]));
   if (!index.has(id)) {
     throw new PmCliError(`Item ${id} not found`, EXIT_CODE.NOT_FOUND);
