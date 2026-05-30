@@ -13,6 +13,7 @@ describe("resolveTypeSynonym", () => {
     expect(resolveTypeSynonym("enhancement")).toBe("Feature");
     expect(resolveTypeSynonym("story")).toBe("Feature");
     expect(resolveTypeSynonym("user-story")).toBe("Feature");
+    expect(resolveTypeSynonym("User Story")).toBe("Feature");
   });
 
   it("maps change to Chore and ticket/todo to Task", () => {

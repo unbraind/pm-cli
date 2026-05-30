@@ -20,7 +20,7 @@ const COLLECTIONS_CACHE_FILENAME = "metadata-cache-collections.json";
  * (`includeCollections`), keeping the always-loaded light cache an order of magnitude
  * smaller and its JSON.parse correspondingly cheaper.
  */
-const HEAVY_METADATA_KEYS = [
+export const HEAVY_METADATA_KEYS = [
   "comments",
   "notes",
   "learnings",

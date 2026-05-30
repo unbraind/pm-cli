@@ -114,11 +114,15 @@ const MONTH_NAMES = [
 ] as const;
 
 // Leading literal calendar date in either hyphenated (`2026-02-30`) or compact
-// (`20260230`) form, optionally followed by a time component. We validate the
-// digits the caller actually typed — not the parsed instant — so timezone
-// offsets never produce a false "impossible date" rejection.
-const LEADING_HYPHEN_DATE = /^(\d{4})-(\d{2})-(\d{2})(?=$|[T ])/;
-const LEADING_COMPACT_DATE = /^(\d{4})(\d{2})(\d{2})(?=$|[T])/;
+// (`20260230`) form, optionally followed by any time/zone component. We validate
+// the digits the caller actually typed — not the parsed instant — so timezone
+// offsets never produce a false "impossible date" rejection. The hyphenated form
+// is unambiguous, so anything may follow (`T`/space time, `Z`, `+/-` offset). The
+// compact form must be followed by end-of-string or a time digit (with an optional
+// `T`/space separator) so a no-separator compact datetime like `20260230135900Z`
+// is still guarded and a 7-digit non-date is not misread as a date.
+const LEADING_HYPHEN_DATE = /^(\d{4})-(\d{2})-(\d{2})/;
+const LEADING_COMPACT_DATE = /^(\d{4})(\d{2})(\d{2})(?:[T ]?\d{2}|$)/;
 
 /**
  * Reject literal calendar dates whose day cannot exist (e.g. `2026-02-30`, which JS
@@ -136,7 +140,7 @@ function assertRealCalendarDate(originalInput: string, trimmed: string, fieldLab
   const year = Number.parseInt(match[1], 10);
   const month = Number.parseInt(match[2], 10);
   const day = Number.parseInt(match[3], 10);
-  const label = fieldLabel.trim().length > 0 ? fieldLabel.trim() : "deadline";
+  const label = fieldLabel?.trim() || "deadline";
   if (month < 1 || month > 12) {
     throw new PmCliError(
       `Invalid ${label} value "${originalInput}". Month "${match[2]}" is out of range — use a month between 01 and 12.`,

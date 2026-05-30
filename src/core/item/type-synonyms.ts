@@ -20,6 +20,7 @@ export const TYPE_SYNONYMS: Readonly<Record<string, string>> = {
   story: "Feature",
   userstory: "Feature",
   "user-story": "Feature",
+  "user story": "Feature",
   change: "Chore",
   ticket: "Task",
   todo: "Task",

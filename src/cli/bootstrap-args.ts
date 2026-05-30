@@ -169,11 +169,18 @@ export function parseBootstrapHelpRequest(argv: string[]): BootstrapHelpRequest 
   };
 }
 
-export function parseBootstrapCommandName(argv: string[]): string | undefined {
+/**
+ * Index of the command token in argv — the first non-flag token, skipping the
+ * value-consuming/global bootstrap flags. Returns undefined when there is none
+ * (bare invocation, only global flags, or a leading `--`). Single source of truth
+ * for command-position scanning shared by {@link parseBootstrapCommandName} and the
+ * command-alias rewrite so their precedence rules can never drift apart.
+ */
+function findCommandTokenIndex(argv: string[]): number | undefined {
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (token === "--") {
-      break;
+      return undefined;
     }
     if (token === "--path") {
       index += 1;
@@ -193,9 +200,14 @@ export function parseBootstrapCommandName(argv: string[]): string | undefined {
     if (token.startsWith("-")) {
       continue;
     }
-    return token.trim().toLowerCase();
+    return index;
   }
   return undefined;
+}
+
+export function parseBootstrapCommandName(argv: string[]): string | undefined {
+  const index = findCommandTokenIndex(argv);
+  return index === undefined ? undefined : argv[index].trim().toLowerCase();
 }
 
 function shouldDisablePagerForInvocation(argv: string[], bootstrapGlobal: BootstrapGlobalOptions): boolean {
@@ -302,39 +314,19 @@ const EXECUTABLE_COMMAND_ALIASES: Readonly<Record<string, string>> = {
  * value-consuming global flag, mirroring {@link parseBootstrapCommandName}.
  */
 function rewriteCommandAlias(argv: string[], trace: BootstrapNormalizationEvent[]): string[] {
-  for (let index = 0; index < argv.length; index += 1) {
-    const token = argv[index];
-    if (token === "--") {
-      return argv;
-    }
-    if (token === "--path") {
-      index += 1;
-      continue;
-    }
-    if (
-      token.startsWith("--path=") ||
-      token === "--json" ||
-      token === "--quiet" ||
-      token === "--no-extensions" ||
-      token === "--no-pager" ||
-      token === "--profile" ||
-      token === "--explain"
-    ) {
-      continue;
-    }
-    if (token.startsWith("-")) {
-      continue;
-    }
-    const canonical = EXECUTABLE_COMMAND_ALIASES[token.trim().toLowerCase()];
-    if (!canonical) {
-      return argv;
-    }
-    const rewritten = [...argv];
-    rewritten[index] = canonical;
-    trace.push({ from: token, to: [canonical], reason: "command_alias", confidence: "high" });
-    return rewritten;
+  const index = findCommandTokenIndex(argv);
+  if (index === undefined) {
+    return argv;
   }
-  return argv;
+  const token = argv[index];
+  const canonical = EXECUTABLE_COMMAND_ALIASES[token.trim().toLowerCase()];
+  if (!canonical) {
+    return argv;
+  }
+  const rewritten = [...argv];
+  rewritten[index] = canonical;
+  trace.push({ from: token, to: [canonical], reason: "command_alias", confidence: "high" });
+  return rewritten;
 }
 
 export interface BootstrapNormalizationEvent {

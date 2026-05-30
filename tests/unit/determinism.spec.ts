@@ -64,6 +64,13 @@ describe("deterministic primitives", () => {
     expect(resolveIsoOrRelative("2026-01-31", now, "deadline")).toBe("2026-01-31T00:00:00.000Z");
     // A valid literal day must not be false-rejected when a tz offset shifts the UTC instant.
     expect(() => resolveIsoOrRelative("2026-02-28T23:30:00-05:00", now, "deadline")).not.toThrow();
+    // Z-suffixed and no-separator compact datetimes must still be guarded.
+    expect(() => resolveIsoOrRelative("2026-02-30Z", now, "deadline")).toThrow(/February 2026 has 28 days/);
+    expect(() => resolveIsoOrRelative("20260230135900Z", now, "deadline")).toThrow(/does not exist/);
+    // Relative tokens and "now" are not literal calendar dates and must pass through untouched.
+    for (const token of ["now", "+3d", "-2w", "+6m"]) {
+      expect(() => resolveIsoOrRelative(token, now, "deadline")).not.toThrow();
+    }
   });
 
   it("maintains stable ordering and document serialization", () => {

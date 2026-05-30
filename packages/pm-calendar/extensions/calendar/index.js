@@ -58,7 +58,7 @@ function normalizeCalendarView(arg) {
 // or a relative token (+7d/+6h/+2w/+1m). These are the same forms the runtime's
 // --date parser accepts, so we re-route them to --date instead of hard-erroring
 // "view must be agenda|day|week|month" — `pm calendar 2026-06-15` just works.
-const DATE_LIKE_POSITIONAL = /^(?:\d{4}-\d{2}-\d{2}(?:[T ].*)?|\d{8}(?:T.*)?|now|\+\d+[hdwm])$/i;
+const DATE_LIKE_POSITIONAL = /^(?:\d{4}-\d{2}-\d{2}(?:[T Z+].*)?|\d{8}(?:[T ]?\d.*)?|now|\+\d+[hdwm])$/i;
 
 function isDateLikePositional(arg) {
   return normalizeCalendarView(arg) === null && DATE_LIKE_POSITIONAL.test(arg);

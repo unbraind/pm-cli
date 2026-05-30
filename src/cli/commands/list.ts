@@ -15,6 +15,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { listAllFrontMatter, listAllFrontMatterLight, listAllFrontMatterWithBody } from "../../core/store/item-store.js";
+import { HEAVY_METADATA_KEYS } from "../../core/store/front-matter-cache.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus, ItemType } from "../../types/index.js";
@@ -62,18 +63,11 @@ export type ListSortOrder = (typeof LIST_SORT_ORDER_VALUES)[number];
 const DEFAULT_COMPACT_LIST_FIELDS = ["id", "title", "status", "type", "priority", "parent", "updated_at"] as const;
 const BRIEF_LIST_FIELDS = ["id", "status", "type", "title"] as const;
 
-// Heavy collection fields stored in the separate, lazily-loaded collections cache.
-// A projection that selects any of these (or `--full`, which returns items verbatim)
-// must load the full metadata; everything else takes the light path.
-const HEAVY_PROJECTION_FIELDS: ReadonlySet<string> = new Set([
-  "comments",
-  "notes",
-  "learnings",
-  "files",
-  "tests",
-  "test_runs",
-  "docs",
-]);
+// A projection that selects any heavy collection field (or `--full`, which returns
+// items verbatim) must load the full metadata; everything else takes the light path.
+// Sourced from the single HEAVY_METADATA_KEYS definition in the cache layer so the
+// light/heavy split can never drift between the cache and the projection routing.
+const HEAVY_PROJECTION_FIELDS: ReadonlySet<string> = new Set<string>(HEAVY_METADATA_KEYS);
 
 export interface ListResult {
   items: ListedItem[];

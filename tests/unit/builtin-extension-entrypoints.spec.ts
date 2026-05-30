@@ -455,6 +455,31 @@ describe("built-in extension entrypoints", () => {
     });
   });
 
+  it("routes the 'now' keyword and a compact date positional to --date", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    await commands[0]!.run({
+      command: "calendar",
+      args: ["now"],
+      options: {},
+      global: globalFlags,
+      pm_root: "/tmp/pm",
+    });
+    await commands[0]!.run({
+      command: "calendar",
+      args: ["20260615"],
+      options: {},
+      global: globalFlags,
+      pm_root: "/tmp/pm",
+    });
+
+    const calls = readRuntimeCalls();
+    expect(calls).toHaveLength(2);
+    expect(calls[0]).toEqual({ kind: "calendar", options: { date: "now", view: "day" }, global: globalFlags });
+    expect(calls[1]).toEqual({ kind: "calendar", options: { date: "20260615", view: "day" }, global: globalFlags });
+  });
+
   it("does not override an explicit --date with a date-like positional", async () => {
     const { api, commands } = createCommandOnlyApi();
     activateCalendar(api);
