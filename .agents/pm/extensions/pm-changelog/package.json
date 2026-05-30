@@ -1,6 +1,6 @@
 {
   "name": "pm-changelog",
-  "version": "2026.5.29-2",
+  "version": "2026.5.30",
   "description": "Generate CHANGELOG.md files from pm-cli items for local and CI usage",
   "repository": {
     "type": "git",
@@ -91,7 +91,7 @@
     ]
   },
   "peerDependencies": {
-    "@unbrained/pm-cli": ">=2026.5.24"
+    "@unbrained/pm-cli": ">=2026.5.29"
   },
   "keywords": [
     "pm-cli",
@@ -106,6 +106,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@unbrained/pm-cli": ">=2026.5.24"
+    "@unbrained/pm-cli": ">=2026.5.29"
   }
 }

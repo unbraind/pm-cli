@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { spawn } from "node:child_process";
+import { mkdirSync, rmSync, statSync } from "node:fs";
 import { mkdir, readdir, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -35,6 +36,7 @@ const TELEMETRY_RESULT_PREVIEW_MAX_BYTES = 8_192;
 const TELEMETRY_QUEUE_REWRITE_RETRY_DELAYS_MS = [25, 50, 100, 200] as const;
 const TELEMETRY_QUEUE_TMP_ORPHAN_MAX_AGE_MS = 60 * 60 * 1000;
 const TELEMETRY_FLUSH_LOCK_STALE_MS = 60_000;
+const TELEMETRY_FLUSH_SPAWN_LOCK_STALE_MS = 60_000;
 const OTEL_TRACES_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT";
 const OTEL_BASE_ENDPOINT_ENV = "OTEL_EXPORTER_OTLP_ENDPOINT";
 const OTEL_SERVICE_NAME_ENV = "OTEL_SERVICE_NAME";
@@ -195,6 +197,10 @@ function runtimeStatePath(globalPmRoot: string): string {
 
 function flushLockPath(globalPmRoot: string): string {
   return path.join(globalPmRoot, "runtime", "telemetry", "flush.lock");
+}
+
+function flushSpawnLockPath(globalPmRoot: string): string {
+  return path.join(globalPmRoot, "runtime", "telemetry", "flush.spawn.lock");
 }
 
 function telemetryFlushRunnerPath(): string {
@@ -1302,8 +1308,59 @@ async function acquireTelemetryFlushLock(globalPmRoot: string): Promise<boolean>
   }
 }
 
+function isFreshDirectoryLock(lockPath: string, staleMs: number): boolean {
+  try {
+    return Date.now() - statSync(lockPath).mtimeMs < staleMs;
+  } catch {
+    return false;
+  }
+}
+
+function removeDirectoryLockBestEffort(lockPath: string): void {
+  try {
+    rmSync(lockPath, { recursive: true, force: true });
+  } catch {
+    // Flush scheduling is best effort and must never fail user commands.
+  }
+}
+
+function acquireTelemetryFlushSpawnGate(globalPmRoot: string): boolean {
+  if (isFreshDirectoryLock(flushLockPath(globalPmRoot), TELEMETRY_FLUSH_LOCK_STALE_MS)) {
+    return false;
+  }
+
+  const lockPath = flushSpawnLockPath(globalPmRoot);
+  if (isFreshDirectoryLock(lockPath, TELEMETRY_FLUSH_SPAWN_LOCK_STALE_MS)) {
+    return false;
+  }
+  removeDirectoryLockBestEffort(lockPath);
+
+  try {
+    mkdirSync(path.dirname(lockPath), { recursive: true });
+    mkdirSync(lockPath);
+    return true;
+  } catch (error: unknown) {
+    if (typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === "EEXIST") {
+      return false;
+    }
+    return true;
+  }
+}
+
+function releaseTelemetryFlushSpawnGate(globalPmRoot: string): void {
+  removeDirectoryLockBestEffort(flushSpawnLockPath(globalPmRoot));
+}
+
+export const _testOnly = {
+  acquireTelemetryFlushSpawnGate,
+  releaseTelemetryFlushSpawnGate,
+  flushLockPath,
+  flushSpawnLockPath,
+};
+
 async function flushQueueWithProcessLock(globalPmRoot: string, endpoint: string, retentionDays: number): Promise<void> {
   const acquired = await acquireTelemetryFlushLock(globalPmRoot);
+  releaseTelemetryFlushSpawnGate(globalPmRoot);
   if (!acquired) {
     return;
   }
@@ -1323,6 +1380,10 @@ function scheduleTelemetryFlush(globalPmRoot: string, endpoint: string, retentio
   }
 
   try {
+    const acquiredSpawnGate = acquireTelemetryFlushSpawnGate(globalPmRoot);
+    if (!acquiredSpawnGate) {
+      return;
+    }
     const child = spawn(process.execPath, [telemetryFlushRunnerPath()], {
       detached: true,
       stdio: "ignore",
@@ -1334,6 +1395,7 @@ function scheduleTelemetryFlush(globalPmRoot: string, endpoint: string, retentio
     });
     child.unref();
   } catch {
+    releaseTelemetryFlushSpawnGate(globalPmRoot);
     // Flush scheduling is best effort and must not keep the CLI alive.
   }
 }

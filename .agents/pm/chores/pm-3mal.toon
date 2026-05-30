@@ -6,10 +6,15 @@ status: open
 priority: 2
 tags[3]: perf,startup,telemetry
 created_at: "2026-05-29T22:28:38.724Z"
-updated_at: "2026-05-30T05:07:04.484Z"
-assignee: maintainer-agent
+updated_at: "2026-05-30T06:42:12.568Z"
 author: maintainer-agent
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-05-29T22:59:24.881Z",maintainer-agent,"Addressed the highest-frequency sub-item: scheduleTelemetryFlush now spawns the detached flush child AT MOST ONCE per process (in-process guard). Previously command_start + command_finish each spawned a child (~6.5ms fork/exec each, deduped only by lock AFTER paying Node startup). One child drains the whole queue. DEFERRED with rationale: (a) PM_TOOL_PARAMETERS_SCHEMA lazy-build — it is public SDK surface (sdk/index.ts re-exports it, contract-tested in sdk-index.spec) and the eager build is only ~3ms (~1% of a ~300ms command); churning the public API for 1% is not worth it. (b) completion.ts flag-string constants are not on the bundled CLI hot path. The dominant per-command cost is ESM module-load/bundle, tracked separately under pm-ss1d (esbuild --splitting --packages=external). Keeping open for the bundling lever."
   "2026-05-30T05:07:04.484Z",maintainer-agent,"CORRECTION: reverted the in-process flush spawn-once guard. A flush child boots (~50-100ms) before even a normal command finishes (~300ms), so spawning only at command_start would systematically defer the command_finish event to the next invocation — a real-time telemetry timeliness regression not worth ~6.5ms. The correct optimization is a cheap cross-process 'flush already in flight' check before spawn (skip redundant spawns while preserving timeliness), tracked as future work. No telemetry runtime change ships in this PR; pm-3mal stays open for the bundling lever (pm-ss1d) + the in-flight cross-process flush guard."
+  "2026-05-30T06:15:14.974Z",maintainer-agent,"Partial implementation evidence 2026-05-30: added the future-work cross-process telemetry flush spawn guard. scheduleTelemetryFlush now creates a cheap spawn-gate directory before forking, skips duplicate command_finish spawns while a command_start child is booting, also skips when a fresh flush.lock is already owned by another process, and clears the spawn gate once the child enters the process lock. This preserves real-time command_finish flushing without paying duplicate child process startup. Bundling lever remains open under this chore; not closing pm-3mal in this pass."
+files[2]{path,scope,note}:
+  src/core/telemetry/runtime.ts,project,Cross-process telemetry flush spawn gate
+  tests/unit/telemetry-runtime.spec.ts,project,Telemetry spawn gate regression coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/telemetry-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Telemetry flush spawn gate regression
 body: ""

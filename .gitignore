@@ -14,6 +14,7 @@ coverage/
 .agents/pm/runtime/front-matter-cache.json
 .agents/pm/runtime/metadata-cache.json
 .agents/pm/runtime/metadata-cache-bodies.json
+.agents/pm/runtime/metadata-cache-collections.json
 .agents/pm/runtime/history-drift-cache.json
 .agents/pm/runtime/telemetry/
 
