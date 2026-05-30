@@ -4,7 +4,17 @@
 
 ### Added
 
+- Semantic index not auto-refreshed on mutation: create then pm search --semantic misses the new item \(stale index\) ([pm-bpaj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bpaj.toon))
 - Reduce ESM module-resolution startup overhead \(~85ms\) via core bundling ([pm-ss1d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ss1d.toon))
+
+### Fixed
+
+- create rejects common type synonyms \(Bug/bug, Change/change\) instead of mapping to Issue/Chore ([pm-4d1b](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-4d1b.toon))
+- Suggestion-only command aliases \(show/comment/note/view\) still hard-fail as nonexistent\_command instead of executing ([pm-7by2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7by2.toon))
+- Calendar positional-date and impossible-deadline UX: pm calendar 2026-06-15 hard-errors; --deadline 2026-02-30 silently rolls to Mar 2 ([pm-wr74](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wr74.toon))
+- Split metadata cache into light + collections tiers to cut list hot-path JSON parse ([pm-jd3v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jd3v.toon))
+- create's schedule-less calendar hint suggests rejected --event pipe form \(accepts CSV\) — blocks agents ([pm-8c2s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-8c2s.toon))
+- Semantic auto-defaults are all-or-nothing: one config leaf disables ALL defaults and hard-errors reindex ([pm-407c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-407c.toon))
 
 ### Other
 

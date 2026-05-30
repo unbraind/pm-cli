@@ -256,7 +256,7 @@ export const COMMENTS_AUDIT_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const COMMENTS_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--add" },
+  { flag: "--add", aliases: ["--comment"] },
   { flag: "--stdin" },
   { flag: "--file" },
   { flag: "--limit" },
@@ -267,7 +267,7 @@ export const COMMENTS_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--add" },
+  { flag: "--add", aliases: ["--note"] },
   { flag: "--limit" },
   { flag: "--author" },
   { flag: "--message" },
@@ -277,7 +277,7 @@ export const NOTES_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const LEARNINGS_FLAG_CONTRACTS: CliFlagContract[] = [
-  { flag: "--add" },
+  { flag: "--add", aliases: ["--learning"] },
   { flag: "--limit" },
   { flag: "--author" },
   { flag: "--message" },

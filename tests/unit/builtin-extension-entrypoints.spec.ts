@@ -413,6 +413,94 @@ describe("built-in extension entrypoints", () => {
     expect(result).toMatchObject({ view: "day" });
   });
 
+  it("routes a date-like positional to --date with a day view instead of erroring", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    await commands[0]!.run({
+      command: "calendar",
+      args: ["2026-06-15"],
+      options: {},
+      global: globalFlags,
+      pm_root: "/tmp/pm",
+    });
+
+    const calls = readRuntimeCalls();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toEqual({
+      kind: "calendar",
+      options: { date: "2026-06-15", view: "day" },
+      global: globalFlags,
+    });
+  });
+
+  it("routes a relative-token positional to --date but keeps an explicit --view", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    await commands[0]!.run({
+      command: "calendar",
+      args: ["+7d", "--view", "week"],
+      options: { view: "week" },
+      global: globalFlags,
+      pm_root: "/tmp/pm",
+    });
+
+    const calls = readRuntimeCalls();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toEqual({
+      kind: "calendar",
+      options: { date: "+7d", view: "week" },
+      global: globalFlags,
+    });
+  });
+
+  it("routes the 'now' keyword and a compact date positional to --date", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    await commands[0]!.run({
+      command: "calendar",
+      args: ["now"],
+      options: {},
+      global: globalFlags,
+      pm_root: "/tmp/pm",
+    });
+    await commands[0]!.run({
+      command: "calendar",
+      args: ["20260615"],
+      options: {},
+      global: globalFlags,
+      pm_root: "/tmp/pm",
+    });
+
+    const calls = readRuntimeCalls();
+    expect(calls).toHaveLength(2);
+    expect(calls[0]).toEqual({ kind: "calendar", options: { date: "now", view: "day" }, global: globalFlags });
+    expect(calls[1]).toEqual({ kind: "calendar", options: { date: "20260615", view: "day" }, global: globalFlags });
+  });
+
+  it("does not override an explicit --date with a date-like positional", async () => {
+    const { api, commands } = createCommandOnlyApi();
+    activateCalendar(api);
+
+    await commands[0]!.run({
+      command: "calendar",
+      args: ["2026-06-15", "--date", "2026-01-01"],
+      options: { date: "2026-01-01" },
+      global: globalFlags,
+      pm_root: "/tmp/pm",
+    });
+
+    const calls = readRuntimeCalls();
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toEqual({
+      kind: "calendar",
+      options: { date: "2026-01-01", view: "day" },
+      global: globalFlags,
+    });
+  });
+
   it("still rejects two positional views and surfaces a recovery hint", async () => {
     const { api, commands } = createCommandOnlyApi();
     activateCalendar(api);

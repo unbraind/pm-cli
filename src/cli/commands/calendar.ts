@@ -14,7 +14,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
-import { listAllFrontMatter } from "../../core/store/item-store.js";
+import { listAllFrontMatterLight } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter, ItemStatus, ItemType, RecurrenceRule } from "../../types/index.js";
@@ -967,7 +967,7 @@ export async function runCalendar(options: CalendarOptions, global: GlobalOption
       `recurring_events_default_cap_applied:lookback=0d,lookahead=${DEFAULT_EVENTS_ONLY_LOOKAHEAD_DAYS}d -- use --recurrence-lookback-days/--recurrence-lookahead-days or --to for wider range`,
     );
   }
-  const items = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
+  const items = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, listWarnings, settings.schema);
   const filteredItems = filterItems(items, options, typeRegistry, statusRegistry, runtimeFieldFilters);
   const recurringWindow = buildRecurringEventWindow(
     rangeBounds.start,

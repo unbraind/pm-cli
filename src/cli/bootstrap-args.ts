@@ -169,11 +169,18 @@ export function parseBootstrapHelpRequest(argv: string[]): BootstrapHelpRequest 
   };
 }
 
-export function parseBootstrapCommandName(argv: string[]): string | undefined {
+/**
+ * Index of the command token in argv — the first non-flag token, skipping the
+ * value-consuming/global bootstrap flags. Returns undefined when there is none
+ * (bare invocation, only global flags, or a leading `--`). Single source of truth
+ * for command-position scanning shared by {@link parseBootstrapCommandName} and the
+ * command-alias rewrite so their precedence rules can never drift apart.
+ */
+function findCommandTokenIndex(argv: string[]): number | undefined {
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (token === "--") {
-      break;
+      return undefined;
     }
     if (token === "--path") {
       index += 1;
@@ -193,9 +200,14 @@ export function parseBootstrapCommandName(argv: string[]): string | undefined {
     if (token.startsWith("-")) {
       continue;
     }
-    return token.trim().toLowerCase();
+    return index;
   }
   return undefined;
+}
+
+export function parseBootstrapCommandName(argv: string[]): string | undefined {
+  const index = findCommandTokenIndex(argv);
+  return index === undefined ? undefined : argv[index].trim().toLowerCase();
 }
 
 function shouldDisablePagerForInvocation(argv: string[], bootstrapGlobal: BootstrapGlobalOptions): boolean {
@@ -270,11 +282,52 @@ export function normalizeLegacyExtensionActionSyntax(argv: string[]): string[] {
 
 type BootstrapNormalizationReason =
   | "legacy_extension_action"
+  | "command_alias"
   | "flag_alias"
   | "flag_typo"
   | "bare_key_value"
   | "list_merge";
 type BootstrapNormalizationConfidence = "high" | "medium";
+
+/**
+ * Executable command aliases: a leading command token here is rewritten to its
+ * canonical command BEFORE commander parses, so the alias actually runs instead of
+ * merely being suggested. These are the highest-frequency aliases real agents type
+ * (telemetry: `pm show <id>` alone is the single most common unknown-command) and
+ * each target takes the same positional/flags as the alias (with `--comment`/
+ * `--note`/`--learning` flag-aliased to `--add` on the target command). Keeping this
+ * in one place means the alias is consistent across registration, commander dispatch,
+ * telemetry, and error handling — all of which read the normalized argv.
+ */
+const EXECUTABLE_COMMAND_ALIASES: Readonly<Record<string, string>> = {
+  show: "get",
+  view: "get",
+  comment: "comments",
+  note: "notes",
+  learning: "learnings",
+};
+
+/**
+ * Rewrite a leading command-alias token (e.g. `show` -> `get`) in place. Only the
+ * command position is considered — the same token appearing later as an argument
+ * (`pm get show`) is left untouched — and only when it is not preceded by `--` or a
+ * value-consuming global flag, mirroring {@link parseBootstrapCommandName}.
+ */
+function rewriteCommandAlias(argv: string[], trace: BootstrapNormalizationEvent[]): string[] {
+  const index = findCommandTokenIndex(argv);
+  if (index === undefined) {
+    return argv;
+  }
+  const token = argv[index];
+  const canonical = EXECUTABLE_COMMAND_ALIASES[token.trim().toLowerCase()];
+  if (!canonical) {
+    return argv;
+  }
+  const rewritten = [...argv];
+  rewritten[index] = canonical;
+  trace.push({ from: token, to: [canonical], reason: "command_alias", confidence: "high" });
+  return rewritten;
+}
 
 export interface BootstrapNormalizationEvent {
   from: string;
@@ -634,13 +687,14 @@ export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocatio
       confidence: "high",
     });
   }
-  const commandName = parseBootstrapCommandName(legacyNormalized);
+  const aliasNormalized = rewriteCommandAlias(legacyNormalized, trace);
+  const commandName = parseBootstrapCommandName(aliasNormalized);
   const lookup = buildFlagLookup(commandName);
   const normalizedArgv: string[] = [];
-  for (let index = 0; index < legacyNormalized.length; index += 1) {
-    const token = legacyNormalized[index];
+  for (let index = 0; index < aliasNormalized.length; index += 1) {
+    const token = aliasNormalized[index];
     if (token === "--") {
-      normalizedArgv.push(...legacyNormalized.slice(index));
+      normalizedArgv.push(...aliasNormalized.slice(index));
       break;
     }
     const previous = normalizedArgv[normalizedArgv.length - 1];

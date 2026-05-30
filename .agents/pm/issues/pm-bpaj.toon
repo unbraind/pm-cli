@@ -1,0 +1,13 @@
+id: pm-bpaj
+title: "Semantic index not auto-refreshed on mutation: create then pm search --semantic misses the new item (stale index)"
+description: "After pm create, an immediate pm search --semantic searches the stale vector index and warns vector_index_stale:1; the new item is absent until pm reindex runs, despite mutation_refresh_policy=semantic_configured. Agents expecting fresh semantic results right after a write silently miss new items. Consider cheap on-mutation incremental embed (~150ms/item) or make the reindex-after-write contract explicit in health/docs. Lower priority than the all-or-nothing defaults bug."
+type: Issue
+status: closed
+priority: 2
+tags[3]: agent-ux,search,semantic
+created_at: "2026-05-29T22:28:43.423Z"
+updated_at: "2026-05-30T05:15:31.038Z"
+author: maintainer-agent
+resolution: Fixed (contract clarified)
+close_reason: "Made the refresh-after-write contract explicit (the item's stated alternative resolution): the vector_index_stale warning now states new/modified items are excluded from semantic/hybrid results until pm reindex, and CONFIGURATION.md documents search.mutation_refresh_policy + that keyword mode always reflects writes. Cheap incremental on-mutation embed deferred as a future optimization."
+body: ""

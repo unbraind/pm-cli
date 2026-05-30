@@ -8,7 +8,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { listAllFrontMatter } from "../../core/store/item-store.js";
+import { listAllFrontMatterLight } from "../../core/store/item-store.js";
 import { getSettingsPath, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { appendTrackedTestRunSummary } from "../../core/test/item-test-run-tracking.js";
@@ -216,7 +216,7 @@ export async function runTestAll(options: TestAllCommandOptions, global: GlobalO
   const statusFilter = parseStatus(options.status, statusRegistry);
   const limitFilter = parseNonNegativeInteger(options.limit, "--limit");
   const offsetFilter = parseNonNegativeInteger(options.offset, "--offset") ?? 0;
-  const allItems = await listAllFrontMatter(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
+  const allItems = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
   const statusFilteredItems = allItems
     .filter((item) => (statusFilter ? item.status === statusFilter : true))
     .sort((a, b) => a.id.localeCompare(b.id));

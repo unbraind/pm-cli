@@ -193,6 +193,34 @@ describe("normalizeBootstrapInvocation", () => {
     );
   });
 
+  it("rewrites an executable command alias (show -> get) before parse", () => {
+    const normalized = normalizeBootstrapInvocation(["show", "pm-a1b2", "--fields", "id,title"]);
+    expect(normalized.argv).toEqual(["get", "pm-a1b2", "--fields", "id,title"]);
+    expect(normalized.commandName).toBe("get");
+    expect(normalized.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ reason: "command_alias", from: "show", to: ["get"], confidence: "high" }),
+      ]),
+    );
+  });
+
+  it("rewrites comment -> comments and flag-aliases --comment to --add together", () => {
+    const normalized = normalizeBootstrapInvocation(["comment", "pm-a1b2", "--comment", "hello"]);
+    expect(normalized.argv).toEqual(["comments", "pm-a1b2", "--add", "hello"]);
+    expect(normalized.commandName).toBe("comments");
+  });
+
+  it("rewrites a command alias even after global flags", () => {
+    const normalized = normalizeBootstrapInvocation(["--json", "view", "pm-a1b2"]);
+    expect(normalized.argv).toEqual(["--json", "get", "pm-a1b2"]);
+  });
+
+  it("does not rewrite an alias token that appears as an argument, not the command", () => {
+    const normalized = normalizeBootstrapInvocation(["create", "Task", "show"]);
+    expect(normalized.argv).toEqual(["create", "Task", "show"]);
+    expect(normalized.trace.some((entry) => entry.reason === "command_alias")).toBe(false);
+  });
+
   it("normalizes long-option aliases and camel/underscore variants", () => {
     const normalized = normalizeBootstrapInvocation([
       "create",

@@ -1,0 +1,13 @@
+id: pm-7by2
+title: Suggestion-only command aliases (show/comment/note/view) still hard-fail as nonexistent_command instead of executing
+description: "Telemetry (14d, real users): pm show = 312 nonexistent_command events across 3 installs, last seen 2026-05-30 (today, ongoing); comment=19/2 installs; note=7/1; view=6/1; status=4/2. commander-usage.ts COMMON_COMMAND_ALIASES already maps show->get, comment->comments, note->notes, learning->learnings, but these are SUGGESTION-ONLY text in the error message — the command still resolves as nonexistent_command and the agent must retry. show is the dominant friction (16x the next). Proposal: make these mappings executable aliases (dispatch show->get, comment->comments, note->notes, learning->learnings) so the first invocation succeeds. This is pure agent-UX: agents pattern-match show/view from other tools. No Sentry impact (correctly classified as expected/usage). Confirm no MCP-action or completion regressions."
+type: Issue
+status: closed
+priority: 2
+tags[2]: agent-ux,telemetry
+created_at: "2026-05-29T22:52:19.235Z"
+updated_at: "2026-05-30T05:15:26.601Z"
+author: telemetry-agent
+resolution: Fixed
+close_reason: "Made common command aliases executable via a bootstrap command-token rewrite: show/view->get, comment/note/learning->comments/notes/learnings, plus --comment/--note/--learning->--add flag aliases. pm show <id> (312 telemetry events) now runs instead of erroring. Verified live."
+body: ""

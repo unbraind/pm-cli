@@ -28,20 +28,36 @@ function isAutoDefaultsDisabled(): boolean {
   return normalized === "1" || normalized === "true" || normalized === "yes";
 }
 
-function hasAnyExplicitSemanticConfiguration(settings: PmSettings): boolean {
-  const candidateValues: Array<unknown> = [
-    settings.search?.provider,
-    settings.vector_store?.adapter,
+/**
+ * True only when the user has opted into a provider/store that COMPETES with the
+ * Ollama + LanceDB auto-default stack: an explicit non-Ollama search provider, a
+ * non-LanceDB vector adapter, or any OpenAI/Qdrant credentials. A partial Ollama
+ * setup (e.g. only `ollama.base_url`) is NOT competing — its missing leaves are
+ * filled per-field below so a single config write can never silently disable
+ * semantic search and then hard-error `pm reindex`.
+ */
+function hasCompetingSemanticConfiguration(settings: PmSettings): boolean {
+  const provider = toOptionalNonEmptyString(settings.search?.provider);
+  if (provider && provider.toLowerCase() !== "ollama") {
+    return true;
+  }
+  const adapter = toOptionalNonEmptyString(settings.vector_store?.adapter);
+  if (adapter && adapter.toLowerCase() !== "lancedb") {
+    return true;
+  }
+  const openaiConfigured = [
     settings.providers?.openai?.base_url,
     settings.providers?.openai?.model,
     settings.providers?.openai?.api_key,
-    settings.providers?.ollama?.base_url,
-    settings.providers?.ollama?.model,
+  ].some((entry) => toOptionalNonEmptyString(entry) !== null);
+  if (openaiConfigured) {
+    return true;
+  }
+  const qdrantConfigured = [
     settings.vector_store?.qdrant?.url,
     settings.vector_store?.qdrant?.api_key,
-    settings.vector_store?.lancedb?.path,
-  ];
-  return candidateValues.some((entry) => toOptionalNonEmptyString(entry) !== null);
+  ].some((entry) => toOptionalNonEmptyString(entry) !== null);
+  return qdrantConfigured;
 }
 
 function isOllamaInstalled(): boolean {
@@ -101,32 +117,59 @@ function resolveAutoOllamaModel(settings: PmSettings): string {
 }
 
 export function resolveSettingsWithSemanticRuntimeDefaults(settings: PmSettings): SemanticRuntimeDefaultsResolution {
+  const unchanged: SemanticRuntimeDefaultsResolution = {
+    settings,
+    auto_ollama_defaults_applied: false,
+  };
   if (isAutoDefaultsDisabled()) {
-    return {
-      settings,
-      auto_ollama_defaults_applied: false,
-    };
+    return unchanged;
   }
-  if (hasAnyExplicitSemanticConfiguration(settings)) {
-    return {
-      settings,
-      auto_ollama_defaults_applied: false,
-    };
+  if (hasCompetingSemanticConfiguration(settings)) {
+    return unchanged;
   }
-  if (!isOllamaInstalled()) {
-    return {
-      settings,
-      auto_ollama_defaults_applied: false,
-    };
+
+  const needsBaseUrl = toOptionalNonEmptyString(settings.providers?.ollama?.base_url) === null;
+  const needsModel = toOptionalNonEmptyString(settings.providers?.ollama?.model) === null;
+  const needsLancedbPath = toOptionalNonEmptyString(settings.vector_store?.lancedb?.path) === null;
+  const needsEmbeddingModel = toOptionalNonEmptyString(settings.search?.embedding_model) === null;
+  if (!needsBaseUrl && !needsModel && !needsLancedbPath && !needsEmbeddingModel) {
+    // A fully-configured Ollama/LanceDB stack — nothing to fill, and no need to
+    // probe for Ollama at all.
+    return unchanged;
+  }
+
+  // Auto-discovering the embedding model (via `ollama list`) is the only step that
+  // requires Ollama to be installed. When a model is already configured we mirror it
+  // into the remaining leaves without forcing an Ollama probe; when it is missing we
+  // require Ollama to actually be present rather than writing an unusable default.
+  if (needsModel && !isOllamaInstalled()) {
+    return unchanged;
   }
 
   const nextSettings = structuredClone(settings);
   const resolvedModel = resolveAutoOllamaModel(nextSettings);
-  nextSettings.providers.ollama.base_url = DEFAULT_OLLAMA_BASE_URL;
-  nextSettings.providers.ollama.model = resolvedModel;
-  nextSettings.vector_store.lancedb.path = DEFAULT_LANCEDB_PATH;
-  if (!toOptionalNonEmptyString(nextSettings.search.embedding_model)) {
-    nextSettings.search.embedding_model = resolvedModel;
+  // `readSettings` always normalizes these nested objects, but this function is
+  // exported and runs on the search hot path with caller-supplied settings, so a
+  // partial object (e.g. providers/vector_store set but no `search` block) must
+  // fill the missing leaf rather than throwing on an undefined parent.
+  if (needsBaseUrl || needsModel) {
+    const providers = (nextSettings.providers ??= {} as PmSettings["providers"]);
+    const ollama = (providers.ollama ??= {} as PmSettings["providers"]["ollama"]);
+    if (needsBaseUrl) {
+      ollama.base_url = DEFAULT_OLLAMA_BASE_URL;
+    }
+    if (needsModel) {
+      ollama.model = resolvedModel;
+    }
+  }
+  if (needsLancedbPath) {
+    const vectorStore = (nextSettings.vector_store ??= {} as PmSettings["vector_store"]);
+    const lancedb = (vectorStore.lancedb ??= {} as PmSettings["vector_store"]["lancedb"]);
+    lancedb.path = DEFAULT_LANCEDB_PATH;
+  }
+  if (needsEmbeddingModel) {
+    const search = (nextSettings.search ??= {} as PmSettings["search"]);
+    search.embedding_model = resolvedModel;
   }
   return {
     settings: nextSettings,

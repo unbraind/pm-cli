@@ -1,0 +1,13 @@
+id: pm-wr74
+title: "Calendar positional-date and impossible-deadline UX: pm calendar 2026-06-15 hard-errors; --deadline 2026-02-30 silently rolls to Mar 2"
+description: "Two agent-hostile calendar UX issues from dogfood: (1) pm calendar <ISO-date> errors 'view must be agenda|day|week|month' with no did-you-mean — should route an ISO-looking positional to --date or hint it. (2) pm create --deadline 2026-02-30 silently overflows to 2026-03-02 (JS Date rollover) with no warning, while 2026-13-99 is correctly rejected — validate calendar-day validity and reject/warn on rollover."
+type: Issue
+status: closed
+priority: 2
+tags[3]: agent-ux,calendar,never-block
+created_at: "2026-05-29T22:28:41.297Z"
+updated_at: "2026-05-30T05:15:13.922Z"
+author: maintainer-agent
+resolution: Fixed
+close_reason: "Calendar routes a date-like positional (pm calendar 2026-06-15 / +7d) to --date with a day view; resolveIsoOrRelative now rejects impossible calendar dates (2026-02-30, bad months) with actionable errors instead of silent rollover. Verified live."
+body: ""

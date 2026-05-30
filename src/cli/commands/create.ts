@@ -23,6 +23,7 @@ import {
 import { acquireLock } from "../../core/lock/lock.js";
 import { printError } from "../../core/output/output.js";
 import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
+import { resolveTypeSynonym } from "../../core/item/type-synonyms.js";
 import { collectRuntimeCreateFieldValues } from "../../core/schema/runtime-field-values.js";
 import {
   type RuntimeFieldRegistry,
@@ -1264,12 +1265,25 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   if (resolvedOptions.type === undefined) {
     throw new PmCliError("Missing required option --type <value>", EXIT_CODE.USAGE);
   }
-  const resolvedTypeName = resolveTypeName(resolvedOptions.type, typeRegistry);
+  let resolvedTypeName = resolveTypeName(resolvedOptions.type, typeRegistry);
   if (!resolvedTypeName) {
-    throw new PmCliError(
-      buildInvalidTypeError(resolvedOptions.type, typeRegistry.types),
-      EXIT_CODE.USAGE,
-    );
+    // Never block on a near-miss type: map a known synonym (e.g. Bug -> Issue,
+    // Change -> Chore) to its canonical built-in type when that type exists in the
+    // active registry, and tell the agent how to make it a distinct custom type.
+    const synonymCanonical = resolveTypeSynonym(resolvedOptions.type);
+    const synonymResolved = synonymCanonical ? resolveTypeName(synonymCanonical, typeRegistry) : undefined;
+    if (synonymResolved) {
+      printError(
+        `[pm] note: type '${resolvedOptions.type.trim()}' is not defined; using closest match '${synonymResolved}'. Run 'pm schema add-type "${resolvedOptions.type.trim()}"' to track it as a distinct type.`,
+      );
+      resolvedOptions.type = synonymResolved;
+      resolvedTypeName = synonymResolved;
+    } else {
+      throw new PmCliError(
+        buildInvalidTypeError(resolvedOptions.type, typeRegistry.types),
+        EXIT_CODE.USAGE,
+      );
+    }
   }
   const typeDefinition = resolveTypeDefinition(resolvedTypeName, typeRegistry);
   if (!typeDefinition) {
@@ -1924,7 +1938,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   // copy-pasteable `pm update` recipe.
   if (calendarRelevantTypes.has(type.toLowerCase()) && !hasDeadline && !hasReminders && !hasEvents) {
     printError(
-      `[pm] warning: ${type} '${id}' has no deadline/reminder/event — it will not appear on the calendar. Add one via 'pm update ${id} --deadline <ISO>' or 'pm update ${id} --event "title|start|end"'.`,
+      `[pm] warning: ${type} '${id}' has no deadline/reminder/event — it will not appear on the calendar. Add one via 'pm update ${id} --deadline <ISO>' or 'pm update ${id} --event "start=<ISO>,end=<ISO>"'.`,
     );
   }
 

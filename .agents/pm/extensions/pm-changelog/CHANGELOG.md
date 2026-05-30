@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026.5.29-2 - 2026-05-29
+
+### Added
+
+- Hands-on functional test pass 2026-05-29 \(real data\) ([pmc-7rd8](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/features/pmc-7rd8.toon))
+
+### Fixed
+
+- Committed CHANGELOG.md stale vs current history \(orphaned release tags\) ([pmc-e3sy](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-e3sy.toon))
+
 ## 2026.5.29-1 - 2026-05-29
 
 ### Fixed

@@ -148,17 +148,28 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
-  it("suggests common command aliases from live telemetry mistakes", async () => {
+  it("executes common command aliases from live telemetry mistakes (show/view -> get, comment -> comments)", async () => {
     await withTempPmPath(async (context) => {
-      const show = context.runCli(["show", "pm-a1b2", "--json"]);
-      expect(show.code).toBe(2);
-      expect(show.stderr).toContain("Unknown command show");
-      expect(show.stderr).toContain("Did you mean: get");
+      const created = context.runCli(["create", "--title", "Alias target", "--type", "Task", "--json"], {
+        expectJson: true,
+      });
+      expect(created.code).toBe(0);
+      const itemId = (created.json as { item?: { id?: string } }).item?.id ?? "";
+      expect(itemId).toBeTruthy();
 
-      const comment = context.runCli(["comment", "pm-a1b2", "hello", "--json"]);
-      expect(comment.code).toBe(2);
-      expect(comment.stderr).toContain("Unknown command comment");
-      expect(comment.stderr).toContain("Did you mean: comments");
+      // `pm show <id>` / `pm view <id>` now run instead of merely suggesting `get`.
+      const show = context.runCli(["show", itemId, "--json"], { expectJson: true });
+      expect(show.code).toBe(0);
+      expect((show.json as { item?: { id?: string } }).item?.id).toBe(itemId);
+
+      const view = context.runCli(["view", itemId, "--json"], { expectJson: true });
+      expect(view.code).toBe(0);
+      expect((view.json as { item?: { id?: string } }).item?.id).toBe(itemId);
+
+      // `pm comment <id> --comment "..."` routes to `comments --add` and succeeds.
+      const comment = context.runCli(["comment", itemId, "--comment", "hello from alias", "--json"]);
+      expect(comment.code).toBe(0);
+      expect(comment.stderr).not.toContain("Unknown command");
     });
   });
 

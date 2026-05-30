@@ -275,7 +275,7 @@ async function maybeEmitVectorIndexStaleWarning(
     }
     warnings.push(`vector_index_stale:${staleIds.length}`);
     process.stderr.write(
-      `[pm] warning: vector index has ${staleIds.length} stale item${staleIds.length === 1 ? "" : "s"}; run 'pm reindex --mode hybrid' to refresh.\n`,
+      `[pm] warning: ${staleIds.length} item${staleIds.length === 1 ? " is" : "s are"} new or modified since the last reindex and ${staleIds.length === 1 ? "is" : "are"} NOT in the semantic index yet — they will be missing from semantic/hybrid results until you run 'pm reindex --mode hybrid'. (Mutations do not auto-embed by default; see search.mutation_refresh_policy.)\n`,
     );
   } catch {
     // Best-effort: missing/unreadable ledger is not a query-blocking concern.
