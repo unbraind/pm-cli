@@ -165,14 +165,19 @@ export async function runGitCommand(args: string[]): Promise<string> {
   }
 }
 
+export function resolveNpmCommandName(platform: NodeJS.Platform = process.platform): "npm" | "npm.cmd" {
+  return platform === "win32" ? "npm.cmd" : "npm";
+}
+
 async function runNpmCommand(args: string[], cwd?: string): Promise<string> {
+  const npmCommand = resolveNpmCommandName();
   try {
-    const result = await execFileAsync("npm", args, { cwd, encoding: "utf8" });
+    const result = await execFileAsync(npmCommand, args, { cwd, encoding: "utf8" });
     return (result.stdout ?? "").trim();
   } catch (error: unknown) {
     const stderr = typeof error === "object" && error !== null && "stderr" in error ? String((error as { stderr: unknown }).stderr) : "";
     const message = stderr.trim().length > 0 ? stderr.trim() : error instanceof Error ? error.message : String(error);
-    throw new PmCliError(`npm command failed: npm ${args.join(" ")}\n${message}`, EXIT_CODE.GENERIC_FAILURE);
+    throw new PmCliError(`npm command failed: ${npmCommand} ${args.join(" ")}\n${message}`, EXIT_CODE.GENERIC_FAILURE);
   }
 }
 
