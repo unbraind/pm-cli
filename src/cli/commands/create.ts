@@ -333,6 +333,24 @@ function parseStatusValue(value: string, statusRegistry: RuntimeStatusRegistry):
   return normalized;
 }
 
+// Resolve the create-time status when `--status` is omitted: a config-driven
+// per-type `default_status` (from `pm schema add-type --default-status`) wins,
+// then the workflow open status. An unknown configured value degrades to the
+// open status rather than blocking the create (never-block-the-agent).
+function resolveCreateDefaultStatus(
+  typeDefinition: ResolvedItemTypeDefinition,
+  statusRegistry: RuntimeStatusRegistry,
+): ItemStatus {
+  const configured = typeDefinition.default_status;
+  if (configured !== undefined) {
+    const normalized = normalizeStatusInput(configured, statusRegistry);
+    if (normalized) {
+      return normalized;
+    }
+  }
+  return statusRegistry.open_status;
+}
+
 function parseCreatedAt(value: string | undefined, currentIso: string): string {
   if (!value || value.trim() === "" || value.trim().toLowerCase() === "now") {
     return currentIso;
@@ -1571,7 +1589,9 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
 
   const id = await generateItemId(pmRoot, settings.id_prefix);
   let status =
-    resolvedOptions.status !== undefined ? parseStatusValue(resolvedOptions.status, statusRegistry) : statusRegistry.open_status;
+    resolvedOptions.status !== undefined
+      ? parseStatusValue(resolvedOptions.status, statusRegistry)
+      : resolveCreateDefaultStatus(typeDefinition, statusRegistry);
   const priority = resolvedOptions.priority !== undefined ? ensurePriority(resolvedOptions.priority) : 2;
   // `--unset tags` clears the field; combining it with `--add-tags` is the same
   // contradiction that `--unset tags --tags ...` already rejects, so reject it

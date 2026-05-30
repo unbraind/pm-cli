@@ -1,0 +1,14 @@
+id: pm-y0gl
+title: Fix per-type default_status config was silently ignored at create
+description: "pm schema add-type --default-status writes default_status into schema/types.json, but the read path dropped it: ItemTypeDefinition/ResolvedItemTypeDefinition had no field, normalizeItemTypeDefinition rebuilt the object without it, and create always used statusRegistry.open_status. A config-driven knob that did nothing — directly undermined the 'schema is config-driven, not hardcoded' goal. Threaded default_status through types.ts -> item-type-definition.ts -> type-registry.ts (coerce+apply) -> create.ts. Unknown values degrade to open_status (never-block)."
+type: Issue
+status: closed
+priority: 2
+tags[4]: bug,config-driven,create,schema
+created_at: "2026-05-30T21:43:10.290Z"
+updated_at: "2026-05-30T21:43:41.793Z"
+author: maintainer-agent
+acceptance_criteria: Custom type with --default-status uses it on create when --status omitted; explicit --status overrides; invalid value degrades to open
+resolution: "Fixed: per-type default_status now honored at create; invalid degrades to open (never-block)."
+close_reason: "Threaded default_status end-to-end (types.ts, item-type-definition.ts, type-registry.ts coerce+apply, create.ts resolveCreateDefaultStatus). Verified live: Spike --default-status in_progress -> create uses in_progress; explicit --status overrides; invalid degrades to open. Tests: create-command.spec (integration) + item-type-definition.spec (normalize round-trip)."
+body: ""

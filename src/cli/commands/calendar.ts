@@ -13,6 +13,7 @@ import {
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { levenshteinDistanceWithinLimit } from "../../core/shared/levenshtein.js";
 import { compareTimestampStrings, nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
 import { listAllFrontMatterLight } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
@@ -181,11 +182,28 @@ function parseIncludeSources(raw: string | undefined): Set<CalendarIncludeKind> 
   return include;
 }
 
+// Suggest the closest valid choice for a mistyped enum value so an agent gets an
+// actionable "did you mean" hint instead of just a list (never-block UX).
+function suggestClosestChoice(value: string, choices: readonly string[]): string | undefined {
+  let best: { choice: string; distance: number } | undefined;
+  for (const choice of choices) {
+    const distance = levenshteinDistanceWithinLimit(value, choice, 2);
+    if (distance !== null && (best === undefined || distance < best.distance)) {
+      best = { choice, distance };
+    }
+  }
+  return best?.choice;
+}
+
 function parseView(raw: string | undefined): CalendarView {
   if (!raw) return "agenda";
   const normalized = raw.trim().toLowerCase();
   if (!CALENDAR_VIEW_VALUES.includes(normalized as CalendarView)) {
-    throw new PmCliError("Calendar view must be one of agenda|day|week|month", EXIT_CODE.USAGE);
+    const suggestion = suggestClosestChoice(normalized, CALENDAR_VIEW_VALUES);
+    throw new PmCliError(
+      `Calendar view must be one of ${CALENDAR_VIEW_VALUES.join("|")}${suggestion ? `. Did you mean "${suggestion}"?` : "."}`,
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized as CalendarView;
 }
@@ -194,7 +212,11 @@ function parseOutputFormat(raw: string | undefined): CalendarOutputFormat | unde
   if (!raw) return undefined;
   const normalized = raw.trim().toLowerCase();
   if (!CALENDAR_OUTPUT_VALUES.includes(normalized as CalendarOutputFormat)) {
-    throw new PmCliError("Calendar format must be one of markdown|toon|json", EXIT_CODE.USAGE);
+    const suggestion = suggestClosestChoice(normalized, CALENDAR_OUTPUT_VALUES);
+    throw new PmCliError(
+      `Calendar format must be one of ${CALENDAR_OUTPUT_VALUES.join("|")}${suggestion ? `. Did you mean "${suggestion}"?` : "."}`,
+      EXIT_CODE.USAGE,
+    );
   }
   return normalized as CalendarOutputFormat;
 }

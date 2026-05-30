@@ -1095,8 +1095,10 @@ describe("LanceDB local snapshot persistence", () => {
       ).resolves.toEqual({ status: "ok" });
 
       await expect(readFile(snapshotPath, "utf8")).resolves.toBeTruthy();
-      await expect(readFile(snapshotPath, "utf8")).resolves.toContain("\"version\": 1");
-      await expect(readFile(snapshotPath, "utf8")).resolves.toContain("\"table\": \"pm_items\"");
+      // Snapshot is serialized compactly (no pretty-print indentation) to keep large
+      // embedding indexes cheap to parse/rewrite on every mutation.
+      await expect(readFile(snapshotPath, "utf8")).resolves.toContain("\"version\":1");
+      await expect(readFile(snapshotPath, "utf8")).resolves.toContain("\"table\":\"pm_items\"");
       const snapshot = JSON.parse(await readFile(snapshotPath, "utf8")) as {
         version: number;
         table: string;

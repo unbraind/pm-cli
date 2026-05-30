@@ -1,0 +1,14 @@
+id: pm-5oxq
+title: Calendar view/format did-you-mean + dependency and type-safety cleanup
+description: "Agent-UX + hygiene. (1) Calendar parseView/parseOutputFormat now emit a Levenshtein 'Did you mean' suggestion on a mistyped --view/--format instead of just listing choices (never-block UX; reuses core levenshteinDistanceWithinLimit). (2) Removed unused devDependency c8 (coverage runs via @vitest/coverage-v8; c8 had no script/config reference) — drops 321 transitive lock lines. (3) Wired the previously-dead RiskLevel type into ItemFrontMatter.risk, replacing an inline duplicated union."
+type: Chore
+status: closed
+priority: 2
+tags[5]: agent-ux,calendar,cleanup,deps,type-safety
+created_at: "2026-05-30T21:43:28.045Z"
+updated_at: "2026-05-30T21:43:44.971Z"
+author: maintainer-agent
+acceptance_criteria: Mistyped calendar view/format suggests closest; c8 gone from lockfile; RiskLevel used
+resolution: "Done: calendar did-you-mean, c8 removed, RiskLevel used."
+close_reason: "Calendar suggestClosestChoice did-you-mean for --view/--format (verified weeek->week, jsonn->json); removed c8 devDep + synced lockfile; RiskLevel wired into ItemFrontMatter.risk. Full suite 2012 tests green; static gate green."
+body: ""

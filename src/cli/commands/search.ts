@@ -210,17 +210,38 @@ interface SearchModeContext {
 
 type ImplicitSemanticFallbackReason = "timeout" | "connection" | "error";
 
+// undici (Node's fetch) collapses connection errors to the generic message
+// "fetch failed" and stashes the real syscall code on error.cause.code. Inspect
+// the cause chain so a downed/unreachable Ollama backend is labelled "connection"
+// rather than the catch-all "error".
+function collectErrorCauseCodes(error: unknown): string {
+  const codes: string[] = [];
+  let current: unknown = error;
+  for (let depth = 0; depth < 5 && current && typeof current === "object"; depth += 1) {
+    const code = (current as { code?: unknown }).code;
+    if (typeof code === "string") {
+      codes.push(code.toLowerCase());
+    }
+    current = (current as { cause?: unknown }).cause;
+  }
+  return codes.join(" ");
+}
+
 function classifyImplicitSemanticFallbackReason(error: unknown): ImplicitSemanticFallbackReason {
   const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
-  if (message.includes("timed out") || message.includes("timeout")) {
+  const causeCodes = collectErrorCauseCodes(error);
+  const haystack = `${message} ${causeCodes}`;
+  if (haystack.includes("timed out") || haystack.includes("timeout") || haystack.includes("etimedout")) {
     return "timeout";
   }
   if (
-    message.includes("econnrefused") ||
-    message.includes("connection refused") ||
-    message.includes("connect ") ||
-    message.includes("enotfound") ||
-    message.includes("eai_again")
+    haystack.includes("econnrefused") ||
+    haystack.includes("connection refused") ||
+    haystack.includes("connect ") ||
+    haystack.includes("enotfound") ||
+    haystack.includes("eai_again") ||
+    haystack.includes("econnreset") ||
+    haystack.includes("fetch failed")
   ) {
     return "connection";
   }
@@ -275,7 +296,7 @@ async function maybeEmitVectorIndexStaleWarning(
     }
     warnings.push(`vector_index_stale:${staleIds.length}`);
     process.stderr.write(
-      `[pm] warning: ${staleIds.length} item${staleIds.length === 1 ? " is" : "s are"} new or modified since the last reindex and ${staleIds.length === 1 ? "is" : "are"} NOT in the semantic index yet — they will be missing from semantic/hybrid results until you run 'pm reindex --mode hybrid'. (Mutations do not auto-embed by default; see search.mutation_refresh_policy.)\n`,
+      `[pm] warning: ${staleIds.length} item${staleIds.length === 1 ? " is" : "s are"} new or modified since the last reindex and ${staleIds.length === 1 ? "is" : "are"} NOT in the semantic index yet — they will be missing from semantic/hybrid results until you run 'pm reindex --mode hybrid'. (Write-time embedding is governed by search.mutation_refresh_policy; staleness means the embed was skipped, failed, or the backend was unreachable.)\n`,
     );
   } catch {
     // Best-effort: missing/unreadable ledger is not a query-blocking concern.

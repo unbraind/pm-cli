@@ -137,6 +137,8 @@ export function normalizeItemTypeDefinition(
   const hasCommandOptionPolicies = definition.command_option_policies !== undefined;
 
   const folder = definition.folder?.trim();
+  const description = definition.description?.trim();
+  const defaultStatus = definition.default_status?.trim();
   const aliases = normalizeItemTypeStringList(definition.aliases);
   const normalizedOptions = (definition.options ?? [])
     .map((option) => normalizeItemTypeOption(option))
@@ -149,6 +151,8 @@ export function normalizeItemTypeDefinition(
 
   return {
     name,
+    description: description && description.length > 0 ? description : undefined,
+    default_status: defaultStatus && defaultStatus.length > 0 ? defaultStatus : undefined,
     folder: folder && folder.length > 0 ? folder : undefined,
     aliases: aliases.length > 0 ? aliases : undefined,
     required_create_fields: hasRequiredCreateFields

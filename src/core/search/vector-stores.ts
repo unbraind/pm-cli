@@ -432,15 +432,15 @@ async function persistLanceDbLocalTable(storePath: string, tableName: string, ta
     snapshotDir,
     `${basename(snapshotPath)}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
   );
-  const serialized = `${JSON.stringify(
-    {
-      version: LANCE_DB_LOCAL_SNAPSHOT_VERSION,
-      table: tableName,
-      records: buildSnapshotRecords(table),
-    },
-    null,
-    2,
-  )}\n`;
+  // Serialize compactly: the snapshot is an internal, gitignored cache re-read via
+  // JSON.parse (whitespace-agnostic). Pretty-printing put every embedding float on its
+  // own indented line, roughly doubling file size and parse/serialize cost — a real
+  // per-mutation latency tax on large indexes. Compact JSON keeps it instant.
+  const serialized = `${JSON.stringify({
+    version: LANCE_DB_LOCAL_SNAPSHOT_VERSION,
+    table: tableName,
+    records: buildSnapshotRecords(table),
+  })}\n`;
   try {
     await writeFile(tempPath, serialized, "utf8");
     await rename(tempPath, snapshotPath);
