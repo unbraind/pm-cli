@@ -182,8 +182,11 @@ function parseIncludeSources(raw: string | undefined): Set<CalendarIncludeKind> 
   return include;
 }
 
-// Suggest the closest valid choice for a mistyped enum value so an agent gets an
-// actionable "did you mean" hint instead of just a list (never-block UX).
+/**
+ * Suggest the closest valid choice for a mistyped enum value (within edit
+ * distance 2) so an agent gets an actionable "did you mean" hint instead of just
+ * a list of choices (never-block UX).
+ */
 function suggestClosestChoice(value: string, choices: readonly string[]): string | undefined {
   let best: { choice: string; distance: number } | undefined;
   for (const choice of choices) {

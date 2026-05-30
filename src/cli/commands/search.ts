@@ -210,11 +210,16 @@ interface SearchModeContext {
 
 type ImplicitSemanticFallbackReason = "timeout" | "connection" | "error";
 
-// undici (Node's fetch) collapses connection errors to the generic message
-// "fetch failed" and stashes the real syscall code on error.cause.code. Inspect
-// the cause chain so a downed/unreachable Ollama backend is labelled "connection"
-// rather than the catch-all "error".
-function collectErrorCauseCodes(error: unknown): string {
+/**
+ * Aggregate the `code` strings found along an error's `cause` chain.
+ *
+ * undici (Node's fetch) collapses connection errors to the generic message
+ * "fetch failed" and stashes the real syscall code (e.g. `ECONNREFUSED`) on
+ * `error.cause.code`. Walking the chain (bounded depth) lets the fallback
+ * classifier label a downed/unreachable Ollama backend as "connection" rather
+ * than the catch-all "error".
+ */
+export function collectErrorCauseCodes(error: unknown): string {
   const codes: string[] = [];
   let current: unknown = error;
   for (let depth = 0; depth < 5 && current && typeof current === "object"; depth += 1) {
@@ -227,7 +232,12 @@ function collectErrorCauseCodes(error: unknown): string {
   return codes.join(" ");
 }
 
-function classifyImplicitSemanticFallbackReason(error: unknown): ImplicitSemanticFallbackReason {
+/**
+ * Classify why an implicit/explicit semantic search degraded to keyword mode,
+ * inspecting both the error message and the {@link collectErrorCauseCodes} chain
+ * so undici's generic "fetch failed" is recognised as a connection failure.
+ */
+export function classifyImplicitSemanticFallbackReason(error: unknown): ImplicitSemanticFallbackReason {
   const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
   const causeCodes = collectErrorCauseCodes(error);
   const haystack = `${message} ${causeCodes}`;

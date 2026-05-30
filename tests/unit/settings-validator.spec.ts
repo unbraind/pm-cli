@@ -140,7 +140,17 @@ describe("core/store/settings-validator", () => {
   it("validates nested optional object blocks and their literal unions", () => {
     const raw = minimalValidSettings();
     raw.governance = { preset: "strict", ownership_enforcement: "warn" };
-    raw.item_types = { definitions: [{ name: "Spike", aliases: ["spk"], options: [{ key: "size", values: ["s", "l"] }] }] };
+    raw.item_types = {
+      definitions: [
+        {
+          name: "Spike",
+          description: "Time-boxed investigation",
+          default_status: "in_progress",
+          aliases: ["spk"],
+          options: [{ key: "size", values: ["s", "l"] }],
+        },
+      ],
+    };
     raw.schema = { version: 2, statuses: [{ id: "in_review", roles: ["active"] }] };
     raw.context = { default_depth: "deep", sections: { hierarchy: true } };
     const result = validateSettings(raw);
@@ -148,6 +158,10 @@ describe("core/store/settings-validator", () => {
     if (result.success) {
       expect(result.data.governance?.preset).toBe("strict");
       expect(result.data.item_types?.definitions[0]?.name).toBe("Spike");
+      // description + default_status must survive validation so inline settings
+      // definitions behave identically to schema/types.json (config-driven).
+      expect(result.data.item_types?.definitions[0]?.description).toBe("Time-boxed investigation");
+      expect(result.data.item_types?.definitions[0]?.default_status).toBe("in_progress");
     }
   });
 

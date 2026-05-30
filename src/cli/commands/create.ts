@@ -333,10 +333,12 @@ function parseStatusValue(value: string, statusRegistry: RuntimeStatusRegistry):
   return normalized;
 }
 
-// Resolve the create-time status when `--status` is omitted: a config-driven
-// per-type `default_status` (from `pm schema add-type --default-status`) wins,
-// then the workflow open status. An unknown configured value degrades to the
-// open status rather than blocking the create (never-block-the-agent).
+/**
+ * Resolve the create-time status when `--status` is omitted: a config-driven
+ * per-type `default_status` (from `pm schema add-type --default-status`) wins,
+ * then the workflow open status. An unknown configured value degrades to the
+ * open status rather than blocking the create (never-block-the-agent).
+ */
 function resolveCreateDefaultStatus(
   typeDefinition: ResolvedItemTypeDefinition,
   statusRegistry: RuntimeStatusRegistry,
@@ -1027,7 +1029,19 @@ function requireCreateOptionByType(
     }
   }
 
-  const missingRequiredOptions = policyState.required.filter((required) => !hasOptionValue(required));
+  // A configured per-type default_status satisfies a required `status` policy:
+  // when --status is omitted, runCreate resolves to that default (or degrades to
+  // the workflow open status), so blocking the agent for a "missing --status"
+  // would contradict the config-driven default. Scoped to status so an explicit
+  // status-required policy on a type WITHOUT a default still holds. Only the
+  // required check is relaxed; the disabled check above keeps using hasOptionValue.
+  const satisfiesRequiredOption = (optionKey: string): boolean => {
+    if (optionKey === "status" && typeDefinition.default_status !== undefined) {
+      return true;
+    }
+    return hasOptionValue(optionKey);
+  };
+  const missingRequiredOptions = policyState.required.filter((required) => !satisfiesRequiredOption(required));
   return [...new Set(missingRequiredOptions.map((required) => commandOptionFlagLabel("create", required)))].sort((left, right) =>
     left.localeCompare(right),
   );

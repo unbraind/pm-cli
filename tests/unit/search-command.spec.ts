@@ -2026,3 +2026,42 @@ describe("runSearch", () => {
     });
   });
 });
+
+describe("classifyImplicitSemanticFallbackReason", () => {
+  it("classifies timeouts from message and from a nested cause code", async () => {
+    const { classifyImplicitSemanticFallbackReason } = await import("../../src/cli/commands/search.js");
+    expect(classifyImplicitSemanticFallbackReason(new Error("Embedding request timed out after 30000ms"))).toBe("timeout");
+    const etimedout = new Error("fetch failed");
+    (etimedout as Error & { cause?: unknown }).cause = { code: "ETIMEDOUT" };
+    expect(classifyImplicitSemanticFallbackReason(etimedout)).toBe("timeout");
+  });
+
+  it("classifies undici 'fetch failed' connection errors via error.cause.code", async () => {
+    const { classifyImplicitSemanticFallbackReason } = await import("../../src/cli/commands/search.js");
+    // undici surfaces ECONNREFUSED as a generic 'fetch failed' message with the
+    // real syscall code on cause.code — must be labelled connection, not error.
+    const refused = new Error("fetch failed");
+    (refused as Error & { cause?: unknown }).cause = { code: "ECONNREFUSED" };
+    expect(classifyImplicitSemanticFallbackReason(refused)).toBe("connection");
+
+    const reset = new Error("fetch failed");
+    (reset as Error & { cause?: unknown }).cause = { code: "ECONNRESET" };
+    expect(classifyImplicitSemanticFallbackReason(reset)).toBe("connection");
+
+    // Bare "fetch failed" with no cause still degrades to connection.
+    expect(classifyImplicitSemanticFallbackReason(new Error("fetch failed"))).toBe("connection");
+  });
+
+  it("falls back to error for unrelated failures and walks bounded cause depth", async () => {
+    const { classifyImplicitSemanticFallbackReason, collectErrorCauseCodes } = await import(
+      "../../src/cli/commands/search.js"
+    );
+    expect(classifyImplicitSemanticFallbackReason(new Error("No embedding provider configured"))).toBe("error");
+    // Nested cause chain: the deep ENOTFOUND is still found within the depth budget.
+    const deep = new Error("outer");
+    (deep as Error & { cause?: unknown }).cause = { message: "mid", cause: { code: "ENOTFOUND" } };
+    expect(classifyImplicitSemanticFallbackReason(deep)).toBe("connection");
+    expect(collectErrorCauseCodes(deep)).toContain("enotfound");
+    expect(collectErrorCauseCodes("plain string")).toBe("");
+  });
+});

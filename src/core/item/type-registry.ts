@@ -312,6 +312,8 @@ export interface CommandOptionPolicyState {
 
 export interface ResolvedItemTypeDefinition {
   name: string;
+  /** Optional human description carried from the type definition. */
+  description?: string;
   folder: string;
   aliases: string[];
   /** Optional per-type status applied at create time when `--status` is omitted. */
@@ -498,8 +500,10 @@ function applyTypeDefinitions(
         ? [...existing.command_option_policies]
         : [];
     const defaultStatus = normalizedDefinition.default_status ?? existing?.default_status;
+    const description = normalizedDefinition.description ?? existing?.description;
     target.set(lowerName, {
       name: keepName,
+      ...(description ? { description } : {}),
       ...(defaultStatus ? { default_status: defaultStatus } : {}),
       folder,
       aliases,
