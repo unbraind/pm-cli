@@ -195,6 +195,10 @@ const itemTypeCommandOptionPolicy = vObject({
 
 const itemTypeDefinition = vObject({
   name: vString,
+  description: vOptional(vString),
+  // Per-type create-time default status (config-driven); preserved so inline
+  // settings.item_types.definitions behave identically to schema/types.json.
+  default_status: vOptional(vString),
   folder: vOptional(vString),
   aliases: vOptional(vArray(vString)),
   required_create_fields: vOptional(vArray(vString)),

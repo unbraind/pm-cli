@@ -176,6 +176,8 @@ describe("normalizeItemTypeDefinition", () => {
   it("trims the name and leaves all optional fields undefined when unset", () => {
     expect(normalizeItemTypeDefinition({ name: "  Spike  " })).toEqual({
       name: "Spike",
+      description: undefined,
+      default_status: undefined,
       folder: undefined,
       aliases: undefined,
       required_create_fields: undefined,
@@ -183,6 +185,20 @@ describe("normalizeItemTypeDefinition", () => {
       options: undefined,
       command_option_policies: undefined,
     });
+  });
+
+  it("preserves and trims description and default_status, dropping blanks", () => {
+    const populated = normalizeItemTypeDefinition({
+      name: "Spike",
+      description: "  Time-boxed investigation  ",
+      default_status: "  in_progress  ",
+    });
+    expect(populated.description).toBe("Time-boxed investigation");
+    expect(populated.default_status).toBe("in_progress");
+
+    const blank = normalizeItemTypeDefinition({ name: "Spike", description: "   ", default_status: "  " });
+    expect(blank.description).toBeUndefined();
+    expect(blank.default_status).toBeUndefined();
   });
 
   it("trims the folder and drops it when blank", () => {

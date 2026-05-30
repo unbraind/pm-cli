@@ -312,8 +312,12 @@ export interface CommandOptionPolicyState {
 
 export interface ResolvedItemTypeDefinition {
   name: string;
+  /** Optional human description carried from the type definition. */
+  description?: string;
   folder: string;
   aliases: string[];
+  /** Optional per-type status applied at create time when `--status` is omitted. */
+  default_status?: string;
   required_create_fields: string[];
   required_create_repeatables: string[];
   options: ItemTypeOptionDefinition[];
@@ -389,6 +393,8 @@ function coerceTypeDefinitionFromUnknown(raw: unknown): ItemTypeDefinition | nul
     return null;
   }
   const folder = typeof record.folder === "string" ? record.folder : undefined;
+  const description = typeof record.description === "string" ? record.description : undefined;
+  const defaultStatus = typeof record.default_status === "string" ? record.default_status : undefined;
   const aliases = Array.isArray(record.aliases) ? record.aliases.filter((value): value is string => typeof value === "string") : undefined;
   const requiredCreateFields = Array.isArray(record.required_create_fields)
     ? record.required_create_fields.filter((value): value is string => typeof value === "string")
@@ -446,6 +452,8 @@ function coerceTypeDefinitionFromUnknown(raw: unknown): ItemTypeDefinition | nul
   }
   return {
     name,
+    description,
+    default_status: defaultStatus,
     folder,
     aliases,
     required_create_fields: requiredCreateFields,
@@ -491,8 +499,12 @@ function applyTypeDefinitions(
       : existing?.command_option_policies
         ? [...existing.command_option_policies]
         : [];
+    const defaultStatus = normalizedDefinition.default_status ?? existing?.default_status;
+    const description = normalizedDefinition.description ?? existing?.description;
     target.set(lowerName, {
       name: keepName,
+      ...(description ? { description } : {}),
+      ...(defaultStatus ? { default_status: defaultStatus } : {}),
       folder,
       aliases,
       required_create_fields: requiredCreateFields,

@@ -320,6 +320,12 @@ export interface ItemTypeCommandOptionPolicy {
 
 export interface ItemTypeDefinition {
   name: string;
+  description?: string;
+  /**
+   * Status assigned to newly created items of this type when `--status` is not
+   * provided. Falls back to the workflow's open status when unset or invalid.
+   */
+  default_status?: string;
   folder?: string;
   aliases?: string[];
   required_create_fields?: string[];
@@ -430,7 +436,7 @@ export interface ItemMetadata {
   why_now?: string;
   parent?: string;
   reviewer?: string;
-  risk?: "low" | "medium" | "high" | "critical";
+  risk?: RiskLevel;
   confidence?: ConfidenceValue;
   sprint?: string;
   release?: string;

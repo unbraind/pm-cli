@@ -107,6 +107,61 @@ describe("runCreate", () => {
     });
   });
 
+  it("applies a custom type's config-driven default_status when --status is omitted", async () => {
+    await withTempPmPath(async (context) => {
+      // Register a custom type whose config-driven default status is in_progress.
+      const added = context.runCli([
+        "schema",
+        "add-type",
+        "Spike",
+        "--description",
+        "Time-boxed investigation",
+        "--default-status",
+        "in_progress",
+      ]);
+      expect(added.code).toBe(0);
+
+      // No --status provided => the type's default_status wins over open_status.
+      const defaulted = await runCreate(
+        {
+          title: "spike-default-status",
+          description: "should inherit the type default status",
+          type: "Spike",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      expect(defaulted.item.status).toBe("in_progress");
+
+      // Explicit --status still overrides the type default.
+      const explicit = await runCreate(
+        {
+          title: "spike-explicit-status",
+          description: "explicit status overrides the type default",
+          type: "Spike",
+          status: "open",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      expect(explicit.item.status).toBe("open");
+
+      // An unknown configured default degrades to the open status (never blocks).
+      const bogus = context.runCli(["schema", "add-type", "Bogus", "--default-status", "notarealstatus"]);
+      expect(bogus.code).toBe(0);
+      const degraded = await runCreate(
+        {
+          title: "bogus-default-status",
+          description: "invalid default status falls back to open",
+          type: "Bogus",
+          createMode: "progressive",
+        },
+        { path: context.pmPath },
+      );
+      expect(degraded.item.status).toBe("open");
+    });
+  });
+
   it("pm create --add-tags extends --tags additively (pm-1lws)", async () => {
     await withTempPmPath(async (context) => {
       const result = await runCreate(

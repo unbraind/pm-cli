@@ -1,0 +1,12 @@
+id: pm-0l88
+title: "Calendar date math is UTC-only: ignores event.timezone and all-day semantics"
+description: "Calendar correctness (audit). calendar.ts does all bucketing/rendering with getUTC*/toISOString and formatClock always appends 'Z' (calendar.ts ~811). event.timezone is stored and displayed as metadata but never applied to day-bucketing or clock rendering, so a timed event near UTC midnight in a non-UTC zone buckets into the wrong calendar day; all-day events bucketed by UTC day (toUtcDayKey ~237) can land on the prior/next day. Also: exdates use exact-string Set matching (~382) so a format mismatch (Z vs +00:00, ms precision) silently fails to exclude; and recurrence 'count' counts from series start not window start (undocumented). Apply event.timezone + explicit all-day semantics to bucketing/clock, normalize exdates through Date.parse->toISOString, and document count window semantics. Minimum: emit a timezone_ignored warning when a non-UTC zone is present."
+type: Issue
+status: open
+priority: 2
+tags[3]: calendar,correctness,timezone
+created_at: "2026-05-30T21:44:35.541Z"
+updated_at: "2026-05-30T21:44:35.541Z"
+author: maintainer-agent
+acceptance_criteria: Non-UTC timed events bucket to correct local day; all-day events stable; exdates match regardless of format; count semantics documented
+body: ""
