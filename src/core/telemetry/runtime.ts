@@ -1324,27 +1324,55 @@ function removeDirectoryLockBestEffort(lockPath: string): void {
   }
 }
 
+function errorCode(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null || !("code" in error)) {
+    return undefined;
+  }
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" ? code : undefined;
+}
+
+function createDirectoryLock(lockPath: string): boolean {
+  try {
+    mkdirSync(lockPath);
+    return true;
+  } catch (error: unknown) {
+    const code = errorCode(error);
+    if (code === "EEXIST") {
+      return false;
+    }
+    if (code !== "ENOENT") {
+      return false;
+    }
+  }
+
+  try {
+    mkdirSync(path.dirname(lockPath), { recursive: true });
+    mkdirSync(lockPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function acquireTelemetryFlushSpawnGate(globalPmRoot: string): boolean {
   if (isFreshDirectoryLock(flushLockPath(globalPmRoot), TELEMETRY_FLUSH_LOCK_STALE_MS)) {
     return false;
   }
 
   const lockPath = flushSpawnLockPath(globalPmRoot);
-  if (isFreshDirectoryLock(lockPath, TELEMETRY_FLUSH_SPAWN_LOCK_STALE_MS)) {
-    return false;
-  }
-  removeDirectoryLockBestEffort(lockPath);
-
   try {
-    mkdirSync(path.dirname(lockPath), { recursive: true });
-    mkdirSync(lockPath);
-    return true;
-  } catch (error: unknown) {
-    if (typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === "EEXIST") {
+    if (Date.now() - statSync(lockPath).mtimeMs < TELEMETRY_FLUSH_SPAWN_LOCK_STALE_MS) {
       return false;
     }
-    return true;
+    removeDirectoryLockBestEffort(lockPath);
+  } catch (error: unknown) {
+    if (errorCode(error) !== "ENOENT") {
+      return false;
+    }
   }
+
+  return createDirectoryLock(lockPath);
 }
 
 function releaseTelemetryFlushSpawnGate(globalPmRoot: string): void {

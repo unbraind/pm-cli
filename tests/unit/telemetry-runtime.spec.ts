@@ -34,14 +34,6 @@ function telemetryQueuePath(globalRoot: string): string {
   return path.join(globalRoot, "runtime", "telemetry", "events.jsonl");
 }
 
-function telemetryFlushLockPath(globalRoot: string): string {
-  return path.join(globalRoot, "runtime", "telemetry", "flush.lock");
-}
-
-function telemetryFlushSpawnLockPath(globalRoot: string): string {
-  return path.join(globalRoot, "runtime", "telemetry", "flush.spawn.lock");
-}
-
 async function withTempGlobalRoot(run: (globalRoot: string) => Promise<void>): Promise<void> {
   await withTempGlobalRootHelper("pm-cli-telemetry-runtime-test-", async (globalRoot) => {
     process.env.PM_GLOBAL_PATH = globalRoot;
@@ -856,7 +848,7 @@ describe("core/telemetry/runtime", () => {
       delete process.env.PM_TELEMETRY_FLUSH_CHILD;
 
       expect(_testOnly.acquireTelemetryFlushSpawnGate(globalRoot)).toBe(true);
-      await expect(fs.access(telemetryFlushSpawnLockPath(globalRoot))).resolves.toBeUndefined();
+      await expect(fs.access(_testOnly.flushSpawnLockPath(globalRoot))).resolves.toBeUndefined();
 
       expect(_testOnly.acquireTelemetryFlushSpawnGate(globalRoot)).toBe(false);
     });
@@ -870,7 +862,7 @@ describe("core/telemetry/runtime", () => {
       expect(_testOnly.acquireTelemetryFlushSpawnGate(globalRoot)).toBe(true);
 
       const staleDate = new Date(Date.now() - 2 * 60 * 1000);
-      await fs.utimes(telemetryFlushSpawnLockPath(globalRoot), staleDate, staleDate);
+      await fs.utimes(_testOnly.flushSpawnLockPath(globalRoot), staleDate, staleDate);
 
       expect(_testOnly.acquireTelemetryFlushSpawnGate(globalRoot)).toBe(true);
     });
@@ -880,10 +872,10 @@ describe("core/telemetry/runtime", () => {
     await withTempGlobalRoot(async (globalRoot) => {
       delete process.env.PM_TELEMETRY_INLINE_FLUSH;
       delete process.env.PM_TELEMETRY_FLUSH_CHILD;
-      await fs.mkdir(telemetryFlushLockPath(globalRoot), { recursive: true });
+      await fs.mkdir(_testOnly.flushLockPath(globalRoot), { recursive: true });
 
       expect(_testOnly.acquireTelemetryFlushSpawnGate(globalRoot)).toBe(false);
-      await expect(fs.access(telemetryFlushSpawnLockPath(globalRoot))).rejects.toMatchObject({
+      await expect(fs.access(_testOnly.flushSpawnLockPath(globalRoot))).rejects.toMatchObject({
         code: "ENOENT",
       });
     });
@@ -891,12 +883,26 @@ describe("core/telemetry/runtime", () => {
 
   it("clears a parent-created spawn gate once the flush child enters the process lock", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
-      await fs.mkdir(path.dirname(telemetryFlushSpawnLockPath(globalRoot)), { recursive: true });
-      await fs.mkdir(telemetryFlushSpawnLockPath(globalRoot));
+      await fs.mkdir(path.dirname(_testOnly.flushSpawnLockPath(globalRoot)), { recursive: true });
+      await fs.mkdir(_testOnly.flushSpawnLockPath(globalRoot));
 
       await flushTelemetryQueueNow(globalRoot);
 
-      await expect(fs.access(telemetryFlushSpawnLockPath(globalRoot))).rejects.toMatchObject({
+      await expect(fs.access(_testOnly.flushSpawnLockPath(globalRoot))).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    });
+  });
+
+  it("clears a parent-created spawn gate when the flush process lock is already held", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      await fs.mkdir(path.dirname(_testOnly.flushSpawnLockPath(globalRoot)), { recursive: true });
+      await fs.mkdir(_testOnly.flushSpawnLockPath(globalRoot));
+      await fs.mkdir(_testOnly.flushLockPath(globalRoot), { recursive: true });
+
+      await flushTelemetryQueueNow(globalRoot);
+
+      await expect(fs.access(_testOnly.flushSpawnLockPath(globalRoot))).rejects.toMatchObject({
         code: "ENOENT",
       });
     });
