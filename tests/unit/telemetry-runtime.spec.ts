@@ -5,8 +5,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import {
+  _testOnly,
   emitTelemetryErrorEvent,
   finishTelemetryCommand,
+  flushTelemetryQueueNow,
   startTelemetryCommand,
   waitForPendingFlush,
 } from "../../src/core/telemetry/runtime.js";
@@ -21,6 +23,7 @@ const originalTelemetryDisabled = process.env.PM_TELEMETRY_DISABLED;
 const originalNoTelemetry = process.env.PM_NO_TELEMETRY;
 const originalTelemetryOtelDisabled = process.env.PM_TELEMETRY_OTEL_DISABLED;
 const originalTelemetryInlineFlush = process.env.PM_TELEMETRY_INLINE_FLUSH;
+const originalTelemetryFlushChild = process.env.PM_TELEMETRY_FLUSH_CHILD;
 const originalTelemetrySourceContext = process.env.PM_TELEMETRY_SOURCE_CONTEXT;
 const originalTelemetryIngestKey = process.env.PM_TELEMETRY_INGEST_KEY;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -97,6 +100,11 @@ describe("core/telemetry/runtime", () => {
       delete process.env.PM_TELEMETRY_INLINE_FLUSH;
     } else {
       process.env.PM_TELEMETRY_INLINE_FLUSH = originalTelemetryInlineFlush;
+    }
+    if (originalTelemetryFlushChild === undefined) {
+      delete process.env.PM_TELEMETRY_FLUSH_CHILD;
+    } else {
+      process.env.PM_TELEMETRY_FLUSH_CHILD = originalTelemetryFlushChild;
     }
     if (originalTelemetrySourceContext === undefined) {
       delete process.env.PM_TELEMETRY_SOURCE_CONTEXT;
@@ -831,6 +839,72 @@ describe("core/telemetry/runtime", () => {
 
       await expect(fs.access(staleTemp)).rejects.toMatchObject({ code: "ENOENT" });
       await expect(fs.access(freshTemp)).resolves.toBeUndefined();
+    });
+  });
+
+  it("deduplicates scheduled flush children while a spawn gate is fresh", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      delete process.env.PM_TELEMETRY_INLINE_FLUSH;
+      delete process.env.PM_TELEMETRY_FLUSH_CHILD;
+
+      expect(_testOnly.acquireTelemetryFlushSpawnGate(globalRoot)).toBe(true);
+      await expect(fs.access(_testOnly.flushSpawnLockPath(globalRoot))).resolves.toBeUndefined();
+
+      expect(_testOnly.acquireTelemetryFlushSpawnGate(globalRoot)).toBe(false);
+    });
+  });
+
+  it("allows another scheduled flush child after a stale spawn gate", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      delete process.env.PM_TELEMETRY_INLINE_FLUSH;
+      delete process.env.PM_TELEMETRY_FLUSH_CHILD;
+
+      expect(_testOnly.acquireTelemetryFlushSpawnGate(globalRoot)).toBe(true);
+
+      const staleDate = new Date(Date.now() - 2 * 60 * 1000);
+      await fs.utimes(_testOnly.flushSpawnLockPath(globalRoot), staleDate, staleDate);
+
+      expect(_testOnly.acquireTelemetryFlushSpawnGate(globalRoot)).toBe(true);
+    });
+  });
+
+  it("skips scheduled flush children while another process owns the flush lock", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      delete process.env.PM_TELEMETRY_INLINE_FLUSH;
+      delete process.env.PM_TELEMETRY_FLUSH_CHILD;
+      await fs.mkdir(_testOnly.flushLockPath(globalRoot), { recursive: true });
+
+      expect(_testOnly.acquireTelemetryFlushSpawnGate(globalRoot)).toBe(false);
+      await expect(fs.access(_testOnly.flushSpawnLockPath(globalRoot))).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    });
+  });
+
+  it("clears a parent-created spawn gate once the flush child enters the process lock", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      await fs.mkdir(path.dirname(_testOnly.flushSpawnLockPath(globalRoot)), { recursive: true });
+      await fs.mkdir(_testOnly.flushSpawnLockPath(globalRoot));
+
+      await flushTelemetryQueueNow(globalRoot);
+
+      await expect(fs.access(_testOnly.flushSpawnLockPath(globalRoot))).rejects.toMatchObject({
+        code: "ENOENT",
+      });
+    });
+  });
+
+  it("clears a parent-created spawn gate when the flush process lock is already held", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      await fs.mkdir(path.dirname(_testOnly.flushSpawnLockPath(globalRoot)), { recursive: true });
+      await fs.mkdir(_testOnly.flushSpawnLockPath(globalRoot));
+      await fs.mkdir(_testOnly.flushLockPath(globalRoot), { recursive: true });
+
+      await flushTelemetryQueueNow(globalRoot);
+
+      await expect(fs.access(_testOnly.flushSpawnLockPath(globalRoot))).rejects.toMatchObject({
+        code: "ENOENT",
+      });
     });
   });
 

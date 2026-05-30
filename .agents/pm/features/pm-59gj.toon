@@ -6,7 +6,7 @@ status: open
 priority: 0
 tags[6]: extensions,install,packages,pi,pm-cli,sdk
 created_at: "2026-05-11T17:39:33.123Z"
-updated_at: "2026-05-29T21:49:53.115Z"
+updated_at: "2026-05-30T06:42:12.568Z"
 author: codex-agent
 acceptance_criteria: External package architecture research is documented in tracker; pm package/install plan is decomposed into child work; pm install supports managed package sources while preserving extension compatibility; SDK/docs/tests stay provider-neutral and pm-specific; full CLI/SDK dogfood passes in a temporary project; telemetry and Sentry verification are recorded.
 parent: pm-rnpb
