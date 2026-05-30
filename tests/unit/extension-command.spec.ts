@@ -9,7 +9,12 @@ import {
   parseExtensionInstallSource,
   readManagedExtensionState,
 } from "../../src/cli/commands/extension.js";
-import { normalizeNpmLocalFileAliasSpec, resolveInstallSource } from "../../src/cli/commands/extension/install-sources.js";
+import {
+  normalizeNpmLocalFileAliasSpec,
+  resolveInstallSource,
+  resolveNpmCommandName,
+  shouldRunNpmCommandInShell,
+} from "../../src/cli/commands/extension/install-sources.js";
 import { buildExtensionTriageSummary } from "../../src/cli/commands/extension/doctor.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
@@ -815,6 +820,13 @@ describe("extension command runtime", () => {
       process.chdir(previousCwd);
       await rm(tempRoot, { recursive: true, force: true });
     }
+  });
+
+  it("uses the Windows npm command shim for npm package installs", () => {
+    expect(resolveNpmCommandName("win32")).toBe("npm.cmd");
+    expect(resolveNpmCommandName("linux")).toBe("npm");
+    expect(shouldRunNpmCommandInShell("win32")).toBe(true);
+    expect(shouldRunNpmCommandInShell("linux")).toBe(false);
   });
 
   it("installs, explores, manages, toggles activation, and uninstalls a local extension", async () => {

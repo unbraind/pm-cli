@@ -1,0 +1,32 @@
+id: pm-arax
+title: Fix Windows npm command resolution for extension package installs
+description: "Nightly Validation on 2026-05-30 failed only on windows-latest Node 20 because extension install paths that run npm pack/install could not spawn npm (spawn npm ENOENT). Duplicate check: pm context, pm search, list-open, and list-in-progress found no open item specific to Windows npm command resolution; this is a child of pm-59gj because it affects package-first extension install dogfood."
+type: Issue
+status: closed
+priority: 2
+tags: []
+created_at: "2026-05-30T07:07:36.147Z"
+updated_at: "2026-05-30T07:21:05.474Z"
+author: maintainer-agent
+parent: pm-59gj
+resolution: Use platform-aware npm executable selection for extension package installs.
+expected_result: Windows and Unix extension package installs can run npm pack/install from pm without spawn ENOENT.
+actual_result: "Windows now resolves npm commands to npm.cmd and uses shell mode on win32 for execFile compatibility. Review follow-up linked test run passed: secret scan, 130 focused extension tests, static quality, and typecheck."
+comments[4]{created_at,author,text}:
+  "2026-05-30T07:08:48.060Z",maintainer-agent,"Implementation note: centralized npm executable selection so Windows extension package installs run npm.cmd instead of bare npm, matching the existing Windows test helper behavior and avoiding spawn npm ENOENT."
+  "2026-05-30T07:10:39.189Z",maintainer-agent,"Evidence: linked test run passed: secret scan, focused extension unit/integration tests (130 tests), static quality gate, and typecheck. git diff --check also passed. Root cause was bare npm executable resolution on Windows; fix selects npm.cmd on win32."
+  "2026-05-30T07:19:31.274Z",maintainer-agent,"Review follow-up: Gemini correctly noted that Windows .cmd npm invocation through execFile needs shell mode. Added shouldRunNpmCommandInShell() and wired runNpmCommand to use shell on win32 with unit coverage."
+  "2026-05-30T07:21:03.672Z",maintainer-agent,"Evidence after review follow-up: linked test run passed again after enabling shell mode on win32 for npm.cmd. The rerun covered secret scan, focused extension unit/integration tests (130 tests), static quality, and typecheck."
+files[2]{path,scope,note}:
+  src/cli/commands/extension/install-sources.ts,project,Select npm.cmd on Windows for extension npm pack/install commands
+  tests/unit/extension-command.spec.ts,project,Covers platform-specific npm command selection
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/check-secrets.mjs,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/integration/cli.integration.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mps0gy5w-a6rz1n,test,passed,"2026-05-30T07:09:01.173Z","2026-05-30T07:10:12.212Z","2026-05-30T07:10:12.212Z",null,null,4,0,0,null,null,null
+  test-local-mps0uo12-b8mwbv,test,passed,"2026-05-30T07:19:40.640Z","2026-05-30T07:20:52.262Z","2026-05-30T07:20:52.262Z",null,null,4,0,0,null,null,null
+close_reason: "Fixed Windows extension npm package install command resolution by selecting npm.cmd on win32; local focused extension tests, static, typecheck, secret scan, and diff check passed."
+body: ""
