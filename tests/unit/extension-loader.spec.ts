@@ -590,6 +590,129 @@ describe("extension loader", () => {
     });
   });
 
+  it("preserves and accepts a satisfied pm_max_version during discovery", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "within-max",
+        {
+          name: "within-max-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          pm_max_version: "9999.0.0",
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.warnings).toEqual([]);
+      expect(discovery.effective).toEqual([
+        expect.objectContaining({
+          name: "within-max-ext",
+          pm_max_version: "9999.0.0",
+        }),
+      ]);
+    });
+  });
+
+  it("rejects an invalid-shape pm_max_version as a malformed manifest", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "blank-max",
+        {
+          name: "blank-max-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          pm_max_version: "",
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.warnings).toEqual(["extension_manifest_invalid:project:blank-max"]);
+      expect(discovery.effective).toEqual([]);
+    });
+  });
+
+  it("blocks extensions with an unparseable pm_max_version before loading", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "unparseable-max",
+        {
+          name: "unparseable-max-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          pm_max_version: "not-a-version",
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.effective).toEqual([]);
+      expect(discovery.warnings).toEqual([
+        "extension_pm_max_version_invalid:project:unparseable-max-ext:allowed=not-a-version",
+      ]);
+
+      const loaded = await loadExtensions({ pmRoot: context.pmPath, settings });
+      expect(loaded.loaded).toEqual([]);
+      expect(loaded.failed).toEqual([]);
+      expect(loaded.warnings).toEqual(discovery.warnings);
+    });
+  });
+
+  it("blocks extensions whose pm_max_version is exceeded by the current CLI before loading", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "exceeded-max",
+        {
+          name: "exceeded-max-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          pm_max_version: "0.0.1",
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.effective).toEqual([]);
+      expect(discovery.warnings).toEqual([
+        expect.stringMatching(/^extension_pm_max_version_exceeded:project:exceeded-max-ext:allowed=0\.0\.1:current=/),
+      ]);
+
+      const loaded = await loadExtensions({ pmRoot: context.pmPath, settings });
+      expect(loaded.loaded).toEqual([]);
+      expect(loaded.failed).toEqual([]);
+      expect(loaded.warnings).toEqual(discovery.warnings);
+    });
+  });
+
   it("reports deterministic warnings for unknown manifest capabilities without blocking load", async () => {
     await withTempPmPath(async (context) => {
       const roots = resolveExtensionRoots(context.pmPath);

@@ -492,6 +492,27 @@ describe("pm package manifest model", () => {
     }
   });
 
+  it("declares manifest_version and pm_min_version on every first-party package manifest", async () => {
+    const extensionDirectories = await collectBundledExtensionDirectories();
+    expect(extensionDirectories.length).toBeGreaterThan(0);
+
+    for (const extensionDirectory of extensionDirectories) {
+      const manifestPath = path.join(extensionDirectory, "manifest.json");
+      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
+        manifest_version?: unknown;
+        pm_min_version?: unknown;
+      };
+      expect(
+        typeof manifest.manifest_version === "number" && Number.isInteger(manifest.manifest_version),
+        `manifest_version must be an integer in ${manifestPath}`,
+      ).toBe(true);
+      expect(
+        typeof manifest.pm_min_version === "string" && manifest.pm_min_version.trim().length > 0,
+        `pm_min_version must be a non-empty string in ${manifestPath}`,
+      ).toBe(true);
+    }
+  });
+
   it("keeps shipped package sources on the public SDK surface", async () => {
     const packageSourceFiles = [
       path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "index.ts"),

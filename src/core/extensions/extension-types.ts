@@ -134,6 +134,7 @@ export interface ExtensionManifest {
   capabilities: string[];
   manifest_version?: number;
   pm_min_version?: string;
+  pm_max_version?: string;
   engines?: ExtensionManifestEngines;
   trusted?: boolean;
   provenance?: ExtensionProvenanceMetadata;
@@ -167,6 +168,7 @@ export interface EffectiveExtension {
   entry_path: string;
   manifest_version?: number;
   pm_min_version?: string;
+  pm_max_version?: string;
   engines?: ExtensionManifestEngines;
   trusted?: boolean;
   provenance?: ExtensionProvenanceMetadata;

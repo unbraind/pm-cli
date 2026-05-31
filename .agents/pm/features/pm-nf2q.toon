@@ -2,13 +2,17 @@ id: pm-nf2q
 title: Declare pm_min_version in all 8 first-party package manifests
 description: "Loader enforces pm_min_version for external packages but all 8 first-party manifests omit it: future breaking SDK changes load stale packages silently, and external authors have no model example. Completes the pm-oxyo version-negotiation story."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: "area:extensions","area:packages",compat,dx,living-map
 created_at: "2026-05-31T19:44:24.399Z"
-updated_at: "2026-05-31T19:44:24.399Z"
+updated_at: "2026-05-31T22:17:54.181Z"
 author: maintainer-agent
 acceptance_criteria: Each packages/pm-*/extensions/*/manifest.json declares pm_min_version; scaffold emits a commented placeholder; governance check (see manifest governance test) verifies presence.
 value: "Loader enforces pm_min_version for external packages but all 8 first-party manifests omit it: future breaking SDK changes load stale packages silently, and external authors have no model example. Completes the pm-oxyo version-negotiation story."
 parent: pm-ugqx
+resolution: "Declared manifest_version:1 and pm_min_version:2026.5.0 across all 8 packages/pm-*/extensions/*/manifest.json (floor chosen so no live 2026.5.x install is gated while modeling the field for external authors); scaffold.ts emits them; docs/EXTENSIONS.md documents the fields."
+comments[1]{created_at,author,text}:
+  "2026-05-31T21:47:28.603Z",sdk-version-compat-agent,"Declared manifest_version:1 + pm_min_version:2026.5.0 on all 8 first-party manifests (beads/calendar/governance-audit/guide-shell/linked-test-adapters/search-advanced/templates/todos). Chose floor 2026.5.0 (not 2026.5.31): every current 2026.5.x CLI satisfies it, so it does not gate any live install, while still modeling the field for external authors. All 8 verified valid strict JSON with trailing newlines preserved. Scaffold (src/cli/commands/extension/scaffold.ts) now emits manifest_version:1 + pm_min_version:2026.5.0 and documents pm_min_version/pm_max_version semantics in both generated READMEs (package + extension), since manifest.json cannot hold comments. Governance enforcement landed under pm-exrw."
+close_reason: "All 8 first-party extension manifests now declare manifest_version:1 + pm_min_version:2026.5.0; scaffold emits both fields and documents pm_min/pm_max semantics in generated READMEs; governance enforced via pm-exrw. Verified by build + targeted vitest (90 passing) + temp-dir manual test (scaffolded manifest carries the fields)."
 body: ""

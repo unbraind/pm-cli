@@ -119,7 +119,9 @@ A minimal extension has a `manifest.json` and an entrypoint:
   "name": "hello",
   "version": "0.1.0",
   "entry": "./index.js",
-  "pm_min_version": "2026.5.31",
+  "manifest_version": 1,
+  "pm_min_version": "2026.5.0",
+  "pm_max_version": "2027.0.0",
   "capabilities": ["commands"]
 }
 ```
@@ -152,8 +154,15 @@ Runnable manifest examples are the source of truth:
 Rules:
 
 - `entry` must resolve inside the extension directory.
+- `manifest_version` is an optional integer identifying the manifest schema generation (currently `1`). First-party packages declare it; the manifest governance test requires it on every first-party package.
 - `pm_min_version` is an inclusive minimum pm CLI version. If the running CLI is older, discovery emits `extension_pm_min_version_unmet:<layer>:<name>:required=<version>:current=<version>` and skips the extension before import.
-- Optional `engines.pm` and `engines.node` metadata is accepted for tooling, but `pm_min_version` is the loader-enforced field.
+- `pm_max_version` is an optional inclusive maximum pm CLI version (the upper compatibility bound). If the running CLI is newer than this value, discovery emits `extension_pm_max_version_exceeded:<layer>:<name>:allowed=<version>:current=<version>` and skips the extension before import. Use it to stop a CLI major release from loading a stale package that would crash at activation.
+- Both bounds share the same blocking semantics and warning-code shapes:
+  - `*_invalid` (`required=`/`allowed=` only): the declared version is unparseable; the extension is **blocked**.
+  - `*_unchecked` (`...:current=unknown` or an uncomparable current version): the bound could not be compared against the running CLI; the extension is **allowed** but a warning is recorded.
+  - `extension_pm_min_version_unmet` / `extension_pm_max_version_exceeded`: the running CLI is outside the declared bound; the extension is **blocked**.
+- An empty-string or non-string `pm_min_version`/`pm_max_version` makes the whole manifest malformed (`extension_manifest_invalid:<layer>:<name>`). Omit the field instead of leaving it blank.
+- Optional `engines.pm` and `engines.node` metadata is accepted for tooling, but `pm_min_version`/`pm_max_version` are the loader-enforced compatibility fields.
 - Declare only capabilities the extension actually uses.
 - Unknown capabilities emit deterministic warnings.
 - Legacy aliases such as `migration` and `validation` are normalized to `schema` with warnings.

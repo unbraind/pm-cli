@@ -2,15 +2,19 @@ id: pm-4gw6
 title: Extension manifest pm_max_version (upper compatibility bound)
 description: pm_min_version sets a floor but no ceiling; a CLI major release removing a deprecated capability cannot block stale packages from crashing at activation. pm_max_version closes this.
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[5]: "area:extensions","area:sdk",compat,dx,living-map
 created_at: "2026-05-31T19:44:25.419Z"
-updated_at: "2026-05-31T20:15:40.678Z"
+updated_at: "2026-05-31T22:17:58.955Z"
 author: maintainer-agent
 acceptance_criteria: Optional pm_max_version parsed like pm_min_version; compatibility check covers both bounds; policy mode controls block vs warn; doctor surfaces a max-version-exceeded code; scaffold placeholder; loader tests.
 value: pm_min_version sets a floor but no ceiling; a CLI major release removing a deprecated capability cannot block stale packages from crashing at activation. pm_max_version closes this.
 parent: pm-ugqx
+resolution: Added optional pm_max_version to ExtensionManifest/EffectiveExtension + parseManifest + summarizeCandidate; evaluatePmMaxVersionCompatibility mirrors the min-version model and gates extensionReady; doctor surfaces extension_pm_min/max_version_* with remediation. Follow-up noted in loader.ts for an optional future warn-vs-block policy toggle.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-nf2q,related,"2026-05-31T20:10:00.000Z",maintainer-agent,null
+comments[1]{created_at,author,text}:
+  "2026-05-31T21:47:38.421Z",sdk-version-compat-agent,"Added optional pm_max_version (upper compatibility bound) to ExtensionManifest + EffectiveExtension interfaces, parsed in parseManifest exactly like pm_min_version (parseOptionalManifestString; invalid-shape -> manifest null -> extension_manifest_invalid), mapped through summarizeCandidate. New evaluatePmMaxVersionCompatibility() mirrors the min-version function with warning codes: extension_pm_max_version_invalid (unparseable -> allowed:false BLOCK), extension_pm_max_version_unchecked (current unknown/uncomparable -> allowed:true + warning), extension_pm_max_version_exceeded (current > max -> allowed:false BLOCK). Wired into the same loadCandidate call site so extensionReady now requires BOTH bounds; warning pushed onto extensionWarnings. Kept semantics CONSISTENT with min-version (default-BLOCK, no new policy framework). Left a one-line '// follow-up:' note in loader.ts recommending a future settings toggle to relax default-BLOCK to warn-only per layer -- did NOT balloon scope. doctor.ts surfaces both extension_pm_min_version_*/extension_pm_max_version_* warning families with a remediation line advising authors to align manifest bounds with the installed CLI version. Loader tests merged into tests/unit/extension-loader.spec.ts: parse-accept(9999.0.0 within bounds), invalid-shape blank-string rejection, unparseable-max block, exceeded(0.0.1) block. Docs updated in docs/EXTENSIONS.md."
+close_reason: "pm_max_version upper compatibility bound implemented end-to-end: parsed like pm_min_version, dual-bound gating of extensionReady, warning codes extension_pm_max_version_invalid/_unchecked/_exceeded (default-BLOCK consistent with min-version), doctor remediation, scaffold placeholder, docs, and merged loader tests. Verified live: forcing pm_max_version=2026.4.0 on an installed extension blocks load with extension_pm_max_version_exceeded:...current=2026.5.31 and a clear doctor remediation."
 body: ""

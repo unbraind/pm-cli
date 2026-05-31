@@ -4,6 +4,8 @@
   "entry": "./index.js",
   "priority": 0,
   "capabilities": ["commands", "schema", "services"],
+  "manifest_version": 1,
+  "pm_min_version": "2026.5.0",
   "activation": {
     "commands": ["completion", "completion-statuses", "completion-tags", "completion-types", "guide"]
   }

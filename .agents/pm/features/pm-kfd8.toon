@@ -2,17 +2,22 @@ id: pm-kfd8
 title: "Extend SDK testing helpers to cover hooks, search providers, importers/exporters"
 description: sdk/testing.ts only has assertRegisteredCommandContract; authors testing hook/importer/search-provider registrations have no SDK assertion utility.
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[5]: "area:sdk",dx,extensions,living-map,testing
 created_at: "2026-05-31T19:44:25.664Z"
-updated_at: "2026-05-31T20:15:41.759Z"
+updated_at: "2026-05-31T22:18:05.722Z"
 author: maintainer-agent
 acceptance_criteria: Add assertRegisteredHook/SearchProvider/Importer/Exporter with clear failure listings; sdk-index.spec coverage; SDK.md docs; at least one first-party package test uses them.
 value: sdk/testing.ts only has assertRegisteredCommandContract; authors testing hook/importer/search-provider registrations have no SDK assertion utility.
 parent: pm-ugqx
+resolution: assertRegisteredHook (ExtensionHookRegistry) + assertRegisteredSearchProvider/Importer/Exporter (ExtensionRegistrationRegistry) added to src/sdk/testing.ts and re-exported from the SDK barrel with public expectation/result types; docs/SDK.md updated; full branch coverage in sdk-index.spec.ts.
 dependencies[3]{id,kind,created_at,author,source_kind}:
   pm-13bn,related,"2026-05-31T20:10:00.000Z",maintainer-agent,null
   pm-7m8p,related,"2026-05-31T20:10:00.000Z",maintainer-agent,null
   pm-bqpg,related,"2026-05-31T20:10:00.000Z",maintainer-agent,null
+comments[2]{created_at,author,text}:
+  "2026-05-31T21:43:46.313Z",sdk-testing-helpers-agent,"Design: hooks are NOT in ExtensionRegistrationRegistry. They live in ExtensionActivationResult.hooks (ExtensionHookRegistry: beforeCommand/afterCommand/onWrite/onRead/onIndex arrays of RegisteredExtensionHook<THook> = {layer,name,run}). So assertRegisteredHook takes an ExtensionHookRegistry; the other three take ExtensionRegistrationRegistry. Registry field names confirmed: registrations.importers (RegisteredExtensionImporter={layer,name(ext),importer(format)}), .exporters (RegisteredExtensionExporter={layer,name,exporter}), .search_providers (RegisteredExtensionSearchProvider={layer,name,definition,runtime_definition}; provider id = definition.name)."
+  "2026-05-31T22:01:12.933Z",sdk-testing-helpers-agent,"FINDING: No first-party package (pm-beads/calendar/governance-audit/guide-shell/linked-test-adapters/search-advanced/templates/todos) registers an importer, exporter, search provider, or hook. Scan of packages/ shows only api.registerCommand (50x), api.registerFlags (2x), api.registerService (4x) — even pm-search-advanced only registers commands+flags, not registerSearchProvider. So per the fallback clause I demonstrated REAL usage in tests/unit/sdk-index.spec.ts: a synthetic extension is written to disk, activated through the actual loadExtensions+activateExtensions pipeline, and all four new helpers assert against the resulting ExtensionActivationResult (.registrations for importer/exporter/search, .hooks for the onWrite hook). RECOMMEND follow-up: add a real first-party exemplar (e.g. teach pm-search-advanced to registerSearchProvider, or give pm-todos/pm-beads a real registerImporter/registerExporter) and switch its package spec to use these helpers, so the SDK ships a non-synthetic usage exemplar."
+close_reason: "SDK testing helpers extended with assertRegisteredHook/SearchProvider/Importer/Exporter (mirroring assertRegisteredCommandContract: name-normalized, optional extension scoping, returns matched entry, throws listing available entries). Exported from src/sdk/index.ts, documented in docs/SDK.md, and covered to 100% in sdk-index.spec.ts (incl. a real loadExtensions+activateExtensions activation demonstration). Verified: 21/21 sdk-index tests pass, testing.ts 100% covered."
 body: ""

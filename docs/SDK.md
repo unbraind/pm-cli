@@ -63,6 +63,14 @@ Command/action contract exports:
 - `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`
 - `PM_TOOL_ACTION_PARAMETER_CONTRACTS`
 
+Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
+
+- `assertRegisteredCommandContract`
+- `assertRegisteredHook`
+- `assertRegisteredSearchProvider`
+- `assertRegisteredImporter`
+- `assertRegisteredExporter`
+
 Commander option contract exports:
 
 - `CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS`
@@ -242,7 +250,13 @@ import { createPmCliExpectedError } from "@unbrained/pm-cli/sdk/runtime";
 
 ## Testing Helpers
 
-Package tests can assert a command registration contract without depending on Vitest-specific helpers:
+Package tests can assert registration contracts without depending on Vitest-specific
+helpers. Every assertion normalizes the expected name, returns the matched registration
+entry, and throws an `Error` that lists what _is_ available when the expectation is
+missing. They are exported from both `@unbrained/pm-cli/sdk/testing` and the main
+`@unbrained/pm-cli/sdk` barrel.
+
+Assert a command registration contract:
 
 ```ts
 import { assertRegisteredCommandContract } from "@unbrained/pm-cli/sdk/testing";
@@ -252,6 +266,39 @@ assertRegisteredCommandContract(activation.registrations, {
   action: "hello",
   flags: ["--name"],
 });
+```
+
+Assert importer, exporter, and search-provider registrations against an
+`ExtensionRegistrationRegistry` (from `activation.registrations`). The optional
+`extensionName` narrows the match to a single extension:
+
+```ts
+import {
+  assertRegisteredExporter,
+  assertRegisteredImporter,
+  assertRegisteredSearchProvider,
+} from "@unbrained/pm-cli/sdk/testing";
+
+assertRegisteredImporter(activation.registrations, { importer: "jsonl" });
+assertRegisteredExporter(activation.registrations, {
+  exporter: "jsonl",
+  extensionName: "my-ext",
+});
+assertRegisteredSearchProvider(activation.registrations, { provider: "semantic-local" });
+```
+
+Hooks are surfaced via `activation.hooks` (an `ExtensionHookRegistry`), not the command
+registry, so `assertRegisteredHook` takes the hook registry and a lifecycle `kind`
+(`before_command` | `after_command` | `on_read` | `on_write` | `on_index`):
+
+```ts
+import { assertRegisteredHook } from "@unbrained/pm-cli/sdk/testing";
+
+const hook = assertRegisteredHook(activation.hooks, {
+  kind: "on_write",
+  extensionName: "my-ext",
+});
+// hook.run is the registered OnWriteHook handler
 ```
 
 ## Custom Item Type
