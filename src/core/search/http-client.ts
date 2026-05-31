@@ -11,7 +11,7 @@ export interface SearchHttpResponse {
 }
 
 export interface SearchHttpRequestInit {
-  method: "POST";
+  method: "DELETE" | "POST" | "PUT";
   headers: Record<string, string>;
   body: string;
   signal: AbortSignal;
@@ -24,7 +24,7 @@ export type SearchHttpFetcher<ResponseType extends SearchHttpResponse = SearchHt
 
 export interface ExecuteSearchJsonRequestOptions<ResponseType extends SearchHttpResponse = SearchHttpResponse> {
   endpoint: string;
-  method: "POST";
+  method: "DELETE" | "POST" | "PUT";
   headers: Record<string, string>;
   body: Record<string, unknown>;
   timeoutMs: number;

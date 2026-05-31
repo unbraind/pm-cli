@@ -33,6 +33,11 @@
       "import": "./dist/sdk/runtime.js",
       "default": "./dist/sdk/runtime.js"
     },
+    "./sdk/testing": {
+      "types": "./dist/sdk/testing.d.ts",
+      "import": "./dist/sdk/testing.js",
+      "default": "./dist/sdk/testing.js"
+    },
     "./cli": {
       "types": "./dist/cli/main.d.ts",
       "import": "./dist/cli/main.js",

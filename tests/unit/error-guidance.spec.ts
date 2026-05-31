@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  classifyUnknownError,
   formatCommanderErrorForDisplay,
   formatCommanderErrorForJson,
   formatPmCliErrorForDisplay,
   formatPmCliErrorForJson,
+  formatUnknownErrorForJson,
 } from "../../src/cli/error-guidance.js";
 
 describe("pm cli error guidance context plumbing", () => {
@@ -199,5 +201,27 @@ describe("pm cli error guidance context plumbing", () => {
       'pm create --title "Agent fast command loop" --type Task --description <value>',
     );
     expect(envelope.recovery?.suggested_retry).not.toContain("--description,");
+  });
+
+  it("classifies module resolution failures with concrete recovery guidance", () => {
+    const envelope = formatUnknownErrorForJson(
+      "Cannot find module '[redacted_path]' imported from [redacted_path]",
+      1,
+    );
+
+    expect(envelope.code).toBe("module_import_failed");
+    expect(envelope.title).toBe("Module import failed");
+    expect(envelope.examples).toEqual([
+      "pnpm build",
+      "pm package manage --doctor --project",
+      "pm health --check-only --json",
+    ]);
+    expect(envelope.next_steps).toContain("Rebuild the checkout or package that provides the missing module.");
+
+    const classified = classifyUnknownError("ERR_MODULE_NOT_FOUND: Cannot find package '@example/missing'");
+    expect(classified.code).toBe("module_import_failed");
+
+    const generic = formatUnknownErrorForJson("Unexpected runtime failure", 1);
+    expect(generic.code).toBe("unknown_error");
   });
 });

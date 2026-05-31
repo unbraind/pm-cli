@@ -16,7 +16,18 @@ import { readVectorizationStatusLedger, writeVectorizationStatusLedger } from ".
 import { REINDEX_LOCK_ID } from "../../core/search/background-refresh.js";
 import { resolveEmbeddingProviders } from "../../core/search/providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
-import { executeVectorUpsert, resolveVectorStores } from "../../core/search/vector-stores.js";
+import { executeVectorDelete, executeVectorReset, executeVectorUpsert, resolveVectorStores } from "../../core/search/vector-stores.js";
+import {
+  buildVectorizationEmbeddingIdentity,
+  buildVectorizationEmbeddingMetadata,
+  hasVectorizationEmbeddingIdentityChanged,
+  hasVectorizationVectorDimensionChanged,
+  inferConsistentVectorDimension,
+} from "../../core/search/vectorization-metadata.js";
+import type {
+  VectorizationEmbeddingIdentity,
+  VectorizationEmbeddingMetadata,
+} from "../../core/search/vectorization-metadata.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -166,6 +177,22 @@ type ExtensionVectorUpsert = (context: {
   settings: PmSettings;
 }) => Promise<void> | void;
 
+type ExtensionVectorDelete = (context: {
+  ids: string[];
+  settings: PmSettings;
+}) => Promise<void> | void;
+
+interface ExtensionVectorAdapter {
+  name: string;
+  upsert: ExtensionVectorUpsert;
+  delete?: ExtensionVectorDelete;
+}
+
+interface ReindexEmbeddingExecutionResult {
+  vectors: number[][];
+  embeddingIdentity: VectorizationEmbeddingIdentity;
+}
+
 const toOptionalNonEmptyString = toNonEmptyStringOrUndefined;
 
 function resolveExtensionSearchEmbedding(
@@ -205,7 +232,7 @@ function resolveExtensionSearchEmbedding(
   };
 }
 
-function resolveExtensionVectorUpsert(settings: PmSettings): { name: string; upsert: ExtensionVectorUpsert } | null {
+function resolveExtensionVectorAdapter(settings: PmSettings): ExtensionVectorAdapter | null {
   const registrations = getActiveExtensionRegistrations();
   const adapterName = toOptionalNonEmptyString(settings.vector_store?.adapter);
   const registration = resolveRegisteredVectorStoreAdapter(registrations, adapterName);
@@ -218,12 +245,14 @@ function resolveExtensionVectorUpsert(settings: PmSettings): { name: string; ups
     toOptionalNonEmptyString((registration.definition as { name?: unknown }).name) ??
     adapterName;
   const upsert = (runtimeDefinition as { upsert?: unknown }).upsert;
+  const deleteHandler = (runtimeDefinition as { delete?: unknown }).delete;
   if (!name || typeof upsert !== "function") {
     return null;
   }
   return {
     name,
     upsert: upsert as ExtensionVectorUpsert,
+    ...(typeof deleteHandler === "function" ? { delete: deleteHandler as ExtensionVectorDelete } : {}),
   };
 }
 
@@ -278,6 +307,170 @@ async function executeExtensionEmbedding(
   return vectors;
 }
 
+function resolveExtensionEmbeddingModel(settings: PmSettings): string {
+  return settings.search?.embedding_model?.trim() || "text-embedding-3-small";
+}
+
+function resolveReindexEmbeddingIdentity(
+  settings: PmSettings,
+  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"],
+  extensionEmbedding: { name: string } | null,
+): VectorizationEmbeddingIdentity {
+  const identity = extensionEmbedding
+    ? buildVectorizationEmbeddingIdentity(extensionEmbedding.name, resolveExtensionEmbeddingModel(settings))
+    : activeEmbeddingProvider
+      ? buildVectorizationEmbeddingIdentity(activeEmbeddingProvider.name, activeEmbeddingProvider.model)
+      : null;
+  if (!identity) {
+    throw new PmCliError(
+      `No embedding identity available for semantic reindex mode`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return identity;
+}
+
+function collectLedgerOrphanIds(ledgerEntries: Record<string, string>, currentIds: Set<string>): string[] {
+  return Object.keys(ledgerEntries)
+    .filter((id) => !currentIds.has(id))
+    .sort((left, right) => left.localeCompare(right));
+}
+
+async function executeReindexEmbedding(
+  settings: PmSettings,
+  requestedMode: "keyword" | "semantic" | "hybrid",
+  activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"],
+  extensionEmbedding: { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null,
+  documents: ItemDocument[],
+  semanticWarnings: string[],
+  semanticSummary: ReindexResult["semantic"],
+  progressEnabled: boolean,
+): Promise<ReindexEmbeddingExecutionResult> {
+  const semanticProviderName = extensionEmbedding?.name ?? activeEmbeddingProvider?.name;
+  const corpusInputs = documents.map((document) => buildSemanticCorpusInput(document, { providerName: semanticProviderName }));
+  let vectors: number[][] = [];
+  let embeddingIdentity: VectorizationEmbeddingIdentity | null = null;
+  if (extensionEmbedding) {
+    try {
+      vectors = await executeExtensionEmbedding(extensionEmbedding, settings, corpusInputs);
+      embeddingIdentity = buildVectorizationEmbeddingIdentity(extensionEmbedding.name, resolveExtensionEmbeddingModel(settings));
+    } catch (error: unknown) {
+      if (!activeEmbeddingProvider) {
+        throw new PmCliError(
+          `Extension search provider "${extensionEmbedding.name}" failed to generate embeddings: ${error instanceof Error ? error.message : String(error)}`,
+          EXIT_CODE.GENERIC_FAILURE,
+        );
+      }
+      semanticWarnings.push(
+        `Extension search provider "${extensionEmbedding.name}" failed; falling back to built-in provider (${error instanceof Error ? error.message : String(error)})`,
+      );
+    }
+  }
+  if (vectors.length === 0) {
+    if (!activeEmbeddingProvider) {
+      throw new PmCliError(
+        `No embedding executor available for reindex mode '${requestedMode}'`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    const embeddingResult = await executeEmbeddingBatchesWithRetry(activeEmbeddingProvider, settings, corpusInputs, {
+      onProgress: (event) => {
+        if (event.phase === "complete") {
+          semanticSummary.batches_completed = event.batch_index;
+        }
+        emitReindexProgress(
+          progressEnabled,
+          `embedding_batch_${event.phase} batch=${event.batch_index}/${event.batch_total} size=${event.batch_size} completed_inputs=${event.completed_inputs}/${event.total_inputs}`,
+        );
+      },
+    });
+    semanticWarnings.push(...embeddingResult.warnings);
+    vectors = embeddingResult.vectors;
+    embeddingIdentity = buildVectorizationEmbeddingIdentity(activeEmbeddingProvider.name, activeEmbeddingProvider.model);
+  }
+  emitReindexProgress(progressEnabled, `embedding_complete vectors=${vectors.length}`);
+  if (vectors.length !== documents.length) {
+    throw new PmCliError(
+      `Embedding output size mismatch (expected ${documents.length}, received ${vectors.length})`,
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+  }
+  if (!embeddingIdentity) {
+    throw new PmCliError(
+      `No embedding identity available for reindex mode '${requestedMode}'`,
+      EXIT_CODE.USAGE,
+    );
+  }
+  return { vectors, embeddingIdentity };
+}
+
+async function resetVectorStoreForReindex(
+  activeVectorStore: ReturnType<typeof resolveVectorStores>["active"],
+  extensionVectorAdapter: ExtensionVectorAdapter | null,
+  ledgerEntries: Record<string, string>,
+  settings: PmSettings,
+  semanticWarnings: string[],
+  vectorDimension?: number,
+): Promise<void> {
+  const knownIds = Object.keys(ledgerEntries);
+  if (extensionVectorAdapter) {
+    if (knownIds.length > 0 && extensionVectorAdapter.delete) {
+      try {
+        await Promise.resolve(extensionVectorAdapter.delete({ ids: knownIds.sort((left, right) => left.localeCompare(right)), settings }));
+      } catch (error: unknown) {
+        throw new PmCliError(
+          `Extension vector adapter "${extensionVectorAdapter.name}" failed to delete vectors during reindex reset: ${error instanceof Error ? error.message : String(error)}`,
+          EXIT_CODE.GENERIC_FAILURE,
+        );
+      }
+    } else if (knownIds.length > 0) {
+      semanticWarnings.push(
+        `search_semantic_reindex_reset_skipped:adapter=${extensionVectorAdapter.name}:known_ids=${knownIds.length}`,
+      );
+    }
+    if (!activeVectorStore) {
+      return;
+    }
+  }
+  if (activeVectorStore) {
+    await executeVectorReset(activeVectorStore, knownIds, {}, vectorDimension);
+  }
+}
+
+async function pruneReindexOrphanVectors(
+  activeVectorStore: ReturnType<typeof resolveVectorStores>["active"],
+  extensionVectorAdapter: ExtensionVectorAdapter | null,
+  orphanIds: string[],
+  settings: PmSettings,
+  semanticWarnings: string[],
+): Promise<void> {
+  if (orphanIds.length === 0) {
+    return;
+  }
+  if (extensionVectorAdapter) {
+    if (extensionVectorAdapter.delete) {
+      try {
+        await Promise.resolve(extensionVectorAdapter.delete({ ids: orphanIds, settings }));
+      } catch (error: unknown) {
+        throw new PmCliError(
+          `Extension vector adapter "${extensionVectorAdapter.name}" failed to delete orphan vectors during reindex: ${error instanceof Error ? error.message : String(error)}`,
+          EXIT_CODE.GENERIC_FAILURE,
+        );
+      }
+    } else {
+      semanticWarnings.push(
+        `search_semantic_reindex_orphan_prune_skipped:adapter=${extensionVectorAdapter.name}:count=${orphanIds.length}`,
+      );
+    }
+    if (!activeVectorStore) {
+      return;
+    }
+  }
+  if (activeVectorStore) {
+    await executeVectorDelete(activeVectorStore, orphanIds);
+  }
+}
+
 export async function runReindex(options: ReindexOptions, global: GlobalOptions): Promise<ReindexResult> {
   const requestedMode = parseMode(options.mode);
   const progressEnabled = shouldEmitReindexProgress(options);
@@ -320,7 +513,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   try {
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const extensionEmbedding = resolveExtensionSearchEmbedding(settings);
-  const extensionVectorUpsert = resolveExtensionVectorUpsert(settings);
+  const extensionVectorAdapter = resolveExtensionVectorAdapter(settings);
   let activeEmbeddingProvider: ReturnType<typeof resolveEmbeddingProviders>["active"] = null;
   let activeVectorStore: ReturnType<typeof resolveVectorStores>["active"] = null;
   if (requestedMode !== "keyword") {
@@ -332,7 +525,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       );
     }
     const vectorResolution = resolveVectorStores(settings);
-    if (!vectorResolution.active && !extensionVectorUpsert) {
+    if (!vectorResolution.active && !extensionVectorAdapter) {
       throw new PmCliError(
         `Reindex mode '${requestedMode}' requires a configured vector store in settings.vector_store.qdrant/settings.vector_store.lancedb or an extension adapter selected by settings.vector_store.adapter`,
         EXIT_CODE.USAGE,
@@ -376,6 +569,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       : metadataDocuments;
   const semanticWarnings: string[] = [];
   const vectorizationLedgerEntries: Record<string, string> = {};
+  let vectorizationEmbeddingMetadata: VectorizationEmbeddingMetadata | null = null;
   const semanticSummary = {
     enabled: mode !== "keyword",
     stale_items: 0,
@@ -387,15 +581,18 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   if (mode !== "keyword" && metadataDocuments.length > 0) {
     const ledger = await readVectorizationStatusLedger(pmRoot);
     semanticWarnings.push(...ledger.warnings);
-    const staleIds = new Set(
-      metadataDocuments
-        .filter((document) => ledger.entries[document.metadata.id] !== document.metadata.updated_at)
+    const embeddingIdentity = resolveReindexEmbeddingIdentity(settings, activeEmbeddingProvider, extensionEmbedding);
+    const currentIds = new Set(metadataDocuments.map((document) => document.metadata.id));
+    const orphanIds = collectLedgerOrphanIds(ledger.entries, currentIds);
+    let resetRequired = hasVectorizationEmbeddingIdentityChanged(ledger.embedding, embeddingIdentity);
+    let staleIds = new Set(
+      (resetRequired ? metadataDocuments : metadataDocuments.filter((document) => ledger.entries[document.metadata.id] !== document.metadata.updated_at))
         .map((document) => document.metadata.id),
     );
-    const staleDocuments = staleIds.size > 0
+    let staleDocuments = staleIds.size > 0
       ? await hydrateDocuments(pmRoot, documentCandidates, settings.schema, reindexWarnings, staleIds)
       : [];
-    const freshDocuments = metadataDocuments.length - staleDocuments.length;
+    let freshDocuments = metadataDocuments.length - staleDocuments.length;
     semanticSummary.stale_items = staleDocuments.length;
     semanticSummary.unchanged_items = freshDocuments;
     for (const document of metadataDocuments) {
@@ -406,52 +603,60 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       semanticWarnings.push(`search_semantic_reindex_skipped_unchanged:count=${freshDocuments}`);
     } else {
       emitReindexProgress(progressEnabled, `embedding_start items=${staleDocuments.length} unchanged_items=${freshDocuments}`);
-      const semanticProviderName = activeEmbeddingProvider?.name ?? extensionEmbedding?.name;
-      const corpusInputs = staleDocuments.map((document) => buildSemanticCorpusInput(document, { providerName: semanticProviderName }));
-      let vectors: number[][] = [];
-      if (extensionEmbedding) {
-        try {
-          vectors = await executeExtensionEmbedding(extensionEmbedding, settings, corpusInputs);
-        } catch (error: unknown) {
-          if (!activeEmbeddingProvider) {
-            throw new PmCliError(
-              `Extension search provider "${extensionEmbedding.name}" failed to generate embeddings: ${error instanceof Error ? error.message : String(error)}`,
-              EXIT_CODE.GENERIC_FAILURE,
-            );
-          }
-          semanticWarnings.push(
-            `Extension search provider "${extensionEmbedding.name}" failed; falling back to built-in provider (${error instanceof Error ? error.message : String(error)})`,
-          );
-        }
-      }
-      if (vectors.length === 0) {
-        if (!activeEmbeddingProvider) {
-          throw new PmCliError(
-            `No embedding executor available for reindex mode '${requestedMode}'`,
-            EXIT_CODE.USAGE,
-          );
-        }
-        const embeddingResult = await executeEmbeddingBatchesWithRetry(activeEmbeddingProvider, settings, corpusInputs, {
-          onProgress: (event) => {
-            if (event.phase === "complete") {
-              semanticSummary.batches_completed = event.batch_index;
-            }
-            emitReindexProgress(
-              progressEnabled,
-              `embedding_batch_${event.phase} batch=${event.batch_index}/${event.batch_total} size=${event.batch_size} completed_inputs=${event.completed_inputs}/${event.total_inputs}`,
-            );
-          },
-        });
-        semanticWarnings.push(...embeddingResult.warnings);
-        vectors = embeddingResult.vectors;
-      }
-      emitReindexProgress(progressEnabled, `embedding_complete vectors=${vectors.length}`);
-      if (vectors.length !== staleDocuments.length) {
-        throw new PmCliError(
-          `Embedding output size mismatch (expected ${staleDocuments.length}, received ${vectors.length})`,
-          EXIT_CODE.GENERIC_FAILURE,
+      let embeddingResult = await executeReindexEmbedding(
+        settings,
+        requestedMode,
+        activeEmbeddingProvider,
+        extensionEmbedding,
+        staleDocuments,
+        semanticWarnings,
+        semanticSummary,
+        progressEnabled,
+      );
+      let vectors = embeddingResult.vectors;
+      let actualEmbeddingIdentity = embeddingResult.embeddingIdentity;
+      let vectorDimension = inferConsistentVectorDimension(vectors, "Reindex embeddings");
+      if (
+        !resetRequired &&
+        (hasVectorizationEmbeddingIdentityChanged(ledger.embedding, actualEmbeddingIdentity) ||
+          hasVectorizationVectorDimensionChanged(ledger.embedding, vectorDimension))
+      ) {
+        resetRequired = true;
+        staleIds = new Set(metadataDocuments.map((document) => document.metadata.id));
+        staleDocuments = await hydrateDocuments(pmRoot, documentCandidates, settings.schema, reindexWarnings, staleIds);
+        freshDocuments = 0;
+        semanticSummary.stale_items = staleDocuments.length;
+        semanticSummary.unchanged_items = 0;
+        emitReindexProgress(progressEnabled, `embedding_dimension_changed reset_items=${staleDocuments.length}`);
+        embeddingResult = await executeReindexEmbedding(
+          settings,
+          requestedMode,
+          activeEmbeddingProvider,
+          extensionEmbedding,
+          staleDocuments,
+          semanticWarnings,
+          semanticSummary,
+          progressEnabled,
         );
+        vectors = embeddingResult.vectors;
+        actualEmbeddingIdentity = embeddingResult.embeddingIdentity;
+        vectorDimension = inferConsistentVectorDimension(vectors, "Reindex embeddings");
       }
+      if (resetRequired) {
+        emitReindexProgress(progressEnabled, "vector_reset_start");
+        await resetVectorStoreForReindex(
+          activeVectorStore,
+          extensionVectorAdapter,
+          ledger.entries,
+          settings,
+          semanticWarnings,
+          ledger.embedding ? vectorDimension : undefined,
+        );
+        emitReindexProgress(progressEnabled, "vector_reset_complete");
+      } else {
+        await pruneReindexOrphanVectors(activeVectorStore, extensionVectorAdapter, orphanIds, settings, semanticWarnings);
+      }
+      vectorizationEmbeddingMetadata = buildVectorizationEmbeddingMetadata(actualEmbeddingIdentity, vectorDimension);
       const points = staleDocuments.map((document, index) => ({
         id: document.metadata.id,
         vector: assertVector(vectors[index], `reindex embeddings output at index ${index}`),
@@ -464,26 +669,26 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
         },
       }));
       semanticSummary.embedded_items = vectors.length;
-      if (extensionVectorUpsert) {
+      if (extensionVectorAdapter) {
         try {
-          emitReindexProgress(progressEnabled, `vector_upsert_start adapter=${extensionVectorUpsert.name} points=${points.length}`);
+          emitReindexProgress(progressEnabled, `vector_upsert_start adapter=${extensionVectorAdapter.name} points=${points.length}`);
           await Promise.resolve(
-            extensionVectorUpsert.upsert({
+            extensionVectorAdapter.upsert({
               points,
               settings,
             }),
           );
           semanticSummary.vector_upserted = points.length;
-          emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${extensionVectorUpsert.name}`);
+          emitReindexProgress(progressEnabled, `vector_upsert_complete adapter=${extensionVectorAdapter.name}`);
         } catch (error: unknown) {
           if (!activeVectorStore) {
             throw new PmCliError(
-              `Extension vector adapter "${extensionVectorUpsert.name}" failed to upsert vectors: ${error instanceof Error ? error.message : String(error)}`,
+              `Extension vector adapter "${extensionVectorAdapter.name}" failed to upsert vectors: ${error instanceof Error ? error.message : String(error)}`,
               EXIT_CODE.GENERIC_FAILURE,
             );
           }
           semanticWarnings.push(
-            `Extension vector adapter "${extensionVectorUpsert.name}" failed; falling back to built-in vector store (${error instanceof Error ? error.message : String(error)})`,
+            `Extension vector adapter "${extensionVectorAdapter.name}" failed; falling back to built-in vector store (${error instanceof Error ? error.message : String(error)})`,
           );
           emitReindexProgress(progressEnabled, "vector_upsert_fallback built_in_store");
           await executeVectorUpsert(activeVectorStore, points);
@@ -509,6 +714,10 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
         (document) => staleDocumentsById.get(document.metadata.id) ?? document,
       );
     }
+    if (staleDocuments.length === 0) {
+      await pruneReindexOrphanVectors(activeVectorStore, extensionVectorAdapter, orphanIds, settings, semanticWarnings);
+      vectorizationEmbeddingMetadata = ledger.embedding;
+    }
   }
   const embeddingsLines = documentsForKeywordArtifacts.map((document) => JSON.stringify(buildKeywordRecord(document, mode))).join("\n");
   emitReindexProgress(progressEnabled, "writing keyword artifacts");
@@ -518,7 +727,7 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
   if (mode !== "keyword") {
     try {
       emitReindexProgress(progressEnabled, "writing vectorization status ledger");
-      await writeVectorizationStatusLedger(pmRoot, vectorizationLedgerEntries);
+      await writeVectorizationStatusLedger(pmRoot, vectorizationLedgerEntries, vectorizationEmbeddingMetadata);
     } catch (error: unknown) {
       vectorizationWarnings.push(
         `search_vectorization_status_ledger_write_failed:${error instanceof Error ? error.message : String(error)}`,

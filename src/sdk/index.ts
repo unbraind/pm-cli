@@ -92,6 +92,7 @@ export type {
   ExtensionDiscoveryResult,
   ExtensionLoadResult,
   ExtensionManifest,
+  ExtensionManifestEngines,
   ExtensionGovernancePolicy,
   ExtensionPolicyOverride,
   ExtensionProvenanceMetadata,

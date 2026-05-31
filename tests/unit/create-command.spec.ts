@@ -4,6 +4,7 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runCreate, type CreateCommandOptions } from "../../src/cli/commands/create.js";
+import { parseTypeOptionEntries } from "../../src/cli/commands/repeatable-metadata-parsers.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import type { ExtensionHookRegistry } from "../../src/core/extensions/loader.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
@@ -1817,7 +1818,10 @@ describe("runCreate", () => {
           }),
           { path: context.pmPath },
         ),
-      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "--reminder text must not be empty",
+      });
 
       await expect(
         runCreate(
@@ -1941,6 +1945,18 @@ describe("runCreate", () => {
       await expect(
         runCreate(
           baseCreateOptions({
+            event: ["start=2026-03-04T10:00:00.000Z,all_day="],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--event all_day must be one of true|false|1|0|yes|no"),
+      });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
             event: ["start=2026-03-04T10:00:00.000Z,recur_interval=2"],
           }),
           { path: context.pmPath },
@@ -1955,6 +1971,18 @@ describe("runCreate", () => {
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            event: ["start=2026-03-04T10:00:00.000Z,recur_freq=daily,recur_interval="],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--event recur_interval must be an integer >= 1"),
+      });
 
       await expect(
         runCreate(
@@ -2453,5 +2481,27 @@ describe("runCreate", () => {
       expect(result.item.comments?.at(0)?.author).toBe("stdin-author");
       expect(result.item.comments?.at(0)?.text).toBe("stdin seeded comment");
     });
+  });
+});
+
+describe("repeatable metadata parser helpers", () => {
+  it("parses type-option entries from compact, colon, and structured forms", () => {
+    expect(
+      parseTypeOptionEntries([
+        "category=checkout",
+        "impact: high",
+        "key=owner,value=agent-team",
+      ]),
+    ).toEqual({
+      category: "checkout",
+      impact: "high",
+      owner: "agent-team",
+    });
+  });
+
+  it("rejects empty or incomplete type-option entries with usage errors", () => {
+    for (const entry of ["   ", "missing-separator", "key=owner,value="]) {
+      expect(() => parseTypeOptionEntries([entry])).toThrow(expect.objectContaining({ exitCode: EXIT_CODE.USAGE }));
+    }
   });
 });

@@ -3,6 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { pathExists } from "../fs/fs-utils.js";
 import { isPathWithinDirectory } from "../fs/path-utils.js";
+import { resolvePmPackageRootFromModule } from "../packages/root.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { asRecordLoose } from "../shared/primitives.js";
@@ -86,6 +87,7 @@ import {
   type ExtensionLayer,
   type ExtensionStatus,
   type ExtensionManifest,
+  type ExtensionManifestEngines,
   type ExtensionDiagnostic,
   type EffectiveExtension,
   type ExtensionDiscoveryResult,
@@ -191,6 +193,7 @@ import {
 export * from "./extension-types.js";
 
 const DEFAULT_EXTENSION_PRIORITY = 100;
+let currentPmCliVersionPromise: Promise<string | null> | null = null;
 
 /* Types now in extension-types.ts - re-exported via `export * from "./extension-types.js"` above */
 
@@ -201,6 +204,39 @@ let extensionReloadEpoch = 0;
 export function nextExtensionReloadToken(seed = Date.now()): string {
   extensionReloadEpoch += 1;
   return `${extensionReloadEpoch}-${seed}`;
+}
+
+function parseOptionalManifestString(candidate: Record<string, unknown>, field: string): string | null | undefined {
+  const value = candidate[field];
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return null;
+  }
+  return value.trim();
+}
+
+function parseManifestEngines(value: unknown): ExtensionManifestEngines | null | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  const enginesRecord = asRecordLoose(value);
+  if (!enginesRecord) {
+    return null;
+  }
+  const engines: ExtensionManifestEngines = {};
+  for (const key of Object.keys(enginesRecord).sort((left, right) => left.localeCompare(right))) {
+    if (key.trim().length === 0) {
+      return null;
+    }
+    const engineValue = enginesRecord[key];
+    if (typeof engineValue !== "string" || engineValue.trim().length === 0) {
+      return null;
+    }
+    engines[key.trim()] = engineValue.trim();
+  }
+  return Object.keys(engines).length > 0 ? engines : undefined;
 }
 
 function parseManifest(raw: unknown): ExtensionManifest | null {
@@ -233,6 +269,16 @@ function parseManifest(raw: unknown): ExtensionManifest | null {
       return null;
     }
     manifestVersion = candidate.manifest_version;
+  }
+
+  const pmMinVersion = parseOptionalManifestString(candidate, "pm_min_version");
+  if (pmMinVersion === null) {
+    return null;
+  }
+
+  const engines = parseManifestEngines(candidate.engines);
+  if (engines === null) {
+    return null;
   }
 
   let trusted: boolean | undefined;
@@ -335,16 +381,45 @@ function parseManifest(raw: unknown): ExtensionManifest | null {
     legacyCapabilityAliases = normalizedCapabilities.legacy_aliases;
   }
 
+  let activation: ExtensionManifest["activation"] | undefined;
+  if ("activation" in candidate && candidate.activation !== undefined && candidate.activation !== null) {
+    const activationRecord = asRecordLoose(candidate.activation);
+    if (!activationRecord) {
+      return null;
+    }
+    const rawCommands = activationRecord.commands;
+    if (rawCommands !== undefined && rawCommands !== null) {
+      if (!Array.isArray(rawCommands) || rawCommands.some((value) => typeof value !== "string")) {
+        return null;
+      }
+      const commands = [
+        ...new Set(
+          rawCommands
+            .map((value) => normalizeCommandName(value))
+            .filter((value) => value.length > 0),
+        ),
+      ].sort((left, right) => left.localeCompare(right));
+      if (commands.length > 0) {
+        activation = {
+          commands,
+        };
+      }
+    }
+  }
+
   return {
     name: candidate.name.trim(),
     version: candidate.version.trim(),
     entry: candidate.entry.trim(),
     priority,
     manifest_version: manifestVersion,
+    pm_min_version: pmMinVersion,
+    engines,
     trusted,
     provenance,
     sandbox_profile: sandboxProfile,
     permissions,
+    activation,
     capabilities,
     legacy_capability_aliases: legacyCapabilityAliases.length > 0 ? legacyCapabilityAliases : undefined,
   };
@@ -395,11 +470,18 @@ function summarizeCandidate(candidate: ExtensionCandidate): EffectiveExtension {
     priority: candidate.manifest.priority,
     entry_path: candidate.entry_path,
     manifest_version: candidate.manifest.manifest_version,
+    pm_min_version: candidate.manifest.pm_min_version,
+    engines: candidate.manifest.engines,
     trusted: candidate.manifest.trusted,
     provenance: candidate.manifest.provenance,
     sandbox_profile: candidate.manifest.sandbox_profile,
     permissions: candidate.manifest.permissions,
     capabilities: [...candidate.manifest.capabilities],
+    activation: candidate.manifest.activation
+      ? {
+          commands: [...(candidate.manifest.activation.commands ?? [])],
+        }
+      : undefined,
   };
 }
 
@@ -532,6 +614,11 @@ async function scanExtensionDirectory(
   } else if (!entryExists) {
     extensionWarnings.push(`extension_entry_missing:${layer}:${manifest.name}`);
   }
+  const pmVersionCompatibility = await evaluatePmMinVersionCompatibility(layer, manifest);
+  if (pmVersionCompatibility.warning) {
+    extensionWarnings.push(pmVersionCompatibility.warning);
+  }
+  const extensionReady = entryWithinDirectory && entryExists && pmVersionCompatibility.allowed;
 
   return {
     diagnostic: {
@@ -544,11 +631,11 @@ async function scanExtensionDirectory(
       priority: manifest.priority,
       entry_path: entryPath,
       enabled: enabledForLoad,
-      status: entryWithinDirectory && entryExists ? "ok" : "warn",
+      status: extensionReady ? "ok" : "warn",
     },
     warnings: extensionWarnings,
     candidate:
-      entryWithinDirectory && entryExists && enabledForLoad
+      extensionReady && enabledForLoad
         ? {
             layer,
             directory,
@@ -640,6 +727,87 @@ function formatUnknownError(error: unknown): string {
     return error.message;
   }
   return String(error);
+}
+
+function parseComparableVersion(value: string): number[] | null {
+  const normalized = value.trim().replace(/^>=\s*/, "").replace(/^v/i, "");
+  const release = normalized.split(/[+-]/, 1)[0] ?? "";
+  if (!/^\d+(?:[.-]\d+)*$/.test(release)) {
+    return null;
+  }
+  return release.split(/[.-]/).map((part) => Number(part));
+}
+
+function compareComparableVersions(currentVersion: string, minimumVersion: string): number | null {
+  const currentParts = parseComparableVersion(currentVersion);
+  const minimumParts = parseComparableVersion(minimumVersion);
+  if (!currentParts || !minimumParts) {
+    return null;
+  }
+  const width = Math.max(currentParts.length, minimumParts.length);
+  for (let index = 0; index < width; index += 1) {
+    const current = currentParts[index] ?? 0;
+    const minimum = minimumParts[index] ?? 0;
+    if (current > minimum) {
+      return 1;
+    }
+    if (current < minimum) {
+      return -1;
+    }
+  }
+  return 0;
+}
+
+async function readCurrentPmCliVersion(): Promise<string | null> {
+  try {
+    const packageRoot = resolvePmPackageRootFromModule(import.meta.url, ["../../.."]);
+    const raw = await fs.readFile(path.join(packageRoot, "package.json"), "utf8");
+    const parsed = JSON.parse(raw) as { version?: unknown };
+    return typeof parsed.version === "string" && parsed.version.trim().length > 0 ? parsed.version.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveCurrentPmCliVersion(): Promise<string | null> {
+  currentPmCliVersionPromise ??= readCurrentPmCliVersion();
+  return currentPmCliVersionPromise;
+}
+
+async function evaluatePmMinVersionCompatibility(
+  layer: ExtensionLayer,
+  manifest: ExtensionManifest,
+): Promise<{ allowed: boolean; warning?: string }> {
+  if (typeof manifest.pm_min_version !== "string" || manifest.pm_min_version.trim().length === 0) {
+    return { allowed: true };
+  }
+  if (!parseComparableVersion(manifest.pm_min_version)) {
+    return {
+      allowed: false,
+      warning: `extension_pm_min_version_invalid:${layer}:${manifest.name}:required=${manifest.pm_min_version}`,
+    };
+  }
+  const currentVersion = await resolveCurrentPmCliVersion();
+  if (!currentVersion) {
+    return {
+      allowed: true,
+      warning: `extension_pm_min_version_unchecked:${layer}:${manifest.name}:required=${manifest.pm_min_version}:current=unknown`,
+    };
+  }
+  const comparison = compareComparableVersions(currentVersion, manifest.pm_min_version);
+  if (comparison === null) {
+    return {
+      allowed: true,
+      warning: `extension_pm_min_version_unchecked:${layer}:${manifest.name}:required=${manifest.pm_min_version}:current=${currentVersion}`,
+    };
+  }
+  if (comparison < 0) {
+    return {
+      allowed: false,
+      warning: `extension_pm_min_version_unmet:${layer}:${manifest.name}:required=${manifest.pm_min_version}:current=${currentVersion}`,
+    };
+  }
+  return { allowed: true };
 }
 
 async function fingerprintPath(pathToInspect: string): Promise<string> {
@@ -1926,4 +2094,3 @@ export async function activateExtensions(loadResult: ExtensionLoadResult): Promi
     registration_counts: getRegistrationCounts(registrations),
   };
 }
-

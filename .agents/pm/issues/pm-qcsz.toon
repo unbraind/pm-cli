@@ -2,10 +2,31 @@ id: pm-qcsz
 title: "Calendar: normalize recurrence exdates by instant + document count-window semantics"
 description: "Follow-up to pm-0l88 (timezone + all-day shipped 2026-05-31). Two secondary calendar-correctness items remain from that audit: (1) exdates are matched via exact-string Set membership (calendar.ts ~ const excluded = new Set(recurrence.exdates)), so a format mismatch (Z vs +00:00, or differing ms precision) silently fails to exclude an occurrence — normalize both exdates and candidate timestamps through Date.parse->toISOString before comparing. (2) recurrence 'count' counts occurrences from the series start_at, not from the query window start; document this window semantics in the help/contract. Low priority; no current user reports."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: calendar,correctness,recurrence
 created_at: "2026-05-31T05:41:43.075Z"
-updated_at: "2026-05-31T05:41:43.075Z"
+updated_at: "2026-05-31T09:10:52.038Z"
 author: claude-code-agent
+resolution: Normalized recurrence exdate matching by parsed instant and documented count anchoring semantics.
+expected_result: Equivalent ISO instants are excluded reliably and agents understand recur_count starts at series start.
+actual_result: "Core and package calendar runtime/docs updated; focused calendar tests, full coverage, and release gates passed."
+comments[3]{created_at,author,text}:
+  "2026-05-31T07:52:03.407Z",codex-gpt5-20260531,"Start: duplicate check reused assigned canonical item pm-qcsz after pm search \"calendar recurrence exdate count\" returned pm-qcsz as the active match; scope limited to calendar recurrence implementation/tests/docs."
+  "2026-05-31T07:59:45.342Z",codex-gpt5-20260531,"Evidence: pm test pm-qcsz --run --progress executed linked tests; node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts failed during temp PM_PATH setup with missing dist/cli-bundle module before recurrence assertions, while linked pnpm build passed. Follow-up direct focused run pnpm exec vitest run tests/unit/calendar-command.spec.ts passed: Test Files 1 passed, Tests 21 passed, Duration 15.09s. A later node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts attempt is currently blocked before tests by unrelated untracked src/core/search/vectorization-metadata.ts TypeScript errors TS2345/TS18046/TS2322 outside calendar scope."
+  "2026-05-31T09:10:48.506Z",codex-gpt5-20260531,"Evidence: calendar recurrence exdates are normalized by parsed instant, recurrence count semantics are documented in package help/readme, and focused calendar tests plus full coverage/release gates passed."
+files[4]{path,scope,note}:
+  packages/pm-calendar/extensions/calendar/index.js,project,Keep packaged calendar extension runtime help text in sync
+  packages/pm-calendar/extensions/calendar/index.ts,project,Document recurrence count semantics in package help and runtime contract source
+  src/cli/commands/calendar.ts,project,Normalize recurrence exdate matching by parsed instant
+  tests/unit/calendar-command.spec.ts,project,Add focused recurrence exdate/count/help/contract coverage
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/calendar-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm exec vitest run tests/unit/calendar-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpthmemo-gxsune,test,failed,"2026-05-31T07:57:39.556Z","2026-05-31T07:58:06.480Z","2026-05-31T07:58:06.480Z",null,null,1,1,0,null,null,null
+docs[1]{path,scope,note}:
+  packages/pm-calendar/README.md,project,Document recurrence count anchoring and exdate instant equivalence
+close_reason: Calendar recurrence correctness fix complete with package docs and tests.
 body: ""

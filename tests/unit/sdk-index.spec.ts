@@ -3,8 +3,10 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   BUILTIN_ITEM_TYPE_VALUES,
+  EXIT_CODE,
   EXTENSION_CAPABILITIES,
   ITEM_TYPE_VALUES,
+  PM_CLI_EXPECTED_ERROR_NAME,
   PM_PACKAGE_RESOURCE_KINDS,
   PM_CORE_COMMAND_NAMES,
   PM_PROVIDER_TOOL_PARAMETERS_SCHEMA,
@@ -14,7 +16,9 @@ import {
   STATUS_VALUES,
   appendHistoryEntry,
   createHistoryEntry,
+  createPmCliExpectedError,
   defineExtension,
+  type ExtensionRegistrationRegistry,
   generateItemId,
   getContracts,
   getWorkspaceContracts,
@@ -24,11 +28,46 @@ import {
   readFileIfExists,
   readSettings,
   resolvePmRoot,
+  isPmCliExpectedError,
   writeFileAtomic,
 } from "../../src/sdk/index.js";
-import { readSettings, writeSettings } from "../../src/core/store/settings.js";
+import { assertRegisteredCommandContract } from "../../src/sdk/testing.js";
+import { readSettings as readCoreSettings, writeSettings } from "../../src/core/store/settings.js";
 import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
+
+function createRegistrationRegistry(): ExtensionRegistrationRegistry {
+  return {
+    commands: [
+      {
+        layer: "project",
+        name: "hello-ext",
+        command: "hello world",
+        action: "hello-world",
+        description: "Say hello.",
+        intent: "exercise sdk testing helpers",
+        examples: ["pm hello world target"],
+        failure_hints: [],
+        arguments: [{ name: "target", required: true }],
+      },
+    ],
+    flags: [
+      {
+        layer: "project",
+        name: "hello-ext",
+        target_command: "hello world",
+        flags: [{ long: "--shout" }, { short: "-n", long: "--name", value_name: "value" }],
+      },
+    ],
+    item_fields: [],
+    item_types: [],
+    migrations: [],
+    importers: [],
+    exporters: [],
+    search_providers: [],
+    vector_store_adapters: [],
+  };
+}
 
 describe("public sdk entrypoint", () => {
   it("exposes deterministic capability names", () => {
@@ -58,6 +97,42 @@ describe("public sdk entrypoint", () => {
     });
     expect(extensionModule.manifest?.name).toBe("test-ext");
     expect(typeof extensionModule.activate).toBe("function");
+  });
+
+  it("creates structural expected CLI errors for package authors", () => {
+    const cause = new Error("source failure");
+    const error = createPmCliExpectedError("Package command requires --file", {
+      exitCode: EXIT_CODE.USAGE + 0.8,
+      context: {
+        code: "missing_file",
+        why: "The package command cannot infer a source file.",
+      },
+      cause,
+    });
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error.name).toBe(PM_CLI_EXPECTED_ERROR_NAME);
+    expect(error.exitCode).toBe(EXIT_CODE.USAGE);
+    expect(error.context).toMatchObject({
+      code: "missing_file",
+      why: "The package command cannot infer a source file.",
+    });
+    expect(error.cause).toBe(cause);
+    expect(Object.keys(error)).not.toContain("cause");
+    expect(isPmCliExpectedError(error)).toBe(true);
+    expect(isPmCliExpectedError(new Error("plain"))).toBe(false);
+    const invalidShape = new Error("invalid shape") as Error & { exitCode: number };
+    invalidShape.name = PM_CLI_EXPECTED_ERROR_NAME;
+    invalidShape.exitCode = Number.NaN;
+    expect(isPmCliExpectedError(invalidShape)).toBe(false);
+
+    expect(() => createPmCliExpectedError("")).toThrow("message must be a non-empty string");
+    expect(() => createPmCliExpectedError("bad exit", { exitCode: Number.NaN })).toThrow("finite number");
+    expect(() => createPmCliExpectedError("bad exit", { exitCode: EXIT_CODE.SUCCESS })).toThrow("positive exit code");
+
+    const defaultError = createPmCliExpectedError("default usage error");
+    expect(defaultError.exitCode).toBe(EXIT_CODE.USAGE);
+    expect(defaultError.context).toEqual({});
   });
 
   it("exposes package resource kind contracts", () => {
@@ -168,7 +243,7 @@ describe("public sdk entrypoint", () => {
 
   it("exposes lightweight workspace schema contracts without requiring a pm subprocess", async () => {
     await withTempPmPath(async ({ pmPath }) => {
-      const settings = await readSettings(pmPath);
+      const settings = await readCoreSettings(pmPath);
       settings.item_types.definitions = [
         ...(settings.item_types.definitions ?? []),
         {
@@ -264,5 +339,106 @@ describe("public sdk entrypoint", () => {
       const defaultContracts = await getContracts();
       expect(defaultContracts.schema_version).toBe("4.0.1");
     });
+  });
+});
+
+describe("sdk testing helpers", () => {
+  it("asserts an extension command registration contract", () => {
+    const result = assertRegisteredCommandContract(createRegistrationRegistry(), {
+      command: " Hello   World ",
+      action: "hello-world",
+      extensionName: "hello-ext",
+      arguments: ["target"],
+      flags: ["--shout", "--name", "-n"],
+    });
+
+    expect(result.command.command).toBe("hello world");
+    expect(result.flags).toHaveLength(2);
+  });
+
+  it("throws actionable assertion errors for missing command metadata", () => {
+    const resultWithoutFlagExpectations = assertRegisteredCommandContract(createRegistrationRegistry(), {
+      command: "hello world",
+      arguments: ["target"],
+    });
+    expect(resultWithoutFlagExpectations.flags).toHaveLength(2);
+
+    const registryWithBlankFlagLabels = createRegistrationRegistry();
+    registryWithBlankFlagLabels.flags[0]!.flags.push({ long: " " }, { short: " " });
+    expect(
+      assertRegisteredCommandContract(registryWithBlankFlagLabels, {
+        command: "hello world",
+        flags: ["--shout"],
+      }).flags,
+    ).toHaveLength(4);
+
+    const registryWithoutArguments = createRegistrationRegistry();
+    delete registryWithoutArguments.commands[0]!.arguments;
+    expect(() =>
+      assertRegisteredCommandContract(registryWithoutArguments, {
+        command: "hello world",
+        arguments: ["target"],
+      }),
+    ).toThrow(/available \(none\)/);
+
+    expect(() =>
+      assertRegisteredCommandContract(createRegistrationRegistry(), {
+        command: "   ",
+      }),
+    ).toThrow("non-empty string");
+
+    expect(() =>
+      assertRegisteredCommandContract(createRegistrationRegistry(), {
+        command: "hello world",
+        action: "different-action",
+      }),
+    ).toThrow('Expected extension command "hello world" action "different-action"');
+
+    expect(() =>
+      assertRegisteredCommandContract(createRegistrationRegistry(), {
+        command: "hello world",
+        arguments: ["missing-arg"],
+      }),
+    ).toThrow(/missing missing-arg/);
+
+    expect(() =>
+      assertRegisteredCommandContract(createRegistrationRegistry(), {
+        command: "hello world",
+        action: "hello-world",
+        flags: ["--missing"],
+      }),
+    ).toThrow(/missing --missing/);
+
+    expect(() =>
+      assertRegisteredCommandContract(createRegistrationRegistry(), {
+        command: "missing command",
+      }),
+    ).toThrow(/Available commands: hello world/);
+
+    const multiCommandRegistry = createRegistrationRegistry();
+    multiCommandRegistry.commands.push({
+      ...multiCommandRegistry.commands[0]!,
+      command: "alpha command",
+      action: "alpha-command",
+    });
+    expect(() =>
+      assertRegisteredCommandContract(multiCommandRegistry, {
+        command: "missing command",
+      }),
+    ).toThrow(/Available commands: alpha command, hello world/);
+
+    expect(() =>
+      assertRegisteredCommandContract({ ...createRegistrationRegistry(), commands: [], flags: [] }, {
+        command: "missing command",
+        extensionName: "missing-ext",
+      }),
+    ).toThrow(/from extension "missing-ext".*Available commands: \(none\)/);
+
+    expect(() =>
+      assertRegisteredCommandContract({ ...createRegistrationRegistry(), flags: [] }, {
+        command: "hello world",
+        flags: ["--missing"],
+      }),
+    ).toThrow(/available \(none\)/);
   });
 });

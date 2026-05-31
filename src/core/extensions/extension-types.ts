@@ -87,8 +87,18 @@ export interface ExtensionRuntimePermissionDeclaration {
   process_spawn?: boolean;
 }
 
+export interface ExtensionActivationMetadata {
+  commands?: string[];
+}
+
 export type ExtensionPolicyOverride = ExtensionPolicyOverrideSettings;
 export type ExtensionGovernancePolicy = ExtensionPolicySettings;
+
+export interface ExtensionManifestEngines {
+  pm?: string;
+  node?: string;
+  [engine: string]: string | undefined;
+}
 
 export function createDefaultExtensionGovernancePolicy(): ExtensionGovernancePolicy {
   return {
@@ -123,10 +133,13 @@ export interface ExtensionManifest {
   priority: number;
   capabilities: string[];
   manifest_version?: number;
+  pm_min_version?: string;
+  engines?: ExtensionManifestEngines;
   trusted?: boolean;
   provenance?: ExtensionProvenanceMetadata;
   sandbox_profile?: ExtensionSandboxProfile;
   permissions?: ExtensionRuntimePermissionDeclaration;
+  activation?: ExtensionActivationMetadata;
   legacy_capability_aliases?: LegacyExtensionCapabilityAliasMapping[];
 }
 
@@ -153,11 +166,14 @@ export interface EffectiveExtension {
   priority: number;
   entry_path: string;
   manifest_version?: number;
+  pm_min_version?: string;
+  engines?: ExtensionManifestEngines;
   trusted?: boolean;
   provenance?: ExtensionProvenanceMetadata;
   sandbox_profile?: ExtensionSandboxProfile;
   permissions?: ExtensionRuntimePermissionDeclaration;
   capabilities?: string[];
+  activation?: ExtensionActivationMetadata;
 }
 
 export interface ExtensionDiscoveryResult {

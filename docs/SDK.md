@@ -19,6 +19,8 @@ import { defineExtension } from "@unbrained/pm-cli/sdk";
 Supported package exports:
 
 - `@unbrained/pm-cli/sdk` - stable extension and package authoring API plus CLI contract exports.
+- `@unbrained/pm-cli/sdk/runtime` - runtime helpers for packages that need command implementations without private imports.
+- `@unbrained/pm-cli/sdk/testing` - lightweight assertion helpers for package/extension tests.
 - `@unbrained/pm-cli/cli` - runtime CLI module entrypoint for package resolution, not a typed library API.
 
 ## Public Exports
@@ -42,6 +44,9 @@ Common authoring exports:
 - `EXTENSION_POLICY_SURFACES`
 - `EXTENSION_TRUST_MODES`
 - `EXTENSION_SANDBOX_PROFILES`
+- `PM_CLI_EXPECTED_ERROR_NAME`
+- `createPmCliExpectedError`
+- `isPmCliExpectedError`
 
 Package manifest exports:
 
@@ -87,9 +92,12 @@ Common types:
 
 - `ExtensionApi`
 - `ExtensionManifest`
+- `ExtensionManifestEngines`
 - `CommandDefinition`
 - `FlagDefinition`
 - `ServiceOverrideContext`
+- `PmCliExpectedError`
+- `CreatePmCliExpectedErrorOptions`
 - `SchemaFieldDefinition`
 - `SchemaItemTypeDefinition`
 - `SearchProviderDefinition`
@@ -174,8 +182,67 @@ Manifest:
   "name": "hello",
   "version": "0.1.0",
   "entry": "./index.js",
+  "pm_min_version": "2026.5.31",
   "capabilities": ["commands"]
 }
+```
+
+`pm_min_version` is an inclusive minimum pm CLI version. When the installed CLI is older than the manifest requires, discovery emits `extension_pm_min_version_unmet:<layer>:<name>:required=<version>:current=<version>` and does not load the extension. Use a plain numeric version such as `2026.5.31`; `>=2026.5.31` is accepted for compatibility with `engines.pm`, but ranges beyond an inclusive minimum are not interpreted.
+
+Manifest typing also accepts optional `engines` metadata:
+
+```json
+{
+  "engines": {
+    "pm": ">=2026.5.31",
+    "node": ">=20"
+  }
+}
+```
+
+Use `pm_min_version` for the loader gate. Keep `engines` as package-manager and tooling metadata.
+
+## Expected CLI Errors
+
+Package commands should throw expected user/action errors with the public SDK shape so the CLI can preserve exit codes and Sentry can filter expected retry failures:
+
+```ts
+import { EXIT_CODE, createPmCliExpectedError } from "@unbrained/pm-cli/sdk";
+
+throw createPmCliExpectedError("hello requires --name", {
+  exitCode: EXIT_CODE.USAGE,
+  context: {
+    code: "missing_name",
+    why: "The command needs a target name.",
+  },
+});
+```
+
+The helper returns an `Error` whose public name is `PmCliError` and whose `exitCode` is structural. That makes it safe for bundled, linked, and separately installed package code even when class identity is not shared with the running CLI.
+
+## Package Runtime Imports
+
+Third-party packages should import from stable public SDK subpaths:
+
+```ts
+import { defineExtension } from "@unbrained/pm-cli/sdk";
+import { createPmCliExpectedError } from "@unbrained/pm-cli/sdk/runtime";
+```
+
+`PM_CLI_PACKAGE_ROOT` is reserved for first-party packages bundled inside this repository. Those packages use it to locate the running CLI's `dist/sdk/runtime.js` before they are installed as independent npm packages. External packages must not depend on `PM_CLI_PACKAGE_ROOT`, `dist/` paths, or `src/core/...`; declare `@unbrained/pm-cli` as a dependency or peer dependency and import the public SDK subpaths instead.
+
+## Testing Helpers
+
+Package tests can assert a command registration contract without depending on Vitest-specific helpers:
+
+```ts
+import { assertRegisteredCommandContract } from "@unbrained/pm-cli/sdk/testing";
+
+assertRegisteredCommandContract(activation.registrations, {
+  command: "hello",
+  action: "hello",
+  flags: ["--name"],
+});
 ```
 
 ## Custom Item Type
@@ -263,6 +330,7 @@ Treat `recovery.suggested_retry` as the first-choice deterministic replay comman
 - Return data, not pre-rendered terminal text, unless implementing a renderer or output service.
 - Keep service and preflight overrides narrow.
 - Declare only capabilities in use.
+- Set `pm_min_version` when the package requires SDK or runtime behavior added after older pm releases.
 - Include examples and failure hints in dynamic commands.
 - Add `pm package doctor` diagnostics to testing instructions.
 

@@ -6,7 +6,9 @@ import type {
 import {
   renderGuideShellPackageOutput,
   runCompletionPackage,
+  runCompletionStatusesPackage,
   runCompletionTagsPackage,
+  runCompletionTypesPackage,
   runGuidePackage,
 } from "./runtime.js";
 
@@ -65,10 +67,30 @@ function completionTagsCommand(): CommandDefinition {
   };
 }
 
+function completionStatusesCommand(): CommandDefinition {
+  return {
+    name: "completion-statuses",
+    action: "completion-statuses",
+    description: "Print runtime status IDs for completion filters.",
+    run: async (context) => runCompletionStatusesPackage(context.global),
+  };
+}
+
+function completionTypesCommand(): CommandDefinition {
+  return {
+    name: "completion-types",
+    action: "completion-types",
+    description: "Print runtime item type IDs for completion filters.",
+    run: async (context) => runCompletionTypesPackage(context.global),
+  };
+}
+
 export function activate(api: ExtensionApi): void {
   api.registerCommand(guideCommand());
   api.registerCommand(completionCommand());
   api.registerCommand(completionTagsCommand());
+  api.registerCommand(completionStatusesCommand());
+  api.registerCommand(completionTypesCommand());
   api.registerService("output_format", (context) => {
     const rendered = renderGuideShellPackageOutput(context as ServiceOverrideContext);
     return rendered ?? null;

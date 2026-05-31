@@ -202,6 +202,70 @@ describe("extension loader", () => {
     });
   });
 
+  it("normalizes optional manifest activation command metadata during discovery", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "activation-metadata",
+        {
+          name: "activation-metadata-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["commands", "schema"],
+          activation: {
+            commands: ["  Slow   Command ", "slow command", ""],
+          },
+        },
+        "export default { activate() {} };\n",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.effective).toEqual([
+        expect.objectContaining({
+          name: "activation-metadata-ext",
+          activation: {
+            commands: ["slow command"],
+          },
+        }),
+      ]);
+    });
+  });
+
+  it("rejects invalid manifest activation command metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "invalid-activation-metadata",
+        {
+          name: "invalid-activation-metadata-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["commands"],
+          activation: {
+            commands: ["ok", 42],
+          },
+        } as Partial<ExtensionManifest>,
+        "export default { activate() {} };\n",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.effective).toEqual([]);
+      expect(discovery.warnings).toContain("extension_manifest_invalid:project:invalid-activation-metadata");
+    });
+  });
+
   it("surfaces capability policy warnings without blocking in warn mode", async () => {
     await withTempPmPath(async (context) => {
       const roots = resolveExtensionRoots(context.pmPath);
@@ -449,6 +513,80 @@ describe("extension loader", () => {
         "extension_entry_outside_extension:project:symlink-escape-ext",
       ]);
       expect(discovery.effective).toEqual([]);
+    });
+  });
+
+  it("preserves compatible manifest version metadata during discovery", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "compatible-version",
+        {
+          name: "compatible-version-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          manifest_version: 2,
+          pm_min_version: "0.0.0",
+          engines: {
+            pm: ">=0.0.0",
+            node: ">=20",
+          },
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.warnings).toEqual([]);
+      expect(discovery.effective).toEqual([
+        expect.objectContaining({
+          name: "compatible-version-ext",
+          manifest_version: 2,
+          pm_min_version: "0.0.0",
+          engines: {
+            pm: ">=0.0.0",
+            node: ">=20",
+          },
+        }),
+      ]);
+    });
+  });
+
+  it("blocks extensions with unmet pm_min_version before loading", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "future-pm",
+        {
+          name: "future-pm-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          pm_min_version: "9999.1.1",
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.effective).toEqual([]);
+      expect(discovery.warnings).toEqual([
+        expect.stringMatching(/^extension_pm_min_version_unmet:project:future-pm-ext:required=9999\.1\.1:current=/),
+      ]);
+
+      const loaded = await loadExtensions({ pmRoot: context.pmPath, settings });
+      expect(loaded.loaded).toEqual([]);
+      expect(loaded.failed).toEqual([]);
+      expect(loaded.warnings).toEqual(discovery.warnings);
     });
   });
 

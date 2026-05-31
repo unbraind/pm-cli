@@ -7,6 +7,8 @@ First-party package that restores optional guide and shell-completion UX in bare
 - `pm guide [topic]`
 - `pm completion [bash|zsh|fish]`
 - `pm completion-tags`
+- `pm completion-statuses`
+- `pm completion-types`
 
 ## Install
 
@@ -20,4 +22,6 @@ pm install guide-shell --project
 pm guide --list --json
 pm completion bash
 pm completion-tags
+pm completion-statuses
+pm completion-types
 ```

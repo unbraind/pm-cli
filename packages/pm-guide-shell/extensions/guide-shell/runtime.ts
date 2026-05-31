@@ -14,6 +14,7 @@ interface RuntimeSdkModule {
     tags?: string[],
     eagerTagExpansion?: boolean,
     runtime?: {
+      item_types?: string[];
       statuses?: string[];
       command_flags?: Partial<Record<"list" | "create" | "update" | "update-many" | "search" | "calendar" | "context", string[]>>;
     },
@@ -26,7 +27,14 @@ interface RuntimeSdkModule {
   getSettingsPath: (pmRoot: string) => string;
   resolvePmRoot: (cwd: string, overridePath?: string) => string;
   readSettings: (pmRoot: string) => Promise<Record<string, unknown>>;
-  resolveItemTypeRegistry: (settings: unknown, registrations: unknown) => { definitions: Array<{ name: string; folder: string }> };
+  resolveItemTypeRegistry: (
+    settings: unknown,
+    registrations: unknown,
+  ) => {
+    types?: string[];
+    definitions?: Array<{ name: string; folder: string }>;
+    type_to_folder?: Record<string, string>;
+  };
   resolveRuntimeStatusRegistry: (schema: unknown) => { definitions: Array<{ id: string }> };
   resolveRuntimeFieldRegistry: (schema: unknown) => {
     command_to_fields: Map<string, Array<{ cli_flag: string }>>;
@@ -134,10 +142,34 @@ function normalizeCompletionOptions(bundle: RuntimeBundle, args: string[], optio
   };
 }
 
+function collectTypeNames(typeRegistry: ReturnType<RuntimeSdkModule["resolveItemTypeRegistry"]>): string[] {
+  const candidates = Array.isArray(typeRegistry.types)
+    ? typeRegistry.types
+    : Array.isArray(typeRegistry.definitions)
+      ? typeRegistry.definitions
+          .filter((definition) => Boolean(definition))
+          .map((definition) => definition.name)
+      : [];
+  return [...new Set(candidates.filter((value): value is string => typeof value === "string" && value.trim().length > 0))]
+    .sort((left, right) => left.localeCompare(right));
+}
+
+function collectTypeToFolder(typeRegistry: ReturnType<RuntimeSdkModule["resolveItemTypeRegistry"]>): Record<string, string> {
+  if (typeof typeRegistry.type_to_folder === "object" && typeRegistry.type_to_folder !== null) {
+    return typeRegistry.type_to_folder;
+  }
+  return Object.fromEntries(
+    (typeRegistry.definitions ?? [])
+      .filter((definition) => Boolean(definition?.name && definition?.folder))
+      .map((definition) => [definition.name, definition.folder]),
+  );
+}
+
 async function buildCompletionRuntimeConfig(
   bundle: RuntimeBundle,
   global: GlobalOptions,
 ): Promise<{
+  item_types?: string[];
   statuses?: string[];
   command_flags?: Partial<Record<"list" | "create" | "update" | "update-many" | "search" | "calendar" | "context", string[]>>;
 }> {
@@ -146,6 +178,9 @@ async function buildCompletionRuntimeConfig(
     return {};
   }
   const settings = await bundle.sdk.readSettings(pmRoot);
+  const registrations = bundle.sdk.getActiveExtensionRegistrations();
+  const typeRegistry = bundle.sdk.resolveItemTypeRegistry(settings, registrations);
+  const itemTypes = collectTypeNames(typeRegistry);
   const schema = (settings as { schema?: unknown }).schema;
   const statuses = bundle.sdk.resolveRuntimeStatusRegistry(schema).definitions
     .map((definition) => definition.id)
@@ -169,6 +204,7 @@ async function buildCompletionRuntimeConfig(
     }
   }
   return {
+    item_types: itemTypes.length > 0 ? itemTypes : undefined,
     statuses: statuses.length > 0 ? statuses : undefined,
     command_flags: Object.keys(commandFlags).length > 0 ? commandFlags : undefined,
   };
@@ -239,9 +275,7 @@ export async function runCompletionTagsPackage(global: GlobalOptions): Promise<{
   const settings = await bundle.sdk.readSettings(pmRoot);
   const registrations = bundle.sdk.getActiveExtensionRegistrations();
   const typeRegistry = bundle.sdk.resolveItemTypeRegistry(settings, registrations);
-  const typeToFolder = Object.fromEntries(
-    typeRegistry.definitions.map((definition) => [definition.name, definition.folder]),
-  );
+  const typeToFolder = collectTypeToFolder(typeRegistry);
   const schema = (settings as { schema?: unknown }).schema;
   const itemFormat = ((settings as { item_format?: unknown }).item_format === "json_markdown" ? "json_markdown" : "toon") as
     | "toon"
@@ -251,6 +285,34 @@ export async function runCompletionTagsPackage(global: GlobalOptions): Promise<{
   return {
     tags,
     count: tags.length,
+  };
+}
+
+export async function runCompletionStatusesPackage(global: GlobalOptions): Promise<{ statuses: string[]; count: number }> {
+  const bundle = await ensureRuntimeBundle();
+  const pmRoot = bundle.sdk.resolvePmRoot(process.cwd(), global.path);
+  const settings = await bundle.sdk.readSettings(pmRoot);
+  const schema = (settings as { schema?: unknown }).schema;
+  const statuses = bundle.sdk.resolveRuntimeStatusRegistry(schema).definitions
+    .map((definition) => definition.id)
+    .filter((status) => typeof status === "string" && status.trim().length > 0)
+    .sort((left, right) => left.localeCompare(right));
+  return {
+    statuses,
+    count: statuses.length,
+  };
+}
+
+export async function runCompletionTypesPackage(global: GlobalOptions): Promise<{ types: string[]; count: number }> {
+  const bundle = await ensureRuntimeBundle();
+  const pmRoot = bundle.sdk.resolvePmRoot(process.cwd(), global.path);
+  const settings = await bundle.sdk.readSettings(pmRoot);
+  const registrations = bundle.sdk.getActiveExtensionRegistrations();
+  const typeRegistry = bundle.sdk.resolveItemTypeRegistry(settings, registrations);
+  const types = collectTypeNames(typeRegistry);
+  return {
+    types,
+    count: types.length,
   };
 }
 
@@ -289,6 +351,24 @@ export function renderGuideShellPackageOutput(context: ServiceOverrideContext): 
       ? ((result as { tags: unknown[] }).tags.filter((entry): entry is string => typeof entry === "string"))
       : [];
     return `${tags.join(" ")}\n`;
+  }
+  if (context.command === "completion-statuses") {
+    if (readPayloadFormat(context.payload) === "json") {
+      return `${JSON.stringify(result, null, 2)}\n`;
+    }
+    const statuses = typeof result === "object" && result !== null && Array.isArray((result as { statuses?: unknown }).statuses)
+      ? ((result as { statuses: unknown[] }).statuses.filter((entry): entry is string => typeof entry === "string"))
+      : [];
+    return `${statuses.join(" ")}\n`;
+  }
+  if (context.command === "completion-types") {
+    if (readPayloadFormat(context.payload) === "json") {
+      return `${JSON.stringify(result, null, 2)}\n`;
+    }
+    const types = typeof result === "object" && result !== null && Array.isArray((result as { types?: unknown }).types)
+      ? ((result as { types: unknown[] }).types.filter((entry): entry is string => typeof entry === "string"))
+      : [];
+    return `${types.join(" ")}\n`;
   }
   return null;
 }

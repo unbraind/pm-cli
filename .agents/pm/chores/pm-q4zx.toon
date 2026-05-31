@@ -2,10 +2,33 @@ id: pm-q4zx
 title: Runtime-resolved shell completion for custom statuses/types via helper command
 description: "Follow-up to pm-jtdc (MCP status enum made config-driven 2026-05-31). Shell completion (completion.ts) still emits a static script using DEFAULT_STATUS_VALUES / DEFAULT_ITEM_TYPES, so bash/zsh/fish completion of --status/--type never surfaces project-defined custom statuses/types. This does NOT block agents (completion only suggests; the CLI accepts custom values), so it is low priority. Plan: add a `pm completion-statuses` / `pm completion-types` helper (mirroring the existing dynamic `pm completion-tags`) that prints the runtime-resolved status/type ids, and have the generated completion scripts call it for dynamic suggestions, falling back to the static defaults when unavailable."
 type: Chore
-status: open
+status: closed
 priority: 4
 tags[3]: completion,config-driven,schema
 created_at: "2026-05-31T05:42:14.222Z"
-updated_at: "2026-05-31T05:42:14.222Z"
+updated_at: "2026-05-31T09:10:49.131Z"
 author: claude-code-agent
+resolution: Added runtime completion helper commands for statuses and item types and wired shell completion scripts to use them.
+expected_result: Shell completion surfaces project-defined statuses and types without hardcoded defaults.
+actual_result: completion-statuses/types returned runtime values; completion specs and release gates passed.
+comments[1]{created_at,author,text}:
+  "2026-05-31T08:07:16.291Z",codex-gpt5-20260531,"Evidence: implemented runtime-driven --status/--type shell completion. Bash/zsh/fish now lazily call pm completion-statuses / pm completion-types with generated fallback values; guide-shell registers and activates those helper commands; completion tests cover generated fallbacks, helper command output, and runtime custom status/type IDs. Verification: pnpm build passed; node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts passed (1 file, 93 tests); pm test pm-q4zx --run --progress passed linked tests (2/2: completion spec and pnpm build). Note: an earlier linked run failed before the guide-shell activation manifest included the new helper commands; rerun is passing after manifest fix."
+files[10]{path,scope,note}:
+  packages/pm-guide-shell/extensions/guide-shell/index.js,project,shipped guide-shell helper command registration
+  packages/pm-guide-shell/extensions/guide-shell/index.ts,project,register completion status/type helper commands
+  packages/pm-guide-shell/extensions/guide-shell/manifest.json,project,activate completion status/type helper commands
+  packages/pm-guide-shell/extensions/guide-shell/runtime.js,project,shipped guide-shell helper implementations
+  packages/pm-guide-shell/extensions/guide-shell/runtime.ts,project,runtime status/type helper implementations
+  src/cli/commands/completion.ts,project,runtime status/type completion resolvers
+  src/cli/commands/contracts.ts,project,package-owned helper command hints
+  src/core/telemetry/consent.ts,project,skip telemetry prompt for completion helpers
+  src/core/telemetry/observability.ts,project,classify completion helpers as setup commands
+  tests/unit/completion-command.spec.ts,project,focused runtime completion coverage
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/completion-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpthssqx-wcxav8,test,failed,"2026-05-31T08:02:43.679Z","2026-05-31T08:03:04.713Z","2026-05-31T08:03:04.713Z",null,null,1,1,0,null,null,null
+  test-local-mpthxap8-am1uiy,test,passed,"2026-05-31T08:06:16.912Z","2026-05-31T08:06:34.604Z","2026-05-31T08:06:34.604Z",null,null,2,0,0,null,null,null
+close_reason: Completed runtime-resolved shell completion helpers for custom statuses/types; linked completion spec and build pass.
 body: ""

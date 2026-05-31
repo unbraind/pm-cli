@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Build package-first pm ecosystem and install command ([pm-59gj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-59gj.toon))
+- SDK ergonomics: package-safe error base, version negotiation, document PM\_CLI\_PACKAGE\_ROOT ([pm-oxyo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-oxyo.toon))
+
+### Changed
+
+- Vector store: prune orphans on reindex + reset on embedding-model/dimension change ([pm-xutw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-xutw.toon))
+- Dedup create/update parsers + optional command-file splits ([pm-8ehg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8ehg.toon))
+
+### Fixed
+
+- Calendar: normalize recurrence exdates by instant + document count-window semantics ([pm-qcsz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qcsz.toon))
+
+### Other
+
+- Runtime-resolved shell completion for custom statuses/types via helper command ([pm-q4zx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-q4zx.toon))
+- Lazy extension activation: defer import+activate until a command needs contributions ([pm-5wb6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5wb6.toon))
+
 ## 2026.5.31 - 2026-05-31
 
 ### Added

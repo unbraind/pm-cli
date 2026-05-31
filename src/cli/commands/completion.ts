@@ -22,7 +22,7 @@ import {
   UPDATE_MANY_FLAG_CONTRACTS,
   toCompletionFlagString,
 } from "../../sdk/cli-contracts.js";
-import { BUILTIN_ITEM_TYPE_VALUES } from "../../types/index.js";
+import { BUILTIN_ITEM_TYPE_VALUES, STATUS_VALUES } from "../../types/index.js";
 import { listGuideTopicIds } from "../guide-topics.js";
 
 export type CompletionShell = "bash" | "zsh" | "fish";
@@ -35,11 +35,12 @@ export interface CompletionResult {
 
 const VALID_SHELLS: CompletionShell[] = ["bash", "zsh", "fish"];
 const DEFAULT_ITEM_TYPES = [...BUILTIN_ITEM_TYPE_VALUES];
-const DEFAULT_STATUS_VALUES = ["draft", "open", "in_progress", "blocked", "closed", "canceled"];
+const DEFAULT_STATUS_VALUES = [...STATUS_VALUES];
 
 type CompletionFlagCommand = "list" | "create" | "update" | "update-many" | "search" | "calendar" | "context";
 
 export interface CompletionRuntimeConfig {
+  item_types?: string[];
   statuses?: string[];
   command_flags?: Partial<Record<CompletionFlagCommand, string[]>>;
 }
@@ -83,6 +84,22 @@ function joinCompletionValues(values: string[]): string {
     .join(" ");
 }
 
+function joinCompletionValuesInOrder(values: string[]): string {
+  return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].join(" ");
+}
+
+function shellDoubleQuote(value: string): string {
+  return value.replaceAll("\\", "\\\\").replaceAll('"', '\\"').replaceAll("$", "\\$").replaceAll("`", "\\`");
+}
+
+function completionTypeValues(itemTypes: string[], runtime: CompletionRuntimeConfig): string {
+  return joinCompletionValuesInOrder(itemTypes.length > 0 ? itemTypes : (runtime.item_types ?? DEFAULT_ITEM_TYPES));
+}
+
+function completionStatusValues(runtime: CompletionRuntimeConfig): string {
+  return joinCompletionValues(runtime.statuses ?? DEFAULT_STATUS_VALUES);
+}
+
 function mergeFlagStrings(baseFlags: string, runtimeFlags: string[] | undefined): string {
   const merged = [...baseFlags.split(/\s+/u).filter((value) => value.length > 0), ...(runtimeFlags ?? [])];
   return joinCompletionValues(merged);
@@ -118,15 +135,101 @@ function renderFishRuntimeFieldFlagSpecs(commands: string[], runtimeFlags: strin
   return `${lines.join("\n")}\n`;
 }
 
+function renderBashDynamicChoiceResolver(kind: "status" | "type", command: "completion-statuses" | "completion-types", fallback: string): string[] {
+  const envKind = kind.toUpperCase();
+  const cacheVar = `PM_COMPLETION_${envKind}_CACHE`;
+  const cacheTsVar = `PM_COMPLETION_${envKind}_CACHE_TS`;
+  const ttlVar = `PM_COMPLETION_${envKind}_TTL`;
+  const escapedFallback = shellDoubleQuote(fallback);
+  return [
+    `_pm_completion_${kind}_choices() {`,
+    "  local now ttl cache_ts resolved",
+    "  now=\"$(date +%s 2>/dev/null || echo 0)\"",
+    `  ttl="\${${ttlVar}:-120}"`,
+    `  cache_ts="\${${cacheTsVar}:-0}"`,
+    `  if [[ -n "\${${cacheVar}:-}" && "$now" -ne 0 && $((now - cache_ts)) -lt "$ttl" ]]; then`,
+    `    printf '%s\\n' "\$${cacheVar}"`,
+    "    return 0",
+    "  fi",
+    `  resolved="$(pm ${command} 2>/dev/null)"`,
+    "  if [[ -z \"$resolved\" ]]; then",
+    `    resolved="${escapedFallback}"`,
+    "  fi",
+    `  ${cacheVar}="$resolved"`,
+    `  ${cacheTsVar}="$now"`,
+    `  printf '%s\\n' "\$${cacheVar}"`,
+    "}",
+  ];
+}
+
+function renderZshDynamicChoiceResolver(kind: "status" | "type", command: "completion-statuses" | "completion-types", fallback: string): string {
+  const envKind = kind.toUpperCase();
+  const cacheVar = `PM_COMPLETION_${envKind}_CACHE`;
+  const cacheTsVar = `PM_COMPLETION_${envKind}_CACHE_TS`;
+  const ttlVar = `PM_COMPLETION_${envKind}_TTL`;
+  const escapedFallback = shellDoubleQuote(fallback);
+  return `
+_pm_${kind}_choices() {
+  local now ttl cache_ts resolved
+  now=\${EPOCHSECONDS:-0}
+  ttl=\${${ttlVar}:-120}
+  cache_ts=\${${cacheTsVar}:-0}
+  if [[ -n "\${${cacheVar}:-}" && "$now" -ne 0 && $((now - cache_ts)) -lt "$ttl" ]]; then
+    print -r -- "$${cacheVar}"
+    return
+  fi
+  resolved="$(pm ${command} 2>/dev/null)"
+  if [[ -z "$resolved" ]]; then
+    resolved="${escapedFallback}"
+  fi
+  ${cacheVar}="$resolved"
+  ${cacheTsVar}="$now"
+  print -r -- "$${cacheVar}"
+}
+`;
+}
+
+function renderFishDynamicChoiceResolver(kind: "status" | "type", command: "completion-statuses" | "completion-types", fallback: string): string {
+  const envKind = kind.toUpperCase();
+  const escapedFallback = fallback.replaceAll("'", "\\'");
+  return `
+function __pm_${kind}_choices
+  set -l now (date +%s ^/dev/null)
+  if test -z "$now"
+    set now 0
+  end
+  set -l ttl 120
+  if set -q PM_COMPLETION_${envKind}_TTL
+    set ttl $PM_COMPLETION_${envKind}_TTL
+  end
+  if set -q PM_COMPLETION_${envKind}_CACHE; and set -q PM_COMPLETION_${envKind}_CACHE_TS
+    set -l age (math "$now - $PM_COMPLETION_${envKind}_CACHE_TS")
+    if test $age -lt $ttl
+      printf '%s\\n' $PM_COMPLETION_${envKind}_CACHE
+      return
+    end
+  end
+  set -l resolved (pm ${command} ^/dev/null)
+  if test (count $resolved) -eq 0
+    set resolved '${escapedFallback}'
+  end
+  set -gx PM_COMPLETION_${envKind}_CACHE $resolved
+  set -gx PM_COMPLETION_${envKind}_CACHE_TS $now
+  printf '%s\\n' $resolved
+end
+`;
+}
+
 export function generateBashScript(
-  itemTypes: string[] = DEFAULT_ITEM_TYPES,
+  itemTypes: string[] = [],
   tags: string[] = [],
   eagerTagExpansion = false,
   runtime: CompletionRuntimeConfig = {},
 ): string {
   const cmds = ALL_COMMANDS.join(" ");
-  const typeValues = itemTypes.join(" ");
-  const statusValues = joinCompletionValues(runtime.statuses ?? DEFAULT_STATUS_VALUES);
+  const useDynamicTypeExpansion = itemTypes.length === 0;
+  const typeValues = completionTypeValues(itemTypes, runtime);
+  const statusValues = completionStatusValues(runtime);
   const tagValues = joinCompletionValues(tags);
   const listFlags = mergeFlagStrings(LIST_FLAGS, runtime.command_flags?.list);
   const createFlags = mergeFlagStrings(CREATE_FLAGS, runtime.command_flags?.create);
@@ -144,6 +247,9 @@ export function generateBashScript(
     "# bash completion for pm",
     '# Source this file or add \'eval "$(pm completion bash)"\' to ~/.bashrc',
     "",
+    ...(useDynamicTypeExpansion ? [...renderBashDynamicChoiceResolver("type", "completion-types", typeValues), ""] : []),
+    ...renderBashDynamicChoiceResolver("status", "completion-statuses", statusValues),
+    "",
     "_pm_completion() {",
     "  local cur prev words cword",
     "  _init_completion 2>/dev/null || {",
@@ -158,12 +264,14 @@ export function generateBashScript(
     "  fi",
     "",
     '  if [[ "$prev" == "--type" ]]; then',
-    `    COMPREPLY=(${compgen(typeValues)})`,
+    useDynamicTypeExpansion
+      ? '    COMPREPLY=($(compgen -W "$(_pm_completion_type_choices)" -- "$cur"))'
+      : `    COMPREPLY=(${compgen(typeValues)})`,
     "    return 0",
     "  fi",
     "",
     '  if [[ "$prev" == "--status" ]]; then',
-    `    COMPREPLY=(${compgen(statusValues)})`,
+    '    COMPREPLY=($(compgen -W "$(_pm_completion_status_choices)" -- "$cur"))',
     "    return 0",
     "  fi",
     "",
@@ -335,14 +443,17 @@ export function generateBashScript(
 }
 
 export function generateZshScript(
-  itemTypes: string[] = DEFAULT_ITEM_TYPES,
+  itemTypes: string[] = [],
   tags: string[] = [],
   eagerTagExpansion = false,
   runtime: CompletionRuntimeConfig = {},
 ): string {
   const cmds = ALL_COMMANDS.map((c) => `'${c}'`).join(" ");
-  const typeChoices = itemTypes.join(" ");
-  const statusChoices = joinCompletionValues(runtime.statuses ?? DEFAULT_STATUS_VALUES);
+  const useDynamicTypeExpansion = itemTypes.length === 0;
+  const typeFallbackChoices = completionTypeValues(itemTypes, runtime);
+  const statusFallbackChoices = completionStatusValues(runtime);
+  const typeChoices = useDynamicTypeExpansion ? '${(f)"$(_pm_type_choices)"}' : typeFallbackChoices;
+  const statusChoices = '${(f)"$(_pm_status_choices)"}';
   const guideTopicChoices = GUIDE_TOPIC_CHOICES;
   const tagChoices = joinCompletionValues(tags);
   const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
@@ -440,6 +551,8 @@ _pm_commands() {
   _describe 'command' commands
 }
 ${dynamicTagResolver}
+${useDynamicTypeExpansion ? renderZshDynamicChoiceResolver("type", "completion-types", typeFallbackChoices) : ""}
+${renderZshDynamicChoiceResolver("status", "completion-statuses", statusFallbackChoices)}
 
 _pm() {
   local context state line
@@ -1189,7 +1302,7 @@ compdef _pm pm`;
 }
 
 export function generateFishScript(
-  itemTypes: string[] = DEFAULT_ITEM_TYPES,
+  itemTypes: string[] = [],
   tags: string[] = [],
   eagerTagExpansion = false,
   runtime: CompletionRuntimeConfig = {},
@@ -1197,8 +1310,11 @@ export function generateFishScript(
   const listCommandNames = ALL_COMMANDS.filter((command) => command === "list" || command.startsWith("list-"));
   const listCmds = listCommandNames.join(" ");
   const noSubcommandList = ALL_COMMANDS.join(" ");
-  const typeChoices = itemTypes.join(" ");
-  const statusChoices = joinCompletionValues(runtime.statuses ?? DEFAULT_STATUS_VALUES);
+  const useDynamicTypeExpansion = itemTypes.length === 0;
+  const typeFallbackChoices = completionTypeValues(itemTypes, runtime);
+  const statusFallbackChoices = completionStatusValues(runtime);
+  const typeChoices = useDynamicTypeExpansion ? "(__pm_type_choices)" : typeFallbackChoices;
+  const statusChoices = "(__pm_status_choices)";
   const guideTopicChoices = GUIDE_TOPIC_CHOICES;
   const tagChoices = joinCompletionValues(tags);
   const useEagerTagExpansion = eagerTagExpansion || tags.length > 0;
@@ -1257,6 +1373,8 @@ function __pm_no_subcommand
   not __fish_seen_subcommand_from ${noSubcommandList}
 end
 ${dynamicTagResolver}
+${useDynamicTypeExpansion ? renderFishDynamicChoiceResolver("type", "completion-types", typeFallbackChoices) : ""}
+${renderFishDynamicChoiceResolver("status", "completion-statuses", statusFallbackChoices)}
 
 # Subcommands
 complete -c pm -n __pm_no_subcommand -a init          -d 'Initialize pm storage for the current workspace'
@@ -1858,7 +1976,7 @@ const SETUP_HINTS: Record<CompletionShell, string> = {
 
 export function runCompletion(
   shell: string,
-  itemTypes: string[] = DEFAULT_ITEM_TYPES,
+  itemTypes: string[] = [],
   tags: string[] = [],
   eagerTagExpansion = false,
   runtime: CompletionRuntimeConfig = {},

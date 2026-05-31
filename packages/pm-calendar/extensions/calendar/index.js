@@ -40,7 +40,12 @@ const calendarFlags = [
   { long: "--include", value_name: "value", value_type: "string", description: "Include sources: deadlines|reminders|events|scheduled|all." },
   { long: "--recurrence-lookahead-days", value_name: "n", value_type: "string", description: "Bound open-ended recurrence lookahead days." },
   { long: "--recurrence-lookback-days", value_name: "n", value_type: "string", description: "Bound open-ended recurrence lookback days." },
-  { long: "--occurrence-limit", value_name: "n", value_type: "string", description: "Cap generated occurrences per recurring event." },
+  {
+    long: "--occurrence-limit",
+    value_name: "n",
+    value_type: "string",
+    description: "Cap generated occurrences per recurring event; stored recur_count starts at series start, not the query window.",
+  },
   { long: "--limit", value_name: "n", value_type: "string", description: "Limit returned event count." },
   { long: "--format", value_name: "value", value_type: "string", description: "Calendar output override: markdown|toon|json." },
 ];

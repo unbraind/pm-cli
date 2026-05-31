@@ -12,8 +12,20 @@ import { resolveEmbeddingProviders } from "./providers.js";
 import type { EmbeddingProviderConfig } from "./providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "./semantic-defaults.js";
 import { scheduleBackgroundSemanticRefresh } from "./background-refresh.js";
-import { executeVectorDelete, executeVectorUpsert, resolveVectorStores } from "./vector-stores.js";
+import { executeVectorDelete, executeVectorReset, executeVectorUpsert, resolveVectorStores } from "./vector-stores.js";
 import type { VectorStoreConfig } from "./vector-stores.js";
+import {
+  buildVectorizationEmbeddingIdentity,
+  buildVectorizationEmbeddingMetadata,
+  hasVectorizationEmbeddingIdentityChanged,
+  hasVectorizationVectorDimensionChanged,
+  inferConsistentVectorDimension,
+  normalizeVectorizationEmbeddingMetadata,
+} from "./vectorization-metadata.js";
+import type {
+  VectorizationEmbeddingIdentity,
+  VectorizationEmbeddingMetadata,
+} from "./vectorization-metadata.js";
 import { nowIso } from "../shared/time.js";
 import type { ItemDocument, ItemFrontMatter } from "../../types/index.js";
 
@@ -55,6 +67,7 @@ export interface SemanticRefreshOptions {
 
 export interface VectorizationStatusLedgerReadResult {
   entries: Record<string, string>;
+  embedding: VectorizationEmbeddingMetadata | null;
   warnings: string[];
 }
 
@@ -90,6 +103,7 @@ export async function readVectorizationStatusLedger(pmRoot: string): Promise<Vec
   if (raw === null || raw.trim().length === 0) {
     return {
       entries: {},
+      embedding: null,
       warnings: [],
     };
   }
@@ -100,6 +114,7 @@ export async function readVectorizationStatusLedger(pmRoot: string): Promise<Vec
   } catch {
     return {
       entries: {},
+      embedding: null,
       warnings: ["search_vectorization_status_ledger_invalid"],
     };
   }
@@ -112,6 +127,7 @@ export async function readVectorizationStatusLedger(pmRoot: string): Promise<Vec
   ) {
     return {
       entries: {},
+      embedding: null,
       warnings: ["search_vectorization_status_ledger_invalid"],
     };
   }
@@ -121,6 +137,7 @@ export async function readVectorizationStatusLedger(pmRoot: string): Promise<Vec
     if (typeof entry !== "object" || entry === null) {
       return {
         entries: {},
+        embedding: null,
         warnings: ["search_vectorization_status_ledger_invalid"],
       };
     }
@@ -129,25 +146,43 @@ export async function readVectorizationStatusLedger(pmRoot: string): Promise<Vec
     if (typeof id !== "string" || id.trim().length === 0 || !isValidUpdatedAt(updatedAt)) {
       return {
         entries: {},
+        embedding: null,
         warnings: ["search_vectorization_status_ledger_invalid"],
       };
     }
     mapped.set(id.trim(), updatedAt);
   }
 
+  let embedding: VectorizationEmbeddingMetadata | null = null;
+  try {
+    embedding = normalizeVectorizationEmbeddingMetadata((parsed as { embedding?: unknown }).embedding);
+  } catch {
+    return {
+      entries: {},
+      embedding: null,
+      warnings: ["search_vectorization_status_ledger_invalid"],
+    };
+  }
+
   return {
     entries: Object.fromEntries([...mapped.entries()].sort((left, right) => left[0].localeCompare(right[0]))),
+    embedding,
     warnings: [],
   };
 }
 
-export async function writeVectorizationStatusLedger(pmRoot: string, entries: Record<string, string>): Promise<void> {
+export async function writeVectorizationStatusLedger(
+  pmRoot: string,
+  entries: Record<string, string>,
+  embedding?: VectorizationEmbeddingMetadata | null,
+): Promise<void> {
   const normalizedEntries = normalizeVectorizationLedgerEntries(entries);
   const ledgerPath = path.join(pmRoot, VECTORIZATION_STATUS_LEDGER_PATH);
   const serialized = `${JSON.stringify(
     {
       version: 1,
       generated_at: nowIso(),
+      ...(embedding ? { embedding } : {}),
       items: Object.entries(normalizedEntries).map(([id, updated_at]) => ({
         id,
         updated_at,
@@ -186,6 +221,20 @@ interface SemanticRefreshOperationResult {
   refreshed: string[];
   skipped: string[];
   warnings: string[];
+}
+
+interface SemanticEmbeddingOperationResult {
+  vectors: number[][];
+  vector_dimension: number;
+  warnings: string[];
+}
+
+function buildVectorizationIdentityForProvider(provider: EmbeddingProviderConfig): VectorizationEmbeddingIdentity {
+  const identity = buildVectorizationEmbeddingIdentity(provider.name, provider.model);
+  if (!identity) {
+    throw new Error("Embedding provider must include a provider name and model");
+  }
+  return identity;
 }
 
 function buildSkippedSemanticRefreshResult(itemIds: string[], warning: string): SemanticMutationRefreshResult {
@@ -275,41 +324,56 @@ async function collectSemanticRefreshWorkload(
   };
 }
 
-async function refreshLocatedSemanticVectors(
+async function embedLocatedSemanticVectors(
   settings: Awaited<ReturnType<typeof readSettings>>,
   provider: EmbeddingProviderConfig,
+  documents: Array<{ id: string; document: ItemDocument }>,
+): Promise<SemanticEmbeddingOperationResult> {
+  const corpusInputs = documents.map((entry) =>
+    buildSemanticCorpusInput(entry.document, {
+      providerName: provider.name,
+    }),
+  );
+  const embeddingResult = await executeEmbeddingBatchesWithRetry(provider, settings, corpusInputs);
+  return {
+    vectors: embeddingResult.vectors,
+    vector_dimension: inferConsistentVectorDimension(embeddingResult.vectors, "Semantic refresh embedding"),
+    warnings: embeddingResult.warnings,
+  };
+}
+
+async function upsertLocatedSemanticVectors(
   vectorStore: VectorStoreConfig,
   documents: Array<{ id: string; document: ItemDocument }>,
+  vectors: number[][],
 ): Promise<SemanticRefreshOperationResult> {
-  if (documents.length === 0) {
-    return { refreshed: [], skipped: [], warnings: [] };
-  }
+  await executeVectorUpsert(
+    vectorStore,
+    documents.map((entry, index) => ({
+      id: entry.id,
+      vector: vectors[index],
+      payload: buildVectorPayload(entry.document.metadata),
+    })),
+  );
+  return {
+    refreshed: documents.map((entry) => entry.id),
+    skipped: [],
+    warnings: [],
+  };
+}
 
+async function resetSemanticVectorStore(
+  vectorStore: VectorStoreConfig,
+  ledgerEntries: Record<string, string>,
+): Promise<SemanticRefreshOperationResult> {
   try {
-    const corpusInputs = documents.map((entry) =>
-      buildSemanticCorpusInput(entry.document, {
-        providerName: provider.name,
-      }),
-    );
-    const embeddingResult = await executeEmbeddingBatchesWithRetry(provider, settings, corpusInputs);
-    await executeVectorUpsert(
-      vectorStore,
-      documents.map((entry, index) => ({
-        id: entry.id,
-        vector: embeddingResult.vectors[index],
-        payload: buildVectorPayload(entry.document.metadata),
-      })),
-    );
-    return {
-      refreshed: documents.map((entry) => entry.id),
-      skipped: [],
-      warnings: embeddingResult.warnings,
-    };
+    await executeVectorReset(vectorStore, Object.keys(ledgerEntries));
+    return { refreshed: [], skipped: [], warnings: [] };
   } catch (error: unknown) {
     return {
       refreshed: [],
-      skipped: documents.map((entry) => entry.id),
-      warnings: [`search_semantic_refresh_failed:${toErrorMessage(error)}`],
+      skipped: [],
+      warnings: [`search_semantic_refresh_reset_failed:${toErrorMessage(error)}`],
     };
   }
 }
@@ -387,12 +451,52 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
     typeRegistry.type_to_folder,
     runtimeContext.settings.schema,
   );
-  const refreshedResult = await refreshLocatedSemanticVectors(
-    runtimeContext.settings,
-    runtimeContext.provider,
-    runtimeContext.vectorStore,
-    workload.documents,
-  );
+  const ledgerRead =
+    workload.documents.length > 0 || workload.missingIds.length > 0
+      ? await readVectorizationStatusLedger(pmRoot)
+      : { entries: {}, embedding: null, warnings: [] };
+  const embeddingIdentity = buildVectorizationIdentityForProvider(runtimeContext.provider);
+  const nextLedgerBaseEntries = ledgerRead.entries;
+  let refreshedResult: SemanticRefreshOperationResult = { refreshed: [], skipped: [], warnings: [] };
+  let nextEmbeddingMetadata = ledgerRead.embedding;
+  if (workload.documents.length > 0) {
+    if (ledgerRead.embedding && hasVectorizationEmbeddingIdentityChanged(ledgerRead.embedding, embeddingIdentity)) {
+      refreshedResult = {
+        refreshed: [],
+        skipped: workload.documents.map((entry) => entry.id),
+        warnings: ["search_semantic_refresh_requires_reindex:embedding_identity_changed"],
+      };
+    } else {
+      try {
+        const embedded = await embedLocatedSemanticVectors(
+          runtimeContext.settings,
+          runtimeContext.provider,
+          workload.documents,
+        );
+        if (hasVectorizationVectorDimensionChanged(ledgerRead.embedding, embedded.vector_dimension)) {
+          refreshedResult = {
+            refreshed: [],
+            skipped: workload.documents.map((entry) => entry.id),
+            warnings: [...embedded.warnings, "search_semantic_refresh_requires_reindex:vector_dimension_changed"],
+          };
+        } else {
+          nextEmbeddingMetadata = buildVectorizationEmbeddingMetadata(embeddingIdentity, embedded.vector_dimension);
+          const upserted = await upsertLocatedSemanticVectors(runtimeContext.vectorStore, workload.documents, embedded.vectors);
+          refreshedResult = {
+            refreshed: upserted.refreshed,
+            skipped: upserted.skipped,
+            warnings: [...embedded.warnings, ...upserted.warnings],
+          };
+        }
+      } catch (error: unknown) {
+        refreshedResult = {
+          refreshed: [],
+          skipped: workload.documents.map((entry) => entry.id),
+          warnings: [`search_semantic_refresh_failed:${toErrorMessage(error)}`],
+        };
+      }
+    }
+  }
   const pruneResult = await pruneMissingSemanticVectors(runtimeContext.vectorStore, workload.missingIds);
   const refreshedIdSet = new Set(refreshedResult.refreshed);
   const refreshedEntries = Object.fromEntries(
@@ -402,16 +506,15 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
   );
   const ledgerWarnings: string[] = [];
   if (Object.keys(refreshedEntries).length > 0 || workload.missingIds.length > 0) {
-    const ledgerRead = await readVectorizationStatusLedger(pmRoot);
     const nextEntries = {
-      ...ledgerRead.entries,
+      ...nextLedgerBaseEntries,
       ...normalizeVectorizationLedgerEntries(refreshedEntries),
     };
     for (const missingId of workload.missingIds) {
       delete nextEntries[missingId];
     }
     try {
-      await writeVectorizationStatusLedger(pmRoot, nextEntries);
+      await writeVectorizationStatusLedger(pmRoot, nextEntries, nextEmbeddingMetadata);
     } catch (error: unknown) {
       ledgerWarnings.push(`search_vectorization_status_ledger_write_failed:${toErrorMessage(error)}`);
     }

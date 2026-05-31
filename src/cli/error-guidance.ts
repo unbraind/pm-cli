@@ -231,6 +231,16 @@ function normalizeMessage(message: string): string {
   return message.replace(/\(outputHelp\)/g, "").trim();
 }
 
+function isModuleResolutionErrorMessage(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("cannot find module") ||
+    normalized.includes("cannot find package") ||
+    normalized.includes("err_module_not_found") ||
+    normalized.includes("module_not_found")
+  );
+}
+
 function normalizeContextList(values: string[] | undefined): string[] | undefined {
   if (!Array.isArray(values)) {
     return undefined;
@@ -774,10 +784,27 @@ export function formatUnknownErrorForJson(rawMessage: string, exitCode: number):
 }
 
 function buildUnknownErrorGuidance(rawMessage: string): GuidanceMessage {
+  const message = normalizeMessage(rawMessage);
+  if (isModuleResolutionErrorMessage(message)) {
+    return makeGuidanceMessage({
+      code: "module_import_failed",
+      title: "Module import failed",
+      happened: message,
+      required: "Ensure the active checkout is built and any package or extension entry file exists before retrying.",
+      why: "Node could not resolve an imported module. In pm this usually means an extension/package entrypoint, build artifact, or dependency is missing from the active runtime.",
+      examples: ["pnpm build", "pm package manage --doctor --project", "pm health --check-only --json"],
+      nextSteps: [
+        "Rebuild the checkout or package that provides the missing module.",
+        "Run package doctor for installed extensions when the failure follows package installation or activation.",
+        "Rerun the original pm command after the runtime files are present.",
+      ],
+    });
+  }
+
   return makeGuidanceMessage({
     code: "unknown_error",
     title: "Unhandled error",
-    happened: normalizeMessage(rawMessage),
+    happened: message,
     required: "Inspect command input and runtime state, then retry.",
     why: "Unexpected runtime failures can occur from environment or extension-level issues.",
     examples: ["pm --help", "pm health --json"],

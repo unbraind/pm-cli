@@ -6,6 +6,7 @@ import {
   activateExtensions,
   clearActiveExtensionHooks,
   createEmptyExtensionRegistrationRegistry,
+  discoverExtensions,
   getActiveCommandResult,
   getActiveExtensionRegistrations,
   loadExtensions,
@@ -24,6 +25,7 @@ import {
   setActiveExtensionRenderers,
   setActiveExtensionServices,
   type ExtensionCommandRegistry,
+  type ExtensionDiscoveryResult,
   type ExtensionHookRegistry,
   type ExtensionParserRegistry,
   type ExtensionPreflightRegistry,
@@ -121,6 +123,7 @@ import {
   parseBootstrapHelpRequest,
   parseBootstrapCommandName,
   normalizeBootstrapInvocation,
+  stripGlobalBootstrapTokens,
 } from "./bootstrap-args.js";
 import {
   type MandatoryMigrationBlocker,
@@ -204,7 +207,21 @@ interface RuntimeExtensionSnapshot {
   activationFailedCount: number;
 }
 
+interface RuntimeExtensionDiscoverySnapshot {
+  pmRoot: string;
+  settings: PmSettings;
+  discovery: ExtensionDiscoveryResult;
+  discoveryMs: number;
+}
+
+interface RuntimeExtensionActivationProbe {
+  commandPath?: string;
+  commandArgs?: string[];
+  allowCommandPrefixMatch?: boolean;
+}
+
 let runtimeExtensionSnapshotCache: { key: string; snapshot: RuntimeExtensionSnapshot | null } | null = null;
+let runtimeExtensionDiscoverySnapshotCache: { key: string; snapshot: RuntimeExtensionDiscoverySnapshot | null } | null = null;
 let activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
 const HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS = 250;
 const EXPECTED_HANDLED_ERROR_EXIT_CODES = new Set<number>([
@@ -774,6 +791,26 @@ async function registerRuntimeSchemaFieldFlags(rootProgram: Command, invocationA
   }
 }
 
+async function maybeAttachCreateUpdatePolicyHelpText(
+  rootProgram: Command,
+  pmRoot: string,
+  invocationArgv: string[],
+  registrations: ReturnType<typeof createEmptyExtensionRegistrationRegistry>,
+  settings?: PmSettings,
+): Promise<void> {
+  const bootstrapCommand = parseBootstrapCommandName(invocationArgv);
+  if (bootstrapCommand !== "create" && bootstrapCommand !== "update") {
+    return;
+  }
+  try {
+    const resolvedSettings = settings ?? (await readSettings(pmRoot));
+    const typeRegistry = resolveItemTypeRegistry(resolvedSettings, registrations);
+    attachCreateUpdatePolicyHelpText(rootProgram, typeRegistry, invocationArgv);
+  } catch {
+    // Help should remain available even when settings cannot be read.
+  }
+}
+
 function defaultPreflightDecision(): PreflightRuntimeDecision {
   return {
     enforce_item_format_gate: true,
@@ -787,6 +824,210 @@ function buildRuntimeExtensionSnapshotCacheKey(pmRoot: string): string {
   return `pm-root:${pmRoot}`;
 }
 
+function bootstrapProfileEnabled(invocationArgv: string[]): boolean {
+  return invocationArgv.some((token) => token === "--profile");
+}
+
+function buildRuntimeExtensionDiscoverySnapshotCacheKey(pmRoot: string): string {
+  return `pm-root:${pmRoot}`;
+}
+
+function collectLeadingCommandArgs(commandArgs: readonly string[] | undefined): string[] {
+  const leading: string[] = [];
+  for (const arg of commandArgs ?? []) {
+    if (arg.startsWith("-")) {
+      break;
+    }
+    const normalized = normalizeExtensionCommandPath(arg);
+    if (normalized.length === 0) {
+      continue;
+    }
+    leading.push(normalized);
+  }
+  return leading;
+}
+
+function collectActivationCommandCandidates(probe: RuntimeExtensionActivationProbe): string[] {
+  const commandPath = normalizeExtensionCommandPath(probe.commandPath ?? "");
+  if (commandPath.length === 0) {
+    return [];
+  }
+  const candidates = [commandPath];
+  const parts = commandPath.split(" ").filter((part) => part.length > 0);
+  for (const arg of collectLeadingCommandArgs(probe.commandArgs)) {
+    parts.push(...arg.split(" ").filter((part) => part.length > 0));
+    candidates.push(parts.join(" "));
+  }
+  return [...new Set(candidates)];
+}
+
+function activationCommandMatchesProbe(command: string, probe: RuntimeExtensionActivationProbe): boolean {
+  const normalized = normalizeExtensionCommandPath(command);
+  if (normalized.length === 0) {
+    return false;
+  }
+  const candidates = collectActivationCommandCandidates(probe);
+  for (const candidate of candidates) {
+    if (candidate === normalized || candidate.startsWith(`${normalized} `)) {
+      return true;
+    }
+  }
+  if (probe.allowCommandPrefixMatch === true) {
+    return candidates.some((candidate) => normalized.startsWith(`${candidate} `));
+  }
+  return false;
+}
+
+function extensionActivationCommands(extension: ExtensionDiscoveryResult["effective"][number]): string[] {
+  return extension.activation?.commands ?? [];
+}
+
+function extensionCapabilities(extension: ExtensionDiscoveryResult["effective"][number]): Set<string> {
+  return new Set((extension.capabilities ?? []).map((capability) => capability.trim().toLowerCase()));
+}
+
+const GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES = new Set(["hooks", "parser", "preflight", "renderers"]);
+const CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES = new Set(["commands", "schema", "services"]);
+const SEARCH_EXTENSION_ACTIVATION_COMMANDS = new Set(["reindex", "search", "search-advanced"]);
+const CREATE_TEMPLATE_FLAGS = new Set(["--template"]);
+
+function hasAnyCapability(capabilities: Set<string>, expected: Set<string>): boolean {
+  for (const capability of expected) {
+    if (capabilities.has(capability)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function commandPathNeedsSearchExtensions(commandPath: string | undefined): boolean {
+  const normalized = normalizeExtensionCommandPath(commandPath ?? "");
+  if (normalized.length === 0) {
+    return false;
+  }
+  const [topLevel] = normalized.split(" ");
+  return SEARCH_EXTENSION_ACTIVATION_COMMANDS.has(topLevel ?? normalized);
+}
+
+function probeUsesAnyFlag(probe: RuntimeExtensionActivationProbe, flags: Set<string>): boolean {
+  for (const arg of probe.commandArgs ?? []) {
+    if (!arg.startsWith("--")) {
+      continue;
+    }
+    const [flagName] = arg.split("=", 1);
+    if (flags.has(flagName)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function commandPathNeedsTemplateExtensions(probe: RuntimeExtensionActivationProbe): boolean {
+  return normalizeExtensionCommandPath(probe.commandPath ?? "") === "create" && probeUsesAnyFlag(probe, CREATE_TEMPLATE_FLAGS);
+}
+
+function extensionProvidesTemplatesRuntime(commands: readonly string[]): boolean {
+  return commands.some((command) => {
+    const normalized = normalizeExtensionCommandPath(command);
+    return normalized === "templates" || normalized.startsWith("templates ");
+  });
+}
+
+function extensionNeedsActivationForProbe(
+  extension: ExtensionDiscoveryResult["effective"][number],
+  probe: RuntimeExtensionActivationProbe,
+): boolean {
+  const capabilities = extensionCapabilities(extension);
+  const commands = extensionActivationCommands(extension);
+  if (commands.length > 0 && commands.some((command) => activationCommandMatchesProbe(command, probe))) {
+    return true;
+  }
+
+  if (hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES)) {
+    return true;
+  }
+
+  if (commandPathNeedsTemplateExtensions(probe) && extensionProvidesTemplatesRuntime(commands)) {
+    return true;
+  }
+
+  if (capabilities.has("search")) {
+    return commandPathNeedsSearchExtensions(probe.commandPath);
+  }
+
+  if (commands.length > 0) {
+    return false;
+  }
+
+  if (hasAnyCapability(capabilities, CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES)) {
+    return true;
+  }
+
+  if (capabilities.has("importers")) {
+    return probe.allowCommandPrefixMatch === true;
+  }
+
+  return false;
+}
+
+function discoveryNeedsActivationForProbe(
+  discovery: ExtensionDiscoveryResult,
+  probe: RuntimeExtensionActivationProbe,
+): boolean {
+  if (discovery.effective.length === 0) {
+    return false;
+  }
+  const hasCommandProbe = normalizeExtensionCommandPath(probe.commandPath ?? "").length > 0;
+  if (!hasCommandProbe) {
+    return discovery.effective.some((extension) => {
+      const capabilities = extensionCapabilities(extension);
+      return (
+        extensionActivationCommands(extension).length > 0 ||
+        hasAnyCapability(capabilities, GLOBAL_EXTENSION_ACTIVATION_CAPABILITIES) ||
+        hasAnyCapability(capabilities, CONSERVATIVE_EXTENSION_ACTIVATION_CAPABILITIES) ||
+        capabilities.has("importers") ||
+        capabilities.has("search")
+      );
+    });
+  }
+  return discovery.effective.some((extension) => extensionNeedsActivationForProbe(extension, probe));
+}
+
+function buildBootstrapActivationProbe(invocationArgv: string[]): RuntimeExtensionActivationProbe {
+  const helpRequest = parseBootstrapHelpRequest(invocationArgv);
+  if (helpRequest.requested && helpRequest.commandPathTokens.length > 0) {
+    const [commandPath, ...commandArgs] = helpRequest.commandPathTokens;
+    return {
+      commandPath,
+      commandArgs,
+      allowCommandPrefixMatch: true,
+    };
+  }
+
+  const stripped = stripGlobalBootstrapTokens(invocationArgv);
+  const commandIndex = stripped.findIndex((token) => token.trim().length > 0 && !token.startsWith("-"));
+  if (commandIndex < 0) {
+    return {};
+  }
+  return {
+    commandPath: stripped[commandIndex],
+    commandArgs: stripped.slice(commandIndex + 1),
+    allowCommandPrefixMatch: helpRequest.requested,
+  };
+}
+
+function collectParsedActivationCommandArgs(command: Command): string[] {
+  const commandArgs = command.args.map(String);
+  const commandPath = normalizeExtensionCommandPath(getCommandPath(command));
+  if (commandPath === "create") {
+    const options = command.optsWithGlobals() as Record<string, unknown>;
+    if (typeof options.template === "string" && options.template.trim().length > 0) {
+      commandArgs.push("--template");
+    }
+  }
+  return commandArgs;
+}
+
 function emitExtensionProfile(globalOptions: GlobalOptions, snapshot: RuntimeExtensionSnapshot): void {
   if (!globalOptions.profile) {
     return;
@@ -796,6 +1037,64 @@ function emitExtensionProfile(globalOptions: GlobalOptions, snapshot: RuntimeExt
   );
   if (snapshot.activationWarnings.length > 0) {
     printError(`profile:extensions activation_warnings=${formatHookWarnings(snapshot.activationWarnings)}`);
+  }
+}
+
+function emitExtensionSkippedProfile(
+  profileEnabled: boolean | undefined,
+  snapshot: RuntimeExtensionDiscoverySnapshot,
+  probe: RuntimeExtensionActivationProbe,
+): void {
+  if (!profileEnabled) {
+    return;
+  }
+  const command = normalizeExtensionCommandPath(probe.commandPath ?? "") || "<none>";
+  printError(
+    `profile:extensions activation=skipped command=${command} effective=${snapshot.discovery.effective.length} warnings=${snapshot.discovery.warnings.length} discovery_ms=${snapshot.discoveryMs}`,
+  );
+}
+
+async function loadRuntimeExtensionDiscoverySnapshot(pmRoot: string): Promise<RuntimeExtensionDiscoverySnapshot | null> {
+  const cacheKey = buildRuntimeExtensionDiscoverySnapshotCacheKey(pmRoot);
+  if (runtimeExtensionDiscoverySnapshotCache?.key === cacheKey) {
+    return runtimeExtensionDiscoverySnapshotCache.snapshot;
+  }
+
+  const settingsPath = getSettingsPath(pmRoot);
+  if (!(await pathExists(settingsPath))) {
+    runtimeExtensionDiscoverySnapshotCache = {
+      key: cacheKey,
+      snapshot: null,
+    };
+    return null;
+  }
+
+  try {
+    const startedAt = Date.now();
+    const settings = await readSettings(pmRoot);
+    const discovery = await discoverExtensions({
+      pmRoot,
+      settings,
+      cwd: process.cwd(),
+      noExtensions: false,
+    });
+    const snapshot: RuntimeExtensionDiscoverySnapshot = {
+      pmRoot,
+      settings,
+      discovery,
+      discoveryMs: Date.now() - startedAt,
+    };
+    runtimeExtensionDiscoverySnapshotCache = {
+      key: cacheKey,
+      snapshot,
+    };
+    return snapshot;
+  } catch {
+    runtimeExtensionDiscoverySnapshotCache = {
+      key: cacheKey,
+      snapshot: null,
+    };
+    return null;
   }
 }
 
@@ -888,6 +1187,19 @@ async function maybeLoadRuntimeExtensions(
   }
 
   const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+  const discoverySnapshot = await loadRuntimeExtensionDiscoverySnapshot(pmRoot);
+  if (!discoverySnapshot) {
+    return null;
+  }
+  const probe: RuntimeExtensionActivationProbe = {
+    commandPath: getCommandPath(command),
+    commandArgs: collectParsedActivationCommandArgs(command),
+  };
+  if (!discoveryNeedsActivationForProbe(discoverySnapshot.discovery, probe)) {
+    emitExtensionSkippedProfile(globalOptions.profile, discoverySnapshot, probe);
+    return null;
+  }
+
   const snapshot = await loadRuntimeExtensionSnapshot(pmRoot);
   if (!snapshot) {
     return null;
@@ -1107,25 +1419,58 @@ function wrapProgramActionsForExtensionHandlers(rootProgram: Command): void {
 
 async function registerDynamicExtensionCommandPaths(rootProgram: Command, invocationArgv: string[]): Promise<void> {
   const bootstrapGlobalOptions = parseBootstrapGlobalOptions(invocationArgv);
+  const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
   if (bootstrapGlobalOptions.noExtensions) {
+    activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
+    setActiveExtensionServices({ overrides: [] });
+    await maybeAttachCreateUpdatePolicyHelpText(
+      rootProgram,
+      pmRoot,
+      invocationArgv,
+      createEmptyExtensionRegistrationRegistry(),
+    );
+    return;
+  }
+
+  const discoverySnapshot = await loadRuntimeExtensionDiscoverySnapshot(pmRoot);
+  const probe = buildBootstrapActivationProbe(invocationArgv);
+  if (!discoverySnapshot) {
     activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
     setActiveExtensionServices({ overrides: [] });
     return;
   }
+  if (!discoveryNeedsActivationForProbe(discoverySnapshot.discovery, probe)) {
+    activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
+    setActiveExtensionServices({ overrides: [] });
+    await maybeAttachCreateUpdatePolicyHelpText(
+      rootProgram,
+      pmRoot,
+      invocationArgv,
+      createEmptyExtensionRegistrationRegistry(),
+      discoverySnapshot.settings,
+    );
+    emitExtensionSkippedProfile(bootstrapProfileEnabled(invocationArgv), discoverySnapshot, probe);
+    return;
+  }
 
-  const pmRoot = resolvePmRoot(process.cwd(), bootstrapGlobalOptions.path);
   const snapshot = await loadRuntimeExtensionSnapshot(pmRoot);
   if (!snapshot) {
     activeRuntimeExtensionCommandDescriptors = new Map<string, ExtensionCommandHelpDescriptor>();
     setActiveExtensionServices({ overrides: [] });
+    await maybeAttachCreateUpdatePolicyHelpText(
+      rootProgram,
+      pmRoot,
+      invocationArgv,
+      createEmptyExtensionRegistrationRegistry(),
+      discoverySnapshot.settings,
+    );
     return;
   }
   // Ensure usage/help/error formatting overrides are available even when parse
   // errors occur before preAction hooks initialize full runtime extension state.
   setActiveExtensionServices(snapshot.services);
   activeRuntimeExtensionCommandDescriptors = new Map(snapshot.commandDescriptors);
-  const typeRegistry = resolveItemTypeRegistry(snapshot.settings, snapshot.registrations);
-  attachCreateUpdatePolicyHelpText(rootProgram, typeRegistry, invocationArgv);
+  await maybeAttachCreateUpdatePolicyHelpText(rootProgram, pmRoot, invocationArgv, snapshot.registrations, snapshot.settings);
 
   const commandPaths = [...new Set([...snapshot.commandHandlers, ...snapshot.commandDescriptors.keys()])].sort((left, right) =>
     left.localeCompare(right),
@@ -1697,8 +2042,17 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
     };
 
     if (!bootstrapGlobal.noExtensions) {
-      const bootstrapSnapshot = await loadRuntimeExtensionSnapshot(bootstrapPmRoot);
-      setActiveExtensionServices(bootstrapSnapshot?.services ?? { overrides: [] });
+      const bootstrapProbe = buildBootstrapActivationProbe(invocationArgv);
+      const discoverySnapshot = await loadRuntimeExtensionDiscoverySnapshot(bootstrapPmRoot);
+      if (discoverySnapshot && discoveryNeedsActivationForProbe(discoverySnapshot.discovery, bootstrapProbe)) {
+        const bootstrapSnapshot = await loadRuntimeExtensionSnapshot(bootstrapPmRoot);
+        setActiveExtensionServices(bootstrapSnapshot?.services ?? { overrides: [] });
+      } else {
+        if (discoverySnapshot) {
+          emitExtensionSkippedProfile(bootstrapProfileEnabled(invocationArgv), discoverySnapshot, bootstrapProbe);
+        }
+        setActiveExtensionServices({ overrides: [] });
+      }
     }
 
     const numericExitCode = readThrownExitCode(error);

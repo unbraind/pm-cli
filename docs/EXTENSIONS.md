@@ -106,6 +106,7 @@ A minimal extension has a `manifest.json` and an entrypoint:
   "name": "hello",
   "version": "0.1.0",
   "entry": "./index.js",
+  "pm_min_version": "2026.5.31",
   "capabilities": ["commands"]
 }
 ```
@@ -138,6 +139,8 @@ Runnable manifest examples are the source of truth:
 Rules:
 
 - `entry` must resolve inside the extension directory.
+- `pm_min_version` is an inclusive minimum pm CLI version. If the running CLI is older, discovery emits `extension_pm_min_version_unmet:<layer>:<name>:required=<version>:current=<version>` and skips the extension before import.
+- Optional `engines.pm` and `engines.node` metadata is accepted for tooling, but `pm_min_version` is the loader-enforced field.
 - Declare only capabilities the extension actually uses.
 - Unknown capabilities emit deterministic warnings.
 - Legacy aliases such as `migration` and `validation` are normalized to `schema` with warnings.
@@ -207,9 +210,9 @@ Common APIs:
 - `api.registerItemFields(fields)` adds custom metadata fields.
 - `api.registerItemTypes(types)` adds custom item types.
 - `api.registerMigration(definition)` adds schema migrations.
-- `api.registerOutputService(definition)` customizes output rendering.
-- `api.registerRenderer(definition)` adds format-specific renderers.
-- `api.registerHook(name, handler)` adds lifecycle hooks.
+- `api.registerService("output_format", handler)` customizes output formatting through the service override API.
+- `api.registerRenderer("toon" | "json", renderer)` adds format-specific renderers.
+- `api.hooks.beforeCommand(handler)`, `api.hooks.afterCommand(handler)`, `api.hooks.onWrite(handler)`, `api.hooks.onRead(handler)`, and `api.hooks.onIndex(handler)` add lifecycle hooks.
 
 Inline command flags require both `commands` and `schema` capabilities. Runtime schema changes should be verified with:
 
@@ -295,6 +298,19 @@ pm health --check-only --json
 For package-owned commands, install the package before assuming the command is available. Runtime contracts expose installed package actions; static SDK contracts intentionally expose only core actions.
 
 If a package-owned command is invoked before installation, usage guidance includes the recovery install command when `pm` can map the command to a bundled package.
+
+## Package Authoring Notes
+
+Third-party packages should import only stable public SDK subpaths:
+
+```js
+import { defineExtension, createPmCliExpectedError } from "@unbrained/pm-cli/sdk";
+import { assertRegisteredCommandContract } from "@unbrained/pm-cli/sdk/testing";
+```
+
+Use `createPmCliExpectedError(message, { exitCode, context })` for expected user/action failures from package commands. It creates an `Error` named `PmCliError` with a structural `exitCode`, so separately installed package code still gets expected-error handling and Sentry filtering.
+
+`PM_CLI_PACKAGE_ROOT` is first-party only. Bundled packages in this repository use it to find the running CLI's `dist/sdk/runtime.js` before they are published or installed independently. External packages must not read this environment variable or import from `dist/` or `src/core`; use `@unbrained/pm-cli/sdk`, `@unbrained/pm-cli/sdk/runtime`, and `@unbrained/pm-cli/sdk/testing`.
 
 ## Troubleshooting
 
