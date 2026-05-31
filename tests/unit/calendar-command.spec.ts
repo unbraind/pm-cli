@@ -376,6 +376,69 @@ describe("calendar command module", () => {
     });
   });
 
+  it("falls back to UTC bucketing and clock for an invalid or explicit-UTC timezone", async () => {
+    await withTempPmPath(async (context) => {
+      createCalendarItem(context, {
+        title: "Timezone fallback seed",
+        events: [
+          // An unparseable IANA zone must not throw and must fall back to the UTC day/clock.
+          "start=2026-07-01T22:15:00.000Z,end=2026-07-01T22:45:00.000Z,timezone=Not/AZone,title=Bad zone sync",
+          // An explicit UTC zone behaves exactly like an untagged UTC event.
+          "start=2026-07-01T08:00:00.000Z,end=2026-07-01T08:30:00.000Z,timezone=UTC,title=UTC sync",
+        ],
+      });
+
+      const result = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-07-01T00:00:00.000Z",
+          to: "2026-07-02T00:00:00.000Z",
+          include: "events",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.events).toHaveLength(2);
+      for (const event of result.events) {
+        expect(event.date).toBe("2026-07-01");
+      }
+      const markdown = renderCalendarMarkdown(result);
+      expect(markdown).toContain("22:15Z [event]");
+      expect(markdown).toContain("08:00Z [event]");
+    });
+  });
+
+  it("renders timezone-aware end times that stay on / cross the local day", async () => {
+    await withTempPmPath(async (context) => {
+      createCalendarItem(context, {
+        title: "Timezone end-time seed",
+        events: [
+          // 22:00Z-23:00Z is 18:00-19:00 EDT (UTC-4): same local day → end shows local clock.
+          "start=2026-08-10T22:00:00.000Z,end=2026-08-10T23:00:00.000Z,timezone=America/New_York,title=Same NY day",
+          // 02:00Z-04:00Z is 11:00-13:00 JST: start buckets to 2026-08-10 local; end same local day.
+          "start=2026-08-10T02:00:00.000Z,end=2026-08-10T04:00:00.000Z,timezone=Asia/Tokyo,title=Tokyo midday",
+        ],
+      });
+
+      const result = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-08-09T00:00:00.000Z",
+          to: "2026-08-12T00:00:00.000Z",
+          include: "events",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.events).toHaveLength(2);
+      const markdown = renderCalendarMarkdown(result);
+      // Same-local-day end renders the local wall-clock (not the UTC Z form, not full ISO).
+      expect(markdown).toContain("end=19:00");
+      expect(markdown).toContain("end=13:00");
+      expect(markdown).not.toContain("end=23:00Z");
+    });
+  });
+
   it("applies filters and event limits", async () => {
     await withTempPmPath(async (context) => {
       createCalendarItem(context, {

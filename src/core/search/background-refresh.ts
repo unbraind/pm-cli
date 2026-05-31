@@ -21,6 +21,10 @@ const PENDING_QUEUE_REL_PATH = "search/pending-refresh.json";
 const PENDING_QUEUE_GATE_REL_PATH = "search/pending-refresh.gate.lock";
 const PENDING_QUEUE_GATE_STALE_MS = 30_000;
 
+// Bounded reindex-lock retry for the background worker (~3.2s worst case).
+const LOCK_ACQUIRE_ATTEMPTS = 8;
+const LOCK_ACQUIRE_BACKOFF_MS = 400;
+
 const SEARCH_REFRESH_INLINE_ENV = "PM_SEARCH_REFRESH_INLINE";
 const SEARCH_REFRESH_CHILD_ENV = "PM_SEARCH_REFRESH_CHILD";
 
@@ -138,15 +142,27 @@ export async function enqueuePendingRefreshIds(pmRoot: string, itemIds: string[]
   if (incoming.length === 0) {
     return;
   }
-  await withQueueGate(
+  const mergeIncoming = async (): Promise<void> => {
+    const existing = await readPendingQueueIds(pmRoot);
+    const merged = [...new Set([...existing, ...incoming])].sort((left, right) => left.localeCompare(right));
+    await writePendingQueueIds(pmRoot, merged);
+  };
+  const gated = await withQueueGate(
     pmRoot,
     async () => {
-      const existing = await readPendingQueueIds(pmRoot);
-      const merged = [...new Set([...existing, ...incoming])].sort((left, right) => left.localeCompare(right));
-      await writePendingQueueIds(pmRoot, merged);
+      await mergeIncoming();
+      return true;
     },
-    undefined,
+    false,
   );
+  if (!gated) {
+    // The gate stayed contended past the retry budget. Never silently drop a
+    // mutation's refresh work: fall back to a best-effort unguarded merge.
+    // writeFileAtomic keeps the file valid; the only risk is losing a concurrent
+    // writer's delta, which its own next dispatch and the vector_index_stale
+    // warning both recover.
+    await mergeIncoming();
+  }
 }
 
 /** Atomically read and clear the pending-refresh queue, returning drained ids. */
@@ -190,6 +206,10 @@ function dispatchRefreshChild(pmRoot: string): void {
         [SEARCH_REFRESH_CHILD_ENV]: "1",
       },
     });
+    // A detached child can emit an async 'error' event (e.g. spawn EAGAIN/ENOENT,
+    // resource limits). Swallow it so it never becomes an unhandled error that
+    // crashes the parent CLI; dispatch is best effort.
+    child.on("error", () => {});
     child.unref();
   } catch {
     // Best effort — see doc comment above.
@@ -242,18 +262,29 @@ export async function runSemanticRefreshWorker(
     return { processed, rounds: 0, warnings: [`search_background_refresh_settings_read_failed:${toErrorMessage(error)}`] };
   }
 
+  // Retry the reindex lock with backoff rather than exiting on the first
+  // conflict: a sibling refresh worker holds it only briefly (~one embed), so a
+  // few retries pick up the queued ids in this run instead of stranding them
+  // until the next mutation. If a long `pm reindex` keeps it, we give up — that
+  // full pass re-embeds everything anyway and the next dispatch retries.
   let release: (() => Promise<void>) | null = null;
-  try {
-    release = await acquireLock(
-      pmRoot,
-      REINDEX_LOCK_ID,
-      settings.locks.ttl_seconds,
-      process.env.PM_AUTHOR ?? "pm-search-refresh",
-      false,
-      settings.governance.force_required_for_stale_lock,
-    );
-  } catch {
-    // Another reindex/refresh holds the lock; it will drain our enqueued ids.
+  for (let attempt = 0; attempt < LOCK_ACQUIRE_ATTEMPTS && !release; attempt += 1) {
+    try {
+      release = await acquireLock(
+        pmRoot,
+        REINDEX_LOCK_ID,
+        settings.locks.ttl_seconds,
+        process.env.PM_AUTHOR ?? "pm-search-refresh",
+        false,
+        settings.governance.force_required_for_stale_lock,
+      );
+    } catch {
+      if (attempt < LOCK_ACQUIRE_ATTEMPTS - 1) {
+        await delay(LOCK_ACQUIRE_BACKOFF_MS);
+      }
+    }
+  }
+  if (!release) {
     return { processed, rounds: 0, warnings };
   }
 
