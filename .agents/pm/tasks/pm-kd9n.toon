@@ -2,15 +2,17 @@ id: pm-kd9n
 title: 2026-05-31 external package audit and agent contract hardening
 description: "Manual latest-main audit and optimization pass for the pm CLI, public SDK, package-first ecosystem, external package installation, temp-project dogfood, agent/token-optimized UX, CI/CD, telemetry, Sentry, docs, and dependency/code-quality posture."
 type: Task
-status: in_progress
+status: closed
 priority: 0
 tags[7]: agents,audit,dogfood,package-first,performance,sdk,telemetry
 created_at: "2026-05-31T10:09:36.633Z"
-updated_at: "2026-05-31T18:29:39.767Z"
-assignee: codex-pr-review-followup
+updated_at: "2026-05-31T18:36:34.821Z"
 author: codex-audit-20260531
 acceptance_criteria: "Changes are committed, pushed to a descriptive PR, AI review window is observed, valid feedback is addressed, checks are green, and main is verified after merge."
 parent: pm-59gj
+resolution: Merged PR #89 after addressing latest reviewer feedback and validating green local/GitHub gates.
+expected_result: "Branch changes are committed and pushed, reviewers have no new actionable feedback, all required checks are green, PR is merged, and checkout is back on main."
+actual_result: PR #89 merged at bace566ec8c9e7b9131c75205586b3f10ebd1f94; main matches origin/main; post-merge pm health summary is ok with zero warnings.
 comments[17]{created_at,author,text}:
   "2026-05-31T10:09:36.633Z",codex-audit-20260531,"Duplicate check 2026-05-31: ran pm context, pm search for broad audit/sdk/ecosystem/agent UX/telemetry/external packages, pm list-open, and pm list-in-progress. No open or in-progress audit items existed. Reusing canonical package-first lineage pm-59gj; recent related children pm-qmx3 and pm-oxyo are closed, so this item tracks only the new latest-main 2026-05-31 pass."
   "2026-05-31T10:09:51.519Z",codex-audit-20260531,"Audit plan: bootstrap latest main and contracts; dogfood in isolated temp PM_PATH/PM_GLOBAL_PATH; inspect SDK/package authoring surfaces and external package install/upgrade; review agent low-token outputs and forgiving command contracts; scan docs/CI/dependencies/security/performance/telemetry/Sentry; implement the smallest durable fixes; link files/docs/tests; run local gates, push PR, wait for AI review, address valid feedback, and merge after green checks."
@@ -83,4 +85,5 @@ docs[4]{path,scope,note}:
   docs/CONFIGURATION.md,project,full get projection guidance
   docs/EXTENSIONS.md,project,package source and collision guidance
   docs/SDK.md,project,single-winner override guidance
+close_reason: "Merged PR #89 at bace566ec8c9e7b9131c75205586b3f10ebd1f94 after addressing latest reviewer feedback. GitHub checks passed on da6bfbaf before merge: build, docs, runtime smokes, typecheck, static, compat, smokes, coverage, Sourcery, and CodeRabbit. Post-merge main matches origin/main and pm health summary is ok with zero warnings."
 body: ""
