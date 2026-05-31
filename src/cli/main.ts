@@ -1976,15 +1976,11 @@ function shouldRegisterRuntimeSchemaFlags(invocationArgv: string[]): boolean {
   return RUNTIME_SCHEMA_FLAG_BOOTSTRAP_COMMANDS.has(commandName);
 }
 
-function enforceExplicitRetryForMutatingFlagTypos(
+function enforceExplicitRetryForFlagTypos(
   bootstrapInvocation: ReturnType<typeof normalizeBootstrapInvocation>,
 ): void {
   const commandName = bootstrapInvocation.commandName;
-  if (
-    !commandName ||
-    (!MUTATION_COMMAND_NAMES.has(commandName) &&
-      !MUTATING_OPERATION_COMMAND_NAMES.has(commandName))
-  ) {
+  if (!commandName) {
     return;
   }
   const typoEvent = bootstrapInvocation.trace.find((entry) => entry.reason === "flag_typo");
@@ -1995,11 +1991,14 @@ function enforceExplicitRetryForMutatingFlagTypos(
     ? typoEvent.to
     : [String(typoEvent.to ?? "")].filter((entry) => entry.length > 0);
   const normalizedDisplay = normalizedTokens.length > 0 ? normalizedTokens.join(" ") : "the canonical flag";
+  const mutatingCommand = MUTATION_COMMAND_NAMES.has(commandName) || MUTATING_OPERATION_COMMAND_NAMES.has(commandName);
+  const code = mutatingCommand ? "mutating_flag_typo_requires_retry" : "flag_typo_requires_retry";
+  const commandScope = mutatingCommand ? "mutating option" : "option";
   throw new PmCliError(
-    `Refusing to auto-correct mutating option ${typoEvent.from} to ${normalizedDisplay}. Retry with the canonical flag so the mutation is explicit.`,
+    `Refusing to auto-correct ${commandScope} ${typoEvent.from} to ${normalizedDisplay}. Retry with the canonical flag so the command is explicit.`,
     EXIT_CODE.USAGE,
     {
-      code: "mutating_flag_typo_requires_retry",
+      code,
       examples: [renderPmCommand(bootstrapInvocation.argv)],
       nextSteps: ["Retry the command with the canonical flag shown in examples."],
       recovery: {
@@ -2016,7 +2015,7 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
   const invocationProcessArgv = [process.argv[0], process.argv[1], ...invocationArgv];
   const isBareInvocation = invocationArgv.length === 0;
   try {
-    enforceExplicitRetryForMutatingFlagTypos(bootstrapInvocation);
+    enforceExplicitRetryForFlagTypos(bootstrapInvocation);
     applyBootstrapPagerPolicy(invocationArgv);
     const registrationSelection =
       resolveCoreCommandRegistrationSelection(invocationArgv);
