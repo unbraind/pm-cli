@@ -215,16 +215,32 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
-  it("auto-corrects a single-transposition flag typo (pm-fl0c #6)", async () => {
-    // pm-fl0c #6 (2026-05-28): the bootstrap argv normalizer now treats
-    // adjacent transpositions as distance 1 (OSA Damerau-Levenshtein), so
-    // `pm create --titel "x"` no longer errors with `Unknown option --titel`
-    // — the flag is silently rewritten to `--title` before commander parses.
+  it("requires an explicit retry for mutating flag typos", async () => {
     await withTempPmPath(async (context) => {
-      const result = context.runCli(["create", "--titel", "Damerau transposition probe", "--type", "Task", "--json"], { expectJson: true });
-      expect(result.code).toBe(0);
-      const created = (result.json as { item: { title: string } }).item;
-      expect(created.title).toBe("Damerau transposition probe");
+      const result = context.runCli(["create", "--titel", "Damerau transposition probe", "--type", "Task", "--json"]);
+      expect(result.code).toBe(2);
+      const envelope = parseJsonErrorEnvelope(result.stderr);
+      expect(envelope.code).toBe("mutating_flag_typo_requires_retry");
+      expect(envelope.examples).toEqual(expect.arrayContaining([expect.stringContaining("--title")]));
+      expect(envelope.recovery?.suggested_retry).toEqual(expect.stringContaining("--title"));
+      expect(envelope.recovery?.normalized_args).toEqual(expect.arrayContaining(["--title"]));
+      const list = context.runCli(["list-all", "--json"], { expectJson: true });
+      expect(((list.json as { items?: unknown[] }).items ?? [])).toHaveLength(0);
+    });
+  });
+
+  it("requires an explicit retry for operation-family mutating flag typos", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "--title", "Claim typo probe", "--type", "Task", "--json"], {
+        expectJson: true,
+      });
+      const id = (created.json as { item: { id: string } }).item.id;
+      const result = context.runCli(["claim", id, "--autor", "integration-test", "--json"]);
+      expect(result.code).toBe(2);
+      const envelope = parseJsonErrorEnvelope(result.stderr);
+      expect(envelope.code).toBe("mutating_flag_typo_requires_retry");
+      expect(envelope.recovery?.suggested_retry).toContain("--author");
+      expect(envelope.recovery?.normalized_args).toEqual(expect.arrayContaining(["--author"]));
     });
   });
 
@@ -331,6 +347,19 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       };
       expect(helpCommandPayload.format).toBe("pm_help_v1");
       expect(helpCommandPayload.resolved_path).toBe("create");
+
+      const packageCatalogHelp = context.runCli(["package", "catalog", "--help", "--json"], { expectJson: true });
+      expect(packageCatalogHelp.code).toBe(0);
+      const packageCatalogPayload = packageCatalogHelp.json as {
+        resolved_path: string;
+        intent: string;
+        examples: string[];
+        options: Array<{ long: string | null }>;
+      };
+      expect(packageCatalogPayload.resolved_path).toBe("package catalog");
+      expect(packageCatalogPayload.intent).toContain("package catalog");
+      expect(packageCatalogPayload.examples[0]).toContain("pm package catalog");
+      expect(packageCatalogPayload.options.some((entry) => entry.long === "--fields")).toBe(true);
 
       const detailedRootJson = context.runCli(["--help", "--json", "--explain"], { expectJson: true });
       expect(detailedRootJson.code).toBe(0);

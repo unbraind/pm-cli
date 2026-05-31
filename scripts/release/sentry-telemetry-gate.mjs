@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { existsSync } from "node:fs";
 import { commandFor, fail, flagBool, flagString, parseFlags, runCommand } from "./utils.mjs";
 
 function parseIssuePayload(payload) {
@@ -284,6 +285,7 @@ function usage() {
     [--max-critical 0]
     [--max-high 0]
     [--telemetry-mode off|best-effort|required]
+    [--telemetry-command scripts/prod/telemetry/query-telemetry.sh]
     [--telemetry-days 7]
     [--max-telemetry-error-rate 6]
     [--max-telemetry-missing-error-rows 0]
@@ -303,6 +305,20 @@ function parseNumber(value, key, fallback) {
   return parsed;
 }
 
+function buildTelemetryCommandInvocation(commandPath, telemetryDays) {
+  const args = ["--days", String(telemetryDays), "--limit", "50"];
+  if (commandPath.endsWith(".sh")) {
+    return {
+      command: "bash",
+      args: [commandPath, ...args],
+    };
+  }
+  return {
+    command: commandPath,
+    args,
+  };
+}
+
 async function main() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
@@ -316,6 +332,10 @@ async function main() {
   const maxCritical = parseNumber(flagString(flags, "max-critical", null), "max-critical", 0);
   const maxHigh = parseNumber(flagString(flags, "max-high", null), "max-high", 0);
   const telemetryMode = flagString(flags, "telemetry-mode", "best-effort");
+  const telemetryCommandPath =
+    flagString(flags, "telemetry-command", null) ??
+    process.env.PM_TELEMETRY_QUERY_COMMAND ??
+    (existsSync("scripts/prod/telemetry/query-telemetry.sh") ? "scripts/prod/telemetry/query-telemetry.sh" : null);
   const telemetryDays = parseNumber(flagString(flags, "telemetry-days", null), "telemetry-days", 7);
   const maxTelemetryErrorRate = parseNumber(
     flagString(flags, "max-telemetry-error-rate", null),
@@ -356,14 +376,27 @@ async function main() {
   };
 
   if (telemetryMode !== "off") {
-    const telemetryCommand = runCommand(
-      "bash",
-      ["scripts/prod/telemetry/query-telemetry.sh", "--days", String(telemetryDays), "--limit", "50"],
-      {
-        capture: true,
-        allowFailure: telemetryMode !== "required",
-      },
-    );
+    if (telemetryMode === "required" && !telemetryCommandPath) {
+      fail("telemetry_query_command_missing: set --telemetry-command or PM_TELEMETRY_QUERY_COMMAND to a private/local telemetry query adapter");
+    }
+    const telemetryInvocation = telemetryCommandPath
+      ? buildTelemetryCommandInvocation(telemetryCommandPath, telemetryDays)
+      : null;
+    const telemetryCommand = telemetryInvocation
+      ? runCommand(
+          telemetryInvocation.command,
+          telemetryInvocation.args,
+          {
+            capture: true,
+            allowFailure: telemetryMode !== "required",
+          },
+        )
+      : {
+          status: 127,
+          stdout: "",
+          stderr:
+            "telemetry_query_command_missing: set --telemetry-command or PM_TELEMETRY_QUERY_COMMAND to a private/local telemetry query adapter",
+        };
 
     if (telemetryCommand.status === 0) {
       const metrics = parseTelemetryMetrics(telemetryCommand.stdout);

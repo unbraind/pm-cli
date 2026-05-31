@@ -351,6 +351,13 @@ try {
   assert(packageList?.details?.total >= 8, "package list did not list all bundled first-party packages");
   run("package explore", ["package", "explore", "--project"]);
   run("package doctor", ["package", "doctor", "--project", "--detail", "summary"]);
+  const scaffoldPackagePath = path.join(tempRoot, "scaffold-package");
+  const packageScaffold = run("package init scaffold", ["package", "init", scaffoldPackagePath, "--project"]);
+  assert(packageScaffold?.details?.extension?.command === "scaffold-package ping", "package init scaffold did not report starter command");
+  run("package install scaffold", ["install", scaffoldPackagePath, "--project"]);
+  const scaffoldInvoke = run("package scaffold command", ["scaffold-package", "ping"]);
+  assert(scaffoldInvoke?.ok === true, "scaffolded package command did not execute");
+  assert(scaffoldInvoke?.command === "scaffold-package ping", "scaffolded package command reported unexpected command");
   const guideList = run("package command guide list", ["guide", "--list"]);
   assert(Array.isArray(guideList?.topics) && guideList.topics.length >= 1, "guide --list package command returned no topics");
   const completionBash = runText("package command completion bash", ["completion", "bash"]);

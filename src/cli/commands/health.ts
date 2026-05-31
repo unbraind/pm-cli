@@ -39,6 +39,7 @@ import {
 import { readSettingsWithMetadata } from "../../core/store/settings.js";
 import type { ItemFormat, ItemMetadata, PmSettings } from "../../types/index.js";
 import { readManagedExtensionState } from "./extension.js";
+import { buildRegistrationCollisionRemediation } from "./extension/doctor.js";
 
 type HealthStatus = "ok" | "warn";
 type MigrationRuntimeStatus = "pending" | "failed" | "applied";
@@ -536,6 +537,13 @@ function buildExtensionHealthTriageSummary(
   const updateHealthPartial = unmanagedActionRequiredExtensions.length > 0;
   const updateHealthCoverage = updateHealthPartial ? "partial" : "full";
   const remediation: string[] = [];
+  const registrationCollisionRemediation = buildRegistrationCollisionRemediation(normalizedWarnings, {
+    deactivate: "pm extension --deactivate <name> --project/--global",
+    doctor: "pm extension --doctor --project/--global --detail deep --trace",
+  });
+  if (registrationCollisionRemediation) {
+    remediation.push(registrationCollisionRemediation);
+  }
   if (loadFailureCount > 0) {
     remediation.push("Run pm extension --explore --project and pm extension --explore --global to inspect load failures.");
   }

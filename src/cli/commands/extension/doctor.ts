@@ -146,6 +146,87 @@ function lifecycleFlagCommand(options: ExtensionCommandOptions, action: string):
   return options.vocabulary === "package" ? `pm package --${action}` : `pm extension --${action}`;
 }
 
+const REGISTRATION_COLLISION_WARNING_CODES = new Set([
+  "extension_command_handler_collision",
+  "extension_command_override_collision",
+  "extension_command_override_handler_overlap",
+  "extension_parser_override_collision",
+  "extension_preflight_override_collision",
+  "extension_renderer_collision",
+  "extension_service_override_collision",
+]);
+
+export function isRegistrationCollisionWarning(warning: string): boolean {
+  return REGISTRATION_COLLISION_WARNING_CODES.has(warningCode(warning));
+}
+
+function isExtensionLayer(value: string | undefined): value is "project" | "global" {
+  return value === "project" || value === "global";
+}
+
+interface RegistrationCollisionWarningParts {
+  code: string;
+  winner: { layer: "project" | "global"; name: string };
+  displaced: { layer: "project" | "global"; name: string };
+}
+
+function parseRegistrationCollisionWarning(warning: string): RegistrationCollisionWarningParts | null {
+  const parts = warning.split(":");
+  const code = parts[0];
+  if (!code || !REGISTRATION_COLLISION_WARNING_CODES.has(code)) {
+    return null;
+  }
+  // Collision warnings end with winnerLayer:winnerName:displacedLayer:displacedName.
+  // Surface identifiers before that suffix may contain colons, so parse from the right.
+  const winnerLayer = parts.at(-4);
+  const winnerName = parts.at(-3)?.trim();
+  const displacedLayer = parts.at(-2);
+  const displacedName = parts.at(-1)?.trim();
+  if (
+    !isExtensionLayer(winnerLayer) ||
+    !isExtensionLayer(displacedLayer) ||
+    !winnerName ||
+    !displacedName
+  ) {
+    return null;
+  }
+  return {
+    code,
+    winner: { layer: winnerLayer, name: winnerName },
+    displaced: { layer: displacedLayer, name: displacedName },
+  };
+}
+
+function collectRegistrationCollisionExtensionNames(warnings: string[]): string[] {
+  const names = new Set<string>();
+  for (const warning of warnings) {
+    const parsed = parseRegistrationCollisionWarning(warning);
+    if (!parsed) {
+      continue;
+    }
+    names.add(parsed.winner.name);
+    names.add(parsed.displaced.name);
+  }
+  return [...names].sort((left, right) => left.localeCompare(right));
+}
+
+export function buildRegistrationCollisionRemediation(
+  warnings: string[],
+  commands: { deactivate: string; doctor: string },
+): string | null {
+  const registrationCollisionWarnings = warnings.filter(isRegistrationCollisionWarning);
+  if (registrationCollisionWarnings.length === 0) {
+    return null;
+  }
+  const collisionNames = collectRegistrationCollisionExtensionNames(registrationCollisionWarnings);
+  const collisionNameText = collisionNames.length > 0 ? ` Conflicting extensions: ${collisionNames.join(", ")}.` : "";
+  return (
+    `Extension registration collisions or handler/override overlaps detected.${collisionNameText} Single-winner surfaces can hide earlier package behavior. ` +
+    `Deactivate one conflicting package with ${commands.deactivate}, ` +
+    `or scope registration surfaces in extensions.policy.extension_overrides, then rerun ${commands.doctor}.`
+  );
+}
+
 export function classifyDoctorLoadFailureWarnings(loadFailures: Array<{ name: string; error: string }>): string[] {
   const warnings: string[] = [];
   for (const failure of loadFailures) {
@@ -216,6 +297,13 @@ export function buildExtensionTriageSummary(
   const scopeFlag = scope === "global" ? "--global" : "--project";
   const remediation: string[] = [];
   if (normalizedWarnings.length > 0) {
+    const registrationCollisionRemediation = buildRegistrationCollisionRemediation(normalizedWarnings, {
+      deactivate: `${lifecycleFlagCommand(options, "deactivate")} <name> ${scopeFlag}`,
+      doctor: `${lifecycleFlagCommand(options, "doctor")} ${scopeFlag} --detail deep --trace`,
+    });
+    if (registrationCollisionRemediation) {
+      remediation.push(registrationCollisionRemediation);
+    }
     if (normalizedWarnings.some((warning) => warning.startsWith("extension_manifest_"))) {
       remediation.push(`Run ${lifecycleFlagCommand(options, "explore")} ${scopeFlag} to inspect discovered manifests and directories.`);
     }

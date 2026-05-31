@@ -1918,7 +1918,15 @@ function collectCommandCollisionWarnings(commands: ExtensionCommandRegistry): st
     .filter((command) => handlerCommands.has(command))
     .sort((left, right) => left.localeCompare(right));
   for (const command of overlapCommands) {
-    warnings.push(`extension_command_override_handler_overlap:${command}`);
+    const handlers = commands.handlers.filter((entry) => entry.command === command);
+    const overrides = commands.overrides.filter((entry) => entry.command === command);
+    for (const override of overrides) {
+      for (const handler of handlers) {
+        warnings.push(
+          `extension_command_override_handler_overlap:${command}:${override.layer}:${override.name}:${handler.layer}:${handler.name}`,
+        );
+      }
+    }
   }
 
   return warnings;

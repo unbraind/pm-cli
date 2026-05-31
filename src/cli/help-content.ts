@@ -171,6 +171,70 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Use --dry-run before upgrade when automation needs a deterministic plan.",
     ],
   },
+  "package init": {
+    why: "Generates an installable starter pm package with package metadata and a root extension entrypoint.",
+    examples: [
+      "pm package init ./my-package",
+      "pm install ./my-package --project",
+      "pm package doctor --project --detail summary",
+    ],
+    tips: [
+      "The generated package is local-install safe; add SDK runtime imports only after declaring dependencies and validating with package doctor.",
+      "Use package doctor after changes to verify activation, policy, and collision diagnostics.",
+    ],
+  },
+  "package install": {
+    why: "Installs pm packages from local paths, npm sources, GitHub sources, bundled aliases, or wildcard/all aliases.",
+    examples: [
+      "pm package install ./my-package --project",
+      "pm install npm:pm-changelog --project",
+      "pm package install --github org/repo/packages/my-pm-package --ref main",
+    ],
+    tips: [
+      "Prefer the top-level pm install alias in scripts when only installation is needed.",
+      "Run pm package manage or pm package doctor after installing external packages.",
+    ],
+  },
+  "package catalog": {
+    why: "Lists bundled first-party package catalog metadata and compact field projections.",
+    examples: [
+      "pm package catalog --project",
+      "pm package catalog --project --fields alias,installed,install_command",
+      "pm package list --project --fields alias,package_name,category",
+    ],
+    tips: [
+      "Use --fields for low-token package discovery in agent loops.",
+      "External npm package discovery still belongs to npm search.",
+    ],
+  },
+  "extension init": {
+    why: "Generates an installable starter runtime extension with manifest and entrypoint files.",
+    examples: [
+      "pm extension init ./my-extension",
+      "pm extension --install --project ./my-extension",
+      "pm extension --doctor --project --detail summary",
+    ],
+    tips: [
+      "Use package init for new distributable package workflows; extension init is the compatibility-level runtime scaffold.",
+    ],
+  },
+  "extension install": {
+    why: "Installs a compatibility runtime extension from local, npm, GitHub, bundled alias, or wildcard sources.",
+    examples: [
+      "pm extension install ./my-extension --project",
+      "pm extension --install --project ./my-extension",
+      "pm extension doctor --project --detail summary",
+    ],
+    tips: ["Prefer pm install or pm package install for new package-first automation."],
+  },
+  "extension catalog": {
+    why: "Compatibility view of bundled package catalog metadata.",
+    examples: [
+      "pm extension catalog --project",
+      "pm extension catalog --project --fields alias,installed,install_command",
+    ],
+    tips: ["Prefer pm package catalog in new user-facing workflows."],
+  },
   install: {
     why: "Installs a pm package into project scope by default, using local, npm, GitHub, or bundled alias sources.",
     examples: [
@@ -399,7 +463,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "pm get pm-a1b2 --fields id,title,status,parent,type --json",
     ],
     tips: [
-      "Default depth is deep for backward compatibility; use brief for metadata-only checks and standard for body plus linked artifacts without append-only logs.",
+      "Default depth is standard for body plus linked artifacts without append-only logs; use brief for metadata-only checks or --full for complete history-heavy metadata.",
       "Use --fields for the smallest deterministic item metadata payload when an agent only needs specific fields.",
       "JSON output shape is { item, body, linked, claim_state }; body is top-level (not item.body).",
     ],

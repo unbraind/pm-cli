@@ -480,6 +480,14 @@ function resolveCanonicalFlag(
   };
 }
 
+export function listAliasPluralKeys(normalizedKey: string): string[] {
+  const candidates = [`${normalizedKey}s`];
+  if (normalizedKey.endsWith("y") && normalizedKey.length > 1) {
+    candidates.push(`${normalizedKey.slice(0, -1)}ies`);
+  }
+  return candidates;
+}
+
 function parseBareKeyValueToken(token: string): { key: string; value: string } | null {
   if (token.includes("://")) {
     return null;
@@ -689,7 +697,8 @@ export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocatio
   }
   const aliasNormalized = rewriteCommandAlias(legacyNormalized, trace);
   const commandName = parseBootstrapCommandName(aliasNormalized);
-  const lookup = buildFlagLookup(commandName);
+  const commandPathName = parseBootstrapCommandPathName(aliasNormalized);
+  const lookup = buildFlagLookup(commandPathName ?? commandName);
   const normalizedArgv: string[] = [];
   for (let index = 0; index < aliasNormalized.length; index += 1) {
     const token = aliasNormalized[index];
@@ -739,6 +748,21 @@ export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocatio
     commandName,
     trace,
   };
+}
+
+function parseBootstrapCommandPathName(argv: string[]): string | undefined {
+  const stripped = stripGlobalBootstrapTokens(argv);
+  const first = stripped[0]?.trim().toLowerCase();
+  const second = stripped[1]?.trim().toLowerCase();
+  if (
+    (first === "extension" || first === "package" || first === "packages") &&
+    typeof second === "string" &&
+    second.length > 0 &&
+    !second.startsWith("-")
+  ) {
+    return `${first} ${second}`;
+  }
+  return first;
 }
 
 export function parseBootstrapTypeValue(argv: string[]): string | undefined {

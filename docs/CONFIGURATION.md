@@ -100,6 +100,7 @@ Use JSON for strict machine parsing:
 
 ```bash
 pm get <id> --json
+pm get <id> --full --json
 pm contracts --json
 ```
 

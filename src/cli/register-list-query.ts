@@ -276,7 +276,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
     program
       .command("get")
       .argument("<id>", "Item id")
-      .option("--depth <value>", "Detail depth: brief|standard|deep|full (full aliases deep; default: deep)")
+      .option("--depth <value>", "Detail depth: brief|standard|deep|full (full aliases deep; default: standard)")
       .option("--full", "Explicit full item read; equivalent to --depth deep (mutually exclusive with --depth/--fields)")
       .option("--fields <value>", "Render custom comma-separated item metadata fields (for example: --fields id,title,status,parent,type)")
       .description("Show item details by ID.")

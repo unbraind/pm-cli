@@ -8,6 +8,7 @@ import {
   normalizeBootstrapInvocation,
   coalesceRepeatedListFlags,
   parseBootstrapTypeValue,
+  listAliasPluralKeys,
 } from "../../src/cli/bootstrap-args.js";
 
 describe("parseBootstrapGlobalOptions", () => {
@@ -271,6 +272,20 @@ describe("normalizeBootstrapInvocation", () => {
     );
   });
 
+  it("keeps truncated plural list flags in the typo path instead of aliasing them", () => {
+    const normalized = normalizeBootstrapInvocation(["update", "pm-a1b2", "--statu", "closed"]);
+    expect(normalized.argv).toEqual(["update", "pm-a1b2", "--status", "closed"]);
+    expect(normalized.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          from: "--statu",
+          to: ["--status"],
+          reason: "flag_typo",
+        }),
+      ]),
+    );
+  });
+
   it("promotes bare key=value and key:value tokens to canonical flags", () => {
     const normalized = normalizeBootstrapInvocation(["create", "title=Hello", "description:World", "type=Task"]);
     expect(normalized.argv).toEqual(["create", "--title", "Hello", "--description", "World", "--type", "Task"]);
@@ -283,7 +298,7 @@ describe("normalizeBootstrapInvocation", () => {
     expect(normalized.trace).toHaveLength(0);
   });
 
-  it("accumulates repeated singular --tag typo occurrences into one --tags token (pm-cf1u)", () => {
+  it("accumulates repeated singular --tag alias occurrences into one --tags token (pm-cf1u)", () => {
     const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tag", "a", "--tag", "b", "--tag", "c"]);
     expect(normalized.argv).toEqual(["create", "issue", "X", "--tags=a,b,c"]);
     expect(normalized.trace).toEqual(
@@ -317,6 +332,12 @@ describe("normalizeBootstrapInvocation", () => {
   it("accumulates repeated --fields occurrences for get (pm-cf1u)", () => {
     const normalized = normalizeBootstrapInvocation(["get", "pm-1", "--fields", "id", "--fields", "title"]);
     expect(normalized.argv).toEqual(["get", "pm-1", "--fields=id,title"]);
+    expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(true);
+  });
+
+  it("accumulates repeated --fields occurrences for package catalog subcommands", () => {
+    const normalized = normalizeBootstrapInvocation(["package", "catalog", "--fields", "alias", "--fields", "installed"]);
+    expect(normalized.argv).toEqual(["package", "catalog", "--fields=alias,installed"]);
     expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(true);
   });
 
@@ -360,6 +381,13 @@ describe("normalizeBootstrapInvocation", () => {
     const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tags", "a", "--", "--tags", "b"]);
     expect(normalized.argv).toEqual(["create", "issue", "X", "--tags", "a", "--", "--tags", "b"]);
     expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(false);
+  });
+});
+
+describe("listAliasPluralKeys", () => {
+  it("covers simple s and y-to-ies list alias candidates", () => {
+    expect(listAliasPluralKeys("tag")).toEqual(["tags"]);
+    expect(listAliasPluralKeys("category")).toEqual(["categorys", "categories"]);
   });
 });
 

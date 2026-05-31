@@ -1057,6 +1057,59 @@ describe("runHealth", () => {
     });
   });
 
+  it("reports actionable extension collision remediation in health diagnostics", async () => {
+    await withTempPmPath(async (context) => {
+      const projectExtensionsRoot = path.join(context.pmPath, "extensions");
+      for (const name of ["pm-starter", "pm-ts-starter"]) {
+        const extensionDir = path.join(projectExtensionsRoot, name);
+        await mkdir(extensionDir, { recursive: true });
+        await writeFile(
+          path.join(extensionDir, "manifest.json"),
+          `${JSON.stringify(
+            {
+              name,
+              version: "1.0.0",
+              entry: "./index.js",
+              capabilities: ["preflight", "renderers"],
+            },
+            null,
+            2,
+          )}\n`,
+          "utf8",
+        );
+        await writeFile(
+          path.join(extensionDir, "index.js"),
+          [
+            "export default {",
+            "  activate(api) {",
+            "    api.registerPreflight(() => ({}));",
+            "    api.registerRenderer('json', () => '{}');",
+            "  },",
+            "};",
+            "",
+          ].join("\n"),
+          "utf8",
+        );
+      }
+
+      const health = await runHealth({ path: context.pmPath });
+      const extensionCheck = health.checks.find((check) => check.name === "extensions");
+      const triage = (extensionCheck?.details as {
+        triage?: {
+          warning_codes: string[];
+          remediation: string[];
+        };
+      }).triage;
+
+      expect(triage?.warning_codes).toEqual(
+        expect.arrayContaining(["extension_preflight_override_collision", "extension_renderer_collision"]),
+      );
+      expect(triage?.remediation.join(" ")).toContain("Conflicting extensions: pm-starter, pm-ts-starter");
+      expect(triage?.remediation.join(" ")).toContain("pm extension --deactivate <name> --project/--global");
+      expect(triage?.remediation.join(" ")).toContain("pm extension --doctor --project/--global --detail deep --trace");
+    });
+  });
+
   it("treats bundled-style unmanaged extensions as informational for update-health coverage", async () => {
     await withTempPmPath(async (context) => {
       const bundledStyleDir = path.join(context.pmPath, "extensions", "beads");

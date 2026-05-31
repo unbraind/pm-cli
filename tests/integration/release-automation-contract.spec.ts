@@ -105,6 +105,17 @@ describe("release automation contract", () => {
     expect(payload.telemetry.mode).toBe("off");
   });
 
+  it("keeps telemetry query command execution portable outside shell scripts", async () => {
+    const gateSource = await readFile(path.join(repoRoot, "scripts/release/sentry-telemetry-gate.mjs"), "utf8");
+    expect(gateSource).toContain('commandFor("sentry")');
+    expect(gateSource).toContain("function buildTelemetryCommandInvocation");
+    expect(gateSource).toContain('commandPath.endsWith(".sh")');
+    expect(gateSource).toContain("telemetryInvocation.command");
+    expect(gateSource).toContain('telemetryMode === "required" && !telemetryCommandPath');
+    expect(gateSource).toContain("telemetry_query_command_missing");
+    expect(gateSource).not.toContain('runCommand(\n          "bash",\n          [telemetryCommandPath');
+  });
+
   it("keeps tracker-only changes outside release relevance", async () => {
     const pipelineModule = (await import(
       pathToFileURL(path.join(repoRoot, "scripts/release/release-relevance.mjs")).href
@@ -184,6 +195,6 @@ describe("release automation contract", () => {
     const workflow = await readFile(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
     expect(workflow).toContain("node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-github-release --json");
     expect(workflow).toContain("node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-package --json");
-    expect(workflow).toContain("--max-critical 10 --max-high 20");
+    expect(workflow).toContain("--max-critical 0 --max-high 0");
   });
 });

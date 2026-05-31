@@ -203,7 +203,7 @@ describe("extension command runtime", () => {
         type: "module",
         pm: {
           aliases: ["starter-package"],
-          extensions: ["extensions/starter-package"],
+          extensions: ["."],
           docs: ["README.md"],
           examples: ["README.md"],
         },
@@ -212,21 +212,16 @@ describe("extension command runtime", () => {
         "@unbrained/pm-cli": "*",
       });
 
-      const manifest = JSON.parse(
-        await readFile(path.join(scaffoldPath, "extensions", "starter-package", "manifest.json"), "utf8"),
-      ) as Record<string, unknown>;
+      const manifest = JSON.parse(await readFile(path.join(scaffoldPath, "manifest.json"), "utf8")) as Record<string, unknown>;
       expect(manifest).toMatchObject({
         name: "starter-package",
         entry: "./index.js",
         capabilities: ["commands"],
       });
-      const entry = await readFile(path.join(scaffoldPath, "extensions", "starter-package", "index.js"), "utf8");
-      // pm-fl0c B-1 (2026-05-28): package scaffold also uses defineExtension
-      // (the peerDependencies on @unbrained/pm-cli now serve the imported
-      // SDK type, not just a runtime guarantee).
-      expect(entry).toContain('import { defineExtension } from "@unbrained/pm-cli/sdk"');
-      expect(entry).toContain("export default defineExtension({");
-      expect(entry).toContain("activate(api)");
+      const entry = await readFile(path.join(scaffoldPath, "index.js"), "utf8");
+      expect(entry).not.toContain('import { defineExtension }');
+      expect(entry).toContain('@param {import("@unbrained/pm-cli/sdk").ExtensionApi}');
+      expect(entry).toContain("export function activate(api)");
       expect(entry).toContain('name: "starter-package ping"');
 
       const install = await runExtension(scaffoldPath, { install: true, project: true }, { path: context.pmPath });
@@ -235,6 +230,20 @@ describe("extension command runtime", () => {
           name: "starter-package",
         },
         activated: true,
+      });
+      const invoked = spawnSync(process.execPath, [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "starter-package", "ping", "--json"], {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PM_TELEMETRY_DISABLED: "1",
+          PM_SENTRY_DISABLED: "1",
+        },
+      });
+      expect(invoked.status).toBe(0);
+      expect(JSON.parse(invoked.stdout) as Record<string, unknown>).toMatchObject({
+        ok: true,
+        command: "starter-package ping",
       });
     });
   });
@@ -1452,6 +1461,55 @@ describe("extension command runtime", () => {
     expect(summary.remediation.join(" ")).toContain("pm package --adopt-all --project");
     expect(summary.remediation.join(" ")).toContain("pm package --install --project <source>");
     expect(summary.remediation.join(" ")).not.toContain("pm package install");
+  });
+
+  it("reports actionable package remediation for registration collisions", () => {
+    const baseExtension = {
+      directory: "/tmp/extension",
+      version: "1.0.0",
+      entry: "./index.js",
+      scope: "project" as const,
+      managed: true,
+      enabled: true,
+      active: true,
+      runtime_active: true,
+      activation_status: "ok" as const,
+      update_check_status: "skipped_non_github" as const,
+      update_check_reason: "managed_source_kind_npm",
+    };
+    const summary = buildExtensionTriageSummary(
+      "project",
+      [
+        "extension_preflight_override_collision:project:pm-starter:project:pm-ts-starter",
+        "extension_renderer_collision:json:project:pm-starter:project:pm-ts-starter",
+        "extension_command_handler_collision:acme:sync:project:pm-starter:project:pm-ts-starter",
+        "extension_command_override_handler_overlap:acme:sync:project:pm-starter:project:pm-ts-starter",
+      ],
+      [
+        {
+          ...baseExtension,
+          name: "pm-starter",
+        },
+        {
+          ...baseExtension,
+          name: "pm-ts-starter",
+        },
+      ],
+      { vocabulary: "package" },
+    );
+
+    expect(summary.warning_codes).toEqual(
+      expect.arrayContaining([
+        "extension_command_handler_collision",
+        "extension_command_override_handler_overlap",
+        "extension_preflight_override_collision",
+        "extension_renderer_collision",
+      ]),
+    );
+    expect(summary.remediation.join(" ")).toContain("Conflicting extensions: pm-starter, pm-ts-starter");
+    expect(summary.remediation.join(" ")).not.toContain("Conflicting extensions: project");
+    expect(summary.remediation.join(" ")).toContain("pm package --deactivate <name> --project");
+    expect(summary.remediation.join(" ")).toContain("pm package --doctor --project --detail deep --trace");
   });
 
   it("reports extension governance policy diagnostics in doctor output", async () => {

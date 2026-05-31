@@ -129,7 +129,7 @@ describe("runGet and runAppend", () => {
     });
   });
 
-  it("supports lower-token get depth projections while keeping deep as the default", async () => {
+  it("supports lower-token get depth projections while keeping standard as the default", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, {
         title: "get-depth-projection",
@@ -140,11 +140,11 @@ describe("runGet and runAppend", () => {
       context.runCli(["comments", id, "depth comment", "--json", "--author", "owner-a"], { expectJson: true });
       context.runCli(["notes", id, "--add", "depth note", "--json", "--author", "owner-a"], { expectJson: true });
 
-      const deep = await runGet(id, { path: context.pmPath });
-      expect(deep.item.comments).toBeDefined();
-      expect(deep.item.notes).toBeDefined();
-      expect(deep.linked.files).toHaveLength(1);
-      expect(deep.body).toBe("depth body");
+      const defaultRead = await runGet(id, { path: context.pmPath });
+      expect(defaultRead.item.comments).toBeUndefined();
+      expect(defaultRead.item.notes).toBeUndefined();
+      expect(defaultRead.linked.files).toHaveLength(1);
+      expect(defaultRead.body).toBe("depth body");
 
       const explicitFull = await runGet(id, { path: context.pmPath }, { full: true });
       expect(explicitFull.item.comments).toBeDefined();

@@ -183,7 +183,7 @@ describe("runBeadsImport", () => {
         warnings: [],
       });
 
-      const first = context.runCli(["get", "pm-legacy.1", "--json"], { expectJson: true });
+      const first = context.runCli(["get", "pm-legacy.1", "--full", "--json"], { expectJson: true });
       expect(first.code).toBe(0);
       const firstJson = first.json as {
         item: {
@@ -410,7 +410,7 @@ describe("runBeadsImport", () => {
         `beads_import_item_exists:${existingId}`,
       ]);
 
-      const imported = context.runCli(["get", "pm-fresh-1", "--json"], { expectJson: true });
+      const imported = context.runCli(["get", "pm-fresh-1", "--full", "--json"], { expectJson: true });
       expect(imported.code).toBe(0);
       const importedJson = imported.json as {
         item: { comments: Array<{ created_at: string; author: string; text: string }> };
@@ -444,7 +444,7 @@ describe("runBeadsImport", () => {
       expect(result.ids).toHaveLength(6);
       expect(result.ids[5]).toMatch(/^pm-/);
 
-      const epicResult = context.runCli(["get", "pm-typed-epic", "--json"], { expectJson: true });
+      const epicResult = context.runCli(["get", "pm-typed-epic", "--full", "--json"], { expectJson: true });
       expect(epicResult.code).toBe(0);
       const epicJson = epicResult.json as {
         item: {
