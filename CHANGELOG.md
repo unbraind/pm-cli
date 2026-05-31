@@ -22,6 +22,7 @@
 
 ### Other
 
+- ADR: Startup-latency strategy \(prebuilt JS, lazy per-command imports, external deps, no single bundle\) ([pm-irp1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-irp1.toon))
 - Verify living-map: ecosystem coverage gaps ([pm-xmhn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xmhn.toon))
 - ADR: Stable CLI exit-code contract \(0 success, 1 generic, 2 usage, 3 not\_found, 4 conflict, 5 dependency\_failed\) ([pm-x1z3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-x1z3.toon))
 - Ecosystem-wide PM living-context map: audit, ADRs, roadmap, and forward backlog \(2026-05-31\) ([pm-w7f2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/epics/pm-w7f2.toon))
@@ -42,7 +43,6 @@
 - Audit domain: Telemetry, observability, Sentry, health/validate ([pm-kxw0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kxw0.toon))
 - ADR: Compact-by-default is the agent path at the MCP boundary ([pm-ko1g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-ko1g.toon))
 - ADR: Health checks are advisory vs blocking: telemetry\_\* never flips ok:false ([pm-jezo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-jezo.toon))
-- ADR: Startup-latency strategy \(prebuilt JS, lazy per-command imports, external deps, no single bundle\) ([pm-irp1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-irp1.toon))
 - ADR: Git-native filesystem is the database \(one file per item; no server, daemon, or DB engine\) ([pm-i7i4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-i7i4.toon))
 - Audit domain: Core CLI command surface & item lifecycle ([pm-hqka](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hqka.toon))
 - ADR: Append-only JSONL history with SHA-256 hash chain ([pm-hg0k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-hg0k.toon))

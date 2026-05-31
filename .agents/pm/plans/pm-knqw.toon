@@ -6,15 +6,16 @@ status: in_progress
 priority: 2
 tags[4]: audit,living-map,methodology,pm-cli
 created_at: "2026-05-31T19:50:17.050Z"
-updated_at: "2026-05-31T20:31:06.275Z"
+updated_at: "2026-05-31T20:37:13.462Z"
 assignee: codex-audit-20260531
 author: maintainer-agent
 parent: pm-doxj
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-doxj,parent,"2026-05-31T19:50:17.050Z",null,null
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-05-31T20:20:23.121Z",codex-audit-20260531,"Closeout note: resuming existing living-map plan step 4 for latest verification, changelog, PR, AI-review loop, observability, and merge. Duplicate check reused pm-knqw under pm-doxj rather than creating a new broad-audit item; latest related closed audit is pm-kd9n under pm-59gj."
   "2026-05-31T20:31:06.275Z",codex-audit-20260531,"Evidence: specialists found no immediate SDK/package, CLI/perf, or tracker-structure blockers. Fixed release docs to match the Sentry token requirement. Backfilled branch-local closed item resolution metadata, reducing validation warnings from 69 to 29 historical rows with history drift still ok. Local gates passed: pnpm build; pm health summary ok; secret scan ok; package-first dogfood ok; semantic package-first dogfood ok with qwen3-embedding:0.6b; required Sentry/telemetry gate ok with zero critical/high and telemetry error rate 1.23%; release run-gates ok including 2068 tests and 100% coverage."
+  "2026-05-31T20:37:13.462Z",codex-audit-20260531,"Review feedback: addressed Gemini grammar comments on pm-irp1 startup ADR body and pm-0hnu health remediation-map acceptance criteria."
 tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/check-secrets.mjs,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/release/run-gates.mjs --telemetry-mode best-effort --json,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
