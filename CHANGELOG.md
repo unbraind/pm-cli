@@ -22,6 +22,7 @@
 
 ### Other
 
+- Ecosystem PM living-map audit & reorganization methodology ([pm-knqw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-knqw.toon))
 - ADR: Startup-latency strategy \(prebuilt JS, lazy per-command imports, external deps, no single bundle\) ([pm-irp1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-irp1.toon))
 - Verify living-map: ecosystem coverage gaps ([pm-xmhn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xmhn.toon))
 - ADR: Stable CLI exit-code contract \(0 success, 1 generic, 2 usage, 3 not\_found, 4 conflict, 5 dependency\_failed\) ([pm-x1z3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-x1z3.toon))

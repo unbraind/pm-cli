@@ -2,14 +2,16 @@ id: pm-knqw
 title: Ecosystem PM living-map audit & reorganization methodology
 description: "Read-only per-domain audit by 8 specialized sub-agents; synthesize into an organized living map (roadmap milestone, capability epics, ADRs, forward backlog, agent/user stories) with strict dedup and create-only discipline on the real tracker."
 type: Plan
-status: in_progress
+status: closed
 priority: 2
 tags[4]: audit,living-map,methodology,pm-cli
 created_at: "2026-05-31T19:50:17.050Z"
-updated_at: "2026-05-31T20:37:13.462Z"
-assignee: codex-audit-20260531
+updated_at: "2026-05-31T20:48:49.947Z"
 author: maintainer-agent
 parent: pm-doxj
+resolution: "Merged PR #90 to main at 31b4d749 after addressing AI reviewer feedback and validating post-merge CI, Sentry, telemetry, dogfood, and release gates."
+expected_result: "pm ecosystem audit produces a deduplicated living map, captures SDK/CLI/package improvement backlog, fixes actionable issues, validates temp-project dogfood and observability, and lands on main with green checks."
+actual_result: "Reused pm-knqw lineage, coordinated specialized subagent findings, fixed release/Sentry docs and tracker metadata, resolved relevant Sentry issue, passed package-first dogfood including semantic mode, passed release gates, addressed Gemini review feedback, merged PR #90, and verified post-merge CI/Docs plus telemetry stack health."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-doxj,parent,"2026-05-31T19:50:17.050Z",null,null
 comments[3]{created_at,author,text}:
@@ -28,43 +30,14 @@ tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
 docs[2]{path,scope,note}:
   CHANGELOG.md,project,generated release notes for living-map tracker changes
   docs/RELEASING.md,project,release workflow Sentry token requirement documentation
+close_reason: "Living-map audit, verification, review loop, and merge completed"
 plan_mode: completed
 plan_scope: "Read-only per-domain audit by 8 specialized sub-agents; synthesize into an organized living map (roadmap milestone, capability epics, ADRs, forward backlog, agent/user stories) with strict dedup and create-only discipline on the real tracker."
 plan_harness: claude-code
 plan_resume_context: Living map built under milestone pm-doxj and ADR-log pm-m2u1; audit meta under epic pm-w7f2. Create-only on real tracker (closed_at null -> changelog buckets by updated_at). Backlog open; ADRs+meta closed today.
-plan_steps[4]:
-  - id: plan-step-001
-    order: 1
-    title: Discover & constrain
-    status: completed
-    created_at: "2026-05-31T19:50:17.069Z"
-    updated_at: "2026-05-31T19:51:35.707Z"
-    body: "Map tracker state (902 items, all closed), confirm changelog buckets by updated_at -> create-only discipline; lock scope via user Q&A."
-    evidence: Completed during 2026-05-31 ecosystem audit (pm-w7f2).
-    completed_at: "2026-05-31T19:51:35.707Z"
-  - id: plan-step-002
-    order: 2
-    title: Fan out 8 read-only domain audits
-    status: completed
-    created_at: "2026-05-31T19:50:55.585Z"
-    updated_at: "2026-05-31T19:51:35.923Z"
-    body: Specialized sub-agents (cli/storage/search/extensions/mcp/telemetry/config/docs) map code+docs+tests to existing pm coverage; track work in pm; return dedup-checked proposals.
-    evidence: Completed during 2026-05-31 ecosystem audit (pm-w7f2).
-    completed_at: "2026-05-31T19:51:35.923Z"
-  - id: plan-step-003
-    order: 3
-    title: Synthesize organized living map
-    status: completed
-    created_at: "2026-05-31T19:50:55.829Z"
-    updated_at: "2026-05-31T19:51:36.131Z"
-    body: Roadmap milestone + 8 capability epics + 53 forward backlog items + 24 ADRs + 14 agent/user stories; dedup against 902 history; create-only.
-    evidence: Completed during 2026-05-31 ecosystem audit (pm-w7f2).
-    completed_at: "2026-05-31T19:51:36.131Z"
-  - id: plan-step-004
-    order: 4
-    title: "Verify, changelog, PR, AI-bot review loop, merge"
-    status: in_progress
-    created_at: "2026-05-31T19:50:56.111Z"
-    updated_at: "2026-05-31T19:51:36.364Z"
-    body: pm health/validate ok; regenerate changelog LAST; commit+push+PR; trigger AI bots; loop until clean; merge; verify Sentry + telemetry.
+plan_steps[4]{id,order,title,status,created_at,updated_at,body,evidence,completed_at}:
+  plan-step-001,1,Discover & constrain,completed,"2026-05-31T19:50:17.069Z","2026-05-31T19:51:35.707Z","Map tracker state (902 items, all closed), confirm changelog buckets by updated_at -> create-only discipline; lock scope via user Q&A.",Completed during 2026-05-31 ecosystem audit (pm-w7f2).,"2026-05-31T19:51:35.707Z"
+  plan-step-002,2,Fan out 8 read-only domain audits,completed,"2026-05-31T19:50:55.585Z","2026-05-31T19:51:35.923Z",Specialized sub-agents (cli/storage/search/extensions/mcp/telemetry/config/docs) map code+docs+tests to existing pm coverage; track work in pm; return dedup-checked proposals.,Completed during 2026-05-31 ecosystem audit (pm-w7f2).,"2026-05-31T19:51:35.923Z"
+  plan-step-003,3,Synthesize organized living map,completed,"2026-05-31T19:50:55.829Z","2026-05-31T19:51:36.131Z",Roadmap milestone + 8 capability epics + 53 forward backlog items + 24 ADRs + 14 agent/user stories; dedup against 902 history; create-only.,Completed during 2026-05-31 ecosystem audit (pm-w7f2).,"2026-05-31T19:51:36.131Z"
+  plan-step-004,4,"Verify, changelog, PR, AI-bot review loop, merge",completed,"2026-05-31T19:50:56.111Z","2026-05-31T20:48:42.125Z",pm health/validate ok; regenerate changelog LAST; commit+push+PR; trigger AI bots; loop until clean; merge; verify Sentry + telemetry.,PR #90 merged to main at 31b4d749 after Gemini review feedback was addressed; post-merge CI run 26723964321 and Docs run 26723964325 passed; Sentry/telemetry gate and stack health passed.,"2026-05-31T20:48:42.125Z"
 body: ""
