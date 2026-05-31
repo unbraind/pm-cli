@@ -8,6 +8,7 @@ import {
   normalizeBootstrapInvocation,
   coalesceRepeatedListFlags,
   parseBootstrapTypeValue,
+  listAliasPluralKeys,
 } from "../../src/cli/bootstrap-args.js";
 
 describe("parseBootstrapGlobalOptions", () => {
@@ -283,7 +284,7 @@ describe("normalizeBootstrapInvocation", () => {
     expect(normalized.trace).toHaveLength(0);
   });
 
-  it("accumulates repeated singular --tag typo occurrences into one --tags token (pm-cf1u)", () => {
+  it("accumulates repeated singular --tag alias occurrences into one --tags token (pm-cf1u)", () => {
     const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tag", "a", "--tag", "b", "--tag", "c"]);
     expect(normalized.argv).toEqual(["create", "issue", "X", "--tags=a,b,c"]);
     expect(normalized.trace).toEqual(
@@ -360,6 +361,13 @@ describe("normalizeBootstrapInvocation", () => {
     const normalized = normalizeBootstrapInvocation(["create", "issue", "X", "--tags", "a", "--", "--tags", "b"]);
     expect(normalized.argv).toEqual(["create", "issue", "X", "--tags", "a", "--", "--tags", "b"]);
     expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(false);
+  });
+});
+
+describe("listAliasPluralKeys", () => {
+  it("covers simple s and y-to-ies list alias candidates", () => {
+    expect(listAliasPluralKeys("tag")).toEqual(["tags"]);
+    expect(listAliasPluralKeys("category")).toEqual(["categorys", "categories"]);
   });
 });
 

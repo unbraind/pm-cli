@@ -175,7 +175,7 @@ function buildSentryIssuesUrl(project, query, limit) {
 
 function fetchSentryIssuesViaCli(project, query, limit, priorFailure) {
   const result = runCommand(
-    commandFor("sentry-cli"),
+    commandFor("sentry"),
     [
       "issue",
       "list",
@@ -305,6 +305,20 @@ function parseNumber(value, key, fallback) {
   return parsed;
 }
 
+function buildTelemetryCommandInvocation(commandPath, telemetryDays) {
+  const args = ["--days", String(telemetryDays), "--limit", "50"];
+  if (commandPath.endsWith(".sh")) {
+    return {
+      command: "bash",
+      args: [commandPath, ...args],
+    };
+  }
+  return {
+    command: commandPath,
+    args,
+  };
+}
+
 async function main() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
@@ -362,10 +376,13 @@ async function main() {
   };
 
   if (telemetryMode !== "off") {
-    const telemetryCommand = telemetryCommandPath
+    const telemetryInvocation = telemetryCommandPath
+      ? buildTelemetryCommandInvocation(telemetryCommandPath, telemetryDays)
+      : null;
+    const telemetryCommand = telemetryInvocation
       ? runCommand(
-          "bash",
-          [telemetryCommandPath, "--days", String(telemetryDays), "--limit", "50"],
+          telemetryInvocation.command,
+          telemetryInvocation.args,
           {
             capture: true,
             allowFailure: telemetryMode !== "required",

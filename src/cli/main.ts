@@ -1979,8 +1979,12 @@ function enforceExplicitRetryForMutatingFlagTypos(
   if (!typoEvent) {
     return;
   }
+  const normalizedTokens = Array.isArray(typoEvent.to)
+    ? typoEvent.to
+    : [String(typoEvent.to ?? "")].filter((entry) => entry.length > 0);
+  const normalizedDisplay = normalizedTokens.length > 0 ? normalizedTokens.join(" ") : "the canonical flag";
   throw new PmCliError(
-    `Refusing to auto-correct mutating option ${typoEvent.from} to ${typoEvent.to.join(" ")}. Retry with the canonical flag so the mutation is explicit.`,
+    `Refusing to auto-correct mutating option ${typoEvent.from} to ${normalizedDisplay}. Retry with the canonical flag so the mutation is explicit.`,
     EXIT_CODE.USAGE,
     {
       code: "mutating_flag_typo_requires_retry",

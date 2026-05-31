@@ -160,29 +160,52 @@ export function isRegistrationCollisionWarning(warning: string): boolean {
   return REGISTRATION_COLLISION_WARNING_CODES.has(warningCode(warning));
 }
 
-function isExtensionLayer(value: string | undefined): boolean {
+function isExtensionLayer(value: string | undefined): value is "project" | "global" {
   return value === "project" || value === "global";
+}
+
+interface RegistrationCollisionWarningParts {
+  code: string;
+  winner: { layer: "project" | "global"; name: string };
+  displaced: { layer: "project" | "global"; name: string };
+}
+
+function parseRegistrationCollisionWarning(warning: string): RegistrationCollisionWarningParts | null {
+  const parts = warning.split(":");
+  const code = parts[0];
+  if (!code || !REGISTRATION_COLLISION_WARNING_CODES.has(code)) {
+    return null;
+  }
+  // Collision warnings end with winnerLayer:winnerName:displacedLayer:displacedName.
+  // Surface identifiers before that suffix may contain colons, so parse from the right.
+  const winnerLayer = parts.at(-4);
+  const winnerName = parts.at(-3)?.trim();
+  const displacedLayer = parts.at(-2);
+  const displacedName = parts.at(-1)?.trim();
+  if (
+    !isExtensionLayer(winnerLayer) ||
+    !isExtensionLayer(displacedLayer) ||
+    !winnerName ||
+    !displacedName
+  ) {
+    return null;
+  }
+  return {
+    code,
+    winner: { layer: winnerLayer, name: winnerName },
+    displaced: { layer: displacedLayer, name: displacedName },
+  };
 }
 
 function collectRegistrationCollisionExtensionNames(warnings: string[]): string[] {
   const names = new Set<string>();
   for (const warning of warnings) {
-    const parts = warning.split(":");
-    const code = parts[0];
-    if (!code || !REGISTRATION_COLLISION_WARNING_CODES.has(code)) {
+    const parsed = parseRegistrationCollisionWarning(warning);
+    if (!parsed) {
       continue;
     }
-
-    const winnerLayer = parts.at(-4);
-    const winnerName = parts.at(-3)?.trim();
-    const displacedLayer = parts.at(-2);
-    const displacedName = parts.at(-1)?.trim();
-    if (!isExtensionLayer(winnerLayer) || !isExtensionLayer(displacedLayer)) {
-      continue;
-    }
-    for (const name of [winnerName, displacedName]) {
-      if (name) names.add(name);
-    }
+    names.add(parsed.winner.name);
+    names.add(parsed.displaced.name);
   }
   return [...names].sort((left, right) => left.localeCompare(right));
 }

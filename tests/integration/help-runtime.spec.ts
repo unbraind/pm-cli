@@ -222,6 +222,8 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       const envelope = parseJsonErrorEnvelope(result.stderr);
       expect(envelope.code).toBe("mutating_flag_typo_requires_retry");
       expect(envelope.examples).toEqual(expect.arrayContaining([expect.stringContaining("--title")]));
+      expect(envelope.recovery?.suggested_retry).toEqual(expect.stringContaining("--title"));
+      expect(envelope.recovery?.normalized_args).toEqual(expect.arrayContaining(["--title"]));
       const list = context.runCli(["list-all", "--json"], { expectJson: true });
       expect(((list.json as { items?: unknown[] }).items ?? [])).toHaveLength(0);
     });

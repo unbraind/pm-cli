@@ -451,13 +451,15 @@ function resolveCanonicalFlag(
       confidence: "high",
     };
   }
-  const pluralListAlias = lookup.canonicalByNormalized.get(`${normalizedKey}s`);
-  if (typeof pluralListAlias === "string" && lookup.listCanonicalFlags.has(pluralListAlias)) {
-    return {
-      flag: pluralListAlias,
-      reason: "flag_alias",
-      confidence: "high",
-    };
+  for (const aliasKey of listAliasPluralKeys(normalizedKey)) {
+    const pluralListAlias = lookup.canonicalByNormalized.get(aliasKey);
+    if (typeof pluralListAlias === "string" && lookup.listCanonicalFlags.has(pluralListAlias)) {
+      return {
+        flag: pluralListAlias,
+        reason: "flag_alias",
+        confidence: "high",
+      };
+    }
   }
   const maxDistance = comparableKey.length >= 8 ? 2 : 1;
   let bestDistance = Number.POSITIVE_INFINITY;
@@ -486,6 +488,14 @@ function resolveCanonicalFlag(
     reason: "flag_typo",
     confidence: bestDistance >= 2 ? "medium" : "high",
   };
+}
+
+export function listAliasPluralKeys(normalizedKey: string): string[] {
+  const candidates = [`${normalizedKey}s`];
+  if (normalizedKey.endsWith("y") && normalizedKey.length > 1) {
+    candidates.push(`${normalizedKey.slice(0, -1)}ies`);
+  }
+  return candidates;
 }
 
 function parseBareKeyValueToken(token: string): { key: string; value: string } | null {

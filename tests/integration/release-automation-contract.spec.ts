@@ -105,6 +105,15 @@ describe("release automation contract", () => {
     expect(payload.telemetry.mode).toBe("off");
   });
 
+  it("keeps telemetry query command execution portable outside shell scripts", async () => {
+    const gateSource = await readFile(path.join(repoRoot, "scripts/release/sentry-telemetry-gate.mjs"), "utf8");
+    expect(gateSource).toContain('commandFor("sentry")');
+    expect(gateSource).toContain("function buildTelemetryCommandInvocation");
+    expect(gateSource).toContain('commandPath.endsWith(".sh")');
+    expect(gateSource).toContain("telemetryInvocation.command");
+    expect(gateSource).not.toContain('runCommand(\n          "bash",\n          [telemetryCommandPath');
+  });
+
   it("keeps tracker-only changes outside release relevance", async () => {
     const pipelineModule = (await import(
       pathToFileURL(path.join(repoRoot, "scripts/release/release-relevance.mjs")).href
