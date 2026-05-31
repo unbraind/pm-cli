@@ -451,6 +451,14 @@ function resolveCanonicalFlag(
       confidence: "high",
     };
   }
+  const pluralListAlias = lookup.canonicalByNormalized.get(`${normalizedKey}s`);
+  if (typeof pluralListAlias === "string" && lookup.listCanonicalFlags.has(pluralListAlias)) {
+    return {
+      flag: pluralListAlias,
+      reason: "flag_alias",
+      confidence: "high",
+    };
+  }
   const maxDistance = comparableKey.length >= 8 ? 2 : 1;
   let bestDistance = Number.POSITIVE_INFINITY;
   let bestFlag: string | undefined;

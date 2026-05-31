@@ -184,6 +184,6 @@ describe("release automation contract", () => {
     const workflow = await readFile(path.join(repoRoot, ".github/workflows/release.yml"), "utf8");
     expect(workflow).toContain("node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-github-release --json");
     expect(workflow).toContain("node scripts/release/verify-published-release.mjs --tag \"${RELEASE_TAG}\" --skip-package --json");
-    expect(workflow).toContain("--max-critical 10 --max-high 20");
+    expect(workflow).toContain("--max-critical 0 --max-high 0");
   });
 });

@@ -81,7 +81,7 @@ function resolveClaimStateContext(
 
 function parseGetDepth(raw: string | undefined): GetDepth {
   if (raw === undefined || raw.trim().length === 0) {
-    return "deep";
+    return "standard";
   }
   const normalized = raw.trim().toLowerCase();
   if (normalized === "full") {

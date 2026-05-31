@@ -453,6 +453,59 @@ export const EXTENSION_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--fail-on-warn" },
 ];
 
+export const EXTENSION_INIT_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--project" },
+  { flag: "--local" },
+  { flag: "--global" },
+];
+
+export const EXTENSION_INSTALL_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--project" },
+  { flag: "--local" },
+  { flag: "--global" },
+  { flag: "--gh" },
+  { flag: "--github" },
+  { flag: "--ref" },
+];
+
+export const EXTENSION_UNINSTALL_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_INIT_FLAG_CONTRACTS;
+export const EXTENSION_EXPLORE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_INIT_FLAG_CONTRACTS;
+export const EXTENSION_ADOPT_ALL_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_INIT_FLAG_CONTRACTS;
+export const EXTENSION_ACTIVATE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_INIT_FLAG_CONTRACTS;
+export const EXTENSION_DEACTIVATE_FLAG_CONTRACTS: CliFlagContract[] = EXTENSION_INIT_FLAG_CONTRACTS;
+
+export const EXTENSION_MANAGE_FLAG_CONTRACTS: CliFlagContract[] = [
+  ...EXTENSION_INIT_FLAG_CONTRACTS,
+  { flag: "--runtime-probe" },
+  { flag: "--fix-managed-state" },
+];
+
+export const EXTENSION_RELOAD_FLAG_CONTRACTS: CliFlagContract[] = [
+  ...EXTENSION_INIT_FLAG_CONTRACTS,
+  { flag: "--watch" },
+];
+
+export const EXTENSION_DOCTOR_FLAG_CONTRACTS: CliFlagContract[] = [
+  ...EXTENSION_INIT_FLAG_CONTRACTS,
+  { flag: "--detail" },
+  { flag: "--trace" },
+  { flag: "--fix-managed-state" },
+  { flag: "--strict-exit" },
+  { flag: "--fail-on-warn" },
+];
+
+export const EXTENSION_CATALOG_FLAG_CONTRACTS: CliFlagContract[] = [
+  ...EXTENSION_INIT_FLAG_CONTRACTS,
+  { flag: "--fields", list: true },
+];
+
+export const EXTENSION_ADOPT_FLAG_CONTRACTS: CliFlagContract[] = [
+  ...EXTENSION_INIT_FLAG_CONTRACTS,
+  { flag: "--gh" },
+  { flag: "--github" },
+  { flag: "--ref" },
+];
+
 export const INSTALL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--project" },
   { flag: "--local" },
@@ -1343,7 +1396,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   "extension-manage": { optional: ["scope", "runtimeProbe", "fixManagedState"] },
   "extension-reload": { optional: ["scope", "watch"] },
   "extension-doctor": { optional: ["scope", "detail", "trace", "fixManagedState", "strictExit", "failOnWarn"] },
-  "extension-catalog": { optional: ["scope"] },
+  "extension-catalog": { optional: ["scope", "fields"] },
   "extension-adopt": { required: ["target"], optional: ["scope", "github", "ref"] },
   "extension-adopt-all": { optional: ["scope"] },
   "extension-activate": { required: ["target"], optional: ["scope"] },
@@ -1385,7 +1438,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   "package-manage": { optional: ["scope", "runtimeProbe", "fixManagedState"] },
   "package-reload": { optional: ["scope", "watch"] },
   "package-doctor": { optional: ["scope", "detail", "trace", "fixManagedState", "strictExit", "failOnWarn"] },
-  "package-catalog": { optional: ["scope"] },
+  "package-catalog": { optional: ["scope", "fields"] },
   "package-adopt": { required: ["target"], optional: ["scope", "github", "ref"] },
   "package-adopt-all": { optional: ["scope"] },
   "package-activate": { required: ["target"], optional: ["scope"] },

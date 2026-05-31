@@ -48,7 +48,19 @@ import {
   DEPS_FLAG_CONTRACTS,
   DEDUPE_AUDIT_FLAG_CONTRACTS,
   DOCS_FLAG_CONTRACTS,
+  EXTENSION_ACTIVATE_FLAG_CONTRACTS,
+  EXTENSION_ADOPT_ALL_FLAG_CONTRACTS,
+  EXTENSION_ADOPT_FLAG_CONTRACTS,
+  EXTENSION_CATALOG_FLAG_CONTRACTS,
+  EXTENSION_DEACTIVATE_FLAG_CONTRACTS,
+  EXTENSION_DOCTOR_FLAG_CONTRACTS,
+  EXTENSION_EXPLORE_FLAG_CONTRACTS,
   EXTENSION_FLAG_CONTRACTS,
+  EXTENSION_INIT_FLAG_CONTRACTS,
+  EXTENSION_INSTALL_FLAG_CONTRACTS,
+  EXTENSION_MANAGE_FLAG_CONTRACTS,
+  EXTENSION_RELOAD_FLAG_CONTRACTS,
+  EXTENSION_UNINSTALL_FLAG_CONTRACTS,
   FILES_FLAG_CONTRACTS,
   GC_FLAG_CONTRACTS,
   GET_FLAG_CONTRACTS,
@@ -315,6 +327,16 @@ const COMMAND_ALIAS_TO_CANONICAL = new Map(
   ),
 );
 
+function packageOwnedActionForCommand(command: string): string {
+  if (command.startsWith("test-runs ")) {
+    return `test-runs-${command.slice("test-runs ".length)}`;
+  }
+  if (command.startsWith("templates ")) {
+    return `templates-${command.slice("templates ".length)}`;
+  }
+  return command;
+}
+
 function resolveActionCommandPath(action: PmToolAction): string | null {
   if (
     PM_CORE_COMMAND_NAMES.includes(
@@ -340,6 +362,9 @@ function resolveActionCommandPath(action: PmToolAction): string | null {
     return normalizeCommandPath(
       `templates ${action.slice("templates-".length)}`,
     );
+  }
+  if (PACKAGE_OWNED_ACTIONS.has(action)) {
+    return normalizeCommandPath(action);
   }
   return null;
 }
@@ -934,17 +959,19 @@ interface ActionContractDescriptor {
 
 function collectActionContractDescriptors(
   extensionContracts: ExtensionCommandContract[],
+  options: { includePackageOwnedActions?: boolean } = {},
 ): ActionContractDescriptor[] {
   const descriptors = new Map<string, ActionContractDescriptor>();
   for (const action of PM_TOOL_ACTIONS) {
-    if (PACKAGE_OWNED_ACTIONS.has(action)) {
+    const packageOwned = PACKAGE_OWNED_ACTIONS.has(action);
+    if (packageOwned && !options.includePackageOwnedActions) {
       continue;
     }
     const commandPath = resolveActionCommandPath(action as PmToolAction);
     descriptors.set(action, {
       action,
-      provider: "core",
-      requires_extension: false,
+      provider: packageOwned ? "extension" : "core",
+      requires_extension: packageOwned,
       command_path: commandPath,
     });
   }
@@ -987,6 +1014,9 @@ function resolveActionAvailability(
   const extensionCommandAvailable = commandPaths.some((commandPath) =>
     runtimeProbe.handlers.has(commandPath),
   );
+  const optionalPackageHint = commandPaths
+    .map((commandPath) => PACKAGE_OWNED_COMMAND_INSTALL_HINTS.get(commandPath))
+    .find((hint): hint is string => typeof hint === "string");
   const invocable =
     runtimeProbe.disabledReason === null && extensionCommandAvailable;
   return {
@@ -997,7 +1027,7 @@ function resolveActionAvailability(
     provider: "extension",
     disabled_reason: invocable
       ? null
-      : (runtimeProbe.disabledReason ?? "extension_command_not_registered"),
+      : (runtimeProbe.disabledReason ?? (optionalPackageHint ? `optional_package_not_installed:${optionalPackageHint}` : "extension_command_not_registered")),
     command_path: descriptor.command_path,
     cli_exposed: extensionCommandAvailable,
     policy_state: {
@@ -1009,6 +1039,42 @@ function resolveActionAvailability(
 }
 
 function resolveCoreCommandFlags(command: string): CliFlagContract[] {
+  if (command === "extension init" || command === "package init") {
+    return EXTENSION_INIT_FLAG_CONTRACTS;
+  }
+  if (command === "extension install" || command === "package install") {
+    return EXTENSION_INSTALL_FLAG_CONTRACTS;
+  }
+  if (command === "extension uninstall" || command === "package uninstall") {
+    return EXTENSION_UNINSTALL_FLAG_CONTRACTS;
+  }
+  if (command === "extension explore" || command === "package explore") {
+    return EXTENSION_EXPLORE_FLAG_CONTRACTS;
+  }
+  if (command === "extension manage" || command === "package manage") {
+    return EXTENSION_MANAGE_FLAG_CONTRACTS;
+  }
+  if (command === "extension reload" || command === "package reload") {
+    return EXTENSION_RELOAD_FLAG_CONTRACTS;
+  }
+  if (command === "extension doctor" || command === "package doctor") {
+    return EXTENSION_DOCTOR_FLAG_CONTRACTS;
+  }
+  if (command === "extension catalog" || command === "package catalog") {
+    return EXTENSION_CATALOG_FLAG_CONTRACTS;
+  }
+  if (command === "extension adopt" || command === "package adopt") {
+    return EXTENSION_ADOPT_FLAG_CONTRACTS;
+  }
+  if (command === "extension adopt-all" || command === "package adopt-all") {
+    return EXTENSION_ADOPT_ALL_FLAG_CONTRACTS;
+  }
+  if (command === "extension activate" || command === "package activate") {
+    return EXTENSION_ACTIVATE_FLAG_CONTRACTS;
+  }
+  if (command === "extension deactivate" || command === "package deactivate") {
+    return EXTENSION_DEACTIVATE_FLAG_CONTRACTS;
+  }
   if (command === "init") {
     return INIT_FLAG_CONTRACTS;
   }
@@ -1160,6 +1226,19 @@ function resolveCoreCommandFlags(command: string): CliFlagContract[] {
   return GLOBAL_FLAG_CONTRACTS;
 }
 
+function isCoreCommandPath(command: string): boolean {
+  if (PACKAGE_OWNED_COMMANDS.has(command)) {
+    return false;
+  }
+  if (PM_CORE_COMMAND_NAMES.includes(command as (typeof PM_CORE_COMMAND_NAMES)[number])) {
+    return true;
+  }
+  if (command.startsWith("extension ") || command.startsWith("package ")) {
+    return resolveCoreCommandFlags(command) !== GLOBAL_FLAG_CONTRACTS;
+  }
+  return false;
+}
+
 function normalizeCommandForRuntimeFieldFlags(command: string): string {
   if (LIST_COMMAND_NAMES.has(command)) {
     return "list";
@@ -1279,10 +1358,7 @@ function buildCommandFlagSurface(
 ): CommandFlagSurface[] {
   return commands
     .map((command) => {
-      const isCoreCommand =
-        PM_CORE_COMMAND_NAMES.includes(
-          command as (typeof PM_CORE_COMMAND_NAMES)[number],
-        ) && !PACKAGE_OWNED_COMMANDS.has(command);
+      const isCoreCommand = isCoreCommandPath(command);
       const coreFlags = isCoreCommand ? resolveCoreCommandFlags(command) : [];
       const runtimeFlags =
         runtimeFieldFlagMap.get(
@@ -1520,8 +1596,24 @@ export async function runContracts(
   const extensionFlagMap = collectExtensionFlagContractsByCommand(
     runtimeProbe.flagRegistrations,
   );
+  const includePackageOwnedActions =
+    (selectedAction !== undefined && PACKAGE_OWNED_ACTIONS.has(selectedAction)) ||
+    (selectedCommand !== undefined && PACKAGE_OWNED_COMMANDS.has(selectedCommand) && availabilityOnly);
   const actionDescriptors =
-    collectActionContractDescriptors(mergedExtensionContracts);
+    collectActionContractDescriptors(mergedExtensionContracts, { includePackageOwnedActions });
+  if (
+    includePackageOwnedActions &&
+    selectedCommand !== undefined &&
+    PACKAGE_OWNED_COMMANDS.has(selectedCommand) &&
+    !actionDescriptors.some((entry) => entry.command_path === selectedCommand)
+  ) {
+    actionDescriptors.push({
+      action: packageOwnedActionForCommand(selectedCommand),
+      provider: "extension",
+      requires_extension: true,
+      command_path: selectedCommand,
+    });
+  }
   const actionNames = new Set(actionDescriptors.map((entry) => entry.action));
   if (selectedAction && !actionNames.has(selectedAction)) {
     throw new PmCliError(
@@ -1534,6 +1626,9 @@ export async function runContracts(
     ...new Set([
       ...PM_CORE_COMMAND_NAMES.filter(
         (entry) => !PACKAGE_OWNED_COMMANDS.has(entry),
+      ),
+      ...actionDescriptors.flatMap((entry) =>
+        entry.command_path ? splitCommandPathAliases(entry.command_path) : [],
       ),
       ...mergedExtensionContracts.flatMap((entry) => entry.command.split("|")),
     ]),
@@ -1618,7 +1713,7 @@ export async function runContracts(
     resolveActionAvailability(descriptor, runtimeProbe),
   );
   const actionAvailability =
-    runtimeOnly && !selectedAction
+    runtimeOnly && !selectedAction && !availabilityOnly
       ? allActionAvailability.filter((entry) => entry.invocable)
       : allActionAvailability;
   const actions = actionAvailability.map((entry) => entry.action);

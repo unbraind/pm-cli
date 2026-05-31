@@ -16,13 +16,17 @@ export function normalizeLongOptionFlag(token: string): string | undefined {
 
 export function extractProvidedOptionFlags(argv: string[]): string[] {
   const provided = new Set<string>();
+  const ordered: string[] = [];
   for (const token of argv) {
     const normalized = normalizeLongOptionFlag(token);
     if (normalized) {
+      if (!provided.has(normalized)) {
+        ordered.push(normalized);
+      }
       provided.add(normalized);
     }
   }
-  return [...provided].sort((left, right) => left.localeCompare(right));
+  return ordered;
 }
 
 export function quoteCommandArg(arg: string): string {

@@ -1,0 +1,15 @@
+id: pm-lql3
+title: Invalid accidental sub-agent probe item
+description: Created accidentally during read-only agent UX contract review; closed immediately as invalid tracker noise under pm-kd9n cleanup.
+type: Task
+status: closed
+priority: 2
+tags: []
+created_at: "2026-05-31T10:42:37.061Z"
+updated_at: "2026-05-31T11:05:29.573Z"
+author: agent-ux-contract-review-20260531
+resolution: Closed as invalid accidental typo-normalization probe under pm-kd9n cleanup
+expected_result: No durable project work item should be created by read-only sub-agent typo probes
+actual_result: Placeholder item was created by permissive mutating flag typo normalization then closed immediately
+close_reason: Invalid accidental sub-agent probe; canonical audit remains pm-kd9n.
+body: ""

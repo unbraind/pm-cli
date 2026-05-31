@@ -47,47 +47,26 @@ export function buildStarterExtensionScaffoldFiles(
   // own node_modules) and keep the import-free shape in extension-only
   // mode, decorated with a JSDoc @param hint so editors that follow JSDoc
   // still narrow the `api` parameter.
-  const entrypoint =
-    vocabulary === "package"
-      ? [
-          'import { defineExtension } from "@unbrained/pm-cli/sdk";',
-          "",
-          "export default defineExtension({",
-          "  activate(api) {",
-          "    api.registerCommand({",
-          `      name: ${JSON.stringify(commandName)},`,
-          '      description: "Starter scaffold command. Replace with your own behavior.",',
-          "      run: async (context) => ({",
-          "        ok: true,",
-          `        source: ${JSON.stringify(extensionName)},`,
-          "        command: context.command,",
-          '        message: "Starter extension scaffold is active.",',
-          "      }),",
-          "    });",
-          "  },",
-          "});",
-          "",
-        ].join("\n")
-      : [
-          '/** @param {import("@unbrained/pm-cli/sdk").ExtensionApi} api */',
-          "export function activate(api) {",
-          "  api.registerCommand({",
-          `    name: ${JSON.stringify(commandName)},`,
-          '    description: "Starter scaffold command. Replace with your own behavior.",',
-          "    run: async (context) => ({",
-          "      ok: true,",
-          `      source: ${JSON.stringify(extensionName)},`,
-          "      command: context.command,",
-          '      message: "Starter extension scaffold is active.",',
-          "    }),",
-          "  });",
-          "}",
-          "",
-          "export default {",
-          "  activate,",
-          "};",
-          "",
-        ].join("\n");
+  const entrypoint = [
+    '/** @param {import("@unbrained/pm-cli/sdk").ExtensionApi} api */',
+    "export function activate(api) {",
+    "  api.registerCommand({",
+    `    name: ${JSON.stringify(commandName)},`,
+    '    description: "Starter scaffold command. Replace with your own behavior.",',
+    "    run: async (context) => ({",
+    "      ok: true,",
+    `      source: ${JSON.stringify(extensionName)},`,
+    "      command: context.command,",
+    '      message: "Starter extension scaffold is active.",',
+    "    }),",
+    "  });",
+    "}",
+    "",
+    "export default {",
+    "  activate,",
+    "};",
+    "",
+  ].join("\n");
   if (vocabulary === "package") {
     const packageJson = `${JSON.stringify(
       {
@@ -101,7 +80,7 @@ export function buildStarterExtensionScaffoldFiles(
         },
         pm: {
           aliases: [extensionName],
-          extensions: [`extensions/${extensionName}`],
+          extensions: ["."],
           docs: ["README.md"],
           examples: ["README.md"],
           catalog: {
@@ -122,8 +101,8 @@ export function buildStarterExtensionScaffoldFiles(
       "",
       "## Included Files",
       "- `package.json`: package metadata and `pm` resource manifest.",
-      `- \`extensions/${extensionName}/manifest.json\`: extension metadata and capabilities.`,
-      `- \`extensions/${extensionName}/index.js\`: starter command registration using the \`commands\` capability.`,
+      "- `manifest.json`: extension metadata and capabilities.",
+      "- `index.js`: starter command registration using the `commands` capability.",
       "",
       "## Quick Start",
       "```bash",
@@ -133,15 +112,16 @@ export function buildStarterExtensionScaffoldFiles(
       "```",
       "",
       "## Notes",
-      "- Keep package metadata in `package.json` and runtime behavior under `extensions/`.",
+      "- Keep simple starter runtime behavior at the package root so local installs work without dependency bootstrapping.",
+      "- Move larger runtimes into subdirectories only after adding package dependencies and validating `pm package doctor`.",
       "- Add capabilities to the extension manifest only when the entrypoint uses the matching SDK API.",
       "- Use `@unbrained/pm-cli/sdk` as the public SDK import for richer package runtimes.",
       "",
     ].join("\n");
     return {
       "package.json": packageJson,
-      [`extensions/${extensionName}/manifest.json`]: manifest,
-      [`extensions/${extensionName}/index.js`]: entrypoint,
+      "manifest.json": manifest,
+      "index.js": entrypoint,
       "README.md": packageReadme,
     };
   }

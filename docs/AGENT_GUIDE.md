@@ -104,7 +104,7 @@ pm release <item-id>
 | Next work and agenda | `pm context --limit 10` |
 | Relevant items | `pm search "<keywords>" --limit 10` |
 | Single item | `pm get <id>` |
-| Exact machine payload | `pm get <id> --json` |
+| Full machine payload | `pm get <id> --full --json` |
 | Command flags | `pm <command> --help --json` |
 | Low-noise machine contracts | `pm contracts --command <command> --flags-only --json` |
 | Timeline | `pm activity --id <id> --limit 20` |

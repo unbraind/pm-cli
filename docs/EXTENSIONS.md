@@ -45,6 +45,17 @@ pm install governance-audit --project
 
 `pm install '*'`, `pm install all`, and shell-expanded `pm install *` are normalized to the same bundled install-all request. First-party package aliases come from each package manifest, with a fallback derived from the `packages/pm-*` directory name.
 
+External registry packages are installed by exact package name:
+
+```bash
+npm search "pm-cli pm-package"
+pm install npm:pm-changelog --project
+pm install npm:pm-github --project
+pm package doctor --project --detail deep --trace
+```
+
+Prefer package-specific docs before invoking commands that require service credentials, such as GitHub, Jira, Linear, or Slack sync packages.
+
 ## Package Manifest
 
 Package roots declare resources in `package.json` under `pm`:
@@ -55,7 +66,7 @@ Package roots declare resources in `package.json` under `pm`:
   "keywords": ["pm-package"],
   "pm": {
     "aliases": ["my-workflow"],
-    "extensions": ["extensions/my-extension"],
+    "extensions": ["."],
     "docs": ["README.md"],
     "examples": ["examples/basic.md"],
     "catalog": {
@@ -80,6 +91,8 @@ Current resource kinds are:
 - `examples`
 
 Installation activates `pm.extensions`. `pm.docs` and `pm.examples` are catalog metadata. Agent-specific assets such as prompts, skills, or MCP servers should live in agent adapter packages, not in the core `pm` package contract.
+
+`pm package init` emits a root extension (`"extensions": ["."]`) so local package installs can activate without dependency bootstrapping. Larger packages may point at nested extension directories after declaring runtime dependencies and validating with `pm package doctor`.
 
 When no package manifest is present, `pm` discovers conventional extension directories:
 
@@ -194,6 +207,20 @@ Surface tokens include:
 - `search.provider`
 
 Use `pm package doctor --project --detail deep --trace` to inspect active policy state and warning codes.
+
+## Registration Collisions
+
+Some extension surfaces are intentionally single-winner: command overrides, parser overrides, preflight overrides, and format renderers. If multiple packages register the same single-winner surface, the later-loaded registration wins and `pm package doctor` / `pm health` report deterministic `extension_*_collision` warnings.
+
+Use the warning details to resolve the overlap:
+
+```bash
+pm package doctor --project --detail deep --trace
+pm package deactivate <conflicting-package> --project
+pm package doctor --project --strict-exit
+```
+
+For production stacks, keep broad demo/starter packages separate from packages that own real workflow behavior, or constrain registration surfaces through `extensions.policy.extension_overrides`.
 
 ## Runtime APIs
 

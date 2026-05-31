@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { existsSync } from "node:fs";
 import { commandFor, fail, flagBool, flagString, parseFlags, runCommand } from "./utils.mjs";
 
 function parseIssuePayload(payload) {
@@ -174,7 +175,7 @@ function buildSentryIssuesUrl(project, query, limit) {
 
 function fetchSentryIssuesViaCli(project, query, limit, priorFailure) {
   const result = runCommand(
-    commandFor("sentry"),
+    commandFor("sentry-cli"),
     [
       "issue",
       "list",
@@ -284,6 +285,7 @@ function usage() {
     [--max-critical 0]
     [--max-high 0]
     [--telemetry-mode off|best-effort|required]
+    [--telemetry-command scripts/prod/telemetry/query-telemetry.sh]
     [--telemetry-days 7]
     [--max-telemetry-error-rate 6]
     [--max-telemetry-missing-error-rows 0]
@@ -316,6 +318,10 @@ async function main() {
   const maxCritical = parseNumber(flagString(flags, "max-critical", null), "max-critical", 0);
   const maxHigh = parseNumber(flagString(flags, "max-high", null), "max-high", 0);
   const telemetryMode = flagString(flags, "telemetry-mode", "best-effort");
+  const telemetryCommandPath =
+    flagString(flags, "telemetry-command", null) ??
+    process.env.PM_TELEMETRY_QUERY_COMMAND ??
+    (existsSync("scripts/prod/telemetry/query-telemetry.sh") ? "scripts/prod/telemetry/query-telemetry.sh" : null);
   const telemetryDays = parseNumber(flagString(flags, "telemetry-days", null), "telemetry-days", 7);
   const maxTelemetryErrorRate = parseNumber(
     flagString(flags, "max-telemetry-error-rate", null),
@@ -356,14 +362,21 @@ async function main() {
   };
 
   if (telemetryMode !== "off") {
-    const telemetryCommand = runCommand(
-      "bash",
-      ["scripts/prod/telemetry/query-telemetry.sh", "--days", String(telemetryDays), "--limit", "50"],
-      {
-        capture: true,
-        allowFailure: telemetryMode !== "required",
-      },
-    );
+    const telemetryCommand = telemetryCommandPath
+      ? runCommand(
+          "bash",
+          [telemetryCommandPath, "--days", String(telemetryDays), "--limit", "50"],
+          {
+            capture: true,
+            allowFailure: telemetryMode !== "required",
+          },
+        )
+      : {
+          status: 127,
+          stdout: "",
+          stderr:
+            "telemetry_query_command_missing: set --telemetry-command or PM_TELEMETRY_QUERY_COMMAND to a private/local telemetry query adapter",
+        };
 
     if (telemetryCommand.status === 0) {
       const metrics = parseTelemetryMetrics(telemetryCommand.stdout);

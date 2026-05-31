@@ -1968,12 +1968,39 @@ function shouldRegisterRuntimeSchemaFlags(invocationArgv: string[]): boolean {
   return RUNTIME_SCHEMA_FLAG_BOOTSTRAP_COMMANDS.has(commandName);
 }
 
+function enforceExplicitRetryForMutatingFlagTypos(
+  bootstrapInvocation: ReturnType<typeof normalizeBootstrapInvocation>,
+): void {
+  const commandName = bootstrapInvocation.commandName;
+  if (!commandName || !MUTATION_COMMAND_NAMES.has(commandName)) {
+    return;
+  }
+  const typoEvent = bootstrapInvocation.trace.find((entry) => entry.reason === "flag_typo");
+  if (!typoEvent) {
+    return;
+  }
+  throw new PmCliError(
+    `Refusing to auto-correct mutating option ${typoEvent.from} to ${typoEvent.to.join(" ")}. Retry with the canonical flag so the mutation is explicit.`,
+    EXIT_CODE.USAGE,
+    {
+      code: "mutating_flag_typo_requires_retry",
+      examples: [renderPmCommand(bootstrapInvocation.argv)],
+      nextSteps: ["Retry the command with the canonical flag shown in examples."],
+      recovery: {
+        normalized_args: [...bootstrapInvocation.argv],
+        suggested_retry: renderPmCommand(bootstrapInvocation.argv),
+      },
+    },
+  );
+}
+
 export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promise<void> {
   const bootstrapInvocation = normalizeBootstrapInvocation(rawArgv);
   const invocationArgv = bootstrapInvocation.argv;
   const invocationProcessArgv = [process.argv[0], process.argv[1], ...invocationArgv];
   const isBareInvocation = invocationArgv.length === 0;
   try {
+    enforceExplicitRetryForMutatingFlagTypos(bootstrapInvocation);
     applyBootstrapPagerPolicy(invocationArgv);
     const registrationSelection =
       resolveCoreCommandRegistrationSelection(invocationArgv);

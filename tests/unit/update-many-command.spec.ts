@@ -56,7 +56,7 @@ function getItemDescription(context: TempPmContext, id: string): string {
 }
 
 function getItemTests(context: TempPmContext, id: string): Array<{ command?: string }> {
-  const result = context.runCli(["get", id, "--json"], { expectJson: true });
+  const result = context.runCli(["get", id, "--full", "--json"], { expectJson: true });
   expect(result.code).toBe(0);
   const item = (result.json as { item: { tests?: Array<{ command?: string }> } }).item;
   return Array.isArray(item.tests) ? item.tests : [];

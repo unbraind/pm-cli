@@ -155,6 +155,15 @@ For provider-safe schemas, use `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`. It is flat 
 | `registerSearchProvider` | `search` |
 | `registerVectorStoreAdapter` | `search` |
 
+Some override surfaces are single-winner: command overrides, parser overrides, preflight overrides, and output renderers. Keep those handlers narrowly scoped and verify package combinations with:
+
+```bash
+pm package doctor --project --detail deep --trace
+pm health --check-only --brief
+```
+
+Collision warnings are deterministic and include package names plus deactivation guidance.
+
 ## Minimal Command Extension
 
 ```ts

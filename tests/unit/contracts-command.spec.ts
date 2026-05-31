@@ -78,6 +78,33 @@ describe("contracts command runtime", () => {
           entry.cli_exposed,
       ),
     ).toBe(true);
+    const packageInstallFlags = await runContracts({ command: "package install", flagsOnly: true }, GLOBAL_OPTIONS);
+    expect(packageInstallFlags.command_flags).toEqual([
+      expect.objectContaining({
+        command: "package install",
+        provider: "core",
+        flags: expect.arrayContaining([
+          expect.objectContaining({ flag: "--project" }),
+          expect.objectContaining({ flag: "--github" }),
+          expect.objectContaining({ flag: "--ref" }),
+        ]),
+      }),
+    ]);
+    const packageCatalogFlags = await runContracts({ command: "package catalog", flagsOnly: true }, GLOBAL_OPTIONS);
+    expect(packageCatalogFlags.command_flags?.[0]?.flags).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--fields" })]),
+    );
+    const optionalCalendarAvailability = await runContracts(
+      { command: "calendar", availabilityOnly: true, runtimeOnly: true },
+      GLOBAL_OPTIONS,
+    );
+    expect(optionalCalendarAvailability.action_availability).toEqual([
+      expect.objectContaining({
+        action: "calendar",
+        available: false,
+        disabled_reason: "optional_package_not_installed:calendar",
+      }),
+    ]);
     const fullResult = await runContracts({ full: true }, GLOBAL_OPTIONS);
     expect(fullResult.schema).toBeDefined();
     expect(fullResult.schema_omitted_reason).toBeUndefined();
