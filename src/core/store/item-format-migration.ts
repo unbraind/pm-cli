@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { runActiveOnWriteHooks } from "../extensions/index.js";
-import { pathExists, readFileIfExists, removeFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
+import { readFileIfExists, removeFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import { parseItemDocument, serializeItemDocument } from "../item/item-format.js";
 import { TYPE_TO_FOLDER } from "../shared/constants.js";
 import { getItemFormatFromPath, getItemPath } from "./paths.js";
@@ -79,7 +79,16 @@ export async function migrateItemFilesToFormat(
     for (const itemId of itemIds) {
       const variants = variantsById.get(itemId) as ItemPathVariants;
       scanned += 1;
-      const sourcePath = (variants[targetFormat] ?? variants[alternateFormat]) as string;
+      // Items already present only in the target format need no migration: there
+      // is no legacy alternate-format file to convert or remove. Skip the
+      // read/parse/serialize/compare round-trip for them. This is the dominant
+      // cost of the pre-mutation format sync, which runs on every mutation and
+      // would otherwise re-parse the entire corpus (O(items)) each time.
+      const alternatePath = variants[alternateFormat];
+      if (!alternatePath) {
+        continue;
+      }
+      const sourcePath = variants[targetFormat] ?? alternatePath;
       const sourceFormat = sourcePath === variants[targetFormat] ? targetFormat : alternateFormat;
       try {
         const sourceRaw = await fs.readFile(sourcePath, "utf8");
@@ -103,19 +112,20 @@ export async function migrateItemFilesToFormat(
           migratedIds.add(itemId);
         }
 
-        const alternatePath = variants[alternateFormat];
-        if (alternatePath && alternatePath !== targetPath && (await pathExists(alternatePath))) {
-          await removeFileIfExists(alternatePath);
-          removedPaths.add(normalizeRelativePath(pmRoot, alternatePath));
-          warnings.push(
-            ...(await runActiveOnWriteHooks({
-              path: alternatePath,
-              scope: "project",
-              op: `${op}:remove`,
-            })),
-          );
-          migratedIds.add(itemId);
-        }
+        // The legacy alternate (.md) was enumerated from disk above and is always
+        // a distinct path from the .toon target, so once the parse succeeds we
+        // remove it unconditionally. removeFileIfExists tolerates a concurrently
+        // removed file, so no pre-check is needed.
+        await removeFileIfExists(alternatePath);
+        removedPaths.add(normalizeRelativePath(pmRoot, alternatePath));
+        warnings.push(
+          ...(await runActiveOnWriteHooks({
+            path: alternatePath,
+            scope: "project",
+            op: `${op}:remove`,
+          })),
+        );
+        migratedIds.add(itemId);
       } catch (error) {
         warnings.push(
           `item_format_migration_skipped:${normalizeRelativePath(pmRoot, sourcePath)}:${errorSummary(error)}`,

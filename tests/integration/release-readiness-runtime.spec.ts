@@ -1818,6 +1818,7 @@ describe("release readiness runtime coverage", () => {
       "src/cli/register-operations.ts",
       "src/cli/register-setup.ts",
       "src/cli/registration-helpers.ts",
+      "src/cli/search-refresh.ts",
       "src/cli/shared-parsers.ts",
       "src/cli/telemetry-flush.ts",
       "src/core/extensions/extension-capability-aliases.ts",

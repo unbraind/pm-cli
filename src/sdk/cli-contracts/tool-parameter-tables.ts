@@ -44,7 +44,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   template: { type: "string" },
   createMode: { type: "string", enum: ["strict", "progressive"] },
   schedulePreset: { type: "string", enum: ["lightweight"] },
-  status: { type: "string", enum: ["draft", "open", "in_progress", "blocked", "closed", "canceled", "in-progress"] },
+  status: { type: "string" },
   filterStatus: { type: "string" },
   filterType: { type: "string" },
   filterTag: { type: "string" },
@@ -499,7 +499,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: ["lightweight"],
   },
   status: {
-    description: "Item status value.",
+    description:
+      "Item status value. Statuses are project-configurable via .agents/pm/settings.json (schema block); the built-in defaults are draft, open, in_progress, blocked, closed, canceled. Custom statuses defined for the project are accepted — discover the active set with the pm_contracts tool (workspace.statuses) or `pm contracts`. Unknown statuses are rejected at runtime with a did-you-mean hint rather than blocked by a fixed schema enum.",
     examples: ["open", "in_progress"],
   },
   priority: {

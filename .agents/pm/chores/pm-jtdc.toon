@@ -2,11 +2,12 @@ id: pm-jtdc
 title: Make MCP status enum + shell completion runtime-resolved from schema (not hardcoded)
 description: "Config-driven schema gaps (audit). The MCP tool 'status' parameter is pinned to the 6 default statuses (tool-parameter-tables.ts ~47), so a project with custom statuses in schema/statuses.json cannot pass them via MCP even though the CLI accepts them — breaks never-block parity (the MCP 'type' param already correctly uses an unconstrained runtime-validated string; status should follow). Also shell completion uses the hardcoded BUILTIN_ITEM_TYPE_VALUES (completion.ts ~25/37) so custom types never appear in bash/zsh/fish type completion (completion is static — at least document that custom types exist). Make lifecycle enums runtime-resolved where the transport allows."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[4]: completion,config-driven,mcp,schema
 created_at: "2026-05-30T21:44:39.036Z"
-updated_at: "2026-05-30T21:44:39.036Z"
+updated_at: "2026-05-31T05:40:58.531Z"
 author: maintainer-agent
 acceptance_criteria: Custom statuses accepted via MCP; completion documents/handles custom types
+close_reason: "MCP status enum is now config-driven. Removed the hardcoded enum on the `status` tool parameter (sdk/cli-contracts/tool-parameter-tables.ts) — it now matches `type`/`filterStatus` (open `{type:\"string\"}`), so project-defined custom statuses (from .agents/pm/settings.json schema block) are accepted via MCP instead of being rejected by a fixed schema enum. Runtime validation already rejects truly-unknown statuses with the allowed-list hint (update.ts parseStatus resolves the project status registry), preserving the never-block guarantee while staying customizable. Improved the param description to point agents at pm_contracts (workspace.statuses) / `pm contracts` for the active set. Verified end-to-end: added a custom `in_review` status to a project schema and set it via mutation — accepted and persisted. Shell-completion static fallback (DEFAULT_STATUS_VALUES/DEFAULT_ITEM_TYPES) is unchanged and acceptable (it degrades to built-in defaults, never blocks); runtime-resolved completion via a helper command is tracked as a separate nice-to-have follow-up."
 body: ""

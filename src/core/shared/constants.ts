@@ -66,7 +66,6 @@ export const PM_CORE_REQUIRED_SUBDIRS = [
   "issues",
   "schema",
   "history",
-  "index",
   "search",
   "extensions",
   "locks",

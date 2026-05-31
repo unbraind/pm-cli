@@ -263,6 +263,36 @@ function toUtcDayKey(timestamp: string): string {
   return new Date(timestamp).toISOString().slice(0, 10);
 }
 
+/**
+ * Calendar day (YYYY-MM-DD) the instant falls on in the given IANA timezone.
+ * Events carry an optional `timezone`; bucketing and clock rendering use it so a
+ * 23:30Z instant tagged Asia/Tokyo correctly lands on the next local day rather
+ * than the UTC day. Falls back to the UTC day when no/invalid timezone is given,
+ * so existing UTC behavior is unchanged. Uses Intl (no timezone dependency).
+ */
+function toLocalDayKey(timestamp: string, timezone?: string | null): string {
+  if (!timezone || timezone === "UTC") {
+    return toUtcDayKey(timestamp);
+  }
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date(timestamp));
+    const year = parts.find((part) => part.type === "year")?.value;
+    const month = parts.find((part) => part.type === "month")?.value;
+    const day = parts.find((part) => part.type === "day")?.value;
+    if (year && month && day) {
+      return `${year}-${month}-${day}`;
+    }
+  } catch {
+    // Invalid IANA zone — fall back to the UTC day key below.
+  }
+  return toUtcDayKey(timestamp);
+}
+
 function startOfUtcDay(timestamp: string): string {
   const date = new Date(timestamp);
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0)).toISOString();
@@ -602,7 +632,13 @@ function buildEventSeed(
             : (event.end_at ?? null);
         events.push({
           at: occurrenceAt,
-          date: toUtcDayKey(occurrenceAt),
+          // All-day events are timezone-agnostic calendar dates: bucket by the
+          // literal start date. Timed events bucket by their local day in the
+          // event's timezone (defaults to UTC when unset).
+          date:
+            event.all_day === true
+              ? occurrenceAt.slice(0, 10)
+              : toLocalDayKey(occurrenceAt, event.timezone),
           kind: "event",
           reminder_text: event.description ?? null,
           event_title: event.title ?? item.title,
@@ -833,7 +869,25 @@ function formatWindow(range: CalendarResult["range"]): string {
   return `${start} -> ${end}`;
 }
 
-function formatClock(timestamp: string): string {
+function formatClock(timestamp: string, timezone?: string | null): string {
+  if (timezone && timezone !== "UTC") {
+    try {
+      const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: timezone,
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      }).formatToParts(new Date(timestamp));
+      const hour = parts.find((part) => part.type === "hour")?.value;
+      const minute = parts.find((part) => part.type === "minute")?.value;
+      if (hour && minute) {
+        // Local wall-clock time; the event line already prints `timezone=<zone>`.
+        return `${hour}:${minute}`;
+      }
+    } catch {
+      // Invalid IANA zone — fall back to the UTC clock below.
+    }
+  }
   return `${new Date(timestamp).toISOString().slice(11, 16)}Z`;
 }
 
@@ -852,14 +906,14 @@ function formatEventEnd(event: CalendarRow): string | null {
   if (event.event_all_day === true) {
     return event.event_end.slice(0, 10);
   }
-  if (event.date === toUtcDayKey(event.event_end)) {
-    return formatClock(event.event_end);
+  if (event.date === toLocalDayKey(event.event_end, event.event_timezone)) {
+    return formatClock(event.event_end, event.event_timezone);
   }
   return event.event_end;
 }
 
 function formatEventLine(event: CalendarRow): string {
-  const core = `${formatClock(event.at)} [${event.kind}] ${event.item_id} type=${event.item_type} p${event.item_priority} ${event.item_status} ${event.item_title}`;
+  const core = `${formatClock(event.at, event.event_timezone)} [${event.kind}] ${event.item_id} type=${event.item_type} p${event.item_priority} ${event.item_status} ${event.item_title}`;
   if (event.kind === "reminder") {
     const reminderText = event.reminder_text ?? "";
     return `${core} — ${reminderText} reminder=${JSON.stringify(reminderText)}`;

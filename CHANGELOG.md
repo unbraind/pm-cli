@@ -2,14 +2,26 @@
 
 ## Unreleased
 
+### Added
+
+- Non-blocking background search index refresh on mutations ([pm-3ju0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3ju0.toon))
+
+### Changed
+
+- Per-command code-splitting: lazy command-module imports drop the 943KB monolith + fast-glob from the read path ([pm-t57d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-t57d.toon))
+
 ### Fixed
 
+- pm health ok:false from legacy unused 'index' required subdir ([pm-yf31](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yf31.toon))
+- Calendar date math is UTC-only: ignores event.timezone and all-day semantics ([pm-0l88](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0l88.toon))
 - Fix per-type default\_status config was silently ignored at create ([pm-y0gl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-y0gl.toon))
 - Fix slow/oversized local vector snapshot and mislabeled search fallback ([pm-f58e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-f58e.toon))
 - Fix Windows npm command resolution for extension package installs ([pm-arax](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-arax.toon))
 
 ### Other
 
+- Make MCP status enum + shell completion runtime-resolved from schema \(not hardcoded\) ([pm-jtdc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-jtdc.toon))
+- Defer eager per-command startup work: completion flag-strings, MCP tool schema build, telemetry flush spawn ([pm-3mal](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-3mal.toon))
 - Calendar view/format did-you-mean + dependency and type-safety cleanup ([pm-5oxq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5oxq.toon))
 - 2026-05-30 package SDK dogfood audit and startup telemetry performance pass ([pm-qmx3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qmx3.toon))
 

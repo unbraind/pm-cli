@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import { pathExists } from "../core/fs/fs-utils.js";
 import { normalizeStatusInput } from "../core/item/status.js";
 import { refreshSearchArtifactsForMutation } from "../core/search/cache.js";
+import { shouldRunSearchRefreshInForeground } from "../core/search/background-refresh.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { printError, printResult, writeStdout } from "../core/output/output.js";
@@ -766,7 +767,9 @@ function collectMutationItemIds(result: unknown): string[] {
 
 export async function invalidateSearchCachesForMutation(globalOptions: GlobalOptions, result?: unknown): Promise<void> {
   const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
-  const refreshResult = await refreshSearchArtifactsForMutation(pmRoot, collectMutationItemIds(result));
+  const refreshResult = await refreshSearchArtifactsForMutation(pmRoot, collectMutationItemIds(result), {
+    background: !shouldRunSearchRefreshInForeground(),
+  });
   if (globalOptions.profile && refreshResult.warnings.length > 0) {
     printError(`profile:search_refresh_warnings=${formatHookWarnings(refreshResult.warnings)}`);
   }

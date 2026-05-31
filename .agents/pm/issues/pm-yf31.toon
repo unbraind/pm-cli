@@ -1,0 +1,12 @@
+id: pm-yf31
+title: "pm health ok:false from legacy unused 'index' required subdir"
+description: "pm health reported ok:false on a fully-healthy repo solely because of warning missing_directory:index. The 'index' subdir was in PM_CORE_REQUIRED_SUBDIRS since the original bootstrap commit but is never written or read — search keyword artifacts live in search/, and grep confirms no code path uses an index/ dir. It is a legacy search-artifact location that gc still cleans for old repos. Removed 'index' from PM_CORE_REQUIRED_SUBDIRS so init no longer creates an empty unused dir and health no longer false-warns. gc still cleans legacy index/ for old repos. Updated the constants assertion test and the gc/integration tests that seeded index/ (they now mkdir it explicitly to test legacy cleanup)."
+type: Issue
+status: closed
+priority: 2
+tags[2]: cleanup,health
+created_at: "2026-05-31T05:41:32.956Z"
+updated_at: "2026-05-31T05:41:38.697Z"
+author: claude-code-agent
+close_reason: "Removed 'index' from PM_CORE_REQUIRED_SUBDIRS (src/core/shared/constants.ts). pm health now reports ok:true on the dev repo. gc still cleans legacy index/ for old repos (unchanged). Updated shared-constants-errors.spec PM_REQUIRED_SUBDIRS assertion and the gc + cli.integration tests that seeded index/manifest.json (now mkdir the dir explicitly). Tests green."
+body: ""

@@ -1,0 +1,11 @@
+id: pm-qcsz
+title: "Calendar: normalize recurrence exdates by instant + document count-window semantics"
+description: "Follow-up to pm-0l88 (timezone + all-day shipped 2026-05-31). Two secondary calendar-correctness items remain from that audit: (1) exdates are matched via exact-string Set membership (calendar.ts ~ const excluded = new Set(recurrence.exdates)), so a format mismatch (Z vs +00:00, or differing ms precision) silently fails to exclude an occurrence — normalize both exdates and candidate timestamps through Date.parse->toISOString before comparing. (2) recurrence 'count' counts occurrences from the series start_at, not from the query window start; document this window semantics in the help/contract. Low priority; no current user reports."
+type: Issue
+status: open
+priority: 3
+tags[3]: calendar,correctness,recurrence
+created_at: "2026-05-31T05:41:43.075Z"
+updated_at: "2026-05-31T05:41:43.075Z"
+author: claude-code-agent
+body: ""

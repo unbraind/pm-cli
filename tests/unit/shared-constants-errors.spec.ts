@@ -27,7 +27,6 @@ describe("shared constants and errors contracts", () => {
       "issues",
       "schema",
       "history",
-      "index",
       "search",
       "extensions",
       "locks",

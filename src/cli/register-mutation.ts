@@ -26,11 +26,8 @@ import {
   printResult,
   writeStdout,
 } from "./registration-helpers.js";
-import { createLazyModule } from "../core/shared/lazy-module.js";
 
-type MutationCommandsModule = typeof import("./commands/index.js");
 
-const loadMutationCommandsModule = createLazyModule<MutationCommandsModule>(() => import("./commands/index.js"));
 
 /**
  * Register a flag and hide it from `--help` text while keeping it fully
@@ -146,7 +143,7 @@ export function registerMutationCommands(program: Command): void {
         options.title = positionalTitle;
       }
       const normalized = normalizeCreateOptions(options, { requireType: false });
-      const { runCreate } = await loadMutationCommandsModule();
+      const { runCreate } = await import("./commands/create.js");
       const result = await runCreate(normalized, globalOptions);
       await invalidateSearchCachesForMutation(globalOptions, result);
       printResult(result, globalOptions);
@@ -182,7 +179,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runUpdate } = await loadMutationCommandsModule();
+      const { runUpdate } = await import("./commands/update.js");
       const result = await runUpdate(id, normalizeUpdateOptions(options), globalOptions);
       await invalidateSearchCachesForMutation(globalOptions, result);
       printResult(result, globalOptions);
@@ -319,7 +316,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runUpdateMany } = await loadMutationCommandsModule();
+      const { runUpdateMany } = await import("./commands/update-many.js");
       const result = await runUpdateMany(
         {
           status: typeof options.filterStatus === "string" ? options.filterStatus : undefined,
@@ -382,7 +379,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, text: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runClose } = await loadMutationCommandsModule();
+      const { runClose } = await import("./commands/close.js");
       const reasonFromOption =
         (typeof options.reason === "string" && options.reason.trim().length > 0 && options.reason) ||
         (typeof options.closeReason === "string" && options.closeReason.trim().length > 0 && options.closeReason) ||
@@ -450,7 +447,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runDelete } = await loadMutationCommandsModule();
+      const { runDelete } = await import("./commands/delete.js");
       const result = await runDelete(id, {
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
@@ -493,7 +490,7 @@ export function registerMutationCommands(program: Command): void {
           EXIT_CODE.USAGE,
         );
       }
-      const { runAppend } = await loadMutationCommandsModule();
+      const { runAppend } = await import("./commands/append.js");
       const result = await runAppend(id, {
         body: resolvedBody,
         author: typeof options.author === "string" ? options.author : undefined,
@@ -518,7 +515,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, target: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runRestore } = await loadMutationCommandsModule();
+      const { runRestore } = await import("./commands/restore.js");
       const result = await runRestore(id, target, {
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
@@ -628,7 +625,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (subcommand: string | undefined, id: string | undefined, stepRef: string | undefined, reorderToken: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runPlan, PLAN_SUBCOMMANDS } = await loadMutationCommandsModule();
+      const { runPlan, PLAN_SUBCOMMANDS } = await import("./commands/plan.js");
       const normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
       if (!normalizedSubcommand) {
         throw new PmCliError(
@@ -735,7 +732,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runHistoryRedact } = await loadMutationCommandsModule();
+      const { runHistoryRedact } = await import("./commands/history-redact.js");
       const literal = Array.isArray(options.literal) ? (options.literal as string[]) : undefined;
       const regex = Array.isArray(options.regex) ? (options.regex as string[]) : undefined;
       const result = await runHistoryRedact(
@@ -771,7 +768,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runHistoryRepair } = await loadMutationCommandsModule();
+      const { runHistoryRepair } = await import("./commands/history-repair.js");
       const result = await runHistoryRepair(
         id,
         {
@@ -812,7 +809,7 @@ export function registerMutationCommands(program: Command): void {
     ) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runSchemaAddType, formatSchemaAddTypeHuman, SCHEMA_SUBCOMMANDS } = await loadMutationCommandsModule();
+      const { runSchemaAddType, formatSchemaAddTypeHuman, SCHEMA_SUBCOMMANDS } = await import("./commands/schema.js");
       let normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
       let typeName = name;
       if (!normalizedSubcommand) {
@@ -923,7 +920,7 @@ export function registerMutationCommands(program: Command): void {
         );
       }
       const add = addFromOption ?? addFromPositional;
-      const { runComments } = await loadMutationCommandsModule();
+      const { runComments } = await import("./commands/comments.js");
       const result = await runComments(id, {
         add,
         stdin: readFromStdin,
@@ -964,7 +961,7 @@ export function registerMutationCommands(program: Command): void {
         throw new PmCliError("Specify note text either as positional [text] or with --add, not both", EXIT_CODE.USAGE);
       }
       const add = addFromOption ?? addFromPositional;
-      const { runNotes } = await loadMutationCommandsModule();
+      const { runNotes } = await import("./commands/notes.js");
       const result = await runNotes(id, {
         add,
         limit: typeof options.limit === "string" ? options.limit : undefined,
@@ -1003,7 +1000,7 @@ export function registerMutationCommands(program: Command): void {
         throw new PmCliError("Specify learning text either as positional [text] or with --add, not both", EXIT_CODE.USAGE);
       }
       const add = addFromOption ?? addFromPositional;
-      const { runLearnings } = await loadMutationCommandsModule();
+      const { runLearnings } = await import("./commands/learnings.js");
       const result = await runLearnings(id, {
         add,
         limit: typeof options.limit === "string" ? options.limit : undefined,
@@ -1045,7 +1042,7 @@ export function registerMutationCommands(program: Command): void {
       const addGlobValues = Array.isArray(options.addGlob) ? (options.addGlob as string[]) : [];
       const removeValues = Array.isArray(options.remove) ? (options.remove as string[]) : [];
       const migrateValues = Array.isArray(options.migrate) ? (options.migrate as string[]) : [];
-      const { runFiles } = await loadMutationCommandsModule();
+      const { runFiles } = await import("./commands/files.js");
       const result = await runFiles(id, {
         add: addValues,
         addGlob: addGlobValues,
@@ -1081,7 +1078,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runFilesDiscover } = await loadMutationCommandsModule();
+      const { runFilesDiscover } = await import("./commands/files.js");
       const result = await runFilesDiscover(id, {
         apply: Boolean(options.apply),
         note: typeof options.note === "string" ? options.note : undefined,
@@ -1120,7 +1117,7 @@ export function registerMutationCommands(program: Command): void {
       const addGlobValues = Array.isArray(options.addGlob) ? (options.addGlob as string[]) : [];
       const removeValues = Array.isArray(options.remove) ? (options.remove as string[]) : [];
       const migrateValues = Array.isArray(options.migrate) ? (options.migrate as string[]) : [];
-      const { runDocs } = await loadMutationCommandsModule();
+      const { runDocs } = await import("./commands/docs.js");
       const result = await runDocs(id, {
         add: addValues,
         addGlob: addGlobValues,
@@ -1153,7 +1150,7 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runDeps } = await loadMutationCommandsModule();
+      const { runDeps } = await import("./commands/deps.js");
       const result = await runDeps(id, {
         format: typeof options.format === "string" ? options.format : undefined,
         maxDepth: typeof options.maxDepth === "string" ? options.maxDepth : undefined,

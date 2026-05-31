@@ -1,0 +1,11 @@
+id: pm-q4zx
+title: Runtime-resolved shell completion for custom statuses/types via helper command
+description: "Follow-up to pm-jtdc (MCP status enum made config-driven 2026-05-31). Shell completion (completion.ts) still emits a static script using DEFAULT_STATUS_VALUES / DEFAULT_ITEM_TYPES, so bash/zsh/fish completion of --status/--type never surfaces project-defined custom statuses/types. This does NOT block agents (completion only suggests; the CLI accepts custom values), so it is low priority. Plan: add a `pm completion-statuses` / `pm completion-types` helper (mirroring the existing dynamic `pm completion-tags`) that prints the runtime-resolved status/type ids, and have the generated completion scripts call it for dynamic suggestions, falling back to the static defaults when unavailable."
+type: Chore
+status: open
+priority: 4
+tags[3]: completion,config-driven,schema
+created_at: "2026-05-31T05:42:14.222Z"
+updated_at: "2026-05-31T05:42:14.222Z"
+author: claude-code-agent
+body: ""
