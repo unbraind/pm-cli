@@ -1,0 +1,14 @@
+id: pm-k5r6
+title: Document the create vs mutateItem dual write-path contract
+description: "create.ts writes via writeFileAtomic+appendHistoryEntry, bypassing mutateItem (the canonical post-create mutation path with locks/hooks/ownership). The split is intentional but undocumented; future cross-cutting concerns can diverge."
+type: Chore
+status: open
+priority: 3
+tags[4]: architecture,"area:storage",living-map,tech-debt
+created_at: "2026-05-31T19:43:39.383Z"
+updated_at: "2026-05-31T19:43:39.383Z"
+author: maintainer-agent
+acceptance_criteria: "Inline ARCH comment in create.ts: why create bypasses mutateItem, which mutateItem concerns DO apply to create, and a checklist for adding new cross-cutting concerns; doc-only, no behavior change."
+value: "create.ts writes via writeFileAtomic+appendHistoryEntry, bypassing mutateItem (the canonical post-create mutation path with locks/hooks/ownership). The split is intentional but undocumented; future cross-cutting concerns can diverge."
+parent: pm-o2kc
+body: ""

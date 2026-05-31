@@ -1,0 +1,15 @@
+id: pm-ydp6
+title: "Capability: Search & semantic retrieval (post-v0.1)"
+description: "Deliver the PRD post-v0.1 search roadmap: advanced relevance tuning, adapter optimization, provider extensibility, eval harness"
+type: Epic
+status: open
+priority: 1
+tags[7]: "area:search","area:semantic",backlog,living-map,pm-cli,post-v0.1,roadmap
+created_at: "2026-05-31T19:42:11.422Z"
+updated_at: "2026-05-31T19:42:11.422Z"
+author: maintainer-agent
+goal: project management = context management
+objective: "Deliver the PRD post-v0.1 search roadmap: advanced relevance tuning, adapter optimization, provider extensibility, eval harness"
+value: "Higher-quality, configurable retrieval for large corpora and agents"
+parent: pm-doxj
+body: ""

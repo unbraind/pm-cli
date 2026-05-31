@@ -1,0 +1,14 @@
+id: pm-t4wb
+title: Telemetry schema versioning/negotiation preparation
+description: TELEMETRY_SCHEMA_VERSION=1 is hardcoded and stamped on every event with no documented upgrade protocol; becomes a reliability risk if the event structure must change.
+type: Task
+status: open
+priority: 3
+tags[4]: "area:observability","area:telemetry",living-map,reliability
+created_at: "2026-05-31T19:45:03.489Z"
+updated_at: "2026-05-31T19:45:03.489Z"
+author: maintainer-agent
+acceptance_criteria: ADR documents the negotiation protocol; queue entries carry client_schema_version distinct from event schema_version; endpoint probe parses an advertised server max-version header; tests assert schema_version on all 3 event types; no v1 behavior change.
+value: TELEMETRY_SCHEMA_VERSION=1 is hardcoded and stamped on every event with no documented upgrade protocol; becomes a reliability risk if the event structure must change.
+parent: pm-5oj5
+body: ""

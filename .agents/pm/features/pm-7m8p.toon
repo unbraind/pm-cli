@@ -1,0 +1,14 @@
+id: pm-7m8p
+title: "pm-governance-audit: onWrite/onRead hooks exemplar (hooks capability)"
+description: The hooks capability has zero first-party exemplar; authors wanting to intercept writes/reads for audit/cache/telemetry have no reference. pm-governance-audit is the natural owner.
+type: Feature
+status: open
+priority: 3
+tags[6]: "area:extensions","area:packages","area:sdk",dx,hooks,living-map
+created_at: "2026-05-31T19:44:25.146Z"
+updated_at: "2026-05-31T19:44:25.146Z"
+author: maintainer-agent
+acceptance_criteria: Registers an opt-in onWrite hook logging mutated path/scope to a sidecar; manifest gains hooks capability; unit test verifies firing; SDK.md hooks section references it.
+value: The hooks capability has zero first-party exemplar; authors wanting to intercept writes/reads for audit/cache/telemetry have no reference. pm-governance-audit is the natural owner.
+parent: pm-ugqx
+body: ""

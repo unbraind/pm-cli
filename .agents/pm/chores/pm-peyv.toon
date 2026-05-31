@@ -1,0 +1,14 @@
+id: pm-peyv
+title: Config-driven optional close reason via governance.require_close_reason
+description: "pm close hard-requires a non-empty reason; for solo repos / agent automation the history record can suffice. A settings key (default true = no change) relaxes it, mirroring the validate-close config pattern."
+type: Chore
+status: open
+priority: 3
+tags[5]: agent-ux,"area:cli","area:lifecycle",governance,living-map
+created_at: "2026-05-31T19:43:37.485Z"
+updated_at: "2026-05-31T19:43:37.485Z"
+author: maintainer-agent
+acceptance_criteria: "governance.require_close_reason boolean (default true); when false, empty-reason close proceeds; CLI+MCP contracts mark reason conditionally required; validator+docs updated; default fully backward compatible."
+value: "pm close hard-requires a non-empty reason; for solo repos / agent automation the history record can suffice. A settings key (default true = no change) relaxes it, mirroring the validate-close config pattern."
+parent: pm-mpbb
+body: ""

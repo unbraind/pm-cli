@@ -1,0 +1,33 @@
+id: pm-4uxz
+title: "Audit domain: Config, schema, custom types & init"
+description: "Audit core/config, core/schema, settings-validator, config + schema commands, custom item types, init bootstrap. Map coverage; surface config/schema forward work + best-practice modeling (e.g. Story type)."
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:config","area:schema",audit,living-map,pm-cli
+created_at: "2026-05-31T19:22:09.575Z"
+updated_at: "2026-05-31T20:25:59.517Z"
+author: maintainer-agent
+acceptance_criteria: "Domain audited read-only across code+docs+tests; existing pm coverage mapped via search; genuine gaps, forward work, improvements, ADRs, and agent/user stories proposed (dedup-checked); work-log + key decisions recorded in pm on this task."
+parent: pm-w7f2
+resolution: Verification task completed during living-map closeout
+expected_result: The task checks its assigned living-map quality area and records whether any blocker remains before PR finalization.
+actual_result: "The closed Task 'Audit domain: Config, schema, custom types & init' completed its verification pass and left no duplicate or hierarchy blocker for finalization."
+comments[3]{created_at,author,text}:
+  "2026-05-31T19:27:21.599Z",audit-config-agent,"Progress 1/3: Audited core/config (nested-settings.ts, positional-value.ts), core/schema (runtime-schema.ts, item-types-file.ts, runtime-field-values.ts, runtime-field-filters.ts), core/store/settings-validator.ts + settings.ts, cli/commands/config.ts + schema.ts + init.ts. Key observations: (1) Built-in types: Epic/Feature/Task/Chore/Issue/Decision/Event/Reminder/Milestone/Meeting/Plan — NO Story type. (2) validateSettings silently falls back to defaults on ANY validation failure (no diagnostic of which field caused it). (3) schema.ts only has add-type subcommand — no list-types, no remove-type, no show-type. (4) Config validator vObject() strips unknown keys silently (zod-compat) — user gets no error or warning if they typo a setting key. (5) Governance has 3 built-in presets (minimal/default/strict) + custom — no project-archetype presets (software/research/ops). Continuing deeper audit..."
+  "2026-05-31T19:30:27.149Z",audit-config-agent,"Progress 2/3: Test coverage mapping. Config/schema domain has strong test coverage: settings-validator.spec.ts (179L), settings-store.spec.ts (409L), config-command.spec.ts (1204L), schema-command.spec.ts (151L), item-types-file.spec.ts (307L), nested-settings.spec.ts (193L), init-command.spec.ts (259L), runtime-schema-command-flags.spec.ts, item-type-definition.spec.ts, config-positional-value.spec.ts, config-key-aliases-search.spec.ts (2702 LOC total just for this domain). Key gaps found: (1) No pm schema list-types/remove-type/show-type subcommands — only add-type. Agent has no CLI surface to inspect what custom types are registered. (2) settings_read_invalid_schema warning is produced but never surfaced to user (falls back to defaults silently). (3) No per-type workflow/state machine (e.g. Bug must go open→in_progress→closed only). (4) Governance has no domain-specific init preset (agile/ops/research). (5) create_default_type is settable in governance but NOT settable via pm config set (only via hand-editing settings.json). (6) schema.files allows custom paths for types/statuses/fields/workflows but no pm schema init or export command."
+  "2026-05-31T19:31:15.354Z",audit-config-agent,"Progress 3/3: Final dedup check complete. All proposed items verified as new (no duplicates found). Confirmed: (A) pm schema list-types/remove-type do NOT exist anywhere in codebase or tracker. (B) settings_read_invalid_schema fallback: the warning IS surfaced in config command output, but NOT surfaced by default in other commands (create/list/etc) since they call readSettings() not readSettingsWithMetadata(). (C) Per-type state machines: not in types.ts, not in schema settings, not in any existing item. (D) No domain archetype init presets (agile/ops/research) exist. (E) create_default_type has no pm config set surface. (F) governance.create_default_type is documented in CONFIGURATION.md L66 but only hand-editable. Wrapping up with final deliverable."
+learnings[2]{created_at,author,text}:
+  "2026-05-31T19:30:36.272Z",audit-config-agent,"ADR evidence: dependency-free settings-validator (settings-validator.ts) replaced zod 2026-05-22 to eliminate ~85ms startup cost. The design reproduces all-or-nothing failure semantics matching zod safeParse: any invalid field returns {success:false} with no field-level detail. This is a deliberate trade-off: the validator is on the hot read path of every command. If the settings.json is malformed, it silently falls back to SETTINGS_DEFAULTS with a warning code 'settings_read_invalid_schema'. The warning IS threaded into SettingsReadResult.warnings and IS surfaced in config command output (normalizeWarnings -> ConfigResult.warnings). So the diagnostics gap is specifically: no pm command (other than pm config get/list/export which requires --action) surfaces these warnings by default."
+  "2026-05-31T19:30:46.366Z",audit-config-agent,"Story type assessment: No built-in 'Story' type. The 11 built-in types (Epic/Feature/Task/Chore/Issue/Decision/Event/Reminder/Milestone/Meeting/Plan) have no agile user/agent story type. Assessment: 'Story' is a genuine modeling gap for agile/scrum workflows where user stories are a first-class work unit distinct from Task (a unit of implementation work). Modeling it as a custom type via pm schema add-type Story is the RIGHT approach over adding it as a 12th built-in: (a) custom types are already feature-complete for default_status/folder/aliases/options/command_option_policies, (b) not every project needs agile stories, (c) projects can further customize Story with required fields like acceptance_criteria via command_option_policies. The friction is: currently there is no pm schema list to confirm Story is registered, and no pm init --type-preset agile to batch-install domain types. RECOMMENDATION: add pm schema list + an init type-preset mechanism rather than adding Story as a built-in."
+files[8]{path,scope,note}:
+  src/cli/commands/config.ts,project,null
+  src/cli/commands/init.ts,project,null
+  src/cli/commands/schema.ts,project,null
+  src/core/config/nested-settings.ts,project,null
+  src/core/schema/item-types-file.ts,project,null
+  src/core/schema/runtime-schema.ts,project,null
+  src/core/store/settings-validator.ts,project,null
+  src/core/store/settings.ts,project,null
+close_reason: Domain audit complete; findings synthesized into the forward living map (open backlog) and ADR log; no duplicates created.
+body: ""

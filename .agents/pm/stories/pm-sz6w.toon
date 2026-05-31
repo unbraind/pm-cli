@@ -1,0 +1,16 @@
+id: pm-sz6w
+title: "As an agent gating on pm health/validate, I want machine-executable remediation commands, so that I can auto-repair findings without hardcoding warning-code mappings"
+description: "As an agent gating on pm health/validate, I want machine-executable remediation commands, so that I can auto-repair findings without hardcoding warning-code mappings"
+type: Story
+status: open
+priority: 2
+tags[4]: agent-ux,"area:observability",living-map,story
+created_at: "2026-05-31T19:49:46.325Z"
+updated_at: "2026-05-31T19:49:46.325Z"
+author: maintainer-agent
+acceptance_criteria: health --json emits per-check remediation map; validate --fix-hints emits executable pm commands per check; tests assert non-empty maps for known codes
+parent: pm-5oj5
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-0hnu,related,"2026-05-31T19:49:46.325Z",null,null
+  pm-6m3y,related,"2026-05-31T19:49:46.325Z",null,null
+body: ""

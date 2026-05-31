@@ -1,0 +1,15 @@
+id: pm-vhd9
+title: "As an agile/ops/research team, I want pm init --type-preset, so that my domain's item types are registered instantly without manual add-type calls"
+description: "As an agile/ops/research team, I want pm init --type-preset, so that my domain's item types are registered instantly without manual add-type calls"
+type: Story
+status: open
+priority: 2
+tags[5]: "area:config","area:schema",bootstrap,living-map,story
+created_at: "2026-05-31T19:49:46.791Z"
+updated_at: "2026-05-31T19:49:46.791Z"
+author: maintainer-agent
+acceptance_criteria: pm init --type-preset agile|ops|research idempotently registers the preset types; composes with --preset/--defaults; no-preset behavior unchanged
+parent: pm-8jdc
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-1lkm,related,"2026-05-31T19:49:46.791Z",null,null
+body: ""

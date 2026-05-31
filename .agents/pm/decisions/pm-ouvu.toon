@@ -1,0 +1,16 @@
+id: pm-ouvu
+title: "ADR: Governance presets (minimal/default/strict/custom) as the primary config surface"
+description: Governance presets (minimal/default/strict/custom) as the primary config surface
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,architecture,"area:config",governance
+created_at: "2026-05-31T19:47:02.474Z"
+updated_at: "2026-05-31T20:26:18.208Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
+actual_result: "The closed Decision 'ADR: Governance presets (minimal/default/strict/custom) as the primary config surface' is recorded under the ADR living log and preserved as durable project context."
+close_reason: ADR recorded and accepted; architectural decision documented as durable context on 2026-05-31.
+body: "CONTEXT: pm must serve both solo/lightweight and team-enforced workflows; exposing every knob is overwhelming. DECISION: three built-in presets plus a custom escape hatch, each setting ownership_enforcement/create_mode/close_validation/parent_reference/metadata_profile/stale-lock force. CONSEQUENCES: simple onboarding (pick a preset); enterprise enforcement available; presets do not cover domain archetypes (handled separately via type presets, see pm-1lkm). EVIDENCE: src/core/shared/constants.ts GOVERNANCE_PRESET_DEFAULTS, src/cli/commands/init.ts; item pm-7by2."

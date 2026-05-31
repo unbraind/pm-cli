@@ -1,0 +1,15 @@
+id: pm-ankr
+title: "As a long-running coding agent, I want to list only items changed since my last context window, so that my context stays focused without scanning 900+ items"
+description: "As a long-running coding agent, I want to list only items changed since my last context window, so that my context stays focused without scanning 900+ items"
+type: Story
+status: open
+priority: 2
+tags[4]: agent-ux,"area:cli",living-map,story
+created_at: "2026-05-31T19:49:44.683Z"
+updated_at: "2026-05-31T19:49:44.683Z"
+author: maintainer-agent
+acceptance_criteria: pm list --updated-after accepts relative (30m/2h) + ISO; returns only items updated since the threshold; resolved threshold echoed in filters
+parent: pm-mpbb
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-y138,related,"2026-05-31T19:49:44.683Z",null,null
+body: ""

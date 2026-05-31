@@ -1,0 +1,14 @@
+id: pm-5vsv
+title: Document changelog classifier keyword routing for contributors
+description: "classifyItem two-tier logic (strong=type+tags, weak=title, BUG_LIKE default, flag-strip) is undocumented; closing items with wrong tags/types silently routes them to Other instead of Fixed/Added/Changed."
+type: Chore
+status: open
+priority: 2
+tags[6]: "area:docs","area:release",changelog,contributor-ux,living-map,pm-changelog
+created_at: "2026-05-31T19:45:41.744Z"
+updated_at: "2026-05-31T19:45:41.744Z"
+author: maintainer-agent
+acceptance_criteria: "RELEASING.md gains a Changelog Classification section: two tiers, keyword->category table, BUG_LIKE default, tag-override examples, and the never-hand-edit rule; docs-skills gate passes."
+value: "classifyItem two-tier logic (strong=type+tags, weak=title, BUG_LIKE default, flag-strip) is undocumented; closing items with wrong tags/types silently routes them to Other instead of Fixed/Added/Changed."
+parent: pm-u9d0
+body: ""

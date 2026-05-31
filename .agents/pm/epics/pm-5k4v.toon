@@ -1,0 +1,15 @@
+id: pm-5k4v
+title: "Capability: MCP server & contract platform"
+description: "Strengthen the MCP server and machine-readable contracts: tool parity, protocol coverage, contract versioning and drift gates"
+type: Epic
+status: open
+priority: 1
+tags[6]: "area:contracts","area:mcp","area:sdk",backlog,living-map,pm-cli
+created_at: "2026-05-31T19:42:12.309Z"
+updated_at: "2026-05-31T19:42:12.309Z"
+author: maintainer-agent
+goal: project management = context management
+objective: "Strengthen the MCP server and machine-readable contracts: tool parity, protocol coverage, contract versioning and drift gates"
+value: "Reliable, drift-free agent integration surface"
+parent: pm-doxj
+body: ""

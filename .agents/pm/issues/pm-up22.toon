@@ -1,0 +1,14 @@
+id: pm-up22
+title: Drift-scan cache can false-hit on mtime-preserving file copies
+description: history-drift-cache keys on mtime+ctime+size; rsync --archive / cp -p can preserve these and suppress re-verification of a tampered/broken stream -> silent false-ok from pm health.
+type: Issue
+status: open
+priority: 3
+tags[4]: "area:history","area:storage",living-map,reliability
+created_at: "2026-05-31T19:43:38.811Z"
+updated_at: "2026-05-31T19:43:38.811Z"
+author: maintainer-agent
+acceptance_criteria: "Add optional content-hash column populated after a cache miss; on hit, O(1) recompute+compare before trusting cached chain_ok; health correctly invalidates an mtime-preserved replaced file; no normal-path latency regression."
+value: history-drift-cache keys on mtime+ctime+size; rsync --archive / cp -p can preserve these and suppress re-verification of a tampered/broken stream -> silent false-ok from pm health.
+parent: pm-o2kc
+body: ""

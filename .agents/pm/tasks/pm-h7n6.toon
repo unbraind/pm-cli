@@ -1,0 +1,31 @@
+id: pm-h7n6
+title: "Audit domain: Search & semantic (keyword/semantic/hybrid, embeddings, vector stores)"
+description: "Audit core/search incl keyword/semantic/hybrid, embedding providers, Qdrant/LanceDB adapters, reindex, search.tuning. Capture PRD post-v0.1 roadmap (advanced tuning, adapter optimization, provider opt) as forward backlog."
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:search","area:semantic",audit,living-map,pm-cli
+created_at: "2026-05-31T19:22:08.438Z"
+updated_at: "2026-05-31T20:26:09.065Z"
+author: maintainer-agent
+acceptance_criteria: "Domain audited read-only across code+docs+tests; existing pm coverage mapped via search; genuine gaps, forward work, improvements, ADRs, and agent/user stories proposed (dedup-checked); work-log + key decisions recorded in pm on this task."
+parent: pm-w7f2
+resolution: Verification task completed during living-map closeout
+expected_result: The task checks its assigned living-map quality area and records whether any blocker remains before PR finalization.
+actual_result: "The closed Task 'Audit domain: Search & semantic (keyword/semantic/hybrid, embeddings, vector stores)' completed its verification pass and left no duplicate or hierarchy blocker for finalization."
+comments[2]{created_at,author,text}:
+  "2026-05-31T19:25:21.315Z",audit-search-agent,"Phase 1 audit complete. Read all 10 core/search/*.ts files (2896 total lines). Key findings: (1) Three PRD post-v0.1 roadmap items confirmed in PRD.md lines 1677-1680: advanced relevance tuning, additional advanced provider optimizations, broader adapter optimization, broader advanced semantic/hybrid tuning. (2) All existing pm search items (pm-qyyv, pm-ip91, pm-cwp, pm-pmd, etc.) are CLOSED — the roadmap stubs ARE the open territory. (3) corpus.ts truncates at 8000 chars (3200 for Ollama) — no configurable override. (4) Only openai+ollama providers; no 3rd-party adapters. (5) LanceDB uses pure cosine similarity in-process (no HNSW/ANN). (6) No embedding cache beyond the vectorization-status-ledger (updated_at staleness check). (7) background-refresh.ts uses a file-lock gate queue but no delivery receipt / DLQ for permanently failed items."
+  "2026-05-31T19:31:21.108Z",audit-search-agent,"Phase 2 audit complete. Key findings confirmed: (1) PRD.md lines 1677-1680 explicitly defer 4 items post-v0.1: advanced relevance tuning, additional advanced provider optimizations, broader adapter optimization, broader advanced semantic/hybrid tuning. (2) reminders_weight (default:2) and events_weight (default:2) implemented in search.ts resolveSearchTuning() but NOT present in PRD search.tuning table (lines 1120,1448) or README - undocumented contract drift. (3) No --status filter on pm search (list has it; search only has --type/--tag/--priority/--deadline). (4) include-linked is lexical/hybrid-lexical only - intentional per PRD. (5) semantic corpus char limit (8000 default, 3200 Ollama) is hardcoded constant, not a settings field. (6) EmbeddingProviderName is a closed union 'openai' | 'ollama' - no 3rd-party provider extensibility. (7) LanceDB uses brute-force in-process cosine similarity (no ANN/HNSW index). (8) background-refresh re-enqueues on failure (covered by test at line 752 of search-cache.spec.ts). All proposed new items checked for duplicates - none found."
+learnings[4]{created_at,author,text}:
+  "2026-05-31T19:31:30.724Z",audit-search-agent,"reminders_weight and events_weight are fully implemented in resolveSearchTuning() with defaults (2,2) but are absent from PRD section 13.3 search.tuning table and from README defaults listing. Any PRD/README update touching tuning must add these two fields."
+  "2026-05-31T19:31:36.429Z",audit-search-agent,"Semantic corpus char limits (8000 default, 3200 Ollama) are module-level constants in corpus.ts, NOT settings fields. The buildSemanticCorpusInput() options.maxCharacters param is an internal escape hatch — not wired to user config. A settings field search.embedding_corpus_max_characters would be the correct extension point."
+  "2026-05-31T19:31:42.844Z",audit-search-agent,"LanceDB adapter uses brute-force in-process cosine similarity (O(n) linear scan over all vectors in the snapshot Map). For large corpora this becomes the dominant query cost. The natural upgrade path is ANN indexing (e.g. HNSW), but that requires either native LanceDB bindings (currently avoided — snapshot is pure JSON) or a new adapter. pm-ss1d (bundling) remains the prerequisite for native deps."
+  "2026-05-31T19:31:48.582Z",audit-search-agent,"pm search has no --status filter. It loads all-status items then applyFilters() supports --type, --tag, --priority, --deadline-before/after only. This means 'pm search foo' includes closed items by default. Adding --status parity with pm list (CSV, 'open', 'closed', 'canceled' aliases) is a genuine forward gap with agent usability value."
+files[5]{path,scope,note}:
+  src/cli/commands/search.ts,project,null
+  src/core/search/background-refresh.ts,project,null
+  src/core/search/corpus.ts,project,null
+  src/core/search/providers.ts,project,null
+  src/core/search/vector-stores.ts,project,null
+close_reason: Domain audit complete; findings synthesized into the forward living map (open backlog) and ADR log; no duplicates created.
+body: ""

@@ -1,0 +1,16 @@
+id: pm-vnie
+title: "ADR: Three-tier metadata cache (light scalars / bodies / collections) keyed by file stat"
+description: Three-tier metadata cache (light scalars / bodies / collections) keyed by file stat
+type: Decision
+status: closed
+priority: 2
+tags[5]: adr,architecture,"area:storage",cache,performance
+created_at: "2026-05-31T19:47:00.495Z"
+updated_at: "2026-05-31T20:26:25.329Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
+actual_result: "The closed Decision 'ADR: Three-tier metadata cache (light scalars / bodies / collections) keyed by file stat' is recorded under the ADR living log and preserved as durable project context."
+close_reason: ADR recorded and accepted; architectural decision documented as durable context on 2026-05-31.
+body: "CONTEXT: reading+parsing all 900+ item files on every pm list was too slow. DECISION: split the persistent cache into light metadata, bodies, and heavy collection fields; key entries by {mtime,ctime,size} plus a context_fingerprint (format/type-folder/schema); load light on every list, body/collections opt-in; skip-unchanged writes. CONSEQUENCES: fast list; collections parsed only when needed; three cache files to keep consistent; a version bump cold-starts all caches; mtime keying can false-hit on timestamp-preserving copies (see pm-up22); caches are gitignored. EVIDENCE: src/core/store/front-matter-cache.ts; items pm-jd3v/pm-4r5t."

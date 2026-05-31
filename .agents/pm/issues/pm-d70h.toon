@@ -1,0 +1,14 @@
+id: pm-d70h
+title: "pm gc lacks a 'locks' scope: stale lock files accumulate indefinitely"
+description: Crashed processes leave .lock files cleaned only lazily on the next mutation of that same item; items never re-mutated keep stale locks forever. gc has no locks scope.
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:lock","area:storage",gc,living-map
+created_at: "2026-05-31T19:43:37.801Z"
+updated_at: "2026-05-31T19:43:37.801Z"
+author: maintainer-agent
+acceptance_criteria: pm gc --scope locks removes only expired locks (created_at+ttl); --dry-run lists; default all-scope gc includes locks; aligns with pm health stale-lock warnings.
+value: Crashed processes leave .lock files cleaned only lazily on the next mutation of that same item; items never re-mutated keep stale locks forever. gc has no locks scope.
+parent: pm-o2kc
+body: ""

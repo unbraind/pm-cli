@@ -1,0 +1,14 @@
+id: pm-1lkm
+title: "pm init --type-preset agile|ops|research: batch-register domain item types"
+description: "A fresh init registers no custom types; each domain (agile: Story/Spike; ops: Incident/Runbook; research: Experiment/Hypothesis) requires manual add-type calls."
+type: Feature
+status: open
+priority: 2
+tags[5]: agent-ux,"area:config","area:schema",bootstrap,living-map
+created_at: "2026-05-31T19:45:40.268Z"
+updated_at: "2026-05-31T19:45:40.268Z"
+author: maintainer-agent
+acceptance_criteria: pm init --type-preset <preset> idempotently registers the preset's types; composes with --preset/--defaults; InitResult.registered_type_preset; docs+tests; no-preset behavior unchanged.
+value: "A fresh init registers no custom types; each domain (agile: Story/Spike; ops: Incident/Runbook; research: Experiment/Hypothesis) requires manual add-type calls."
+parent: pm-8jdc
+body: ""

@@ -1,0 +1,14 @@
+id: pm-7tsx
+title: "Advanced relevance tuning (post-v0.1): cross-encoder reranking + query expansion"
+description: PRD line 1677 defers advanced relevance tuning. Add opt-in cross-encoder reranking on hybrid top-N and LLM query expansion before embedding to improve recall/precision for agent queries on large corpora.
+type: Feature
+status: open
+priority: 3
+tags[7]: "area:search","area:semantic",hybrid,living-map,post-v0.1,roadmap,tuning
+created_at: "2026-05-31T19:44:23.445Z"
+updated_at: "2026-05-31T19:44:23.445Z"
+author: maintainer-agent
+acceptance_criteria: "search.rerank{enabled,model,top_k} and search.query_expansion{enabled,provider} blocks; opt-in, degrade gracefully offline; filters output flags; provider abstraction; mock-provider tests; no regression to keyword/hybrid."
+value: PRD line 1677 defers advanced relevance tuning. Add opt-in cross-encoder reranking on hybrid top-N and LLM query expansion before embedding to improve recall/precision for agent queries on large corpora.
+parent: pm-ydp6
+body: ""

@@ -1,0 +1,15 @@
+id: pm-tnk5
+title: "As a PM with large item bodies, I want to raise the semantic corpus character limit, so that search indexes my full content instead of truncating it"
+description: "As a PM with large item bodies, I want to raise the semantic corpus character limit, so that search indexes my full content instead of truncating it"
+type: Story
+status: open
+priority: 3
+tags[4]: "area:search","area:semantic",living-map,story
+created_at: "2026-05-31T19:49:45.373Z"
+updated_at: "2026-05-31T19:49:45.373Z"
+author: maintainer-agent
+acceptance_criteria: search.embedding_corpus_max_characters raises/lowers the limit; invalid falls back to default with a warning; reindex+background refresh honor it
+parent: pm-ydp6
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-cxdg,related,"2026-05-31T19:49:45.373Z",null,null
+body: ""

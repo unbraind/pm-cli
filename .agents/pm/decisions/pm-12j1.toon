@@ -1,0 +1,16 @@
+id: pm-12j1
+title: "ADR: Collision-checked random short IDs (configurable prefix + base36 token)"
+description: Item IDs are short random base36 tokens with a configurable prefix and filesystem-existence collision checks.
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,architecture,"area:storage",ids
+created_at: "2026-05-31T20:15:01.376Z"
+updated_at: "2026-05-31T20:25:33.255Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures the durable decision, context, consequences, and evidence for future agents."
+actual_result: The closed ADR documents collision-checked random short IDs and links it under the ADR living log.
+close_reason: ADR recorded and accepted; ID-generation scheme documented as durable context on 2026-05-31.
+body: "CONTEXT: a git-native store has no central sequence generator; IDs must not collide across concurrent branches or agents, must stay short for CLI and agent ergonomics, and must carry no ordering semantics that would create merge-conflict counters. DECISION: generate IDs as <prefix>-<random base36 token> (default prefix pm-, configurable per project via settings id_prefix); start at a 4-char token and grow up to 10 chars, re-rolling against filesystem-existence checks (.md and .toon across all type folders, 32 attempts per length) until unique. Not monotonic sequences (which would merge-conflict in a git store) and not UUIDs (which would be long and un-typable). CONSEQUENCES: branch-safe, human-typable IDs; no global ordering is derivable from IDs, so timestamps are used for ordering; collision probability is negligible thanks to the existence re-roll. EVIDENCE: src/core/item/id.ts (randomToken via crypto.randomBytes, generateItemId growth loop, idExists); settings id_prefix."

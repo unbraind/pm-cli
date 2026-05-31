@@ -1,0 +1,16 @@
+id: pm-ee1k
+title: "ADR: Date-based calendar versioning with daily automated release and manual same-day follow-ups"
+description: Date-based calendar versioning with daily automated release and manual same-day follow-ups
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,architecture,"area:release",ci
+created_at: "2026-05-31T19:48:29.282Z"
+updated_at: "2026-05-31T20:26:06.315Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
+actual_result: "The closed Decision 'ADR: Date-based calendar versioning with daily automated release and manual same-day follow-ups' is recorded under the ADR living log and preserved as durable project context."
+close_reason: ADR recorded and accepted; architectural decision documented as durable context on 2026-05-31.
+body: "CONTEXT: npm requires semver; pm uses a date scheme. DECISION: version is YYYY.M.D (unpadded) for the first release of a UTC day and YYYY.M.D-N for same-day follow-ups; package.json version is NEVER hand-edited (only the release pipeline sets it); auto-release runs daily ~02:35 UTC and skips when only tracker-only commits exist; same-day releases are manual workflow_dispatch only. CONSEQUENCES: release cadence visible from the version; no semver-breakage signal; a hard 'never touch package.json version' invariant; format enforced by version:check. EVIDENCE: docs/RELEASING.md, .github/workflows/auto-release.yml; items pm-ot8r/pm-qa2h; memory project_session_2026_05_28_release_unblock."

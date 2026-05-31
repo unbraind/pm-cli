@@ -1,0 +1,14 @@
+id: pm-kl11
+title: Add MCP protocol handshake tests (initialize + tools/list + unknown-tool error)
+description: "Integration tests only exercise tools/call; the initialize handshake and tools/list (the first client calls) are untested, so a protocol-version or TOOLS/HANDLERS mismatch would go undetected."
+type: Task
+status: open
+priority: 3
+tags[4]: "area:mcp",coverage,living-map,tests
+created_at: "2026-05-31T19:45:01.297Z"
+updated_at: "2026-05-31T19:45:01.297Z"
+author: maintainer-agent
+acceptance_criteria: "Tests assert initialize protocolVersion + capabilities.tools + serverInfo.name; tools/list returns the full tool set incl pm_run/pm_plan; unknown tools/call returns isError:true."
+value: "Integration tests only exercise tools/call; the initialize handshake and tools/list (the first client calls) are untested, so a protocol-version or TOOLS/HANDLERS mismatch would go undetected."
+parent: pm-5k4v
+body: ""

@@ -1,3 +1,15 @@
 {
-  "definitions": []
+  "definitions": [
+    {
+      "name": "Story",
+      "folder": "stories",
+      "aliases": [
+        "agent-story",
+        "story",
+        "user-story"
+      ],
+      "description": "Agile agent/user story: 'As a <role>, I want <capability>, so that <benefit>'. First-class backlog need distinct from a Feature (capability) or Task (work).",
+      "default_status": "open"
+    }
+  ]
 }

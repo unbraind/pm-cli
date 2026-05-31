@@ -1,0 +1,14 @@
+id: pm-zw0n
+title: Publish pm-github starter package as a community reference (credential-requiring pattern)
+description: "docs/EXTENSIONS.md cites 'pm install npm:pm-github' but the package does not exist; it would validate the npm-install path end-to-end and model service-credential packages (GitHub/Jira/Linear/Slack)."
+type: Chore
+status: open
+priority: 3
+tags[5]: "area:packages",community,dx,ecosystem,living-map
+created_at: "2026-05-31T19:44:25.917Z"
+updated_at: "2026-05-31T19:44:25.917Z"
+author: maintainer-agent
+acceptance_criteria: Minimal published @unbrained/pm-github registers a command that errors with clear credential-setup guidance when unconfigured; manifest has pm_min_version+catalog+commands; install+doctor work; docs reference published version.
+value: "docs/EXTENSIONS.md cites 'pm install npm:pm-github' but the package does not exist; it would validate the npm-install path end-to-end and model service-credential packages (GitHub/Jira/Linear/Slack)."
+parent: pm-ugqx
+body: ""

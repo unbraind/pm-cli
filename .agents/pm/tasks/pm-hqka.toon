@@ -1,0 +1,28 @@
+id: pm-hqka
+title: "Audit domain: Core CLI command surface & item lifecycle"
+description: Audit every CLI command + lifecycle (create/update/close/claim/release/lifecycle aliases/delete/restore/append/list family/aggregate/context/get/history/activity/stats/validate/health/gc/deps/comments/notes/learnings/files/docs/test/test-all/update-many). Map coverage; surface gaps + forward UX.
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:cli","area:lifecycle",audit,living-map,pm-cli
+created_at: "2026-05-31T19:22:07.863Z"
+updated_at: "2026-05-31T20:26:10.911Z"
+author: maintainer-agent
+acceptance_criteria: "Domain audited read-only across code+docs+tests; existing pm coverage mapped via search; genuine gaps, forward work, improvements, ADRs, and agent/user stories proposed (dedup-checked); work-log + key decisions recorded in pm on this task."
+parent: pm-w7f2
+resolution: Verification task completed during living-map closeout
+expected_result: The task checks its assigned living-map quality area and records whether any blocker remains before PR finalization.
+actual_result: "The closed Task 'Audit domain: Core CLI command surface & item lifecycle' completed its verification pass and left no duplicate or hierarchy blocker for finalization."
+comments[2]{created_at,author,text}:
+  "2026-05-31T19:27:07.242Z",audit-cli-agent,"Phase 1 inspection complete. Reviewed: src/cli/commands/ (all 55+ files), update-many.ts (has rollback/checkpoint/dry-run, uses runUpdate not runClose → cannot trigger close validation), close.ts (supports inline resolution/expected/actual since pr#78), list.ts (has sort/filter/projection/brief/compact modes), context.ts (markdown/toon/json output), stats.ts (totals by_type by_status). Key gaps emerging: (1) close-many does not exist — update-many uses runUpdate which won't trigger close semantics; (2) no pm copy/clone command; (3) no saved/named filter presets; (4) no item tree view (children hierarchy); (5) no watch/subscribe for live updates; (6) history has no per-field diff view. Will run dedup searches before proposing."
+  "2026-05-31T19:31:02.232Z",audit-cli-agent,"Phase 2 complete. Dedup searches run for all 8 proposed items + 3 ADRs + 3 stories. No exact duplicates found in closed history. Key confirmed gaps: (1) close-many (no closed item exists; pm-12ib was auto-route for single update->close, unrelated); (2) list --updated-after/--created-after (list.ts only has deadline-before/after); (3) update-many --ids explicit filter (pm-lwps was governance ownership override, different concern); (4) aggregate numeric sum (only count grouping exists); (5) history field-diff view (no item); (6) pm copy/clone (no item); (7) pm list --tree recursive (no item). Exit code ADR is undocumented (constants.ts has EXIT_CODE enum but no Decision item). Ready to write deliverable."
+learnings[4]{created_at,author,text}:
+  "2026-05-31T19:30:21.811Z",audit-cli-agent,"update-many delegates every mutation to runUpdate (not runClose), so setting --status closed via update-many skips close validation (validate-close), the active-children check, and never populates close_reason properly. A dedicated close-many surface is the clean fix."
+  "2026-05-31T19:30:24.290Z",audit-cli-agent,pm list already filters by --parent <id> (line 326 of list.ts) but has no --tree / --recursive flag to render the full subtree as an indented hierarchy. This is a gap for agents navigating epic->feature->task hierarchies.
+  "2026-05-31T19:30:29.849Z",audit-cli-agent,"pm list has --deadline-before/--deadline-after filters but no --updated-after / --created-after date filters. Agents doing incremental sync (e.g. 'what changed since my last context pull') must fetch all items and filter client-side, which is expensive on large trackers."
+  "2026-05-31T19:30:32.127Z",audit-cli-agent,pm history shows the full event stream for an item but does not compute per-entry field diffs (before/after for each changed field). Agents diagnosing 'what exactly changed in this update' must reconstruct diffs manually from consecutive snapshots.
+files[2]{path,scope,note}:
+  "src/cli/commands/close.ts,src/cli/commands/list.ts,src/cli/commands/context.ts,src/core/shared/constants.ts",project,null
+  src/cli/commands/update-many.ts,project,null
+close_reason: Domain audit complete; findings synthesized into the forward living map (open backlog) and ADR log; no duplicates created.
+body: ""

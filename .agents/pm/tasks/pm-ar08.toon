@@ -1,0 +1,30 @@
+id: pm-ar08
+title: "Audit domain: Storage, item-store, history, TOON, restore"
+description: "Audit core/store, core/item, core/history, core/fs, core/lock, TOON format, restore, history-repair/redact, migrations, front-matter cache. Map coverage; surface integrity/perf forward work."
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:history","area:storage",audit,living-map,pm-cli
+created_at: "2026-05-31T19:22:08.153Z"
+updated_at: "2026-05-31T20:26:04.032Z"
+author: maintainer-agent
+acceptance_criteria: "Domain audited read-only across code+docs+tests; existing pm coverage mapped via search; genuine gaps, forward work, improvements, ADRs, and agent/user stories proposed (dedup-checked); work-log + key decisions recorded in pm on this task."
+parent: pm-w7f2
+resolution: Verification task completed during living-map closeout
+expected_result: The task checks its assigned living-map quality area and records whether any blocker remains before PR finalization.
+actual_result: "The closed Task 'Audit domain: Storage, item-store, history, TOON, restore' completed its verification pass and left no duplicate or hierarchy blocker for finalization."
+comments[3]{created_at,author,text}:
+  "2026-05-31T19:24:05.172Z",audit-storage-agent,"Starting storage domain audit. Phase 1: reading source files in core/store, core/item, core/history, core/fs, core/lock, core/output. Then dedup-search against existing closed items. Finally propose forward work."
+  "2026-05-31T19:26:16.523Z",audit-storage-agent,"Phase 1 code reading complete. Phase 2: dedup searches complete. Key observations: (1) gc command only covers index/embeddings/runtime — NOT stale lock files. (2) appendLineAtomic uses open('a') which is not atomic on NFS/shared FS; no multi-writer protection at the JSONL line level. (3) history stream growth is unbounded — no compaction/prune primitive exists. (4) front-matter cache has CACHE_VERSION=6 but no migration path docs for cache-format upgrades. (5) drift-scan cache uses mtime+ctime+size keying — mtime-preserving copy (e.g. rsync) would give false cache hits. (6) No export/archive/portable-snapshot primitive exists. (7) TOON bracket-bug workaround is production code but upstream patch is not tracked. Proceeding to final proposal."
+  "2026-05-31T19:27:23.443Z",audit-storage-agent,"Dedup complete. All 6 proposed items confirmed genuinely new. No existing closed items cover: gc --scope locks, history compaction/snapshot, history-stats storage metrics, drift-cache hash-based keying, TOON upstream bracket-bug tracking, or an ADR for append-only JSONL hash-chain design. Finalizing deliverable."
+learnings[3]{created_at,author,text}:
+  "2026-05-31T19:26:40.850Z",audit-storage-agent,"appendLineAtomic (history append) is NOT atomic for concurrent multi-process writers: open('a')+write is not an atomic unit on most filesystems. The per-item lock ensures single-writer for normal mutations, but history-repair/history-redact acquire the lock AFTER reading, creating a brief TOCTOU window that verifyHistoryRewriteNoDrift guards but cannot fully close for all edge cases."
+  "2026-05-31T19:26:43.379Z",audit-storage-agent,"gc command covers only 3 scopes (index, embeddings, runtime) and does NOT collect stale lock files from .agents/pm/locks/. Stale locks (past TTL) are removed lazily on next acquireLock() for the same item, but an item with NO subsequent mutation will permanently accumulate a stale .lock file. No batch lock-cleanup command exists."
+  "2026-05-31T19:26:50.118Z",audit-storage-agent,"front-matter-cache uses CACHE_VERSION=6 with three separate cache files (light metadata, bodies, collections). Cache is invalidated entirely on version bump or context_fingerprint mismatch — no partial/entry-level migration. The drift-scan cache uses mtime+ctime+size as cache key, which can produce false hits when files are copied with mtime-preserved (e.g. rsync --archive). A content-hash-based key would be more robust but costlier."
+files[4]{path,scope,note}:
+  src/core/history/drift-scan.ts,project,null
+  src/core/history/history.ts,project,null
+  src/core/store/front-matter-cache.ts,project,null
+  src/core/store/item-store.ts,project,null
+close_reason: Domain audit complete; findings synthesized into the forward living map (open backlog) and ADR log; no duplicates created.
+body: ""

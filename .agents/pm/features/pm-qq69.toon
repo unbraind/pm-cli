@@ -1,0 +1,14 @@
+id: pm-qq69
+title: "pm schema list / pm schema show: inspect registered custom and built-in types"
+description: After pm schema add-type there is no CLI to confirm registered types or inspect the merged runtime registry; agents must read schema/types.json directly.
+type: Feature
+status: open
+priority: 1
+tags[3]: agent-ux,"area:schema",living-map
+created_at: "2026-05-31T19:45:39.781Z"
+updated_at: "2026-05-31T19:45:39.781Z"
+author: maintainer-agent
+acceptance_criteria: "pm schema list outputs built-in+custom (toon+json {builtin,custom}); pm schema show <Name> shows full definition (folder/aliases/default_status/policies); schema-command tests; MCP schema action."
+value: After pm schema add-type there is no CLI to confirm registered types or inspect the merged runtime registry; agents must read schema/types.json directly.
+parent: pm-8jdc
+body: ""

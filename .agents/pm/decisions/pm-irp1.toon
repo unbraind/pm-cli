@@ -1,0 +1,16 @@
+id: pm-irp1
+title: "ADR: Startup-latency strategy (prebuilt JS, lazy per-command imports, external deps, no single bundle)"
+description: "Cold-start is optimized via prebuilt JS, lazy per-command module imports, and external deps rather than a single bundled binary."
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,architecture,"area:performance",startup
+created_at: "2026-05-31T20:15:02.138Z"
+updated_at: "2026-05-31T20:26:12.518Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
+actual_result: "The closed Decision 'ADR: Startup-latency strategy (prebuilt JS, lazy per-command imports, external deps, no single bundle)' is recorded under the ADR living log and preserved as durable project context."
+close_reason: ADR recorded and accepted; startup-latency strategy documented as durable context on 2026-05-31.
+body: "CONTEXT: per-invocation latency is dominated by ESM module resolution, not compute; agents and humans invoke pm hundreds of times per session, so cold-start is a primary UX lever. This was captured only as delivery items (pm-gt82, pm-t57d, pm-ss1d), never as a decision record. DECISION: optimize cold-start by (1) shipping prebuilt JS so no transpile happens per invocation, (2) lazy-importing each command's own module through a thin dispatch layer in src/cli/main.ts rather than eagerly loading a single large command barrel, and (3) keeping node_modules external (esbuild --packages=external) because bundling dependencies in measured slower. CONSEQUENCES: fast cold-start for the common single-command invocation at the cost of a thin dispatch indirection; the package is not a single self-contained binary because deps remain external. EVIDENCE: src/cli/main.ts dispatch, the esbuild build config; delivery items pm-gt82 (esbuild bundling), pm-t57d (per-command code-splitting), pm-ss1d (ESM module-resolution overhead)."

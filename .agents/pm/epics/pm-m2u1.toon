@@ -1,0 +1,15 @@
+id: pm-m2u1
+title: Architecture Decision Records (living log)
+description: Living log of Architecture Decision Records (ADRs) for pm-cli. Each ADR is a recorded Decision item (context/decision/consequences/evidence) capturing a real architectural choice already made.
+type: Epic
+status: open
+priority: 1
+tags[6]: adr,architecture,context-management,decisions,living-map,pm-cli
+created_at: "2026-05-31T19:41:51.126Z"
+updated_at: "2026-05-31T20:15:20.015Z"
+author: maintainer-agent
+goal: project management = context management
+objective: Make the 'why' behind the architecture discoverable as durable context
+value: Agents and contributors understand prior decisions without re-deriving them from code/memory
+parent: pm-doxj
+body: "ADRs are recorded as closed Decision items parented here. They document decisions ALREADY made (recorded today), so they are closed records, not open work. New decisions append to this log over time."

@@ -1,0 +1,16 @@
+id: pm-u7xx
+title: "ADR: Dependency-free settings validator (replaced zod on the hot path)"
+description: Dependency-free settings validator (replaced zod on the hot path)
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,architecture,"area:config",performance
+created_at: "2026-05-31T19:47:01.093Z"
+updated_at: "2026-05-31T20:26:22.461Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
+actual_result: "The closed Decision 'ADR: Dependency-free settings validator (replaced zod on the hot path)' is recorded under the ADR living log and preserved as durable project context."
+close_reason: ADR recorded and accepted; architectural decision documented as durable context on 2026-05-31.
+body: "CONTEXT: settings.json is read on nearly every command; zod validation added ~38% per-command startup cost. DECISION: replace zod with a bespoke dependency-free settings-validator.ts mirroring safeParse semantics (type-check, strip unknown keys, success/failure). CONSEQUENCES: large startup win; no field-level error detail (bad field -> silent fallback to defaults, see pm-7tcw); the validator must be hand-synced with the PmSettings type when adding fields. EVIDENCE: src/core/store/settings-validator.ts; item pm-e1va; memory startup_perf_zod."

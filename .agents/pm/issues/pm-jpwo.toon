@@ -1,0 +1,14 @@
+id: pm-jpwo
+title: governance.create_default_type is not settable via pm config set
+description: "create_default_type is documented and used at create time but absent from CONFIG_KEY_VALUES, so agents cannot set it without hand-editing settings.json."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,"area:config",living-map
+created_at: "2026-05-31T19:45:40.031Z"
+updated_at: "2026-05-31T19:45:40.031Z"
+author: maintainer-agent
+acceptance_criteria: Add governance_create_default_type (+kebab alias) to CONFIG_KEY_VALUES/ALIASES/SUMMARIES/readConfigValue and the set dispatch; config-command test.
+value: "create_default_type is documented and used at create time but absent from CONFIG_KEY_VALUES, so agents cannot set it without hand-editing settings.json."
+parent: pm-8jdc
+body: ""

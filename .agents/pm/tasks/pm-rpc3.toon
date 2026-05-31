@@ -1,0 +1,33 @@
+id: pm-rpc3
+title: "Audit domain: MCP server, SDK & contracts"
+description: "Audit src/mcp server + tools, src/sdk (cli-contracts, contracts), pm contracts command, MCP tool parity with CLI. Map coverage; surface contract/MCP forward work + stories."
+type: Task
+status: closed
+priority: 1
+tags[6]: "area:contracts","area:mcp","area:sdk",audit,living-map,pm-cli
+created_at: "2026-05-31T19:22:09.039Z"
+updated_at: "2026-05-31T20:26:20.358Z"
+author: maintainer-agent
+acceptance_criteria: "Domain audited read-only across code+docs+tests; existing pm coverage mapped via search; genuine gaps, forward work, improvements, ADRs, and agent/user stories proposed (dedup-checked); work-log + key decisions recorded in pm on this task."
+parent: pm-w7f2
+resolution: Verification task completed during living-map closeout
+expected_result: The task checks its assigned living-map quality area and records whether any blocker remains before PR finalization.
+actual_result: "The closed Task 'Audit domain: MCP server, SDK & contracts' completed its verification pass and left no duplicate or hierarchy blocker for finalization."
+comments[2]{created_at,author,text}:
+  "2026-05-31T19:26:11.708Z",audit-mcp-agent,"PHASE 1 DONE: Read server.ts (842 LOC), cli-contracts.ts (1948 LOC), enum-contracts.ts, runtime.ts, testing.ts, sdk/index.ts, contracts-command.spec.ts, mcp-dynamic-package-actions.spec.ts. Key findings: (1) MCP protocol version 2025-06-18, capabilities={tools:{}} only — no resources/prompts/sampling/logging. (2) 17 named narrow tools + pm_run fallback. (3) Lazy schema Proxy defers PM_TOOL_PARAMETERS_SCHEMA build. (4) structuredContent emitted alongside text content. (5) ARRAY_TO_CSV_FIELDS / SCALAR_TO_ARRAY_FIELDS / ARRAY_ADD_REMOVE_ACTIONS normalization logic at MCP boundary. (6) No test-runs narrow tool (only via pm_run). (7) No notifications/resources/prompts. (8) Schema version is hardcoded in contracts test (4.0.1). (9) getContracts() / getWorkspaceContracts() in SDK runtime.ts — good programmatic surface. (10) assertRegisteredCommandContract() testing helper in sdk/testing.ts."
+  "2026-05-31T19:30:06.942Z",audit-mcp-agent,"PHASE 2 DONE — dedup search complete. No existing open items found covering: (1) MCP protocol method coverage tests (initialize/tools-list untested), (2) contract schema golden-file snapshot gate, (3) pm_run action enum in tool description vs PM_TOOL_ACTIONS drift risk, (4) TOOL_SCHEMA_BASE additionalProperties:true security risk (typo props silently ignored), (5) narrow tools for notes/learnings/deps (only via pm_run), (6) MCP resources/prompts/sampling capability gap. Closest existing closed items: pm-p8j6 (contract token-bloat — fixed), pm-jtdc (status enum config-driven — fixed), pm-3mal (lazy schema Proxy — fixed), pm-qeu1/pm-9r7z (scalar crashes — fixed). No open duplicates found."
+learnings[2]{created_at,author,text}:
+  "2026-05-31T19:30:25.849Z",audit-mcp-agent,"MCP server is a single-file hand-rolled JSON-RPC server (no SDK dependency) with 18 tools (17 narrow + pm_run). TOOL_SCHEMA_BASE has additionalProperties:true, meaning unknown top-level MCP tool args are silently ignored — a latent typo-masking risk.  The pm_run action description enumerates valid actions as a prose string, not bound to PM_TOOL_ACTIONS; any new core action added to enum-contracts.ts must also be manually updated in the description string to avoid agent confusion."
+  "2026-05-31T19:30:30.448Z",audit-mcp-agent,"Contract schema version (x-schema-version=4.0.1, $id=tool-parameters-v4.schema.json) is hardcoded as a string literal in cli-contracts.ts and asserted as a string literal in contracts-command.spec.ts and sdk-index.spec.ts. No symbolic constant ties them together — version bump must update 3 sites in sync. A named export VERSION_TOOL_PARAMETERS_SCHEMA would create a single truth.  MCP protocol test coverage: all integration tests only call tools/call. Neither initialize nor tools/list are exercised under test, so the announced protocolVersion and TOOLS array are untested end-to-end."
+files[9]{path,scope,note}:
+  src/mcp/server.ts,project,null
+  src/sdk/cli-contracts.ts,project,null
+  src/sdk/cli-contracts/enum-contracts.ts,project,null
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,null
+  src/sdk/index.ts,project,null
+  src/sdk/runtime.ts,project,null
+  src/sdk/testing.ts,project,null
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,null
+  tests/unit/contracts-command.spec.ts,project,null
+close_reason: Domain audit complete; findings synthesized into the forward living map (open backlog) and ADR log; no duplicates created.
+body: ""

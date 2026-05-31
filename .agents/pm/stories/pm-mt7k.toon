@@ -1,0 +1,15 @@
+id: pm-mt7k
+title: "As a coding agent bootstrapping a custom-typed project, I want pm schema list/show, so that I can confirm my types registered before pm create"
+description: "As a coding agent bootstrapping a custom-typed project, I want pm schema list/show, so that I can confirm my types registered before pm create"
+type: Story
+status: open
+priority: 1
+tags[4]: agent-ux,"area:schema",living-map,story
+created_at: "2026-05-31T19:49:46.562Z"
+updated_at: "2026-05-31T19:49:46.562Z"
+author: maintainer-agent
+acceptance_criteria: pm schema list outputs builtin+custom (toon+json); pm schema show <Name> shows full definition; completion picks up custom types
+parent: pm-8jdc
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-qq69,related,"2026-05-31T19:49:46.562Z",null,null
+body: ""

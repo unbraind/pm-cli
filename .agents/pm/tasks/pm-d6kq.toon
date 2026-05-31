@@ -1,0 +1,14 @@
+id: pm-d6kq
+title: Contract schema golden-file snapshot gate in CI
+description: "pm contracts --full JSON is the primary machine-readable surface for agents/SDK consumers; tested behaviorally but not as a whole-output snapshot, so a structural change could ship silently."
+type: Task
+status: open
+priority: 3
+tags[5]: "area:contracts","area:sdk",ci,governance,living-map
+created_at: "2026-05-31T19:45:02.095Z"
+updated_at: "2026-05-31T19:45:02.095Z"
+author: maintainer-agent
+acceptance_criteria: Script generates a committed contracts snapshot; CI compares and fails on diff; explicit update command regenerates; CHANGELOG entry required when snapshot changes.
+value: "pm contracts --full JSON is the primary machine-readable surface for agents/SDK consumers; tested behaviorally but not as a whole-output snapshot, so a structural change could ship silently."
+parent: pm-5k4v
+body: ""

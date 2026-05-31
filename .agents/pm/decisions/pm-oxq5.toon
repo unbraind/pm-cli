@@ -1,0 +1,16 @@
+id: pm-oxq5
+title: "ADR: Product vision & guiding principle — project management = context management"
+description: Product vision & guiding principle — project management = context management
+type: Decision
+status: closed
+priority: 2
+tags[5]: adr,architecture,charter,context-management,vision
+created_at: "2026-05-31T19:46:58.677Z"
+updated_at: "2026-05-31T20:26:18.961Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
+actual_result: "The closed Decision 'ADR: Product vision & guiding principle — project management = context management' is recorded under the ADR living log and preserved as durable project context."
+close_reason: ADR recorded and accepted; architectural decision documented as durable context on 2026-05-31.
+body: "CONTEXT: pm-cli is a universal, agent-optimized, git-native project management CLI. DECISION: The product north star is 'project management = context management' — pm ships PM primitives via the pm SDK so any project can fully customize and optimize it; the tracker is the durable, shared context store for humans and coding agents across Claude Code, Codex, Cursor, and bare CLI. CONSEQUENCES: features are judged by whether they make project context more complete, organized, and discoverable; agent-ergonomics and determinism are first-class; the tracker must be a LIVING map (forward backlog + decisions), not only a completed-work log. EVIDENCE: README.md, AGENTS.md, PRD.md, docs/ARCHITECTURE.md; this audit (pm-w7f2) seeded the forward layer."
