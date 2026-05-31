@@ -26,6 +26,7 @@ describe("runGc", () => {
 
   it("removes known cache files deterministically", async () => {
     await withTempPmPath(async (context) => {
+      await mkdir(path.join(context.pmPath, "index"), { recursive: true });
       await writeFile(path.join(context.pmPath, "index", "manifest.json"), '{"seed":true}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "embeddings.jsonl"), '{"id":"seed"}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "vectorization-status.json"), '{"version":1,"items":[]}\n', "utf8");
@@ -97,6 +98,7 @@ describe("runGc", () => {
 
   it("supports dry-run previews without mutating files", async () => {
     await withTempPmPath(async (context) => {
+      await mkdir(path.join(context.pmPath, "index"), { recursive: true });
       await writeFile(path.join(context.pmPath, "index", "manifest.json"), '{"seed":true}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "embeddings.jsonl"), '{"id":"seed"}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "vectorization-status.json"), '{"version":1,"items":[]}\n', "utf8");
@@ -136,6 +138,7 @@ describe("runGc", () => {
 
   it("supports scoped cleanup for index/embeddings/runtime", async () => {
     await withTempPmPath(async (context) => {
+      await mkdir(path.join(context.pmPath, "index"), { recursive: true });
       await writeFile(path.join(context.pmPath, "index", "manifest.json"), '{"seed":true}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "embeddings.jsonl"), '{"id":"seed"}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "vectorization-status.json"), '{"version":1,"items":[]}\n', "utf8");
@@ -180,6 +183,7 @@ describe("runGc", () => {
 
   it("dispatches active read/write hooks for gc cache targets", async () => {
     await withTempPmPath(async (context) => {
+      await mkdir(path.join(context.pmPath, "index"), { recursive: true });
       await writeFile(path.join(context.pmPath, "index", "manifest.json"), '{"seed":true}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "embeddings.jsonl"), '{"id":"seed"}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "vectorization-status.json"), '{"version":1,"items":[]}\n', "utf8");

@@ -319,6 +319,63 @@ describe("calendar command module", () => {
     });
   });
 
+  it("buckets and clocks timed events by their event timezone", async () => {
+    await withTempPmPath(async (context) => {
+      createCalendarItem(context, {
+        title: "Timezone bucketing seed",
+        events: [
+          // 23:30Z on Jun 10 is 08:30 on Jun 11 in Asia/Tokyo (UTC+9): the event
+          // must bucket to the local day and render the local wall-clock time.
+          "start=2026-06-10T23:30:00.000Z,end=2026-06-10T23:45:00.000Z,timezone=Asia/Tokyo,title=Tokyo standup",
+        ],
+      });
+
+      const result = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-06-10T00:00:00.000Z",
+          to: "2026-06-12T00:00:00.000Z",
+          include: "events",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.events).toHaveLength(1);
+      expect(result.events[0]?.date).toBe("2026-06-11");
+      const markdown = renderCalendarMarkdown(result);
+      expect(markdown).toContain("08:30 [event]");
+      expect(markdown).toContain("timezone=Asia/Tokyo");
+      // The UTC clock (23:30Z) must not leak into a timezone-tagged event line.
+      expect(markdown).not.toContain("23:30Z [event]");
+    });
+  });
+
+  it("treats all-day events as timezone-agnostic calendar dates", async () => {
+    await withTempPmPath(async (context) => {
+      createCalendarItem(context, {
+        title: "All-day timezone seed",
+        events: [
+          // An all-day event tagged with a far-east zone must still bucket on its
+          // literal start date, never shifting across a day boundary.
+          "start=2026-04-12T00:00:00.000Z,end=2026-04-13T00:00:00.000Z,all_day=true,timezone=Asia/Tokyo,title=All day offsite",
+        ],
+      });
+
+      const result = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-11T00:00:00.000Z",
+          to: "2026-04-14T00:00:00.000Z",
+          include: "events",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.events).toHaveLength(1);
+      expect(result.events[0]?.date).toBe("2026-04-12");
+    });
+  });
+
   it("applies filters and event limits", async () => {
     await withTempPmPath(async (context) => {
       createCalendarItem(context, {

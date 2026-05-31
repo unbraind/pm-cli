@@ -1,0 +1,12 @@
+id: pm-t57d
+title: "Per-command code-splitting: lazy command-module imports drop the 943KB monolith + fast-glob from the read path"
+description: "Startup perf: the 4 register-* families lazily imported the entire commands/index.js barrel (~40 modules, 32K LOC) inside every action handler, so esbuild --splitting produced ONE 943KB commands chunk. Running any command (e.g. list) loaded all command code AND their deps — notably fast-glob's ~15-package transitive tree (braces/picomatch/micromatch/glob-parent/fastq/...) pulled in only by linked-artifacts.ts. Changed all 44 handler call sites to import the specific command module (import('./commands/<x>.js')), so esbuild emits a chunk per command and a command loads only its own chunk + shared core chunks. Verified: fast-glob resolutions during `pm list` 30+ -> 0; the 943KB monolith is gone. Dev-repo (best of 7): search 673ms->292ms, show 370ms->204ms, list 296-527ms->266ms. Companion to pm-3mal (completion.ts now only loads for `pm completion`)."
+type: Chore
+status: closed
+priority: 1
+tags[3]: perf,refactor,startup
+created_at: "2026-05-31T05:41:23.297Z"
+updated_at: "2026-05-31T05:41:28.636Z"
+author: claude-code-agent
+close_reason: "Implemented and verified. All 44 handler call sites in register-setup/list-query/mutation/operations now import their specific command module; the unused barrel lazy-loaders were removed. esbuild now emits per-command chunks (verified: 943KB commands monolith gone, fast-glob 0 resolutions during `pm list`). Full suite green (2029 tests)."
+body: ""

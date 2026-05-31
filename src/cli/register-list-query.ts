@@ -17,11 +17,8 @@ import {
   resolveActivityStreamMode,
   writeStdout,
 } from "./registration-helpers.js";
-import { createLazyModule } from "../core/shared/lazy-module.js";
 
-type ListQueryCommandsModule = typeof import("./commands/index.js");
 
-const loadListQueryCommandsModule = createLazyModule<ListQueryCommandsModule>(() => import("./commands/index.js"));
 
 export interface RegisterListQueryCommandsOptions {
   commandFilter?: Set<string>;
@@ -100,7 +97,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
           listOptions.brief = true;
         }
         if (excludeTerminal) listOptions.excludeTerminal = true;
-        const { runList } = await loadListQueryCommandsModule();
+        const { runList } = await import("./commands/list.js");
         const result = await runList(status, listOptions, globalOptions);
         const streamMode = options.stream === true;
         if (streamMode && !globalOptions.json) {
@@ -172,7 +169,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .action(async (options: Record<string, unknown>, command) => {
         const globalOptions = getGlobalOptions(command);
         const startedAt = Date.now();
-        const { runAggregate } = await loadListQueryCommandsModule();
+        const { runAggregate } = await import("./commands/aggregate.js");
         const result = await runAggregate(normalizeAggregateOptions(options), globalOptions);
         printResult(result, globalOptions);
         if (globalOptions.profile) {
@@ -210,7 +207,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
         const globalOptions = getGlobalOptions(actionCommand);
         const startedAt = Date.now();
         const normalized = normalizeContextOptions(options);
-        const commands = await loadListQueryCommandsModule();
+        const commands = await import("./commands/context.js");
         const result = await commands.runContext(normalized, globalOptions);
         const outputFormat = commands.resolveContextOutputFormat(normalized, globalOptions);
         if (outputFormat === "markdown") {
@@ -255,7 +252,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .action(async (keywords: string[], options: Record<string, unknown>, command) => {
         const globalOptions = getGlobalOptions(command);
         const startedAt = Date.now();
-        const { runSearch } = await loadListQueryCommandsModule();
+        const { runSearch } = await import("./commands/search.js");
         const searchOptions = normalizeSearchOptions(options);
         const result = await runSearch(
           normalizeSearchKeywordsInput(keywords),
@@ -286,7 +283,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .action(async (id: string, options: Record<string, unknown>, command) => {
         const globalOptions = getGlobalOptions(command);
         const startedAt = Date.now();
-        const { runGet } = await loadListQueryCommandsModule();
+        const { runGet } = await import("./commands/get.js");
         const result = await runGet(
           id,
           globalOptions,
@@ -319,7 +316,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
         if (options.compact === true && options.full === true) {
           throw new PmCliError("History projection options are mutually exclusive. Use either --compact or --full.", EXIT_CODE.USAGE);
         }
-        const { runHistory } = await loadListQueryCommandsModule();
+        const { runHistory } = await import("./commands/history.js");
         const result = await runHistory(
           id,
           {
@@ -357,7 +354,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
           throw new PmCliError("Activity projection options are mutually exclusive. Use either --compact or --full.", EXIT_CODE.USAGE);
         }
         const normalized = normalizeActivityOptions(options);
-        const { runActivity } = await loadListQueryCommandsModule();
+        const { runActivity } = await import("./commands/activity.js");
         const result = await runActivity(normalized, globalOptions);
         const streamMode = resolveActivityStreamMode(options.stream);
         if (streamMode && !globalOptions.json) {

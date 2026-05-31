@@ -195,6 +195,7 @@ function checkOrphanSourceModules(files) {
     "src/cli.ts",
     "src/cli/main.ts",
     "src/cli/telemetry-flush.ts",
+    "src/cli/search-refresh.ts",
     "src/mcp/server.ts",
     "src/sdk/index.ts",
     "src/types/index.ts",

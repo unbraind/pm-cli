@@ -3127,6 +3127,9 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         "vectorization",
       ]);
 
+      // `index/` is a legacy search-artifact dir that init no longer creates; gc still
+      // cleans it for old repos, so seed it explicitly to verify legacy cleanup.
+      await mkdir(path.join(context.pmPath, "index"), { recursive: true });
       await writeFile(path.join(context.pmPath, "index", "manifest.json"), '{"seed":true}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "embeddings.jsonl"), '{"id":"seed"}\n', "utf8");
       await writeFile(path.join(context.pmPath, "search", "vectorization-status.json"), '{"version":1,"items":[]}\n', "utf8");

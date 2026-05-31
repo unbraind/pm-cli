@@ -15,11 +15,8 @@ import {
   printError,
   printResult,
 } from "./registration-helpers.js";
-import { createLazyModule } from "../core/shared/lazy-module.js";
 
-type OperationCommandsModule = typeof import("./commands/index.js");
 
-const loadOperationCommandsModule = createLazyModule<OperationCommandsModule>(() => import("./commands/index.js"));
 
 export function registerOperationCommands(program: Command): void {
   program
@@ -60,7 +57,7 @@ export function registerOperationCommands(program: Command): void {
         throw new PmCliError("--background does not support --add/--remove; update linked tests first, then run in background", EXIT_CODE.USAGE);
       }
       if (runInBackground) {
-        const { runStartBackgroundRun } = await loadOperationCommandsModule();
+        const { runStartBackgroundRun } = await import("./commands/test-runs.js");
         const result = await runStartBackgroundRun({
           kind: "test",
           commandArgs: buildBackgroundTestCommandArgs(id, { ...options, add: addValues, remove: removeValues }),
@@ -74,7 +71,7 @@ export function registerOperationCommands(program: Command): void {
         }
         return;
       }
-      const { runTest } = await loadOperationCommandsModule();
+      const { runTest } = await import("./commands/test.js");
       const result = await runTest(id, {
         add: addValues,
         remove: removeValues,
@@ -134,7 +131,7 @@ export function registerOperationCommands(program: Command): void {
       const startedAt = Date.now();
       const runInBackground = options.background === true;
       if (runInBackground) {
-        const { runStartBackgroundRun } = await loadOperationCommandsModule();
+        const { runStartBackgroundRun } = await import("./commands/test-runs.js");
         const result = await runStartBackgroundRun({
           kind: "test-all",
           commandArgs: buildBackgroundTestAllCommandArgs(options),
@@ -147,7 +144,7 @@ export function registerOperationCommands(program: Command): void {
         }
         return;
       }
-      const { runTestAll } = await loadOperationCommandsModule();
+      const { runTestAll } = await import("./commands/test-all.js");
       const result = await runTestAll({
         status: typeof options.status === "string" ? options.status : undefined,
         limit: typeof options.limit === "string" ? options.limit : undefined,
@@ -182,7 +179,7 @@ export function registerOperationCommands(program: Command): void {
     .description("Internal background worker command.")
     .action(async (runId: string, _options: Record<string, unknown>, command: Command) => {
       const globalOptions = getGlobalOptions(command);
-      const { runTestRunsWorker } = await loadOperationCommandsModule();
+      const { runTestRunsWorker } = await import("./commands/test-runs.js");
       await runTestRunsWorker(runId, globalOptions);
     });
 
@@ -192,7 +189,7 @@ export function registerOperationCommands(program: Command): void {
     .action(async (_options: unknown, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runStats } = await loadOperationCommandsModule();
+      const { runStats } = await import("./commands/stats.js");
       const result = await runStats(globalOptions);
       printResult(result, globalOptions);
       if (globalOptions.profile) {
@@ -223,7 +220,7 @@ export function registerOperationCommands(program: Command): void {
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runHealth } = await loadOperationCommandsModule();
+      const { runHealth } = await import("./commands/health.js");
       const result = await runHealth(globalOptions, {
         strictDirectories: Boolean(options.strictDirectories),
         checkOnly: Boolean(options.checkOnly),
@@ -277,7 +274,7 @@ export function registerOperationCommands(program: Command): void {
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runValidate } = await loadOperationCommandsModule();
+      const { runValidate } = await import("./commands/validate.js");
       const result = await runValidate({
         checkMetadata: Boolean(options.checkMetadata),
         metadataProfile: typeof options.metadataProfile === "string" ? options.metadataProfile : undefined,
@@ -319,7 +316,7 @@ export function registerOperationCommands(program: Command): void {
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runGc } = await loadOperationCommandsModule();
+      const { runGc } = await import("./commands/gc.js");
       const result = await runGc(globalOptions, {
         dryRun: options.dryRun === true,
         scope: Array.isArray(options.scope) ? (options.scope as string[]) : [],
@@ -347,7 +344,7 @@ export function registerOperationCommands(program: Command): void {
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runContracts } = await loadOperationCommandsModule();
+      const { runContracts } = await import("./commands/contracts.js");
       const result = await runContracts({
         action: typeof options.action === "string" ? options.action : undefined,
         command: typeof options.command === "string" ? options.command : undefined,
@@ -374,7 +371,7 @@ export function registerOperationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runClaim } = await loadOperationCommandsModule();
+      const { runClaim } = await import("./commands/claim.js");
       const result = await runClaim(id, Boolean(options.force), globalOptions, {
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
@@ -398,7 +395,7 @@ export function registerOperationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runRelease } = await loadOperationCommandsModule();
+      const { runRelease } = await import("./commands/claim.js");
       const result = await runRelease(id, Boolean(options.force), globalOptions, {
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
@@ -430,10 +427,13 @@ export function registerOperationCommands(program: Command): void {
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
       };
-      const commands = await loadOperationCommandsModule();
-      const claimResult = await commands.runClaim(id, force, globalOptions, mutationOptions);
+      const [{ runClaim }, { runUpdate }] = await Promise.all([
+        import("./commands/claim.js"),
+        import("./commands/update.js"),
+      ]);
+      const claimResult = await runClaim(id, force, globalOptions, mutationOptions);
       await invalidateSearchCachesForMutation(globalOptions, claimResult);
-      const updateResult = await commands.runUpdate(id, { ...mutationOptions, status: inProgressStatus, force }, globalOptions);
+      const updateResult = await runUpdate(id, { ...mutationOptions, status: inProgressStatus, force }, globalOptions);
       await invalidateSearchCachesForMutation(globalOptions, updateResult);
       printResult({ id, action: "start_task", claim: claimResult, update: updateResult }, globalOptions);
       if (globalOptions.profile) {
@@ -460,10 +460,13 @@ export function registerOperationCommands(program: Command): void {
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
       };
-      const commands = await loadOperationCommandsModule();
-      const updateResult = await commands.runUpdate(id, { ...mutationOptions, status: openStatus, force }, globalOptions);
+      const [{ runUpdate }, { runRelease }] = await Promise.all([
+        import("./commands/update.js"),
+        import("./commands/claim.js"),
+      ]);
+      const updateResult = await runUpdate(id, { ...mutationOptions, status: openStatus, force }, globalOptions);
       await invalidateSearchCachesForMutation(globalOptions, updateResult);
-      const releaseResult = await commands.runRelease(id, force, globalOptions, mutationOptions);
+      const releaseResult = await runRelease(id, force, globalOptions, mutationOptions);
       await invalidateSearchCachesForMutation(globalOptions, releaseResult);
       printResult({ id, action: "pause_task", update: updateResult, release: releaseResult }, globalOptions);
       if (globalOptions.profile) {
@@ -488,14 +491,17 @@ export function registerOperationCommands(program: Command): void {
         author: typeof options.author === "string" ? options.author : undefined,
         message: typeof options.message === "string" ? options.message : undefined,
       };
-      const commands = await loadOperationCommandsModule();
-      const closeResult = await commands.runClose(id, reason, {
+      const [{ runClose }, { runRelease }] = await Promise.all([
+        import("./commands/close.js"),
+        import("./commands/claim.js"),
+      ]);
+      const closeResult = await runClose(id, reason, {
         ...mutationOptions,
         validateClose: typeof options.validateClose === "string" ? options.validateClose : undefined,
         force,
       }, globalOptions);
       await invalidateSearchCachesForMutation(globalOptions, closeResult);
-      const releaseResult = await commands.runRelease(id, force, globalOptions, mutationOptions);
+      const releaseResult = await runRelease(id, force, globalOptions, mutationOptions);
       await invalidateSearchCachesForMutation(globalOptions, releaseResult);
       printResult({ id, action: "close_task", close: closeResult, release: releaseResult }, globalOptions);
       if (globalOptions.profile) {

@@ -1,12 +1,19 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   invalidateSearchCacheArtifacts,
   refreshSearchArtifactsForMutation,
   refreshSemanticEmbeddingsForMutatedItems,
   SEARCH_CACHE_ARTIFACT_PATHS,
 } from "../../src/core/search/cache.js";
+import {
+  drainPendingRefreshIds,
+  enqueuePendingRefreshIds,
+  REINDEX_LOCK_ID,
+  runSemanticRefreshWorker,
+  shouldRunSearchRefreshInForeground,
+} from "../../src/core/search/background-refresh.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempDir } from "../helpers/temp.js";
@@ -425,6 +432,150 @@ describe("core/search/cache", () => {
       } finally {
         semanticMock.restore();
       }
+    });
+  });
+});
+
+const SEARCH_REFRESH_INLINE_ENV = "PM_SEARCH_REFRESH_INLINE";
+const SEARCH_REFRESH_CHILD_ENV = "PM_SEARCH_REFRESH_CHILD";
+
+describe("search background refresh", () => {
+  const savedEnv: Record<string, string | undefined> = {};
+
+  beforeEach(() => {
+    for (const key of [SEARCH_REFRESH_INLINE_ENV, SEARCH_REFRESH_CHILD_ENV]) {
+      savedEnv[key] = process.env[key];
+      delete process.env[key];
+    }
+  });
+
+  afterEach(() => {
+    for (const [key, value] of Object.entries(savedEnv)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+  });
+
+  it("exposes the shared reindex lock id so reindex and refresh never write concurrently", () => {
+    expect(REINDEX_LOCK_ID).toBe("reindex");
+  });
+
+  describe("shouldRunSearchRefreshInForeground", () => {
+    it("runs inline under the vitest runner by default", () => {
+      // VITEST is set by the test runner, so the gate stays inline (deterministic).
+      expect(shouldRunSearchRefreshInForeground()).toBe(true);
+    });
+
+    it("honors the explicit inline override flag", () => {
+      process.env[SEARCH_REFRESH_INLINE_ENV] = "1";
+      expect(shouldRunSearchRefreshInForeground()).toBe(true);
+      process.env[SEARCH_REFRESH_INLINE_ENV] = "false";
+      // Still inline because the vitest runner env forces inline regardless.
+      expect(shouldRunSearchRefreshInForeground()).toBe(true);
+    });
+
+    it("treats the worker-child marker as inline", () => {
+      process.env[SEARCH_REFRESH_CHILD_ENV] = "yes";
+      expect(shouldRunSearchRefreshInForeground()).toBe(true);
+    });
+  });
+
+  describe("pending queue", () => {
+    it("merges, de-duplicates, and sorts enqueued ids and drains them once", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        await enqueuePendingRefreshIds(pmPath, ["pm-b", "pm-a"]);
+        await enqueuePendingRefreshIds(pmPath, ["pm-a", "pm-c"]);
+
+        const drained = await drainPendingRefreshIds(pmPath);
+        expect(drained).toEqual(["pm-a", "pm-b", "pm-c"]);
+
+        // Second drain is empty — ids are consumed exactly once.
+        expect(await drainPendingRefreshIds(pmPath)).toEqual([]);
+      });
+    });
+
+    it("ignores empty enqueue requests without writing the queue file", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        await enqueuePendingRefreshIds(pmPath, []);
+        await enqueuePendingRefreshIds(pmPath, ["", "   "]);
+        expect(await drainPendingRefreshIds(pmPath)).toEqual([]);
+      });
+    });
+
+    it("recovers from a corrupt queue file by treating it as empty", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        await fs.writeFile(path.join(pmPath, "search", "pending-refresh.json"), "{not json", "utf8");
+        expect(await drainPendingRefreshIds(pmPath)).toEqual([]);
+        await enqueuePendingRefreshIds(pmPath, ["pm-x"]);
+        expect(await drainPendingRefreshIds(pmPath)).toEqual(["pm-x"]);
+      });
+    });
+  });
+
+  describe("runSemanticRefreshWorker", () => {
+    it("drains the queue and refreshes ids under the reindex lock", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        await enqueuePendingRefreshIds(pmPath, ["pm-1", "pm-2"]);
+        const calls: string[][] = [];
+        const result = await runSemanticRefreshWorker(pmPath, async (_root, ids) => {
+          calls.push(ids);
+          return { refreshed: ids, skipped: [], warnings: [] };
+        });
+
+        expect(calls).toEqual([["pm-1", "pm-2"]]);
+        expect(result.processed).toEqual(["pm-1", "pm-2"]);
+        expect(result.rounds).toBe(1);
+        expect(await drainPendingRefreshIds(pmPath)).toEqual([]);
+      });
+    });
+
+    it("processes ids enqueued mid-refresh in a follow-up round", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        await enqueuePendingRefreshIds(pmPath, ["pm-1"]);
+        let enqueuedFollowUp = false;
+        const result = await runSemanticRefreshWorker(pmPath, async (root, ids) => {
+          if (!enqueuedFollowUp) {
+            enqueuedFollowUp = true;
+            await enqueuePendingRefreshIds(root, ["pm-2"]);
+          }
+          return { refreshed: ids, skipped: [], warnings: [] };
+        });
+
+        expect(result.rounds).toBe(2);
+        expect(result.processed).toEqual(["pm-1", "pm-2"]);
+      });
+    });
+
+    it("returns immediately when the queue is empty", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const result = await runSemanticRefreshWorker(pmPath, async () => {
+          throw new Error("refresh should not run for an empty queue");
+        });
+        expect(result.rounds).toBe(0);
+        expect(result.processed).toEqual([]);
+      });
+    });
+
+    it("re-enqueues ids and records a warning when refresh throws", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        await enqueuePendingRefreshIds(pmPath, ["pm-err"]);
+        const result = await runSemanticRefreshWorker(pmPath, async () => {
+          throw new Error("embed boom");
+        });
+        expect(result.warnings.some((w) => w.startsWith("search_background_refresh_failed:"))).toBe(true);
+        // Failed ids are re-queued for a later dispatch rather than dropped.
+        expect(await drainPendingRefreshIds(pmPath)).toEqual(["pm-err"]);
+      });
+    });
+
+    it("returns early when the pm root does not exist", async () => {
+      const result = await runSemanticRefreshWorker(path.join("/nonexistent-pm-root", "missing"), async () => {
+        throw new Error("should not run");
+      });
+      expect(result).toEqual({ processed: [], rounds: 0, warnings: [] });
     });
   });
 });

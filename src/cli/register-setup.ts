@@ -9,11 +9,8 @@ import {
   printError,
   printResult,
 } from "./registration-helpers.js";
-import { createLazyModule } from "../core/shared/lazy-module.js";
 
-type SetupCommandsModule = typeof import("./commands/index.js");
 
-const loadSetupCommandsModule = createLazyModule<SetupCommandsModule>(() => import("./commands/index.js"));
 
 type ExtensionSubcommandAction =
   | "init"
@@ -118,7 +115,7 @@ async function executeExtensionCommand(
   const globalOptions = getGlobalOptions(command);
   const startedAt = Date.now();
   const normalizedOptions = normalizeExtensionOptions(options, forcedAction, vocabulary);
-  const { runExtension } = await loadSetupCommandsModule();
+  const { runExtension } = await import("./commands/extension.js");
   const result = await runExtension(target, normalizedOptions, globalOptions);
   printResult(result, globalOptions);
   const strictExit = Boolean(normalizedOptions.strictExit) || Boolean(normalizedOptions.failOnWarn);
@@ -342,7 +339,7 @@ export function registerSetupCommands(program: Command): void {
     .action(async (prefix: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runInit, summarizeInitResult } = await loadSetupCommandsModule();
+      const { runInit, summarizeInitResult } = await import("./commands/init.js");
       const result = await runInit(
         prefix,
         globalOptions,
@@ -407,7 +404,7 @@ export function registerSetupCommands(program: Command): void {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const criteria = Array.isArray(options.criterion) ? (options.criterion as string[]) : [];
-      const { runConfig } = await loadSetupCommandsModule();
+      const { runConfig } = await import("./commands/config.js");
       const actionShorthands = new Set(["get", "set", "list", "export"]);
       const scopeShorthand = scope !== undefined && actionShorthands.has(scope);
       const resolvedScope = scopeShorthand ? "project" : (scope ?? "project");
@@ -477,7 +474,7 @@ export function registerSetupCommands(program: Command): void {
   ).action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
     const globalOptions = getGlobalOptions(command);
     const startedAt = Date.now();
-    const { runUpgrade } = await loadSetupCommandsModule();
+    const { runUpgrade } = await import("./commands/upgrade.js");
     const result = await runUpgrade(target, command.opts() as Record<string, unknown>, globalOptions);
     printResult(result, globalOptions);
     if (!result.ok) {

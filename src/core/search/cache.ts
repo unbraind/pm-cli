@@ -11,6 +11,7 @@ import { buildSemanticCorpusInput } from "./corpus.js";
 import { resolveEmbeddingProviders } from "./providers.js";
 import type { EmbeddingProviderConfig } from "./providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "./semantic-defaults.js";
+import { scheduleBackgroundSemanticRefresh } from "./background-refresh.js";
 import { executeVectorDelete, executeVectorUpsert, resolveVectorStores } from "./vector-stores.js";
 import type { VectorStoreConfig } from "./vector-stores.js";
 import { nowIso } from "../shared/time.js";
@@ -33,6 +34,18 @@ export interface SemanticMutationRefreshResult {
 export interface SearchMutationArtifactRefreshResult extends SearchCacheInvalidationResult {
   refreshed: string[];
   skipped: string[];
+  /** True when the semantic refresh was dispatched to a detached background worker. */
+  scheduled?: boolean;
+}
+
+export interface RefreshSearchArtifactsForMutationOptions {
+  /**
+   * When true and semantic search is active, the (slow) embedding refresh is
+   * dispatched to a detached background worker instead of awaited inline so the
+   * mutation returns immediately. The synchronous keyword-cache invalidation
+   * still runs first. Callers pass this only outside test runners.
+   */
+  background?: boolean;
 }
 
 export interface SemanticRefreshOptions {
@@ -412,9 +425,27 @@ export async function refreshSemanticEmbeddingsForMutatedItems(
   };
 }
 
+/**
+ * Returns true when a semantic embedding refresh would do real work for these
+ * settings (an embedding provider AND a vector store both resolve). Used to
+ * decide whether a mutation's refresh is worth dispatching to a background
+ * worker — when semantic search is not configured the inline path is already a
+ * fast no-op and no child is spawned.
+ */
+export function isSemanticRefreshActive(
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  applyRuntimeDefaults: boolean,
+): boolean {
+  const effectiveSettings = applyRuntimeDefaults
+    ? resolveSettingsWithSemanticRuntimeDefaults(settings).settings
+    : settings;
+  return Boolean(resolveEmbeddingProviders(effectiveSettings).active && resolveVectorStores(effectiveSettings).active);
+}
+
 export async function refreshSearchArtifactsForMutation(
   pmRoot: string,
   itemIds: string[],
+  options: RefreshSearchArtifactsForMutationOptions = {},
 ): Promise<SearchMutationArtifactRefreshResult> {
   const invalidation = await invalidateSearchCacheArtifacts(pmRoot);
   const normalizedItemIds = toUniqueSorted(itemIds);
@@ -461,9 +492,26 @@ export async function refreshSearchArtifactsForMutation(
     };
   }
 
+  const applyRuntimeDefaults = settings.search.mutation_refresh_policy === "semantic_auto";
+
+  // Keyword cache is already invalidated synchronously above (so keyword search
+  // stays immediately correct). When requested, dispatch the slow embedding
+  // refresh to a detached worker so the mutation returns instantly; the
+  // vector_index_stale health/search warning covers the catch-up window.
+  if (options.background && isSemanticRefreshActive(settings, applyRuntimeDefaults)) {
+    await scheduleBackgroundSemanticRefresh(pmRoot, normalizedItemIds);
+    return {
+      invalidated: invalidation.invalidated,
+      refreshed: [],
+      skipped: [],
+      warnings: [...invalidation.warnings, "search_semantic_refresh_scheduled_background"],
+      scheduled: true,
+    };
+  }
+
   const semanticRefresh = await refreshSemanticEmbeddingsForMutatedItems(pmRoot, normalizedItemIds, {
     settings,
-    apply_runtime_defaults: settings.search.mutation_refresh_policy === "semantic_auto",
+    apply_runtime_defaults: applyRuntimeDefaults,
   });
   return {
     invalidated: invalidation.invalidated,

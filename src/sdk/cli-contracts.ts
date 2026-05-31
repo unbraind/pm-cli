@@ -1775,14 +1775,38 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
   return schema;
 }
 
-export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = {
+// Building the full MCP tool-parameter schemas (one variant per action) is only
+// needed by the MCP server, the `pm contracts` command, and SDK consumers — never
+// on the hot CLI path that imports this module for flag contracts. Wrap them in a
+// memoized lazy Proxy so the build is deferred until first property access and the
+// object API (`.type`, `.oneOf`, spread, JSON.stringify) stays identical.
+function createLazyContractSchema(
+  build: () => Record<string, unknown>,
+): Record<string, unknown> {
+  let value: Record<string, unknown> | undefined;
+  const resolve = (): Record<string, unknown> => (value ??= build());
+  return new Proxy({} as Record<string, unknown>, {
+    get: (_target, prop) => resolve()[prop as string],
+    has: (_target, prop) => prop in resolve(),
+    ownKeys: () => Reflect.ownKeys(resolve()),
+    getOwnPropertyDescriptor: (_target, prop) => {
+      const descriptor = Reflect.getOwnPropertyDescriptor(resolve(), prop);
+      if (descriptor) {
+        descriptor.configurable = true;
+      }
+      return descriptor;
+    },
+  });
+}
+
+export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = createLazyContractSchema(() => ({
   $schema: "https://json-schema.org/draft/2020-12/schema",
   $id: "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
   title: "pm-cli tool parameters (action-scoped strict schema)",
   "x-schema-version": "4.0.1",
   type: "object",
   oneOf: PM_TOOL_ACTIONS.map((action) => buildActionScopedToolSchema(action)),
-};
+}));
 
 function toProviderCompatibleParameterDefinition(key: string, definition: unknown): Record<string, unknown> {
   const decorated = decorateToolParameterDefinition(key, definition);
@@ -1830,4 +1854,6 @@ function buildProviderCompatibleToolSchema(): Record<string, unknown> {
   };
 }
 
-export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = buildProviderCompatibleToolSchema();
+export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = createLazyContractSchema(
+  buildProviderCompatibleToolSchema,
+);

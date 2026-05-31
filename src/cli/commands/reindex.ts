@@ -13,6 +13,7 @@ import { acquireLock } from "../../core/lock/lock.js";
 import { buildSearchCorpus, buildSemanticCorpusInput } from "../../core/search/corpus.js";
 import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
 import { readVectorizationStatusLedger, writeVectorizationStatusLedger } from "../../core/search/cache.js";
+import { REINDEX_LOCK_ID } from "../../core/search/background-refresh.js";
 import { resolveEmbeddingProviders } from "../../core/search/providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
 import { executeVectorUpsert, resolveVectorStores } from "../../core/search/vector-stores.js";
@@ -27,7 +28,6 @@ import type { ItemDocument, PmSettings } from "../../types/index.js";
 
 const MANIFEST_PATH = "index/manifest.json";
 const EMBEDDINGS_PATH = "search/embeddings.jsonl";
-const REINDEX_LOCK_ID = "reindex";
 
 export interface ReindexOptions {
   mode?: string;
