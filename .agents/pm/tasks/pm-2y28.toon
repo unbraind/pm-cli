@@ -1,0 +1,24 @@
+id: pm-2y28
+title: Refresh changelog after PR closeout merge
+description: "Fix the main CI static gate after PR #89 merge by regenerating the package-owned changelog for the final pm-kd9n closeout state. Duplicate check: pm context shows no active work, list-open/list-in-progress are empty, and search found only older closed changelog/static-gate items; this is a closeout child of pm-kd9n."
+type: Task
+status: closed
+priority: 2
+tags[3]: changelog,ci,closeout
+created_at: "2026-05-31T18:41:38.464Z"
+updated_at: "2026-05-31T18:43:12.776Z"
+author: codex-pr-review-followup
+parent: pm-kd9n
+resolution: Regenerated CHANGELOG.md after the final tracker closeout so the package-owned changelog gate matches closed pm state.
+expected_result: Main CI static gate passes on the closeout commit and checkout remains on main.
+actual_result: "Local pnpm changelog:pm:check and node scripts/release/static-quality-gate.mjs pass after regeneration; final main CI will be watched after push."
+comments[2]{created_at,author,text}:
+  "2026-05-31T18:42:33.279Z",codex-pr-review-followup,"Evidence: reproduced main CI static failure as pnpm changelog:pm:check out-of-date; regenerated CHANGELOG.md; pnpm changelog:pm:check, node scripts/release/static-quality-gate.mjs, and git diff --check pass locally before final closeout regeneration."
+  "2026-05-31T18:43:12.776Z",codex-pr-review-followup,"Evidence after close: regenerated CHANGELOG.md with 890 closed items including pm-kd9n and pm-2y28; pnpm changelog:pm:check and node scripts/release/static-quality-gate.mjs pass."
+files[1]{path,scope,note}:
+  CHANGELOG.md,project,regenerate package-owned changelog after final tracker closeout
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/static-quality-gate.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Regenerated package-owned changelog after final closeout state; local changelog/static gates pass and replacement main CI will be watched after push.
+body: ""

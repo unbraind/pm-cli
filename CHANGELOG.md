@@ -18,6 +18,8 @@
 
 ### Other
 
+- Refresh changelog after PR closeout merge ([pm-2y28](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-2y28.toon))
+- 2026-05-31 external package audit and agent contract hardening ([pm-kd9n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kd9n.toon))
 - Runtime-resolved shell completion for custom statuses/types via helper command ([pm-q4zx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-q4zx.toon))
 - Lazy extension activation: defer import+activate until a command needs contributions ([pm-5wb6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5wb6.toon))
 
