@@ -1,0 +1,14 @@
+id: pm-f4r1
+title: Per-type workflow / allowed-transitions config (schema/workflows.json)
+description: workflows.json maps global role slots but has no per-type state-machine; a project cannot enforce that Story must pass through in_review before closed. Biggest remaining domain-governance gap.
+type: Feature
+status: open
+priority: 3
+tags[4]: "area:config","area:schema",governance,living-map
+created_at: "2026-05-31T19:45:41.277Z"
+updated_at: "2026-05-31T19:45:41.277Z"
+author: maintainer-agent
+acceptance_criteria: "type_workflows: [{type, allowed_transitions:[[from,to]...]}] validated on pm update --status with warn|strict per governance policy; tests; CONFIGURATION.md."
+value: workflows.json maps global role slots but has no per-type state-machine; a project cannot enforce that Story must pass through in_review before closed. Biggest remaining domain-governance gap.
+parent: pm-8jdc
+body: ""

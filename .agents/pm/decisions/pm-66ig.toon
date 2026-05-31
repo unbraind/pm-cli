@@ -1,0 +1,16 @@
+id: pm-66ig
+title: "ADR: Hybrid search = normalized linear interpolation with a configurable weight"
+description: Hybrid search = normalized linear interpolation with a configurable weight
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,architecture,"area:search","area:semantic"
+created_at: "2026-05-31T19:47:41.834Z"
+updated_at: "2026-05-31T20:26:00.240Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
+actual_result: "The closed Decision 'ADR: Hybrid search = normalized linear interpolation with a configurable weight' is recorded under the ADR living log and preserved as durable project context."
+close_reason: ADR recorded and accepted; architectural decision documented as durable context on 2026-05-31.
+body: "CONTEXT: combining semantic+keyword scores; alternatives were RRF, learning-to-rank, score concatenation. DECISION: linear interpolation score = semantic_norm*w + keyword_norm*(1-w) with single configurable search.hybrid_semantic_weight (default 0.7); both normalized to [0,1]. CONSEQUENCES: simple/deterministic/transparent, single tuning knob, no training data; weight is global-only (per-query override proposed pm-cy8i); keyword normalization is corpus-relative. EVIDENCE: src/cli/commands/search.ts; item pm-cwp; PRD 13.3."

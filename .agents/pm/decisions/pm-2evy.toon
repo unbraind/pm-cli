@@ -1,0 +1,16 @@
+id: pm-2evy
+title: "ADR: Single-source contracts: cli-contracts.ts is the authoritative CLI+MCP+contracts surface"
+description: "Single-source contracts: cli-contracts.ts is the authoritative CLI+MCP+contracts surface"
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,architecture,"area:contracts","area:sdk"
+created_at: "2026-05-31T19:47:44.153Z"
+updated_at: "2026-05-31T20:25:58.868Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
+actual_result: "The closed Decision 'ADR: Single-source contracts: cli-contracts.ts is the authoritative CLI+MCP+contracts surface' is recorded under the ADR living log and preserved as durable project context."
+close_reason: ADR recorded and accepted; architectural decision documented as durable context on 2026-05-31.
+body: "CONTEXT: Commander flags, MCP tool schemas, and pm contracts output all need overlapping schema data. DECISION: cli-contracts.ts (and cli-contracts/*) is the single truth; *_FLAG_CONTRACTS drive Commander, PM_TOOL_ACTION_SCHEMA_CONTRACTS drive both the lazy MCP schema Proxy and pm contracts; startup cost deferred via lazy Proxy. CONSEQUENCES: no CLI/MCP drift, always-accurate contracts; a single large file; new flags need coordinated edits across flag contracts + schema contracts + parameter tables (checklist in memory). EVIDENCE: src/sdk/cli-contracts.ts createLazyContractSchema; items pm-3mal/pm-p8j6/pm-xlzl."

@@ -1,0 +1,15 @@
+id: pm-8jdc
+title: "Capability: Schema, config & universal customization"
+description: "Make pm a universal PM tool: schema list/show/remove, custom statuses, per-type workflows, project archetype presets"
+type: Epic
+status: open
+priority: 1
+tags[5]: "area:config","area:schema",backlog,living-map,pm-cli
+created_at: "2026-05-31T19:42:13.016Z"
+updated_at: "2026-05-31T19:42:13.016Z"
+author: maintainer-agent
+goal: project management = context management
+objective: "Make pm a universal PM tool: schema list/show/remove, custom statuses, per-type workflows, project archetype presets"
+value: Any project archetype (agile/ops/research) models its domain natively
+parent: pm-doxj
+body: ""

@@ -1,0 +1,16 @@
+id: pm-i7i4
+title: "ADR: Git-native filesystem is the database (one file per item; no server, daemon, or DB engine)"
+description: "Foundational data-model decision: the git working tree is the system of record."
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,architecture,"area:storage",git-native
+created_at: "2026-05-31T20:15:00.696Z"
+updated_at: "2026-05-31T20:26:11.777Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
+actual_result: "The closed Decision 'ADR: Git-native filesystem is the database (one file per item; no server, daemon, or DB engine)' is recorded under the ADR living log and preserved as durable project context."
+close_reason: ADR recorded and accepted; foundational git-native data-model decision documented as durable context on 2026-05-31.
+body: "CONTEXT: pm needs a durable, branch-mergeable, auditable, offline-first store with zero operational burden. Prior ADRs cover the item FORMAT (TOON, pm-rvbt) and history FORMAT (JSONL hash-chain, pm-hg0k) but never the foundational data MODEL. DECISION: the git working tree itself is the system of record. Each item is one file at .agents/pm/<type-folder>/<id>.toon with a companion append-only history/<id>.jsonl; concurrency is single-writer-per-item via TTL lock files under .agents/pm/locks/; branch, merge, and diff are the sync, review, and audit mechanisms. No database, server, or daemon. CONSEQUENCES: zero infrastructure, offline-first, fully reviewable in PRs, trivially backed up and portable; cross-item transactions and global secondary indexes (search) must be derived and rebuilt rather than queried, and very large trackers pay filesystem-scan costs (mitigated by front-matter and drift-scan caches). EVIDENCE: src/core/store/, src/core/fs/paths.ts, the .agents/pm/ layout; related ADRs pm-rvbt (TOON canonical format) and pm-hg0k (history hash-chain)."

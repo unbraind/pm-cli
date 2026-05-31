@@ -1,0 +1,14 @@
+id: pm-oh5h
+title: Create ONBOARDING.md for new maintainers and first-time contributors
+description: No single 'first two hours' onboarding doc; setup/testing/workflow/release info is scattered across CONTRIBUTING/AGENTS/RELEASING/ARCHITECTURE. Also the right target for the ShareOnboardingGuide tool.
+type: Task
+status: open
+priority: 2
+tags[4]: "area:docs",contributor-ux,living-map,onboarding
+created_at: "2026-05-31T19:45:41.512Z"
+updated_at: "2026-05-31T19:45:41.512Z"
+author: maintainer-agent
+acceptance_criteria: "docs/ONBOARDING.md covers prerequisites, first build, safe test runs, real tracker mutation workflow (PM_AUTHOR+claim/update/close), auto-release+same-day release, hard never-do list (no hand-edit CHANGELOG, no manual npm publish, no PM_PATH on real repo), diagnostics, private-ops pointer; linked from README+CONTRIBUTING; docs-skills gate passes."
+value: No single 'first two hours' onboarding doc; setup/testing/workflow/release info is scattered across CONTRIBUTING/AGENTS/RELEASING/ARCHITECTURE. Also the right target for the ShareOnboardingGuide tool.
+parent: pm-u9d0
+body: ""

@@ -1,0 +1,16 @@
+id: pm-exrw
+title: "Governance test: enforce manifest pm_min_version and manifest_version on all first-party packages"
+description: "After declaring pm_min_version, a governance test (like coverage-allowlist/marketplace drift-lock) prevents future omission as package count grows."
+type: Chore
+status: open
+priority: 3
+tags[5]: "area:extensions","area:packages",ci,governance,living-map
+created_at: "2026-05-31T19:44:26.168Z"
+updated_at: "2026-05-31T20:15:40.448Z"
+author: maintainer-agent
+acceptance_criteria: Test reads all packages/pm-*/extensions/*/manifest.json and asserts non-empty pm_min_version + integer manifest_version; failure names the offending file; in vitest include; runs in static gate.
+value: "After declaring pm_min_version, a governance test (like coverage-allowlist/marketplace drift-lock) prevents future omission as package count grows."
+parent: pm-ugqx
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-nf2q,blocked_by,"2026-05-31T20:10:00.000Z",maintainer-agent,null
+body: ""

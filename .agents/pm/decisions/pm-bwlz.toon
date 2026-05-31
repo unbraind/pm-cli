@@ -1,0 +1,16 @@
+id: pm-bwlz
+title: "ADR: Never-block agent UX: high-frequency aliases are executable bootstrap rewrites, not suggestion text"
+description: "Never-block agent UX: high-frequency aliases are executable bootstrap rewrites, not suggestion text"
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,agent-ux,architecture,"area:cli"
+created_at: "2026-05-31T19:48:30.850Z"
+updated_at: "2026-05-31T20:26:04.682Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
+actual_result: "The closed Decision 'ADR: Never-block agent UX: high-frequency aliases are executable bootstrap rewrites, not suggestion text' is recorded under the ADR living log and preserved as durable project context."
+close_reason: ADR recorded and accepted; architectural decision documented as durable context on 2026-05-31.
+body: "CONTEXT: suggestion-only aliases (pm show -> 'did you mean get') made agents retry; telemetry showed 312 nonexistent_command events/14d for pm show alone. DECISION: common agent-natural aliases (show/view->get, comment/note/learning(s) and --comment/--note/--learning->--add) are resolved at bootstrap before Commander parses argv, so the first invocation succeeds; suggestion-only aliases are never used for patterns that appear in real telemetry. CONSEQUENCES: agents succeed on first try; new high-frequency aliases must be executable rewrites kept in sync with completions; monitor nonexistent_command telemetry before each release. EVIDENCE: src/cli bootstrap/argv-utils; item pm-7by2; memory project_session_2026_05_30_pr83."

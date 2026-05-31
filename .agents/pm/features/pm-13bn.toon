@@ -1,0 +1,14 @@
+id: pm-13bn
+title: "pm-todos + pm-beads: migrate to registerImporter/registerExporter (importers capability exemplar)"
+description: "pm-todos/pm-beads implement import/export via registerCommand, so the importers capability has no first-party exemplar and external authors have no model."
+type: Feature
+status: open
+priority: 2
+tags[5]: "area:packages","area:sdk",dx,importers,living-map
+created_at: "2026-05-31T19:44:24.669Z"
+updated_at: "2026-05-31T19:44:24.669Z"
+author: maintainer-agent
+acceptance_criteria: Both migrate to api.registerImporter/registerExporter retaining backward-compatible command paths; manifests gain importers capability; tests+SDK.md importer example updated.
+value: "pm-todos/pm-beads implement import/export via registerCommand, so the importers capability has no first-party exemplar and external authors have no model."
+parent: pm-ugqx
+body: ""

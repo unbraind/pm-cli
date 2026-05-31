@@ -1,0 +1,16 @@
+id: pm-vizt
+title: "ADR: Non-blocking background semantic refresh (detached worker + reindex lock)"
+description: Non-blocking background semantic refresh (detached worker + reindex lock)
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,architecture,"area:search",performance
+created_at: "2026-05-31T19:47:42.437Z"
+updated_at: "2026-05-31T20:26:24.639Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
+actual_result: "The closed Decision 'ADR: Non-blocking background semantic refresh (detached worker + reindex lock)' is recorded under the ADR living log and preserved as durable project context."
+close_reason: ADR recorded and accepted; architectural decision documented as durable context on 2026-05-31.
+body: "CONTEXT: inline embedding on mutation blocked the CLI ~1.6-2.4s. DECISION: mutations enqueue mutated IDs to search/pending-refresh.json under a mkdir gate lock and spawn a detached child that acquires the shared reindex lock, drains, embeds, upserts, and re-dispatches; failures re-enqueue; spawn errors are ignored so mutations never fail. CONSEQUENCES: instant mutations (create 2581->239ms); transient vector staleness surfaced as a query-time warning; self-healing via stale-lock timeout. EVIDENCE: src/core/search/background-refresh.ts, src/cli/search-refresh.ts; item pm-3ju0."

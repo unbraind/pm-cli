@@ -1,0 +1,14 @@
+id: pm-i17g
+title: "pm close-many: bulk-close matched items with shared reason and validate-close semantics"
+description: "update-many --status closed routes through runUpdate, bypassing ensureCloseReason, active-children check, and validate-close. A dedicated close-many closes matched items with proper close semantics, shared reason, optional per-item resolution, dry-run and rollback checkpoint."
+type: Feature
+status: open
+priority: 1
+tags[5]: agent-ux,"area:cli","area:lifecycle",bulk-ops,living-map
+created_at: "2026-05-31T19:43:35.451Z"
+updated_at: "2026-05-31T19:43:35.451Z"
+author: maintainer-agent
+acceptance_criteria: pm close-many with filter family (--status/--tag/--sprint/--type) closes each via runClose semantics; --dry-run previews; rollback checkpoint restores; active-child orphan check per item; compact projectMutationResult output; MCP+completion+docs updated.
+value: "update-many --status closed routes through runUpdate, bypassing ensureCloseReason, active-children check, and validate-close. A dedicated close-many closes matched items with proper close semantics, shared reason, optional per-item resolution, dry-run and rollback checkpoint."
+parent: pm-mpbb
+body: ""

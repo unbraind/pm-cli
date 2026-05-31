@@ -1,0 +1,14 @@
+id: pm-6m3y
+title: "pm validate --fix-hints: machine-executable remediation commands per check"
+description: validate emits resolution remediation hints for one check only and not as a flag; agents must parse warning codes and build fix commands themselves.
+type: Feature
+status: open
+priority: 3
+tags[4]: agent-ux,"area:observability",living-map,validate
+created_at: "2026-05-31T19:45:02.641Z"
+updated_at: "2026-05-31T19:45:02.641Z"
+author: maintainer-agent
+acceptance_criteria: "--fix-hints adds fix_hints[] of executable pm commands per check (metadata->pm update --author stub, lifecycle->clear stale closure, history_drift->pm history-repair, command refs->corrected pm command); existing resolution hints aliased in; read-only (no mutation); --fix auto-apply explicitly out of scope."
+value: validate emits resolution remediation hints for one check only and not as a flag; agents must parse warning codes and build fix commands themselves.
+parent: pm-5oj5
+body: ""

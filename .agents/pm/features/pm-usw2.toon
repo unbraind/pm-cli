@@ -1,0 +1,14 @@
+id: pm-usw2
+title: Configurable vector store collection name (post-v0.1 adapter optimization)
+description: "PRD line 1679 defers broader adapter optimization; DEFAULT_COLLECTION='pm_items' is hardcoded, blocking shared Qdrant instances across projects and multi-workspace hosting."
+type: Feature
+status: open
+priority: 3
+tags[6]: "area:search",config,living-map,post-v0.1,roadmap,vector-store
+created_at: "2026-05-31T19:44:23.905Z"
+updated_at: "2026-05-31T19:44:23.905Z"
+author: maintainer-agent
+acceptance_criteria: "Optional vector_store.collection_name (non-empty, default pm_items) wired through Qdrant target+LanceDB table; validator+PRD 13.4+README+tests."
+value: "PRD line 1679 defers broader adapter optimization; DEFAULT_COLLECTION='pm_items' is hardcoded, blocking shared Qdrant instances across projects and multi-workspace hosting."
+parent: pm-ydp6
+body: ""

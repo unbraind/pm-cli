@@ -1,0 +1,14 @@
+id: pm-k8ik
+title: "pm schema remove-type: delete a custom type from types.json"
+description: add-type is idempotent upsert but there is no deletion path; renamed/abandoned types linger in types.json forever with no CLI removal.
+type: Chore
+status: open
+priority: 3
+tags[3]: agent-ux,"area:schema",living-map
+created_at: "2026-05-31T19:45:41.042Z"
+updated_at: "2026-05-31T19:45:41.042Z"
+author: maintainer-agent
+acceptance_criteria: pm schema remove-type <Name> removes the definition (case-insensitive); refuses built-ins; warns (not blocks) if open items of that type exist; lock-guarded; tests; MCP action.
+value: add-type is idempotent upsert but there is no deletion path; renamed/abandoned types linger in types.json forever with no CLI removal.
+parent: pm-8jdc
+body: ""

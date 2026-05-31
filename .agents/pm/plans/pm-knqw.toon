@@ -1,0 +1,70 @@
+id: pm-knqw
+title: Ecosystem PM living-map audit & reorganization methodology
+description: "Read-only per-domain audit by 8 specialized sub-agents; synthesize into an organized living map (roadmap milestone, capability epics, ADRs, forward backlog, agent/user stories) with strict dedup and create-only discipline on the real tracker."
+type: Plan
+status: in_progress
+priority: 2
+tags[4]: audit,living-map,methodology,pm-cli
+created_at: "2026-05-31T19:50:17.050Z"
+updated_at: "2026-05-31T20:37:13.462Z"
+assignee: codex-audit-20260531
+author: maintainer-agent
+parent: pm-doxj
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-doxj,parent,"2026-05-31T19:50:17.050Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-05-31T20:20:23.121Z",codex-audit-20260531,"Closeout note: resuming existing living-map plan step 4 for latest verification, changelog, PR, AI-review loop, observability, and merge. Duplicate check reused pm-knqw under pm-doxj rather than creating a new broad-audit item; latest related closed audit is pm-kd9n under pm-59gj."
+  "2026-05-31T20:31:06.275Z",codex-audit-20260531,"Evidence: specialists found no immediate SDK/package, CLI/perf, or tracker-structure blockers. Fixed release docs to match the Sentry token requirement. Backfilled branch-local closed item resolution metadata, reducing validation warnings from 69 to 29 historical rows with history drift still ok. Local gates passed: pnpm build; pm health summary ok; secret scan ok; package-first dogfood ok; semantic package-first dogfood ok with qwen3-embedding:0.6b; required Sentry/telemetry gate ok with zero critical/high and telemetry error rate 1.23%; release run-gates ok including 2068 tests and 100% coverage."
+  "2026-05-31T20:37:13.462Z",codex-audit-20260531,"Review feedback: addressed Gemini grammar comments on pm-irp1 startup ADR body and pm-0hnu health remediation-map acceptance criteria."
+tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/check-secrets.mjs,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/run-gates.mjs --telemetry-mode best-effort --json,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 0 --max-high 0 --max-telemetry-error-rate 6 --max-telemetry-missing-error-rows 0,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "npm run dogfood:package-first",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  pm health --check-only --summary --json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pm validate --check-resolution --check-history-drift --json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "PM_DOGFOOD_SEMANTIC=1 npm run dogfood:package-first",null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,generated release notes for living-map tracker changes
+  docs/RELEASING.md,project,release workflow Sentry token requirement documentation
+plan_mode: completed
+plan_scope: "Read-only per-domain audit by 8 specialized sub-agents; synthesize into an organized living map (roadmap milestone, capability epics, ADRs, forward backlog, agent/user stories) with strict dedup and create-only discipline on the real tracker."
+plan_harness: claude-code
+plan_resume_context: Living map built under milestone pm-doxj and ADR-log pm-m2u1; audit meta under epic pm-w7f2. Create-only on real tracker (closed_at null -> changelog buckets by updated_at). Backlog open; ADRs+meta closed today.
+plan_steps[4]:
+  - id: plan-step-001
+    order: 1
+    title: Discover & constrain
+    status: completed
+    created_at: "2026-05-31T19:50:17.069Z"
+    updated_at: "2026-05-31T19:51:35.707Z"
+    body: "Map tracker state (902 items, all closed), confirm changelog buckets by updated_at -> create-only discipline; lock scope via user Q&A."
+    evidence: Completed during 2026-05-31 ecosystem audit (pm-w7f2).
+    completed_at: "2026-05-31T19:51:35.707Z"
+  - id: plan-step-002
+    order: 2
+    title: Fan out 8 read-only domain audits
+    status: completed
+    created_at: "2026-05-31T19:50:55.585Z"
+    updated_at: "2026-05-31T19:51:35.923Z"
+    body: Specialized sub-agents (cli/storage/search/extensions/mcp/telemetry/config/docs) map code+docs+tests to existing pm coverage; track work in pm; return dedup-checked proposals.
+    evidence: Completed during 2026-05-31 ecosystem audit (pm-w7f2).
+    completed_at: "2026-05-31T19:51:35.923Z"
+  - id: plan-step-003
+    order: 3
+    title: Synthesize organized living map
+    status: completed
+    created_at: "2026-05-31T19:50:55.829Z"
+    updated_at: "2026-05-31T19:51:36.131Z"
+    body: Roadmap milestone + 8 capability epics + 53 forward backlog items + 24 ADRs + 14 agent/user stories; dedup against 902 history; create-only.
+    evidence: Completed during 2026-05-31 ecosystem audit (pm-w7f2).
+    completed_at: "2026-05-31T19:51:36.131Z"
+  - id: plan-step-004
+    order: 4
+    title: "Verify, changelog, PR, AI-bot review loop, merge"
+    status: in_progress
+    created_at: "2026-05-31T19:50:56.111Z"
+    updated_at: "2026-05-31T19:51:36.364Z"
+    body: pm health/validate ok; regenerate changelog LAST; commit+push+PR; trigger AI bots; loop until clean; merge; verify Sentry + telemetry.
+body: ""

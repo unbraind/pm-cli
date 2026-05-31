@@ -1,0 +1,14 @@
+id: pm-e77a
+title: "pm schema add-status: register custom statuses (complement to add-type)"
+description: schema/statuses.json is loaded at runtime but there is no add-status command; users hand-edit JSON to add review/pending_approval/wont_fix.
+type: Feature
+status: open
+priority: 3
+tags[3]: agent-ux,"area:schema",living-map
+created_at: "2026-05-31T19:45:40.782Z"
+updated_at: "2026-05-31T19:45:40.782Z"
+author: maintainer-agent
+acceptance_criteria: pm schema add-status <id> --role <active|blocked|terminal_done|terminal_canceled> --alias --description writes statuses.json; role-validated; idempotent; surfaced by schema list; MCP+contracts+tests.
+value: schema/statuses.json is loaded at runtime but there is no add-status command; users hand-edit JSON to add review/pending_approval/wont_fix.
+parent: pm-8jdc
+body: ""

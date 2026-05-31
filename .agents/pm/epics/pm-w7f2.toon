@@ -1,0 +1,29 @@
+id: pm-w7f2
+title: "Ecosystem-wide PM living-context map: audit, ADRs, roadmap, and forward backlog (2026-05-31)"
+description: "Establish a best-practice, living project-management map of the entire pm-cli ecosystem: forward backlog, architectural decision records, a roadmap milestone, agent/user stories, and capability epics — without duplicating the 902 historical items."
+type: Epic
+status: closed
+priority: 0
+tags[8]: adr,agent-ux,audit,context-management,governance,living-map,pm-cli,roadmap
+created_at: "2026-05-31T19:21:38.591Z"
+updated_at: "2026-05-31T20:26:26.201Z"
+author: maintainer-agent
+acceptance_criteria: "(1) Forward backlog of open, well-defined items covers genuine future work + coverage gaps surfaced by per-domain audits; (2) Architectural ADRs recorded for real undocumented decisions; (3) Roadmap milestone + capability epics anchor the backlog; (4) Agent/user stories captured; (5) No duplicate items (every create dedup-checked via pm search); (6) Existing closed items are NOT modified (would mis-attribute them to this release in the changelog); (7) pm health/validate stay ok; (8) CI green + AI-bot review clean; (9) Sentry + telemetry verified post-change."
+definition_of_ready: Per-domain read-only audits completed by specialized sub-agents; their work-logs and decisions recorded in pm under per-domain tracking tasks.
+goal: project management = context management
+objective: "Make the tracker a complete, organized, living representation of the ecosystem (not just a completed-work log)"
+value: "Future work, decisions, stories, and goals become discoverable context for humans and agents via pm"
+impact: Agents get optimal next-work context; contributors see the roadmap and the why behind the architecture
+outcome: "An organized forward backlog (open), architectural ADRs (recorded), a roadmap milestone, and agent/user stories — all dedup-checked"
+why_now: "Tracker has 902 items but ZERO open/in-progress: rich history, no living map. pm context returns empty. Best-practice PM needs a forward layer."
+reviewer: maintainer-review
+risk: medium
+confidence: high
+resolution: Living-map audit synthesis completed
+expected_result: "The ecosystem audit organizes findings into capability areas, decisions, stories, and forward backlog without duplicating existing pm lineage."
+actual_result: "The closed Epic 'Ecosystem-wide PM living-context map: audit, ADRs, roadmap, and forward backlog (2026-05-31)' captures the completed living-map audit synthesis and links the resulting tracker structure."
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-doxj,related,"2026-05-31T19:52:14.611Z",null,null
+  pm-m2u1,related,"2026-05-31T19:52:14.611Z",null,null
+close_reason: "Ecosystem PM living-map audit complete: forward backlog, ADRs, roadmap milestone, capability epics, and agent/user stories created (create-only, dedup-checked). Meta-work recorded today."
+body: ""

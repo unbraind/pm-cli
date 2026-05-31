@@ -1,0 +1,16 @@
+id: pm-rvbt
+title: "ADR: TOON as canonical item storage; JSON-Markdown is legacy read-only"
+description: TOON as canonical item storage; JSON-Markdown is legacy read-only
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,architecture,"area:storage",toon
+created_at: "2026-05-31T19:46:59.303Z"
+updated_at: "2026-05-31T20:26:21.073Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
+actual_result: "The closed Decision 'ADR: TOON as canonical item storage; JSON-Markdown is legacy read-only' is recorded under the ADR living log and preserved as durable project context."
+close_reason: ADR recorded and accepted; architectural decision documented as durable context on 2026-05-31.
+body: "CONTEXT: items were JSON-front-matter+Markdown; migrated to TOON (@toon-format/toon) for human-readable, type-preserving, git-diffable storage. DECISION: TOON is canonical (writes always target .toon); JSON-Markdown is a read-only migration source only; locateItem prefers .toon. CONSEQUENCES: git-friendly typed diffs; a known upstream strict-decoder bracket bug needs a scoped workaround in toon-decode.ts (tracked for removal); format lock-in to @toon-format/toon. EVIDENCE: src/core/item/toon-decode.ts, src/core/store/item-format-migration.ts, paths.ts; items pm-bckz/pm-iqgj."

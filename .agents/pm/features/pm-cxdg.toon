@@ -1,0 +1,14 @@
+id: pm-cxdg
+title: Configurable semantic corpus character limit (search.embedding_corpus_max_characters)
+description: "Corpus truncation (8000 default, 3200 Ollama) is hardcoded in corpus.ts; large-body items truncate with no override and cost-sensitive users cannot lower it. buildSemanticCorpusInput already accepts maxCharacters."
+type: Feature
+status: open
+priority: 3
+tags[5]: "area:search","area:semantic",config,corpus,living-map
+created_at: "2026-05-31T19:44:23.168Z"
+updated_at: "2026-05-31T19:44:23.168Z"
+author: maintainer-agent
+acceptance_criteria: New positive-integer setting wired through corpus build call sites; validator falls back to defaults on unset/invalid; reindex+background refresh honor it; PRD+README+tests.
+value: "Corpus truncation (8000 default, 3200 Ollama) is hardcoded in corpus.ts; large-body items truncate with no override and cost-sensitive users cannot lower it. buildSemanticCorpusInput already accepts maxCharacters."
+parent: pm-ydp6
+body: ""

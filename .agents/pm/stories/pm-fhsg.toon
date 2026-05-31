@@ -1,0 +1,16 @@
+id: pm-fhsg
+title: "As a maintainer tuning relevance, I want a golden-query eval harness, so that I can catch ranking regressions before release"
+description: "As a maintainer tuning relevance, I want a golden-query eval harness, so that I can catch ranking regressions before release"
+type: Story
+status: open
+priority: 3
+tags[4]: "area:search",living-map,quality,story
+created_at: "2026-05-31T19:49:45.631Z"
+updated_at: "2026-05-31T20:15:20.271Z"
+author: maintainer-agent
+acceptance_criteria: "A relevance/ranking change can be validated against a stored baseline before release: regressions surface as a measurable nDCG@5 drop on the golden-query set, and the maintainer gets a clear per-query pass/fail signal. (Implemented by the eval-harness task pm-22x2, which owns the fixture format and runner.)"
+parent: pm-ydp6
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-22x2,related,"2026-05-31T19:49:45.631Z",null,null
+  pm-7tsx,related,"2026-05-31T19:49:45.631Z",null,null
+body: ""

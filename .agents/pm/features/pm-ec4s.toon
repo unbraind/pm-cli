@@ -1,0 +1,14 @@
+id: pm-ec4s
+title: pm search --status filter (parity with pm list)
+description: "pm list has --status; pm search has --type/--tag/--priority/--deadline but no --status, so search includes closed history noise by default. Add status parity."
+type: Feature
+status: open
+priority: 2
+tags[5]: agent-ux,"area:search",filters,living-map,parity
+created_at: "2026-05-31T19:44:22.873Z"
+updated_at: "2026-05-31T19:44:22.873Z"
+author: maintainer-agent
+acceptance_criteria: pm search --status <csv> (open/closed/canceled aliases) applied pre-query; emitted in filters; CLI+contracts+MCP+completions+docs+tests; reuse list status parsing.
+value: "pm list has --status; pm search has --type/--tag/--priority/--deadline but no --status, so search includes closed history noise by default. Add status parity."
+parent: pm-ydp6
+body: ""

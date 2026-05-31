@@ -1,0 +1,14 @@
+id: pm-te9x
+title: Document capture_level semantics for extension authors
+description: The three capture levels (minimal/redacted/max) are enforced for core commands but undocumented for extension authors; the activation context exposes settings.telemetry.capture_level but no guidance exists.
+type: Chore
+status: open
+priority: 3
+tags[5]: "area:sdk","area:telemetry",docs,extensions,living-map
+created_at: "2026-05-31T19:45:03.201Z"
+updated_at: "2026-05-31T19:45:03.201Z"
+author: maintainer-agent
+acceptance_criteria: SDK.md+EXTENSIONS.md gain a Telemetry & privacy section explaining levels+redaction and how to read capture_level from activation; optional advisory doctor lint when a telemetry-capability extension reads no telemetry setting; no core redaction change.
+value: The three capture levels (minimal/redacted/max) are enforced for core commands but undocumented for extension authors; the activation context exposes settings.telemetry.capture_level but no guidance exists.
+parent: pm-5oj5
+body: ""

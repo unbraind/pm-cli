@@ -1,0 +1,14 @@
+id: pm-hywv
+title: "Add narrow MCP tools pm_notes, pm_learnings, pm_deps (agent self-documentation + deps)"
+description: "notes/learnings/deps require pm_run with an action string, losing the ergonomic named-tool discoverability that pm_comments/pm_files/pm_docs have; notes/learnings are the primary agent self-documentation primitives."
+type: Feature
+status: open
+priority: 3
+tags[4]: agent-ux,"area:mcp",dx,living-map
+created_at: "2026-05-31T19:45:01.797Z"
+updated_at: "2026-05-31T19:45:01.797Z"
+author: maintainer-agent
+acceptance_criteria: pm_notes/pm_learnings/pm_deps added to TOOLS+HANDLERS with top-level id; instructions+docs+plugin tool counts updated; tests added.
+value: "notes/learnings/deps require pm_run with an action string, losing the ergonomic named-tool discoverability that pm_comments/pm_files/pm_docs have; notes/learnings are the primary agent self-documentation primitives."
+parent: pm-5k4v
+body: ""

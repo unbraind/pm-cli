@@ -1,0 +1,15 @@
+id: pm-mpbb
+title: "Capability: CLI command surface & agent ergonomics"
+description: "Evolve the CLI command surface and lifecycle primitives for agent and human ergonomics (bulk ops, query filters, hierarchy views, history diffs)"
+type: Epic
+status: open
+priority: 1
+tags[6]: agent-ux,"area:cli","area:lifecycle",backlog,living-map,pm-cli
+created_at: "2026-05-31T19:42:10.452Z"
+updated_at: "2026-05-31T19:42:10.452Z"
+author: maintainer-agent
+goal: project management = context management
+objective: "Evolve the CLI command surface and lifecycle primitives for agent and human ergonomics (bulk ops, query filters, hierarchy views, history diffs)"
+value: "Faster, safer agent/human workflows over the core item lifecycle"
+parent: pm-doxj
+body: ""

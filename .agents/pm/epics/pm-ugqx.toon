@@ -1,0 +1,15 @@
+id: pm-ugqx
+title: "Capability: Extension & package platform maturity"
+description: "Mature the extension/package platform: capability exemplars, version-compat, sandbox API surface, SDK testing helpers"
+type: Epic
+status: open
+priority: 1
+tags[6]: "area:extensions","area:packages","area:sdk",backlog,living-map,pm-cli
+created_at: "2026-05-31T19:42:11.928Z"
+updated_at: "2026-05-31T19:42:11.928Z"
+author: maintainer-agent
+goal: project management = context management
+objective: "Mature the extension/package platform: capability exemplars, version-compat, sandbox API surface, SDK testing helpers"
+value: A robust SDK that lets any project fully customize pm via packages
+parent: pm-doxj
+body: ""

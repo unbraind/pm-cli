@@ -1,0 +1,15 @@
+id: pm-5oj5
+title: "Capability: Observability, telemetry & health"
+description: "Improve observability: structured remediation, local telemetry analytics, validate --fix-hints, schema versioning"
+type: Epic
+status: open
+priority: 1
+tags[5]: "area:observability","area:telemetry",backlog,living-map,pm-cli
+created_at: "2026-05-31T19:42:12.693Z"
+updated_at: "2026-05-31T19:42:12.693Z"
+author: maintainer-agent
+goal: project management = context management
+objective: "Improve observability: structured remediation, local telemetry analytics, validate --fix-hints, schema versioning"
+value: "Actionable, privacy-preserving diagnostics for agents and operators"
+parent: pm-doxj
+body: ""

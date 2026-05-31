@@ -1,0 +1,15 @@
+id: pm-u9d0
+title: "Capability: Docs, onboarding, release & CI"
+description: "Keep docs/onboarding/release/CI healthy: onboarding guide, classifier docs, link-checking, changelog/release hygiene"
+type: Epic
+status: open
+priority: 1
+tags[6]: "area:ci","area:docs","area:release",backlog,living-map,pm-cli
+created_at: "2026-05-31T19:42:13.323Z"
+updated_at: "2026-05-31T19:42:13.323Z"
+author: maintainer-agent
+goal: project management = context management
+objective: "Keep docs/onboarding/release/CI healthy: onboarding guide, classifier docs, link-checking, changelog/release hygiene"
+value: Low-friction contribution and reliable releases
+parent: pm-doxj
+body: ""

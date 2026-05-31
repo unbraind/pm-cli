@@ -1,0 +1,23 @@
+id: pm-uid0
+title: "Verify living-map: hierarchy, dependencies & ADR coverage"
+description: "Verify the relationship graph and ADR coverage are sound per best-practice PM: (1) every capability epic has >=1 open child, (2) every open Feature/Story/Chore/Issue/Task parents to a real correctly-themed epic, (3) milestone pm-doxj roots the capability epics; (4) Story<->Feature dependency linkage; (5) ADR coverage vs real architecture."
+type: Task
+status: closed
+priority: 1
+tags[4]: audit,living-map,pm-cli,verification
+created_at: "2026-05-31T20:06:16.644Z"
+updated_at: "2026-05-31T20:26:23.218Z"
+author: verify-hierarchy-agent
+acceptance_criteria: Hierarchy issues flagged; missing dependency edges proposed; genuinely-missing ADRs proposed; verdict returned. No existing item modified.
+parent: pm-h31a
+resolution: Verification task completed during living-map closeout
+expected_result: The task checks its assigned living-map quality area and records whether any blocker remains before PR finalization.
+actual_result: "The closed Task 'Verify living-map: hierarchy, dependencies & ADR coverage' completed its verification pass and left no duplicate or hierarchy blocker for finalization."
+comments[2]{created_at,author,text}:
+  "2026-05-31T20:07:06.039Z",verify-hierarchy-agent,"Phase 1 (hierarchy) complete. All 8 capability epics (pm-mpbb/o2kc/ydp6/ugqx/5k4v/5oj5/8jdc/u9d0) parent to milestone pm-doxj — milestone IS the root. All 67 open backlog items have a parent that is one of the 8 capability epics; none orphaned. Children-per-epic: mpbb=11, o2kc=7, ydp6=10, ugqx=8, 5k4v=6, 5oj5=6, 8jdc=8, u9d0=7 — every epic has >=1 open child. Now checking thematic correctness + existing dependency edges."
+  "2026-05-31T20:07:52.844Z",verify-hierarchy-agent,"Phase 3 (dependencies): All 13 Stories ALREADY carry related-edges to their implementing Feature/Task/Chore (mt7k->qq69, 9mjw->i17g, 77t3->hywv, vhd9->1lkm, gbbn->d70h, ijd9->5vsv, 10ml->oh5h, sz6w->0hnu+6m3y, izsi->13bn+nf2q, arew->ec4s, g94b->puvn, ankr->y138, fhsg->22x2+7tsx, tnk5->cxdg). Story-level linkage is COMPLETE. Remaining gaps are Feature<->Feature / cross-item prerequisites not yet edged. Now reviewing ADRs."
+learnings[2]{created_at,author,text}:
+  "2026-05-31T20:09:17.992Z",verify-hierarchy-agent,"ADR coverage: 24 ADR-prefixed Decisions exist (all parent=None, NOT parented to pm-m2u1 — the ADR-log epic has zero linked children, so pm context/pm get pm-m2u1 won't surface them). Covered candidates: never-block(pm-bwlz), zod-validator(pm-u7xx), TOON(pm-rvbt), coverage-allowlist(pm-3cbk, pre-existing non-ADR Decision), metadata-profile(folded into governance-presets pm-ouvu). GENUINE gaps confirmed by code+dedup-search: (1) git-as-database/no-server one-file-per-item model — only format ADRs exist (rvbt/hg0k), not the foundational data-model decision; (2) short-ID scheme (src/core/item/id.ts: prefix + collision-checked random base36, 4->10 chars, fs-existence uniqueness); (3) startup-perf strategy (pre-built JS + lazy per-command imports + deps-external, only delivery items pm-gt82/t57d/ss1d exist)."
+  "2026-05-31T20:09:24.779Z",verify-hierarchy-agent,"Hierarchy is SOUND: pm-doxj milestone roots all 8 capability epics; all 67 open backlog items parent to a correctly-themed capability epic; every epic has >=1 open child. One soft issue: the 24 ADRs are parent=None instead of parented to ADR-log epic pm-m2u1, so the living-map epic is childless in the graph. Dependency Story->implementer linkage is COMPLETE (all 13 stories edged). Missing edges are item<->item prerequisites: exrw->nf2q (governance test needs declare-first), 4gw6<->nf2q (max/min version pair), 1h99<->i17g (shared explicit-ID bulk targeting), 0hnu<->6m3y (the two halves of remediation-map), mnee<->3pbq (stats informs when-to-compact), kfd8<->{bqpg,7m8p,13bn} (SDK test helpers cover the 3 exemplars)."
+close_reason: "Verification complete. Hierarchy SOUND (milestone pm-doxj roots 8 capability epics; all 67 open items correctly-themed-parented; every epic has open children). Story->implementer dependency linkage already COMPLETE (13/13). Proposed 9 missing item<->item prerequisite edges + 3 genuinely-missing ADRs (git-as-database model, short-ID scheme, startup-perf strategy). Flagged soft issue: 24 ADRs have parent=None, not linked to ADR-log epic pm-m2u1. No existing item modified."
+body: ""

@@ -1,0 +1,14 @@
+id: pm-qxwu
+title: "MCP TOOL_SCHEMA_BASE additionalProperties:true silently swallows typo'd top-level args"
+description: "All narrow tool schemas inherit additionalProperties:true; a typo like fullChangedField (missing s) is ignored with no error, so agents silently get default behavior."
+type: Issue
+status: open
+priority: 3
+tags[5]: agent-ux,"area:mcp",contracts,dx,living-map
+created_at: "2026-05-31T19:45:01.543Z"
+updated_at: "2026-05-31T19:45:01.543Z"
+author: maintainer-agent
+acceptance_criteria: "Either additionalProperties:false with a documented allow-list of known top-level keys, or a server-side warning on unexpected keys; a typo-arg test triggers warning/error; existing tests pass."
+value: "All narrow tool schemas inherit additionalProperties:true; a typo like fullChangedField (missing s) is ignored with no error, so agents silently get default behavior."
+parent: pm-5k4v
+body: ""

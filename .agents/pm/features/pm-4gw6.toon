@@ -1,0 +1,16 @@
+id: pm-4gw6
+title: Extension manifest pm_max_version (upper compatibility bound)
+description: pm_min_version sets a floor but no ceiling; a CLI major release removing a deprecated capability cannot block stale packages from crashing at activation. pm_max_version closes this.
+type: Feature
+status: open
+priority: 3
+tags[5]: "area:extensions","area:sdk",compat,dx,living-map
+created_at: "2026-05-31T19:44:25.419Z"
+updated_at: "2026-05-31T20:15:40.678Z"
+author: maintainer-agent
+acceptance_criteria: Optional pm_max_version parsed like pm_min_version; compatibility check covers both bounds; policy mode controls block vs warn; doctor surfaces a max-version-exceeded code; scaffold placeholder; loader tests.
+value: pm_min_version sets a floor but no ceiling; a CLI major release removing a deprecated capability cannot block stale packages from crashing at activation. pm_max_version closes this.
+parent: pm-ugqx
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-nf2q,related,"2026-05-31T20:10:00.000Z",maintainer-agent,null
+body: ""

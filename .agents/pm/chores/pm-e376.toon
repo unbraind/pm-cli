@@ -1,0 +1,14 @@
+id: pm-e376
+title: Clean up stale closed tracker-item references in docs/ header lines
+description: "Six docs files carry 'Tracked documentation work: pm-1sb2/pm-3042/pm-r9gu' header lines pointing to closed items, implying active tracking and confusing agents that orient on headers."
+type: Chore
+status: open
+priority: 3
+tags[4]: "area:docs",cleanup,hygiene,living-map
+created_at: "2026-05-31T19:45:42.689Z"
+updated_at: "2026-05-31T19:45:42.689Z"
+author: maintainer-agent
+acceptance_criteria: Remove or replace the stale header lines (point to the living docs epic); keep docs/README history refs marked as closed; build+docs-skills pass.
+value: "Six docs files carry 'Tracked documentation work: pm-1sb2/pm-3042/pm-r9gu' header lines pointing to closed items, implying active tracking and confusing agents that orient on headers."
+parent: pm-u9d0
+body: ""

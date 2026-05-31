@@ -1,0 +1,14 @@
+id: pm-0sqs
+title: Add AGENTS.md/README workflow-update checkbox to the PR template
+description: "The PR template lacks a reminder to update AGENTS.md/README workflow sections when new agent-facing commands/flags ship, so the agent quickstart drifts behind."
+type: Chore
+status: open
+priority: 3
+tags[5]: "area:ci","area:docs",contributor-ux,dx,living-map
+created_at: "2026-05-31T19:45:43.014Z"
+updated_at: "2026-05-31T19:45:43.014Z"
+author: maintainer-agent
+acceptance_criteria: Add a single non-blocking checklist item to PULL_REQUEST_TEMPLATE.md.
+value: "The PR template lacks a reminder to update AGENTS.md/README workflow sections when new agent-facing commands/flags ship, so the agent quickstart drifts behind."
+parent: pm-u9d0
+body: ""

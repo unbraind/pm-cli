@@ -1,0 +1,14 @@
+id: pm-22x2
+title: "Search relevance evaluation harness (golden queries, nDCG) for regression detection"
+description: No automated way to verify a ranking change improves/regresses quality. A golden-query fixture set scored via nDCG@5 gives a tuning feedback loop and catches regressions.
+type: Task
+status: open
+priority: 3
+tags[6]: "area:search",eval,living-map,quality,roadmap,testing
+created_at: "2026-05-31T19:44:24.148Z"
+updated_at: "2026-05-31T19:44:24.148Z"
+author: maintainer-agent
+acceptance_criteria: "tests/search-eval/ JSON fixtures {query,mode,expected_top_ids}; pm test --eval-search (or pm reindex --eval) scores nDCG@5 with per-fixture pass/fail; optional non-blocking CI gate; seeded with 10-20 real corpus queries."
+value: No automated way to verify a ranking change improves/regresses quality. A golden-query fixture set scored via nDCG@5 gives a tuning feedback loop and catches regressions.
+parent: pm-ydp6
+body: ""

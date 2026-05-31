@@ -1,0 +1,28 @@
+id: pm-n15j
+title: "Audit domain: Extensions, packages & SDK extension API"
+description: "Audit core/extensions, core/packages, loader, SDK extension API, the 8 packages (beads/calendar/governance-audit/guide-shell/linked-test-adapters/search-advanced/templates/todos), install/upgrade/extension/package commands, sandbox API surface (PRD roadmap)."
+type: Task
+status: closed
+priority: 1
+tags[6]: "area:extensions","area:packages","area:sdk",audit,living-map,pm-cli
+created_at: "2026-05-31T19:22:08.752Z"
+updated_at: "2026-05-31T20:26:16.731Z"
+author: maintainer-agent
+acceptance_criteria: "Domain audited read-only across code+docs+tests; existing pm coverage mapped via search; genuine gaps, forward work, improvements, ADRs, and agent/user stories proposed (dedup-checked); work-log + key decisions recorded in pm on this task."
+parent: pm-w7f2
+resolution: Verification task completed during living-map closeout
+expected_result: The task checks its assigned living-map quality area and records whether any blocker remains before PR finalization.
+actual_result: "The closed Task 'Audit domain: Extensions, packages & SDK extension API' completed its verification pass and left no duplicate or hierarchy blocker for finalization."
+comments[3]{created_at,author,text}:
+  "2026-05-31T19:25:02.178Z",audit-ext-agent,"Phase 1 complete: claimed task. Read loader.ts (2105 LOC), extension-types.ts (829 LOC), sdk/index.ts + testing.ts. Inventoried all 8 packages — all at 0.1.0, each with one extension under extensions/, all capabilities declared but none use 'hooks', 'importers', 'search', 'parser', or 'preflight' capabilities (only 'commands'/'schema'/'services'). All manifests missing pm_min_version, trusted, provenance, permissions fields. No sandbox_profile declared in any package manifest. Hand-maintained .js files present alongside .ts. Now reading package entry points and PRD.md."
+  "2026-05-31T19:28:10.719Z",audit-ext-agent,"Phase 2 complete: read all 8 package entry points. Findings: (1) ZERO first-party packages use hooks/importers/exporters/parser/preflight/search/vectorStore capabilities — only commands+schema+services. (2) No pm_min_version declared in any package manifest (version compat enforcement is one-sided: pm-cli enforces it at load time but no package declares it). (3) sandbox_profile absent from all 8 manifests (default_sandbox_profile=none). (4) pm-beads and pm-todos use an install-safe runtime-loader.ts pattern; others import directly. (5) All packages import SDK from src/ via relative path (../../../../src/sdk/index.js) — works in-tree but requires the hand-maintained .js companion to work when installed. (6) Scaffold is implemented (extension/scaffold.ts) for both extension and package modes. (7) No pm_max_version support (one-directional compat). (8) Real process-level sandbox enforcement is metadata-only (none/restricted/strict profiles declared but no actual vm.context/Worker isolation). Now checking docs and external gaps."
+  "2026-05-31T19:29:35.207Z",audit-ext-agent,"Phase 3 complete: cross-checked docs, PRD, existing pm items. Key synthesis: (1) Sandbox profiles none/restricted/strict are metadata-only — no Node.js vm.context/Worker isolation enforced at runtime. (2) pm_min_version missing from ALL 8 first-party manifests — enforcer exists but declarers don't use it. (3) No first-party package declares 'hooks', 'importers', 'search', 'parser', 'preflight' capabilities; the advanced API surfaces are documented but have zero first-party exemplar packages. (4) pm-beads and pm-todos use importers conceptually (via command approach, not registerImporter). (5) EXTENSIONS.md references pm-github as an example installable package (non-existent yet). (6) pm_max_version mechanism absent entirely. (7) manifest_version tracked in managed-state but no loading behavior gated on it. Dedup confirmed: all proposed items below are genuinely new — no open duplicates found. Wrapping up with files annotation then final report."
+learnings[1]{created_at,author,text}:
+  "2026-05-31T19:30:19.662Z",audit-ext-agent,"All 8 first-party packages are scope=commands+schema only; no package exercises hooks, importers, search/vector, parser, or preflight capabilities. These advanced API surfaces exist and are documented but have zero first-party exemplar packages — making them developer-experience dark matter for external authors. Priority gap: (1) pm_min_version not declared in any first-party manifest despite enforcer existing in loader; (2) sandbox profiles are metadata-only (no Node vm/Worker enforcement); (3) no pm_max_version mechanism; (4) beads/todos use registerCommand not registerImporter even though the semantic is 'import workflow'. pm-todos and pm-beads are natural candidates to add 'importers' capability as exemplars. pm-search-advanced is the natural candidate for 'search' capability exemplar (registerSearchProvider). pm-calendar/pm-guide-shell service overrides prove services capability works well in-tree."
+files[4]{path,scope,note}:
+  src/core/extensions/extension-policy.ts,project,null
+  src/core/extensions/extension-types.ts,project,null
+  src/core/extensions/loader.ts,project,null
+  src/sdk/index.ts,project,null
+close_reason: Domain audit complete; findings synthesized into the forward living map (open backlog) and ADR log; no duplicates created.
+body: ""

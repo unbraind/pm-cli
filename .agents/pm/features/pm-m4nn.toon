@@ -1,0 +1,14 @@
+id: pm-m4nn
+title: "pm copy <id>: clone an item to a new ID with optional title override"
+description: "Agents re-create same-shape items (recurring audits, template issues) by re-specifying all fields. pm copy clones non-lifecycle fields into a fresh open item."
+type: Feature
+status: open
+priority: 3
+tags[4]: agent-ux,"area:cli","area:lifecycle",living-map
+created_at: "2026-05-31T19:43:36.545Z"
+updated_at: "2026-05-31T19:43:36.545Z"
+author: maintainer-agent
+acceptance_criteria: "pm copy <id> [--title] [--status open] copies type/priority/desc/body/tags/parent/assignee/etc.; resets id/status/timestamps/close fields; history notes source; MCP contract."
+value: "Agents re-create same-shape items (recurring audits, template issues) by re-specifying all fields. pm copy clones non-lifecycle fields into a fresh open item."
+parent: pm-mpbb
+body: ""

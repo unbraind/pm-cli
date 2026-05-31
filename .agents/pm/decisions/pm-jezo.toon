@@ -1,0 +1,16 @@
+id: pm-jezo
+title: "ADR: Health checks are advisory vs blocking: telemetry_* never flips ok:false"
+description: "Health checks are advisory vs blocking: telemetry_* never flips ok:false"
+type: Decision
+status: closed
+priority: 2
+tags[4]: adr,architecture,"area:observability",health
+created_at: "2026-05-31T19:48:27.785Z"
+updated_at: "2026-05-31T20:26:13.183Z"
+author: maintainer-agent
+parent: pm-m2u1
+resolution: Accepted ADR recorded in living map
+expected_result: "The ADR captures a durable architecture or operating decision with context, consequences, and evidence for future agents."
+actual_result: "The closed Decision 'ADR: Health checks are advisory vs blocking: telemetry_* never flips ok:false' is recorded under the ADR living log and preserved as durable project context."
+close_reason: ADR recorded and accepted; architectural decision documented as durable context on 2026-05-31.
+body: "CONTEXT: agents gate automation on pm health --json .ok; telemetry queue/endpoint issues used to flip ok:false and block pipelines. DECISION: any warning code prefixed telemetry_ is advisory via isAdvisoryHealthWarning() — surfaced in warnings but excluded from the blocking set that drives ok; permanent policy. CONSEQUENCES: ok:true reliably means the tracker is functional; telemetry outages never cascade to blocked CI; a permanently-down endpoint needs explicit --check-telemetry monitoring (high-water-mark advisory). EVIDENCE: src/cli/commands/health.ts isAdvisoryHealthWarning/blockingWarnings; items pm-gmnh/pm-1lgy."

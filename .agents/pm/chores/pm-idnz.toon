@@ -1,0 +1,14 @@
+id: pm-idnz
+title: Track removal of TOON upstream bracket-bug workaround when upstream fix ships
+description: toon-decode.ts carries escapeBracketsInQuotedScalars to work around a known @toon-format/toon strict-decoder bug; extra code on the hot parse path with no watch item for the upstream fix.
+type: Chore
+status: open
+priority: 3
+tags[4]: "area:storage",dependencies,living-map,tech-debt
+created_at: "2026-05-31T19:43:39.093Z"
+updated_at: "2026-05-31T19:43:39.093Z"
+author: maintainer-agent
+acceptance_criteria: "Track the upstream issue/PR; on fix: upgrade dep, verify toon-decode.spec passes without the escape function, remove the workaround+retry branch; no parse-coverage regression."
+value: toon-decode.ts carries escapeBracketsInQuotedScalars to work around a known @toon-format/toon strict-decoder bug; extra code on the hot parse path with no watch item for the upstream fix.
+parent: pm-o2kc
+body: ""

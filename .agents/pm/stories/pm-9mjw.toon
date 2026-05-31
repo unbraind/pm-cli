@@ -1,0 +1,15 @@
+id: pm-9mjw
+title: "As a coding agent doing sprint closeout, I want to close all matched items in one audited command, so that I don't issue 20 individual closes or bypass close validation"
+description: "As a coding agent doing sprint closeout, I want to close all matched items in one audited command, so that I don't issue 20 individual closes or bypass close validation"
+type: Story
+status: open
+priority: 1
+tags[4]: agent-ux,"area:cli",living-map,story
+created_at: "2026-05-31T19:49:44.417Z"
+updated_at: "2026-05-31T19:49:44.417Z"
+author: maintainer-agent
+acceptance_criteria: close-many dry-run previews matches+reason; apply closes via runClose semantics with checkpoint+rollback; active-child orphan warnings per item
+parent: pm-mpbb
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-i17g,related,"2026-05-31T19:49:44.417Z",null,null
+body: ""

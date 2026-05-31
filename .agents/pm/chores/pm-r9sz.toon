@@ -1,0 +1,14 @@
+id: pm-r9sz
+title: Export PM_TOOL_PARAMETERS_SCHEMA_VERSION constant and bind all assertion sites
+description: Schema version '4.0.1' is a string literal in cli-contracts.ts plus two spec files; a bump needs 3 coordinated edits with no compile guard. A named export removes drift risk.
+type: Chore
+status: open
+priority: 3
+tags[5]: "area:contracts","area:sdk",code-quality,dx,living-map
+created_at: "2026-05-31T19:45:00.670Z"
+updated_at: "2026-05-31T19:45:00.670Z"
+author: maintainer-agent
+acceptance_criteria: Constant exported and imported by both spec files; grep for bare '4.0.1' outside the definition returns zero; CI passes.
+value: Schema version '4.0.1' is a string literal in cli-contracts.ts plus two spec files; a bump needs 3 coordinated edits with no compile guard. A named export removes drift risk.
+parent: pm-5k4v
+body: ""
