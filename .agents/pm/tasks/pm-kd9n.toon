@@ -6,12 +6,12 @@ status: in_progress
 priority: 0
 tags[7]: agents,audit,dogfood,package-first,performance,sdk,telemetry
 created_at: "2026-05-31T10:09:36.633Z"
-updated_at: "2026-05-31T11:39:55.395Z"
-assignee: codex-audit-20260531
+updated_at: "2026-05-31T18:29:39.767Z"
+assignee: codex-pr-review-followup
 author: codex-audit-20260531
 acceptance_criteria: "Changes are committed, pushed to a descriptive PR, AI review window is observed, valid feedback is addressed, checks are green, and main is verified after merge."
 parent: pm-59gj
-comments[16]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-05-31T10:09:36.633Z",codex-audit-20260531,"Duplicate check 2026-05-31: ran pm context, pm search for broad audit/sdk/ecosystem/agent UX/telemetry/external packages, pm list-open, and pm list-in-progress. No open or in-progress audit items existed. Reusing canonical package-first lineage pm-59gj; recent related children pm-qmx3 and pm-oxyo are closed, so this item tracks only the new latest-main 2026-05-31 pass."
   "2026-05-31T10:09:51.519Z",codex-audit-20260531,"Audit plan: bootstrap latest main and contracts; dogfood in isolated temp PM_PATH/PM_GLOBAL_PATH; inspect SDK/package authoring surfaces and external package install/upgrade; review agent low-token outputs and forgiving command contracts; scan docs/CI/dependencies/security/performance/telemetry/Sentry; implement the smallest durable fixes; link files/docs/tests; run local gates, push PR, wait for AI review, address valid feedback, and merge after green checks."
   "2026-05-31T10:22:10.184Z",codex-audit-20260531,"Evidence so far: bootstrapped latest main c5a86254 with npm install -g ., pm --version 2026.5.31, Node v25.9.0, pnpm 10.33.4, and pnpm build. Required pm orientation found no open/in-progress duplicates; created child under pm-59gj. Bundled package-first dogfood passed 84 commands; semantic dogfood passed 86 commands with qwen3-embedding:0.6b. Repo health brief passed; validate history drift passed with only legacy closed-item resolution warnings. External npm package sweep installed 15 official pm-package packages successfully and exposed pm-starter/pm-ts-starter preflight/renderer collisions; patched doctor and health triage to emit package names plus deactivate/policy remediation, with focused tests passing 90/90."
@@ -28,8 +28,17 @@ comments[16]{created_at,author,text}:
   "2026-05-31T10:46:39.575Z",agent-ux-contract-review-20260531,"Final agent-ux-contract-review: read-only review completed aside from requested pm comments. Side effect: typo probes for create unexpectedly created pm-crpv/pm-lql3/pm-11ag because bootstrap typo-normalization silently rewrites misspelled mutating flags; lead cleanup closed them as invalid. Findings: High - src/cli/bootstrap-args.ts:432-480,502-528,679-735 plus tests/integration/help-runtime.spec.ts:218-228 silently autocorrect create flag typos such as --titel/--titl to --title and writes items with no warning; make typo rewrites advisory/visible for mutating commands, or require explicit retry/acceptance and include normalization_events in output/history. High - src/cli/commands/contracts.ts:318-359,1533-1564,1648-1754 and src/sdk/cli-contracts.ts:1122-1230 advertise action command_path values like package install/extension doctor but pm contracts --command \"package install\" --flags-only --json rejects them; accept advertised command paths/action names and return subcommand-specific flags. Medium - pm contracts --command calendar --availability-only --runtime-only --json exits 2 instead of a nonblocking availability=false optional-package record; synthesize package availability with install_command for availability-only. Medium - pm calendar --help text emits full root help before unknown-command guidance; intercept unknown help paths before commander writes root help. Medium - pm get default is deep/unbounded and duplicates linked metadata (src/cli/commands/get.ts:82-99,225-239; src/cli/register-list-query.ts:277-281); default to brief/standard and require --full for comments/body/deep links. Medium - invalid-value retry examples can rewrite the wrong flag because provided fields are sorted (src/cli/argv-utils.ts:17-26, src/cli/error-guidance.ts:285-299); pm list --sort upd --limit 1 suggests --limit priority. Commands sampled include context/list/get/search/health/package/extension help, contracts flags/schema/availability, optional command help, and invalid option/value paths."
   "2026-05-31T11:17:33.963Z",codex-audit-20260531,"Evidence update 2026-05-31 final local gates: pnpm build passed; pnpm typecheck passed; focused regression suite passed 175/175; coverage passed 135 files and 2063/2063 tests with 100 percent instrumented coverage; bundled package-first dogfood passed 87 commands including generated package scaffold install/run; semantic dogfood passed 89 commands with qwen3-embedding:0.6b; check-secrets passed; pnpm audit --audit-level moderate found no vulnerabilities; docs-skills gate passed; static-quality gate passed; git diff --check passed; pm health --check-only --brief --json ok with telemetry queue healthy and recent flush; pm validate history drift ok with only 29 pre-existing closed-item resolution warnings; Sentry/telemetry gate passed with zero critical/high Sentry issues and required telemetry finish error rate 1.29 percent; telemetry stack health showed all core services healthy, queue depth 0, and 7407 events in the last 24h. External npm registry sweep after final build found 15 first-party pm-package packages and installed all 15 in an initialized temp project with failed=0; package doctor reported only pm-starter/pm-ts-starter preflight and json renderer single-winner collisions with the new package-named remediation."
   "2026-05-31T11:39:55.395Z",codex-audit-20260531,"PR review response: addressed Gemini and Sourcery suggestions by table-driving core command flag contract lookup, centralizing registration collision warning parsing, adding y-to-ies list alias candidate handling with coverage, defensively formatting typo trace events, and allowing telemetry query commands to execute directly unless they are .sh scripts. Addressed CodeRabbit valid findings by switching Sentry fallback to the modern sentry issue list executable and canceling accidental probe items so changelog generation ignores invalid tracker noise. Skipped CodeRabbit's .agents/pm removal suggestion because these tracker files were produced through pm commands, not direct edits, and are required project-management evidence for this audit."
+  "2026-05-31T18:29:39.767Z",codex-pr-review-followup,"Evidence: addressed latest PR review feedback after commit 94152f83. Fixes include required telemetry missing-command failure, explicit retry recovery preservation, mutating operation typo guards for claim/release/start/pause/close/test, subcommand-aware package catalog list-flag coalescing, package/packages lifecycle contract aliases, optional package action availability for direct --action calendar, root templates/test-runs command-to-action mapping, and truncated plural flags staying in the typo path. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-automation-contract.spec.ts (127/127); node scripts/run-tests.mjs coverage (135 files, 2068/2068 tests, 100% coverage); git diff --check; node scripts/check-secrets.mjs; pm validate --check-resolution --check-history-drift ok with only 29 pre-existing closed-item resolution warnings and history drift ok."
 files[30]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,avoid Sentry cache in free CI
+  .github/workflows/ci.yml,project,avoid Sentry cache in PR CI
+  .github/workflows/nightly.yml,project,avoid Sentry cache in nightly CI
+  .github/workflows/release.yml,project,require Sentry token for releases
+  scripts/dogfood-package-first.mjs,project,package scaffold install dogfood
+  scripts/release/run-gates.mjs,project,stricter Sentry release thresholds
+  scripts/release/sentry-telemetry-gate.mjs,project,portable telemetry command and sentry-cli fallback
   src/cli/argv-utils.ts,project,preserve flag order for retry guidance
+  src/cli/bootstrap-args.ts,project,classify singular list aliases separately from typos
   src/cli/commands/contracts.ts,project,nested package contracts and optional availability
   src/cli/commands/extension/doctor.ts,project,actionable package/extension collision remediation
   src/cli/commands/extension/scaffold.ts,project,installable package scaffold shape
@@ -40,31 +49,24 @@ files[30]{path,scope,note}:
   src/cli/register-list-query.ts,project,get help default projection
   src/core/extensions/loader.ts,project,structured collision warnings for handler/override overlaps
   src/sdk/cli-contracts.ts,project,subcommand flag and schema contracts
-  tests/unit/extension-command.spec.ts,project,package doctor collision remediation regression coverage
-  tests/unit/health-command.spec.ts,project,health collision remediation regression coverage
-  .github/workflows/auto-release.yml,project,avoid Sentry cache in free CI
-  .github/workflows/ci.yml,project,avoid Sentry cache in PR CI
-  .github/workflows/nightly.yml,project,avoid Sentry cache in nightly CI
-  .github/workflows/release.yml,project,require Sentry token for releases
-  scripts/dogfood-package-first.mjs,project,package scaffold install dogfood
-  scripts/release/run-gates.mjs,project,stricter Sentry release thresholds
-  scripts/release/sentry-telemetry-gate.mjs,project,portable telemetry command and sentry-cli fallback
-  tests/unit/contracts-command.spec.ts,project,nested contract and optional availability coverage
-  tests/unit/get-append-command.spec.ts,project,get standard projection regression
-  tests/integration/help-runtime.spec.ts,project,mutating typo and subcommand help coverage
   tests/integration/ci-workflow-contract.spec.ts,project,CI cache contract coverage
-  tests/integration/release-automation-contract.spec.ts,project,release gate contract coverage
-  src/cli/bootstrap-args.ts,project,classify singular list aliases separately from typos
+  tests/integration/help-runtime.spec.ts,project,mutating typo and subcommand help coverage
   tests/integration/list-flag-accumulation.integration.spec.ts,project,singular list alias regression coverage
+  tests/integration/release-automation-contract.spec.ts,project,release gate contract coverage
   tests/unit/beads-command.spec.ts,project,full projection assertions after get default change
-  tests/unit/update-many-command.spec.ts,project,full projection helper for linked tests
   tests/unit/bootstrap-args.spec.ts,project,review coverage for list alias pluralization
-tests[14]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/contracts-command.spec.ts,project,nested contract and optional availability coverage
+  tests/unit/extension-command.spec.ts,project,package doctor collision remediation regression coverage
+  tests/unit/get-append-command.spec.ts,project,get standard projection regression
+  tests/unit/health-command.spec.ts,project,health collision remediation regression coverage
+  tests/unit/update-many-command.spec.ts,project,full projection helper for linked tests
+tests[15]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/check-secrets.mjs,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/release/docs-skills-gate.mjs --json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/release/static-quality-gate.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/integration/list-flag-accumulation.integration.spec.ts tests/unit/beads-command.spec.ts tests/unit/update-many-command.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/contracts-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,focused PR review regression suite
   node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/contracts-command.spec.ts tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts tests/integration/release-automation-contract.spec.ts tests/integration/help-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,focused collision remediation tests
   node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/health-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/get-append-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/ci-workflow-contract.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null

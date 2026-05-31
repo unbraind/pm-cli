@@ -111,6 +111,8 @@ describe("release automation contract", () => {
     expect(gateSource).toContain("function buildTelemetryCommandInvocation");
     expect(gateSource).toContain('commandPath.endsWith(".sh")');
     expect(gateSource).toContain("telemetryInvocation.command");
+    expect(gateSource).toContain('telemetryMode === "required" && !telemetryCommandPath');
+    expect(gateSource).toContain("telemetry_query_command_missing");
     expect(gateSource).not.toContain('runCommand(\n          "bash",\n          [telemetryCommandPath');
   });
 

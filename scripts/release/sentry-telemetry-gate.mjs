@@ -376,6 +376,9 @@ async function main() {
   };
 
   if (telemetryMode !== "off") {
+    if (telemetryMode === "required" && !telemetryCommandPath) {
+      fail("telemetry_query_command_missing: set --telemetry-command or PM_TELEMETRY_QUERY_COMMAND to a private/local telemetry query adapter");
+    }
     const telemetryInvocation = telemetryCommandPath
       ? buildTelemetryCommandInvocation(telemetryCommandPath, telemetryDays)
       : null;

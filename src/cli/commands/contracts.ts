@@ -310,6 +310,30 @@ const PACKAGE_OWNED_COMMAND_INSTALL_HINTS = new Map<string, string>([
   ["test-runs resume", "linked-test-adapters"],
 ]);
 
+const PACKAGE_OWNED_ACTION_COMMAND_PATHS = new Map<string, string>([
+  ["calendar", "calendar|cal"],
+  ["dedupe-audit", "dedupe-audit"],
+  ["guide", "guide"],
+  ["reindex", "reindex"],
+  ["normalize", "normalize"],
+  ["comments-audit", "comments-audit"],
+  ["completion", "completion"],
+  ["test-runs-list", "test-runs|test-runs list"],
+  ["test-runs-status", "test-runs status"],
+  ["test-runs-logs", "test-runs logs"],
+  ["test-runs-stop", "test-runs stop"],
+  ["test-runs-resume", "test-runs resume"],
+  ["templates-list", "templates|templates list"],
+  ["templates-save", "templates save"],
+  ["templates-show", "templates show"],
+]);
+
+const PACKAGE_OWNED_COMMAND_ACTIONS = new Map(
+  [...PACKAGE_OWNED_ACTION_COMMAND_PATHS.entries()].flatMap(([action, commandPaths]) =>
+    splitCommandPathAliases(commandPaths).map((commandPath) => [commandPath, action] as const),
+  ),
+);
+
 const CANONICAL_COMMAND_ALIASES: CommandAliasSurface[] = [
   {
     canonical: "context",
@@ -346,6 +370,7 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<readonly [string, CliFlagContrac
   ...EXTENSION_PACKAGE_LIFECYCLE_FLAG_CONTRACTS.flatMap(([subcommand, flags]) => [
     [`extension ${subcommand}`, flags] as const,
     [`package ${subcommand}`, flags] as const,
+    [`packages ${subcommand}`, flags] as const,
   ]),
   ["init", INIT_FLAG_CONTRACTS],
   ["config", CONFIG_FLAG_CONTRACTS],
@@ -404,6 +429,10 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<readonly [string, CliFlagContrac
 const CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND = new Map(CORE_COMMAND_FLAG_CONTRACT_ENTRIES);
 
 function packageOwnedActionForCommand(command: string): string {
+  const exactAction = PACKAGE_OWNED_COMMAND_ACTIONS.get(command);
+  if (exactAction) {
+    return exactAction;
+  }
   if (command.startsWith("test-runs ")) {
     return `test-runs-${command.slice("test-runs ".length)}`;
   }
@@ -440,7 +469,7 @@ function resolveActionCommandPath(action: PmToolAction): string | null {
     );
   }
   if (PACKAGE_OWNED_ACTIONS.has(action)) {
-    return normalizeCommandPath(action);
+    return PACKAGE_OWNED_ACTION_COMMAND_PATHS.get(action) ?? normalizeCommandPath(action);
   }
   return null;
 }
@@ -1051,6 +1080,19 @@ function collectActionContractDescriptors(
       command_path: commandPath,
     });
   }
+  if (options.includePackageOwnedActions) {
+    for (const action of PACKAGE_OWNED_ACTIONS) {
+      if (descriptors.has(action)) {
+        continue;
+      }
+      descriptors.set(action, {
+        action,
+        provider: "extension",
+        requires_extension: true,
+        command_path: resolveActionCommandPath(action as PmToolAction),
+      });
+    }
+  }
   for (const contract of extensionContracts) {
     if (descriptors.has(contract.action)) {
       continue;
@@ -1483,7 +1525,7 @@ export async function runContracts(
     runtimeProbe.flagRegistrations,
   );
   const includePackageOwnedActions =
-    (selectedAction !== undefined && PACKAGE_OWNED_ACTIONS.has(selectedAction)) ||
+    (selectedAction !== undefined && PACKAGE_OWNED_ACTIONS.has(selectedAction) && availabilityOnly) ||
     (selectedCommand !== undefined && PACKAGE_OWNED_COMMANDS.has(selectedCommand) && availabilityOnly);
   const actionDescriptors =
     collectActionContractDescriptors(mergedExtensionContracts, { includePackageOwnedActions });
@@ -1511,6 +1553,9 @@ export async function runContracts(
   const commandCatalog = [
     ...new Set([
       ...PM_CORE_COMMAND_NAMES.filter(
+        (entry) => !PACKAGE_OWNED_COMMANDS.has(entry),
+      ),
+      ...[...CORE_COMMAND_FLAG_CONTRACTS_BY_COMMAND.keys()].filter(
         (entry) => !PACKAGE_OWNED_COMMANDS.has(entry),
       ),
       ...actionDescriptors.flatMap((entry) =>
@@ -1543,9 +1588,14 @@ export async function runContracts(
       EXIT_CODE.USAGE,
     );
   }
+  const selectedPackageOwnedAction = selectedCommand
+    ? PACKAGE_OWNED_COMMAND_ACTIONS.get(selectedCommand)
+    : undefined;
   const commandScopedDescriptors = selectedCommand
     ? actionDescriptors.filter((descriptor) =>
-        actionDescriptorMatchesSelectedCommand(descriptor, selectedCommand),
+        selectedPackageOwnedAction
+          ? descriptor.action === selectedPackageOwnedAction
+          : actionDescriptorMatchesSelectedCommand(descriptor, selectedCommand),
       )
     : actionDescriptors;
   if (
@@ -1595,14 +1645,21 @@ export async function runContracts(
         (descriptor) => descriptor.action === selectedAction,
       )
     : commandScopedDescriptors;
-  const allActionAvailability = scopedActionDescriptors.map((descriptor) =>
-    resolveActionAvailability(descriptor, runtimeProbe),
-  );
+  const allActionAvailability = [
+    ...new Map(
+      scopedActionDescriptors
+        .map((descriptor) => resolveActionAvailability(descriptor, runtimeProbe))
+        .map((entry) => [
+          selectedPackageOwnedAction ? entry.action : `${entry.action}|${entry.command_path ?? ""}`,
+          entry,
+        ] as const),
+    ).values(),
+  ];
   const actionAvailability =
     runtimeOnly && !selectedAction && !availabilityOnly
       ? allActionAvailability.filter((entry) => entry.invocable)
       : allActionAvailability;
-  const actions = actionAvailability.map((entry) => entry.action);
+  const actions = [...new Set(actionAvailability.map((entry) => entry.action))];
   const descriptorActionSet = new Set(
     actionDescriptors.map((descriptor) => descriptor.action),
   );

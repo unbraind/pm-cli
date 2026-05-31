@@ -229,6 +229,21 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("requires an explicit retry for operation-family mutating flag typos", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "--title", "Claim typo probe", "--type", "Task", "--json"], {
+        expectJson: true,
+      });
+      const id = (created.json as { item: { id: string } }).item.id;
+      const result = context.runCli(["claim", id, "--autor", "integration-test", "--json"]);
+      expect(result.code).toBe(2);
+      const envelope = parseJsonErrorEnvelope(result.stderr);
+      expect(envelope.code).toBe("mutating_flag_typo_requires_retry");
+      expect(envelope.recovery?.suggested_retry).toContain("--author");
+      expect(envelope.recovery?.normalized_args).toEqual(expect.arrayContaining(["--author"]));
+    });
+  });
+
   it("refuses pm create <type> with no title when the positional matches a known type (pm-edge #1)", async () => {
     // pm-edge #1 (2026-05-28): when the sole positional matches a known item
     // type AND no --title is provided, refuse with helpful guidance instead

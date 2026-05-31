@@ -330,7 +330,7 @@ function buildPmCliRecoveryContext(
   if (!suggestedRetry) {
     suggestedRetry = attemptedCommand;
   }
-  if (suggestedRetry === attemptedCommand) {
+  if (!existingRecovery?.suggested_retry && suggestedRetry === attemptedCommand) {
     suggestedRetry = undefined;
   }
   const recovery: PmCliErrorRecoveryPayload = {
@@ -1797,6 +1797,14 @@ const OPERATION_COMMAND_NAMES = new Set([
   "test-runs-worker",
   "validate",
 ]);
+const MUTATING_OPERATION_COMMAND_NAMES = new Set([
+  "claim",
+  "close-task",
+  "pause-task",
+  "release",
+  "start-task",
+  "test",
+]);
 interface CoreCommandRegistrationSelection {
   setup: boolean;
   listQuery: boolean;
@@ -1972,7 +1980,11 @@ function enforceExplicitRetryForMutatingFlagTypos(
   bootstrapInvocation: ReturnType<typeof normalizeBootstrapInvocation>,
 ): void {
   const commandName = bootstrapInvocation.commandName;
-  if (!commandName || !MUTATION_COMMAND_NAMES.has(commandName)) {
+  if (
+    !commandName ||
+    (!MUTATION_COMMAND_NAMES.has(commandName) &&
+      !MUTATING_OPERATION_COMMAND_NAMES.has(commandName))
+  ) {
     return;
   }
   const typoEvent = bootstrapInvocation.trace.find((entry) => entry.reason === "flag_typo");
