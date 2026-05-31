@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -8,6 +8,7 @@ import {
   runCalendar,
   type CalendarOptions,
 } from "../../src/cli/commands/calendar.js";
+import { parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -77,6 +78,17 @@ function createCalendarItem(
   const result = context.runCli(createArgs, { expectJson: true });
   expect(result.code).toBe(0);
   return (result.json as { item: { id: string } }).item.id;
+}
+
+async function rewriteFirstEventExdates(context: TempPmContext, itemId: string, exdates: string[]): Promise<void> {
+  const itemPath = path.join(context.pmPath, "tasks", `${itemId}.toon`);
+  const document = parseItemDocument(await readFile(itemPath, "utf8"), { format: "toon" });
+  const firstEvent = document.metadata.events?.[0];
+  if (!firstEvent?.recurrence) {
+    throw new Error(`Expected ${itemId} to have a recurring event`);
+  }
+  firstEvent.recurrence.exdates = exdates;
+  await writeFile(itemPath, serializeItemDocument(document, { format: "toon" }), "utf8");
 }
 
 describe("calendar command module", () => {
@@ -195,6 +207,11 @@ describe("calendar command module", () => {
       expect(repeatedViews.stderr).toContain("received: agenda, day");
       expect(repeatedViews.stderr).toContain("pm calendar agenda");
 
+      const help = context.runCli(["calendar", "--help"]);
+      expect(help.code).toBe(0);
+      expect(help.stdout).toContain("stored recur_count starts at series start");
+      expect(help.stdout).toContain("not the query window");
+
       const contracts = context.runCli(
         ["contracts", "--action", "calendar", "--runtime-only", "--schema-only", "--json"],
         { expectJson: true },
@@ -210,6 +227,16 @@ describe("calendar command module", () => {
           }),
         ],
       });
+      const contractPayload = contracts.json as {
+        extension_commands?: Array<{
+          command?: string;
+          flags?: Array<{ flag?: string; description?: string }>;
+        }>;
+      };
+      const calendarContract = contractPayload.extension_commands?.find((entry) => entry.command === "calendar");
+      const occurrenceLimit = calendarContract?.flags?.find((flag) => flag.flag === "--occurrence-limit");
+      expect(occurrenceLimit?.description).toContain("stored recur_count starts at series start");
+      expect(occurrenceLimit?.description).toContain("not the query window");
     });
   });
 
@@ -254,6 +281,72 @@ describe("calendar command module", () => {
       const markdown = renderCalendarMarkdown(result);
       expect(markdown).toContain("[event]");
       expect(markdown).toContain("(recurring)");
+    });
+  });
+
+  it("excludes recurring occurrences by instant across common ISO spellings", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createCalendarItem(context, {
+        title: "Daily standup seed",
+        tags: "calendar,recurrence-exdate-instant",
+        events: ["start=2026-04-01T09:00:00.000Z,title=Daily standup,recur_freq=daily,recur_count=5"],
+      });
+      await rewriteFirstEventExdates(context, itemId, [
+        "2026-04-02T09:00:00Z",
+        "2026-04-03T09:00:00.000+00:00",
+      ]);
+
+      const result = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-01T00:00:00.000Z",
+          to: "2026-04-06T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-exdate-instant",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.events.map((event) => event.at)).toEqual([
+        "2026-04-01T09:00:00.000Z",
+        "2026-04-04T09:00:00.000Z",
+        "2026-04-05T09:00:00.000Z",
+      ]);
+      expect(renderCalendarMarkdown(result)).toContain("exdates=2026-04-02T09:00:00Z|2026-04-03T09:00:00.000+00:00");
+    });
+  });
+
+  it("keeps recurrence count anchored to the series start instead of the query window", async () => {
+    await withTempPmPath(async (context) => {
+      createCalendarItem(context, {
+        title: "Three-session clinic seed",
+        tags: "calendar,recurrence-count-window",
+        events: ["start=2026-04-01T15:00:00.000Z,title=Clinic visit,recur_freq=daily,recur_count=3"],
+      });
+
+      const afterCountWindow = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-10T00:00:00.000Z",
+          to: "2026-04-13T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-count-window",
+        },
+        { path: context.pmPath },
+      );
+      expect(afterCountWindow.events).toHaveLength(0);
+
+      const finalCountedOccurrence = await runCalendar(
+        {
+          view: "agenda",
+          from: "2026-04-03T00:00:00.000Z",
+          to: "2026-04-04T00:00:00.000Z",
+          include: "events",
+          tag: "recurrence-count-window",
+        },
+        { path: context.pmPath },
+      );
+      expect(finalCountedOccurrence.events.map((event) => event.at)).toEqual(["2026-04-03T15:00:00.000Z"]);
     });
   });
 

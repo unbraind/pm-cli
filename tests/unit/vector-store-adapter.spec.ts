@@ -9,6 +9,7 @@ import {
   buildVectorUpsertPlan,
   executeVectorDelete,
   executeVectorQuery,
+  executeVectorReset,
   executeVectorUpsert,
   resolveVectorStoreRequestTarget,
   resolveVectorStores,
@@ -980,6 +981,154 @@ describe("executeVectorDelete", () => {
       },
     ]);
     expect(result).toEqual({ status: "acknowledged" });
+  });
+
+  it("resets remote vector stores by deleting known ids", async () => {
+    const calls: Array<{ url: string; body: string }> = [];
+    const result = await executeVectorReset(
+      {
+        name: "qdrant",
+        url: "https://qdrant.example.test",
+      },
+      [" pm-reset-b ", "", "pm-reset-a"],
+      {
+        fetcher: async (url, init) => {
+          calls.push({ url, body: init.body });
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({ result: { status: "deleted" } }),
+            text: async () => "",
+          };
+        },
+      },
+    );
+
+    expect(calls).toEqual([
+      {
+        url: "https://qdrant.example.test/collections/pm_items/points/delete?wait=true",
+        body: JSON.stringify({
+          points: ["pm-reset-a", "pm-reset-b"],
+        }),
+      },
+    ]);
+    expect(result).toEqual({ status: "deleted" });
+  });
+
+  it("recreates Qdrant collections when reset is given a new vector dimension", async () => {
+    const calls: Array<{ url: string; method: string; body: string }> = [];
+    const result = await executeVectorReset(
+      {
+        name: "qdrant",
+        url: "https://qdrant.example.test",
+        api_key: "reset-key",
+      },
+      ["pm-old"],
+      {
+        fetcher: async (url, init) => {
+          calls.push({ url, method: init.method, body: init.body });
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({ status: init.method === "PUT" ? "created" : "deleted" }),
+            text: async () => "",
+          };
+        },
+      },
+      3,
+    );
+
+    expect(calls).toEqual([
+      {
+        url: "https://qdrant.example.test/collections/pm_items",
+        method: "DELETE",
+        body: JSON.stringify({}),
+      },
+      {
+        url: "https://qdrant.example.test/collections/pm_items",
+        method: "PUT",
+        body: JSON.stringify({
+          vectors: {
+            size: 3,
+            distance: "Cosine",
+          },
+        }),
+      },
+    ]);
+    expect(result).toEqual({ status: "created" });
+  });
+
+  it("normalizes Qdrant collection reset edge cases", async () => {
+    await expect(
+      executeVectorReset(
+        {
+          name: "qdrant",
+          url: "https://qdrant.example.test",
+        },
+        [],
+        {},
+        0,
+      ),
+    ).rejects.toThrow("Vector reset dimension must be a positive integer when provided");
+
+    const notFoundCalls: string[] = [];
+    await expect(
+      executeVectorReset(
+        {
+          name: "qdrant",
+          url: "https://qdrant.example.test",
+        },
+        [],
+        {
+          fetcher: async (url, init) => {
+            notFoundCalls.push(`${init.method}:${url}`);
+            if (init.method === "DELETE") {
+              return {
+                ok: false,
+                status: 404,
+                statusText: "Not Found",
+                json: async () => ({}),
+                text: async () => "",
+              };
+            }
+            return {
+              ok: true,
+              status: 200,
+              statusText: "OK",
+              json: async () => ({ status: "created" }),
+              text: async () => "",
+            };
+          },
+        },
+        2,
+      ),
+    ).resolves.toEqual({ status: "created" });
+    expect(notFoundCalls).toEqual([
+      "DELETE:https://qdrant.example.test/collections/pm_items",
+      "PUT:https://qdrant.example.test/collections/pm_items",
+    ]);
+
+    await expect(
+      executeVectorReset(
+        {
+          name: "qdrant",
+          url: "https://qdrant.example.test",
+        },
+        [],
+        {
+          fetcher: async () => ({
+            ok: false,
+            status: 500,
+            statusText: "Internal Server Error",
+            json: async () => ({}),
+            text: async () => "reset failed",
+          }),
+        },
+        2,
+      ),
+    ).rejects.toThrow("Vector delete request failed with status 500 Internal Server Error: reset failed");
   });
 
   it("supports LanceDB local deletion and normalizes remote failures", async () => {

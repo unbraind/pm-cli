@@ -383,6 +383,22 @@ function weekdayToken(timestamp: string): (typeof UTC_DAY_TO_WEEKDAY)[number] {
   return UTC_DAY_TO_WEEKDAY[new Date(timestamp).getUTCDay()];
 }
 
+function normalizeInstantKey(timestamp: string): string | null {
+  const parsed = Date.parse(timestamp);
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
+}
+
+function buildExcludedInstantSet(exdates: readonly string[] | undefined): Set<string> {
+  const excluded = new Set<string>();
+  for (const exdate of exdates ?? []) {
+    const instantKey = normalizeInstantKey(exdate);
+    if (instantKey) {
+      excluded.add(instantKey);
+    }
+  }
+  return excluded;
+}
+
 function buildRecurringEventWindow(
   start: string | undefined,
   end: string | undefined,
@@ -408,7 +424,7 @@ function expandRecurringOccurrences(
   const interval = recurrence.interval ?? 1;
   const countLimit = recurrence.count ?? Number.POSITIVE_INFINITY;
   const until = recurrence.until;
-  const excluded = new Set(recurrence.exdates ?? []);
+  const excluded = buildExcludedInstantSet(recurrence.exdates);
   const recurrenceWeekdays =
     recurrence.by_weekday && recurrence.by_weekday.length > 0 ? [...recurrence.by_weekday] : [weekdayToken(startAt)];
   const recurrenceMonthDays =

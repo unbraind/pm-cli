@@ -31,7 +31,7 @@ interface InferTelemetryErrorCodeParams {
   exitCode?: number;
 }
 
-const SETUP_ROOT_COMMANDS = new Set(["init", "config", "completion", "completion-tags"]);
+const SETUP_ROOT_COMMANDS = new Set(["init", "config", "completion", "completion-statuses", "completion-tags", "completion-types"]);
 const QUERY_ROOT_COMMANDS = new Set([
   "list",
   "list-all",

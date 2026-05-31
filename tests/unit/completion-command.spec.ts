@@ -388,17 +388,29 @@ describe("generateBashScript", () => {
   it("uses lazy dynamic tag completion by default and supports eager mode", () => {
     const lazyBash = generateBashScript();
     expect(lazyBash).toContain("pm completion-tags");
+    expect(lazyBash).toContain("pm completion-statuses");
+    expect(lazyBash).toContain("pm completion-types");
 
     const eagerBash = generateBashScript(["Task"], [], true);
     expect(eagerBash).not.toContain("pm completion-tags");
+    expect(eagerBash).toContain("pm completion-statuses");
+    expect(eagerBash).not.toContain("pm completion-types");
 
     const lazyZsh = generateZshScript();
     expect(lazyZsh).toContain("_pm_tag_choices()");
+    expect(lazyZsh).toContain("_pm_status_choices()");
+    expect(lazyZsh).toContain("_pm_type_choices()");
     expect(lazyZsh).toContain("pm completion-tags");
+    expect(lazyZsh).toContain("pm completion-statuses");
+    expect(lazyZsh).toContain("pm completion-types");
 
     const lazyFish = generateFishScript();
     expect(lazyFish).toContain("function __pm_tag_choices");
+    expect(lazyFish).toContain("function __pm_status_choices");
+    expect(lazyFish).toContain("function __pm_type_choices");
     expect(lazyFish).toContain("pm completion-tags");
+    expect(lazyFish).toContain("pm completion-statuses");
+    expect(lazyFish).toContain("pm completion-types");
   });
 
   it("includes context-specific flags", () => {
@@ -866,8 +878,9 @@ describe("runCompletion", () => {
     }
   });
 
-  it("applies runtime statuses and schema field flags for zsh and fish", () => {
+  it("applies runtime statuses, item types, and schema field flags for generated scripts", () => {
     const runtime = {
+      item_types: ["Bug", "Task"],
       statuses: ["qa_review", "draft"],
       command_flags: {
         list: ["--customer_segment", "--alpha_segment"],
@@ -875,8 +888,20 @@ describe("runCompletion", () => {
       },
     } satisfies CompletionRuntimeConfig;
 
+    const bashResult = runCompletion("bash", [], [], false, runtime);
+    expect(bashResult.script).toContain("pm completion-statuses");
+    expect(bashResult.script).toContain("pm completion-types");
+    expect(bashResult.script).toContain('resolved="Bug Task"');
+    expect(bashResult.script).toContain('resolved="draft qa_review"');
+    expect(bashResult.script).toContain('compgen -W "$(_pm_completion_status_choices)"');
+    expect(bashResult.script).toContain('compgen -W "$(_pm_completion_type_choices)"');
+
     const zshResult = runCompletion("zsh", ["Task"], [], false, runtime);
-    expect(zshResult.script).toContain("--status[Filter by status]:(draft qa_review)");
+    expect(zshResult.script).toContain("_pm_status_choices()");
+    expect(zshResult.script).toContain("pm completion-statuses");
+    expect(zshResult.script).toContain('resolved="draft qa_review"');
+    expect(zshResult.script).toContain('--status[Filter by status]:(${(f)"$(_pm_status_choices)"})');
+    expect(zshResult.script).not.toContain("_pm_type_choices()");
     const alphaFlagIndex = zshResult.script.indexOf("--alpha-segment[Runtime schema field flag]:value");
     const customerFlagIndex = zshResult.script.indexOf("--customer-segment[Runtime schema field flag]:value");
     expect(alphaFlagIndex).toBeGreaterThan(-1);
@@ -885,7 +910,11 @@ describe("runCompletion", () => {
     expect(zshResult.script).toContain("--customer-segment[Runtime schema field flag]:value");
 
     const fishResult = runCompletion("fish", ["Task"], [], false, runtime);
-    expect(fishResult.script).toContain("-l status -d 'Filter by status' -r -a 'draft qa_review'");
+    expect(fishResult.script).toContain("function __pm_status_choices");
+    expect(fishResult.script).toContain("pm completion-statuses");
+    expect(fishResult.script).toContain("set resolved 'draft qa_review'");
+    expect(fishResult.script).toContain("-l status -d 'Filter by status' -r -a '(__pm_status_choices)'");
+    expect(fishResult.script).not.toContain("function __pm_type_choices");
     expect(fishResult.script).toContain("-l alpha-segment -d 'Runtime schema field flag' -r");
     expect(fishResult.script).toContain("-l customer-segment -d 'Runtime schema field flag' -r");
   });
@@ -969,6 +998,55 @@ describe("pm completion CLI command", () => {
       const fishResult = context.runCli(["completion", "fish"]);
       expect(fishResult.code).toBe(0);
       expect(fishResult.stdout).toContain("-l customer-segment -d 'Runtime schema field flag' -r");
+    });
+  });
+
+  it("resolves status and type helper commands from runtime config", async () => {
+    await withTempPmPath(async (context) => {
+      context.env.PM_CLI_PACKAGE_ROOT = process.cwd();
+      installGuideShellPackage(context);
+      const settings = await readSettings(context.pmPath);
+      settings.schema.statuses = [
+        ...(settings.schema.statuses ?? []),
+        {
+          id: "qa_review",
+          roles: ["active"],
+        },
+      ];
+      settings.item_types.definitions = [
+        ...(settings.item_types.definitions ?? []),
+        {
+          name: "Bug",
+        },
+      ];
+      await writeSettings(context.pmPath, settings, "settings:write");
+
+      const statuses = context.runCli(["completion-statuses"]);
+      expect(statuses.code).toBe(0);
+      expect(statuses.stdout).toContain("qa_review");
+      expect(statuses.stdout).toContain("open");
+
+      const types = context.runCli(["completion-types"]);
+      expect(types.code).toBe(0);
+      expect(types.stdout).toContain("Bug");
+      expect(types.stdout).toContain("Task");
+
+      const bashResult = context.runCli(["completion", "bash"]);
+      expect(bashResult.code).toBe(0);
+      expect(bashResult.stdout).toContain("pm completion-statuses");
+      expect(bashResult.stdout).toContain("pm completion-types");
+      expect(bashResult.stdout).toContain("qa_review");
+      expect(bashResult.stdout).toContain("Bug");
+
+      const zshResult = context.runCli(["completion", "zsh"]);
+      expect(zshResult.code).toBe(0);
+      expect(zshResult.stdout).toContain('--status[Filter by status]:(${(f)"$(_pm_status_choices)"})');
+      expect(zshResult.stdout).toContain('--type[Filter by item type]:(${(f)"$(_pm_type_choices)"})');
+
+      const fishResult = context.runCli(["completion", "fish"]);
+      expect(fishResult.code).toBe(0);
+      expect(fishResult.stdout).toContain("-l status -d 'Filter by status' -r -a '(__pm_status_choices)'");
+      expect(fishResult.stdout).toContain("-l type     -d 'Filter by item type' -r -a '(__pm_type_choices)'");
     });
   });
 

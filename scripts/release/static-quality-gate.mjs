@@ -198,6 +198,7 @@ function checkOrphanSourceModules(files) {
     "src/cli/search-refresh.ts",
     "src/mcp/server.ts",
     "src/sdk/index.ts",
+    "src/sdk/testing.ts",
     "src/types/index.ts",
   ]);
   const violations = [];

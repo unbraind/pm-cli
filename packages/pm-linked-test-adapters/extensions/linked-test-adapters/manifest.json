@@ -3,5 +3,15 @@
   "version": "0.1.0",
   "entry": "./index.js",
   "priority": 0,
-  "capabilities": ["commands", "schema"]
+  "capabilities": ["commands", "schema"],
+  "activation": {
+    "commands": [
+      "test-runs",
+      "test-runs list",
+      "test-runs logs",
+      "test-runs resume",
+      "test-runs status",
+      "test-runs stop"
+    ]
+  }
 }

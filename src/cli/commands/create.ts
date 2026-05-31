@@ -50,7 +50,6 @@ import {
   parseConfidenceInput,
   parseRegressionInput,
 } from "./metadata-normalizers.js";
-import { resolveEventEndAt } from "./event-validation-messages.js";
 import { assertNoLegacyNoneToken, assertNoLegacyNoneTokens, isLegacyNoneToken } from "./legacy-none-tokens.js";
 import {
   parseLinkedTestAssertionEqualsMap,
@@ -64,7 +63,12 @@ import {
   parseLinkedTestStringList,
 } from "./linked-test-parsers.js";
 import { looksLikeStructuredLinkedTestEntry, normalizeStructuredLinkedTestEntry } from "./linked-test-entry.js";
-import { ensureEnumValue, parseEventBoolean, parseRecurrenceRule } from "./recurrence-parsers.js";
+import { ensureEnumValue } from "./recurrence-parsers.js";
+import {
+  parseEventEntries,
+  parseReminderEntries,
+  parseTypeOptionEntries,
+} from "./repeatable-metadata-parsers.js";
 import type {
   CalendarEvent,
   Comment,
@@ -686,76 +690,22 @@ export function parseDocs(raw: string[] | undefined): { values: LinkedDoc[] | un
 function parseReminders(raw: string[] | undefined, nowValue: string): { values: Reminder[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   assertNoLegacyNoneTokens(raw, "--reminder", "Use --clear-reminders to clear reminders.");
-  const values = raw.map((entry) => {
-    const kv = parseCsvKv(entry, "--reminder");
-    const atRaw = parseOptionalString(kv.at ?? kv.date);
-    const textRaw = parseOptionalString(kv.text ?? kv.title);
-    if (!atRaw || !textRaw) {
-      throw new PmCliError("--reminder requires at=<iso|relative> or date=<iso|relative>, plus text=<value> or title=<value>", EXIT_CODE.USAGE);
-    }
-    const text = textRaw.trim();
-    if (!text) {
-      throw new PmCliError("--reminder text must not be empty", EXIT_CODE.USAGE);
-    }
-    return {
-      at: resolveIsoOrRelative(atRaw, new Date(nowValue), "reminder.at"),
-      text,
-    };
-  });
-  return { values, explicitEmpty: false };
+  return {
+    values: parseReminderEntries(raw, new Date(nowValue), { valueMode: "raw" }),
+    explicitEmpty: false,
+  };
 }
 
 function parseEvents(raw: string[] | undefined, nowValue: string): { values: CalendarEvent[] | undefined; explicitEmpty: boolean } {
   if (!raw || raw.length === 0) return { values: undefined, explicitEmpty: false };
   assertNoLegacyNoneTokens(raw, "--event", "Use --clear-events to clear linked events.");
-  const referenceDate = new Date(nowValue);
-  const values = raw.map((entry) => {
-    const kv = parseCsvKv(entry, "--event");
-    const startRaw = parseOptionalString(kv.start ?? kv.date)?.trim();
-    if (!startRaw) {
-      throw new PmCliError("--event requires start=<iso|relative> or date=<iso|relative>", EXIT_CODE.USAGE);
-    }
-    const startAt = resolveIsoOrRelative(startRaw, referenceDate, "event.start");
-    const endRaw = parseOptionalString(kv.end)?.trim();
-    const durationRaw = parseOptionalString(kv.duration)?.trim();
-    const endAt = resolveEventEndAt(startAt, endRaw, durationRaw, referenceDate);
-
-    const titleRaw = parseOptionalString(kv.title);
-    const descriptionRaw = parseOptionalString(kv.description);
-    const locationRaw = parseOptionalString(kv.location);
-    const timezoneRaw = parseOptionalString(kv.timezone);
-    const title = titleRaw?.trim();
-    const description = descriptionRaw?.trim();
-    const location = locationRaw?.trim();
-    const timezone = timezoneRaw?.trim();
-    if (titleRaw !== undefined && !title) {
-      throw new PmCliError("--event title must not be empty", EXIT_CODE.USAGE);
-    }
-    if (descriptionRaw !== undefined && !description) {
-      throw new PmCliError("--event description must not be empty", EXIT_CODE.USAGE);
-    }
-    if (locationRaw !== undefined && !location) {
-      throw new PmCliError("--event location must not be empty", EXIT_CODE.USAGE);
-    }
-    if (timezoneRaw !== undefined && !timezone) {
-      throw new PmCliError("--event timezone must not be empty", EXIT_CODE.USAGE);
-    }
-
-    const allDayRaw = parseOptionalString(kv.all_day)?.trim();
-    const recurrence = parseRecurrenceRule(kv, startAt, referenceDate, "defined");
-
-    return {
-      start_at: startAt,
-      end_at: endAt,
-      title,
-      description,
-      location,
-      all_day: allDayRaw !== undefined ? parseEventBoolean(allDayRaw, "--event all_day") : undefined,
-      timezone,
-      recurrence,
-    };
-  });
-  return { values, explicitEmpty: false };
+  return {
+    values: parseEventEntries(raw, new Date(nowValue), {
+      allDayEmptyGuard: "defined",
+      recurrenceEmptyNumericGuard: "defined",
+    }),
+    explicitEmpty: false,
+  };
 }
 
 function buildChangedFields(frontMatter: ItemMetadata, body: string, explicitUnsets: string[]): string[] {
@@ -792,47 +742,8 @@ function parseTypeOptions(raw: string[] | undefined): { values: Record<string, s
     return { values: undefined, explicitEmpty: false };
   }
   assertNoLegacyNoneTokens(raw, "--type-option", "Use --clear-type-options to clear existing type options.");
-  const values: Record<string, string> = {};
-  for (const entry of raw) {
-    const trimmedEntry = entry.trim();
-    if (trimmedEntry.length === 0) {
-      throw new PmCliError("--type-option values must not be empty", EXIT_CODE.USAGE);
-    }
-    let key: string | undefined;
-    let value: string | undefined;
-    const prefersStructuredKv =
-      trimmedEntry.includes(",") ||
-      trimmedEntry.includes("\n") ||
-      trimmedEntry.startsWith("```") ||
-      /^(?:[-*+]\s+)?(?:key|value)\s*[:=]/i.test(trimmedEntry);
-    if (prefersStructuredKv) {
-      const kv = parseCsvKv(trimmedEntry, "--type-option");
-      key = parseOptionalString(kv.key)?.trim();
-      value = parseOptionalString(kv.value)?.trim();
-    } else {
-      const equalsIndex = trimmedEntry.indexOf("=");
-      const colonIndex = trimmedEntry.indexOf(":");
-      let separatorIndex = equalsIndex;
-      if (equalsIndex <= 0 && colonIndex > 0) {
-        separatorIndex = colonIndex;
-      }
-      if (separatorIndex <= 0 || separatorIndex === trimmedEntry.length - 1) {
-        throw new PmCliError(
-          "--type-option requires key=value or key=<name>,value=<value> entries",
-          EXIT_CODE.USAGE,
-        );
-      }
-      key = trimmedEntry.slice(0, separatorIndex).trim();
-      value = trimmedEntry.slice(separatorIndex + 1).trim();
-    }
-    if (!key || !value) {
-      throw new PmCliError("--type-option requires key and value", EXIT_CODE.USAGE);
-    }
-    values[key] = value;
-  }
-  const sortedEntries = Object.entries(values).sort((left, right) => left[0].localeCompare(right[0]));
   return {
-    values: Object.fromEntries(sortedEntries),
+    values: parseTypeOptionEntries(raw),
     explicitEmpty: false,
   };
 }

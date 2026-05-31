@@ -99,6 +99,8 @@ type VectorSettingsInput = {
   };
 };
 
+type RemoteVectorMethod = "DELETE" | "POST" | "PUT";
+
 const DEFAULT_COLLECTION = "pm_items";
 const LANCE_DB_LOCAL_SNAPSHOT_DIR = ".pm-cli-local-vectors";
 const LANCE_DB_LOCAL_SNAPSHOT_VERSION = 1;
@@ -180,7 +182,7 @@ function normalizeQdrantUpsertResponse(payload: unknown): VectorUpsertResult {
 async function executeRemoteVectorPlan(
   endpoint: string,
   plan: {
-    method: "POST";
+    method: RemoteVectorMethod;
     headers: Record<string, string>;
     body: Record<string, unknown>;
   },
@@ -270,6 +272,17 @@ function normalizeVectorDeleteIds(ids: string[]): string[] {
 
 function resolveQdrantDeleteTarget(upsertTarget: string): string {
   return upsertTarget.replace(/\/points\?wait=true$/, "/points/delete?wait=true");
+}
+
+function resolveQdrantCollectionTarget(upsertTarget: string): string {
+  return upsertTarget.replace(/\/points\?wait=true$/, "");
+}
+
+function buildQdrantJsonHeaders(store: QdrantVectorStoreConfig): Record<string, string> {
+  return {
+    "content-type": "application/json",
+    ...(store.api_key ? { "api-key": store.api_key } : {}),
+  };
 }
 
 function getLanceDbLocalTableKey(storePath: string, table: string): string {
@@ -450,6 +463,13 @@ async function persistLanceDbLocalTable(storePath: string, tableName: string, ta
   }
 }
 
+async function resetLanceDbLocalTable(storePath: string, tableName: string): Promise<void> {
+  const key = getLanceDbLocalTableKey(storePath, tableName);
+  const snapshotPath = getLanceDbSnapshotPath(storePath, tableName);
+  await removeSnapshotFile(snapshotPath);
+  lanceDbLocalTables.delete(key);
+}
+
 function l2Norm(vector: number[]): number {
   let sumSq = 0;
   for (let index = 0; index < vector.length; index += 1) {
@@ -517,10 +537,7 @@ export function buildVectorQueryPlan(store: VectorStoreConfig, vector: number[],
     return {
       target,
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        ...(store.api_key ? { "api-key": store.api_key } : {}),
-      },
+      headers: buildQdrantJsonHeaders(store),
       body: {
         vector: normalizedVector,
         limit: normalizedLimit,
@@ -547,10 +564,7 @@ export function buildVectorUpsertPlan(store: VectorStoreConfig, records: VectorR
     return {
       target,
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        ...(store.api_key ? { "api-key": store.api_key } : {}),
-      },
+      headers: buildQdrantJsonHeaders(store),
       body: {
         points: normalizedRecords,
       },
@@ -574,10 +588,7 @@ export function buildVectorDeletePlan(store: VectorStoreConfig, ids: string[]): 
     return {
       target,
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        ...(store.api_key ? { "api-key": store.api_key } : {}),
-      },
+      headers: buildQdrantJsonHeaders(store),
       body: {
         points: normalizedIds,
       },
@@ -747,4 +758,65 @@ export async function executeVectorDelete(
     "delete",
   );
   return normalizeQdrantUpsertResponse(payload);
+}
+
+export async function executeVectorReset(
+  store: VectorStoreConfig,
+  knownIds: string[] = [],
+  options: ExecuteVectorRequestOptions = {},
+  vectorDimension?: number,
+): Promise<VectorUpsertResult> {
+  if (store.name === "lancedb") {
+    await resetLanceDbLocalTable(store.path, DEFAULT_COLLECTION);
+    return { status: "ok" };
+  }
+  if (vectorDimension !== undefined) {
+    if (!Number.isInteger(vectorDimension) || vectorDimension <= 0) {
+      throw new Error("Vector reset dimension must be a positive integer when provided");
+    }
+    const target = resolveVectorStoreRequestTarget(store);
+    const collectionTarget = resolveQdrantCollectionTarget(target.upsert_target);
+    const timeoutMs = normalizeSearchHttpTimeoutMs(options.timeout_ms, "Vector request");
+    const fetcher = resolveSearchHttpFetcher(options.fetcher, "Vector request");
+    const headers = buildQdrantJsonHeaders(store);
+    try {
+      await executeRemoteVectorPlan(
+        collectionTarget,
+        {
+          method: "DELETE",
+          headers,
+          body: {},
+        },
+        timeoutMs,
+        fetcher,
+        "delete",
+      );
+    } catch (error: unknown) {
+      if (!toErrorMessage(error).includes("failed with status 404")) {
+        throw error;
+      }
+    }
+    const payload = await executeRemoteVectorPlan(
+      collectionTarget,
+      {
+        method: "PUT",
+        headers,
+        body: {
+          vectors: {
+            size: vectorDimension,
+            distance: "Cosine",
+          },
+        },
+      },
+      timeoutMs,
+      fetcher,
+      "upsert",
+    );
+    return normalizeQdrantUpsertResponse(payload);
+  }
+  const idsToDelete = knownIds.map((id) => id.trim()).filter((id) => id.length > 0);
+  if (idsToDelete.length === 0) {
+    return { status: "ok" };
+  }
+  return await executeVectorDelete(store, idsToDelete, options);
 }

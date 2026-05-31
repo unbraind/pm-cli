@@ -39,15 +39,25 @@ async function collectBundledExtensionDirectories(): Promise<string[]> {
 }
 
 describe("pm package manifest model", () => {
-  it("publishes the SDK runtime subpath used by bundled package runtimes", async () => {
+  it("publishes stable SDK subpaths used by package authors", async () => {
     const packageJson = JSON.parse(await readFile(path.join(repoRoot, "package.json"), "utf8")) as {
       exports?: Record<string, unknown>;
     };
 
+    expect(packageJson.exports?.["./sdk"]).toMatchObject({
+      types: "./dist/sdk/index.d.ts",
+      import: "./dist/sdk/index.js",
+      default: "./dist/sdk/index.js",
+    });
     expect(packageJson.exports?.["./sdk/runtime"]).toMatchObject({
       types: "./dist/sdk/runtime.d.ts",
       import: "./dist/sdk/runtime.js",
       default: "./dist/sdk/runtime.js",
+    });
+    expect(packageJson.exports?.["./sdk/testing"]).toMatchObject({
+      types: "./dist/sdk/testing.d.ts",
+      import: "./dist/sdk/testing.js",
+      default: "./dist/sdk/testing.js",
     });
   });
 

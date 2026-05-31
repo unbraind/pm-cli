@@ -3,6 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runReindex } from "../../src/cli/commands/reindex.js";
+import { readVectorizationStatusLedger, writeVectorizationStatusLedger } from "../../src/core/search/cache.js";
+import { executeVectorUpsert } from "../../src/core/search/vector-stores.js";
 import {
   clearActiveExtensionHooks,
   setActiveExtensionHooks,
@@ -14,6 +16,8 @@ import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
 import { embeddingsResponse, fakeResponse, installSemanticFetchMock } from "../helpers/semanticFetchMock.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
+
+const LANCE_DB_SNAPSHOT_DIR = ".pm-cli-local-vectors";
 
 function createSeedItem(context: TempPmContext, title: string, body: string, withSeeds: boolean): string {
   const seedArgs = withSeeds
@@ -70,6 +74,18 @@ function createSeedItem(context: TempPmContext, title: string, body: string, wit
   );
   expect(result.code).toBe(0);
   return (result.json as { item: { id: string } }).item.id;
+}
+
+async function readLocalVectorSnapshot(storePath: string): Promise<{
+  records: Array<{ id: string; vector: number[]; payload?: Record<string, unknown> }>;
+}> {
+  const snapshotRaw = await readFile(
+    path.join(path.resolve(storePath), LANCE_DB_SNAPSHOT_DIR, "pm_items.json"),
+    "utf8",
+  );
+  return JSON.parse(snapshotRaw) as {
+    records: Array<{ id: string; vector: number[]; payload?: Record<string, unknown> }>;
+  };
 }
 
 describe("runReindex", () => {
@@ -279,6 +295,192 @@ describe("runReindex", () => {
     });
   });
 
+  it("resets the local vector store and re-embeds every item when embedding model metadata changes", async () => {
+    await withTempPmPath(async (context) => {
+      const idA = createSeedItem(context, "Semantic Model Reset Alpha", "alpha body", false);
+      const idB = createSeedItem(context, "Semantic Model Reset Beta", "beta body", false);
+      const storePath = path.join(context.pmPath, "search", "lancedb");
+
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "old-model";
+      settings.vector_store.lancedb.path = storePath;
+      await writeSettings(context.pmPath, settings);
+
+      const semanticMock = installSemanticFetchMock({
+        embeddings: (request) => {
+          const model = (request.body as { model?: string }).model;
+          const dimensions = model === "new-model" ? 3 : 2;
+          return fakeResponse({
+            json: {
+              data: Array.from({ length: request.inputCount }, (_entry, index) => ({
+                index,
+                embedding: Array.from({ length: dimensions }, (_value, dimension) => index + dimension + 0.1),
+              })),
+            },
+          });
+        },
+      });
+
+      try {
+        const first = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+        expect(first.semantic).toMatchObject({
+          stale_items: 2,
+          unchanged_items: 0,
+          embedded_items: 2,
+          vector_upserted: 2,
+        });
+        await executeVectorUpsert(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [{ id: "pm-untracked-orphan", vector: [9], payload: { kind: "old" } }],
+        );
+
+        const nextSettings = await readSettings(context.pmPath);
+        nextSettings.providers.openai.model = "new-model";
+        await writeSettings(context.pmPath, nextSettings);
+
+        const second = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+        expect(second.semantic).toMatchObject({
+          stale_items: 2,
+          unchanged_items: 0,
+          embedded_items: 2,
+          vector_upserted: 2,
+        });
+
+        const snapshot = await readLocalVectorSnapshot(storePath);
+        expect(snapshot.records.map((entry) => entry.id)).toEqual([idA, idB].sort((left, right) => left.localeCompare(right)));
+        expect(snapshot.records.every((entry) => entry.vector.length === 3)).toBe(true);
+        expect(snapshot.records.some((entry) => entry.id === "pm-untracked-orphan")).toBe(false);
+
+        const ledger = await readVectorizationStatusLedger(context.pmPath);
+        expect(ledger.embedding).toEqual({
+          provider: "openai",
+          model: "new-model",
+          vector_dimension: 3,
+        });
+        expect(Object.keys(ledger.entries)).toEqual([idA, idB].sort((left, right) => left.localeCompare(right)));
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
+
+  it("resets and re-embeds all local vectors when vector dimension changes during a partial reindex", async () => {
+    await withTempPmPath(async (context) => {
+      const idA = createSeedItem(context, "Semantic Dimension Reset Alpha", "alpha body", false);
+      const idB = createSeedItem(context, "Semantic Dimension Reset Beta", "beta body", false);
+      const storePath = path.join(context.pmPath, "search", "lancedb-dimension");
+
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "same-model";
+      settings.vector_store.lancedb.path = storePath;
+      await writeSettings(context.pmPath, settings);
+
+      let dimensions = 2;
+      const semanticMock = installSemanticFetchMock({
+        embeddings: (request) =>
+          fakeResponse({
+            json: {
+              data: Array.from({ length: request.inputCount }, (_entry, index) => ({
+                index,
+                embedding: Array.from({ length: dimensions }, (_value, dimension) => index + dimension + 0.1),
+              })),
+            },
+          }),
+      });
+
+      try {
+        await runReindex({ mode: "semantic" }, { path: context.pmPath });
+        const firstLedger = await readVectorizationStatusLedger(context.pmPath);
+        expect(firstLedger.embedding?.vector_dimension).toBe(2);
+        await writeVectorizationStatusLedger(
+          context.pmPath,
+          {
+            ...firstLedger.entries,
+            [idA]: "2000-01-01T00:00:00.000Z",
+          },
+          firstLedger.embedding,
+        );
+
+        dimensions = 3;
+        const second = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+        expect(second.semantic).toMatchObject({
+          stale_items: 2,
+          unchanged_items: 0,
+          embedded_items: 2,
+          vector_upserted: 2,
+        });
+
+        const snapshot = await readLocalVectorSnapshot(storePath);
+        expect(snapshot.records.map((entry) => entry.id)).toEqual([idA, idB].sort((left, right) => left.localeCompare(right)));
+        expect(snapshot.records.every((entry) => entry.vector.length === 3)).toBe(true);
+        const ledger = await readVectorizationStatusLedger(context.pmPath);
+        expect(ledger.embedding).toEqual({
+          provider: "openai",
+          model: "same-model",
+          vector_dimension: 3,
+        });
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
+
+  it("prunes orphaned local vectors and ledger entries during semantic reindex", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context, "Semantic Orphan Prune", "orphan body", false);
+      const storePath = path.join(context.pmPath, "search", "lancedb-orphans");
+
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.lancedb.path = storePath;
+      await writeSettings(context.pmPath, settings);
+
+      const semanticMock = installSemanticFetchMock();
+
+      try {
+        await runReindex({ mode: "semantic" }, { path: context.pmPath });
+        const firstLedger = await readVectorizationStatusLedger(context.pmPath);
+        await executeVectorUpsert(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [{ id: "pm-orphan", vector: [0.9, 0.1], payload: { kind: "orphan" } }],
+        );
+        await writeVectorizationStatusLedger(
+          context.pmPath,
+          {
+            ...firstLedger.entries,
+            "pm-orphan": "2026-01-01T00:00:00.000Z",
+          },
+          firstLedger.embedding,
+        );
+
+        const second = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+        expect(second.semantic).toMatchObject({
+          stale_items: 0,
+          unchanged_items: 1,
+          embedded_items: 0,
+          vector_upserted: 0,
+        });
+        expect(second.warnings).toContain("search_semantic_reindex_skipped_unchanged:count=1");
+
+        const snapshot = await readLocalVectorSnapshot(storePath);
+        expect(snapshot.records.map((entry) => entry.id)).toEqual([itemId]);
+        const ledger = await readVectorizationStatusLedger(context.pmPath);
+        expect(Object.keys(ledger.entries)).toEqual([itemId]);
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
+
   it("supports semantic reindex through extension embedding and vector adapter registrations", async () => {
     await withTempPmPath(async (context) => {
       createSeedItem(context, "Extension Semantic", "extension semantic body", false);
@@ -298,6 +500,7 @@ describe("runReindex", () => {
         },
       });
       const capturedPointIds: string[] = [];
+      const capturedDeletedIds: string[] = [];
       registrations.vector_store_adapters.push({
         layer: "project",
         name: "ext-vector-reg",
@@ -306,6 +509,9 @@ describe("runReindex", () => {
           name: "ext-vector",
           upsert: ({ points }: { points: Array<{ id: string }> }) => {
             capturedPointIds.push(...points.map((point) => point.id));
+          },
+          delete: ({ ids }: { ids: string[] }) => {
+            capturedDeletedIds.push(...ids);
           },
         },
       });
@@ -320,10 +526,56 @@ describe("runReindex", () => {
       expect(capturedPointIds[0]).toMatch(/^pm-/);
       const vectorizationLedgerRaw = await readFile(path.join(context.pmPath, "search", "vectorization-status.json"), "utf8");
       const vectorizationLedger = JSON.parse(vectorizationLedgerRaw) as {
+        embedding: { provider: string; model: string; vector_dimension: number };
         items: Array<{ id: string }>;
       };
+      expect(vectorizationLedger.embedding).toEqual({
+        provider: "ext-provider",
+        model: "text-embedding-3-small",
+        vector_dimension: 2,
+      });
       expect(vectorizationLedger.items).toHaveLength(1);
       expect(vectorizationLedger.items[0]?.id).toMatch(/^pm-/);
+
+      const firstLedger = await readVectorizationStatusLedger(context.pmPath);
+      await writeVectorizationStatusLedger(
+        context.pmPath,
+        {
+          ...firstLedger.entries,
+          "pm-extension-orphan": "2026-01-01T00:00:00.000Z",
+        },
+        vectorizationLedger.embedding,
+      );
+      capturedPointIds.length = 0;
+
+      const pruneResult = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+      expect(pruneResult.warnings).toContain("search_semantic_reindex_skipped_unchanged:count=1");
+      expect(capturedPointIds).toEqual([]);
+      expect(capturedDeletedIds).toEqual(["pm-extension-orphan"]);
+      const prunedLedger = await readVectorizationStatusLedger(context.pmPath);
+      expect(Object.keys(prunedLedger.entries)).toEqual([vectorizationLedger.items[0]!.id]);
+
+      const nextSettings = await readSettings(context.pmPath);
+      nextSettings.search.embedding_model = "extension-next-model";
+      await writeSettings(context.pmPath, nextSettings);
+      capturedPointIds.length = 0;
+      capturedDeletedIds.length = 0;
+
+      const resetResult = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+      expect(resetResult.semantic).toMatchObject({
+        stale_items: 1,
+        unchanged_items: 0,
+        embedded_items: 1,
+        vector_upserted: 1,
+      });
+      expect(capturedDeletedIds).toEqual([vectorizationLedger.items[0]!.id]);
+      expect(capturedPointIds).toEqual([vectorizationLedger.items[0]!.id]);
+      const resetLedger = await readVectorizationStatusLedger(context.pmPath);
+      expect(resetLedger.embedding).toEqual({
+        provider: "ext-provider",
+        model: "extension-next-model",
+        vector_dimension: 2,
+      });
     });
   });
 

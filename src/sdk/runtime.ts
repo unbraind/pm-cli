@@ -23,6 +23,13 @@ export { appendHistoryEntry, createHistoryEntry } from "../core/history/history.
 export { generateItemId, normalizeItemId, normalizeRawItemId } from "../core/item/id.js";
 export { readBooleanOption, readCsvListOption, readStringOption } from "./package-runtime-options.js";
 export {
+  PM_CLI_EXPECTED_ERROR_NAME,
+  createPmCliExpectedError,
+  isPmCliExpectedError,
+  type CreatePmCliExpectedErrorOptions,
+  type PmCliExpectedError,
+} from "./errors.js";
+export {
   commitImportedItem,
   emptyImportedDocument,
   ensureTrackerInitialized,

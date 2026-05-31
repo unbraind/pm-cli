@@ -1538,6 +1538,19 @@ describe("runUpdate", () => {
       await expect(
         runUpdate(
           id,
+          { reminder: ['at=+1d,text="   "'] },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining(
+          "--reminder requires at=<iso|relative> or date=<iso|relative>, plus text=<value> or title=<value>",
+        ),
+      });
+
+      await expect(
+        runUpdate(
+          id,
           { reminder: ["at=+3d+1h,text=compound-relative"] },
           { path: context.pmPath },
         ),
@@ -1633,6 +1646,22 @@ describe("runUpdate", () => {
           { path: context.pmPath },
         ),
       ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+
+      const emptyGuardUpdate = await runUpdate(
+        id,
+        {
+          event: ["start=2026-03-03T12:00:00.000Z,title=empty guards,all_day=,recur_freq=daily,recur_interval="],
+          message: "empty event parser guards",
+        },
+        { path: context.pmPath },
+      );
+      expect(emptyGuardUpdate.item.events?.[0]).toMatchObject({
+        start_at: "2026-03-03T12:00:00.000Z",
+        title: "empty guards",
+        recurrence: { freq: "daily" },
+      });
+      expect(emptyGuardUpdate.item.events?.[0]?.all_day).toBeUndefined();
+      expect(emptyGuardUpdate.item.events?.[0]?.recurrence?.interval).toBeUndefined();
 
       await expect(
         runUpdate(

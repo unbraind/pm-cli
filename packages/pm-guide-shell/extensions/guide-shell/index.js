@@ -1,7 +1,9 @@
 import {
   renderGuideShellPackageOutput,
   runCompletionPackage,
+  runCompletionStatusesPackage,
   runCompletionTagsPackage,
+  runCompletionTypesPackage,
   runGuidePackage,
 } from "./runtime.js";
 
@@ -60,10 +62,30 @@ function completionTagsCommand() {
   };
 }
 
+function completionStatusesCommand() {
+  return {
+    name: "completion-statuses",
+    action: "completion-statuses",
+    description: "Print runtime status IDs for completion filters.",
+    run: async (context) => runCompletionStatusesPackage(context.global),
+  };
+}
+
+function completionTypesCommand() {
+  return {
+    name: "completion-types",
+    action: "completion-types",
+    description: "Print runtime item type IDs for completion filters.",
+    run: async (context) => runCompletionTypesPackage(context.global),
+  };
+}
+
 export function activate(api) {
   api.registerCommand(guideCommand());
   api.registerCommand(completionCommand());
   api.registerCommand(completionTagsCommand());
+  api.registerCommand(completionStatusesCommand());
+  api.registerCommand(completionTypesCommand());
   api.registerService("output_format", (context) => {
     const rendered = renderGuideShellPackageOutput(context);
     return rendered ?? null;

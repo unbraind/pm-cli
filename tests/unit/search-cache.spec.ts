@@ -3,10 +3,20 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   invalidateSearchCacheArtifacts,
+  readVectorizationStatusLedger,
   refreshSearchArtifactsForMutation,
   refreshSemanticEmbeddingsForMutatedItems,
   SEARCH_CACHE_ARTIFACT_PATHS,
+  writeVectorizationStatusLedger,
 } from "../../src/core/search/cache.js";
+import {
+  buildVectorizationEmbeddingIdentity,
+  buildVectorizationEmbeddingMetadata,
+  hasVectorizationEmbeddingIdentityChanged,
+  hasVectorizationVectorDimensionChanged,
+  inferConsistentVectorDimension,
+  normalizeVectorizationEmbeddingMetadata,
+} from "../../src/core/search/vectorization-metadata.js";
 import {
   drainPendingRefreshIds,
   enqueuePendingRefreshIds,
@@ -332,6 +342,97 @@ describe("core/search/cache", () => {
     });
   });
 
+  it("keeps existing semantic vectors when mutation refresh detects an embedding identity change", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context, "Changed provider refresh item");
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "new-model";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      await writeSettings(context.pmPath, settings);
+      await writeVectorizationStatusLedger(
+        context.pmPath,
+        {
+          [itemId]: "2000-01-01T00:00:00.000Z",
+          "pm-unchanged": "2026-01-01T00:00:00.000Z",
+        },
+        buildVectorizationEmbeddingMetadata(buildVectorizationEmbeddingIdentity("openai", "old-model")!, 2),
+      );
+
+      const semanticMock = installFailingFetchMock({ text: "mutation refresh should not embed on identity change" });
+
+      try {
+        const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, [itemId]);
+        expect(result.refreshed).toEqual([]);
+        expect(result.skipped).toEqual([itemId]);
+        expect(result.warnings).toEqual(["search_semantic_refresh_requires_reindex:embedding_identity_changed"]);
+        const ledger = await readVectorizationStatusLedger(context.pmPath);
+        expect(ledger.entries).toEqual({
+          [itemId]: "2000-01-01T00:00:00.000Z",
+          "pm-unchanged": "2026-01-01T00:00:00.000Z",
+        });
+        expect(ledger.embedding).toEqual({
+          provider: "openai",
+          model: "old-model",
+          vector_dimension: 2,
+        });
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
+
+  it("keeps existing semantic vectors when mutation refresh detects a vector dimension change", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context, "Changed dimension refresh item");
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "same-model";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      await writeSettings(context.pmPath, settings);
+      await writeVectorizationStatusLedger(
+        context.pmPath,
+        {
+          [itemId]: "2000-01-01T00:00:00.000Z",
+          "pm-unchanged": "2026-01-01T00:00:00.000Z",
+        },
+        buildVectorizationEmbeddingMetadata(buildVectorizationEmbeddingIdentity("openai", "same-model")!, 2),
+      );
+
+      const semanticMock = installSemanticFetchMock({
+        embeddings: (request) =>
+          fakeResponse({
+            json: {
+              data: Array.from({ length: request.inputCount }, (_entry, index) => ({
+                index,
+                embedding: [index + 0.1, index + 0.2, index + 0.3],
+              })),
+            },
+          }),
+      });
+
+      try {
+        const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, [itemId]);
+        expect(result.refreshed).toEqual([]);
+        expect(result.skipped).toEqual([itemId]);
+        expect(result.warnings).toEqual(["search_semantic_refresh_requires_reindex:vector_dimension_changed"]);
+        expect(semanticMock.calls).toEqual(["https://api.example.test/v1/embeddings"]);
+        const ledger = await readVectorizationStatusLedger(context.pmPath);
+        expect(ledger.entries).toEqual({
+          [itemId]: "2000-01-01T00:00:00.000Z",
+          "pm-unchanged": "2026-01-01T00:00:00.000Z",
+        });
+        expect(ledger.embedding).toEqual({
+          provider: "openai",
+          model: "same-model",
+          vector_dimension: 2,
+        });
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
+
   it("reports deterministic warning when missing-id vector prune fails", async () => {
     await withTempPmPath(async (context) => {
       const settings = await readSettings(context.pmPath);
@@ -436,6 +537,72 @@ describe("core/search/cache", () => {
   });
 });
 
+describe("core/search/vectorization-metadata", () => {
+  it("normalizes provider/model identity and embedding metadata", () => {
+    const identity = buildVectorizationEmbeddingIdentity(" ollama ", " qwen3-embedding:0.6b ");
+    expect(identity).toEqual({
+      provider: "ollama",
+      model: "qwen3-embedding:0.6b",
+    });
+    expect(buildVectorizationEmbeddingIdentity("", "model")).toBeNull();
+    expect(buildVectorizationEmbeddingIdentity("provider", " ")).toBeNull();
+    expect(normalizeVectorizationEmbeddingMetadata(undefined)).toBeNull();
+    expect(normalizeVectorizationEmbeddingMetadata(null)).toBeNull();
+    expect(
+      normalizeVectorizationEmbeddingMetadata({
+        provider: "ollama",
+        model: "qwen3",
+        vector_dimension: 1024,
+      }),
+    ).toEqual({
+      provider: "ollama",
+      model: "qwen3",
+      vector_dimension: 1024,
+    });
+    expect(buildVectorizationEmbeddingMetadata(identity!, 1024)).toEqual({
+      provider: "ollama",
+      model: "qwen3-embedding:0.6b",
+      vector_dimension: 1024,
+    });
+  });
+
+  it("rejects invalid embedding metadata shapes", () => {
+    expect(() => normalizeVectorizationEmbeddingMetadata("bad")).toThrow("must be an object");
+    expect(() =>
+      normalizeVectorizationEmbeddingMetadata({
+        provider: "ollama",
+        model: "qwen3",
+        vector_dimension: "1024",
+      }),
+    ).toThrow("provider, model, and positive vector_dimension");
+    expect(() => buildVectorizationEmbeddingMetadata({ provider: "ollama", model: "qwen3" }, 0)).toThrow(
+      "positive vector dimension",
+    );
+  });
+
+  it("detects identity and dimension changes", () => {
+    const metadata = {
+      provider: "ollama",
+      model: "qwen3",
+      vector_dimension: 1024,
+    };
+    expect(hasVectorizationEmbeddingIdentityChanged(null, { provider: "ollama", model: "qwen3" })).toBe(true);
+    expect(hasVectorizationEmbeddingIdentityChanged(metadata, { provider: "ollama", model: "qwen3" })).toBe(false);
+    expect(hasVectorizationEmbeddingIdentityChanged(metadata, { provider: "openai", model: "qwen3" })).toBe(true);
+    expect(hasVectorizationEmbeddingIdentityChanged(metadata, { provider: "ollama", model: "nomic" })).toBe(true);
+    expect(hasVectorizationVectorDimensionChanged(null, 1024)).toBe(false);
+    expect(hasVectorizationVectorDimensionChanged(metadata, 1024)).toBe(false);
+    expect(hasVectorizationVectorDimensionChanged(metadata, 768)).toBe(true);
+  });
+
+  it("infers consistent vector dimensions and rejects unusable vectors", () => {
+    expect(inferConsistentVectorDimension([[1, 2], [3, 4]], "unit")).toBe(2);
+    expect(() => inferConsistentVectorDimension([], "unit")).toThrow("unit returned no vectors");
+    expect(() => inferConsistentVectorDimension([[]], "unit")).toThrow("unit returned an empty vector");
+    expect(() => inferConsistentVectorDimension([[1], [2, 3]], "unit")).toThrow("unit returned mixed vector dimensions");
+  });
+});
+
 const SEARCH_REFRESH_INLINE_ENV = "PM_SEARCH_REFRESH_INLINE";
 const SEARCH_REFRESH_CHILD_ENV = "PM_SEARCH_REFRESH_CHILD";
 
@@ -470,11 +637,34 @@ describe("search background refresh", () => {
     });
 
     it("honors the explicit inline override flag", () => {
-      process.env[SEARCH_REFRESH_INLINE_ENV] = "1";
-      expect(shouldRunSearchRefreshInForeground()).toBe(true);
-      process.env[SEARCH_REFRESH_INLINE_ENV] = "false";
-      // Still inline because the vitest runner env forces inline regardless.
-      expect(shouldRunSearchRefreshInForeground()).toBe(true);
+      const originalVitest = process.env.VITEST;
+      const originalVitestWorkerId = process.env.VITEST_WORKER_ID;
+      const originalNodeEnv = process.env.NODE_ENV;
+      delete process.env.VITEST;
+      delete process.env.VITEST_WORKER_ID;
+      delete process.env.NODE_ENV;
+      try {
+        process.env[SEARCH_REFRESH_INLINE_ENV] = "1";
+        expect(shouldRunSearchRefreshInForeground()).toBe(true);
+        process.env[SEARCH_REFRESH_INLINE_ENV] = "false";
+        expect(shouldRunSearchRefreshInForeground()).toBe(false);
+      } finally {
+        if (originalVitest === undefined) {
+          delete process.env.VITEST;
+        } else {
+          process.env.VITEST = originalVitest;
+        }
+        if (originalVitestWorkerId === undefined) {
+          delete process.env.VITEST_WORKER_ID;
+        } else {
+          process.env.VITEST_WORKER_ID = originalVitestWorkerId;
+        }
+        if (originalNodeEnv === undefined) {
+          delete process.env.NODE_ENV;
+        } else {
+          process.env.NODE_ENV = originalNodeEnv;
+        }
+      }
     });
 
     it("treats the worker-child marker as inline", () => {

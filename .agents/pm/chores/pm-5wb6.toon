@@ -2,11 +2,36 @@ id: pm-5wb6
 title: "Lazy extension activation: defer import+activate until a command needs contributions"
 description: "Extension overhead is ~73ms on EVERY command in a repo with extensions installed (measured: dev repo list 240ms vs 165ms with --no-extensions; 8 bundled extensions). loader.ts loadExtensions (line ~689) does await import(importHref) for each discovered extension and activateExtensions runs every activate() on every command, even for core commands (list/get) that may need no extension contributions. Investigate deferring the expensive import()+activate() until a command actually requires an extension's command/renderer/parser/hook/service — using cheap manifest capability metadata to decide. Must preserve renderer/hook overrides for core commands. Distinct from pm-3mal (which is module-load/completion/MCP-schema/telemetry-flush, not extension activation). Scales with number of installed extensions."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[3]: extensions,perf,startup
 created_at: "2026-05-30T21:44:14.247Z"
-updated_at: "2026-05-30T21:44:14.247Z"
+updated_at: "2026-05-31T09:10:48.817Z"
 author: maintainer-agent
 acceptance_criteria: Commands that use no extension contributions skip extension import()/activate(); renderer/hook overrides still apply where needed; measurable per-command savings with N extensions
+resolution: Implemented manifest-scoped lazy extension activation with create-template probing and type-aware help preservation.
+expected_result: Core commands that do not need extension contributions skip import/activate while extension-backed commands and help remain correct.
+actual_result: Fresh temp smoke showed list-open activation=skipped with 8 effective bundled extensions; create --template and type-aware help remained functional; release gates passed.
+comments[2]{created_at,author,text}:
+  "2026-05-31T07:52:16.405Z",codex-gpt5-20260531,"Start: oriented with pm context/search/list-open/list-in-progress. Reusing assigned item pm-5wb6; no new item created. Investigating lazy extension activation in src/core/extensions and focused startup tests/benchmarks."
+  "2026-05-31T08:06:26.695Z",codex-gpt5-20260531,"Evidence: implemented manifest-gated lazy extension activation. Commands with scoped activation metadata skip import()+activate() unless the invocation matches their declared activation.commands; hooks/parser/preflight/renderers stay conservative and still activate globally; legacy broad commands/schema/services manifests without activation metadata preserve old activation behavior. Focused linked test passed: node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/integration/extension-startup.integration.spec.ts tests/unit/package-manifest.spec.ts (3 files, 59 tests, exit 0; build step included). Timing probe with 8 synthetic command extensions and ~18ms import-side delay: scoped activation list-open samples 504/532/538/401/444ms, median 504ms; legacy broad samples 597/976/658/556/635ms, median 635ms; median delta 131ms. Profile confirmed skip: profile:extensions activation=skipped command=list-open effective=8 warnings=0 discovery_ms=9."
+files[13]{path,scope,note}:
+  src/cli/main.ts,project,Manifest-gated lazy extension activation in CLI startup
+  src/core/extensions/loader.ts,project,Parse and carry optional activation command metadata from manifests
+  src/core/extensions/extension-types.ts,project,Narrow manifest activation metadata type for command gating
+  tests/integration/extension-startup.integration.spec.ts,project,Behavior tests for skipped imports dynamic commands hooks and renderers
+  tests/unit/extension-loader.spec.ts,project,Manifest activation metadata parser tests
+  packages/pm-beads/extensions/beads/manifest.json,project,First-party activation command metadata for lazy startup
+  packages/pm-calendar/extensions/calendar/manifest.json,project,First-party activation command metadata for lazy startup
+  packages/pm-governance-audit/extensions/governance-audit/manifest.json,project,First-party activation command metadata for lazy startup
+  packages/pm-guide-shell/extensions/guide-shell/manifest.json,project,First-party activation command metadata for lazy startup
+  packages/pm-linked-test-adapters/extensions/linked-test-adapters/manifest.json,project,First-party activation command metadata for lazy startup
+  packages/pm-search-advanced/extensions/search-advanced/manifest.json,project,First-party activation command metadata for lazy startup
+  packages/pm-templates/extensions/templates/manifest.json,project,First-party activation command metadata for lazy startup
+  packages/pm-todos/extensions/todos/manifest.json,project,First-party activation command metadata for lazy startup
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts tests/integration/extension-startup.integration.spec.ts tests/unit/package-manifest.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Focused extension startup and manifest verification
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpthwq1t-yld0k0,test,passed,"2026-05-31T08:05:53.653Z","2026-05-31T08:06:07.841Z","2026-05-31T08:06:07.841Z",null,null,1,0,0,null,null,null
+close_reason: Implemented manifest-gated lazy extension activation with focused tests and timing evidence; renderer/hook paths remain conservative and first-party command manifests declare activation.commands.
 body: ""
