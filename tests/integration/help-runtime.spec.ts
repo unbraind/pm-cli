@@ -229,6 +229,22 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("requires an explicit retry for query flag typos", async () => {
+    await withTempPmPath(async (context) => {
+      const created = context.runCli(["create", "--title", "Query typo guard", "--type", "Task", "--json"], {
+        expectJson: true,
+      });
+      expect(created.code).toBe(0);
+
+      const result = context.runCli(["list-open", "--limt", "1", "--json"]);
+      expect(result.code).toBe(2);
+      const envelope = parseJsonErrorEnvelope(result.stderr);
+      expect(envelope.code).toBe("flag_typo_requires_retry");
+      expect(envelope.detail).toContain("--limt");
+      expect(envelope.recovery?.suggested_retry).toContain("--limit");
+    });
+  });
+
   it("requires an explicit retry for operation-family mutating flag typos", async () => {
     await withTempPmPath(async (context) => {
       const created = context.runCli(["create", "--title", "Claim typo probe", "--type", "Task", "--json"], {
