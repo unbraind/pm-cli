@@ -426,6 +426,52 @@ describe("runValidate", () => {
     });
   });
 
+  it("keeps default command-reference diagnostics compact and expands them with verbose diagnostics", async () => {
+    await withTempPmPath(async (context) => {
+      const ownerId = createTask(context, "validate-command-reference-compact");
+      for (let index = 0; index < 7; index += 1) {
+        const linked = context.runCli(
+          [
+            "test",
+            ownerId,
+            "--json",
+            "--add",
+            `command=pm get pm-stale-${index},scope=project,note=stale-reference-${index}`,
+          ],
+          { expectJson: true },
+        );
+        expect(linked.code).toBe(0);
+      }
+
+      const compact = await runValidate({ checkCommandReferences: true }, { path: context.pmPath });
+      const compactDetails = checkByName(compact, "command_references").details as {
+        stale_pm_ids: string[];
+        stale_pm_ids_truncated: boolean;
+        stale_pm_id_reference_rows: string[];
+        stale_pm_id_reference_rows_truncated: boolean;
+      };
+      expect(compactDetails.stale_pm_ids).toHaveLength(5);
+      expect(compactDetails.stale_pm_ids_truncated).toBe(true);
+      expect(compactDetails.stale_pm_id_reference_rows).toHaveLength(5);
+      expect(compactDetails.stale_pm_id_reference_rows_truncated).toBe(true);
+
+      const verbose = await runValidate(
+        { checkCommandReferences: true, verboseDiagnostics: true },
+        { path: context.pmPath },
+      );
+      const verboseDetails = checkByName(verbose, "command_references").details as {
+        stale_pm_ids: string[];
+        stale_pm_ids_truncated: boolean;
+        stale_pm_id_reference_rows: string[];
+        stale_pm_id_reference_rows_truncated: boolean;
+      };
+      expect(verboseDetails.stale_pm_ids).toHaveLength(7);
+      expect(verboseDetails.stale_pm_ids_truncated).toBe(false);
+      expect(verboseDetails.stale_pm_id_reference_rows).toHaveLength(7);
+      expect(verboseDetails.stale_pm_id_reference_rows_truncated).toBe(false);
+    });
+  });
+
   it("returns ok for requested metadata-only checks when fields are complete", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "validate-metadata-only");

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { orderObject, sha256Hex, stableStringify } from "../../src/core/shared/serialization.js";
+import { orderObject, sha256Hex, stableStringify, stableValueEquals } from "../../src/core/shared/serialization.js";
 
 class ToJsonValue {
   public readonly marker = "ignored";
@@ -63,6 +63,12 @@ describe("core/shared/serialization", () => {
 
     const fromToJsonSelf = stableStringify(new ToJsonSelf());
     expect(fromToJsonSelf).toBe('{"a":1,"b":2}');
+  });
+
+  it("stableValueEquals uses primitive identity before stable object comparison", () => {
+    expect(stableValueEquals("value", "value")).toBe(true);
+    expect(stableValueEquals(undefined, "undefined")).toBe(false);
+    expect(stableValueEquals({ b: 2, a: 1 }, { a: 1, b: 2 })).toBe(true);
   });
 
   it("orderObject keeps known keys first, sorts unknown keys, and skips undefined values", () => {

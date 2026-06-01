@@ -1,9 +1,9 @@
 import { coerceRuntimeFieldValue, readRuntimeFieldOptionValue } from "./runtime-field-values.js";
 import type { RuntimeFieldCommand, RuntimeFieldRegistry } from "./runtime-schema.js";
-import { stableStringify } from "../shared/serialization.js";
+import { stableValueEquals } from "../shared/serialization.js";
 
 function valuesEqual(left: unknown, right: unknown): boolean {
-  return stableStringify(left) === stableStringify(right);
+  return stableValueEquals(left, right);
 }
 
 export function collectRuntimeFilterValues(

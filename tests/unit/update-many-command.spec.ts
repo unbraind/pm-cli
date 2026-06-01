@@ -71,6 +71,7 @@ describe("runUpdateMany", () => {
         { payload: { a: 1, b: 2 } },
       ),
     ).toBe(true);
+    expect(matchesRuntimeFilters({}, { payload: "undefined" })).toBe(false);
   });
 
   it("produces dry-run plans without mutating matched items", async () => {

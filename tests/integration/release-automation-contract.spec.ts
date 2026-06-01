@@ -72,6 +72,8 @@ describe("release automation contract", () => {
     const bundleScript = await readFile(path.join(repoRoot, "scripts/bundle-cli.mjs"), "utf8");
     expect(bundleScript).not.toContain("rm(outputDir");
     expect(bundleScript).toContain("Do not delete the live bundle before rebuilding");
+    expect(bundleScript).toContain("metafile: true");
+    expect(bundleScript).toContain("removeStaleBundleFiles");
   });
 
   it("builds dist before the auto-release pipeline consumes dist/cli.js", async () => {
@@ -115,6 +117,7 @@ describe("release automation contract", () => {
     const gateSource = await readFile(path.join(repoRoot, "scripts/release/sentry-telemetry-gate.mjs"), "utf8");
     expect(gateSource).toContain('commandFor("sentry")');
     expect(gateSource).toContain("function isExpectedHandledCliIssue");
+    expect(gateSource).toContain('issue?.isUnhandled === false');
     expect(gateSource).toContain("ignored_expected_cli_error_total");
     expect(gateSource).toContain("function buildTelemetryCommandInvocation");
     expect(gateSource).toContain('commandPath.endsWith(".sh")');

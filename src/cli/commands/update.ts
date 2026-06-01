@@ -36,7 +36,7 @@ import {
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { stableStringify } from "../../core/shared/serialization.js";
+import { stableValueEquals } from "../../core/shared/serialization.js";
 import { resolveIsoOrRelative } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extensions/item-fields.js";
@@ -1872,7 +1872,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         if (clearFrontMatterKeys.has(fieldKey)) {
           continue;
         }
-        if (stableStringify(metadataRecord[fieldKey]) === stableStringify(fieldValue)) {
+        if (stableValueEquals(metadataRecord[fieldKey], fieldValue)) {
           continue;
         }
         metadataRecord[fieldKey] = fieldValue;

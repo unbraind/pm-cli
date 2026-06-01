@@ -49,6 +49,16 @@ export function stableStringify(value: unknown): string {
   return JSON.stringify(sortObjectKeys(value));
 }
 
+export function stableValueEquals(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) {
+    return true;
+  }
+  if (left === null || right === null || typeof left !== "object" || typeof right !== "object") {
+    return false;
+  }
+  return stableStringify(left) === stableStringify(right);
+}
+
 export function sha256Hex(value: string): string {
   return crypto.createHash("sha256").update(value, "utf8").digest("hex");
 }

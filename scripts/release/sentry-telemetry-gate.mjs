@@ -130,7 +130,7 @@ function isIgnoredConsoleNoiseIssue(issue) {
 function isExpectedHandledCliIssue(issue) {
   const metadata = issue && typeof issue === "object" ? issue.metadata : null;
   const type = metadata && typeof metadata.type === "string" ? metadata.type : "";
-  return type === "PmCliError" || type === "CommandError";
+  return (type === "PmCliError" || type === "CommandError") && issue?.isUnhandled === false;
 }
 
 function partitionSentryIssuesForGate(issues) {
@@ -193,7 +193,7 @@ function fetchSentryIssuesViaCli(project, query, limit, priorFailure) {
       project,
       "--json",
       "--fields",
-      "shortId,title,level,priority,status,culprit,metadata,logger",
+      "shortId,title,level,priority,status,culprit,metadata,logger,isUnhandled",
       "--query",
       query,
       "--limit",
