@@ -1,13 +1,47 @@
 #!/usr/bin/env node
 
-import { readdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { build } from "esbuild";
 
 const repoRoot = process.cwd();
 const entryPoint = path.join(repoRoot, "dist", "cli", "main.js");
 const outputDir = path.join(repoRoot, "dist", "cli-bundle");
+const lockDir = path.join(repoRoot, "dist", ".cli-bundle-build.lock");
 const binPath = path.join(repoRoot, "dist", "cli.js");
+const lockRetryMs = 250;
+const lockTimeoutMs = 120_000;
+const staleLockMs = 10 * 60_000;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function acquireBundleBuildLock() {
+  await mkdir(path.dirname(lockDir), { recursive: true });
+  const startedAt = Date.now();
+  while (true) {
+    try {
+      await mkdir(lockDir);
+      return async () => {
+        await rm(lockDir, { recursive: true, force: true });
+      };
+    } catch (error) {
+      if (!error || typeof error !== "object" || !("code" in error) || error.code !== "EEXIST") {
+        throw error;
+      }
+      const lockStats = await stat(lockDir).catch(() => null);
+      if (lockStats && Date.now() - lockStats.mtimeMs > staleLockMs) {
+        await rm(lockDir, { recursive: true, force: true });
+        continue;
+      }
+      if (Date.now() - startedAt > lockTimeoutMs) {
+        throw new Error(`Timed out waiting for bundle build lock at ${lockDir}`);
+      }
+      await sleep(lockRetryMs);
+    }
+  }
+}
 
 async function collectFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true }).catch((error) => {
@@ -50,22 +84,27 @@ async function removeStaleBundleFiles(outputs) {
 // Do not delete the live bundle before rebuilding. Agents often run docs,
 // dogfood, and build gates concurrently in one checkout; removing this folder
 // creates a transient broken `dist/cli.js` runtime.
-const buildResult = await build({
-  entryPoints: [entryPoint],
-  outdir: outputDir,
-  bundle: true,
-  splitting: true,
-  format: "esm",
-  platform: "node",
-  target: ["node20"],
-  packages: "external",
-  sourcemap: true,
-  metafile: true,
-  entryNames: "[name]",
-  chunkNames: "chunks/[name]-[hash]",
-  logLevel: "warning",
-});
-await removeStaleBundleFiles(buildResult.metafile.outputs);
+const releaseBundleBuildLock = await acquireBundleBuildLock();
+try {
+  const buildResult = await build({
+    entryPoints: [entryPoint],
+    outdir: outputDir,
+    bundle: true,
+    splitting: true,
+    format: "esm",
+    platform: "node",
+    target: ["node20"],
+    packages: "external",
+    sourcemap: true,
+    metafile: true,
+    entryNames: "[name]",
+    chunkNames: "chunks/[name]-[hash]",
+    logLevel: "warning",
+  });
+  await removeStaleBundleFiles(buildResult.metafile.outputs);
+} finally {
+  await releaseBundleBuildLock();
+}
 
 const binSource = await readFile(binPath, "utf8");
 const sourceImport = 'await import("./cli/main.js")';

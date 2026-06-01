@@ -75,6 +75,8 @@ describe("release automation contract", () => {
     expect(bundleScript).toContain("metafile: true");
     expect(bundleScript).toContain("removeStaleBundleFiles");
     expect(bundleScript).toContain("entry.isSymbolicLink()");
+    expect(bundleScript).toContain("acquireBundleBuildLock");
+    expect(bundleScript).toContain(".cli-bundle-build.lock");
   });
 
   it("builds dist before the auto-release pipeline consumes dist/cli.js", async () => {
