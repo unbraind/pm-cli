@@ -137,7 +137,7 @@ function isIgnoredConsoleNoiseIssue(issue) {
 function isExpectedHandledCliIssue(issue) {
   const metadata = issue && typeof issue === "object" ? issue.metadata : null;
   const type = metadata && typeof metadata.type === "string" ? metadata.type : "";
-  if ((type !== "PmCliError" && type !== "CommandError") || issue?.isUnhandled !== false) {
+  if ((type !== "PmCliError" && type !== "CommandError") || issue?.isUnhandled === true) {
     return false;
   }
   const combinedText = issueTextValue(issue);

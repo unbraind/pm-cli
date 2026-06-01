@@ -6,10 +6,10 @@ status: in_progress
 priority: 0
 tags[7]: agent-ux,audit,ci,ecosystem,package-first,sdk,telemetry
 created_at: "2026-06-01T20:57:09.204Z"
-updated_at: "2026-06-01T22:32:02.982Z"
+updated_at: "2026-06-01T22:39:20.297Z"
 assignee: codex-audit-20260601
 author: codex-audit-20260601
-comments[16]{created_at,author,text}:
+comments[17]{created_at,author,text}:
   "2026-06-01T20:57:16.236Z",codex-audit-20260601,"Investigation note: Required orientation completed: pm context, pm search, pm list-open, pm list-in-progress. Existing broad audit lineage is closed; no in-progress duplicate found. Proceeding with bounded sub-agent review lanes and local dogfood/implementation."
   "2026-06-01T20:58:05.168Z",subagent-sdk-20260601,"Lane start: SDK/package ecosystem audit by subagent-sdk-20260601. Scope: package.json, sdk sources, package/extension runtime surfaces, docs/SDK.md, docs/EXTENSIONS.md, and init/install/contracts tests. Read-only lane; no file edits planned."
   "2026-06-01T20:58:07.865Z",subagent-docsci-20260601,"Lane start: docs/CI/observability audit reviewing progressive-disclosure docs, README/AGENTS links, GitHub workflows, changelog/release setup, secrets/privacy posture, Sentry/telemetry validation scripts, and free-service assumptions. No file edits planned."
@@ -26,6 +26,7 @@ comments[16]{created_at,author,text}:
   "2026-06-01T22:16:51.754Z",codex-audit-20260601,"Review follow-up: Codex found concurrent bundle cleanups could delete another build's fresh hashed chunks. Added a stale-aware .cli-bundle-build.lock around the esbuild output plus stale cleanup phase so builds serialize while the live bundle stays available for CLI users. Verification: pnpm build, pnpm typecheck, and node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts."
   "2026-06-01T22:22:28.609Z",codex-audit-20260601,"Review follow-up: Gemini found stale bundle-lock cleanup could delete a newly acquired lock if multiple builders detected the same stale lock. Changed stale cleanup to atomically rename the stale lock directory to a unique candidate before removing it, preserving mutual exclusion. Verification: pnpm build, pnpm typecheck, and node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts."
   "2026-06-01T22:32:02.982Z",codex-audit-20260601,"Review follow-up: Gemini/Codex found immediate stale bundle cleanup could affect already-running lazy imports, stale-lock retry could sleep after a released lock, RegExp values could compare equal through stableStringify, and the Sentry expected-error filter needed message-level narrowing. Added bundle stale-file retention, immediate retry on missing lock stats, RegExp-aware stableValueEquals, and a known expected handled CLI issue allowlist. Verification: pnpm build, pnpm typecheck, focused release/serialization tests, full coverage 135 files/2094 tests at 100%, Sentry strict gate, and required telemetry gate."
+  "2026-06-01T22:39:20.297Z",codex-audit-20260601,"Review follow-up: Gemini found lock stat errors should only ignore ENOENT, stale symlink cleanup should inspect links with lstat, and Sentry issue payloads may omit isUnhandled. Updated bundle lock/file stat handling and relaxed the Sentry expected-message filter to reject only explicitly unhandled issues. CodeRabbit's pm history warning was reviewed as a false positive because all .agents/pm mutations in this branch were produced through pm CLI commands. Verification: pnpm build, pnpm typecheck, release automation contract test, Sentry strict gate with explicit personal token, and required telemetry gate."
 files[18]{path,scope,note}:
   scripts/bundle-cli.mjs,project,Avoid deleting live bundle during rebuilds in shared local checkouts
   scripts/dogfood-package-first.mjs,project,Dogfood new get --depth brief contract

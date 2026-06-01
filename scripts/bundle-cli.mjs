@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdir, readdir, readFile, rename, rm, stat, unlink, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readdir, readFile, rename, rm, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { build } from "esbuild";
 
@@ -31,7 +31,12 @@ async function acquireBundleBuildLock() {
       if (!error || typeof error !== "object" || !("code" in error) || error.code !== "EEXIST") {
         throw error;
       }
-      const lockStats = await stat(lockDir).catch(() => null);
+      const lockStats = await stat(lockDir).catch((statError) => {
+        if (statError && typeof statError === "object" && "code" in statError && statError.code === "ENOENT") {
+          return null;
+        }
+        throw statError;
+      });
       if (!lockStats) {
         continue;
       }
@@ -91,7 +96,12 @@ async function removeStaleBundleFiles(outputs) {
     existingFiles
       .filter((filePath) => !expectedFiles.has(filePath))
       .map(async (filePath) => {
-        const fileStats = await stat(filePath).catch(() => null);
+        const fileStats = await lstat(filePath).catch((lstatError) => {
+          if (lstatError && typeof lstatError === "object" && "code" in lstatError && lstatError.code === "ENOENT") {
+            return null;
+          }
+          throw lstatError;
+        });
         if (!fileStats || now - fileStats.mtimeMs < bundleStaleRetentionMs) {
           return;
         }
