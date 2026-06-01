@@ -96,21 +96,11 @@ async function removeStaleBundleFiles(outputs) {
     existingFiles
       .filter((filePath) => !expectedFiles.has(filePath))
       .map(async (filePath) => {
-        const fileStats = await lstat(filePath).catch((lstatError) => {
-          if (lstatError && typeof lstatError === "object" && "code" in lstatError && lstatError.code === "ENOENT") {
-            return null;
-          }
-          throw lstatError;
-        });
+        const fileStats = await lstat(filePath).catch(() => null);
         if (!fileStats || now - fileStats.mtimeMs < bundleStaleRetentionMs) {
           return;
         }
-        await unlink(filePath).catch((error) => {
-          if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
-            return;
-          }
-          throw error;
-        });
+        await unlink(filePath).catch(() => {});
       }),
   );
 }

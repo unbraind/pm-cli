@@ -59,6 +59,25 @@ export function stableValueEquals(left: unknown, right: unknown): boolean {
   if (left instanceof RegExp || right instanceof RegExp) {
     return left instanceof RegExp && right instanceof RegExp && left.toString() === right.toString();
   }
+  if (left instanceof Date || right instanceof Date) {
+    return left instanceof Date && right instanceof Date && left.getTime() === right.getTime();
+  }
+  if (left instanceof Set || right instanceof Set) {
+    if (!(left instanceof Set && right instanceof Set) || left.size !== right.size) {
+      return false;
+    }
+    const leftValues = [...left].map(stableStringify).sort();
+    const rightValues = [...right].map(stableStringify).sort();
+    return leftValues.every((value, index) => value === rightValues[index]);
+  }
+  if (left instanceof Map || right instanceof Map) {
+    if (!(left instanceof Map && right instanceof Map) || left.size !== right.size) {
+      return false;
+    }
+    const leftEntries = [...left.entries()].map((entry) => stableStringify(entry)).sort();
+    const rightEntries = [...right.entries()].map((entry) => stableStringify(entry)).sort();
+    return leftEntries.every((value, index) => value === rightEntries[index]);
+  }
   return stableStringify(left) === stableStringify(right);
 }
 
