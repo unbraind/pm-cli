@@ -23,7 +23,7 @@ async function collectFiles(directory) {
       files.push(...await collectFiles(absolutePath));
       continue;
     }
-    if (entry.isFile()) {
+    if (entry.isFile() || entry.isSymbolicLink()) {
       files.push(absolutePath);
     }
   }
