@@ -73,12 +73,39 @@ describe("core/shared/serialization", () => {
     expect(stableValueEquals(/abc/i, /def/i)).toBe(false);
     expect(stableValueEquals(new Date("2026-01-01T00:00:00.000Z"), new Date("2026-01-01T00:00:00.000Z"))).toBe(true);
     expect(stableValueEquals(new Date("2026-01-01T00:00:00.000Z"), new Date("2026-01-02T00:00:00.000Z"))).toBe(false);
+    expect(stableValueEquals(new Date("2026-01-01T00:00:00.000Z"), {})).toBe(false);
     expect(stableValueEquals(new Set([{ b: 2, a: 1 }, "x"]), new Set(["x", { a: 1, b: 2 }]))).toBe(true);
     expect(stableValueEquals(new Set(["x"]), new Set(["y"]))).toBe(false);
     expect(stableValueEquals(new Set(["x"]), ["x"])).toBe(false);
+    expect(stableValueEquals(new Set(["x", "y"]), new Set(["x"]))).toBe(false);
+    expect(stableValueEquals(new Set([{ a: 1 }, { a: 1 }]), new Set([{ a: 1 }, { a: 1 }]))).toBe(true);
     expect(stableValueEquals(new Map([[{ b: 2, a: 1 }, "x"]]), new Map([[{ a: 1, b: 2 }, "x"]]))).toBe(true);
     expect(stableValueEquals(new Map([["x", 1]]), new Map([["x", 2]]))).toBe(false);
     expect(stableValueEquals(new Map([["x", 1]]), { x: 1 })).toBe(false);
+    expect(stableValueEquals(new Map([["x", 1], ["y", 2]]), new Map([["x", 1]]))).toBe(false);
+    expect(stableValueEquals(new Map([[{ a: 1 }, 1], [{ a: 1 }, 1]]), new Map([[{ a: 1 }, 1], [{ a: 1 }, 1]]))).toBe(true);
+    expect(stableValueEquals({ nested: /abc/i }, { nested: /abc/i })).toBe(true);
+    expect(stableValueEquals({ nested: /abc/i }, { nested: /def/i })).toBe(false);
+    expect(stableValueEquals({ nested: /abc/i }, { nested: {} })).toBe(false);
+    expect(stableValueEquals({ nested: new Set([/abc/i]) }, { nested: new Set([/def/i]) })).toBe(false);
+    expect(stableValueEquals(["x"], { 0: "x" })).toBe(false);
+    expect(stableValueEquals(["x"], ["x", "y"])).toBe(false);
+    expect(stableValueEquals(["x"], ["y"])).toBe(false);
+    expect(stableValueEquals({ a: 1 }, { a: 1, b: 2 })).toBe(false);
+    expect(stableValueEquals({ a: 1 }, { b: 1 })).toBe(false);
+    expect(stableValueEquals({ a: 1 }, { a: 2 })).toBe(false);
+    expect(
+      stableValueEquals(
+        { nested: new Map([[{ key: /abc/i }, new Set([new Date("2026-01-01T00:00:00.000Z")])]]) },
+        { nested: new Map([[{ key: /abc/i }, new Set([new Date("2026-01-01T00:00:00.000Z")])]]) },
+      ),
+    ).toBe(true);
+    expect(
+      stableValueEquals(
+        { nested: new Map([[{ key: /abc/i }, new Set([new Date("2026-01-01T00:00:00.000Z")])]]) },
+        { nested: new Map([[{ key: /abc/i }, new Set([new Date("2026-01-02T00:00:00.000Z")])]]) },
+      ),
+    ).toBe(false);
   });
 
   it("orderObject keeps known keys first, sorts unknown keys, and skips undefined values", () => {
