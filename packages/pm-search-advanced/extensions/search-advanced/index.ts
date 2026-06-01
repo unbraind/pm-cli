@@ -35,7 +35,8 @@ function scoreDocumentForQuery(
   document: ItemDocument,
 ): { score: number; matched_fields: string[] } {
   const metadata = document?.metadata;
-  if (!metadata) {
+  // A non-string id would crash hits.sort()'s localeCompare; treat as unscoreable.
+  if (!metadata || typeof metadata.id !== "string") {
     return { score: 0, matched_fields: [] };
   }
   const fields: Array<{ field: keyof typeof SEARCH_FIELD_WEIGHTS; tokens: string[] }> = [

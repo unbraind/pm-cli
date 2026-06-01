@@ -833,6 +833,15 @@ async function evaluatePmMaxVersionCompatibility(
   if (typeof manifest.pm_max_version !== "string" || manifest.pm_max_version.trim().length === 0) {
     return { allowed: true };
   }
+  // An upper bound must be an exact version. parseComparableVersion leniently strips a
+  // leading ">=" (for engines.pm min-version compat), which would turn a range-like
+  // ">=2026.6.1" into an inclusive max and wrongly block newer CLIs — reject range prefixes.
+  if (/^[<>=~^]/.test(manifest.pm_max_version.trim())) {
+    return {
+      allowed: false,
+      warning: `extension_pm_max_version_invalid:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}`,
+    };
+  }
   if (!parseComparableVersion(manifest.pm_max_version)) {
     return {
       allowed: false,
@@ -1763,13 +1772,17 @@ function createExtensionApi(
 
     if (options.flags !== undefined) {
       assertExtensionCapability(extension, "schema", `${method} options.flags`);
-      validateFlagDefinitions(options.flags);
-      registrations.flags.push({
-        layer: extension.layer,
-        name: extension.name,
-        target_command: commandPath,
-        flags: normalizeRegistrationRecordList(`${method} options.flags`, options.flags),
-      });
+      // Route metadata flags through the same surface-policy gate as registerFlags so
+      // enforce-mode policies blocking schema.flags are honored even when importers are allowed.
+      if (allowRegistration("schema.flags", `${method} options.flags`, "schema")) {
+        validateFlagDefinitions(options.flags);
+        registrations.flags.push({
+          layer: extension.layer,
+          name: extension.name,
+          target_command: commandPath,
+          flags: normalizeRegistrationRecordList(`${method} options.flags`, options.flags),
+        });
+      }
     }
 
     const registration: RegisteredExtensionCommandDefinition = {

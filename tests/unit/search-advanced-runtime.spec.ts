@@ -295,8 +295,15 @@ describe("search-advanced package runtime", () => {
       tokens: ["calendar"],
       options: {},
       settings: {},
-      documents: [{}, { metadata: null }, { metadata: { id: "pm-z", title: "calendar", tags: [null, "calendar"] } }],
+      documents: [
+        {},
+        { metadata: null },
+        { metadata: { title: "calendar" } },
+        { metadata: { id: 123, title: "calendar" } },
+        { metadata: { id: "pm-z", title: "calendar", tags: [null, "calendar"] } },
+      ],
     });
+    // Documents missing metadata, with a missing/non-string id, are skipped (no crash in sort()).
     expect(malformedHits.map((hit) => hit.id)).toEqual(["pm-z"]);
   });
 });

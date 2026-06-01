@@ -680,6 +680,35 @@ describe("extension loader", () => {
     });
   });
 
+  it("rejects a range-prefixed pm_max_version instead of treating it as an inclusive bound", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "range-max",
+        {
+          name: "range-max-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          // ">=" is valid for pm_min_version (engines.pm compat) but nonsensical as an upper bound.
+          pm_max_version: ">=2026.6.1",
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.effective).toEqual([]);
+      expect(discovery.warnings).toEqual([
+        "extension_pm_max_version_invalid:project:range-max-ext:allowed=>=2026.6.1",
+      ]);
+    });
+  });
+
   it("blocks extensions whose pm_max_version is exceeded by the current CLI before loading", async () => {
     await withTempPmPath(async (context) => {
       const roots = resolveExtensionRoots(context.pmPath);

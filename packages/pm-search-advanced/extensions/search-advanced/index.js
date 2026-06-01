@@ -20,7 +20,8 @@ function tokenizeSearchText(value) {
 
 function scoreDocumentForQuery(queryTokens, document) {
   const metadata = document?.metadata;
-  if (!metadata) {
+  // A non-string id would crash hits.sort()'s localeCompare; treat as unscoreable.
+  if (!metadata || typeof metadata.id !== "string") {
     return { score: 0, matched_fields: [] };
   }
   const fields = [
