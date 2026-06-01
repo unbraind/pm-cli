@@ -110,12 +110,19 @@ const KNOWN_IGNORED_CONSOLE_ISSUE_PATTERNS = [
   "[pm-ext-ts-starter] all capabilities registered.",
   "run `pm init` first to initialise a pm workspace",
 ];
+const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
+  "authentication required, not authenticated",
+  "csv is missing required 'title' column",
+  "failed to fetch issues from jira",
+  "no items imported",
+  "slack webhook request failed",
+];
 
 function issueTextValue(issue) {
   const metadata = issue && typeof issue === "object" ? issue.metadata : null;
   const metadataValue = metadata && typeof metadata.value === "string" ? metadata.value : "";
   const title = issue && typeof issue.title === "string" ? issue.title : "";
-  return `${title}\n${metadataValue}`.toLowerCase();
+  return `${title}\n${metadataValue}`;
 }
 
 function isIgnoredConsoleNoiseIssue(issue) {
@@ -123,21 +130,36 @@ function isIgnoredConsoleNoiseIssue(issue) {
   if (logger !== "console") {
     return false;
   }
-  const combinedText = issueTextValue(issue);
+  const combinedText = issueTextValue(issue).toLowerCase();
   return KNOWN_IGNORED_CONSOLE_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
+}
+
+function isExpectedHandledCliIssue(issue) {
+  const metadata = issue && typeof issue === "object" ? issue.metadata : null;
+  const type = metadata && typeof metadata.type === "string" ? metadata.type : "";
+  if ((type !== "PmCliError" && type !== "CommandError") || issue?.isUnhandled === true) {
+    return false;
+  }
+  const combinedText = issueTextValue(issue).toLowerCase();
+  return KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
 }
 
 function partitionSentryIssuesForGate(issues) {
   const relevant = [];
-  const ignored = [];
+  const ignoredNoise = [];
+  const ignoredExpected = [];
   for (const issue of issues) {
     if (isIgnoredConsoleNoiseIssue(issue)) {
-      ignored.push(issue);
+      ignoredNoise.push(issue);
+      continue;
+    }
+    if (isExpectedHandledCliIssue(issue)) {
+      ignoredExpected.push(issue);
       continue;
     }
     relevant.push(issue);
   }
-  return { relevant, ignored };
+  return { relevant, ignoredNoise, ignoredExpected };
 }
 
 function redactedTokenCandidates() {
@@ -182,7 +204,7 @@ function fetchSentryIssuesViaCli(project, query, limit, priorFailure) {
       project,
       "--json",
       "--fields",
-      "shortId,title,level,priority,status,culprit,metadata,logger",
+      "shortId,title,level,priority,status,culprit,metadata,logger,isUnhandled",
       "--query",
       query,
       "--limit",
@@ -456,8 +478,13 @@ async function main() {
       critical: sentrySummary.critical,
       high: sentrySummary.high,
       total: sentrySummary.total,
-      ignored_noise_total: sentryPartition.ignored.length,
-      ignored_noise_short_ids: sentryPartition.ignored
+      ignored_noise_total: sentryPartition.ignoredNoise.length,
+      ignored_noise_short_ids: sentryPartition.ignoredNoise
+        .map((issue) => issue?.shortId)
+        .filter((value) => typeof value === "string")
+        .slice(0, 25),
+      ignored_expected_cli_error_total: sentryPartition.ignoredExpected.length,
+      ignored_expected_cli_error_short_ids: sentryPartition.ignoredExpected
         .map((issue) => issue?.shortId)
         .filter((value) => typeof value === "string")
         .slice(0, 25),
@@ -471,11 +498,11 @@ async function main() {
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   } else if (ok) {
     console.log(
-      `Sentry/telemetry gate passed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, ignored_noise=${sentryPartition.ignored.length}, telemetry_mode=${telemetryMode}).`,
+      `Sentry/telemetry gate passed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, ignored_noise=${sentryPartition.ignoredNoise.length}, ignored_expected_cli=${sentryPartition.ignoredExpected.length}, telemetry_mode=${telemetryMode}).`,
     );
   } else {
     console.error(
-      `Sentry/telemetry gate failed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, ignored_noise=${sentryPartition.ignored.length}, telemetry_mode=${telemetryMode}).`,
+      `Sentry/telemetry gate failed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, ignored_noise=${sentryPartition.ignoredNoise.length}, ignored_expected_cli=${sentryPartition.ignoredExpected.length}, telemetry_mode=${telemetryMode}).`,
     );
   }
 

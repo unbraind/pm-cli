@@ -112,7 +112,7 @@ Runtime path overrides:
 - `PM_PATH`: project tracker root
 - `PM_GLOBAL_PATH`: global profile root
 
-A minimal extension has a `manifest.json` and an entrypoint:
+A minimal standalone extension has a `manifest.json` and an import-free entrypoint. Standalone entries are loaded by file URL from the extension directory, so they should not import `@unbrained/pm-cli` unless the extension is installed as a package with its own dependencies.
 
 ```json
 {
@@ -125,6 +125,23 @@ A minimal extension has a `manifest.json` and an entrypoint:
   "capabilities": ["commands"]
 }
 ```
+
+```js
+/** @param {import("@unbrained/pm-cli/sdk").ExtensionApi} api */
+export function activate(api) {
+  api.registerCommand({
+    name: "hello",
+    description: "Print a deterministic hello payload.",
+    intent: "verify extension command activation",
+    examples: ["pm hello"],
+    run() {
+      return { ok: true, message: "hello" };
+    },
+  });
+}
+```
+
+Package-backed extensions can use the SDK helper after declaring `@unbrained/pm-cli` in `package.json` and installing dependencies. Use this shape for packages published to npm or installed from a package root:
 
 ```js
 import { defineExtension } from "@unbrained/pm-cli/sdk";

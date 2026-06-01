@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runUpdateMany } from "../../src/cli/commands/update-many.js";
+import { matchesRuntimeFilters } from "../../src/core/schema/runtime-field-filters.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -63,6 +64,16 @@ function getItemTests(context: TempPmContext, id: string): Array<{ command?: str
 }
 
 describe("runUpdateMany", () => {
+  it("matches object-valued runtime filters without depending on key insertion order", () => {
+    expect(
+      matchesRuntimeFilters(
+        { payload: { b: 2, a: 1 } },
+        { payload: { a: 1, b: 2 } },
+      ),
+    ).toBe(true);
+    expect(matchesRuntimeFilters({}, { payload: "undefined" })).toBe(false);
+  });
+
   it("produces dry-run plans without mutating matched items", async () => {
     await withTempPmPath(async (context) => {
       const firstId = createTask(context, "bulk-dry-run-a", { tags: "bulk-dry-run" });

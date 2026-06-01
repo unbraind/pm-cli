@@ -125,7 +125,7 @@ const METADATA_TRUNCATED_KEY_BY_FIELD: Record<ValidateMetadataRequiredField, str
 };
 const GIT_LS_FILES_MAX_BUFFER = 32 * 1024 * 1024;
 const FILE_LIST_SUMMARY_LIMIT = 40;
-const DIAGNOSTIC_LIST_SUMMARY_LIMIT = 40;
+const DIAGNOSTIC_LIST_SUMMARY_LIMIT = 5;
 const execFileAsync = promisify(execFile);
 
 export interface ValidateCommandOptions {
@@ -939,6 +939,7 @@ function buildLifecycleCheck(
   dependencyCycleSeverity: ValidateDependencyCycleSeverity,
   statusRegistry: RuntimeStatusRegistry,
   lifecyclePatternPolicy: LifecyclePatternPolicy,
+  verboseDiagnostics: boolean,
 ): { check: ValidateCheck; warnings: string[] } {
   const itemsById = new Map(items.map((item) => [item.id, item]));
   const blockedStatuses =
@@ -1046,17 +1047,21 @@ function buildLifecycleCheck(
     );
   }
 
+  const diagnosticLimit = verboseDiagnostics ? Number.POSITIVE_INFINITY : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
   const summarizedClosureLikeRows = summarizeList(
     closureLikeRows.map((row) => `${row.id}:${row.fields.join(",")}`),
+    diagnosticLimit,
   );
   const summarizedTerminalParentRows = summarizeList(
     terminalParentRows.map((row) => `${row.id}:${row.parent_id}:${row.parent_status}`),
+    diagnosticLimit,
   );
   const summarizedStaleBlockerRows = summarizeList(
     staleBlockerRows.map((row) => `${row.id}:${row.status}:${row.reasons.join(",")}`),
+    diagnosticLimit,
   );
-  const summarizedDependencyCycleItemIds = summarizeList(dependencyCycleDiagnostics.cycle_item_ids);
-  const summarizedDependencyCycleSamplePaths = summarizeList(dependencyCycleDiagnostics.cycle_sample_paths);
+  const summarizedDependencyCycleItemIds = summarizeList(dependencyCycleDiagnostics.cycle_item_ids, diagnosticLimit);
+  const summarizedDependencyCycleSamplePaths = summarizeList(dependencyCycleDiagnostics.cycle_sample_paths, diagnosticLimit);
 
   return {
     check: {
@@ -1219,7 +1224,11 @@ async function buildFilesCheck(
   };
 }
 
-async function buildHistoryDriftCheck(pmRoot: string, items: ItemWithBody[]): Promise<{ check: ValidateCheck; warnings: string[] }> {
+async function buildHistoryDriftCheck(
+  pmRoot: string,
+  items: ItemWithBody[],
+  verboseDiagnostics: boolean,
+): Promise<{ check: ValidateCheck; warnings: string[] }> {
   const { missingStreams, unreadableStreams, hashMismatches, chainMismatches, driftedItems } = await scanHistoryDrift(
     pmRoot,
     items,
@@ -1237,7 +1246,8 @@ async function buildHistoryDriftCheck(pmRoot: string, items: ItemWithBody[]): Pr
   if (chainMismatches.length > 0) {
     warnings.push(`validate_history_drift_chain_mismatches:${chainMismatches.length}`);
   }
-  const summarizedDrifted = summarizeList(driftedItems);
+  const diagnosticLimit = verboseDiagnostics ? Number.POSITIVE_INFINITY : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
+  const summarizedDrifted = summarizeList(driftedItems, diagnosticLimit);
   return {
     check: {
       name: "history_drift",
@@ -1268,6 +1278,7 @@ function summarizeCommandReferenceRow(ownerId: string, referencedId: string, com
 function buildCommandReferencesCheck(
   items: ItemWithBody[],
   idPrefix: string,
+  verboseDiagnostics: boolean,
 ): { check: ValidateCheck; warnings: string[] } {
   const knownIds = new Set(items.map((item) => item.id.toLowerCase()));
   let linkedCommandsScanned = 0;
@@ -1301,9 +1312,13 @@ function buildCommandReferencesCheck(
     .sort((left, right) => left.localeCompare(right));
   const warnings =
     uniqueStaleReferenceRows.length > 0 ? [`validate_command_references_stale_pm_ids:${uniqueStaleReferenceRows.length}`] : [];
-  const summarizedRows = summarizeList(uniqueStaleReferenceRows);
-  const summarizedStalePmIds = summarizeList(stalePmIds);
-  const summarizedReferencedPmIds = summarizeList([...referencedPmIds].sort((left, right) => left.localeCompare(right)));
+  const diagnosticLimit = verboseDiagnostics ? Number.POSITIVE_INFINITY : DIAGNOSTIC_LIST_SUMMARY_LIMIT;
+  const summarizedRows = summarizeList(uniqueStaleReferenceRows, diagnosticLimit);
+  const summarizedStalePmIds = summarizeList(stalePmIds, diagnosticLimit);
+  const summarizedReferencedPmIds = summarizeList(
+    [...referencedPmIds].sort((left, right) => left.localeCompare(right)),
+    diagnosticLimit,
+  );
 
   return {
     check: {
@@ -1380,6 +1395,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
       dependencyCycleSeverity,
       statusRegistry,
       lifecyclePatternPolicy,
+      Boolean(options.verboseDiagnostics),
     );
     checks.push(lifecycleCheck.check);
     warnings.push(...lifecycleCheck.warnings);
@@ -1397,12 +1413,12 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
     warnings.push(...filesCheck.warnings);
   }
   if (requestedChecks.has("command_references")) {
-    const commandReferencesCheck = buildCommandReferencesCheck(items, settings.id_prefix);
+    const commandReferencesCheck = buildCommandReferencesCheck(items, settings.id_prefix, Boolean(options.verboseDiagnostics));
     checks.push(commandReferencesCheck.check);
     warnings.push(...commandReferencesCheck.warnings);
   }
   if (requestedChecks.has("history_drift")) {
-    const historyDriftCheck = await buildHistoryDriftCheck(pmRoot, items);
+    const historyDriftCheck = await buildHistoryDriftCheck(pmRoot, items, Boolean(options.verboseDiagnostics));
     checks.push(historyDriftCheck.check);
     warnings.push(...historyDriftCheck.warnings);
   }

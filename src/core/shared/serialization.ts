@@ -49,6 +49,91 @@ export function stableStringify(value: unknown): string {
   return JSON.stringify(sortObjectKeys(value));
 }
 
+export function stableValueEquals(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) {
+    return true;
+  }
+  if (left === null || right === null || typeof left !== "object" || typeof right !== "object") {
+    return false;
+  }
+  if (left instanceof RegExp || right instanceof RegExp) {
+    return left instanceof RegExp && right instanceof RegExp && left.toString() === right.toString();
+  }
+  if (left instanceof Date || right instanceof Date) {
+    return left instanceof Date && right instanceof Date && left.getTime() === right.getTime();
+  }
+  if (left instanceof Set || right instanceof Set) {
+    if (!(left instanceof Set && right instanceof Set) || left.size !== right.size) {
+      return false;
+    }
+    const rightValues = [...right];
+    const matched = new Set<number>();
+    for (const leftValue of left) {
+      let found = false;
+      for (let index = 0; index < rightValues.length; index += 1) {
+        if (matched.has(index)) {
+          continue;
+        }
+        if (stableValueEquals(leftValue, rightValues[index])) {
+          matched.add(index);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        return false;
+      }
+    }
+    return true;
+  }
+  if (left instanceof Map || right instanceof Map) {
+    if (!(left instanceof Map && right instanceof Map) || left.size !== right.size) {
+      return false;
+    }
+    const rightEntries = [...right.entries()];
+    const matched = new Set<number>();
+    for (const [leftKey, leftValue] of left.entries()) {
+      let found = false;
+      for (let index = 0; index < rightEntries.length; index += 1) {
+        if (matched.has(index)) {
+          continue;
+        }
+        const [rightKey, rightValue] = rightEntries[index]!;
+        if (stableValueEquals(leftKey, rightKey) && stableValueEquals(leftValue, rightValue)) {
+          matched.add(index);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        return false;
+      }
+    }
+    return true;
+  }
+  if (Array.isArray(left) || Array.isArray(right)) {
+    if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+      return false;
+    }
+    return left.every((value, index) => stableValueEquals(value, right[index]));
+  }
+  const leftKeys = Object.keys(left).sort((a, b) => a.localeCompare(b));
+  const rightKeys = Object.keys(right).sort((a, b) => a.localeCompare(b));
+  if (leftKeys.length !== rightKeys.length) {
+    return false;
+  }
+  for (let index = 0; index < leftKeys.length; index += 1) {
+    const leftKey = leftKeys[index]!;
+    if (leftKey !== rightKeys[index]) {
+      return false;
+    }
+    if (!stableValueEquals((left as Record<string, unknown>)[leftKey], (right as Record<string, unknown>)[leftKey])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function sha256Hex(value: string): string {
   return crypto.createHash("sha256").update(value, "utf8").digest("hex");
 }

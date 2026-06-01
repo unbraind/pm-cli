@@ -169,10 +169,9 @@ describe("runGet and runAppend", () => {
       const brief = await runGet(id, { path: context.pmPath }, { depth: "brief" });
       expect(brief.item.id).toBe(id);
       expect(brief.item.comments).toBeUndefined();
-      expect(brief.linked.files).toEqual([]);
-      expect(brief.linked.tests).toEqual([]);
-      expect(brief.linked.docs).toEqual([]);
-      expect(brief.body).toBe("");
+      expect(brief.linked).toBeUndefined();
+      expect(brief.body).toBeUndefined();
+      expect(brief.claim_state).toBeUndefined();
 
       await expect(runGet(id, { path: context.pmPath }, { depth: "verbose" })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
@@ -211,6 +210,12 @@ describe("runGet and runAppend", () => {
       expect(withBodyAndFiles.body).toBe("fields body");
       expect(withBodyAndFiles.linked.files).toHaveLength(1);
       expect(withBodyAndFiles.linked.tests).toEqual([]);
+
+      const withOnlyTests = await runGet(id, { path: context.pmPath }, { fields: "id,linked.tests" });
+      expect(withOnlyTests.item).toEqual({ id });
+      expect(withOnlyTests.linked?.files).toEqual([]);
+      expect(withOnlyTests.linked?.tests).toHaveLength(1);
+      expect(withOnlyTests.linked?.docs).toEqual([]);
 
       const withClaimState = await runGet(id, { path: context.pmPath }, { fields: "id,claim_state" });
       expect(withClaimState.item).toEqual({ id });

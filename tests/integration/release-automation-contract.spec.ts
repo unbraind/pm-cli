@@ -68,6 +68,21 @@ describe("release automation contract", () => {
     expect(workflow).toContain("SENTRY_PERSONAL_ADMIN_TOKEN");
   });
 
+  it("keeps bundle rebuilds safe for concurrent local pm invocations", async () => {
+    const bundleScript = await readFile(path.join(repoRoot, "scripts/bundle-cli.mjs"), "utf8");
+    expect(bundleScript).not.toContain("rm(outputDir");
+    expect(bundleScript).toContain("Do not delete the live bundle before rebuilding");
+    expect(bundleScript).toContain("metafile: true");
+    expect(bundleScript).toContain("removeStaleBundleFiles");
+    expect(bundleScript).toContain("entry.isSymbolicLink()");
+    expect(bundleScript).toContain("acquireBundleBuildLock");
+    expect(bundleScript).toContain(".cli-bundle-build.lock");
+    expect(bundleScript).toContain("rename(lockDir");
+    expect(bundleScript).toContain("bundleStaleRetentionMs");
+    expect(bundleScript).toContain("if (!lockStats)");
+    expect(bundleScript).toContain("await lstat(filePath)");
+  });
+
   it("builds dist before the auto-release pipeline consumes dist/cli.js", async () => {
     const workflow = await readFile(path.join(repoRoot, ".github/workflows/auto-release.yml"), "utf8");
     expect(workflow).toContain("pnpm build");
@@ -108,6 +123,11 @@ describe("release automation contract", () => {
   it("keeps telemetry query command execution portable outside shell scripts", async () => {
     const gateSource = await readFile(path.join(repoRoot, "scripts/release/sentry-telemetry-gate.mjs"), "utf8");
     expect(gateSource).toContain('commandFor("sentry")');
+    expect(gateSource).toContain("function isExpectedHandledCliIssue");
+    expect(gateSource).toContain('issue?.isUnhandled === true');
+    expect(gateSource).toContain("const combinedText = issueTextValue(issue).toLowerCase();");
+    expect(gateSource).toContain("KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS");
+    expect(gateSource).toContain("ignored_expected_cli_error_total");
     expect(gateSource).toContain("function buildTelemetryCommandInvocation");
     expect(gateSource).toContain('commandPath.endsWith(".sh")');
     expect(gateSource).toContain("telemetryInvocation.command");
