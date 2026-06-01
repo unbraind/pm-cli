@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdir, readdir, readFile, rm, stat, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, rm, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { build } from "esbuild";
 
@@ -32,7 +32,20 @@ async function acquireBundleBuildLock() {
       }
       const lockStats = await stat(lockDir).catch(() => null);
       if (lockStats && Date.now() - lockStats.mtimeMs > staleLockMs) {
-        await rm(lockDir, { recursive: true, force: true });
+        const staleCandidateDir = `${lockDir}.stale.${Date.now()}.${Math.random().toString(36).slice(2)}`;
+        try {
+          await rename(lockDir, staleCandidateDir);
+          await rm(staleCandidateDir, { recursive: true, force: true });
+        } catch (staleError) {
+          if (
+            !staleError ||
+            typeof staleError !== "object" ||
+            !("code" in staleError) ||
+            !["ENOENT", "EEXIST", "ENOTEMPTY"].includes(String(staleError.code))
+          ) {
+            throw staleError;
+          }
+        }
         continue;
       }
       if (Date.now() - startedAt > lockTimeoutMs) {
