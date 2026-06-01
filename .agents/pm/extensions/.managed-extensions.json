@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-06-01T19:58:25.784Z",
+  "updated_at": "2026-06-01T20:08:23.245Z",
   "entries": [
     {
       "name": "pm-changelog",
@@ -13,7 +13,7 @@
         "schema"
       ],
       "installed_at": "2026-05-23T20:26:03.509Z",
-      "updated_at": "2026-06-01T19:54:38.240Z",
+      "updated_at": "2026-06-01T20:08:16.228Z",
       "source": {
         "kind": "npm",
         "input": "npm:pm-changelog",

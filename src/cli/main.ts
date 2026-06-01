@@ -1979,11 +1979,10 @@ function shouldRegisterRuntimeSchemaFlags(invocationArgv: string[]): boolean {
 function enforceExplicitRetryForFlagTypos(
   bootstrapInvocation: ReturnType<typeof normalizeBootstrapInvocation>,
 ): void {
-  const rawCommandName = bootstrapInvocation.commandName;
-  if (!rawCommandName) {
+  const commandName = bootstrapInvocation.commandName;
+  if (!commandName) {
     return;
   }
-  const commandName = rawCommandName.trim().toLowerCase();
   const typoEvent = bootstrapInvocation.trace.find((entry) => entry.reason === "flag_typo");
   if (!typoEvent) {
     return;

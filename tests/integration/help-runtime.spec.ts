@@ -229,16 +229,6 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
-  it("classifies mixed-case mutating command typos before command dispatch", async () => {
-    await withTempPmPath(async (context) => {
-      const result = context.runCli(["Create", "--titel", "Mixed case mutation probe", "--type", "Task", "--json"]);
-      expect(result.code).toBe(2);
-      const envelope = parseJsonErrorEnvelope(result.stderr);
-      expect(envelope.code).toBe("mutating_flag_typo_requires_retry");
-      expect(envelope.recovery?.suggested_retry).toContain("--title");
-    });
-  });
-
   it("requires an explicit retry for query flag typos", async () => {
     await withTempPmPath(async (context) => {
       const created = context.runCli(["create", "--title", "Query typo guard", "--type", "Task", "--json"], {
