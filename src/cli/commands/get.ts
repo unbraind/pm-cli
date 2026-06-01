@@ -210,7 +210,7 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
   const includeLinkedFiles = includeLinked || fieldsInclude(fields, "linked.files");
   const includeLinkedTests = includeLinked || fieldsInclude(fields, "linked.tests");
   const includeLinkedDocs = includeLinked || fieldsInclude(fields, "linked.docs");
-  const includeClaimState = !fieldProjection || fieldsIncludeRoot(fields, "claim_state");
+  const includeClaimState = !fieldProjection ? depth !== "brief" : fieldsIncludeRoot(fields, "claim_state");
   let claimState: ClaimStateContext | undefined;
   if (includeClaimState) {
     const historyPath = getHistoryPath(pmRoot, located.id);
@@ -227,10 +227,10 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
       ? projectItemForFields(loaded.document.metadata, fields)
       : projectItemForDepth(loaded.document.metadata, depth),
   };
-  if (!fieldProjection || includeBody) {
-    result.body = includeBody ? loaded.document.body : "";
+  if (includeBody) {
+    result.body = loaded.document.body;
   }
-  if (!fieldProjection || includeLinked || includeLinkedFiles || includeLinkedTests || includeLinkedDocs) {
+  if (includeLinked || includeLinkedFiles || includeLinkedTests || includeLinkedDocs) {
     result.linked = {
       files: includeLinkedFiles ? files : [],
       tests: includeLinkedTests ? tests : [],

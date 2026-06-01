@@ -554,8 +554,8 @@ describe("CLI help runtime coverage (sandboxed)", () => {
       expect(brief.code).toBe(0);
       const payload = brief.json as { item?: { id?: string }; body?: string; linked?: { files?: unknown[] } };
       expect(payload.item?.id).toBe(id);
-      expect(payload.body).toBe("");
-      expect(payload.linked?.files).toEqual([]);
+      expect(payload.body).toBeUndefined();
+      expect(payload.linked).toBeUndefined();
 
       const depthFull = context.runCli(["get", id, "--depth", "full", "--json"], { expectJson: true });
       expect(depthFull.code).toBe(0);

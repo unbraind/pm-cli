@@ -9,6 +9,7 @@ import { createStdinTokenResolver, parseCsvKv, parseOptionalNumber } from "../..
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { stableStringify } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
 import { locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getSettingsPath, ITEM_FILE_EXTENSIONS, resolveGlobalPmRoot, resolvePmRoot } from "../../core/store/paths.js";
@@ -1290,7 +1291,7 @@ function compareAssertionValues(actual: unknown, expected: unknown): boolean {
     typeof expected === "object" &&
     expected !== null
   ) {
-    return JSON.stringify(actual) === JSON.stringify(expected);
+    return stableStringify(actual) === stableStringify(expected);
   }
   return Object.is(actual, expected);
 }

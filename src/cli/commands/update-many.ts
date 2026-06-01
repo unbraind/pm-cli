@@ -9,6 +9,7 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { toErrorMessage } from "../../core/shared/primitives.js";
+import { stableStringify } from "../../core/shared/serialization.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -353,7 +354,7 @@ function normalizeUnsetField(rawField: string): string {
 }
 
 function areValuesEqual(left: unknown, right: unknown): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+  return stableStringify(left) === stableStringify(right);
 }
 
 function normalizeCollectionBeforeValue(field: string, value: unknown): unknown {

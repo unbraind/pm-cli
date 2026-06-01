@@ -2143,7 +2143,9 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
         command_resolution: commandResolution,
         resolution_stage: "execute",
       });
-      sentryCaptureCliError(wrapThrownErrorForSentry(error, errorMessage));
+      if (loggedHandledErrorToSentry) {
+        sentryCaptureCliError(wrapThrownErrorForSentry(error, errorMessage));
+      }
       if (jsonErrors) {
         printError(JSON.stringify(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext), null, 2));
       } else {

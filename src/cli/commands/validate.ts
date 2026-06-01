@@ -125,7 +125,7 @@ const METADATA_TRUNCATED_KEY_BY_FIELD: Record<ValidateMetadataRequiredField, str
 };
 const GIT_LS_FILES_MAX_BUFFER = 32 * 1024 * 1024;
 const FILE_LIST_SUMMARY_LIMIT = 40;
-const DIAGNOSTIC_LIST_SUMMARY_LIMIT = 40;
+const DIAGNOSTIC_LIST_SUMMARY_LIMIT = 5;
 const execFileAsync = promisify(execFile);
 
 export interface ValidateCommandOptions {

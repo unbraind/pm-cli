@@ -127,17 +127,28 @@ function isIgnoredConsoleNoiseIssue(issue) {
   return KNOWN_IGNORED_CONSOLE_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
 }
 
+function isExpectedHandledCliIssue(issue) {
+  const metadata = issue && typeof issue === "object" ? issue.metadata : null;
+  const type = metadata && typeof metadata.type === "string" ? metadata.type : "";
+  return type === "PmCliError" || type === "CommandError";
+}
+
 function partitionSentryIssuesForGate(issues) {
   const relevant = [];
-  const ignored = [];
+  const ignoredNoise = [];
+  const ignoredExpected = [];
   for (const issue of issues) {
     if (isIgnoredConsoleNoiseIssue(issue)) {
-      ignored.push(issue);
+      ignoredNoise.push(issue);
+      continue;
+    }
+    if (isExpectedHandledCliIssue(issue)) {
+      ignoredExpected.push(issue);
       continue;
     }
     relevant.push(issue);
   }
-  return { relevant, ignored };
+  return { relevant, ignoredNoise, ignoredExpected };
 }
 
 function redactedTokenCandidates() {
@@ -456,8 +467,13 @@ async function main() {
       critical: sentrySummary.critical,
       high: sentrySummary.high,
       total: sentrySummary.total,
-      ignored_noise_total: sentryPartition.ignored.length,
-      ignored_noise_short_ids: sentryPartition.ignored
+      ignored_noise_total: sentryPartition.ignoredNoise.length,
+      ignored_noise_short_ids: sentryPartition.ignoredNoise
+        .map((issue) => issue?.shortId)
+        .filter((value) => typeof value === "string")
+        .slice(0, 25),
+      ignored_expected_cli_error_total: sentryPartition.ignoredExpected.length,
+      ignored_expected_cli_error_short_ids: sentryPartition.ignoredExpected
         .map((issue) => issue?.shortId)
         .filter((value) => typeof value === "string")
         .slice(0, 25),
@@ -471,11 +487,11 @@ async function main() {
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   } else if (ok) {
     console.log(
-      `Sentry/telemetry gate passed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, ignored_noise=${sentryPartition.ignored.length}, telemetry_mode=${telemetryMode}).`,
+      `Sentry/telemetry gate passed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, ignored_noise=${sentryPartition.ignoredNoise.length}, ignored_expected_cli=${sentryPartition.ignoredExpected.length}, telemetry_mode=${telemetryMode}).`,
     );
   } else {
     console.error(
-      `Sentry/telemetry gate failed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, ignored_noise=${sentryPartition.ignored.length}, telemetry_mode=${telemetryMode}).`,
+      `Sentry/telemetry gate failed (critical=${sentrySummary.critical}, high=${sentrySummary.high}, ignored_noise=${sentryPartition.ignoredNoise.length}, ignored_expected_cli=${sentryPartition.ignoredExpected.length}, telemetry_mode=${telemetryMode}).`,
     );
   }
 

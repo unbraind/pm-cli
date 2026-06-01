@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { build } from "esbuild";
 
@@ -9,8 +9,9 @@ const entryPoint = path.join(repoRoot, "dist", "cli", "main.js");
 const outputDir = path.join(repoRoot, "dist", "cli-bundle");
 const binPath = path.join(repoRoot, "dist", "cli.js");
 
-await rm(outputDir, { recursive: true, force: true });
-
+// Do not delete the live bundle before rebuilding. Agents often run docs,
+// dogfood, and build gates concurrently in one checkout; removing this folder
+// creates a transient broken `dist/cli.js` runtime.
 await build({
   entryPoints: [entryPoint],
   outdir: outputDir,

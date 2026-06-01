@@ -231,8 +231,9 @@ try {
   run("search keyword", ["search", "Dogfood package-first workflow", "--limit", "5"]);
   const getBrief = run("get brief", ["get", id, "--depth", "brief"]);
   assert(getBrief?.item?.id === id, "get --depth brief did not return the requested item");
-  assert(getBrief?.body === "", "get --depth brief should omit body text for low-token inspection");
-  assert(Array.isArray(getBrief?.linked?.files) && getBrief.linked.files.length === 0, "get --depth brief should omit linked files");
+  assert(getBrief?.body === undefined, "get --depth brief should omit body text for low-token inspection");
+  assert(getBrief?.linked === undefined, "get --depth brief should omit linked containers");
+  assert(getBrief?.claim_state === undefined, "get --depth brief should omit claim state history");
   const listOpenBrief = run("list-open default brief", ["list-open", "--limit", "1"]);
   assert(listOpenBrief?.projection?.mode === "compact", "list-open default should use compact brief projection");
   assert(

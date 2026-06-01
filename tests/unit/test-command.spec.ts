@@ -1461,6 +1461,25 @@ describe("runTest", () => {
 
       await overwriteTaskTests(context, id, [
         {
+          command: "node -e \"process.stdout.write(JSON.stringify({obj:{b:2,a:1}}))\"",
+          scope: "project",
+          assert_json_field_equals: {
+            obj: "{\"a\":1,\"b\":2}",
+          },
+        },
+      ]);
+      const reorderedObjectPass = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+      expect(reorderedObjectPass.run_results[0]?.status).toBe("passed");
+
+      await overwriteTaskTests(context, id, [
+        {
           command: "node -e \"process.stdout.write('not-json')\"",
           scope: "project",
           assert_json_field_gte: {

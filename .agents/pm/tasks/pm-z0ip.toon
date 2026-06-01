@@ -1,0 +1,48 @@
+id: pm-z0ip
+title: 2026-06-01 package ecosystem SDK agent UX audit and hardening
+description: "Detailed manual audit, temp-project dogfood, SDK/ecosystem review, agent-optimized UX review, telemetry/Sentry validation, CI/PR review loop, and targeted hardening on latest main. Duplicate check: pm search found prior closed broad-audit lineage pm-59gj/pm-kd9n/pm-etxf/pm-qmx3 and no in-progress audit items; this task records the new June 1 requested pass."
+type: Task
+status: in_progress
+priority: 0
+tags[7]: agent-ux,audit,ci,ecosystem,package-first,sdk,telemetry
+created_at: "2026-06-01T20:57:09.204Z"
+updated_at: "2026-06-01T21:22:29.820Z"
+assignee: codex-audit-20260601
+author: codex-audit-20260601
+comments[11]{created_at,author,text}:
+  "2026-06-01T20:57:16.236Z",codex-audit-20260601,"Investigation note: Required orientation completed: pm context, pm search, pm list-open, pm list-in-progress. Existing broad audit lineage is closed; no in-progress duplicate found. Proceeding with bounded sub-agent review lanes and local dogfood/implementation."
+  "2026-06-01T20:58:05.168Z",subagent-sdk-20260601,"Lane start: SDK/package ecosystem audit by subagent-sdk-20260601. Scope: package.json, sdk sources, package/extension runtime surfaces, docs/SDK.md, docs/EXTENSIONS.md, and init/install/contracts tests. Read-only lane; no file edits planned."
+  "2026-06-01T20:58:07.865Z",subagent-docsci-20260601,"Lane start: docs/CI/observability audit reviewing progressive-disclosure docs, README/AGENTS links, GitHub workflows, changelog/release setup, secrets/privacy posture, Sentry/telemetry validation scripts, and free-service assumptions. No file edits planned."
+  "2026-06-01T20:58:10.256Z",subagent-uxperf-20260601,"Lane start: CLI agent-UX/performance audit lane inspecting contracts/help/list/search/get/history/health/validate/reindex surfaces, compact defaults, parser recovery, startup/telemetry hot paths. Scope is read-only code audit; duplicate check reused pm-z0ip after context/search/list-open/list-in-progress."
+  "2026-06-01T20:58:18.946Z",subagent-quality-20260601,"Quality lane start: inspecting complex/long files, duplicated logic/tests/docs, dead legacy code, dependency/type-safety risks, and low-risk optimization opportunities. No edits planned; duplicate check reused active lineage pm-z0ip."
+  "2026-06-01T21:02:07.365Z",subagent-uxperf-20260601,"Lane final findings: 1) MED get --depth brief is not brief: src/cli/commands/get.ts:208-223 still emits empty body/linked shells and reads full history for claim_state; pm get pm-z0ip --json and --depth brief were both 1198 bytes vs --fields id,title,status,type,updated_at 213 bytes. Fix: omit body/linked on brief and gate claim_state history behind standard/deep or explicit field. 2) MED validate resolution JSON is token-heavy: src/cli/commands/validate.ts:776-795 emits up to 40 missing rows plus 40 full pm update commands by default; pm validate --check-resolution --check-history-drift --json returned 37 rows and 37 remediation commands. Fix: default to counts/top-N and add explicit --verbose-diagnostics/--remediation-hints for full commands. 3) LOW reindex discoverability/package split: src/cli/commands/reindex.ts:474-770 exists, src/cli/commands/index.ts lacks runReindex export, pm reindex --help --json exits unknown_command while contracts package-owned hints point to search-advanced. Fix: either remove/move dead core implementation or register/package it consistently, and add search-advanced/reindex to rich package hints in src/cli/error-guidance.ts:75-80. No new pm items created."
+  "2026-06-01T21:02:13.158Z",subagent-sdk-20260601,"Final SDK/package audit findings: found one concrete docs/example ergonomics defect fitting pm-z0ip. docs/EXTENSIONS.md minimal standalone extension imports @unbrained/pm-cli/sdk, but extension-only runtime cannot resolve that dependency unless the copied extension/package has its own package.json deps installed; isolated doctor repro returned extension_load_failed_sdk_dependency_missing. Suggested fix: split standalone extension snippets from package snippets or require package.json+npm install when using SDK imports, matching scaffold behavior. Evidence: pnpm build; targeted tests 9 files/217 tests passed; temp PM_PATH repro confirmed warning."
+  "2026-06-01T21:02:52.317Z",subagent-quality-20260601,"Quality lane final: findings only, no edits. Medium: raw JSON.stringify equality in linked-test assertions/runtime filters/update-many is order-sensitive; use stableStringify/deep equality and add order-variant tests (src/cli/commands/test.ts:1293, src/core/schema/runtime-field-filters.ts:4-5, src/cli/commands/update-many.ts:355-356). Low: unused-symbol audit fails with stale helpers/imports, concentrated in extension loader/test command; run pnpm exec tsc --noEmit -p tsconfig.json --noUnusedLocals --noUnusedParameters and prune or convert public types to exports (src/core/extensions/loader.ts:8-10,19-21,48-49,82-110,946; src/cli/commands/test.ts:20,396-409; src/cli/commands/create.ts:316; src/core/search/cache.ts:365). Low optimization/risk: npm pack ships 262 dist source maps totaling 8.54MB of 14.02MB unpacked; decide whether npm package needs maps or exclude/upload separately (package.json:48-60). Verification: pnpm build, pnpm typecheck, pnpm quality:static, pnpm audit --audit-level moderate, pm health --check-only --summary --json, npm pack --dry-run --json."
+  "2026-06-01T21:03:47.541Z",subagent-docsci-20260601,"Final docs/CI/observability audit findings: release.yml strict Sentry gate currently fails live with 0 critical/6 high unresolved; run-gates/coverage can fail under shared checkout because bundle-cli deletes dist/cli-bundle while tests use dist/cli.js; changelog:pm:check mutates .agents/pm/extensions/.managed-extensions.json timestamp via install side effect; release workflow uses bun-version latest. Verified docs links, docs-skills gate, security scan, changelog check, and telemetry freshness gate otherwise green; private telemetry docs remain ignored."
+  "2026-06-01T21:08:35.432Z",codex-audit-20260601,"Evidence: Focused regression suite passed after final test placement: 6 files, 160 tests via node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/test-command.spec.ts tests/unit/update-many-command.spec.ts tests/integration/help-runtime.spec.ts tests/integration/release-automation-contract.spec.ts."
+  "2026-06-01T21:19:09.855Z",codex-audit-20260601,"Evidence: Final focused regression suite passed: 7 files, 164 tests including CLI main Sentry suppression, release automation contracts, get/validate/test/update-many/help runtime coverage."
+files[15]{path,scope,note}:
+  scripts/bundle-cli.mjs,project,Avoid deleting live bundle during rebuilds in shared local checkouts
+  scripts/dogfood-package-first.mjs,project,Dogfood new get --depth brief contract
+  scripts/release/sentry-telemetry-gate.mjs,project,Ignore expected handled CLI error issues in release Sentry threshold gate while reporting counts
+  src/cli/commands/get.ts,project,Make get --depth brief omit body/linked/claim_state for lower-token agent reads
+  src/cli/commands/test.ts,project,Use stable equality for linked-test JSON assertions
+  src/cli/commands/update-many.ts,project,Use stable equality for update-many no-op detection
+  src/cli/commands/update.ts,project,Use stable equality for runtime field update no-op detection
+  src/cli/commands/validate.ts,project,Lower default validate diagnostic sample while preserving verbose diagnostics
+  src/cli/main.ts,project,Do not capture expected handled CLI failures as Sentry exceptions by default
+  src/core/schema/runtime-field-filters.ts,project,Use stable equality for object-valued runtime filters
+  tests/integration/release-automation-contract.spec.ts,project,Covers bundle rebuild and Sentry gate contract
+  tests/unit/cli-main-errors.spec.ts,project,Covers handled-error Sentry suppression helper behavior
+  tests/unit/get-append-command.spec.ts,project,Covers brief get output and linked projection branches
+  tests/unit/test-command.spec.ts,project,Covers order-insensitive linked-test JSON assertions
+  tests/unit/update-many-command.spec.ts,project,Runtime filter stable-equality regression lives in existing unit spec to preserve directory-load limits
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/cli-main-errors.spec.ts tests/integration/release-automation-contract.spec.ts tests/unit/get-append-command.spec.ts tests/unit/validate-command.spec.ts tests/unit/test-command.spec.ts tests/unit/update-many-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build && node scripts/dogfood-package-first.mjs,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpvpjwtd-xwqegs,test,passed,"2026-06-01T21:14:14.573Z","2026-06-01T21:15:39.361Z","2026-06-01T21:15:39.361Z",null,null,2,0,0,null,null,null
+  test-local-mpvpspiu-oyvwjf,test,passed,"2026-06-01T21:21:39.294Z","2026-06-01T21:22:29.815Z","2026-06-01T21:22:29.815Z",null,null,2,0,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Clarify standalone extension vs SDK-backed package import patterns
+body: ""

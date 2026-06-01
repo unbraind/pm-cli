@@ -640,6 +640,38 @@ describe("runValidate", () => {
     });
   });
 
+  it("keeps default resolution diagnostics compact and expands them with verbose diagnostics", async () => {
+    await withTempPmPath(async (context) => {
+      const closedIds: string[] = [];
+      for (let index = 0; index < 7; index += 1) {
+        const id = createTask(context, `validate-resolution-gap-${index}`);
+        await runClose(id, "done", {}, { path: context.pmPath });
+        closedIds.push(id);
+      }
+
+      const compact = await runValidate({ checkResolution: true }, { path: context.pmPath });
+      const compactDetails = checkByName(compact, "resolution").details as {
+        missing_resolution_items: number;
+        missing_resolution_remediation_hints: string[];
+        missing_resolution_remediation_hints_truncated: boolean;
+      };
+      expect(compactDetails.missing_resolution_items).toBe(7);
+      expect(compactDetails.missing_resolution_remediation_hints).toHaveLength(5);
+      expect(compactDetails.missing_resolution_remediation_hints_truncated).toBe(true);
+
+      const verbose = await runValidate(
+        { checkResolution: true, verboseDiagnostics: true },
+        { path: context.pmPath },
+      );
+      const verboseDetails = checkByName(verbose, "resolution").details as {
+        missing_resolution_remediation_hints: string[];
+        missing_resolution_remediation_hints_truncated: boolean;
+      };
+      expect(verboseDetails.missing_resolution_remediation_hints).toHaveLength(closedIds.length);
+      expect(verboseDetails.missing_resolution_remediation_hints_truncated).toBe(false);
+    });
+  });
+
   it("returns ok for closed items with complete resolution metadata", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "validate-resolution-complete");
