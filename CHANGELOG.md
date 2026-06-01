@@ -10,6 +10,7 @@
 
 ### Other
 
+- 2026-06-01 package ecosystem SDK agent UX audit and hardening ([pm-z0ip](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-z0ip.toon))
 - 2026-05-31 late latest-main ecosystem dogfood and review closure ([pm-etxf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-etxf.toon))
 
 ## 2026.6.1 - 2026-06-01
