@@ -69,6 +69,8 @@ describe("core/shared/serialization", () => {
     expect(stableValueEquals("value", "value")).toBe(true);
     expect(stableValueEquals(undefined, "undefined")).toBe(false);
     expect(stableValueEquals({ b: 2, a: 1 }, { a: 1, b: 2 })).toBe(true);
+    expect(stableValueEquals(/abc/i, /abc/i)).toBe(true);
+    expect(stableValueEquals(/abc/i, /def/i)).toBe(false);
   });
 
   it("orderObject keeps known keys first, sorts unknown keys, and skips undefined values", () => {

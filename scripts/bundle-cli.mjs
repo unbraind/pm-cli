@@ -12,6 +12,7 @@ const binPath = path.join(repoRoot, "dist", "cli.js");
 const lockRetryMs = 250;
 const lockTimeoutMs = 120_000;
 const staleLockMs = 10 * 60_000;
+const bundleStaleRetentionMs = 10 * 60_000;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -31,7 +32,10 @@ async function acquireBundleBuildLock() {
         throw error;
       }
       const lockStats = await stat(lockDir).catch(() => null);
-      if (lockStats && Date.now() - lockStats.mtimeMs > staleLockMs) {
+      if (!lockStats) {
+        continue;
+      }
+      if (Date.now() - lockStats.mtimeMs > staleLockMs) {
         const staleCandidateDir = `${lockDir}.stale.${Date.now()}.${Math.random().toString(36).slice(2)}`;
         try {
           await rename(lockDir, staleCandidateDir);
@@ -82,15 +86,22 @@ async function removeStaleBundleFiles(outputs) {
     Object.keys(outputs).map((outputPath) => path.resolve(repoRoot, outputPath)),
   );
   const existingFiles = await collectFiles(outputDir);
+  const now = Date.now();
   await Promise.all(
     existingFiles
       .filter((filePath) => !expectedFiles.has(filePath))
-      .map((filePath) => unlink(filePath).catch((error) => {
-        if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      .map(async (filePath) => {
+        const fileStats = await stat(filePath).catch(() => null);
+        if (!fileStats || now - fileStats.mtimeMs < bundleStaleRetentionMs) {
           return;
         }
-        throw error;
-      })),
+        await unlink(filePath).catch((error) => {
+          if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+            return;
+          }
+          throw error;
+        });
+      }),
   );
 }
 

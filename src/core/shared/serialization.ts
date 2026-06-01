@@ -56,6 +56,9 @@ export function stableValueEquals(left: unknown, right: unknown): boolean {
   if (left === null || right === null || typeof left !== "object" || typeof right !== "object") {
     return false;
   }
+  if (left instanceof RegExp || right instanceof RegExp) {
+    return left instanceof RegExp && right instanceof RegExp && left.toString() === right.toString();
+  }
   return stableStringify(left) === stableStringify(right);
 }
 

@@ -78,6 +78,8 @@ describe("release automation contract", () => {
     expect(bundleScript).toContain("acquireBundleBuildLock");
     expect(bundleScript).toContain(".cli-bundle-build.lock");
     expect(bundleScript).toContain("rename(lockDir");
+    expect(bundleScript).toContain("bundleStaleRetentionMs");
+    expect(bundleScript).toContain("if (!lockStats)");
   });
 
   it("builds dist before the auto-release pipeline consumes dist/cli.js", async () => {
@@ -121,7 +123,8 @@ describe("release automation contract", () => {
     const gateSource = await readFile(path.join(repoRoot, "scripts/release/sentry-telemetry-gate.mjs"), "utf8");
     expect(gateSource).toContain('commandFor("sentry")');
     expect(gateSource).toContain("function isExpectedHandledCliIssue");
-    expect(gateSource).toContain('issue?.isUnhandled === false');
+    expect(gateSource).toContain('issue?.isUnhandled !== false');
+    expect(gateSource).toContain("KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS");
     expect(gateSource).toContain("ignored_expected_cli_error_total");
     expect(gateSource).toContain("function buildTelemetryCommandInvocation");
     expect(gateSource).toContain('commandPath.endsWith(".sh")');

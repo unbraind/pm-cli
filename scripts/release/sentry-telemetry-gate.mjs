@@ -110,6 +110,13 @@ const KNOWN_IGNORED_CONSOLE_ISSUE_PATTERNS = [
   "[pm-ext-ts-starter] all capabilities registered.",
   "run `pm init` first to initialise a pm workspace",
 ];
+const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
+  "authentication required, not authenticated",
+  "csv is missing required 'title' column",
+  "failed to fetch issues from jira",
+  "no items imported",
+  "slack webhook request failed",
+];
 
 function issueTextValue(issue) {
   const metadata = issue && typeof issue === "object" ? issue.metadata : null;
@@ -130,7 +137,11 @@ function isIgnoredConsoleNoiseIssue(issue) {
 function isExpectedHandledCliIssue(issue) {
   const metadata = issue && typeof issue === "object" ? issue.metadata : null;
   const type = metadata && typeof metadata.type === "string" ? metadata.type : "";
-  return (type === "PmCliError" || type === "CommandError") && issue?.isUnhandled === false;
+  if ((type !== "PmCliError" && type !== "CommandError") || issue?.isUnhandled !== false) {
+    return false;
+  }
+  const combinedText = issueTextValue(issue);
+  return KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
 }
 
 function partitionSentryIssuesForGate(issues) {
