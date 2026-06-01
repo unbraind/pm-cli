@@ -2,12 +2,11 @@ id: pm-etxf
 title: 2026-05-31 late latest-main ecosystem dogfood and review closure
 description: "Follow-up latest-main manual audit after PR #89 merge: verify full pm CLI, SDK, package ecosystem, external packages, agent/token-efficient UX, docs, CI/CD, security, telemetry/Sentry, and performance in isolated temporary projects; document any remaining issues without duplicating the closed pm-kd9n audit."
 type: Task
-status: in_progress
+status: closed
 priority: 0
 tags[7]: agents,audit,dogfood,package-first,performance,sdk,telemetry
 created_at: "2026-05-31T20:51:25.691Z"
-updated_at: "2026-05-31T21:06:58.998Z"
-assignee: codex-late-audit-20260531
+updated_at: "2026-06-01T20:49:32.256Z"
 author: codex-late-audit-20260531
 acceptance_criteria: "Latest main is dogfooded in isolated temporary projects, external pm packages are verified, specialist sub-agent findings are recorded, actionable issues are fixed or tracked, local gates pass, changes are committed/pushed to a descriptive PR, review feedback is handled, checks are green, and PR is merged back to main when clean."
 parent: pm-59gj
@@ -35,4 +34,5 @@ tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   "pnpm release:gates",null,project,1800,null,null,null,null,null,null,null,null,null,null,null,serial full release gate
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,clarify required Sentry release reliability gate
+close_reason: "Work fully landed on main. The 2026-05-31 late-main audit's actionable output (query-flag-typo explicit-retry guard + mixed-case command classification) reached main via PR #91 (41d366e0) and was confirmed/carried by PR #94 (merge da6a38ef, 2026-06-01) — during the PR #94 merge the canonical main versions of src/cli/main.ts, help-runtime.spec.ts, and this task's tracker were taken. Specialist sub-agent findings were recorded as comments; remaining actionable items are tracked (pm-kcba release-publish gap). All CI checks green on PR #94; merged back to main clean. Acceptance met."
 body: ""

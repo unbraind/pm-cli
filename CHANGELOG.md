@@ -8,6 +8,10 @@
 - pm-todos + pm-beads: migrate to registerImporter/registerExporter \(importers capability exemplar\) ([pm-13bn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-13bn.toon))
 - First-class importer/exporter registration: registerImporter/registerExporter accept command metadata \(description/flags/intent/examples\) ([pm-7qjk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7qjk.toon))
 
+### Other
+
+- 2026-05-31 late latest-main ecosystem dogfood and review closure ([pm-etxf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-etxf.toon))
+
 ## 2026.6.1 - 2026-06-01
 
 ### Added
