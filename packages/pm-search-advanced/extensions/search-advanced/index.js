@@ -13,19 +13,23 @@ export const SEARCH_ADVANCED_LOCAL_PROVIDER = "search-advanced-local";
 const SEARCH_FIELD_WEIGHTS = { title: 3, tags: 2, description: 1 };
 
 function tokenizeSearchText(value) {
-  return value
-    .toLowerCase()
-    .split(/[^a-z0-9]+/u)
-    .filter((token) => token.length > 0);
+  // Unicode-aware: keep letters/numbers from any script (é, ü, CJK, Cyrillic, ...)
+  // so the provider works for non-English/multilingual corpora.
+  return value.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
 }
 
 function scoreDocumentForQuery(queryTokens, document) {
-  const metadata = document.metadata;
+  const metadata = document?.metadata;
+  if (!metadata) {
+    return { score: 0, matched_fields: [] };
+  }
   const fields = [
     { field: "title", tokens: tokenizeSearchText(typeof metadata.title === "string" ? metadata.title : "") },
     {
       field: "tags",
-      tokens: Array.isArray(metadata.tags) ? metadata.tags.flatMap((tag) => tokenizeSearchText(String(tag))) : [],
+      tokens: Array.isArray(metadata.tags)
+        ? metadata.tags.flatMap((tag) => (tag == null ? [] : tokenizeSearchText(String(tag))))
+        : [],
     },
     {
       field: "description",

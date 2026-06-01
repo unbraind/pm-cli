@@ -269,8 +269,34 @@ describe("search-advanced package runtime", () => {
     expect(hits[0]).toEqual({ id: "pm-1", score: 5, matched_fields: ["title", "tags"] });
     expect(hits[1]).toEqual({ id: "pm-2", score: 1, matched_fields: ["description"] });
 
-    // An empty/stopword-only query returns no hits.
-    const emptyHits = query({ query: "   ", mode: "keyword", tokens: [], options: {}, settings: {}, documents });
+    // An empty/punctuation-only query returns no hits.
+    const emptyHits = query({ query: "  ... ", mode: "keyword", tokens: [], options: {}, settings: {}, documents });
     expect(emptyHits).toEqual([]);
+
+    // Unicode-aware: non-ASCII queries/titles/tags tokenize correctly (universal corpora).
+    const unicodeDocs = [
+      sampleSearchDocument("pm-u1", "Kalénder Übersicht", ["café"], "日本語 description"),
+      sampleSearchDocument("pm-u2", "unrelated", ["misc"], "nothing"),
+    ];
+    const unicodeHits = query({
+      query: "café 日本語",
+      mode: "keyword",
+      tokens: [],
+      options: {},
+      settings: {},
+      documents: unicodeDocs,
+    });
+    expect(unicodeHits.map((hit) => hit.id)).toEqual(["pm-u1"]);
+
+    // Malformed documents (missing/null metadata, null tags) are scored safely, never crash.
+    const malformedHits = query({
+      query: "calendar",
+      mode: "keyword",
+      tokens: ["calendar"],
+      options: {},
+      settings: {},
+      documents: [{}, { metadata: null }, { metadata: { id: "pm-z", title: "calendar", tags: [null, "calendar"] } }],
+    });
+    expect(malformedHits.map((hit) => hit.id)).toEqual(["pm-z"]);
   });
 });
