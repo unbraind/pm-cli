@@ -5,8 +5,70 @@ export const manifest = {
   version: "0.1.0",
   entry: "./index.js",
   priority: 0,
-  capabilities: ["commands", "schema"],
+  capabilities: ["commands", "schema", "search"],
 };
+
+export const SEARCH_ADVANCED_LOCAL_PROVIDER = "search-advanced-local";
+
+const SEARCH_FIELD_WEIGHTS = { title: 3, tags: 2, description: 1 };
+
+function tokenizeSearchText(value) {
+  return value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/u)
+    .filter((token) => token.length > 0);
+}
+
+function scoreDocumentForQuery(queryTokens, document) {
+  const metadata = document.metadata;
+  const fields = [
+    { field: "title", tokens: tokenizeSearchText(typeof metadata.title === "string" ? metadata.title : "") },
+    {
+      field: "tags",
+      tokens: Array.isArray(metadata.tags) ? metadata.tags.flatMap((tag) => tokenizeSearchText(String(tag))) : [],
+    },
+    {
+      field: "description",
+      tokens: tokenizeSearchText(typeof metadata.description === "string" ? metadata.description : ""),
+    },
+  ];
+  let score = 0;
+  const matched = [];
+  for (const { field, tokens } of fields) {
+    const available = new Set(tokens);
+    let fieldMatches = 0;
+    for (const queryToken of queryTokens) {
+      if (available.has(queryToken)) {
+        fieldMatches += 1;
+      }
+    }
+    if (fieldMatches > 0) {
+      score += fieldMatches * SEARCH_FIELD_WEIGHTS[field];
+      matched.push(field);
+    }
+  }
+  return { score, matched_fields: matched };
+}
+
+export function searchAdvancedLocalProvider() {
+  return {
+    name: SEARCH_ADVANCED_LOCAL_PROVIDER,
+    query(context) {
+      const queryTokens = tokenizeSearchText(context.query);
+      if (queryTokens.length === 0) {
+        return [];
+      }
+      const hits = [];
+      for (const document of context.documents) {
+        const { score, matched_fields } = scoreDocumentForQuery(queryTokens, document);
+        if (score > 0) {
+          hits.push({ id: document.metadata.id, score, matched_fields });
+        }
+      }
+      return hits.sort((left, right) => right.score - left.score || left.id.localeCompare(right.id));
+    },
+  };
+}
 
 const searchAdvancedFlags = [
   {
@@ -159,6 +221,7 @@ export function activate(api) {
   api.registerFlags("search-advanced", [...searchAdvancedFlags]);
   api.registerCommand(searchAdvancedCommand());
   api.registerCommand(reindexCommand());
+  api.registerSearchProvider(searchAdvancedLocalProvider());
 }
 
 export default {

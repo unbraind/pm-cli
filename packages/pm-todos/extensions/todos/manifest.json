@@ -3,10 +3,17 @@
   "version": "0.1.0",
   "entry": "./index.js",
   "priority": 0,
-  "capabilities": ["commands", "schema"],
+  "capabilities": [
+    "commands",
+    "schema",
+    "importers"
+  ],
   "manifest_version": 1,
   "pm_min_version": "2026.5.0",
   "activation": {
-    "commands": ["todos export", "todos import"]
+    "commands": [
+      "todos export",
+      "todos import"
+    ]
   }
 }

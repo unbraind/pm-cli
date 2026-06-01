@@ -2412,6 +2412,205 @@ describe("extension loader", () => {
     });
   });
 
+  it("registers a full command definition and flags when importer/exporter metadata is provided", async () => {
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: {
+        global: "/tmp/global",
+        project: "/tmp/project",
+      },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      loaded: [
+        {
+          layer: "project",
+          directory: "registration-rich",
+          manifest_path: "/tmp/project/registration-rich/manifest.json",
+          name: "registration-rich",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 10,
+          entry_path: "/tmp/project/registration-rich/index.mjs",
+          module: {
+            activate(api: {
+              registerImporter: (
+                name: string,
+                importer: (context: unknown) => unknown,
+                options?: Record<string, unknown>,
+              ) => void;
+              registerExporter: (
+                name: string,
+                exporter: (context: unknown) => unknown,
+                options?: Record<string, unknown>,
+              ) => void;
+            }) {
+              api.registerImporter(
+                "jsonl",
+                (context) => {
+                  const importerContext = context as {
+                    registration: string;
+                    action: string;
+                    command: string;
+                    options: Record<string, unknown>;
+                  };
+                  return {
+                    registration: importerContext.registration,
+                    action: importerContext.action,
+                    command: importerContext.command,
+                    file: importerContext.options.file,
+                  };
+                },
+                {
+                  action: "jsonl-import",
+                  description: "Import JSONL records into pm items.",
+                  intent: "ingest external task records",
+                  examples: ["pm jsonl import --file source.jsonl"],
+                  failure_hints: ["Verify the JSONL source path exists."],
+                  arguments: [{ name: "source", required: true, description: "Source file path." }],
+                  flags: [
+                    {
+                      long: "--file",
+                      value_name: "path",
+                      value_type: "string",
+                      description: "Path to the JSONL source file.",
+                    },
+                  ],
+                },
+              );
+              // Minimal metadata (description only) defaults action from the command path
+              // and omits the absent flags/intent fields.
+              api.registerExporter("jsonl", () => ({ ok: true }), {
+                description: "Export pm items to JSONL.",
+              });
+            },
+          },
+        },
+      ],
+      failed: [],
+    });
+
+    expect(activation.failed).toEqual([]);
+    expect(activation.warnings).toEqual([]);
+    expect(activation.registration_counts.importers).toBe(1);
+    expect(activation.registration_counts.exporters).toBe(1);
+    expect(activation.command_handler_count).toBe(2);
+    // Auto-created command paths gain full command definitions when metadata is supplied.
+    expect(activation.registrations.commands).toEqual([
+      {
+        layer: "project",
+        name: "registration-rich",
+        command: "jsonl import",
+        action: "jsonl-import",
+        examples: ["pm jsonl import --file source.jsonl"],
+        failure_hints: ["Verify the JSONL source path exists."],
+        arguments: [{ name: "source", required: true, description: "Source file path." }],
+        description: "Import JSONL records into pm items.",
+        intent: "ingest external task records",
+      },
+      {
+        layer: "project",
+        name: "registration-rich",
+        command: "jsonl export",
+        action: "jsonl-export",
+        examples: [],
+        failure_hints: [],
+        arguments: [],
+        description: "Export pm items to JSONL.",
+      },
+    ]);
+    expect(activation.registrations.flags).toEqual([
+      {
+        layer: "project",
+        name: "registration-rich",
+        target_command: "jsonl import",
+        flags: [
+          {
+            long: "--file",
+            value_name: "path",
+            value_type: "string",
+            description: "Path to the JSONL source file.",
+          },
+        ],
+      },
+    ]);
+    expect(activation.registrations.importers).toEqual([
+      { layer: "project", name: "registration-rich", importer: "jsonl" },
+    ]);
+    expect(activation.registrations.exporters).toEqual([
+      { layer: "project", name: "registration-rich", exporter: "jsonl" },
+    ]);
+
+    const importerResult = await runCommandHandler(activation.commands, {
+      command: "jsonl import",
+      args: ["--file", "source.jsonl"],
+      options: { file: "source.jsonl" },
+      global: {
+        json: true,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+    });
+    expect(importerResult).toEqual({
+      handled: true,
+      result: {
+        registration: "jsonl",
+        action: "import",
+        command: "jsonl import",
+        file: "source.jsonl",
+      },
+      warnings: [],
+    });
+  });
+
+  it("fails activation when importer metadata options are not an object", async () => {
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: {
+        global: "/tmp/global",
+        project: "/tmp/project",
+      },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      loaded: [
+        {
+          layer: "project",
+          directory: "invalid-importer-options",
+          manifest_path: "/tmp/project/invalid-importer-options/manifest.json",
+          name: "invalid-importer-options",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 10,
+          entry_path: "/tmp/project/invalid-importer-options/index.mjs",
+          module: {
+            activate(api: {
+              registerImporter: (
+                name: string,
+                importer: (context: unknown) => unknown,
+                options?: unknown,
+              ) => void;
+            }) {
+              api.registerImporter("jsonl", () => "ok", "not-an-object");
+            },
+          },
+        },
+      ],
+      failed: [],
+    });
+
+    expect(activation.failed).toEqual([expect.objectContaining({ name: "invalid-importer-options" })]);
+    expect(activation.warnings).toEqual(["extension_activate_failed:project:invalid-importer-options"]);
+    expect(activation.registrations.importers).toEqual([]);
+    expect(activation.registrations.commands).toEqual([]);
+  });
+
   it("fails activation when extended registration APIs receive invalid input", async () => {
     const activation = await activateExtensions({
       disabled_by_flag: false,

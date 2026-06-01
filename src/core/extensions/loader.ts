@@ -134,6 +134,7 @@ import {
   type SchemaMigrationRunner,
   type SchemaMigrationDefinition,
   type ImportExportContext,
+  type ImportExportRegistrationOptions,
   type Importer,
   type Exporter,
   type ExtensionSearchMode,
@@ -1741,7 +1742,56 @@ function createExtensionApi(
       ) as RegisteredExtensionSchemaMigrationDefinition,
     );
   };
-  const registerImporter = (name: string, importer: Importer): void => {
+  const applyImportExportCommandMetadata = (
+    method: "registerImporter" | "registerExporter",
+    commandPath: string,
+    options: ImportExportRegistrationOptions | undefined,
+  ): void => {
+    if (options === undefined) {
+      return;
+    }
+    if (typeof options !== "object" || options === null || Array.isArray(options)) {
+      throw new TypeError(`${method} options must be an object when provided`);
+    }
+    assertOptionalStringField(`${method} options.action`, options.action);
+    assertOptionalStringField(`${method} options.description`, options.description);
+    assertOptionalStringField(`${method} options.intent`, options.intent);
+    const action = resolveCommandDefinitionAction(commandPath, options.action);
+    const examples = normalizeOptionalStringArrayField(`${method} options.examples`, options.examples);
+    const failureHints = normalizeOptionalStringArrayField(`${method} options.failure_hints`, options.failure_hints);
+    const argumentsDefinition = normalizeCommandDefinitionArguments(options.arguments);
+
+    if (options.flags !== undefined) {
+      assertExtensionCapability(extension, "schema", `${method} options.flags`);
+      validateFlagDefinitions(options.flags);
+      registrations.flags.push({
+        layer: extension.layer,
+        name: extension.name,
+        target_command: commandPath,
+        flags: normalizeRegistrationRecordList(`${method} options.flags`, options.flags),
+      });
+    }
+
+    const registration: RegisteredExtensionCommandDefinition = {
+      layer: extension.layer,
+      name: extension.name,
+      command: commandPath,
+      action,
+      examples,
+      failure_hints: failureHints,
+      arguments: argumentsDefinition,
+    };
+    const description = options.description?.trim();
+    if (description) {
+      registration.description = description;
+    }
+    const intent = options.intent?.trim();
+    if (intent) {
+      registration.intent = intent;
+    }
+    registrations.commands.push(registration);
+  };
+  const registerImporter = (name: string, importer: Importer, options?: ImportExportRegistrationOptions): void => {
     assertExtensionCapability(extension, "importers", "registerImporter");
     if (!allowRegistration("importers.importer", "registerImporter", "importers")) {
       return;
@@ -1749,6 +1799,9 @@ function createExtensionApi(
     const normalizedName = normalizeRegistrationName(assertNonEmptyString("registerImporter name", name));
     assertFunctionHandler("registerImporter importer", importer);
     const commandPath = toRegistrationCommandPath(normalizedName, "import");
+    // Validate and register optional command metadata before mutating the registry
+    // so an invalid options object leaves no partial importer registration.
+    applyImportExportCommandMetadata("registerImporter", commandPath, options);
     registrations.importers.push({
       layer: extension.layer,
       name: extension.name,
@@ -1770,7 +1823,7 @@ function createExtensionApi(
         }),
     });
   };
-  const registerExporter = (name: string, exporter: Exporter): void => {
+  const registerExporter = (name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void => {
     assertExtensionCapability(extension, "importers", "registerExporter");
     if (!allowRegistration("importers.exporter", "registerExporter", "importers")) {
       return;
@@ -1778,6 +1831,9 @@ function createExtensionApi(
     const normalizedName = normalizeRegistrationName(assertNonEmptyString("registerExporter name", name));
     assertFunctionHandler("registerExporter exporter", exporter);
     const commandPath = toRegistrationCommandPath(normalizedName, "export");
+    // Validate and register optional command metadata before mutating the registry
+    // so an invalid options object leaves no partial exporter registration.
+    applyImportExportCommandMetadata("registerExporter", commandPath, options);
     registrations.exporters.push({
       layer: extension.layer,
       name: extension.name,

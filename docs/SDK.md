@@ -103,6 +103,7 @@ Common types:
 - `ExtensionManifestEngines`
 - `CommandDefinition`
 - `FlagDefinition`
+- `ImportExportRegistrationOptions`
 - `ServiceOverrideContext`
 - `PmCliExpectedError`
 - `CreatePmCliExpectedErrorOptions`
@@ -331,6 +332,57 @@ export default defineExtension({
 
 Manifest capability: `schema`.
 
+## Importer / Exporter
+
+`registerImporter(name, importer)` and `registerExporter(name, exporter)` register
+a data adapter and automatically create a `<name> import` / `<name> export` command
+path that invokes it. The handler receives an `ImportExportContext`
+(`registration`, `action`, `command`, `args`, `options`, `global`, `pm_root`).
+
+By default the auto-created command only has a handler. Pass an optional third
+`ImportExportRegistrationOptions` argument to make it a first-class command with a
+description, flags, intent, examples, failure hints, and positional arguments —
+surfaced in `--help` and runtime contracts exactly like `registerCommand`:
+
+```ts
+import { defineExtension } from "@unbrained/pm-cli/sdk";
+
+export default defineExtension({
+  activate(api) {
+    api.registerImporter(
+      "jsonl",
+      async (context) => {
+        // context.options.file, context.global, context.pm_root, ...
+        return { ok: true, imported: 0 };
+      },
+      {
+        action: "jsonl-import",
+        description: "Import JSONL records into pm items.",
+        intent: "ingest external task records",
+        examples: ["pm jsonl import --file source.jsonl"],
+        failure_hints: ["Verify the JSONL source path exists."],
+        flags: [
+          {
+            long: "--file",
+            value_name: "path",
+            value_type: "string",
+            description: "Path to the JSONL source file.",
+          },
+        ],
+      },
+    );
+
+    api.registerExporter("jsonl", async () => ({ ok: true }), {
+      description: "Export pm items to JSONL.",
+    });
+  },
+});
+```
+
+Manifest capability: `importers` (and `schema` when supplying `flags`). The two-argument
+form remains supported; supplying the options object never produces a command-handler
+collision because the definition and handler share the same command path and extension.
+
 ## Search Provider
 
 ```ts
@@ -351,6 +403,15 @@ export default defineExtension({
 ```
 
 Manifest capability: `search`.
+
+Core search invokes the registered `query` when `settings.search.provider` matches
+the provider `name`. The bundled `pm-search-advanced` package ships a working
+first-party exemplar: `searchAdvancedLocalProvider()` registers a deterministic,
+dependency-free local lexical ranker named `search-advanced-local` (enable with
+`pm config set search.provider search-advanced-local`). Authors building
+embedding-backed providers (for example Ollama or a hosted model) implement
+`embed`/`embedBatch` on the same `SearchProviderDefinition` shape, and may also
+`registerVectorStoreAdapter` for a custom vector store.
 
 ## Robust Automation Pattern
 

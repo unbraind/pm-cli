@@ -121,6 +121,7 @@ export type {
   FlagValueType,
   FlagDefinition,
   ImportExportContext,
+  ImportExportRegistrationOptions,
   Importer,
   OnIndexHook,
   OnIndexHookContext,

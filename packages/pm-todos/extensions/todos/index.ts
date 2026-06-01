@@ -1,4 +1,9 @@
-import type { CommandDefinition, ExtensionApi, GlobalOptions } from "../../../../src/sdk/index.js";
+import type {
+  ExtensionApi,
+  GlobalOptions,
+  ImportExportContext,
+  ImportExportRegistrationOptions,
+} from "../../../../src/sdk/index.js";
 import type { TodosExportOptions, TodosExportResult, TodosImportOptions, TodosImportResult } from "./runtime.js";
 import { loadPackageRuntimeModule } from "./runtime-loader.js";
 
@@ -7,7 +12,7 @@ export const manifest = {
   version: "0.1.0",
   entry: "./index.js",
   priority: 0,
-  capabilities: ["commands", "schema"],
+  capabilities: ["commands", "schema", "importers"],
 };
 
 type RuntimeModule = {
@@ -50,46 +55,54 @@ async function runTodosExportFromRuntime(options: TodosExportOptions, global: Gl
 }
 
 export function activate(api: ExtensionApi): void {
-  api.registerCommand({
-    name: "todos import",
-    action: "todos-import",
-    description: "Import Todo markdown files into pm items.",
-    flags: [
-      {
-        long: "--folder",
-        value_name: "path",
-        value_type: "string",
-        description: "Source folder containing Todo markdown files.",
-      },
-      {
-        long: "--author",
-        value_name: "author",
-        value_type: "string",
-        description: "Override import mutation author.",
-      },
-      {
-        long: "--message",
-        value_name: "text",
-        value_type: "string",
-        description: "Override import history message.",
-      },
-    ],
-    run: async (context) => runTodosImportFromRuntime(toImportOptions(context.options), context.global),
-  } satisfies CommandDefinition);
-  api.registerCommand({
-    name: "todos export",
-    action: "todos-export",
-    description: "Export pm items into Todo markdown files.",
-    flags: [
-      {
-        long: "--folder",
-        value_name: "path",
-        value_type: "string",
-        description: "Destination folder for exported Todo markdown files.",
-      },
-    ],
-    run: async (context) => runTodosExportFromRuntime(toExportOptions(context.options), context.global),
-  } satisfies CommandDefinition);
+  // First-party exemplar for the importers capability: registerImporter/
+  // registerExporter create the `todos import` / `todos export` command paths,
+  // and the options object keeps the command description + flags as discoverable
+  // as the previous registerCommand registration.
+  api.registerImporter(
+    "todos",
+    async (context: ImportExportContext) => runTodosImportFromRuntime(toImportOptions(context.options), context.global),
+    {
+      action: "todos-import",
+      description: "Import Todo markdown files into pm items.",
+      flags: [
+        {
+          long: "--folder",
+          value_name: "path",
+          value_type: "string",
+          description: "Source folder containing Todo markdown files.",
+        },
+        {
+          long: "--author",
+          value_name: "author",
+          value_type: "string",
+          description: "Override import mutation author.",
+        },
+        {
+          long: "--message",
+          value_name: "text",
+          value_type: "string",
+          description: "Override import history message.",
+        },
+      ],
+    } satisfies ImportExportRegistrationOptions,
+  );
+  api.registerExporter(
+    "todos",
+    async (context: ImportExportContext) => runTodosExportFromRuntime(toExportOptions(context.options), context.global),
+    {
+      action: "todos-export",
+      description: "Export pm items into Todo markdown files.",
+      flags: [
+        {
+          long: "--folder",
+          value_name: "path",
+          value_type: "string",
+          description: "Destination folder for exported Todo markdown files.",
+        },
+      ],
+    } satisfies ImportExportRegistrationOptions,
+  );
 }
 
 export default {
