@@ -14,10 +14,16 @@ import {
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
   PM_TOOL_PARAMETERS_SCHEMA,
   STATUS_VALUES,
+  assertRegisteredCommandContract as assertRegisteredCommandContractFromBarrel,
+  assertRegisteredExporter as assertRegisteredExporterFromBarrel,
+  assertRegisteredHook as assertRegisteredHookFromBarrel,
+  assertRegisteredImporter as assertRegisteredImporterFromBarrel,
+  assertRegisteredSearchProvider as assertRegisteredSearchProviderFromBarrel,
   appendHistoryEntry,
   createHistoryEntry,
   createPmCliExpectedError,
   defineExtension,
+  type ExtensionHookRegistry,
   type ExtensionRegistrationRegistry,
   generateItemId,
   getContracts,
@@ -31,8 +37,15 @@ import {
   isPmCliExpectedError,
   writeFileAtomic,
 } from "../../src/sdk/index.js";
-import { assertRegisteredCommandContract } from "../../src/sdk/testing.js";
+import {
+  assertRegisteredCommandContract,
+  assertRegisteredExporter,
+  assertRegisteredHook,
+  assertRegisteredImporter,
+  assertRegisteredSearchProvider,
+} from "../../src/sdk/testing.js";
 import { readSettings as readCoreSettings, writeSettings } from "../../src/core/store/settings.js";
+import { activateExtensions, loadExtensions } from "../../src/core/extensions/loader.js";
 import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -62,10 +75,33 @@ function createRegistrationRegistry(): ExtensionRegistrationRegistry {
     item_fields: [],
     item_types: [],
     migrations: [],
-    importers: [],
-    exporters: [],
-    search_providers: [],
+    importers: [
+      { layer: "project", name: "todos-ext", importer: "todos" },
+      { layer: "global", name: "beads-ext", importer: "beads" },
+    ],
+    exporters: [{ layer: "project", name: "todos-ext", exporter: "todos" }],
+    search_providers: [
+      {
+        layer: "project",
+        name: "search-ext",
+        definition: { name: "semantic-local" },
+        runtime_definition: { name: "semantic-local" },
+      },
+    ],
     vector_store_adapters: [],
+  };
+}
+
+function createHookRegistry(): ExtensionHookRegistry {
+  return {
+    beforeCommand: [{ layer: "project", name: "audit-ext", run: () => undefined }],
+    afterCommand: [],
+    onWrite: [
+      { layer: "project", name: "first-write-ext", run: () => undefined },
+      { layer: "global", name: "second-write-ext", run: () => undefined },
+    ],
+    onRead: [],
+    onIndex: [],
   };
 }
 
@@ -218,6 +254,14 @@ describe("public sdk entrypoint", () => {
     expect(typeof getItemPath).toBe("function");
     expect(typeof readSettings).toBe("function");
     expect(typeof resolvePmRoot).toBe("function");
+  });
+
+  it("re-exports the sdk testing assertion helpers through the barrel", () => {
+    expect(typeof assertRegisteredCommandContractFromBarrel).toBe("function");
+    expect(typeof assertRegisteredHookFromBarrel).toBe("function");
+    expect(typeof assertRegisteredSearchProviderFromBarrel).toBe("function");
+    expect(typeof assertRegisteredImporterFromBarrel).toBe("function");
+    expect(typeof assertRegisteredExporterFromBarrel).toBe("function");
   });
 
   it("exposes runtime contracts without requiring a pm subprocess", async () => {
@@ -440,5 +484,175 @@ describe("sdk testing helpers", () => {
         flags: ["--missing"],
       }),
     ).toThrow(/available \(none\)/);
+  });
+
+  it("asserts a registered hook by kind and extension name", () => {
+    const hooks = createHookRegistry();
+
+    const before = assertRegisteredHook(hooks, { kind: "before_command" });
+    expect(before.name).toBe("audit-ext");
+
+    const scopedWrite = assertRegisteredHook(hooks, {
+      kind: "on_write",
+      extensionName: "second-write-ext",
+    });
+    expect(scopedWrite.name).toBe("second-write-ext");
+    expect(typeof scopedWrite.run).toBe("function");
+  });
+
+  it("throws actionable errors for missing hook registrations", () => {
+    const hooks = createHookRegistry();
+
+    expect(() => assertRegisteredHook(hooks, { kind: "on_read" })).toThrow(
+      /Expected a "on_read" hook to be registered\. Available "on_read" hooks: \(none\)/,
+    );
+
+    expect(() =>
+      assertRegisteredHook(hooks, { kind: "on_write", extensionName: "missing-ext" }),
+    ).toThrow(/from extension "missing-ext".*Available "on_write" hooks: first-write-ext, second-write-ext/);
+  });
+
+  it("asserts a registered search provider by name and extension", () => {
+    const provider = assertRegisteredSearchProvider(createRegistrationRegistry(), {
+      provider: " Semantic-Local ",
+      extensionName: "search-ext",
+    });
+    expect(provider.definition.name).toBe("semantic-local");
+  });
+
+  it("throws actionable errors for missing search provider registrations", () => {
+    expect(() =>
+      assertRegisteredSearchProvider(createRegistrationRegistry(), { provider: "   " }),
+    ).toThrow("non-empty string");
+
+    expect(() =>
+      assertRegisteredSearchProvider(createRegistrationRegistry(), { provider: "missing-provider" }),
+    ).toThrow(/Available search providers: semantic-local/);
+
+    expect(() =>
+      assertRegisteredSearchProvider(createRegistrationRegistry(), {
+        provider: "semantic-local",
+        extensionName: "other-ext",
+      }),
+    ).toThrow(/from extension "other-ext".*Available search providers: semantic-local/);
+
+    expect(() =>
+      assertRegisteredSearchProvider({ ...createRegistrationRegistry(), search_providers: [] }, {
+        provider: "semantic-local",
+      }),
+    ).toThrow(/Available search providers: \(none\)/);
+  });
+
+  it("asserts a registered importer by format and extension", () => {
+    const importer = assertRegisteredImporter(createRegistrationRegistry(), {
+      importer: " Beads ",
+      extensionName: "beads-ext",
+    });
+    expect(importer.importer).toBe("beads");
+    expect(importer.layer).toBe("global");
+  });
+
+  it("throws actionable errors for missing importer registrations", () => {
+    expect(() =>
+      assertRegisteredImporter(createRegistrationRegistry(), { importer: "   " }),
+    ).toThrow("non-empty string");
+
+    expect(() =>
+      assertRegisteredImporter(createRegistrationRegistry(), { importer: "missing-format" }),
+    ).toThrow(/Available importers: beads, todos/);
+
+    expect(() =>
+      assertRegisteredImporter(createRegistrationRegistry(), {
+        importer: "todos",
+        extensionName: "other-ext",
+      }),
+    ).toThrow(/from extension "other-ext".*Available importers: beads, todos/);
+  });
+
+  it("asserts a registered exporter by format and extension", () => {
+    const exporter = assertRegisteredExporter(createRegistrationRegistry(), {
+      exporter: "todos",
+    });
+    expect(exporter.exporter).toBe("todos");
+    expect(exporter.name).toBe("todos-ext");
+
+    const scoped = assertRegisteredExporter(createRegistrationRegistry(), {
+      exporter: "todos",
+      extensionName: "todos-ext",
+    });
+    expect(scoped.name).toBe("todos-ext");
+  });
+
+  it("throws actionable errors for missing exporter registrations", () => {
+    expect(() =>
+      assertRegisteredExporter(createRegistrationRegistry(), { exporter: " " }),
+    ).toThrow("non-empty string");
+
+    expect(() =>
+      assertRegisteredExporter(createRegistrationRegistry(), { exporter: "missing-format" }),
+    ).toThrow(/Available exporters: todos/);
+
+    expect(() =>
+      assertRegisteredExporter(createRegistrationRegistry(), {
+        exporter: "todos",
+        extensionName: "other-ext",
+      }),
+    ).toThrow(/from extension "other-ext".*Available exporters: todos/);
+
+    expect(() =>
+      assertRegisteredExporter({ ...createRegistrationRegistry(), exporters: [] }, {
+        exporter: "todos",
+      }),
+    ).toThrow(/Available exporters: \(none\)/);
+  });
+
+  it("asserts importer, exporter, search provider, and hook registrations from a real extension activation", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await writeTestExtension({
+        root: pmPath,
+        placement: "projectRoot",
+        directory: "capability-ext",
+        manifest: {
+          name: "capability-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["importers", "search", "hooks"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerImporter('jsonl', async () => ({ items: [] }));",
+          "  api.registerExporter('jsonl', async () => ({ content: '' }));",
+          "  api.registerSearchProvider({ name: 'capability-search', query: async () => ({ hits: [] }) });",
+          "  api.hooks.onWrite(() => undefined);",
+          "}",
+          "",
+        ].join("\n"),
+      });
+
+      const settings = await readCoreSettings(pmPath);
+      const loadResult = await loadExtensions({ pmRoot: pmPath, settings, cwd: pmPath });
+      const activation = await activateExtensions(loadResult);
+
+      const importer = assertRegisteredImporter(activation.registrations, {
+        importer: "jsonl",
+        extensionName: "capability-ext",
+      });
+      expect(importer.importer).toBe("jsonl");
+
+      const exporter = assertRegisteredExporter(activation.registrations, { exporter: "jsonl" });
+      expect(exporter.name).toBe("capability-ext");
+
+      const provider = assertRegisteredSearchProvider(activation.registrations, {
+        provider: "capability-search",
+      });
+      expect(provider.definition.name).toBe("capability-search");
+
+      const hook = assertRegisteredHook(activation.hooks, {
+        kind: "on_write",
+        extensionName: "capability-ext",
+      });
+      expect(typeof hook.run).toBe("function");
+    });
   });
 });

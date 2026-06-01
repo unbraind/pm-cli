@@ -134,6 +134,7 @@ export interface ExtensionManifest {
   capabilities: string[];
   manifest_version?: number;
   pm_min_version?: string;
+  pm_max_version?: string;
   engines?: ExtensionManifestEngines;
   trusted?: boolean;
   provenance?: ExtensionProvenanceMetadata;
@@ -167,6 +168,7 @@ export interface EffectiveExtension {
   entry_path: string;
   manifest_version?: number;
   pm_min_version?: string;
+  pm_max_version?: string;
   engines?: ExtensionManifestEngines;
   trusted?: boolean;
   provenance?: ExtensionProvenanceMetadata;
@@ -340,6 +342,28 @@ export interface CommandDefinition {
    * @deprecated Use `run` instead. This alias remains for backward compatibility.
    */
   handler?: CommandHandler;
+  action?: string;
+  description?: string;
+  intent?: string;
+  examples?: string[];
+  failure_hints?: string[];
+  arguments?: ExtensionCommandArgumentDefinition[];
+  flags?: FlagDefinition[];
+}
+
+/**
+ * Optional command-definition metadata for first-class importer/exporter
+ * registration.
+ *
+ * `registerImporter`/`registerExporter` always create a `<name> import` /
+ * `<name> export` command path. By default that path only has a handler. When
+ * these options are supplied, the auto-created command also gains a full command
+ * definition (description, flags, intent, examples, failure hints, positional
+ * arguments) — surfaced in help and runtime contracts exactly like
+ * `registerCommand`. The registration `name` and `run` handler are implicit, so
+ * they are not part of this options object.
+ */
+export interface ImportExportRegistrationOptions {
   action?: string;
   description?: string;
   intent?: string;
@@ -678,8 +702,8 @@ export interface ExtensionApi {
   registerItemTypes(types: SchemaItemTypeDefinition[]): void;
   registerMigration(definition: SchemaMigrationDefinition): void;
   registerRenderer(format: OutputRendererFormat, renderer: RendererOverride): void;
-  registerImporter(name: string, importer: Importer): void;
-  registerExporter(name: string, exporter: Exporter): void;
+  registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void;
+  registerExporter(name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void;
   registerSearchProvider(provider: SearchProviderDefinition): void;
   registerVectorStoreAdapter(adapter: VectorStoreAdapterDefinition): void;
   hooks: {

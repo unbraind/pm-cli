@@ -5,6 +5,13 @@ import { EXIT_CODE } from "../../../core/shared/constants.js";
 import { PmCliError } from "../../../core/shared/errors.js";
 import { normalizeManagedDirectoryName } from "./shared.js";
 
+// Safe compatibility floor emitted into scaffolded manifests. Mirrors the
+// first-party package manifests (pm-nf2q): every current 2026.5.x CLI
+// satisfies it, and it models the field for external authors. manifest_version
+// tracks the manifest schema generation (currently 1).
+const SCAFFOLD_MANIFEST_VERSION = 1;
+const SCAFFOLD_PM_MIN_VERSION = "2026.5.0";
+
 interface ExtensionScaffoldFileResult {
   path: string;
   status: "created" | "unchanged";
@@ -31,6 +38,8 @@ export function buildStarterExtensionScaffoldFiles(
       version: "0.1.0",
       entry: "./index.js",
       capabilities: ["commands"],
+      manifest_version: SCAFFOLD_MANIFEST_VERSION,
+      pm_min_version: SCAFFOLD_PM_MIN_VERSION,
     },
     null,
     2,
@@ -111,6 +120,12 @@ export function buildStarterExtensionScaffoldFiles(
       "pm package doctor --project --detail summary",
       "```",
       "",
+      "## Compatibility Bounds",
+      "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",
+      `- \`manifest_version\` (integer): manifest schema generation. Leave at \`${SCAFFOLD_MANIFEST_VERSION}\` unless you adopt a newer manifest schema.`,
+      `- \`pm_min_version\` (string): lowest pm CLI version that may load this package. Scaffolded as \`${SCAFFOLD_PM_MIN_VERSION}\`. The loader blocks the package on older CLIs.`,
+      "- `pm_max_version` (string, optional): highest pm CLI version that may load this package. Add it to block CLIs that are newer than the version you have validated against. The loader blocks the package when the CLI exceeds this bound.",
+      "",
       "## Notes",
       "- Keep simple starter runtime behavior at the package root so local installs work without dependency bootstrapping.",
       "- Move larger runtimes into subdirectories only after adding package dependencies and validating `pm package doctor`.",
@@ -140,6 +155,12 @@ export function buildStarterExtensionScaffoldFiles(
     `pm ${commandName}`,
     "pm extension --doctor --project --detail summary",
     "```",
+    "",
+    "## Compatibility Bounds",
+    "`manifest.json` cannot hold comments, so the version-compatibility fields are documented here:",
+    `- \`manifest_version\` (integer): manifest schema generation. Leave at \`${SCAFFOLD_MANIFEST_VERSION}\` unless you adopt a newer manifest schema.`,
+    `- \`pm_min_version\` (string): lowest pm CLI version that may load this extension. Scaffolded as \`${SCAFFOLD_PM_MIN_VERSION}\`. The loader blocks the extension on older CLIs.`,
+    "- `pm_max_version` (string, optional): highest pm CLI version that may load this extension. Add it to block CLIs that are newer than the version you have validated against. The loader blocks the extension when the CLI exceeds this bound.",
     "",
     "## Notes",
     "- This scaffold uses ESM exports so it works in package scopes with `type: module`.",

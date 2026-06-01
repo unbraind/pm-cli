@@ -1,4 +1,11 @@
-import type { CommandDefinition, ExtensionApi } from "../../../../src/sdk/index.js";
+import type {
+  CommandDefinition,
+  ExtensionApi,
+  ItemDocument,
+  SearchProviderDefinition,
+  SearchProviderHit,
+  SearchProviderQueryContext,
+} from "../../../../src/sdk/index.js";
 import { runAdvancedReindexPackage, runAdvancedSearchPackage } from "./runtime.js";
 
 export const manifest = {
@@ -6,8 +13,89 @@ export const manifest = {
   version: "0.1.0",
   entry: "./index.js",
   priority: 0,
-  capabilities: ["commands", "schema"],
+  capabilities: ["commands", "schema", "search"],
 };
+
+/**
+ * Provider name selected via `pm config set search.provider search-advanced-local`.
+ * Core search invokes the registered `query` when this name is configured.
+ */
+export const SEARCH_ADVANCED_LOCAL_PROVIDER = "search-advanced-local";
+
+const SEARCH_FIELD_WEIGHTS = { title: 3, tags: 2, description: 1 } as const;
+
+function tokenizeSearchText(value: string): string[] {
+  // Unicode-aware: keep letters/numbers from any script (é, ü, CJK, Cyrillic, ...)
+  // so the provider works for non-English/multilingual corpora.
+  return value.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+}
+
+function scoreDocumentForQuery(
+  queryTokens: readonly string[],
+  document: ItemDocument,
+): { score: number; matched_fields: string[] } {
+  const metadata = document?.metadata;
+  // A non-string id would crash hits.sort()'s localeCompare; treat as unscoreable.
+  if (!metadata || typeof metadata.id !== "string") {
+    return { score: 0, matched_fields: [] };
+  }
+  const fields: Array<{ field: keyof typeof SEARCH_FIELD_WEIGHTS; tokens: string[] }> = [
+    { field: "title", tokens: tokenizeSearchText(typeof metadata.title === "string" ? metadata.title : "") },
+    {
+      field: "tags",
+      tokens: Array.isArray(metadata.tags)
+        ? metadata.tags.flatMap((tag) => (tag == null ? [] : tokenizeSearchText(String(tag))))
+        : [],
+    },
+    {
+      field: "description",
+      tokens: tokenizeSearchText(typeof metadata.description === "string" ? metadata.description : ""),
+    },
+  ];
+  let score = 0;
+  const matched: string[] = [];
+  for (const { field, tokens } of fields) {
+    const available = new Set(tokens);
+    let fieldMatches = 0;
+    for (const queryToken of queryTokens) {
+      if (available.has(queryToken)) {
+        fieldMatches += 1;
+      }
+    }
+    if (fieldMatches > 0) {
+      score += fieldMatches * SEARCH_FIELD_WEIGHTS[field];
+      matched.push(field);
+    }
+  }
+  return { score, matched_fields: matched };
+}
+
+/**
+ * First-party exemplar SearchProvider: a deterministic, dependency-free local
+ * lexical ranker over the in-memory document corpus. Core search calls `query`
+ * when `settings.search.provider === "search-advanced-local"`. Authors building
+ * embedding-backed providers (for example Ollama or a hosted model) implement
+ * `embed`/`embedBatch` on this same SearchProviderDefinition shape instead.
+ */
+export function searchAdvancedLocalProvider(): SearchProviderDefinition {
+  return {
+    name: SEARCH_ADVANCED_LOCAL_PROVIDER,
+    query(context: SearchProviderQueryContext): SearchProviderHit[] {
+      const queryTokens = tokenizeSearchText(context.query);
+      if (queryTokens.length === 0) {
+        return [];
+      }
+      const hits: SearchProviderHit[] = [];
+      for (const document of context.documents) {
+        const { score, matched_fields } = scoreDocumentForQuery(queryTokens, document);
+        if (score > 0) {
+          hits.push({ id: document.metadata.id, score, matched_fields });
+        }
+      }
+      return hits.sort((left, right) => right.score - left.score || left.id.localeCompare(right.id));
+    },
+  };
+}
 
 const searchAdvancedFlags = [
   {
@@ -160,6 +248,7 @@ export function activate(api: ExtensionApi): void {
   api.registerFlags("search-advanced", [...searchAdvancedFlags]);
   api.registerCommand(searchAdvancedCommand());
   api.registerCommand(reindexCommand());
+  api.registerSearchProvider(searchAdvancedLocalProvider());
 }
 
 export default {

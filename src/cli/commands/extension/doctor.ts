@@ -337,6 +337,17 @@ export function buildExtensionTriageSummary(
           `or use an explicit .mjs entry and rerun ${lifecycleFlagCommand(options, "doctor")} ${scopeFlag}.`,
       );
     }
+    if (
+      normalizedWarnings.some(
+        (warning) =>
+          warning.startsWith("extension_pm_min_version_") || warning.startsWith("extension_pm_max_version_"),
+      )
+    ) {
+      remediation.push(
+        "Extension pm version-bound warnings detected. Align each package manifest's pm_min_version/pm_max_version " +
+          `with the installed pm CLI version (see the warning's required/allowed=...:current=... details), or upgrade/downgrade the pm CLI to satisfy the declared bounds, then rerun ${lifecycleFlagCommand(options, "doctor")} ${scopeFlag}.`,
+      );
+    }
     if (updateCheckFailedTotal > 0) {
       remediation.push(`Run ${lifecycleFlagCommand(options, "manage")} ${scopeFlag} after validating network and repository access.`);
     }

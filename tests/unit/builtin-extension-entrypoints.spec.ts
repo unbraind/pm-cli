@@ -7,9 +7,14 @@ import type {
   CommandOverride,
   ExtensionApi,
   ExtensionServiceName,
+  ImportExportRegistrationOptions,
+  Importer,
+  Exporter,
   RendererOverride,
   ServiceOverride,
 } from "../../src/core/extensions/loader.js";
+import { activateExtensions } from "../../src/core/extensions/loader.js";
+import { assertRegisteredExporter, assertRegisteredImporter } from "../../src/sdk/testing.js";
 import beadsBuiltin, { activate as activateBeads, manifest as beadsManifest } from "../../packages/pm-beads/extensions/beads/index.js";
 import calendarBuiltin, { activate as activateCalendar, manifest as calendarManifest } from "../../packages/pm-calendar/extensions/calendar/index.js";
 import todosBuiltin, { activate as activateTodos, manifest as todosManifest } from "../../packages/pm-todos/extensions/todos/index.js";
@@ -227,9 +232,29 @@ const globalFlags = {
   profile: false,
 };
 
-function createCommandOnlyApi(): { api: ExtensionApi; commands: CommandDefinition[]; services: Array<{ service: ExtensionServiceName; override: ServiceOverride }> } {
+interface CapturedImporter {
+  name: string;
+  importer: Importer;
+  options?: ImportExportRegistrationOptions;
+}
+
+interface CapturedExporter {
+  name: string;
+  exporter: Exporter;
+  options?: ImportExportRegistrationOptions;
+}
+
+function createCommandOnlyApi(): {
+  api: ExtensionApi;
+  commands: CommandDefinition[];
+  services: Array<{ service: ExtensionServiceName; override: ServiceOverride }>;
+  importers: CapturedImporter[];
+  exporters: CapturedExporter[];
+} {
   const commands: CommandDefinition[] = [];
   const services: Array<{ service: ExtensionServiceName; override: ServiceOverride }> = [];
+  const importers: CapturedImporter[] = [];
+  const exporters: CapturedExporter[] = [];
   const api: ExtensionApi = {
     registerCommand(first: string | CommandDefinition, _override?: CommandOverride): void {
       if (typeof first === "string") {
@@ -261,11 +286,11 @@ function createCommandOnlyApi(): { api: ExtensionApi; commands: CommandDefinitio
     registerMigration(): void {
       throw new Error("Unexpected migration registration");
     },
-    registerImporter(): void {
-      throw new Error("Unexpected importer registration");
+    registerImporter(name: string, importer: Importer, options?: ImportExportRegistrationOptions): void {
+      importers.push({ name, importer, options });
     },
-    registerExporter(): void {
-      throw new Error("Unexpected exporter registration");
+    registerExporter(name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void {
+      exporters.push({ name, exporter, options });
     },
     registerSearchProvider(): void {
       throw new Error("Unexpected search provider registration");
@@ -281,7 +306,7 @@ function createCommandOnlyApi(): { api: ExtensionApi; commands: CommandDefinitio
       onIndex: () => undefined,
     },
   };
-  return { api, commands, services };
+  return { api, commands, services, importers, exporters };
 }
 
 describe("built-in extension entrypoints", () => {
@@ -307,7 +332,7 @@ describe("built-in extension entrypoints", () => {
       version: "0.1.0",
       entry: "./index.js",
       priority: 0,
-      capabilities: ["commands", "schema"],
+      capabilities: ["commands", "schema", "importers"],
     });
     expect(beadsBuiltin).toEqual({
       manifest: beadsManifest,
@@ -331,7 +356,7 @@ describe("built-in extension entrypoints", () => {
       version: "0.1.0",
       entry: "./index.js",
       priority: 0,
-      capabilities: ["commands", "schema"],
+      capabilities: ["commands", "schema", "importers"],
     });
     expect(todosBuiltin).toEqual({
       manifest: todosManifest,
@@ -642,13 +667,15 @@ describe("built-in extension entrypoints", () => {
     expect(error.message).toContain("--view agenda --date +7d");
   });
 
-  it("registers beads import handler and coerces extension options", async () => {
-    const { api, commands } = createCommandOnlyApi();
+  it("registers beads importer and coerces extension options", async () => {
+    const { api, commands, importers } = createCommandOnlyApi();
 
     activateBeads(api);
-    expect(commands.map((command) => command.name)).toEqual(["beads import"]);
-    expect(commands[0]?.action).toBe("beads-import");
-    expect(commands[0]?.flags).toEqual(
+    expect(commands).toEqual([]);
+    expect(importers.map((entry) => entry.name)).toEqual(["beads"]);
+    expect(importers[0]?.options?.action).toBe("beads-import");
+    expect(importers[0]?.options?.description).toBe("Import Beads JSONL records into pm items.");
+    expect(importers[0]?.options?.flags).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ long: "--file" }),
         expect.objectContaining({ long: "--author" }),
@@ -657,7 +684,9 @@ describe("built-in extension entrypoints", () => {
       ]),
     );
 
-    const result = await commands[0]!.run({
+    const result = await importers[0]!.importer({
+      registration: "beads",
+      action: "import",
       command: "beads import",
       args: [],
       options: {
@@ -693,10 +722,12 @@ describe("built-in extension entrypoints", () => {
   });
 
   it("drops non-boolean preserveSourceIds values when coercing extension options", async () => {
-    const { api, commands } = createCommandOnlyApi();
+    const { api, importers } = createCommandOnlyApi();
 
     activateBeads(api);
-    await commands[0]!.run({
+    await importers[0]!.importer({
+      registration: "beads",
+      action: "import",
       command: "beads import",
       args: [],
       options: {
@@ -720,25 +751,27 @@ describe("built-in extension entrypoints", () => {
     });
   });
 
-  it("registers todos import/export handlers and coerces option fields", async () => {
-    const { api, commands } = createCommandOnlyApi();
+  it("registers todos importer/exporter and coerces option fields", async () => {
+    const { api, commands, importers, exporters } = createCommandOnlyApi();
 
     activateTodos(api);
-    expect(commands.map((command) => command.name)).toEqual([
-      "todos import",
-      "todos export",
-    ]);
-    expect(commands.map((command) => command.action)).toEqual(["todos-import", "todos-export"]);
-    expect(commands[0]?.flags).toEqual(
+    expect(commands).toEqual([]);
+    expect(importers.map((entry) => entry.name)).toEqual(["todos"]);
+    expect(exporters.map((entry) => entry.name)).toEqual(["todos"]);
+    expect(importers[0]?.options?.action).toBe("todos-import");
+    expect(exporters[0]?.options?.action).toBe("todos-export");
+    expect(importers[0]?.options?.flags).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ long: "--folder" }),
         expect.objectContaining({ long: "--author" }),
         expect.objectContaining({ long: "--message" }),
       ]),
     );
-    expect(commands[1]?.flags).toEqual(expect.arrayContaining([expect.objectContaining({ long: "--folder" })]));
+    expect(exporters[0]?.options?.flags).toEqual(expect.arrayContaining([expect.objectContaining({ long: "--folder" })]));
 
-    const importResult = await commands[0]!.run({
+    const importResult = await importers[0]!.importer({
+      registration: "todos",
+      action: "import",
       command: "todos import",
       args: [],
       options: {
@@ -769,7 +802,9 @@ describe("built-in extension entrypoints", () => {
       warnings: [],
     });
 
-    const exportResult = await commands[1]!.run({
+    const exportResult = await exporters[0]!.exporter({
+      registration: "todos",
+      action: "export",
       command: "todos export",
       args: [],
       options: {
@@ -794,5 +829,77 @@ describe("built-in extension entrypoints", () => {
       ids: ["pm-a", "pm-b", "pm-c"],
       warnings: [],
     });
+  });
+
+  it("activates todos/beads through the real loader as first-party importer/exporter exemplars", async () => {
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: { global: "/tmp/global", project: "/tmp/project" },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      loaded: [
+        {
+          layer: "project",
+          directory: "pm-beads",
+          manifest_path: "/tmp/project/pm-beads/manifest.json",
+          name: beadsManifest.name,
+          version: beadsManifest.version,
+          entry: "./index.js",
+          priority: 0,
+          entry_path: "/tmp/project/pm-beads/index.js",
+          module: beadsBuiltin,
+        },
+        {
+          layer: "project",
+          directory: "pm-todos",
+          manifest_path: "/tmp/project/pm-todos/manifest.json",
+          name: todosManifest.name,
+          version: todosManifest.version,
+          entry: "./index.js",
+          priority: 0,
+          entry_path: "/tmp/project/pm-todos/index.js",
+          module: todosBuiltin,
+        },
+      ],
+      failed: [],
+    });
+
+    expect(activation.failed).toEqual([]);
+    expect(activation.warnings).toEqual([]);
+
+    // The SDK assertion helpers see the real first-party importer/exporter registrations.
+    const beadsImporter = assertRegisteredImporter(activation.registrations, {
+      importer: "beads",
+      extensionName: beadsManifest.name,
+    });
+    expect(beadsImporter.importer).toBe("beads");
+    const todosImporter = assertRegisteredImporter(activation.registrations, {
+      importer: "todos",
+      extensionName: todosManifest.name,
+    });
+    expect(todosImporter.importer).toBe("todos");
+    const todosExporter = assertRegisteredExporter(activation.registrations, {
+      exporter: "todos",
+      extensionName: todosManifest.name,
+    });
+    expect(todosExporter.exporter).toBe("todos");
+
+    // The importer/exporter metadata produces discoverable command definitions and backing handlers.
+    expect(activation.registrations.commands.map((entry) => entry.command).sort()).toEqual([
+      "beads import",
+      "todos export",
+      "todos import",
+    ]);
+    expect(activation.commands.handlers.map((entry) => entry.command).sort()).toEqual([
+      "beads import",
+      "todos export",
+      "todos import",
+    ]);
+    const beadsImportDefinition = activation.registrations.commands.find((entry) => entry.command === "beads import");
+    expect(beadsImportDefinition?.action).toBe("beads-import");
+    expect(beadsImportDefinition?.description).toBe("Import Beads JSONL records into pm items.");
   });
 });

@@ -4,7 +4,7 @@ export const manifest = {
     version: "0.1.0",
     entry: "./index.js",
     priority: 0,
-    capabilities: ["commands", "schema"],
+    capabilities: ["commands", "schema", "importers"],
 };
 function asOptionalString(value) {
     return typeof value === "string" ? value : undefined;
@@ -36,8 +36,7 @@ async function runTodosExportFromRuntime(options, global) {
     return runtime.runTodosExport(options, global);
 }
 export function activate(api) {
-    api.registerCommand({
-        name: "todos import",
+    api.registerImporter("todos", async (context) => runTodosImportFromRuntime(toImportOptions(context.options), context.global), {
         action: "todos-import",
         description: "Import Todo markdown files into pm items.",
         flags: [
@@ -60,10 +59,8 @@ export function activate(api) {
                 description: "Override import history message.",
             },
         ],
-        run: async (context) => runTodosImportFromRuntime(toImportOptions(context.options), context.global),
     });
-    api.registerCommand({
-        name: "todos export",
+    api.registerExporter("todos", async (context) => runTodosExportFromRuntime(toExportOptions(context.options), context.global), {
         action: "todos-export",
         description: "Export pm items into Todo markdown files.",
         flags: [
@@ -74,7 +71,6 @@ export function activate(api) {
                 description: "Destination folder for exported Todo markdown files.",
             },
         ],
-        run: async (context) => runTodosExportFromRuntime(toExportOptions(context.options), context.global),
     });
 }
 export default {

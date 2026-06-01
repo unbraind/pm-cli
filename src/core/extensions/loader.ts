@@ -134,6 +134,7 @@ import {
   type SchemaMigrationRunner,
   type SchemaMigrationDefinition,
   type ImportExportContext,
+  type ImportExportRegistrationOptions,
   type Importer,
   type Exporter,
   type ExtensionSearchMode,
@@ -276,6 +277,11 @@ function parseManifest(raw: unknown): ExtensionManifest | null {
     return null;
   }
 
+  const pmMaxVersion = parseOptionalManifestString(candidate, "pm_max_version");
+  if (pmMaxVersion === null) {
+    return null;
+  }
+
   const engines = parseManifestEngines(candidate.engines);
   if (engines === null) {
     return null;
@@ -414,6 +420,7 @@ function parseManifest(raw: unknown): ExtensionManifest | null {
     priority,
     manifest_version: manifestVersion,
     pm_min_version: pmMinVersion,
+    pm_max_version: pmMaxVersion,
     engines,
     trusted,
     provenance,
@@ -471,6 +478,7 @@ function summarizeCandidate(candidate: ExtensionCandidate): EffectiveExtension {
     entry_path: candidate.entry_path,
     manifest_version: candidate.manifest.manifest_version,
     pm_min_version: candidate.manifest.pm_min_version,
+    pm_max_version: candidate.manifest.pm_max_version,
     engines: candidate.manifest.engines,
     trusted: candidate.manifest.trusted,
     provenance: candidate.manifest.provenance,
@@ -618,7 +626,15 @@ async function scanExtensionDirectory(
   if (pmVersionCompatibility.warning) {
     extensionWarnings.push(pmVersionCompatibility.warning);
   }
-  const extensionReady = entryWithinDirectory && entryExists && pmVersionCompatibility.allowed;
+  const pmMaxVersionCompatibility = await evaluatePmMaxVersionCompatibility(layer, manifest);
+  if (pmMaxVersionCompatibility.warning) {
+    extensionWarnings.push(pmMaxVersionCompatibility.warning);
+  }
+  const extensionReady =
+    entryWithinDirectory &&
+    entryExists &&
+    pmVersionCompatibility.allowed &&
+    pmMaxVersionCompatibility.allowed;
 
   return {
     diagnostic: {
@@ -805,6 +821,52 @@ async function evaluatePmMinVersionCompatibility(
     return {
       allowed: false,
       warning: `extension_pm_min_version_unmet:${layer}:${manifest.name}:required=${manifest.pm_min_version}:current=${currentVersion}`,
+    };
+  }
+  return { allowed: true };
+}
+
+async function evaluatePmMaxVersionCompatibility(
+  layer: ExtensionLayer,
+  manifest: ExtensionManifest,
+): Promise<{ allowed: boolean; warning?: string }> {
+  if (typeof manifest.pm_max_version !== "string" || manifest.pm_max_version.trim().length === 0) {
+    return { allowed: true };
+  }
+  // An upper bound must be an exact version. parseComparableVersion leniently strips a
+  // leading ">=" (for engines.pm min-version compat), which would turn a range-like
+  // ">=2026.6.1" into an inclusive max and wrongly block newer CLIs — reject range prefixes.
+  if (/^[<>=~^]/.test(manifest.pm_max_version.trim())) {
+    return {
+      allowed: false,
+      warning: `extension_pm_max_version_invalid:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}`,
+    };
+  }
+  if (!parseComparableVersion(manifest.pm_max_version)) {
+    return {
+      allowed: false,
+      warning: `extension_pm_max_version_invalid:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}`,
+    };
+  }
+  const currentVersion = await resolveCurrentPmCliVersion();
+  if (!currentVersion) {
+    return {
+      allowed: true,
+      warning: `extension_pm_max_version_unchecked:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}:current=unknown`,
+    };
+  }
+  const comparison = compareComparableVersions(currentVersion, manifest.pm_max_version);
+  if (comparison === null) {
+    return {
+      allowed: true,
+      warning: `extension_pm_max_version_unchecked:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}:current=${currentVersion}`,
+    };
+  }
+  // follow-up: pm-4gw6 recommends a future settings toggle to relax this default-BLOCK to warn-only per layer.
+  if (comparison > 0) {
+    return {
+      allowed: false,
+      warning: `extension_pm_max_version_exceeded:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}:current=${currentVersion}`,
     };
   }
   return { allowed: true };
@@ -1689,7 +1751,60 @@ function createExtensionApi(
       ) as RegisteredExtensionSchemaMigrationDefinition,
     );
   };
-  const registerImporter = (name: string, importer: Importer): void => {
+  const applyImportExportCommandMetadata = (
+    method: "registerImporter" | "registerExporter",
+    commandPath: string,
+    options: ImportExportRegistrationOptions | undefined,
+  ): void => {
+    if (options === undefined) {
+      return;
+    }
+    if (typeof options !== "object" || options === null || Array.isArray(options)) {
+      throw new TypeError(`${method} options must be an object when provided`);
+    }
+    assertOptionalStringField(`${method} options.action`, options.action);
+    assertOptionalStringField(`${method} options.description`, options.description);
+    assertOptionalStringField(`${method} options.intent`, options.intent);
+    const action = resolveCommandDefinitionAction(commandPath, options.action);
+    const examples = normalizeOptionalStringArrayField(`${method} options.examples`, options.examples);
+    const failureHints = normalizeOptionalStringArrayField(`${method} options.failure_hints`, options.failure_hints);
+    const argumentsDefinition = normalizeCommandDefinitionArguments(options.arguments);
+
+    if (options.flags !== undefined) {
+      assertExtensionCapability(extension, "schema", `${method} options.flags`);
+      // Route metadata flags through the same surface-policy gate as registerFlags so
+      // enforce-mode policies blocking schema.flags are honored even when importers are allowed.
+      if (allowRegistration("schema.flags", `${method} options.flags`, "schema")) {
+        validateFlagDefinitions(options.flags);
+        registrations.flags.push({
+          layer: extension.layer,
+          name: extension.name,
+          target_command: commandPath,
+          flags: normalizeRegistrationRecordList(`${method} options.flags`, options.flags),
+        });
+      }
+    }
+
+    const registration: RegisteredExtensionCommandDefinition = {
+      layer: extension.layer,
+      name: extension.name,
+      command: commandPath,
+      action,
+      examples,
+      failure_hints: failureHints,
+      arguments: argumentsDefinition,
+    };
+    const description = options.description?.trim();
+    if (description) {
+      registration.description = description;
+    }
+    const intent = options.intent?.trim();
+    if (intent) {
+      registration.intent = intent;
+    }
+    registrations.commands.push(registration);
+  };
+  const registerImporter = (name: string, importer: Importer, options?: ImportExportRegistrationOptions): void => {
     assertExtensionCapability(extension, "importers", "registerImporter");
     if (!allowRegistration("importers.importer", "registerImporter", "importers")) {
       return;
@@ -1697,6 +1812,9 @@ function createExtensionApi(
     const normalizedName = normalizeRegistrationName(assertNonEmptyString("registerImporter name", name));
     assertFunctionHandler("registerImporter importer", importer);
     const commandPath = toRegistrationCommandPath(normalizedName, "import");
+    // Validate and register optional command metadata before mutating the registry
+    // so an invalid options object leaves no partial importer registration.
+    applyImportExportCommandMetadata("registerImporter", commandPath, options);
     registrations.importers.push({
       layer: extension.layer,
       name: extension.name,
@@ -1718,7 +1836,7 @@ function createExtensionApi(
         }),
     });
   };
-  const registerExporter = (name: string, exporter: Exporter): void => {
+  const registerExporter = (name: string, exporter: Exporter, options?: ImportExportRegistrationOptions): void => {
     assertExtensionCapability(extension, "importers", "registerExporter");
     if (!allowRegistration("importers.exporter", "registerExporter", "importers")) {
       return;
@@ -1726,6 +1844,9 @@ function createExtensionApi(
     const normalizedName = normalizeRegistrationName(assertNonEmptyString("registerExporter name", name));
     assertFunctionHandler("registerExporter exporter", exporter);
     const commandPath = toRegistrationCommandPath(normalizedName, "export");
+    // Validate and register optional command metadata before mutating the registry
+    // so an invalid options object leaves no partial exporter registration.
+    applyImportExportCommandMetadata("registerExporter", commandPath, options);
     registrations.exporters.push({
       layer: extension.layer,
       name: extension.name,

@@ -1,0 +1,12 @@
+id: pm-s40s
+title: First-party hooks capability exemplar (lifecycle hook) for pm-izsi completion
+description: "After pm-13bn (importers) and pm-bqpg (search) landed, the importers and search capabilities each have a tested first-party exemplar, but the HOOKS capability still has none (no bundled package registers before_command/after_command/on_read/on_write/on_index; the only model is the docs/SDK.md hook example + assertRegisteredHook). pm-izsi's acceptance lists importers/hooks/search, so it stays open on this. Add a safe, opt-in first-party lifecycle-hook exemplar (candidate: an on_index or after_command observability hook in an existing bundled package, or a small dedicated example) that returns deterministic no-warning output, with an assertRegisteredHook test and an SDK.md reference. Must avoid behavioral/perf regressions in auto-loaded packages (hooks run on every matching lifecycle event) — prefer a narrowly-scoped, default-inert hook. Closing this completes pm-izsi."
+type: Feature
+status: open
+priority: 2
+tags[5]: "area:hooks","area:packages","area:sdk",dx,living-map
+created_at: "2026-06-01T19:57:51.489Z"
+updated_at: "2026-06-01T19:57:51.489Z"
+author: maintainer-agent
+parent: pm-ugqx
+body: ""

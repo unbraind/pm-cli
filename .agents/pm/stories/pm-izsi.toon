@@ -6,11 +6,14 @@ status: open
 priority: 2
 tags[5]: "area:packages","area:sdk",dx,living-map,story
 created_at: "2026-05-31T19:49:45.872Z"
-updated_at: "2026-05-31T19:49:45.872Z"
+updated_at: "2026-06-01T19:58:00.482Z"
 author: maintainer-agent
 acceptance_criteria: importers/hooks/search capabilities each have a tested first-party exemplar; all first-party manifests declare pm_min_version; SDK.md references them
 parent: pm-ugqx
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-13bn,related,"2026-05-31T19:49:45.872Z",null,null
   pm-nf2q,related,"2026-05-31T19:49:45.872Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-05-31T22:18:33.374Z",maintainer-agent,"Partial progress (this PR, branch sdk-package-version-bounds-and-testing-helpers-20260531): (1) all 8 first-party manifests now declare pm_min_version (pm-nf2q closed) — the version-compat model exemplar is done; (2) SDK testing helpers now cover hooks/search-providers/importers/exporters (pm-kfd8 closed). REMAINING for full closure: real first-party CAPABILITY exemplars for importers/hooks/search — tracked by pm-13bn (importer/exporter migration) and pm-bqpg (search-provider exemplar). Finding from pm-kfd8: NO first-party package currently registers an importer/exporter/search-provider/hook (only commands/flags/services), so those two items are the remaining exemplar work. Keeping this story open until pm-13bn/pm-bqpg land."
+  "2026-06-01T19:58:00.477Z",maintainer-agent,"Progress (this PR): importers exemplar (pm-13bn: todos/beads registerImporter/registerExporter) and search exemplar (pm-bqpg: pm-search-advanced 'search-advanced-local' SearchProvider) both CLOSED, and the SDK foundation pm-7qjk (first-class importer/exporter registration metadata) shipped. SDK.md now references both first-party exemplars. REMAINING for full closure: the HOOKS third of the acceptance — no first-party package registers a lifecycle hook yet. Tracked by new follow-up pm-s40s (kept narrow/low-risk because hooks run on every matching lifecycle event in auto-loaded packages). Keeping pm-izsi OPEN until pm-s40s lands; all first-party manifests already declare pm_min_version (pm-nf2q)."
 body: ""

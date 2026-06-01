@@ -1,9 +1,20 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- pm-search-advanced: register a built-in SearchProvider exemplar \(search capability\) ([pm-bqpg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-bqpg.toon))
+- pm-todos + pm-beads: migrate to registerImporter/registerExporter \(importers capability exemplar\) ([pm-13bn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-13bn.toon))
+- First-class importer/exporter registration: registerImporter/registerExporter accept command metadata \(description/flags/intent/examples\) ([pm-7qjk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7qjk.toon))
+
 ## 2026.6.1 - 2026-06-01
 
 ### Added
 
+- Extend SDK testing helpers to cover hooks, search providers, importers/exporters ([pm-kfd8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-kfd8.toon))
+- Extension manifest pm\_max\_version \(upper compatibility bound\) ([pm-4gw6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4gw6.toon))
+- Declare pm\_min\_version in all 8 first-party package manifests ([pm-nf2q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-nf2q.toon))
 - Build package-first pm ecosystem and install command ([pm-59gj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-59gj.toon))
 - SDK ergonomics: package-safe error base, version negotiation, document PM\_CLI\_PACKAGE\_ROOT ([pm-oxyo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-oxyo.toon))
 
@@ -22,6 +33,7 @@
 
 ### Other
 
+- Governance test: enforce manifest pm\_min\_version and manifest\_version on all first-party packages ([pm-exrw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-exrw.toon))
 - Ecosystem PM living-map audit & reorganization methodology ([pm-knqw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-knqw.toon))
 - ADR: Startup-latency strategy \(prebuilt JS, lazy per-command imports, external deps, no single bundle\) ([pm-irp1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-irp1.toon))
 - Verify living-map: ecosystem coverage gaps ([pm-xmhn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xmhn.toon))

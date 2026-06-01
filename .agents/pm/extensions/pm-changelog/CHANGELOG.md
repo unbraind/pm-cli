@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.6.1 - 2026-06-01
+
+### Fixed
+
+- changelog generate returned {error} \(exit 0\) on bad flags; plain throw on --check ([pmc-qw3g](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-qw3g.toon))
+
 ## 2026.5.29-2 - 2026-05-29
 
 ### Added

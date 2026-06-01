@@ -63,6 +63,14 @@ Command/action contract exports:
 - `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`
 - `PM_TOOL_ACTION_PARAMETER_CONTRACTS`
 
+Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
+
+- `assertRegisteredCommandContract`
+- `assertRegisteredHook`
+- `assertRegisteredSearchProvider`
+- `assertRegisteredImporter`
+- `assertRegisteredExporter`
+
 Commander option contract exports:
 
 - `CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS`
@@ -95,6 +103,7 @@ Common types:
 - `ExtensionManifestEngines`
 - `CommandDefinition`
 - `FlagDefinition`
+- `ImportExportRegistrationOptions`
 - `ServiceOverrideContext`
 - `PmCliExpectedError`
 - `CreatePmCliExpectedErrorOptions`
@@ -242,7 +251,13 @@ import { createPmCliExpectedError } from "@unbrained/pm-cli/sdk/runtime";
 
 ## Testing Helpers
 
-Package tests can assert a command registration contract without depending on Vitest-specific helpers:
+Package tests can assert registration contracts without depending on Vitest-specific
+helpers. Every assertion normalizes the expected name, returns the matched registration
+entry, and throws an `Error` that lists what _is_ available when the expectation is
+missing. They are exported from both `@unbrained/pm-cli/sdk/testing` and the main
+`@unbrained/pm-cli/sdk` barrel.
+
+Assert a command registration contract:
 
 ```ts
 import { assertRegisteredCommandContract } from "@unbrained/pm-cli/sdk/testing";
@@ -252,6 +267,39 @@ assertRegisteredCommandContract(activation.registrations, {
   action: "hello",
   flags: ["--name"],
 });
+```
+
+Assert importer, exporter, and search-provider registrations against an
+`ExtensionRegistrationRegistry` (from `activation.registrations`). The optional
+`extensionName` narrows the match to a single extension:
+
+```ts
+import {
+  assertRegisteredExporter,
+  assertRegisteredImporter,
+  assertRegisteredSearchProvider,
+} from "@unbrained/pm-cli/sdk/testing";
+
+assertRegisteredImporter(activation.registrations, { importer: "jsonl" });
+assertRegisteredExporter(activation.registrations, {
+  exporter: "jsonl",
+  extensionName: "my-ext",
+});
+assertRegisteredSearchProvider(activation.registrations, { provider: "semantic-local" });
+```
+
+Hooks are surfaced via `activation.hooks` (an `ExtensionHookRegistry`), not the command
+registry, so `assertRegisteredHook` takes the hook registry and a lifecycle `kind`
+(`before_command` | `after_command` | `on_read` | `on_write` | `on_index`):
+
+```ts
+import { assertRegisteredHook } from "@unbrained/pm-cli/sdk/testing";
+
+const hook = assertRegisteredHook(activation.hooks, {
+  kind: "on_write",
+  extensionName: "my-ext",
+});
+// hook.run is the registered OnWriteHook handler
 ```
 
 ## Custom Item Type
@@ -284,6 +332,57 @@ export default defineExtension({
 
 Manifest capability: `schema`.
 
+## Importer / Exporter
+
+`registerImporter(name, importer)` and `registerExporter(name, exporter)` register
+a data adapter and automatically create a `<name> import` / `<name> export` command
+path that invokes it. The handler receives an `ImportExportContext`
+(`registration`, `action`, `command`, `args`, `options`, `global`, `pm_root`).
+
+By default the auto-created command only has a handler. Pass an optional third
+`ImportExportRegistrationOptions` argument to make it a first-class command with a
+description, flags, intent, examples, failure hints, and positional arguments —
+surfaced in `--help` and runtime contracts exactly like `registerCommand`:
+
+```ts
+import { defineExtension } from "@unbrained/pm-cli/sdk";
+
+export default defineExtension({
+  activate(api) {
+    api.registerImporter(
+      "jsonl",
+      async (context) => {
+        // context.options.file, context.global, context.pm_root, ...
+        return { ok: true, imported: 0 };
+      },
+      {
+        action: "jsonl-import",
+        description: "Import JSONL records into pm items.",
+        intent: "ingest external task records",
+        examples: ["pm jsonl import --file source.jsonl"],
+        failure_hints: ["Verify the JSONL source path exists."],
+        flags: [
+          {
+            long: "--file",
+            value_name: "path",
+            value_type: "string",
+            description: "Path to the JSONL source file.",
+          },
+        ],
+      },
+    );
+
+    api.registerExporter("jsonl", async () => ({ ok: true }), {
+      description: "Export pm items to JSONL.",
+    });
+  },
+});
+```
+
+Manifest capability: `importers` (and `schema` when supplying `flags`). The two-argument
+form remains supported; supplying the options object never produces a command-handler
+collision because the definition and handler share the same command path and extension.
+
 ## Search Provider
 
 ```ts
@@ -304,6 +403,15 @@ export default defineExtension({
 ```
 
 Manifest capability: `search`.
+
+Core search invokes the registered `query` when `settings.search.provider` matches
+the provider `name`. The bundled `pm-search-advanced` package ships a working
+first-party exemplar: `searchAdvancedLocalProvider()` registers a deterministic,
+dependency-free local lexical ranker named `search-advanced-local` (enable with
+`pm config set search.provider search-advanced-local`). Authors building
+embedding-backed providers (for example Ollama or a hosted model) implement
+`embed`/`embedBatch` on the same `SearchProviderDefinition` shape, and may also
+`registerVectorStoreAdapter` for a custom vector store.
 
 ## Robust Automation Pattern
 

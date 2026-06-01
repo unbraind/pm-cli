@@ -24,6 +24,20 @@ export {
 } from "../core/packages/manifest.js";
 export * from "./cli-contracts.js";
 export * from "./runtime.js";
+export {
+  assertRegisteredCommandContract,
+  assertRegisteredExporter,
+  assertRegisteredHook,
+  assertRegisteredImporter,
+  assertRegisteredSearchProvider,
+  type RegisteredCommandContractAssertion,
+  type RegisteredCommandContractExpectation,
+  type RegisteredExporterExpectation,
+  type RegisteredHookExpectation,
+  type RegisteredHookKind,
+  type RegisteredImporterExpectation,
+  type RegisteredSearchProviderExpectation,
+} from "./testing.js";
 
 /**
  * Canonical extension capability names accepted by pm.
@@ -90,6 +104,7 @@ export type {
   ExtensionCommandRegistry,
   ExtensionDiagnostic,
   ExtensionDiscoveryResult,
+  ExtensionHookRegistry,
   ExtensionLoadResult,
   ExtensionManifest,
   ExtensionManifestEngines,
@@ -106,6 +121,7 @@ export type {
   FlagValueType,
   FlagDefinition,
   ImportExportContext,
+  ImportExportRegistrationOptions,
   Importer,
   OnIndexHook,
   OnIndexHookContext,
@@ -121,6 +137,10 @@ export type {
   PreflightOverrideContext,
   PreflightOverrideDelta,
   PreflightRuntimeDecision,
+  RegisteredExtensionExporter,
+  RegisteredExtensionHook,
+  RegisteredExtensionImporter,
+  RegisteredExtensionSearchProvider,
   RendererOverride,
   RendererOverrideContext,
   SchemaFieldDefinition,
