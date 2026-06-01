@@ -122,7 +122,7 @@ function issueTextValue(issue) {
   const metadata = issue && typeof issue === "object" ? issue.metadata : null;
   const metadataValue = metadata && typeof metadata.value === "string" ? metadata.value : "";
   const title = issue && typeof issue.title === "string" ? issue.title : "";
-  return `${title}\n${metadataValue}`.toLowerCase();
+  return `${title}\n${metadataValue}`;
 }
 
 function isIgnoredConsoleNoiseIssue(issue) {
@@ -130,7 +130,7 @@ function isIgnoredConsoleNoiseIssue(issue) {
   if (logger !== "console") {
     return false;
   }
-  const combinedText = issueTextValue(issue);
+  const combinedText = issueTextValue(issue).toLowerCase();
   return KNOWN_IGNORED_CONSOLE_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
 }
 
@@ -140,7 +140,7 @@ function isExpectedHandledCliIssue(issue) {
   if ((type !== "PmCliError" && type !== "CommandError") || issue?.isUnhandled === true) {
     return false;
   }
-  const combinedText = issueTextValue(issue);
+  const combinedText = issueTextValue(issue).toLowerCase();
   return KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS.some((pattern) => combinedText.includes(pattern));
 }
 

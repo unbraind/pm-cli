@@ -125,6 +125,7 @@ describe("release automation contract", () => {
     expect(gateSource).toContain('commandFor("sentry")');
     expect(gateSource).toContain("function isExpectedHandledCliIssue");
     expect(gateSource).toContain('issue?.isUnhandled === true');
+    expect(gateSource).toContain("const combinedText = issueTextValue(issue).toLowerCase();");
     expect(gateSource).toContain("KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS");
     expect(gateSource).toContain("ignored_expected_cli_error_total");
     expect(gateSource).toContain("function buildTelemetryCommandInvocation");
