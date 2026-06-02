@@ -273,6 +273,15 @@ describe("core/output/output", () => {
     expect(rendered).not.toContain("extra:");
   });
 
+  it("keeps user native-output marker fields unless the marker is true", () => {
+    const rendered = formatOutput({ __pm_native_output: false, count: 1 }, { json: true });
+
+    expect(JSON.parse(rendered)).toEqual({
+      __pm_native_output: false,
+      count: 1,
+    });
+  });
+
   it("applies active renderer overrides and falls back when they fail", () => {
     setActiveExtensionRenderers({
       overrides: [

@@ -2119,6 +2119,39 @@ describe("runUpdate", () => {
     });
   });
 
+  it("unsets declared extension item fields through --unset", async () => {
+    await withTempPmPath(async (context) => {
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "unset-extension-field-values");
+      await runUpdate(
+        id,
+        {
+          field: ["github_url=https://example.test/2"],
+          message: "seed extension field",
+        },
+        { path: context.pmPath },
+      );
+      const result = await runUpdate(
+        id,
+        {
+          unset: ["github-url"],
+          message: "unset extension field",
+        },
+        { path: context.pmPath },
+      );
+
+      expect((result.item as { github_url?: string }).github_url).toBeUndefined();
+      expect(result.changed_fields).toContain("github_url");
+    });
+  });
+
   it("allows declared extension item fields on update when strict schema rejects unknown fields", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");

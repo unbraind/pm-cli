@@ -431,6 +431,7 @@ function resolveRuntimeUnsetDefinition(
 function parseUpdateUnsetTargets(
   raw: string[] | undefined,
   runtimeFieldRegistry?: RuntimeFieldRegistry,
+  extensionFieldNames: readonly string[] = [],
 ): { frontMatterKeys: Set<string>; optionKeys: Set<string> } {
   const frontMatterKeys = new Set<string>();
   const optionKeys = new Set<string>();
@@ -449,7 +450,17 @@ function parseUpdateUnsetTargets(
         EXIT_CODE.USAGE,
       );
     }
-    const definition = UPDATE_UNSET_ALIAS_MAP.get(trimmed) ?? resolveRuntimeUnsetDefinition(trimmed, runtimeFieldRegistry);
+    const extensionFieldName = extensionFieldNames.find((fieldName) => {
+      const normalizedFieldName = fieldName.toLowerCase();
+      return (
+        normalizedFieldName === trimmed ||
+        normalizedFieldName.replaceAll("_", "-") === trimmed ||
+        normalizedFieldName.replaceAll("-", "_") === trimmed
+      );
+    });
+    const definition = UPDATE_UNSET_ALIAS_MAP.get(trimmed) ??
+      resolveRuntimeUnsetDefinition(trimmed, runtimeFieldRegistry) ??
+      (extensionFieldName ? { optionKey: "field", frontMatterKey: extensionFieldName } : undefined);
     if (!definition) {
       throw new PmCliError(
         `Unsupported --unset field "${entry}". Supported fields: ${UPDATE_UNSET_SUPPORTED_CANONICAL_FIELDS}`,
@@ -919,7 +930,7 @@ function normalizeUpdatePolicyOptionKey(raw: string, typeName: string): string {
   return canonical;
 }
 
-function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<string> {
+function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions, extensionFieldNames: readonly string[]): Set<string> {
   const provided = new Set<string>();
   const mark = (optionKey: string, isProvided: boolean): void => {
     if (isProvided) {
@@ -1003,7 +1014,7 @@ function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<
   mark("event", options.clearEvents === true);
   mark("typeOption", options.clearTypeOptions === true);
   if (options.unset && options.unset.length > 0) {
-    const unsetTargets = parseUpdateUnsetTargets(options.unset);
+    const unsetTargets = parseUpdateUnsetTargets(options.unset, undefined, extensionFieldNames);
     for (const optionKey of unsetTargets.optionKeys) {
       mark(optionKey, true);
     }
@@ -1011,7 +1022,12 @@ function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<
   return provided;
 }
 
-function enforceUpdateOptionsByType(typeName: string, options: UpdateCommandOptions, typeRegistry: ReturnType<typeof resolveItemTypeRegistry>): void {
+function enforceUpdateOptionsByType(
+  typeName: string,
+  options: UpdateCommandOptions,
+  typeRegistry: ReturnType<typeof resolveItemTypeRegistry>,
+  extensionFieldNames: readonly string[],
+): void {
   const typeDefinition = resolveTypeDefinition(typeName, typeRegistry);
   if (!typeDefinition) {
     throw new PmCliError(`Invalid type value "${typeName}"`, EXIT_CODE.USAGE);
@@ -1021,7 +1037,7 @@ function enforceUpdateOptionsByType(typeName: string, options: UpdateCommandOpti
     throw new PmCliError(policyState.errors.join("; "), EXIT_CODE.CONFLICT);
   }
 
-  const provided = collectProvidedUpdatePolicyOptions(options);
+  const provided = collectProvidedUpdatePolicyOptions(options, extensionFieldNames);
   for (const disabled of policyState.disabled) {
     if (provided.has(normalizeUpdatePolicyOptionKey(disabled, typeName))) {
       throw new PmCliError(
@@ -1066,10 +1082,12 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
-  const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+  const extensionRegistrations = getActiveExtensionRegistrations();
+  const extensionFieldNames = collectRegisteredItemFieldNames(extensionRegistrations);
+  const typeRegistry = resolveItemTypeRegistry(settings, extensionRegistrations);
   const parentReferencePolicy = settings.validation.parent_reference;
   const sprintReleasePolicy = settings.validation.sprint_release_format;
-  const unsetTargets = parseUpdateUnsetTargets(options.unset, runtimeFieldRegistry);
+  const unsetTargets = parseUpdateUnsetTargets(options.unset, runtimeFieldRegistry, extensionFieldNames);
   const clearOptionKeys = new Set<string>(unsetTargets.optionKeys);
   const clearFrontMatterKeys = new Set<string>(unsetTargets.frontMatterKeys);
 
@@ -1486,8 +1504,6 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     throw new PmCliError("--order and --rank must match when both are provided", EXIT_CODE.USAGE);
   }
 
-  const extensionRegistrations = getActiveExtensionRegistrations();
-  const extensionFieldNames = collectRegisteredItemFieldNames(extensionRegistrations);
   const result = await mutateItem({
     pmRoot,
     settings,
@@ -1589,7 +1605,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         activeTypeName = resolvedTypeName;
         changedFields.push("type");
       }
-      enforceUpdateOptionsByType(activeTypeName, options, typeRegistry);
+      enforceUpdateOptionsByType(activeTypeName, options, typeRegistry, extensionFieldNames);
       if (options.typeOption !== undefined || clearFrontMatterKeys.has("type_options")) {
         if (clearFrontMatterKeys.has("type_options")) {
           delete document.metadata.type_options;
@@ -1877,6 +1893,17 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         }
         delete metadataRecord[definition.metadata_key];
         changedFields.push(definition.metadata_key);
+      }
+
+      for (const fieldKey of extensionFieldNames) {
+        if (!clearFrontMatterKeys.has(fieldKey)) {
+          continue;
+        }
+        if (metadataRecord[fieldKey] === undefined) {
+          continue;
+        }
+        delete metadataRecord[fieldKey];
+        changedFields.push(fieldKey);
       }
 
       const runtimeFieldUpdates = collectRuntimeUpdateFieldValues(options as Record<string, unknown>, runtimeFieldRegistry);

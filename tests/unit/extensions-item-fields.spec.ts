@@ -75,8 +75,31 @@ describe("extensions item field runtime wiring", () => {
       "--field missing is not declared",
     );
     expect(() => parseRegisteredItemFieldAssignments(["count=NaN"], registrations)).toThrow("must be a number");
+    expect(() => parseRegisteredItemFieldAssignments(["count=   "], registrations)).toThrow("must be a number");
     expect(() => parseRegisteredItemFieldAssignments(["enabled=maybe"], registrations)).toThrow("true|false");
     expect(() => parseRegisteredItemFieldAssignments(["payload=not-json"], registrations)).toThrow("valid JSON object");
+  });
+
+  it("rejects conflicting extension field types for the same field name", () => {
+    expect(() =>
+      parseRegisteredItemFieldAssignments(
+        ["github_number=7"],
+        withFields([
+          { name: "github_number", type: "number" },
+          { name: "github_number", type: "string" },
+        ]),
+      ),
+    ).toThrow('Extension item field "github_number" is declared with conflicting types: number, string');
+
+    expect(() =>
+      applyRegisteredItemFieldDefaultsAndValidation(
+        {},
+        withFields([
+          { name: "github_number", type: "number" },
+          { name: "github_number", type: "string" },
+        ]),
+      ),
+    ).toThrow('Extension item field "github_number" is declared with conflicting types: number, string');
   });
 
   it("accepts supported field types", () => {

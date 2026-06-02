@@ -37,7 +37,7 @@ function shouldUseNativeOutput(result: unknown): boolean {
 }
 
 function stripNativeOutputMarker<T>(result: T): T {
-  if (!isPlainObject(result) || !(NATIVE_OUTPUT_MARKER in result)) {
+  if (!isPlainObject(result) || result[NATIVE_OUTPUT_MARKER] !== true) {
     return result;
   }
   const { [NATIVE_OUTPUT_MARKER]: _marker, ...rest } = result;

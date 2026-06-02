@@ -71,7 +71,11 @@ function coerceRegisteredFieldValue(fieldName: string, fieldType: "string" | "nu
     return raw;
   }
   if (fieldType === "number") {
-    const parsed = Number(raw.trim());
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) {
+      throw new PmCliError(`--field ${fieldName}=... must be a number`, EXIT_CODE.USAGE);
+    }
+    const parsed = Number(trimmed);
     if (!Number.isFinite(parsed)) {
       throw new PmCliError(`--field ${fieldName}=... must be a number`, EXIT_CODE.USAGE);
     }
@@ -103,6 +107,17 @@ function collectRegisteredFieldDefinitions(
       const fieldType = normalizeFieldType(definition.type);
       if (!fieldName || !fieldType) {
         continue;
+      }
+      const existing = definitions.get(fieldName);
+      if (existing && existing.type !== fieldType) {
+        throw new PmCliError(
+          `Extension item field "${fieldName}" is declared with conflicting types: ${existing.type}, ${fieldType}`,
+          EXIT_CODE.USAGE,
+          {
+            code: "extension_item_field_type_conflict",
+            nextSteps: ["Make every active extension declaration for this field use the same type."],
+          },
+        );
       }
       definitions.set(fieldName, { name: fieldName, type: fieldType });
     }
@@ -182,6 +197,7 @@ export function applyRegisteredItemFieldDefaultsAndValidation(
   if (!registrations) {
     return;
   }
+  collectRegisteredFieldDefinitions(registrations);
   for (const registration of registrations.item_fields) {
     for (const definition of registration.fields) {
       const fieldName = normalizeFieldName(definition.name);
