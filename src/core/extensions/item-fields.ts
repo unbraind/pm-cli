@@ -1,6 +1,8 @@
 import type { ExtensionRegistrationRegistry } from "./loader.js";
-import { EXIT_CODE } from "../shared/constants.js";
+import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
+
+const RESERVED_ITEM_FIELD_NAMES = new Set(FRONT_MATTER_KEY_ORDER);
 
 function normalizeFieldName(value: unknown): string | null {
   if (typeof value !== "string") {
@@ -108,6 +110,20 @@ function collectRegisteredFieldDefinitions(
   return definitions;
 }
 
+function assertNotReservedItemFieldName(fieldName: string): void {
+  if (!RESERVED_ITEM_FIELD_NAMES.has(fieldName)) {
+    return;
+  }
+  throw new PmCliError(`Extension item field "${fieldName}" collides with reserved item metadata`, EXIT_CODE.USAGE, {
+    code: "extension_item_field_reserved",
+    nextSteps: ["Rename the extension item field, preferably with an extension-specific prefix."],
+  });
+}
+
+export function collectRegisteredItemFieldNames(registrations: ExtensionRegistrationRegistry | null): string[] {
+  return [...collectRegisteredFieldDefinitions(registrations).keys()].sort((left, right) => left.localeCompare(right));
+}
+
 export function parseRegisteredItemFieldAssignments(
   rawFields: string[] | undefined,
   registrations: ExtensionRegistrationRegistry | null,
@@ -130,6 +146,7 @@ export function parseRegisteredItemFieldAssignments(
           : ["Activate an extension that calls registerItemFields before setting extension fields."],
       });
     }
+    assertNotReservedItemFieldName(definition.name);
     values[definition.name] = coerceRegisteredFieldValue(definition.name, definition.type, value);
   }
   return values;
@@ -171,6 +188,7 @@ export function applyRegisteredItemFieldDefaultsAndValidation(
       if (!fieldName) {
         continue;
       }
+      assertNotReservedItemFieldName(fieldName);
       if (!(fieldName in frontMatter) && Object.prototype.hasOwnProperty.call(definition, "default")) {
         frontMatter[fieldName] = cloneFieldValue(definition.default);
       }

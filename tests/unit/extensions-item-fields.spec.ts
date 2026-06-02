@@ -103,17 +103,30 @@ describe("extensions item field runtime wiring", () => {
   it("throws for type mismatch and allowed value mismatch", () => {
     expect(() =>
       applyRegisteredItemFieldDefaultsAndValidation(
-        { severity: "high" },
-        withFields([{ name: "severity", type: "number" }]),
+        { ext_severity: "high" },
+        withFields([{ name: "ext_severity", type: "number" }]),
       ),
-    ).toThrow('Item field "severity" must be of type number');
+    ).toThrow('Item field "ext_severity" must be of type number');
 
     expect(() =>
       applyRegisteredItemFieldDefaultsAndValidation(
-        { status: "blocked" },
-        withFields([{ name: "status", type: "string", values: ["open", "closed"] }]),
+        { ext_status: "blocked" },
+        withFields([{ name: "ext_status", type: "string", values: ["open", "closed"] }]),
       ),
-    ).toThrow('Item field "status" must match one of the configured allowed values');
+    ).toThrow('Item field "ext_status" must match one of the configured allowed values');
+  });
+
+  it("rejects extension field names that collide with reserved metadata", () => {
+    expect(() =>
+      parseRegisteredItemFieldAssignments(["id=pm-other"], withFields([{ name: "id", type: "string" }])),
+    ).toThrow('Extension item field "id" collides with reserved item metadata');
+
+    expect(() =>
+      applyRegisteredItemFieldDefaultsAndValidation(
+        {},
+        withFields([{ name: "updated_at", type: "string", default: "2026-01-01T00:00:00.000Z" }]),
+      ),
+    ).toThrow('Extension item field "updated_at" collides with reserved item metadata');
   });
 
   it("skips invalid field names and unknown field types", () => {

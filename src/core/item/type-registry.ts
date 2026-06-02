@@ -85,6 +85,7 @@ const CREATE_COMMAND_OPTION_KEYS = [
   "reminder",
   "event",
   "typeOption",
+  "field",
 ] as const;
 
 const UPDATE_COMMAND_OPTION_KEYS = [
@@ -140,6 +141,7 @@ const UPDATE_COMMAND_OPTION_KEYS = [
   "reminder",
   "event",
   "typeOption",
+  "field",
   "allowAuditUpdate",
   "force",
 ] as const;

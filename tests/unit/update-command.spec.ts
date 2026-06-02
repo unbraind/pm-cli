@@ -2119,6 +2119,109 @@ describe("runUpdate", () => {
     });
   });
 
+  it("allows declared extension item fields on update when strict schema rejects unknown fields", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { unknown_field_policy?: string };
+      };
+      settings.schema = {
+        ...(settings.schema ?? {}),
+        unknown_field_policy: "reject",
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "update-extension-field-strict-schema");
+      const result = await runUpdate(
+        id,
+        {
+          field: ["github_url=https://example.test/strict"],
+          message: "update strict extension field",
+        },
+        { path: context.pmPath },
+      );
+
+      expect((result.item as { github_url?: string }).github_url).toBe("https://example.test/strict");
+      expect(result.changed_fields).toContain("github_url");
+    });
+  });
+
+  it("enforces command_option_policies for the extension --field setter on update", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Task",
+            command_option_policies: [{ command: "update", option: "field", enabled: false }],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "update-extension-field-policy");
+      await expect(
+        runUpdate(
+          id,
+          {
+            field: ["github_url=https://example.test/policy"],
+            message: "update disabled extension field",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--field"),
+      });
+    });
+  });
+
+  it("rejects reserved extension item field names on update", async () => {
+    await withTempPmPath(async (context) => {
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "bad-extension",
+        fields: [{ name: "id", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "update-extension-field-reserved");
+      await expect(
+        runUpdate(
+          id,
+          {
+            field: ["id=pm-other"],
+            message: "update reserved extension field",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: { code: "extension_item_field_reserved" },
+      });
+    });
+  });
+
   it("rejects undeclared extension item fields on update", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-unknown-extension-field");

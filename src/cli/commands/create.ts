@@ -41,6 +41,7 @@ import {
   runActiveOnWriteHooks,
 } from "../../core/extensions/index.js";
 import {
+  collectRegisteredItemFieldNames,
   applyRegisteredItemFieldDefaultsAndValidation,
   parseRegisteredItemFieldAssignments,
 } from "../../core/extensions/item-fields.js";
@@ -726,9 +727,15 @@ function parseEvents(raw: string[] | undefined, nowValue: string): { values: Cal
   };
 }
 
-function buildChangedFields(frontMatter: ItemMetadata, body: string, explicitUnsets: string[]): string[] {
+function buildChangedFields(
+  frontMatter: ItemMetadata,
+  body: string,
+  explicitUnsets: string[],
+  additionalFrontMatterKeys: readonly string[] = [],
+): string[] {
   const changed = [
     ...FRONT_MATTER_KEY_ORDER.filter((key) => frontMatter[key] !== undefined),
+    ...additionalFrontMatterKeys.filter((key) => (frontMatter as unknown as Record<string, unknown>)[key] !== undefined),
     ...(body.length > 0 ? ["body"] : []),
     ...explicitUnsets.map((key) => `unset:${key}`),
   ];
@@ -1474,6 +1481,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const typeOptions = parseTypeOptions(resolvedOptions.typeOption);
   const validatedTypeOptions = validateTypeOptions(type, typeOptions.values, typeRegistry);
   const extensionRegistrations = getActiveExtensionRegistrations();
+  const extensionFieldNames = collectRegisteredItemFieldNames(extensionRegistrations);
   const registeredItemFieldValues = parseRegisteredItemFieldAssignments(resolvedOptions.field, extensionRegistrations);
   for (const fieldKey of Object.keys(registeredItemFieldValues)) {
     if (!unsetTargets.frontMatterKeys.has(fieldKey)) {
@@ -1849,7 +1857,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       metadata: frontMatter,
       body,
     },
-    { schema: settings.schema },
+    { schema: settings.schema, extensionFieldNames },
   );
   const beforeDocument: ItemDocument = {
     metadata: {} as ItemMetadata,
@@ -1871,7 +1879,14 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   let hookWarnings: string[] = [];
 
   try {
-    await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: settings.item_format, schema: settings.schema }));
+    await writeFileAtomic(
+      itemPath,
+      serializeItemDocument(afterDocument, {
+        format: settings.item_format,
+        schema: settings.schema,
+        extensionFieldNames,
+      }),
+    );
     try {
       const entry = createHistoryEntry({
         nowIso: nowValue,
@@ -1902,7 +1917,10 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     await lockRelease();
   }
 
-  const changedFields = buildChangedFields(frontMatter, body, explicitUnsetKeys);
+  const changedFields = buildChangedFields(frontMatter, body, explicitUnsetKeys, [
+    ...Object.keys(registeredItemFieldValues),
+    ...Object.keys(runtimeCreateFieldValues.values),
+  ]);
   const outputItem = structuredClone(frontMatter);
 
   // After the create has committed (so the ID is real and shows up in the suggestion),

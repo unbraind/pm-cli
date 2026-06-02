@@ -40,6 +40,7 @@ import { stableValueEquals } from "../../core/shared/serialization.js";
 import { resolveIsoOrRelative } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import {
+  collectRegisteredItemFieldNames,
   applyRegisteredItemFieldDefaultsAndValidation,
   parseRegisteredItemFieldAssignments,
 } from "../../core/extensions/item-fields.js";
@@ -1485,6 +1486,8 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     throw new PmCliError("--order and --rank must match when both are provided", EXIT_CODE.USAGE);
   }
 
+  const extensionRegistrations = getActiveExtensionRegistrations();
+  const extensionFieldNames = collectRegisteredItemFieldNames(extensionRegistrations);
   const result = await mutateItem({
     pmRoot,
     settings,
@@ -1495,6 +1498,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     message: options.message,
     force: options.force,
     bypassAssigneeConflict: options.allowAuditUpdate === true || options.allowAuditDepUpdate === true,
+    extensionFieldNames,
     mutate(document) {
       const changedFields: string[] = [];
       const warnings: string[] = [];
@@ -1887,7 +1891,6 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         changedFields.push(fieldKey);
       }
 
-      const extensionRegistrations = getActiveExtensionRegistrations();
       const registeredItemFieldUpdates = parseRegisteredItemFieldAssignments(options.field, extensionRegistrations);
       for (const [fieldKey, fieldValue] of Object.entries(registeredItemFieldUpdates)) {
         if (clearFrontMatterKeys.has(fieldKey)) {

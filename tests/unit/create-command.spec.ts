@@ -49,6 +49,7 @@ function readCreateHistory(context: TempPmContext, id: string): Array<{ op: stri
 describe("runCreate", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
+    setActiveExtensionRegistrations(null);
     vi.restoreAllMocks();
   });
 
@@ -2509,6 +2510,84 @@ describe("runCreate", () => {
       expect(result.item.github_url).toBe("https://example.test/1");
       expect(result.item.github_number).toBe(42);
       expect(result.item.github_synced).toBe(true);
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["github_url", "github_number", "github_synced"]));
+    });
+  });
+
+  it("allows declared extension item fields when strict schema rejects unknown fields", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { unknown_field_policy?: string };
+      };
+      settings.schema = {
+        ...(settings.schema ?? {}),
+        unknown_field_policy: "reject",
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "create-extension-field-strict-schema",
+          field: ["github_url=https://example.test/strict"],
+        }),
+        { path: context.pmPath },
+      );
+
+      expect(result.item.github_url).toBe("https://example.test/strict");
+    });
+  });
+
+  it("enforces command_option_policies for the extension --field setter on create", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            command_option_policies: [{ command: "create", option: "field", required: true }],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      await expect(
+        runCreate(baseCreateOptions({ type: "Asset", field: undefined }), { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--field"),
+      });
+
+      const created = await runCreate(
+        baseCreateOptions({
+          type: "Asset",
+          field: ["github_url=https://example.test/policy"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(created.item.github_url).toBe("https://example.test/policy");
     });
   });
 
