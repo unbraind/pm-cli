@@ -23,11 +23,25 @@ interface NodeLikeError {
   code?: string;
 }
 
+const NATIVE_OUTPUT_MARKER = "__pm_native_output";
+
 let streamErrorHandlersInstalled = false;
 type OutputStreamTarget = "stdout" | "stderr";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function shouldUseNativeOutput(result: unknown): boolean {
+  return isPlainObject(result) && result[NATIVE_OUTPUT_MARKER] === true;
+}
+
+function stripNativeOutputMarker<T>(result: T): T {
+  if (!isPlainObject(result) || !(NATIVE_OUTPUT_MARKER in result)) {
+    return result;
+  }
+  const { [NATIVE_OUTPUT_MARKER]: _marker, ...rest } = result;
+  return rest as T;
 }
 
 function isBrokenPipeError(error: unknown): boolean {
@@ -214,7 +228,8 @@ function renderDefaultMarkdownResult(value: unknown): string | null {
 
 export function formatOutput(result: unknown, options: OutputOptions): string {
   const commandOverride = runActiveCommandOverride(result);
-  const effectiveResult = commandOverride.result;
+  const nativeOutput = shouldUseNativeOutput(commandOverride.result);
+  const effectiveResult = stripNativeOutputMarker(commandOverride.result);
   setActiveCommandResult(effectiveResult);
   const format =
     options.json === true
@@ -224,7 +239,7 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
         : options.defaultOutputFormat === "json"
         ? "json"
         : "toon";
-  const serviceOverride = runActiveServiceOverrideSync("output_format", {
+  const serviceOverride = nativeOutput ? { handled: false, result: effectiveResult } : runActiveServiceOverrideSync("output_format", {
     command: options.command,
     args: options.commandArgs,
     command_options: options.commandOptions,
@@ -244,7 +259,7 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
       return markdownDefault;
     }
   }
-  const rendererOverride = runActiveRendererOverride(format, outputResult);
+  const rendererOverride = nativeOutput ? { rendered: null } : runActiveRendererOverride(format, outputResult);
   if (rendererOverride.rendered !== null) {
     return rendererOverride.rendered.endsWith("\n") ? rendererOverride.rendered : `${rendererOverride.rendered}\n`;
   }

@@ -325,6 +325,17 @@ export function buildExtensionTriageSummary(
           "Update command definitions to use run: (context) => ... for forward compatibility.",
       );
     }
+    if (
+      normalizedWarnings.some(
+        (warning) =>
+          warning.startsWith("extension_output_service_override_global:") ||
+          warning.startsWith("extension_output_renderer_override_global:"),
+      )
+    ) {
+      remediation.push(
+        "Global output service/renderer overrides are active. For output_format, return context.payload/null/undefined unless the extension owns the command. For renderers, return null for unrelated payloads so pm falls back to native rendering.",
+      );
+    }
     if (normalizedWarnings.some((warning) => warning.startsWith("extension_load_failed_sdk_dependency_missing:"))) {
       remediation.push(
         `Detected extension load failures caused by missing SDK dependency resolution. ` +

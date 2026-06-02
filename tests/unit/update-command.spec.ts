@@ -5,11 +5,14 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runUpdate } from "../../src/cli/commands/update.js";
 import { runDeps } from "../../src/cli/commands/deps.js";
+import { setActiveExtensionRegistrations } from "../../src/core/extensions/index.js";
+import { createEmptyExtensionRegistrationRegistry } from "../../src/core/extensions/loader.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 afterEach(() => {
+  setActiveExtensionRegistrations(null);
   vi.restoreAllMocks();
 });
 
@@ -2083,6 +2086,54 @@ describe("runUpdate", () => {
       );
       expect((markdownResult.item as { type_options?: Record<string, string> }).type_options).toEqual({
         workflow: "regression",
+      });
+    });
+  });
+
+  it("updates declared extension item fields through repeatable --field values", async () => {
+    await withTempPmPath(async (context) => {
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [
+          { name: "github_url", type: "string" },
+          { name: "github_number", type: "number" },
+        ],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "update-extension-field-values");
+      const result = await runUpdate(
+        id,
+        {
+          field: ["github_url=https://example.test/2", "github_number=7"],
+          message: "update extension fields",
+        },
+        { path: context.pmPath },
+      );
+
+      expect((result.item as { github_url?: string }).github_url).toBe("https://example.test/2");
+      expect((result.item as { github_number?: number }).github_number).toBe(7);
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["github_url", "github_number"]));
+    });
+  });
+
+  it("rejects undeclared extension item fields on update", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-unknown-extension-field");
+      await expect(
+        runUpdate(
+          id,
+          {
+            field: ["github_url=https://example.test/2"],
+            message: "update unknown extension field",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: { code: "extension_item_field_unknown" },
       });
     });
   });

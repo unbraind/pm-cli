@@ -40,7 +40,10 @@ import {
   runActiveCommandHandler,
   runActiveOnWriteHooks,
 } from "../../core/extensions/index.js";
-import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extensions/item-fields.js";
+import {
+  applyRegisteredItemFieldDefaultsAndValidation,
+  parseRegisteredItemFieldAssignments,
+} from "../../core/extensions/item-fields.js";
 import { locateItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -144,6 +147,7 @@ export interface CreateCommandOptions {
   reminder?: string[];
   event?: string[];
   typeOption?: string[];
+  field?: string[];
   template?: string;
   createMode?: string;
   schedulePreset?: string;
@@ -777,6 +781,7 @@ async function resolveCreateStdinInputs(options: CreateCommandOptions): Promise<
     reminder: await stdinResolver.resolveList(options.reminder, "--reminder"),
     event: await stdinResolver.resolveList(options.event, "--event"),
     typeOption: await stdinResolver.resolveList(options.typeOption, "--type-option"),
+    field: await stdinResolver.resolveList(options.field, "--field"),
   };
 }
 
@@ -895,6 +900,7 @@ function requireCreateOptionByType(
     reminder: options.reminder,
     event: options.event,
     typeOption: options.typeOption,
+    field: options.field,
   };
 
   const hasOptionValue = (optionKey: string): boolean => {
@@ -1467,6 +1473,14 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const events = parseEvents(resolvedOptions.event, nowValue);
   const typeOptions = parseTypeOptions(resolvedOptions.typeOption);
   const validatedTypeOptions = validateTypeOptions(type, typeOptions.values, typeRegistry);
+  const extensionRegistrations = getActiveExtensionRegistrations();
+  const registeredItemFieldValues = parseRegisteredItemFieldAssignments(resolvedOptions.field, extensionRegistrations);
+  for (const fieldKey of Object.keys(registeredItemFieldValues)) {
+    if (!unsetTargets.frontMatterKeys.has(fieldKey)) {
+      continue;
+    }
+    throw new PmCliError(`Cannot combine --unset ${fieldKey.replaceAll("_", "-")} with --field ${fieldKey}=...`, EXIT_CODE.USAGE);
+  }
   const runtimeCreateFieldValues = collectRuntimeCreateFieldValues(
     resolvedOptions as Record<string, unknown>,
     runtimeFieldRegistry,
@@ -1818,12 +1832,13 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     docs: docs.values,
     reminders: reminders.values,
     events: events.values,
+    ...registeredItemFieldValues,
     ...runtimeCreateFieldValues.values,
   });
   try {
     applyRegisteredItemFieldDefaultsAndValidation(
       frontMatter as unknown as Record<string, unknown>,
-      getActiveExtensionRegistrations(),
+      extensionRegistrations,
     );
   } catch (error: unknown) {
     throw new PmCliError(error instanceof Error ? error.message : "Invalid extension item field values", EXIT_CODE.USAGE);

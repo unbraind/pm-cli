@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { applyRegisteredItemFieldDefaultsAndValidation } from "../../src/core/extensions/item-fields.js";
+import {
+  applyRegisteredItemFieldDefaultsAndValidation,
+  parseRegisteredItemFieldAssignments,
+} from "../../src/core/extensions/item-fields.js";
 import { createEmptyExtensionRegistrationRegistry, type ExtensionRegistrationRegistry } from "../../src/core/extensions/loader.js";
 
 function withFields(fields: Array<Record<string, unknown>>): ExtensionRegistrationRegistry {
@@ -32,6 +35,48 @@ describe("extensions item field runtime wiring", () => {
     const frontMatter: Record<string, unknown> = {};
     applyRegisteredItemFieldDefaultsAndValidation(frontMatter, null);
     expect(frontMatter).toEqual({});
+  });
+
+  it("parses declared extension field assignments with typed values", () => {
+    const parsed = parseRegisteredItemFieldAssignments(
+      [
+        "text_value=hello",
+        "number_value=42",
+        "boolean_value=yes",
+        "array_value=[\"a\",\"b\"]",
+        "object_value={\"key\":\"value\"}",
+      ],
+      withFields([
+        { name: "text_value", type: "string" },
+        { name: "number_value", type: "number" },
+        { name: "boolean_value", type: "boolean" },
+        { name: "array_value", type: "array" },
+        { name: "object_value", type: "object" },
+      ]),
+    );
+
+    expect(parsed).toEqual({
+      text_value: "hello",
+      number_value: 42,
+      boolean_value: true,
+      array_value: ["a", "b"],
+      object_value: { key: "value" },
+    });
+  });
+
+  it("rejects undeclared and invalid typed extension field assignments", () => {
+    const registrations = withFields([
+      { name: "count", type: "number" },
+      { name: "enabled", type: "boolean" },
+      { name: "payload", type: "object" },
+    ]);
+
+    expect(() => parseRegisteredItemFieldAssignments(["missing=value"], registrations)).toThrow(
+      "--field missing is not declared",
+    );
+    expect(() => parseRegisteredItemFieldAssignments(["count=NaN"], registrations)).toThrow("must be a number");
+    expect(() => parseRegisteredItemFieldAssignments(["enabled=maybe"], registrations)).toThrow("true|false");
+    expect(() => parseRegisteredItemFieldAssignments(["payload=not-json"], registrations)).toThrow("valid JSON object");
   });
 
   it("accepts supported field types", () => {

@@ -260,11 +260,11 @@ Common APIs:
 
 - `api.registerCommand(definition)` adds package-owned commands.
 - `api.registerFlags(command, flags)` adds runtime command flags.
-- `api.registerItemFields(fields)` adds custom metadata fields.
+- `api.registerItemFields(fields)` adds custom metadata fields. Agents can set declared fields with repeatable `pm create --field name=value` and `pm update <id> --field name=value`; undeclared names are rejected.
 - `api.registerItemTypes(types)` adds custom item types.
 - `api.registerMigration(definition)` adds schema migrations.
-- `api.registerService("output_format", handler)` customizes output formatting through the service override API.
-- `api.registerRenderer("toon" | "json", renderer)` adds format-specific renderers.
+- `api.registerService("output_format", handler)` customizes output formatting through the service override API. Return `context.payload`, `null`, or `undefined` for commands the extension does not own.
+- `api.registerRenderer("toon" | "json", renderer)` adds format-specific renderers. Return `null` for unrelated payloads so pm falls back to native rendering.
 - `api.hooks.beforeCommand(handler)`, `api.hooks.afterCommand(handler)`, `api.hooks.onWrite(handler)`, `api.hooks.onRead(handler)`, and `api.hooks.onIndex(handler)` add lifecycle hooks.
 
 Inline command flags require both `commands` and `schema` capabilities. Runtime schema changes should be verified with:

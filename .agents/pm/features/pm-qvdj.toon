@@ -2,11 +2,35 @@ id: pm-qvdj
 title: Add generic create/update setter for extension item fields
 description: "GitHub issue #97: registerItemFields exposes custom fields to contracts/validation, but standalone extensions cannot populate those fields through pm create/update without description marker hacks. Duplicate check: pm search for registerItemFields custom fields create update field setter importer provenance found no open direct duplicate. Desired outcome: repeatable generic setter such as --field name=value on create and update, honored for declared extension item fields and reflected in contracts/help."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[5]: "area:cli","area:sdk",custom-fields,extensions,github-issue
 created_at: "2026-06-02T15:55:03.159Z"
-updated_at: "2026-06-02T15:55:03.159Z"
+updated_at: "2026-06-02T22:19:39.198Z"
 author: codex-gpt5
 parent: pm-8jdc
+comments[3]{created_at,author,text}:
+  "2026-06-02T21:59:49.447Z",codex-sdk-lane-20260602,"SDK/custom-item-fields lane start under pm-lwtx: reviewing current registerItemFields support and create/update mutation surface for generic extension field setters. Scope is findings and minimal implementation/test recommendations only; no claim/release."
+  "2026-06-02T22:02:45.759Z",codex-sdk-lane-20260602,"SDK/custom-item-fields lane final: recommend minimal implementation: keep repeatable --field <name=value> on create/update contracts, add field?: string[] options, normalize/read it in registration-helpers, parse/coerce only active registerItemFields names, merge parsed fields into create frontMatter before applyRegisteredItemFieldDefaultsAndValidation, apply update values in mutateItem with changed_fields and stable equality, add tool/MCP param + docs/examples. Current partial work also needs PmCliErrorContext.known_fields fixed or moved into nextSteps/recovery."
+  "2026-06-02T22:19:38.564Z",codex-broad-audit-20260602,"Evidence: implemented repeatable pm create/update --field name=value for active registerItemFields declarations; values are typed/coerced, undeclared fields reject with extension_item_field_unknown, contracts/tool schemas/docs updated. Passed linked test: node scripts/run-tests.mjs test -- tests/unit/extensions-item-fields.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts (135 tests)."
+files[11]{path,scope,note}:
+  src/cli/commands/create.ts,project,Persist declared extension item fields on create
+  src/cli/commands/update.ts,project,Persist declared extension item fields on update
+  src/cli/registration-helpers.ts,project,Normalize repeatable --field options
+  src/core/extensions/item-fields.ts,project,Parse and validate declared extension item fields from --field
+  src/sdk/cli-contracts.ts,project,Expose --field in CLI flag contracts
+  src/sdk/cli-contracts/commander-mutation-options.ts,project,Expose --field in create/update commander contracts
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,Expose --field in tool option mapping
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Expose field parameter in tool schemas
+  tests/unit/create-command.spec.ts,project,Coverage for create --field
+  tests/unit/extensions-item-fields.spec.ts,project,Coverage for typed field parser
+  tests/unit/update-command.spec.ts,project,Coverage for update --field
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extensions-item-fields.spec.ts tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpx6zspc-07em0n,test,passed,"2026-06-02T22:10:46.370Z","2026-06-02T22:11:40.176Z","2026-06-02T22:11:40.176Z",null,null,1,0,0,null,null,null
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Document registerItemFields CLI setter
+  docs/SDK.md,project,Document create/update --field for declared item fields
+close_reason: "Implemented generic create/update setter for extension item fields with contracts, docs, and tests."
 body: ""

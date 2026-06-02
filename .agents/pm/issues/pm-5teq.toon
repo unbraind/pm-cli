@@ -2,11 +2,32 @@ id: pm-5teq
 title: Warn on global service and renderer override footguns
 description: "GitHub issue #96: registerService(\"output_format\") and registerRenderer overrides can silently replace output for every command, while extension doctor still reports the extension healthy. Duplicate check: pm search for service renderer override output_format corrupt output doctor warning found no open direct duplicate. Desired outcome: extension doctor/runtime should surface unsafe global override behavior and docs should explain pass-through/null fallback contracts."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,"area:extensions",diagnostics,github-issue
 created_at: "2026-06-02T15:55:03.148Z"
-updated_at: "2026-06-02T15:55:03.148Z"
+updated_at: "2026-06-02T22:19:48.199Z"
 author: codex-gpt5
 parent: pm-ugqx
+comments[4]{created_at,author,text}:
+  "2026-06-02T21:59:54.387Z",codex-extension-lane-20260602,"Audit lane start (codex-extension-lane-20260602): checking extension service/renderer override diagnostics against GitHub issue #96 under pm-lwtx. Scope: registerService/registerRenderer, extension doctor, activation metadata, warnings, docs, tests. No claim/release; findings-only unless tiny isolated doc/test typo."
+  "2026-06-02T22:02:41.569Z",codex-extension-lane-20260602,"Final audit findings for GitHub #96: confirmed current behavior in isolated temp tracker. Service-only override registerService('output_format', () => ({format:'toon'})) corrupts list-open --json and extension doctor --json to {format:'toon'} with exit 0. Renderer-only override registerRenderer('json', ...) corrupts both commands to the renderer JSON with exit 0. Root locations: src/core/extensions/loader.ts:1644 registerService and :1661 registerRenderer store global overrides; src/core/extensions/loader.ts:2113 treats output_format as chained and suppresses service collision warnings; src/core/output/output.ts:227/:247 applies service then renderer globally; src/cli/commands/extension.ts:1488/:1582 reports counts but no unsafe-output diagnostics. Docs gap: docs/EXTENSIONS.md:266 and docs/SDK.md:167/:446 mention APIs/narrow overrides but not the pass-through/null fallback contract; RendererOverride is typed as string at src/core/extensions/extension-types.ts:248 while #96 expects null fallback. Minimal fix shape: doctor/runtime warning code(s) for unsafe global output_format and renderer registrations, native/no-extension-output rendering path for doctor so doctor remains parseable, docs with safe context.payload/null examples, and focused tests for service-only, renderer-only, and doctor parseability. Commands run: gh issue view 96 --json; pm context/search/list-open/list-in-progress/show; pnpm build (passed before shared edits); isolated temp repros via node dist/cli.js; pm health --check-only --summary --json (passed). Focused test command attempted but blocked by unrelated shared edit TS2353 in src/core/extensions/item-fields.ts known_fields/PmCliErrorContext."
+  "2026-06-02T22:19:38.566Z",codex-broad-audit-20260602,"Evidence: extension doctor now reports global output service/renderer override warnings, doctor output uses native rendering to remain parseable while diagnosing output overrides, renderer null fallback is supported in SDK/runtime, docs and starter example updated. Passed linked test: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/output.spec.ts (74 tests)."
+  "2026-06-02T22:19:47.576Z",codex-broad-audit-20260602,"Evidence: extension doctor now reports global output service/renderer override warnings, doctor output uses native rendering to remain parseable while diagnosing output overrides, renderer null fallback is supported in SDK/runtime, docs and starter example updated. Passed linked test: node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/output.spec.ts (74 tests)."
+files[7]{path,scope,note}:
+  src/cli/commands/extension.ts,project,Doctor warnings for global output service and renderer overrides
+  src/cli/commands/extension/doctor.ts,project,Remediation for global output override footguns
+  src/core/extensions/extension-hook-runtime.ts,project,Allow renderer null fallback
+  src/core/extensions/extension-types.ts,project,SDK renderer type permits null fallback
+  src/core/output/output.ts,project,Native-render doctor output to avoid corruption by diagnosed output overrides
+  tests/unit/extension-command.spec.ts,project,Doctor warning coverage for global output overrides
+  tests/unit/output.spec.ts,project,Output fallback coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/extension-command.spec.ts tests/unit/output.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpx6z5qw-b943hy,test,passed,"2026-06-02T22:10:46.424Z","2026-06-02T22:11:10.424Z","2026-06-02T22:11:10.424Z",null,null,1,0,0,null,null,null
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Document output service/renderer fallback contracts
+  docs/SDK.md,project,Document output override pass-through contracts
+close_reason: Implemented diagnostics and safe fallback contracts for global output override footguns.
 body: ""

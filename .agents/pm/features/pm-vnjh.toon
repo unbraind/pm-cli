@@ -1,0 +1,12 @@
+id: pm-vnjh
+title: Reusable external npm package ecosystem smoke harness
+description: "Follow-up from pm-lwtx ecosystem lane: external audit manually discovered npm packages with npm search 'pm-cli pm-package' and verified isolated install + package doctor + runtime availability for 15 current packages. Duplicate check: pm search external npm package smoke harness discover pm-cli pm-package install doctor availability found only closed broad-audit/package-first lineage (pm-59gj, pm-kd9n, pm-etxf) and no open direct harness item. Desired outcome: script or npm task that discovers current external pm-cli/pm-package packages and runs isolated PM_PATH/PM_GLOBAL_PATH install, package doctor, and contracts availability probes with compact JSON output for agents."
+type: Feature
+status: open
+priority: 2
+tags[5]: agent-ux,ecosystem,external-packages,package-first,test-harness
+created_at: "2026-06-02T22:19:14.844Z"
+updated_at: "2026-06-02T22:19:14.844Z"
+author: codex-broad-audit-20260602
+parent: pm-ugqx
+body: ""

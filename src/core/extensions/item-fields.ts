@@ -1,4 +1,6 @@
 import type { ExtensionRegistrationRegistry } from "./loader.js";
+import { EXIT_CODE } from "../shared/constants.js";
+import { PmCliError } from "../shared/errors.js";
 
 function normalizeFieldName(value: unknown): string | null {
   if (typeof value !== "string") {
@@ -31,6 +33,106 @@ function cloneFieldValue<T>(value: T): T {
   } catch {
     return value;
   }
+}
+
+function parseFieldAssignment(raw: string): { key: string; value: string } {
+  const trimmed = raw.trim();
+  const separatorIndex = trimmed.indexOf("=");
+  if (separatorIndex <= 0) {
+    throw new PmCliError(`--field entries must use name=value syntax, received: ${raw}`, EXIT_CODE.USAGE);
+  }
+  const key = trimmed.slice(0, separatorIndex).trim();
+  const value = trimmed.slice(separatorIndex + 1);
+  if (key.length === 0) {
+    throw new PmCliError("--field entries require a non-empty field name", EXIT_CODE.USAGE);
+  }
+  return { key, value };
+}
+
+function parseJsonFieldValue(raw: string, fieldName: string, expectedType: "array" | "object"): unknown {
+  try {
+    const parsed = JSON.parse(raw);
+    if (expectedType === "array" && Array.isArray(parsed)) {
+      return parsed;
+    }
+    if (expectedType === "object" && typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch {
+    // Fall through to the typed usage error below.
+  }
+  throw new PmCliError(`--field ${fieldName}=... must be valid JSON ${expectedType}`, EXIT_CODE.USAGE);
+}
+
+function coerceRegisteredFieldValue(fieldName: string, fieldType: "string" | "number" | "boolean" | "array" | "object", raw: string): unknown {
+  if (fieldType === "string") {
+    return raw;
+  }
+  if (fieldType === "number") {
+    const parsed = Number(raw.trim());
+    if (!Number.isFinite(parsed)) {
+      throw new PmCliError(`--field ${fieldName}=... must be a number`, EXIT_CODE.USAGE);
+    }
+    return parsed;
+  }
+  if (fieldType === "boolean") {
+    const normalized = raw.trim().toLowerCase();
+    if (normalized === "true" || normalized === "1" || normalized === "yes") {
+      return true;
+    }
+    if (normalized === "false" || normalized === "0" || normalized === "no") {
+      return false;
+    }
+    throw new PmCliError(`--field ${fieldName}=... must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
+  }
+  return parseJsonFieldValue(raw, fieldName, fieldType);
+}
+
+function collectRegisteredFieldDefinitions(
+  registrations: ExtensionRegistrationRegistry | null,
+): Map<string, { name: string; type: "string" | "number" | "boolean" | "array" | "object" }> {
+  const definitions = new Map<string, { name: string; type: "string" | "number" | "boolean" | "array" | "object" }>();
+  if (!registrations) {
+    return definitions;
+  }
+  for (const registration of registrations.item_fields) {
+    for (const definition of registration.fields) {
+      const fieldName = normalizeFieldName(definition.name);
+      const fieldType = normalizeFieldType(definition.type);
+      if (!fieldName || !fieldType) {
+        continue;
+      }
+      definitions.set(fieldName, { name: fieldName, type: fieldType });
+    }
+  }
+  return definitions;
+}
+
+export function parseRegisteredItemFieldAssignments(
+  rawFields: string[] | undefined,
+  registrations: ExtensionRegistrationRegistry | null,
+): Record<string, unknown> {
+  if (!rawFields || rawFields.length === 0) {
+    return {};
+  }
+  const definitions = collectRegisteredFieldDefinitions(registrations);
+  const values: Record<string, unknown> = {};
+  for (const raw of rawFields) {
+    const { key, value } = parseFieldAssignment(raw);
+    const definition = definitions.get(key);
+    if (!definition) {
+      const known = [...definitions.keys()].sort((left, right) => left.localeCompare(right));
+      throw new PmCliError(`--field ${key} is not declared by an active extension item-field registration`, EXIT_CODE.USAGE, {
+        code: "extension_item_field_unknown",
+        recovery: { provided_fields: known },
+        nextSteps: known.length > 0
+          ? [`Use one of the declared fields: ${known.join(", ")}`]
+          : ["Activate an extension that calls registerItemFields before setting extension fields."],
+      });
+    }
+    values[definition.name] = coerceRegisteredFieldValue(definition.name, definition.type, value);
+  }
+  return values;
 }
 
 function isValidFieldType(value: unknown, expectedType: "string" | "number" | "boolean" | "array" | "object"): boolean {

@@ -39,7 +39,10 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { stableValueEquals } from "../../core/shared/serialization.js";
 import { resolveIsoOrRelative } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
-import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extensions/item-fields.js";
+import {
+  applyRegisteredItemFieldDefaultsAndValidation,
+  parseRegisteredItemFieldAssignments,
+} from "../../core/extensions/item-fields.js";
 import { buildItemNotFoundError, locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -138,6 +141,7 @@ export interface UpdateCommandOptions {
   reminder?: string[];
   event?: string[];
   typeOption?: string[];
+  field?: string[];
   unset?: string[];
   clearDeps?: boolean;
   clearComments?: boolean;
@@ -984,6 +988,7 @@ function collectProvidedUpdatePolicyOptions(options: UpdateCommandOptions): Set<
   mark("reminder", options.reminder !== undefined);
   mark("event", options.event !== undefined);
   mark("typeOption", options.typeOption !== undefined);
+  mark("field", options.field !== undefined);
   mark("force", options.force === true);
   mark("allowAuditUpdate", options.allowAuditUpdate === true);
   mark("dep", options.clearDeps === true);
@@ -1051,6 +1056,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     reminder: await stdinResolver.resolveList(options.reminder, "--reminder"),
     event: await stdinResolver.resolveList(options.event, "--event"),
     typeOption: await stdinResolver.resolveList(options.typeOption, "--type-option"),
+    field: await stdinResolver.resolveList(options.field, "--field"),
   });
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -1389,6 +1395,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     reminder: options.reminder !== undefined,
     event: options.event !== undefined,
     typeOption: options.typeOption !== undefined,
+    field: options.field !== undefined,
     unset: options.unset !== undefined && options.unset.length > 0,
     clearDeps: options.clearDeps === true,
     clearComments: options.clearComments === true,
@@ -1880,10 +1887,23 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         changedFields.push(fieldKey);
       }
 
+      const extensionRegistrations = getActiveExtensionRegistrations();
+      const registeredItemFieldUpdates = parseRegisteredItemFieldAssignments(options.field, extensionRegistrations);
+      for (const [fieldKey, fieldValue] of Object.entries(registeredItemFieldUpdates)) {
+        if (clearFrontMatterKeys.has(fieldKey)) {
+          continue;
+        }
+        if (stableValueEquals(metadataRecord[fieldKey], fieldValue)) {
+          continue;
+        }
+        metadataRecord[fieldKey] = fieldValue;
+        changedFields.push(fieldKey);
+      }
+
       try {
         applyRegisteredItemFieldDefaultsAndValidation(
           metadataRecord,
-          getActiveExtensionRegistrations(),
+          extensionRegistrations,
         );
       } catch (error: unknown) {
         throw new PmCliError(error instanceof Error ? error.message : "Invalid extension item field values", EXIT_CODE.USAGE);
