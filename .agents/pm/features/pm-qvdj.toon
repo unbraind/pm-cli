@@ -1,0 +1,12 @@
+id: pm-qvdj
+title: Add generic create/update setter for extension item fields
+description: "GitHub issue #97: registerItemFields exposes custom fields to contracts/validation, but standalone extensions cannot populate those fields through pm create/update without description marker hacks. Duplicate check: pm search for registerItemFields custom fields create update field setter importer provenance found no open direct duplicate. Desired outcome: repeatable generic setter such as --field name=value on create and update, honored for declared extension item fields and reflected in contracts/help."
+type: Feature
+status: open
+priority: 1
+tags[5]: "area:cli","area:sdk",custom-fields,extensions,github-issue
+created_at: "2026-06-02T15:55:03.159Z"
+updated_at: "2026-06-02T15:55:03.159Z"
+author: codex-gpt5
+parent: pm-8jdc
+body: ""

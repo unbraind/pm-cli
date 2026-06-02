@@ -931,6 +931,7 @@ describe("runUpdate", () => {
             "id=dep-alpha,kind=blocks,author=dep-owner,created_at=2026-03-01T00:00:00.000Z",
             "id=dep-alpha,kind=blocks,author=duplicate-owner,created_at=2026-03-03T00:00:00.000Z",
             "id=dep-beta,kind=related,author=dep-owner,source_kind=imported,created_at=2026-03-02T00:00:00.000Z",
+            "type=blocked-by,id=dep-blocker,author=dep-owner,created_at=2026-03-02T12:00:00.000Z",
             "dep-gamma",
           ],
           message: "add dependencies through update command",
@@ -952,6 +953,12 @@ describe("runUpdate", () => {
           created_at: "2026-03-02T00:00:00.000Z",
           author: "dep-owner",
           source_kind: "imported",
+        },
+        {
+          id: "pm-dep-blocker",
+          kind: "blocked_by",
+          created_at: "2026-03-02T12:00:00.000Z",
+          author: "dep-owner",
         },
         expect.objectContaining({
           id: "pm-dep-gamma",
@@ -975,6 +982,12 @@ describe("runUpdate", () => {
           author: "dep-owner",
           source_kind: "imported",
         },
+        {
+          id: "pm-dep-blocker",
+          kind: "blocked_by",
+          created_at: "2026-03-02T12:00:00.000Z",
+          author: "dep-owner",
+        },
         expect.objectContaining({
           id: "pm-dep-gamma",
           kind: "related",
@@ -984,7 +997,7 @@ describe("runUpdate", () => {
       const removedBySelector = await runUpdate(
         id,
         {
-          depRemove: ["id=dep-beta,kind=related,source_kind=imported", "dep-gamma"],
+          depRemove: ["id=dep-beta,kind=related,source_kind=imported", "id=dep-blocker,type=blocked-by", "dep-gamma"],
           message: "remove dependency by selector",
         },
         { path: context.pmPath },

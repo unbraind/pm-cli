@@ -1,9 +1,11 @@
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { defineExtension, listAllFrontMatter, EXIT_CODE, PmCliError } from "@unbrained/pm-cli/sdk";
 import { createChangelog, mergeChangelog, writeChangelog } from "./generator.js";
 import { resolveReleaseContext, resolveReleaseTagWindows } from "./release-context.js";
 export default defineExtension({
     name: "pm-changelog",
-    version: "2026.6.1",
+    version: "2026.6.2",
     activate(api) {
         api.registerCommand({
             name: "changelog generate",
@@ -131,6 +133,68 @@ export default defineExtension({
                     check: Boolean(ctx.options["check"]),
                 };
             },
+        });
+        // -----------------------------------------------------------------------
+        // Exporter: `pm changelog export` — native export pipeline.
+        // Reuses the same generation core as `changelog generate` (whose default
+        // output is intentionally left byte-identical). Adds --format md|json and a
+        // --release-notes concise mode. Does NOT write CHANGELOG.md unless --output
+        // is given, so it is side-effect free by default.
+        // -----------------------------------------------------------------------
+        api.registerExporter("changelog", async (ctx) => {
+            const format = (stringOption(ctx.options, "format", "format") ?? "md").toLowerCase();
+            const groupByOption = stringOption(ctx.options, "group-by", "groupBy") ?? "version";
+            if (groupByOption !== "version" && groupByOption !== "release" && groupByOption !== "milestone") {
+                throw new PmCliError("--group-by must be 'version', 'release', or 'milestone'", EXIT_CODE.USAGE);
+            }
+            const releaseNotes = booleanOption(ctx.options, "release-notes", "releaseNotes");
+            const releaseVersion = stringOption(ctx.options, "release-version", "releaseVersion");
+            const sinceOption = stringOption(ctx.options, "since", "since");
+            const untilOption = stringOption(ctx.options, "until", "until");
+            const statuses = ctx.options["status"]
+                ?.split(",").map((s) => s.trim()).filter(Boolean);
+            const releaseContext = resolveReleaseContext({
+                cwd: ctx.pm_root,
+                version: releaseVersion,
+                versionFromPackage: booleanOption(ctx.options, "release-version-from-package", "releaseVersionFromPackage"),
+                since: sinceOption,
+                sincePreviousTag: booleanOption(ctx.options, "since-previous-tag", "sincePreviousTag"),
+                until: untilOption,
+                untilReleaseTag: booleanOption(ctx.options, "until-release-tag", "untilReleaseTag"),
+            });
+            const items = await listAllFrontMatter(ctx.pm_root);
+            const generated = createChangelog({
+                items,
+                title: stringOption(ctx.options, "title", "title") ?? (releaseNotes ? "Release Notes" : undefined),
+                version: releaseContext.version,
+                date: stringOption(ctx.options, "date", "date") ?? releaseContext.date,
+                since: releaseContext.since,
+                until: releaseContext.until,
+                includeStatuses: statuses,
+                groupBy: groupByOption,
+                includeEmpty: booleanOption(ctx.options, "include-empty", "includeEmpty"),
+                includeLinks: booleanOption(ctx.options, "include-links", "includeLinks"),
+                itemUrlBase: stringOption(ctx.options, "item-url-base", "itemUrlBase"),
+            });
+            const outputPath = stringOption(ctx.options, "output", "output");
+            if (format === "json") {
+                const payload = {
+                    version: releaseContext.version ?? "Unreleased",
+                    item_count: generated.itemCount,
+                    group_by: groupByOption,
+                    markdown: generated.markdown,
+                };
+                if (outputPath) {
+                    writeFileSync(resolve(outputPath), JSON.stringify(payload, null, 2) + "\n", "utf-8");
+                    return { file: outputPath, format: "json", item_count: generated.itemCount };
+                }
+                return payload;
+            }
+            if (outputPath) {
+                writeFileSync(resolve(outputPath), generated.markdown.endsWith("\n") ? generated.markdown : generated.markdown + "\n", "utf-8");
+                return { file: outputPath, format: "markdown", item_count: generated.itemCount };
+            }
+            return { changelog: generated.markdown, format: "markdown", item_count: generated.itemCount };
         });
     },
 });

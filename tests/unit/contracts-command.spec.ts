@@ -1273,12 +1273,32 @@ describe("contracts command runtime", () => {
     ).rejects.toMatchObject<PmCliError>({
       message: 'Unknown command: "unknown-command".',
       exitCode: EXIT_CODE.USAGE,
+      context: expect.objectContaining({
+        code: "unknown_command",
+        required: expect.any(String),
+        why: expect.any(String),
+        examples: expect.arrayContaining(["pm contracts --flags-only --json"]),
+        nextSteps: expect.arrayContaining([expect.any(String)]),
+        recovery: expect.objectContaining({
+          suggested_retry: "pm contracts --flags-only --json",
+        }),
+      }),
     });
     await expect(
       runContracts({ command: "calendar" }, { ...GLOBAL_OPTIONS, path: "/tmp/pm-contracts-no-calendar" }),
     ).rejects.toMatchObject<PmCliError>({
       message: expect.stringContaining("pm install calendar --project"),
       exitCode: EXIT_CODE.USAGE,
+      context: expect.objectContaining({
+        code: "unknown_command",
+        required: expect.any(String),
+        why: expect.any(String),
+        examples: expect.arrayContaining(["pm install calendar --project"]),
+        nextSteps: expect.arrayContaining([expect.any(String)]),
+        recovery: expect.objectContaining({
+          suggested_retry: "pm install calendar --project",
+        }),
+      }),
     });
   });
 });

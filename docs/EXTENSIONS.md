@@ -171,7 +171,7 @@ Runnable manifest examples are the source of truth:
 Rules:
 
 - `entry` must resolve inside the extension directory.
-- `manifest_version` is an optional integer identifying the manifest schema generation (currently `1`). First-party packages declare it; the manifest governance test requires it on every first-party package.
+- `manifest_version` is an optional integer identifying the manifest schema generation. Runtime contracts currently support manifest versions `1` and `2`, and first-party runnable examples use `2`. First-party packages declare it; the manifest governance test requires it on every first-party package.
 - `pm_min_version` is an inclusive minimum pm CLI version. If the running CLI is older, discovery emits `extension_pm_min_version_unmet:<layer>:<name>:required=<version>:current=<version>` and skips the extension before import.
 - `pm_max_version` is an optional inclusive maximum pm CLI version (the upper compatibility bound). If the running CLI is newer than this value, discovery emits `extension_pm_max_version_exceeded:<layer>:<name>:allowed=<version>:current=<version>` and skips the extension before import. Use it to stop a CLI major release from loading a stale package that would crash at activation.
 - Both bounds share the same blocking semantics and warning-code shapes:

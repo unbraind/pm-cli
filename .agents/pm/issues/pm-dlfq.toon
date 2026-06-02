@@ -1,0 +1,29 @@
+id: pm-dlfq
+title: Fix GitHub #98 dependency --dep type parsing
+description: "GitHub issue #98 reports that pm update --dep \"type=blocked-by,id=...\" stores the whole key/value string as the dependency id instead of parsing it as structured dependency metadata. Duplicate check: pm search for dependency type/id parsing, custom field setter, and service renderer override found no open direct duplicate before creating this item."
+type: Issue
+status: closed
+priority: 1
+tags[4]: agent-ux,"area:cli",dependencies,github-issue
+created_at: "2026-06-02T15:51:49.839Z"
+updated_at: "2026-06-02T16:05:10.950Z"
+author: codex-gpt5
+parent: pm-mpbb
+comments[3]{created_at,author,text}:
+  "2026-06-02T15:54:49.273Z",codex-gpt5,"Implementation evidence: create/update dependency parsers now recognize type as structured dependency metadata, normalize type=blocked-by to blocked_by, and support the same alias in --dep-remove selectors. Focused regression passed: 3 files, 198 tests."
+  "2026-06-02T15:59:26.567Z",codex-gpt5,"Static gate follow-up: moved the CLI regression into tests/integration/dependency-alias.integration.spec.ts so tests/integration/cli.integration.spec.ts stays below the file-length threshold."
+  "2026-06-02T16:05:10.950Z",codex-gpt5,"Final verification evidence: node scripts/release/run-gates.mjs --telemetry-mode best-effort passed on the final tree after dependency updates and the focused integration-file split. Coverage gate reported 136 files, 2096 tests, 100% coverage."
+files[6]{path,scope,note}:
+  src/cli/commands/create.ts,project,Accept dependency type alias for create --dep.
+  src/cli/commands/update.ts,project,Accept dependency type alias for update --dep and --dep-remove.
+  tests/integration/cli.integration.spec.ts,project,CLI integration coverage for GitHub #98.
+  tests/integration/dependency-alias.integration.spec.ts,project,Dedicated CLI regression for GitHub #98 without growing the large integration file.
+  tests/unit/create-command.spec.ts,project,Regression coverage for create --dep type alias.
+  tests/unit/update-command.spec.ts,project,Regression coverage for update --dep/--dep-remove type alias.
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/dependency-alias.integration.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,Regression coverage for GitHub #98 dependency type alias.
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpwtl81o-ynvdxf,test,passed,"2026-06-02T15:55:10.796Z","2026-06-02T15:56:25.212Z","2026-06-02T15:56:25.212Z",null,null,1,0,0,null,null,null
+  test-local-mpwtqd4b-5kv9c5,test,passed,"2026-06-02T15:59:45.188Z","2026-06-02T16:00:25.067Z","2026-06-02T16:00:25.067Z",null,null,1,0,0,null,null,null
+close_reason: "Fixed GitHub #98 by parsing dependency type aliases for create/update/remove paths and verified with linked sandbox test: node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts (198 tests passed)."
+body: ""
