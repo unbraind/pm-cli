@@ -1919,10 +1919,16 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       }
 
       const registeredItemFieldUpdates = parseRegisteredItemFieldAssignments(options.field, extensionRegistrations);
-      for (const [fieldKey, fieldValue] of Object.entries(registeredItemFieldUpdates)) {
-        if (clearFrontMatterKeys.has(fieldKey)) {
+      for (const fieldKey of Object.keys(registeredItemFieldUpdates)) {
+        if (!clearFrontMatterKeys.has(fieldKey)) {
           continue;
         }
+        throw new PmCliError(
+          `Cannot combine --unset ${fieldKey.replaceAll("_", "-")} with --field ${fieldKey}=...`,
+          EXIT_CODE.USAGE,
+        );
+      }
+      for (const [fieldKey, fieldValue] of Object.entries(registeredItemFieldUpdates)) {
         if (stableValueEquals(metadataRecord[fieldKey], fieldValue)) {
           continue;
         }
@@ -1934,6 +1940,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         applyRegisteredItemFieldDefaultsAndValidation(
           metadataRecord,
           extensionRegistrations,
+          { skipDefaultFields: clearFrontMatterKeys },
         );
       } catch (error: unknown) {
         throw new PmCliError(error instanceof Error ? error.message : "Invalid extension item field values", EXIT_CODE.USAGE);

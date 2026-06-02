@@ -193,6 +193,7 @@ function isAllowedFieldValue(value: unknown, allowed: unknown[] | undefined): bo
 export function applyRegisteredItemFieldDefaultsAndValidation(
   frontMatter: Record<string, unknown>,
   registrations: ExtensionRegistrationRegistry | null,
+  options: { skipDefaultFields?: ReadonlySet<string> } = {},
 ): void {
   if (!registrations) {
     return;
@@ -205,7 +206,11 @@ export function applyRegisteredItemFieldDefaultsAndValidation(
         continue;
       }
       assertNotReservedItemFieldName(fieldName);
-      if (!(fieldName in frontMatter) && Object.prototype.hasOwnProperty.call(definition, "default")) {
+      if (
+        !(fieldName in frontMatter) &&
+        !options.skipDefaultFields?.has(fieldName) &&
+        Object.prototype.hasOwnProperty.call(definition, "default")
+      ) {
         frontMatter[fieldName] = cloneFieldValue(definition.default);
       }
 

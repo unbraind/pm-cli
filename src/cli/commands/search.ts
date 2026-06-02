@@ -3,6 +3,7 @@ import path from "node:path";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
+import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import {
   resolveRegisteredSearchProvider,
   resolveRegisteredVectorStoreAdapter,
@@ -1134,6 +1135,7 @@ async function loadDocuments(
   typeToFolder: Record<string, string>,
   schema: PmSettings["schema"],
 ): Promise<{ documents: ItemDocument[]; warnings: string[] }> {
+  const extensionFieldNames = collectRegisteredItemFieldNames(getActiveExtensionRegistrations());
   const readDocumentBody = async (
     metadata: ItemFrontMatter,
     preferredPath: string,
@@ -1145,6 +1147,7 @@ async function loadDocuments(
       const parsed = parseItemDocument(raw, {
         format,
         schema,
+        extensionFieldNames,
         onWarning: (warning) => listWarnings.push(warning),
       });
       return parsed.body;

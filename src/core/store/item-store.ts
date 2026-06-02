@@ -6,6 +6,7 @@ import {
   runActiveOnWriteHooks,
   runActiveServiceOverride,
 } from "../extensions/index.js";
+import { collectRegisteredItemFieldNames } from "../extensions/item-fields.js";
 import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE, TYPE_TO_FOLDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { appendHistoryEntry, createHistoryEntry } from "../history/history.js";
@@ -48,6 +49,10 @@ function appendWarning(warnings: string[] | undefined, warning: string): void {
   if (!warnings.includes(warning)) {
     warnings.push(warning);
   }
+}
+
+function resolveActiveExtensionFieldNames(explicit: readonly string[] | undefined): readonly string[] {
+  return explicit ?? collectRegisteredItemFieldNames(getActiveExtensionRegistrations());
 }
 
 function resolveItemFormatSearchOrder(preferredFormat?: ItemFormat): ItemFormat[] {
@@ -102,7 +107,7 @@ export async function readLocatedItem(
   const document = parseItemDocument(raw, {
     format: item.item_format,
     schema: options.schema,
-    extensionFieldNames: options.extensionFieldNames,
+    extensionFieldNames: resolveActiveExtensionFieldNames(options.extensionFieldNames),
     onWarning: (warning) => appendWarning(options.warnings, warning),
   });
   return { raw, document };

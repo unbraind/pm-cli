@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
-import { hasActiveOnReadHooks, runActiveOnReadHooks } from "../extensions/index.js";
+import { getActiveExtensionRegistrations, hasActiveOnReadHooks, runActiveOnReadHooks } from "../extensions/index.js";
+import { collectRegisteredItemFieldNames } from "../extensions/item-fields.js";
 import { parseItemDocument } from "../item/item-format.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
 import { ITEM_FILE_EXTENSIONS, getItemFormatFromPath } from "./paths.js";
@@ -29,6 +30,10 @@ export const HEAVY_METADATA_KEYS = [
   "test_runs",
   "docs",
 ] as const;
+
+function resolveActiveExtensionFieldNames(): readonly string[] {
+  return collectRegisteredItemFieldNames(getActiveExtensionRegistrations());
+}
 
 interface StatSignature {
   mtime_ms: number;
@@ -110,6 +115,7 @@ function computeContextFingerprint(
   preferredFormat: ItemFormat | undefined,
   typeToFolder: Record<string, string>,
   schema: RuntimeSchemaSettings | undefined,
+  extensionFieldNames: readonly string[],
 ): string {
   const hash = createHash("sha256");
   hash.update(`format:${preferredFormat ?? "default"}`);
@@ -120,6 +126,9 @@ function computeContextFingerprint(
   hash.update(`|types:${sortedTypes}`);
   if (schema) {
     hash.update(`|schema:${JSON.stringify(schema)}`);
+  }
+  if (extensionFieldNames.length > 0) {
+    hash.update(`|extension_fields:${extensionFieldNames.join(",")}`);
   }
   return hash.digest("hex").slice(0, 16);
 }
@@ -230,7 +239,8 @@ export async function listAllDocumentCandidatesCached(
 ): Promise<CachedDocumentCandidate[]> {
   const includeBody = options.includeBody !== false;
   const includeCollections = options.includeCollections !== false;
-  const contextFingerprint = computeContextFingerprint(preferredFormat, typeToFolder, schema);
+  const extensionFieldNames = resolveActiveExtensionFieldNames();
+  const contextFingerprint = computeContextFingerprint(preferredFormat, typeToFolder, schema, extensionFieldNames);
 
   const existingCache = await loadCache(pmRoot);
   const previousEntries: Record<string, CachedEntry> =
@@ -315,12 +325,13 @@ export async function listAllDocumentCandidatesCached(
             let body: string | undefined;
 
             if (needRead) {
-              const raw = await fs.readFile(filePath, "utf8");
-              const parsed = parseItemDocument(raw, {
-                format: itemFormat,
-                schema,
-                onWarning: (w) => appendWarning(warnings, w),
-              });
+            const raw = await fs.readFile(filePath, "utf8");
+            const parsed = parseItemDocument(raw, {
+              format: itemFormat,
+              schema,
+              extensionFieldNames,
+              onWarning: (w) => appendWarning(warnings, w),
+            });
               const split = splitHeavyMetadata(parsed.metadata);
               lightMetadata = metadataCached ? cachedEntry.metadata : split.light;
               bodyLength = metadataCached ? cachedEntry.body_length : parsed.body.length;

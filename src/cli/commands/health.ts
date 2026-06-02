@@ -3,6 +3,7 @@ import path from "node:path";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
 import { activateExtensions, getActiveExtensionRegistrations, loadExtensions, runActiveOnReadHooks } from "../../core/extensions/index.js";
+import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import {
   EXTENSION_CAPABILITY_CONTRACT,
   KNOWN_EXTENSION_CAPABILITIES,
@@ -279,6 +280,7 @@ async function buildIntegrityCheck(
   const itemUnreadable: string[] = [];
   const itemConflictMarkers: Array<{ path: string; line: number; marker: string }> = [];
   const itemParseFailures: string[] = [];
+  const extensionFieldNames = collectRegisteredItemFieldNames(getActiveExtensionRegistrations());
 
   for (const itemPath of itemPaths) {
     const relativePath = normalizeRelativePath(pmRoot, itemPath);
@@ -299,7 +301,7 @@ async function buildIntegrityCheck(
       continue;
     }
     try {
-      parseItemDocument(raw, { format: getItemFormatFromPath(itemPath) as ItemFormat, schema });
+      parseItemDocument(raw, { format: getItemFormatFromPath(itemPath) as ItemFormat, schema, extensionFieldNames });
     } catch {
       itemParseFailures.push(relativePath);
     }
