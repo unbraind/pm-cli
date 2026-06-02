@@ -4,6 +4,7 @@
 
 ### Added
 
+- First-party hooks capability exemplar \(lifecycle hook\) for pm-izsi completion ([pm-s40s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-s40s.toon))
 - Add generic create/update setter for extension item fields ([pm-qvdj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qvdj.toon))
 
 ### Changed

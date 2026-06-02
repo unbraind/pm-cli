@@ -1,0 +1,52 @@
+{
+  "name": "@unbrained/pm-lifecycle-hooks",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "First-party pm package demonstrating safe lifecycle hook registration.",
+  "homepage": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-lifecycle-hooks#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unbraind/pm-cli.git",
+    "directory": "packages/pm-lifecycle-hooks"
+  },
+  "bugs": {
+    "url": "https://github.com/unbraind/pm-cli/issues"
+  },
+  "keywords": [
+    "pm-package",
+    "project-management",
+    "hooks",
+    "lifecycle",
+    "sdk"
+  ],
+  "pm": {
+    "aliases": [
+      "lifecycle-hooks"
+    ],
+    "extensions": [
+      "extensions/lifecycle-hooks"
+    ],
+    "catalog": {
+      "display_name": "Lifecycle Hooks",
+      "category": "sdk",
+      "summary": "Default-inert lifecycle hook exemplar for package authors.",
+      "tags": [
+        "hooks",
+        "lifecycle",
+        "sdk"
+      ],
+      "links": {
+        "docs": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-lifecycle-hooks#readme",
+        "repository": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-lifecycle-hooks",
+        "report": "https://github.com/unbraind/pm-cli/issues"
+      }
+    },
+    "docs": [
+      "README.md"
+    ],
+    "examples": [
+      "README.md"
+    ]
+  }
+}

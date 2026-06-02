@@ -302,6 +302,11 @@ const hook = assertRegisteredHook(activation.hooks, {
 // hook.run is the registered OnWriteHook handler
 ```
 
+The bundled `pm-lifecycle-hooks` package is the first-party hooks exemplar. It
+declares only the `hooks` capability and registers a default-inert `afterCommand`
+hook, so package authors can copy a lifecycle pattern that does not write files,
+produce output, or alter command behavior.
+
 ## Custom Item Type
 
 ```ts
@@ -391,6 +396,10 @@ export default defineExtension({
 Manifest capability: `importers` (and `schema` when supplying `flags`). The two-argument
 form remains supported; supplying the options object never produces a command-handler
 collision because the definition and handler share the same command path and extension.
+
+The bundled `pm-beads` and `pm-todos` packages are first-party importer/exporter
+exemplars that use this registration path and expose runtime contracts for their
+generated commands.
 
 ## Search Provider
 

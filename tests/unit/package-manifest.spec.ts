@@ -274,6 +274,7 @@ describe("pm package manifest model", () => {
     const calendarRoot = path.join(repoRoot, "packages", "pm-calendar");
     const governanceAuditRoot = path.join(repoRoot, "packages", "pm-governance-audit");
     const guideShellRoot = path.join(repoRoot, "packages", "pm-guide-shell");
+    const lifecycleHooksRoot = path.join(repoRoot, "packages", "pm-lifecycle-hooks");
     const linkedTestAdaptersRoot = path.join(repoRoot, "packages", "pm-linked-test-adapters");
     const searchAdvancedRoot = path.join(repoRoot, "packages", "pm-search-advanced");
     const templatesRoot = path.join(repoRoot, "packages", "pm-templates");
@@ -345,6 +346,23 @@ describe("pm package manifest model", () => {
     });
     await expect(collectPackageExtensionDirectories(guideShellRoot)).resolves.toEqual([
       path.join(guideShellRoot, "extensions", "guide-shell"),
+    ]);
+
+    await expect(readPmPackageManifest(lifecycleHooksRoot)).resolves.toMatchObject({
+      source: "pm",
+      package_name: "@unbrained/pm-lifecycle-hooks",
+      package_version: "0.1.0",
+      aliases: ["lifecycle-hooks"],
+      catalog: {
+        display_name: "Lifecycle Hooks",
+        category: "sdk",
+      },
+      resources: {
+        extensions: ["extensions/lifecycle-hooks"],
+      },
+    });
+    await expect(collectPackageExtensionDirectories(lifecycleHooksRoot)).resolves.toEqual([
+      path.join(lifecycleHooksRoot, "extensions", "lifecycle-hooks"),
     ]);
 
     await expect(readPmPackageManifest(linkedTestAdaptersRoot)).resolves.toMatchObject({
@@ -420,6 +438,7 @@ describe("pm package manifest model", () => {
       calendarRoot,
       governanceAuditRoot,
       guideShellRoot,
+      lifecycleHooksRoot,
       linkedTestAdaptersRoot,
       searchAdvancedRoot,
       templatesRoot,
@@ -447,6 +466,8 @@ describe("pm package manifest model", () => {
     await expect(access(path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "index.ts"))).resolves
       .toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "runtime.ts"))).resolves
+      .toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-lifecycle-hooks", "extensions", "lifecycle-hooks", "index.ts"))).resolves
       .toBeUndefined();
     await expect(
       access(path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "index.ts")),
@@ -533,6 +554,8 @@ describe("pm package manifest model", () => {
       path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "runtime.ts"),
       path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "index.js"),
       path.join(repoRoot, "packages", "pm-guide-shell", "extensions", "guide-shell", "runtime.js"),
+      path.join(repoRoot, "packages", "pm-lifecycle-hooks", "extensions", "lifecycle-hooks", "index.ts"),
+      path.join(repoRoot, "packages", "pm-lifecycle-hooks", "extensions", "lifecycle-hooks", "index.js"),
       path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "index.ts"),
       path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "runtime.ts"),
       path.join(repoRoot, "packages", "pm-linked-test-adapters", "extensions", "linked-test-adapters", "index.js"),
