@@ -66,12 +66,14 @@ interface RuntimeSchemaValidationContext {
   statusRegistry?: RuntimeStatusRegistry;
   fieldRegistry?: RuntimeFieldRegistry;
   unknownFieldPolicy: "allow" | "warn" | "reject";
+  extensionFieldNames: ReadonlySet<string>;
   onWarning?: (warning: string) => void;
 }
 
 export interface ItemDocumentFormatOptions {
   format?: ItemFormat;
   schema?: RuntimeSchemaSettings;
+  extensionFieldNames?: readonly string[];
   onWarning?: (warning: string) => void;
 }
 
@@ -85,6 +87,7 @@ function resolveRuntimeSchemaValidationContext(
     statusRegistry: resolveRuntimeStatusRegistry(options.schema),
     fieldRegistry: resolveRuntimeFieldRegistry(options.schema),
     unknownFieldPolicy: options.schema.unknown_field_policy ?? "allow",
+    extensionFieldNames: new Set(options.extensionFieldNames ?? []),
     onWarning: options.onWarning,
   };
 }
@@ -101,6 +104,17 @@ function runtimeFieldRequiredForType(definition: RuntimeFieldRegistry["definitio
 
 function validationError(message: string): never {
   throw new PmCliError(`Invalid item front matter: ${message}`, EXIT_CODE.GENERIC_FAILURE);
+}
+
+function buildKnownFrontMatterKeys(runtimeContext: RuntimeSchemaValidationContext): Set<string> {
+  const knownKeys = new Set(STATIC_FRONT_MATTER_FIELD_SET);
+  for (const definition of runtimeContext.fieldRegistry?.definitions ?? []) {
+    knownKeys.add(definition.metadata_key);
+  }
+  for (const fieldName of runtimeContext.extensionFieldNames) {
+    knownKeys.add(fieldName);
+  }
+  return knownKeys;
 }
 
 function assertFrontMatterCondition(condition: boolean, message: string): void {
@@ -378,10 +392,7 @@ function assertValidFrontMatter(
   }
 
   if (runtimeContext && runtimeContext.unknownFieldPolicy !== "allow") {
-    const knownKeys = new Set(STATIC_FRONT_MATTER_FIELD_SET);
-    for (const definition of runtimeContext.fieldRegistry?.definitions ?? []) {
-      knownKeys.add(definition.metadata_key);
-    }
+    const knownKeys = buildKnownFrontMatterKeys(runtimeContext);
     const unknownKeys = Object.keys(record).filter((key) => !knownKeys.has(key)).sort((left, right) => left.localeCompare(right));
     if (unknownKeys.length > 0) {
       if (runtimeContext.unknownFieldPolicy === "reject") {
@@ -976,7 +987,7 @@ function normalizeSeverityValue(value: ItemMetadata["severity"] | undefined): It
 
 export function normalizeFrontMatter(
   frontMatter: ItemMetadata,
-  options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
+  options: Pick<ItemDocumentFormatOptions, "schema" | "extensionFieldNames" | "onWarning"> = {},
 ): ItemMetadata {
   const runtimeContext = resolveRuntimeSchemaValidationContext(options);
   const normalizedStatus = normalizeStatusInput(frontMatter.status, runtimeContext?.statusRegistry) ?? frontMatter.status;
@@ -1076,10 +1087,7 @@ export function normalizeFrontMatter(
   }
 
   if (runtimeContext && runtimeContext.unknownFieldPolicy !== "allow") {
-    const knownKeys = new Set(STATIC_FRONT_MATTER_FIELD_SET);
-    for (const definition of runtimeContext.fieldRegistry?.definitions ?? []) {
-      knownKeys.add(definition.metadata_key);
-    }
+    const knownKeys = buildKnownFrontMatterKeys(runtimeContext);
     const unknownKeys = Object.keys(normalized as unknown as Record<string, unknown>)
       .filter((key) => !knownKeys.has(key))
       .sort((left, right) => left.localeCompare(right));
@@ -1180,7 +1188,7 @@ function stripLeadingYamlDocument(content: string): { content: string; stripped:
 function parseJsonMarkdownItemDocument(
   content: string,
   runtimeContext?: RuntimeSchemaValidationContext,
-  options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
+  options: Pick<ItemDocumentFormatOptions, "schema" | "extensionFieldNames" | "onWarning"> = {},
 ): ItemDocument {
   const normalized = stripLeadingYamlDocument(content);
   if (normalized.stripped) {
@@ -1212,7 +1220,7 @@ function parseJsonMarkdownItemDocument(
 function parseToonItemDocument(
   content: string,
   runtimeContext?: RuntimeSchemaValidationContext,
-  options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
+  options: Pick<ItemDocumentFormatOptions, "schema" | "extensionFieldNames" | "onWarning"> = {},
 ): ItemDocument {
   let parsed: unknown;
   try {
@@ -1257,7 +1265,7 @@ function parseToonItemDocument(
 
 function serializeJsonMarkdownItemDocument(
   document: ItemDocument,
-  options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
+  options: Pick<ItemDocumentFormatOptions, "schema" | "extensionFieldNames" | "onWarning"> = {},
 ): string {
   const normalizedFrontMatter = normalizeFrontMatter(document.metadata, options);
   const orderedFrontMatter = orderFrontMatter(normalizedFrontMatter);
@@ -1271,7 +1279,7 @@ function serializeJsonMarkdownItemDocument(
 
 function serializeToonItemDocument(
   document: ItemDocument,
-  options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {},
+  options: Pick<ItemDocumentFormatOptions, "schema" | "extensionFieldNames" | "onWarning"> = {},
 ): string {
   const normalizedFrontMatter = normalizeFrontMatter(document.metadata, options);
   const orderedFrontMatter = orderFrontMatter(normalizedFrontMatter);
@@ -1306,7 +1314,7 @@ export function serializeItemDocument(document: ItemDocument, options: ItemDocum
   return format === "toon" ? serializeToonItemDocument(document, options) : serializeJsonMarkdownItemDocument(document, options);
 }
 
-export function canonicalDocument(document: ItemDocument, options: Pick<ItemDocumentFormatOptions, "schema" | "onWarning"> = {}): ItemDocument {
+export function canonicalDocument(document: ItemDocument, options: Pick<ItemDocumentFormatOptions, "schema" | "extensionFieldNames" | "onWarning"> = {}): ItemDocument {
   return {
     metadata: normalizeFrontMatter(document.metadata, options),
     body: normalizeBody(document.body ?? ""),

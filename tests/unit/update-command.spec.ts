@@ -4,12 +4,16 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runUpdate } from "../../src/cli/commands/update.js";
+import { runGet } from "../../src/cli/commands/get.js";
 import { runDeps } from "../../src/cli/commands/deps.js";
+import { setActiveExtensionRegistrations } from "../../src/core/extensions/index.js";
+import { createEmptyExtensionRegistrationRegistry } from "../../src/core/extensions/loader.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 afterEach(() => {
+  setActiveExtensionRegistrations(null);
   vi.restoreAllMocks();
 });
 
@@ -2083,6 +2087,286 @@ describe("runUpdate", () => {
       );
       expect((markdownResult.item as { type_options?: Record<string, string> }).type_options).toEqual({
         workflow: "regression",
+      });
+    });
+  });
+
+  it("updates declared extension item fields through repeatable --field values", async () => {
+    await withTempPmPath(async (context) => {
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [
+          { name: "github_url", type: "string" },
+          { name: "github_number", type: "number" },
+        ],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "update-extension-field-values");
+      const result = await runUpdate(
+        id,
+        {
+          field: ["github_url=https://example.test/2", "github_number=7"],
+          message: "update extension fields",
+        },
+        { path: context.pmPath },
+      );
+
+      expect((result.item as { github_url?: string }).github_url).toBe("https://example.test/2");
+      expect((result.item as { github_number?: number }).github_number).toBe(7);
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["github_url", "github_number"]));
+    });
+  });
+
+  it("unsets declared extension item fields through --unset", async () => {
+    await withTempPmPath(async (context) => {
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "unset-extension-field-values");
+      await runUpdate(
+        id,
+        {
+          field: ["github_url=https://example.test/2"],
+          message: "seed extension field",
+        },
+        { path: context.pmPath },
+      );
+      const result = await runUpdate(
+        id,
+        {
+          unset: ["github-url"],
+          message: "unset extension field",
+        },
+        { path: context.pmPath },
+      );
+
+      expect((result.item as { github_url?: string }).github_url).toBeUndefined();
+      expect(result.changed_fields).toContain("github_url");
+    });
+  });
+
+  it("reads declared extension item fields after strict-schema updates", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { unknown_field_policy?: string };
+      };
+      settings.schema = {
+        ...(settings.schema ?? {}),
+        unknown_field_policy: "reject",
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "read-extension-field-strict-schema");
+      await runUpdate(
+        id,
+        {
+          field: ["github_url=https://example.test/read"],
+          message: "set strict extension field",
+        },
+        { path: context.pmPath },
+      );
+
+      const read = await runGet(id, { path: context.pmPath });
+      expect((read.item as { github_url?: string }).github_url).toBe("https://example.test/read");
+    });
+  });
+
+  it("rejects combining --unset and --field for the same extension field", async () => {
+    await withTempPmPath(async (context) => {
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "conflicting-extension-field-update");
+      await expect(
+        runUpdate(
+          id,
+          {
+            unset: ["github-url"],
+            field: ["github_url=https://example.test/conflict"],
+            message: "conflicting extension field update",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot combine --unset github-url with --field github_url=..."),
+      });
+    });
+  });
+
+  it("does not reapply extension defaults for explicitly unset fields", async () => {
+    await withTempPmPath(async (context) => {
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string", default: "https://example.test/default" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "unset-extension-field-default");
+      await runUpdate(
+        id,
+        {
+          field: ["github_url=https://example.test/custom"],
+          message: "seed custom extension field",
+        },
+        { path: context.pmPath },
+      );
+      const result = await runUpdate(
+        id,
+        {
+          unset: ["github-url"],
+          message: "unset extension field with default",
+        },
+        { path: context.pmPath },
+      );
+
+      expect((result.item as { github_url?: string }).github_url).toBeUndefined();
+      expect(result.changed_fields).toContain("github_url");
+    });
+  });
+
+  it("allows declared extension item fields on update when strict schema rejects unknown fields", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { unknown_field_policy?: string };
+      };
+      settings.schema = {
+        ...(settings.schema ?? {}),
+        unknown_field_policy: "reject",
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "update-extension-field-strict-schema");
+      const result = await runUpdate(
+        id,
+        {
+          field: ["github_url=https://example.test/strict"],
+          message: "update strict extension field",
+        },
+        { path: context.pmPath },
+      );
+
+      expect((result.item as { github_url?: string }).github_url).toBe("https://example.test/strict");
+      expect(result.changed_fields).toContain("github_url");
+    });
+  });
+
+  it("enforces command_option_policies for the extension --field setter on update", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Task",
+            command_option_policies: [{ command: "update", option: "field", enabled: false }],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "update-extension-field-policy");
+      await expect(
+        runUpdate(
+          id,
+          {
+            field: ["github_url=https://example.test/policy"],
+            message: "update disabled extension field",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--field"),
+      });
+    });
+  });
+
+  it("rejects reserved extension item field names on update", async () => {
+    await withTempPmPath(async (context) => {
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "bad-extension",
+        fields: [{ name: "id", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "update-extension-field-reserved");
+      await expect(
+        runUpdate(
+          id,
+          {
+            field: ["id=pm-other"],
+            message: "update reserved extension field",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: { code: "extension_item_field_reserved" },
+      });
+    });
+  });
+
+  it("rejects undeclared extension item fields on update", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-unknown-extension-field");
+      await expect(
+        runUpdate(
+          id,
+          {
+            field: ["github_url=https://example.test/2"],
+            message: "update unknown extension field",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: { code: "extension_item_field_unknown" },
       });
     });
   });

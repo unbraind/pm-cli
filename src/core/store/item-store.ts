@@ -6,6 +6,7 @@ import {
   runActiveOnWriteHooks,
   runActiveServiceOverride,
 } from "../extensions/index.js";
+import { collectRegisteredItemFieldNames } from "../extensions/item-fields.js";
 import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE, TYPE_TO_FOLDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 import { appendHistoryEntry, createHistoryEntry } from "../history/history.js";
@@ -50,6 +51,10 @@ function appendWarning(warnings: string[] | undefined, warning: string): void {
   }
 }
 
+function resolveActiveExtensionFieldNames(explicit: readonly string[] | undefined): readonly string[] {
+  return explicit ?? collectRegisteredItemFieldNames(getActiveExtensionRegistrations());
+}
+
 function resolveItemFormatSearchOrder(preferredFormat?: ItemFormat): ItemFormat[] {
   if (preferredFormat === "toon") {
     return ["toon", "json_markdown"];
@@ -92,7 +97,7 @@ export async function locateItem(
 
 export async function readLocatedItem(
   item: LocatedItem,
-  options: { schema?: RuntimeSchemaSettings; warnings?: string[] } = {},
+  options: { schema?: RuntimeSchemaSettings; extensionFieldNames?: readonly string[]; warnings?: string[] } = {},
 ): Promise<{ raw: string; document: ItemDocument }> {
   const raw = await fs.readFile(item.itemPath, "utf8");
   await runActiveOnReadHooks({
@@ -102,6 +107,7 @@ export async function readLocatedItem(
   const document = parseItemDocument(raw, {
     format: item.item_format,
     schema: options.schema,
+    extensionFieldNames: resolveActiveExtensionFieldNames(options.extensionFieldNames),
     onWarning: (warning) => appendWarning(options.warnings, warning),
   });
   return { raw, document };
@@ -254,6 +260,7 @@ async function prepareLockedItem(params: {
   author: string;
   force?: boolean;
   bypassAssigneeConflict?: boolean;
+  extensionFieldNames?: readonly string[];
   typeToFolder?: Record<string, string>;
 }): Promise<{
   typeToFolder: Record<string, string>;
@@ -296,6 +303,7 @@ async function prepareLockedItem(params: {
     const warnings: string[] = [];
     const { raw: originalRaw, document } = await readLocatedItem(located, {
       schema: params.settings.schema,
+      extensionFieldNames: params.extensionFieldNames,
       warnings,
     });
 
@@ -343,6 +351,7 @@ export async function mutateItem(params: {
   message?: string;
   force?: boolean;
   bypassAssigneeConflict?: boolean;
+  extensionFieldNames?: readonly string[];
   typeToFolder?: Record<string, string>;
   mutate: (document: ItemDocument) => {
     changedFields: string[];
@@ -362,6 +371,7 @@ export async function mutateItem(params: {
     author: params.author,
     force: params.force,
     bypassAssigneeConflict: params.bypassAssigneeConflict,
+    extensionFieldNames: params.extensionFieldNames,
     typeToFolder: params.typeToFolder,
   });
   const {
@@ -381,15 +391,25 @@ export async function mutateItem(params: {
       commandLabel: params.op,
     });
 
-    const beforeDocument = canonicalDocument(document, { schema: params.settings.schema });
-    const mutableDocument = canonicalDocument(structuredClone(document), { schema: params.settings.schema });
+    const beforeDocument = canonicalDocument(document, {
+      schema: params.settings.schema,
+      extensionFieldNames: params.extensionFieldNames,
+    });
+    const mutableDocument = canonicalDocument(structuredClone(document), {
+      schema: params.settings.schema,
+      extensionFieldNames: params.extensionFieldNames,
+    });
     const mutation = params.mutate(mutableDocument);
     mutableDocument.metadata.updated_at = nowIso();
-    const afterDocument = canonicalDocument(mutableDocument, { schema: params.settings.schema });
+    const afterDocument = canonicalDocument(mutableDocument, {
+      schema: params.settings.schema,
+      extensionFieldNames: params.extensionFieldNames,
+    });
     const targetItemFormat: ItemFormat = "toon";
     const serializedAfter = serializeItemDocument(afterDocument, {
       format: targetItemFormat,
       schema: params.settings.schema,
+      extensionFieldNames: params.extensionFieldNames,
     });
     const targetItemPath = getItemPath(
       params.pmRoot,

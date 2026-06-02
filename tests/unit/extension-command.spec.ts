@@ -1434,6 +1434,42 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("reports global output service and renderer override diagnostics in doctor", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "output-footgun-source");
+      await writeTestExtension({
+        root: sourceDir,
+        name: "output-footgun-ext",
+        manifestOverrides: {
+          capabilities: ["services", "renderers"],
+        },
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerService('output_format', () => ({ format: 'toon' }));",
+          "  api.registerRenderer('json', () => JSON.stringify({ rendered_by: 'output-footgun-ext' }));",
+          "}",
+          "",
+        ].join("\n"),
+      });
+      await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+
+      const doctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep" }, { path: context.pmPath });
+      const summary = doctor.details.summary as {
+        warning_codes: string[];
+        remediation: string[];
+      };
+
+      expect(summary.warning_codes).toEqual(
+        expect.arrayContaining([
+          "extension_output_renderer_override_global",
+          "extension_output_service_override_global",
+        ]),
+      );
+      expect(summary.remediation.join(" ")).toContain("return context.payload/null/undefined");
+      expect(JSON.stringify(doctor)).not.toContain("__pm_native_output");
+    });
+  });
+
   it("uses flag-form package commands in package doctor remediation", () => {
     const summary = buildExtensionTriageSummary(
       "project",

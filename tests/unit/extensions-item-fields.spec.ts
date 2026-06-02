@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { applyRegisteredItemFieldDefaultsAndValidation } from "../../src/core/extensions/item-fields.js";
+import {
+  applyRegisteredItemFieldDefaultsAndValidation,
+  parseRegisteredItemFieldAssignments,
+} from "../../src/core/extensions/item-fields.js";
 import { createEmptyExtensionRegistrationRegistry, type ExtensionRegistrationRegistry } from "../../src/core/extensions/loader.js";
 
 function withFields(fields: Array<Record<string, unknown>>): ExtensionRegistrationRegistry {
@@ -34,6 +37,71 @@ describe("extensions item field runtime wiring", () => {
     expect(frontMatter).toEqual({});
   });
 
+  it("parses declared extension field assignments with typed values", () => {
+    const parsed = parseRegisteredItemFieldAssignments(
+      [
+        "text_value=hello",
+        "number_value=42",
+        "boolean_value=yes",
+        "array_value=[\"a\",\"b\"]",
+        "object_value={\"key\":\"value\"}",
+      ],
+      withFields([
+        { name: "text_value", type: "string" },
+        { name: "number_value", type: "number" },
+        { name: "boolean_value", type: "boolean" },
+        { name: "array_value", type: "array" },
+        { name: "object_value", type: "object" },
+      ]),
+    );
+
+    expect(parsed).toEqual({
+      text_value: "hello",
+      number_value: 42,
+      boolean_value: true,
+      array_value: ["a", "b"],
+      object_value: { key: "value" },
+    });
+  });
+
+  it("rejects undeclared and invalid typed extension field assignments", () => {
+    const registrations = withFields([
+      { name: "count", type: "number" },
+      { name: "enabled", type: "boolean" },
+      { name: "payload", type: "object" },
+    ]);
+
+    expect(() => parseRegisteredItemFieldAssignments(["missing=value"], registrations)).toThrow(
+      "--field missing is not declared",
+    );
+    expect(() => parseRegisteredItemFieldAssignments(["count=NaN"], registrations)).toThrow("must be a number");
+    expect(() => parseRegisteredItemFieldAssignments(["count=   "], registrations)).toThrow("must be a number");
+    expect(() => parseRegisteredItemFieldAssignments(["enabled=maybe"], registrations)).toThrow("true|false");
+    expect(() => parseRegisteredItemFieldAssignments(["payload=not-json"], registrations)).toThrow("valid JSON object");
+  });
+
+  it("rejects conflicting extension field types for the same field name", () => {
+    expect(() =>
+      parseRegisteredItemFieldAssignments(
+        ["github_number=7"],
+        withFields([
+          { name: "github_number", type: "number" },
+          { name: "github_number", type: "string" },
+        ]),
+      ),
+    ).toThrow('Extension item field "github_number" is declared with conflicting types: number, string');
+
+    expect(() =>
+      applyRegisteredItemFieldDefaultsAndValidation(
+        {},
+        withFields([
+          { name: "github_number", type: "number" },
+          { name: "github_number", type: "string" },
+        ]),
+      ),
+    ).toThrow('Extension item field "github_number" is declared with conflicting types: number, string');
+  });
+
   it("accepts supported field types", () => {
     const frontMatter: Record<string, unknown> = {
       text_value: "ok",
@@ -58,17 +126,30 @@ describe("extensions item field runtime wiring", () => {
   it("throws for type mismatch and allowed value mismatch", () => {
     expect(() =>
       applyRegisteredItemFieldDefaultsAndValidation(
-        { severity: "high" },
-        withFields([{ name: "severity", type: "number" }]),
+        { ext_severity: "high" },
+        withFields([{ name: "ext_severity", type: "number" }]),
       ),
-    ).toThrow('Item field "severity" must be of type number');
+    ).toThrow('Item field "ext_severity" must be of type number');
 
     expect(() =>
       applyRegisteredItemFieldDefaultsAndValidation(
-        { status: "blocked" },
-        withFields([{ name: "status", type: "string", values: ["open", "closed"] }]),
+        { ext_status: "blocked" },
+        withFields([{ name: "ext_status", type: "string", values: ["open", "closed"] }]),
       ),
-    ).toThrow('Item field "status" must match one of the configured allowed values');
+    ).toThrow('Item field "ext_status" must match one of the configured allowed values');
+  });
+
+  it("rejects extension field names that collide with reserved metadata", () => {
+    expect(() =>
+      parseRegisteredItemFieldAssignments(["id=pm-other"], withFields([{ name: "id", type: "string" }])),
+    ).toThrow('Extension item field "id" collides with reserved item metadata');
+
+    expect(() =>
+      applyRegisteredItemFieldDefaultsAndValidation(
+        {},
+        withFields([{ name: "updated_at", type: "string", default: "2026-01-01T00:00:00.000Z" }]),
+      ),
+    ).toThrow('Extension item field "updated_at" collides with reserved item metadata');
   });
 
   it("skips invalid field names and unknown field types", () => {

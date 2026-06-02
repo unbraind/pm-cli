@@ -40,7 +40,11 @@ import {
   runActiveCommandHandler,
   runActiveOnWriteHooks,
 } from "../../core/extensions/index.js";
-import { applyRegisteredItemFieldDefaultsAndValidation } from "../../core/extensions/item-fields.js";
+import {
+  collectRegisteredItemFieldNames,
+  applyRegisteredItemFieldDefaultsAndValidation,
+  parseRegisteredItemFieldAssignments,
+} from "../../core/extensions/item-fields.js";
 import { locateItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -144,6 +148,7 @@ export interface CreateCommandOptions {
   reminder?: string[];
   event?: string[];
   typeOption?: string[];
+  field?: string[];
   template?: string;
   createMode?: string;
   schedulePreset?: string;
@@ -722,9 +727,15 @@ function parseEvents(raw: string[] | undefined, nowValue: string): { values: Cal
   };
 }
 
-function buildChangedFields(frontMatter: ItemMetadata, body: string, explicitUnsets: string[]): string[] {
+function buildChangedFields(
+  frontMatter: ItemMetadata,
+  body: string,
+  explicitUnsets: string[],
+  additionalFrontMatterKeys: readonly string[] = [],
+): string[] {
   const changed = [
     ...FRONT_MATTER_KEY_ORDER.filter((key) => frontMatter[key] !== undefined),
+    ...additionalFrontMatterKeys.filter((key) => (frontMatter as unknown as Record<string, unknown>)[key] !== undefined),
     ...(body.length > 0 ? ["body"] : []),
     ...explicitUnsets.map((key) => `unset:${key}`),
   ];
@@ -777,6 +788,7 @@ async function resolveCreateStdinInputs(options: CreateCommandOptions): Promise<
     reminder: await stdinResolver.resolveList(options.reminder, "--reminder"),
     event: await stdinResolver.resolveList(options.event, "--event"),
     typeOption: await stdinResolver.resolveList(options.typeOption, "--type-option"),
+    field: await stdinResolver.resolveList(options.field, "--field"),
   };
 }
 
@@ -895,6 +907,7 @@ function requireCreateOptionByType(
     reminder: options.reminder,
     event: options.event,
     typeOption: options.typeOption,
+    field: options.field,
   };
 
   const hasOptionValue = (optionKey: string): boolean => {
@@ -1467,6 +1480,15 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const events = parseEvents(resolvedOptions.event, nowValue);
   const typeOptions = parseTypeOptions(resolvedOptions.typeOption);
   const validatedTypeOptions = validateTypeOptions(type, typeOptions.values, typeRegistry);
+  const extensionRegistrations = getActiveExtensionRegistrations();
+  const extensionFieldNames = collectRegisteredItemFieldNames(extensionRegistrations);
+  const registeredItemFieldValues = parseRegisteredItemFieldAssignments(resolvedOptions.field, extensionRegistrations);
+  for (const fieldKey of Object.keys(registeredItemFieldValues)) {
+    if (!unsetTargets.frontMatterKeys.has(fieldKey)) {
+      continue;
+    }
+    throw new PmCliError(`Cannot combine --unset ${fieldKey.replaceAll("_", "-")} with --field ${fieldKey}=...`, EXIT_CODE.USAGE);
+  }
   const runtimeCreateFieldValues = collectRuntimeCreateFieldValues(
     resolvedOptions as Record<string, unknown>,
     runtimeFieldRegistry,
@@ -1818,12 +1840,13 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     docs: docs.values,
     reminders: reminders.values,
     events: events.values,
+    ...registeredItemFieldValues,
     ...runtimeCreateFieldValues.values,
   });
   try {
     applyRegisteredItemFieldDefaultsAndValidation(
       frontMatter as unknown as Record<string, unknown>,
-      getActiveExtensionRegistrations(),
+      extensionRegistrations,
     );
   } catch (error: unknown) {
     throw new PmCliError(error instanceof Error ? error.message : "Invalid extension item field values", EXIT_CODE.USAGE);
@@ -1834,7 +1857,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       metadata: frontMatter,
       body,
     },
-    { schema: settings.schema },
+    { schema: settings.schema, extensionFieldNames },
   );
   const beforeDocument: ItemDocument = {
     metadata: {} as ItemMetadata,
@@ -1856,7 +1879,14 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   let hookWarnings: string[] = [];
 
   try {
-    await writeFileAtomic(itemPath, serializeItemDocument(afterDocument, { format: settings.item_format, schema: settings.schema }));
+    await writeFileAtomic(
+      itemPath,
+      serializeItemDocument(afterDocument, {
+        format: settings.item_format,
+        schema: settings.schema,
+        extensionFieldNames,
+      }),
+    );
     try {
       const entry = createHistoryEntry({
         nowIso: nowValue,
@@ -1887,7 +1917,10 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     await lockRelease();
   }
 
-  const changedFields = buildChangedFields(frontMatter, body, explicitUnsetKeys);
+  const changedFields = buildChangedFields(frontMatter, body, explicitUnsetKeys, [
+    ...Object.keys(registeredItemFieldValues),
+    ...Object.keys(runtimeCreateFieldValues.values),
+  ]);
   const outputItem = structuredClone(frontMatter);
 
   // After the create has committed (so the ID is real and shows up in the suggestion),

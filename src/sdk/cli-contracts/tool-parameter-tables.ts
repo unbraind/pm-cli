@@ -242,6 +242,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   reminder: { type: "array", items: { type: "string" } },
   event: { type: "array", items: { type: "string" } },
   typeOption: { type: "array", items: { type: "string" } },
+  field: { type: "array", items: { type: "string" } },
   unset: { type: "array", items: { type: "string" } },
   clearDeps: { type: "boolean" },
   clearComments: { type: "boolean" },

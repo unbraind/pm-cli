@@ -245,7 +245,7 @@ export type OnReadHook = (context: OnReadHookContext) => Promise<void> | void;
 export type OnIndexHook = (context: OnIndexHookContext) => Promise<void> | void;
 export type OutputRendererFormat = "toon" | "json";
 export type CommandOverride = (context: CommandOverrideContext) => unknown;
-export type RendererOverride = (context: RendererOverrideContext) => string;
+export type RendererOverride = (context: RendererOverrideContext) => string | null | undefined;
 export type CommandHandler = (context: CommandHandlerContext) => unknown;
 export type ParserOverride = (context: ParserOverrideContext) => ParserOverrideDelta | Promise<ParserOverrideDelta>;
 export type PreflightOverride = (context: PreflightOverrideContext) => PreflightOverrideDelta | Promise<PreflightOverrideDelta>;

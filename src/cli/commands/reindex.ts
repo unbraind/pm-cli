@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { getActiveExtensionRegistrations, runActiveOnIndexHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
 import {
   resolveRegisteredSearchProvider,
   resolveRegisteredVectorStoreAdapter,
@@ -112,6 +113,7 @@ async function hydrateDocuments(
   warnings: string[],
   itemIds?: Set<string>,
 ): Promise<ItemDocument[]> {
+  const extensionFieldNames = collectRegisteredItemFieldNames(getActiveExtensionRegistrations());
   const hydrated: ItemDocument[] = [];
   for (const candidate of candidates) {
     if (itemIds && !itemIds.has(candidate.metadata.id)) {
@@ -129,6 +131,7 @@ async function hydrateDocuments(
       const parsed = parseItemDocument(raw, {
         format: candidate.item_format,
         schema,
+        extensionFieldNames,
         onWarning: (warning) => warnings.push(warning),
       });
       hydrated.push({

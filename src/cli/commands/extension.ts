@@ -168,6 +168,8 @@ export interface ExtensionCommandResult {
   details: Record<string, unknown>;
 }
 
+const NATIVE_OUTPUT_MARKER = "__pm_native_output";
+
 export interface ExtensionTriageSummary {
   status: "ok" | "warn";
   warning_count: number;
@@ -877,6 +879,23 @@ function requireTarget(target: string | undefined, action: ExtensionCommandActio
   }
   return normalized;
 }
+
+function collectGlobalOutputOverrideDoctorWarnings(
+  activationResult: Awaited<ReturnType<typeof activateExtensions>>,
+): string[] {
+  const warnings: string[] = [];
+  for (const entry of activationResult.services.overrides) {
+    if (entry.service !== "output_format") {
+      continue;
+    }
+    warnings.push(`extension_output_service_override_global:${entry.service}:${entry.layer}:${entry.name}`);
+  }
+  for (const entry of activationResult.renderers.overrides) {
+    warnings.push(`extension_output_renderer_override_global:${entry.format}:${entry.layer}:${entry.name}`);
+  }
+  return [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+}
+
 export async function runExtension(
   target: string | undefined,
   options: ExtensionCommandOptions,
@@ -923,26 +942,36 @@ export async function runExtension(
   const resolvedRoots = resolveExtensionRootsForScope(scope, global);
   const warnings: string[] = [];
 
-  const withResult = (details: Record<string, unknown>): ExtensionCommandResult => ({
-    ok: true,
-    action,
-    scope,
-    roots: action === "catalog" && typeof options.fields === "string" && options.fields.trim().length > 0
-      ? {
-          project: "project",
-          global: "global",
-          selected: scope,
-          settings_root: "project",
-        }
-      : {
-          project: resolvedRoots.roots.project,
-          global: resolvedRoots.roots.global,
-          selected: resolvedRoots.selected_root,
-          settings_root: resolvedRoots.settings_root,
-        },
-    warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
-    details,
-  });
+  const withResult = (details: Record<string, unknown>): ExtensionCommandResult => {
+    const result: ExtensionCommandResult = {
+      ok: true,
+      action,
+      scope,
+      roots: action === "catalog" && typeof options.fields === "string" && options.fields.trim().length > 0
+        ? {
+            project: "project",
+            global: "global",
+            selected: scope,
+            settings_root: "project",
+          }
+        : {
+            project: resolvedRoots.roots.project,
+            global: resolvedRoots.roots.global,
+            selected: resolvedRoots.selected_root,
+            settings_root: resolvedRoots.settings_root,
+          },
+      warnings: [...new Set(warnings)].sort((left, right) => left.localeCompare(right)),
+      details,
+    };
+    if (action === "doctor") {
+      Object.defineProperty(result, NATIVE_OUTPUT_MARKER, {
+        value: true,
+        enumerable: false,
+        configurable: false,
+      });
+    }
+    return result;
+  };
 
   if (action === "init") {
     const githubOption = resolveGithubOption(options);
@@ -1420,6 +1449,7 @@ export async function runExtension(
     warnings.push(...loadResult.warnings);
     warnings.push(...classifyDoctorLoadFailureWarnings(loadResult.failed));
     warnings.push(...activationResult.warnings);
+    warnings.push(...collectGlobalOutputOverrideDoctorWarnings(activationResult));
     const runtimeInstalledExtensions = applyDoctorRuntimeActivationState(refreshedInstalled.extensions, loadResult, activationResult);
     const doctorConsistency = buildDoctorConsistencySummary(
       scope,

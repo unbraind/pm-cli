@@ -94,8 +94,16 @@ export default defineExtension({
     });
 
     // renderers
-    api.registerRenderer("json", (context) => stableJson(context.result));
+    api.registerRenderer("json", (context) => {
+      if (context.command !== "starter ping") {
+        return null;
+      }
+      return stableJson(context.result);
+    });
     api.registerRenderer("toon", (context) => {
+      if (context.command !== "starter ping") {
+        return null;
+      }
       const result = asRecord(context.result);
       const hooks = asRecord(result.hook_counts);
       return [

@@ -332,6 +332,15 @@ export default defineExtension({
 
 Manifest capability: `schema`.
 
+Declared item fields are first-class create/update inputs. Agents and importers can persist extension provenance without description markers:
+
+```bash
+pm create "Import issue" --type Incident --field service=api --field severity=critical
+pm update pm-1234 --field service=worker
+```
+
+`--field` accepts only fields declared by active `registerItemFields` registrations and coerces values using the declared field type.
+
 ## Importer / Exporter
 
 `registerImporter(name, importer)` and `registerExporter(name, exporter)` register
@@ -445,7 +454,7 @@ Treat `recovery.suggested_retry` as the first-choice deterministic replay comman
 
 - Keep handlers deterministic and JSON-like.
 - Return data, not pre-rendered terminal text, unless implementing a renderer or output service.
-- Keep service and preflight overrides narrow.
+- Keep service, renderer, and preflight overrides narrow. For `output_format`, return `context.payload`, `null`, or `undefined` for unrelated commands; for renderers, return `null` when the payload should fall back to native rendering.
 - Declare only capabilities in use.
 - Set `pm_min_version` when the package requires SDK or runtime behavior added after older pm releases.
 - Include examples and failure hints in dynamic commands.

@@ -5,8 +5,8 @@ import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runCreate, type CreateCommandOptions } from "../../src/cli/commands/create.js";
 import { parseTypeOptionEntries } from "../../src/cli/commands/repeatable-metadata-parsers.js";
-import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
-import type { ExtensionHookRegistry } from "../../src/core/extensions/loader.js";
+import { clearActiveExtensionHooks, setActiveExtensionHooks, setActiveExtensionRegistrations } from "../../src/core/extensions/index.js";
+import { createEmptyExtensionRegistrationRegistry, type ExtensionHookRegistry } from "../../src/core/extensions/loader.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
@@ -49,6 +49,7 @@ function readCreateHistory(context: TempPmContext, id: string): Array<{ op: stri
 describe("runCreate", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
+    setActiveExtensionRegistrations(null);
     vi.restoreAllMocks();
   });
 
@@ -2481,6 +2482,129 @@ describe("runCreate", () => {
         { path: context.pmPath },
       );
       expect(markdownResult.item.type_options).toEqual({ workflow: "seeded" });
+    });
+  });
+
+  it("sets declared extension item fields through repeatable --field values", async () => {
+    await withTempPmPath(async (context) => {
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [
+          { name: "github_url", type: "string" },
+          { name: "github_number", type: "number" },
+          { name: "github_synced", type: "boolean" },
+        ],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "create-extension-field-values",
+          field: ["github_url=https://example.test/1", "github_number=42", "github_synced=true"],
+        }),
+        { path: context.pmPath },
+      );
+
+      expect(result.item.github_url).toBe("https://example.test/1");
+      expect(result.item.github_number).toBe(42);
+      expect(result.item.github_synced).toBe(true);
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["github_url", "github_number", "github_synced"]));
+    });
+  });
+
+  it("allows declared extension item fields when strict schema rejects unknown fields", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { unknown_field_policy?: string };
+      };
+      settings.schema = {
+        ...(settings.schema ?? {}),
+        unknown_field_policy: "reject",
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "create-extension-field-strict-schema",
+          field: ["github_url=https://example.test/strict"],
+        }),
+        { path: context.pmPath },
+      );
+
+      expect(result.item.github_url).toBe("https://example.test/strict");
+    });
+  });
+
+  it("enforces command_option_policies for the extension --field setter on create", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            command_option_policies: [{ command: "create", option: "field", required: true }],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      await expect(
+        runCreate(baseCreateOptions({ type: "Asset", field: undefined }), { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--field"),
+      });
+
+      const created = await runCreate(
+        baseCreateOptions({
+          type: "Asset",
+          field: ["github_url=https://example.test/policy"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(created.item.github_url).toBe("https://example.test/policy");
+    });
+  });
+
+  it("rejects undeclared extension item fields on create", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-unknown-extension-field",
+            field: ["github_url=https://example.test/1"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: { code: "extension_item_field_unknown" },
+      });
     });
   });
 

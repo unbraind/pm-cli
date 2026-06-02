@@ -485,6 +485,13 @@ export function runRendererOverride(
       pm_root: rendererPmRoot,
       result: cloneContextSnapshot(context.result),
     });
+    if (rendered === null || rendered === undefined) {
+      return {
+        overridden: false,
+        rendered: null,
+        warnings: [],
+      };
+    }
     if (typeof rendered !== "string") {
       return {
         overridden: false,

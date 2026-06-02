@@ -190,6 +190,13 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     aliasOptions: [{ option: "--type_option <value>", description: "Alias for --type-option" }],
   },
   {
+    target: "field",
+    keys: ["field"],
+    option: "--field <name=value>",
+    description: "Set a field declared by an active extension registerItemFields registration (repeatable)",
+    repeatable: true,
+  },
+  {
     target: "unset",
     keys: ["unset"],
     option: "--unset <field>",
@@ -505,6 +512,13 @@ export const UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
     description: "Set type options key=value or key=<name>,value=<value> (also accepts key:value and markdown pairs; use - for stdin; repeatable)",
     repeatable: true,
     aliasOptions: [{ option: "--type_option <value>", description: "Alias for --type-option" }],
+  },
+  {
+    target: "field",
+    keys: ["field"],
+    option: "--field <name=value>",
+    description: "Set a field declared by an active extension registerItemFields registration (repeatable)",
+    repeatable: true,
   },
   {
     target: "unset",

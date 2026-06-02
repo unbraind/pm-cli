@@ -1,4 +1,8 @@
 import type { ExtensionRegistrationRegistry } from "./loader.js";
+import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
+import { PmCliError } from "../shared/errors.js";
+
+const RESERVED_ITEM_FIELD_NAMES = new Set(FRONT_MATTER_KEY_ORDER);
 
 function normalizeFieldName(value: unknown): string | null {
   if (typeof value !== "string") {
@@ -33,6 +37,136 @@ function cloneFieldValue<T>(value: T): T {
   }
 }
 
+function parseFieldAssignment(raw: string): { key: string; value: string } {
+  const trimmed = raw.trim();
+  const separatorIndex = trimmed.indexOf("=");
+  if (separatorIndex <= 0) {
+    throw new PmCliError(`--field entries must use name=value syntax, received: ${raw}`, EXIT_CODE.USAGE);
+  }
+  const key = trimmed.slice(0, separatorIndex).trim();
+  const value = trimmed.slice(separatorIndex + 1);
+  if (key.length === 0) {
+    throw new PmCliError("--field entries require a non-empty field name", EXIT_CODE.USAGE);
+  }
+  return { key, value };
+}
+
+function parseJsonFieldValue(raw: string, fieldName: string, expectedType: "array" | "object"): unknown {
+  try {
+    const parsed = JSON.parse(raw);
+    if (expectedType === "array" && Array.isArray(parsed)) {
+      return parsed;
+    }
+    if (expectedType === "object" && typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch {
+    // Fall through to the typed usage error below.
+  }
+  throw new PmCliError(`--field ${fieldName}=... must be valid JSON ${expectedType}`, EXIT_CODE.USAGE);
+}
+
+function coerceRegisteredFieldValue(fieldName: string, fieldType: "string" | "number" | "boolean" | "array" | "object", raw: string): unknown {
+  if (fieldType === "string") {
+    return raw;
+  }
+  if (fieldType === "number") {
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) {
+      throw new PmCliError(`--field ${fieldName}=... must be a number`, EXIT_CODE.USAGE);
+    }
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed)) {
+      throw new PmCliError(`--field ${fieldName}=... must be a number`, EXIT_CODE.USAGE);
+    }
+    return parsed;
+  }
+  if (fieldType === "boolean") {
+    const normalized = raw.trim().toLowerCase();
+    if (normalized === "true" || normalized === "1" || normalized === "yes") {
+      return true;
+    }
+    if (normalized === "false" || normalized === "0" || normalized === "no") {
+      return false;
+    }
+    throw new PmCliError(`--field ${fieldName}=... must be one of true|false|1|0|yes|no`, EXIT_CODE.USAGE);
+  }
+  return parseJsonFieldValue(raw, fieldName, fieldType);
+}
+
+function collectRegisteredFieldDefinitions(
+  registrations: ExtensionRegistrationRegistry | null,
+): Map<string, { name: string; type: "string" | "number" | "boolean" | "array" | "object" }> {
+  const definitions = new Map<string, { name: string; type: "string" | "number" | "boolean" | "array" | "object" }>();
+  if (!registrations) {
+    return definitions;
+  }
+  for (const registration of registrations.item_fields) {
+    for (const definition of registration.fields) {
+      const fieldName = normalizeFieldName(definition.name);
+      const fieldType = normalizeFieldType(definition.type);
+      if (!fieldName || !fieldType) {
+        continue;
+      }
+      const existing = definitions.get(fieldName);
+      if (existing && existing.type !== fieldType) {
+        throw new PmCliError(
+          `Extension item field "${fieldName}" is declared with conflicting types: ${existing.type}, ${fieldType}`,
+          EXIT_CODE.USAGE,
+          {
+            code: "extension_item_field_type_conflict",
+            nextSteps: ["Make every active extension declaration for this field use the same type."],
+          },
+        );
+      }
+      definitions.set(fieldName, { name: fieldName, type: fieldType });
+    }
+  }
+  return definitions;
+}
+
+function assertNotReservedItemFieldName(fieldName: string): void {
+  if (!RESERVED_ITEM_FIELD_NAMES.has(fieldName)) {
+    return;
+  }
+  throw new PmCliError(`Extension item field "${fieldName}" collides with reserved item metadata`, EXIT_CODE.USAGE, {
+    code: "extension_item_field_reserved",
+    nextSteps: ["Rename the extension item field, preferably with an extension-specific prefix."],
+  });
+}
+
+export function collectRegisteredItemFieldNames(registrations: ExtensionRegistrationRegistry | null): string[] {
+  return [...collectRegisteredFieldDefinitions(registrations).keys()].sort((left, right) => left.localeCompare(right));
+}
+
+export function parseRegisteredItemFieldAssignments(
+  rawFields: string[] | undefined,
+  registrations: ExtensionRegistrationRegistry | null,
+): Record<string, unknown> {
+  if (!rawFields || rawFields.length === 0) {
+    return {};
+  }
+  const definitions = collectRegisteredFieldDefinitions(registrations);
+  const values: Record<string, unknown> = {};
+  for (const raw of rawFields) {
+    const { key, value } = parseFieldAssignment(raw);
+    const definition = definitions.get(key);
+    if (!definition) {
+      const known = [...definitions.keys()].sort((left, right) => left.localeCompare(right));
+      throw new PmCliError(`--field ${key} is not declared by an active extension item-field registration`, EXIT_CODE.USAGE, {
+        code: "extension_item_field_unknown",
+        recovery: { provided_fields: known },
+        nextSteps: known.length > 0
+          ? [`Use one of the declared fields: ${known.join(", ")}`]
+          : ["Activate an extension that calls registerItemFields before setting extension fields."],
+      });
+    }
+    assertNotReservedItemFieldName(definition.name);
+    values[definition.name] = coerceRegisteredFieldValue(definition.name, definition.type, value);
+  }
+  return values;
+}
+
 function isValidFieldType(value: unknown, expectedType: "string" | "number" | "boolean" | "array" | "object"): boolean {
   if (expectedType === "string") {
     return typeof value === "string";
@@ -59,17 +193,24 @@ function isAllowedFieldValue(value: unknown, allowed: unknown[] | undefined): bo
 export function applyRegisteredItemFieldDefaultsAndValidation(
   frontMatter: Record<string, unknown>,
   registrations: ExtensionRegistrationRegistry | null,
+  options: { skipDefaultFields?: ReadonlySet<string> } = {},
 ): void {
   if (!registrations) {
     return;
   }
+  collectRegisteredFieldDefinitions(registrations);
   for (const registration of registrations.item_fields) {
     for (const definition of registration.fields) {
       const fieldName = normalizeFieldName(definition.name);
       if (!fieldName) {
         continue;
       }
-      if (!(fieldName in frontMatter) && Object.prototype.hasOwnProperty.call(definition, "default")) {
+      assertNotReservedItemFieldName(fieldName);
+      if (
+        !(fieldName in frontMatter) &&
+        !options.skipDefaultFields?.has(fieldName) &&
+        Object.prototype.hasOwnProperty.call(definition, "default")
+      ) {
         frontMatter[fieldName] = cloneFieldValue(definition.default);
       }
 
