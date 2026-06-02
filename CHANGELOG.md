@@ -6,6 +6,10 @@
 
 - Add generic create/update setter for extension item fields ([pm-qvdj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qvdj.toon))
 
+### Changed
+
+- 2026-06-02 commander SDK custom-field and extension-output hardening ([pm-lwtx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lwtx.toon))
+
 ### Fixed
 
 - Warn on global service and renderer override footguns ([pm-5teq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5teq.toon))
