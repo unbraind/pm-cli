@@ -1,0 +1,12 @@
+id: pm-5teq
+title: Warn on global service and renderer override footguns
+description: "GitHub issue #96: registerService(\"output_format\") and registerRenderer overrides can silently replace output for every command, while extension doctor still reports the extension healthy. Duplicate check: pm search for service renderer override output_format corrupt output doctor warning found no open direct duplicate. Desired outcome: extension doctor/runtime should surface unsafe global override behavior and docs should explain pass-through/null fallback contracts."
+type: Issue
+status: open
+priority: 1
+tags[4]: agent-ux,"area:extensions",diagnostics,github-issue
+created_at: "2026-06-02T15:55:03.148Z"
+updated_at: "2026-06-02T15:55:03.148Z"
+author: codex-gpt5
+parent: pm-ugqx
+body: ""

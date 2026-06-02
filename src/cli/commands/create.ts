@@ -518,11 +518,11 @@ function parseDependencies(
   assertNoLegacyNoneTokens(raw, "--dep", "Use --clear-deps to clear dependencies.");
   const values: Dependency[] = raw.map((entry) => {
     const trimmedEntry = entry.trim();
-    const kv = looksLikeStructuredEntry(trimmedEntry, ["id", "kind", "author", "created_at"])
+    const kv = looksLikeStructuredEntry(trimmedEntry, ["id", "kind", "type", "author", "created_at"])
       ? parseCsvKv(entry, "--dep")
       : { id: trimmedEntry, kind: "related" };
     const id = parseOptionalString(kv.id);
-    const kind = parseOptionalString(kv.kind);
+    const kind = normalizeDependencyKindInput(parseOptionalString(kv.kind ?? kv.type));
     if (!id || !kind) {
       throw new PmCliError("--dep requires id and kind, or a bare item id to create a related dependency", EXIT_CODE.USAGE);
     }
@@ -540,6 +540,20 @@ function parseDependencies(
     };
   });
   return { values, explicitEmpty: false };
+}
+
+const DEPENDENCY_KIND_INPUT_ALIASES: Readonly<Record<string, string>> = {
+  "blocked-by": "blocked_by",
+  depends_on: "blocked_by",
+  "depends-on": "blocked_by",
+};
+
+function normalizeDependencyKindInput(raw: string | undefined): string | undefined {
+  if (typeof raw !== "string") {
+    return raw;
+  }
+  const alias = DEPENDENCY_KIND_INPUT_ALIASES[raw.toLowerCase()];
+  return alias ?? raw;
 }
 
 function looksLikeStructuredEntry(raw: string, keys: readonly string[]): boolean {

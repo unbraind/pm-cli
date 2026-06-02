@@ -225,6 +225,26 @@ describe("runCreate", () => {
     });
   });
 
+  it("accepts type as a structured --dep kind alias", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "create-dependency-type-alias",
+          dep: ["type=blocked-by,id=dep-blocker,created_at=2026-03-01T00:00:00.000Z"],
+        }),
+        { path: context.pmPath },
+      );
+
+      expect(result.item.dependencies).toEqual([
+        {
+          id: "pm-dep-blocker",
+          kind: "blocked_by",
+          created_at: "2026-03-01T00:00:00.000Z",
+        },
+      ]);
+    });
+  });
+
   it("accepts cmd as a structured --test alias without corrupting linked test commands", async () => {
     await withTempPmPath(async (context) => {
       const result = await runCreate(

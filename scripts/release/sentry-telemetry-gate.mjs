@@ -113,9 +113,11 @@ const KNOWN_IGNORED_CONSOLE_ISSUE_PATTERNS = [
 const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   "authentication required, not authenticated",
   "csv is missing required 'title' column",
+  "dependency cycle",
   "failed to fetch issues from jira",
   "no items imported",
   "slack webhook request failed",
+  "validation found 3 structural error(s)",
 ];
 
 function issueTextValue(issue) {

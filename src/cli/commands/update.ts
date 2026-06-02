@@ -696,7 +696,7 @@ function looksLikeStructuredDependencyEntry(raw: string): boolean {
   if (raw.startsWith("```") || raw.includes("\n")) {
     return true;
   }
-  return /^(?:[-*+]\s+)?(?:id|kind|author|created_at|source_kind)\s*[:=]/i.test(raw);
+  return /^(?:[-*+]\s+)?(?:id|kind|type|author|created_at|source_kind)\s*[:=]/i.test(raw);
 }
 
 // pm-fl0c #4 (2026-05-28): `pm plan` accepts `depends_on` as a link kind
@@ -707,6 +707,7 @@ function looksLikeStructuredDependencyEntry(raw: string): boolean {
 // — the stored kind stays canonical (`blocked_by`) and downstream consumers
 // (closing logic, dependency graphs, blockers views) keep working unchanged.
 const DEPENDENCY_KIND_INPUT_ALIASES: Readonly<Record<string, string>> = {
+  "blocked-by": "blocked_by",
   depends_on: "blocked_by",
   "depends-on": "blocked_by",
 };
@@ -729,7 +730,7 @@ function parseDependencyAdditions(raw: string[] | undefined, prefix: string, now
     const trimmedEntry = entry.trim();
     const kv = looksLikeStructuredDependencyEntry(trimmedEntry) ? parseCsvKv(entry, "--dep") : { id: trimmedEntry, kind: "related" };
     const id = kv.id?.trim();
-    const kind = normalizeDependencyKindInput(kv.kind?.trim());
+    const kind = normalizeDependencyKindInput((kv.kind ?? kv.type)?.trim());
     if (!id || !kind) {
       throw new PmCliError("--dep requires id and kind, or a bare item id to add a related dependency", EXIT_CODE.USAGE);
     }
@@ -761,7 +762,7 @@ function parseDependencyRemovals(raw: string[] | undefined, prefix: string): Dep
     if (!trimmed) {
       throw new PmCliError("--dep-remove requires id or key/value selectors", EXIT_CODE.USAGE);
     }
-    if (trimmed.includes("=") || /^(?:[-*+]\s+)?(?:id|kind|source_kind)\s*[:=]/i.test(trimmed) || trimmed.startsWith("```")) {
+    if (trimmed.includes("=") || /^(?:[-*+]\s+)?(?:id|kind|type|source_kind)\s*[:=]/i.test(trimmed) || trimmed.startsWith("```")) {
       const kv = parseCsvKv(trimmed, "--dep-remove");
       const idRaw = kv.id?.trim();
       if (!idRaw) {
@@ -770,7 +771,7 @@ function parseDependencyRemovals(raw: string[] | undefined, prefix: string): Dep
       if (idRaw.toLowerCase() === "undefined") {
         throw new PmCliError(`--dep-remove id must not use placeholder token "${idRaw}"`, EXIT_CODE.USAGE);
       }
-      const kindRaw = normalizeDependencyKindInput(parseOptionalDependencyString(kv.kind));
+      const kindRaw = normalizeDependencyKindInput(parseOptionalDependencyString(kv.kind ?? kv.type));
       const sourceKind = parseOptionalDependencyString(kv.source_kind);
       return {
         id: normalizeItemId(idRaw, prefix),
