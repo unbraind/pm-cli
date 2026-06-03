@@ -250,6 +250,31 @@ describe("runConfig", () => {
 
       const getResult = await runConfig("project", "get", "governance_create_default_type", {}, globalOptions);
       expect(getResult.policy).toBe("Issue");
+
+      // An explicit empty value clears the setting back to unset (exposed as "").
+      const clearResult = await runConfig(
+        "project",
+        "set",
+        "governance-create-default-type",
+        { policy: "" },
+        globalOptions,
+      );
+      expect(clearResult.policy).toBe("");
+      expect(clearResult.changed).toBe(true);
+      const afterClear = await readSettings(pmRoot);
+      expect(afterClear.governance.create_default_type).toBeUndefined();
+      const getAfterClear = await runConfig("project", "get", "governance_create_default_type", {}, globalOptions);
+      expect(getAfterClear.policy).toBe("");
+
+      // Clearing an already-unset value is an idempotent no-op (changed: false).
+      const clearAgain = await runConfig(
+        "project",
+        "set",
+        "governance-create-default-type",
+        { policy: "" },
+        globalOptions,
+      );
+      expect(clearAgain.changed).toBe(false);
     });
   });
 

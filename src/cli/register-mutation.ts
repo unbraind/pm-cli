@@ -44,6 +44,35 @@ function addHiddenOption(command: Command, flags: string, description: string, r
   command.addOption(option);
 }
 
+/**
+ * Parse the `--order` value for `pm schema add-status`. Accepts a value that is
+ * already a number or a numeric string; throws a usage error when the flag was
+ * supplied but does not parse to a finite integer (rather than silently dropping
+ * it). Returns `undefined` only when the flag was genuinely not provided.
+ */
+function parseSchemaOrderOption(raw: unknown): number | undefined {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (typeof raw === "number") {
+    if (!Number.isFinite(raw)) {
+      throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
+    }
+    return Math.trunc(raw);
+  }
+  if (typeof raw === "string") {
+    if (raw.trim().length === 0) {
+      return undefined;
+    }
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed)) {
+      throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
+    }
+    return Math.trunc(parsed);
+  }
+  throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
+}
+
 function registerCommanderOptionContracts(command: Command, contracts: CommanderOptionRegistrationContract[]): void {
   for (const contract of contracts) {
     if (contract.required) {
@@ -863,10 +892,7 @@ export function registerMutationCommands(program: Command): void {
           : typeof options.default_status === "string"
             ? (options.default_status as string)
             : undefined;
-      const order =
-        typeof options.order === "string" && options.order.trim().length > 0
-          ? Number.parseInt(options.order, 10)
-          : undefined;
+      const order = parseSchemaOrderOption(options.order);
       if (!SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number]) && typeName === undefined) {
         typeName = subcommand;
         normalizedSubcommand = "add-type";

@@ -48,8 +48,15 @@ export interface RawAddStatusInput {
 
 export interface NormalizedAddStatusInput {
   id: string;
-  roles: RuntimeStatusRole[];
-  aliases: string[];
+  /**
+   * Normalized roles, or `undefined` when the raw input did not supply a roles
+   * field at all. `undefined` means "leave existing roles untouched" on upsert;
+   * an explicit empty array means "clear roles". This distinction is what keeps
+   * `add-status review --description x` from wiping a previously-set role.
+   */
+  roles?: RuntimeStatusRole[];
+  /** Same omitted-vs-explicit-empty semantics as `roles`. */
+  aliases?: string[];
   description?: string;
   order?: number;
 }
@@ -93,30 +100,39 @@ function dedupeTokens(values: Iterable<string>): string[] {
  * Validates and normalizes raw add-status CLI input. Throws a plain Error with a
  * stable message when the id is missing/empty or a role is not one of
  * RUNTIME_STATUS_ROLE_VALUES; the CLI layer maps these to PmCliError exit codes.
+ *
+ * Omitted vs explicit-empty is preserved end-to-end: when `raw.roles`/`raw.aliases`
+ * is `undefined` (flag not supplied) the normalized field is `undefined` so the
+ * upsert leaves the existing value untouched; when supplied (even an empty array)
+ * the field is normalized to an array so the upsert can apply an explicit clear.
  */
 export function normalizeAddStatusInput(raw: RawAddStatusInput): NormalizedAddStatusInput {
   const id = normalizeStatusToken(raw.id);
   if (id.length === 0) {
     throw new Error("Status id must not be empty.");
   }
-  const roles: RuntimeStatusRole[] = [];
-  const seenRoles = new Set<string>();
-  for (const rawRole of raw.roles ?? []) {
-    const role = typeof rawRole === "string" ? rawRole.trim().toLowerCase() : "";
-    if (role.length === 0) {
-      continue;
-    }
-    if (!RUNTIME_STATUS_ROLE_SET.has(role)) {
-      throw new Error(
-        `Invalid status role "${rawRole}". Allowed roles: ${RUNTIME_STATUS_ROLE_VALUES.join(", ")}.`,
-      );
-    }
-    if (!seenRoles.has(role)) {
-      seenRoles.add(role);
-      roles.push(role as RuntimeStatusRole);
+  let roles: RuntimeStatusRole[] | undefined;
+  if (raw.roles !== undefined) {
+    roles = [];
+    const seenRoles = new Set<string>();
+    for (const rawRole of raw.roles) {
+      const role = typeof rawRole === "string" ? rawRole.trim().toLowerCase() : "";
+      if (role.length === 0) {
+        continue;
+      }
+      if (!RUNTIME_STATUS_ROLE_SET.has(role)) {
+        throw new Error(
+          `Invalid status role "${rawRole}". Allowed roles: ${RUNTIME_STATUS_ROLE_VALUES.join(", ")}.`,
+        );
+      }
+      if (!seenRoles.has(role)) {
+        seenRoles.add(role);
+        roles.push(role as RuntimeStatusRole);
+      }
     }
   }
-  const aliases = dedupeTokens(raw.aliases ?? []).filter((alias) => alias !== id);
+  const aliases =
+    raw.aliases === undefined ? undefined : dedupeTokens(raw.aliases).filter((alias) => alias !== id);
   const description = raw.description?.trim();
   const order =
     typeof raw.order === "number" && Number.isFinite(raw.order) ? Math.trunc(raw.order) : undefined;
@@ -195,9 +211,12 @@ export function serializeStatusDefsFile(file: StatusDefsFile): string {
 /**
  * Idempotent UPSERT of a status definition into the parsed file. Matching is by
  * normalized id. When a definition already exists, fields supplied in `input`
- * override the previous values (roles/aliases replace, description/order
- * override when provided); fields not addressed by add-status flags are
- * preserved untouched.
+ * override the previous values (roles/aliases replace when a non-empty array is
+ * given, clear when an explicit empty array is given, and are left UNTOUCHED
+ * when the field is `undefined` — i.e. the add-status flag was omitted);
+ * description/order override when provided. Fields not addressed by add-status
+ * flags are preserved untouched, so `add-status <id> --description x` keeps any
+ * previously-set roles/aliases.
  */
 export function upsertStatusDef(file: StatusDefsFile, input: NormalizedAddStatusInput): UpsertStatusDefResult {
   const statuses = file.statuses.slice();
@@ -210,15 +229,19 @@ export function upsertStatusDef(file: StatusDefsFile, input: NormalizedAddStatus
     ...(existing ?? {}),
     id: input.id,
   };
-  if (input.roles.length > 0) {
-    next.roles = [...input.roles];
-  } else if (next.roles !== undefined) {
-    delete next.roles;
+  if (input.roles !== undefined) {
+    if (input.roles.length > 0) {
+      next.roles = [...input.roles];
+    } else if (next.roles !== undefined) {
+      delete next.roles;
+    }
   }
-  if (input.aliases.length > 0) {
-    next.aliases = [...input.aliases];
-  } else if (next.aliases !== undefined) {
-    delete next.aliases;
+  if (input.aliases !== undefined) {
+    if (input.aliases.length > 0) {
+      next.aliases = [...input.aliases];
+    } else if (next.aliases !== undefined) {
+      delete next.aliases;
+    }
   }
   if (input.description !== undefined) {
     next.description = input.description;

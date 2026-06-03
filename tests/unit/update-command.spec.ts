@@ -2806,4 +2806,47 @@ describe("runUpdate per-type workflow enforcement (pm-f4r1)", () => {
       expect((result.item as { status: string }).status).toBe("blocked");
     });
   });
+
+  // An explicit empty allowed_transitions array is a DENY-ALL rule, not "no
+  // rule". It must survive every normalization layer (settings.schema normalize +
+  // resolveTypeWorkflows) so the type is NOT treated as unrestricted.
+  async function seedDenyAllWorkflow(context: TempPmContext): Promise<void> {
+    const settingsPath = path.join(context.pmPath, "settings.json");
+    const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+      governance?: Record<string, unknown>;
+      schema?: Record<string, unknown>;
+    };
+    settings.governance = { ...(settings.governance ?? {}), workflow_enforcement: "strict" };
+    settings.schema = {
+      ...(settings.schema ?? {}),
+      type_workflows: [{ type: "Issue", allowed_transitions: [] }],
+    };
+    await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+  }
+
+  it("denies every cross-status transition under an explicit deny-all rule (strict)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "wf-deny-all", { type: "Issue" });
+      await seedDenyAllWorkflow(context);
+      await expect(
+        runUpdate(id, { status: "in_progress", message: "deny-all blocks this" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Disallowed transition"),
+      });
+    });
+  });
+
+  it("still allows a same-status no-op under an explicit deny-all rule (strict)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "wf-deny-all-noop", { type: "Issue" });
+      await seedDenyAllWorkflow(context);
+      const result = await runUpdate(
+        id,
+        { status: "open", message: "no-op stays allowed" },
+        { path: context.pmPath },
+      );
+      expect((result.item as { status: string }).status).toBe("open");
+    });
+  });
 });

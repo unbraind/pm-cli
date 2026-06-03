@@ -1520,9 +1520,9 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       enforcement: workflowEnforcement,
       typeWorkflows,
       statusRegistry,
-      typeName: document.metadata.type,
-      fromStatus: document.metadata.status,
-      toStatus: options.status,
+      typeName: document.metadata?.type ?? "",
+      fromStatus: document.metadata?.status ?? "",
+      toStatus: options.status ?? "",
     });
     if (warning) {
       workflowTransitionWarnings.push(warning);

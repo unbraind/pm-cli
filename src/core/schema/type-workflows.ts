@@ -61,13 +61,19 @@ function resolveStatusId(value: string, statusRegistry: StatusTokenResolver | un
   if (token.length === 0) {
     return "";
   }
-  return statusRegistry?.alias_to_id.get(token) ?? token;
+  return statusRegistry?.alias_to_id?.get(token) ?? token;
 }
 
 /**
  * Normalize the raw type_workflows from a runtime schema into a deduped,
- * lower-cased-type list with normalized status tokens. Invalid entries (empty
- * type, empty/short pairs) are dropped.
+ * lower-cased-type list with normalized status tokens.
+ *
+ * An entry is kept when it has a valid (non-empty) `type` AND its
+ * `allowed_transitions` is an ARRAY — even when that array is empty. An explicit
+ * empty array is a deliberate DENY-ALL rule (only same-status no-ops are
+ * permitted, see evaluateTransition), so it must NOT collapse into "no rule"
+ * (which would leave the type unrestricted). Entries with a missing/empty type
+ * or a non-array `allowed_transitions` are dropped, as are malformed/short pairs.
  */
 export function resolveTypeWorkflows(
   schema: Pick<RuntimeSchemaSettings, "type_workflows"> | undefined,
@@ -79,7 +85,10 @@ export function resolveTypeWorkflows(
     if (type.length === 0) {
       continue;
     }
-    const pairs = Array.isArray(entry?.allowed_transitions) ? entry.allowed_transitions : [];
+    if (!Array.isArray(entry?.allowed_transitions)) {
+      continue;
+    }
+    const pairs = entry.allowed_transitions;
     const existing = byType.get(type) ?? [];
     for (const pair of pairs) {
       if (!Array.isArray(pair) || pair.length !== 2) {
@@ -99,7 +108,6 @@ export function resolveTypeWorkflows(
   }
   return [...byType.entries()]
     .map(([type, allowed_transitions]) => ({ type, allowed_transitions }))
-    .filter((entry) => entry.allowed_transitions.length > 0)
     .sort((left, right) => left.type.localeCompare(right.type));
 }
 

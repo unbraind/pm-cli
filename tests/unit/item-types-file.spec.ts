@@ -406,9 +406,15 @@ describe("normalizeAddStatusInput", () => {
     expect(result.aliases).toEqual(["in_review"]);
   });
 
-  it("drops empty description, missing role/alias lists, and non-finite order", () => {
+  it("leaves roles/aliases undefined when the lists are omitted (so upsert preserves existing)", () => {
     const result = normalizeAddStatusInput({ id: "review", description: "   ", order: Number.NaN });
-    expect(result).toEqual({ id: "review", roles: [], aliases: [], description: undefined, order: undefined });
+    expect(result).toEqual({ id: "review", roles: undefined, aliases: undefined, description: undefined, order: undefined });
+  });
+
+  it("normalizes a supplied-but-empty roles/aliases list to an explicit empty array (clear)", () => {
+    const result = normalizeAddStatusInput({ id: "review", roles: [], aliases: [] });
+    expect(result.roles).toEqual([]);
+    expect(result.aliases).toEqual([]);
   });
 
   it("throws on a missing/empty id", () => {
@@ -526,11 +532,33 @@ describe("upsertStatusDef", () => {
     expect(result.file.statuses).toHaveLength(1);
   });
 
-  it("clears previously-set roles/aliases when none are supplied", () => {
+  it("clears previously-set roles/aliases when an explicit empty array is supplied", () => {
     const file = { statuses: [{ id: "review", roles: ["active"], aliases: ["in_review"] }] as never };
     const result = upsertStatusDef(file, { id: "review", roles: [], aliases: [] });
     expect(result.replaced).toBe(true);
     expect(result.definition).not.toHaveProperty("roles");
+    expect(result.definition).not.toHaveProperty("aliases");
+  });
+
+  it("preserves existing roles/aliases when the fields are omitted (undefined)", () => {
+    // Regression for the data-loss finding: `add-status review --description x`
+    // must NOT wipe a previously-set role/alias just because --role/--alias were
+    // omitted (normalizeAddStatusInput yields undefined for an omitted flag).
+    const file = { statuses: [{ id: "review", roles: ["active"], aliases: ["in_review"] }] as never };
+    const result = upsertStatusDef(file, { id: "review", description: "needs eyes" });
+    expect(result.replaced).toBe(true);
+    expect(result.definition).toMatchObject({
+      id: "review",
+      roles: ["active"],
+      aliases: ["in_review"],
+      description: "needs eyes",
+    });
+  });
+
+  it("preserves existing roles while applying an explicit alias clear (and vice versa)", () => {
+    const file = { statuses: [{ id: "review", roles: ["active"], aliases: ["in_review"] }] as never };
+    const result = upsertStatusDef(file, { id: "review", aliases: [] });
+    expect(result.definition).toMatchObject({ id: "review", roles: ["active"] });
     expect(result.definition).not.toHaveProperty("aliases");
   });
 

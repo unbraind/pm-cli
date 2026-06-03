@@ -31,6 +31,7 @@ import { resolveItemTypeRegistry, type ResolvedItemTypeDefinition } from "../../
 import { listAllFrontMatterLight } from "../../core/store/item-store.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
+import type { PmSettings } from "../../types/index.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
@@ -285,10 +286,10 @@ async function ensureInitialized(pmRoot: string): Promise<void> {
  * the lightest existing read path (listAllFrontMatterLight skips the heavy
  * collections cache). All items are counted — not just open ones — so the
  * advisory warning surfaces every item the removed definition would orphan;
- * the count is non-blocking.
+ * the count is non-blocking. The caller passes its already-loaded `settings`
+ * so we never re-read settings.json from disk here.
  */
-async function countItemsUsingType(pmRoot: string, typeName: string): Promise<number> {
-  const settings = await readSettings(pmRoot);
+async function countItemsUsingType(pmRoot: string, settings: PmSettings, typeName: string): Promise<number> {
   const registry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const lowerName = typeName.trim().toLowerCase();
   const items = await listAllFrontMatterLight(pmRoot, settings.item_format, registry.type_to_folder, [], settings.schema);
@@ -298,10 +299,10 @@ async function countItemsUsingType(pmRoot: string, typeName: string): Promise<nu
 /**
  * Counts items currently set to the status whose id/aliases resolve to
  * `statusId`. Uses listAllFrontMatterLight (the lightest read path). All items
- * are counted regardless of lifecycle phase; the count is advisory only.
+ * are counted regardless of lifecycle phase; the count is advisory only. The
+ * caller passes its already-loaded `settings` so we never re-read from disk.
  */
-async function countItemsUsingStatus(pmRoot: string, statusId: string): Promise<number> {
-  const settings = await readSettings(pmRoot);
+async function countItemsUsingStatus(pmRoot: string, settings: PmSettings, statusId: string): Promise<number> {
   const registry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const normalizedId = normalizeStatusToken(statusId);
@@ -329,16 +330,6 @@ export async function runSchemaRemoveType(
   const author = toAuthor(options.author, settings.author_default);
   const governance = resolveGovernanceKnobs(settings);
 
-  // Count items BEFORE acquiring the lock so the advisory warning never blocks
-  // removal; the count is informational only.
-  const typeName = (name ?? "").trim();
-  if (typeName.length > 0) {
-    const usingType = await countItemsUsingType(pmRoot, typeName);
-    if (usingType > 0) {
-      warnings.push(`items_using_type:${usingType}`);
-    }
-  }
-
   const releaseLock = await acquireLock(
     pmRoot,
     SCHEMA_TYPES_LOCK_ID,
@@ -362,6 +353,17 @@ export async function runSchemaRemoveType(
       throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
     }
     if (removal.removed) {
+      // Only emit the advisory orphan-count warning once a removable custom
+      // definition was actually removed; a no-op/unknown removal would otherwise
+      // surface a misleading items_using_type:* warning. The count is
+      // non-blocking and reuses the already-loaded settings (no disk re-read).
+      const removedName = (removal.definition?.name ?? name ?? "").trim();
+      if (removedName.length > 0) {
+        const usingType = await countItemsUsingType(pmRoot, settings, removedName);
+        if (usingType > 0) {
+          warnings.push(`items_using_type:${usingType}`);
+        }
+      }
       // writeFileAtomic writes to a temp file then renames, so a failure leaves
       // the existing types.json untouched; no manual rollback is needed.
       await writeFileAtomic(typesPath, serializeItemTypesFile(removal.file));
@@ -485,15 +487,6 @@ export async function runSchemaRemoveStatus(
   const author = toAuthor(options.author, settings.author_default);
   const governance = resolveGovernanceKnobs(settings);
 
-  // Count items using this status BEFORE the lock — advisory and non-blocking.
-  const normalizedId = normalizeStatusToken(id);
-  if (normalizedId.length > 0 && !BUILTIN_STATUS_IDS.has(normalizedId)) {
-    const usingStatus = await countItemsUsingStatus(pmRoot, normalizedId);
-    if (usingStatus > 0) {
-      warnings.push(`items_using_status:${usingStatus}`);
-    }
-  }
-
   const releaseLock = await acquireLock(
     pmRoot,
     SCHEMA_STATUSES_LOCK_ID,
@@ -517,6 +510,17 @@ export async function runSchemaRemoveStatus(
       throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
     }
     if (removal.removed) {
+      // Only emit the advisory orphan-count warning once a removable custom
+      // status was actually removed; a no-op/unknown removal would otherwise
+      // surface a misleading items_using_status:* warning. The count reuses the
+      // already-loaded settings (no disk re-read) and is non-blocking.
+      const removedId = normalizeStatusToken(removal.definition?.id ?? id);
+      if (removedId.length > 0 && !BUILTIN_STATUS_IDS.has(removedId)) {
+        const usingStatus = await countItemsUsingStatus(pmRoot, settings, removedId);
+        if (usingStatus > 0) {
+          warnings.push(`items_using_status:${usingStatus}`);
+        }
+      }
       await writeFileAtomic(statusesPath, serializeStatusDefsFile(removal.file));
       warnings.push(
         ...(await runActiveOnWriteHooks({

@@ -549,8 +549,9 @@ function normalizeGovernanceCloseValidationDefault(value: string | undefined): G
   );
 }
 
-function normalizeGovernanceWorkflowEnforcement(value: string | undefined): GovernanceWorkflowEnforcement {
-  const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
+function normalizeGovernanceWorkflowEnforcement(value: unknown): GovernanceWorkflowEnforcement {
+  const normalized =
+    typeof value === "string" ? value.trim().toLowerCase().replaceAll("-", "_") : undefined;
   if (normalized === "off" || normalized === "warn" || normalized === "strict") {
     return normalized;
   }
@@ -1665,10 +1666,28 @@ export async function runConfig(
   }
 
   if (key === "governance_create_default_type") {
-    const rawType = typeof options.policy === "string" ? options.policy.trim() : "";
+    const policyProvided = typeof options.policy === "string";
+    const rawType = policyProvided ? options.policy!.trim() : "";
+    // An explicit empty value clears the setting back to "unset" (matching how
+    // get/export expose unset as ""). Without this clear path there is no CLI
+    // route back from a set value to the governance default.
+    if (policyProvided && rawType.length === 0) {
+      const changed = settings.governance.create_default_type !== undefined;
+      delete settings.governance.create_default_type;
+      if (changed) {
+        await writeSettings(target.pmRoot, settings, "config:set:governance_create_default_type");
+      }
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.governance.create_default_type ?? "",
+        settings_path: target.settingsPath,
+        changed,
+      }, warnings);
+    }
     if (rawType.length === 0) {
       throw new PmCliError(
-        "Config set governance-create-default-type requires a non-empty item type value",
+        'Config set governance-create-default-type requires an item type value (or an empty value "" to clear it)',
         EXIT_CODE.USAGE,
       );
     }

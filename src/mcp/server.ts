@@ -715,12 +715,19 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
         const roleSource = args.role ?? options.role;
         const roles = roleSource === undefined ? undefined : readStringArray(roleSource);
         const orderSource = args.order ?? options.order;
-        const order =
-          typeof orderSource === "number" && Number.isFinite(orderSource)
-            ? orderSource
-            : typeof orderSource === "string" && orderSource.trim().length > 0
-              ? Number.parseInt(orderSource, 10)
-              : undefined;
+        let order: number | undefined;
+        if (typeof orderSource === "number") {
+          if (!Number.isFinite(orderSource)) {
+            throw new PmCliError("schema add-status order must be a finite integer.", 64);
+          }
+          order = Math.trunc(orderSource);
+        } else if (typeof orderSource === "string" && orderSource.trim().length > 0) {
+          const parsed = Number(orderSource);
+          if (!Number.isFinite(parsed)) {
+            throw new PmCliError("schema add-status order must be a finite integer.", 64);
+          }
+          order = Math.trunc(parsed);
+        }
         return runSchemaAddStatus(
           schemaName,
           {

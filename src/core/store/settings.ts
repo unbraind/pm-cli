@@ -55,7 +55,8 @@ function withGovernanceExtras(
   base: Partial<GovernanceSettings> & { preset: GovernancePreset },
   governance: GovernanceSettings,
 ): Partial<GovernanceSettings> & { preset: GovernancePreset } {
-  const createDefaultType = governance.create_default_type?.trim();
+  const createDefaultType =
+    typeof governance.create_default_type === "string" ? governance.create_default_type.trim() : undefined;
   if (createDefaultType && createDefaultType.length > 0) {
     base.create_default_type = createDefaultType;
   }
@@ -97,7 +98,8 @@ function normalizeGovernanceForPersist(governance: GovernanceSettings): Partial<
 function resolveGovernanceExtras(
   rawGovernance: Partial<GovernanceSettings>,
 ): Pick<GovernanceSettings, "create_default_type" | "workflow_enforcement"> {
-  const createDefaultType = rawGovernance.create_default_type?.trim();
+  const createDefaultType =
+    typeof rawGovernance.create_default_type === "string" ? rawGovernance.create_default_type.trim() : undefined;
   return {
     create_default_type: createDefaultType && createDefaultType.length > 0 ? createDefaultType : undefined,
     workflow_enforcement:

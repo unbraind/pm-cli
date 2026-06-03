@@ -151,6 +151,15 @@ describe("resolveTypeWorkflows (pm-f4r1)", () => {
     expect(normalizeStatusToken(" In-Progress ")).toBe("in_progress");
     expect(normalizeStatusToken(42)).toBe("");
   });
+
+  it("keeps an explicit empty allowed_transitions array as a deny-all rule (not unrestricted)", () => {
+    const resolved = resolveTypeWorkflows({
+      type_workflows: [{ type: "Story", allowed_transitions: [] }],
+    });
+    // An explicit empty array is a deliberate DENY-ALL rule and MUST survive
+    // normalization (a missing entry would leave the type unrestricted instead).
+    expect(resolved).toEqual([{ type: "story", allowed_transitions: [] }]);
+  });
 });
 
 describe("evaluateTransition (pm-f4r1)", () => {
@@ -251,6 +260,41 @@ describe("evaluateTransition (pm-f4r1)", () => {
       statusRegistry: builtInRegistry,
     });
     expect(result.allowed).toBe(false);
+    expect(result.hasRule).toBe(true);
+  });
+
+  it("denies every cross-status transition for an explicit empty (deny-all) rule but allows a no-op", () => {
+    const denyAll = resolveTypeWorkflows({
+      type_workflows: [{ type: "Story", allowed_transitions: [] }],
+    });
+    const denied = evaluateTransition({
+      typeName: "Story",
+      fromStatus: "open",
+      toStatus: "in_progress",
+      typeWorkflows: denyAll,
+      statusRegistry: builtInRegistry,
+    });
+    expect(denied).toEqual({ allowed: false, hasRule: true, allowedTransitions: [] });
+    const noop = evaluateTransition({
+      typeName: "Story",
+      fromStatus: "open",
+      toStatus: "open",
+      typeWorkflows: denyAll,
+      statusRegistry: builtInRegistry,
+    });
+    expect(noop).toEqual({ allowed: true, hasRule: true, allowedTransitions: [] });
+  });
+
+  it("falls back to raw token resolution when the status registry lacks an alias map", () => {
+    const result = evaluateTransition({
+      typeName: "Story",
+      fromStatus: "open",
+      toStatus: "in_progress",
+      typeWorkflows,
+      // A degenerate registry missing alias_to_id must not crash resolveStatusId.
+      statusRegistry: {} as unknown as { alias_to_id: Map<string, string> },
+    });
+    expect(result.allowed).toBe(true);
     expect(result.hasRule).toBe(true);
   });
 });

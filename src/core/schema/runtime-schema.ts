@@ -183,15 +183,22 @@ function normalizeTypeWorkflowDefinitions(
   }
   // Keep the raw (trimmed) type name so it round-trips verbatim; comparison is
   // case-insensitive downstream (resolveTypeWorkflows lower-cases). from/to
-  // status tokens use the same normalization rules as runtime statuses.
+  // status tokens use the same normalization rules as runtime statuses. An
+  // explicit empty `allowed_transitions` array is a deliberate DENY-ALL rule and
+  // MUST survive normalization (it must NOT collapse to "no entry", which would
+  // leave the type unrestricted); only entries whose `allowed_transitions` is not
+  // an array are dropped.
   const byTypeKey = new Map<string, TypeWorkflowDefinition>();
   for (const entry of workflows) {
     const rawType = typeof entry?.type === "string" ? entry.type.trim() : "";
     if (rawType.length === 0) {
       continue;
     }
+    if (!Array.isArray(entry?.allowed_transitions)) {
+      continue;
+    }
     const typeKey = rawType.toLowerCase();
-    const pairs = Array.isArray(entry?.allowed_transitions) ? entry.allowed_transitions : [];
+    const pairs = entry.allowed_transitions;
     const existing = byTypeKey.get(typeKey)?.allowed_transitions ?? [];
     for (const pair of pairs) {
       if (!Array.isArray(pair) || pair.length !== 2) {
@@ -209,9 +216,7 @@ function normalizeTypeWorkflowDefinitions(
     }
     byTypeKey.set(typeKey, { type: rawType, allowed_transitions: existing });
   }
-  const normalized = [...byTypeKey.values()]
-    .filter((entry) => entry.allowed_transitions.length > 0)
-    .sort((left, right) => left.type.localeCompare(right.type));
+  const normalized = [...byTypeKey.values()].sort((left, right) => left.type.localeCompare(right.type));
   return normalized.length > 0 ? normalized : undefined;
 }
 
