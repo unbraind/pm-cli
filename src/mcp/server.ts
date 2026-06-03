@@ -50,8 +50,11 @@ import {
   runNotes,
   runPlan,
   runRelease,
+  runSchemaAddStatus,
   runSchemaAddType,
   runSchemaList,
+  runSchemaRemoveStatus,
+  runSchemaRemoveType,
   runSchemaShow,
   runSearch,
   runStats,
@@ -141,18 +144,32 @@ const TOOLS: ToolDefinition[] = [
         force: { type: "boolean", description: "Force ownership/terminal-state override when supported." },
         subcommand: {
           type: "string",
-          enum: ["list", "show", "add-type"],
+          enum: ["list", "show", "add-type", "remove-type", "add-status", "remove-status"],
           description: "Schema subcommand when action=schema.",
         },
-        name: { type: "string", description: "Item type name for action=schema show/add-type." },
-        description: { type: "string", description: "Custom item type description for action=schema add-type." },
+        name: {
+          type: "string",
+          description:
+            "Item type name for action=schema show/add-type/remove-type, or status id for add-status/remove-status.",
+        },
+        description: {
+          type: "string",
+          description: "Custom item type or status description for action=schema add-type/add-status.",
+        },
         defaultStatus: { type: "string", description: "Default status for action=schema add-type." },
         folder: { type: "string", description: "Storage folder for action=schema add-type." },
         alias: {
           type: "array",
           items: { type: "string" },
-          description: "Aliases for action=schema add-type.",
+          description: "Aliases for action=schema add-type/add-status.",
         },
+        role: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Lifecycle roles for action=schema add-status: draft, active, blocked, terminal, terminal_done, terminal_canceled, default_open, default_close, default_cancel.",
+        },
+        order: { type: "number", description: "Display/sort order for action=schema add-status." },
         options: { type: "object", description: "Underlying pm command options using camelCase keys." },
         fullChangedFields: {
           type: "boolean",
@@ -680,19 +697,61 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       // so accept them from args first and fall back to options for parity.
       const subcommand = readString(args, "subcommand") ?? readRequiredString(options, "subcommand");
       const normalizedSubcommand = subcommand.trim().toLowerCase();
+      const schemaName = readString(args, "name") ?? readString(options, "name");
+      const schemaAuthor = readString(args, "author") ?? readString(options, "author");
+      const schemaForce = args.force === true || options.force === true;
       if (normalizedSubcommand === "list") {
         return runSchemaList(global);
       }
       if (normalizedSubcommand === "show") {
-        return runSchemaShow(readString(args, "name") ?? readString(options, "name"), global);
+        return runSchemaShow(schemaName, global);
       }
-      if (normalizedSubcommand !== "add-type") {
-        throw new PmCliError(`Unknown pm schema subcommand "${subcommand}". Allowed: add-type, list, show`, 64);
+      if (normalizedSubcommand === "remove-type") {
+        return runSchemaRemoveType(schemaName, { author: schemaAuthor, force: schemaForce }, global);
       }
       const aliasSource = args.alias ?? options.alias;
       const aliases = aliasSource === undefined ? undefined : readStringArray(aliasSource);
+      if (normalizedSubcommand === "add-status") {
+        const roleSource = args.role ?? options.role;
+        const roles = roleSource === undefined ? undefined : readStringArray(roleSource);
+        const orderSource = args.order ?? options.order;
+        let order: number | undefined;
+        if (typeof orderSource === "number") {
+          if (!Number.isInteger(orderSource)) {
+            throw new PmCliError("schema add-status order must be a finite integer.", 64);
+          }
+          order = orderSource;
+        } else if (typeof orderSource === "string" && orderSource.trim().length > 0) {
+          const parsed = Number(orderSource);
+          if (!Number.isInteger(parsed)) {
+            throw new PmCliError("schema add-status order must be a finite integer.", 64);
+          }
+          order = parsed;
+        }
+        return runSchemaAddStatus(
+          schemaName,
+          {
+            role: roles,
+            alias: aliases,
+            description: readString(args, "description") ?? readString(options, "description"),
+            order,
+            author: schemaAuthor,
+            force: schemaForce,
+          },
+          global,
+        );
+      }
+      if (normalizedSubcommand === "remove-status") {
+        return runSchemaRemoveStatus(schemaName, { author: schemaAuthor, force: schemaForce }, global);
+      }
+      if (normalizedSubcommand !== "add-type") {
+        throw new PmCliError(
+          `Unknown pm schema subcommand "${subcommand}". Allowed: add-type, remove-type, add-status, remove-status, list, show`,
+          64,
+        );
+      }
       return runSchemaAddType(
-        readString(args, "name") ?? readString(options, "name"),
+        schemaName,
         {
           description: readString(args, "description") ?? readString(options, "description"),
           defaultStatus:
@@ -702,8 +761,8 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
             readString(options, "default_status"),
           folder: readString(args, "folder") ?? readString(options, "folder"),
           alias: aliases,
-          author: readString(args, "author") ?? readString(options, "author"),
-          force: args.force === true || options.force === true,
+          author: schemaAuthor,
+          force: schemaForce,
         },
         global,
       );

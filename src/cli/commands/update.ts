@@ -33,6 +33,12 @@ import {
   type RuntimeFieldRegistry,
   type RuntimeStatusRegistry,
 } from "../../core/schema/runtime-schema.js";
+import {
+  describeAllowedTransitions,
+  evaluateTransition,
+  resolveTypeWorkflows,
+  type NormalizedTypeWorkflow,
+} from "../../core/schema/type-workflows.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -64,6 +70,7 @@ import {
 import type {
   Comment,
   Dependency,
+  GovernanceWorkflowEnforcement,
   ItemFormat,
   ItemFrontMatter,
   ItemStatus,
@@ -681,6 +688,45 @@ function parseStatus(value: string, statusRegistry: RuntimeStatusRegistry): Item
   return normalized;
 }
 
+/**
+ * Enforce per-type allowed-transition rules (governance.workflow_enforcement).
+ * `off` (default) or an unrestricted type is a no-op. `strict` throws on a
+ * disallowed transition; `warn` returns a warning string surfaced on the
+ * update result. The target status is the raw `--status` value (resolved
+ * case-insensitively through the registry inside evaluateTransition).
+ */
+function enforceTypeWorkflowTransition(params: {
+  enforcement: GovernanceWorkflowEnforcement;
+  typeWorkflows: NormalizedTypeWorkflow[];
+  statusRegistry: RuntimeStatusRegistry;
+  typeName: string;
+  fromStatus: string;
+  toStatus: string;
+}): string | undefined {
+  if (params.enforcement === "off" || params.typeWorkflows.length === 0) {
+    return undefined;
+  }
+  const result = evaluateTransition({
+    typeName: params.typeName,
+    fromStatus: params.fromStatus,
+    toStatus: params.toStatus,
+    typeWorkflows: params.typeWorkflows,
+    statusRegistry: params.statusRegistry,
+  });
+  if (!result.hasRule || result.allowed) {
+    return undefined;
+  }
+  const normalizedFrom = normalizeStatusInput(params.fromStatus, params.statusRegistry) ?? params.fromStatus;
+  const normalizedTo = normalizeStatusInput(params.toStatus, params.statusRegistry) ?? params.toStatus;
+  const message =
+    `Disallowed transition for type "${params.typeName}": ${normalizedFrom} -> ${normalizedTo}. ` +
+    `Allowed transitions: ${describeAllowedTransitions(result.allowedTransitions)}.`;
+  if (params.enforcement === "strict") {
+    throw new PmCliError(message, EXIT_CODE.USAGE);
+  }
+  return `workflow_transition_not_allowed: ${message}`;
+}
+
 interface ParsedDependencyUpdates {
   additions: Dependency[];
 }
@@ -1085,6 +1131,10 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const extensionRegistrations = getActiveExtensionRegistrations();
   const extensionFieldNames = collectRegisteredItemFieldNames(extensionRegistrations);
   const typeRegistry = resolveItemTypeRegistry(settings, extensionRegistrations);
+  // Per-type allowed-transition enforcement is read RAW (not preset-derived) so
+  // existing projects are unaffected when unset; defaults to "off".
+  const workflowEnforcement: GovernanceWorkflowEnforcement = settings.governance.workflow_enforcement ?? "off";
+  const typeWorkflows = workflowEnforcement === "off" ? [] : resolveTypeWorkflows(settings.schema);
   const parentReferencePolicy = settings.validation.parent_reference;
   const sprintReleasePolicy = settings.validation.sprint_release_format;
   const unsetTargets = parseUpdateUnsetTargets(options.unset, runtimeFieldRegistry, extensionFieldNames);
@@ -1325,6 +1375,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   const testUpdates = parseTests(options.test);
   const docUpdates = parseDocs(options.doc);
   const parentReferenceWarnings: string[] = [];
+  const workflowTransitionWarnings: string[] = [];
   let resolvedParentValue: string | undefined;
   if (options.parent !== undefined && !unsetTargets.frontMatterKeys.has("parent")) {
     resolvedParentValue = normalizeParentReferenceValue(options.parent);
@@ -1448,6 +1499,45 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     };
   }
 
+  // Per-type allowed-transition enforcement runs BEFORE the close-reroute so a
+  // transition toward the close status is gated too. We read the item's current
+  // status + type once (only when enforcement is active and --status is set) so
+  // the default `off` path adds zero extra work. A `strict` violation throws; a
+  // `warn` violation surfaces a warning on the result.
+  if (workflowEnforcement !== "off" && typeWorkflows.length > 0 && fieldFlags.status && options.status !== undefined) {
+    const located = await locateItem(
+      pmRoot,
+      id,
+      settings.id_prefix,
+      settings.item_format,
+      typeRegistry.type_to_folder,
+    );
+    if (!located) {
+      throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeRegistry.type_to_folder);
+    }
+    const { document } = await readLocatedItem(located, { schema: settings.schema });
+    // When this update also changes --type, gate the transition against the
+    // EFFECTIVE (post-update) type, so a combined --type/--status change can't
+    // bypass a target-type rule (or be wrongly blocked by the pre-update type's
+    // rule that will no longer apply). Falls back to the raw value when --type is
+    // unresolved; the later type resolution surfaces an invalid-type error.
+    const effectiveType =
+      options.type !== undefined
+        ? (resolveTypeName(options.type, typeRegistry) ?? options.type)
+        : (document.metadata?.type ?? "");
+    const warning = enforceTypeWorkflowTransition({
+      enforcement: workflowEnforcement,
+      typeWorkflows,
+      statusRegistry,
+      typeName: effectiveType,
+      fromStatus: document.metadata?.status ?? "",
+      toStatus: options.status ?? "",
+    });
+    if (warning) {
+      workflowTransitionWarnings.push(warning);
+    }
+  }
+
   // `pm update --status <close_status>` always routes to the auditable close
   // workflow so agents are never blocked by close-through-update errors. Any
   // other field updates in the same call are applied first, then the item is
@@ -1489,7 +1579,12 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         global,
       );
 
-      const warnings = [...routeWarnings, ...closeResult.warnings, "auto_routed_from_update_to_close"];
+      const warnings = [
+        ...workflowTransitionWarnings,
+        ...routeWarnings,
+        ...closeResult.warnings,
+        "auto_routed_from_update_to_close",
+      ];
       if (reasonDefaulted) {
         warnings.push("close_reason_defaulted");
       }
@@ -1953,7 +2048,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
   return {
     item: toItemRecord(result.item),
     changed_fields: result.changedFields,
-    warnings: [...parentReferenceWarnings, ...result.warnings],
+    warnings: [...workflowTransitionWarnings, ...parentReferenceWarnings, ...result.warnings],
     ...(options.allowAuditUpdate === true || options.allowAuditDepUpdate === true ? { audit_update: true } : {}),
   };
 }

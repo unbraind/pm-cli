@@ -44,6 +44,35 @@ function addHiddenOption(command: Command, flags: string, description: string, r
   command.addOption(option);
 }
 
+/**
+ * Parse the `--order` value for `pm schema add-status`. Accepts a value that is
+ * already a number or a numeric string; throws a usage error when the flag was
+ * supplied but does not parse to a finite integer (rather than silently dropping
+ * it). Returns `undefined` only when the flag was genuinely not provided.
+ */
+function parseSchemaOrderOption(raw: unknown): number | undefined {
+  if (raw === undefined || raw === null) {
+    return undefined;
+  }
+  if (typeof raw === "number") {
+    if (!Number.isInteger(raw)) {
+      throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
+    }
+    return raw;
+  }
+  if (typeof raw === "string") {
+    if (raw.trim().length === 0) {
+      return undefined;
+    }
+    const parsed = Number(raw);
+    if (!Number.isInteger(parsed)) {
+      throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
+    }
+    return parsed;
+  }
+  throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
+}
+
 function registerCommanderOptionContracts(command: Command, contracts: CommanderOptionRegistrationContract[]): void {
   for (const contract of contracts) {
     if (contract.required) {
@@ -789,12 +818,14 @@ export function registerMutationCommands(program: Command): void {
 
   const schemaCommand = program
     .command("schema")
-    .argument("[subcommand]", "Schema subcommand: list, show, add-type, or a custom item type name shorthand")
-    .argument("[name]", "Item type name for show/add-type")
-    .option("--description <text>", "Human description for the custom item type")
+    .argument("[subcommand]", "Schema subcommand: list, show, add-type, remove-type, add-status, remove-status, or a custom item type name shorthand")
+    .argument("[name]", "Item type name (add-type/remove-type/show) or status id (add-status/remove-status)")
+    .option("--description <text>", "Human description for the custom item type or status")
     .option("--default-status <status>", "Default status hint recorded for the custom item type")
     .option("--folder <dir>", "Storage folder for items of this custom type")
-    .option("--alias <name>", "Alias for the custom type (repeatable, csv-friendly)", collect)
+    .option("--alias <name>", "Alias for the custom type or status (repeatable, csv-friendly)", collect)
+    .option("--role <value>", "Lifecycle role for a custom status (repeatable): draft, active, blocked, terminal, terminal_done, terminal_canceled, default_open, default_close, default_cancel", collect)
+    .option("--order <n>", "Display/sort order for a custom status")
     .option("--author <value>", "Mutation author")
     .option("--force", "Force ownership/lock override")
     .description("Inspect and manage config-driven runtime schema.");
@@ -811,9 +842,15 @@ export function registerMutationCommands(program: Command): void {
       const startedAt = Date.now();
       const {
         runSchemaAddType,
+        runSchemaRemoveType,
+        runSchemaAddStatus,
+        runSchemaRemoveStatus,
         runSchemaList,
         runSchemaShow,
         formatSchemaAddTypeHuman,
+        formatSchemaRemoveTypeHuman,
+        formatSchemaAddStatusHuman,
+        formatSchemaRemoveStatusHuman,
         formatSchemaListHuman,
         formatSchemaShowHuman,
         SCHEMA_SUBCOMMANDS,
@@ -830,7 +867,9 @@ export function registerMutationCommands(program: Command): void {
               "pm schema list",
               "pm schema show Task",
               'pm schema add-type Spike --description "Time-boxed investigation" --default-status open',
-              'pm schema add-type Spike --alias spike --alias research',
+              "pm schema remove-type Spike",
+              "pm schema add-status review --role active --alias in_review",
+              "pm schema remove-status review",
             ],
           },
         );
@@ -841,12 +880,19 @@ export function registerMutationCommands(program: Command): void {
           : Array.isArray(options.alias)
             ? (options.alias as string[])
             : undefined;
+      const roles =
+        typeof options.role === "string"
+          ? [options.role]
+          : Array.isArray(options.role)
+            ? (options.role as string[])
+            : undefined;
       const defaultStatus =
         typeof options.defaultStatus === "string"
           ? options.defaultStatus
           : typeof options.default_status === "string"
             ? (options.default_status as string)
             : undefined;
+      const order = parseSchemaOrderOption(options.order);
       if (!SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number]) && typeName === undefined) {
         typeName = subcommand;
         normalizedSubcommand = "add-type";
@@ -858,23 +904,42 @@ export function registerMutationCommands(program: Command): void {
           { code: "unknown_subcommand" },
         );
       }
+      const author = typeof options.author === "string" ? options.author : undefined;
+      const force = Boolean(options.force);
       const result =
         normalizedSubcommand === "list"
           ? await runSchemaList(globalOptions)
           : normalizedSubcommand === "show"
             ? await runSchemaShow(typeName, globalOptions)
-            : await runSchemaAddType(
-                typeName,
-                {
-                  description: typeof options.description === "string" ? options.description : undefined,
-                  defaultStatus,
-                  folder: typeof options.folder === "string" ? options.folder : undefined,
-                  alias: aliases,
-                  author: typeof options.author === "string" ? options.author : undefined,
-                  force: Boolean(options.force),
-                },
-                globalOptions,
-              );
+            : normalizedSubcommand === "remove-type"
+              ? await runSchemaRemoveType(typeName, { author, force }, globalOptions)
+              : normalizedSubcommand === "add-status"
+                ? await runSchemaAddStatus(
+                    typeName,
+                    {
+                      role: roles,
+                      alias: aliases,
+                      description: typeof options.description === "string" ? options.description : undefined,
+                      order,
+                      author,
+                      force,
+                    },
+                    globalOptions,
+                  )
+                : normalizedSubcommand === "remove-status"
+                  ? await runSchemaRemoveStatus(typeName, { author, force }, globalOptions)
+                  : await runSchemaAddType(
+                      typeName,
+                      {
+                        description: typeof options.description === "string" ? options.description : undefined,
+                        defaultStatus,
+                        folder: typeof options.folder === "string" ? options.folder : undefined,
+                        alias: aliases,
+                        author,
+                        force,
+                      },
+                      globalOptions,
+                    );
       // Schema inspection and type registration do not touch item content, so search caches stay valid.
       if (globalOptions.json === true || globalOptions.defaultOutputFormat === "json") {
         printResult(result, globalOptions);
@@ -883,13 +948,19 @@ export function registerMutationCommands(program: Command): void {
           writeStdout(`${formatSchemaListHuman(result)}\n`);
         } else if (result.action === "show") {
           writeStdout(`${formatSchemaShowHuman(result)}\n`);
+        } else if (result.action === "remove-type") {
+          writeStdout(`${formatSchemaRemoveTypeHuman(result)}\n`);
+        } else if (result.action === "add-status") {
+          writeStdout(`${formatSchemaAddStatusHuman(result)}\n`);
+        } else if (result.action === "remove-status") {
+          writeStdout(`${formatSchemaRemoveStatusHuman(result)}\n`);
         } else {
           writeStdout(`${formatSchemaAddTypeHuman(result)}\n`);
         }
         // Surface extension on-write hook diagnostics so policy/enforcement
         // warnings are visible without forcing --json.
-        if (result.action === "add-type" && result.warnings.length > 0) {
-          printError(`schema add-type warnings: ${formatHookWarnings(result.warnings)}`);
+        if (result.action !== "list" && result.action !== "show" && result.warnings.length > 0) {
+          printError(`schema ${result.action} warnings: ${formatHookWarnings(result.warnings)}`);
         }
       }
       if (globalOptions.profile) {

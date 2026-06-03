@@ -2,13 +2,21 @@ id: pm-jpwo
 title: governance.create_default_type is not settable via pm config set
 description: "create_default_type is documented and used at create time but absent from CONFIG_KEY_VALUES, so agents cannot set it without hand-editing settings.json."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:config",living-map
 created_at: "2026-05-31T19:45:40.031Z"
-updated_at: "2026-05-31T19:45:40.031Z"
+updated_at: "2026-06-03T22:33:43.464Z"
 author: maintainer-agent
 acceptance_criteria: Add governance_create_default_type (+kebab alias) to CONFIG_KEY_VALUES/ALIASES/SUMMARIES/readConfigValue and the set dispatch; config-command test.
 value: "create_default_type is documented and used at create time but absent from CONFIG_KEY_VALUES, so agents cannot set it without hand-editing settings.json."
 parent: pm-8jdc
+resolution: Wired governance_create_default_type (+ kebab alias) through every config.ts site and patched normalizeGovernanceForPersist + resolveGovernanceKnobs to carry create_default_type across all presets (it was previously dropped on read/write for non-custom presets).
+expected_result: pm config set governance-create-default-type <Type> persists and pm create defaults to it.
+actual_result: "Verified round-trip under preset=default: set Issue -> survives write -> pm create defaults to Issue -> config get returns Issue; invalid type rejected. Full coverage gate green (2195 tests, 100%)."
+comments[3]{created_at,author,text}:
+  "2026-06-03T14:18:07.950Z",claude-code-agent,"Orchestrator brief (claude-code-agent): grouped with pm-f4r1 into the config-and-workflows sub-agent. KEY TRAP confirmed by orchestrator: settings.ts normalizeGovernanceForPersist (line ~50) returns only {preset} for non-custom presets, so settings.governance.create_default_type is DROPPED on write unless preset=custom. The fix must (a) wire governance_create_default_type through all config.ts sites mirroring governance_create_mode_default, writing settings.governance.create_default_type, AND (b) patch normalizeGovernanceForPersist to always carry create_default_type when defined. create_default_type is already validated (settings-validator:270) and read raw by create.ts:1227, so verify the full set->write->read round-trip."
+  "2026-06-03T14:46:34.171Z",claude-code-agent,"Implemented: added governance-create-default-type (+ kebab/snake alias) to config command machinery (CONFIG_KEY_VALUES, ConfigKey union, aliases, summaries, normalizeKey, readConfigValue projection+dispatch, export, get, set dispatch, positional-value POLICY_KEYS). Set-dispatch validates the value resolves to a known item type via resolveTypeName + buildInvalidTypeError did-you-mean; rejects unknown types. KEY FIX (persistence trap): normalizeGovernanceForPersist previously returned only {preset} for non-custom presets, dropping the field on write; AND resolveGovernanceKnobs rebuilt governance without it on BOTH read (mergeSettings) and write (serializeSettings). Fixed by carrying create_default_type (and workflow_enforcement) through resolveGovernanceKnobs in both preset branches + a new withGovernanceExtras helper in normalizeGovernanceForPersist that always carries them when defined regardless of preset. Verified full round-trip end-to-end: config set governance-create-default-type Issue -> write -> set preset=default (non-custom) -> re-read survives -> pm create with no --type defaults to Issue -> config get returns Issue. Tests in config-command.spec.ts (round-trip incl non-custom-preset survival + invalid-type rejection)."
+  "2026-06-03T22:33:43.464Z",claude-code-agent,"PR #106 review remediation: governance-create-default-type is now clearable. get/export expose unset as empty, but the setter previously rejected empty after trim, leaving no CLI path back to unset. An explicit empty value now deletes settings.governance.create_default_type and writes (idempotent no-op when already unset). Round-trip set -> clear -> get(unset) covered in config-command.spec.ts. Also added typeof-string guards before .trim() on the create_default_type reads in settings.ts (withGovernanceExtras + resolveGovernanceExtras) and on normalizeGovernanceWorkflowEnforcement in config.ts (value typed unknown) so corrupted non-string settings cannot crash. Full coverage gate 100%, static gate green."
+close_reason: Delivered governance-create-default-type via pm config set with full set->write->read round-trip (incl. non-custom-preset persistence fix in normalizeGovernanceForPersist + resolveGovernanceKnobs). Verified end-to-end; full coverage gate green. Part of schema-customization-completion PR (plan pm-z5nb).
 body: ""

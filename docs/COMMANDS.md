@@ -30,7 +30,7 @@ Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
 | Links | `files`, `docs`, `test`, `deps` | connect items to artifacts, tests, and relationships |
 | Verification | `test`, `test-all`, `test-runs`, `validate`, `gc` | run linked tests and repository checks |
 | History | `history`, `history-redact`, `history-repair`, `activity`, `restore`, `stats` | inspect, redact, re-anchor, and recover item state |
-| Schema | `schema add-type` | register config-driven custom item types into `.agents/pm/schema/types.json` |
+| Schema | `schema add-type` / `remove-type` / `add-status` / `remove-status` | manage config-driven custom item types (`.agents/pm/schema/types.json`) and statuses (`.agents/pm/schema/statuses.json`) |
 | Calendar | `calendar`, `cal` | project deadlines, reminders, and events |
 | Packages | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups | install, upgrade, manage, and run package-backed extension commands |
 | Machines | `contracts`, `help`, optional `guide`/`completion` | command contracts plus optional guide-shell docs routing and shell helpers |
@@ -98,7 +98,10 @@ pm create "Fix login bug" --type Issue --priority high
 ```
 
 `pm create` defaults `--type` to `settings.governance.create_default_type` (falling back to `Task`).
+Set it with `pm config project set governance-create-default-type <Type>` (must resolve to a known item type).
 Pass `--create-mode strict` to require an explicit `--type` flag for governance-controlled flows.
+`pm update --status` can be constrained per item type via `schema.type_workflows` plus
+`pm config project set governance-workflow-enforcement <off|warn|strict>` (see CONFIGURATION.md → Per-Type Workflows).
 Priority accepts either `0..4` or the equivalent names `critical`, `high`, `medium`, `low`, and `minimal`.
 
 Minimal progressive create with explicit fields:
@@ -284,21 +287,27 @@ History is append-only. Restore appends a new restore event instead of rewriting
 
 Tracker references: [pm-qq69](../.agents/pm/features/pm-qq69.toon), [pm-1lkm](../.agents/pm/features/pm-1lkm.toon).
 
-`pm schema` inspects and manages the runtime item-type registry. `list` and `show` include built-in, custom, and extension-provided types so agents can confirm project context before creating work. `add-type` registers a config-driven custom item type so agents can use `pm create <Type> "..."` for project-specific work categories without editing settings by hand. Custom definitions are merged from `.agents/pm/schema/types.json` (shape: `{ "definitions": [ItemTypeDefinition...] }`).
+`pm schema` inspects and manages the runtime item-type registry. `list` and `show` include built-in, custom, and extension-provided types so agents can confirm project context before creating work. `add-type` registers a config-driven custom item type so agents can use `pm create <Type> "..."` for project-specific work categories without editing settings by hand. Custom definitions are merged from `.agents/pm/schema/types.json` (shape: `{ "definitions": [ItemTypeDefinition...] }`). Custom statuses are managed with `add-status`/`remove-status` and persist in `.agents/pm/schema/statuses.json` (shape: `{ "statuses": [RuntimeStatusDefinition...] }`).
 
 ```bash
 pm schema list
 pm schema show Task
 pm schema add-type Spike --description "Time-boxed investigation" --default-status open
 pm schema add-type Spike --alias spike --alias research --folder spikes
+pm schema remove-type Spike
+pm schema add-status review --role active --alias in_review --description "Awaiting review" --order 25
+pm schema remove-status review
 pm create Spike "Investigate retry backoff"
 ```
 
-- `pm schema list --json` returns `{ builtin, custom, extension, counts }` for compact machine parsing.
+- `pm schema list --json` returns `{ builtin, custom, extension, counts, statuses: { builtin, custom, counts } }` for compact machine parsing. Each status entry includes `id`, `source` (`builtin`/`custom`), `roles`, and `aliases`.
 - `pm schema show <Type> --json` returns the resolved definition, including folder, aliases, default status, required create options, type options, command-option policies, and extension provenance when applicable.
-- The command is an idempotent UPSERT keyed on the type name (case-insensitive); re-running it merges aliases and overrides supplied fields while preserving everything else.
-- Built-in types (Chore, Decision, Epic, Event, Feature, Issue, Meeting, Milestone, Plan, Reminder, Task) are reserved and cannot be redefined.
-- Flags: `--description <text>`, `--default-status <status>`, `--folder <dir>`, `--alias <name>` (repeatable), plus `--author`/`--force` governance flags. Add `--json` for the machine envelope.
+- `add-type` is an idempotent UPSERT keyed on the type name (case-insensitive); re-running it merges aliases and overrides supplied fields while preserving everything else.
+- `remove-type <Name>` removes a custom type definition (case-insensitive). Built-in types are refused. It WARNS (non-blocking) with `items_using_type:<N>` when items of that type still exist, then removes the definition.
+- `add-status <id>` writes a custom lifecycle status (idempotent UPSERT keyed on the normalized id; re-adding sets `replaced: true`). Roles are validated against the runtime status roles: `draft`, `active`, `blocked`, `terminal`, `terminal_done`, `terminal_canceled`, `default_open`, `default_close`, `default_cancel`.
+- `remove-status <id>` removes a custom status. The five built-in default statuses (`open`, `in_progress`, `blocked`, `closed`, `canceled`, plus `draft`) are refused. It WARNS (non-blocking) with `items_using_status:<N>` when items currently use that status.
+- Built-in types (Chore, Decision, Epic, Event, Feature, Issue, Meeting, Milestone, Plan, Reminder, Task) are reserved and cannot be redefined or removed.
+- Flags: `--description <text>`, `--default-status <status>`, `--folder <dir>`, `--alias <name>` (repeatable), `--role <value>` (repeatable; add-status), `--order <n>` (add-status), plus `--author`/`--force` governance flags. Add `--json` for the machine envelope.
 - When `pm create`/`pm update` reject an unknown type, the error now points back here: `To register a custom type, run: pm schema add-type "X" (writes .agents/pm/schema/types.json).`
 
 `pm init --type-preset agile|ops|research` registers common domain types during initialization:

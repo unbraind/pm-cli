@@ -111,6 +111,9 @@ pm release <item-id>
 | Audited history redaction | `pm history-redact <id> --literal "<secret>" --replacement "[redacted]" --dry-run` |
 | Audited history re-anchor | `pm history-repair <id> --dry-run` (clears drift flagged by `pm health`/`pm validate`) |
 | Register custom item type | `pm schema add-type <Name> --description "<text>" --default-status open` (then `pm create <Name> "..."`) |
+| Remove custom item type | `pm schema remove-type <Name>` (warns if items still use it; built-ins refused) |
+| Register custom status | `pm schema add-status <id> --role <active\|terminal\|...> --alias <name> --order <n>` |
+| Remove custom status | `pm schema remove-status <id>` (warns if items use it; built-in statuses refused) |
 | Agent plan create | `pm plan create --title "<scope>" --harness claude-code --scope "<short>" --claim` |
 | Agent plan step update | `pm plan update-step <plan-id> plan-step-001 --step-status in_progress --step-evidence "<short>"` |
 | Agent plan read | `pm plan show <plan-id> --depth brief` (or `--fields id,title,steps_summary`) |
@@ -155,7 +158,8 @@ Use these defaults unless the task requires otherwise:
 - `pm history-redact <id> --dry-run` before rewriting sensitive history payloads, then rerun without `--dry-run` once scope is confirmed.
 - `pm history-repair <id> --dry-run` when `pm health` or `pm validate --check-history-drift` report drifted streams; it re-anchors the hash chain and reconciles with the on-disk item without touching item content. Rerun without `--dry-run` to apply.
 - `pm schema list` and `pm schema show <Type>` before creating custom-domain work; they show built-in, persisted custom, and extension-provided item types without reading schema files by hand.
-- `pm schema add-type <Name>` when `pm create`/`pm update` reject a project-specific type as invalid; it registers the type in `.agents/pm/schema/types.json` so `pm create <Name> "..."` works. Built-in types are reserved; the upsert is idempotent.
+- `pm schema add-type <Name>` when `pm create`/`pm update` reject a project-specific type as invalid; it registers the type in `.agents/pm/schema/types.json` so `pm create <Name> "..."` works. Built-in types are reserved; the upsert is idempotent. `pm schema remove-type <Name>` removes a custom type (warns, non-blocking, if items still use it).
+- `pm schema add-status <id> --role <role>` / `pm schema remove-status <id>` manage custom lifecycle statuses in `.agents/pm/schema/statuses.json`; roles come from the runtime status-role vocabulary, the upsert is idempotent, and built-in default statuses cannot be removed. `pm schema list` now reports statuses (builtin vs custom) alongside types.
 - `pm init --type-preset agile|ops|research` for new projects that should start with domain item types instead of generic tasks only.
 - `pm normalize --dry-run --json` before lifecycle metadata cleanups.
 - `pm health --check-only` when inspecting repository health without refresh side effects.

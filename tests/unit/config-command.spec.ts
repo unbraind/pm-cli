@@ -60,7 +60,7 @@ describe("runConfig", () => {
 
       const result = await runConfig("project", "list", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
       expect(result.changed).toBe(false);
-      expect(result.count).toBe(21);
+      expect(result.count).toBe(23);
       expect(result.keys?.map((entry) => entry.key)).toEqual([
         "definition_of_done",
         "item_format",
@@ -77,6 +77,8 @@ describe("runConfig", () => {
         "governance_ownership_enforcement",
         "governance_create_mode_default",
         "governance_close_validation_default",
+        "governance_create_default_type",
+        "governance_workflow_enforcement",
         "governance_parent_reference_policy",
         "governance_metadata_validation_profile",
         "governance_force_required_for_stale_lock",
@@ -142,6 +144,8 @@ describe("runConfig", () => {
         governance_ownership_enforcement: "strict",
         governance_create_mode_default: "strict",
         governance_close_validation_default: "strict",
+        governance_create_default_type: "",
+        governance_workflow_enforcement: "off",
         governance_parent_reference_policy: "strict_error",
         governance_metadata_validation_profile: "strict",
         governance_force_required_for_stale_lock: "enabled",
@@ -222,6 +226,93 @@ describe("runConfig", () => {
         { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
       );
       expect(getCustomPreset.policy).toBe("custom");
+    });
+  });
+
+  it("round-trips governance-create-default-type and survives a non-custom preset write (pm-jpwo)", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      // Put the project on a non-custom preset first to exercise the persist trap.
+      await runConfig("project", "set", "governance_preset", { policy: "default" }, globalOptions);
+
+      const setResult = await runConfig("project", "set", "governance-create-default-type", { policy: "Issue" }, globalOptions);
+      expect(setResult.key).toBe("governance_create_default_type");
+      expect(setResult.policy).toBe("Issue");
+      expect(setResult.changed).toBe(true);
+
+      // The field must survive the write even though the preset is "default".
+      const reloaded = await readSettings(pmRoot);
+      expect(reloaded.governance.preset).toBe("default");
+      expect(reloaded.governance.create_default_type).toBe("Issue");
+
+      const getResult = await runConfig("project", "get", "governance_create_default_type", {}, globalOptions);
+      expect(getResult.policy).toBe("Issue");
+
+      // An explicit empty value clears the setting back to unset (exposed as "").
+      const clearResult = await runConfig(
+        "project",
+        "set",
+        "governance-create-default-type",
+        { policy: "" },
+        globalOptions,
+      );
+      expect(clearResult.policy).toBe("");
+      expect(clearResult.changed).toBe(true);
+      const afterClear = await readSettings(pmRoot);
+      expect(afterClear.governance.create_default_type).toBeUndefined();
+      const getAfterClear = await runConfig("project", "get", "governance_create_default_type", {}, globalOptions);
+      expect(getAfterClear.policy).toBe("");
+
+      // Clearing an already-unset value is an idempotent no-op (changed: false).
+      const clearAgain = await runConfig(
+        "project",
+        "set",
+        "governance-create-default-type",
+        { policy: "" },
+        globalOptions,
+      );
+      expect(clearAgain.changed).toBe(false);
+    });
+  });
+
+  it("rejects an unknown governance-create-default-type with a hint (pm-jpwo)", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      await expect(
+        runConfig("project", "set", "governance-create-default-type", { policy: "Nonsense" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("round-trips governance-workflow-enforcement and rejects invalid modes (pm-f4r1)", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      const getDefault = await runConfig("project", "get", "governance-workflow-enforcement", {}, globalOptions);
+      expect(getDefault.policy).toBe("off");
+
+      const setStrict = await runConfig("project", "set", "governance-workflow-enforcement", { policy: "strict" }, globalOptions);
+      expect(setStrict.key).toBe("governance_workflow_enforcement");
+      expect(setStrict.policy).toBe("strict");
+      expect(setStrict.changed).toBe(true);
+
+      const reloaded = await readSettings(pmRoot);
+      expect(reloaded.governance.workflow_enforcement).toBe("strict");
+
+      const getResult = await runConfig("project", "get", "governance_workflow_enforcement", {}, globalOptions);
+      expect(getResult.policy).toBe("strict");
+
+      await expect(
+        runConfig("project", "set", "governance-workflow-enforcement", { policy: "bogus" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
     });
   });
 

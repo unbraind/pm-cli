@@ -11,7 +11,8 @@ import {
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { normalizeParentReferencePolicy } from "../../core/item/parent-reference-policy.js";
 import { normalizeSprintReleaseFormatPolicy } from "../../core/item/sprint-release-format.js";
-import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
+import { resolveItemTypeRegistry, resolveTypeName } from "../../core/item/type-registry.js";
+import { buildInvalidTypeError } from "../../core/schema/item-types-file.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -28,6 +29,7 @@ import type {
   GovernanceCreateModeDefault,
   GovernanceOwnershipEnforcement,
   GovernancePreset,
+  GovernanceWorkflowEnforcement,
   ItemFormat,
   ParentReferencePolicy,
   SprintReleaseFormatPolicy,
@@ -70,6 +72,10 @@ const CONFIG_KEY_VALUES = [
   "governance_create_mode_default",
   "governance-close-validation-default",
   "governance_close_validation_default",
+  "governance-create-default-type",
+  "governance_create_default_type",
+  "governance-workflow-enforcement",
+  "governance_workflow_enforcement",
   "governance-parent-reference-policy",
   "governance_parent_reference_policy",
   "governance-metadata-validation-profile",
@@ -99,6 +105,8 @@ type ConfigKey =
   | "governance_ownership_enforcement"
   | "governance_create_mode_default"
   | "governance_close_validation_default"
+  | "governance_create_default_type"
+  | "governance_workflow_enforcement"
   | "governance_parent_reference_policy"
   | "governance_metadata_validation_profile"
   | "governance_force_required_for_stale_lock"
@@ -110,6 +118,7 @@ type TestResultTrackingPolicy = "enabled" | "disabled";
 type TelemetryTrackingPolicy = "enabled" | "disabled";
 type GovernanceForceRequiredForStaleLockPolicy = "enabled" | "disabled";
 type ConfigValue =
+  | string
   | string[]
   | ItemFormat
   | HistoryMissingStreamPolicy
@@ -120,6 +129,7 @@ type ConfigValue =
   | GovernanceOwnershipEnforcement
   | GovernanceCreateModeDefault
   | GovernanceCloseValidationDefault
+  | GovernanceWorkflowEnforcement
   | GovernanceForceRequiredForStaleLockPolicy
   | TestResultTrackingPolicy
   | TelemetryTrackingPolicy
@@ -181,9 +191,11 @@ export interface ConfigResult {
     | GovernanceOwnershipEnforcement
     | GovernanceCreateModeDefault
     | GovernanceCloseValidationDefault
+    | GovernanceWorkflowEnforcement
     | GovernanceForceRequiredForStaleLockPolicy
     | TestResultTrackingPolicy
-    | TelemetryTrackingPolicy;
+    | TelemetryTrackingPolicy
+    | string;
   nested_setting?: NestedSettingResultValue;
   nested_settings?: NestedSettingResultValue[];
   keys?: ConfigKeyDescriptor[];
@@ -234,6 +246,8 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
     "governance-close-validation-default",
     "governance_close_validation_default",
   ],
+  governance_create_default_type: ["governance-create-default-type", "governance_create_default_type"],
+  governance_workflow_enforcement: ["governance-workflow-enforcement", "governance_workflow_enforcement"],
   governance_parent_reference_policy: ["governance-parent-reference-policy", "governance_parent_reference_policy"],
   governance_metadata_validation_profile: [
     "governance-metadata-validation-profile",
@@ -275,6 +289,8 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   governance_ownership_enforcement: "Governance ownership enforcement policy (none|warn|strict).",
   governance_create_mode_default: "Governance default create mode (progressive|strict).",
   governance_close_validation_default: "Governance default close validation mode (off|warn|strict).",
+  governance_create_default_type: "Governance default item type for `pm create` when --type is omitted.",
+  governance_workflow_enforcement: "Governance per-type transition enforcement mode (off|warn|strict).",
   governance_parent_reference_policy: "Governance parent reference policy (warn|strict_error).",
   governance_metadata_validation_profile: "Governance metadata validation profile (core|strict|custom).",
   governance_force_required_for_stale_lock: "Governance stale-lock force policy (enabled|disabled).",
@@ -366,6 +382,12 @@ function normalizeKey(value: string): ConfigKey {
     }
     if (value === "governance-close-validation-default" || value === "governance_close_validation_default") {
       return "governance_close_validation_default";
+    }
+    if (value === "governance-create-default-type" || value === "governance_create_default_type") {
+      return "governance_create_default_type";
+    }
+    if (value === "governance-workflow-enforcement" || value === "governance_workflow_enforcement") {
+      return "governance_workflow_enforcement";
     }
     if (value === "governance-parent-reference-policy" || value === "governance_parent_reference_policy") {
       return "governance_parent_reference_policy";
@@ -527,6 +549,21 @@ function normalizeGovernanceCloseValidationDefault(value: string | undefined): G
   );
 }
 
+function normalizeGovernanceWorkflowEnforcement(value: unknown): GovernanceWorkflowEnforcement {
+  const normalized =
+    typeof value === "string" ? value.trim().toLowerCase().replaceAll("-", "_") : undefined;
+  if (normalized === "off" || normalized === "warn" || normalized === "strict") {
+    return normalized;
+  }
+  if (normalized === "none" || normalized === "disabled") {
+    return "off";
+  }
+  throw new PmCliError(
+    "Config set governance-workflow-enforcement requires one of: off, warn, strict",
+    EXIT_CODE.USAGE,
+  );
+}
+
 function normalizeGovernanceForceRequiredForStaleLockPolicy(
   value: string | undefined,
 ): GovernanceForceRequiredForStaleLockPolicy {
@@ -560,6 +597,8 @@ function normalizePolicyForConflict(key: ConfigKey | undefined, value: string): 
       return normalizeGovernanceCreateModeDefault(value);
     case "governance_close_validation_default":
       return normalizeGovernanceCloseValidationDefault(value);
+    case "governance_workflow_enforcement":
+      return normalizeGovernanceWorkflowEnforcement(value);
     case "governance_force_required_for_stale_lock":
       return normalizeGovernanceForceRequiredForStaleLockPolicy(value);
     case "test_result_tracking":
@@ -697,6 +736,8 @@ function readConfigValue(settings: {
     parent_reference: ParentReferencePolicy;
     metadata_profile: ValidateMetadataProfile;
     force_required_for_stale_lock: boolean;
+    create_default_type?: string;
+    workflow_enforcement?: GovernanceWorkflowEnforcement;
   };
   testing: { record_results_to_items: boolean };
   telemetry: { enabled: boolean };
@@ -743,6 +784,12 @@ function readConfigValue(settings: {
   }
   if (key === "governance_close_validation_default") {
     return settings.governance.close_validation_default;
+  }
+  if (key === "governance_create_default_type") {
+    return settings.governance.create_default_type ?? "";
+  }
+  if (key === "governance_workflow_enforcement") {
+    return settings.governance.workflow_enforcement ?? "off";
   }
   if (key === "governance_parent_reference_policy") {
     return settings.governance.parent_reference;
@@ -1104,6 +1151,8 @@ export async function runConfig(
       governance_ownership_enforcement: readConfigValue(settings, "governance_ownership_enforcement"),
       governance_create_mode_default: readConfigValue(settings, "governance_create_mode_default"),
       governance_close_validation_default: readConfigValue(settings, "governance_close_validation_default"),
+      governance_create_default_type: readConfigValue(settings, "governance_create_default_type"),
+      governance_workflow_enforcement: readConfigValue(settings, "governance_workflow_enforcement"),
       governance_parent_reference_policy: readConfigValue(settings, "governance_parent_reference_policy"),
       governance_metadata_validation_profile: readConfigValue(settings, "governance_metadata_validation_profile"),
       governance_force_required_for_stale_lock: readConfigValue(settings, "governance_force_required_for_stale_lock"),
@@ -1249,6 +1298,24 @@ export async function runConfig(
         scope,
         key,
         policy: settings.governance.close_validation_default,
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "governance_create_default_type") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.governance.create_default_type ?? "",
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "governance_workflow_enforcement") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.governance.workflow_enforcement ?? "off",
         settings_path: target.settingsPath,
         changed: false,
       }, warnings);
@@ -1593,6 +1660,70 @@ export async function runConfig(
       scope,
       key,
       policy: settings.governance.close_validation_default,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "governance_create_default_type") {
+    const policyProvided = typeof options.policy === "string";
+    const rawType = policyProvided ? options.policy!.trim() : "";
+    // An explicit empty value clears the setting back to "unset" (matching how
+    // get/export expose unset as ""). Without this clear path there is no CLI
+    // route back from a set value to the governance default.
+    if (policyProvided && rawType.length === 0) {
+      const changed = settings.governance.create_default_type !== undefined;
+      delete settings.governance.create_default_type;
+      if (changed) {
+        await writeSettings(target.pmRoot, settings, "config:set:governance_create_default_type");
+      }
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.governance.create_default_type ?? "",
+        settings_path: target.settingsPath,
+        changed,
+      }, warnings);
+    }
+    if (rawType.length === 0) {
+      throw new PmCliError(
+        'Config set governance-create-default-type requires an item type value (or an empty value "" to clear it)',
+        EXIT_CODE.USAGE,
+      );
+    }
+    // create_default_type is preset-orthogonal: it tunes `pm create` and is
+    // carried through writes regardless of preset, so we do NOT force preset=custom.
+    const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+    const resolvedType = resolveTypeName(rawType, typeRegistry);
+    if (!resolvedType) {
+      throw new PmCliError(buildInvalidTypeError(rawType, typeRegistry.types), EXIT_CODE.USAGE);
+    }
+    const changed = settings.governance.create_default_type !== resolvedType;
+    settings.governance.create_default_type = resolvedType;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:governance_create_default_type");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.governance.create_default_type,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "governance_workflow_enforcement") {
+    const nextPolicy = normalizeGovernanceWorkflowEnforcement(options.policy);
+    // workflow_enforcement is preset-orthogonal (see create_default_type above).
+    const changed = (settings.governance.workflow_enforcement ?? "off") !== nextPolicy;
+    settings.governance.workflow_enforcement = nextPolicy;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:governance_workflow_enforcement");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.governance.workflow_enforcement,
       settings_path: target.settingsPath,
       changed,
     }, warnings);

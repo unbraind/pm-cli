@@ -342,6 +342,11 @@ export const SCHEMA_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--default-status", aliases: ["--default_status"] },
   { flag: "--folder" },
   { flag: "--alias" },
+  // --role is a repeatable Commander collect flag (NOT a comma-list contract),
+  // mirroring --alias; list:false keeps the bootstrap coalescer from corrupting
+  // values.
+  { flag: "--role" },
+  { flag: "--order" },
   { flag: "--author" },
   { flag: "--force" },
 ];
@@ -1555,11 +1560,15 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   },
   schema: {
     required: ["subcommand"],
-    // No --message: schema add-type writes a config file, not item history.
-    optional: ["name", "description", "defaultStatus", "folder", "alias", "author", "force"],
+    // No --message: schema mutations write config files, not item history.
+    optional: ["name", "description", "defaultStatus", "folder", "alias", "role", "order", "author", "force"],
     conditionalRequired: [
       { property: "subcommand", value: "show", required: ["name"] },
       { property: "subcommand", value: "add-type", required: ["name"] },
+      { property: "subcommand", value: "remove-type", required: ["name"] },
+      // add-status/remove-status pass the status id as `name`.
+      { property: "subcommand", value: "add-status", required: ["name"] },
+      { property: "subcommand", value: "remove-status", required: ["name"] },
     ],
   },
   plan: {
@@ -1916,7 +1925,7 @@ export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = createLazyCont
   $schema: "https://json-schema.org/draft/2020-12/schema",
   $id: "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
   title: "pm-cli tool parameters (action-scoped strict schema)",
-  "x-schema-version": "4.0.1",
+  "x-schema-version": "4.0.2",
   type: "object",
   oneOf: PM_TOOL_ACTIONS.map((action) => buildActionScopedToolSchema(action)),
 }));

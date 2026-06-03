@@ -47,20 +47,67 @@ function normalizeGovernancePreset(value: GovernancePreset | undefined): Governa
   return SETTINGS_DEFAULTS.governance.preset;
 }
 
+// `create_default_type` and `workflow_enforcement` are orthogonal to the
+// governance preset (they tune create/update behavior, not the preset knobs),
+// so they must survive a write regardless of preset — otherwise a project on a
+// non-custom preset would silently drop them on every settings write.
+function withGovernanceExtras(
+  base: Partial<GovernanceSettings> & { preset: GovernancePreset },
+  governance: GovernanceSettings,
+): Partial<GovernanceSettings> & { preset: GovernancePreset } {
+  const createDefaultType =
+    typeof governance.create_default_type === "string" ? governance.create_default_type.trim() : undefined;
+  if (createDefaultType && createDefaultType.length > 0) {
+    base.create_default_type = createDefaultType;
+  }
+  if (
+    governance.workflow_enforcement === "off" ||
+    governance.workflow_enforcement === "warn" ||
+    governance.workflow_enforcement === "strict"
+  ) {
+    base.workflow_enforcement = governance.workflow_enforcement;
+  }
+  return base;
+}
+
 function normalizeGovernanceForPersist(governance: GovernanceSettings): Partial<GovernanceSettings> & { preset: GovernancePreset } {
   if (governance.preset === "custom") {
-    return {
-      preset: "custom",
-      ownership_enforcement: governance.ownership_enforcement,
-      create_mode_default: governance.create_mode_default,
-      close_validation_default: governance.close_validation_default,
-      parent_reference: governance.parent_reference,
-      metadata_profile: governance.metadata_profile,
-      force_required_for_stale_lock: governance.force_required_for_stale_lock,
-    };
+    return withGovernanceExtras(
+      {
+        preset: "custom",
+        ownership_enforcement: governance.ownership_enforcement,
+        create_mode_default: governance.create_mode_default,
+        close_validation_default: governance.close_validation_default,
+        parent_reference: governance.parent_reference,
+        metadata_profile: governance.metadata_profile,
+        force_required_for_stale_lock: governance.force_required_for_stale_lock,
+      },
+      governance,
+    );
   }
+  return withGovernanceExtras(
+    {
+      preset: governance.preset,
+    },
+    governance,
+  );
+}
+
+// Preset-orthogonal knobs that must be carried through resolve from the raw
+// governance regardless of preset (see normalizeGovernanceForPersist).
+function resolveGovernanceExtras(
+  rawGovernance: Partial<GovernanceSettings>,
+): Pick<GovernanceSettings, "create_default_type" | "workflow_enforcement"> {
+  const createDefaultType =
+    typeof rawGovernance.create_default_type === "string" ? rawGovernance.create_default_type.trim() : undefined;
   return {
-    preset: governance.preset,
+    create_default_type: createDefaultType && createDefaultType.length > 0 ? createDefaultType : undefined,
+    workflow_enforcement:
+      rawGovernance.workflow_enforcement === "off" ||
+      rawGovernance.workflow_enforcement === "warn" ||
+      rawGovernance.workflow_enforcement === "strict"
+        ? rawGovernance.workflow_enforcement
+        : undefined,
   };
 }
 
@@ -69,6 +116,7 @@ export function resolveGovernanceKnobs(
 ): GovernanceSettings {
   const rawGovernance = settings.governance ?? {};
   const preset = normalizeGovernancePreset(rawGovernance.preset);
+  const extras = resolveGovernanceExtras(rawGovernance);
   if (preset === "custom") {
     const baseline = resolveGovernanceKnobsFromPreset("default");
     return {
@@ -79,11 +127,13 @@ export function resolveGovernanceKnobs(
       parent_reference: rawGovernance.parent_reference ?? baseline.parent_reference,
       metadata_profile: rawGovernance.metadata_profile ?? baseline.metadata_profile,
       force_required_for_stale_lock: rawGovernance.force_required_for_stale_lock ?? baseline.force_required_for_stale_lock,
+      ...extras,
     };
   }
   return {
     preset,
     ...resolveGovernanceKnobsFromPreset(preset),
+    ...extras,
   };
 }
 
@@ -495,6 +545,8 @@ export function serializeSettings(settings: PmSettings): string {
     "parent_reference",
     "metadata_profile",
     "force_required_for_stale_lock",
+    "create_default_type",
+    "workflow_enforcement",
   ]);
   ordered.workflow = orderObject(ordered.workflow as Record<string, unknown>, ["definition_of_done"]);
   ordered.testing = orderObject(ordered.testing as Record<string, unknown>, ["record_results_to_items"]);
@@ -520,6 +572,7 @@ export function serializeSettings(settings: PmSettings): string {
     "statuses",
     "fields",
     "workflow",
+    "type_workflows",
     "unknown_field_policy",
   ]);
   (ordered.schema as Record<string, unknown>).files = orderObject(

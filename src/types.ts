@@ -94,6 +94,8 @@ export const GOVERNANCE_CREATE_MODE_DEFAULT_VALUES = ["progressive", "strict"] a
 export type GovernanceCreateModeDefault = (typeof GOVERNANCE_CREATE_MODE_DEFAULT_VALUES)[number];
 export const GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES = ["off", "warn", "strict"] as const;
 export type GovernanceCloseValidationDefault = (typeof GOVERNANCE_CLOSE_VALIDATION_DEFAULT_VALUES)[number];
+export const GOVERNANCE_WORKFLOW_ENFORCEMENT_VALUES = ["off", "warn", "strict"] as const;
+export type GovernanceWorkflowEnforcement = (typeof GOVERNANCE_WORKFLOW_ENFORCEMENT_VALUES)[number];
 export const VALIDATE_METADATA_REQUIRED_FIELD_VALUES = [
   "author",
   "acceptance_criteria",
@@ -377,12 +379,24 @@ export interface RuntimeSchemaFileConfig {
   workflows?: string;
 }
 
+/**
+ * Per-type allowed-transition rule. A type with no matching entry is
+ * unrestricted; a type with an entry allows only the listed [from, to]
+ * status pairs (status tokens are resolved case-insensitively through the
+ * status registry alias map; a same-status no-op is always allowed).
+ */
+export interface TypeWorkflowDefinition {
+  type: string;
+  allowed_transitions: [string, string][];
+}
+
 export interface RuntimeSchemaSettings {
   version: number;
   files: RuntimeSchemaFileConfig;
   statuses: RuntimeStatusDefinition[];
   fields: RuntimeFieldDefinition[];
   workflow: RuntimeWorkflowDefinition;
+  type_workflows?: TypeWorkflowDefinition[];
   unknown_field_policy: RuntimeUnknownFieldPolicy;
 }
 
@@ -544,6 +558,12 @@ export interface GovernanceSettings {
   metadata_profile: ValidateMetadataProfile;
   force_required_for_stale_lock: boolean;
   create_default_type?: string;
+  /**
+   * Per-type allowed-transition enforcement mode for `pm update --status`.
+   * Read raw from settings (not preset-derived) so existing projects are
+   * unaffected when unset; defaults to "off".
+   */
+  workflow_enforcement?: GovernanceWorkflowEnforcement;
 }
 
 export type ExtensionPolicyMode = "off" | "warn" | "enforce";

@@ -2,14 +2,18 @@ id: pm-vhd9
 title: "As an agile/ops/research team, I want pm init --type-preset, so that my domain's item types are registered instantly without manual add-type calls"
 description: "As an agile/ops/research team, I want pm init --type-preset, so that my domain's item types are registered instantly without manual add-type calls"
 type: Story
-status: open
+status: closed
 priority: 2
 tags[5]: "area:config","area:schema",bootstrap,living-map,story
 created_at: "2026-05-31T19:49:46.791Z"
-updated_at: "2026-05-31T19:49:46.791Z"
+updated_at: "2026-06-03T14:53:50.149Z"
 author: maintainer-agent
 acceptance_criteria: pm init --type-preset agile|ops|research idempotently registers the preset types; composes with --preset/--defaults; no-preset behavior unchanged
 parent: pm-8jdc
+resolution: Delivered by pm-1lkm (pm init --type-preset agile|ops|research with persisted runtime schema registration + InitResult summary).
+expected_result: "Fresh projects bootstrap agile/ops/research item types idempotently during init, composing with --preset/--defaults."
+actual_result: init --yes --type-preset agile registered the preset types in this PR's smoke run; no-preset behavior unchanged.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-1lkm,related,"2026-05-31T19:49:46.791Z",null,null
+close_reason: "Story satisfied: pm init --type-preset agile|ops|research shipped via pm-1lkm (idempotent preset registration, composes with --preset/--defaults, InitResult summary). Verified init --yes --type-preset agile in temp dir. Closing the story-level tracking as part of the schema-customization-completion PR."
 body: ""

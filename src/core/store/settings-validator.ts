@@ -231,6 +231,22 @@ const runtimeFieldDefinition = vObject({
   allow_unset: vOptional(vBoolean),
 });
 
+const statusTransitionPair: Check<[string, string]> = (input) => {
+  if (!Array.isArray(input) || input.length !== 2) {
+    return FAIL;
+  }
+  const [from, to] = input;
+  if (typeof from !== "string" || typeof to !== "string") {
+    return FAIL;
+  }
+  return { ok: true, value: [from, to] };
+};
+
+const typeWorkflowDefinition = vObject({
+  type: vString,
+  allowed_transitions: vArray(statusTransitionPair),
+});
+
 const runtimeSchemaSettings = vOptional(
   vObject({
     version: vOptional(vNumber({ int: true })),
@@ -254,6 +270,7 @@ const runtimeSchemaSettings = vOptional(
         canceled_status: vOptional(vString),
       }),
     ),
+    type_workflows: vOptional(vArray(typeWorkflowDefinition)),
     unknown_field_policy: vOptional(vLiteral(...RUNTIME_UNKNOWN_FIELD_POLICY_VALUES)),
   }),
 );
@@ -268,6 +285,7 @@ const governanceSettings = vOptional(
     metadata_profile: vOptional(vLiteral("core", "strict", "custom")),
     force_required_for_stale_lock: vOptional(vBoolean),
     create_default_type: vOptional(vString),
+    workflow_enforcement: vOptional(vLiteral("off", "warn", "strict")),
   }),
 );
 
