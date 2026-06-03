@@ -423,6 +423,14 @@ describe("normalizeAddStatusInput", () => {
     expect(() => normalizeAddStatusInput({ id: "   " })).toThrow(/must not be empty/);
   });
 
+  it("rejects built-in status ids (reserved, symmetric with remove-status)", () => {
+    expect(() => normalizeAddStatusInput({ id: "open" })).toThrow(/built-in status "open"/);
+    expect(() => normalizeAddStatusInput({ id: "Closed", roles: ["terminal_done"] })).toThrow(
+      /built-in status "closed"/,
+    );
+    expect(() => normalizeAddStatusInput({ id: "in-progress" })).toThrow(/built-in status "in_progress"/);
+  });
+
   it("throws on an invalid role", () => {
     expect(() => normalizeAddStatusInput({ id: "review", roles: ["bogus"] })).toThrow(
       /Invalid status role "bogus"\. Allowed roles: draft, active, blocked, terminal, terminal_done, terminal_canceled, default_open, default_close, default_cancel\./,

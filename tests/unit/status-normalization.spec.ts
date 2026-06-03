@@ -160,6 +160,23 @@ describe("resolveTypeWorkflows (pm-f4r1)", () => {
     // normalization (a missing entry would leave the type unrestricted instead).
     expect(resolved).toEqual([{ type: "story", allowed_transitions: [] }]);
   });
+
+  it("drops a nonempty-but-all-malformed allowed_transitions (typo) instead of deny-all", () => {
+    // Regression for the round-3 finding: a nonempty array whose pairs are all
+    // malformed is a typo, NOT an intentional deny-all. It must be dropped (the
+    // type stays unrestricted) so it doesn't silently start failing every update
+    // under strict enforcement. Contrast with the explicit `[]` deny-all above.
+    const resolved = resolveTypeWorkflows({
+      type_workflows: [
+        {
+          type: "Story",
+          allowed_transitions: [["open", "in_progress", "extra"] as unknown as [string, string]],
+        },
+        { type: "Bug", allowed_transitions: [["open", "in_progress"]] },
+      ],
+    });
+    expect(resolved).toEqual([{ type: "bug", allowed_transitions: [["open", "in_progress"]] }]);
+  });
 });
 
 describe("evaluateTransition (pm-f4r1)", () => {

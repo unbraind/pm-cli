@@ -79,7 +79,7 @@ export function resolveTypeWorkflows(
   schema: Pick<RuntimeSchemaSettings, "type_workflows"> | undefined,
 ): NormalizedTypeWorkflow[] {
   const rawWorkflows: TypeWorkflowDefinition[] = Array.isArray(schema?.type_workflows) ? schema!.type_workflows! : [];
-  const byType = new Map<string, [string, string][]>();
+  const byType = new Map<string, { pairs: [string, string][]; denyAll: boolean }>();
   for (const entry of rawWorkflows) {
     const type = normalizeTypeName(entry?.type);
     if (type.length === 0) {
@@ -89,7 +89,12 @@ export function resolveTypeWorkflows(
       continue;
     }
     const pairs = entry.allowed_transitions;
-    const existing = byType.get(type) ?? [];
+    const record = byType.get(type) ?? { pairs: [], denyAll: false };
+    // Only an explicitly empty array is an intentional deny-all; a nonempty array
+    // whose pairs are all malformed is a typo and must be dropped (not deny-all).
+    if (pairs.length === 0) {
+      record.denyAll = true;
+    }
     for (const pair of pairs) {
       if (!Array.isArray(pair) || pair.length !== 2) {
         continue;
@@ -99,15 +104,16 @@ export function resolveTypeWorkflows(
       if (from.length === 0 || to.length === 0) {
         continue;
       }
-      if (existing.some((candidate) => candidate[0] === from && candidate[1] === to)) {
+      if (record.pairs.some((candidate) => candidate[0] === from && candidate[1] === to)) {
         continue;
       }
-      existing.push([from, to]);
+      record.pairs.push([from, to]);
     }
-    byType.set(type, existing);
+    byType.set(type, record);
   }
   return [...byType.entries()]
-    .map(([type, allowed_transitions]) => ({ type, allowed_transitions }))
+    .filter(([, record]) => record.pairs.length > 0 || record.denyAll)
+    .map(([type, record]) => ({ type, allowed_transitions: record.pairs }))
     .sort((left, right) => left.type.localeCompare(right.type));
 }
 

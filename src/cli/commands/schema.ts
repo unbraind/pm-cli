@@ -467,8 +467,8 @@ export async function runSchemaAddStatus(
   const baseDefinition: RuntimeStatusDefinition | undefined = resolvedExisting
     ? {
         id: resolvedExisting.id,
-        ...(resolvedExisting.roles.length > 0 ? { roles: [...resolvedExisting.roles] } : {}),
-        ...(resolvedExisting.aliases.length > 0 ? { aliases: [...resolvedExisting.aliases] } : {}),
+        ...(resolvedExisting.roles?.length ? { roles: [...resolvedExisting.roles] } : {}),
+        ...(resolvedExisting.aliases?.length ? { aliases: [...resolvedExisting.aliases] } : {}),
         ...(resolvedExisting.description ? { description: resolvedExisting.description } : {}),
         ...(typeof resolvedExisting.order === "number" ? { order: resolvedExisting.order } : {}),
       }
@@ -494,6 +494,29 @@ export async function runSchemaAddStatus(
       parsed = parseStatusDefsFile(previousRaw);
     } catch (error) {
       throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.GENERIC_FAILURE);
+    }
+    // Re-check collisions against the CURRENT file under the lock: the pre-lock
+    // check used the registry loaded before acquiring schema-statuses, so a
+    // concurrent add-status could have written a colliding id/alias in between.
+    // The lock serializes writes; this serializes the collision decision too.
+    const fileAliasToId = new Map<string, string>();
+    for (const definition of parsed.statuses) {
+      const defId = normalizeStatusToken(definition.id);
+      if (defId.length === 0) {
+        continue;
+      }
+      fileAliasToId.set(defId, defId);
+      for (const alias of definition.aliases ?? []) {
+        const aliasToken = normalizeStatusToken(alias);
+        if (aliasToken.length > 0 && !fileAliasToId.has(aliasToken)) {
+          fileAliasToId.set(aliasToken, defId);
+        }
+      }
+    }
+    try {
+      assertStatusTokensAvailable(normalized, fileAliasToId);
+    } catch (error) {
+      throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
     }
     upsert = upsertStatusDef(parsed, normalized, baseDefinition);
     // writeFileAtomic writes to a temp file then renames, so a failure leaves

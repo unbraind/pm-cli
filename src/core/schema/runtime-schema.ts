@@ -183,12 +183,15 @@ function normalizeTypeWorkflowDefinitions(
   }
   // Keep the raw (trimmed) type name so it round-trips verbatim; comparison is
   // case-insensitive downstream (resolveTypeWorkflows lower-cases). from/to
-  // status tokens use the same normalization rules as runtime statuses. An
-  // explicit empty `allowed_transitions` array is a deliberate DENY-ALL rule and
+  // status tokens use the same normalization rules as runtime statuses.
+  //
+  // An EXPLICIT empty `allowed_transitions: []` is a deliberate DENY-ALL rule and
   // MUST survive normalization (it must NOT collapse to "no entry", which would
-  // leave the type unrestricted); only entries whose `allowed_transitions` is not
-  // an array are dropped.
-  const byTypeKey = new Map<string, TypeWorkflowDefinition>();
+  // leave the type unrestricted). But a NON-empty array whose every pair is
+  // malformed (e.g. a 3-element tuple typo) must be DROPPED like other malformed
+  // schema-file content, NOT silently turned into a deny-all rule — otherwise a
+  // typo would start failing every update for that type under strict enforcement.
+  const byTypeKey = new Map<string, { type: string; pairs: [string, string][]; denyAll: boolean }>();
   for (const entry of workflows) {
     const rawType = typeof entry?.type === "string" ? entry.type.trim() : "";
     if (rawType.length === 0) {
@@ -199,7 +202,11 @@ function normalizeTypeWorkflowDefinitions(
     }
     const typeKey = rawType.toLowerCase();
     const pairs = entry.allowed_transitions;
-    const existing = byTypeKey.get(typeKey)?.allowed_transitions ?? [];
+    const record = byTypeKey.get(typeKey) ?? { type: rawType, pairs: [], denyAll: false };
+    // Only an explicitly empty array signals an intentional deny-all.
+    if (pairs.length === 0) {
+      record.denyAll = true;
+    }
     for (const pair of pairs) {
       if (!Array.isArray(pair) || pair.length !== 2) {
         continue;
@@ -209,14 +216,22 @@ function normalizeTypeWorkflowDefinitions(
       if (from.length === 0 || to.length === 0) {
         continue;
       }
-      if (existing.some((candidate) => candidate[0] === from && candidate[1] === to)) {
+      if (record.pairs.some((candidate) => candidate[0] === from && candidate[1] === to)) {
         continue;
       }
-      existing.push([from, to]);
+      record.pairs.push([from, to]);
     }
-    byTypeKey.set(typeKey, { type: rawType, allowed_transitions: existing });
+    byTypeKey.set(typeKey, record);
   }
-  const normalized = [...byTypeKey.values()].sort((left, right) => left.type.localeCompare(right.type));
+  const normalized: TypeWorkflowDefinition[] = [];
+  for (const record of byTypeKey.values()) {
+    // Keep when there is at least one valid transition OR an explicit deny-all was
+    // declared; drop nonempty-but-all-malformed entries (treated as typos).
+    if (record.pairs.length > 0 || record.denyAll) {
+      normalized.push({ type: record.type, allowed_transitions: record.pairs });
+    }
+  }
+  normalized.sort((left, right) => left.type.localeCompare(right.type));
   return normalized.length > 0 ? normalized : undefined;
 }
 

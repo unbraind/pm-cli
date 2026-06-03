@@ -111,6 +111,15 @@ export function normalizeAddStatusInput(raw: RawAddStatusInput): NormalizedAddSt
   if (id.length === 0) {
     throw new Error("Status id must not be empty.");
   }
+  // Built-in lifecycle statuses are reserved and cannot be overridden: an
+  // add-status override would change reserved metadata yet remove-status refuses
+  // to delete a built-in id, leaving no CLI path to undo it. Reject up front,
+  // symmetric with removeStatusDef.
+  if (BUILTIN_STATUS_IDS.has(id)) {
+    throw new Error(
+      `Cannot add-status the built-in status "${id}". Built-in statuses are reserved: ${[...BUILTIN_STATUS_IDS].join(", ")}.`,
+    );
+  }
   let roles: RuntimeStatusRole[] | undefined;
   if (raw.roles !== undefined) {
     roles = [];
