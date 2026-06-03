@@ -290,10 +290,15 @@ async function ensureInitialized(pmRoot: string): Promise<void> {
  * the count is non-blocking. The caller passes its already-loaded `settings`
  * so we never re-read settings.json from disk here.
  */
-async function countItemsUsingType(pmRoot: string, settings: PmSettings, typeName: string): Promise<number> {
+async function countItemsUsingType(
+  pmRoot: string,
+  settings: PmSettings,
+  schema: ReturnType<typeof normalizeRuntimeSchemaSettings>,
+  typeName: string,
+): Promise<number> {
   const registry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const lowerName = typeName.trim().toLowerCase();
-  const items = await listAllFrontMatterLight(pmRoot, settings.item_format, registry.type_to_folder, [], settings.schema);
+  const items = await listAllFrontMatterLight(pmRoot, settings.item_format, registry.type_to_folder, [], schema);
   return items.filter((item) => typeof item.type === "string" && item.type.toLowerCase() === lowerName).length;
 }
 
@@ -303,11 +308,16 @@ async function countItemsUsingType(pmRoot: string, settings: PmSettings, typeNam
  * are counted regardless of lifecycle phase; the count is advisory only. The
  * caller passes its already-loaded `settings` so we never re-read from disk.
  */
-async function countItemsUsingStatus(pmRoot: string, settings: PmSettings, statusId: string): Promise<number> {
+async function countItemsUsingStatus(
+  pmRoot: string,
+  settings: PmSettings,
+  schema: ReturnType<typeof normalizeRuntimeSchemaSettings>,
+  statusId: string,
+): Promise<number> {
   const registry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const statusRegistry = resolveRuntimeStatusRegistry(schema);
   const normalizedId = normalizeStatusToken(statusId);
-  const items = await listAllFrontMatterLight(pmRoot, settings.item_format, registry.type_to_folder, [], settings.schema);
+  const items = await listAllFrontMatterLight(pmRoot, settings.item_format, registry.type_to_folder, [], schema);
   return items.filter((item) => {
     const itemStatus = typeof item.status === "string" ? item.status : "";
     const resolved = statusRegistry.alias_to_id.get(normalizeStatusToken(itemStatus)) ?? normalizeStatusToken(itemStatus);
@@ -389,7 +399,7 @@ export async function runSchemaRemoveType(
       // non-blocking and reuses the already-loaded settings (no disk re-read).
       const removedName = (removal.definition?.name ?? name ?? "").trim();
       if (removedName.length > 0) {
-        const usingType = await countItemsUsingType(pmRoot, settings, removedName);
+        const usingType = await countItemsUsingType(pmRoot, settings, schema, removedName);
         if (usingType > 0) {
           warnings.push(`items_using_type:${usingType}`);
         }
@@ -592,7 +602,7 @@ export async function runSchemaRemoveStatus(
       // already-loaded settings (no disk re-read) and is non-blocking.
       const removedId = normalizeStatusToken(removal.definition?.id ?? id);
       if (removedId.length > 0 && !BUILTIN_STATUS_IDS.has(removedId)) {
-        const usingStatus = await countItemsUsingStatus(pmRoot, settings, removedId);
+        const usingStatus = await countItemsUsingStatus(pmRoot, settings, schema, removedId);
         if (usingStatus > 0) {
           warnings.push(`items_using_status:${usingStatus}`);
         }
