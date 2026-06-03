@@ -542,6 +542,7 @@ describe("pm package manifest model", () => {
       const manifestPath = path.join(extensionDirectory, "manifest.json");
       const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as { capabilities?: unknown };
       const declaredCapabilities = new Set(Array.isArray(manifest.capabilities) ? manifest.capabilities : []);
+      // Heuristic guard: catches direct index.ts/index.js registrations, while package doctor remains the runtime check.
       const sourcePaths = [path.join(extensionDirectory, "index.ts"), path.join(extensionDirectory, "index.js")];
       const source = (
         await Promise.all(

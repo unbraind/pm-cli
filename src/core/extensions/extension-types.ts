@@ -730,6 +730,7 @@ export interface FailedExtensionActivation {
 
 export interface ExtensionActivationFailureTrace {
   method: string;
+  /** `-1` means the failure happened before a numbered registration was accepted. */
   registration_index: number;
   command?: string;
   capability?: ExtensionCapability;

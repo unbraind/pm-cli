@@ -325,6 +325,9 @@ produce output, or alter command behavior.
 is tied to an item mutation, the context also includes `item_id`, `item_type`,
 `before`, `after`, and `changed_fields`, so sync packages can mirror the exact
 item change without reparsing files. Non-item writes omit those item fields.
+`changed_fields` lists mutated fields for updates and uses lifecycle sentinels
+for item lifecycle writes: `["imported"]` for package imports, `["restored"]`
+for restores, and `["deleted"]` for deletes.
 
 ## Custom Item Type
 
