@@ -544,7 +544,16 @@ describe("pm package manifest model", () => {
       const declaredCapabilities = new Set(Array.isArray(manifest.capabilities) ? manifest.capabilities : []);
       const sourcePaths = [path.join(extensionDirectory, "index.ts"), path.join(extensionDirectory, "index.js")];
       const source = (
-        await Promise.all(sourcePaths.map(async (sourcePath) => readFile(sourcePath, "utf8").catch(() => "")))
+        await Promise.all(
+          sourcePaths.map(async (sourcePath) =>
+            readFile(sourcePath, "utf8").catch((error: unknown) => {
+              if (typeof error === "object" && error !== null && (error as { code?: unknown }).code === "ENOENT") {
+                return "";
+              }
+              throw error;
+            }),
+          ),
+        )
       ).join("\n");
 
       for (const { capability, patterns } of capabilityUsagePatterns) {
