@@ -116,6 +116,7 @@ const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   "dependency cycle",
   "failed to fetch issues from jira",
   "no items imported",
+  "no slack webhook configured",
   "slack webhook request failed",
   "structural error(s) found in",
   "validation failed: 3 structural error(s)",

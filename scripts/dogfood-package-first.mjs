@@ -340,6 +340,7 @@ try {
     "calendar",
     "governance-audit",
     "guide-shell",
+    "lifecycle-hooks",
     "linked-test-adapters",
     "search-advanced",
     "templates",

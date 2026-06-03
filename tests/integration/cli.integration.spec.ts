@@ -99,7 +99,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         action: "install",
         details: {
           installed_all: true,
-          installed_count: 8,
+          installed_count: 9,
         },
       });
 
@@ -118,6 +118,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
             managed: true,
             enabled: true,
           }),
+          expect.objectContaining({ name: "builtin-lifecycle-hooks", managed: true, enabled: true }),
           expect.objectContaining({
             name: "builtin-todos-import-export",
             managed: true,
@@ -150,7 +151,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           action: "install",
           details: {
             installed_all: true,
-            installed_count: 8,
+            installed_count: 9,
           },
         });
       }

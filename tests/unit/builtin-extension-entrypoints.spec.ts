@@ -14,9 +14,17 @@ import type {
   ServiceOverride,
 } from "../../src/core/extensions/loader.js";
 import { activateExtensions } from "../../src/core/extensions/loader.js";
-import { assertRegisteredExporter, assertRegisteredImporter } from "../../src/sdk/testing.js";
+import { assertRegisteredExporter, assertRegisteredHook, assertRegisteredImporter } from "../../src/sdk/testing.js";
 import beadsBuiltin, { activate as activateBeads, manifest as beadsManifest } from "../../packages/pm-beads/extensions/beads/index.js";
 import calendarBuiltin, { activate as activateCalendar, manifest as calendarManifest } from "../../packages/pm-calendar/extensions/calendar/index.js";
+import governanceBuiltin, {
+  activate as activateGovernance,
+  manifest as governanceManifest,
+} from "../../packages/pm-governance-audit/extensions/governance-audit/index.js";
+import lifecycleHooksBuiltin, {
+  activate as activateLifecycleHooks,
+  manifest as lifecycleHooksManifest,
+} from "../../packages/pm-lifecycle-hooks/extensions/lifecycle-hooks/index.js";
 import todosBuiltin, { activate as activateTodos, manifest as todosManifest } from "../../packages/pm-todos/extensions/todos/index.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
@@ -351,6 +359,30 @@ describe("built-in extension entrypoints", () => {
       activate: activateCalendar,
     });
 
+    expect(governanceManifest).toEqual({
+      name: "builtin-governance-audit",
+      version: "0.1.0",
+      entry: "./index.js",
+      priority: 0,
+      capabilities: ["commands", "schema"],
+    });
+    expect(governanceBuiltin).toEqual({
+      manifest: governanceManifest,
+      activate: activateGovernance,
+    });
+
+    expect(lifecycleHooksManifest).toEqual({
+      name: "builtin-lifecycle-hooks",
+      version: "0.1.0",
+      entry: "./index.js",
+      priority: 0,
+      capabilities: ["hooks"],
+    });
+    expect(lifecycleHooksBuiltin).toEqual({
+      manifest: lifecycleHooksManifest,
+      activate: activateLifecycleHooks,
+    });
+
     expect(todosManifest).toEqual({
       name: "builtin-todos-import-export",
       version: "0.1.0",
@@ -665,6 +697,58 @@ describe("built-in extension entrypoints", () => {
     expect(error.message).toContain("Unknown view alias(es): totally-bogus");
     expect(error.message).toContain("pm calendar agenda");
     expect(error.message).toContain("--view agenda --date +7d");
+  });
+
+  it("registers a dedicated default-inert afterCommand hook exemplar", async () => {
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: { global: "/tmp/global", project: "/tmp/project" },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      loaded: [
+        {
+          layer: "project",
+          directory: "pm-lifecycle-hooks",
+          manifest_path: "/tmp/project/pm-lifecycle-hooks/manifest.json",
+          name: lifecycleHooksManifest.name,
+          version: lifecycleHooksManifest.version,
+          entry: "./index.js",
+          priority: 0,
+          entry_path: path.join(
+            process.cwd(),
+            "packages",
+            "pm-lifecycle-hooks",
+            "extensions",
+            "lifecycle-hooks",
+            "index.js",
+          ),
+          module: { manifest: lifecycleHooksManifest, activate: activateLifecycleHooks },
+        },
+      ],
+      failed: [],
+    });
+
+    expect(activation.failed).toEqual([]);
+    expect(activation.warnings).toEqual([]);
+    expect(activation.registrations.commands).toEqual([]);
+
+    const hook = assertRegisteredHook(activation.hooks, {
+      kind: "after_command",
+      extensionName: lifecycleHooksManifest.name,
+    });
+    await expect(Promise.resolve(
+      hook.run({
+        command: "context",
+        args: [],
+        options: {},
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+        ok: true,
+      }),
+    )).resolves.toBeUndefined();
   });
 
   it("registers beads importer and coerces extension options", async () => {

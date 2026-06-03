@@ -128,6 +128,7 @@ describe("release automation contract", () => {
     expect(gateSource).toContain("const combinedText = issueTextValue(issue).toLowerCase();");
     expect(gateSource).toContain("KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS");
     expect(gateSource).toContain('"dependency cycle"');
+    expect(gateSource).toContain('"no slack webhook configured"');
     expect(gateSource).toContain('"structural error(s) found in"');
     expect(gateSource).toContain('"validation failed: 3 structural error(s)"');
     expect(gateSource).toContain('"validation found 3 structural error(s)"');

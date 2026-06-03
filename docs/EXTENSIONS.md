@@ -196,6 +196,12 @@ Supported capabilities:
 - `importers`
 - `search`
 
+First-party package exemplars:
+
+- `pm-beads` and `pm-todos`: importer/exporter registration and generated command contracts.
+- `pm-lifecycle-hooks`: default-inert lifecycle hook registration.
+- `pm-search-advanced`: deterministic local search provider registration.
+
 ## Governance Policy
 
 Governance policy is configured in `settings.json` under `extensions.policy`. The runnable [policy-restricted example](examples/policy-restricted-extension/README.md) owns the complete policy snippet and expected behavior.
@@ -266,6 +272,10 @@ Common APIs:
 - `api.registerService("output_format", handler)` customizes output formatting through the service override API. Return `context.payload`, `null`, or `undefined` for commands the extension does not own.
 - `api.registerRenderer("toon" | "json", renderer)` adds format-specific renderers. Return `null` for unrelated payloads so pm falls back to native rendering.
 - `api.hooks.beforeCommand(handler)`, `api.hooks.afterCommand(handler)`, `api.hooks.onWrite(handler)`, `api.hooks.onRead(handler)`, and `api.hooks.onIndex(handler)` add lifecycle hooks.
+
+The bundled `pm-lifecycle-hooks` package is the hook exemplar: it declares only
+`hooks` and registers a default-inert `afterCommand` hook so authors can copy a
+safe lifecycle pattern without changing command output.
 
 Inline command flags require both `commands` and `schema` capabilities. Runtime schema changes should be verified with:
 

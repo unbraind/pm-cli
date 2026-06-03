@@ -359,7 +359,7 @@ describe("extension command runtime", () => {
       const beforeInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });
       expect(beforeInstall.action).toBe("catalog");
       expect(beforeInstall.details).toMatchObject({
-        total: 8,
+        total: 9,
         scope: "project",
         installable_resource_kinds: ["extensions"],
         metadata_only_resource_kinds: ["docs", "examples"],
@@ -409,6 +409,16 @@ describe("extension command runtime", () => {
             catalog: {
               display_name: "Guide + Shell UX",
               category: "workflow",
+            },
+          },
+          {
+            alias: "lifecycle-hooks",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-lifecycle-hooks",
+            catalog: {
+              display_name: "Lifecycle Hooks",
+              category: "sdk",
             },
           },
           {
@@ -478,6 +488,7 @@ describe("extension command runtime", () => {
       expect(packages.find((entry) => entry.alias === "calendar")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "governance-audit")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "guide-shell")?.installed).toBe(false);
+      expect(packages.find((entry) => entry.alias === "lifecycle-hooks")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "linked-test-adapters")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "search-advanced")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "templates")?.installed).toBe(false);
@@ -492,7 +503,7 @@ describe("extension command runtime", () => {
       const wildcardInstall = await runExtension("*", { install: true, project: true }, { path: context.pmPath });
       expect(wildcardInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 8,
+        installed_count: 9,
         packages: [
           {
             alias: "beads",
@@ -512,6 +523,11 @@ describe("extension command runtime", () => {
           {
             alias: "guide-shell",
             extension: { name: "builtin-guide-shell" },
+            activated: true,
+          },
+          {
+            alias: "lifecycle-hooks",
+            extension: { name: "builtin-lifecycle-hooks" },
             activated: true,
           },
           {
@@ -540,7 +556,7 @@ describe("extension command runtime", () => {
       const allInstall = await runExtension("all", { install: true, project: true }, { path: context.pmPath });
       expect(allInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 8,
+        installed_count: 9,
       });
     });
   });
