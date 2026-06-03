@@ -519,6 +519,15 @@ describe("contracts command runtime", () => {
       ),
     ).toBe(false);
     expect(initFlags.command_flags?.[0]?.flags.some((entry) => entry.flag === "--verbose")).toBe(true);
+    expect(initFlags.command_flags?.[0]?.flags.some((entry) => entry.flag === "--type-preset")).toBe(true);
+
+    const schemaAction = await runContracts(
+      { action: "schema", schemaOnly: true },
+      GLOBAL_OPTIONS,
+    );
+    const schemaBranch = (schemaAction.schema?.oneOf ?? [])[0] as { required?: string[]; properties?: Record<string, unknown> } | undefined;
+    expect(schemaBranch?.required).toEqual(["action", "subcommand"]);
+    expect(schemaBranch?.properties?.name).toBeDefined();
 
     const activityFlags = await runContracts(
       { command: "activity", flagsOnly: true },

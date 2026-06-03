@@ -137,15 +137,18 @@ describe("generateBashScript", () => {
     expect(bashScript).toContain("--yes");
     expect(bashScript).toContain("-y");
     expect(bashScript).toContain("--verbose");
+    expect(bashScript).toContain("--type-preset");
 
     const zshScript = generateZshScript();
     expect(zshScript).toContain("--agent-guidance[Agent guidance mode]");
+    expect(zshScript).toContain("--type-preset[Register domain item types]");
     expect(zshScript).toContain("Alias for --defaults");
     expect(zshScript).toContain("--verbose[");
 
     const fishScript = generateFishScript();
     expect(fishScript).toContain("__fish_seen_subcommand_from init");
     expect(fishScript).toContain("-l agent-guidance");
+    expect(fishScript).toContain("-l type-preset");
     expect(fishScript).toContain("-s y -l yes");
     expect(fishScript).toContain("-l verbose");
   });

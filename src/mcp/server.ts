@@ -51,6 +51,8 @@ import {
   runPlan,
   runRelease,
   runSchemaAddType,
+  runSchemaList,
+  runSchemaShow,
   runSearch,
   runStats,
   runTest,
@@ -131,7 +133,7 @@ const TOOLS: ToolDefinition[] = [
         action: {
           type: "string",
           description:
-            "Operation name: init, context, list, get, search, create, update, delete, claim, release, close, comments, notes, learnings, files, files-discover, docs, deps, test, test-all, validate, health, contracts, config, activity, aggregate, extension, extension-reload, package, package-install, package-catalog, install, upgrade, history, stats, append, update-many, gc. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
+            "Operation name: init, context, list, get, search, create, update, delete, claim, release, close, comments, notes, learnings, files, files-discover, docs, deps, test, test-all, validate, health, contracts, config, activity, aggregate, extension, extension-reload, package, package-install, package-catalog, install, upgrade, history, schema, stats, append, update-many, gc. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
         },
         id: idSchema,
         query: { type: "string", description: "Search query for action=search." },
@@ -663,8 +665,15 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       // subcommand/name are top-level fields in the published action contract,
       // so accept them from args first and fall back to options for parity.
       const subcommand = readString(args, "subcommand") ?? readRequiredString(options, "subcommand");
-      if (subcommand.trim().toLowerCase() !== "add-type") {
-        throw new PmCliError(`Unknown pm schema subcommand "${subcommand}". Allowed: add-type`, 64);
+      const normalizedSubcommand = subcommand.trim().toLowerCase();
+      if (normalizedSubcommand === "list") {
+        return runSchemaList(global);
+      }
+      if (normalizedSubcommand === "show") {
+        return runSchemaShow(readString(args, "name") ?? readString(options, "name"), global);
+      }
+      if (normalizedSubcommand !== "add-type") {
+        throw new PmCliError(`Unknown pm schema subcommand "${subcommand}". Allowed: add-type, list, show`, 64);
       }
       const aliasSource = args.alias ?? options.alias;
       const aliases = aliasSource === undefined ? undefined : readStringArray(aliasSource);

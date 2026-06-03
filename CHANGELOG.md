@@ -4,6 +4,8 @@
 
 ### Added
 
+- pm init --type-preset agile\|ops\|research: batch-register domain item types ([pm-1lkm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1lkm.toon))
+- pm schema list / pm schema show: inspect registered custom and built-in types ([pm-qq69](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qq69.toon))
 - First-party hooks capability exemplar \(lifecycle hook\) for pm-izsi completion ([pm-s40s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-s40s.toon))
 - Add generic create/update setter for extension item fields ([pm-qvdj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qvdj.toon))
 
@@ -13,6 +15,7 @@
 
 ### Fixed
 
+- Auto Release 2026-06-01 tagged v2026.6.1 but npm publish never completed \(latest npm = 2026.5.31\) ([pm-kcba](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kcba.toon))
 - Warn on global service and renderer override footguns ([pm-5teq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5teq.toon))
 - Fix GitHub \#98 dependency --dep type parsing ([pm-dlfq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dlfq.toon))
 

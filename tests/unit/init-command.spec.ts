@@ -86,6 +86,42 @@ describe("runInit", () => {
     }
   });
 
+  it("registers domain type presets into runtime schema during initialization", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-type-preset-"));
+    try {
+      const result = await runInit("pm", { path: tempRoot }, { defaults: true, typePreset: "agile" });
+      expect(result.registered_type_preset).toMatchObject({
+        name: "agile",
+        registered: ["Story", "Spike"],
+        updated: [],
+      });
+      expect(result.warnings).toContain("registered_type_preset:agile");
+      expect(result.next_steps).toContain("Inspect registered preset types: pm schema list, pm schema show Story");
+
+      const summary = summarizeInitResult(result);
+      expect(summary.registered_type_preset).toEqual(result.registered_type_preset);
+
+      const types = JSON.parse(await readFile(path.join(tempRoot, "schema", "types.json"), "utf8")) as {
+        definitions: Array<{ name: string; aliases?: string[]; folder?: string }>;
+      };
+      expect(types.definitions).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: "Spike", folder: "spikes", aliases: ["research-spike"] }),
+          expect.objectContaining({ name: "Story", folder: "stories", aliases: ["user-story"] }),
+        ]),
+      );
+
+      const rerun = await runInit("pm", { path: tempRoot }, { defaults: true, typePreset: "agile" });
+      expect(rerun.registered_type_preset).toMatchObject({
+        name: "agile",
+        registered: [],
+        updated: ["Story", "Spike"],
+      });
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it("emits already-exists warnings and updates id prefix only when changed", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-reinit-"));
     try {

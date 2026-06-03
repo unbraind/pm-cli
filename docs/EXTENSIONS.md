@@ -280,6 +280,8 @@ safe lifecycle pattern without changing command output.
 Inline command flags require both `commands` and `schema` capabilities. Runtime schema changes should be verified with:
 
 ```bash
+pm schema list
+pm schema show <Type>
 pm contracts --runtime-only --schema-only --json
 pm contracts --command <command> --flags-only --json
 ```

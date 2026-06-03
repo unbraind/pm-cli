@@ -398,6 +398,7 @@ export const PLAN_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const INIT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--preset" },
+  { flag: "--type-preset" },
   { flag: "--defaults", short: "-y", aliases: ["--yes"] },
   { flag: "--author" },
   { flag: "--agent-guidance" },
@@ -1418,7 +1419,7 @@ const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
 
 const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = {
-  init: { optional: ["prefix", "preset", "defaults", "author", "agentGuidance", "withPackages"] },
+  init: { optional: ["prefix", "preset", "typePreset", "defaults", "author", "agentGuidance", "withPackages"] },
   config: {
     required: ["scope", "configAction"],
     optional: ["key", "value", "criterion", "clearCriteria", "format", "policy"],
@@ -1548,9 +1549,9 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     optional: ["dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
   },
   schema: {
-    required: ["subcommand", "name"],
+    required: ["subcommand"],
     // No --message: schema add-type writes a config file, not item history.
-    optional: ["description", "defaultStatus", "folder", "alias", "author", "force"],
+    optional: ["name", "description", "defaultStatus", "folder", "alias", "author", "force"],
   },
   plan: {
     required: ["subcommand"],

@@ -24,6 +24,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   sort: { type: "string", enum: ["priority", "deadline", "updated_at", "created_at", "title", "parent"] },
   prefix: { type: "string" },
   preset: { type: "string", enum: ["minimal", "default", "strict", "custom"] },
+  typePreset: { type: "string", enum: ["agile", "ops", "research"] },
   defaults: { type: "boolean" },
   agentGuidance: { type: "string", enum: ["ask", "add", "skip", "status"] },
   withPackages: { type: "boolean" },
@@ -463,7 +464,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   subcommand: {
     description: "Subcommand for the schema action.",
-    examples: ["add-type"],
+    examples: ["list", "show", "add-type"],
   },
   name: {
     description: "Custom item type name to register (for schema add-type).",
@@ -480,6 +481,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   preset: {
     description: "Governance preset for initialization flows.",
     examples: ["minimal", "default", "strict"],
+  },
+  typePreset: {
+    description: "Domain item-type preset registered during initialization.",
+    examples: ["agile", "ops", "research"],
   },
   defaults: {
     description: "Use non-interactive setup defaults during initialization.",

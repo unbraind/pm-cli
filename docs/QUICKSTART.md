@@ -48,6 +48,7 @@ pm package doctor --project --detail summary
 
 ```bash
 pm init
+pm init --defaults --type-preset agile
 pm health --check-only
 pm init --agent-guidance status
 pm init --agent-guidance add
@@ -57,6 +58,7 @@ pm init --agent-guidance add
 When AGENTS/CLAUDE guidance is missing, default `pm init` uses `--agent-guidance ask`: it prompts only in TTY, never blocks non-interactive runs, and records declined prompts.
 Use `pm init --agent-guidance add` to write the compact workflow block later, or `pm init --agent-guidance status` to inspect guidance state without changing files.
 Use `pm init --defaults --with-packages` when agents should get bundled commands such as calendar, templates, advanced search, and governance helpers in one non-interactive setup step.
+Use `pm init --type-preset agile|ops|research` when a fresh project should start with domain item types such as Story/Spike, Incident/Runbook, or Experiment/Hypothesis.
 
 ## Create Your First Item
 

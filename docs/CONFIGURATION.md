@@ -9,7 +9,7 @@
 - Use `--json` only when strict parsing is needed.
 - Use `pm contracts` for current command/schema metadata.
 
-Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
+Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon), [pm-1lkm](../.agents/pm/features/pm-1lkm.toon), [pm-qq69](../.agents/pm/features/pm-qq69.toon).
 
 ## Configuration Commands
 
@@ -65,6 +65,8 @@ Precedence:
 | `item_types.definitions[]` | custom item types and type options |
 | `governance.create_default_type` | default `--type` used by the `pm create "title"` positional shortcut (defaults to `Task`) |
 | `search.*` | search mode, scoring, providers, embedding timeout, and vector settings |
+
+Runtime item types are context primitives. Use `pm schema list` to inspect the merged registry and `pm schema show <Type>` to inspect one type's folder, aliases, defaults, required options, and extension provenance. `pm init --type-preset agile|ops|research` writes reusable domain types into `.agents/pm/schema/types.json`; this is equivalent to persisted project schema, not an extension-only runtime overlay.
 
 ## Environment Variables
 

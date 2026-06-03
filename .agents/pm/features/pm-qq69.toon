@@ -2,13 +2,39 @@ id: pm-qq69
 title: "pm schema list / pm schema show: inspect registered custom and built-in types"
 description: After pm schema add-type there is no CLI to confirm registered types or inspect the merged runtime registry; agents must read schema/types.json directly.
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[3]: agent-ux,"area:schema",living-map
 created_at: "2026-05-31T19:45:39.781Z"
-updated_at: "2026-05-31T19:45:39.781Z"
+updated_at: "2026-06-03T05:16:32.306Z"
 author: maintainer-agent
 acceptance_criteria: "pm schema list outputs built-in+custom (toon+json {builtin,custom}); pm schema show <Name> shows full definition (folder/aliases/default_status/policies); schema-command tests; MCP schema action."
 value: After pm schema add-type there is no CLI to confirm registered types or inspect the merged runtime registry; agents must read schema/types.json directly.
 parent: pm-8jdc
+resolution: "Implemented schema list/show across CLI, MCP, SDK contracts, completion, docs, and tests."
+expected_result: "Agents can inspect built-in, custom, and extension item types without reading schema files."
+actual_result: pm schema list/show works in focused tests and temp dogfood; coverage and quality gates pass.
+comments[2]{created_at,author,text}:
+  "2026-06-03T05:05:25.727Z",codex-sdk-explorer,"Explorer finding 2026-06-03: SDK/schema inspection confirms this is the canonical item for schema list/show. Public primitives today: @unbrained/pm-cli/sdk exports defineExtension, ExtensionApi, SchemaItemTypeDefinition/SchemaFieldDefinition/SchemaMigrationDefinition, ExtensionRegistrationRegistry, getContracts/getWorkspaceContracts; extensions can call api.registerItemTypes/registerItemFields/registerMigration with schema capability. Runtime type registry merges built-ins + settings/schema/types.json + extension registerItemTypes, but current pm schema CLI/MCP/contracts expose only add-type. Combined PR should make list/show source-aware (builtin, configured file/settings, extension with layer/name), update CLI/MCP/contracts/completion/docs/tests, and include extension-registered type coverage so package authors can verify activation before create."
+  "2026-06-03T05:16:09.435Z",codex-main,"Evidence: Implemented pm schema list/show with compact human output and JSON builtin/custom/extension groups, full show definitions, extension provenance for extension-owned types, CLI/MCP/SDK contracts/completion coverage, and docs. Verification passed: pnpm build; linked pm test --run for schema/contracts/completion/sdk tests; temp dogfood init --type-preset research + schema list/show + create Experiment + health; pnpm quality:docs-skills; pnpm quality:static; pnpm changelog:pm:check using pm-changelog 2026.6.2 unchanged; pm health --check-only --summary ok; node scripts/run-tests.mjs coverage 2120 tests 100%. pm validate history drift ok; resolution warnings are pre-existing closed-item metadata warnings."
+files[7]{path,scope,note}:
+  src/cli/commands/completion.ts,project,completion updates for schema subcommands
+  src/cli/commands/index.ts,project,command barrel exports schema inspection helpers
+  src/cli/commands/schema.ts,project,schema list/show implementation and compact renderers
+  src/cli/register-mutation.ts,project,CLI dispatch for schema list/show/add-type
+  src/mcp/server.ts,project,MCP schema action supports list/show
+  src/sdk/cli-contracts.ts,project,schema action contract allows list/show
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,schema/init parameter metadata
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/schema-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpxm1ufd-285tf9,test,passed,"2026-06-03T05:12:55.624Z","2026-06-03T05:13:09.961Z","2026-06-03T05:13:09.961Z",null,null,2,0,0,null,null,null
+docs[5]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,agent loop schema inspection guidance
+  docs/COMMANDS.md,project,schema list/show command reference
+  docs/CONFIGURATION.md,project,runtime item-type context settings
+  docs/EXTENSIONS.md,project,extension schema verification commands
+  docs/SDK.md,project,package author schema inspection guidance
+close_reason: "Delivered schema list/show inspection with CLI, MCP, SDK contracts, completion, docs, tests, temp dogfood, and coverage evidence."
 body: ""

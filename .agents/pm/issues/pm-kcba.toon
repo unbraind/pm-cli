@@ -2,10 +2,25 @@ id: pm-kcba
 title: Auto Release 2026-06-01 tagged v2026.6.1 but npm publish never completed (latest npm = 2026.5.31)
 description: "Both the scheduled Auto Release (run 26741340961, 07:30Z) and the manual Release dispatch (run 26741550574, 07:35Z) FAILED on 2026-06-01 with 'Process completed with exit code 1' in the 'Build, Test, Publish' job. The job got PAST build + tests + coverage (artifact coverage-release-v2026.6.1.zip uploaded successfully), and the release commit e876a074 'chore(release): cut 2026.6.1' + git tag v2026.6.1 WERE created on main. But `npm view @unbrained/pm-cli version` = 2026.5.31 and `@unbrained/pm-cli@2026.6.1` returns E404 — the npm publish never happened. So the failure is in a POST-test step: most likely npm publish (token expiry/auth) or the Sentry release-reliability gate (release.yml requires SENTRY_PERSONAL_ADMIN_TOKEN per docs/RELEASING.md). This is a repo-secret/CI concern (cannot be fixed in product code). Net effect: daily release is half-broken — tag + GitHub release exist but the package is unpublished on npm, and CHANGELOG/version drift will recur until fixed."
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "area:ci","area:release",blocking,release
 created_at: "2026-06-01T20:17:08.897Z"
-updated_at: "2026-06-01T20:17:08.897Z"
+updated_at: "2026-06-03T05:16:32.818Z"
 author: maintainer-agent
+resolution: Added Auto Release preflight for the mandatory Sentry reliability token before creating version commits/tags.
+expected_result: Auto Release should not create unpublished tags when Release will fail because SENTRY_PERSONAL_ADMIN_TOKEN is missing.
+actual_result: "Workflow now fails before mutation when push=true, dry_run=false, and SENTRY_PERSONAL_ADMIN_TOKEN is empty; release automation contract passes."
+comments[2]{created_at,author,text}:
+  "2026-06-03T05:06:22.122Z",codex-release-explorer,"Release/dependency sweep 2026-06-03: GitHub open PRs/issues are empty (gh pr list [], gh issue list []); open Dependabot alerts are empty (gh api dependabot/alerts?state=open []), vulnerability alerts endpoint returns 204 enabled, secret scanning alerts empty, code scanning endpoint unavailable/no analysis and also reports token would need admin:repo_hook. Dependency/audit: pnpm audit --json reports 0 vulnerabilities across 200 deps; npm audit --json cannot run because repo has no npm lockfile (ENOLOCK); pnpm outdated --format json reports only commander current 14.0.3, latest 15.0.0, wanted 14.0.3. Dependabot Updates workflow latest runs for commander and vitest/tsx/coverage-v8 succeeded on 2026-06-02; no open Dependabot PR remains. Release/changelog: local package and tag are 2026.6.2, but npm @unbrained/pm-cli latest is still 2026.5.31 and GitHub releases latest is v2026.5.31; v2026.6.1/v2026.6.2 tags exist without published GitHub releases/npm packages. Auto Release latest runs 26804332718 (2026-06-02) and 26741340961 (2026-06-01) failed; Release latest runs 26804564260 and 26741550574 failed. Run 26804564260 failed at step 17 Reliability threshold gate after coverage, static quality, changelog check, and compatibility passed; log says SENTRY_PERSONAL_ADMIN_TOKEN is required and env was empty. pm-changelog alignment: npm pm-changelog latest=2026.6.2; pnpm changelog:pm:check installed pm-changelog 2026.6.2 and reported CHANGELOG.md unchanged, item_count=946, check=true. Actionable blocker: restore/configure SENTRY_PERSONAL_ADMIN_TOKEN for Release workflow or adjust the gate policy; until then Auto Release can keep creating version/tag commits but publish remains blocked."
+  "2026-06-03T05:16:09.900Z",codex-main,"Evidence: Added Auto Release preflight that fails before creating a version commit/tag when push=true, dry_run=false, and SENTRY_PERSONAL_ADMIN_TOKEN is missing, preserving the strict Release Sentry reliability gate while preventing new unpublished tags. Release docs now state the preflight behavior. Verification passed: linked pm test --run for tests/integration/release-automation-contract.spec.ts; pnpm quality:docs-skills; pnpm quality:static; pnpm changelog:pm:check; node scripts/run-tests.mjs coverage 2120 tests 100%. Dependency/security sweep found no open PRs/issues, no open Dependabot/secret scanning alerts, pnpm audit 0 vulnerabilities, pm-changelog latest 2026.6.2."
+files[1]{path,scope,note}:
+  .github/workflows/auto-release.yml,project,preflight required Sentry gate token before version commit/tag push
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpxm2abo-lcfors,test,passed,"2026-06-03T05:13:24.700Z","2026-06-03T05:13:30.564Z","2026-06-03T05:13:30.564Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,document Auto Release Sentry token preflight
+close_reason: Added Auto Release Sentry-token preflight before version commit/tag creation and documented the release guard; release publish still requires the repository secret to be configured.
 body: ""

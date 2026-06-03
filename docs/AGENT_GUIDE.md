@@ -154,6 +154,8 @@ Use these defaults unless the task requires otherwise:
 - `pm validate --check-resolution --check-history-drift` before closing broad work.
 - `pm history-redact <id> --dry-run` before rewriting sensitive history payloads, then rerun without `--dry-run` once scope is confirmed.
 - `pm history-repair <id> --dry-run` when `pm health` or `pm validate --check-history-drift` report drifted streams; it re-anchors the hash chain and reconciles with the on-disk item without touching item content. Rerun without `--dry-run` to apply.
+- `pm schema list` and `pm schema show <Type>` before creating custom-domain work; they show built-in, persisted custom, and extension-provided item types without reading schema files by hand.
 - `pm schema add-type <Name>` when `pm create`/`pm update` reject a project-specific type as invalid; it registers the type in `.agents/pm/schema/types.json` so `pm create <Name> "..."` works. Built-in types are reserved; the upsert is idempotent.
+- `pm init --type-preset agile|ops|research` for new projects that should start with domain item types instead of generic tasks only.
 - `pm normalize --dry-run --json` before lifecycle metadata cleanups.
 - `pm health --check-only` when inspecting repository health without refresh side effects.

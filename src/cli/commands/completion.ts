@@ -1114,6 +1114,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--yes[Alias for --defaults]' \\
             '--author[Set the default mutation author for this project]:author' \\
             '--agent-guidance[Agent guidance mode]:mode:(ask add skip status)' \\
+            '--type-preset[Register domain item types]:type-preset:(agile ops research)' \\
             '--with-packages[Install bundled first-party packages during initialization]' \\
             '--verbose[Include the full resolved settings tree in init output]' \\
             '--json[Output JSON]' \\
@@ -1127,6 +1128,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--yes[Alias for --defaults]' \\
             '--author[Set the default mutation author for this project]:author' \\
             '--agent-guidance[Agent guidance mode]:mode:(ask add skip status)' \\
+            '--type-preset[Register domain item types]:type-preset:(agile ops research)' \\
             '--with-packages[Install bundled first-party packages during initialization]' \\
             '--verbose[Include the full resolved settings tree in init output]' \\
             '--json[Output JSON]' \\
@@ -1402,7 +1404,7 @@ complete -c pm -n __pm_no_subcommand -a reindex       -d 'Rebuild search artifac
 complete -c pm -n __pm_no_subcommand -a history       -d 'Show item history entries'
 complete -c pm -n __pm_no_subcommand -a history-redact -d 'Redact sensitive literals/patterns and recompute history hashes'
 complete -c pm -n __pm_no_subcommand -a history-repair -d 'Re-anchor a drifted history chain so pm health/validate report ok'
-complete -c pm -n __pm_no_subcommand -a schema        -d 'Register custom item types into .agents/pm/schema/types.json'
+complete -c pm -n __pm_no_subcommand -a schema        -d 'Inspect and manage runtime schema'
 complete -c pm -n __pm_no_subcommand -a plan          -d 'Agent-optimized Plan workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)'
 complete -c pm -n __pm_no_subcommand -a activity      -d 'Show recent activity across items'
 complete -c pm -n __pm_no_subcommand -a restore       -d 'Restore an item to an earlier state'
@@ -1748,7 +1750,7 @@ complete -c pm -n '__fish_seen_subcommand_from history-repair' -l dry-run -d 'Pr
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l message -d 'Audit history message' -r
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l force -d 'Force ownership/lock override'
-complete -c pm -n '__fish_seen_subcommand_from schema' -a 'add-type' -d 'Schema subcommand'
+complete -c pm -n '__fish_seen_subcommand_from schema' -a 'list show add-type' -d 'Schema subcommand'
 complete -c pm -n '__fish_seen_subcommand_from schema' -l description -d 'Human description for the custom item type' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l default-status -d 'Default status hint for the custom item type' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l folder -d 'Storage folder for items of this custom type' -r
@@ -1903,6 +1905,7 @@ complete -c pm -n '__fish_seen_subcommand_from init' -l defaults -d 'Use non-int
 complete -c pm -n '__fish_seen_subcommand_from init' -s y -l yes -d 'Alias for --defaults'
 complete -c pm -n '__fish_seen_subcommand_from init' -l author -d 'Set the default mutation author for this project' -r
 complete -c pm -n '__fish_seen_subcommand_from init' -l agent-guidance -d 'Agent guidance mode' -r -a 'ask add skip status'
+complete -c pm -n '__fish_seen_subcommand_from init' -l type-preset -d 'Register domain item types' -r -a 'agile ops research'
 complete -c pm -n '__fish_seen_subcommand_from init' -l with-packages -d 'Install bundled first-party packages during initialization'
 complete -c pm -n '__fish_seen_subcommand_from init' -l verbose -d 'Include the full resolved settings tree in init output'
 complete -c pm -n '__fish_seen_subcommand_from config' -l criterion -d 'Criteria value for definition-of-done metadata-required-fields or lifecycle pattern keys (repeatable for set)' -r

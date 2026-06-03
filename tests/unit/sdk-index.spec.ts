@@ -238,8 +238,10 @@ describe("public sdk entrypoint", () => {
     });
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.create.required).toEqual(expect.arrayContaining(["title"]));
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.init.optional).toEqual(
-      expect.arrayContaining(["defaults", "author", "agentGuidance", "withPackages"]),
+      expect.arrayContaining(["defaults", "author", "agentGuidance", "typePreset", "withPackages"]),
     );
+    expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.schema.required).toEqual(["subcommand"]);
+    expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.schema.optional).toEqual(expect.arrayContaining(["name"]));
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.upgrade.optional).toEqual(expect.arrayContaining(["dryRun"]));
   });
 
