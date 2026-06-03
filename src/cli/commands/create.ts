@@ -1494,7 +1494,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     runtimeFieldRegistry,
     type,
   );
-  for (const fieldKey of Object.keys(runtimeCreateFieldValues.values)) {
+  for (const fieldKey of Object.keys(runtimeCreateFieldValues.values ?? {})) {
     if (!unsetTargets.frontMatterKeys.has(fieldKey)) {
       continue;
     }
@@ -1841,7 +1841,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     reminders: reminders.values,
     events: events.values,
     ...registeredItemFieldValues,
-    ...runtimeCreateFieldValues.values,
+    ...(runtimeCreateFieldValues.values ?? {}),
   });
   try {
     applyRegisteredItemFieldDefaultsAndValidation(
@@ -1878,7 +1878,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const historyMessage = buildHistoryMessage(resolvedOptions.message, explicitUnsetKeys);
   const changedFields = buildChangedFields(frontMatter, body, explicitUnsetKeys, [
     ...Object.keys(registeredItemFieldValues),
-    ...Object.keys(runtimeCreateFieldValues.values),
+    ...Object.keys(runtimeCreateFieldValues.values ?? {}),
   ]);
   let hookWarnings: string[] = [];
 

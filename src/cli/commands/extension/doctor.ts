@@ -255,6 +255,9 @@ export function classifyDoctorActivationFailureWarnings(
   const failures = Array.isArray(activationFailures) ? activationFailures : [];
   const warnings: string[] = [];
   for (const failure of failures) {
+    if (!failure || typeof failure.name !== "string") {
+      continue;
+    }
     const missingCapability = failure.trace?.missing_capability ?? failure.trace?.capability;
     if (typeof missingCapability === "string" && missingCapability.trim().length > 0) {
       warnings.push(`extension_capability_missing:${failure.name}:${missingCapability.trim().toLowerCase()}`);
