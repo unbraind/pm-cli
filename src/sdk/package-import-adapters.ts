@@ -165,6 +165,7 @@ export async function commitImportedItem(
 ): Promise<CommitImportedItemResult> {
   const { pmRoot, id, itemPath, document, author, message, settings, conflictWarningPrefix } = params;
   const historyPath = getHistoryPath(pmRoot, id);
+  const beforeDocument = emptyImportedDocument();
   try {
     const releaseLock = await acquireLock(pmRoot, id, settings.locks.ttl_seconds, author);
     try {
@@ -174,7 +175,7 @@ export async function commitImportedItem(
           nowIso: nowIso(),
           author,
           op: "import",
-          before: emptyImportedDocument(),
+          before: beforeDocument,
           after: document,
           message,
         });
@@ -184,11 +185,21 @@ export async function commitImportedItem(
             path: itemPath,
             scope: "project",
             op: "import",
+            item_id: document.metadata.id,
+            item_type: document.metadata.type,
+            before: beforeDocument,
+            after: document,
+            changed_fields: ["imported"],
           })),
           ...(await runActiveOnWriteHooks({
             path: historyPath,
             scope: "project",
             op: "import:history",
+            item_id: document.metadata.id,
+            item_type: document.metadata.type,
+            before: beforeDocument,
+            after: document,
+            changed_fields: ["imported"],
           })),
         ];
         return { committed: true, writeWarnings };

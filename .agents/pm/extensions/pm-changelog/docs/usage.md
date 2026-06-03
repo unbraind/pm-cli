@@ -135,6 +135,50 @@ Pair `--all-release-tags` with `--release-version-from-package` (or `--version v
 
 Each item entry becomes a link: `- Fix something ([pmc-abc](https://github.com/owner/repo/blob/main/.agents/pm/issues/pmc-abc.toon))`. The type subdirectory (`issues/`, `tasks/`, `chores/`, `features/`, `epics/`) is resolved automatically from the item's type.
 
+## Opt-in enhancements
+
+All of the following flags are strictly additive: omitting them produces byte-for-byte identical output to earlier versions, so they are safe to adopt incrementally in CI.
+
+Group items inside each release by type, status, or tag instead of the default keep-a-changelog categories:
+
+```bash
+npx pm-changelog --stdout --section-by type
+npx pm-changelog --stdout --section-by label
+```
+
+Render Conventional-Commits headings (`Features`, `Bug Fixes`, `Documentation`, ...) while keeping the default category bucketing:
+
+```bash
+npx pm-changelog --stdout --conventional
+```
+
+Append a per-release contributor list (from `assignee`, falling back to `author`):
+
+```bash
+npx pm-changelog --stdout --contributors
+```
+
+Trim large histories to the most recent releases or to releases at/after a version:
+
+```bash
+npx pm-changelog --all-release-tags --stdout --limit 10
+npx pm-changelog --all-release-tags --stdout --since-version 2.0.0
+```
+
+Emit a structured changelog document (releases -> sections -> items) for downstream tooling:
+
+```bash
+npx pm-changelog --all-release-tags --changelog-json > changelog.json
+```
+
+The same flags are available on the pm extension command:
+
+```bash
+pm changelog generate --stdout --section-by status
+pm changelog generate --stdout --conventional --contributors
+pm changelog generate --changelog-json
+```
+
 ## Options
 
 | Option | Default | Description |
@@ -157,7 +201,13 @@ Each item entry becomes a link: `- Fix something ([pmc-abc](https://github.com/o
 | `--all-release-tags` | false | Rebuild full changelog history from git release tag windows, including an `Unreleased` section for post-latest-tag closed items. |
 | `--release-tag-pattern <glob>` | `v*` | Git tag glob used by `--all-release-tags`. |
 | `--status <list>` | `closed` | Comma-separated statuses |
-| `--group-by <mode>` | `version` | `version`, `release`, or `milestone` |
+| `--group-by <mode>` | `version` | `version`, `release`, or `milestone` (controls how release sections are bucketed) |
+| `--section-by <mode>` | `category` | Within-release grouping: `category` (default, keep-a-changelog), `type`, `status`, or `label` |
+| `--conventional` | false | With the default `category` grouping, render Conventional-Commits headings (`Features`, `Bug Fixes`, ...) instead of `Added`/`Fixed`/... |
+| `--contributors` | false | Append a `Contributors` list per release derived from item `assignee` (falling back to `author`) |
+| `--limit <n>` | - | Keep only the most recent N release sections (only affects `--all-release-tags`/`--group-by` history output) |
+| `--since-version <v>` | - | Keep only releases at or newer than version `<v>` (`Unreleased` is always kept; history output only) |
+| `--changelog-json` | false | Print the full structured changelog document (releases -> sections -> items) as JSON to stdout. Distinct from `--json` (CI summary) |
 | `--mode <mode>` | `replace` | `replace` or `prepend` existing changelog |
 | `--json` | false | Print JSON summary for automation |
 | `--check` | false | Do not write; exit 1 if the output file would change |

@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
-import { listAllFrontMatter, locateItem, mutateItem, readLocatedItem } from "../../src/core/store/item-store.js";
+import { deleteItem, listAllFrontMatter, locateItem, mutateItem, readLocatedItem } from "../../src/core/store/item-store.js";
 import { listAllDocumentsCached } from "../../src/core/store/front-matter-cache.js";
 import { getItemPath } from "../../src/core/store/paths.js";
 import { readSettings } from "../../src/core/store/settings.js";
@@ -301,6 +301,88 @@ describe("core/store/item-store", () => {
       } finally {
         clearActiveExtensionHooks();
       }
+    });
+  });
+
+  it("dispatches item identity and snapshots on item onWrite hooks", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-write-context";
+      await writeTaskItem(pmPath, id, { description: "before description" }, "toon");
+      const settings = await readSettings(pmPath);
+      const seenWrites: Array<{
+        op: string;
+        itemId?: string;
+        itemType?: string;
+        beforeDescription?: string;
+        afterDescription?: string;
+        changedFields?: string[];
+      }> = [];
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onWrite: [
+          {
+            layer: "project",
+            name: "capture-write-context",
+            run: (context) => {
+              seenWrites.push({
+                op: context.op,
+                itemId: context.item_id,
+                itemType: context.item_type,
+                beforeDescription: context.before?.metadata.description,
+                afterDescription: context.after?.metadata.description,
+                changedFields: context.changed_fields,
+              });
+            },
+          },
+        ],
+        onRead: [],
+        onIndex: [],
+      });
+
+      try {
+        await mutateItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          op: "update",
+          author: "unit-author",
+          mutate: (document) => {
+            document.metadata.description = "after description";
+            return { changedFields: ["description"] };
+          },
+        });
+        await deleteItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          author: "unit-author",
+          message: "delete after context capture",
+        });
+      } finally {
+        clearActiveExtensionHooks();
+      }
+
+      expect(seenWrites).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            op: "update",
+            itemId: id,
+            itemType: "Task",
+            beforeDescription: "before description",
+            afterDescription: "after description",
+            changedFields: ["description"],
+          }),
+          expect.objectContaining({
+            op: "delete",
+            itemId: id,
+            itemType: "Task",
+            beforeDescription: "after description",
+            afterDescription: undefined,
+            changedFields: ["deleted"],
+          }),
+        ]),
+      );
     });
   });
 });

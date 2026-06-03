@@ -11,12 +11,22 @@ export interface PmItem {
     milestone?: string;
     metadata?: Record<string, unknown>;
     url?: string;
+    /** Person an item is assigned to. Surfaced in the optional Contributors
+     * section (`--contributors`); never affects default output. */
+    assignee?: string;
+    /** Person who authored an item. Used as a Contributors fallback when no
+     * assignee is set. Never affects default output. */
+    author?: string;
     created_at?: string;
     updated_at?: string;
     closed_at?: string;
     due_date?: string;
 }
 export type ChangelogGroupBy = "version" | "release" | "milestone";
+/** Within-release grouping selector for the opt-in `--section-by` flag.
+ * `"category"` is the default and reproduces the historical
+ * keep-a-changelog grouping (Added/Changed/Fixed/...) byte-for-byte. */
+export type ChangelogSectionBy = "category" | "type" | "status" | "label";
 export interface ChangelogReleaseWindow {
     heading: string;
     /** Git tag name (e.g. "v1.2.0") for this window. When set, items whose
@@ -44,6 +54,23 @@ export interface GenerateChangelogOptions {
      * When set, each item ID in the changelog becomes a hyperlink:
      * `[pmc-abc]({itemUrlBase}/pmc-abc.toon)` */
     itemUrlBase?: string;
+    /** OPT-IN: within-release grouping. Absent or `"category"` reproduces the
+     * historical keep-a-changelog grouping byte-for-byte. */
+    sectionBy?: ChangelogSectionBy;
+    /** OPT-IN: when true, map category-style headings to Conventional-Commits
+     * headings (Features/Bug Fixes/Documentation/...). Only takes effect with
+     * the default `sectionBy: "category"` grouping. Absent → headings unchanged. */
+    conventional?: boolean;
+    /** OPT-IN: append a "Contributors" list per release, derived from item
+     * assignee (falling back to author). Absent → no Contributors section. */
+    contributors?: boolean;
+    /** OPT-IN: keep only the most recent N release sections. Applies only when
+     * `releaseWindows` produced the sections. Absent/0 → all releases. */
+    limit?: number;
+    /** OPT-IN: keep only release sections at or newer than this version.
+     * Applies only when `releaseWindows` produced the sections (the `Unreleased`
+     * section is always kept). Absent → all releases. */
+    sinceVersion?: string;
 }
 export interface GeneratedChangelog {
     markdown: string;
@@ -84,5 +111,37 @@ export interface WriteChangelogResult {
 export interface ChangelogSection {
     heading: string;
     items: PmItem[];
+}
+/** A single item as it appears in the structured `--changelog-json` document. */
+export interface ChangelogDocumentItem {
+    id?: string;
+    title: string;
+    type?: string;
+    status?: string;
+    tags?: string[];
+    url?: string;
+}
+/** A heading group (category/type/status/label) within a release. */
+export interface ChangelogDocumentSection {
+    heading: string;
+    items: ChangelogDocumentItem[];
+}
+/** One release in the structured changelog document. */
+export interface ChangelogDocumentRelease {
+    heading: string;
+    /** Normalized version key (e.g. "1.2.0"), or undefined for Unreleased. */
+    version?: string;
+    item_count: number;
+    sections: ChangelogDocumentSection[];
+    /** Present only when `--contributors` is set. */
+    contributors?: string[];
+}
+/** Structured changelog produced by the opt-in `--changelog-json` flag. */
+export interface ChangelogDocument {
+    title: string;
+    group_by: ChangelogGroupBy;
+    section_by: ChangelogSectionBy;
+    item_count: number;
+    releases: ChangelogDocumentRelease[];
 }
 //# sourceMappingURL=types.d.ts.map

@@ -272,10 +272,16 @@ Common APIs:
 - `api.registerService("output_format", handler)` customizes output formatting through the service override API. Return `context.payload`, `null`, or `undefined` for commands the extension does not own.
 - `api.registerRenderer("toon" | "json", renderer)` adds format-specific renderers. Return `null` for unrelated payloads so pm falls back to native rendering.
 - `api.hooks.beforeCommand(handler)`, `api.hooks.afterCommand(handler)`, `api.hooks.onWrite(handler)`, `api.hooks.onRead(handler)`, and `api.hooks.onIndex(handler)` add lifecycle hooks.
+  `onWrite` always includes `path`, `scope`, and `op`; item mutations also add optional `item_id`, `item_type`, `before`, `after`, and `changed_fields`.
 
 The bundled `pm-lifecycle-hooks` package is the hook exemplar: it declares only
 `hooks` and registers a default-inert `afterCommand` hook so authors can copy a
 safe lifecycle pattern without changing command output.
+
+If a package calls a `register*` API without declaring the required manifest
+capability, `pm package doctor --project --detail deep --trace` reports
+`extension_capability_missing:<name>:<capability>` and shows the exact capability
+to add before publishing.
 
 Inline command flags require both `commands` and `schema` capabilities. Runtime schema changes should be verified with:
 

@@ -21,6 +21,7 @@
 
 ### Other
 
+- SDK extension hook context and manifest capability guardrails ([pm-e9ut](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-e9ut.toon))
 - 2026-06-02 latest-main ecosystem dogfood and SDK review ([pm-kddw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kddw.toon))
 
 ## 2026.6.2 - 2026-06-02

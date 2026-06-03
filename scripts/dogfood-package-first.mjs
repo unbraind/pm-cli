@@ -352,7 +352,12 @@ try {
   assert(packageList?.action === "catalog", "package list compatibility path did not resolve to catalog action");
   assert(packageList?.details?.total >= 8, "package list did not list all bundled first-party packages");
   run("package explore", ["package", "explore", "--project"]);
-  run("package doctor", ["package", "doctor", "--project", "--detail", "summary"]);
+  const packageDoctor = run("package doctor", ["package", "doctor", "--project", "--detail", "deep", "--trace"]);
+  const packageDoctorSummary = packageDoctor?.details?.summary ?? {};
+  const packageDoctorWarningCodes = new Set(packageDoctor?.details?.triage?.warning_codes ?? []);
+  assert(packageDoctorSummary.activation_failure_count === 0, "package doctor reported activation failures");
+  assert(packageDoctorSummary.blocking_failure_count === 0, "package doctor reported blocking failures");
+  assert(!packageDoctorWarningCodes.has("extension_capability_missing"), "package doctor reported missing manifest capabilities");
   const scaffoldPackagePath = path.join(tempRoot, "scaffold-package");
   const packageScaffold = run("package init scaffold", ["package", "init", scaffoldPackagePath, "--project"]);
   assert(packageScaffold?.details?.extension?.command === "scaffold-package ping", "package init scaffold did not report starter command");

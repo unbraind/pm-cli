@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026.6.3 - 2026-06-03
+
+### Added
+
+- Opt-in changelog enhancements ([pmc-emx6](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/features/pmc-emx6.toon))
+- Add --changelog-json structured document output ([pmc-gl6b](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-gl6b.toon))
+- Add --limit and --since-version release windowing ([pmc-xtwa](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-xtwa.toon))
+- Add --contributors per-release contributor list ([pmc-imsu](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-imsu.toon))
+- Add --conventional Conventional-Commits heading mapping ([pmc-91hn](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-91hn.toon))
+- Add --section-by type\|status\|label within-release grouping ([pmc-qro6](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/tasks/pmc-qro6.toon))
+
+### Fixed
+
+- Zero-regression guarantee for pm-changelog enhancements ([pmc-1w1r](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/decisions/pmc-1w1r.toon))
+- Fix changelog export format validation and metadata ([pmc-55cp](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-55cp.toon))
+
 ## 2026.6.1 - 2026-06-01
 
 ### Fixed
