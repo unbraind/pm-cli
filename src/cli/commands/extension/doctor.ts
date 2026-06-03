@@ -250,7 +250,7 @@ export function classifyDoctorLoadFailureWarnings(loadFailures: Array<{ name: st
 }
 
 export function classifyDoctorActivationFailureWarnings(
-  activationFailures: Array<{ name: string; trace?: { missing_capability?: string; capability?: string } }>,
+  activationFailures: Array<{ name: string; trace?: { missing_capability?: string; capability?: string } }> = [],
 ): string[] {
   const warnings: string[] = [];
   for (const failure of activationFailures) {
