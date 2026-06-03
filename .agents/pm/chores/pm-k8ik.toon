@@ -2,13 +2,21 @@ id: pm-k8ik
 title: "pm schema remove-type: delete a custom type from types.json"
 description: add-type is idempotent upsert but there is no deletion path; renamed/abandoned types linger in types.json forever with no CLI removal.
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[3]: agent-ux,"area:schema",living-map
 created_at: "2026-05-31T19:45:41.042Z"
-updated_at: "2026-05-31T19:45:41.042Z"
+updated_at: "2026-06-03T14:53:25.632Z"
 author: maintainer-agent
 acceptance_criteria: pm schema remove-type <Name> removes the definition (case-insensitive); refuses built-ins; warns (not blocks) if open items of that type exist; lock-guarded; tests; MCP action.
 value: add-type is idempotent upsert but there is no deletion path; renamed/abandoned types linger in types.json forever with no CLI removal.
 parent: pm-8jdc
+resolution: "Added pm schema remove-type <Name> (mirrors add-type: SCHEMA_TYPES_LOCK_ID, atomic write, schema:remove-type onWrite hooks). Case-insensitive; refuses built-in BUILTIN_ITEM_TYPE_VALUES; emits non-blocking items_using_type:<N> warning (lightest read path listAllFrontMatterLight, counts all items). Wired CLI, MCP enum+dispatch, SCHEMA_FLAG_CONTRACTS, completion (bash/zsh/fish), docs, tests."
+expected_result: "pm schema remove-type removes a custom type, refuses built-ins, warns if items use it."
+actual_result: "Verified in temp dir: remove-type Spike removed; remove-type Task refused (exit 2); items_using_type warning surfaced non-blocking. New removeItemType core helper 100% covered."
+comments[3]{created_at,author,text}:
+  "2026-06-03T13:52:09.660Z",claude-code-agent,"Orchestrator brief (claude-code-agent): grouped with pm-e77a into the schema-mutation-primitives sub-agent on branch schema-customization-completion-20260603 (part of plan pm-z5nb). add-type writes schema/types.json via core/schema/item-types-file.ts and merges into settings.item_types at readSettings (settings.ts:647). remove-type mirrors that path with a removeItemType helper. Wiring sites confirmed: schema.ts SCHEMA_SUBCOMMANDS, register-mutation.ts dispatch, completion.ts (bash ~line402 + zsh/fish), mcp/server.ts (enum line144 + dispatch line678), cli-contracts SCHEMA_FLAG_CONTRACTS + PM_TOOL_ACTION_SCHEMA_CONTRACTS.schema, tool-parameter-tables, docs/COMMANDS.md."
+  "2026-06-03T13:55:10.017Z",claude-code-agent,"Started implementation. Read existing add-type architecture: types.json persisted via src/core/schema/item-types-file.ts; readSettings merges schema/types.json defs + schema/statuses.json statuses into settings. Plan: add removeItemType() to item-types-file.ts (case-insensitive, refuse BUILTIN_ITEM_TYPE_VALUES), runSchemaRemoveType in schema.ts mirroring add-type (lock SCHEMA_TYPES_LOCK_ID, atomic write, onWrite hooks). Count items-using-type via listAllFrontMatterLight (lightest read path) and warn (non-blocking) with open_items_using_type:<N>."
+  "2026-06-03T14:14:29.357Z",claude-code-agent,"Implemented pm schema remove-type <Name>. Core: added removeItemType(file,name) to src/core/schema/item-types-file.ts (case-insensitive; throws on built-in BUILTIN_ITEM_TYPE_VALUES; returns {file,removed,definition}; no-op removed:false when absent). CLI: runSchemaRemoveType in schema.ts mirrors add-type (lock SCHEMA_TYPES_LOCK_ID, atomic write, schema:remove-type onWrite hooks, init check). Item counting: countItemsUsingType uses listAllFrontMatterLight (lightest read path) BEFORE acquiring the lock; counts ALL items of that type (not just open) and surfaces non-blocking warning items_using_type:<N>. Removal proceeds regardless. Wired: register-mutation dispatch + commander, MCP server (enum + dispatch + Allowed string), cli-contracts (SCHEMA_FLAG_CONTRACTS, conditionalRequired remove-type->name), completion bash/zsh/fish, commands/index barrel, docs COMMANDS+AGENT_GUIDE. Tests merged into tests/unit/item-types-file.spec.ts (core) + schema-command.spec.ts (command). 100% core coverage. All 2167 tests green; static gate + typecheck pass."
+close_reason: "Delivered pm schema remove-type <Name>: case-insensitive removal, refuses built-ins, non-blocking items_using_type warning, lock-guarded, MCP+contracts+completion+docs+tests, removeItemType core helper 100% covered. Verified in temp dir. Part of schema-customization-completion PR (plan pm-z5nb)."
 body: ""

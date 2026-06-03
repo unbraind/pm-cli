@@ -383,7 +383,7 @@ describe("public sdk entrypoint", () => {
       expect(optionObjectContracts.selected.command).toBe("init");
 
       const defaultContracts = await getContracts();
-      expect(defaultContracts.schema_version).toBe("4.0.1");
+      expect(defaultContracts.schema_version).toBe("4.0.2");
     });
   });
 });

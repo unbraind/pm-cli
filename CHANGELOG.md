@@ -4,6 +4,8 @@
 
 ### Added
 
+- Per-type workflow / allowed-transitions config \(schema/workflows.json\) ([pm-f4r1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-f4r1.toon))
+- pm schema add-status: register custom statuses \(complement to add-type\) ([pm-e77a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e77a.toon))
 - pm init --type-preset agile\|ops\|research: batch-register domain item types ([pm-1lkm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1lkm.toon))
 - pm schema list / pm schema show: inspect registered custom and built-in types ([pm-qq69](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qq69.toon))
 - First-party hooks capability exemplar \(lifecycle hook\) for pm-izsi completion ([pm-s40s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-s40s.toon))
@@ -15,9 +17,14 @@
 
 ### Fixed
 
+- governance.create\_default\_type is not settable via pm config set ([pm-jpwo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jpwo.toon))
 - Auto Release 2026-06-01 tagged v2026.6.1 but npm publish never completed \(latest npm = 2026.5.31\) ([pm-kcba](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kcba.toon))
 - Warn on global service and renderer override footguns ([pm-5teq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5teq.toon))
 - Fix GitHub \#98 dependency --dep type parsing ([pm-dlfq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dlfq.toon))
+
+### Removed
+
+- pm schema remove-type: delete a custom type from types.json ([pm-k8ik](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-k8ik.toon))
 
 ### Other
 

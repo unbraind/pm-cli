@@ -399,7 +399,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--dry-run --author --message --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    schema)",
-    `      COMPREPLY=(${compgen("list show add-type --description --default-status --folder --alias --author --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("list show add-type remove-type add-status remove-status --description --default-status --folder --alias --role --order --author --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    plan)",
     `      COMPREPLY=(${compgen(`${PLAN_SUBCOMMANDS_LIST} ${PLAN_FLAGS}`)})`,
@@ -514,7 +514,7 @@ _pm_commands() {
     'history:Show item history entries'
     'history-redact:Redact sensitive literals/patterns and recompute history hashes'
     'history-repair:Re-anchor a drifted history chain so pm health/validate report ok'
-    'schema:Register custom item types into .agents/pm/schema/types.json'
+    'schema:Manage custom item types and statuses in .agents/pm/schema/*.json'
     'plan:Agent-optimized Plan item workflow (create/show/add-step/update-step/complete-step/link/approve/materialize)'
     'activity:Show recent activity across items'
     'restore:Restore an item to an earlier state'
@@ -933,11 +933,13 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         schema)
           _arguments \\
-            '1:subcommand:(list show add-type)' \\
-            '--description[Human description for the custom item type]:text' \\
+            '1:subcommand:(list show add-type remove-type add-status remove-status)' \\
+            '--description[Human description for the custom item type or status]:text' \\
             '--default-status[Default status hint for the custom item type]:status' \\
             '--folder[Storage folder for items of this custom type]:dir' \\
-            '--alias[Alias for the custom type (repeatable)]:name' \\
+            '--alias[Alias for the custom type or status (repeatable)]:name' \\
+            '--role[Lifecycle role for a custom status (repeatable)]:role' \\
+            '--order[Display/sort order for a custom status]:n' \\
             '--author[Mutation author]:author' \\
             '--force[Force ownership/lock override]' \\
             '--json[Output JSON]' \\
@@ -1750,11 +1752,13 @@ complete -c pm -n '__fish_seen_subcommand_from history-repair' -l dry-run -d 'Pr
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l message -d 'Audit history message' -r
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l force -d 'Force ownership/lock override'
-complete -c pm -n '__fish_seen_subcommand_from schema' -a 'list show add-type' -d 'Schema subcommand'
-complete -c pm -n '__fish_seen_subcommand_from schema' -l description -d 'Human description for the custom item type' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -a 'list show add-type remove-type add-status remove-status' -d 'Schema subcommand'
+complete -c pm -n '__fish_seen_subcommand_from schema' -l description -d 'Human description for the custom item type or status' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l default-status -d 'Default status hint for the custom item type' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l folder -d 'Storage folder for items of this custom type' -r
-complete -c pm -n '__fish_seen_subcommand_from schema' -l alias -d 'Alias for the custom type (repeatable)' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l alias -d 'Alias for the custom type or status (repeatable)' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l role -d 'Lifecycle role for a custom status (repeatable)' -r
+complete -c pm -n '__fish_seen_subcommand_from schema' -l order -d 'Display/sort order for a custom status' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l force -d 'Force ownership/lock override'
 complete -c pm -n '__fish_seen_subcommand_from plan' -a 'create show add-step update-step complete-step block-step reorder-step remove-step link unlink decision discovery validation resume approve materialize' -d 'Plan subcommand'

@@ -2,14 +2,18 @@ id: pm-mt7k
 title: "As a coding agent bootstrapping a custom-typed project, I want pm schema list/show, so that I can confirm my types registered before pm create"
 description: "As a coding agent bootstrapping a custom-typed project, I want pm schema list/show, so that I can confirm my types registered before pm create"
 type: Story
-status: open
+status: closed
 priority: 1
 tags[4]: agent-ux,"area:schema",living-map,story
 created_at: "2026-05-31T19:49:46.562Z"
-updated_at: "2026-05-31T19:49:46.562Z"
+updated_at: "2026-06-03T14:53:48.171Z"
 author: maintainer-agent
 acceptance_criteria: pm schema list outputs builtin+custom (toon+json); pm schema show <Name> shows full definition; completion picks up custom types
 parent: pm-8jdc
+resolution: "Delivered by pm-qq69 (pm schema list/show across CLI, MCP, SDK contracts, completion, docs, tests)."
+expected_result: Agents can inspect builtin+custom+extension item types before pm create without reading schema files.
+actual_result: pm schema list shows builtin/custom/extension sections (toon+json); pm schema show <Type> shows full definition; verified in this PR's smoke run.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-qq69,related,"2026-05-31T19:49:46.562Z",null,null
+close_reason: "Story satisfied: pm schema list/show shipped via pm-qq69 (CLI+MCP+SDK contracts+completion+docs+tests); custom types are picked up by the guide-shell package's dynamic completion resolver (graceful static fallback in core). Verified pm schema list/show output for builtin+custom types. Closing the story-level tracking as part of the schema-customization-completion PR."
 body: ""

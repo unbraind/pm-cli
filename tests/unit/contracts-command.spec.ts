@@ -35,7 +35,7 @@ const GLOBAL_OPTIONS: GlobalOptions = {
 describe("contracts command runtime", () => {
   it("returns schema, actions, command flags, and alias surfaces", async () => {
     const result = await runContracts({}, GLOBAL_OPTIONS);
-    expect(result.schema_version).toBe("4.0.1");
+    expect(result.schema_version).toBe("4.0.2");
     expect(result.schema_id).toBe(
       "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
     );

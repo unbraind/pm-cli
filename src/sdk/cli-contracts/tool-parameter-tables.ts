@@ -220,6 +220,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   name: { type: "string" },
   defaultStatus: { type: "string" },
   alias: { type: "array", items: { type: "string" } },
+  role: { type: "array", items: { type: "string" } },
   text: { type: "string" },
   add: { type: "array", items: { type: "string" } },
   addGlob: { type: "array", items: { type: "string" } },
@@ -465,19 +466,25 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   subcommand: {
     description: "Subcommand for the schema action.",
-    examples: ["list", "show", "add-type"],
+    examples: ["list", "show", "add-type", "remove-type", "add-status", "remove-status"],
   },
   name: {
-    description: "Custom item type name to register (for schema add-type).",
-    examples: ["Spike"],
+    description:
+      "Custom item type name (schema add-type/remove-type/show) or custom status id (schema add-status/remove-status).",
+    examples: ["Spike", "review"],
   },
   defaultStatus: {
     description: "Default status hint recorded for a custom item type.",
     examples: ["open"],
   },
   alias: {
-    description: "Aliases for the custom item type (repeatable).",
+    description: "Aliases for the custom item type or status (repeatable).",
     examples: [["spike", "research"]],
+  },
+  role: {
+    description:
+      "Lifecycle roles for a custom status (schema add-status): draft, active, blocked, terminal, terminal_done, terminal_canceled, default_open, default_close, default_cancel.",
+    examples: [["active"], ["terminal", "terminal_done"]],
   },
   preset: {
     description: "Governance preset for initialization flows.",

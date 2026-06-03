@@ -63,7 +63,9 @@ Precedence:
 | `validation.sprint_release_format` | `warn` or `strict_error` |
 | `validation.parent_reference` | `warn` or `strict_error` |
 | `item_types.definitions[]` | custom item types and type options |
-| `governance.create_default_type` | default `--type` used by the `pm create "title"` positional shortcut (defaults to `Task`) |
+| `governance.create_default_type` | default `--type` used by `pm create "title"` when `--type` is omitted (defaults to `Task`); must resolve to a known item type |
+| `governance.workflow_enforcement` | per-type transition enforcement mode for `pm update --status` (`off` default, `warn`, or `strict`) |
+| `schema.type_workflows[]` | per-type allowed status transitions (see Per-Type Workflows below) |
 | `search.*` | search mode, scoring, providers, embedding timeout, and vector settings |
 
 Runtime item types are context primitives. Use `pm schema list` to inspect the merged registry and `pm schema show <Type>` to inspect one type's folder, aliases, defaults, required options, and extension provenance. `pm init --type-preset agile|ops|research` writes reusable domain types into `.agents/pm/schema/types.json`; this is equivalent to persisted project schema, not an extension-only runtime overlay.
@@ -124,6 +126,46 @@ pm validate --check-resolution --check-history-drift
 pm validate --check-files --scan-mode tracked-all
 pm health --check-only --summary --json
 ```
+
+## Per-Type Workflows
+
+Restrict which status transitions are allowed for a given item type. Rules live in
+`schema/workflows.json` alongside the lifecycle `workflow` block, and enforcement is
+gated by `governance.workflow_enforcement` (default `off`, so existing projects are
+unaffected until you opt in).
+
+```jsonc
+// .agents/pm/schema/workflows.json
+{
+  "workflow": { "open_status": "open", "close_status": "closed", "canceled_status": "canceled" },
+  "type_workflows": [
+    {
+      "type": "Story",
+      "allowed_transitions": [
+        ["open", "in_progress"],
+        ["in_progress", "closed"]
+      ]
+    }
+  ]
+}
+```
+
+```bash
+pm config project set governance-workflow-enforcement strict   # off | warn | strict
+pm config project set governance-create-default-type Issue     # default create type
+```
+
+Semantics:
+
+- A type with **no** `type_workflows` entry is unrestricted (every transition allowed).
+- A type **with** an entry allows only the listed `[from, to]` pairs. `from`/`to` are
+  matched case-insensitively and resolved through the status registry's aliases.
+- A same-status no-op (`from === to`) is always allowed.
+- `workflow_enforcement: strict` rejects a disallowed transition (including transitions
+  toward the close status, gated before close-routing) with the allowed-transition hint.
+- `workflow_enforcement: warn` still applies the change but adds a
+  `workflow_transition_not_allowed` warning to the update result.
+- `workflow_enforcement: off` (default) ignores all `type_workflows` rules.
 
 ## Search Configuration
 

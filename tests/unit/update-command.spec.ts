@@ -2693,3 +2693,117 @@ describe("runUpdate", () => {
     });
   });
 });
+
+describe("runUpdate per-type workflow enforcement (pm-f4r1)", () => {
+  // Seed inline settings.json with a per-type allowed-transition rule for Issue:
+  // open -> in_progress and in_progress -> closed only.
+  async function seedWorkflowEnforcement(
+    context: TempPmContext,
+    enforcement: "off" | "warn" | "strict",
+  ): Promise<void> {
+    const settingsPath = path.join(context.pmPath, "settings.json");
+    const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+      governance?: Record<string, unknown>;
+      schema?: Record<string, unknown>;
+    };
+    settings.governance = { ...(settings.governance ?? {}), workflow_enforcement: enforcement };
+    settings.schema = {
+      ...(settings.schema ?? {}),
+      type_workflows: [
+        {
+          type: "Issue",
+          allowed_transitions: [
+            ["open", "in_progress"],
+            ["in_progress", "closed"],
+          ],
+        },
+      ],
+    };
+    await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+  }
+
+  it("throws under strict on a disallowed transition", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "wf-strict-disallowed", { type: "Issue" });
+      await seedWorkflowEnforcement(context, "strict");
+      await expect(
+        runUpdate(id, { status: "blocked", message: "disallowed jump" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Disallowed transition"),
+      });
+    });
+  });
+
+  it("allows a listed transition under strict", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "wf-strict-allowed", { type: "Issue" });
+      await seedWorkflowEnforcement(context, "strict");
+      const result = await runUpdate(
+        id,
+        { status: "in_progress", message: "allowed transition" },
+        { path: context.pmPath },
+      );
+      expect((result.item as { status: string }).status).toBe("in_progress");
+      expect(result.warnings).not.toContain(
+        expect.stringContaining("workflow_transition_not_allowed"),
+      );
+    });
+  });
+
+  it("surfaces a warning under warn on a disallowed transition but still applies it", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "wf-warn-disallowed", { type: "Issue" });
+      await seedWorkflowEnforcement(context, "warn");
+      const result = await runUpdate(
+        id,
+        { status: "blocked", message: "warned transition" },
+        { path: context.pmPath },
+      );
+      expect((result.item as { status: string }).status).toBe("blocked");
+      expect(result.warnings.some((warning) => warning.startsWith("workflow_transition_not_allowed"))).toBe(true);
+    });
+  });
+
+  it("ignores rules entirely when enforcement is off", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "wf-off", { type: "Issue" });
+      await seedWorkflowEnforcement(context, "off");
+      const result = await runUpdate(
+        id,
+        { status: "blocked", message: "off ignores rules" },
+        { path: context.pmPath },
+      );
+      expect((result.item as { status: string }).status).toBe("blocked");
+      expect(result.warnings.some((warning) => warning.startsWith("workflow_transition_not_allowed"))).toBe(false);
+    });
+  });
+
+  it("gates a transition toward the close status before the close reroute (strict)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "wf-strict-close-gate", { type: "Issue" });
+      await seedWorkflowEnforcement(context, "strict");
+      // open -> closed is not listed (only in_progress -> closed is), so the
+      // close-routing path must be gated rather than silently closing the item.
+      await expect(
+        runUpdate(id, { status: "closed", closeReason: "premature close" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Disallowed transition"),
+      });
+    });
+  });
+
+  it("leaves an unrestricted type unaffected even under strict", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "wf-unrestricted-task", { type: "Task" });
+      await seedWorkflowEnforcement(context, "strict");
+      const result = await runUpdate(
+        id,
+        { status: "blocked", message: "task is unrestricted" },
+        { path: context.pmPath },
+      );
+      expect((result.item as { status: string }).status).toBe("blocked");
+    });
+  });
+});

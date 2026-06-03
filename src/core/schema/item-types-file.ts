@@ -45,6 +45,14 @@ export interface UpsertItemTypeResult {
   replaced: boolean;
 }
 
+export interface RemoveItemTypeResult {
+  file: ItemTypesFile;
+  /** True when a matching definition existed and was dropped from the file. */
+  removed: boolean;
+  /** The removed definition, when one matched (case-insensitively) the requested name. */
+  definition?: ItemTypeDefinition;
+}
+
 /**
  * Returns the canonical built-in name when `name` collides (case-insensitively)
  * with a reserved built-in item type, otherwise undefined.
@@ -262,6 +270,36 @@ export function upsertItemType(file: ItemTypesFile, input: NormalizedAddTypeInpu
     definition: next,
     replaced: existingIndex >= 0,
   };
+}
+
+/**
+ * Removes a custom item type definition from the parsed file by name
+ * (case-insensitive). Throws a plain Error when `name` is empty or collides
+ * with a reserved built-in type (built-ins are not stored in the file and must
+ * never be deletable). Returns `removed: false` when no matching custom
+ * definition exists so the CLI layer can treat the call as an idempotent no-op.
+ */
+export function removeItemType(file: ItemTypesFile, name: string | undefined): RemoveItemTypeResult {
+  const trimmed = (name ?? "").trim();
+  if (trimmed.length === 0) {
+    throw new Error("Type name must not be empty.");
+  }
+  const builtinMatch = matchBuiltinTypeName(trimmed);
+  if (builtinMatch) {
+    throw new Error(
+      `Cannot remove built-in item type "${builtinMatch}". Built-in types are reserved: ${BUILTIN_ITEM_TYPE_VALUES.join(", ")}.`,
+    );
+  }
+  const lowerName = trimmed.toLowerCase();
+  const definitions = file.definitions.slice();
+  const existingIndex = definitions.findIndex(
+    (definition) => typeof definition.name === "string" && definition.name.trim().toLowerCase() === lowerName,
+  );
+  if (existingIndex < 0) {
+    return { file: { definitions }, removed: false };
+  }
+  const [definition] = definitions.splice(existingIndex, 1);
+  return { file: { definitions }, removed: true, definition };
 }
 
 function applyAttribute(definition: ItemTypeDefinition, key: string, value: string | undefined): void {

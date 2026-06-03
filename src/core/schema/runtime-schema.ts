@@ -17,6 +17,7 @@ import type {
   RuntimeStatusDefinition,
   RuntimeStatusRole,
   RuntimeWorkflowDefinition,
+  TypeWorkflowDefinition,
 } from "../../types/index.js";
 
 export type { RuntimeFieldCommand } from "../../types/index.js";
@@ -174,6 +175,46 @@ function normalizeRuntimeWorkflow(workflow: RuntimeWorkflowDefinition | undefine
   };
 }
 
+function normalizeTypeWorkflowDefinitions(
+  workflows: TypeWorkflowDefinition[] | undefined,
+): TypeWorkflowDefinition[] | undefined {
+  if (!Array.isArray(workflows) || workflows.length === 0) {
+    return undefined;
+  }
+  // Keep the raw (trimmed) type name so it round-trips verbatim; comparison is
+  // case-insensitive downstream (resolveTypeWorkflows lower-cases). from/to
+  // status tokens use the same normalization rules as runtime statuses.
+  const byTypeKey = new Map<string, TypeWorkflowDefinition>();
+  for (const entry of workflows) {
+    const rawType = typeof entry?.type === "string" ? entry.type.trim() : "";
+    if (rawType.length === 0) {
+      continue;
+    }
+    const typeKey = rawType.toLowerCase();
+    const pairs = Array.isArray(entry?.allowed_transitions) ? entry.allowed_transitions : [];
+    const existing = byTypeKey.get(typeKey)?.allowed_transitions ?? [];
+    for (const pair of pairs) {
+      if (!Array.isArray(pair) || pair.length !== 2) {
+        continue;
+      }
+      const from = normalizeStatusToken(pair[0]);
+      const to = normalizeStatusToken(pair[1]);
+      if (from.length === 0 || to.length === 0) {
+        continue;
+      }
+      if (existing.some((candidate) => candidate[0] === from && candidate[1] === to)) {
+        continue;
+      }
+      existing.push([from, to]);
+    }
+    byTypeKey.set(typeKey, { type: rawType, allowed_transitions: existing });
+  }
+  const normalized = [...byTypeKey.values()]
+    .filter((entry) => entry.allowed_transitions.length > 0)
+    .sort((left, right) => left.type.localeCompare(right.type));
+  return normalized.length > 0 ? normalized : undefined;
+}
+
 function normalizeRuntimeFieldDefinition(definition: RuntimeFieldDefinition): RuntimeFieldDefinitionResolved | null {
   const key = normalizeStatusToken(definition.key ?? "");
   if (!key) {
@@ -285,6 +326,7 @@ export function normalizeRuntimeSchemaSettings(schema: Partial<RuntimeSchemaSett
       ...DEFAULT_RUNTIME_WORKFLOW,
       ...normalizeRuntimeWorkflow(schema?.workflow),
     },
+    type_workflows: normalizeTypeWorkflowDefinitions(schema?.type_workflows),
     unknown_field_policy: unknownFieldPolicy as RuntimeSchemaSettings["unknown_field_policy"],
   };
 }
@@ -394,6 +436,17 @@ function readWorkflowFromSchemaFile(parsed: unknown): RuntimeWorkflowDefinition 
   return record as RuntimeWorkflowDefinition;
 }
 
+function readTypeWorkflowsFromSchemaFile(parsed: unknown): TypeWorkflowDefinition[] | undefined {
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return undefined;
+  }
+  const record = parsed as Record<string, unknown>;
+  if (Array.isArray(record.type_workflows)) {
+    return record.type_workflows as TypeWorkflowDefinition[];
+  }
+  return undefined;
+}
+
 export function filePathForSchemaSection(pmRoot: string, configuredPath: string | undefined, fallbackPath: string): string {
   const normalized = configuredPath?.trim() || fallbackPath;
   if (path.isAbsolute(normalized)) {
@@ -464,6 +517,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
   let loadedStatuses: RuntimeStatusDefinition[] | undefined;
   let loadedFields: RuntimeFieldDefinition[] | undefined;
   let loadedWorkflow: RuntimeWorkflowDefinition | undefined;
+  let loadedTypeWorkflows: TypeWorkflowDefinition[] | undefined;
 
   const readAndParse = async (targetPath: string, warningKey: string): Promise<unknown | undefined> => {
     const raw = await readFileIfExists(targetPath);
@@ -503,6 +557,9 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     if (loadedWorkflow === undefined) {
       warnings.push("runtime_schema_workflows_invalid_shape");
     }
+    // type_workflows live alongside `workflow` in the same file; their absence
+    // is not an error (the file may carry only the lifecycle workflow block).
+    loadedTypeWorkflows = readTypeWorkflowsFromSchemaFile(parsedWorkflow);
   }
 
   const mergedSchema = normalizeRuntimeSchemaSettings({
@@ -513,6 +570,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
       ...normalizedSchema.workflow,
       ...(loadedWorkflow ?? {}),
     },
+    type_workflows: [...(normalizedSchema.type_workflows ?? []), ...(loadedTypeWorkflows ?? [])],
   });
 
   return {

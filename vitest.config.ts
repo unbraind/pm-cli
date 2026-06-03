@@ -92,6 +92,8 @@ export default defineConfig({
         "src/core/output/mutation-projection.ts",
         "src/core/packages/manifest.ts",
         "src/core/schema/item-types-file.ts",
+        "src/core/schema/status-defs-file.ts",
+        "src/core/schema/type-workflows.ts",
         "src/core/shared/author.ts",
         "src/core/shared/command-types.ts",
         "src/core/config/nested-settings.ts",

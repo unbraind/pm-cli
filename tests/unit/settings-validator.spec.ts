@@ -176,4 +176,43 @@ describe("core/store/settings-validator", () => {
     (raw.extensions as Record<string, unknown>).policy = { extension_overrides: [{ disabled: true }] };
     expect(validateSettings(raw).success).toBe(false);
   });
+
+  it("accepts schema.type_workflows and governance.workflow_enforcement (pm-f4r1)", () => {
+    const raw = minimalValidSettings();
+    raw.governance = { preset: "default", workflow_enforcement: "strict", create_default_type: "Issue" };
+    raw.schema = {
+      type_workflows: [
+        { type: "Story", allowed_transitions: [["open", "in_progress"], ["in_progress", "closed"]] },
+      ],
+    };
+    const result = validateSettings(raw);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.governance?.workflow_enforcement).toBe("strict");
+      expect(result.data.governance?.create_default_type).toBe("Issue");
+      expect(result.data.schema?.type_workflows?.[0]?.type).toBe("Story");
+    }
+  });
+
+  it("rejects a type_workflows pair with the wrong arity (pm-f4r1)", () => {
+    const raw = minimalValidSettings();
+    raw.schema = {
+      type_workflows: [{ type: "Story", allowed_transitions: [["open", "in_progress", "extra"]] }],
+    };
+    expect(validateSettings(raw).success).toBe(false);
+  });
+
+  it("rejects a type_workflows pair whose element is not a string (pm-f4r1)", () => {
+    const raw = minimalValidSettings();
+    raw.schema = {
+      type_workflows: [{ type: "Story", allowed_transitions: [["open", 5]] }],
+    };
+    expect(validateSettings(raw).success).toBe(false);
+  });
+
+  it("rejects an invalid governance.workflow_enforcement literal (pm-f4r1)", () => {
+    const raw = minimalValidSettings();
+    raw.governance = { preset: "default", workflow_enforcement: "bogus" };
+    expect(validateSettings(raw).success).toBe(false);
+  });
 });
