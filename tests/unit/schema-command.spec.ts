@@ -169,6 +169,19 @@ describe("schema add-type command", () => {
     });
   });
 
+  it("accepts a custom type name shorthand without requiring add-type flags", async () => {
+    await withTempPmPath(async (context) => {
+      const add = context.runCli(["schema", "Spike", "--json"], { expectJson: true });
+      expect(add.code).toBe(0);
+      expect(add.json).toMatchObject({
+        action: "add-type",
+        type: {
+          name: "Spike",
+        },
+      });
+    });
+  });
+
   it("refuses to redefine a built-in type", async () => {
     await withTempPmPath(async (context) => {
       const add = context.runCli(["schema", "add-type", "Task"]);
@@ -204,7 +217,7 @@ describe("schema add-type command", () => {
       expect(none.stderr).toContain("show");
       expect(none.stderr).toContain("add-type");
 
-      const unknown = context.runCli(["schema", "bogus"]);
+      const unknown = context.runCli(["schema", "bogus", "extra"]);
       expect(unknown.code).not.toBe(0);
       expect(unknown.stderr).toContain('Unknown pm schema subcommand "bogus"');
     });

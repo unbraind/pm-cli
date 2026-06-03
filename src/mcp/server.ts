@@ -139,6 +139,20 @@ const TOOLS: ToolDefinition[] = [
         query: { type: "string", description: "Search query for action=search." },
         reason: { type: "string", description: "Close reason for action=close." },
         force: { type: "boolean", description: "Force ownership/terminal-state override when supported." },
+        subcommand: {
+          type: "string",
+          enum: ["list", "show", "add-type"],
+          description: "Schema subcommand when action=schema.",
+        },
+        name: { type: "string", description: "Item type name for action=schema show/add-type." },
+        description: { type: "string", description: "Custom item type description for action=schema add-type." },
+        defaultStatus: { type: "string", description: "Default status for action=schema add-type." },
+        folder: { type: "string", description: "Storage folder for action=schema add-type." },
+        alias: {
+          type: "array",
+          items: { type: "string" },
+          description: "Aliases for action=schema add-type.",
+        },
         options: { type: "object", description: "Underlying pm command options using camelCase keys." },
         fullChangedFields: {
           type: "boolean",

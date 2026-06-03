@@ -1342,6 +1342,11 @@ export interface PmActionSchemaContract {
   required?: string[];
   optional?: string[];
   anyOfRequired?: Array<string[]>;
+  conditionalRequired?: Array<{
+    property: string;
+    value: string;
+    required: string[];
+  }>;
 }
 
 function toSchemaKeyList(values: string[]): string[] {
@@ -1419,7 +1424,7 @@ const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
 
 const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = {
-  init: { optional: ["prefix", "preset", "typePreset", "defaults", "author", "agentGuidance", "withPackages"] },
+  init: { optional: ["prefix", "preset", "typePreset", "defaults", "author", "agentGuidance", "withPackages", "verbose"] },
   config: {
     required: ["scope", "configAction"],
     optional: ["key", "value", "criterion", "clearCriteria", "format", "policy"],
@@ -1552,6 +1557,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     required: ["subcommand"],
     // No --message: schema add-type writes a config file, not item history.
     optional: ["name", "description", "defaultStatus", "folder", "alias", "author", "force"],
+    conditionalRequired: [
+      { property: "subcommand", value: "show", required: ["name"] },
+      { property: "subcommand", value: "add-type", required: ["name"] },
+    ],
   },
   plan: {
     required: ["subcommand"],
@@ -1861,6 +1870,19 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
   if (contract.anyOfRequired && contract.anyOfRequired.length > 0) {
     schema.anyOf = contract.anyOfRequired.map((requiredFields) => ({
       required: [...requiredFields],
+    }));
+  }
+  if (contract.conditionalRequired && contract.conditionalRequired.length > 0) {
+    schema.allOf = contract.conditionalRequired.map((entry) => ({
+      if: {
+        properties: {
+          [entry.property]: { const: entry.value },
+        },
+        required: [entry.property],
+      },
+      then: {
+        required: entry.required,
+      },
     }));
   }
   return schema;

@@ -847,16 +847,7 @@ export function registerMutationCommands(program: Command): void {
           : typeof options.default_status === "string"
             ? (options.default_status as string)
             : undefined;
-      const usedAddTypeOption =
-        typeof options.description === "string" ||
-        typeof defaultStatus === "string" ||
-        typeof options.folder === "string" ||
-        (aliases?.length ?? 0) > 0;
-      if (
-        !SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number]) &&
-        typeName === undefined &&
-        usedAddTypeOption
-      ) {
+      if (!SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number]) && typeName === undefined) {
         typeName = subcommand;
         normalizedSubcommand = "add-type";
       }

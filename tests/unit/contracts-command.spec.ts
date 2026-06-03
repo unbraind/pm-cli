@@ -528,6 +528,14 @@ describe("contracts command runtime", () => {
     const schemaBranch = (schemaAction.schema?.oneOf ?? [])[0] as { required?: string[]; properties?: Record<string, unknown> } | undefined;
     expect(schemaBranch?.required).toEqual(["action", "subcommand"]);
     expect(schemaBranch?.properties?.name).toBeDefined();
+    expect(schemaBranch).toMatchObject({
+      allOf: expect.arrayContaining([
+        expect.objectContaining({
+          if: { properties: { subcommand: { const: "show" } }, required: ["subcommand"] },
+          then: { required: ["name"] },
+        }),
+      ]),
+    });
 
     const activityFlags = await runContracts(
       { command: "activity", flagsOnly: true },

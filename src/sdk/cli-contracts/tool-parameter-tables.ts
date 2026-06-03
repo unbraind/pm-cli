@@ -26,6 +26,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   preset: { type: "string", enum: ["minimal", "default", "strict", "custom"] },
   typePreset: { type: "string", enum: ["agile", "ops", "research"] },
   defaults: { type: "boolean" },
+  verbose: { type: "boolean" },
   agentGuidance: { type: "string", enum: ["ask", "add", "skip", "status"] },
   withPackages: { type: "boolean" },
   scope: { type: "string", enum: ["project", "global"] },
@@ -488,6 +489,9 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   defaults: {
     description: "Use non-interactive setup defaults during initialization.",
+  },
+  verbose: {
+    description: "Include the full resolved settings tree in init output.",
   },
   agentGuidance: {
     description: "Control AGENTS.md/CLAUDE.md guidance behavior during init: ask, add, skip, or status.",

@@ -43,6 +43,8 @@ jobs:
     name: Auto release pipeline
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    environment:
+      name: release
 
     steps:
       - name: Checkout

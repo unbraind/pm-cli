@@ -399,7 +399,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--dry-run --author --message --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    schema)",
-    `      COMPREPLY=(${compgen("add-type --description --default-status --folder --alias --author --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("list show add-type --description --default-status --folder --alias --author --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    plan)",
     `      COMPREPLY=(${compgen(`${PLAN_SUBCOMMANDS_LIST} ${PLAN_FLAGS}`)})`,
@@ -933,7 +933,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         schema)
           _arguments \\
-            '1:subcommand:(add-type)' \\
+            '1:subcommand:(list show add-type)' \\
             '--description[Human description for the custom item type]:text' \\
             '--default-status[Default status hint for the custom item type]:status' \\
             '--folder[Storage folder for items of this custom type]:dir' \\

@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -97,6 +97,8 @@ describe("runInit", () => {
       });
       expect(result.warnings).toContain("registered_type_preset:agile");
       expect(result.next_steps).toContain("Inspect registered preset types: pm schema list, pm schema show Story");
+      expect((await stat(path.join(tempRoot, "stories"))).isDirectory()).toBe(true);
+      expect((await stat(path.join(tempRoot, "spikes"))).isDirectory()).toBe(true);
 
       const summary = summarizeInitResult(result);
       expect(summary.registered_type_preset).toEqual(result.registered_type_preset);

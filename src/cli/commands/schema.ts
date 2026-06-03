@@ -23,7 +23,6 @@ import { nowIso } from "../../core/shared/time.js";
 import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings, resolveGovernanceKnobs } from "../../core/store/settings.js";
-import { ITEM_TYPE_VALUES } from "../../types/index.js";
 
 export const SCHEMA_SUBCOMMANDS = ["add-type", "list", "show"] as const;
 export type SchemaSubcommand = (typeof SCHEMA_SUBCOMMANDS)[number];
@@ -267,12 +266,11 @@ async function loadSchemaInspectionContext(global: GlobalOptions): Promise<{
   const schema = normalizeRuntimeSchemaSettings(settings.schema);
   const typesPath = filePathForSchemaSection(pmRoot, schema.files.types, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types);
   const registry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
-  const builtinNames = new Set(ITEM_TYPE_VALUES.map((value) => value.toLowerCase()));
   const extensionProvenance = collectExtensionTypeProvenance();
   const customNames = new Set(
-    Object.values(registry.by_type)
-      .map((definition) => definition.name.toLowerCase())
-      .filter((name) => !builtinNames.has(name) && !extensionProvenance.has(name)),
+    (settings.item_types?.definitions ?? [])
+      .map((definition) => definition.name.trim().toLowerCase())
+      .filter((name) => name.length > 0 && !extensionProvenance.has(name)),
   );
   return {
     typesPath,

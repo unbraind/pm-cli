@@ -238,7 +238,7 @@ describe("public sdk entrypoint", () => {
     });
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.create.required).toEqual(expect.arrayContaining(["title"]));
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.init.optional).toEqual(
-      expect.arrayContaining(["defaults", "author", "agentGuidance", "typePreset", "withPackages"]),
+      expect.arrayContaining(["defaults", "author", "agentGuidance", "typePreset", "withPackages", "verbose"]),
     );
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.schema.required).toEqual(["subcommand"]);
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.schema.optional).toEqual(expect.arrayContaining(["name"]));
