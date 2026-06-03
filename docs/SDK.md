@@ -181,6 +181,11 @@ pm health --check-only --brief
 ```
 
 Collision warnings are deterministic and include package names plus deactivation guidance.
+If extension code calls a `register*` API without declaring the matching
+manifest capability, activation fails with
+`extension_capability_missing:<name>:<capability>` in doctor triage. Run doctor
+with `--trace` to see the exact method, `missing_capability`, and manifest
+capability entry to add before publishing.
 
 ## Minimal Command Extension
 
@@ -315,6 +320,14 @@ The bundled `pm-lifecycle-hooks` package is the first-party hooks exemplar. It
 declares only the `hooks` capability and registers a default-inert `afterCommand`
 hook, so package authors can copy a lifecycle pattern that does not write files,
 produce output, or alter command behavior.
+
+`onWrite` receives `{ path, scope, op }` for every observed write. When the write
+is tied to an item mutation, the context also includes `item_id`, `item_type`,
+`before`, `after`, and `changed_fields`, so sync packages can mirror the exact
+item change without reparsing files. Non-item writes omit those item fields.
+`changed_fields` lists mutated fields for updates and uses lifecycle sentinels
+for item lifecycle writes: `["imported"]` for package imports, `["restored"]`
+for restores, and `["deleted"]` for deletes.
 
 ## Custom Item Type
 

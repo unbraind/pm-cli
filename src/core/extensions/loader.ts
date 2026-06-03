@@ -1381,8 +1381,17 @@ function assertExtensionCapability(extension: LoadedExtension, capability: Exten
     return;
   }
   if (!declared.has(capability)) {
-    throw new TypeError(
+    throw createRegistrationValidationError(
       `${method} requires capability '${capability}' in extension manifest capabilities`,
+      {
+        method,
+        registration_index: -1,
+        capability,
+        missing_capability: capability,
+        expected_schema: `"capabilities": [..., "${capability}"]`,
+        received: extension.capabilities ?? [],
+        hint: `Add "${capability}" to ${extension.name} manifest capabilities, or remove the ${method} registration call.`,
+      },
     );
   }
 }

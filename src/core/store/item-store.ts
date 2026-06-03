@@ -486,11 +486,21 @@ export async function mutateItem(params: {
         path: effectiveTargetItemPath,
         scope: "project",
         op: params.op,
+        item_id: afterDocument.metadata.id,
+        item_type: afterDocument.metadata.type,
+        before: beforeDocument,
+        after: afterDocument,
+        changed_fields: mutation.changedFields,
       })),
       ...(await runActiveOnWriteHooks({
         path: historyPath,
         scope: "project",
         op: `${params.op}:history`,
+        item_id: afterDocument.metadata.id,
+        item_type: afterDocument.metadata.type,
+        before: beforeDocument,
+        after: afterDocument,
+        changed_fields: mutation.changedFields,
       })),
     ];
 
@@ -603,11 +613,21 @@ export async function deleteItem(params: {
         path: effectiveItemPath,
         scope: "project",
         op: "delete",
+        item_id: beforeDocument.metadata.id,
+        item_type: beforeDocument.metadata.type,
+        before: beforeDocument,
+        after: tombstoneDocument,
+        changed_fields: ["deleted"],
       })),
       ...(await runActiveOnWriteHooks({
         path: historyPath,
         scope: "project",
         op: "delete:history",
+        item_id: beforeDocument.metadata.id,
+        item_type: beforeDocument.metadata.type,
+        before: beforeDocument,
+        after: tombstoneDocument,
+        changed_fields: ["deleted"],
       })),
     ];
 

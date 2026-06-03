@@ -226,6 +226,11 @@ export interface OnWriteHookContext {
   path: string;
   scope: "project" | "global";
   op: string;
+  item_id?: string;
+  item_type?: string;
+  before?: ItemDocument;
+  after?: ItemDocument;
+  changed_fields?: string[];
 }
 
 export interface OnReadHookContext {
@@ -725,8 +730,11 @@ export interface FailedExtensionActivation {
 
 export interface ExtensionActivationFailureTrace {
   method: string;
+  /** `-1` means the failure happened before a numbered registration was accepted. */
   registration_index: number;
   command?: string;
+  capability?: ExtensionCapability;
+  missing_capability?: ExtensionCapability;
   expected_schema: string;
   received?: unknown;
   hint?: string;

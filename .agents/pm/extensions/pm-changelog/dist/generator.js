@@ -32,9 +32,13 @@ export function createChangelog(options) {
             itemCount: items.length,
         };
     }
-    const visibleSections = options.includeEmpty
+    // Apply visibility before limiting so `--limit N` counts N releases that
+    // actually render (empty windows like a fresh "Unreleased" don't consume a
+    // slot). With no limit/since-version flags this is a pure identity pass.
+    const candidateSections = options.includeEmpty
         ? sections
         : sections.filter((section) => section.items.length > 0);
+    const visibleSections = limitSections(candidateSections, options);
     if (visibleSections.length === 0) {
         return {
             markdown: lines.join("\n").trimEnd() + "\n",
@@ -42,28 +46,147 @@ export function createChangelog(options) {
             itemCount: 0,
         };
     }
+    const sectionBy = options.sectionBy ?? "category";
     for (const section of visibleSections) {
         lines.push(`## ${section.heading}`, "");
         if (section.items.length === 0) {
             lines.push("No changes.", "");
             continue;
         }
-        const grouped = groupByCategory(section.items);
-        for (const category of CATEGORY_ORDER) {
-            const categoryItems = grouped.get(category);
-            if (!categoryItems || categoryItems.length === 0)
-                continue;
-            lines.push(`### ${category}`, "");
-            for (const item of categoryItems) {
-                lines.push(`- ${formatItem(item, options)}`);
+        if (sectionBy === "category") {
+            const grouped = groupByCategory(section.items);
+            for (const category of CATEGORY_ORDER) {
+                const categoryItems = grouped.get(category);
+                if (!categoryItems || categoryItems.length === 0)
+                    continue;
+                // OPT-IN: --conventional remaps the heading text only; item order,
+                // bucketing, and bullet rendering are untouched, so dropping the flag
+                // restores byte-identical output.
+                const heading = options.conventional ? CONVENTIONAL_HEADINGS[category] : category;
+                lines.push(`### ${heading}`, "");
+                for (const item of categoryItems) {
+                    lines.push(`- ${formatItem(item, options)}`);
+                }
+                lines.push("");
             }
-            lines.push("");
+        }
+        else {
+            for (const group of groupByField(section.items, sectionBy)) {
+                lines.push(`### ${group.heading}`, "");
+                for (const item of group.items) {
+                    lines.push(`- ${formatItem(item, options)}`);
+                }
+                lines.push("");
+            }
+        }
+        if (options.contributors) {
+            const names = collectContributors(section.items);
+            if (names.length > 0) {
+                lines.push("### Contributors", "");
+                lines.push(names.map((name) => `@${name}`).join(", "));
+                lines.push("");
+            }
         }
     }
     return {
         markdown: lines.join("\n").trimEnd() + "\n",
         sections,
         itemCount: visibleSections.reduce((sum, section) => sum + section.items.length, 0),
+    };
+}
+/**
+ * OPT-IN (`--limit` / `--since-version`): restrict release sections to the
+ * most recent N or to those at or newer than a version. Only release-window
+ * sections (the `## version - date` history rebuilt by `--all-release-tags`)
+ * are eligible; the leading `Unreleased` section is always kept. When neither
+ * option is set this is an identity pass, preserving default output exactly.
+ */
+function limitSections(sections, options) {
+    const limit = options.limit && options.limit > 0 ? options.limit : undefined;
+    const sinceVersion = options.sinceVersion?.trim()
+        ? normalizeReleaseKey(options.sinceVersion)
+        : undefined;
+    if (limit === undefined && sinceVersion === undefined)
+        return sections;
+    if (!options.releaseWindows || options.releaseWindows.length === 0)
+        return sections;
+    let result = sections;
+    if (sinceVersion !== undefined) {
+        result = result.filter((section) => {
+            const key = sectionVersionKey(section.heading);
+            if (key === undefined)
+                return true; // keep Unreleased and unparsable headings
+            return compareVersionStrings(key, sinceVersion) >= 0;
+        });
+    }
+    if (limit !== undefined && result.length > limit) {
+        result = result.slice(0, limit);
+    }
+    return result;
+}
+function sectionVersionKey(heading) {
+    const version = heading.split(/\s+-\s+/, 1)[0]?.trim() ?? heading.trim();
+    if (!version || version.toLowerCase() === "unreleased")
+        return undefined;
+    return normalizeReleaseKey(version);
+}
+/**
+ * OPT-IN (`--changelog-json`): build a structured representation of the
+ * changelog (releases -> sections -> items) for downstream tooling. This is
+ * deliberately distinct from the `--json` CLI summary (action/bytes/changed)
+ * and from the `changelog export --format json` payload (which wraps markdown).
+ * It applies the same filtering, limiting and grouping as the markdown path so
+ * the two stay in sync, but emits structured data instead of rendered text.
+ */
+export function buildChangelogDocument(options) {
+    const filtered = filterItems(options);
+    const sections = buildSections(filtered, options);
+    const candidateSections = options.includeEmpty
+        ? sections
+        : sections.filter((section) => section.items.length > 0);
+    const visibleSections = limitSections(candidateSections, options);
+    const sectionBy = options.sectionBy ?? "category";
+    const releases = visibleSections.map((section) => {
+        const sectionGroups = [];
+        if (sectionBy === "category") {
+            const grouped = groupByCategory(section.items);
+            for (const category of CATEGORY_ORDER) {
+                const categoryItems = grouped.get(category);
+                if (!categoryItems || categoryItems.length === 0)
+                    continue;
+                const heading = options.conventional ? CONVENTIONAL_HEADINGS[category] : category;
+                sectionGroups.push({ heading, items: categoryItems.map(toDocumentItem) });
+            }
+        }
+        else {
+            for (const group of groupByField(section.items, sectionBy)) {
+                sectionGroups.push({ heading: group.heading, items: group.items.map(toDocumentItem) });
+            }
+        }
+        return {
+            heading: section.heading,
+            version: sectionVersionKey(section.heading),
+            item_count: section.items.length,
+            sections: sectionGroups,
+            contributors: options.contributors ? collectContributors(section.items) : undefined,
+        };
+    });
+    return {
+        title: options.title ?? DEFAULT_TITLE,
+        group_by: options.groupBy ?? "version",
+        section_by: sectionBy,
+        item_count: visibleSections.reduce((sum, section) => sum + section.items.length, 0),
+        releases,
+    };
+}
+function toDocumentItem(item) {
+    return {
+        id: item.id,
+        title: toSingleLine(item.title),
+        type: item.type,
+        status: item.status,
+        tags: item.tags,
+        url: item.url,
     };
 }
 export function mergeChangelog(existingMarkdown, generatedMarkdown, options = {}) {
@@ -355,6 +478,88 @@ function insertAfterTitle(markdown, releaseSection) {
     if (!after)
         return `${before}\n\n${releaseSection}`;
     return `${before}\n\n${releaseSection}\n\n${after}`;
+}
+// OPT-IN (`--conventional`): keep-a-changelog category -> Conventional-Commits
+// style heading. Every key maps so the mapping is total; values mirror common
+// conventional-changelog section titles.
+const CONVENTIONAL_HEADINGS = {
+    Added: "Features",
+    Changed: "Changes",
+    Fixed: "Bug Fixes",
+    Removed: "Reverts",
+    Security: "Security",
+    Deprecated: "Deprecations",
+    Other: "Other",
+};
+/**
+ * OPT-IN (`--section-by type|status|label`): group a release's items by a
+ * single item field instead of the keep-a-changelog category. Groups are
+ * ordered by first appearance (items arrive pre-sorted by `compareItems`), so
+ * output is deterministic. Items missing the field fall into an "Other" /
+ * "Unlabeled" bucket. For `label`, an item may appear under several headings
+ * (one per tag) — this is by design and clearly opt-in.
+ */
+function groupByField(items, sectionBy) {
+    const groups = new Map();
+    const push = (heading, item) => {
+        const bucket = groups.get(heading) ?? [];
+        bucket.push(item);
+        groups.set(heading, bucket);
+    };
+    for (const item of items) {
+        if (sectionBy === "type") {
+            push(titleCase(typeof item.type === "string" && item.type.trim() ? item.type.trim() : "Other"), item);
+        }
+        else if (sectionBy === "status") {
+            push(titleCase(typeof item.status === "string" && item.status.trim() ? item.status.trim() : "Unknown"), item);
+        }
+        else {
+            const tags = (item.tags ?? []).map((tag) => tag.trim()).filter(Boolean);
+            if (tags.length === 0) {
+                push("Unlabeled", item);
+            }
+            else {
+                for (const tag of tags)
+                    push(tag, item);
+            }
+        }
+    }
+    return Array.from(groups.entries()).map(([heading, groupedItems]) => ({ heading, items: groupedItems }));
+}
+function titleCase(value) {
+    return value
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+/**
+ * OPT-IN (`--contributors`): unique contributor handles for a release, ordered
+ * by first appearance. Prefers `assignee`, falls back to `author`; ignores the
+ * `unknown` placeholder pm writes when no author is recorded.
+ */
+function collectContributors(items) {
+    const seen = new Set();
+    const ordered = [];
+    for (const item of items) {
+        const candidate = pickContributor(item.assignee) ?? pickContributor(item.author);
+        if (!candidate)
+            continue;
+        const key = candidate.toLowerCase();
+        if (seen.has(key))
+            continue;
+        seen.add(key);
+        ordered.push(candidate);
+    }
+    return ordered;
+}
+function pickContributor(value) {
+    if (typeof value !== "string")
+        return undefined;
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.toLowerCase() === "unknown")
+        return undefined;
+    return trimmed;
 }
 function groupByCategory(items) {
     const grouped = new Map();

@@ -249,6 +249,23 @@ export function classifyDoctorLoadFailureWarnings(loadFailures: Array<{ name: st
   return [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
 }
 
+export function classifyDoctorActivationFailureWarnings(
+  activationFailures: Array<{ name: string; trace?: { missing_capability?: string; capability?: string } }> = [],
+): string[] {
+  const failures = Array.isArray(activationFailures) ? activationFailures : [];
+  const warnings: string[] = [];
+  for (const failure of failures) {
+    if (!failure || typeof failure.name !== "string") {
+      continue;
+    }
+    const missingCapability = failure.trace?.missing_capability ?? failure.trace?.capability;
+    if (typeof missingCapability === "string" && missingCapability.trim().length > 0) {
+      warnings.push(`extension_capability_missing:${failure.name}:${missingCapability.trim().toLowerCase()}`);
+    }
+  }
+  return [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
+}
+
 export function buildExtensionTriageSummary(
   scope: ExtensionScope,
   warnings: string[],
@@ -317,6 +334,12 @@ export function buildExtensionTriageSummary(
       remediation.push(
         "Legacy extension capability aliases were auto-remapped to canonical capabilities. " +
           "Update manifests to canonical names (migration/validation -> schema).",
+      );
+    }
+    if (normalizedWarnings.some((warning) => warning.startsWith("extension_capability_missing:"))) {
+      remediation.push(
+        `Extension activation failed because code registered a surface missing from manifest capabilities. ` +
+          `Run ${lifecycleFlagCommand(options, "doctor")} ${scopeFlag} --detail deep --trace and add the reported missing_capability to manifest.json before publishing.`,
       );
     }
     if (normalizedWarnings.some((warning) => warning.startsWith("extension_command_definition_legacy_handler_alias:"))) {

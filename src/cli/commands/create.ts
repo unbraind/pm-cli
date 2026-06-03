@@ -1494,7 +1494,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     runtimeFieldRegistry,
     type,
   );
-  for (const fieldKey of Object.keys(runtimeCreateFieldValues.values)) {
+  for (const fieldKey of Object.keys(runtimeCreateFieldValues.values ?? {})) {
     if (!unsetTargets.frontMatterKeys.has(fieldKey)) {
       continue;
     }
@@ -1841,7 +1841,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     reminders: reminders.values,
     events: events.values,
     ...registeredItemFieldValues,
-    ...runtimeCreateFieldValues.values,
+    ...(runtimeCreateFieldValues.values ?? {}),
   });
   try {
     applyRegisteredItemFieldDefaultsAndValidation(
@@ -1876,6 +1876,10 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   );
   const explicitUnsetKeys = [...explicitUnsets].sort((left, right) => left.localeCompare(right));
   const historyMessage = buildHistoryMessage(resolvedOptions.message, explicitUnsetKeys);
+  const changedFields = buildChangedFields(frontMatter, body, explicitUnsetKeys, [
+    ...Object.keys(registeredItemFieldValues),
+    ...Object.keys(runtimeCreateFieldValues.values ?? {}),
+  ]);
   let hookWarnings: string[] = [];
 
   try {
@@ -1906,21 +1910,27 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
         path: itemPath,
         scope: "project",
         op: "create",
+        item_id: afterDocument.metadata.id,
+        item_type: afterDocument.metadata.type,
+        before: beforeDocument,
+        after: afterDocument,
+        changed_fields: changedFields,
       })),
       ...(await runActiveOnWriteHooks({
         path: historyPath,
         scope: "project",
         op: "create:history",
+        item_id: afterDocument.metadata.id,
+        item_type: afterDocument.metadata.type,
+        before: beforeDocument,
+        after: afterDocument,
+        changed_fields: changedFields,
       })),
     ];
   } finally {
     await lockRelease();
   }
 
-  const changedFields = buildChangedFields(frontMatter, body, explicitUnsetKeys, [
-    ...Object.keys(registeredItemFieldValues),
-    ...Object.keys(runtimeCreateFieldValues.values),
-  ]);
   const outputItem = structuredClone(frontMatter);
 
   // After the create has committed (so the ID is real and shows up in the suggestion),

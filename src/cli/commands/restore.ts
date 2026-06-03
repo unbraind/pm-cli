@@ -455,11 +455,21 @@ export async function runRestore(
         path: restoredItemPath,
         scope: "project",
         op: "restore",
+        item_id: restoredDocument.metadata.id,
+        item_type: restoredDocument.metadata.type,
+        before: resolvedCurrentDocument,
+        after: restoredDocument,
+        changed_fields: ["restored"],
       })),
       ...(await runActiveOnWriteHooks({
         path: subject.historyPath,
         scope: "project",
         op: "restore:history",
+        item_id: restoredDocument.metadata.id,
+        item_type: restoredDocument.metadata.type,
+        before: resolvedCurrentDocument,
+        after: restoredDocument,
+        changed_fields: ["restored"],
       })),
     ];
 

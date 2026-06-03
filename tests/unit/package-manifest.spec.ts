@@ -513,6 +513,66 @@ describe("pm package manifest model", () => {
     }
   });
 
+  it("keeps first-party manifest capabilities aligned with SDK registration API usage", async () => {
+    const extensionDirectories = await collectBundledExtensionDirectories();
+    expect(extensionDirectories.length).toBeGreaterThan(0);
+
+    const capabilityUsagePatterns: Array<{ capability: string; patterns: RegExp[] }> = [
+      { capability: "commands", patterns: [/\bregisterCommand\s*\(/] },
+      {
+        capability: "schema",
+        patterns: [
+          /\bregisterFlags\s*\(/,
+          /\bregisterItemFields\s*\(/,
+          /\bregisterItemTypes\s*\(/,
+          /\bregisterMigration\s*\(/,
+          /\bflags\s*:/,
+        ],
+      },
+      { capability: "importers", patterns: [/\bregisterImporter\s*\(/, /\bregisterExporter\s*\(/] },
+      { capability: "search", patterns: [/\bregisterSearchProvider\s*\(/, /\bregisterVectorStoreAdapter\s*\(/] },
+      { capability: "parser", patterns: [/\bregisterParser\s*\(/] },
+      { capability: "preflight", patterns: [/\bregisterPreflight\s*\(/] },
+      { capability: "services", patterns: [/\bregisterService\s*\(/] },
+      { capability: "renderers", patterns: [/\bregisterRenderer\s*\(/] },
+      { capability: "hooks", patterns: [/\bapi\.hooks\.(?:beforeCommand|afterCommand|onWrite|onRead|onIndex)\s*\(/] },
+    ];
+
+    for (const extensionDirectory of extensionDirectories) {
+      const manifestPath = path.join(extensionDirectory, "manifest.json");
+      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as { capabilities?: unknown };
+      const declaredCapabilities = new Set(Array.isArray(manifest.capabilities) ? manifest.capabilities : []);
+      // Heuristic guard for common entry files; package doctor remains the runtime check.
+      const sourcePaths = [
+        path.join(extensionDirectory, "index.ts"),
+        path.join(extensionDirectory, "index.js"),
+        path.join(extensionDirectory, "src", "index.ts"),
+        path.join(extensionDirectory, "src", "index.js"),
+        path.join(extensionDirectory, "src", "extension.ts"),
+        path.join(extensionDirectory, "src", "extension.js"),
+      ];
+      const source = (
+        await Promise.all(
+          sourcePaths.map(async (sourcePath) =>
+            readFile(sourcePath, "utf8").catch((error: unknown) => {
+              if (typeof error === "object" && error !== null && (error as { code?: unknown }).code === "ENOENT") {
+                return "";
+              }
+              throw error;
+            }),
+          ),
+        )
+      ).join("\n");
+
+      for (const { capability, patterns } of capabilityUsagePatterns) {
+        const usesCapability = patterns.some((pattern) => pattern.test(source));
+        if (usesCapability) {
+          expect(declaredCapabilities.has(capability), `${manifestPath} must declare ${capability}`).toBe(true);
+        }
+      }
+    }
+  });
+
   it("declares manifest_version and pm_min_version on every first-party package manifest", async () => {
     const extensionDirectories = await collectBundledExtensionDirectories();
     expect(extensionDirectories.length).toBeGreaterThan(0);

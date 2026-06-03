@@ -1877,6 +1877,64 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("reports missing manifest capabilities as actionable activation diagnostics", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "doctor-missing-capability-source");
+      await mkdir(sourceDir, { recursive: true });
+      await writeFile(
+        path.join(sourceDir, "manifest.json"),
+        `${JSON.stringify(
+          {
+            name: "doctor-missing-capability-ext",
+            version: "1.0.0",
+            entry: "./index.js",
+            capabilities: ["commands"],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(sourceDir, "index.js"),
+        [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerPreflight(() => ({ ok: true }));",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+
+      const doctor = await runExtension(
+        undefined,
+        { doctor: true, project: true, detail: "deep", trace: true },
+        { path: context.pmPath },
+      );
+      const triage = doctor.details.triage as { warning_codes?: string[]; remediation?: string[] };
+      const deep = doctor.details.deep as {
+        trace?: { activation_failures?: Array<Record<string, unknown>> };
+      };
+
+      expect(triage.warning_codes).toContain("extension_capability_missing");
+      expect(triage.remediation?.join("\n")).toContain("missing_capability");
+      expect(deep.trace?.activation_failures).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: "doctor-missing-capability-ext",
+            method: "registerPreflight",
+            capability: "preflight",
+            missing_capability: "preflight",
+            expected_schema: '"capabilities": [..., "preflight"]',
+          }),
+        ]),
+      );
+    });
+  });
+
   it("validates action flags and missing targets", async () => {
     // Bare invocation now defaults to --explore; verify it returns ok=true instead of throwing
     const bareResult = await runExtension(undefined, {}, { path: ".agents/pm" });
