@@ -3,10 +3,21 @@ import path from "node:path";
 import readline from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
 import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
-import { pathExists } from "../../core/fs/fs-utils.js";
+import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { normalizePrefix } from "../../core/item/id.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { ensureRuntimeSchemaFileScaffold } from "../../core/schema/runtime-schema.js";
+import {
+  DEFAULT_RUNTIME_SCHEMA_FILE_PATHS,
+  ensureRuntimeSchemaFileScaffold,
+  filePathForSchemaSection,
+  normalizeRuntimeSchemaSettings,
+} from "../../core/schema/runtime-schema.js";
+import {
+  normalizeAddTypeInput,
+  parseItemTypesFile,
+  serializeItemTypesFile,
+  upsertItemType,
+} from "../../core/schema/item-types-file.js";
 import { EXIT_CODE, GOVERNANCE_PRESET_DEFAULTS, PM_REQUIRED_SUBDIRS, SETTINGS_DEFAULTS } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -30,6 +41,15 @@ export interface InitInstalledPackagesSummary {
   }>;
 }
 
+export type InitTypePresetName = "agile" | "ops" | "research";
+
+export interface InitRegisteredTypePresetSummary {
+  name: InitTypePresetName;
+  registered: string[];
+  updated: string[];
+  file: string;
+}
+
 export interface InitResult {
   ok: boolean;
   path: string;
@@ -38,6 +58,7 @@ export interface InitResult {
   warnings: string[];
   governance_preset: GovernancePreset;
   wizard_used: boolean;
+  registered_type_preset?: InitRegisteredTypePresetSummary;
   installed_packages?: InitInstalledPackagesSummary;
   next_steps: string[];
   agent_guidance: InitAgentGuidanceSummary;
@@ -49,6 +70,7 @@ export interface InitCommandOptions {
   author?: string;
   withPackages?: boolean;
   agentGuidance?: string;
+  typePreset?: string;
 }
 
 /**
@@ -73,6 +95,7 @@ export interface InitConciseResult {
   created_dirs: string[];
   warnings: string[];
   wizard_used: boolean;
+  registered_type_preset?: InitRegisteredTypePresetSummary;
   installed_packages?: InitInstalledPackagesSummary;
   next_steps: string[];
   agent_guidance: InitAgentGuidanceSummary;
@@ -94,6 +117,7 @@ export function summarizeInitResult(result: InitResult): InitConciseResult {
     created_dirs: result.created_dirs,
     warnings: result.warnings,
     wizard_used: result.wizard_used,
+    ...(result.registered_type_preset ? { registered_type_preset: result.registered_type_preset } : {}),
     ...(result.installed_packages ? { installed_packages: result.installed_packages } : {}),
     next_steps: result.next_steps,
     agent_guidance: result.agent_guidance,
@@ -107,6 +131,58 @@ function cloneDefaults(): PmSettings {
 
 type BuiltinGovernancePreset = Exclude<GovernancePreset, "custom">;
 const BUILTIN_GOVERNANCE_PRESETS: BuiltinGovernancePreset[] = ["minimal", "default", "strict"];
+const INIT_TYPE_PRESET_NAMES: InitTypePresetName[] = ["agile", "ops", "research"];
+
+const INIT_TYPE_PRESET_DEFINITIONS: Record<InitTypePresetName, Array<Parameters<typeof normalizeAddTypeInput>[0]>> = {
+  agile: [
+    {
+      name: "Story",
+      description: "User-facing outcome or capability slice expressed from a stakeholder perspective.",
+      defaultStatus: "open",
+      folder: "stories",
+      aliases: ["user-story"],
+    },
+    {
+      name: "Spike",
+      description: "Time-boxed investigation used to reduce uncertainty before implementation.",
+      defaultStatus: "open",
+      folder: "spikes",
+      aliases: ["research-spike"],
+    },
+  ],
+  ops: [
+    {
+      name: "Incident",
+      description: "Operational disruption, degradation, or support escalation with recovery tracking.",
+      defaultStatus: "open",
+      folder: "incidents",
+      aliases: ["outage"],
+    },
+    {
+      name: "Runbook",
+      description: "Repeatable operational procedure, diagnostic path, or response playbook.",
+      defaultStatus: "open",
+      folder: "runbooks",
+      aliases: ["playbook"],
+    },
+  ],
+  research: [
+    {
+      name: "Experiment",
+      description: "Validated-learning activity with hypothesis, method, and outcome tracking.",
+      defaultStatus: "open",
+      folder: "experiments",
+      aliases: ["study"],
+    },
+    {
+      name: "Hypothesis",
+      description: "Testable claim or assumption that should be supported, rejected, or refined.",
+      defaultStatus: "open",
+      folder: "hypotheses",
+      aliases: ["assumption"],
+    },
+  ],
+};
 
 function normalizeInitGovernancePreset(rawValue: string | undefined): BuiltinGovernancePreset | undefined {
   if (rawValue === undefined) {
@@ -124,6 +200,23 @@ function normalizeInitGovernancePreset(rawValue: string | undefined): BuiltinGov
   }
   throw new PmCliError(
     `Invalid --preset value "${rawValue}". Allowed: ${BUILTIN_GOVERNANCE_PRESETS.join(", ")}`,
+    EXIT_CODE.USAGE,
+  );
+}
+
+function normalizeInitTypePreset(rawValue: string | undefined): InitTypePresetName | undefined {
+  if (rawValue === undefined) {
+    return undefined;
+  }
+  const normalized = rawValue.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized.length === 0) {
+    throw new PmCliError("--type-preset must not be empty", EXIT_CODE.USAGE);
+  }
+  if (normalized === "agile" || normalized === "ops" || normalized === "research") {
+    return normalized;
+  }
+  throw new PmCliError(
+    `Invalid --type-preset value "${rawValue}". Allowed: ${INIT_TYPE_PRESET_NAMES.join(", ")}`,
     EXIT_CODE.USAGE,
   );
 }
@@ -198,6 +291,32 @@ function summarizeInstalledPackages(result: ExtensionCommandResult): InitInstall
           ok: entry.ok === true,
         }))
       : [],
+  };
+}
+
+async function registerInitTypePreset(
+  pmRoot: string,
+  settings: PmSettings,
+  preset: InitTypePresetName,
+): Promise<InitRegisteredTypePresetSummary> {
+  const schema = normalizeRuntimeSchemaSettings(settings.schema);
+  const typesPath = filePathForSchemaSection(pmRoot, schema.files.types, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types);
+  const parsed = parseItemTypesFile(await readFileIfExists(typesPath));
+  let nextFile = parsed;
+  const registered: string[] = [];
+  const updated: string[] = [];
+  for (const rawDefinition of INIT_TYPE_PRESET_DEFINITIONS[preset]) {
+    const normalized = normalizeAddTypeInput(rawDefinition);
+    const upsert = upsertItemType(nextFile, normalized);
+    nextFile = upsert.file;
+    (upsert.replaced ? updated : registered).push(upsert.definition.name);
+  }
+  await writeFileAtomic(typesPath, serializeItemTypesFile(nextFile));
+  return {
+    name: preset,
+    registered,
+    updated,
+    file: typesPath,
   };
 }
 
@@ -277,6 +396,7 @@ export async function runInit(
   const authorFromOption = normalizeOptionalInitAuthor(options.author);
   const installBundledPackages = options.withPackages === true;
   const agentGuidanceMode = normalizeInitAgentGuidanceMode(options.agentGuidance);
+  const typePreset = normalizeInitTypePreset(options.typePreset);
   let chosenPreset = presetFromOption;
   let chosenTelemetryEnabled: boolean | undefined;
 
@@ -349,6 +469,20 @@ export async function runInit(
     );
   }
 
+  let registeredTypePreset: InitRegisteredTypePresetSummary | undefined;
+  if (typePreset !== undefined) {
+    registeredTypePreset = await registerInitTypePreset(pmRoot, settings, typePreset);
+    warnings.push(`registered_type_preset:${typePreset}`);
+    warnings.push(
+      ...(await runActiveOnWriteHooks({
+        path: registeredTypePreset.file,
+        scope: "project",
+        op: "init:type_preset",
+      })),
+    );
+    settings = await readSettings(pmRoot);
+  }
+
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   for (const typeFolder of typeRegistry.folders) {
     if ((PM_REQUIRED_SUBDIRS as readonly string[]).includes(typeFolder)) {
@@ -394,6 +528,9 @@ export async function runInit(
   } else {
     nextSteps.push("Explore newly-available commands: pm cal, pm templates, pm guide");
   }
+  if (registeredTypePreset) {
+    nextSteps.push(`Inspect registered preset types: pm schema list, pm schema show ${registeredTypePreset.registered[0] ?? registeredTypePreset.updated[0]}`);
+  }
   nextSteps.push("Set PM_AUTHOR=<your-agent-id> so mutations attribute to the right caller.");
   for (const guidanceNextStep of agentGuidanceResult.next_steps) {
     if (!nextSteps.includes(guidanceNextStep)) {
@@ -409,6 +546,7 @@ export async function runInit(
     warnings,
     governance_preset: settings.governance.preset,
     wizard_used: wizardUsed,
+    ...(registeredTypePreset ? { registered_type_preset: registeredTypePreset } : {}),
     ...(installedPackages ? { installed_packages: installedPackages } : {}),
     next_steps: nextSteps,
     agent_guidance: agentGuidanceResult.summary,

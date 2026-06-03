@@ -43,6 +43,8 @@ jobs:
     name: Auto release pipeline
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    environment:
+      name: release
 
     steps:
       - name: Checkout
@@ -108,6 +110,11 @@ jobs:
           if [[ "${INPUT_DRY_RUN}" == "true" && "${INPUT_PUSH}" == "true" ]]; then
             echo "dry_run=true cannot be combined with push=true"
             exit 2
+          fi
+          if [[ "${INPUT_PUSH}" == "true" && "${INPUT_DRY_RUN}" != "true" && -z "${SENTRY_PERSONAL_ADMIN_TOKEN:-}" ]]; then
+            echo "SENTRY_PERSONAL_ADMIN_TOKEN is required before Auto Release can create a version commit/tag."
+            echo "The downstream Release workflow treats the Sentry reliability gate as mandatory; failing here prevents unpublished tags."
+            exit 1
           fi
 
           args=(--json --author "github-actions[bot]" --telemetry-mode "${INPUT_TELEMETRY_MODE}")

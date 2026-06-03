@@ -282,18 +282,32 @@ History is append-only. Restore appends a new restore event instead of rewriting
 
 ## Custom Item Types
 
-`pm schema add-type` registers a config-driven custom item type so agents can use `pm create <Type> "..."` for project-specific work categories without editing settings by hand. The definition is merged into the runtime type registry from `.agents/pm/schema/types.json` (shape: `{ "definitions": [ItemTypeDefinition...] }`).
+Tracker references: [pm-qq69](../.agents/pm/features/pm-qq69.toon), [pm-1lkm](../.agents/pm/features/pm-1lkm.toon).
+
+`pm schema` inspects and manages the runtime item-type registry. `list` and `show` include built-in, custom, and extension-provided types so agents can confirm project context before creating work. `add-type` registers a config-driven custom item type so agents can use `pm create <Type> "..."` for project-specific work categories without editing settings by hand. Custom definitions are merged from `.agents/pm/schema/types.json` (shape: `{ "definitions": [ItemTypeDefinition...] }`).
 
 ```bash
+pm schema list
+pm schema show Task
 pm schema add-type Spike --description "Time-boxed investigation" --default-status open
 pm schema add-type Spike --alias spike --alias research --folder spikes
 pm create Spike "Investigate retry backoff"
 ```
 
+- `pm schema list --json` returns `{ builtin, custom, extension, counts }` for compact machine parsing.
+- `pm schema show <Type> --json` returns the resolved definition, including folder, aliases, default status, required create options, type options, command-option policies, and extension provenance when applicable.
 - The command is an idempotent UPSERT keyed on the type name (case-insensitive); re-running it merges aliases and overrides supplied fields while preserving everything else.
 - Built-in types (Chore, Decision, Epic, Event, Feature, Issue, Meeting, Milestone, Plan, Reminder, Task) are reserved and cannot be redefined.
 - Flags: `--description <text>`, `--default-status <status>`, `--folder <dir>`, `--alias <name>` (repeatable), plus `--author`/`--force` governance flags. Add `--json` for the machine envelope.
 - When `pm create`/`pm update` reject an unknown type, the error now points back here: `To register a custom type, run: pm schema add-type "X" (writes .agents/pm/schema/types.json).`
+
+`pm init --type-preset agile|ops|research` registers common domain types during initialization:
+
+- `agile`: Story, Spike
+- `ops`: Incident, Runbook
+- `research`: Experiment, Hypothesis
+
+The option composes with `--defaults`, `--preset`, `--author`, `--agent-guidance`, and `--with-packages`; re-running it is idempotent and reports `registered_type_preset` in JSON output.
 
 ## Plan Workflow
 

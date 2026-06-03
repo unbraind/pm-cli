@@ -138,6 +138,15 @@ const contracts = await getContracts("/path/to/project/.agents/pm", {
 });
 ```
 
+For item-type context, use the CLI inspection primitives before issuing custom-domain mutations:
+
+```bash
+pm schema list --json
+pm schema show Experiment --json
+```
+
+`schema list/show` include built-in, persisted custom, and extension-provided item types. Extension-provided types include provenance (`layer` and package/extension name) in `show --json`, which helps agents decide whether a missing type should be registered persistently with `pm schema add-type`, added through `pm init --type-preset`, or provided by an installed package.
+
 When a package-owned command is missing at runtime, CLI usage guidance now includes a deterministic install hint (for example `pm install calendar` or `pm install search-advanced`) so agents can recover in one retry.
 
 Package installs currently activate only extension resources. Additional package resource kinds (`docs`, `examples`) are metadata-first and available through package manifest/catalog inspection.

@@ -2,13 +2,37 @@ id: pm-1lkm
 title: "pm init --type-preset agile|ops|research: batch-register domain item types"
 description: "A fresh init registers no custom types; each domain (agile: Story/Spike; ops: Incident/Runbook; research: Experiment/Hypothesis) requires manual add-type calls."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:config","area:schema",bootstrap,living-map
 created_at: "2026-05-31T19:45:40.268Z"
-updated_at: "2026-05-31T19:45:40.268Z"
+updated_at: "2026-06-03T05:32:00.427Z"
 author: maintainer-agent
 acceptance_criteria: pm init --type-preset <preset> idempotently registers the preset's types; composes with --preset/--defaults; InitResult.registered_type_preset; docs+tests; no-preset behavior unchanged.
 value: "A fresh init registers no custom types; each domain (agile: Story/Spike; ops: Incident/Runbook; research: Experiment/Hypothesis) requires manual add-type calls."
 parent: pm-8jdc
+resolution: Implemented init type presets using persisted runtime schema definitions and result summaries.
+expected_result: "Fresh projects can bootstrap agile, ops, or research item types idempotently during init."
+actual_result: init --type-preset research dogfood created Experiment/Hypothesis types and allowed creating an Experiment item; tests and coverage pass.
+comments[3]{created_at,author,text}:
+  "2026-06-03T05:05:25.739Z",codex-sdk-explorer,"Explorer finding 2026-06-03: type-preset work is canonical for batch-registering domain item types; no new item needed. Current init options are --preset governance, --defaults, --author, --agent-guidance, --with-packages, --verbose; no --type-preset or InitResult.registered_type_preset exists. A package-author-friendly PR should add preset normalization/data, idempotent persisted writes to schema/types.json (same semantics as schema add-type), folder creation after registration, InitResult + concise output + contracts/MCP/help/completion docs, and tests for agile/ops/research presets composing with --preset/--defaults and no-preset behavior unchanged."
+  "2026-06-03T05:16:09.663Z",codex-main,"Evidence: Implemented pm init --type-preset agile|ops|research with persisted schema/types.json upserts, InitResult.registered_type_preset, concise init summary propagation, folder creation, CLI/SDK contracts/completion, and docs. Verification passed: pnpm build; linked pm test --run for init/contracts/completion/sdk tests; temp dogfood init --type-preset research + schema list/show + create Experiment + health; pnpm quality:docs-skills; pnpm quality:static; pnpm changelog:pm:check using pm-changelog 2026.6.2 unchanged; node scripts/run-tests.mjs coverage 2120 tests 100%."
+  "2026-06-03T05:32:00.427Z",codex-main,"Review follow-up: addressed CodeRabbit feedback by asserting preset folder creation and adding init verbose/type-preset contract coverage. Existing implementation already scaffolded preset folders through readSettings after schema write; test now locks that behavior. Verification: pnpm build and focused tests passed after patch."
+files[5]{path,scope,note}:
+  src/cli/commands/completion.ts,project,completion updates for init type preset
+  src/cli/commands/init.ts,project,init type preset registration and result summary
+  src/cli/register-setup.ts,project,init --type-preset CLI flag
+  src/sdk/cli-contracts.ts,project,init typePreset action/flag contract
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,typePreset parameter metadata
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/init-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpxm25m4-uaovo7,test,passed,"2026-06-03T05:13:10.253Z","2026-06-03T05:13:24.460Z","2026-06-03T05:13:24.460Z",null,null,2,0,0,null,null,null
+docs[4]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,agent loop init type preset guidance
+  docs/COMMANDS.md,project,init type preset command reference
+  docs/CONFIGURATION.md,project,persisted type preset behavior
+  docs/QUICKSTART.md,project,fresh project type preset setup
+close_reason: "Delivered init type presets with persisted runtime schema registration, result summaries, contracts, docs, tests, temp dogfood, and coverage evidence."
 body: ""

@@ -333,6 +333,7 @@ export function registerSetupCommands(program: Command): void {
     .option("-y, --yes", "Alias for --defaults (non-interactive setup)")
     .option("--author <value>", "Set the default mutation author for this project")
     .option("--agent-guidance <mode>", "Agent guidance mode: ask|add|skip|status")
+    .option("--type-preset <name>", "Register domain item types during init: agile|ops|research")
     .option("--with-packages", "Install all bundled first-party packages during initialization")
     .option("--verbose", "Include the full resolved settings tree in the output (default output is a concise summary)")
     .description("Initialize pm storage and defaults for the current workspace.")
@@ -348,6 +349,7 @@ export function registerSetupCommands(program: Command): void {
           defaults: options.defaults === true || options.yes === true,
           author: typeof options.author === "string" ? options.author : undefined,
           agentGuidance: typeof options.agentGuidance === "string" ? options.agentGuidance : undefined,
+          typePreset: typeof options.typePreset === "string" ? options.typePreset : undefined,
           withPackages: options.withPackages === true,
         },
       );

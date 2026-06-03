@@ -789,15 +789,15 @@ export function registerMutationCommands(program: Command): void {
 
   const schemaCommand = program
     .command("schema")
-    .argument("[subcommand]", "Schema subcommand: add-type, or a custom item type name shorthand")
-    .argument("[name]", "Custom item type name (for add-type)")
+    .argument("[subcommand]", "Schema subcommand: list, show, add-type, or a custom item type name shorthand")
+    .argument("[name]", "Item type name for show/add-type")
     .option("--description <text>", "Human description for the custom item type")
     .option("--default-status <status>", "Default status hint recorded for the custom item type")
     .option("--folder <dir>", "Storage folder for items of this custom type")
     .option("--alias <name>", "Alias for the custom type (repeatable, csv-friendly)", collect)
     .option("--author <value>", "Mutation author")
     .option("--force", "Force ownership/lock override")
-    .description("Manage config-driven runtime schema: register custom item types into .agents/pm/schema/types.json.");
+    .description("Inspect and manage config-driven runtime schema.");
   // Hidden pure snake_case underscore-duplicate alias.
   addHiddenOption(schemaCommand, "--default_status <status>", "Alias for --default-status", false);
   schemaCommand
@@ -809,7 +809,15 @@ export function registerMutationCommands(program: Command): void {
     ) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runSchemaAddType, formatSchemaAddTypeHuman, SCHEMA_SUBCOMMANDS } = await import("./commands/schema.js");
+      const {
+        runSchemaAddType,
+        runSchemaList,
+        runSchemaShow,
+        formatSchemaAddTypeHuman,
+        formatSchemaListHuman,
+        formatSchemaShowHuman,
+        SCHEMA_SUBCOMMANDS,
+      } = await import("./commands/schema.js");
       let normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
       let typeName = name;
       if (!normalizedSubcommand) {
@@ -819,6 +827,8 @@ export function registerMutationCommands(program: Command): void {
           {
             code: "missing_required_argument",
             examples: [
+              "pm schema list",
+              "pm schema show Task",
               'pm schema add-type Spike --description "Time-boxed investigation" --default-status open',
               'pm schema add-type Spike --alias spike --alias research',
             ],
@@ -837,16 +847,7 @@ export function registerMutationCommands(program: Command): void {
           : typeof options.default_status === "string"
             ? (options.default_status as string)
             : undefined;
-      const usedAddTypeOption =
-        typeof options.description === "string" ||
-        typeof defaultStatus === "string" ||
-        typeof options.folder === "string" ||
-        (aliases?.length ?? 0) > 0;
-      if (
-        !SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number]) &&
-        typeName === undefined &&
-        usedAddTypeOption
-      ) {
+      if (!SCHEMA_SUBCOMMANDS.includes(normalizedSubcommand as typeof SCHEMA_SUBCOMMANDS[number]) && typeName === undefined) {
         typeName = subcommand;
         normalizedSubcommand = "add-type";
       }
@@ -857,26 +858,37 @@ export function registerMutationCommands(program: Command): void {
           { code: "unknown_subcommand" },
         );
       }
-      const result = await runSchemaAddType(
-        typeName,
-        {
-          description: typeof options.description === "string" ? options.description : undefined,
-          defaultStatus,
-          folder: typeof options.folder === "string" ? options.folder : undefined,
-          alias: aliases,
-          author: typeof options.author === "string" ? options.author : undefined,
-          force: Boolean(options.force),
-        },
-        globalOptions,
-      );
-      // Registering a type does not touch item content, so search caches stay valid.
+      const result =
+        normalizedSubcommand === "list"
+          ? await runSchemaList(globalOptions)
+          : normalizedSubcommand === "show"
+            ? await runSchemaShow(typeName, globalOptions)
+            : await runSchemaAddType(
+                typeName,
+                {
+                  description: typeof options.description === "string" ? options.description : undefined,
+                  defaultStatus,
+                  folder: typeof options.folder === "string" ? options.folder : undefined,
+                  alias: aliases,
+                  author: typeof options.author === "string" ? options.author : undefined,
+                  force: Boolean(options.force),
+                },
+                globalOptions,
+              );
+      // Schema inspection and type registration do not touch item content, so search caches stay valid.
       if (globalOptions.json === true || globalOptions.defaultOutputFormat === "json") {
         printResult(result, globalOptions);
       } else if (!globalOptions.quiet) {
-        writeStdout(`${formatSchemaAddTypeHuman(result)}\n`);
+        if (result.action === "list") {
+          writeStdout(`${formatSchemaListHuman(result)}\n`);
+        } else if (result.action === "show") {
+          writeStdout(`${formatSchemaShowHuman(result)}\n`);
+        } else {
+          writeStdout(`${formatSchemaAddTypeHuman(result)}\n`);
+        }
         // Surface extension on-write hook diagnostics so policy/enforcement
         // warnings are visible without forcing --json.
-        if (result.warnings.length > 0) {
+        if (result.action === "add-type" && result.warnings.length > 0) {
           printError(`schema add-type warnings: ${formatHookWarnings(result.warnings)}`);
         }
       }

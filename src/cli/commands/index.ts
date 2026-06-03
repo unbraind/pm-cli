@@ -45,11 +45,17 @@ export {
 } from "./plan.js";
 export {
   runSchemaAddType,
+  runSchemaList,
+  runSchemaShow,
   formatSchemaAddTypeHuman,
+  formatSchemaListHuman,
+  formatSchemaShowHuman,
   SCHEMA_SUBCOMMANDS,
   type SchemaSubcommand,
   type SchemaAddTypeCommandOptions,
   type SchemaAddTypeResult,
+  type SchemaListResult,
+  type SchemaShowResult,
 } from "./schema.js";
 export { runSearch } from "./search.js";
 export { runRestore } from "./restore.js";

@@ -12,6 +12,73 @@ async function readTypes(context: TempPmContext): Promise<{ definitions: Array<R
 }
 
 describe("schema add-type command", () => {
+  it("lists built-in and custom types in compact groups", async () => {
+    await withTempPmPath(async (context) => {
+      const add = context.runCli(["schema", "add-type", "Spike", "--alias", "spike"]);
+      expect(add.code).toBe(0);
+
+      const listed = context.runCli(["schema", "list", "--json"], { expectJson: true });
+      expect(listed.code).toBe(0);
+      const result = listed.json as {
+        action: string;
+        builtin: Array<{ name: string }>;
+        custom: Array<{ name: string; aliases: string[] }>;
+        counts: { builtin: number; custom: number; total: number };
+      };
+      expect(result.action).toBe("list");
+      expect(result.builtin.map((entry) => entry.name)).toContain("Task");
+      expect(result.custom).toContainEqual(expect.objectContaining({ name: "Spike", aliases: ["spike"] }));
+      expect(result.counts.custom).toBe(1);
+      expect(result.counts.total).toBe(result.counts.builtin + result.counts.custom);
+    });
+  });
+
+  it("shows a built-in or custom type definition by name or alias", async () => {
+    await withTempPmPath(async (context) => {
+      const add = context.runCli(["schema", "add-type", "Spike", "--alias", "spike", "--folder", "spikes"]);
+      expect(add.code).toBe(0);
+
+      const builtin = context.runCli(["schema", "show", "Task", "--json"], { expectJson: true });
+      expect(builtin.code).toBe(0);
+      expect(builtin.json).toMatchObject({
+        action: "show",
+        type: {
+          name: "Task",
+          source: "builtin",
+          folder: "tasks",
+        },
+      });
+
+      const custom = context.runCli(["schema", "show", "spike", "--json"], { expectJson: true });
+      expect(custom.code).toBe(0);
+      expect(custom.json).toMatchObject({
+        action: "show",
+        type: {
+          name: "Spike",
+          source: "custom",
+          folder: "spikes",
+          aliases: ["spike"],
+        },
+      });
+    });
+  });
+
+  it("renders human list and show output without dumping full definitions", async () => {
+    await withTempPmPath(async (context) => {
+      const listed = context.runCli(["schema", "list"]);
+      expect(listed.code).toBe(0);
+      expect(listed.stdout).toContain("Schema types:");
+      expect(listed.stdout).toContain("builtin:");
+      expect(listed.stdout).toContain("Inspect one: pm schema show <Type>");
+
+      const shown = context.runCli(["schema", "show", "Task"]);
+      expect(shown.code).toBe(0);
+      expect(shown.stdout).toContain("type: Task");
+      expect(shown.stdout).toContain("source: builtin");
+      expect(shown.stdout).toContain("folder: tasks");
+    });
+  });
+
   it("registers a custom type so pm create succeeds, after a discoverable failure", async () => {
     await withTempPmPath(async (context) => {
       // Before registration, create with an unknown type fails AND points at schema add-type.
@@ -102,6 +169,19 @@ describe("schema add-type command", () => {
     });
   });
 
+  it("accepts a custom type name shorthand without requiring add-type flags", async () => {
+    await withTempPmPath(async (context) => {
+      const add = context.runCli(["schema", "Spike", "--json"], { expectJson: true });
+      expect(add.code).toBe(0);
+      expect(add.json).toMatchObject({
+        action: "add-type",
+        type: {
+          name: "Spike",
+        },
+      });
+    });
+  });
+
   it("refuses to redefine a built-in type", async () => {
     await withTempPmPath(async (context) => {
       const add = context.runCli(["schema", "add-type", "Task"]);
@@ -133,9 +213,11 @@ describe("schema add-type command", () => {
       const none = context.runCli(["schema"]);
       expect(none.code).not.toBe(0);
       expect(none.stderr).toContain("pm schema requires a subcommand");
+      expect(none.stderr).toContain("list");
+      expect(none.stderr).toContain("show");
       expect(none.stderr).toContain("add-type");
 
-      const unknown = context.runCli(["schema", "bogus"]);
+      const unknown = context.runCli(["schema", "bogus", "extra"]);
       expect(unknown.code).not.toBe(0);
       expect(unknown.stderr).toContain('Unknown pm schema subcommand "bogus"');
     });
