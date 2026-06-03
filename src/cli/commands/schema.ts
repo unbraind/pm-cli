@@ -477,8 +477,12 @@ export async function runSchemaAddStatus(
   const baseDefinition: RuntimeStatusDefinition | undefined = resolvedExisting
     ? {
         id: resolvedExisting.id,
-        ...(resolvedExisting.roles?.length ? { roles: [...resolvedExisting.roles] } : {}),
-        ...(resolvedExisting.aliases?.length ? { aliases: [...resolvedExisting.aliases] } : {}),
+        ...(Array.isArray(resolvedExisting.roles) && resolvedExisting.roles.length > 0
+          ? { roles: [...resolvedExisting.roles] }
+          : {}),
+        ...(Array.isArray(resolvedExisting.aliases) && resolvedExisting.aliases.length > 0
+          ? { aliases: [...resolvedExisting.aliases] }
+          : {}),
         ...(resolvedExisting.description ? { description: resolvedExisting.description } : {}),
         ...(typeof resolvedExisting.order === "number" ? { order: resolvedExisting.order } : {}),
       }
@@ -516,7 +520,7 @@ export async function runSchemaAddStatus(
         continue;
       }
       fileAliasToId.set(defId, defId);
-      for (const alias of definition.aliases ?? []) {
+      for (const alias of Array.isArray(definition.aliases) ? definition.aliases : []) {
         const aliasToken = normalizeStatusToken(alias);
         if (aliasToken.length > 0 && !fileAliasToId.has(aliasToken)) {
           fileAliasToId.set(aliasToken, defId);
@@ -645,7 +649,7 @@ function toSchemaTypeSummary(definition: ResolvedItemTypeDefinition): SchemaType
   return {
     name: definition.name,
     folder: definition.folder,
-    aliases: [...definition.aliases],
+    aliases: Array.isArray(definition.aliases) ? [...definition.aliases] : [],
     ...(definition.default_status ? { default_status: definition.default_status } : {}),
     ...(definition.description ? { description: definition.description } : {}),
   };
@@ -717,8 +721,8 @@ function buildSchemaStatusSummaries(
     const summary: SchemaStatusSummary = {
       id: definition.id,
       source,
-      roles: [...(definition.roles ?? [])],
-      aliases: [...(definition.aliases ?? [])],
+      roles: Array.isArray(definition.roles) ? [...definition.roles] : [],
+      aliases: Array.isArray(definition.aliases) ? [...definition.aliases] : [],
       ...(definition.description ? { description: definition.description } : {}),
     };
     if (source === "builtin") {
