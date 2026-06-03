@@ -717,16 +717,16 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
         const orderSource = args.order ?? options.order;
         let order: number | undefined;
         if (typeof orderSource === "number") {
-          if (!Number.isFinite(orderSource)) {
+          if (!Number.isInteger(orderSource)) {
             throw new PmCliError("schema add-status order must be a finite integer.", 64);
           }
-          order = Math.trunc(orderSource);
+          order = orderSource;
         } else if (typeof orderSource === "string" && orderSource.trim().length > 0) {
           const parsed = Number(orderSource);
-          if (!Number.isFinite(parsed)) {
+          if (!Number.isInteger(parsed)) {
             throw new PmCliError("schema add-status order must be a finite integer.", 64);
           }
-          order = Math.trunc(parsed);
+          order = parsed;
         }
         return runSchemaAddStatus(
           schemaName,

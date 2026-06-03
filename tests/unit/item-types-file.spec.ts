@@ -12,6 +12,7 @@ import {
   upsertItemType,
 } from "../../src/core/schema/item-types-file.js";
 import {
+  assertStatusTokensAvailable,
   BUILTIN_STATUS_IDS,
   normalizeAddStatusInput,
   normalizeStatusToken,
@@ -566,6 +567,61 @@ describe("upsertStatusDef", () => {
     const file = { statuses: [{ id: "review", description: "keep", order: 4 }] as never };
     const result = upsertStatusDef(file, { id: "review", roles: [], aliases: [] });
     expect(result.definition).toMatchObject({ id: "review", description: "keep", order: 4 });
+  });
+
+  it("seeds from baseDefinition when the status is absent from the file (settings-defined)", () => {
+    // Regression: a status defined only in settings.schema.statuses (not the
+    // file) must keep its roles/aliases when `add-status --description x` omits
+    // --role/--alias; the resolved definition is passed as baseDefinition.
+    const base = { id: "review", roles: ["active"], aliases: ["in_review"], order: 3 } as never;
+    const result = upsertStatusDef({ statuses: [] }, { id: "review", description: "needs eyes" }, base);
+    expect(result.replaced).toBe(true);
+    expect(result.definition).toMatchObject({
+      id: "review",
+      roles: ["active"],
+      aliases: ["in_review"],
+      description: "needs eyes",
+      order: 3,
+    });
+    expect(result.file.statuses).toHaveLength(1);
+  });
+
+  it("reports replaced=false for a brand-new status with no file entry and no base", () => {
+    const result = upsertStatusDef({ statuses: [] }, { id: "fresh" }, undefined);
+    expect(result.replaced).toBe(false);
+    expect(result.definition).toEqual({ id: "fresh" });
+  });
+});
+
+describe("assertStatusTokensAvailable", () => {
+  it("throws when the id resolves to a different status (e.g. a built-in alias)", () => {
+    // A new id equal to another status's token (here "cancelled" owned by the
+    // built-in "canceled") would shadow that lifecycle token.
+    expect(() =>
+      assertStatusTokensAvailable({ id: "cancelled" }, new Map([["cancelled", "canceled"]])),
+    ).toThrow(/already belongs to status "canceled"/);
+  });
+
+  it("throws when a supplied alias collides with a different status", () => {
+    expect(() =>
+      assertStatusTokensAvailable({ id: "review", aliases: ["open"] }, new Map([["open", "open"]])),
+    ).toThrow(/already belongs to status "open"/);
+  });
+
+  it("allows re-adding the same status (token owned by itself)", () => {
+    expect(() =>
+      assertStatusTokensAvailable({ id: "review", aliases: ["in_review"] }, new Map([["review", "review"]])),
+    ).not.toThrow();
+  });
+
+  it("allows a brand-new status whose tokens are unowned", () => {
+    expect(() => assertStatusTokensAvailable({ id: "triage", aliases: ["queued"] }, new Map())).not.toThrow();
+  });
+
+  it("skips empty/whitespace tokens", () => {
+    expect(() =>
+      assertStatusTokensAvailable({ id: "review", aliases: ["   "] }, new Map([["open", "open"]])),
+    ).not.toThrow();
   });
 });
 

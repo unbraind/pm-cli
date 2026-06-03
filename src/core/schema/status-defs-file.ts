@@ -218,12 +218,20 @@ export function serializeStatusDefsFile(file: StatusDefsFile): string {
  * flags are preserved untouched, so `add-status <id> --description x` keeps any
  * previously-set roles/aliases.
  */
-export function upsertStatusDef(file: StatusDefsFile, input: NormalizedAddStatusInput): UpsertStatusDefResult {
+export function upsertStatusDef(
+  file: StatusDefsFile,
+  input: NormalizedAddStatusInput,
+  baseDefinition?: RuntimeStatusDefinition,
+): UpsertStatusDefResult {
   const statuses = file.statuses.slice();
   const existingIndex = statuses.findIndex(
     (definition) => normalizeStatusToken(definition.id) === input.id,
   );
-  const existing = existingIndex >= 0 ? statuses[existingIndex] : undefined;
+  // A file-backed definition is the primary seed; when the status is not yet in
+  // statuses.json fall back to `baseDefinition` (the resolved settings-backed
+  // definition) so omitting --role/--alias preserves metadata that lives in
+  // settings.schema.statuses rather than the file.
+  const existing = existingIndex >= 0 ? statuses[existingIndex] : baseDefinition;
 
   const next: RuntimeStatusDefinition = {
     ...(existing ?? {}),
@@ -259,7 +267,10 @@ export function upsertStatusDef(file: StatusDefsFile, input: NormalizedAddStatus
   return {
     file: { statuses },
     definition: next,
-    replaced: existingIndex >= 0,
+    // "replaced" reflects whether the status already existed effectively (in the
+    // file OR in resolved settings), so the CLI reports "Updated" vs "Registered"
+    // correctly even when the prior definition lived only in settings.
+    replaced: existing !== undefined,
   };
 }
 
@@ -289,4 +300,34 @@ export function removeStatusDef(file: StatusDefsFile, id: string | undefined): R
   }
   const [definition] = statuses.splice(existingIndex, 1);
   return { file: { statuses }, removed: true, definition };
+}
+
+/**
+ * Throws when the new status id or any explicitly-supplied alias collides with a
+ * DIFFERENT existing status's id/alias. `resolvedAliasToId` maps a normalized
+ * token to its owning status id (the runtime status registry's alias_to_id map,
+ * which stores ids and aliases in one namespace). Re-adding the same status
+ * (matching id) is allowed — only cross-status collisions throw. This prevents a
+ * custom status from shadowing a built-in lifecycle token (for example
+ * `add-status review --alias open`, or a custom id `cancelled` that aliases the
+ * built-in `canceled`), which would make `pm update --status open` resolve to the
+ * wrong status. The CLI layer maps the thrown Error to a USAGE exit code.
+ */
+export function assertStatusTokensAvailable(
+  input: { id: string; aliases?: string[] },
+  resolvedAliasToId: ReadonlyMap<string, string>,
+): void {
+  const candidates = [input.id, ...(input.aliases ?? [])];
+  for (const candidate of candidates) {
+    const token = normalizeStatusToken(candidate);
+    if (token.length === 0) {
+      continue;
+    }
+    const owner = resolvedAliasToId.get(token);
+    if (owner !== undefined && owner !== input.id) {
+      throw new Error(
+        `Status token "${token}" already belongs to status "${owner}". Choose a different id/alias to avoid shadowing it.`,
+      );
+    }
+  }
 }

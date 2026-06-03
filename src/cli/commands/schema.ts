@@ -12,6 +12,7 @@ import {
   type ItemTypeDefinition,
 } from "../../core/schema/item-types-file.js";
 import {
+  assertStatusTokensAvailable,
   BUILTIN_STATUS_IDS,
   normalizeAddStatusInput,
   normalizeStatusToken,
@@ -314,6 +315,35 @@ async function countItemsUsingStatus(pmRoot: string, settings: PmSettings, statu
   }).length;
 }
 
+/**
+ * Returns the workflow role-slot names (open_status, close_status, ...) that
+ * currently point at `statusId` (normalized). Used to warn before removing a
+ * status that a workflow default still references.
+ */
+function workflowSlotsReferencing(
+  workflow: {
+    draft_status?: string;
+    open_status?: string;
+    in_progress_status?: string;
+    blocked_status?: string;
+    close_status?: string;
+    canceled_status?: string;
+  },
+  statusId: string,
+): string[] {
+  const slots: Array<[string, string | undefined]> = [
+    ["draft_status", workflow.draft_status],
+    ["open_status", workflow.open_status],
+    ["in_progress_status", workflow.in_progress_status],
+    ["blocked_status", workflow.blocked_status],
+    ["close_status", workflow.close_status],
+    ["canceled_status", workflow.canceled_status],
+  ];
+  return slots
+    .filter(([, value]) => value !== undefined && normalizeStatusToken(value) === statusId)
+    .map(([slot]) => slot);
+}
+
 export async function runSchemaRemoveType(
   name: string | undefined,
   options: SchemaRemoveTypeCommandOptions,
@@ -420,6 +450,29 @@ export async function runSchemaAddStatus(
   const settings = await readSettings(pmRoot);
   const schema = normalizeRuntimeSchemaSettings(settings.schema);
   const statusesPath = statusesPathFor(pmRoot, schema);
+  const statusRegistry = resolveRuntimeStatusRegistry(schema);
+
+  // Reject id/alias collisions with a DIFFERENT existing status so a custom
+  // status can never shadow a built-in lifecycle token (e.g. --alias open).
+  try {
+    assertStatusTokensAvailable(normalized, statusRegistry.alias_to_id);
+  } catch (error) {
+    throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
+  }
+
+  // Seed the upsert from the resolved (settings-or-file) definition so omitting
+  // --role/--alias preserves metadata defined in settings.schema.statuses, not
+  // only what is already in statuses.json.
+  const resolvedExisting = statusRegistry.by_id.get(normalized.id);
+  const baseDefinition: RuntimeStatusDefinition | undefined = resolvedExisting
+    ? {
+        id: resolvedExisting.id,
+        ...(resolvedExisting.roles.length > 0 ? { roles: [...resolvedExisting.roles] } : {}),
+        ...(resolvedExisting.aliases.length > 0 ? { aliases: [...resolvedExisting.aliases] } : {}),
+        ...(resolvedExisting.description ? { description: resolvedExisting.description } : {}),
+        ...(typeof resolvedExisting.order === "number" ? { order: resolvedExisting.order } : {}),
+      }
+    : undefined;
 
   const warnings: string[] = [];
   const author = toAuthor(options.author, settings.author_default);
@@ -442,7 +495,7 @@ export async function runSchemaAddStatus(
     } catch (error) {
       throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.GENERIC_FAILURE);
     }
-    upsert = upsertStatusDef(parsed, normalized);
+    upsert = upsertStatusDef(parsed, normalized, baseDefinition);
     // writeFileAtomic writes to a temp file then renames, so a failure leaves
     // the existing statuses.json untouched; no manual rollback is needed.
     await writeFileAtomic(statusesPath, serializeStatusDefsFile(upsert.file));
@@ -519,6 +572,14 @@ export async function runSchemaRemoveStatus(
         const usingStatus = await countItemsUsingStatus(pmRoot, settings, removedId);
         if (usingStatus > 0) {
           warnings.push(`items_using_status:${usingStatus}`);
+        }
+        // Removing a status that a workflow default still points at would leave
+        // pm close / default pm create resolving to an unregistered status. Warn
+        // (non-blocking, consistent with remove-type) so the operator re-points
+        // the workflow slot via schema/workflows.json or pm config.
+        const referencingSlots = workflowSlotsReferencing(schema.workflow, removedId);
+        if (referencingSlots.length > 0) {
+          warnings.push(`status_referenced_by_workflow:${referencingSlots.join(",")}`);
         }
       }
       await writeFileAtomic(statusesPath, serializeStatusDefsFile(removal.file));
@@ -623,8 +684,8 @@ function buildSchemaStatusSummaries(
     const summary: SchemaStatusSummary = {
       id: definition.id,
       source,
-      roles: [...definition.roles],
-      aliases: [...definition.aliases],
+      roles: [...(definition.roles ?? [])],
+      aliases: [...(definition.aliases ?? [])],
       ...(definition.description ? { description: definition.description } : {}),
     };
     if (source === "builtin") {

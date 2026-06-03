@@ -55,20 +55,20 @@ function parseSchemaOrderOption(raw: unknown): number | undefined {
     return undefined;
   }
   if (typeof raw === "number") {
-    if (!Number.isFinite(raw)) {
+    if (!Number.isInteger(raw)) {
       throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
     }
-    return Math.trunc(raw);
+    return raw;
   }
   if (typeof raw === "string") {
     if (raw.trim().length === 0) {
       return undefined;
     }
     const parsed = Number(raw);
-    if (!Number.isFinite(parsed)) {
+    if (!Number.isInteger(parsed)) {
       throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
     }
-    return Math.trunc(parsed);
+    return parsed;
   }
   throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
 }

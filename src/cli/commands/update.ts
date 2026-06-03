@@ -1516,11 +1516,20 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
       throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeRegistry.type_to_folder);
     }
     const { document } = await readLocatedItem(located, { schema: settings.schema });
+    // When this update also changes --type, gate the transition against the
+    // EFFECTIVE (post-update) type, so a combined --type/--status change can't
+    // bypass a target-type rule (or be wrongly blocked by the pre-update type's
+    // rule that will no longer apply). Falls back to the raw value when --type is
+    // unresolved; the later type resolution surfaces an invalid-type error.
+    const effectiveType =
+      options.type !== undefined
+        ? (resolveTypeName(options.type, typeRegistry) ?? options.type)
+        : (document.metadata?.type ?? "");
     const warning = enforceTypeWorkflowTransition({
       enforcement: workflowEnforcement,
       typeWorkflows,
       statusRegistry,
-      typeName: document.metadata?.type ?? "",
+      typeName: effectiveType,
       fromStatus: document.metadata?.status ?? "",
       toStatus: options.status ?? "",
     });
