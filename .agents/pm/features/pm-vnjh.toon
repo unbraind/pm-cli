@@ -6,13 +6,13 @@ status: closed
 priority: 2
 tags[5]: agent-ux,ecosystem,external-packages,package-first,test-harness
 created_at: "2026-06-02T22:19:14.844Z"
-updated_at: "2026-06-04T06:33:58.530Z"
+updated_at: "2026-06-04T06:43:44.451Z"
 author: codex-broad-audit-20260602
 parent: pm-ugqx
 resolution: "Shipped reusable external package smoke harness, public SDK in-memory activation test helper, docs, and Sentry gate handled-validation hygiene."
 expected_result: Agents can verify external pm packages in isolated temp projects and package authors can test SDK extension registration through public helpers without private loader imports.
 actual_result: "Added pnpm smoke:external-packages, activateExtensionForTest, package-author docs, release-gate allowlist coverage, and linked 11-command verification evidence with all commands passing."
-comments[9]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-06-04T05:36:36.013Z",codex-sdk-cli-impl,"Start: continuing implementation-mode SDK/package-platform work. Duplicate check: pm context, pm search 'SDK package author customizable primitives context management', pm list-open, and pm list-in-progress found no active duplicate; reusing pm-vnjh under pm-ugqx. Sidecar agents launched for GitHub/security/release triage and SDK/package-author surface review."
   "2026-06-04T05:40:29.721Z",codex-sdk-cli-impl,"Evidence: focused external package smoke passed after harness argument-separator fix: pnpm smoke:external-packages -- --package pm-changelog returned ok=true, tested=1, failed=0, package doctor activation_failure_count=0, blocking_failure_count=0, and runtime contracts included changelog actions."
   "2026-06-04T05:42:06.731Z",codex-sdk-cli-impl,"Evidence: SDK sidecar under pm-ugqx added activateExtensionForTest to the public SDK testing surface, documented it in docs/SDK.md and docs/EXTENSIONS.md, and verified with sdk-index tests, pnpm build, and a manual temp npm consumer. Mainline focused verification also passed: node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/package-runtime-options.spec.ts (36 tests)."
@@ -22,6 +22,7 @@ comments[9]{created_at,author,text}:
   "2026-06-04T06:11:24.691Z",codex-sdk-cli-impl,"Review response: addressed local PR feedback from Gemini/CodeRabbit/Codex. scripts/smoke-external-packages.mjs now resolves repoRoot from import.meta.url, reports spawnSync errors, creates PM_GLOBAL_PATH, wraps temp cleanup, and reports runtime actions from action_availability[].invocable. src/sdk/testing.ts now reads default-exported manifests and validates manifest.capabilities before spreading. Added SDK regression coverage for default-export manifests and malformed capabilities. Routed package-owned pm-changelog review findings upstream as unbraind/pm-changelog#26, #27, and #28 instead of patching generated managed extension code in pm-cli."
   "2026-06-04T06:18:41.703Z",codex-sdk-cli-impl,"Evidence: review-response linked rerun passed 12/12 commands after fixing bot findings. Coverage passed with 2218 tests and 100% statements/branches/functions/lines; subdirectory command cd scripts && node smoke-external-packages.mjs --discover-only --limit 1 passed; Sentry/telemetry, telemetry stack health, package smoke, build, typecheck, static/docs/security gates all passed."
   "2026-06-04T06:33:58.530Z",codex-sdk-package-smoke,"Evidence: addressed Gemini review feedback by letting activateExtensionForTest read direct metadata from in-memory extension modules and default exports. Added direct/default/capability-only regression coverage; focused SDK suite passed 29 tests, direct coverage passed 2221 tests at 100%, and pm-linked verification passed 12/12 commands including telemetry/Sentry, security scan, pm-changelog package smoke, build, docs/static, coverage, and typecheck."
+  "2026-06-04T06:43:44.451Z",codex-sdk-package-smoke,"Evidence: addressed Gemini smoke-harness feedback by recording JSON parse failures as failed command entries, accepting comma/space-separated npm keyword strings during discovery, and filtering runtime action availability to invocable entries with string action names. Direct smoke checks passed: pnpm smoke:external-packages -- --package pm-changelog and cd scripts && node smoke-external-packages.mjs --discover-only --limit 1. Full pm-linked verification passed 12/12 commands with telemetry/Sentry, coverage, SDK/runtime, build, docs/static, security, package smoke, and typecheck green."
 files[9]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Latest pm-changelog managed extension metadata from changelog gate
   CHANGELOG.md,project,Package-owned pm-changelog refresh after closing pm-vnjh
@@ -45,13 +46,14 @@ tests[12]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,s
   "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   "pnpm smoke:external-packages -- --package pm-changelog",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
-test_runs[6]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+test_runs[7]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mpz2jc65-w6elc6,test,passed,"2026-06-04T05:42:06.334Z","2026-06-04T05:42:26.142Z","2026-06-04T05:42:26.142Z",null,null,3,0,0,null,null,null
   test-local-mpz35bm5-2iv3ny,test,passed,"2026-06-04T05:56:11.241Z","2026-06-04T05:59:31.853Z","2026-06-04T05:59:31.853Z",null,null,11,0,0,null,null,null
   test-local-mpz3ooe3-8asdfp,test,failed,"2026-06-04T06:11:31.651Z","2026-06-04T06:14:34.875Z","2026-06-04T06:14:34.875Z",null,null,11,1,0,null,null,null
   test-local-mpz3tm99-viqnkv,test,passed,"2026-06-04T06:14:50.894Z","2026-06-04T06:18:25.389Z","2026-06-04T06:18:25.389Z",null,null,12,0,0,null,null,null
   test-local-mpz43e64-02vpmf,test,failed,"2026-06-04T06:22:48.232Z","2026-06-04T06:26:01.468Z","2026-06-04T06:26:01.468Z",null,null,11,1,0,null,null,null
   test-local-mpz4d0zy-2x9q1e,test,passed,"2026-06-04T06:30:47.509Z","2026-06-04T06:33:30.958Z","2026-06-04T06:33:30.958Z",null,null,12,0,0,null,null,null
+  test-local-mpz4q0lw-37nd2j,test,passed,"2026-06-04T06:40:22.731Z","2026-06-04T06:43:36.980Z","2026-06-04T06:43:36.980Z",null,null,12,0,0,null,null,null
 docs[3]{path,scope,note}:
   docs/EXTENSIONS.md,project,Document external package ecosystem smoke workflow
   docs/SDK.md,project,Document package-author in-memory SDK activation helper

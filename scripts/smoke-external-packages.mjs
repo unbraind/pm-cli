@@ -146,7 +146,11 @@ function isPmPackageSearchResult(entry) {
   if (!entry || typeof entry.name !== "string" || entry.name.length === 0) {
     return false;
   }
-  const keywords = Array.isArray(entry.keywords) ? entry.keywords : [];
+  const keywords = Array.isArray(entry.keywords)
+    ? entry.keywords
+    : typeof entry.keywords === "string"
+      ? entry.keywords.split(/[\s,]+/)
+      : [];
   const haystack = [entry.name, entry.description, ...keywords]
     .filter((value) => typeof value === "string")
     .join(" ")
@@ -173,7 +177,13 @@ function runPm(label, args, env, options) {
     entry.error = summarizeFailure(result);
     return { entry, payload: null };
   }
-  return { entry, payload: parseJsonOutput(result, label) };
+  try {
+    return { entry, payload: parseJsonOutput(result, label) };
+  } catch (error) {
+    entry.code = 1;
+    entry.error = error instanceof Error ? error.message : String(error);
+    return { entry, payload: null };
+  }
 }
 
 function smokePackage(packageName, options) {
@@ -222,7 +232,9 @@ function smokePackage(packageName, options) {
     }
 
     const availableActions = Array.isArray(contracts?.action_availability)
-      ? contracts.action_availability.filter((entry) => entry?.invocable === true).map((entry) => entry.action)
+      ? contracts.action_availability
+          .filter((entry) => entry?.invocable === true && typeof entry.action === "string")
+          .map((entry) => entry.action)
       : [];
     return {
       package: packageName,
