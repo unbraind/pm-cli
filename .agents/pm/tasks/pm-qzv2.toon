@@ -1,0 +1,53 @@
+id: pm-qzv2
+title: After-command hook affected item transition context
+description: "Add additive SDK/runtime afterCommand affected-item before/after context for transition-aware packages, covering GitHub issue #107 and package-author docs/tests."
+type: Task
+status: closed
+priority: 2
+tags[4]: "area:extensions","area:sdk",context-management,"github:107"
+created_at: "2026-06-04T07:10:14.882Z"
+updated_at: "2026-06-04T09:44:23.574Z"
+author: codex-sdk-continuation
+parent: pm-ugqx
+resolution: "Added additive afterCommand affected item transition context using store-sourced before/current snapshots, documented package-author usage, and verified with regression tests and temp dogfood."
+expected_result: Transition-aware extensions can inspect afterCommand event.affected to distinguish item status changes such as open to in_progress without parsing result.
+actual_result: "afterCommand event.affected includes id, op, item_type, previous_status, status, changed_fields, previous, and current for item mutations; create/update/delete coverage, full integration tests, temp dogfood, static, and build passed."
+comments[14]{created_at,author,text}:
+  "2026-06-04T07:12:18.552Z",codex-sdk-continuation,"Duplicate-check and sidecar evidence: searched pm for afterCommand previousStatus/before-after transition hook work; closest existing item was closed pm-e9ut, and no open duplicate existed. GitHub issue #107 is the live external report. Release-health subagent found latest Auto Release failed because SENTRY_PERSONAL_ADMIN_TOKEN is unset, while main CI/Docs are green, no open PRs, no open Dependabot/security/secret-scanning alerts; operational follow-up belongs under pm-u9d0, no code change required for that failure. SDK subagent recommended an additive optional afterCommand affected-item field sourced from store before/after snapshots with per-command accumulation and compact payloads."
+  "2026-06-04T07:19:28.526Z",codex-sdk-continuation,"Evidence: implemented additive afterCommand affected item transition context. Runtime now records compact before/current front matter snapshots from mutateItem and passes them to afterCommand as event.affected; docs explain using affected instead of parsing result. Verification passed: focused hook regression, full tests/integration/cli.integration.spec.ts, unit extension/item-store/sdk tests, pnpm build, manual temp-project dogfood showing previousStatus=open and status=in_progress, pm health summary ok, validate history drift ok."
+  "2026-06-04T07:25:20.793Z",codex-sdk-continuation,"Follow-up for CI static gate: moved the affected-item hook regression from oversized tests/integration/cli.integration.spec.ts into dedicated tests/integration/extension-hooks.integration.spec.ts to keep the static file-length gate green."
+  "2026-06-04T07:33:23.277Z",codex-sdk-continuation,"Review follow-up: addressed automated feedback by renaming previousStatus to previous_status, exporting AfterCommandAffectedItem from the SDK barrel, using exception-safe afterCommand cleanup, short-circuiting affected collection when no afterCommand hooks are registered, centralizing compact snapshot filtering, skipping large list-like fields, and adding create/delete affected entries with integration assertions."
+  "2026-06-04T07:35:28.227Z",codex-sdk-continuation,"Final review-fix evidence: manual temp-project dogfood verified create/update/delete afterCommand affected entries; update used previous_status=open -> status=in_progress and delete used previous_status=in_progress. Reran linked pm tests after review fixes, SDK/runtime/store unit tests, static quality, Sentry gate, changelog check, health, and validate history drift."
+  "2026-06-04T07:39:24.593Z",codex-sdk-continuation,"Final Gemini defensive follow-up: added optional chaining for mocked afterCommand registries, a guard for snapshot projection metadata, and initialized hookWarnings before the afterCommand try/finally cleanup."
+  "2026-06-04T07:44:01.090Z",codex-sdk-continuation,"Gemini optimization follow-up: skipped id/type/status in afterCommand snapshot changed-field projection because those fields are seeded explicitly."
+  "2026-06-04T07:49:40.144Z",codex-sdk-continuation,"Review follow-up: added restore affected context for pm restore/update-many rollback paths and normalized unset:<field> names before projecting compact snapshots."
+  "2026-06-04T07:55:53.767Z",codex-sdk-continuation,"Gemini tombstone follow-up: projectAfterCommandItemSnapshot now returns an empty snapshot when metadata or metadata.id is absent, avoiding undefined identity fields for restored deleted-item tombstones."
+  "2026-06-04T08:18:22.639Z",codex-sdk-continuation,"Gemini delete-snapshot follow-up: delete affected context now projects Object.keys(beforeDocument.metadata) into previous while preserving changed_fields=[deleted], so transition-aware hooks can inspect deleted item metadata such as title without parsing command result."
+  "2026-06-04T08:40:05.699Z",codex-sdk-continuation,"Gemini defensive follow-up: recordAfterCommandAffectedItem now ignores nullish items, and projectAfterCommandItemSnapshot now returns seeded metadata when changedFields is not an array and skips non-string changed-field entries before string normalization."
+  "2026-06-04T09:01:33.462Z",codex-sdk-continuation,"Gemini afterCommand failure follow-up: runAndClearAfterCommandHooks now catches afterCommand hook failures, prints a warning, preserves cleanup in finally, and avoids masking the primary command outcome."
+  "2026-06-04T09:22:58.699Z",codex-sdk-continuation,"Codex review follow-up: afterCommand hook warnings returned by runAfterCommandHooks are now surfaced in normal stderr output instead of only profile diagnostics, while profile mode keeps the detailed profile hook_warnings line."
+  "2026-06-04T09:44:23.574Z",codex-sdk-continuation,"Codex JSON-mode follow-up: normal afterCommand warning surfacing is now suppressed when --json is active so JSON error stderr remains parseable; profile diagnostics remain profile-scoped."
+files[8]{path,scope,note}:
+  src/cli/commands/create.ts,project,Record create mutations in afterCommand affected context
+  src/cli/commands/restore.ts,project,Record restore mutations in afterCommand affected context
+  src/cli/main.ts,project,Pass affected item snapshots into afterCommand hooks
+  src/core/extensions/extension-types.ts,project,Expose additive AfterCommandAffectedItem SDK context type
+  src/core/extensions/index.ts,project,Collect and clear per-command afterCommand affected item snapshots
+  src/core/store/item-store.ts,project,Record compact before/after item snapshots from mutateItem
+  src/sdk/index.ts,project,Export AfterCommandAffectedItem from SDK barrel
+  tests/integration/extension-hooks.integration.spec.ts,project,Dedicated regression coverage for transition-aware afterCommand hooks
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/integration/extension-hooks.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[4]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpz5ze2y-pyofwi,test,passed,"2026-06-04T07:17:46.917Z","2026-06-04T07:18:53.962Z","2026-06-04T07:18:53.963Z",null,null,3,0,0,null,null,null
+  test-local-mpz69pa8-pbw1nv,test,passed,"2026-06-04T07:25:47.962Z","2026-06-04T07:26:55.040Z","2026-06-04T07:26:55.040Z",null,null,3,0,0,null,null,null
+  test-local-mpz6jq9n-g6md1m,test,passed,"2026-06-04T07:33:34.278Z","2026-06-04T07:34:42.875Z","2026-06-04T07:34:42.875Z",null,null,3,0,0,null,null,null
+  test-local-mpz74p8d-inius4,test,passed,"2026-06-04T07:49:53.570Z","2026-06-04T07:51:01.309Z","2026-06-04T07:51:01.309Z",null,null,3,0,0,null,null,null
+docs[3]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Document lifecycle hook affected-item mutation context
+  docs/SDK.md,project,Document afterCommand affected transition context for package authors
+  packages/pm-lifecycle-hooks/README.md,project,Document exemplar hook transition context availability
+close_reason: "Delivered transition-aware afterCommand affected item context for GitHub issue #107 with docs, tests, temp dogfood, and linked verification."
+body: ""

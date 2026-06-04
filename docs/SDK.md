@@ -361,6 +361,13 @@ declares only the `hooks` capability and registers a default-inert `afterCommand
 hook, so package authors can copy a lifecycle pattern that does not write files,
 produce output, or alter command behavior.
 
+`afterCommand` receives the command outcome plus an optional `affected` array for
+item mutations. Each affected entry is a compact command context:
+`id`, `op`, `item_type`, `previous_status`, `status`, `changed_fields`, and
+partial `previous`/`current` front matter snapshots. Use this for
+transition-aware packages such as notifications; do not parse the untyped
+`result` payload when the transition fields are available.
+
 `onWrite` receives `{ path, scope, op }` for every observed write. When the write
 is tied to an item mutation, the context also includes `item_id`, `item_type`,
 `before`, `after`, and `changed_fields`, so sync packages can mirror the exact

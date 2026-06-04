@@ -37,6 +37,8 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso, resolveIsoOrRelative } from "../../core/shared/time.js";
 import {
   getActiveExtensionRegistrations,
+  projectAfterCommandItemSnapshot,
+  recordAfterCommandAffectedItem,
   runActiveCommandHandler,
   runActiveOnWriteHooks,
 } from "../../core/extensions/index.js";
@@ -1927,6 +1929,14 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
         changed_fields: changedFields,
       })),
     ];
+    recordAfterCommandAffectedItem({
+      id: afterDocument.metadata.id,
+      op: "create",
+      item_type: afterDocument.metadata.type,
+      status: afterDocument.metadata.status,
+      current: projectAfterCommandItemSnapshot(afterDocument.metadata, changedFields),
+      changed_fields: changedFields,
+    });
   } finally {
     await lockRelease();
   }

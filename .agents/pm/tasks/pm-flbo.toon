@@ -1,0 +1,29 @@
+id: pm-flbo
+title: Sentry gate expected handled CLI classifier refresh
+description: Refresh the release Sentry gate expected handled CLI error classifier for current unresolved benign CommandError shapes so release automation blocks only actionable issues.
+type: Task
+status: closed
+priority: 2
+tags[4]: "area:observability","area:release",sentry,telemetry
+created_at: "2026-06-04T07:16:42.066Z"
+updated_at: "2026-06-04T07:19:40.776Z"
+author: codex-sdk-continuation
+parent: pm-5oj5
+resolution: Updated Sentry release-gate expected handled CLI classifier for live benign CommandError shapes and verified live Sentry/telemetry gate now passes.
+expected_result: Release telemetry gate reports no actionable critical/high Sentry issues while continuing to count expected handled CLI validation/config errors separately.
+actual_result: "node scripts/release/sentry-telemetry-gate.mjs --json reports ok=true, critical=0, high=0, ignored_expected_cli_error_total=12, telemetry finish_error_rate_pct=1.99, failures_without_error_code_rows=0."
+comments[2]{created_at,author,text}:
+  "2026-06-04T07:17:32.855Z",codex-sdk-continuation,"Live Sentry evidence before fix: gate saw critical=0 high=3 from PM-CLI-1C Slack webhook returned HTTP 404 no_team, PM-CLI-1B preflight structural validation abort, and PM-CLI-19 validation failed with 2 structural errors. These are handled CommandError/PmCliError cases, not unhandled runtime defects. Patched the expected handled CLI classifier narrowly and verified live gate now reports critical=0 high=0, ignored_expected_cli_error_total=12, telemetry finish_error_rate_pct=1.99, failures_without_error_code_rows=0."
+  "2026-06-04T07:19:28.785Z",codex-sdk-continuation,"Evidence: refreshed live Sentry gate expected handled CLI classifier. Verification passed: tests/integration/release-automation-contract.spec.ts, live node scripts/release/sentry-telemetry-gate.mjs --json with critical=0 high=0, telemetry stack health with 15110 events in last 24h, and pnpm build."
+files[2]{path,scope,note}:
+  scripts/release/sentry-telemetry-gate.mjs,project,Refresh expected handled CLI issue classifier from live Sentry evidence
+  tests/integration/release-automation-contract.spec.ts,project,Contract coverage for refreshed expected handled CLI patterns
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  bash scripts/prod/telemetry/check-stack-health.sh,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/release/sentry-telemetry-gate.mjs --json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpz5zvqq-oko7t4,test,passed,"2026-06-04T07:18:54.228Z","2026-06-04T07:19:16.850Z","2026-06-04T07:19:16.850Z",null,null,4,0,0,null,null,null
+close_reason: Delivered Sentry gate expected handled CLI classifier refresh from live issue evidence with contract tests and live telemetry/Sentry verification.
+body: ""

@@ -21,6 +21,7 @@ import {
   type ExtensionRendererRegistry,
   type ExtensionServiceName,
   type ExtensionServiceRegistry,
+  type AfterCommandAffectedItem,
   type OnIndexHookContext,
   type OnReadHookContext,
   type OnWriteHookContext,
@@ -32,6 +33,7 @@ import {
   type RendererOverrideResult,
   type ServiceOverrideResult,
 } from "./loader.js";
+import type { ItemFrontMatter } from "../../types/index.js";
 
 let activeExtensionHooks: ExtensionHookRegistry | null = null;
 let activeExtensionCommands: ExtensionCommandRegistry | null = null;
@@ -42,6 +44,20 @@ let activeExtensionRenderers: ExtensionRendererRegistry | null = null;
 let activeExtensionRegistrations: ExtensionRegistrationRegistry | null = null;
 let activeCommandContext: Omit<CommandOverrideContext, "result"> | null = null;
 let activeCommandResult: unknown = undefined;
+let activeAfterCommandAffectedItems: AfterCommandAffectedItem[] = [];
+const AFTER_COMMAND_SNAPSHOT_OMITTED_FIELDS = new Set([
+  "body",
+  "comments",
+  "dependencies",
+  "docs",
+  "events",
+  "files",
+  "learnings",
+  "notes",
+  "reminders",
+  "test_runs",
+  "tests",
+]);
 
 export function setActiveExtensionHooks(hooks: ExtensionHookRegistry | null): void {
   activeExtensionHooks = hooks;
@@ -87,6 +103,58 @@ export function getActiveCommandResult(): unknown {
   return activeCommandResult;
 }
 
+export function recordAfterCommandAffectedItem(item: AfterCommandAffectedItem): void {
+  if (!item || (activeExtensionHooks?.afterCommand?.length ?? 0) === 0) {
+    return;
+  }
+  activeAfterCommandAffectedItems.push(item);
+}
+
+export function projectAfterCommandItemSnapshot(
+  metadata: ItemFrontMatter,
+  changedFields: readonly string[],
+): Partial<ItemFrontMatter> {
+  if (!metadata || !metadata.id) {
+    return {};
+  }
+  const snapshot: Record<string, unknown> = {
+    id: metadata.id,
+    type: metadata.type,
+    status: metadata.status,
+  };
+  if (!Array.isArray(changedFields)) {
+    return snapshot as Partial<ItemFrontMatter>;
+  }
+  const source = metadata as unknown as Record<string, unknown>;
+  for (const field of changedFields) {
+    if (typeof field !== "string") {
+      continue;
+    }
+    const actualField = field.startsWith("unset:") ? field.slice("unset:".length) : field;
+    if (
+      actualField === "id" ||
+      actualField === "type" ||
+      actualField === "status" ||
+      AFTER_COMMAND_SNAPSHOT_OMITTED_FIELDS.has(actualField)
+    ) {
+      continue;
+    }
+    if (Object.hasOwn(source, actualField) && source[actualField] !== undefined) {
+      snapshot[actualField] = source[actualField];
+    }
+  }
+  return snapshot as Partial<ItemFrontMatter>;
+}
+
+export function consumeAfterCommandAffectedItems(): AfterCommandAffectedItem[] | undefined {
+  if (activeAfterCommandAffectedItems.length === 0) {
+    return undefined;
+  }
+  const affected = activeAfterCommandAffectedItems;
+  activeAfterCommandAffectedItems = [];
+  return affected;
+}
+
 export function clearActiveExtensionHooks(): void {
   activeExtensionHooks = null;
   activeExtensionCommands = null;
@@ -97,6 +165,7 @@ export function clearActiveExtensionHooks(): void {
   activeExtensionRegistrations = null;
   activeCommandContext = null;
   activeCommandResult = undefined;
+  activeAfterCommandAffectedItems = [];
 }
 
 export async function runActiveOnWriteHooks(context: OnWriteHookContext): Promise<string[]> {

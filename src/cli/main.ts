@@ -10,6 +10,7 @@ import {
   getActiveCommandResult,
   getActiveExtensionRegistrations,
   loadExtensions,
+  consumeAfterCommandAffectedItems,
   runActiveCommandHandler,
   runActiveParserOverride,
   runActivePreflightOverride,
@@ -538,17 +539,28 @@ async function runAndClearAfterCommandHooks(outcome: TelemetryCommandOutcome): P
     return;
   }
 
-  const hookWarnings = await runAfterCommandHooks(runtime.hooks, {
-    command: runtime.commandName,
-    args: runtime.commandArgs,
-    options: { ...runtime.commandOptions },
-    global: { ...runtime.globalOptions },
-    pm_root: runtime.pmRoot,
-    ok: outcome.ok,
-    error: outcome.error,
-    result: getActiveCommandResult(),
-  });
-  clearActiveExtensionHooks();
+  let hookWarnings: string[] = [];
+  try {
+    hookWarnings = await runAfterCommandHooks(runtime.hooks, {
+      command: runtime.commandName,
+      args: runtime.commandArgs,
+      options: { ...runtime.commandOptions },
+      global: { ...runtime.globalOptions },
+      pm_root: runtime.pmRoot,
+      ok: outcome.ok,
+      error: outcome.error,
+      result: getActiveCommandResult(),
+      affected: consumeAfterCommandAffectedItems(),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    hookWarnings = [`afterCommand hooks failed: ${message}`];
+  } finally {
+    clearActiveExtensionHooks();
+  }
+  if (!runtime.globalOptions.json && hookWarnings.length > 0) {
+    printError(`[pm] warning: afterCommand hook_warnings=${formatHookWarnings(hookWarnings)}`);
+  }
   if (runtime.profileEnabled && hookWarnings.length > 0) {
     printError(`profile:extensions hook_warnings=${formatHookWarnings(hookWarnings)}`);
   }

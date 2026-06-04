@@ -2,6 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import {
   getActiveExtensionRegistrations,
+  projectAfterCommandItemSnapshot,
+  recordAfterCommandAffectedItem,
   runActiveOnReadHooks,
   runActiveOnWriteHooks,
   runActiveServiceOverride,
@@ -504,6 +506,17 @@ export async function mutateItem(params: {
       })),
     ];
 
+    recordAfterCommandAffectedItem({
+      id: afterDocument.metadata.id,
+      op: params.op,
+      item_type: afterDocument.metadata.type,
+      previous_status: beforeDocument.metadata.status,
+      status: afterDocument.metadata.status,
+      previous: projectAfterCommandItemSnapshot(beforeDocument.metadata, mutation.changedFields),
+      current: projectAfterCommandItemSnapshot(afterDocument.metadata, mutation.changedFields),
+      changed_fields: mutation.changedFields,
+    });
+
     return {
       item: afterDocument.metadata,
       body: afterDocument.body,
@@ -630,6 +643,15 @@ export async function deleteItem(params: {
         changed_fields: ["deleted"],
       })),
     ];
+
+    recordAfterCommandAffectedItem({
+      id: beforeDocument.metadata.id,
+      op: "delete",
+      item_type: beforeDocument.metadata.type,
+      previous_status: beforeDocument.metadata.status,
+      previous: projectAfterCommandItemSnapshot(beforeDocument.metadata, Object.keys(beforeDocument.metadata)),
+      changed_fields: ["deleted"],
+    });
 
     return {
       item: beforeDocument.metadata,
