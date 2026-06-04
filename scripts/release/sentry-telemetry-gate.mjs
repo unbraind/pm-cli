@@ -118,8 +118,11 @@ const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   "no items imported",
   "no slack webhook configured",
   "slack webhook request failed",
+  "slack webhook returned http",
+  "preflight: 1 structural error(s)",
   "structural error(s) found in",
   "validation failed: 1 structural error(s)",
+  "validation failed: 2 structural error(s)",
   "validation failed: 3 structural error(s)",
   "validation found 3 structural error(s)",
 ];

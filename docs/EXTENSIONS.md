@@ -287,6 +287,9 @@ Common APIs:
 - `api.registerService("output_format", handler)` customizes output formatting through the service override API. Return `context.payload`, `null`, or `undefined` for commands the extension does not own.
 - `api.registerRenderer("toon" | "json", renderer)` adds format-specific renderers. Return `null` for unrelated payloads so pm falls back to native rendering.
 - `api.hooks.beforeCommand(handler)`, `api.hooks.afterCommand(handler)`, `api.hooks.onWrite(handler)`, `api.hooks.onRead(handler)`, and `api.hooks.onIndex(handler)` add lifecycle hooks.
+  `afterCommand` receives command outcome fields plus optional compact `affected`
+  item entries for mutations, including `previous_status`, `status`,
+  `changed_fields`, and partial `previous`/`current` front matter snapshots.
   `onWrite` always includes `path`, `scope`, and `op`; item mutations also add optional `item_id`, `item_type`, `before`, `after`, and `changed_fields`.
 
 The bundled `pm-lifecycle-hooks` package is the hook exemplar: it declares only

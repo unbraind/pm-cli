@@ -2,6 +2,8 @@ import type {
   ExtensionPolicyOverrideSettings,
   ExtensionPolicySettings,
   ItemDocument,
+  ItemFrontMatter,
+  ItemStatus,
   PmSettings,
 } from "../../types/index.js";
 import type { GlobalOptions } from "../shared/command-types.js";
@@ -220,6 +222,18 @@ export interface AfterCommandHookContext extends BeforeCommandHookContext {
   ok: boolean;
   error?: string;
   result?: unknown;
+  affected?: AfterCommandAffectedItem[];
+}
+
+export interface AfterCommandAffectedItem {
+  id: string;
+  op?: string;
+  item_type?: string;
+  previous_status?: ItemStatus;
+  status?: ItemStatus;
+  previous?: Partial<ItemFrontMatter>;
+  current?: Partial<ItemFrontMatter>;
+  changed_fields?: string[];
 }
 
 export interface OnWriteHookContext {

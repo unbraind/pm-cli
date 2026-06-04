@@ -7,6 +7,10 @@ This package is intentionally default-inert. Its `afterCommand` hook returns
 without producing output, writing files, or changing command behavior. Package
 authors can copy this shape when they need low-risk observation hooks.
 
+Transition-aware packages can inspect `afterCommand`'s optional `affected`
+entries for item mutations. Each entry includes the item id, operation,
+previous/current status, changed fields, and compact front matter snapshots.
+
 ## Capabilities
 
 - `hooks`

@@ -89,6 +89,7 @@ export function defineExtension<TModule extends ExtensionModule>(module: TModule
 }
 
 export type {
+  AfterCommandAffectedItem,
   AfterCommandHook,
   AfterCommandHookContext,
   BeforeCommandHook,

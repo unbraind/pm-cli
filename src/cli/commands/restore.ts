@@ -18,7 +18,12 @@ import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { nowIso } from "../../core/shared/time.js";
-import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../core/extensions/index.js";
+import {
+  getActiveExtensionRegistrations,
+  projectAfterCommandItemSnapshot,
+  recordAfterCommandAffectedItem,
+  runActiveOnWriteHooks,
+} from "../../core/extensions/index.js";
 import { locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getItemPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
@@ -450,6 +455,7 @@ export async function runRestore(
       }
       throw error;
     }
+    const restoreChangedFields = changedFields(resolvedCurrentDocument, restoredDocument);
     const hookWarnings = [
       ...(await runActiveOnWriteHooks({
         path: restoredItemPath,
@@ -472,6 +478,16 @@ export async function runRestore(
         changed_fields: ["restored"],
       })),
     ];
+    recordAfterCommandAffectedItem({
+      id: restoredDocument.metadata.id,
+      op: "restore",
+      item_type: restoredDocument.metadata.type,
+      previous_status: resolvedCurrentDocument.metadata.status,
+      status: restoredDocument.metadata.status,
+      previous: projectAfterCommandItemSnapshot(resolvedCurrentDocument.metadata, restoreChangedFields),
+      current: projectAfterCommandItemSnapshot(restoredDocument.metadata, restoreChangedFields),
+      changed_fields: restoreChangedFields,
+    });
 
     const targetEntry = history[resolvedTarget.historyIndex];
     return {
@@ -483,7 +499,7 @@ export async function runRestore(
         entry_ts: targetEntry.ts,
         entry_op: targetEntry.op,
       },
-      changed_fields: changedFields(resolvedCurrentDocument, restoredDocument),
+      changed_fields: restoreChangedFields,
       warnings: [...subject.historyPolicyWarnings, ...ownershipWarnings, ...hookWarnings],
     };
   } finally {
