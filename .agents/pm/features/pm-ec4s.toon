@@ -2,13 +2,19 @@ id: pm-ec4s
 title: pm search --status filter (parity with pm list)
 description: "pm list has --status; pm search has --type/--tag/--priority/--deadline but no --status, so search includes closed history noise by default. Add status parity."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:search",filters,living-map,parity
 created_at: "2026-05-31T19:44:22.873Z"
-updated_at: "2026-05-31T19:44:22.873Z"
+updated_at: "2026-06-04T16:17:41.192Z"
 author: maintainer-agent
 acceptance_criteria: pm search --status <csv> (open/closed/canceled aliases) applied pre-query; emitted in filters; CLI+contracts+MCP+completions+docs+tests; reuse list status parsing.
 value: "pm list has --status; pm search has --type/--tag/--priority/--deadline but no --status, so search includes closed history noise by default. Add status parity."
 parent: pm-ydp6
+resolution: "search --status CSV (open/closed/canceled aliases + ids), strict did-you-mean via shared status-filter parser; pre-query filter; full wiring + tests"
+expected_result: "search scopes by status, invalid value hints"
+actual_result: Implemented and verified
+comments[1]{created_at,author,text}:
+  "2026-06-04T16:17:23.627Z",maintainer-agent,"Shipped: pm search --status (CSV; open/closed/canceled workflow-group aliases + configured ids). Strict parse with did-you-mean hint on typos (shared core/item/status-filter.ts parseStatusFilterCsv, also adopted by pm list in lenient mode). Applied pre-query; echoed in filters block. Full wiring: commander, normalizeSearchOptions, SEARCH_FLAG_CONTRACTS, TOOL_SEARCH_FILTER_OPTION_CONTRACTS, commander-types, completions (bash/zsh/fish), MCP."
+close_reason: Delivered pm search --status parity with did-you-mean
 body: ""

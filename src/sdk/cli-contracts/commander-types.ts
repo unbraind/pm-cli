@@ -21,6 +21,10 @@ export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContrac
   { target: "priority", keys: ["priority"] },
   { target: "deadlineBefore", keys: ["deadlineBefore"] },
   { target: "deadlineAfter", keys: ["deadlineAfter"] },
+  { target: "updatedAfter", keys: ["updatedAfter"] },
+  { target: "updatedBefore", keys: ["updatedBefore"] },
+  { target: "createdAfter", keys: ["createdAfter"] },
+  { target: "createdBefore", keys: ["createdBefore"] },
   { target: "assignee", keys: ["assignee"] },
   { target: "assigneeFilter", keys: ["assigneeFilter", "assignee_filter"] },
   { target: "parent", keys: ["parent"] },
@@ -35,6 +39,7 @@ export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContrac
 
 export const SEARCH_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
   { target: "mode", keys: ["mode"] },
+  { target: "status", keys: ["status"] },
   { target: "type", keys: ["type"] },
   { target: "tag", keys: ["tag"] },
   { target: "priority", keys: ["priority"] },

@@ -140,6 +140,7 @@ export interface UpdateCommandOptions {
   depRemove?: string[];
   replaceDeps?: boolean;
   replaceTests?: boolean;
+  runtimeFieldCommands?: Array<"update" | "update_many">;
   comment?: string[];
   note?: string[];
   learning?: string[];
@@ -1407,6 +1408,11 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     parentReferenceWarnings.push(`blocked_by_unresolved:${blockedByResolution.unresolved}`);
   }
 
+  const runtimeFieldUpdates = collectRuntimeUpdateFieldValues(
+    options as Record<string, unknown>,
+    runtimeFieldRegistry,
+    options.runtimeFieldCommands,
+  );
   const fieldFlags: Record<string, boolean> = {
     title: options.title !== undefined,
     description: options.description !== undefined,
@@ -1477,6 +1483,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     clearReminders: options.clearReminders === true,
     clearEvents: options.clearEvents === true,
     clearTypeOptions: options.clearTypeOptions === true,
+    runtimeFields: Object.keys(runtimeFieldUpdates).length > 0,
   };
   const changedFlags = Object.values(fieldFlags).some(Boolean);
 
@@ -2001,7 +2008,6 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
         changedFields.push(fieldKey);
       }
 
-      const runtimeFieldUpdates = collectRuntimeUpdateFieldValues(options as Record<string, unknown>, runtimeFieldRegistry);
       for (const [fieldKey, fieldValue] of Object.entries(runtimeFieldUpdates)) {
         if (clearFrontMatterKeys.has(fieldKey)) {
           continue;

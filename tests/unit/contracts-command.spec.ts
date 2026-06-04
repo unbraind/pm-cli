@@ -361,6 +361,18 @@ describe("contracts command runtime", () => {
           commands: ["list", "create", "update", "search"],
           cli_aliases: ["segment"],
         },
+        {
+          key: "single_review_stage",
+          type: "string",
+          commands: ["update"],
+          cli_flag: "single-review-stage",
+        },
+        {
+          key: "bulk_review_stage",
+          type: "string",
+          commands: ["update_many"],
+          cli_flag: "bulk-review-stage",
+        },
       ];
       await writeSettings(context.pmPath, settings, "settings:write");
 
@@ -377,6 +389,17 @@ describe("contracts command runtime", () => {
           expect.objectContaining({ flag: "--segment" }),
         ]),
       );
+
+      const updateManyContracts = await runContracts(
+        { command: "update-many", flagsOnly: true },
+        {
+          ...GLOBAL_OPTIONS,
+          path: context.pmPath,
+        },
+      );
+      const updateManyFlags = updateManyContracts.command_flags?.[0]?.flags.map((entry) => entry.flag) ?? [];
+      expect(updateManyFlags).toContain("--bulk-review-stage");
+      expect(updateManyFlags).not.toContain("--single-review-stage");
 
       const runtimeContracts = await runContracts(
         {},

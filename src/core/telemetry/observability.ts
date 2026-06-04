@@ -57,6 +57,7 @@ const MUTATION_ROOT_COMMANDS = new Set([
   "create",
   "update",
   "update-many",
+  "close-many",
   "append",
   "close",
   "delete",

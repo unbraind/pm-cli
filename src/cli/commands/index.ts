@@ -3,6 +3,7 @@ export { runAggregate, type AggregateOptions, type AggregateResult } from "./agg
 export { runActivity } from "./activity.js";
 export { runClaim, runRelease } from "./claim.js";
 export { runClose, type CloseCommandOptions, type CloseResult } from "./close.js";
+export { runCloseMany, type CloseManyCommandOptions, type CloseManyResult } from "./close-many.js";
 export { runComments } from "./comments.js";
 export { runConfig, type ConfigCommandOptions, type ConfigResult } from "./config.js";
 export { runContracts, type ContractsCommandOptions, type ContractsResult } from "./contracts.js";

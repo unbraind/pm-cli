@@ -78,6 +78,127 @@ function createItem(context: TempPmContext, params: {
 }
 
 describe("runList", () => {
+  it("treats null programmatic date and id filters as omitted", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Null Programmatic Filters",
+        status: "open",
+        priority: "2",
+        tags: "null-programmatic",
+        deadline: "2026-06-10T10:00:00.000Z",
+      });
+
+      const result = await runList(
+        undefined,
+        {
+          updatedAfter: null as unknown as string,
+          updatedBefore: null as unknown as string,
+          createdAfter: null as unknown as string,
+          createdBefore: null as unknown as string,
+          ids: null as unknown as string,
+          tag: "null-programmatic",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.count).toBe(1);
+    });
+  });
+
+  it("treats empty programmatic date filters as omitted", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Empty Programmatic Filters",
+        status: "open",
+        priority: "2",
+        tags: "empty-programmatic",
+        deadline: "2026-06-10T10:00:00.000Z",
+      });
+
+      const result = await runList(
+        undefined,
+        {
+          updatedAfter: "",
+          updatedBefore: "   ",
+          createdAfter: "",
+          createdBefore: "   ",
+          tag: "empty-programmatic",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.count).toBe(1);
+    });
+  });
+
+  it("rejects explicit blank id filters", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Blank Id Filter",
+        status: "open",
+        priority: "2",
+        tags: "blank-ids",
+        deadline: "2026-06-10T10:00:00.000Z",
+      });
+
+      await expect(
+        runList(
+          undefined,
+          {
+            ids: "   ",
+            tag: "blank-ids",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "--ids requires at least one non-empty item ID",
+      });
+    });
+  });
+
+  it("filters list results by explicit --ids from the CLI", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createItem(context, {
+        title: "IDs Alpha",
+        status: "open",
+        priority: "1",
+        tags: "ids,list",
+        deadline: "+1d",
+      });
+      const secondId = createItem(context, {
+        title: "IDs Beta",
+        status: "open",
+        priority: "1",
+        tags: "ids,list",
+        deadline: "+1d",
+      });
+      createItem(context, {
+        title: "IDs Gamma",
+        status: "open",
+        priority: "1",
+        tags: "ids,list",
+        deadline: "+1d",
+      });
+
+      const ids = `${firstId},${secondId}`;
+      const result = context.runCli(["list", "--ids", ids, "--json"], { expectJson: true });
+      expect(result.code).toBe(0);
+      const payload = result.json as { count: number; filters: Record<string, unknown>; items: Array<{ id: string }> };
+      expect(payload.count).toBe(2);
+      expect(payload.items.map((item) => item.id).sort()).toEqual([firstId, secondId].sort());
+      expect(payload.filters.ids).toBe(ids);
+
+      const miss = context.runCli(["list", "--ids", "pm-missing", "--json"], { expectJson: true });
+      expect(miss.code).toBe(0);
+      expect((miss.json as { count: number }).count).toBe(0);
+
+      const noIds = context.runCli(["list", "--json"], { expectJson: true });
+      expect(noIds.code).toBe(0);
+      expect((noIds.json as { filters: Record<string, unknown> }).filters.ids).toBeNull();
+    });
+  });
+
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-list-not-init-"));
     try {
@@ -612,6 +733,75 @@ describe("runList", () => {
           /Sort field must be one of/,
         );
       }
+    });
+  });
+
+  it("applies updated/created date-window filters and echoes the raw input", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Window Alpha",
+        status: "open",
+        priority: "1",
+        tags: "window,date",
+        deadline: "+1d",
+      });
+      createItem(context, {
+        title: "Window Beta",
+        status: "open",
+        priority: "1",
+        tags: "window,date",
+        deadline: "+1d",
+      });
+
+      // updated-after: relative past offset keeps all just-created items.
+      const updatedAfterRecent = context.runCli(["list", "--updated-after=-1h", "--json"], { expectJson: true });
+      expect(updatedAfterRecent.code).toBe(0);
+      const recentPayload = updatedAfterRecent.json as { count: number; filters: Record<string, unknown> };
+      expect(recentPayload.count).toBeGreaterThan(0);
+      // The result echoes the RAW input string, not the resolved ISO timestamp.
+      expect(recentPayload.filters.updated_after).toBe("-1h");
+
+      // updated-after: a future ISO threshold filters everything out.
+      const updatedAfterFuture = context.runCli(["list", "--updated-after", "2030-01-01", "--json"], {
+        expectJson: true,
+      });
+      expect(updatedAfterFuture.code).toBe(0);
+      const futurePayload = updatedAfterFuture.json as { count: number; filters: Record<string, unknown> };
+      expect(futurePayload.count).toBe(0);
+      expect(futurePayload.filters.updated_after).toBe("2030-01-01");
+
+      // created-before: a far-future ISO threshold keeps all items.
+      const createdBeforeFuture = context.runCli(["list", "--created-before", "2030-01-01", "--json"], {
+        expectJson: true,
+      });
+      expect(createdBeforeFuture.code).toBe(0);
+      const createdFuturePayload = createdBeforeFuture.json as {
+        count: number;
+        filters: Record<string, unknown>;
+      };
+      expect(createdFuturePayload.count).toBeGreaterThan(0);
+      expect(createdFuturePayload.filters.created_before).toBe("2030-01-01");
+
+      // created-before: a relative past offset filters everything out.
+      const createdBeforePast = context.runCli(["list", "--created-before=-1h", "--json"], { expectJson: true });
+      expect(createdBeforePast.code).toBe(0);
+      const createdPastPayload = createdBeforePast.json as { count: number; filters: Record<string, unknown> };
+      expect(createdPastPayload.count).toBe(0);
+      expect(createdPastPayload.filters.created_before).toBe("-1h");
+
+      // Date-window filters default to null when absent.
+      const noFilters = context.runCli(["list", "--json"], { expectJson: true });
+      expect(noFilters.code).toBe(0);
+      const noFiltersPayload = noFilters.json as { filters: Record<string, unknown> };
+      expect(noFiltersPayload.filters.updated_after).toBeNull();
+      expect(noFiltersPayload.filters.updated_before).toBeNull();
+      expect(noFiltersPayload.filters.created_after).toBeNull();
+      expect(noFiltersPayload.filters.created_before).toBeNull();
+
+      // An unparseable date-window value is a USAGE error (non-zero exit + "Invalid").
+      const invalid = context.runCli(["list", "--updated-after", "totally-not-a-date", "--json"]);
+      expect(invalid.code).not.toBe(0);
+      expect(`${invalid.stderr}${invalid.stdout}`).toContain("Invalid");
     });
   });
 

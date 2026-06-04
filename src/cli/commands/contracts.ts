@@ -36,6 +36,7 @@ import {
   COMMENTS_FLAG_CONTRACTS,
   COMMENTS_AUDIT_FLAG_CONTRACTS,
   CLOSE_FLAG_CONTRACTS,
+  CLOSE_MANY_FLAG_CONTRACTS,
   COMPLETION_FLAG_CONTRACTS,
   CONFIG_FLAG_CONTRACTS,
   CONTRACTS_FLAG_CONTRACTS,
@@ -402,6 +403,7 @@ const CORE_COMMAND_FLAG_CONTRACT_ENTRIES: Array<readonly [string, CliFlagContrac
   ["restore", RESTORE_FLAG_CONTRACTS],
   ["delete", DELETE_FLAG_CONTRACTS],
   ["close", CLOSE_FLAG_CONTRACTS],
+  ["close-many", CLOSE_MANY_FLAG_CONTRACTS],
   ["append", APPEND_FLAG_CONTRACTS],
   ["claim", CLAIM_FLAG_CONTRACTS],
   ["release", RELEASE_FLAG_CONTRACTS],
@@ -1178,7 +1180,7 @@ function normalizeCommandForRuntimeFieldFlags(command: string): string {
     return "context";
   }
   if (command === "update-many") {
-    return "update";
+    return "update_many";
   }
   return command;
 }

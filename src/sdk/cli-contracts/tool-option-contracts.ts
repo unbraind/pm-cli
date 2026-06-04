@@ -7,6 +7,11 @@ export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "priority", flag: "--priority" },
   { param: "deadlineBefore", flag: "--deadline-before" },
   { param: "deadlineAfter", flag: "--deadline-after" },
+  { param: "updatedAfter", flag: "--updated-after" },
+  { param: "updatedBefore", flag: "--updated-before" },
+  { param: "createdAfter", flag: "--created-after" },
+  { param: "createdBefore", flag: "--created-before" },
+  { param: "ids", flag: "--ids" },
   { param: "assignee", flag: "--assignee" },
   { param: "assigneeFilter", flag: "--assignee-filter" },
   { param: "parent", flag: "--parent" },
@@ -52,6 +57,7 @@ export const TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
 ];
 
 export const TOOL_SEARCH_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  { param: "status", flag: "--status" },
   { param: "type", flag: "--type" },
   { param: "tag", flag: "--tag" },
   { param: "priority", flag: "--priority" },
@@ -188,6 +194,30 @@ export const TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] 
   { param: "filterPriority", flag: "--filter-priority" },
   { param: "filterDeadlineBefore", flag: "--filter-deadline-before" },
   { param: "filterDeadlineAfter", flag: "--filter-deadline-after" },
+  { param: "filterUpdatedAfter", flag: "--filter-updated-after" },
+  { param: "filterUpdatedBefore", flag: "--filter-updated-before" },
+  { param: "filterCreatedAfter", flag: "--filter-created-after" },
+  { param: "filterCreatedBefore", flag: "--filter-created-before" },
+  { param: "filterAssignee", flag: "--filter-assignee" },
+  { param: "filterAssigneeFilter", flag: "--filter-assignee-filter" },
+  { param: "filterParent", flag: "--filter-parent" },
+  { param: "filterSprint", flag: "--filter-sprint" },
+  { param: "filterRelease", flag: "--filter-release" },
+  { param: "ids", flag: "--ids" },
+  { param: "limit", flag: "--limit" },
+  { param: "offset", flag: "--offset" },
+];
+
+// normalize keeps the original filter family (no --ids / date-window filters):
+// it audits/repairs metadata in place and its filter contract is intentionally
+// narrower than update-many's bulk-mutation surface.
+export const TOOL_NORMALIZE_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  { param: "filterStatus", flag: "--filter-status" },
+  { param: "filterType", flag: "--filter-type" },
+  { param: "filterTag", flag: "--filter-tag" },
+  { param: "filterPriority", flag: "--filter-priority" },
+  { param: "filterDeadlineBefore", flag: "--filter-deadline-before" },
+  { param: "filterDeadlineAfter", flag: "--filter-deadline-after" },
   { param: "filterAssignee", flag: "--filter-assignee" },
   { param: "filterAssigneeFilter", flag: "--filter-assignee-filter" },
   { param: "filterParent", flag: "--filter-parent" },
@@ -197,7 +227,26 @@ export const TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] 
   { param: "offset", flag: "--offset" },
 ];
 
-export const TOOL_NORMALIZE_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [...TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS];
+export const TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  { param: "filterStatus", flag: "--filter-status" },
+  { param: "filterType", flag: "--filter-type" },
+  { param: "filterTag", flag: "--filter-tag" },
+  { param: "filterPriority", flag: "--filter-priority" },
+  { param: "filterDeadlineBefore", flag: "--filter-deadline-before" },
+  { param: "filterDeadlineAfter", flag: "--filter-deadline-after" },
+  { param: "filterUpdatedAfter", flag: "--filter-updated-after" },
+  { param: "filterUpdatedBefore", flag: "--filter-updated-before" },
+  { param: "filterCreatedAfter", flag: "--filter-created-after" },
+  { param: "filterCreatedBefore", flag: "--filter-created-before" },
+  { param: "filterAssignee", flag: "--filter-assignee" },
+  { param: "filterAssigneeFilter", flag: "--filter-assignee-filter" },
+  { param: "filterParent", flag: "--filter-parent" },
+  { param: "filterSprint", flag: "--filter-sprint" },
+  { param: "filterRelease", flag: "--filter-release" },
+  { param: "ids", flag: "--ids" },
+  { param: "limit", flag: "--limit" },
+  { param: "offset", flag: "--offset" },
+];
 
 export const TOOL_CALENDAR_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "view", flag: "--view" },

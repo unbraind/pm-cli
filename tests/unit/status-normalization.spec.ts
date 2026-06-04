@@ -8,6 +8,9 @@ import {
   normalizeStatusToken,
   resolveTypeWorkflows,
 } from "../../src/core/schema/type-workflows.js";
+import { parseStatusFilterCsv, resolveStatusFilterToken } from "../../src/core/item/status-filter.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import type { ItemStatus } from "../../src/types/index.js";
 
@@ -41,6 +44,12 @@ describe("normalizeStatusInput", () => {
     expect(normalizeStatusInput("in progress")).toBeUndefined();
     expect(normalizeStatusInput("doing")).toBeUndefined();
     expect(normalizeStatusInput(undefined)).toBeUndefined();
+  });
+});
+
+describe("parseStatusFilterCsv", () => {
+  it("treats null like an omitted programmatic status filter", () => {
+    expect(parseStatusFilterCsv(null as unknown as string, builtInRegistry)).toBeUndefined();
   });
 });
 
@@ -328,5 +337,95 @@ describe("describeAllowedTransitions (pm-f4r1)", () => {
 
   it("renders an explicit hint when no transitions are allowed", () => {
     expect(describeAllowedTransitions([])).toBe("(no transitions allowed)");
+  });
+});
+
+describe("resolveStatusFilterToken", () => {
+  it("maps the open/closed/canceled workflow-group aliases to the registry anchors", () => {
+    expect(resolveStatusFilterToken("open", builtInRegistry)).toBe(builtInRegistry.open_status);
+    expect(resolveStatusFilterToken("closed", builtInRegistry)).toBe(builtInRegistry.close_status);
+    expect(resolveStatusFilterToken("canceled", builtInRegistry)).toBe(builtInRegistry.canceled_status);
+    expect(resolveStatusFilterToken("cancelled", builtInRegistry)).toBe(builtInRegistry.canceled_status);
+  });
+
+  it("resolves group aliases against a custom workflow registry", () => {
+    expect(resolveStatusFilterToken("open", customRegistry)).toBe("todo");
+    expect(resolveStatusFilterToken("closed", customRegistry)).toBe("shipped");
+    expect(resolveStatusFilterToken(" Canceled ", customRegistry)).toBe("dropped");
+  });
+
+  it("normalizes concrete status ids and registry aliases (case/whitespace-insensitive)", () => {
+    expect(resolveStatusFilterToken("in_progress", builtInRegistry)).toBe("in_progress");
+    expect(resolveStatusFilterToken("in-progress", builtInRegistry)).toBe("in_progress");
+    expect(resolveStatusFilterToken("wip", customRegistry)).toBe("doing");
+  });
+
+  it("returns undefined for blank or unknown tokens", () => {
+    expect(resolveStatusFilterToken("", builtInRegistry)).toBeUndefined();
+    expect(resolveStatusFilterToken("   ", builtInRegistry)).toBeUndefined();
+    expect(resolveStatusFilterToken("nonsense", builtInRegistry)).toBeUndefined();
+  });
+});
+
+describe("parseStatusFilterCsv", () => {
+  it("returns undefined when no filter is provided", () => {
+    expect(parseStatusFilterCsv(undefined, builtInRegistry)).toBeUndefined();
+  });
+
+  it("returns undefined for an all-blank CSV", () => {
+    expect(parseStatusFilterCsv("  , ,", builtInRegistry)).toBeUndefined();
+  });
+
+  it("resolves and de-duplicates a CSV of group aliases and ids", () => {
+    expect(parseStatusFilterCsv("open,closed", builtInRegistry)).toEqual([
+      builtInRegistry.open_status,
+      builtInRegistry.close_status,
+    ]);
+    // open + the resolved open anchor collapse to one entry
+    expect(parseStatusFilterCsv("open, in_progress, open", builtInRegistry)).toEqual([
+      builtInRegistry.open_status,
+      "in_progress",
+    ]);
+  });
+
+  it("lenient mode (default) passes unknown tokens through verbatim", () => {
+    expect(parseStatusFilterCsv("open,mystery", builtInRegistry)).toEqual([
+      builtInRegistry.open_status,
+      "mystery" as ItemStatus,
+    ]);
+  });
+
+  it("strict mode throws a USAGE error with a did-you-mean hint for a near-miss", () => {
+    let caught: unknown;
+    try {
+      parseStatusFilterCsv("opne", builtInRegistry, { strict: true });
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(PmCliError);
+    const pmError = caught as PmCliError;
+    expect(pmError.exitCode).toBe(EXIT_CODE.USAGE);
+    expect(pmError.message).toContain('Invalid --status value "opne"');
+    expect(pmError.message).toContain('Did you mean "open"');
+  });
+
+  it("strict mode omits the suggestion when nothing is within edit distance", () => {
+    let caught: unknown;
+    try {
+      parseStatusFilterCsv("zzzzzzzz", builtInRegistry, { strict: true, flagLabel: "--filter-status" });
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(PmCliError);
+    expect((caught as PmCliError).message).toContain('Invalid --filter-status value "zzzzzzzz"');
+    expect((caught as PmCliError).message).not.toContain("Did you mean");
+  });
+
+  it("strict mode accepts valid tokens including custom registry aliases", () => {
+    expect(parseStatusFilterCsv("open,wip,shipped", customRegistry, { strict: true })).toEqual([
+      "todo",
+      "doing",
+      "shipped",
+    ]);
   });
 });

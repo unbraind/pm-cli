@@ -21,12 +21,15 @@ import { decodeHtmlEntitiesInOptions } from "../core/shared/html-entity-decode.j
 import { asRecordClone } from "../core/shared/primitives.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
+import { normalizeListOptions, normalizeUpdateOptions } from "../cli/registration-helpers.js";
+import { UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "../sdk/cli-contracts/commander-mutation-options.js";
 import {
   runActivity,
   runAggregate,
   runAppend,
   runClaim,
   runClose,
+  runCloseMany,
   runComments,
   runContracts,
   runContext,
@@ -65,6 +68,9 @@ import {
   runUpgrade,
   runValidate,
 } from "../cli/commands/index.js";
+import type { CloseManyCommandOptions } from "../cli/commands/close-many.js";
+import type { ListOptions } from "../cli/commands/list.js";
+import type { UpdateManyCommandOptions } from "../cli/commands/update-many.js";
 
 interface JsonRpcRequest {
   jsonrpc?: string;
@@ -136,7 +142,7 @@ const TOOLS: ToolDefinition[] = [
         action: {
           type: "string",
           description:
-            "Operation name: init, context, list, get, search, create, update, delete, claim, release, close, comments, notes, learnings, files, files-discover, docs, deps, test, test-all, validate, health, contracts, config, activity, aggregate, extension, extension-reload, package, package-install, package-catalog, install, upgrade, history, schema, stats, append, update-many, gc. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
+            "Operation name: init, context, list, get, search, create, update, delete, claim, release, close, close-many, comments, notes, learnings, files, files-discover, docs, deps, test, test-all, validate, health, contracts, config, activity, aggregate, extension, extension-reload, package, package-install, package-catalog, install, upgrade, history, schema, stats, append, update-many, gc. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
         },
         id: idSchema,
         query: { type: "string", description: "Search query for action=search." },
@@ -322,6 +328,26 @@ function readString(args: Record<string, unknown>, key: string): string | undefi
   return typeof value === "string" && value.trim().length > 0 ? value : undefined;
 }
 
+function readScalarString(args: Record<string, unknown>, key: string): string | undefined {
+  const value = args[key];
+  if (typeof value === "string") {
+    return value.trim().length > 0 ? value : undefined;
+  }
+  return typeof value === "number" && Number.isFinite(value) ? String(value) : undefined;
+}
+
+function readScalarStringAllowBlank(args: Record<string, unknown>, key: string): string | undefined {
+  const value = args[key];
+  if (typeof value === "string") {
+    return value;
+  }
+  return typeof value === "number" && Number.isFinite(value) ? String(value) : undefined;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 function readRequiredString(args: Record<string, unknown>, key: string): string {
   const value = readString(args, key);
   if (!value) {
@@ -374,7 +400,7 @@ const ARRAY_ADD_REMOVE_ACTIONS = new Set([
   "test-all",
 ]);
 
-function normalizeOptionsArrays(
+function normalizeMcpOptionsArrays(
   options: Record<string, unknown>,
   action?: string,
 ): Record<string, unknown> {
@@ -399,7 +425,7 @@ function normalizeOptionsArrays(
 }
 
 function optionsWithAuthor(args: Record<string, unknown>, action?: string): Record<string, unknown> {
-  const options = normalizeOptionsArrays(asRecordClone(args.options), action);
+  const options = normalizeMcpOptionsArrays(asRecordClone(args.options), action);
   const author = readString(args, "author");
   return author && options.author === undefined ? { ...options, author } : options;
 }
@@ -527,6 +553,122 @@ function withMutationCompaction(args: Record<string, unknown>, options?: Record<
   runnerOptions: Record<string, unknown>;
 } {
   return { changedFields: args.fullChangedFields === true ? "full" : "compact", runnerOptions: { ...(options ?? {}) } };
+}
+
+function mutationListOptions(options: Record<string, unknown>): ListOptions {
+  return {
+    type: readScalarString(options, "filterType"),
+    tag: readScalarString(options, "filterTag"),
+    priority: readScalarString(options, "filterPriority"),
+    deadlineBefore: readScalarString(options, "filterDeadlineBefore"),
+    deadlineAfter: readScalarString(options, "filterDeadlineAfter"),
+    updatedAfter: readScalarString(options, "filterUpdatedAfter"),
+    updatedBefore: readScalarString(options, "filterUpdatedBefore"),
+    createdAfter: readScalarString(options, "filterCreatedAfter"),
+    createdBefore: readScalarString(options, "filterCreatedBefore"),
+    ids: readScalarStringAllowBlank(options, "ids"),
+    assignee: readScalarString(options, "filterAssignee"),
+    assigneeFilter: readScalarString(options, "filterAssigneeFilter") ?? readScalarString(options, "filterAssignee_filter"),
+    parent: readScalarString(options, "filterParent"),
+    sprint: readScalarString(options, "filterSprint"),
+    release: readScalarString(options, "filterRelease"),
+    limit: readScalarString(options, "limit"),
+    offset: readScalarString(options, "offset"),
+  };
+}
+
+function closeManyOptionsFromFlat(options: Record<string, unknown>): CloseManyCommandOptions {
+  return {
+    status: readString(options, "filterStatus"),
+    list: isRecord(options.list) ? normalizeListOptions(options.list) : mutationListOptions(options),
+    reason: readString(options, "reason"),
+    resolution: readString(options, "resolution"),
+    expectedResult: readString(options, "expectedResult") ?? readString(options, "expected_result") ?? readString(options, "expected"),
+    actualResult: readString(options, "actualResult") ?? readString(options, "actual_result") ?? readString(options, "actual"),
+    validateClose: readString(options, "validateClose") ?? readString(options, "validate_close"),
+    author: readString(options, "author"),
+    message: readString(options, "message"),
+    force: options.force === true ? true : undefined,
+    dryRun: options.dryRun === true || options.dry_run === true ? true : undefined,
+    rollback: readString(options, "rollback"),
+    checkpoint: options.checkpoint === false || options.noCheckpoint === true || options.no_checkpoint === true ? false : undefined,
+  };
+}
+
+const UPDATE_MANY_FLAT_CONTROL_KEYS = new Set([
+  "filterStatus",
+  "filterType",
+  "filterTag",
+  "filterPriority",
+  "filterDeadlineBefore",
+  "filterDeadlineAfter",
+  "filterUpdatedAfter",
+  "filterUpdatedBefore",
+  "filterCreatedAfter",
+  "filterCreatedBefore",
+  "filterAssignee",
+  "filterAssigneeFilter",
+  "filterAssignee_filter",
+  "filterParent",
+  "filterSprint",
+  "filterRelease",
+  "ids",
+  "list",
+  "update",
+  "limit",
+  "offset",
+  "dryRun",
+  "dry_run",
+  "rollback",
+  "checkpoint",
+  "noCheckpoint",
+  "no_checkpoint",
+]);
+
+function updateManyUpdateOptionsFromFlat(options: Record<string, unknown>): Record<string, unknown> {
+  const update: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(options)) {
+    if (UPDATE_MANY_FLAT_CONTROL_KEYS.has(key)) {
+      continue;
+    }
+    update[key] = value;
+  }
+  return normalizeMcpUpdateOptions(update);
+}
+
+function normalizeMcpUpdateOptions(options: Record<string, unknown>): Record<string, unknown> {
+  const normalizedInput: Record<string, unknown> = normalizeMcpOptionsArrays(options, "update-many");
+  for (const contract of UPDATE_COMMANDER_STRING_OPTION_CONTRACTS) {
+    for (const key of contract.keys) {
+      const value = normalizedInput[key];
+      if (typeof value === "number" && Number.isFinite(value)) {
+        normalizedInput[key] = String(value);
+      }
+    }
+  }
+  return normalizeUpdateOptions(normalizedInput);
+}
+
+function updateManyOptionsFromFlat(options: Record<string, unknown>): UpdateManyCommandOptions {
+  if (isRecord(options.list) || isRecord(options.update)) {
+    const updateSource = isRecord(options.update) ? options.update : updateManyUpdateOptionsFromFlat(options);
+    return {
+      status: readScalarString(options, "filterStatus"),
+      list: isRecord(options.list) ? normalizeListOptions(options.list) : mutationListOptions(options),
+      update: normalizeMcpUpdateOptions(updateSource) as never,
+      dryRun: options.dryRun === true || options.dry_run === true ? true : undefined,
+      rollback: readString(options, "rollback"),
+      checkpoint: options.checkpoint === false || options.noCheckpoint === true || options.no_checkpoint === true ? false : undefined,
+    };
+  }
+  return {
+    status: readScalarString(options, "filterStatus"),
+    list: mutationListOptions(options),
+    update: updateManyUpdateOptionsFromFlat(options) as never,
+    dryRun: options.dryRun === true || options.dry_run === true ? true : undefined,
+    rollback: readString(options, "rollback"),
+    checkpoint: options.checkpoint === false || options.noCheckpoint === true || options.no_checkpoint === true ? false : undefined,
+  };
 }
 
 async function runAction(args: Record<string, unknown>): Promise<unknown> {
@@ -778,7 +920,19 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
     }
     case "update-many": {
       const { changedFields, runnerOptions } = withMutationCompaction(args, options);
-      return projectMutationResult(await runUpdateMany(runnerOptions as never, global), { changedFields });
+      return projectMutationResult(await runUpdateMany(updateManyOptionsFromFlat(runnerOptions), global), { changedFields });
+    }
+    case "close-many": {
+      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
+      const topLevelReason = readString(args, "reason");
+      const closeManyRunnerOptions: Record<string, unknown> =
+        topLevelReason !== undefined && runnerOptions.reason === undefined
+          ? { ...runnerOptions, reason: topLevelReason }
+          : { ...runnerOptions };
+      if (force && closeManyRunnerOptions.force === undefined) {
+        closeManyRunnerOptions.force = true;
+      }
+      return projectMutationResult(await runCloseMany(closeManyOptionsFromFlat(closeManyRunnerOptions), global), { changedFields });
     }
     case "gc":
       return runGc(global, options);

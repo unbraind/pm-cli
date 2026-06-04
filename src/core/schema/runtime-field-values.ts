@@ -165,13 +165,20 @@ export function collectRuntimeCreateFieldValues(
 export function collectRuntimeUpdateFieldValues(
   options: Record<string, unknown>,
   fieldRegistry: RuntimeFieldRegistry,
+  commands: Array<"update" | "update_many"> | null | undefined = ["update"],
 ): Record<string, unknown> {
   const values: Record<string, unknown> = {};
-  for (const definition of fieldRegistry.command_to_fields.get("update") ?? []) {
+  const definitions = (commands ?? ["update"]).flatMap((command) => fieldRegistry.command_to_fields.get(command) ?? []);
+  const seen = new Set<string>();
+  for (const definition of definitions) {
     const rawValue = readRuntimeFieldOptionValue(options, definition);
     if (rawValue === undefined) {
       continue;
     }
+    if (seen.has(definition.metadata_key)) {
+      continue;
+    }
+    seen.add(definition.metadata_key);
     values[definition.metadata_key] = coerceRuntimeFieldValue(definition, rawValue);
   }
   return values;
