@@ -54,6 +54,21 @@ pm install npm:pm-github --project
 pm package doctor --project --detail deep --trace
 ```
 
+For ecosystem maintenance, use the reusable external package smoke harness after
+building `dist/`:
+
+```bash
+pnpm build
+pnpm smoke:external-packages -- --limit 10
+pnpm smoke:external-packages -- --package pm-changelog
+```
+
+The harness discovers npm packages with the `keywords:pm-package` query unless
+explicit packages are provided. Each package is installed in a temporary project
+with isolated `PM_PATH` and `PM_GLOBAL_PATH`, then checked with `pm package
+doctor --project --detail deep --trace` and runtime availability contracts. The
+JSON output is compact enough for agents to attach as tracker evidence.
+
 Prefer package-specific docs before invoking commands that require service credentials, such as GitHub, Jira, Linear, or Slack sync packages.
 
 ## Package Manifest
@@ -376,10 +391,17 @@ Third-party packages should import only stable public SDK subpaths:
 
 ```js
 import { defineExtension, createPmCliExpectedError } from "@unbrained/pm-cli/sdk";
-import { assertRegisteredCommandContract } from "@unbrained/pm-cli/sdk/testing";
+import { activateExtensionForTest, assertRegisteredCommandContract } from "@unbrained/pm-cli/sdk/testing";
 ```
 
 Use `createPmCliExpectedError(message, { exitCode, context })` for expected user/action failures from package commands. It creates an `Error` named `PmCliError` with a structural `exitCode`, so separately installed package code still gets expected-error handling and Sentry filtering.
+
+Use `activateExtensionForTest(module)` in package unit tests when you need an
+`activation.registrations` or `activation.hooks` object for assertion helpers.
+It exercises the real activation and capability validation path without
+requiring private loader imports or a temporary `.agents/pm/extensions` tree.
+Keep `pm package doctor --project --detail deep --trace` and runtime contracts
+for integration tests against installed packages.
 
 `PM_CLI_PACKAGE_ROOT` is first-party only. Bundled packages in this repository use it to find the running CLI's `dist/sdk/runtime.js` before they are published or installed independently. External packages must not read this environment variable or import from `dist/` or `src/core`; use `@unbrained/pm-cli/sdk`, `@unbrained/pm-cli/sdk/runtime`, and `@unbrained/pm-cli/sdk/testing`.
 

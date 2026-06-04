@@ -1,5 +1,10 @@
 import type {
+  ExtensionActivationResult,
+  ExtensionCapability,
+  ExtensionGovernancePolicy,
   ExtensionHookRegistry,
+  ExtensionLayer,
+  ExtensionManifest,
   ExtensionRegistrationRegistry,
   FlagDefinition,
   RegisteredExtensionCommandDefinition,
@@ -8,6 +13,21 @@ import type {
   RegisteredExtensionImporter,
   RegisteredExtensionSearchProvider,
 } from "../core/extensions/loader.js";
+import { activateExtensions } from "../core/extensions/loader.js";
+import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
+
+interface TestExtensionModule {
+  manifest?: Partial<ExtensionManifest>;
+  activate?: unknown;
+  default?: TestExtensionModule;
+}
+
+export interface ActivateExtensionForTestOptions {
+  name?: string;
+  layer?: ExtensionLayer;
+  capabilities?: readonly ExtensionCapability[];
+  policy?: ExtensionGovernancePolicy;
+}
 
 export interface RegisteredCommandContractExpectation {
   command: string;
@@ -91,6 +111,94 @@ function collectFlagLabels(flags: readonly FlagDefinition[]): Set<string> {
     }
   }
   return labels;
+}
+
+function readTestExtensionManifest(module: unknown): Partial<ExtensionManifest> {
+  if (module && typeof module === "object") {
+    const testModule = module as TestExtensionModule;
+    const manifest = testModule.manifest;
+    if (manifest && typeof manifest === "object") {
+      return manifest;
+    }
+    const defaultExport = testModule.default;
+    const defaultManifest = defaultExport?.manifest;
+    if (defaultManifest && typeof defaultManifest === "object") {
+      return defaultManifest;
+    }
+    if (defaultExport && typeof defaultExport === "object" && ("name" in defaultExport || "capabilities" in defaultExport)) {
+      return defaultExport as Partial<ExtensionManifest>;
+    }
+    if ("name" in testModule || "capabilities" in testModule) {
+      return testModule as Partial<ExtensionManifest>;
+    }
+  }
+  return {};
+}
+
+function readTestExtensionCapabilities(
+  manifest: Partial<ExtensionManifest>,
+  options: ActivateExtensionForTestOptions,
+): ExtensionCapability[] {
+  if (Array.isArray(options.capabilities)) {
+    return [...options.capabilities];
+  }
+  if (Array.isArray(manifest.capabilities)) {
+    return manifest.capabilities.filter((capability): capability is ExtensionCapability => typeof capability === "string");
+  }
+  return [];
+}
+
+/**
+ * Activate one in-memory extension module for package tests.
+ *
+ * This uses pm's real registration validation and activation engine while
+ * avoiding private loader imports, filesystem manifests, or workspace setup.
+ */
+export async function activateExtensionForTest(
+  module: unknown,
+  options: ActivateExtensionForTestOptions = {},
+): Promise<ExtensionActivationResult> {
+  const manifest = readTestExtensionManifest(module);
+  const name =
+    options.name ??
+    (typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : "test-extension");
+  const layer = options.layer ?? "project";
+  const capabilities = readTestExtensionCapabilities(manifest, options);
+
+  return activateExtensions({
+    disabled_by_flag: false,
+    roots: { global: "", project: "" },
+    configured_enabled: [],
+    configured_disabled: [],
+    discovered: [],
+    effective: [],
+    warnings: [],
+    policy: options.policy ?? createDefaultExtensionGovernancePolicy(),
+    failed: [],
+    loaded: [
+      {
+        layer,
+        directory: "",
+        manifest_path: "",
+        name,
+        version: typeof manifest.version === "string" ? manifest.version : "0.0.0",
+        entry: typeof manifest.entry === "string" ? manifest.entry : "./index.js",
+        priority: typeof manifest.priority === "number" ? manifest.priority : 0,
+        entry_path: "",
+        capabilities,
+        manifest_version: typeof manifest.manifest_version === "number" ? manifest.manifest_version : undefined,
+        pm_min_version: typeof manifest.pm_min_version === "string" ? manifest.pm_min_version : undefined,
+        pm_max_version: typeof manifest.pm_max_version === "string" ? manifest.pm_max_version : undefined,
+        engines: manifest.engines,
+        trusted: manifest.trusted,
+        provenance: manifest.provenance,
+        sandbox_profile: manifest.sandbox_profile,
+        permissions: manifest.permissions,
+        activation: manifest.activation,
+        module,
+      },
+    ],
+  });
 }
 
 /**

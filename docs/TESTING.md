@@ -48,6 +48,23 @@ pm test-all --status in_progress --progress
 
 Do not link `pm test-all` itself as an item-level test command. It creates recursive orchestration.
 
+## Package Ecosystem Smoke
+
+After `pnpm build`, external package compatibility can be checked without
+touching the repository tracker:
+
+```bash
+pnpm smoke:external-packages -- --limit 10
+pnpm smoke:external-packages -- --package pm-changelog
+```
+
+The harness creates one temporary project per package, sets sandboxed `PM_PATH`
+and `PM_GLOBAL_PATH`, installs the package with `pm install npm:<name>
+--project`, runs `pm package doctor --project --detail deep --trace`, and probes
+runtime contracts with `pm contracts --runtime-only --availability-only`. Use
+`--discover-only` for the npm package list and `--keep-temp` only when debugging
+a failing package root.
+
 ## PM Context Modes
 
 Linked PM commands default to schema context: settings and extensions are seeded, but tracker item data stays isolated.

@@ -19,10 +19,12 @@ import {
   assertRegisteredHook as assertRegisteredHookFromBarrel,
   assertRegisteredImporter as assertRegisteredImporterFromBarrel,
   assertRegisteredSearchProvider as assertRegisteredSearchProviderFromBarrel,
+  activateExtensionForTest as activateExtensionForTestFromBarrel,
   appendHistoryEntry,
   createHistoryEntry,
   createPmCliExpectedError,
   defineExtension,
+  type ExtensionApi,
   type ExtensionHookRegistry,
   type ExtensionRegistrationRegistry,
   generateItemId,
@@ -43,6 +45,7 @@ import {
   assertRegisteredHook,
   assertRegisteredImporter,
   assertRegisteredSearchProvider,
+  activateExtensionForTest,
 } from "../../src/sdk/testing.js";
 import { readSettings as readCoreSettings, writeSettings } from "../../src/core/store/settings.js";
 import { activateExtensions, loadExtensions } from "../../src/core/extensions/loader.js";
@@ -264,6 +267,7 @@ describe("public sdk entrypoint", () => {
     expect(typeof assertRegisteredSearchProviderFromBarrel).toBe("function");
     expect(typeof assertRegisteredImporterFromBarrel).toBe("function");
     expect(typeof assertRegisteredExporterFromBarrel).toBe("function");
+    expect(typeof activateExtensionForTestFromBarrel).toBe("function");
   });
 
   it("exposes runtime contracts without requiring a pm subprocess", async () => {
@@ -656,5 +660,212 @@ describe("sdk testing helpers", () => {
       });
       expect(typeof hook.run).toBe("function");
     });
+  });
+
+  it("activates an in-memory extension module for package-author tests", async () => {
+    const activation = await activateExtensionForTest({
+      manifest: {
+        name: "memory-ext",
+        version: "1.0.0",
+        entry: "./index.js",
+        priority: 0,
+        manifest_version: 2,
+        pm_min_version: "2026.5.0",
+        pm_max_version: "2027.0.0",
+        capabilities: ["commands", "schema", "hooks"],
+      },
+      activate(api: ExtensionApi) {
+        api.registerCommand({
+          name: "memory hello",
+          action: "memory-hello",
+          description: "Exercise in-memory SDK activation.",
+          flags: [{ long: "--name", value_type: "string" }],
+          run: async () => ({ ok: true }),
+        });
+        api.hooks.afterCommand(() => undefined);
+      },
+    });
+
+    const command = assertRegisteredCommandContract(activation.registrations, {
+      command: "memory hello",
+      action: "memory-hello",
+      extensionName: "memory-ext",
+      flags: ["--name"],
+    });
+    expect(command.command.description).toBe("Exercise in-memory SDK activation.");
+
+    const hook = assertRegisteredHook(activation.hooks, {
+      kind: "after_command",
+      extensionName: "memory-ext",
+    });
+    expect(typeof hook.run).toBe("function");
+  });
+
+  it("uses a default manifest for simple in-memory extension tests", async () => {
+    const activation = await activateExtensionForTest(
+      {
+        activate(api: ExtensionApi) {
+          api.registerCommand({
+            name: "default hello",
+            action: "default-hello",
+            description: "Exercise default in-memory SDK activation.",
+            run: async () => ({ ok: true }),
+          });
+        },
+      },
+      { capabilities: ["commands"] },
+    );
+
+    assertRegisteredCommandContract(activation.registrations, {
+      command: "default hello",
+      action: "default-hello",
+      extensionName: "test-extension",
+    });
+  });
+
+  it("reads manifests from default-exported in-memory extension modules", async () => {
+    const activation = await activateExtensionForTest({
+      default: {
+        manifest: {
+          name: "default-export-ext",
+          version: "1.0.0",
+          entry: "./index.js",
+          capabilities: ["commands"],
+        },
+        activate(api: ExtensionApi) {
+          api.registerCommand({
+            name: "default export hello",
+            action: "default-export-hello",
+            description: "Exercise default export manifest activation.",
+            run: async () => ({ ok: true }),
+          });
+        },
+      },
+    });
+
+    assertRegisteredCommandContract(activation.registrations, {
+      command: "default export hello",
+      action: "default-export-hello",
+      extensionName: "default-export-ext",
+    });
+  });
+
+  it("reads direct metadata from default-exported in-memory extension modules", async () => {
+    const activation = await activateExtensionForTest({
+      default: {
+        name: "direct-default-ext",
+        version: "1.0.0",
+        entry: "./index.js",
+        capabilities: ["commands"],
+        activate(api: ExtensionApi) {
+          api.registerCommand({
+            name: "direct default hello",
+            action: "direct-default-hello",
+            description: "Exercise default export direct metadata activation.",
+            run: async () => ({ ok: true }),
+          });
+        },
+      },
+    });
+
+    assertRegisteredCommandContract(activation.registrations, {
+      command: "direct default hello",
+      action: "direct-default-hello",
+      extensionName: "direct-default-ext",
+    });
+  });
+
+  it("uses default-exported capabilities metadata without an explicit name", async () => {
+    const activation = await activateExtensionForTest({
+      default: {
+        capabilities: ["commands"],
+        activate(api: ExtensionApi) {
+          api.registerCommand({
+            name: "capability default hello",
+            action: "capability-default-hello",
+            description: "Exercise default export capability-only metadata activation.",
+            run: async () => ({ ok: true }),
+          });
+        },
+      },
+    });
+
+    assertRegisteredCommandContract(activation.registrations, {
+      command: "capability default hello",
+      action: "capability-default-hello",
+      extensionName: "test-extension",
+    });
+  });
+
+  it("reads direct metadata from in-memory extension modules", async () => {
+    const activation = await activateExtensionForTest({
+      name: "direct-ext",
+      version: "1.0.0",
+      entry: "./index.js",
+      capabilities: ["commands"],
+      activate(api: ExtensionApi) {
+        api.registerCommand({
+          name: "direct hello",
+          action: "direct-hello",
+          description: "Exercise direct metadata activation.",
+          run: async () => ({ ok: true }),
+        });
+      },
+    });
+
+    assertRegisteredCommandContract(activation.registrations, {
+      command: "direct hello",
+      action: "direct-hello",
+      extensionName: "direct-ext",
+    });
+  });
+
+  it("uses fallback metadata for primitive in-memory modules", async () => {
+    const activation = await activateExtensionForTest("not-an-extension-module");
+
+    expect(activation.failed).toHaveLength(0);
+    expect(activation.registrations.commands).toHaveLength(0);
+    expect(activation.warnings).toHaveLength(0);
+  });
+
+  it("ignores malformed manifest capabilities instead of throwing", async () => {
+    const activation = await activateExtensionForTest({
+      manifest: {
+        name: "malformed-capabilities-ext",
+        version: "1.0.0",
+        entry: "./index.js",
+        capabilities: "commands",
+      },
+      activate(api: ExtensionApi) {
+        api.registerCommand({
+          name: "malformed hello",
+          action: "malformed-hello",
+          description: "Exercise malformed manifest capability handling.",
+          run: async () => ({ ok: true }),
+        });
+      },
+    });
+
+    expect(activation.failed).toHaveLength(1);
+    expect(activation.failed[0]?.trace?.missing_capability).toBe("commands");
+  });
+
+  it("keeps capability guardrails active for in-memory extension tests", async () => {
+    const activation = await activateExtensionForTest({
+      manifest: {
+        name: "missing-capability-ext",
+        version: "1.0.0",
+        entry: "./index.js",
+        priority: 0,
+        capabilities: ["commands"],
+      },
+      activate(api: ExtensionApi) {
+        api.registerItemFields([{ name: "severity", type: "string" }]);
+      },
+    });
+
+    expect(activation.failed).toHaveLength(1);
+    expect(activation.warnings).toContain("extension_activate_failed:project:missing-capability-ext");
+    expect(activation.failed[0]?.trace?.missing_capability).toBe("schema");
   });
 });

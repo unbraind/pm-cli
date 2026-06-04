@@ -9,6 +9,10 @@ export interface PmItem {
     tags?: string[];
     release?: string;
     milestone?: string;
+    /** Optional explicit breaking-change flag. Consulted only by the opt-in
+     * `--breaking-changes` / `--suggest-semver` features; never affects default
+     * output. */
+    breaking?: unknown;
     metadata?: Record<string, unknown>;
     url?: string;
     /** Person an item is assigned to. Surfaced in the optional Contributors
@@ -71,6 +75,37 @@ export interface GenerateChangelogOptions {
      * Applies only when `releaseWindows` produced the sections (the `Unreleased`
      * section is always kept). Absent → all releases. */
     sinceVersion?: string;
+    /** OPT-IN: when true, emit an extra `### Breaking Changes` group per release
+     * listing items detected as breaking (type/tag/title contains "breaking", or
+     * a truthy `breaking` flag). Absent → no Breaking Changes section. */
+    breakingChanges?: boolean;
+    /** OPT-IN: append the first N characters of each item's body/description to
+     * its changelog entry (single-lined, escaped). Absent/0 → bodies omitted. */
+    bodyPreview?: number;
+    /** OPT-IN: prefix category headings with a conventional emoji
+     * (Added 🎉, Fixed 🐛, ...). Absent → headings unprefixed. */
+    emojiPrefix?: boolean;
+    /** OPT-IN: include a suggested semver bump in the `--changelog-json`
+     * document. Never alters default markdown. Absent → no suggestion emitted. */
+    suggestSemver?: boolean;
+}
+/** A truthy `breaking` flag may live directly on a pm item or in its metadata.
+ * Used only by the opt-in `--breaking-changes` / `--suggest-semver` features. */
+export interface PmItemBreakingFlag {
+    breaking?: unknown;
+}
+export type SemverBump = "major" | "minor" | "patch" | "none";
+/** Result of the opt-in `--suggest-semver` analysis. Emitted as JSON / footer
+ * note only; never alters default markdown. */
+export interface SemverSuggestion {
+    bump: SemverBump;
+    reason: string;
+    counts: {
+        breaking: number;
+        feature: number;
+        fix: number;
+        other: number;
+    };
 }
 export interface GeneratedChangelog {
     markdown: string;
@@ -135,6 +170,8 @@ export interface ChangelogDocumentRelease {
     sections: ChangelogDocumentSection[];
     /** Present only when `--contributors` is set. */
     contributors?: string[];
+    /** Present only when `--breaking-changes` is set: items detected as breaking. */
+    breaking_changes?: ChangelogDocumentItem[];
 }
 /** Structured changelog produced by the opt-in `--changelog-json` flag. */
 export interface ChangelogDocument {
@@ -143,5 +180,7 @@ export interface ChangelogDocument {
     section_by: ChangelogSectionBy;
     item_count: number;
     releases: ChangelogDocumentRelease[];
+    /** Present only when `--suggest-semver` is set: recommended version bump. */
+    suggested_semver?: SemverSuggestion;
 }
 //# sourceMappingURL=types.d.ts.map

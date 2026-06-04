@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026.6.4 - 2026-06-04
+
+### Added
+
+- Add opt-in breaking-changes, suggest-semver, body-preview, and emoji-prefix flags ([pmc-se5c](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/features/pmc-se5c.toon))
+
+### Fixed
+
+- Deduplicate label grouping tags in changelog sections ([pmc-an10](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-an10.toon))
+
 ## 2026.6.3 - 2026-06-03
 
 ### Added

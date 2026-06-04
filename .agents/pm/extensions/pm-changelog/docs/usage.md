@@ -171,6 +171,31 @@ Emit a structured changelog document (releases -> sections -> items) for downstr
 npx pm-changelog --all-release-tags --changelog-json > changelog.json
 ```
 
+Surface breaking changes in a dedicated section (items whose type/tag/title contains `breaking`, or that carry a truthy `breaking` flag). The breaking items still appear in their normal category below, so this is purely additive:
+
+```bash
+npx pm-changelog --stdout --breaking-changes
+```
+
+Get a suggested semver bump from the in-scope items (breaking -> major, feature -> minor, fix -> patch). Printed as JSON to stdout; never writes the changelog and never alters default markdown. It is also embedded in `--changelog-json` output when combined:
+
+```bash
+npx pm-changelog --suggest-semver
+npx pm-changelog --changelog-json --suggest-semver
+```
+
+Append a short preview of each item body to its entry (first N characters, single-lined; truncated with an ellipsis when longer):
+
+```bash
+npx pm-changelog --stdout --body-preview 80
+```
+
+Prefix section headings with conventional emoji (`Added 🎉`, `Fixed 🐛`, ...; unknown custom headings pass through unchanged):
+
+```bash
+npx pm-changelog --stdout --emoji-prefix
+```
+
 The same flags are available on the pm extension command:
 
 ```bash
@@ -208,6 +233,10 @@ pm changelog generate --changelog-json
 | `--limit <n>` | - | Keep only the most recent N release sections (only affects `--all-release-tags`/`--group-by` history output) |
 | `--since-version <v>` | - | Keep only releases at or newer than version `<v>` (`Unreleased` is always kept; history output only) |
 | `--changelog-json` | false | Print the full structured changelog document (releases -> sections -> items) as JSON to stdout. Distinct from `--json` (CI summary) |
+| `--breaking-changes` | false | Emit an additional `Breaking Changes` section per release listing items detected as breaking (type/tag/title contains `breaking`, or a truthy `breaking` flag) |
+| `--suggest-semver` | false | Print a suggested semver bump (`major`/`minor`/`patch`/`none`) as JSON to stdout; never writes the changelog. Also embedded in `--changelog-json` output |
+| `--body-preview <n>` | - | Append the first N characters of each item's body to its entry (single-lined, truncated with an ellipsis when longer) |
+| `--emoji-prefix` | false | Prefix section headings with conventional emoji (`Added 🎉`, `Fixed 🐛`, ...); unknown headings pass through unchanged |
 | `--mode <mode>` | `replace` | `replace` or `prepend` existing changelog |
 | `--json` | false | Print JSON summary for automation |
 | `--check` | false | Do not write; exit 1 if the output file would change |

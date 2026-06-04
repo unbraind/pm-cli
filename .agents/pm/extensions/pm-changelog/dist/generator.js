@@ -53,6 +53,19 @@ export function createChangelog(options) {
             lines.push("No changes.", "");
             continue;
         }
+        // OPT-IN (`--breaking-changes`): a dedicated heading listing breaking items
+        // up front. Items still appear in their normal category/field group below,
+        // so this is purely additive and absent by default.
+        if (options.breakingChanges) {
+            const breaking = section.items.filter(isBreakingItem);
+            if (breaking.length > 0) {
+                lines.push(`### ${maybeEmoji("Breaking Changes", options)}`, "");
+                for (const item of breaking) {
+                    lines.push(`- ${formatItem(item, options)}`);
+                }
+                lines.push("");
+            }
+        }
         if (sectionBy === "category") {
             const grouped = groupByCategory(section.items);
             for (const category of CATEGORY_ORDER) {
@@ -63,7 +76,7 @@ export function createChangelog(options) {
                 // bucketing, and bullet rendering are untouched, so dropping the flag
                 // restores byte-identical output.
                 const heading = options.conventional ? CONVENTIONAL_HEADINGS[category] : category;
-                lines.push(`### ${heading}`, "");
+                lines.push(`### ${maybeEmoji(heading, options)}`, "");
                 for (const item of categoryItems) {
                     lines.push(`- ${formatItem(item, options)}`);
                 }
@@ -72,7 +85,7 @@ export function createChangelog(options) {
         }
         else {
             for (const group of groupByField(section.items, sectionBy)) {
-                lines.push(`### ${group.heading}`, "");
+                lines.push(`### ${maybeEmoji(group.heading, options)}`, "");
                 for (const item of group.items) {
                     lines.push(`- ${formatItem(item, options)}`);
                 }
@@ -169,6 +182,9 @@ export function buildChangelogDocument(options) {
             item_count: section.items.length,
             sections: sectionGroups,
             contributors: options.contributors ? collectContributors(section.items) : undefined,
+            breaking_changes: options.breakingChanges
+                ? section.items.filter(isBreakingItem).map(toDocumentItem)
+                : undefined,
         };
     });
     return {
@@ -177,6 +193,7 @@ export function buildChangelogDocument(options) {
         section_by: sectionBy,
         item_count: visibleSections.reduce((sum, section) => sum + section.items.length, 0),
         releases,
+        suggested_semver: options.suggestSemver ? suggestSemver(options) : undefined,
     };
 }
 function toDocumentItem(item) {
@@ -514,7 +531,12 @@ function groupByField(items, sectionBy) {
             push(titleCase(typeof item.status === "string" && item.status.trim() ? item.status.trim() : "Unknown"), item);
         }
         else {
-            const tags = (item.tags ?? []).map((tag) => tag.trim()).filter(Boolean);
+            const tags = [
+                ...new Set((Array.isArray(item.tags) ? item.tags : [])
+                    .filter((tag) => typeof tag === "string")
+                    .map((tag) => tag.trim())
+                    .filter(Boolean)),
+            ];
             if (tags.length === 0) {
                 push("Unlabeled", item);
             }
@@ -637,7 +659,132 @@ function formatItem(item, options) {
     const title = escapeMarkdown(toSingleLine(item.title));
     const id = formatItemId(item, options);
     const link = options.includeLinks ? formatLink(item.url) : "";
-    return `${title}${id}${link}`;
+    const preview = formatBodyPreview(item, options);
+    return `${title}${id}${link}${preview}`;
+}
+/**
+ * OPT-IN (`--body-preview <n>`): append a truncated, single-lined, escaped
+ * preview of the item body. Returns "" when the flag is unset/0 or the item has
+ * no body, so default output is byte-identical. Truncation appends an ellipsis
+ * only when the body actually exceeds N characters.
+ */
+function formatBodyPreview(item, options) {
+    const limit = options.bodyPreview && options.bodyPreview > 0 ? options.bodyPreview : 0;
+    if (limit === 0)
+        return "";
+    const body = typeof item.body === "string" ? toSingleLine(item.body) : "";
+    if (!body)
+        return "";
+    const truncated = body.length > limit ? `${body.slice(0, limit)}…` : body;
+    return ` — ${escapeMarkdown(truncated)}`;
+}
+/**
+ * OPT-IN (`--emoji-prefix`): prefix a known heading with a conventional emoji.
+ * Unknown headings (custom labels/types) pass through unchanged. Off by
+ * default, so headings render exactly as before.
+ */
+function maybeEmoji(heading, options) {
+    if (!options.emojiPrefix)
+        return heading;
+    const emoji = HEADING_EMOJI[heading];
+    return emoji ? `${emoji} ${heading}` : heading;
+}
+const HEADING_EMOJI = {
+    // keep-a-changelog categories
+    Added: "🎉",
+    Changed: "♻️",
+    Fixed: "🐛",
+    Removed: "🗑️",
+    Security: "🔒",
+    Deprecated: "⚠️",
+    Other: "📦",
+    // conventional-commits headings (when --conventional is also set)
+    Features: "🎉",
+    Changes: "♻️",
+    "Bug Fixes": "🐛",
+    Reverts: "⏪",
+    Deprecations: "⚠️",
+    // breaking changes section
+    "Breaking Changes": "💥",
+};
+/**
+ * Detect whether an item is a breaking change. Signals (any one suffices):
+ *  - a truthy `breaking` flag on the item or in its metadata, OR
+ *  - the substring "breaking" appearing in the type, any tag, or the title.
+ * Used only by the opt-in `--breaking-changes` / `--suggest-semver` features.
+ */
+function isBreakingItem(item) {
+    if (isTruthyFlag(item.breaking))
+        return true;
+    if (isTruthyFlag(item.metadata?.["breaking"]))
+        return true;
+    const haystack = [
+        typeof item.type === "string" ? item.type : "",
+        ...(Array.isArray(item.tags) ? item.tags.filter((t) => typeof t === "string") : []),
+        typeof item.title === "string" ? item.title : "",
+    ]
+        .join(" ")
+        .toLowerCase();
+    return haystack.includes("breaking");
+}
+function isTruthyFlag(value) {
+    if (value === true)
+        return true;
+    if (typeof value === "string") {
+        const v = value.trim().toLowerCase();
+        return v === "true" || v === "yes" || v === "1";
+    }
+    if (typeof value === "number")
+        return value === 1;
+    return false;
+}
+/**
+ * OPT-IN (`--suggest-semver`): classify the in-scope items into breaking /
+ * feature / fix / other and recommend a semver bump. Emitted as JSON or a
+ * footer note; never alters default markdown.
+ */
+export function suggestSemver(options) {
+    const items = filterItems(options);
+    let breaking = 0;
+    let feature = 0;
+    let fix = 0;
+    let other = 0;
+    for (const item of items) {
+        if (isBreakingItem(item)) {
+            breaking++;
+            continue;
+        }
+        const category = classifyItem(item);
+        if (category === "Added")
+            feature++;
+        else if (category === "Fixed")
+            fix++;
+        else
+            other++;
+    }
+    let bump;
+    let reason;
+    if (breaking > 0) {
+        bump = "major";
+        reason = `${breaking} breaking change${breaking === 1 ? "" : "s"}`;
+    }
+    else if (feature > 0) {
+        bump = "minor";
+        reason = `${feature} feature${feature === 1 ? "" : "s"}`;
+    }
+    else if (fix > 0) {
+        bump = "patch";
+        reason = `${fix} fix${fix === 1 ? "" : "es"}`;
+    }
+    else if (other > 0) {
+        bump = "patch";
+        reason = `${other} other change${other === 1 ? "" : "s"}`;
+    }
+    else {
+        bump = "none";
+        reason = "no changes";
+    }
+    return { bump, reason, counts: { breaking, feature, fix, other } };
 }
 function formatItemId(item, options) {
     if (!item.id)

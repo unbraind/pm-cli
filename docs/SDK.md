@@ -65,6 +65,7 @@ Command/action contract exports:
 
 Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 
+- `activateExtensionForTest`
 - `assertRegisteredCommandContract`
 - `assertRegisteredHook`
 - `assertRegisteredSearchProvider`
@@ -270,6 +271,45 @@ helpers. Every assertion normalizes the expected name, returns the matched regis
 entry, and throws an `Error` that lists what _is_ available when the expectation is
 missing. They are exported from both `@unbrained/pm-cli/sdk/testing` and the main
 `@unbrained/pm-cli/sdk` barrel.
+
+Activate an in-memory extension module without private loader imports:
+
+```ts
+import {
+  activateExtensionForTest,
+  assertRegisteredCommandContract,
+} from "@unbrained/pm-cli/sdk/testing";
+
+const activation = await activateExtensionForTest({
+  manifest: {
+    name: "hello-ext",
+    version: "0.1.0",
+    entry: "./index.js",
+    priority: 0,
+    capabilities: ["commands", "schema"],
+  },
+  activate(api) {
+    api.registerCommand({
+      name: "hello",
+      action: "hello",
+      description: "Return a deterministic hello payload.",
+      flags: [{ long: "--name", value_type: "string" }],
+      run: async () => ({ ok: true }),
+    });
+  },
+});
+
+assertRegisteredCommandContract(activation.registrations, {
+  command: "hello",
+  action: "hello",
+  flags: ["--name"],
+});
+```
+
+`activateExtensionForTest` uses the real pm activation engine and capability
+guardrails, but it does not discover files or install packages. Use it for unit
+tests of extension registration shape; keep `pm package doctor` and runtime
+contracts in integration tests.
 
 Assert a command registration contract:
 
