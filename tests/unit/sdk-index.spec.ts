@@ -750,6 +750,76 @@ describe("sdk testing helpers", () => {
     });
   });
 
+  it("reads direct metadata from default-exported in-memory extension modules", async () => {
+    const activation = await activateExtensionForTest({
+      default: {
+        name: "direct-default-ext",
+        version: "1.0.0",
+        entry: "./index.js",
+        capabilities: ["commands"],
+        activate(api: ExtensionApi) {
+          api.registerCommand({
+            name: "direct default hello",
+            action: "direct-default-hello",
+            description: "Exercise default export direct metadata activation.",
+            run: async () => ({ ok: true }),
+          });
+        },
+      },
+    });
+
+    assertRegisteredCommandContract(activation.registrations, {
+      command: "direct default hello",
+      action: "direct-default-hello",
+      extensionName: "direct-default-ext",
+    });
+  });
+
+  it("uses default-exported capabilities metadata without an explicit name", async () => {
+    const activation = await activateExtensionForTest({
+      default: {
+        capabilities: ["commands"],
+        activate(api: ExtensionApi) {
+          api.registerCommand({
+            name: "capability default hello",
+            action: "capability-default-hello",
+            description: "Exercise default export capability-only metadata activation.",
+            run: async () => ({ ok: true }),
+          });
+        },
+      },
+    });
+
+    assertRegisteredCommandContract(activation.registrations, {
+      command: "capability default hello",
+      action: "capability-default-hello",
+      extensionName: "test-extension",
+    });
+  });
+
+  it("reads direct metadata from in-memory extension modules", async () => {
+    const activation = await activateExtensionForTest({
+      name: "direct-ext",
+      version: "1.0.0",
+      entry: "./index.js",
+      capabilities: ["commands"],
+      activate(api: ExtensionApi) {
+        api.registerCommand({
+          name: "direct hello",
+          action: "direct-hello",
+          description: "Exercise direct metadata activation.",
+          run: async () => ({ ok: true }),
+        });
+      },
+    });
+
+    assertRegisteredCommandContract(activation.registrations, {
+      command: "direct hello",
+      action: "direct-hello",
+      extensionName: "direct-ext",
+    });
+  });
+
   it("uses fallback metadata for primitive in-memory modules", async () => {
     const activation = await activateExtensionForTest("not-an-extension-module");
 

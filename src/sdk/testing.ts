@@ -115,13 +115,21 @@ function collectFlagLabels(flags: readonly FlagDefinition[]): Set<string> {
 
 function readTestExtensionManifest(module: unknown): Partial<ExtensionManifest> {
   if (module && typeof module === "object") {
-    const manifest = (module as TestExtensionModule).manifest;
+    const testModule = module as TestExtensionModule;
+    const manifest = testModule.manifest;
     if (manifest && typeof manifest === "object") {
       return manifest;
     }
-    const defaultManifest = (module as TestExtensionModule).default?.manifest;
+    const defaultExport = testModule.default;
+    const defaultManifest = defaultExport?.manifest;
     if (defaultManifest && typeof defaultManifest === "object") {
       return defaultManifest;
+    }
+    if (defaultExport && typeof defaultExport === "object" && ("name" in defaultExport || "capabilities" in defaultExport)) {
+      return defaultExport as Partial<ExtensionManifest>;
+    }
+    if ("name" in testModule || "capabilities" in testModule) {
+      return testModule as Partial<ExtensionManifest>;
     }
   }
   return {};
