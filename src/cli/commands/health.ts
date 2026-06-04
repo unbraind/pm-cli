@@ -38,6 +38,7 @@ import {
   resolvePmRoot,
 } from "../../core/store/paths.js";
 import { readSettingsWithMetadata } from "../../core/store/settings.js";
+import { buildRemediationMap } from "../../core/diagnostics/remediation.js";
 import type { ItemFormat, ItemMetadata, PmSettings } from "../../types/index.js";
 import { readManagedExtensionState } from "./extension.js";
 import { buildRegistrationCollisionRemediation } from "./extension/doctor.js";
@@ -1513,6 +1514,30 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     ...hookWarnings,
   ];
   const normalizedWarnings = [...new Set(warnings)];
+  // Attach a machine-executable remediation_map (warning-code-prefix -> fix
+  // command) to each non-extension check so agents gating on `pm health --json`
+  // never have to hardcode the warning-code -> fix mapping. The extensions check
+  // keeps its richer, contextual `details.triage.remediation`; brief/summary
+  // projections omit remediation_map (it lives only in full check details).
+  const checkRemediationSources: Partial<Record<HealthCheck["name"], string[]>> = {
+    settings: normalizedSettingsReadWarnings,
+    directories: missingDirs.map((dir) => `missing_directory:${dir}`),
+    settings_values: settingWarnings,
+    telemetry: telemetryCheck.warnings,
+    integrity: integrityCheck.warnings,
+    history_drift: historyDriftCheck.warnings,
+    vectorization: vectorizationCheck.warnings,
+  };
+  for (const check of checks) {
+    const sources = checkRemediationSources[check.name];
+    if (sources === undefined) {
+      continue;
+    }
+    const remediationMap = buildRemediationMap(sources);
+    if (Object.keys(remediationMap).length > 0) {
+      check.details = { ...check.details, remediation_map: remediationMap };
+    }
+  }
   // Telemetry is an opt-out, non-critical observability feature. Its operational
   // state (queue backlog, unreachable endpoint, corrupt local state) is advisory:
   // it must never flip overall project health to not-ok. Such warnings are still

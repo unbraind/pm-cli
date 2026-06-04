@@ -300,11 +300,27 @@ For `--include events` without explicit `--to`, `--recurrence-lookahead-days`, o
 ```bash
 pm validate --check-resolution --check-history-drift
 pm validate --check-files --scan-mode tracked-all
+pm validate --check-resolution --fix-hints --json
 pm normalize --dry-run --json
 pm gc --dry-run
 ```
 
 Use dry-run modes before broad lifecycle or cleanup changes.
+
+`--fix-hints` is a read-only flag: each failing check gains `details.fix_hints`, an array of executable `pm` commands derived from the warning codes it raised (for example `pm history-repair <id>` for history drift, or `pm update <id> --author "<name>"` for missing metadata). It never mutates items. The mapping comes from the shared remediation registry that also backs `pm health --json` (see Self-Repair Remediation below), so agents gating on `pm validate` can auto-repair findings without hardcoding warning-code-to-command lookups.
+
+### Self-Repair Remediation
+
+`pm health --json` annotates every non-extension check whose warnings have a known code with `details.remediation_map`, an object mapping each warning-code prefix to the executable `pm` command that fixes it:
+
+```jsonc
+// history_drift check
+"remediation_map": { "history_drift_missing_stream": "pm history-repair <id>" }
+// vectorization check
+"remediation_map": { "vectorization_stale_items_remaining": "pm health --refresh-vectors" }
+```
+
+`remediation_map` appears in default and `--full` output and is omitted in `--brief`/`--summary` to stay token-efficient. Extension checks keep their existing richer `details.triage.remediation` instead.
 
 ## History and Recovery
 

@@ -383,7 +383,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    validate)",
-    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --strict-exit --fail-on-warn --check-history-drift --check-command-references --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --verbose-diagnostics --strict-exit --fail-on-warn --fix-hints --check-history-drift --check-command-references --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    health)",
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
@@ -1270,6 +1270,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--verbose-file-lists[Include full file-path lists for validate --check-files details]' \\
             '--strict-exit[Return non-zero exit when validation warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit]' \\
+            '--fix-hints[Add a machine-executable fix_hints[] of pm commands to each failing check]' \\
             '--check-history-drift[Run item/history hash drift checks]' \\
             '--check-command-references[Run linked-command PM-ID reference checks]' \\
             '--json[Output JSON]' \\
@@ -1998,6 +1999,7 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l include-pm-internals
 complete -c pm -n '__fish_seen_subcommand_from validate' -l verbose-file-lists -d 'Include full file-path lists for validate --check-files details'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l strict-exit -d 'Return non-zero exit when validation warnings are present'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l fail-on-warn -d 'Alias for --strict-exit'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l fix-hints -d 'Add a machine-executable fix_hints[] of pm commands to each failing check'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-references -d 'Run linked-command PM-ID reference checks'
 complete -c pm -n '__fish_seen_subcommand_from init' -l preset -d 'Governance preset for new setups' -r -a 'minimal default strict'

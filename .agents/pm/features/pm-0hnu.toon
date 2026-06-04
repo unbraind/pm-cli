@@ -2,15 +2,19 @@ id: pm-0hnu
 title: Structured remediation map on pm health --json for all non-extension checks
 description: "Agents consuming pm health --json get warning codes (history_drift_missing_stream, integrity_item_unreadable, telemetry_queue_pending, vectorization_stale) but must hardcode the fix; only extensions return triage.remediation."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:health","area:observability",living-map,telemetry
 created_at: "2026-05-31T19:45:02.363Z"
-updated_at: "2026-05-31T20:37:05.329Z"
+updated_at: "2026-06-04T22:17:44.191Z"
 author: maintainer-agent
 acceptance_criteria: "Each check detail gains remediation_map (warning-code-prefix -> fix command) e.g. history_drift->pm history-repair <id>, vectorization->pm health --refresh-vectors; brief omits it; full includes it; test asserts a non-empty map."
 value: "Agents consuming pm health --json get warning codes (history_drift_missing_stream, integrity_item_unreadable, telemetry_queue_pending, vectorization_stale) but must hardcode the fix; only extensions return triage.remediation."
 parent: pm-5oj5
+resolution: Added details.remediation_map (warning-code-prefix -> executable pm fix command) to every non-extension health check via the shared registry src/core/diagnostics/remediation.ts; brief/summary omit it; extensions keep details.triage.remediation.
+expected_result: Agents read a fix command per warning code from pm health --json without hardcoding mappings.
+actual_result: history_drift/vectorization/integrity/settings/telemetry/directories checks now carry remediation_map when they warn; verified in sandbox.
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-6m3y,related,"2026-05-31T20:10:00.000Z",maintainer-agent,null
+close_reason: Shipped per-check remediation_map on pm health --json
 body: ""

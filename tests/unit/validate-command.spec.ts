@@ -1342,4 +1342,68 @@ describe("runValidate", () => {
       expect(details.counts.chain_mismatches).toBe(1);
     });
   });
+
+  it("attaches executable fix_hints to the metadata check when --fix-hints is requested", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "validate-metadata-fix-hints");
+      const itemPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+      const before = await readFile(itemPath, "utf8");
+      const withoutAc = before.replace(/^acceptance_criteria:.*\n/m, "");
+      const after = withoutAc.replace(/^estimated_minutes:.*\n/m, "");
+      expect(after).not.toBe(before);
+      await writeFile(itemPath, after, "utf8");
+
+      const result = await runValidate({ checkMetadata: true, fixHints: true }, { path: context.pmPath });
+      expect(result.has_warnings).toBe(true);
+      const metadataCheck = checkByName(result, "metadata");
+      expect(metadataCheck.status).toBe("warn");
+      const fixHints = (metadataCheck.details as { fix_hints?: string[] }).fix_hints;
+      expect(Array.isArray(fixHints)).toBe(true);
+      expect(fixHints?.length ?? 0).toBeGreaterThan(0);
+      expect(fixHints?.every((hint) => typeof hint === "string")).toBe(true);
+      expect(fixHints?.some((hint) => hint.startsWith("pm update <id> --acceptance-criteria"))).toBe(true);
+    });
+  });
+
+  it("aliases the resolution check per-row remediation commands into fix_hints", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "validate-resolution-fix-hints");
+      await runClose(id, "done", {}, { path: context.pmPath });
+
+      const result = await runValidate({ checkResolution: true, fixHints: true }, { path: context.pmPath });
+      expect(result.has_warnings).toBe(true);
+      const resolutionCheck = checkByName(result, "resolution");
+      expect(resolutionCheck.status).toBe("warn");
+      const details = resolutionCheck.details as {
+        fix_hints?: string[];
+        missing_resolution_remediation_hints: string[];
+      };
+      expect(Array.isArray(details.fix_hints)).toBe(true);
+      // fix_hints aliases the existing per-row remediation commands verbatim.
+      expect(details.fix_hints).toEqual(details.missing_resolution_remediation_hints);
+      expect(details.fix_hints?.length ?? 0).toBeGreaterThan(0);
+      const firstHint = details.fix_hints?.[0] ?? "";
+      expect(firstHint).toContain(id);
+      expect(firstHint).toContain("--resolution");
+      expect(firstHint).toContain(`pm update ${id}`);
+    });
+  });
+
+  it("omits fix_hints from every check when --fix-hints is not requested", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "validate-metadata-no-fix-hints");
+      const itemPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+      const before = await readFile(itemPath, "utf8");
+      const withoutAc = before.replace(/^acceptance_criteria:.*\n/m, "");
+      const after = withoutAc.replace(/^estimated_minutes:.*\n/m, "");
+      expect(after).not.toBe(before);
+      await writeFile(itemPath, after, "utf8");
+
+      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      expect(result.has_warnings).toBe(true);
+      expect(result.checks.every((check) => !Object.prototype.hasOwnProperty.call(check.details, "fix_hints"))).toBe(
+        true,
+      );
+    });
+  });
 });

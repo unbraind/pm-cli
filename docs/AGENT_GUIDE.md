@@ -167,3 +167,12 @@ Use these defaults unless the task requires otherwise:
 - `pm init --type-preset agile|ops|research` for new projects that should start with domain item types instead of generic tasks only.
 - `pm normalize --dry-run --json` before lifecycle metadata cleanups.
 - `pm health --check-only` when inspecting repository health without refresh side effects.
+
+## Self-Repair Remediation
+
+When gating on `pm health` / `pm validate`, read the executable fix command from the output instead of hardcoding a warning-code-to-command mapping:
+
+- `pm health --json` per-check `details.remediation_map` maps each warning-code prefix to a `pm` fix command (for example `{ "history_drift_missing_stream": "pm history-repair <id>" }`). It is present in default/`--full` output and omitted in `--brief`/`--summary`.
+- `pm validate --fix-hints` (read-only) adds `details.fix_hints[]` to each failing check — a uniform list of executable `pm` commands for that check's findings.
+
+Both draw from the same remediation registry, so an agent can substitute the concrete `<id>` and run the command to auto-repair findings. Extension health checks expose their remediation under `details.triage.remediation` instead. See [Command Reference](COMMANDS.md#self-repair-remediation).

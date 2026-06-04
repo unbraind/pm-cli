@@ -4,6 +4,8 @@
 
 ### Added
 
+- pm validate --fix-hints: machine-executable remediation commands per check ([pm-6m3y](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-6m3y.toon))
+- Structured remediation map on pm health --json for all non-extension checks ([pm-0hnu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0hnu.toon))
 - pm close-many: bulk-close matched items with shared reason and validate-close semantics ([pm-i17g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-i17g.toon))
 - pm update-many --ids: explicit ID-list filter for targeted bulk mutations ([pm-1h99](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1h99.toon))
 - pm search --status filter \(parity with pm list\) ([pm-ec4s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ec4s.toon))
@@ -22,8 +24,8 @@
 
 ### Fixed
 
-- governance.create\_default\_type is not settable via pm config set ([pm-jpwo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jpwo.toon))
 - Auto Release 2026-06-01 tagged v2026.6.1 but npm publish never completed \(latest npm = 2026.5.31\) ([pm-kcba](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kcba.toon))
+- governance.create\_default\_type is not settable via pm config set ([pm-jpwo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jpwo.toon))
 - Warn on global service and renderer override footguns ([pm-5teq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5teq.toon))
 - Fix GitHub \#98 dependency --dep type parsing ([pm-dlfq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-dlfq.toon))
 
@@ -33,6 +35,7 @@
 
 ### Other
 
+- Surface settings\_read\_invalid\_schema warning proactively on affected commands ([pm-7tcw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7tcw.toon))
 - Agent context & bulk-ops primitives: incremental date filters, search --status, --ids targeting, close-many ([pm-j2ig](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-j2ig.toon))
 - After-command hook affected item transition context ([pm-qzv2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-qzv2.toon))
 - Sentry gate expected handled CLI classifier refresh ([pm-flbo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-flbo.toon))

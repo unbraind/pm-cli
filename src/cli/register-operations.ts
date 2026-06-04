@@ -270,6 +270,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--verbose-diagnostics", "Include full validate diagnostic ID lists instead of compact summaries")
     .option("--strict-exit", "Return non-zero exit when validation warnings are present")
     .option("--fail-on-warn", "Alias for --strict-exit")
+    .option("--fix-hints", "Add a machine-executable fix_hints[] of pm commands to each failing check's details")
     .option("--check-history-drift", "Run item/history hash drift checks")
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
@@ -289,6 +290,7 @@ export function registerOperationCommands(program: Command): void {
         verboseFileLists: Boolean(options.verboseFileLists),
         verboseDiagnostics: Boolean(options.verboseDiagnostics),
         checkHistoryDrift: Boolean(options.checkHistoryDrift),
+        fixHints: Boolean(options.fixHints),
       }, globalOptions);
       printResult(result, globalOptions);
       const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);
