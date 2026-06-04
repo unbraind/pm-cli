@@ -723,12 +723,61 @@ describe("sdk testing helpers", () => {
     });
   });
 
+  it("reads manifests from default-exported in-memory extension modules", async () => {
+    const activation = await activateExtensionForTest({
+      default: {
+        manifest: {
+          name: "default-export-ext",
+          version: "1.0.0",
+          entry: "./index.js",
+          capabilities: ["commands"],
+        },
+        activate(api: ExtensionApi) {
+          api.registerCommand({
+            name: "default export hello",
+            action: "default-export-hello",
+            description: "Exercise default export manifest activation.",
+            run: async () => ({ ok: true }),
+          });
+        },
+      },
+    });
+
+    assertRegisteredCommandContract(activation.registrations, {
+      command: "default export hello",
+      action: "default-export-hello",
+      extensionName: "default-export-ext",
+    });
+  });
+
   it("uses fallback metadata for primitive in-memory modules", async () => {
     const activation = await activateExtensionForTest("not-an-extension-module");
 
     expect(activation.failed).toHaveLength(0);
     expect(activation.registrations.commands).toHaveLength(0);
     expect(activation.warnings).toHaveLength(0);
+  });
+
+  it("ignores malformed manifest capabilities instead of throwing", async () => {
+    const activation = await activateExtensionForTest({
+      manifest: {
+        name: "malformed-capabilities-ext",
+        version: "1.0.0",
+        entry: "./index.js",
+        capabilities: "commands",
+      },
+      activate(api: ExtensionApi) {
+        api.registerCommand({
+          name: "malformed hello",
+          action: "malformed-hello",
+          description: "Exercise malformed manifest capability handling.",
+          run: async () => ({ ok: true }),
+        });
+      },
+    });
+
+    expect(activation.failed).toHaveLength(1);
+    expect(activation.failed[0]?.trace?.missing_capability).toBe("commands");
   });
 
   it("keeps capability guardrails active for in-memory extension tests", async () => {

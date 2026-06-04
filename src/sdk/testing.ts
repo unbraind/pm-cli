@@ -19,6 +19,7 @@ import { createDefaultExtensionGovernancePolicy } from "../core/extensions/exten
 interface TestExtensionModule {
   manifest?: Partial<ExtensionManifest>;
   activate?: unknown;
+  default?: TestExtensionModule;
 }
 
 export interface ActivateExtensionForTestOptions {
@@ -118,8 +119,25 @@ function readTestExtensionManifest(module: unknown): Partial<ExtensionManifest> 
     if (manifest && typeof manifest === "object") {
       return manifest;
     }
+    const defaultManifest = (module as TestExtensionModule).default?.manifest;
+    if (defaultManifest && typeof defaultManifest === "object") {
+      return defaultManifest;
+    }
   }
   return {};
+}
+
+function readTestExtensionCapabilities(
+  manifest: Partial<ExtensionManifest>,
+  options: ActivateExtensionForTestOptions,
+): ExtensionCapability[] {
+  if (Array.isArray(options.capabilities)) {
+    return [...options.capabilities];
+  }
+  if (Array.isArray(manifest.capabilities)) {
+    return manifest.capabilities.filter((capability): capability is ExtensionCapability => typeof capability === "string");
+  }
+  return [];
 }
 
 /**
@@ -137,7 +155,7 @@ export async function activateExtensionForTest(
     options.name ??
     (typeof manifest.name === "string" && manifest.name.trim().length > 0 ? manifest.name.trim() : "test-extension");
   const layer = options.layer ?? "project";
-  const capabilities = [...(options.capabilities ?? (manifest.capabilities as ExtensionCapability[] | undefined) ?? [])];
+  const capabilities = readTestExtensionCapabilities(manifest, options);
 
   return activateExtensions({
     disabled_by_flag: false,

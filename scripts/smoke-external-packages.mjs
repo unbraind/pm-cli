@@ -4,8 +4,10 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const repoRoot = process.cwd();
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(scriptDir, "..");
 const cliPath = path.join(repoRoot, "dist", "cli.js");
 const defaultQuery = "keywords:pm-package";
 const ecosystemMarkers = ["pm-package", "pm-cli", "pm-extension", "pm-cli-extension"];
@@ -103,7 +105,7 @@ function runCommand(command, args, options = {}) {
     code: result.status ?? 1,
     signal: result.signal ?? null,
     stdout: result.stdout ?? "",
-    stderr: result.stderr ?? "",
+    stderr: result.stderr || (result.error ? result.error.message : ""),
     took_ms: tookMs,
     command: [command, ...args].join(" "),
   };
@@ -176,35 +178,37 @@ function runPm(label, args, env, options) {
 
 function smokePackage(packageName, options) {
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-external-package-smoke-"));
-  const projectRoot = path.join(tempRoot, "project");
-  const pmPath = path.join(projectRoot, ".agents", "pm");
-  const globalPath = path.join(tempRoot, "global");
-  mkdirSync(projectRoot, { recursive: true });
-  writeFileSync(path.join(projectRoot, "README.md"), "# External package smoke project\n", "utf8");
-
-  const env = {
-    ...process.env,
-    PM_PATH: pmPath,
-    PM_GLOBAL_PATH: globalPath,
-    PM_AUTHOR: "external-package-smoke",
-    PM_TELEMETRY_SOURCE_CONTEXT: process.env.PM_TELEMETRY_SOURCE_CONTEXT || "external-package-smoke",
-  };
   const commands = [];
   const startedAt = Date.now();
 
-  function record(label, args) {
-    const result = runPm(label, args, env, {
-      cwd: projectRoot,
-      timeoutMs: options.timeoutMs,
-    });
-    commands.push(result.entry);
-    if (result.entry.code !== 0) {
-      throw new Error(result.entry.error || `${label} failed`);
-    }
-    return result.payload;
-  }
-
   try {
+    const projectRoot = path.join(tempRoot, "project");
+    const pmPath = path.join(projectRoot, ".agents", "pm");
+    const globalPath = path.join(tempRoot, "global");
+    mkdirSync(projectRoot, { recursive: true });
+    mkdirSync(globalPath, { recursive: true });
+    writeFileSync(path.join(projectRoot, "README.md"), "# External package smoke project\n", "utf8");
+
+    const env = {
+      ...process.env,
+      PM_PATH: pmPath,
+      PM_GLOBAL_PATH: globalPath,
+      PM_AUTHOR: "external-package-smoke",
+      PM_TELEMETRY_SOURCE_CONTEXT: process.env.PM_TELEMETRY_SOURCE_CONTEXT || "external-package-smoke",
+    };
+
+    function record(label, args) {
+      const result = runPm(label, args, env, {
+        cwd: projectRoot,
+        timeoutMs: options.timeoutMs,
+      });
+      commands.push(result.entry);
+      if (result.entry.code !== 0) {
+        throw new Error(result.entry.error || `${label} failed`);
+      }
+      return result.payload;
+    }
+
     record("init", ["init", "--defaults", "--author", "external-package-smoke"]);
     const install = record("install", ["install", `npm:${packageName}`, "--project"]);
     const doctor = record("package doctor", ["package", "doctor", "--project", "--detail", "deep", "--trace"]);
@@ -218,7 +222,7 @@ function smokePackage(packageName, options) {
     }
 
     const availableActions = Array.isArray(contracts?.action_availability)
-      ? contracts.action_availability.filter((entry) => entry?.available === true).map((entry) => entry.action)
+      ? contracts.action_availability.filter((entry) => entry?.invocable === true).map((entry) => entry.action)
       : [];
     return {
       package: packageName,
@@ -243,7 +247,15 @@ function smokePackage(packageName, options) {
     };
   } finally {
     if (!options.keepTemp) {
-      rmSync(tempRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+      try {
+        rmSync(tempRoot, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+      } catch (cleanupError) {
+        console.error(
+          `Warning: failed to clean up temp directory ${tempRoot}: ${
+            cleanupError instanceof Error ? cleanupError.message : String(cleanupError)
+          }`,
+        );
+      }
     }
   }
 }
