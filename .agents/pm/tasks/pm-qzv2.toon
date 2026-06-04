@@ -6,13 +6,13 @@ status: closed
 priority: 2
 tags[4]: "area:extensions","area:sdk",context-management,"github:107"
 created_at: "2026-06-04T07:10:14.882Z"
-updated_at: "2026-06-04T09:44:23.574Z"
+updated_at: "2026-06-04T10:06:14.111Z"
 author: codex-sdk-continuation
 parent: pm-ugqx
 resolution: "Added additive afterCommand affected item transition context using store-sourced before/current snapshots, documented package-author usage, and verified with regression tests and temp dogfood."
 expected_result: Transition-aware extensions can inspect afterCommand event.affected to distinguish item status changes such as open to in_progress without parsing result.
 actual_result: "afterCommand event.affected includes id, op, item_type, previous_status, status, changed_fields, previous, and current for item mutations; create/update/delete coverage, full integration tests, temp dogfood, static, and build passed."
-comments[14]{created_at,author,text}:
+comments[15]{created_at,author,text}:
   "2026-06-04T07:12:18.552Z",codex-sdk-continuation,"Duplicate-check and sidecar evidence: searched pm for afterCommand previousStatus/before-after transition hook work; closest existing item was closed pm-e9ut, and no open duplicate existed. GitHub issue #107 is the live external report. Release-health subagent found latest Auto Release failed because SENTRY_PERSONAL_ADMIN_TOKEN is unset, while main CI/Docs are green, no open PRs, no open Dependabot/security/secret-scanning alerts; operational follow-up belongs under pm-u9d0, no code change required for that failure. SDK subagent recommended an additive optional afterCommand affected-item field sourced from store before/after snapshots with per-command accumulation and compact payloads."
   "2026-06-04T07:19:28.526Z",codex-sdk-continuation,"Evidence: implemented additive afterCommand affected item transition context. Runtime now records compact before/current front matter snapshots from mutateItem and passes them to afterCommand as event.affected; docs explain using affected instead of parsing result. Verification passed: focused hook regression, full tests/integration/cli.integration.spec.ts, unit extension/item-store/sdk tests, pnpm build, manual temp-project dogfood showing previousStatus=open and status=in_progress, pm health summary ok, validate history drift ok."
   "2026-06-04T07:25:20.793Z",codex-sdk-continuation,"Follow-up for CI static gate: moved the affected-item hook regression from oversized tests/integration/cli.integration.spec.ts into dedicated tests/integration/extension-hooks.integration.spec.ts to keep the static file-length gate green."
@@ -27,6 +27,7 @@ comments[14]{created_at,author,text}:
   "2026-06-04T09:01:33.462Z",codex-sdk-continuation,"Gemini afterCommand failure follow-up: runAndClearAfterCommandHooks now catches afterCommand hook failures, prints a warning, preserves cleanup in finally, and avoids masking the primary command outcome."
   "2026-06-04T09:22:58.699Z",codex-sdk-continuation,"Codex review follow-up: afterCommand hook warnings returned by runAfterCommandHooks are now surfaced in normal stderr output instead of only profile diagnostics, while profile mode keeps the detailed profile hook_warnings line."
   "2026-06-04T09:44:23.574Z",codex-sdk-continuation,"Codex JSON-mode follow-up: normal afterCommand warning surfacing is now suppressed when --json is active so JSON error stderr remains parseable; profile diagnostics remain profile-scoped."
+  "2026-06-04T10:06:14.111Z",codex-sdk-continuation,"Merge closeout: PR #109 merged to main as 98899d0a after final 20-minute review loop; GitHub issue #107 closed with merged PR evidence. Main checkout is clean and changelog check remains unchanged with pm-changelog@2026.6.4."
 files[8]{path,scope,note}:
   src/cli/commands/create.ts,project,Record create mutations in afterCommand affected context
   src/cli/commands/restore.ts,project,Record restore mutations in afterCommand affected context
