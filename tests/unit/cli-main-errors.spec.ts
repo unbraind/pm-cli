@@ -82,4 +82,20 @@ describe("CLI settings-read warning surfacing", () => {
       expect(result.stdout).not.toContain("settings_read_invalid_json");
     });
   });
+
+  it("surfaces the warning even with --no-extensions (the common safe mode)", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      await writeFile(
+        settingsPath,
+        `${JSON.stringify({ version: 1, id_prefix: 123, item_format: "toon" })}\n`,
+        "utf8",
+      );
+
+      const result = context.runCli(["--no-extensions", "list", "--json"], { expectJson: true });
+      expect(result.stderr).toContain("settings_read_invalid_schema");
+      expect(result.code).toBe(0);
+      expect(() => JSON.parse(result.stdout)).not.toThrow();
+    });
+  });
 });

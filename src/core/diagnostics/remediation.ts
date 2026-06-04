@@ -208,8 +208,9 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   },
   {
     code: "validate_metadata_custom_profile_missing_required_fields",
-    command: 'pm update <id> --<field> "<value>"',
-    summary: "Backfill the custom-profile required fields on the reported item(s).",
+    command: 'pm config set metadata-required-fields --criterion "<field>"',
+    summary:
+      "Config-driven finding: the custom metadata profile has no required fields configured and falls back to core, so configure the fields rather than mutating items.",
   },
   // --- pm validate: resolution ---
   {
@@ -220,9 +221,9 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   // --- pm validate: lifecycle ---
   {
     code: "validate_lifecycle_active_closure_like_metadata",
-    command: "pm update <id> --unset resolution",
+    command: "pm update <id> --unset <closure-like-field>",
     summary:
-      "Clear the closure-like field the validator flags (--unset resolution / actual-result / blocked-reason), or close the item if it is actually done.",
+      "Clear the closure-like field the validator flags on this active item — the detail row names it (resolution / actual-result / blocked-reason) — or close the item if it is actually done.",
   },
   {
     code: "validate_lifecycle_active_terminal_parent",
@@ -233,7 +234,7 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     code: "validate_lifecycle_stale_blockers",
     command: "pm update <id> --unset blocked-by --unset blocked-reason",
     summary:
-      "Clear the blocked-by/blocked-reason fields the validator inspects when an item's blockers are no longer active.",
+      "Resolve the stale blocker the validator flags: clear blocked-by/blocked-reason when they linger on a non-blocked item or report a resolved blocker; if instead a blocked item is missing blocker context, add the context or move it out of a blocked status.",
   },
   {
     code: "validate_lifecycle_dependency_cycles_error",
@@ -248,15 +249,15 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   // --- pm validate: files ---
   {
     code: "validate_files_missing_linked_paths",
-    command: "pm files <id> --remove <path>",
+    command: "pm <files|docs> <id> --remove <path>",
     summary:
-      "Restore the missing linked artifact, or unlink it: use pm files <id> --remove <path> for a linked file, pm docs <id> --remove <path> for a linked doc.",
+      "The check spans both item.files and item.docs under one code: restore the missing linked artifact, or unlink it with pm files (linked file) or pm docs (linked doc).",
   },
   {
     code: "validate_files_orphaned_paths",
-    command: "pm files <id> --add <path>",
+    command: "pm <files|docs> <id> --add <path>",
     summary:
-      "Link the orphaned artifact to an item (pm files/pm docs <id> --add <path>), or remove it from the workspace.",
+      "Link the orphaned artifact with pm files (file) or pm docs (doc), or remove it from the workspace.",
   },
   {
     code: "validate_files_tracked_all_strict_forces_pm_internals",
@@ -287,9 +288,9 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   // --- pm validate: command_references ---
   {
     code: "validate_command_references_stale_pm_ids",
-    command: 'pm update <id> --replace-tests --test "command=<corrected-command>"',
+    command: 'pm update <id> --replace-tests --test "command=<corrected-command>" [--test ...]',
     summary:
-      "Correct the stale pm-ID inside the item's linked test command (the check scans tests[].command, not the body); replace the linked test entry.",
+      "Correct the stale pm-ID inside the item's linked test command (the check scans tests[].command, not the body). --replace-tests overwrites the entire tests list, so re-include the item's other linked tests in the same call.",
   },
 ]);
 
@@ -298,10 +299,22 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
  * entry is registered. A warning matches an entry when it equals the entry code
  * or begins with `<code>:` (the colon boundary keeps sibling codes such as
  * `validate_lifecycle_dependency_cycles` and
- * `validate_lifecycle_dependency_cycles_error` disjoint). Registry codes are
- * mutually exclusive under this rule, so first match is the only match.
+ * `validate_lifecycle_dependency_cycles_error` disjoint).
+ *
+ * First match is intentional and correct: registry codes are mutually exclusive
+ * under the colon-boundary rule, so at most one entry can ever match a warning
+ * and order is irrelevant. That invariant is enforced by a test (see
+ * remediation-registry.spec.ts "keeps every registry code mutually exclusive"),
+ * which is why this stays a simple linear scan rather than a longest-prefix
+ * search — a longest-prefix tie-break is unreachable with disjoint codes.
+ *
+ * Accepts unknown input defensively (this is an exported helper SDK consumers
+ * may call from untyped JS): a non-string `warning` resolves to `undefined`.
  */
 export function resolveRemediation(warning: string): RemediationEntry | undefined {
+  if (typeof warning !== "string") {
+    return undefined;
+  }
   const normalized = warning.trim();
   for (const entry of REMEDIATION_REGISTRY) {
     if (normalized === entry.code || normalized.startsWith(`${entry.code}:`)) {

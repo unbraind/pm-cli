@@ -1217,6 +1217,15 @@ async function maybeLoadRuntimeExtensions(
 > {
   const globalOptions = getGlobalOptions(command);
   if (globalOptions.noExtensions) {
+    // Extensions are disabled, so the discovery snapshot that normally carries
+    // the settings-read warnings is skipped. Surface them directly here (a single
+    // read on this uncommon path) so `pm --no-extensions <cmd>` — the common safe
+    // mode — still reports a corrupt settings.json instead of silently running on
+    // defaults.
+    const noExtPmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+    if (await pathExists(getSettingsPath(noExtPmRoot))) {
+      emitSettingsReadWarnings((await readSettingsWithMetadata(noExtPmRoot)).warnings);
+    }
     return null;
   }
 

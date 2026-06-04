@@ -6,7 +6,7 @@ status: closed
 priority: 3
 tags[4]: agent-ux,"area:observability",living-map,validate
 created_at: "2026-05-31T19:45:02.641Z"
-updated_at: "2026-06-04T22:39:11.199Z"
+updated_at: "2026-06-04T22:57:57.155Z"
 author: maintainer-agent
 acceptance_criteria: "--fix-hints adds fix_hints[] of executable pm commands per check (metadata->pm update --author stub, lifecycle->clear stale closure, history_drift->pm history-repair, command refs->corrected pm command); existing resolution hints aliased in; read-only (no mutation); --fix auto-apply explicitly out of scope."
 value: validate emits resolution remediation hints for one check only and not as a flag; agents must parse warning codes and build fix commands themselves.
@@ -14,7 +14,8 @@ parent: pm-5oj5
 resolution: "Added read-only --fix-hints flag; each failing validate check gains details.fix_hints[] of executable pm commands. Resolution check aliases its per-row commands; other checks derive generic commands from the shared remediation registry. No item mutation."
 expected_result: validate emits executable fix commands per check behind a flag.
 actual_result: "fix_hints[] present per failing check with --fix-hints; metadata/resolution/history_drift verified in sandbox."
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-06-04T22:39:11.199Z",maintainer-agent,"PR #111 bot round 1 (Codex P2, all valid): corrected remediation commands that did not actually resolve their findings. (1) validate_metadata_missing_author REMOVED — pm update --author is the audit author, no CLI flag writes metadata.author. (2) lifecycle_active_closure_like_metadata: --resolution \"none\" -> --unset resolution (explicit clear path per legacy-none-tokens.ts). (3) lifecycle_stale_blockers: --unblock-note -> --unset blocked-by --unset blocked-reason (the fields the validator actually inspects). (4) command_references_stale_pm_ids: --body -> --replace-tests --test (check scans tests[].command not body). (5) files_missing/orphaned: summary now covers pm docs duality (check spans item.files+item.docs). Also fixed doc/impl drift flagged by Sourcery+Gemini: RemediationEntry.code JSDoc said longest-prefix but resolver is first-match (codes disjoint). All re-verified executable in sandbox."
+  "2026-06-04T22:57:57.155Z",maintainer-agent,"PR #111 bot round 2 (Codex re-review, 8 more valid findings, all fixed): (1) custom_profile_missing_required_fields -> 'pm config set metadata-required-fields' (config-driven finding, not an item edit). (2) lifecycle closure-like -> 'pm update <id> --unset <closure-like-field>' template (matched field varies: resolution/actual-result/blocked-reason). (3) stale_blockers summary now covers blocked_status_missing_blocker_context (where --unset is a no-op). (4)+(5) files missing/orphaned -> 'pm <files|docs> <id>' template (one code spans item.files+item.docs). (6) command_references --replace-tests summary warns it overwrites the whole tests list. (7) main.ts: settings_read_* warning now ALSO surfaced under --no-extensions (was skipped before the early return; verified). (8) resolution fix_hints now carries fix_hints_truncated when the aliased per-row list is summarized. Plus COMMANDS.md author example removed (P3). resolveRemediation got a defensive non-string guard. All verified; registry still 100% covered."
 close_reason: Shipped pm validate --fix-hints
 body: ""

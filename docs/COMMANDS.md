@@ -307,7 +307,7 @@ pm gc --dry-run
 
 Use dry-run modes before broad lifecycle or cleanup changes.
 
-`--fix-hints` is a read-only flag: each failing check gains `details.fix_hints`, an array of executable `pm` commands derived from the warning codes it raised (for example `pm history-repair <id>` for history drift, or `pm update <id> --author "<name>"` for missing metadata). It never mutates items. The mapping comes from the shared remediation registry that also backs `pm health --json` (see Self-Repair Remediation below), so agents gating on `pm validate` can auto-repair findings without hardcoding warning-code-to-command lookups.
+`--fix-hints` is a read-only flag: each failing check gains `details.fix_hints`, an array of `pm` command templates derived from the warning codes it raised (for example `pm history-repair <id>` for history drift, or `pm update <id> --reviewer "<name>"` for a missing reviewer). Generic hints may contain `<id>`/`<field>`/`<path>` placeholders the agent substitutes from the check's detail rows; the resolution check aliases concrete per-row commands and marks `fix_hints_truncated` when the list is summarized. It never mutates items. The mapping comes from the shared remediation registry that also backs `pm health --json` (see Self-Repair Remediation below), so agents gating on `pm validate` can auto-repair findings without hardcoding warning-code-to-command lookups.
 
 ### Self-Repair Remediation
 

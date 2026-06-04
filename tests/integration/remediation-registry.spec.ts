@@ -64,6 +64,11 @@ describe("shared remediation registry", () => {
     it("returns undefined for an unknown warning code", () => {
       expect(resolveRemediation("totally_unknown_warning:1")).toBeUndefined();
     });
+
+    it("returns undefined for non-string input (defensive for untyped SDK callers)", () => {
+      expect(resolveRemediation(undefined as unknown as string)).toBeUndefined();
+      expect(resolveRemediation(123 as unknown as string)).toBeUndefined();
+    });
   });
 
   describe("buildRemediationMap", () => {

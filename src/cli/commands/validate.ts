@@ -646,14 +646,23 @@ function buildResolutionRemediationCommand(row: { id: string; missing_fields: Re
  * output, never mutates any item.
  */
 function attachValidateFixHints(check: ValidateCheck, checkWarnings: string[]): void {
-  const existingResolutionHints = check.details.missing_resolution_remediation_hints;
-  const fixHints =
-    Array.isArray(existingResolutionHints) && existingResolutionHints.length > 0
-      ? existingResolutionHints.filter((hint): hint is string => typeof hint === "string")
-      : buildRemediationCommands(checkWarnings);
-  if (fixHints.length > 0) {
-    check.details = { ...check.details, fix_hints: fixHints };
+  const existingResolutionHints = check.details?.missing_resolution_remediation_hints;
+  const aliasedResolution = Array.isArray(existingResolutionHints) && existingResolutionHints.length > 0;
+  const fixHints = aliasedResolution
+    ? (existingResolutionHints as unknown[]).filter((hint): hint is string => typeof hint === "string")
+    : buildRemediationCommands(checkWarnings);
+  if (fixHints.length === 0) {
+    return;
   }
+  // The resolution check truncates its per-row hint list for low-token output;
+  // carry that marker onto fix_hints so an agent knows the list is partial and
+  // there are more items to repair beyond the ones shown.
+  const truncated = aliasedResolution && check.details?.missing_resolution_remediation_hints_truncated === true;
+  check.details = {
+    ...check.details,
+    fix_hints: fixHints,
+    ...(truncated ? { fix_hints_truncated: true } : {}),
+  };
 }
 
 function resolveRequestedChecks(options: ValidateCommandOptions): Set<ValidateCheckName> {
