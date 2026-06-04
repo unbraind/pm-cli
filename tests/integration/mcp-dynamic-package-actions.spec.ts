@@ -32,6 +32,440 @@ describe("MCP dynamic package actions", () => {
     });
   });
 
+  it("routes close-many through pm_run with nested list filters", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli([
+        "create",
+        "--json",
+        "--title",
+        "MCP close-many target",
+        "--description",
+        "MCP close-many target description",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "mcp-close-many",
+        "--author",
+        "mcp-test",
+      ], { expectJson: true });
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      const dryRun = await handleRequest({
+        jsonrpc: "2.0",
+        id: 12,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: {
+            path: context.pmPath,
+            action: "close-many",
+            options: {
+              filterTag: "mcp-close-many",
+              reason: "mcp close-many dry-run",
+              dryRun: true,
+            },
+          },
+        },
+      });
+
+      expect(dryRun?.isError).not.toBe(true);
+      const dryRunResult = (dryRun?.structuredContent as {
+        result?: { mode?: string; matched_count?: number; item_plans?: Array<{ id: string; action: string }> };
+      } | undefined)?.result;
+      expect(dryRunResult?.mode).toBe("dry_run");
+      expect(dryRunResult?.matched_count).toBe(1);
+      expect(dryRunResult?.item_plans).toEqual([
+        expect.objectContaining({ id, action: "close" }),
+      ]);
+
+      const apply = await handleRequest({
+        jsonrpc: "2.0",
+        id: 13,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: {
+            path: context.pmPath,
+            action: "close-many",
+            options: {
+              filterTag: "mcp-close-many",
+              reason: "mcp close-many apply",
+              checkpoint: false,
+            },
+          },
+        },
+      });
+
+      expect(apply?.isError).not.toBe(true);
+      const applyResult = (apply?.structuredContent as {
+        result?: { mode?: string; closed_count?: number; ids?: string[]; rows?: Array<{ id: string; status: string }> };
+      } | undefined)?.result;
+      expect(applyResult?.mode).toBe("apply");
+      expect(applyResult?.closed_count).toBe(1);
+      expect(applyResult?.ids).toEqual([id]);
+      expect(applyResult?.rows).toEqual([
+        expect.objectContaining({ id, status: "closed" }),
+      ]);
+    });
+  });
+
+  it("routes close-many through pm_run with top-level reason and force", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli([
+        "create",
+        "--json",
+        "--title",
+        "MCP close-many top-level reason target",
+        "--description",
+        "MCP close-many top-level reason target description",
+        "--type",
+        "Task",
+        "--status",
+        "closed",
+        "--priority",
+        "1",
+        "--tags",
+        "mcp-close-many-top-reason",
+        "--author",
+        "mcp-test",
+      ], { expectJson: true });
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      const result = await handleRequest({
+        jsonrpc: "2.0",
+        id: 19,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: {
+            path: context.pmPath,
+            action: "close-many",
+            reason: "mcp close-many top-level reason",
+            force: true,
+            options: {
+              filterTag: "mcp-close-many-top-reason",
+              checkpoint: false,
+            },
+          },
+        },
+      });
+
+      expect(result?.isError).not.toBe(true);
+      const closeResult = (result?.structuredContent as {
+        result?: { closed_count?: number; ids?: string[] };
+      } | undefined)?.result;
+      expect(closeResult?.closed_count).toBe(1);
+      expect(closeResult?.ids).toEqual([id]);
+    });
+  });
+
+  it("routes update-many through pm_run with nested list and update options", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli([
+        "create",
+        "--json",
+        "--title",
+        "MCP update-many target",
+        "--description",
+        "MCP update-many target description",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "mcp-update-many",
+        "--author",
+        "mcp-test",
+      ], { expectJson: true });
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      const result = await handleRequest({
+        jsonrpc: "2.0",
+        id: 14,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: {
+            path: context.pmPath,
+            action: "update-many",
+            options: {
+              list: {
+                tag: "mcp-update-many",
+                priority: 1,
+                includeBody: true,
+              },
+              update: {
+                description: "MCP update-many applied description",
+              },
+              checkpoint: false,
+            },
+          },
+        },
+      });
+
+      expect(result?.isError).not.toBe(true);
+      const updateResult = (result?.structuredContent as {
+        result?: { mode?: string; updated_count?: number; ids?: string[]; rows?: Array<{ id: string; status: string }> };
+      } | undefined)?.result;
+      expect(updateResult?.mode).toBe("apply");
+      expect(updateResult?.updated_count).toBe(1);
+      expect(updateResult?.ids).toEqual([id]);
+      expect(updateResult?.rows).toEqual([
+        expect.objectContaining({ id, status: "updated" }),
+      ]);
+
+      const get = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect((get.json as { item: { description: string } }).item.description).toBe("MCP update-many applied description");
+    });
+  });
+
+  it("routes update-many through pm_run with nested list and flat update options", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli([
+        "create",
+        "--json",
+        "--title",
+        "MCP mixed update-many target",
+        "--description",
+        "MCP mixed update-many target description",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "mcp-mixed-update-many",
+        "--author",
+        "mcp-test",
+      ], { expectJson: true });
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      const result = await handleRequest({
+        jsonrpc: "2.0",
+        id: 17,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: {
+            path: context.pmPath,
+            action: "update-many",
+            options: {
+              list: { tag: "mcp-mixed-update-many" },
+              description: "MCP mixed update-many applied description",
+              checkpoint: false,
+            },
+          },
+        },
+      });
+
+      expect(result?.isError).not.toBe(true);
+      const updateResult = (result?.structuredContent as {
+        result?: { updated_count?: number; ids?: string[] };
+      } | undefined)?.result;
+      expect(updateResult?.updated_count).toBe(1);
+      expect(updateResult?.ids).toEqual([id]);
+
+      const get = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect((get.json as { item: { description: string } }).item.description).toBe("MCP mixed update-many applied description");
+    });
+  });
+
+  it("normalizes nested scalar update-many repeatable fields through pm_run", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli([
+        "create",
+        "--json",
+        "--title",
+        "MCP nested scalar update-many target",
+        "--description",
+        "MCP nested scalar update-many target description",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "mcp-nested-scalar-update-many",
+        "--author",
+        "mcp-test",
+      ], { expectJson: true });
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      const result = await handleRequest({
+        jsonrpc: "2.0",
+        id: 18,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: {
+            path: context.pmPath,
+            action: "update-many",
+            options: {
+              list: { tag: "mcp-nested-scalar-update-many" },
+              update: {
+                comment: "text=nested scalar comment from MCP update-many",
+              },
+              checkpoint: false,
+            },
+          },
+        },
+      });
+
+      expect(result?.isError).not.toBe(true);
+      const get = context.runCli(["get", id, "--full", "--json"], { expectJson: true });
+      const item = (get.json as { item: { comments?: Array<{ text: string }> } }).item;
+      expect(item.comments?.some((entry) => entry.text === "nested scalar comment from MCP update-many")).toBe(true);
+    });
+  });
+
+  it("preserves numeric MCP bulk filters and normalizes update-many aliases", async () => {
+    await withTempPmPath(async (context) => {
+      const createOne = context.runCli([
+        "create",
+        "--json",
+        "--title",
+        "MCP numeric update target",
+        "--description",
+        "MCP numeric update target description",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "1",
+        "--tags",
+        "mcp-numeric-bulk",
+        "--estimate",
+        "30",
+        "--author",
+        "mcp-test",
+      ], { expectJson: true });
+      expect(createOne.code).toBe(0);
+      const targetId = (createOne.json as { item: { id: string } }).item.id;
+
+      const createTwo = context.runCli([
+        "create",
+        "--json",
+        "--title",
+        "MCP numeric update non-target",
+        "--description",
+        "MCP numeric update non-target description",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--priority",
+        "2",
+        "--tags",
+        "mcp-numeric-bulk",
+        "--estimate",
+        "30",
+        "--author",
+        "mcp-test",
+      ], { expectJson: true });
+      expect(createTwo.code).toBe(0);
+      const otherId = (createTwo.json as { item: { id: string } }).item.id;
+
+      const result = await handleRequest({
+        jsonrpc: "2.0",
+        id: 15,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: {
+            path: context.pmPath,
+            action: "update-many",
+            options: {
+              filterTag: "mcp-numeric-bulk",
+              filterPriority: 1,
+              estimate: 45,
+              checkpoint: false,
+            },
+          },
+        },
+      });
+
+      expect(result?.isError).not.toBe(true);
+      const updateResult = (result?.structuredContent as {
+        result?: { updated_count?: number; ids?: string[] };
+      } | undefined)?.result;
+      expect(updateResult?.updated_count).toBe(1);
+      expect(updateResult?.ids).toEqual([targetId]);
+
+      const target = context.runCli(["get", targetId, "--json"], { expectJson: true });
+      const other = context.runCli(["get", otherId, "--json"], { expectJson: true });
+      expect((target.json as { item: { estimated_minutes: number } }).item.estimated_minutes).toBe(45);
+      expect((other.json as { item: { estimated_minutes: number } }).item.estimated_minutes).toBe(30);
+    });
+  });
+
+  it("preserves numeric MCP close-many limits", async () => {
+    await withTempPmPath(async (context) => {
+      for (const title of ["MCP numeric close target one", "MCP numeric close target two"]) {
+        const create = context.runCli([
+          "create",
+          "--json",
+          "--title",
+          title,
+          "--description",
+          `${title} description`,
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--priority",
+          "1",
+          "--tags",
+          "mcp-close-limit",
+          "--author",
+          "mcp-test",
+        ], { expectJson: true });
+        expect(create.code).toBe(0);
+      }
+
+      const result = await handleRequest({
+        jsonrpc: "2.0",
+        id: 16,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: {
+            path: context.pmPath,
+            action: "close-many",
+            options: {
+              list: {
+                tag: "mcp-close-limit",
+                limit: 1,
+              },
+              reason: "mcp close numeric limit",
+              checkpoint: false,
+            },
+          },
+        },
+      });
+
+      expect(result?.isError).not.toBe(true);
+      const closeResult = (result?.structuredContent as {
+        result?: { closed_count?: number; ids?: string[] };
+      } | undefined)?.result;
+      expect(closeResult?.closed_count).toBe(1);
+      expect(closeResult?.ids).toHaveLength(1);
+    });
+  });
+
   it("normalizes scalar update log fields and defaults list output to compact", async () => {
     await withTempPmPath(async (context) => {
       const create = context.runCli([

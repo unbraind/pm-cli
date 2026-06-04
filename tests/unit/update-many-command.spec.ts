@@ -1,8 +1,21 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { runUpdate } from "../../src/cli/commands/update.js";
 import { runUpdateMany } from "../../src/cli/commands/update-many.js";
+import {
+  checkpointFilePath,
+  createCheckpointId,
+  loadMutationCheckpoint,
+  normalizeCheckpointId,
+  restoreCheckpointItems,
+  writeMutationCheckpoint,
+} from "../../src/core/checkpoint/mutation-checkpoint.js";
 import { matchesRuntimeFilters } from "../../src/core/schema/runtime-field-filters.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
+import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 interface CreateTaskOptions {
@@ -56,11 +69,23 @@ function getItemDescription(context: TempPmContext, id: string): string {
   return String((result.json as { item: { description: string } }).item.description);
 }
 
+function getItemPriority(context: TempPmContext, id: string): number {
+  const result = context.runCli(["get", id, "--json"], { expectJson: true });
+  expect(result.code).toBe(0);
+  return Number((result.json as { item: { priority: number } }).item.priority);
+}
+
 function getItemTests(context: TempPmContext, id: string): Array<{ command?: string }> {
   const result = context.runCli(["get", id, "--full", "--json"], { expectJson: true });
   expect(result.code).toBe(0);
   const item = (result.json as { item: { tests?: Array<{ command?: string }> } }).item;
   return Array.isArray(item.tests) ? item.tests : [];
+}
+
+function getItemMetadataValue(context: TempPmContext, id: string, key: string): unknown {
+  const result = context.runCli(["get", id, "--full", "--json"], { expectJson: true });
+  expect(result.code).toBe(0);
+  return (result.json as { item: Record<string, unknown> }).item[key];
 }
 
 describe("runUpdateMany", () => {
@@ -180,6 +205,78 @@ describe("runUpdateMany", () => {
     });
   });
 
+  it("ignores null programmatic filters in rollback mode", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTask(context, "bulk-null-rollback-a", {
+        tags: "bulk-null-rollback",
+        description: "bulk null rollback original",
+      });
+      const apply = await runUpdateMany(
+        {
+          list: { tag: "bulk-null-rollback" },
+          update: {
+            description: "bulk null rollback updated",
+            message: "bulk null rollback apply",
+          },
+        },
+        { path: context.pmPath },
+      );
+      const checkpointId = apply.checkpoint?.id;
+      expect(typeof checkpointId).toBe("string");
+
+      const rollback = await runUpdateMany(
+        {
+          rollback: String(checkpointId),
+          status: null as unknown as string,
+          list: {
+            ids: null as unknown as string,
+            updatedAfter: null as unknown as string,
+          },
+          update: {},
+        },
+        { path: context.pmPath },
+      );
+
+      expect(rollback.restored_count).toBe(1);
+      expect(getItemDescription(context, firstId)).toBe("bulk null rollback original");
+    });
+  });
+
+  it("rejects nested status filters in rollback mode", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "bulk-nested-status-rollback", {
+        tags: "bulk-nested-status-rollback",
+        description: "bulk nested status rollback original",
+      });
+      const apply = await runUpdateMany(
+        {
+          list: { tag: "bulk-nested-status-rollback" },
+          update: {
+            description: "bulk nested status rollback updated",
+            message: "bulk nested status rollback apply",
+          },
+        },
+        { path: context.pmPath },
+      );
+      const checkpointId = apply.checkpoint?.id;
+      expect(typeof checkpointId).toBe("string");
+
+      await expect(
+        runUpdateMany(
+          {
+            rollback: String(checkpointId),
+            list: { status: "open" },
+            update: {},
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "Rollback mode does not accept filter options",
+      });
+    });
+  });
+
   it("returns actionable mutation-flag guidance when no update flags are provided", async () => {
     await withTempPmPath(async (context) => {
       createTask(context, "bulk-no-mutation-guidance");
@@ -212,6 +309,133 @@ describe("runUpdateMany", () => {
       ).rejects.toMatchObject<PmCliError>({
         message: expect.stringContaining("--replace-tests"),
       });
+    });
+  });
+
+  it("does not treat filter-only CLI options as update-many mutations", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTask(context, "bulk-filter-only-a", { tags: "bulk-filter-only" });
+      const result = context.runCli([
+        "update-many",
+        "--ids",
+        firstId,
+        "--filter-updated-after",
+        "",
+        "--filter-created-before",
+        "",
+        "--json",
+      ]);
+
+      expect(result.code).not.toBe(0);
+      expect(`${result.stderr}${result.stdout}`).toContain("No update-many mutation flags provided");
+    });
+  });
+
+  it("rejects explicit blank ids before bulk mutation", async () => {
+    await withTempPmPath(async (context) => {
+      const controlId = createTask(context, "bulk-blank-ids-control", { tags: "bulk-blank-ids" });
+
+      const result = context.runCli([
+        "update-many",
+        "--ids",
+        "",
+        "--description",
+        "must not apply broadly",
+        "--json",
+      ]);
+
+      expect(result.code).not.toBe(0);
+      expect(`${result.stderr}${result.stdout}`).toContain("--ids requires at least one non-empty item ID");
+      expect(getItemDescription(context, controlId)).toBe("bulk-blank-ids-control description");
+    });
+  });
+
+  it("plans and applies runtime field updates in update-many", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.schema.fields = [
+        ...(settings.schema.fields ?? []),
+        {
+          key: "review_stage",
+          type: "string",
+          cli_flag: "review-stage",
+          commands: ["update_many"],
+        },
+      ];
+      await writeSettings(context.pmPath, settings, "settings:write");
+      const id = createTask(context, "bulk-runtime-field", { tags: "bulk-runtime-field" });
+
+      const dryRun = context.runCli(
+        ["update-many", "--filter-tag", "bulk-runtime-field", "--review-stage", "ready", "--dry-run", "--json"],
+        { expectJson: true },
+      );
+      expect(dryRun.code).toBe(0);
+      const plans = (dryRun.json as { item_plans: Array<{ changes: Array<{ field: string; after: unknown }> }> }).item_plans;
+      expect(plans[0]?.changes).toEqual([
+        expect.objectContaining({ field: "review_stage", after: "ready" }),
+      ]);
+      expect(getItemMetadataValue(context, id, "review_stage")).toBeUndefined();
+
+      const apply = context.runCli(
+        ["update-many", "--filter-tag", "bulk-runtime-field", "--review-stage", "ready", "--json"],
+        { expectJson: true },
+      );
+      expect(apply.code).toBe(0);
+      expect((apply.json as { updated_count: number }).updated_count).toBe(1);
+      expect(getItemMetadataValue(context, id, "review_stage")).toBe("ready");
+    });
+  });
+
+  it("keeps update_many-only runtime fields out of regular update", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.schema.fields = [
+        ...(settings.schema.fields ?? []),
+        {
+          key: "review_stage",
+          type: "string",
+          cli_flag: "review-stage",
+          commands: ["update_many"],
+        },
+      ];
+      await writeSettings(context.pmPath, settings, "settings:write");
+      const id = createTask(context, "single-update-runtime-field-scope", { tags: "runtime-field-scope" });
+
+      const result = await runUpdate(id, { reviewStage: "ready" } as never, { path: context.pmPath });
+
+      expect(result.changed_fields).toEqual([]);
+      expect(result.warnings).toContain("noop_no_update_fields");
+      expect(getItemMetadataValue(context, id, "review_stage")).toBeUndefined();
+    });
+  });
+
+  it("keeps update-only runtime fields out of update-many", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.schema.fields = [
+        ...(settings.schema.fields ?? []),
+        {
+          key: "single_review_stage",
+          type: "string",
+          cli_flag: "single-review-stage",
+          commands: ["update"],
+        },
+      ];
+      await writeSettings(context.pmPath, settings, "settings:write");
+      const id = createTask(context, "bulk-update-runtime-field-scope", { tags: "bulk-runtime-field-scope" });
+
+      const result = await runUpdateMany(
+        {
+          list: { tag: "bulk-runtime-field-scope" },
+          update: { singleReviewStage: "ready" } as never,
+        },
+        { path: context.pmPath },
+      );
+      expect(result.updated_count).toBe(0);
+      expect(result.rows).toEqual([
+        expect.objectContaining({ id, status: "skipped" }),
+      ]);
+      expect(getItemMetadataValue(context, id, "single_review_stage")).toBeUndefined();
     });
   });
 
@@ -533,5 +757,214 @@ describe("runUpdateMany", () => {
         "node scripts/run-tests.mjs test -- tests/replaced.spec.ts",
       ]);
     });
+  });
+
+  describe("--ids explicit allowlist (pm-1h99)", () => {
+    it("restricts the mutation to the listed ids only", async () => {
+      await withTempPmPath(async (context) => {
+        const a = createTask(context, "ids-a", { tags: "ids-batch" });
+        const b = createTask(context, "ids-b", { tags: "ids-batch" });
+        const c = createTask(context, "ids-c", { tags: "ids-batch" });
+
+        const apply = await runUpdateMany(
+          {
+            list: { ids: `${a},${b}`, includeBody: true },
+            update: { priority: "0", message: "ids subset" },
+          },
+          { path: context.pmPath },
+        );
+
+        expect(apply.mode).toBe("apply");
+        expect(apply.matched_count).toBe(2);
+        expect(apply.updated_count).toBe(2);
+        expect([...apply.ids].sort()).toEqual([a, b].sort());
+        // c was outside the allowlist and must be untouched
+        expect(getItemPriority(context, c)).toBe(1);
+        expect(getItemPriority(context, a)).toBe(0);
+      });
+    });
+
+    it("intersects --ids with other filters and ignores ids that do not exist", async () => {
+      await withTempPmPath(async (context) => {
+        const a = createTask(context, "ids-int-a", { tags: "keep" });
+        const b = createTask(context, "ids-int-b", { tags: "other" });
+
+        const apply = await runUpdateMany(
+          {
+            list: { ids: `${a},${b},pm-doesnotexist`, tag: "keep", includeBody: true },
+            update: { priority: "0", message: "ids intersect tag" },
+          },
+          { path: context.pmPath },
+        );
+
+        // only a is both in the id allowlist AND tagged "keep"
+        expect(apply.matched_count).toBe(1);
+        expect(apply.ids).toEqual([a]);
+        expect(getItemPriority(context, b)).toBe(1);
+      });
+    });
+
+    it("echoes the ids filter in the result filters block", async () => {
+      await withTempPmPath(async (context) => {
+        const a = createTask(context, "ids-echo", { tags: "echo" });
+        const result = await runUpdateMany(
+          {
+            list: { ids: a, includeBody: true },
+            update: { priority: "0", message: "echo" },
+            dryRun: true,
+          },
+          { path: context.pmPath },
+        );
+        expect(result.filters?.ids).toBe(a);
+      });
+    });
+  });
+});
+
+describe("mutation-checkpoint shared module", () => {
+  const SCHEMA_VERSION = 1;
+  let root: string;
+
+  async function makeRoot(): Promise<string> {
+    return mkdtemp(path.join(tmpdir(), "pm-ckpt-"));
+  }
+
+  it("normalizeCheckpointId trims valid ids and rejects empty/invalid ids", () => {
+    expect(normalizeCheckpointId("  close-many-123_x.y-z  ")).toBe("close-many-123_x.y-z");
+    expect(() => normalizeCheckpointId("   ")).toThrowError(PmCliError);
+    let usage: unknown;
+    try {
+      normalizeCheckpointId("bad id/with slash");
+    } catch (error) {
+      usage = error;
+    }
+    expect((usage as PmCliError).exitCode).toBe(EXIT_CODE.USAGE);
+  });
+
+  it("createCheckpointId embeds the prefix and a compact timestamp", () => {
+    const id = createCheckpointId("close-many", "2026-06-04T15:59:09.123Z");
+    expect(id).toMatch(/^close-many-20260604155909-[a-z0-9]{1,6}$/);
+  });
+
+  it("writes and round-trips a checkpoint, preserving command-specific fields", async () => {
+    root = await makeRoot();
+    try {
+      const id = createCheckpointId("close-many", "2026-06-04T00:00:00.000Z");
+      const payload = {
+        schema_version: SCHEMA_VERSION,
+        id,
+        created_at: "2026-06-04T00:00:00.000Z",
+        author: "tester",
+        reason: "bulk close",
+        items: [{ id: "pm-a", target_updated_at: "2026-06-03T00:00:00.000Z" }],
+      };
+      const writtenPath = await writeMutationCheckpoint(root, "close-many", id, payload);
+      expect(writtenPath).toBe(checkpointFilePath(root, "close-many", id));
+
+      const loaded = await loadMutationCheckpoint(root, "close-many", id, SCHEMA_VERSION);
+      expect(loaded.id).toBe(id);
+      expect(loaded.author).toBe("tester");
+      expect(loaded.created_at).toBe("2026-06-04T00:00:00.000Z");
+      expect(loaded.items).toEqual([{ id: "pm-a", target_updated_at: "2026-06-03T00:00:00.000Z" }]);
+      expect(loaded.record.reason).toBe("bulk close");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it("applies defaults when optional record fields are missing", async () => {
+    root = await makeRoot();
+    try {
+      const id = "close-many-defaults";
+      await writeMutationCheckpoint(root, "close-many", id, {
+        schema_version: SCHEMA_VERSION,
+        items: [{ id: "pm-x", target_updated_at: "2026-06-03T00:00:00.000Z" }],
+      });
+      const loaded = await loadMutationCheckpoint(root, "close-many", id, SCHEMA_VERSION);
+      expect(loaded.id).toBe(id);
+      expect(loaded.author).toBe("unknown");
+      expect(typeof loaded.created_at).toBe("string");
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  async function expectLoadFailure(contents: string, expected: string, code: number): Promise<void> {
+    const dir = await makeRoot();
+    try {
+      const id = "close-many-bad";
+      const filePath = checkpointFilePath(dir, "close-many", id);
+      await mkdir(path.dirname(filePath), { recursive: true });
+      await writeFile(filePath, contents);
+      let caught: unknown;
+      try {
+        await loadMutationCheckpoint(dir, "close-many", id, SCHEMA_VERSION);
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(PmCliError);
+      expect((caught as PmCliError).message).toContain(expected);
+      expect((caught as PmCliError).exitCode).toBe(code);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("rejects a missing checkpoint with NOT_FOUND", async () => {
+    const dir = await makeRoot();
+    try {
+      let caught: unknown;
+      try {
+        await loadMutationCheckpoint(dir, "close-many", "missing-id", SCHEMA_VERSION);
+      } catch (error) {
+        caught = error;
+      }
+      expect((caught as PmCliError).exitCode).toBe(EXIT_CODE.NOT_FOUND);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("rejects malformed checkpoint payloads with descriptive errors", async () => {
+    await expectLoadFailure("{not-json", "contains invalid JSON", EXIT_CODE.GENERIC_FAILURE);
+    await expectLoadFailure("null", "is invalid", EXIT_CODE.GENERIC_FAILURE);
+    await expectLoadFailure(JSON.stringify({ schema_version: 99, items: [] }), "unsupported schema version", EXIT_CODE.GENERIC_FAILURE);
+    await expectLoadFailure(JSON.stringify({ schema_version: SCHEMA_VERSION }), "is missing items", EXIT_CODE.GENERIC_FAILURE);
+    await expectLoadFailure(
+      JSON.stringify({ schema_version: SCHEMA_VERSION, items: [42] }),
+      "invalid item entry",
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+    await expectLoadFailure(
+      JSON.stringify({ schema_version: SCHEMA_VERSION, items: [{ target_updated_at: "x" }] }),
+      "without ID",
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+    await expectLoadFailure(
+      JSON.stringify({ schema_version: SCHEMA_VERSION, items: [{ id: "pm-a" }] }),
+      "without target_updated_at",
+      EXIT_CODE.GENERIC_FAILURE,
+    );
+  });
+
+  it("restoreCheckpointItems records per-item success and failure without aborting", async () => {
+    const result = await restoreCheckpointItems(
+      [
+        { id: "pm-ok", target_updated_at: "2026-06-03T00:00:00.000Z" },
+        { id: "pm-fail", target_updated_at: "2026-06-03T00:00:00.000Z" },
+      ],
+      async (id) => {
+        if (id === "pm-fail") {
+          throw new Error("restore blew up");
+        }
+        return { changed_fields: ["status"], warnings: [] };
+      },
+    );
+    expect(result.restored_ids).toEqual(["pm-ok"]);
+    expect(result.failed_count).toBe(1);
+    expect(result.rows).toEqual([
+      { id: "pm-ok", status: "restored", changed_fields: ["status"], warnings: [] },
+      { id: "pm-fail", status: "failed", error: "restore blew up" },
+    ]);
   });
 });

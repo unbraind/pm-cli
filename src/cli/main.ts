@@ -1779,6 +1779,7 @@ const LIST_QUERY_COMMAND_NAMES = new Set([
 const MUTATION_COMMAND_NAMES = new Set([
   "append",
   "close",
+  "close-many",
   "comments",
   "delete",
   "deps",

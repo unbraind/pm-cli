@@ -54,6 +54,7 @@ export {
   TOOL_UPDATE_OPTION_CONTRACTS,
   TOOL_UPDATE_MANY_FILTER_OPTION_CONTRACTS,
   TOOL_NORMALIZE_FILTER_OPTION_CONTRACTS,
+  TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS,
   TOOL_CALENDAR_OPTION_CONTRACTS,
   TOOL_ACTIVITY_OPTION_CONTRACTS,
   TOOL_CONTEXT_OPTION_CONTRACTS,
@@ -72,6 +73,7 @@ import {
   TOOL_AGGREGATE_OPTION_CONTRACTS,
   TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS,
   TOOL_SEARCH_FILTER_OPTION_CONTRACTS,
+  TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS,
 } from "./cli-contracts/tool-option-contracts.js";
 import {
   PM_TOOL_PARAMETER_PROPERTIES,
@@ -183,6 +185,11 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--priority" },
   { flag: "--deadline-before" },
   { flag: "--deadline-after" },
+  { flag: "--updated-after" },
+  { flag: "--updated-before" },
+  { flag: "--created-after" },
+  { flag: "--created-before" },
+  { flag: "--ids", list: true },
   { flag: "--assignee" },
   { flag: "--assignee-filter" },
   { flag: "--assignee_filter" },
@@ -554,6 +561,42 @@ export const CLOSE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--force" },
 ];
 
+// close-many shares update-many's `--filter-*` scoping family and close's
+// inline closure-validation fields. The shared close reason is required for the
+// audited bulk close (each matched item routes through runClose semantics).
+export const CLOSE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--filter-status", list: true },
+  { flag: "--filter-type" },
+  { flag: "--filter-tag" },
+  { flag: "--filter-priority" },
+  { flag: "--filter-deadline-before" },
+  { flag: "--filter-deadline-after" },
+  { flag: "--filter-updated-after" },
+  { flag: "--filter-updated-before" },
+  { flag: "--filter-created-after" },
+  { flag: "--filter-created-before" },
+  { flag: "--filter-assignee" },
+  { flag: "--filter-assignee-filter" },
+  { flag: "--filter-assignee_filter" },
+  { flag: "--filter-parent" },
+  { flag: "--filter-sprint" },
+  { flag: "--filter-release" },
+  { flag: "--ids", list: true },
+  { flag: "--limit" },
+  { flag: "--offset" },
+  { flag: "--reason" },
+  { flag: "--resolution" },
+  { flag: "--expected-result", aliases: ["--expected_result", "--expected"] },
+  { flag: "--actual-result", aliases: ["--actual_result", "--actual"] },
+  { flag: "--validate-close" },
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--force" },
+  { flag: "--dry-run" },
+  { flag: "--rollback" },
+  { flag: "--no-checkpoint" },
+];
+
 export const APPEND_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--body", short: "-b" },
   { flag: "--author" },
@@ -903,12 +946,17 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--filter-priority" },
   { flag: "--filter-deadline-before" },
   { flag: "--filter-deadline-after" },
+  { flag: "--filter-updated-after" },
+  { flag: "--filter-updated-before" },
+  { flag: "--filter-created-after" },
+  { flag: "--filter-created-before" },
   { flag: "--filter-assignee" },
   { flag: "--filter-assignee-filter" },
   { flag: "--filter-assignee_filter" },
   { flag: "--filter-parent" },
   { flag: "--filter-sprint" },
   { flag: "--filter-release" },
+  { flag: "--ids", list: true },
   { flag: "--limit" },
   { flag: "--offset" },
   { flag: "--dry-run" },
@@ -1115,6 +1163,7 @@ export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--full" },
   { flag: "--fields", list: true },
   { flag: "--limit" },
+  { flag: "--status", list: true },
   { flag: "--type" },
   { flag: "--tag" },
   { flag: "--priority" },
@@ -1283,6 +1332,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(UPDATE_MANY_FLAG_CONTRACTS);
     case "close":
       return withSubcommandGlobalFlags(CLOSE_FLAG_CONTRACTS);
+    case "close-many":
+      return withSubcommandGlobalFlags(CLOSE_MANY_FLAG_CONTRACTS);
     case "delete":
       return withSubcommandGlobalFlags(DELETE_FLAG_CONTRACTS);
     case "append":
@@ -1385,6 +1436,21 @@ const NORMALIZE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   "author",
   "message",
   "allowAuditUpdate",
+  "force",
+]);
+
+const CLOSE_MANY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
+  ...TOOL_CLOSE_MANY_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
+  "reason",
+  "resolution",
+  "expectedResult",
+  "actualResult",
+  "validateClose",
+  "dryRun",
+  "rollback",
+  "noCheckpoint",
+  "author",
+  "message",
   "force",
 ]);
 
@@ -1633,6 +1699,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   "update-many": { optional: UPDATE_MANY_CONTRACT_PARAMETER_KEYS },
   normalize: { optional: NORMALIZE_CONTRACT_PARAMETER_KEYS },
   close: { required: ["id", "text"], optional: ["validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  "close-many": { optional: CLOSE_MANY_CONTRACT_PARAMETER_KEYS },
   delete: { required: ["id"], optional: ["dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   comments: {

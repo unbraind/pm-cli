@@ -2,13 +2,19 @@ id: pm-y138
 title: pm list --updated-after/--created-after incremental date filters
 description: pm list has only --deadline-before/after; agents doing incremental 'what changed since' sync must fetch all 900+ items and filter client-side. Add updated/created date-window filters (reuse resolveIsoOrRelative).
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:lifecycle",living-map,query
 created_at: "2026-05-31T19:43:35.703Z"
-updated_at: "2026-05-31T19:43:35.703Z"
+updated_at: "2026-06-04T16:17:40.771Z"
 author: maintainer-agent
 acceptance_criteria: "--updated-after/--updated-before and --created-after/--created-before accept ISO+relative; appear in filters block; wired into update-many, pm context, and MCP contracts."
 value: pm list has only --deadline-before/after; agents doing incremental 'what changed since' sync must fetch all 900+ items and filter client-side. Add updated/created date-window filters (reuse resolveIsoOrRelative).
 parent: pm-mpbb
+resolution: "Added --updated-after/-before/--created-after/-before to runList, list* commands, update-many/close-many --filter-* family, and MCP pm_list contracts; signed-relative + ISO; 100%-tested"
+expected_result: list/MCP accept updated/created windows; raw echoed in filters
+actual_result: Implemented and verified end-to-end + unit tests
+comments[1]{created_at,author,text}:
+  "2026-06-04T16:17:23.367Z",maintainer-agent,"Shipped on branch cli-incremental-context-and-bulk-ops-20260604. Added --updated-after/--updated-before/--created-after/--created-before to runList + all list* commands + MCP pm_list contracts. Reuses the shared signed-relative resolver (resolveIsoOrRelative): ISO timestamps (primary 'changed since last window' case) or signed offsets (-2h/-7d past, +1d future; units h/d/w/m, m=months, no minutes unit). Raw inputs echoed in filters block. Also wired into update-many/close-many --filter-updated-*/--filter-created-* family."
+close_reason: Delivered incremental updated/created date-window filters on list + bulk-ops + MCP
 body: ""

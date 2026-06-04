@@ -300,6 +300,21 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
       "Checkpoints are enabled by default for apply mode and can be restored with --rollback.",
     ],
   },
+  "close-many": {
+    why: "Bulk-closes matched items with a shared reason routed through full pm close semantics (close validation, active-child orphan checks, blocked-edge cleanup) plus dry-run previews and rollback checkpoints — unlike update-many --status closed, which bypasses close validation.",
+    examples: [
+      'pm close-many --filter-sprint S-12 --reason "Sprint S-12 acceptance criteria met" --dry-run',
+      'pm close-many --filter-tag wave:7 --reason "Superseded by redesign" --validate-close warn',
+      'pm close-many --ids pm-a,pm-b,pm-c --reason "Closed in batch" --resolution "Verified by integration suite"',
+      "pm close-many --rollback close-many-20260604-abc123",
+    ],
+    tips: [
+      "At least one filter (--filter-* or --ids) is required so close-many never matches every item.",
+      "Already-terminal matches are skipped by default; pass --force to re-close them.",
+      "Use --dry-run to preview matches plus per-item skip reasons and active-child orphan warnings before applying.",
+      "Checkpoints are enabled by default for apply mode; restore with --rollback <checkpoint-id>.",
+    ],
+  },
   normalize: {
     why:
       "Scans items for low-signal lifecycle metadata drift, emits deterministic per-item plans, and optionally applies normalized metadata updates with update-style safety checks.",

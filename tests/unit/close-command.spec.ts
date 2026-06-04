@@ -32,6 +32,12 @@ function latestCloseAuthor(context: TempPmContext, id: string): string | undefin
   return [...entries].reverse().find((entry) => entry.op === "close")?.author;
 }
 
+function itemStatus(context: TempPmContext, id: string): string {
+  const result = context.runCli(["get", id, "--json"], { expectJson: true });
+  expect(result.code).toBe(0);
+  return (result.json as { item: { status: string } }).item.status;
+}
+
 describe("runClose", () => {
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-close-not-init-"));
@@ -360,6 +366,430 @@ describe("runClose", () => {
           process.env.PM_AUTHOR = previousPmAuthor;
         }
       }
+    });
+  });
+});
+
+interface CloseManyResultPayload {
+  mode: string;
+  matched_count?: number;
+  closed_count?: number;
+  skipped_count?: number;
+  failed_count?: number;
+  restored_count?: number;
+  ids?: string[];
+  rows?: Array<{ id: string; status: string; skip_reason?: string; error?: string }>;
+  item_plans?: Array<{ id: string; status: string; action: string; skip_reason?: string; active_child_ids?: string[] }>;
+  checkpoint?: { id: string; rollback_command: string };
+}
+
+describe("runCloseMany via CLI", () => {
+  it("requires at least one filter before scoping a bulk close", async () => {
+    await withTempPmPath(async (context) => {
+      const result = context.runCli(["close-many", "--reason", "no filter supplied", "--json"]);
+      expect(result.code).not.toBe(0);
+      expect(`${result.stderr}${result.stdout}`).toContain("at least one filter");
+    });
+  });
+
+  it("rejects null and empty programmatic filters instead of matching every item", async () => {
+    await withTempPmPath(async (context) => {
+      createTestItemId(context, { title: "close-many-null-filter", tags: "null-filter", status: "open" });
+
+      await expect(
+        import("../../src/cli/commands/close-many.js").then(({ runCloseMany }) =>
+          runCloseMany(
+            {
+              status: null as unknown as string,
+              list: { ids: "" },
+              reason: "null filter should not match all",
+            },
+            { path: context.pmPath },
+          ),
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("rejects whitespace-only close-many filters instead of matching every item", async () => {
+    await withTempPmPath(async (context) => {
+      createTestItemId(context, { title: "close-many-blank-filter", tags: "blank-filter", status: "open" });
+      const { runCloseMany } = await import("../../src/cli/commands/close-many.js");
+
+      await expect(
+        runCloseMany(
+          {
+            status: " , ",
+            list: { tag: "   " },
+            reason: "blank filters should not match all",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("accepts a status-scoped close-many call when list options are omitted", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, {
+        title: "close-many-status-only",
+        tags: "status-only",
+        status: "open",
+      });
+      const { runCloseMany } = await import("../../src/cli/commands/close-many.js");
+
+      const result = await runCloseMany(
+        {
+          status: "open",
+          reason: "status-only close-many dry-run",
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.matched_count).toBeGreaterThanOrEqual(1);
+      expect(result.item_plans?.some((plan) => plan.id === id && plan.action === "close")).toBe(true);
+    });
+  });
+
+  it("accepts a nested list status filter as close-many scope", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, {
+        title: "close-many-nested-status",
+        tags: "nested-status",
+        status: "open",
+      });
+      const { runCloseMany } = await import("../../src/cli/commands/close-many.js");
+
+      const result = await runCloseMany(
+        {
+          list: { status: "open" },
+          reason: "nested status close-many dry-run",
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.matched_count).toBeGreaterThanOrEqual(1);
+      expect(result.item_plans?.some((plan) => plan.id === id && plan.action === "close")).toBe(true);
+    });
+  });
+
+  it("ignores inactive programmatic filters when another close-many filter scopes the batch", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, {
+        title: "close-many-inactive-filter",
+        tags: "inactive-filter",
+        status: "open",
+      });
+      const { runCloseMany } = await import("../../src/cli/commands/close-many.js");
+
+      const result = await runCloseMany(
+        {
+          list: { tag: "inactive-filter", ids: " , ", updatedAfter: null as unknown as string },
+          reason: "inactive filters ignored",
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.matched_count).toBe(1);
+      expect(result.item_plans?.[0]?.id).toBe(id);
+    });
+  });
+
+  it("requires a shared close reason for apply and dry-run", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "close-many-needs-reason");
+      const result = context.runCli(["close-many", "--filter-tag", "close", "--json"]);
+      expect(result.code).not.toBe(0);
+      expect(`${result.stderr}${result.stdout}`).toContain("requires a shared close reason");
+
+      const dryRun = context.runCli(["close-many", "--filter-tag", "close", "--dry-run", "--json"]);
+      expect(dryRun.code).not.toBe(0);
+      expect(`${dryRun.stderr}${dryRun.stdout}`).toContain("requires a shared close reason");
+    });
+  });
+
+  it("previews matched plans in dry-run without mutating any items", async () => {
+    await withTempPmPath(async (context) => {
+      const openId = createTestItemId(context, { title: "close-many-dry-open", tags: "dryrun", status: "open" });
+      const closedId = createTestItemId(context, {
+        title: "close-many-dry-closed",
+        tags: "dryrun",
+        status: "closed",
+      });
+
+      const result = context.runCli(
+        ["close-many", "--filter-tag", "dryrun", "--reason", "dry-run preview", "--dry-run", "--json"],
+        { expectJson: true },
+      );
+      expect(result.code).toBe(0);
+      const payload = result.json as CloseManyResultPayload;
+      expect(payload.mode).toBe("dry_run");
+      expect(payload.matched_count).toBe(2);
+      const plans = payload.item_plans ?? [];
+      const openPlan = plans.find((plan) => plan.id === openId);
+      const closedPlan = plans.find((plan) => plan.id === closedId);
+      expect(openPlan?.action).toBe("close");
+      expect(closedPlan?.action).toBe("skip");
+      expect(closedPlan?.skip_reason).toBe("already_terminal");
+
+      // Dry-run must not mutate: the open item stays open.
+      expect(itemStatus(context, openId)).toBe("open");
+    });
+  });
+
+  it("closes matched open items, skips already-terminal matches, and emits a rollback checkpoint", async () => {
+    await withTempPmPath(async (context) => {
+      const openId = createTestItemId(context, { title: "close-many-apply-open", tags: "apply", status: "open" });
+      const alreadyClosedId = createTestItemId(context, {
+        title: "close-many-apply-closed",
+        tags: "apply",
+        status: "closed",
+      });
+
+      const result = context.runCli(
+        ["close-many", "--filter-tag", "apply", "--reason", "bulk apply close", "--json"],
+        { expectJson: true },
+      );
+      expect(result.code).toBe(0);
+      const payload = result.json as CloseManyResultPayload;
+      expect(payload.mode).toBe("apply");
+      expect(payload.closed_count).toBe(1);
+      expect(payload.skipped_count).toBe(1);
+      expect(payload.failed_count).toBe(0);
+      expect(payload.ids).toEqual([openId]);
+      const closedRow = (payload.rows ?? []).find((row) => row.id === openId);
+      const skippedRow = (payload.rows ?? []).find((row) => row.id === alreadyClosedId);
+      expect(closedRow?.status).toBe("closed");
+      expect(skippedRow?.status).toBe("skipped");
+      expect(skippedRow?.skip_reason).toBe("already_terminal");
+      expect(typeof payload.checkpoint?.id).toBe("string");
+      expect(payload.checkpoint?.rollback_command).toContain("close-many --rollback");
+
+      // The matched open item is now closed.
+      expect(itemStatus(context, openId)).toBe("closed");
+    });
+  });
+
+  it("re-closes an already-terminal match under --force", async () => {
+    await withTempPmPath(async (context) => {
+      createTestItemId(context, { title: "close-many-force-closed", tags: "force", status: "closed" });
+
+      const result = context.runCli(
+        ["close-many", "--filter-tag", "force", "--reason", "force re-close", "--force", "--json"],
+        { expectJson: true },
+      );
+      expect(result.code).toBe(0);
+      const payload = result.json as CloseManyResultPayload;
+      expect(payload.mode).toBe("apply");
+      expect(payload.closed_count).toBe(1);
+      expect(payload.skipped_count).toBe(0);
+    });
+  });
+
+  it("rolls back a prior apply checkpoint to restore items to their pre-close state", async () => {
+    await withTempPmPath(async (context) => {
+      const openId = createTestItemId(context, { title: "close-many-rollback", tags: "rollback", status: "open" });
+
+      const apply = context.runCli(
+        ["close-many", "--filter-tag", "rollback", "--reason", "close before rollback", "--json"],
+        { expectJson: true },
+      );
+      expect(apply.code).toBe(0);
+      const applyPayload = apply.json as CloseManyResultPayload;
+      const checkpointId = applyPayload.checkpoint?.id;
+      expect(typeof checkpointId).toBe("string");
+      expect(itemStatus(context, openId)).toBe("closed");
+
+      const rollback = context.runCli(
+        ["close-many", "--rollback", String(checkpointId), "--json"],
+        { expectJson: true },
+      );
+      expect(rollback.code).toBe(0);
+      const rollbackPayload = rollback.json as CloseManyResultPayload;
+      expect(rollbackPayload.mode).toBe("rollback");
+      expect(rollbackPayload.restored_count).toBe(1);
+      // The item is restored to its prior open status.
+      expect(itemStatus(context, openId)).toBe("open");
+    });
+  });
+
+  it("rejects limit and offset in rollback mode", async () => {
+    await withTempPmPath(async (context) => {
+      const openId = createTestItemId(context, {
+        title: "close-many-rollback-limit",
+        tags: "rollback-limit",
+        status: "open",
+      });
+
+      const apply = context.runCli(
+        ["close-many", "--filter-tag", "rollback-limit", "--reason", "close before rollback", "--json"],
+        { expectJson: true },
+      );
+      expect(apply.code).toBe(0);
+      expect(itemStatus(context, openId)).toBe("closed");
+      const checkpointId = (apply.json as CloseManyResultPayload).checkpoint?.id;
+
+      const rollback = context.runCli(["close-many", "--rollback", String(checkpointId), "--limit", "1", "--json"]);
+      expect(rollback.code).not.toBe(0);
+      expect(`${rollback.stderr}${rollback.stdout}`).toContain("Rollback mode does not accept filter options");
+
+      const offsetRollback = context.runCli([
+        "close-many",
+        "--rollback",
+        String(checkpointId),
+        "--offset",
+        "1",
+        "--json",
+      ]);
+      expect(offsetRollback.code).not.toBe(0);
+      expect(`${offsetRollback.stderr}${offsetRollback.stdout}`).toContain("Rollback mode does not accept filter options");
+    });
+  });
+
+  it("rejects numeric rollback limit and offset without crashing", async () => {
+    await withTempPmPath(async (context) => {
+      const openId = createTestItemId(context, {
+        title: "close-many-rollback-numeric-limit",
+        tags: "rollback-numeric-limit",
+        status: "open",
+      });
+      const { runCloseMany } = await import("../../src/cli/commands/close-many.js");
+      const apply = await runCloseMany(
+        {
+          list: { tag: "rollback-numeric-limit" },
+          reason: "close before numeric rollback guard",
+        },
+        { path: context.pmPath },
+      );
+      expect(apply.closed_count).toBe(1);
+      expect(itemStatus(context, openId)).toBe("closed");
+
+      await expect(
+        runCloseMany(
+          {
+            rollback: String(apply.checkpoint?.id),
+            list: { limit: 1 as unknown as string, offset: 0 as unknown as string },
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Rollback mode does not accept filter options"),
+      });
+    });
+  });
+
+  it("annotates active-child orphans for matched parents in dry-run", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createTestItemId(context, {
+        title: "close-many-parent",
+        tags: "orphan-parent",
+        status: "open",
+      });
+      const childId = createTestItemId(context, {
+        title: "close-many-child",
+        tags: "orphan-child",
+        status: "open",
+        parent: parentId,
+      });
+
+      const result = context.runCli(
+        ["close-many", "--ids", parentId, "--reason", "close parent", "--dry-run", "--json"],
+        { expectJson: true },
+      );
+      expect(result.code).toBe(0);
+      const payload = result.json as CloseManyResultPayload;
+      const parentPlan = (payload.item_plans ?? []).find((plan) => plan.id === parentId);
+      expect(parentPlan?.active_child_ids).toContain(childId);
+    });
+  });
+
+  it("closes children before parents when both are matched in strict mode", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createTestItemId(context, {
+        title: "close-many-strict-parent",
+        tags: "strict-family",
+        status: "open",
+      });
+      const childId = createTestItemId(context, {
+        title: "close-many-strict-child",
+        tags: "strict-family",
+        status: "open",
+        parent: parentId,
+      });
+      const grandchildId = createTestItemId(context, {
+        title: "close-many-strict-grandchild",
+        tags: "strict-family",
+        status: "open",
+        parent: childId,
+      });
+
+      const preview = context.runCli(
+        ["close-many", "--filter-tag", "strict-family", "--reason", "strict family close", "--dry-run", "--json"],
+        { expectJson: true },
+      );
+      expect(preview.code).toBe(0);
+      const previewPayload = preview.json as CloseManyResultPayload;
+      const parentPlan = (previewPayload.item_plans ?? []).find((plan) => plan.id === parentId);
+      expect(parentPlan?.active_child_ids).toBeUndefined();
+
+      const result = context.runCli(
+        [
+          "close-many",
+          "--filter-tag",
+          "strict-family",
+          "--reason",
+          "strict family close",
+          "--validate-close",
+          "strict",
+          "--resolution",
+          "finished",
+          "--expected-result",
+          "family closed",
+          "--actual-result",
+          "family closed",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+
+      expect(result.code).toBe(0);
+      const payload = result.json as CloseManyResultPayload;
+      expect(payload.failed_count).toBe(0);
+      expect(payload.closed_count).toBe(3);
+      expect(payload.rows?.map((row) => row.id)).toEqual([grandchildId, childId, parentId]);
+      expect(itemStatus(context, parentId)).toBe("closed");
+      expect(itemStatus(context, childId)).toBe("closed");
+      expect(itemStatus(context, grandchildId)).toBe("closed");
+    });
+  });
+
+  it("reports a failed row when --validate-close strict finds missing closure fields", async () => {
+    await withTempPmPath(async (context) => {
+      createTestItemId(context, { title: "close-many-strict", tags: "strict-validate", status: "open" });
+
+      const result = context.runCli(
+        [
+          "close-many",
+          "--filter-tag",
+          "strict-validate",
+          "--reason",
+          "strict closure",
+          "--validate-close",
+          "strict",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(result.code).toBe(0);
+      const payload = result.json as CloseManyResultPayload;
+      expect(payload.mode).toBe("apply");
+      expect(payload.failed_count ?? 0).toBeGreaterThanOrEqual(1);
+      const failedRow = (payload.rows ?? []).find((row) => row.status === "failed");
+      expect(failedRow).toBeDefined();
     });
   });
 });

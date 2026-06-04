@@ -1,10 +1,21 @@
-import { mkdir, readFile } from "node:fs/promises";
-import path from "node:path";
-import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
+import { pathExists } from "../../core/fs/fs-utils.js";
+import {
+  createCheckpointId,
+  loadMutationCheckpoint,
+  restoreCheckpointItems,
+  writeMutationCheckpoint,
+  type MutationCheckpointItem,
+} from "../../core/checkpoint/mutation-checkpoint.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { applyTagRemovals, mergeAdditiveTags, parseTags } from "../../core/item/parse.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
-import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
+import { collectRuntimeUpdateFieldValues } from "../../core/schema/runtime-field-values.js";
+import {
+  resolveRuntimeFieldRegistry,
+  resolveRuntimeStatusRegistry,
+  type RuntimeFieldRegistry,
+  type RuntimeStatusRegistry,
+} from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -20,7 +31,7 @@ import { runRestore } from "./restore.js";
 import { runUpdate, type UpdateCommandOptions } from "./update.js";
 
 const UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION = 1;
-const UPDATE_MANY_CHECKPOINT_DIRECTORY = ["checkpoints", "update-many"] as const;
+const UPDATE_MANY_CHECKPOINT_SUBDIR = "update-many";
 
 const NON_MUTATION_UPDATE_OPTION_KEYS = new Set<keyof UpdateCommandOptions>([
   "author",
@@ -218,11 +229,6 @@ const UNSET_FIELD_ALIASES: Record<string, string> = {
   tags: "tags",
 };
 
-interface UpdateManyCheckpointItem {
-  id: string;
-  target_updated_at: string;
-}
-
 interface UpdateManyCheckpoint {
   schema_version: number;
   id: string;
@@ -231,7 +237,7 @@ interface UpdateManyCheckpoint {
   status_filter: string | null;
   list_filters: Record<string, unknown>;
   update_options: Record<string, unknown>;
-  items: UpdateManyCheckpointItem[];
+  items: MutationCheckpointItem[];
 }
 
 export interface UpdateManyCommandOptions {
@@ -290,17 +296,6 @@ export interface UpdateManyResult {
   rollback_checkpoint_id?: string;
   rows?: UpdateManyApplyResultRow[] | UpdateManyRollbackResultRow[];
   ids: string[];
-}
-
-function normalizeCheckpointId(raw: string): string {
-  const trimmed = raw.trim();
-  if (!trimmed) {
-    throw new PmCliError("--rollback requires a non-empty checkpoint ID", EXIT_CODE.USAGE);
-  }
-  if (!/^[a-zA-Z0-9._-]+$/.test(trimmed)) {
-    throw new PmCliError("--rollback checkpoint ID must match [a-zA-Z0-9._-]+", EXIT_CODE.USAGE);
-  }
-  return trimmed;
 }
 
 function sanitizeUpdateOptionsForSummary(options: UpdateCommandOptions): Record<string, unknown> {
@@ -439,15 +434,20 @@ function buildTagMutationPlan(row: Record<string, unknown>, update: UpdateComman
   return { field: "tags", before: existing, after };
 }
 
-function buildPlannedItemDiff(item: ListedItem, update: UpdateCommandOptions): PlannedItemDiff {
+function buildPlannedItemDiff(
+  item: ListedItem,
+  update: UpdateCommandOptions | undefined,
+  runtimeFieldRegistry: RuntimeFieldRegistry,
+): PlannedItemDiff {
+  const safeUpdate = update ?? {};
   const row = toItemRecord(item);
   const changes: PlannedChange[] = [];
-  const tagPlan = buildTagMutationPlan(row, update);
+  const tagPlan = buildTagMutationPlan(row, safeUpdate);
   if (tagPlan) {
     changes.push(tagPlan);
   }
   for (const [optionKey, itemKey] of Object.entries(UPDATE_OPTION_TO_ITEM_KEY) as Array<[keyof UpdateCommandOptions, string]>) {
-    const candidate = update[optionKey];
+    const candidate = safeUpdate[optionKey];
     if (candidate === undefined) {
       continue;
     }
@@ -462,10 +462,27 @@ function buildPlannedItemDiff(item: ListedItem, update: UpdateCommandOptions): P
       after,
     });
   }
-  changes.push(...buildCollectionMutationPlans(row, update));
+  changes.push(...buildCollectionMutationPlans(row, safeUpdate));
 
-  if (update.unset && update.unset.length > 0) {
-    for (const rawUnsetField of update.unset) {
+  const runtimeFieldUpdates = collectRuntimeUpdateFieldValues(
+    safeUpdate as Record<string, unknown>,
+    runtimeFieldRegistry,
+    ["update_many"],
+  );
+  for (const [fieldKey, fieldValue] of Object.entries(runtimeFieldUpdates)) {
+    const before = row[fieldKey];
+    if (areValuesEqual(before, fieldValue)) {
+      continue;
+    }
+    changes.push({
+      field: fieldKey,
+      before,
+      after: fieldValue,
+    });
+  }
+
+  if (safeUpdate.unset && safeUpdate.unset.length > 0) {
+    for (const rawUnsetField of safeUpdate.unset) {
       const field = normalizeUnsetField(rawUnsetField);
       const before = row[field];
       if (before === undefined) {
@@ -485,20 +502,6 @@ function buildPlannedItemDiff(item: ListedItem, update: UpdateCommandOptions): P
   };
 }
 
-function createCheckpointId(nowValue: string): string {
-  const compactTimestamp = nowValue.replace(/[-:.TZ]/g, "").slice(0, 14);
-  const randomSuffix = Math.random().toString(36).slice(2, 8);
-  return `update-many-${compactTimestamp}-${randomSuffix}`;
-}
-
-function checkpointDirectoryPath(pmRoot: string): string {
-  return path.join(pmRoot, ...UPDATE_MANY_CHECKPOINT_DIRECTORY);
-}
-
-function checkpointFilePath(pmRoot: string, checkpointId: string): string {
-  return path.join(checkpointDirectoryPath(pmRoot), `${checkpointId}.json`);
-}
-
 function normalizeStatusFilter(value: string | undefined, statusRegistry: RuntimeStatusRegistry): ItemStatus | undefined {
   if (value === undefined) {
     return undefined;
@@ -514,83 +517,38 @@ function normalizeStatusFilter(value: string | undefined, statusRegistry: Runtim
   return normalized;
 }
 
-function hasListFilters(list: ListOptions, status: string | undefined): boolean {
+function hasListFilters(list: ListOptions | undefined, status: string | undefined): boolean {
+  const isActive = (value: unknown): boolean =>
+    value != null && (typeof value !== "string" || value.split(",").some((entry) => entry.trim().length > 0));
   return (
-    status !== undefined ||
-    list.type !== undefined ||
-    list.tag !== undefined ||
-    list.priority !== undefined ||
-    list.deadlineBefore !== undefined ||
-    list.deadlineAfter !== undefined ||
-    list.assignee !== undefined ||
-    list.assigneeFilter !== undefined ||
-    list.parent !== undefined ||
-    list.sprint !== undefined ||
-    list.release !== undefined ||
-    list.limit !== undefined ||
-    list.offset !== undefined
+    isActive(status) ||
+    isActive(list?.status) ||
+    isActive(list?.type) ||
+    isActive(list?.tag) ||
+    isActive(list?.priority) ||
+    isActive(list?.deadlineBefore) ||
+    isActive(list?.deadlineAfter) ||
+    isActive(list?.updatedAfter) ||
+    isActive(list?.updatedBefore) ||
+    isActive(list?.createdAfter) ||
+    isActive(list?.createdBefore) ||
+    isActive(list?.ids) ||
+    isActive(list?.assignee) ||
+    isActive(list?.assigneeFilter) ||
+    isActive(list?.parent) ||
+    isActive(list?.sprint) ||
+    isActive(list?.release) ||
+    isActive(list?.limit) ||
+    isActive(list?.offset)
   );
 }
 
-
-function ensureCheckpointShape(value: unknown, checkpointId: string): UpdateManyCheckpoint {
-  if (!value || typeof value !== "object") {
-    throw new PmCliError(`Checkpoint ${checkpointId} is invalid`, EXIT_CODE.GENERIC_FAILURE);
+function rejectBlankIdsFilter(list: ListOptions | undefined): void {
+  if (list?.ids != null && String(list.ids).trim().length === 0) {
+    throw new PmCliError("--ids requires at least one non-empty item ID", EXIT_CODE.USAGE);
   }
-  const record = value as Record<string, unknown>;
-  if (record.schema_version !== UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION) {
-    throw new PmCliError(`Checkpoint ${checkpointId} has unsupported schema version`, EXIT_CODE.GENERIC_FAILURE);
-  }
-  if (!Array.isArray(record.items)) {
-    throw new PmCliError(`Checkpoint ${checkpointId} is missing items`, EXIT_CODE.GENERIC_FAILURE);
-  }
-  const items = record.items.map((entry) => {
-    if (!entry || typeof entry !== "object") {
-      throw new PmCliError(`Checkpoint ${checkpointId} contains an invalid item entry`, EXIT_CODE.GENERIC_FAILURE);
-    }
-    const row = entry as Record<string, unknown>;
-    if (typeof row.id !== "string" || row.id.trim().length === 0) {
-      throw new PmCliError(`Checkpoint ${checkpointId} contains an item entry without ID`, EXIT_CODE.GENERIC_FAILURE);
-    }
-    if (typeof row.target_updated_at !== "string" || row.target_updated_at.trim().length === 0) {
-      throw new PmCliError(`Checkpoint ${checkpointId} contains an item entry without target_updated_at`, EXIT_CODE.GENERIC_FAILURE);
-    }
-    return {
-      id: row.id.trim(),
-      target_updated_at: row.target_updated_at.trim(),
-    };
-  });
-  return {
-    schema_version: UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION,
-    id: typeof record.id === "string" ? record.id : checkpointId,
-    created_at: typeof record.created_at === "string" ? record.created_at : nowIso(),
-    author: typeof record.author === "string" ? record.author : "unknown",
-    status_filter: typeof record.status_filter === "string" ? record.status_filter : null,
-    list_filters:
-      record.list_filters && typeof record.list_filters === "object" && !Array.isArray(record.list_filters)
-        ? (record.list_filters as Record<string, unknown>)
-        : {},
-    update_options:
-      record.update_options && typeof record.update_options === "object" && !Array.isArray(record.update_options)
-        ? (record.update_options as Record<string, unknown>)
-        : {},
-    items,
-  };
 }
 
-async function loadCheckpoint(pmRoot: string, checkpointId: string): Promise<{ checkpoint: UpdateManyCheckpoint; path: string }> {
-  const normalizedId = normalizeCheckpointId(checkpointId);
-  const filePath = checkpointFilePath(pmRoot, normalizedId);
-  if (!(await pathExists(filePath))) {
-    throw new PmCliError(`Checkpoint ${normalizedId} not found`, EXIT_CODE.NOT_FOUND);
-  }
-  const raw = await readFile(filePath, "utf8");
-  const parsed = JSON.parse(raw) as unknown;
-  return {
-    checkpoint: ensureCheckpointShape(parsed, normalizedId),
-    path: filePath,
-  };
-}
 
 export async function runUpdateMany(options: UpdateManyCommandOptions, global: GlobalOptions): Promise<UpdateManyResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
@@ -599,10 +557,12 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
   }
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+  const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
 
   const dryRun = options.dryRun === true;
   const rollbackId = typeof options.rollback === "string" ? options.rollback : undefined;
   const updateSummary = sanitizeUpdateOptionsForSummary(options.update);
+  rejectBlankIdsFilter(options.list);
 
   if (rollbackId) {
     if (dryRun) {
@@ -615,38 +575,25 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
       throw new PmCliError("Rollback mode does not accept update mutation flags", EXIT_CODE.USAGE);
     }
 
-    const { checkpoint, path: checkpointPath } = await loadCheckpoint(pmRoot, rollbackId);
-    const rollbackRows: UpdateManyRollbackResultRow[] = [];
-    const restoredIds: string[] = [];
-    const restoreMessage = options.update.message ?? `Rollback update-many checkpoint ${checkpoint.id}`;
-    for (const entry of checkpoint.items) {
-      try {
-        const restored = await runRestore(
-          entry.id,
-          entry.target_updated_at,
-          {
-            author: options.update.author,
-            message: restoreMessage,
-            force: options.update.force ?? true,
-          },
-          global,
-        );
-        rollbackRows.push({
-          id: entry.id,
-          status: "restored",
-          changed_fields: restored.changed_fields,
-          warnings: restored.warnings,
-        });
-        restoredIds.push(entry.id);
-      } catch (error: unknown) {
-        rollbackRows.push({
-          id: entry.id,
-          status: "failed",
-          error: toErrorMessage(error),
-        });
-      }
-    }
-    const failedCount = rollbackRows.filter((row) => row.status === "failed").length;
+    const checkpoint = await loadMutationCheckpoint(
+      pmRoot,
+      UPDATE_MANY_CHECKPOINT_SUBDIR,
+      rollbackId,
+      UPDATE_MANY_CHECKPOINT_SCHEMA_VERSION,
+    );
+    const restoreMessage = options.update?.message ?? `Rollback update-many checkpoint ${checkpoint.id}`;
+    const rollback = await restoreCheckpointItems(checkpoint.items, (id, targetUpdatedAt) =>
+      runRestore(
+        id,
+        targetUpdatedAt,
+        {
+          author: options.update?.author,
+          message: restoreMessage,
+          force: options.update?.force ?? true,
+        },
+        global,
+      ),
+    );
     return {
       mode: "rollback",
       matched_count: checkpoint.items.length,
@@ -655,13 +602,13 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
       checkpoint: {
         id: checkpoint.id,
         created_at: checkpoint.created_at,
-        path: checkpointPath,
+        path: checkpoint.path,
         rollback_command: `pm update-many --rollback ${checkpoint.id}`,
       },
-      restored_count: restoredIds.length,
-      failed_count: failedCount,
-      rows: rollbackRows,
-      ids: restoredIds,
+      restored_count: rollback.restored_ids.length,
+      failed_count: rollback.failed_count,
+      rows: rollback.rows,
+      ids: rollback.restored_ids,
     };
   }
 
@@ -674,7 +621,7 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
 
   const statusFilter = normalizeStatusFilter(options.status, statusRegistry);
   const listed = await runList(statusFilter, { ...options.list, includeBody: true }, global);
-  const planned = listed.items.map((item) => buildPlannedItemDiff(item, options.update));
+  const planned = listed.items.map((item) => buildPlannedItemDiff(item, options.update, runtimeFieldRegistry));
   const actionable = planned.filter((row) => row.changes.length > 0);
   if (dryRun) {
     return {
@@ -707,9 +654,9 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
   }
 
   const nowValue = nowIso();
-  const checkpointId = createCheckpointId(nowValue);
+  const checkpointId = createCheckpointId(UPDATE_MANY_CHECKPOINT_SUBDIR, nowValue);
   const checkpointEnabled = options.checkpoint !== false;
-  const checkpointItems: UpdateManyCheckpointItem[] = listed.items
+  const checkpointItems: MutationCheckpointItem[] = listed.items
     .filter((item) => actionable.some((candidate) => candidate.id === item.id))
     .map((item) => ({
       id: item.id,
@@ -728,10 +675,12 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
       update_options: updateSummary,
       items: checkpointItems,
     };
-    const checkpointDir = checkpointDirectoryPath(pmRoot);
-    await mkdir(checkpointDir, { recursive: true });
-    const checkpointPath = checkpointFilePath(pmRoot, checkpointId);
-    await writeFileAtomic(checkpointPath, `${JSON.stringify(checkpointPayload, null, 2)}\n`);
+    const checkpointPath = await writeMutationCheckpoint(
+      pmRoot,
+      UPDATE_MANY_CHECKPOINT_SUBDIR,
+      checkpointId,
+      checkpointPayload,
+    );
     checkpointInfo = {
       id: checkpointId,
       created_at: nowValue,
@@ -755,6 +704,7 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
         {
           ...options.update,
           message: updateMessage,
+          runtimeFieldCommands: ["update_many"],
         },
         global,
       );

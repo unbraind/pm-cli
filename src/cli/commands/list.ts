@@ -1,7 +1,8 @@
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { toItemRecord } from "../../core/item/item-record.js";
-import { isTerminalStatus, normalizeStatusInput } from "../../core/item/status.js";
+import { isTerminalStatus } from "../../core/item/status.js";
+import { parseStatusFilterCsv } from "../../core/item/status-filter.js";
 import { resolveItemTypeRegistry, type ItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseIntegerLimit, parsePriority, parseType } from "../shared-parsers.js";
 import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
@@ -27,6 +28,11 @@ export interface ListOptions {
   priority?: string;
   deadlineBefore?: string;
   deadlineAfter?: string;
+  updatedAfter?: string;
+  updatedBefore?: string;
+  createdAfter?: string;
+  createdBefore?: string;
+  ids?: string;
   assignee?: string;
   assigneeFilter?: string;
   parent?: string;
@@ -109,6 +115,35 @@ function sortItemsDefault(items: ListedItem[], statusRegistry: RuntimeStatusRegi
 function parseDeadline(raw: string | undefined, fieldLabel: string): string | undefined {
   if (raw === undefined) return undefined;
   return resolveIsoOrRelative(raw, new Date(), fieldLabel);
+}
+
+// updated/created date-window filters share the deadline ISO+relative resolver
+// so agents doing incremental "what changed since my last context window" syncs
+// can pass either an ISO timestamp (the common case — feed back the previous
+// run's `now`) or a SIGNED relative offset where "-2h"/"-7d" reach into the
+// past and "+1d" into the future (units h/d/w/m, m = months — there is no
+// minutes unit, matching the deadline resolver).
+function parseTimestampWindow(raw: unknown, fieldLabel: string): string | undefined {
+  if (raw == null) return undefined;
+  const value = String(raw).trim();
+  if (value.length === 0) return undefined;
+  return resolveIsoOrRelative(value, new Date(), fieldLabel);
+}
+
+function parseIdsFilter(raw: unknown): Set<string> | undefined {
+  if (raw == null) return undefined;
+  const value = String(raw).trim();
+  if (value.length === 0) {
+    throw new PmCliError("--ids requires at least one non-empty item ID", EXIT_CODE.USAGE);
+  }
+  const ids = value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+  if (ids.length === 0) {
+    throw new PmCliError("--ids requires at least one non-empty item ID", EXIT_CODE.USAGE);
+  }
+  return new Set(ids);
 }
 
 function parseOffset(raw: string | undefined): number | undefined {
@@ -253,31 +288,14 @@ function parseAssigneeFilter(raw: string | undefined): "assigned" | "unassigned"
   return normalized;
 }
 
-function resolveSingleStatusToken(token: string, statusRegistry: RuntimeStatusRegistry): ItemStatus {
-  const trimmed = token.trim().toLowerCase();
-  if (trimmed === "open") return statusRegistry.open_status;
-  if (trimmed === "closed") return statusRegistry.close_status;
-  if (trimmed === "canceled" || trimmed === "cancelled") return statusRegistry.canceled_status;
-  const normalized = normalizeStatusInput(token, statusRegistry);
-  return normalized ?? (token as ItemStatus);
-}
-
+// `pm list` keeps lenient status parsing (an unknown token is passed through
+// verbatim and simply matches nothing) so custom/unknown statuses never error;
+// the shared CSV parser resolves the open/closed/canceled workflow-group aliases.
 function resolveStatusFilter(
   status: ItemStatus | undefined,
   statusRegistry: RuntimeStatusRegistry,
 ): ItemStatus[] | undefined {
-  if (status === undefined) {
-    return undefined;
-  }
-  const tokens = String(status)
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-  if (tokens.length === 0) {
-    return undefined;
-  }
-  const resolved = tokens.map((token) => resolveSingleStatusToken(token, statusRegistry));
-  return [...new Set(resolved)];
+  return parseStatusFilterCsv(status, statusRegistry, { strict: false });
 }
 
 function applyFilters(
@@ -294,6 +312,11 @@ function applyFilters(
   const priorityFilter = parsePriority(options.priority);
   const deadlineBefore = parseDeadline(options.deadlineBefore, "deadline-before");
   const deadlineAfter = parseDeadline(options.deadlineAfter, "deadline-after");
+  const updatedAfter = parseTimestampWindow(options.updatedAfter, "updated-after");
+  const updatedBefore = parseTimestampWindow(options.updatedBefore, "updated-before");
+  const createdAfter = parseTimestampWindow(options.createdAfter, "created-after");
+  const createdBefore = parseTimestampWindow(options.createdBefore, "created-before");
+  const idsFilter = parseIdsFilter(options.ids);
   const assigneeFilter = options.assignee?.trim();
   const assigneeModeFilter = parseAssigneeFilter(options.assigneeFilter);
   const parentFilter = options.parent?.trim();
@@ -311,6 +334,7 @@ function applyFilters(
   }
 
   return items.filter((item) => {
+    if (idsFilter && !idsFilter.has(item.id)) return false;
     if (statusSet && !statusSet.has(item.status)) return false;
     if (options.excludeTerminal && isTerminalStatus(item.status, statusRegistry)) return false;
     if (typeFilter && item.type !== typeFilter) return false;
@@ -318,6 +342,10 @@ function applyFilters(
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
     if (deadlineBefore && (!item.deadline || compareTimestampStrings(item.deadline, deadlineBefore) > 0)) return false;
     if (deadlineAfter && (!item.deadline || compareTimestampStrings(item.deadline, deadlineAfter) < 0)) return false;
+    if (updatedAfter && compareTimestampStrings(item.updated_at, updatedAfter) < 0) return false;
+    if (updatedBefore && compareTimestampStrings(item.updated_at, updatedBefore) > 0) return false;
+    if (createdAfter && compareTimestampStrings(item.created_at, createdAfter) < 0) return false;
+    if (createdBefore && compareTimestampStrings(item.created_at, createdBefore) > 0) return false;
     if (assigneeModeFilter === "assigned" && !item.assignee) return false;
     if (assigneeModeFilter === "unassigned" && item.assignee) return false;
     if (assigneeFilter !== undefined && item.assignee !== assigneeFilter) {
@@ -484,6 +512,11 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       priority: options.priority ?? null,
       deadline_before: options.deadlineBefore ?? null,
       deadline_after: options.deadlineAfter ?? null,
+      updated_after: options.updatedAfter ?? null,
+      updated_before: options.updatedBefore ?? null,
+      created_after: options.createdAfter ?? null,
+      created_before: options.createdBefore ?? null,
+      ids: options.ids ?? null,
       assignee: options.assignee ?? null,
       assignee_filter: options.assigneeFilter ?? null,
       parent: options.parent ?? null,

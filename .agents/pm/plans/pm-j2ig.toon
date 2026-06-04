@@ -1,0 +1,167 @@
+id: pm-j2ig
+title: "Agent context & bulk-ops primitives: incremental date filters, search --status, --ids targeting, close-many"
+description: "Deliver four interlocking agent-facing CLI/SDK primitives that serve project-management=context-management: pm list --updated-after/--updated-before/--created-after/--created-before (pm-y138/pm-ankr), pm search --status parity (pm-ec4s/pm-arew), pm update-many --ids explicit ID allowlist (pm-1h99), and pm close-many bulk-close with runClose semantics + dry-run + checkpoint/rollback (pm-i17g/pm-9mjw)."
+type: Plan
+status: in_progress
+priority: 1
+tags[5]: agent-ux,"area:cli",bulk-ops,living-map,query
+created_at: "2026-06-04T15:24:46.355Z"
+updated_at: "2026-06-04T19:50:56.758Z"
+assignee: codex-sdk-continuation
+author: maintainer-agent
+parent: pm-mpbb
+dependencies[8]{id,kind,created_at,author,source_kind}:
+  pm-1h99,related,"2026-06-04T15:24:46.355Z",null,null
+  pm-9mjw,related,"2026-06-04T15:24:46.355Z",null,null
+  pm-ankr,related,"2026-06-04T15:24:46.355Z",null,null
+  pm-arew,related,"2026-06-04T15:24:46.355Z",null,null
+  pm-ec4s,related,"2026-06-04T15:24:46.355Z",null,null
+  pm-i17g,related,"2026-06-04T15:24:46.355Z",null,null
+  pm-mpbb,parent,"2026-06-04T15:24:46.355Z",null,null
+  pm-y138,related,"2026-06-04T15:24:46.355Z",null,null
+comments[25]{created_at,author,text}:
+  "2026-06-04T16:08:58.985Z",claude-code-agent,"test-author subagent: added 1 list date-window test case covering --updated-after/--updated-before/--created-after/--created-before relative+ISO semantics, raw-input filter echo, null defaults, and invalid-value USAGE error (tests/unit/list-command.spec.ts); 2 search --status test cases covering open/closed alias filtering + raw-input echo + null default and the strict Invalid --status \"opne\" did-you-mean rejection (tests/unit/search-command.spec.ts); 7 close-many test cases via runCli covering missing-filter guard, missing-reason guard (apply+dry-run), non-mutating dry-run plan, apply (open closed + already_terminal skip + rollback checkpoint), --force re-close, rollback restore-to-open, active-child orphan annotation, and --validate-close strict failed row (tests/unit/close-command.spec.ts). All green: list 16 passed, search 39 passed, close 23 passed; combined run 78 passed (3 files). Only the three allowed test files were touched (insertions only)."
+  "2026-06-04T16:23:13.331Z",codex-sdk-continuation,"Continuation evidence: branch cli-incremental-context-and-bulk-ops-20260604 is 1 commit ahead of origin/main with no local unstaged diff; gh pr list returned no open PRs; gh issue list returned no open issues; Dependabot alert API returned only fixed alerts #1-#34; npm view pm-changelog version returned 2026.6.4 and project package doctor deep trace is ok with pm-changelog 2026.6.4 active."
+  "2026-06-04T16:26:22.710Z",codex-sdk-contract-subagent,"SDK/contract verification subagent evidence: reviewed branch commit 7504da28 for agent context + bulk-ops primitives against SDK/CLI/MCP package-author surfaces. Findings: no bounded SDK/contract bug found. Verified close-many is exported from src/cli/commands/index.ts, registered as core command/action, listed in PM_CORE_COMMAND_NAMES/PM_TOOL_ACTIONS, exposed through pm contracts --command close-many --flags-only --json and pm contracts --action close-many --schema-only --json with filter date-window fields, --ids, reason/resolution/expectedResult/actualResult/validateClose/dryRun/rollback/noCheckpoint parameters. Verified update-many contracts expose date-window filter fields + --ids, list contracts expose updated/created date-window filters, search contracts expose --status, and pm search --status opne returns strict did-you-mean usage guidance. Commands run: pnpm build; pm contracts --command close-many --flags-only --json; pm close-many --help --json; pm contracts --command search --flags-only --json; pm contracts --action close-many --schema-only --json; pm contracts --action update-many --schema-only --json; pm list --help --json; pm search pm-j2ig --status opne --json (expected exit 2); node scripts/run-tests.mjs test -- tests/unit/status-normalization.spec.ts tests/unit/list-command.spec.ts tests/unit/search-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/close-command.spec.ts (140 passed); temp-project dist/cli.js smoke covering list --updated-after, search --status open, update-many --ids apply, close-many --ids --dry-run (passed). Note: an attempted temp smoke with pm init --name and pm list --ids correctly failed as unsupported current contracts; reran with pm init and mutation-scoped --ids. Changed files by this subagent: none besides this pm evidence comment."
+  "2026-06-04T16:27:53.935Z",codex-gh-release-subagent,"GitHub/release/security verification subagent evidence (2026-06-04T16:30Z, branch cli-incremental-context-and-bulk-ops-20260604):\n- GitHub live state: gh repo view => unbraind/pm-cli public repo, default branch main; gh pr list --state open => []; gh issue list --state open => []. Current branch is 1 commit ahead of origin/main and has no open branch workflow runs yet.\n- Recent CI/release state: latest main CI run 26945147068 success; latest main Docs run 26945085852 success; Nightly Validation schedule run 26939971636 success. Latest Auto Release schedule run 26936604085 failed at Run auto release pipeline because SENTRY_PERSONAL_ADMIN_TOKEN was empty; Release workflow latest runs 26804564260 and 26741550574 also failed after dispatch on Jun 2/Jun 1. Latest GitHub release remains v2026.5.31 (2026-05-31T06:52:03Z). This is environment/secret readiness, not a code regression in this branch.\n- Security state: gh api dependabot alerts state=open => []; vulnerability-alerts endpoint returned HTTP 204; secret-scanning alerts state=open => []; repo security advisories state=open => []; code-scanning alerts returned 404 no analysis found plus missing admin:repo_hook scope, so no code-scanning evidence is available through current auth.\n- Dependency state: pnpm audit --audit-level moderate => No known vulnerabilities found. pnpm outdated reports only commander 14.0.3 -> 15.0.0, but npm view commander@15.0.0 engines => node >=22.12.0 while README/package/workflows still support/run Node 20. I kept/restored commander at ^14.0.3 and refreshed pnpm-lock.yaml to avoid a release compatibility break for CI, Docs, Nightly, and Auto Release Node 20 jobs.\n- pm-changelog state: npm view pm-changelog version => 2026.6.4; pnpm changelog:pm:check installed/activated pm-changelog 2026.6.4 and reported CHANGELOG.md unchanged, item_count 961, check true. .agents/pm/extensions/.managed-extensions.json timestamp refreshed from the latest install.\n- Verification passed after the dependency compatibility fix: pnpm audit --audit-level moderate, pnpm build, pnpm changelog:pm:check.\nCommands run included: gh pr list, gh issue list, gh run list, gh run view 26936604085 --log-failed, gh release list, gh api dependabot/code-scanning/secret-scanning/vulnerability/security-advisory endpoints, pnpm audit, pnpm outdated, npm view pm-changelog version, npm view commander@15.0.0 engines, pnpm add commander@^14.0.3, pnpm build, pnpm changelog:pm:check."
+  "2026-06-04T16:28:31.321Z",codex-sdk-continuation,"Dependency verification clarification: commander@15.0.0 is the only direct outdated dependency, but npm metadata requires Node >=22.12.0 while this repo still supports Node 20; left commander at ^14.0.3 and reverted attempted lockfile/managed-extension timestamp churn before final verification."
+  "2026-06-04T16:31:55.058Z",codex-sdk-continuation,"Verification evidence: node scripts/run-tests.mjs test had 3 failures in full parallel run (health/update-many/integration), but each failed test passed when rerun individually; node scripts/run-tests.mjs coverage then passed 137 files / 2254 tests with 100% coverage. Manual temp-directory smoke passed with sandboxed PM_PATH covering list --updated-after, search --status open, update-many --ids, close-many --dry-run item_plans, and close-many apply rows."
+  "2026-06-04T16:32:34.374Z",codex-sdk-continuation,"Pre-PR verification evidence: pnpm changelog:pm and pnpm changelog:pm:check used pm-changelog@2026.6.4 and reported CHANGELOG.md unchanged (item_count 961); pm validate --check-resolution --check-history-drift passed with history_drift ok and pre-existing validate_resolution_missing_fields:42 warning; Sentry telemetry gate passed with 0 critical/high, telemetry finish error rate 2%, no missing error-code rows; telemetry stack health passed with healthy containers, queue depth 0, and 14310 events in last 24h."
+  "2026-06-04T16:36:23.668Z",codex-sdk-continuation,"Release-gate evidence: node scripts/release/run-gates.mjs --telemetry-mode required --json passed build, typecheck, docs-skills gate, static-quality gate, coverage 2254 tests/100%, version policy, secret scan, npx packed smoke, package-first dogfood (87 commands), npm pack dry-run, compatibility check from 2026.5.31, and sentry-telemetry-gate with 0 critical/high and telemetry error rate 1.99%."
+  "2026-06-04T16:47:14.795Z",codex-sdk-continuation,"Review follow-up evidence: addressed Gemini feedback on PR #110 by making close-many filter guards ignore null/empty programmatic filters, sorting close-many matched items by parent-depth descending so children close before parents under strict validation, adding null-safe status/date/id parsing, and using optional chaining for update-many rollback options. Focused verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/list-command.spec.ts tests/unit/status-normalization.spec.ts tests/unit/update-many-command.spec.ts (105 tests)."
+  "2026-06-04T16:49:55.169Z",codex-sdk-continuation,"Review follow-up verification: node scripts/run-tests.mjs coverage passed after Gemini fixes with 137 files / 2258 tests / 100% coverage; pnpm changelog:pm:check with pm-changelog@2026.6.4 still reports CHANGELOG.md unchanged (item_count 961)."
+  "2026-06-04T17:10:19.884Z",codex-sdk-continuation,"Second review follow-up evidence: addressed new PR #110 review comments by translating MCP pm_run close-many flat filter options into the nested CLI shape, exposing list --ids in command registration, sanitizing inactive/null filters before bulk list evaluation, rejecting close-many rollback limit/offset, preserving child-before-parent strict close ordering with cached hierarchy depth, wrapping malformed checkpoint JSON in PmCliError, and clarifying help/completion text. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/list-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/status-normalization.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts (5 files, 117 tests); node scripts/run-tests.mjs coverage (137 files, 2263 tests, 100% coverage); pnpm changelog:pm:check with pm-changelog 2026.6.4 unchanged at 961 closed items."
+  "2026-06-04T17:33:24.356Z",codex-sdk-continuation,"Third review follow-up evidence: addressed new PR #110 findings by rejecting whitespace/comma-only bulk close filters, making close-many list options optional/null-safe, treating empty list date/id filters as omitted, making close-many warnings optional-safe, mapping MCP pm_run update-many flat options into nested list/update/control shapes, keeping update-many filter selectors out of update options, exposing list --ids in CLI and tool contracts, and applying/planning runtime fields registered for update_many by collecting update/update_many runtime values and counting them before runUpdate's no-op guard. Verification passed: pnpm build; focused test run (6 files, 125 tests); node dist/cli.js contracts --command list --flags-only --json confirmed --ids; node scripts/run-tests.mjs coverage (137 files, 2269 tests, 100% coverage); pnpm changelog:pm:check with pm-changelog 2026.6.4 unchanged at 961 closed items."
+  "2026-06-04T17:42:30.175Z",codex-sdk-continuation,"Fourth review follow-up evidence: fixed Gemini high-priority finding in close-many rollback conflict detection by converting programmatic numeric limit/offset values with String(...) before trimming, preventing TypeError crashes for MCP/API callers. Added regression coverage for numeric rollback limit/offset. Verification passed: pnpm build; focused test run (6 files, 126 tests); node scripts/run-tests.mjs coverage (137 files, 2270 tests, 100% coverage); pnpm changelog:pm:check with pm-changelog 2026.6.4 unchanged at 961 closed items."
+  "2026-06-04T17:52:04.681Z",codex-sdk-continuation,"Review follow-up 5: post-push review window found fresh actionable issues on commit 550507d12e. Fixing MCP bulk option normalization for numeric filters/limits, structured update-many payloads, update-many alias normalization, and buildPlannedItemDiff undefined update safety before another verification/push/review cycle."
+  "2026-06-04T17:57:29.084Z",codex-sdk-continuation,"Review follow-up 5 evidence: addressed latest PR #110 comments by preserving numeric MCP bulk filters/limits via scalar coercion, forwarding structured MCP update-many {list,update} payloads, normalizing flat update-many mutation aliases through normalizeUpdateOptions (including numeric estimate aliases), and making buildPlannedItemDiff safe for undefined update options. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/update-many-command.spec.ts (2 files, 37 tests); node scripts/run-tests.mjs coverage (137 files, 2272 tests, 100% coverage); pnpm changelog:pm:check with pm-changelog 2026.6.4 unchanged at 961 closed items."
+  "2026-06-04T18:03:54.706Z",codex-sdk-continuation,"Review follow-up 6: latest Gemini review on commit 261538e8 found nested MCP list payloads were cast directly instead of normalized. Fixing normalizeListOptions numeric coercion for known list fields, routing nested MCP update-many/close-many list payloads through it, and adding regressions before another verification/push/review wait."
+  "2026-06-04T18:07:19.118Z",codex-sdk-continuation,"Review follow-up 6 evidence: addressed latest Gemini nested MCP list feedback by importing normalizeListOptions in the MCP adapter, routing nested update-many and close-many list payloads through it, and extending normalizeListOptions to stringify numeric known list scalar aliases such as priority/limit/offset. Added nested numeric list regressions for MCP update-many and close-many. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/update-many-command.spec.ts (2 files, 37 tests); node scripts/run-tests.mjs coverage (137 files, 2272 tests, 100% coverage); pnpm changelog:pm:check with pm-changelog 2026.6.4 unchanged at 961 closed items."
+  "2026-06-04T18:28:35.556Z",codex-sdk-continuation,"Review follow-up 7: final post-wait sweep found new Codex comments on commit 1892077f. Fixing mixed nested-list/flat-update MCP update-many payloads, scalar-to-array normalization for nested update repeatables, nested list.status scoping guards for close-many and update-many rollback, and runtime-field update/update_many command scoping before another verification/push/review wait."
+  "2026-06-04T18:35:53.362Z",codex-sdk-continuation,"Review follow-up 7 evidence: addressed latest Codex findings by preserving flat mutation fields when MCP update-many uses nested list without nested update, promoting scalar nested update-many repeatables through normalizeOptionsArrays, including nested list.status in close-many scope checks and update-many rollback filter conflicts, and making runtime field collection command-aware so update_many-only fields are not writable by regular update while still applying through update-many. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/update-many-command.spec.ts tests/unit/close-command.spec.ts tests/unit/update-command.spec.ts (4 files, 152 tests); node scripts/run-tests.mjs coverage (137 files, 2277 tests, 100% coverage); pnpm changelog:pm:check with pm-changelog 2026.6.4 unchanged at 961 closed items."
+  "2026-06-04T18:57:06.913Z",codex-sdk-continuation,"Review follow-up 8: post-wait sweep found new Gemini/Codex comments on commit acce8b8c. Fixing defensive non-string handling for status/date/id/reason/runtime command inputs, warning length idiom, update-many runtime field scope to update_many-only, and top-level MCP pm_run close-many reason forwarding before another verification/push/review wait."
+  "2026-06-04T19:01:54.610Z",codex-sdk-continuation,"Review follow-up 8 evidence: addressed latest Gemini/Codex findings by defensively handling non-string status filters, list date/id filters, close-many reasons, and nullable runtime command scopes; using a safer close-many warnings length check; restricting update-many runtime fields to update_many-only; and forwarding top-level MCP pm_run close-many reason into runner options. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/update-many-command.spec.ts tests/unit/close-command.spec.ts tests/unit/list-command.spec.ts tests/unit/status-normalization.spec.ts (5 files, 133 tests); node scripts/run-tests.mjs coverage (137 files, 2279 tests, 100% coverage); pnpm changelog:pm:check with pm-changelog 2026.6.4 unchanged at 961 closed items."
+  "2026-06-04T19:23:17.867Z",codex-sdk-continuation,"Review follow-up 9: final sweep found new comments on commit 6c6d4b9a. Fixing blank ids rejection for explicit --ids, close-many active-child dry-run warnings when children are also in the batch, top-level MCP pm_run close-many force forwarding, update-many runtime-field contract discovery for update_many-only fields, and hierarchyDepth caching polish before another verification/push/review wait."
+  "2026-06-04T19:31:31.024Z",codex-sdk-continuation,"Review follow-up 9 evidence: addressed latest current-commit comments by rejecting explicit blank --ids before list/update-many/close-many bulk evaluation, suppressing close-many active_child_ids warnings for children also planned in the same batch, forwarding top-level MCP pm_run close-many force, advertising update_many runtime fields in update-many contracts, and caching intermediate hierarchyDepth values. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/list-command.spec.ts tests/unit/close-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts (5 files, 114 tests); node scripts/run-tests.mjs coverage (137 files, 2281 tests, 100% coverage); pnpm changelog:pm:check with pm-changelog 2026.6.4 unchanged at 961 closed items."
+  "2026-06-04T19:41:17.768Z",codex-sdk-continuation,"Review follow-up 10 evidence: addressed current-head Gemini comment on commit 72f0ee7c by counting the edge to a cached ancestor in close-many hierarchyDepth, preserving correct child-before-parent sorting for strict bulk closes. Added regression coverage for a parent/child/grandchild matched close-many strict batch expecting grandchild, child, then parent closure order. Verification passed: node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts (31 tests); pnpm build; node scripts/run-tests.mjs coverage (137 files, 2281 tests, 100% coverage); pnpm changelog:pm:check with pm-changelog 2026.6.4 unchanged at 961 closed items."
+  "2026-06-04T19:50:56.758Z",codex-sdk-continuation,"Review follow-up 11 evidence: addressed current-head Gemini comments on commit 83041b05 by making close-many hierarchyDepth skip cache writes when a parent cycle is detected and renaming the MCP-local normalizeOptionsArrays helper to normalizeMcpOptionsArrays so it is unambiguous and cannot be mistaken for a missing registration-helper import. Verification passed: node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts (2 files, 45 tests); pnpm build; node scripts/run-tests.mjs coverage (137 files, 2281 tests, 100% coverage); pnpm changelog:pm:check with pm-changelog 2026.6.4 unchanged at 961 closed items."
+files[21]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,pm-changelog latest install metadata refreshed during changelog verification.
+  package.json,project,Dependency verification confirmed commander remains 14.0.3 to preserve advertised Node 20 support.
+  pnpm-lock.yaml,project,Lockfile refreshed during dependency verification; commander remains 14.0.3 for Node 20 compatibility.
+  src/cli/commands/close-many.ts,project,"New close-many bulk close primitive with dry-run,checkpoint,rollback,terminal skip,and runClose semantics."
+  src/cli/commands/completion.ts,project,"Second review follow-up: clarify ISO/relative date completion descriptions."
+  src/cli/commands/list.ts,project,Date-window and explicit-id filters for context retrieval.
+  src/cli/commands/search.ts,project,Search status filter parity for context queries.
+  src/cli/commands/update-many.ts,project,Explicit --ids targeting and shared filter plumbing for bulk mutation.
+  src/cli/commands/update.ts,project,"Third review follow-up: count runtime update/update_many fields before runUpdate no-op guard so batch runtime fields actually apply."
+  src/cli/register-list-query.ts,project,"Second review follow-up: expose list --ids registration."
+  src/cli/register-mutation.ts,project,"Second review follow-up: clarify close-many reason requirement for dry-run/apply."
+  src/cli/registration-helpers.ts,project,"Second review follow-up: normalize list --ids from CLI options."
+  src/core/checkpoint/mutation-checkpoint.ts,project,"Second review follow-up: wrap malformed checkpoint JSON in PmCliError and document metadata fallback."
+  src/core/schema/runtime-field-values.ts,project,"Third review follow-up: collect runtime update values from update and update_many field registrations."
+  src/mcp/server.ts,project,"Second review follow-up: map MCP pm_run close-many flat filters into CLI list/options shape and advertise close-many."
+  src/sdk/cli-contracts.ts,project,SDK contract exposure for the new CLI flags and close-many action.
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,"Third review follow-up: expose list --ids in tool option contracts."
+  tests/integration/mcp-dynamic-package-actions.spec.ts,project,Regression coverage for MCP pm_run close-many option translation.
+  tests/unit/close-command.spec.ts,project,"Regression coverage for close-many inactive filters,rollback limit/offset rejection,and child-first strict close."
+  tests/unit/list-command.spec.ts,project,Regression coverage for CLI list --ids.
+  tests/unit/update-many-command.spec.ts,project,Regression coverage for null rollback filters and malformed checkpoint JSON.
+tests[7]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node dist/cli.js contracts --command list --flags-only --json,null,project,60,null,null,null,null,null,null,null,null,null,null,null,Contract smoke confirming list --ids is exposed.
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Full coverage after second review follow-up.
+  node scripts/run-tests.mjs test,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/list-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/status-normalization.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,"Focused regressions for review comments: close-many filters/rollback ordering,list --ids,update-many rollback nulls,MCP pm_run close-many."
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/list-command.spec.ts tests/unit/update-many-command.spec.ts tests/unit/status-normalization.spec.ts tests/integration/mcp-dynamic-package-actions.spec.ts tests/unit/runtime-schema-command-flags.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,"Third review regressions for blank filters,MCP update-many mapping,list --ids contracts,and runtime update_many fields."
+  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,180,null,null,null,null,null,null,null,null,null,null,null,Verify latest pm-changelog output unchanged after second review follow-up.
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,"Command reference for new date filters,search status,ids targeting,and close-many."
+plan_mode: executing
+plan_scope: "Deliver four interlocking agent-facing CLI/SDK primitives that serve project-management=context-management: pm list --updated-after/--updated-before/--created-after/--created-before (pm-y138/pm-ankr), pm search --status parity (pm-ec4s/pm-arew), pm update-many --ids explicit ID allowlist (pm-1h99), and pm close-many bulk-close with runClose semantics + dry-run + checkpoint/rollback (pm-i17g/pm-9mjw)."
+plan_harness: claude-code
+plan_decisions[2]{ts,author,decision}:
+  "2026-06-04T16:04:13.352Z",maintainer-agent,"Implemented all 4 primitives + shared core modules (status-filter, mutation-checkpoint) + full wiring (commander, normalize, cli-contracts flag+param+schema, enum-contracts, MCP server action, contracts core map, completion bash/zsh/fish, help-content, telemetry mutation sets). Date-window filters use the shared signed-relative resolver (-2h=past, +1d=future; m=months, no minutes unit) — primary use is ISO timestamps for 'changed since last window'. close-many requires >=1 filter (never matches all) and a shared --reason; skips already-terminal unless --force; checkpoint+rollback via shared core. Manually smoke-tested all four end-to-end in temp dirs (dry-run/apply/rollback/skip-terminal/did-you-mean all verified)."
+  "2026-06-04T16:17:58.613Z",maintainer-agent,"All 4 primitives shipped + 7 pm items closed (pm-y138/pm-ankr/pm-ec4s/pm-arew/pm-1h99/pm-i17g/pm-9mjw). Full suite: 2254 tests pass, 100% coverage; static + docs + secret gates green. Test-author subagent added 78 command-level cases across list/search/close specs; lead added status-filter + mutation-checkpoint (100%) + update-many --ids cases. Docs (COMMANDS/AGENT_GUIDE/help-content) + completions (bash/zsh/fish) updated. Next: regenerate CHANGELOG, commit, PR, bot-review loop."
+plan_steps[9]:
+  - id: plan-step-001
+    order: 1
+    title: "Extract shared status-filter CSV parser (open/closed/canceled aliases + did-you-mean) into core, adopt in list + search"
+    status: completed
+    created_at: "2026-06-04T15:24:46.376Z"
+    updated_at: "2026-06-04T16:17:56.486Z"
+    evidence: done
+    completed_at: "2026-06-04T16:17:56.486Z"
+    linked_items[7]{id,kind}:
+      pm-y138,related
+      pm-ankr,related
+      pm-ec4s,related
+      pm-arew,related
+      pm-1h99,related
+      pm-i17g,related
+      pm-9mjw,related
+  - id: plan-step-002
+    order: 2
+    title: "pm-y138/pm-ankr: add --updated-after/--updated-before/--created-after/--created-before date-window filters to runList + all list-* commands + MCP pm_list contracts"
+    status: completed
+    created_at: "2026-06-04T15:24:59.224Z"
+    updated_at: "2026-06-04T16:17:56.778Z"
+    evidence: done
+    completed_at: "2026-06-04T16:17:56.778Z"
+  - id: plan-step-003
+    order: 3
+    title: "pm-ec4s/pm-arew: add pm search --status (CSV, open/closed/canceled aliases, did-you-mean) applied pre-query; emit in filters; MCP+contracts+completions"
+    status: completed
+    created_at: "2026-06-04T15:24:59.483Z"
+    updated_at: "2026-06-04T16:17:57.017Z"
+    evidence: done
+    completed_at: "2026-06-04T16:17:57.017Z"
+  - id: plan-step-004
+    order: 4
+    title: "pm-1h99: add --ids explicit allowlist to runList intersection + update-many --ids flag + MCP/contracts"
+    status: completed
+    created_at: "2026-06-04T15:24:59.756Z"
+    updated_at: "2026-06-04T16:17:57.250Z"
+    evidence: done
+    completed_at: "2026-06-04T16:17:57.250Z"
+  - id: plan-step-005
+    order: 5
+    title: "pm-i17g/pm-9mjw: new pm close-many command (runClose semantics per item, shared reason, dry-run, checkpoint/rollback, active-child + skip-terminal) + full wiring (register-mutation, index, MCP, cli-contracts, completion, contracts)"
+    status: completed
+    created_at: "2026-06-04T15:25:00.000Z"
+    updated_at: "2026-06-04T16:17:57.472Z"
+    evidence: done
+    completed_at: "2026-06-04T16:17:57.472Z"
+  - id: plan-step-006
+    order: 6
+    title: Wire date filters into update-many/close-many filter family for bulk 'operate on what changed since'
+    status: completed
+    created_at: "2026-06-04T15:25:00.228Z"
+    updated_at: "2026-06-04T16:17:57.705Z"
+    evidence: done
+    completed_at: "2026-06-04T16:17:57.705Z"
+  - id: plan-step-007
+    order: 7
+    title: "Tests: list date+ids filters, search --status, update-many --ids, close-many (dry-run/apply/rollback/skip-terminal); vitest.config include/exclude"
+    status: completed
+    created_at: "2026-06-04T15:25:00.448Z"
+    updated_at: "2026-06-04T16:17:57.928Z"
+    evidence: done
+    completed_at: "2026-06-04T16:17:57.928Z"
+  - id: plan-step-008
+    order: 8
+    title: Build + run full test suite; manual smoke test in temp dir covering all four primitives end-to-end
+    status: completed
+    created_at: "2026-06-04T15:25:00.661Z"
+    updated_at: "2026-06-04T16:17:58.152Z"
+    evidence: done
+    completed_at: "2026-06-04T16:17:58.152Z"
+  - id: plan-step-009
+    order: 9
+    title: "Docs (COMMANDS/AGENT_GUIDE), completions, changelog classification; regenerate CHANGELOG via pm-changelog as LAST step"
+    status: completed
+    created_at: "2026-06-04T15:25:00.869Z"
+    updated_at: "2026-06-04T16:17:58.386Z"
+    evidence: done
+    completed_at: "2026-06-04T16:17:58.386Z"
+body: ""

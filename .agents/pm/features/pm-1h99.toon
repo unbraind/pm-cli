@@ -2,15 +2,21 @@ id: pm-1h99
 title: "pm update-many --ids: explicit ID-list filter for targeted bulk mutations"
 description: update-many accepts only filter predicates; an agent with a resolved ID set must re-express it as fragile filters or loop pm update. --ids gives a safe explicit allowlist composable with search --json | jq.
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:lifecycle",bulk-ops,living-map
 created_at: "2026-05-31T19:43:37.182Z"
-updated_at: "2026-05-31T20:15:40.936Z"
+updated_at: "2026-06-04T16:17:41.580Z"
 author: maintainer-agent
 acceptance_criteria: "pm update-many --ids pm-a,pm-b ... applies to listed ids only (intersection with other filters); dry-run+checkpoint unchanged; MCP contracts updated."
 value: update-many accepts only filter predicates; an agent with a resolved ID set must re-express it as fragile filters or loop pm update. --ids gives a safe explicit allowlist composable with search --json | jq.
 parent: pm-mpbb
+resolution: runList ids intersection filter exposed on update-many/close-many; non-existent ids absent from match set; tested
+expected_result: "--ids restricts to listed ids intersected with filters"
+actual_result: Implemented and verified
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-i17g,related,"2026-05-31T20:10:00.000Z",maintainer-agent,null
+comments[1]{created_at,author,text}:
+  "2026-06-04T16:17:23.928Z",maintainer-agent,"Shipped: --ids explicit comma-separated allowlist on runList (intersected with all other filters), exposed on update-many (and close-many). Non-existent ids are simply absent from the match set. Full contract + completion wiring."
+close_reason: Delivered update-many --ids explicit allowlist
 body: ""

@@ -103,6 +103,8 @@ pm release <item-id>
 |------|---------|
 | Next work and agenda | `pm context --limit 10` |
 | Relevant items | `pm search "<keywords>" --limit 10` |
+| Open work only | `pm search "<keywords>" --status open` (drops closed-history noise; did-you-mean on typos) |
+| Items changed since last window | `pm list-all --updated-after <prev-run-ISO> --brief` (relative `-2h`/`-7d` also work) |
 | Single item | `pm get <id>` |
 | Full machine payload | `pm get <id> --full --json` |
 | Command flags | `pm <command> --help --json` |
@@ -119,6 +121,8 @@ pm release <item-id>
 | Agent plan read | `pm plan show <plan-id> --depth brief` (or `--fields id,title,steps_summary`) |
 | Materialize plan steps | `pm plan materialize <plan-id> --steps plan-step-002 --materialize-type Task` |
 | Dependencies | `pm deps <id> --format tree` |
+| Bulk update by id allowlist | `pm update-many --ids pm-a,pm-b --priority 1 --dry-run` (preview, then drop `--dry-run`) |
+| Audited bulk close (sprint closeout) | `pm close-many --filter-sprint <s> --reason "<text>" --dry-run` (full `pm close` semantics per item; `--rollback <id>` to undo) |
 | Local docs routing | `pm install guide-shell --project`, then `pm guide <topic>` |
 | Compact mutation echo | `pm --no-changed-fields create "..."` (drops the redundant `changed_fields` array, keeps `changed_field_count`) |
 

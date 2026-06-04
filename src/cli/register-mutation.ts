@@ -226,11 +226,16 @@ export function registerMutationCommands(program: Command): void {
     .option("--filter-priority <value>", "Filter by priority before applying updates")
     .option("--filter-deadline-before <value>", "Filter by deadline upper bound before applying updates")
     .option("--filter-deadline-after <value>", "Filter by deadline lower bound before applying updates")
+    .option("--filter-updated-after <value>", "Filter by updated_at lower bound before applying updates (ISO/relative)")
+    .option("--filter-updated-before <value>", "Filter by updated_at upper bound before applying updates (ISO/relative)")
+    .option("--filter-created-after <value>", "Filter by created_at lower bound before applying updates (ISO/relative)")
+    .option("--filter-created-before <value>", "Filter by created_at upper bound before applying updates (ISO/relative)")
     .option("--filter-assignee <value>", "Filter by assignee before applying updates")
     .option("--filter-assignee-filter <value>", "Filter assignee presence: assigned|unassigned before applying updates")
     .option("--filter-parent <value>", "Filter by parent item ID before applying updates")
     .option("--filter-sprint <value>", "Filter by sprint before applying updates")
     .option("--filter-release <value>", "Filter by release before applying updates")
+    .option("--ids <value>", "Restrict to an explicit comma-separated ID allowlist (intersected with other filters)")
     .option("--limit <n>", "Limit matched item count before apply/preview")
     .option("--offset <n>", "Skip first n matched rows before apply/preview")
     .option("--dry-run", "Preview per-item diffs and checkpoint intent without mutating")
@@ -355,6 +360,11 @@ export function registerMutationCommands(program: Command): void {
             priority: typeof options.filterPriority === "string" ? options.filterPriority : undefined,
             deadlineBefore: typeof options.filterDeadlineBefore === "string" ? options.filterDeadlineBefore : undefined,
             deadlineAfter: typeof options.filterDeadlineAfter === "string" ? options.filterDeadlineAfter : undefined,
+            updatedAfter: typeof options.filterUpdatedAfter === "string" ? options.filterUpdatedAfter : undefined,
+            updatedBefore: typeof options.filterUpdatedBefore === "string" ? options.filterUpdatedBefore : undefined,
+            createdAfter: typeof options.filterCreatedAfter === "string" ? options.filterCreatedAfter : undefined,
+            createdBefore: typeof options.filterCreatedBefore === "string" ? options.filterCreatedBefore : undefined,
+            ids: typeof options.ids === "string" ? options.ids : undefined,
             assignee: typeof options.filterAssignee === "string" ? options.filterAssignee : undefined,
             assigneeFilter:
               typeof options.filterAssigneeFilter === "string"
@@ -464,6 +474,103 @@ export function registerMutationCommands(program: Command): void {
         printError(`profile:command=close took_ms=${Date.now() - startedAt}`);
       }
     });
+
+  const closeManyCommand = program
+    .command("close-many")
+    .description("Bulk-close matched items with a shared reason and full runClose semantics (dry-run + rollback checkpoint).")
+    .option("--filter-status <value>", "Filter by status before closing")
+    .option("--filter-type <value>", "Filter by item type before closing")
+    .option("--filter-tag <value>", "Filter by tag before closing")
+    .option("--filter-priority <value>", "Filter by priority before closing")
+    .option("--filter-deadline-before <value>", "Filter by deadline upper bound before closing")
+    .option("--filter-deadline-after <value>", "Filter by deadline lower bound before closing")
+    .option("--filter-updated-after <value>", "Filter by updated_at lower bound before closing (ISO/relative)")
+    .option("--filter-updated-before <value>", "Filter by updated_at upper bound before closing (ISO/relative)")
+    .option("--filter-created-after <value>", "Filter by created_at lower bound before closing (ISO/relative)")
+    .option("--filter-created-before <value>", "Filter by created_at upper bound before closing (ISO/relative)")
+    .option("--filter-assignee <value>", "Filter by assignee before closing")
+    .option("--filter-assignee-filter <value>", "Filter assignee presence: assigned|unassigned before closing")
+    .option("--filter-parent <value>", "Filter by parent item ID before closing")
+    .option("--filter-sprint <value>", "Filter by sprint before closing")
+    .option("--filter-release <value>", "Filter by release before closing")
+    .option("--ids <value>", "Restrict to an explicit comma-separated ID allowlist (intersected with other filters)")
+    .option("--limit <n>", "Limit matched item count before apply/preview")
+    .option("--offset <n>", "Skip first n matched rows before apply/preview")
+    .option("--reason <value>", "Shared close reason applied to every matched item (required for dry-run/apply)")
+    .option("--resolution <value>", "Shared closure resolution applied to every matched item (closure-validation field)")
+    .option("--expected-result <value>", "Shared expected-result note (closure-validation field)")
+    .option("--expected <value>", "Short alias for --expected-result")
+    .option("--actual-result <value>", "Shared actual-result note (closure-validation field)")
+    .option("--actual <value>", "Short alias for --actual-result")
+    .option("--validate-close [mode]", 'Validate closure metadata per item: "off", "warn", or "strict" (default: settings governance preset)')
+    .option("--author <value>", "Mutation author")
+    .option("--message <value>", "History message")
+    .option("--force", "Re-close already-terminal matches and override ownership")
+    .option("--dry-run", "Preview matched items + per-item skip/active-child plan without mutating")
+    .option("--rollback <value>", "Rollback a prior close-many checkpoint ID")
+    .option("--no-checkpoint", "Disable checkpoint creation during apply mode");
+  addHiddenOption(closeManyCommand, "--filter-assignee_filter <value>", "Alias for --filter-assignee-filter", false);
+  addHiddenOption(closeManyCommand, "--expected_result <value>", "Alias for --expected-result", false);
+  addHiddenOption(closeManyCommand, "--actual_result <value>", "Alias for --actual-result", false);
+  closeManyCommand.action(async (options: Record<string, unknown>, command) => {
+    const globalOptions = getGlobalOptions(command);
+    const startedAt = Date.now();
+    const pickString = (...candidates: unknown[]): string | undefined => {
+      for (const candidate of candidates) {
+        if (typeof candidate === "string") {
+          return candidate;
+        }
+      }
+      return undefined;
+    };
+    const { runCloseMany } = await import("./commands/close-many.js");
+    const result = await runCloseMany(
+      {
+        status: typeof options.filterStatus === "string" ? options.filterStatus : undefined,
+        list: {
+          type: typeof options.filterType === "string" ? options.filterType : undefined,
+          tag: typeof options.filterTag === "string" ? options.filterTag : undefined,
+          priority: typeof options.filterPriority === "string" ? options.filterPriority : undefined,
+          deadlineBefore: typeof options.filterDeadlineBefore === "string" ? options.filterDeadlineBefore : undefined,
+          deadlineAfter: typeof options.filterDeadlineAfter === "string" ? options.filterDeadlineAfter : undefined,
+          updatedAfter: typeof options.filterUpdatedAfter === "string" ? options.filterUpdatedAfter : undefined,
+          updatedBefore: typeof options.filterUpdatedBefore === "string" ? options.filterUpdatedBefore : undefined,
+          createdAfter: typeof options.filterCreatedAfter === "string" ? options.filterCreatedAfter : undefined,
+          createdBefore: typeof options.filterCreatedBefore === "string" ? options.filterCreatedBefore : undefined,
+          ids: typeof options.ids === "string" ? options.ids : undefined,
+          assignee: typeof options.filterAssignee === "string" ? options.filterAssignee : undefined,
+          assigneeFilter: pickString(options.filterAssigneeFilter, options.filterAssignee_filter),
+          parent: typeof options.filterParent === "string" ? options.filterParent : undefined,
+          sprint: typeof options.filterSprint === "string" ? options.filterSprint : undefined,
+          release: typeof options.filterRelease === "string" ? options.filterRelease : undefined,
+          limit: typeof options.limit === "string" ? options.limit : undefined,
+          offset: typeof options.offset === "string" ? options.offset : undefined,
+        },
+        reason: typeof options.reason === "string" ? options.reason : undefined,
+        resolution: typeof options.resolution === "string" ? options.resolution : undefined,
+        expectedResult: pickString(options.expectedResult, options.expected_result, options.expected),
+        actualResult: pickString(options.actualResult, options.actual_result, options.actual),
+        validateClose:
+          options.validateClose === true
+            ? "warn"
+            : typeof options.validateClose === "string"
+              ? options.validateClose
+              : undefined,
+        author: typeof options.author === "string" ? options.author : undefined,
+        message: typeof options.message === "string" ? options.message : undefined,
+        force: Boolean(options.force),
+        dryRun: options.dryRun === true ? true : undefined,
+        rollback: typeof options.rollback === "string" ? options.rollback : undefined,
+        checkpoint: options.checkpoint === false ? false : undefined,
+      },
+      globalOptions,
+    );
+    await invalidateSearchCachesForMutation(globalOptions, result);
+    printResult(result, globalOptions);
+    if (globalOptions.profile) {
+      printError(`profile:command=close-many took_ms=${Date.now() - startedAt}`);
+    }
+  });
 
   program
     .command("delete")

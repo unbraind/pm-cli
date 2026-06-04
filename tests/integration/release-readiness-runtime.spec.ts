@@ -1785,6 +1785,7 @@ describe("release readiness runtime coverage", () => {
       "src/cli/bootstrap-args.ts",
       "src/cli/commander-usage.ts",
       "src/cli/commands/aggregate.ts",
+      "src/cli/commands/close-many.ts",
       "src/cli/commands/comments-audit.ts",
       "src/cli/commands/dedupe-audit.ts",
       "src/cli/commands/event-validation-messages.ts",

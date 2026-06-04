@@ -4,6 +4,10 @@
 
 ### Added
 
+- pm close-many: bulk-close matched items with shared reason and validate-close semantics ([pm-i17g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-i17g.toon))
+- pm update-many --ids: explicit ID-list filter for targeted bulk mutations ([pm-1h99](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1h99.toon))
+- pm search --status filter \(parity with pm list\) ([pm-ec4s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ec4s.toon))
+- pm list --updated-after/--created-after incremental date filters ([pm-y138](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-y138.toon))
 - Reusable external npm package ecosystem smoke harness ([pm-vnjh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-vnjh.toon))
 - Per-type workflow / allowed-transitions config \(schema/workflows.json\) ([pm-f4r1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-f4r1.toon))
 - pm schema add-status: register custom statuses \(complement to add-type\) ([pm-e77a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e77a.toon))

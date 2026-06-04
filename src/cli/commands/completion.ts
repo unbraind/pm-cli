@@ -4,6 +4,7 @@ import {
   ACTIVITY_FLAG_CONTRACTS,
   APPEND_FLAG_CONTRACTS,
   CALENDAR_FLAG_CONTRACTS,
+  CLOSE_MANY_FLAG_CONTRACTS,
   COMPLETION_FLAG_CONTRACTS,
   CONTRACTS_FLAG_CONTRACTS,
   CONTEXT_FLAG_CONTRACTS,
@@ -51,6 +52,7 @@ const APPEND_FLAGS = toCompletionFlagString(APPEND_FLAG_CONTRACTS);
 const CREATE_FLAGS = toCompletionFlagString(CREATE_FLAG_CONTRACTS);
 const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
 const UPDATE_MANY_FLAGS = toCompletionFlagString(UPDATE_MANY_FLAG_CONTRACTS);
+const CLOSE_MANY_FLAGS = toCompletionFlagString(CLOSE_MANY_FLAG_CONTRACTS);
 const NORMALIZE_FLAGS = toCompletionFlagString(NORMALIZE_FLAG_CONTRACTS);
 const ACTIVITY_FLAGS = toCompletionFlagString(ACTIVITY_FLAG_CONTRACTS);
 const CALENDAR_FLAGS = toCompletionFlagString(CALENDAR_FLAG_CONTRACTS);
@@ -416,6 +418,9 @@ export function generateBashScript(
     "    close|close-task)",
     `      COMPREPLY=(${compgen(CLOSE_MUTATION_FLAGS)})`,
     "      ;;",
+    "    close-many)",
+    `      COMPREPLY=(${compgen(CLOSE_MANY_FLAGS)})`,
+    "      ;;",
     "    release)",
     `      COMPREPLY=(${compgen(RELEASE_MUTATION_FLAGS)})`,
     "      ;;",
@@ -522,6 +527,7 @@ _pm_commands() {
     'update-many:Bulk-update matched items with dry-run and rollback checkpoints'
     'normalize:Normalize lifecycle metadata with dry-run planning or apply mode'
     'close:Close an item with a required reason'
+    'close-many:Bulk-close matched items with a shared reason and rollback checkpoint'
     'delete:Delete an item and record the change'
     'append:Append text to an item body'
     'comments:List or add comments for an item'
@@ -579,6 +585,10 @@ _pm() {
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--deadline-before[Filter by deadline upper bound (ISO/date string or relative)]:date' \\
             '--deadline-after[Filter by deadline lower bound (ISO/date string or relative)]:date' \\
+            '--updated-after[Filter by updated_at lower bound (ISO/relative)]:timestamp' \\
+            '--updated-before[Filter by updated_at upper bound (ISO/relative)]:timestamp' \\
+            '--created-after[Filter by created_at lower bound (ISO/relative)]:timestamp' \\
+            '--created-before[Filter by created_at upper bound (ISO/relative)]:timestamp' \\
             '--assignee[Filter by assignee]:assignee' \\
             '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--sprint[Filter by sprint]:sprint' \\
@@ -719,11 +729,16 @@ ${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner m
             '--filter-priority[Filter by priority before applying updates]:(0 1 2 3 4)' \\
             '--filter-deadline-before[Filter by deadline upper bound]:deadline' \\
             '--filter-deadline-after[Filter by deadline lower bound]:deadline' \\
+            '--filter-updated-after[Filter by updated_at lower bound (ISO/relative)]:timestamp' \\
+            '--filter-updated-before[Filter by updated_at upper bound (ISO/relative)]:timestamp' \\
+            '--filter-created-after[Filter by created_at lower bound (ISO/relative)]:timestamp' \\
+            '--filter-created-before[Filter by created_at upper bound (ISO/relative)]:timestamp' \\
             '--filter-assignee[Filter by assignee before applying updates]:assignee' \\
             '--filter-assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--filter-parent[Filter by parent item ID]:parent' \\
             '--filter-sprint[Filter by sprint]:sprint' \\
             '--filter-release[Filter by release]:release' \\
+            '--ids[Explicit comma-separated ID allowlist]:ids' \\
             '--limit[Limit matched item count]:number' \\
             '--offset[Skip first n matched rows]:number' \\
             '--dry-run[Preview updates without mutating]' \\
@@ -795,6 +810,42 @@ ${zshUpdateManyRuntimeFieldFlags}            '--allow-audit-update[Allow non-own
             '--author[Mutation author]:author' \\
             '--message[History message]:message' \\
             '--force[Force override]' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        close-many)
+          _arguments \\
+            '--filter-status[Filter by status before closing]:(${statusChoices})' \\
+            '--filter-type[Filter by type before closing]:(${typeChoices})' \\
+            '--filter-tag[Filter by tag before closing]:(${zshTagChoices})' \\
+            '--filter-priority[Filter by priority before closing]:(0 1 2 3 4)' \\
+            '--filter-deadline-before[Filter by deadline upper bound]:deadline' \\
+            '--filter-deadline-after[Filter by deadline lower bound]:deadline' \\
+            '--filter-updated-after[Filter by updated_at lower bound (ISO/relative)]:timestamp' \\
+            '--filter-updated-before[Filter by updated_at upper bound (ISO/relative)]:timestamp' \\
+            '--filter-created-after[Filter by created_at lower bound (ISO/relative)]:timestamp' \\
+            '--filter-created-before[Filter by created_at upper bound (ISO/relative)]:timestamp' \\
+            '--filter-assignee[Filter by assignee before closing]:assignee' \\
+            '--filter-assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
+            '--filter-parent[Filter by parent item ID]:parent' \\
+            '--filter-sprint[Filter by sprint]:sprint' \\
+            '--filter-release[Filter by release]:release' \\
+            '--ids[Explicit comma-separated ID allowlist]:ids' \\
+            '--limit[Limit matched item count]:number' \\
+            '--offset[Skip first n matched rows]:number' \\
+            '--reason[Shared close reason applied to every matched item]:reason' \\
+            '--resolution[Shared closure resolution]:resolution' \\
+            '--expected-result[Shared expected-result note]:expected_result' \\
+            '--actual-result[Shared actual-result note]:actual_result' \\
+            '--expected[Short alias for --expected-result]:expected_result' \\
+            '--actual[Short alias for --actual-result]:actual_result' \\
+            '--validate-close[Validate closure metadata per item]:(off warn strict)' \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--force[Re-close terminal matches and override ownership]' \\
+            '--dry-run[Preview matched items without mutating]' \\
+            '--rollback[Rollback checkpoint ID]:checkpoint_id' \\
+            '--no-checkpoint[Disable checkpoint creation during apply mode]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -879,6 +930,7 @@ ${zshContextRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--mode[Search mode]:(keyword semantic hybrid)' \\
             '--include-linked[Include linked content in scoring]' \\
             '--limit[Max results]:number' \\
+            '--status[Filter by status (open/closed/canceled, csv)]:(${statusChoices})' \\
             '--type[Filter by type]:(${typeChoices})' \\
             '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
@@ -1414,6 +1466,7 @@ complete -c pm -n __pm_no_subcommand -a update        -d 'Update item fields and
 complete -c pm -n __pm_no_subcommand -a update-many   -d 'Bulk-update matched items with dry-run and rollback checkpoints'
 complete -c pm -n __pm_no_subcommand -a normalize     -d 'Normalize lifecycle metadata with dry-run planning or apply mode'
 complete -c pm -n __pm_no_subcommand -a close         -d 'Close an item with a required reason'
+complete -c pm -n __pm_no_subcommand -a close-many    -d 'Bulk-close matched items with a shared reason and rollback checkpoint'
 complete -c pm -n __pm_no_subcommand -a delete        -d 'Delete an item and record the change'
 complete -c pm -n __pm_no_subcommand -a append        -d 'Append text to an item body'
 complete -c pm -n __pm_no_subcommand -a comments      -d 'List or add comments for an item'
@@ -1458,6 +1511,10 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l stream -d 'Emit line-delimited JSON rows (requires --json)'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-before -d 'Filter by deadline upper bound (ISO/date string or relative)' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l deadline-after  -d 'Filter by deadline lower bound (ISO/date string or relative)' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l updated-after  -d 'Filter by updated_at lower bound (ISO/relative)' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l updated-before -d 'Filter by updated_at upper bound (ISO/relative)' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l created-after  -d 'Filter by created_at lower bound (ISO/relative)' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l created-before -d 'Filter by created_at upper bound (ISO/relative)' -r
 end
 ${fishListRuntimeFieldFlags}
 
@@ -1573,11 +1630,16 @@ complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-tag       
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-priority         -d 'Filter by priority before applying updates' -r -a '0 1 2 3 4'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-deadline-before  -d 'Filter by deadline upper bound' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-deadline-after   -d 'Filter by deadline lower bound' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-updated-after    -d 'Filter by updated_at lower bound (ISO/relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-updated-before   -d 'Filter by updated_at upper bound (ISO/relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-created-after    -d 'Filter by created_at lower bound (ISO/relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-created-before   -d 'Filter by created_at upper bound (ISO/relative)' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-assignee         -d 'Filter by assignee before applying updates' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-assignee-filter  -d 'Filter assignee presence' -r -a 'assigned unassigned'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-parent           -d 'Filter by parent item ID' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-sprint           -d 'Filter by sprint before applying updates' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-release          -d 'Filter by release before applying updates' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l ids                     -d 'Explicit comma-separated ID allowlist' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l limit                   -d 'Limit matched item count' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l offset                  -d 'Skip first n matched rows' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l dry-run                 -d 'Preview updates without mutating'
@@ -1676,6 +1738,7 @@ complete -c pm -n '__fish_seen_subcommand_from normalize' -l force              
 complete -c pm -n '__fish_seen_subcommand_from search' -l mode          -d 'Search mode' -r -a 'keyword semantic hybrid'
 complete -c pm -n '__fish_seen_subcommand_from search' -l include-linked -d 'Include linked content in scoring'
 complete -c pm -n '__fish_seen_subcommand_from search' -l limit          -d 'Max results' -r
+complete -c pm -n '__fish_seen_subcommand_from search' -l status         -d 'Filter by status (open/closed/canceled, csv)' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from search' -l type           -d 'Filter by type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from search' -l tag            -d 'Filter by tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from search' -l priority       -d 'Filter by priority' -r -a '0 1 2 3 4'
@@ -1888,6 +1951,39 @@ complete -c pm -n '__fish_seen_subcommand_from close' -l expected -d 'Short alia
 complete -c pm -n '__fish_seen_subcommand_from close' -l actual -d 'Short alias for --actual-result' -r
 complete -c pm -n '__fish_seen_subcommand_from release' -l allow-audit-release -d 'Allow non-owner release handoffs without requiring --force'
 complete -c pm -n '__fish_seen_subcommand_from delete' -l dry-run -d 'Preview the item file that would be deleted without mutating'
+
+# close-many flags
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-status          -d 'Filter by status before closing' -r -a '${statusChoices}'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-type            -d 'Filter by type before closing' -r -a '${typeChoices}'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-tag             -d 'Filter by tag before closing' -r -a ${fishTagChoices}
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-priority        -d 'Filter by priority before closing' -r -a '0 1 2 3 4'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-deadline-before -d 'Filter by deadline upper bound' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-deadline-after  -d 'Filter by deadline lower bound' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-updated-after   -d 'Filter by updated_at lower bound (ISO/relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-updated-before  -d 'Filter by updated_at upper bound (ISO/relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-created-after   -d 'Filter by created_at lower bound (ISO/relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-created-before  -d 'Filter by created_at upper bound (ISO/relative)' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-assignee        -d 'Filter by assignee before closing' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-parent          -d 'Filter by parent item ID' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-sprint          -d 'Filter by sprint before closing' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-release         -d 'Filter by release before closing' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l ids                    -d 'Explicit comma-separated ID allowlist' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l limit                  -d 'Limit matched item count' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l offset                 -d 'Skip first n matched rows' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l reason                 -d 'Shared close reason applied to every matched item' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l resolution             -d 'Shared closure resolution' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l expected-result        -d 'Shared expected-result note' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l actual-result          -d 'Shared actual-result note' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l expected               -d 'Short alias for --expected-result' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l actual                 -d 'Short alias for --actual-result' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l validate-close         -d 'Validate closure metadata per item' -r -a 'off warn strict'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l author                 -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l message                -d 'History message' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l force                  -d 'Re-close terminal matches and override ownership'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l dry-run                -d 'Preview matched items without mutating'
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l rollback               -d 'Rollback checkpoint ID' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l no-checkpoint          -d 'Disable checkpoint creation during apply mode'
 
 # validate flags
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-metadata -d 'Run metadata completeness checks'

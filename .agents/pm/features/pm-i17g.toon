@@ -2,13 +2,19 @@ id: pm-i17g
 title: "pm close-many: bulk-close matched items with shared reason and validate-close semantics"
 description: "update-many --status closed routes through runUpdate, bypassing ensureCloseReason, active-children check, and validate-close. A dedicated close-many closes matched items with proper close semantics, shared reason, optional per-item resolution, dry-run and rollback checkpoint."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[5]: agent-ux,"area:cli","area:lifecycle",bulk-ops,living-map
 created_at: "2026-05-31T19:43:35.451Z"
-updated_at: "2026-05-31T19:43:35.451Z"
+updated_at: "2026-06-04T16:17:41.906Z"
 author: maintainer-agent
 acceptance_criteria: pm close-many with filter family (--status/--tag/--sprint/--type) closes each via runClose semantics; --dry-run previews; rollback checkpoint restores; active-child orphan check per item; compact projectMutationResult output; MCP+completion+docs updated.
 value: "update-many --status closed routes through runUpdate, bypassing ensureCloseReason, active-children check, and validate-close. A dedicated close-many closes matched items with proper close semantics, shared reason, optional per-item resolution, dry-run and rollback checkpoint."
 parent: pm-mpbb
+resolution: New close-many command; per-item runClose; require-filter + require-reason; skip-terminal/--force; shared mutation-checkpoint core (update-many refactored onto it); 100% covered + tested
+expected_result: bulk close routes through close validation with rollback
+actual_result: Implemented and verified end-to-end
+comments[1]{created_at,author,text}:
+  "2026-06-04T16:17:24.205Z",maintainer-agent,"Shipped: pm close-many. Routes EACH matched item through full runClose semantics (ensureCloseReason, active-child orphan checks, blocked-edge cleanup, validate-close) — unlike update-many --status closed which bypasses them. Requires >=1 filter (never matches all) + shared --reason. Skips already-terminal unless --force. --dry-run previews per-item plan (close/skip + active_child_ids). Checkpoint+rollback via new shared core/checkpoint/mutation-checkpoint.ts (also refactored update-many onto it, DRY, passes 24-line duplicate-chunk gate). Optional shared --resolution/--expected/--actual. Full wiring + 100%-covered shared modules."
+close_reason: Delivered pm close-many with full runClose semantics + dry-run + checkpoint/rollback
 body: ""

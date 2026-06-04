@@ -415,12 +415,17 @@ const UPDATE_MANY_CONTROL_OPTION_KEYS = new Set<string>([
   "filterPriority",
   "filterDeadlineBefore",
   "filterDeadlineAfter",
+  "filterUpdatedAfter",
+  "filterUpdatedBefore",
+  "filterCreatedAfter",
+  "filterCreatedBefore",
   "filterAssignee",
   "filterAssigneeFilter",
   "filterAssignee_filter",
   "filterParent",
   "filterSprint",
   "filterRelease",
+  "ids",
   "limit",
   "offset",
   "dryRun",
@@ -440,13 +445,24 @@ export function extractUpdateManyMutationOptionSource(commandOptions: Record<str
 }
 
 function readListOptionString(options: Record<string, unknown>, target: string): string | undefined {
-  return readFirstStringFromCommanderOptions(
-    options,
-    LIST_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
-      target,
-      keys: [target],
-    },
-  );
+  const contract = LIST_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
+    target,
+    keys: [target],
+  };
+  const stringValue = readFirstStringFromCommanderOptions(options, contract);
+  if (stringValue !== undefined) {
+    return stringValue;
+  }
+  for (const key of contract.keys) {
+    const value = options[key];
+    if (target === "ids" && typeof value === "string") {
+      return value;
+    }
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return String(value);
+    }
+  }
+  return undefined;
 }
 
 export function normalizeListOptions(options: Record<string, unknown>): ListOptions {
@@ -457,6 +473,11 @@ export function normalizeListOptions(options: Record<string, unknown>): ListOpti
     priority: readListOptionString(options, "priority"),
     deadlineBefore: readListOptionString(options, "deadlineBefore"),
     deadlineAfter: readListOptionString(options, "deadlineAfter"),
+    updatedAfter: readListOptionString(options, "updatedAfter"),
+    updatedBefore: readListOptionString(options, "updatedBefore"),
+    createdAfter: readListOptionString(options, "createdAfter"),
+    createdBefore: readListOptionString(options, "createdBefore"),
+    ids: readListOptionString(options, "ids"),
     assignee: readListOptionString(options, "assignee"),
     assigneeFilter: readListOptionString(options, "assigneeFilter"),
     parent: readListOptionString(options, "parent"),
@@ -593,6 +614,7 @@ export function normalizeSearchOptions(options: Record<string, unknown>): Record
     includeLinked: options.includeLinked === true ? true : undefined,
     titleExact: options.titleExact === true ? true : undefined,
     phraseExact: options.phraseExact === true ? true : undefined,
+    status: readSearchString("status"),
     type: readSearchString("type"),
     tag: readSearchString("tag"),
     priority: readSearchString("priority"),

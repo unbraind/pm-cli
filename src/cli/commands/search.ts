@@ -31,6 +31,7 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { isTerminalStatus } from "../../core/item/status.js";
+import { parseStatusFilterCsv } from "../../core/item/status-filter.js";
 import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
 import {
   resolveRuntimeFieldRegistry,
@@ -54,6 +55,7 @@ export interface SearchOptions {
   includeLinked?: boolean;
   titleExact?: boolean;
   phraseExact?: boolean;
+  status?: string;
   type?: string;
   tag?: string;
   priority?: string;
@@ -498,15 +500,18 @@ function applyFilters(
   options: SearchOptions,
   typeRegistry: ItemTypeRegistry,
   runtimeFieldFilters: Record<string, unknown>,
+  statusFilter: ItemStatus[] | undefined,
 ): ItemDocument[] {
   const typeFilter = parseType(options.type, typeRegistry);
   const tagFilter = options.tag?.trim().toLowerCase();
   const priorityFilter = parsePriority(options.priority);
   const deadlineBefore = parseDeadline(options.deadlineBefore, "deadline-before");
   const deadlineAfter = parseDeadline(options.deadlineAfter, "deadline-after");
+  const statusSet = statusFilter && statusFilter.length > 0 ? new Set<ItemStatus>(statusFilter) : undefined;
 
   return items.filter((document) => {
     const item = document.metadata;
+    if (statusSet && !statusSet.has(item.status)) return false;
     if (typeFilter && item.type !== typeFilter) return false;
     if (tagFilter && !stringArray(item.tags).includes(tagFilter)) return false;
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
@@ -860,6 +865,7 @@ function emptySearchResult(
     count: 0,
     filters: {
       mode,
+      status: options.status ?? null,
       type: options.type ?? null,
       tag: options.tag ?? null,
       priority: options.priority ?? null,
@@ -1266,6 +1272,15 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const runtimeFieldRegistry = resolveRuntimeFieldRegistry(settings.schema);
   validateSearchProjectionFields(projection, runtimeFieldRegistry);
   const runtimeFieldFilters = collectRuntimeFilterValues(options as Record<string, unknown>, runtimeFieldRegistry, "search");
+  // `pm search --status` resolves strictly (a typo'd status surfaces a
+  // did-you-mean hint) so agents can scope retrieval to open work and drop
+  // closed-history noise without re-listing. Resolved before the corpus scan so
+  // an invalid value fails fast.
+  const statusFilter = parseStatusFilterCsv(
+    typeof options.status === "string" ? options.status : undefined,
+    statusRegistry,
+    { strict: true },
+  );
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const maxResults = resolveSearchMaxResults(settings);
   const scoreThreshold = resolveSearchScoreThreshold(settings);
@@ -1287,7 +1302,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   );
   const warnings = loadedDocuments.warnings;
   const allDocuments = loadedDocuments.documents;
-  const metadataFilteredDocuments = applyFilters(allDocuments, options, typeRegistry, runtimeFieldFilters);
+  const metadataFilteredDocuments = applyFilters(allDocuments, options, typeRegistry, runtimeFieldFilters, statusFilter);
   const filteredDocuments = applyExactQueryFilters(metadataFilteredDocuments, normalizedQuery, {
     titleExact,
     phraseExact,
@@ -1440,6 +1455,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     count: projectedItems.length,
     filters: {
       mode: effectiveMode,
+      status: options.status ?? null,
       type: options.type ?? null,
       tag: options.tag ?? null,
       priority: options.priority ?? null,

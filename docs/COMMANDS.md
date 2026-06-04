@@ -86,6 +86,47 @@ Use `context` first for a compact active-work snapshot. Use `search` when the re
 pm list-all --sort updated --order desc
 ```
 
+### Incremental "what changed since" filters
+
+Every `list*` command accepts `--updated-after`/`--updated-before`/`--created-after`/`--created-before`, and `pm search` accepts `--status` for parity with `list`. These keep a long-running agent's context focused on the slice it cares about instead of re-scanning the whole tracker:
+
+```bash
+# Items touched since my last context window (feed back the previous run's `now`)
+pm list-all --updated-after 2026-06-04T15:18:32Z --brief
+
+# Relative offsets are SIGNED: -2h/-7d reach into the past, +1d into the future.
+# Units are h/d/w/m (m = months — there is no minutes unit).
+pm list-open --updated-after=-2h --brief
+pm list-all --created-after=-7d --status open
+
+# Search scoped to open work only (drops closed-history noise); statuses are
+# open/closed/canceled aliases or configured ids, comma-separated, with a
+# did-you-mean hint on typos.
+pm search "reminder validation" --status open --limit 10
+```
+
+Each filter echoes its raw input back in the result `filters` block so an agent can confirm exactly what window it queried.
+
+## Bulk Operations
+
+`update-many` and `close-many` apply one change across a matched set with a dry-run preview and a rollback checkpoint. Both share the `--filter-*` scoping family (`--filter-status/-type/-tag/-priority/-sprint/-release/-parent/-assignee/-deadline-before|after/-updated-after|before/-created-after|before`) plus `--ids` for an explicit comma-separated allowlist intersected with the other filters.
+
+```bash
+# Bulk metadata update by explicit id allowlist (compose with search --json | jq)
+pm update-many --ids pm-a,pm-b,pm-c --priority 1 --dry-run
+pm update-many --filter-tag wave:7 --reviewer maintainer-review
+
+# Audited bulk close: routes EACH match through full `pm close` semantics
+# (close validation, active-child orphan checks, blocked-edge cleanup) — unlike
+# `update-many --status closed`, which bypasses them. A shared --reason is required
+# and at least one filter is required so it never matches every item.
+pm close-many --filter-sprint S-12 --reason "Sprint S-12 acceptance criteria met" --dry-run
+pm close-many --filter-sprint S-12 --reason "Sprint S-12 acceptance criteria met"
+pm close-many --rollback close-many-20260604-abc123   # restore the batch
+```
+
+`close-many` skips already-terminal matches by default (pass `--force` to re-close), reports a per-item plan (`close`/`skip`, plus `active_child_ids` for parents that would be orphaned) under `--dry-run`, and writes a checkpoint by default (`--no-checkpoint` to disable). Checkpoints for both commands live under `.agents/pm/checkpoints/<command>/` and are restored with `--rollback <checkpoint-id>`.
+
 When a flag is rejected with `Unknown option`, the error guidance now suggests the nearest supported flag (including abbreviations like `--desc` → `--description`) and notes when the flag is valid on a different command (for example `--type` on `test-all` points to `create`/`list`).
 
 ## Create and Update

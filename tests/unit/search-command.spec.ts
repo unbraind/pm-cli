@@ -2025,6 +2025,66 @@ describe("runSearch", () => {
       exitCode: EXIT_CODE.USAGE,
     });
   });
+
+  it("filters the keyword corpus by --status before the query and echoes the raw value", async () => {
+    const openHit = makeFrontMatter({
+      id: "pm-status-open",
+      title: "statustoken open work",
+      description: "statustoken open description",
+      status: "open",
+    });
+    const closedHit = makeFrontMatter({
+      id: "pm-status-closed",
+      title: "statustoken closed work",
+      description: "statustoken closed description",
+      status: "closed",
+    });
+    const docs = [openHit, closedHit];
+    listAllFrontMatterMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "statustoken body");
+    });
+
+    const { runSearch } = await import("../../src/cli/commands/search.js");
+
+    // --status open excludes the closed item via the open workflow-group alias.
+    const openResult = await runSearch("statustoken", { mode: "keyword", status: "open" }, { path: "/tmp/pm-search" });
+    expect(openResult.count).toBe(1);
+    expect(openResult.items[0].item.id).toBe("pm-status-open");
+    expect(openResult.filters.status).toBe("open");
+
+    // --status closed returns only the closed item via the closed alias.
+    const closedResult = await runSearch(
+      "statustoken",
+      { mode: "keyword", status: "closed" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(closedResult.count).toBe(1);
+    expect(closedResult.items[0].item.id).toBe("pm-status-closed");
+    expect(closedResult.filters.status).toBe("closed");
+
+    // No --status leaves the corpus unfiltered and echoes null.
+    const noStatus = await runSearch("statustoken", { mode: "keyword" }, { path: "/tmp/pm-search" });
+    expect(noStatus.count).toBe(2);
+    expect(noStatus.filters.status).toBeNull();
+  });
+
+  it("rejects an unrecognized --status token strictly with a did-you-mean hint", async () => {
+    const { runSearch } = await import("../../src/cli/commands/search.js");
+    await expect(
+      runSearch("statustoken", { mode: "keyword", status: "opne" }, { path: "/tmp/pm-search" }),
+    ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+      message: expect.stringContaining('Invalid --status value "opne"'),
+    });
+    await expect(
+      runSearch("statustoken", { mode: "keyword", status: "opne" }, { path: "/tmp/pm-search" }),
+    ).rejects.toThrow(/Did you mean "open"\?/);
+  });
 });
 
 describe("classifyImplicitSemanticFallbackReason", () => {
