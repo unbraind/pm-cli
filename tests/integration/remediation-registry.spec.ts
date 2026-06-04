@@ -95,12 +95,12 @@ describe("shared remediation registry", () => {
   describe("buildRemediationCommands", () => {
     it("returns a deduped, ordered list of executable commands", () => {
       const commands = buildRemediationCommands([
-        "validate_metadata_missing_author:1",
+        "validate_metadata_missing_reviewer:1",
         "validate_metadata_missing_estimate:1",
-        "validate_metadata_missing_author:2",
+        "validate_metadata_missing_reviewer:2",
       ]);
       expect(commands).toEqual([
-        'pm update <id> --author "<name>"',
+        'pm update <id> --reviewer "<name>"',
         'pm update <id> --estimate "<estimate>"',
       ]);
     });

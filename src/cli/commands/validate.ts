@@ -635,13 +635,15 @@ function buildResolutionRemediationCommand(row: { id: string; missing_fields: Re
 }
 
 /**
- * Attach a uniform, machine-executable `fix_hints` array (executable `pm`
- * commands) to a validate check's details when `--fix-hints` is requested. The
- * resolution check's existing per-row remediation commands are aliased in so
- * agents read one uniform field across every check; all other checks derive one
- * generic command per distinct warning code from the shared remediation
- * registry. Read-only: this only enriches the diagnostic output, never mutates
- * any item.
+ * Attach a uniform, machine-executable `fix_hints` array to a validate check's
+ * details when `--fix-hints` is requested. The resolution check's existing
+ * per-row remediation commands (which already carry concrete item ids) are
+ * aliased in so agents read one uniform field across every check; all other
+ * checks derive one generic command per distinct warning code from the shared
+ * remediation registry. Generic hints may contain `<id>`/`<field>`/`<path>`
+ * placeholders the caller substitutes before running — they are templates, not
+ * always directly executable as-is. Read-only: this only enriches the diagnostic
+ * output, never mutates any item.
  */
 function attachValidateFixHints(check: ValidateCheck, checkWarnings: string[]): void {
   const existingResolutionHints = check.details.missing_resolution_remediation_hints;

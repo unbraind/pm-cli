@@ -20,10 +20,12 @@
 
 export interface RemediationEntry {
   /**
-   * Stable warning-code prefix this entry resolves. Matched against the segment
-   * of a warning token up to (but not including) the first `:` separator, with
-   * longest-prefix precedence so `settings:id_prefix_empty` can be more specific
-   * than a hypothetical bare `settings` entry.
+   * Stable warning-code prefix this entry resolves. A warning matches when it
+   * equals this code or begins with `<code>:`. Registry codes are mutually
+   * exclusive under that colon-boundary rule (no code is a `:`-delimited prefix
+   * of another — e.g. `settings:id_prefix_empty` is distinct from a bare
+   * `settings`, which is intentionally not registered), so `resolveRemediation`
+   * uses first-match with no ordering dependency.
    */
   readonly code: string;
   /** Executable `pm` command (or imperative) that resolves the finding. May contain an `<id>` placeholder. */
@@ -159,11 +161,11 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     summary: "Some items have stale embeddings; refresh vectors so semantic search results stay current.",
   },
   // --- pm validate: metadata ---
-  {
-    code: "validate_metadata_missing_author",
-    command: 'pm update <id> --author "<name>"',
-    summary: "Backfill the missing author on the reported item(s).",
-  },
+  // Note: validate_metadata_missing_author has no entry on purpose. `pm update
+  // --author` sets the mutation/audit author (history), not the item's
+  // `metadata.author` front-matter field, and there is no CLI flag that writes
+  // that field — so emitting a command here would record an audit entry without
+  // clearing the finding. A missing item author must be restored at the source.
   {
     code: "validate_metadata_missing_acceptance_criteria",
     command: 'pm update <id> --acceptance-criteria "<criteria>"',
@@ -218,8 +220,9 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   // --- pm validate: lifecycle ---
   {
     code: "validate_lifecycle_active_closure_like_metadata",
-    command: 'pm update <id> --resolution "none"',
-    summary: "Clear closure-like metadata from active items, or close them if they are actually done.",
+    command: "pm update <id> --unset resolution",
+    summary:
+      "Clear the closure-like field the validator flags (--unset resolution / actual-result / blocked-reason), or close the item if it is actually done.",
   },
   {
     code: "validate_lifecycle_active_terminal_parent",
@@ -228,8 +231,9 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   },
   {
     code: "validate_lifecycle_stale_blockers",
-    command: 'pm update <id> --unblock-note "<resolution>"',
-    summary: "Clear stale blocker metadata from items whose blockers are no longer active.",
+    command: "pm update <id> --unset blocked-by --unset blocked-reason",
+    summary:
+      "Clear the blocked-by/blocked-reason fields the validator inspects when an item's blockers are no longer active.",
   },
   {
     code: "validate_lifecycle_dependency_cycles_error",
@@ -245,12 +249,14 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   {
     code: "validate_files_missing_linked_paths",
     command: "pm files <id> --remove <path>",
-    summary: "Restore the missing linked file, or unlink it from the item.",
+    summary:
+      "Restore the missing linked artifact, or unlink it: use pm files <id> --remove <path> for a linked file, pm docs <id> --remove <path> for a linked doc.",
   },
   {
     code: "validate_files_orphaned_paths",
     command: "pm files <id> --add <path>",
-    summary: "Link the orphaned file to an item, or remove it from the workspace.",
+    summary:
+      "Link the orphaned artifact to an item (pm files/pm docs <id> --add <path>), or remove it from the workspace.",
   },
   {
     code: "validate_files_tracked_all_strict_forces_pm_internals",
@@ -281,8 +287,9 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
   // --- pm validate: command_references ---
   {
     code: "validate_command_references_stale_pm_ids",
-    command: "pm update <id> --body <corrected-body>",
-    summary: "Correct the stale pm-ID reference in the item body to an existing item id.",
+    command: 'pm update <id> --replace-tests --test "command=<corrected-command>"',
+    summary:
+      "Correct the stale pm-ID inside the item's linked test command (the check scans tests[].command, not the body); replace the linked test entry.",
   },
 ]);
 

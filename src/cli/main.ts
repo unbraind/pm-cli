@@ -1042,11 +1042,12 @@ function collectParsedActivationCommandArgs(command: Command): string[] {
 }
 
 /**
- * Surface actionable settings-read warnings once per command on stderr.
- * readSettings() silently falls back to defaults when settings.json is invalid,
- * so most commands (create/list/search/...) generate the warning but never show
- * it — a typo would change behavior with no explanation. Only the actionable
- * settings_read_* codes are surfaced; benign informational warnings (schema
+ * Surface settings-read warnings once per command on stderr. readSettings()
+ * silently falls back to defaults when settings.json is invalid, so most
+ * commands (create/list/search/...) generate the warning but never show it — a
+ * typo would change behavior with no explanation. Only the `settings_read_*`
+ * codes are surfaced (the corrupt-settings fallbacks: invalid_json /
+ * invalid_schema / merge_failed); other informational settings warnings (schema
  * bootstrap, legacy-format coercion) stay quiet. Mirrors the same finding in
  * `pm health`, which also carries a remediation_map for it.
  */
