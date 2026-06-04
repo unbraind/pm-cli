@@ -119,6 +119,7 @@ const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   "no slack webhook configured",
   "slack webhook request failed",
   "structural error(s) found in",
+  "validation failed: 1 structural error(s)",
   "validation failed: 3 structural error(s)",
   "validation found 3 structural error(s)",
 ];

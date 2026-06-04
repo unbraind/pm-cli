@@ -1,11 +1,11 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineExtension, listAllFrontMatter, EXIT_CODE, PmCliError } from "@unbrained/pm-cli/sdk";
-import { buildChangelogDocument, createChangelog, mergeChangelog, writeChangelog } from "./generator.js";
+import { buildChangelogDocument, createChangelog, mergeChangelog, suggestSemver, writeChangelog } from "./generator.js";
 import { resolveReleaseContext, resolveReleaseTagWindows } from "./release-context.js";
 export default defineExtension({
     name: "pm-changelog",
-    version: "2026.6.3",
+    version: "2026.6.4",
     activate(api) {
         api.registerCommand({
             name: "changelog generate",
@@ -41,6 +41,10 @@ export default defineExtension({
                 { long: "--contributors", description: "Append a Contributors list per release from item assignee/author" },
                 { long: "--limit", value_name: "n", description: "Keep only the most recent N release sections (history modes only)" },
                 { long: "--since-version", value_name: "version", description: "Keep only releases at or newer than this version (history modes only)" },
+                { long: "--breaking-changes", description: "Emit a Breaking Changes section listing items detected as breaking" },
+                { long: "--suggest-semver", description: "Return a suggested semver bump (major/minor/patch); never writes the changelog" },
+                { long: "--body-preview", value_name: "n", description: "Append the first N chars of each item body to its entry" },
+                { long: "--emoji-prefix", description: "Prefix section headings with conventional emoji (Added 🎉, Fixed 🐛, ...)" },
                 { long: "--changelog-json", description: "Return the full structured changelog document (releases->sections->items)" },
                 { long: "--mode", value_name: "mode", description: "replace or prepend existing changelog (default: replace)" },
                 { long: "--include-empty", description: "Emit an empty release section when no items match" },
@@ -116,6 +120,10 @@ export default defineExtension({
                     contributors: booleanOption(ctx.options, "contributors", "contributors"),
                     limit: limitValue,
                     sinceVersion: stringOption(ctx.options, "since-version", "sinceVersion"),
+                    breakingChanges: booleanOption(ctx.options, "breaking-changes", "breakingChanges"),
+                    bodyPreview: parseBodyPreviewOption(ctx.options),
+                    emojiPrefix: booleanOption(ctx.options, "emoji-prefix", "emojiPrefix"),
+                    suggestSemver: booleanOption(ctx.options, "suggest-semver", "suggestSemver"),
                     includeEmpty: booleanOption(ctx.options, "include-empty", "includeEmpty"),
                     includeLinks: booleanOption(ctx.options, "include-links", "includeLinks"),
                     itemUrlBase: stringOption(ctx.options, "item-url-base", "itemUrlBase"),
@@ -124,6 +132,12 @@ export default defineExtension({
                 if (booleanOption(ctx.options, "changelog-json", "changelogJson")) {
                     const document = buildChangelogDocument(generationOptions);
                     return { document, format: "json", item_count: document.item_count };
+                }
+                // OPT-IN (`--suggest-semver`) standalone: emit only the semver analysis;
+                // never writes a file and never alters default markdown.
+                if (booleanOption(ctx.options, "suggest-semver", "suggestSemver")) {
+                    const suggestion = suggestSemver(generationOptions);
+                    return { suggested_semver: suggestion, format: "json" };
                 }
                 const generated = createChangelog(generationOptions);
                 if (stdout) {
@@ -269,6 +283,16 @@ function parseLimitOption(options) {
     const parsed = typeof raw === "number" ? raw : Number.parseInt(String(raw), 10);
     if (!Number.isInteger(parsed) || parsed < 1) {
         throw new PmCliError("--limit must be a positive integer", EXIT_CODE.USAGE);
+    }
+    return parsed;
+}
+function parseBodyPreviewOption(options) {
+    const raw = options["body-preview"] ?? options["bodyPreview"];
+    if (raw === undefined || raw === null || raw === "")
+        return undefined;
+    const parsed = typeof raw === "number" ? raw : Number.parseInt(String(raw), 10);
+    if (!Number.isInteger(parsed) || parsed < 1) {
+        throw new PmCliError("--body-preview must be a positive integer", EXIT_CODE.USAGE);
     }
     return parsed;
 }

@@ -2,7 +2,7 @@
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { stdin } from "node:process";
-import { buildChangelogDocument, createChangelog, mergeChangelog, parsePmItemsJson, readPmItems, writeChangelog, } from "./generator.js";
+import { buildChangelogDocument, createChangelog, mergeChangelog, parsePmItemsJson, readPmItems, suggestSemver, writeChangelog, } from "./generator.js";
 import { resolveReleaseContext, resolveReleaseTagWindows } from "./release-context.js";
 async function main() {
     const options = parseArgs(process.argv.slice(2));
@@ -14,6 +14,14 @@ async function main() {
     if (options.changelogJson) {
         const document = buildChangelogDocument(buildGenerationOptions(options, items));
         process.stdout.write(JSON.stringify(document, null, 2) + "\n");
+        return;
+    }
+    // OPT-IN (`--suggest-semver`) without `--changelog-json`: emit only the
+    // semver analysis as JSON to stdout and exit. Never writes CHANGELOG.md and
+    // never touches default markdown.
+    if (options.suggestSemver) {
+        const suggestion = suggestSemver(buildGenerationOptions(options, items));
+        process.stdout.write(JSON.stringify(suggestion, null, 2) + "\n");
         return;
     }
     if (!options.stdout) {
@@ -82,6 +90,9 @@ function parseArgs(args) {
         sectionBy: "category",
         conventional: false,
         contributors: false,
+        breakingChanges: false,
+        suggestSemver: false,
+        emojiPrefix: false,
         changelogJson: false,
         includeEmpty: false,
         includeLinks: false,
@@ -190,6 +201,18 @@ function parseArgs(args) {
             case "--contributors":
                 options.contributors = true;
                 break;
+            case "--breaking-changes":
+                options.breakingChanges = true;
+                break;
+            case "--suggest-semver":
+                options.suggestSemver = true;
+                break;
+            case "--body-preview":
+                options.bodyPreview = parseBodyPreview(requireValue(args, ++i, arg));
+                break;
+            case "--emoji-prefix":
+                options.emojiPrefix = true;
+                break;
             case "--changelog-json":
                 options.changelogJson = true;
                 break;
@@ -296,6 +319,13 @@ function parseLimit(value) {
     }
     return parsed;
 }
+function parseBodyPreview(value) {
+    const parsed = Number.parseInt(value, 10);
+    if (!Number.isInteger(parsed) || parsed < 1) {
+        throw new Error("--body-preview must be a positive integer");
+    }
+    return parsed;
+}
 function parseMode(value) {
     if (value === "replace" || value === "prepend")
         return value;
@@ -317,6 +347,10 @@ function buildGenerationOptions(options, items) {
         contributors: options.contributors,
         limit: options.limit,
         sinceVersion: options.sinceVersion,
+        breakingChanges: options.breakingChanges,
+        bodyPreview: options.bodyPreview,
+        emojiPrefix: options.emojiPrefix,
+        suggestSemver: options.suggestSemver,
         includeEmpty: options.includeEmpty,
         includeLinks: options.includeLinks,
         itemUrlBase: options.itemUrlBase,
@@ -410,6 +444,10 @@ Options:
       --contributors        Append a Contributors list per release from item assignee/author
       --limit <n>           Keep only the most recent N release sections (history modes only)
       --since-version <v>   Keep only releases at or newer than version <v> (history modes only)
+      --breaking-changes    Emit a Breaking Changes section listing items detected as breaking
+      --suggest-semver      Print a suggested semver bump (major/minor/patch) as JSON; never writes the changelog
+      --body-preview <n>    Append the first N chars of each item body to its entry
+      --emoji-prefix        Prefix section headings with conventional emoji (Added 🎉, Fixed 🐛, ...)
       --changelog-json      Print the full structured changelog document (releases->sections->items) to stdout
       --mode <mode>         replace or prepend existing changelog (default: replace)
       --include-empty       Emit an empty release section when no items match

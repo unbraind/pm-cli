@@ -36,6 +36,10 @@ npx pm-changelog --stdout --contributors         # per-release contributor list
 npx pm-changelog --all-release-tags --limit 10   # keep only the newest N releases
 npx pm-changelog --all-release-tags --since-version 2.0.0
 npx pm-changelog --all-release-tags --changelog-json > changelog.json
+npx pm-changelog --stdout --breaking-changes      # add a Breaking Changes section
+npx pm-changelog --suggest-semver                 # print a suggested semver bump as JSON
+npx pm-changelog --stdout --body-preview 80       # append first 80 chars of each item body
+npx pm-changelog --stdout --emoji-prefix          # prefix headings with emoji (Added 🎉, Fixed 🐛, ...)
 ```
 
 See [Usage](docs/usage.md#opt-in-enhancements) for details.

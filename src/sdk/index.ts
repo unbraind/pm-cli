@@ -30,6 +30,8 @@ export {
   assertRegisteredHook,
   assertRegisteredImporter,
   assertRegisteredSearchProvider,
+  activateExtensionForTest,
+  type ActivateExtensionForTestOptions,
   type RegisteredCommandContractAssertion,
   type RegisteredCommandContractExpectation,
   type RegisteredExporterExpectation,

@@ -75,6 +75,7 @@
     "quality:static": "node scripts/release/static-quality-gate.mjs",
     "quality:docs-skills": "node scripts/release/docs-skills-gate.mjs",
     "dogfood:package-first": "node scripts/dogfood-package-first.mjs",
+    "smoke:external-packages": "node scripts/smoke-external-packages.mjs",
     "smoke:codex-plugin": "node scripts/smoke-codex-plugin-mcp.mjs",
     "smoke:claude-plugin": "node scripts/smoke-claude-plugin.mjs",
     "version:check": "node scripts/release-version.mjs check",

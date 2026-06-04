@@ -1,4 +1,4 @@
-import type { ChangelogDocument, GeneratedChangelog, GenerateChangelogOptions, MergeChangelogOptions, MergeChangelogResult, PmItem, ReadPmItemsOptions, WriteChangelogOptions, WriteChangelogResult } from "./types.js";
+import type { ChangelogDocument, GeneratedChangelog, GenerateChangelogOptions, MergeChangelogOptions, MergeChangelogResult, PmItem, ReadPmItemsOptions, SemverSuggestion, WriteChangelogOptions, WriteChangelogResult } from "./types.js";
 export declare function generateChangelog(options: GenerateChangelogOptions): string;
 export declare function createChangelog(options: GenerateChangelogOptions): GeneratedChangelog;
 /**
@@ -14,4 +14,10 @@ export declare function mergeChangelog(existingMarkdown: string | undefined, gen
 export declare function readPmItems(options?: ReadPmItemsOptions): PmItem[];
 export declare function writeChangelog(options: WriteChangelogOptions): WriteChangelogResult;
 export declare function parsePmItemsJson(raw: string): PmItem[];
+/**
+ * OPT-IN (`--suggest-semver`): classify the in-scope items into breaking /
+ * feature / fix / other and recommend a semver bump. Emitted as JSON or a
+ * footer note; never alters default markdown.
+ */
+export declare function suggestSemver(options: GenerateChangelogOptions): SemverSuggestion;
 //# sourceMappingURL=generator.d.ts.map

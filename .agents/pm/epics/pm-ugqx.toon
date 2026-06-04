@@ -6,10 +6,24 @@ status: open
 priority: 1
 tags[6]: "area:extensions","area:packages","area:sdk",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:11.928Z"
-updated_at: "2026-05-31T19:42:11.928Z"
+updated_at: "2026-06-04T05:41:12.433Z"
 author: maintainer-agent
 goal: project management = context management
 objective: "Mature the extension/package platform: capability exemplars, version-compat, sandbox API surface, SDK testing helpers"
 value: A robust SDK that lets any project fully customize pm via packages
 parent: pm-doxj
+comments[1]{created_at,author,text}:
+  "2026-06-04T05:40:59.863Z",codex-sdk-surface,"Sidecar SDK surface evidence: added activateExtensionForTest to @unbrained/pm-cli/sdk/testing and the SDK barrel, documented the package-author pattern in docs/SDK.md and docs/EXTENSIONS.md, and covered command/hook activation plus missing-capability failure in tests/unit/sdk-index.spec.ts. Verification passed: node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts (23 tests), pnpm build, and manual temp npm consumer installing <repo-root> then importing @unbrained/pm-cli/sdk/testing returned {ok:true,command:'consumer hello',failed:0,warnings:0}. Note: unrelated concurrent worktree changes exist for pm-vnjh/docs/TESTING.md/package.json/scripts/smoke-external-packages.mjs and were not modified by this sidecar."
+files[3]{path,scope,note}:
+  src/sdk/index.ts,project,Re-export testing activation helper from SDK barrel
+  src/sdk/testing.ts,project,Add public in-memory extension activation helper for package-author tests
+  tests/unit/sdk-index.spec.ts,project,Cover public testing activation helper and capability guardrails
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mpz2hafq-wr1til,test,passed,"2026-06-04T05:40:37.665Z","2026-06-04T05:40:50.582Z","2026-06-04T05:40:50.582Z",null,null,2,0,0,null,null,null
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Document package unit-test helper in extension authoring notes
+  docs/SDK.md,project,Document package-author in-memory activation testing pattern
 body: ""
