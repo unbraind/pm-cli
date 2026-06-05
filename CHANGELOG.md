@@ -24,6 +24,7 @@
 
 ### Fixed
 
+- Sentry reliability gate blocks release on dogfood-generated expected CLI errors \(brittle per-count + missing standup-export patterns\) ([pm-yohx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-yohx.toon))
 - Auto Release 2026-06-01 tagged v2026.6.1 but npm publish never completed \(latest npm = 2026.5.31\) ([pm-kcba](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kcba.toon))
 - governance.create\_default\_type is not settable via pm config set ([pm-jpwo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jpwo.toon))
 - Warn on global service and renderer override footguns ([pm-5teq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-5teq.toon))

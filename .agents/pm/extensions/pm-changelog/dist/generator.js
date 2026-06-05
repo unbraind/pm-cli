@@ -672,7 +672,15 @@ function formatBodyPreview(item, options) {
     const limit = options.bodyPreview && options.bodyPreview > 0 ? options.bodyPreview : 0;
     if (limit === 0)
         return "";
-    const body = typeof item.body === "string" ? toSingleLine(item.body) : "";
+    // pm workspaces store long-form prose in `description`; `body` is usually
+    // empty. Prefer a non-empty `body`, then fall back to `description`, so the
+    // preview actually has content against real pm items.
+    const rawSource = typeof item.body === "string" && item.body.trim() !== ""
+        ? item.body
+        : typeof item.description === "string"
+            ? item.description
+            : "";
+    const body = toSingleLine(rawSource);
     if (!body)
         return "";
     const truncated = body.length > limit ? `${body.slice(0, limit)}…` : body;

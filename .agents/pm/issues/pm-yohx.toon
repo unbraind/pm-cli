@@ -1,0 +1,17 @@
+id: pm-yohx
+title: Sentry reliability gate blocks release on dogfood-generated expected CLI errors (brittle per-count + missing standup-export patterns)
+description: "After SENTRY_PERSONAL_ADMIN_TOKEN was configured (unblocking pm-kcba), the auto-release dry-run got past the preflight but failed the sentry-telemetry-gate with high=2. The 2 issues are handled CommandErrors from the release dogfood step that the gate's KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS allowlist did not recognize: PM-CLI-1E (standup export: could not write — parent directory does not exist) had no pattern, and PM-CLI-18 (validation failed: 4 structural error(s)) missed because the allowlist only listed counts 1/2/3. Both are expected handled CLI errors (isUnhandled=false), not release-blocking bugs."
+type: Issue
+status: closed
+priority: 2
+tags[3]: "area:ci","area:release",release
+created_at: "2026-06-05T04:50:30.410Z"
+updated_at: "2026-06-05T04:50:41.069Z"
+author: maintainer-agent
+acceptance_criteria: Make the structural-error pattern count-agnostic; add the standup-export missing-parent-directory pattern; gate passes (high=0) against live Sentry; release-automation-contract test updated; no weakening of the unhandled-error protection (type guard intact).
+parent: pm-u9d0
+resolution: "Replaced the brittle per-count validation patterns (1/2/3 + 'found in' + 'preflight') in KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS with one count-agnostic 'structural error(s)', and added 'the parent directory does not exist' for the standup-export write failure. Type guard (PmCliError/CommandError + isUnhandled=false) unchanged, so real unhandled crashes still block."
+expected_result: Auto-release Sentry gate passes (high=0) on dogfood-generated expected CLI errors regardless of error count.
+actual_result: "Gate verified locally against live Sentry: ok=true, critical=0, high=0, ignored_expected=14 (was 12); exit 0. release-automation-contract test updated."
+close_reason: Made structural-error pattern count-agnostic + added standup-export pattern
+body: ""

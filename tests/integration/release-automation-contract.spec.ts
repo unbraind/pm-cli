@@ -130,12 +130,11 @@ describe("release automation contract", () => {
     expect(gateSource).toContain('"dependency cycle"');
     expect(gateSource).toContain('"no slack webhook configured"');
     expect(gateSource).toContain('"slack webhook returned http"');
-    expect(gateSource).toContain('"preflight: 1 structural error(s)"');
-    expect(gateSource).toContain('"structural error(s) found in"');
-    expect(gateSource).toContain('"validation failed: 1 structural error(s)"');
-    expect(gateSource).toContain('"validation failed: 2 structural error(s)"');
-    expect(gateSource).toContain('"validation failed: 3 structural error(s)"');
-    expect(gateSource).toContain('"validation found 3 structural error(s)"');
+    // Count-agnostic structural-error pattern (replaced the brittle per-count
+    // "validation failed: 1/2/3" + "found in" + "preflight" entries) plus the
+    // standup-export missing-parent-directory write failure.
+    expect(gateSource).toContain('"structural error(s)"');
+    expect(gateSource).toContain('"the parent directory does not exist"');
     expect(gateSource).toContain("ignored_expected_cli_error_total");
     expect(gateSource).toContain("function buildTelemetryCommandInvocation");
     expect(gateSource).toContain('commandPath.endsWith(".sh")');
