@@ -18,6 +18,7 @@ Related docs:
 - [Configuration](CONFIGURATION.md)
 - [Testing](TESTING.md)
 - [Command Reference](COMMANDS.md)
+- [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md)
 
 ## Package Sources
 
@@ -309,6 +310,12 @@ pm schema show <Type>
 pm contracts --runtime-only --schema-only --json
 pm contracts --command <command> --flags-only --json
 ```
+
+Detailed package-author runtime contracts live in
+[Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md), including
+`telemetry.capture_level`, create-path vs `mutateItem` write behavior, and hook
+surface guarantees.
+
 
 ## Lifecycle Commands
 

@@ -6,7 +6,7 @@ Native pm CLI integration for Claude Code. Use pm project management tools direc
 
 | Component | What it provides |
 |-----------|----------------|
-| **18 MCP tools** | Full pm surface: context, search, list, get, create, update, claim, release, close, comments, files, docs, test, validate, health, contracts, plan + `pm_run` for everything else |
+| **21 MCP tools** | Full pm surface: context, search, list, get, create, update, claim, release, close, comments, files, docs, notes, learnings, deps, test, validate, health, contracts, plan + `pm_run` for everything else |
 | **5 skills** | `pm-workflow`, `pm-developer`, `pm-release`, `pm-audit`, `pm-planner` — auto-loaded as Claude Code skills |
 | **14 slash commands** | Full lifecycle coverage — status, start, close, triage, audit, search, new, list, calendar, developer, planner, release, workflow, init |
 | **4 subagents** | `pm-coordinator` (batch/multi-item), `pm-triage-agent` (duplicate-safe item creation), `pm-verification-agent` (evidence + close readiness), and `pm-delivery-chain` (orchestrated delivery) |
@@ -29,7 +29,7 @@ claude plugin marketplace add /path/to/pm-cli
 # claude plugin marketplace add unbraind/pm-cli
 ```
 
-This installs all 18 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and the session hook in one step.
+This installs all 21 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and the session hook in one step.
 
 ### Option B: Legacy marketplace alias (also works)
 
@@ -45,7 +45,7 @@ Both `pm` and `pm-cli` marketplace IDs resolve to the same plugin.
 claude mcp add --transport stdio pm-mcp -- npx -y @unbrained/pm-cli pm-mcp
 ```
 
-This gives you the 18 MCP tools but not the skills, slash commands, or session hook.
+This gives you the 21 MCP tools but not the skills, slash commands, or session hook.
 
 ### Option D: Direct `.mcp.json` (project-scoped MCP only)
 
@@ -159,6 +159,9 @@ Spawn pm-triage-agent to set up the pm item for: add OAuth2 login support
 | `pm_comments` | List or add comments |
 | `pm_files` | Link/unlink files |
 | `pm_docs` | Link/unlink docs |
+| `pm_notes` | List or add notes |
+| `pm_learnings` | List or add learnings |
+| `pm_deps` | List/add/remove dependencies |
 | `pm_test` | Link or run tests |
 | `pm_validate` | Run validation checks |
 | `pm_health` | Run health diagnostics |
@@ -171,7 +174,7 @@ Spawn pm-triage-agent to set up the pm item for: add OAuth2 login support
 |------|---------|
 | `pm_run` | Any pm action not covered above — pass `action` field |
 
-**`pm_run` actions:** `init`, `calendar`, `activity`, `aggregate`, `dedupe-audit`, `normalize`, `reindex`, `extension`, `history`, `stats`, `append`, `notes`, `learnings`, `test-all`, `comments-audit`, `gc`, `templates-list`, `templates-save`, `templates-show`, `test-runs-list`, `test-runs-status`, `test-runs-logs`, `test-runs-stop`, `test-runs-resume`, `config`, `completion`
+**`pm_run` actions:** `init`, `calendar`, `activity`, `aggregate`, `dedupe-audit`, `normalize`, `reindex`, `extension`, `history`, `stats`, `append`, `test-all`, `comments-audit`, `gc`, `templates-list`, `templates-save`, `templates-show`, `test-runs-list`, `test-runs-status`, `test-runs-logs`, `test-runs-stop`, `test-runs-resume`, `config`, `completion`
 
 ## Hybrid TUI Sync Pattern
 

@@ -6,9 +6,22 @@ status: open
 priority: 3
 tags[5]: "area:contracts","area:sdk",ci,governance,living-map
 created_at: "2026-05-31T19:45:02.095Z"
-updated_at: "2026-05-31T19:45:02.095Z"
+updated_at: "2026-06-05T15:28:43.561Z"
 author: maintainer-agent
 acceptance_criteria: Script generates a committed contracts snapshot; CI compares and fails on diff; explicit update command regenerates; CHANGELOG entry required when snapshot changes.
 value: "pm contracts --full JSON is the primary machine-readable surface for agents/SDK consumers; tested behaviorally but not as a whole-output snapshot, so a structural change could ship silently."
 parent: pm-5k4v
+comments[2]{created_at,author,text}:
+  "2026-06-05T15:22:04.129Z",maintainer-agent,"Implementation update: added scripts/contracts-snapshot.mjs with --update/--check, committed tests/fixtures/contracts/full.json from pm contracts --full --json, exposed pnpm contracts:update/check, wired CI static gate to pnpm contracts:check, and documented the workflow in docs/TESTING.md. Evidence so far: pnpm build && pnpm contracts:update && pnpm contracts:check passed; node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts passed (19 tests). Note: an earlier parallel contracts:check raced with another command rebuilding dist; reran snapshot serially to compare against one built artifact."
+  "2026-06-05T15:28:42.249Z",maintainer-agent,"Verification evidence: contracts snapshot gate remains current after changelog regeneration and full coverage. Commands passed: pnpm contracts:check; node scripts/run-tests.mjs coverage (139 files, 2314 tests, 100% statements/branches/functions/lines); pnpm typecheck; pnpm quality:static; pnpm security:scan; pnpm audit --audit-level low; manual temp-project smoke verified contracts schema_version=4.0.2 and 75 actions. Status: implementation is ready for PR inclusion but item remains open because this run intentionally did not commit/push."
+files[4]{path,scope,note}:
+  .github/workflows/ci.yml,project,"CI static gate runs contracts:check"
+  package.json,project,"contracts:update and contracts:check scripts"
+  scripts/contracts-snapshot.mjs,project,Contract snapshot update/check script
+  tests/fixtures/contracts/full.json,project,Committed full contracts golden snapshot
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm build && pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Contract snapshot gate workflow
 body: ""

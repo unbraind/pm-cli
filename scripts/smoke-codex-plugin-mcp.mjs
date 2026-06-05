@@ -19,7 +19,7 @@ try {
   });
   const tools = await request("tools/list");
   const toolNames = new Set(tools.tools.map((tool) => tool.name));
-  for (const required of ["pm_run", "pm_context", "pm_create", "pm_get", "pm_update", "pm_comments", "pm_files", "pm_docs", "pm_test"]) {
+  for (const required of ["pm_run", "pm_context", "pm_create", "pm_get", "pm_update", "pm_comments", "pm_files", "pm_docs", "pm_notes", "pm_learnings", "pm_deps", "pm_test"]) {
     if (!toolNames.has(required)) {
       throw new Error(`Missing MCP tool ${required}`);
     }

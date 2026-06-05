@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026.6.5-1 - 2026-06-05
+
+### Fixed
+
+- suggest-semver computed over all items not visible release sections \(GH \#28\) ([pmc-isyx](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-isyx.toon))
+- body-preview silently empty for real pm items: body not loaded \(GH \#27\) ([pmc-ztt5](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-ztt5.toon))
+- Breaking-change detector substring-matches non-breaking as breaking \(GH \#26\) ([pmc-18yz](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-18yz.toon))
+
 ## 2026.6.5 - 2026-06-05
 
 ### Added

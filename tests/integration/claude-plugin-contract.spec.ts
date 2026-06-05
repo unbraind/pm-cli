@@ -192,7 +192,8 @@ describe("Claude Code plugin contract", () => {
     const PM_NATIVE_TOOLS = [
       "pm_context", "pm_search", "pm_list", "pm_get", "pm_create",
       "pm_update", "pm_claim", "pm_release", "pm_close", "pm_comments",
-      "pm_files", "pm_docs", "pm_test", "pm_validate", "pm_health",
+      "pm_files", "pm_docs", "pm_notes", "pm_learnings", "pm_deps",
+      "pm_test", "pm_validate", "pm_health",
       "pm_contracts", "pm_plan", "pm_run",
     ];
     const agents = ["pm-coordinator", "pm-triage-agent", "pm-verification-agent", "pm-delivery-chain"];

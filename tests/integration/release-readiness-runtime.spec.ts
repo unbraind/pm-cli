@@ -1950,6 +1950,7 @@ describe("release readiness runtime coverage", () => {
     expect(compatibilityScript).toContain("PM_GLOBAL_PATH");
     expect(compatibilityScript).toContain("prependYamlFrontMatter");
     expect(compatibilityScript).toContain("projectRoot");
+    expect(compatibilityScript).toContain('legacy("get", taskId, "--depth", "full")');
 
     const staticQualityScript = await readRepoText("scripts/release/static-quality-gate.mjs");
     expect(staticQualityScript).toContain("orphan_modules");

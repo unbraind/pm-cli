@@ -2,13 +2,18 @@ id: pm-te9x
 title: Document capture_level semantics for extension authors
 description: The three capture levels (minimal/redacted/max) are enforced for core commands but undocumented for extension authors; the activation context exposes settings.telemetry.capture_level but no guidance exists.
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[5]: "area:sdk","area:telemetry",docs,extensions,living-map
 created_at: "2026-05-31T19:45:03.201Z"
-updated_at: "2026-05-31T19:45:03.201Z"
+updated_at: "2026-06-05T14:57:12.720Z"
 author: maintainer-agent
 acceptance_criteria: SDK.md+EXTENSIONS.md gain a Telemetry & privacy section explaining levels+redaction and how to read capture_level from activation; optional advisory doctor lint when a telemetry-capability extension reads no telemetry setting; no core redaction change.
 value: The three capture levels (minimal/redacted/max) are enforced for core commands but undocumented for extension authors; the activation context exposes settings.telemetry.capture_level but no guidance exists.
 parent: pm-5oj5
+comments[1]{created_at,author,text}:
+  "2026-06-05T14:42:33.412Z",sdk-docs-subagent,"CODE RESEARCH FINDINGS: capture_level has three valid values: `minimal`, `redacted`, and `max`. Default is `redacted` (src/core/shared/constants.ts:257). Type is defined as `type TelemetryCaptureLevel = 'minimal' | 'redacted' | 'max'` at src/core/telemetry/runtime.ts:121. The settings-validator accepts `\"minimal\" | \"redacted\" | \"max\"` at src/core/store/settings-validator.ts:54/360. The `normalizeCaptureLevel()` function at runtime.ts:394-400 falls back to `\"redacted\"` for any unknown/undefined value. Behavioral contract per build-payload functions (runtime.ts:730-950): `minimal` — only hashed/digest versions of args/options/paths are recorded; no raw command text, no sanitized args, no result_summary, no runtime environment, no absolute paths; errors are still sanitized with `redacted` sanitizer; `redacted` — full event payload including sanitized command args, options, and result_summary; absolute paths replaced with `[redacted_path]`, emails with `[redacted_email]`, bearer tokens with `[redacted_token]`, private IPs with `[redacted_ip]`, inline secrets/flags redacted; string cap 512 chars; `max` — same payload shape as `redacted` but string cap is 2048 chars (looser truncation). ALL three levels apply `sanitizeCommonSensitiveTokens`, `redactInlineSensitiveAssignments`, and `redactAbsolutePathTokens` — `max` is NOT raw/unredacted. Change via `pm config set telemetry.capture_level <value>`. Inspect via `pm health --json` (check `details.capture_level`). Documented in docs/EXTENSIONS.md under new section `Telemetry capture_level`."
+learnings[1]{created_at,author,text}:
+  "2026-06-05T14:42:55.521Z",sdk-docs-subagent,"capture_level `max` is NOT unredacted. All three levels apply the same redaction passes (emails, bearer tokens, private IPs, inline secrets, absolute paths). `max` only widens the string truncation cap from 512 to 2048 chars and is useful when longer command args or error messages need to be preserved for debugging without sacrificing PII safety."
+close_reason: "Shipped in pm-at83 (sub-agent sdk-docs). Documented capture_level for extension authors in docs/EXTENSIONS.md new section 'Telemetry capture_level': allowed values minimal|redacted|max (default redacted, verified settings-validator.ts:360 + constants.ts:257), what every level redacts (inline secrets, absolute paths, emails, bearer tokens, private IPs), per-level payload detail (minimal = hashed/digest-only, no raw/sanitized args/result_summary; redacted = sanitized payload with 512-char truncation; max = same shape with 2048-char truncation, NOT unredacted), and how to inspect/change via `pm config set` / `pm health --json`. Documents only verified code behavior."
 body: ""

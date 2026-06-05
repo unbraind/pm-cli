@@ -1,0 +1,328 @@
+import { describe, expect, it, vi } from "vitest";
+import { handleRequest, processRpcLine } from "../../src/mcp/server.js";
+import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
+import { PM_TOOL_ACTIONS } from "../../src/sdk/cli-contracts/enum-contracts.js";
+import { withTempPmPath } from "../helpers/withTempPmPath.js";
+
+// pm-kl11: MCP protocol handshake coverage. These tests drive handleRequest
+// directly (the same entry point the stdio transport calls per JSON-RPC line)
+// to lock the initialize/tools-list/tools-call contract, the 21-tool surface
+// (incl. the pm-hywv narrow tools), the unknown-tool error path, and the
+// pm-qxwu typo-warning behavior.
+
+const EXPECTED_TOOL_NAMES = [
+  "pm_run",
+  "pm_context",
+  "pm_search",
+  "pm_list",
+  "pm_get",
+  "pm_create",
+  "pm_update",
+  "pm_claim",
+  "pm_release",
+  "pm_close",
+  "pm_comments",
+  "pm_files",
+  "pm_docs",
+  "pm_notes",
+  "pm_learnings",
+  "pm_deps",
+  "pm_test",
+  "pm_validate",
+  "pm_health",
+  "pm_contracts",
+  "pm_plan",
+];
+
+describe("MCP protocol handshake", () => {
+  it("initialize returns protocolVersion, serverInfo, and instructions", async () => {
+    const result = (await handleRequest({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "handshake-test", version: "1.0.0" },
+      },
+    })) as {
+      protocolVersion?: string;
+      serverInfo?: { name?: string; version?: string };
+      instructions?: string;
+      capabilities?: Record<string, unknown>;
+    };
+
+    expect(result.protocolVersion).toBe("2025-06-18");
+    expect(result.serverInfo).toMatchObject({ name: "pm-mcp" });
+    expect(typeof result.serverInfo?.version).toBe("string");
+    expect(typeof result.instructions).toBe("string");
+    expect(result.instructions).toContain("pm_context");
+    // pm-hywv: the narrow tools are advertised in the prefer-narrow guidance.
+    expect(result.instructions).toContain("pm_notes");
+    expect(result.instructions).toContain("pm_learnings");
+    expect(result.instructions).toContain("pm_deps");
+    expect(result.capabilities).toMatchObject({ tools: {} });
+  });
+
+  it("tools/list returns exactly the 21 expected tools including the new narrow tools", async () => {
+    const result = (await handleRequest({
+      jsonrpc: "2.0",
+      id: 2,
+      method: "tools/list",
+    })) as { tools?: Array<{ name?: string; description?: string; inputSchema?: unknown }> };
+
+    const tools = result.tools ?? [];
+    expect(tools).toHaveLength(21);
+
+    const names = tools.map((tool) => tool.name);
+    expect(new Set(names)).toEqual(new Set(EXPECTED_TOOL_NAMES));
+    // No duplicates.
+    expect(names.length).toBe(new Set(names).size);
+
+    // Every tool carries a non-empty description and an object input schema.
+    for (const tool of tools) {
+      expect(typeof tool.description).toBe("string");
+      expect((tool.description ?? "").length).toBeGreaterThan(0);
+      expect(tool.inputSchema).toMatchObject({ type: "object" });
+    }
+  });
+
+  it("pm_run action description is derived from PM_TOOL_ACTIONS (pm-fd8n)", async () => {
+    const result = (await handleRequest({
+      jsonrpc: "2.0",
+      id: 3,
+      method: "tools/list",
+    })) as { tools?: Array<{ name?: string; inputSchema?: { properties?: Record<string, { description?: string }> } }> };
+
+    const pmRun = (result.tools ?? []).find((tool) => tool.name === "pm_run");
+    const actionDescription = pmRun?.inputSchema?.properties?.action?.description ?? "";
+    // Every canonical action must appear in the generated enumeration; the
+    // string can never drift from PM_TOOL_ACTIONS since it is joined from it.
+    for (const action of PM_TOOL_ACTIONS) {
+      expect(actionDescription).toContain(action);
+    }
+    // The trailing package-owned prose is preserved.
+    expect(actionDescription).toContain("Package-owned actions");
+  });
+
+  it("tools/call with an unknown tool name yields a clear error", async () => {
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 4,
+        method: "tools/call",
+        params: { name: "pm_not_a_real_tool", arguments: {} },
+      }),
+    ).rejects.toThrow(/Unknown pm MCP tool: pm_not_a_real_tool/);
+  });
+
+  it("warns on a typo'd top-level key but not on a clean call (pm-qxwu)", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Typo warning target",
+          "--description",
+          "Typo warning target description",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--author",
+          "mcp-test",
+        ],
+        { expectJson: true },
+      );
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      // Clean call: all top-level keys are declared -> no warnings, no stderr.
+      const cleanErr = vi.spyOn(console, "error").mockImplementation(() => {});
+      let cleanResult: { structuredContent?: { warnings?: unknown; result?: unknown } } | undefined;
+      try {
+        cleanResult = (await handleRequest({
+          jsonrpc: "2.0",
+          id: 5,
+          method: "tools/call",
+          params: {
+            name: "pm_update",
+            arguments: {
+              path: context.pmPath,
+              id,
+              author: "mcp-test",
+              fullChangedFields: true,
+              options: { priority: "1", message: "clean update" },
+            },
+          },
+        })) as { structuredContent?: { warnings?: unknown; result?: unknown } };
+        // No pm-mcp unexpected-key warning should be emitted for a clean call.
+        const cleanStderr = cleanErr.mock.calls.map((call) => String(call[0])).join("\n");
+        expect(cleanStderr).not.toContain("[pm-mcp]");
+      } finally {
+        cleanErr.mockRestore();
+      }
+      expect(cleanResult?.structuredContent?.warnings).toBeUndefined();
+      expect(cleanResult?.structuredContent?.result).toBeDefined();
+
+      // Typo'd call: `fullChangedField` is a near-miss of `fullChangedFields`.
+      const typoErr = vi.spyOn(console, "error").mockImplementation(() => {});
+      let typoResult: { structuredContent?: { warnings?: string[]; result?: unknown } } | undefined;
+      try {
+        typoResult = (await handleRequest({
+          jsonrpc: "2.0",
+          id: 6,
+          method: "tools/call",
+          params: {
+            name: "pm_update",
+            arguments: {
+              path: context.pmPath,
+              id,
+              author: "mcp-test",
+              fullChangedField: true,
+              options: { priority: "2", message: "typo update" },
+            },
+          },
+        })) as { structuredContent?: { warnings?: string[]; result?: unknown } };
+        // Warning surfaced to stderr.
+        expect(typoErr).toHaveBeenCalled();
+        const stderrText = typoErr.mock.calls.map((call) => String(call[0])).join("\n");
+        expect(stderrText).toContain("fullChangedField");
+        expect(stderrText).toContain("fullChangedFields");
+      } finally {
+        typoErr.mockRestore();
+      }
+
+      // Warning surfaced additively in structuredContent, result still present.
+      const warnings = typoResult?.structuredContent?.warnings;
+      expect(Array.isArray(warnings)).toBe(true);
+      expect(warnings?.some((w) => w.includes("fullChangedField") && w.includes("fullChangedFields"))).toBe(true);
+      expect(typoResult?.structuredContent?.result).toBeDefined();
+    });
+  });
+
+  it("does not warn on unexpected top-level keys for pm_run (catch-all passthrough)", async () => {
+    await withTempPmPath(async (context) => {
+      const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+      let result: { structuredContent?: { warnings?: unknown } } | undefined;
+      try {
+        result = (await handleRequest({
+          jsonrpc: "2.0",
+          id: 7,
+          method: "tools/call",
+          params: {
+            name: "pm_run",
+            arguments: {
+              path: context.pmPath,
+              action: "context",
+              // Arbitrary extra top-level key would be a typo for a narrow tool
+              // but is legitimate extension passthrough for pm_run.
+              somePassthroughKey: "value",
+              options: { limit: "5" },
+            },
+          },
+        })) as { structuredContent?: { warnings?: unknown } };
+      } finally {
+        spy.mockRestore();
+      }
+      expect(result?.structuredContent?.warnings).toBeUndefined();
+    });
+  });
+
+  it("returns an invalid-request error for non-object JSON-RPC lines", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    let responseText = "";
+    try {
+      await processRpcLine("null");
+      responseText = write.mock.calls.map((call) => String(call[0])).join("");
+    } finally {
+      write.mockRestore();
+    }
+    expect(responseText).toContain('"id":null');
+    expect(responseText).toContain('"code":-32600');
+    expect(responseText).toContain("expected an object");
+  });
+
+  it("returns a JSON-RPC parse error for malformed JSON lines", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    let responseText = "";
+    try {
+      await processRpcLine("{not-json");
+      responseText = write.mock.calls.map((call) => String(call[0])).join("");
+    } finally {
+      write.mockRestore();
+    }
+    expect(responseText).toContain('"id":null');
+    expect(responseText).toContain('"code":-32700');
+    expect(responseText).toContain("Parse error");
+  });
+
+  it("does not respond to JSON-RPC notifications that omit id", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    try {
+      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", method: "tools/list" }));
+      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", method: "not/supported" }));
+      expect(write).not.toHaveBeenCalled();
+    } finally {
+      write.mockRestore();
+    }
+  });
+
+  it("serializes pipelined same-item mutations so both succeed (pm-3puw)", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Pipelined mutation target",
+          "--description",
+          "Pipelined mutation target description",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--author",
+          "mcp-test",
+        ],
+        { expectJson: true },
+      );
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      // Drive two mutations on the SAME item through the serial queue the stdio
+      // transport wraps around each JSON-RPC line (startMcpServer enqueues
+      // processRpcLine, which calls handleRequest). Before pm-3puw these ran
+      // fire-and-forget/concurrently and the second hit a lock conflict;
+      // serialized, the first releases the lock before the second begins so both
+      // succeed. This mirrors a client that pipelines requests without awaiting.
+      let callId = 100;
+      const callTool = (toolName: string, options: Record<string, unknown>) =>
+        handleRequest({
+          jsonrpc: "2.0",
+          id: callId++,
+          method: "tools/call",
+          params: {
+            name: toolName,
+            arguments: { path: context.pmPath, id, author: "mcp-test", options },
+          },
+        }) as Promise<{ structuredContent?: { result?: { count?: number } } }>;
+
+      const queue = createSerialQueue();
+      const first = queue.enqueue(() => callTool("pm_notes", { add: "serialized note" }));
+      const second = queue.enqueue(() => callTool("pm_learnings", { add: "serialized learning" }));
+      const [noteResult, learningResult] = await Promise.all([first, second]);
+
+      // Neither call threw a lock conflict; both carry a structured result.
+      expect(noteResult.structuredContent?.result).toBeDefined();
+      expect(learningResult.structuredContent?.result).toBeDefined();
+
+      // Both annotations actually landed on the item.
+      const notes = await callTool("pm_notes", {});
+      const learnings = await callTool("pm_learnings", {});
+      expect(notes.structuredContent?.result?.count).toBe(1);
+      expect(learnings.structuredContent?.result?.count).toBe(1);
+    });
+  });
+});

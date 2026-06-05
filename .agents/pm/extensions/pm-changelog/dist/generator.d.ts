@@ -20,4 +20,14 @@ export declare function parsePmItemsJson(raw: string): PmItem[];
  * footer note; never alters default markdown.
  */
 export declare function suggestSemver(options: GenerateChangelogOptions): SemverSuggestion;
+/**
+ * The items that actually render for the given options: the union of all
+ * visible release-section items after filtering, empty-section pruning and
+ * `--limit`/`--since-version` narrowing. Exposed so semver suggestions and the
+ * structured `--changelog-json` document classify the same set the markdown
+ * emits (GH #28).
+ */
+export declare function visibleChangelogItems(options: GenerateChangelogOptions): PmItem[];
+/** Classify an explicit item set into a semver bump (no option-driven filtering). */
+export declare function suggestSemverForItems(items: PmItem[]): SemverSuggestion;
 //# sourceMappingURL=generator.d.ts.map

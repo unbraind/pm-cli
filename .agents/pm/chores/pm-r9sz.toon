@@ -2,13 +2,16 @@ id: pm-r9sz
 title: Export PM_TOOL_PARAMETERS_SCHEMA_VERSION constant and bind all assertion sites
 description: Schema version '4.0.1' is a string literal in cli-contracts.ts plus two spec files; a bump needs 3 coordinated edits with no compile guard. A named export removes drift risk.
 type: Chore
-status: open
+status: closed
 priority: 3
-tags[5]: "area:contracts","area:sdk",code-quality,dx,living-map
+tags[6]: "area:contracts","area:sdk",code-quality,dx,living-map,refactor
 created_at: "2026-05-31T19:45:00.670Z"
-updated_at: "2026-05-31T19:45:00.670Z"
+updated_at: "2026-06-05T14:57:12.275Z"
 author: maintainer-agent
 acceptance_criteria: Constant exported and imported by both spec files; grep for bare '4.0.1' outside the definition returns zero; CI passes.
 value: Schema version '4.0.1' is a string literal in cli-contracts.ts plus two spec files; a bump needs 3 coordinated edits with no compile guard. A named export removes drift risk.
 parent: pm-5k4v
+comments[1]{created_at,author,text}:
+  "2026-06-05T14:42:55.363Z",maintainer-agent,"Implemented (orchestrator, part of pm-at83 bundle). Hoisted the duplicated schema-version literals in src/sdk/cli-contracts.ts into three exported constants: PM_TOOL_PARAMETERS_SCHEMA_VERSION='4.0.2' (strict action-scoped schema), PM_TOOL_PARAMETERS_SCHEMA_MAJOR (derived major that now drives the $id 'tool-parameters-v{major}' slug so version + $id never drift), and PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION='1.0.0' (provider-flat schema). PM_TOOL_PARAMETERS_SCHEMA's x-schema-version + $id now reference the constants; PM_PROVIDER_TOOL_PARAMETERS_SCHEMA likewise. Re-exported automatically via src/sdk/index.ts (`export * from ./cli-contracts.js`). Bound the two assertion sites to the constants: tests/unit/contracts-command.spec.ts (schema_version + schema_id) and tests/unit/sdk-index.spec.ts (schema_version). No remaining hardcoded '4.0.2' in src/ or tests/. Full build+test pending in orchestrator integration phase."
+close_reason: "Shipped in pm-at83. Hoisted the duplicated '4.0.2'/'1.0.0' schema-version literals in src/sdk/cli-contracts.ts into exported constants PM_TOOL_PARAMETERS_SCHEMA_VERSION, PM_TOOL_PARAMETERS_SCHEMA_MAJOR (derives the $id 'tool-parameters-v{major}' slug so version+$id never drift), and PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION; bound both spec assertion sites (contracts-command.spec schema_version+schema_id, sdk-index.spec schema_version) to the constants. No bare '4.0.2' remains in src/ or tests/. Re-exported automatically via src/sdk/index.ts. Verified: manual `pm contracts` returns schema_version=4.0.2 + tool-parameters-v4 schema_id; full suite + 100% coverage green."
 body: ""

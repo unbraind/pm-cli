@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Add MCP protocol handshake tests \(initialize + tools/list + unknown-tool error\) ([pm-kl11](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kl11.toon))
+- Add narrow MCP tools pm\_notes, pm\_learnings, pm\_deps \(agent self-documentation + deps\) ([pm-hywv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hywv.toon))
+
+### Changed
+
+- Export PM\_TOOL\_PARAMETERS\_SCHEMA\_VERSION constant and bind all assertion sites ([pm-r9sz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-r9sz.toon))
+- Generate pm\_run action-list description from PM\_TOOL\_ACTIONS to end prose/enum drift ([pm-fd8n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-fd8n.toon))
+
+### Fixed
+
+- MCP TOOL\_SCHEMA\_BASE additionalProperties:true silently swallows typo'd top-level args ([pm-qxwu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qxwu.toon))
+
+### Other
+
+- Document the create vs mutateItem dual write-path contract ([pm-k5r6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-k5r6.toon))
+- Document capture\_level semantics for extension authors ([pm-te9x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-te9x.toon))
+
 ## 2026.6.5 - 2026-06-05
 
 ### Added

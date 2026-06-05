@@ -2,13 +2,16 @@ id: pm-fd8n
 title: Generate pm_run action-list description from PM_TOOL_ACTIONS to end prose/enum drift
 description: "server.ts hand-writes the pm_run action list in prose; new actions (schema, history-repair, history-redact) require manual edits or agents get no discoverability hint."
 type: Chore
-status: open
+status: closed
 priority: 3
-tags[5]: "area:mcp",code-quality,contracts,dx,living-map
+tags[6]: "area:mcp",code-quality,contracts,dx,living-map,refactor
 created_at: "2026-05-31T19:45:00.983Z"
-updated_at: "2026-05-31T19:45:00.983Z"
+updated_at: "2026-06-05T14:56:56.102Z"
 author: maintainer-agent
 acceptance_criteria: Action description computed from PM_TOOL_ACTIONS (plus dynamic package section); test asserts it includes schema+history-repair; adding an action auto-appears.
 value: "server.ts hand-writes the pm_run action list in prose; new actions (schema, history-repair, history-redact) require manual edits or agents get no discoverability hint."
 parent: pm-5k4v
+comments[1]{created_at,author,text}:
+  "2026-06-05T14:46:28.752Z",mcp-platform-subagent,"Derived the pm_run action list from canonical PM_TOOL_ACTIONS (imported from src/sdk/cli-contracts/enum-contracts.js). Added PM_RUN_ACTION_DESCRIPTION = `Operation name (one of): ${PM_TOOL_ACTIONS.join(', ')}. ` + trailing package-owned-dynamic-actions prose. Replaced the hand-maintained hardcoded action enumeration in the pm_run tool def with this constant, ending prose/enum drift. Trailing prose about dynamically-installed package actions preserved verbatim."
+close_reason: "Shipped in pm-at83. The pm_run action-list description is now derived from the canonical PM_TOOL_ACTIONS enum via PM_RUN_ACTION_DESCRIPTION (`Operation name (one of): ` + PM_TOOL_ACTIONS.join(', ') + the package-owned dynamic-actions prose), replacing the hand-maintained hardcoded list so the MCP-facing description can no longer drift from the actual supported actions. The new handshake test asserts every PM_TOOL_ACTIONS entry appears in the description. Verified: full suite green + manual check."
 body: ""

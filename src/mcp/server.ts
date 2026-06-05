@@ -18,11 +18,14 @@ import { projectMutationResult } from "../core/output/mutation-projection.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { decodeHtmlEntitiesInOptions } from "../core/shared/html-entity-decode.js";
+import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import { asRecordClone } from "../core/shared/primitives.js";
+import { createSerialQueue } from "../core/shared/serial-queue.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { normalizeListOptions, normalizeUpdateOptions } from "../cli/registration-helpers.js";
 import { UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "../sdk/cli-contracts/commander-mutation-options.js";
+import { PM_TOOL_ACTIONS } from "../sdk/cli-contracts/enum-contracts.js";
 import {
   runActivity,
   runAggregate,
@@ -121,6 +124,13 @@ const idSchema = {
   description: "pm item id, for example pm-abc1.",
 };
 
+// pm-fd8n: derive the pm_run action enumeration from the canonical
+// PM_TOOL_ACTIONS contract instead of a hand-maintained prose list, so the
+// MCP-facing description can never drift from the actual supported actions.
+const PM_RUN_ACTION_DESCRIPTION =
+  `Operation name (one of): ${PM_TOOL_ACTIONS.join(", ")}. ` +
+  "Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.";
+
 function objectSchema(properties: Record<string, unknown>, required: string[] = []): Record<string, unknown> {
   return {
     ...TOOL_SCHEMA_BASE,
@@ -141,8 +151,7 @@ const TOOLS: ToolDefinition[] = [
       {
         action: {
           type: "string",
-          description:
-            "Operation name: init, context, list, get, search, create, update, delete, claim, release, close, close-many, comments, notes, learnings, files, files-discover, docs, deps, test, test-all, validate, health, contracts, config, activity, aggregate, extension, extension-reload, package, package-install, package-catalog, install, upgrade, history, schema, stats, append, update-many, gc. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
+          description: PM_RUN_ACTION_DESCRIPTION,
         },
         id: idSchema,
         query: { type: "string", description: "Search query for action=search." },
@@ -291,6 +300,24 @@ const TOOLS: ToolDefinition[] = [
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
   },
   {
+    name: "pm_notes",
+    description:
+      "List or add structured notes on a pm item. Use options.add to append a note; omit it to list existing notes.",
+    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
+  },
+  {
+    name: "pm_learnings",
+    description:
+      "List or add learnings on a pm item. Use options.add to capture a learning/insight; omit it to list existing learnings.",
+    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
+  },
+  {
+    name: "pm_deps",
+    description:
+      "List, add, or remove dependencies for a pm item. Use options.add to declare a dependency and options.remove to drop one; omit both to list current dependencies.",
+    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
+  },
+  {
     name: "pm_test",
     description: "List, add, remove, or run linked tests for a pm item.",
     inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
@@ -322,6 +349,70 @@ const TOOLS: ToolDefinition[] = [
     }),
   },
 ];
+
+// pm-qxwu: TOOL_SCHEMA_BASE keeps additionalProperties:true so legitimate
+// passthrough keeps working, which means a typo'd top-level arg (e.g.
+// "fullChangedField" missing the trailing "s") is silently swallowed and the
+// agent gets default behavior with no signal. We precompute the declared
+// top-level property keys for each tool and, on every tools/call, warn (without
+// rejecting) when an unexpected top-level key appears. The warning is surfaced
+// to stderr and additively in structuredContent.warnings.
+const TOOL_DECLARED_KEYS: Map<string, string[]> = new Map(
+  TOOLS.map((tool) => {
+    const schema = tool.inputSchema as { properties?: Record<string, unknown> };
+    const properties = schema.properties ?? {};
+    return [tool.name, Object.keys(properties)] as const;
+  }),
+);
+
+function nearestDeclaredKey(unexpected: string, declared: string[]): string | undefined {
+  // Cheap did-you-mean: budget grows with key length but stays small so we only
+  // suggest genuine near-misses (a single typo / transposition for short keys).
+  const limit = Math.max(1, Math.min(3, Math.floor(unexpected.length / 4) + 1));
+  let best: { key: string; distance: number } | undefined;
+  for (const candidate of declared) {
+    const distance = levenshteinDistanceWithinLimit(unexpected, candidate, limit);
+    if (distance === null) {
+      continue;
+    }
+    if (best === undefined || distance < best.distance) {
+      best = { key: candidate, distance };
+    }
+  }
+  return best?.key;
+}
+
+// pm_run is the explicit catch-all passthrough tool: extension/package actions
+// accept arbitrary top-level keys (see extensionOptionsFromArgs), so unexpected
+// keys there are by-design rather than typos and must not be flagged.
+const UNEXPECTED_KEY_WARNING_EXEMPT_TOOLS = new Set(["pm_run"]);
+
+function detectUnexpectedTopLevelKeys(toolName: string, args: Record<string, unknown>): string[] {
+  if (typeof args !== "object" || args === null || Array.isArray(args)) {
+    return [];
+  }
+  if (UNEXPECTED_KEY_WARNING_EXEMPT_TOOLS.has(toolName)) {
+    return [];
+  }
+  const declared = TOOL_DECLARED_KEYS.get(toolName);
+  if (declared === undefined) {
+    return [];
+  }
+  const declaredSet = new Set(declared);
+  const warnings: string[] = [];
+  for (const key of Object.keys(args)) {
+    if (declaredSet.has(key)) {
+      continue;
+    }
+    const suggestion = nearestDeclaredKey(key, declared);
+    warnings.push(
+      suggestion !== undefined
+        ? `Unexpected top-level argument "${key}" for ${toolName} (did you mean "${suggestion}"?). It was passed through unchanged; declared arguments are: ${declared.join(", ")}.`
+        : `Unexpected top-level argument "${key}" for ${toolName}. It was passed through unchanged; declared arguments are: ${declared.join(", ")}.`,
+    );
+  }
+  return warnings;
+}
 
 function readString(args: Record<string, unknown>, key: string): string | undefined {
   const value = args[key];
@@ -955,6 +1046,9 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_comments: (args) => runAction({ ...args, action: "comments" }),
   pm_files: (args) => runAction({ ...args, action: "files" }),
   pm_docs: (args) => runAction({ ...args, action: "docs" }),
+  pm_notes: (args) => runAction({ ...args, action: "notes" }),
+  pm_learnings: (args) => runAction({ ...args, action: "learnings" }),
+  pm_deps: (args) => runAction({ ...args, action: "deps" }),
   pm_test: (args) => runAction({ ...args, action: "test" }),
   pm_validate: (args) => runAction({ ...args, action: "validate" }),
   pm_health: (args) => runAction({ ...args, action: "health" }),
@@ -962,7 +1056,11 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_plan: (args) => runAction({ ...args, action: "plan" }),
 };
 
-function resultContent(result: unknown): Record<string, unknown> {
+function resultContent(result: unknown, warnings?: string[]): Record<string, unknown> {
+  // pm-qxwu: warnings is additive — existing fields (content, structuredContent.result)
+  // are never removed or renamed. The warnings array only appears when non-empty.
+  const structuredContent: Record<string, unknown> =
+    warnings !== undefined && warnings.length > 0 ? { result, warnings } : { result };
   return {
     content: [
       {
@@ -970,7 +1068,7 @@ function resultContent(result: unknown): Record<string, unknown> {
         text: JSON.stringify(result, null, 2),
       },
     ],
-    structuredContent: { result },
+    structuredContent,
   };
 }
 
@@ -1001,9 +1099,9 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
       instructions:
         "You have access to native pm CLI tools for git-based project management. " +
         "Use pm_context or pm_search before creating new work. " +
-        "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_update, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_test, pm_validate, pm_health, pm_contracts, pm_plan) over pm_run when they cover the operation. " +
+        "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_update, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_test, pm_validate, pm_health, pm_contracts, pm_plan) over pm_run when they cover the operation. " +
         "Use pm_plan for agent harness Plan workflows: it provides Codex/Claude/Cursor-style planning with durable steps, dependencies, decisions, discoveries, validation, and materialization. " +
-        "Use pm_run with an explicit action for package-owned operations (calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume), plus activity, aggregate, history, stats, append, notes, learnings, test-all, and gc. " +
+        "Use pm_run with an explicit action for package-owned operations (calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume), plus activity, aggregate, history, stats, append, test-all, and gc. " +
         "Use history-redact for audited history-stream redaction workflows, and history-repair to re-anchor a drifted history chain so pm health/validate report ok. " +
         "Set author to 'claude-code-agent' on all mutations. " +
         "Do not pass path during real repository tracking — only pass path for sandbox or test runs.",
@@ -1026,8 +1124,14 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
     // affected; decoding at the MCP boundary normalizes the agent path while
     // leaving normal text untouched.
     const args = decodeHtmlEntitiesInOptions(asRecordClone(params.arguments));
+    // pm-qxwu: non-breaking detection of typo'd / unexpected top-level keys.
+    // additionalProperties stays true so passthrough still works; we only warn.
+    const warnings = detectUnexpectedTopLevelKeys(name, args);
+    for (const warning of warnings) {
+      console.error(`[pm-mcp] ${warning}`);
+    }
     const result = await withCwd(args.cwd, () => handler(args));
-    return resultContent(result);
+    return resultContent(result, warnings);
   }
   throw new PmCliError(`Unsupported MCP method: ${request.method ?? "(missing)"}`, 64);
 }
@@ -1042,33 +1146,52 @@ function writeError(id: JsonRpcRequest["id"], error: unknown): void {
   process.stdout.write(`${JSON.stringify({ jsonrpc: "2.0", id, error: { code, message } })}\n`);
 }
 
+// pm-3puw: parse one JSON-RPC line, dispatch it, and write the response. Kept
+// as a standalone async unit so the stdio loop can enqueue it onto a serial
+// queue (process lines in arrival order) and tests can drive it directly.
+export async function processRpcLine(line: string): Promise<void> {
+  if (line.trim().length === 0) {
+    return;
+  }
+  let request: JsonRpcRequest;
+  try {
+    request = JSON.parse(line) as JsonRpcRequest;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    writeError(null, new PmCliError(`Parse error: ${message}`, -32700));
+    return;
+  }
+  if (typeof request !== "object" || request === null || Array.isArray(request)) {
+    writeError(null, new PmCliError("Invalid JSON-RPC request: expected an object", -32600));
+    return;
+  }
+  const shouldRespond = Object.prototype.hasOwnProperty.call(request, "id");
+  try {
+    const result = await handleRequest(request);
+    if (shouldRespond && result !== undefined) {
+      writeResponse(request.id, result);
+    }
+  } catch (error) {
+    if (!shouldRespond) {
+      return;
+    }
+    if (request.method === "tools/call") {
+      writeResponse(request.id, errorContent(error));
+    } else {
+      writeError(request.id, error);
+    }
+  }
+}
+
 export function startMcpServer(): void {
   const rl = readline.createInterface({ input: process.stdin, crlfDelay: Infinity });
+  // pm-3puw: serialize line handling so pipelined requests are processed in
+  // arrival order. The previous fire-and-forget handler ran requests
+  // concurrently, so a client that pipelined two mutations on the same item
+  // (without awaiting the first response) hit a lock conflict on the second.
+  const queue = createSerialQueue();
   rl.on("line", (line) => {
-    void (async () => {
-      if (line.trim().length === 0) {
-        return;
-      }
-      let request: JsonRpcRequest;
-      try {
-        request = JSON.parse(line) as JsonRpcRequest;
-      } catch (error) {
-        writeError(null, error);
-        return;
-      }
-      try {
-        const result = await handleRequest(request);
-        if (result !== undefined) {
-          writeResponse(request.id, result);
-        }
-      } catch (error) {
-        if (request.method === "tools/call") {
-          writeResponse(request.id, errorContent(error));
-        } else {
-          writeError(request.id, error);
-        }
-      }
-    })();
+    void queue.enqueue(() => processRpcLine(line));
   });
 }
 

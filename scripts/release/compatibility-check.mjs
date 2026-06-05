@@ -225,7 +225,7 @@ async function seedLegacyData(baseVersion, tempRoot, env, author) {
   );
 
   const before = legacy("list-all", "--limit", "200");
-  const taskSnapshot = legacy("get", taskId);
+  const taskSnapshot = legacy("get", taskId, "--depth", "full");
   const taskMarkdownPath = path.join(env.PM_PATH, "tasks", `${taskId}.md`);
   const taskToonPath = path.join(env.PM_PATH, "tasks", `${taskId}.toon`);
   await writeFile(
