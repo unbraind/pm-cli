@@ -1164,12 +1164,16 @@ export async function processRpcLine(line: string): Promise<void> {
     writeError(null, new PmCliError("Invalid JSON-RPC request: expected an object", -32600));
     return;
   }
+  const shouldRespond = Object.prototype.hasOwnProperty.call(request, "id");
   try {
     const result = await handleRequest(request);
-    if (result !== undefined) {
+    if (shouldRespond && result !== undefined) {
       writeResponse(request.id, result);
     }
   } catch (error) {
+    if (!shouldRespond) {
+      return;
+    }
     if (request.method === "tools/call") {
       writeResponse(request.id, errorContent(error));
     } else {

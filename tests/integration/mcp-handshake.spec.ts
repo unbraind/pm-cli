@@ -244,6 +244,17 @@ describe("MCP protocol handshake", () => {
     expect(responseText).toContain("expected an object");
   });
 
+  it("does not respond to JSON-RPC notifications that omit id", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    try {
+      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", method: "tools/list" }));
+      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", method: "not/supported" }));
+      expect(write).not.toHaveBeenCalled();
+    } finally {
+      write.mockRestore();
+    }
+  });
+
   it("serializes pipelined same-item mutations so both succeed (pm-3puw)", async () => {
     await withTempPmPath(async (context) => {
       const create = context.runCli(
