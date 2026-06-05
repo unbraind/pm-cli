@@ -119,12 +119,16 @@ const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   "no slack webhook configured",
   "slack webhook request failed",
   "slack webhook returned http",
-  "preflight: 1 structural error(s)",
-  "structural error(s) found in",
-  "validation failed: 1 structural error(s)",
-  "validation failed: 2 structural error(s)",
-  "validation failed: 3 structural error(s)",
-  "validation found 3 structural error(s)",
+  // Count-agnostic: validation / preflight structural-error CommandErrors are
+  // expected handled CLI failures regardless of how many errors are reported
+  // ("validation failed: N", "validation found N", "N structural error(s) found
+  // in", "preflight: N structural error(s)"). The brittle per-count list missed
+  // new counts (e.g. 4) and re-blocked the release on dogfood smoke output.
+  "structural error(s)",
+  // Handled write failure surfaced by the standup-export dogfood step when the
+  // target's parent directory is missing ("could not write to <path>: the parent
+  // directory does not exist — create it first ..."). Expected handled CLI error.
+  "the parent directory does not exist",
 ];
 
 function issueTextValue(issue) {

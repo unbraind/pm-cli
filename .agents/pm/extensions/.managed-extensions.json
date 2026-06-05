@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "updated_at": "2026-06-04T16:47:38.800Z",
+  "updated_at": "2026-06-05T04:52:29.995Z",
   "entries": [
     {
       "name": "pm-changelog",
       "directory": "pm-changelog",
       "scope": "project",
-      "manifest_version": "2026.6.4",
+      "manifest_version": "2026.6.5",
       "manifest_entry": "./dist/extension.js",
       "capabilities": [
         "commands",
@@ -14,13 +14,13 @@
         "schema"
       ],
       "installed_at": "2026-05-23T20:26:03.509Z",
-      "updated_at": "2026-06-04T05:59:56.852Z",
+      "updated_at": "2026-06-05T04:52:29.995Z",
       "source": {
         "kind": "npm",
         "input": "npm:pm-changelog",
         "location": "package",
         "package": "pm-changelog",
-        "version": "2026.6.4"
+        "version": "2026.6.5"
       }
     }
   ]

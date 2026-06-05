@@ -3,6 +3,11 @@ export interface PmItem {
     id?: string;
     title: string;
     body?: string;
+    /** Long-form prose. In pm workspaces the item body is stored in
+     * `description`; `body` is frequently empty. The opt-in `--body-preview`
+     * feature falls back to this when `body` is empty. Never affects default
+     * output. */
+    description?: string;
     status?: PmItemStatus;
     priority?: number;
     type?: string;

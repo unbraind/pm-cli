@@ -1,10 +1,12 @@
 # Changelog
 
-## 2026.6.4 - 2026-06-04
+## 2026.6.5 - 2026-06-05
 
 ### Added
 
 - Add opt-in breaking-changes, suggest-semver, body-preview, and emoji-prefix flags ([pmc-se5c](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/features/pmc-se5c.toon))
+
+## 2026.6.4 - 2026-06-04
 
 ### Fixed
 
