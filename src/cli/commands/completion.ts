@@ -389,7 +389,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
     "      ;;",
     "    history)",
-    `      COMPREPLY=(${compgen("--limit --compact --full --diff --verify --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--limit --compact --full --diff --field --verify --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    get)",
     `      COMPREPLY=(${compgen("--depth --full --fields --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
@@ -414,6 +414,9 @@ export function generateBashScript(
     "      ;;",
     "    gc)",
     `      COMPREPLY=(${compgen("--dry-run --scope --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    "      ;;",
+    "    stats)",
+    `      COMPREPLY=(${compgen("--storage --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    close|close-task)",
     `      COMPREPLY=(${compgen(CLOSE_MUTATION_FLAGS)})`,
@@ -949,7 +952,8 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--limit[Max entries]:number' \\
             '--compact[Condensed history projection]' \\
             '--full[Show full history entries]' \\
-            '--diff[Include changed-field patch summary]' \\
+            '--diff[Include per-entry field-level before/after value diffs]' \\
+            '--field[With --diff, show only entries that changed this field]:field' \\
             '--verify[Verify history hash chain and replay integrity]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1051,7 +1055,13 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
         gc)
           _arguments \\
             '--dry-run[Preview cleanup targets without deleting files]' \\
-            '--scope[Limit cleanup to one or more scopes]:scope' \\
+            '--scope[Limit cleanup to one or more scopes: index, embeddings, runtime, locks]:scope' \\
+            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        stats)
+          _arguments \\
+            '--storage[Include aggregate history-stream storage metrics]' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;

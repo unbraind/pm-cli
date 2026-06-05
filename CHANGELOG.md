@@ -4,6 +4,9 @@
 
 ### Added
 
+- Add pm stats --storage: aggregate history-stream metrics ([pm-mnee](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-mnee.toon))
+- pm history --diff: per-entry field-level before/after diffs ([pm-puvn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-puvn.toon))
+- Add pm gc --scope locks: sweep expired lock debris from crashed processes ([pm-d70h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-d70h.toon))
 - Add MCP protocol handshake tests \(initialize + tools/list + unknown-tool error\) ([pm-kl11](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kl11.toon))
 - Add narrow MCP tools pm\_notes, pm\_learnings, pm\_deps \(agent self-documentation + deps\) ([pm-hywv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-hywv.toon))
 
@@ -18,6 +21,7 @@
 
 ### Other
 
+- History & storage observability: pm gc locks scope, pm history --diff before/after, pm stats --storage ([pm-l709](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-l709.toon))
 - MCP & contract platform maturity PR \(pm-5k4v\): narrow tools pm\_notes/pm\_learnings/pm\_deps + schema-base hardening + action-list drift-gen + schema-version constant + handshake tests ([pm-at83](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-at83.toon))
 - Document the create vs mutateItem dual write-path contract ([pm-k5r6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-k5r6.toon))
 - Document capture\_level semantics for extension authors ([pm-te9x](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-te9x.toon))

@@ -1,15 +1,19 @@
 id: pm-g94b
-title: "As a maintainer reviewing an audit trail, I want field-level history diffs, so that I can see exactly when/who changed a field without comparing snapshots"
+title: "Add pm history --diff --field: filter the audit diff to one field's transitions"
 description: "As a maintainer reviewing an audit trail, I want field-level history diffs, so that I can see exactly when/who changed a field without comparing snapshots"
 type: Story
-status: open
+status: closed
 priority: 2
 tags[4]: "area:cli",living-map,observability,story
 created_at: "2026-05-31T19:49:44.907Z"
-updated_at: "2026-05-31T19:49:44.907Z"
+updated_at: "2026-06-05T21:19:41.171Z"
 author: maintainer-agent
 acceptance_criteria: "pm history <id> --diff shows per-event {field,before,after}; --field filters to one field; includes author+timestamp; json+text"
 parent: pm-mpbb
+resolution: "Shipped --field <name> (implies --diff): emits only entries that changed the named field, with before/after values, answering 'when/who changed <field>'. CLI-discoverable via FLAG_CONTRACTS + completion + help."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-puvn,related,"2026-05-31T19:49:44.907Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-05T20:42:35.978Z",claude-code-agent,"history-diff.ts core module delivered for --field filter feature. computeHistoryDiff() accepts optional { field?: string } — when supplied, skips entries that don't touch that field and restricts each emitted entry's changes/changed_fields to the single matching field. This directly powers 'pm history <id> --diff --field status' (show only entries where status changed, with before/after values). patchPathToChangedField() exported from new module; orchestrator can replace the private copy in history.ts with this import. 40 tests pass in tests/unit/core/history/history-diff.spec.ts."
+close_reason: "Shipped pm history --diff --field <name> (implies --diff): filters the value diff to one field's transitions with before/after + author + ts. Exposed CLI-only (FLAG_CONTRACTS + completion + help) to avoid colliding with create/update's repeatable --field array param; MCP returns the full changes[] for client-side filtering. Covered by command tests + manual e2e."
 body: ""

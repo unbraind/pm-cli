@@ -1,0 +1,19 @@
+id: pm-l709
+title: "History & storage observability: pm gc locks scope, pm history --diff before/after, pm stats --storage"
+description: "Combined PR delivering three history/storage observability primitives under epics pm-o2kc (storage/history/durability) and pm-mpbb (CLI surface): (1) pm gc locks scope — clean stale lock debris from crashed processes [pm-d70h, pm-gbbn]; (2) pm history --diff before/after field values + --field filter, enhancing the existing names-only --diff [pm-puvn, pm-g94b]; (3) pm stats --storage aggregate history-stream metrics (streams/lines/bytes/top-N by size+depth/oldest+newest) [pm-mnee]. Each feature's pure logic lives in an isolated src/core/** module (100% covered); orchestrator owns shared wiring (cli-contracts, MCP server, completion, docs)."
+type: Plan
+status: closed
+priority: 2
+tags[5]: "area:cli","area:history","area:storage",living-map,observability
+created_at: "2026-06-05T20:36:47.034Z"
+updated_at: "2026-06-05T21:19:44.761Z"
+author: claude-code-agent
+parent: pm-mpbb
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-mpbb,parent,"2026-06-05T20:36:47.034Z",null,null
+close_reason: "Plan complete: all 3 history/storage observability features shipped (gc locks scope, history --diff before/after + --field, stats --storage) via 3 isolated 100%-covered core modules + orchestrator wiring. Full gate green (142 files / 2423 tests, 100% coverage); manual e2e verified all paths."
+plan_mode: draft
+plan_scope: pm gc locks scope + pm history --diff values + pm stats --storage
+plan_steps[1]{id,order,title,status,created_at,updated_at,evidence,completed_at}:
+  plan-step-001,1,"Build isolated core modules (lock-gc, history-diff, history-storage-stats) via specialized sub-agents",completed,"2026-06-05T20:36:47.048Z","2026-06-05T21:19:13.151Z","Shipped via 3 isolated, 100%-covered core modules built by specialized sub-agents: core/lock/lock-gc.ts (runLockGc, 27 tests), core/history/history-diff.ts (computeHistoryDiff replaying via replay.ts primitives, 40 tests), core/history/history-storage-stats.ts (computeHistoryStorageStats pure aggregate, 31 tests). Orchestrator wired the command layer (gc/history/stats), contracts, MCP, completion, docs. DECISION: history --field exposed CLI-only (FLAG_CONTRACTS + completion + help) and NOT added to the MCP action schema, because the param key 'field' is already taken by create/update's repeatable --field name=value (array) — MCP pm_history returns the full changes[] for client-side filtering. DISCOVERY: --diff already existed but only emitted changed_field NAMES; enhanced to add changes:[{field,before,after}] values and made it independent of the compact/full projection. pm stats already aggregated streams; --storage adds top-N largest/deepest + oldest/newest. Full gate green: 142 files / 2423 tests, 100% coverage; manual e2e in temp tracker verified gc locks sweep (stale removed, active+unparseable retained), --diff/--field values, and stats --storage.","2026-06-05T21:19:13.151Z"
+body: ""

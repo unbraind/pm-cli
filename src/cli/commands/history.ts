@@ -1,4 +1,5 @@
 import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
+import { computeHistoryDiff, patchPathToChangedField, type HistoryDiffValueEntry } from "../../core/history/history-diff.js";
 import { hashDocument, hashEmptyDocument } from "../../core/history/history.js";
 import { verifyHistoryChain } from "../../core/history/replay.js";
 import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
@@ -20,6 +21,8 @@ export { verifyHistoryChain } from "../../core/history/replay.js";
 export interface HistoryCommandOptions {
   limit?: string;
   diff?: boolean;
+  /** Restrict --diff to a single field's before/after transitions (implies --diff). */
+  field?: string;
   verify?: boolean;
   compact?: boolean;
 }
@@ -49,37 +52,13 @@ export interface HistoryResult {
   compact: boolean;
   count: number;
   limit: number | null;
-  diff?: HistoryDiffEntry[];
+  diff?: HistoryDiffValueEntry[];
   verification?: HistoryVerificationResult;
 }
 
 function limitEntries<T>(values: T[], limit: number | undefined): T[] {
   if (limit === undefined) return values;
   return values.slice(Math.max(0, values.length - limit));
-}
-
-function decodeJsonPointerSegment(segment: string): string {
-  return segment.replaceAll("~1", "/").replaceAll("~0", "~");
-}
-
-function patchPathToChangedField(path: string): string {
-  if (path === "/body" || path.startsWith("/body/")) {
-    return "body";
-  }
-  if (
-    path === "/metadata" ||
-    path.startsWith("/metadata/") ||
-    path === "/front_matter" ||
-    path.startsWith("/front_matter/")
-  ) {
-    const segment = path.replace(/^\/(?:metadata|front_matter)\/?/, "").split("/")[0];
-    if (!segment) {
-      return "metadata";
-    }
-    return decodeJsonPointerSegment(segment);
-  }
-  const segment = path.replace(/^\//, "").split("/")[0];
-  return segment ? decodeJsonPointerSegment(segment) : "root";
 }
 
 function buildDiffEntries(entries: HistoryEntry[], startIndex: number): HistoryDiffEntry[] {
@@ -190,8 +169,15 @@ export async function runHistory(id: string, options: HistoryCommandOptions, glo
     limit: limit ?? null,
   };
 
-  if (options.diff) {
-    result.diff = compact ? [] : buildDiffEntries(history, Math.max(0, fullHistory.length - history.length));
+  if (options.diff || options.field !== undefined) {
+    // --diff replays the full chain to surface per-field before/after values for
+    // the displayed window (the latest --limit entries). --field narrows to a
+    // single field's transitions ("when did status change?"). Unlike the compact
+    // projection above, the value diff is independent of the compact/full toggle.
+    result.diff = computeHistoryDiff(fullHistory, {
+      windowStartIndex: Math.max(0, fullHistory.length - history.length),
+      field: options.field,
+    });
   }
 
   if (options.verify) {

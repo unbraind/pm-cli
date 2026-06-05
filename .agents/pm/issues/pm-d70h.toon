@@ -1,14 +1,19 @@
 id: pm-d70h
-title: "pm gc lacks a 'locks' scope: stale lock files accumulate indefinitely"
+title: "Add pm gc --scope locks: sweep expired lock debris from crashed processes"
 description: Crashed processes leave .lock files cleaned only lazily on the next mutation of that same item; items never re-mutated keep stale locks forever. gc has no locks scope.
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:lock","area:storage",gc,living-map
 created_at: "2026-05-31T19:43:37.801Z"
-updated_at: "2026-05-31T19:43:37.801Z"
+updated_at: "2026-06-05T21:19:35.591Z"
 author: maintainer-agent
 acceptance_criteria: pm gc --scope locks removes only expired locks (created_at+ttl); --dry-run lists; default all-scope gc includes locks; aligns with pm health stale-lock warnings.
 value: Crashed processes leave .lock files cleaned only lazily on the next mutation of that same item; items never re-mutated keep stale locks forever. gc has no locks scope.
 parent: pm-o2kc
+resolution: "Shipped runLockGc (core/lock/lock-gc.ts): the locks scope removes only locks whose embedded created_at+ttl_seconds has expired; active and unparseable locks are always retained. --dry-run previews; default gc includes locks; result carries a locks {scanned,removed,retained} summary; onRead/onWrite hooks fire per lock."
+comments[2]{created_at,author,text}:
+  "2026-06-05T20:39:23.893Z",claude-code-agent,"Sub-agent starting: implementing src/core/lock/lock-gc.ts pure stale-lock scanner (safety-first: never delete unparseable locks; staleness from lock-embedded ttl_seconds). Orchestrator wires into pm gc locks scope."
+  "2026-06-05T20:43:50.984Z",claude-code-agent,"DONE: src/core/lock/lock-gc.ts + tests/unit/core/lock/lock-gc.spec.ts created. Safety policy: any lock file that cannot be read or parsed is RETAINED (never deleted). Staleness uses lock-embedded ttl_seconds, not settings. Exported signature: runLockGc(pmRoot, {dryRun, now?, hooks?}) → LockGcResult with scanned/removed/retained/warnings/entries[]. StaleLockScanEntry has file/id/owner/created_at/ttl_seconds/age_seconds/stale/reason. LockGcHooks has onRead?/onWrite?. Edge cases covered: missing locks dir (ENOENT), non-.lock files ignored, active lock retained, expired lock removed (real unlink), dryRun preview, unparseable JSON retained+warning, invalid shape variants (missing id, bad ttl type, null ttl, array root, primitive root), invalid timestamp (NaN) retained+warning, zero ttl (immediately stale for positive age), negative ttl (always stale), onRead/onWrite hooks invoked + warnings surfaced, onWrite NOT called under dryRun, unlink ENOENT race treated as removed, unlink EPERM failure → lock_remove_failed + retained, readFile ENOENT ghost (disappeared after readdir) silently skipped, readdir non-ENOENT rethrown, deterministic now injection, sorted entries. npx vitest run passed: 27/27 tests, 100% lines/branches/functions/statements."
+close_reason: "Shipped pm gc --scope locks via runLockGc (core/lock/lock-gc.ts): removes only expired locks (embedded created_at+ttl_seconds), retains active + unparseable. 100% covered (27 module tests) + gc-command locks tests + manual e2e. Part of the history-storage-observability PR."
 body: ""

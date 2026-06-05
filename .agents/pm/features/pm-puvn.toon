@@ -2,15 +2,19 @@ id: pm-puvn
 title: "pm history --diff: per-entry field-level before/after diffs"
 description: "pm history entries are full snapshots, not deltas; debugging 'when did status change' requires manual comparison. --diff computes field-level changes per entry."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[5]: agent-ux,"area:cli","area:lifecycle",living-map,observability
 created_at: "2026-05-31T19:43:36.267Z"
-updated_at: "2026-05-31T20:15:42.074Z"
+updated_at: "2026-06-05T21:19:39.242Z"
 author: maintainer-agent
 acceptance_criteria: "pm history <id> --diff emits per-event changes[{field,before,after}]; --field filters to one field; json+markdown; read-only projection, no new writes."
 value: "pm history entries are full snapshots, not deltas; debugging 'when did status change' requires manual comparison. --diff computes field-level changes per entry."
 parent: pm-mpbb
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-mnee,related,"2026-05-31T20:10:00.000Z",maintainer-agent,null
+comments[2]{created_at,author,text}:
+  "2026-06-05T20:39:39.204Z",claude-code-agent,"Sub-agent starting: src/core/history/history-diff.ts — replay-based per-field before/after diff + --field filter, reusing replay.ts primitives. Ports patchPathToChangedField out of history.ts for the orchestrator to import."
+  "2026-06-05T20:42:29.949Z",claude-code-agent,"Completed: src/core/history/history-diff.ts shipped. Exported signature: (1) patchPathToChangedField(path: string): string — ported out of history.ts private copy for orchestrator import; (2) computeHistoryDiff(fullEntries: HistoryEntry[], options?: { windowStartIndex?: number; field?: string }): HistoryDiffValueEntry[] — replay-based per-field before/after diff. Approach: replays full chain via cloneEmptyReplayDocument + tryApplyReplayPatch; captures beforeDoc snapshot before each entry, reads field values with readFieldValue() helper (body→doc.body, metadata→doc.metadata whole-obj, root→whole doc, other→doc.metadata[field]). Failed patch: after=before, replay NOT advanced. windowStartIndex: entries still replayed but only emitted from that position. field filter: skip entries not touching the field, restrict changes/changed_fields to single field. Edge cases covered: ~0/~1 JSON-Pointer decoding, bare /metadata and /front_matter paths, op.from (move/copy adds both source and dest fields), root '/' path, failed patch (after=before + no state advance), windowStartIndex slicing with correct before values, field filter matching + non-matching. Vitest result: 40 tests passed, 1 file (620ms). File: tests/unit/core/history/history-diff.spec.ts"
+close_reason: "Enhanced pm history --diff to emit per-entry changes:[{field,before,after}] VALUES (previously names-only) by replaying the chain via core/history/history-diff.ts (reuses replay.ts primitives), now independent of the compact/full projection. patchPathToChangedField moved into the shared module. 40 module tests + command-layer tests + manual e2e."
 body: ""

@@ -209,6 +209,41 @@ describe("runStats", () => {
     });
   });
 
+  it("omits storage metrics by default and attaches aggregate metrics with the storage option", async () => {
+    await withTempPmPath(async (context) => {
+      const epicId = createItem(context, {
+        title: "Storage Epic",
+        type: "Epic",
+        status: "open",
+      });
+      createItem(context, {
+        title: "Storage Task",
+        type: "Task",
+        status: "open",
+      });
+      const update = context.runCli(
+        ["update", epicId, "--json", "--description", "deeper", "--author", "test-author", "--message", "Deepen epic stream"],
+        { expectJson: true },
+      );
+      expect(update.code).toBe(0);
+
+      const withoutStorage = await runStats({ path: context.pmPath });
+      expect(withoutStorage.storage).toBeUndefined();
+
+      const withStorage = await runStats({ path: context.pmPath }, { storage: true });
+      expect(withStorage.storage).toBeDefined();
+      const storage = withStorage.storage!;
+      expect(storage.total_streams).toBe(withStorage.totals.history_streams);
+      expect(storage.total_lines).toBe(withStorage.totals.history_entries);
+      expect(storage.total_bytes).toBeGreaterThan(0);
+      // The epic has the deepest stream (create + update = 2 entries).
+      expect(storage.deepest_by_lines[0]).toMatchObject({ id: epicId, lines: 2 });
+      expect(storage.largest_by_bytes.length).toBeGreaterThan(0);
+      expect(storage.oldest_entry).toMatchObject({ id: expect.any(String), ts: expect.any(String) });
+      expect(storage.newest_entry).toMatchObject({ id: expect.any(String), ts: expect.any(String) });
+    });
+  });
+
   it("dispatches active onRead hooks for history scans without changing output shape", async () => {
     await withTempPmPath(async (context) => {
       const itemId = createItem(context, {

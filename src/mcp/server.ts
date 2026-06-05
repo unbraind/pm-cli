@@ -1001,7 +1001,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       );
     }
     case "stats":
-      return runStats(global);
+      return runStats(global, { storage: options.storage === true });
     case "append": {
       const { changedFields, runnerOptions } = withMutationCompaction(args, options);
       return projectMutationResult(
