@@ -161,6 +161,11 @@ describe("core/shared/serial-queue: createSerialQueue (pm-3puw)", () => {
     expect(order).toEqual(["task"]);
   });
 
+  it("idle() resolves immediately when the queue is already empty", async () => {
+    const queue = createSerialQueue();
+    await expect(queue.idle()).resolves.toBeUndefined();
+  });
+
   it("idle() waits for tasks enqueued while the queue is still active", async () => {
     const queue = createSerialQueue();
     const order: string[] = [];
