@@ -388,6 +388,9 @@ function nearestDeclaredKey(unexpected: string, declared: string[]): string | un
 const UNEXPECTED_KEY_WARNING_EXEMPT_TOOLS = new Set(["pm_run"]);
 
 function detectUnexpectedTopLevelKeys(toolName: string, args: Record<string, unknown>): string[] {
+  if (typeof args !== "object" || args === null || Array.isArray(args)) {
+    return [];
+  }
   if (UNEXPECTED_KEY_WARNING_EXEMPT_TOOLS.has(toolName)) {
     return [];
   }
@@ -1155,6 +1158,10 @@ export async function processRpcLine(line: string): Promise<void> {
     request = JSON.parse(line) as JsonRpcRequest;
   } catch (error) {
     writeError(null, error);
+    return;
+  }
+  if (typeof request !== "object" || request === null || Array.isArray(request)) {
+    writeError(null, new PmCliError("Invalid JSON-RPC request: expected an object", -32600));
     return;
   }
   try {

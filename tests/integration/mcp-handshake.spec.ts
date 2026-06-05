@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { handleRequest } from "../../src/mcp/server.js";
+import { handleRequest, processRpcLine } from "../../src/mcp/server.js";
 import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
 import { PM_TOOL_ACTIONS } from "../../src/sdk/cli-contracts/enum-contracts.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
@@ -228,6 +228,20 @@ describe("MCP protocol handshake", () => {
       }
       expect(result?.structuredContent?.warnings).toBeUndefined();
     });
+  });
+
+  it("returns an invalid-request error for non-object JSON-RPC lines", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    let responseText = "";
+    try {
+      await processRpcLine("null");
+      responseText = write.mock.calls.map((call) => String(call[0])).join("");
+    } finally {
+      write.mockRestore();
+    }
+    expect(responseText).toContain('"id":null');
+    expect(responseText).toContain('"code":-32600');
+    expect(responseText).toContain("expected an object");
   });
 
   it("serializes pipelined same-item mutations so both succeed (pm-3puw)", async () => {

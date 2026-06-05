@@ -23,20 +23,27 @@ if (!existsSync(cliPath)) {
 
 function runContracts() {
   const isolatedGlobalPath = mkdtempSync(resolve(tmpdir(), "pm-cli-contracts-global-"));
-  const result = spawnSync(process.execPath, [cliPath, "contracts", "--full", "--json"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-    env: {
-      ...process.env,
-      NO_COLOR: "1",
-      PM_GLOBAL_PATH: isolatedGlobalPath,
-    },
-    maxBuffer: 50 * 1024 * 1024,
-  });
-  rmSync(isolatedGlobalPath, { recursive: true, force: true });
+  let result;
+  try {
+    result = spawnSync(process.execPath, [cliPath, "contracts", "--full", "--json"], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        NO_COLOR: "1",
+        PM_GLOBAL_PATH: isolatedGlobalPath,
+      },
+      maxBuffer: 50 * 1024 * 1024,
+    });
+  } finally {
+    rmSync(isolatedGlobalPath, { recursive: true, force: true });
+  }
+  if (result.error !== undefined) {
+    throw new Error(`pm contracts --full --json failed to start: ${result.error.message}`);
+  }
   if (result.status !== 0) {
-    process.stderr.write(result.stderr);
-    process.stderr.write(result.stdout);
+    process.stderr.write(result.stderr ?? "");
+    process.stderr.write(result.stdout ?? "");
     throw new Error(`pm contracts --full --json failed with exit code ${result.status ?? "unknown"}`);
   }
   try {

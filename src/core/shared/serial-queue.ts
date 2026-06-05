@@ -22,17 +22,34 @@ export function createSerialQueue(): SerialQueue {
   // separate from the per-task promise returned to callers so one rejection
   // does not break the chain or surface as an unhandled rejection.
   let tail: Promise<void> = Promise.resolve();
+  let pending = 0;
+  const idleWaiters: Array<() => void> = [];
+  const notifyIdle = () => {
+    if (pending !== 0) {
+      return;
+    }
+    const waiters = idleWaiters.splice(0);
+    for (const resolve of waiters) {
+      resolve();
+    }
+  };
   return {
     enqueue<T>(task: () => Promise<T> | T): Promise<T> {
+      pending++;
       const run = tail.then(() => task());
-      tail = run.then(
-        () => undefined,
-        () => undefined,
-      );
+      tail = run
+        .then(
+          () => undefined,
+          () => undefined,
+        )
+        .finally(() => {
+          pending--;
+          notifyIdle();
+        });
       return run;
     },
     idle(): Promise<void> {
-      return tail;
+      return pending === 0 ? Promise.resolve() : new Promise((resolve) => idleWaiters.push(resolve));
     },
   };
 }
