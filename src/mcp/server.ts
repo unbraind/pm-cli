@@ -1157,7 +1157,8 @@ export async function processRpcLine(line: string): Promise<void> {
   try {
     request = JSON.parse(line) as JsonRpcRequest;
   } catch (error) {
-    writeError(null, error);
+    const message = error instanceof Error ? error.message : String(error);
+    writeError(null, new PmCliError(`Parse error: ${message}`, -32700));
     return;
   }
   if (typeof request !== "object" || request === null || Array.isArray(request)) {

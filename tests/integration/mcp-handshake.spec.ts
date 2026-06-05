@@ -244,6 +244,20 @@ describe("MCP protocol handshake", () => {
     expect(responseText).toContain("expected an object");
   });
 
+  it("returns a JSON-RPC parse error for malformed JSON lines", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    let responseText = "";
+    try {
+      await processRpcLine("{not-json");
+      responseText = write.mock.calls.map((call) => String(call[0])).join("");
+    } finally {
+      write.mockRestore();
+    }
+    expect(responseText).toContain('"id":null');
+    expect(responseText).toContain('"code":-32700');
+    expect(responseText).toContain("Parse error");
+  });
+
   it("does not respond to JSON-RPC notifications that omit id", async () => {
     const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     try {
