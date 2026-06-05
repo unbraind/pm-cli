@@ -14,7 +14,6 @@
     "activity",
     "aggregate",
     "append",
-    "beads import",
     "changelog export",
     "changelog generate",
     "claim",
@@ -206,7 +205,6 @@
     "activity",
     "aggregate",
     "append",
-    "beads-import",
     "changelog-export",
     "changelog-generate",
     "claim",
@@ -312,21 +310,6 @@
       "disabled_reason": null,
       "command_path": "append",
       "cli_exposed": true
-    },
-    {
-      "action": "beads-import",
-      "invocable": true,
-      "available": true,
-      "requires_extension": true,
-      "provider": "extension",
-      "disabled_reason": null,
-      "command_path": "beads import",
-      "cli_exposed": true,
-      "policy_state": {
-        "mode": "off",
-        "trust_mode": "off",
-        "default_sandbox_profile": "none"
-      }
     },
     {
       "action": "changelog-export",
@@ -12267,44 +12250,6 @@
         "properties": {
           "action": {
             "type": "string",
-            "const": "beads-import",
-            "description": "Import Beads JSONL records into pm items."
-          },
-          "file": {
-            "type": "string",
-            "description": "Path to the Beads JSONL source file."
-          },
-          "author": {
-            "type": "string",
-            "description": "Override import mutation author."
-          },
-          "message": {
-            "type": "string",
-            "description": "Override import history message."
-          },
-          "preserveSourceIds": {
-            "type": "boolean",
-            "description": "Preserve source IDs from Beads payload records when possible."
-          }
-        },
-        "required": [
-          "action"
-        ],
-        "additionalProperties": true,
-        "x-extension-source": {
-          "layer": "global",
-          "name": "builtin-beads-import"
-        },
-        "x-extension-command": "beads import",
-        "x-extension-commands": [
-          "beads import"
-        ]
-      },
-      {
-        "type": "object",
-        "properties": {
-          "action": {
-            "type": "string",
             "const": "changelog-export",
             "description": "export changelog release notes as markdown or json"
           },
@@ -12527,44 +12472,6 @@
     ]
   },
   "extension_commands": [
-    {
-      "command": "beads import",
-      "action": "beads-import",
-      "source": {
-        "layer": "global",
-        "name": "builtin-beads-import"
-      },
-      "description": "Import Beads JSONL records into pm items.",
-      "intent": null,
-      "arguments": [],
-      "flags": [
-        {
-          "flag": "--file",
-          "description": "Path to the Beads JSONL source file.",
-          "value_name": "path",
-          "value_type": "string"
-        },
-        {
-          "flag": "--author",
-          "description": "Override import mutation author.",
-          "value_name": "author",
-          "value_type": "string"
-        },
-        {
-          "flag": "--message",
-          "description": "Override import history message.",
-          "value_name": "text",
-          "value_type": "string"
-        },
-        {
-          "flag": "--preserve-source-ids",
-          "description": "Preserve source IDs from Beads payload records when possible.",
-          "value_type": "boolean"
-        }
-      ],
-      "examples": [],
-      "failure_hints": []
-    },
     {
       "command": "changelog export",
       "action": "changelog-export",
@@ -12947,41 +12854,6 @@
         }
       ],
       "provider": "core"
-    },
-    {
-      "command": "beads import",
-      "flags": [
-        {
-          "flag": "--file",
-          "description": "Path to the Beads JSONL source file.",
-          "value_name": "path",
-          "value_type": "string"
-        },
-        {
-          "flag": "--author",
-          "description": "Override import mutation author.",
-          "value_name": "author",
-          "value_type": "string"
-        },
-        {
-          "flag": "--message",
-          "description": "Override import history message.",
-          "value_name": "text",
-          "value_type": "string"
-        },
-        {
-          "flag": "--preserve-source-ids",
-          "description": "Preserve source IDs from Beads payload records when possible.",
-          "value_type": "boolean"
-        }
-      ],
-      "provider": "extension",
-      "extension_sources": [
-        {
-          "layer": "global",
-          "name": "builtin-beads-import"
-        }
-      ]
     },
     {
       "command": "changelog export",

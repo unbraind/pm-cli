@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -21,15 +22,18 @@ if (!existsSync(cliPath)) {
 }
 
 function runContracts() {
+  const isolatedGlobalPath = mkdtempSync(resolve(tmpdir(), "pm-cli-contracts-global-"));
   const result = spawnSync(process.execPath, [cliPath, "contracts", "--full", "--json"], {
     cwd: repoRoot,
     encoding: "utf8",
     env: {
       ...process.env,
       NO_COLOR: "1",
+      PM_GLOBAL_PATH: isolatedGlobalPath,
     },
     maxBuffer: 50 * 1024 * 1024,
   });
+  rmSync(isolatedGlobalPath, { recursive: true, force: true });
   if (result.status !== 0) {
     process.stderr.write(result.stderr);
     process.stderr.write(result.stdout);
