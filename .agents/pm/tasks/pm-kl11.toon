@@ -2,13 +2,16 @@ id: pm-kl11
 title: Add MCP protocol handshake tests (initialize + tools/list + unknown-tool error)
 description: "Integration tests only exercise tools/call; the initialize handshake and tools/list (the first client calls) are untested, so a protocol-version or TOOLS/HANDLERS mismatch would go undetected."
 type: Task
-status: open
+status: closed
 priority: 3
 tags[4]: "area:mcp",coverage,living-map,tests
 created_at: "2026-05-31T19:45:01.297Z"
-updated_at: "2026-05-31T19:45:01.297Z"
+updated_at: "2026-06-05T14:57:12.369Z"
 author: maintainer-agent
 acceptance_criteria: "Tests assert initialize protocolVersion + capabilities.tools + serverInfo.name; tools/list returns the full tool set incl pm_run/pm_plan; unknown tools/call returns isError:true."
 value: "Integration tests only exercise tools/call; the initialize handshake and tools/list (the first client calls) are untested, so a protocol-version or TOOLS/HANDLERS mismatch would go undetected."
 parent: pm-5k4v
+comments[1]{created_at,author,text}:
+  "2026-06-05T14:46:32.478Z",mcp-platform-subagent,"Test coverage: new tests/integration/mcp-handshake.spec.ts drives handleRequest directly. Asserts (1) initialize -> protocolVersion 2025-06-18 + serverInfo.name pm-mcp + instructions incl pm_notes/learnings/deps; (2) tools/list returns exactly 21 tools, exact name-set match, no dupes, each has description+object inputSchema; (3) pm_run action description contains every PM_TOOL_ACTIONS entry + 'Package-owned actions' (pm-fd8n); (4) unknown tool name rejects with /Unknown pm MCP tool/; (5) pm-qxwu typo fullChangedField fires stderr [pm-mcp] warning + structuredContent.warnings with did-you-mean fullChangedFields, while clean call emits neither; (6) pm_run unexpected key is NOT warned. Uses withTempPmPath for the mutation cases."
+close_reason: "Shipped in pm-at83. Added tests/integration/mcp-handshake.spec.ts covering the MCP protocol: initialize (protocolVersion 2025-06-18 + serverInfo.name=pm-mcp + instructions mentioning the new tools + capabilities.tools), tools/list (exactly 21 tools, exact name-set, no duplicates, each with non-empty description + object inputSchema), pm_run action-description coverage of every PM_TOOL_ACTIONS entry, unknown-tool name → clear error, and the pm-qxwu typo-warning (fires + did-you-mean on a typo'd key, silent on a clean call). All green in the full suite."
 body: ""

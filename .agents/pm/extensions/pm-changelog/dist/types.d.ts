@@ -134,6 +134,12 @@ export interface ReadPmItemsOptions {
     cwd?: string;
     env?: NodeJS.ProcessEnv;
     maxBuffer?: number;
+    /**
+     * Pass `--include-body` to `pm list-all --json` so each row carries its body.
+     * Required for `--body-preview` to render real body content (GH #27); the
+     * field is otherwise omitted from list output.
+     */
+    includeBody?: boolean;
 }
 export interface WriteChangelogOptions extends GenerateChangelogOptions {
     output?: string;

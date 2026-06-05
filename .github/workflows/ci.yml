@@ -191,6 +191,7 @@ jobs:
         run: |
           pnpm version:check
           pnpm changelog:pm:check
+          pnpm contracts:check
           pnpm security:scan
           pnpm quality:static
           npm pack --dry-run

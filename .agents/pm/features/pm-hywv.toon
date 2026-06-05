@@ -2,13 +2,17 @@ id: pm-hywv
 title: "Add narrow MCP tools pm_notes, pm_learnings, pm_deps (agent self-documentation + deps)"
 description: "notes/learnings/deps require pm_run with an action string, losing the ergonomic named-tool discoverability that pm_comments/pm_files/pm_docs have; notes/learnings are the primary agent self-documentation primitives."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[4]: agent-ux,"area:mcp",dx,living-map
 created_at: "2026-05-31T19:45:01.797Z"
-updated_at: "2026-05-31T19:45:01.797Z"
+updated_at: "2026-06-05T14:56:47.997Z"
 author: maintainer-agent
 acceptance_criteria: pm_notes/pm_learnings/pm_deps added to TOOLS+HANDLERS with top-level id; instructions+docs+plugin tool counts updated; tests added.
 value: "notes/learnings/deps require pm_run with an action string, losing the ergonomic named-tool discoverability that pm_comments/pm_files/pm_docs have; notes/learnings are the primary agent self-documentation primitives."
 parent: pm-5k4v
+comments[2]{created_at,author,text}:
+  "2026-06-05T14:46:20.233Z",mcp-platform-subagent,"Narrow-tools design: added pm_notes/pm_learnings/pm_deps to TOOLS[] in src/mcp/server.ts as named wrappers over existing runAction cases notes/learnings/deps (no new action logic). Each uses objectSchema({ id: idSchema, options }, [\"id\"]) matching pm_comments/pm_docs. HANDLERS map them to action strings. initialize instructions add them to the prefer-narrow list and drop notes/learnings from the pm_run-action list (deps was never there). Tool count 18 -> 21."
+  "2026-06-05T14:47:15.300Z",mcp-platform-subagent,"FINAL SUMMARY (pm-hywv/pm-77t3/pm-fd8n/pm-qxwu/pm-kl11). Tool count 18 -> 21. Files changed: src/mcp/server.ts (3 narrow tools pm_notes/pm_learnings/pm_deps in TOOLS+HANDLERS; initialize instructions updated; PM_RUN_ACTION_DESCRIPTION derived from PM_TOOL_ACTIONS; pm-qxwu TOOL_DECLARED_KEYS + detectUnexpectedTopLevelKeys + nearestDeclaredKey + resultContent additive warnings + console.error surfacing + pm_run exemption); tests/integration/mcp-handshake.spec.ts (NEW — protocol handshake + 21-tool + unknown-tool + typo-warning coverage); tests/integration/claude-plugin-contract.spec.ts (PM_NATIVE_TOOLS +3); scripts/smoke-claude-plugin.mjs (header comment 18->21, required[] +3, dynamic count msg); scripts/smoke-codex-plugin-mcp.mjs (required subset +3); docs/CLAUDE_CODE_PLUGIN.md (two 18->21); plugins/pm-claude/README.md (3 prose 18->21, MCP table +3 rows, pm_run-actions line drops notes/learnings); plugins/pm-claude/commands/pm-init.md (count+list); plugins/pm-claude/.claude-plugin/plugin.json (description 18->21); plugins/pm-claude/agents/pm-coordinator.md (tool list +3). No vitest.config.ts change needed (server.ts not in coverage include; new spec auto-discovered by tests/**/*.spec.ts). CODEX_PLUGIN.md/COMMANDS.md/AGENT_GUIDE.md have no narrow-tool table — no edits. Items left in_progress for orchestrator."
+close_reason: "Shipped in the pm-at83 MCP & contract-platform bundle. Added narrow MCP tools pm_notes/pm_learnings/pm_deps as named wrappers over the existing notes/learnings/deps runAction cases (no new action logic), raising the MCP surface 18→21 tools. Wired every site: TOOLS[]+HANDLERS, initialize instructions (added to 'Prefer narrow tools', removed notes/learnings from the pm_run list), plugin README/plugin.json/pm-init/coordinator, smoke-claude/smoke-codex scripts, claude-plugin-contract PM_NATIVE_TOOLS, docs/CLAUDE_CODE_PLUGIN. Verified: clean build, 2309 tests + 100% coverage, and a manual sandbox MCP test (tools/list=21 with all three present + in instructions; pm_notes add count 1→2; pm_learnings/pm_deps functional; pm_run action=notes behaves identically)."
 body: ""

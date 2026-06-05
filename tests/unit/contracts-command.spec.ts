@@ -21,6 +21,8 @@ import {
   PM_EXTENSION_SANDBOX_PROFILE_CONTRACTS,
   PM_EXTENSION_SERVICE_NAME_CONTRACTS,
   PM_EXTENSION_TRUST_MODE_CONTRACTS,
+  PM_TOOL_PARAMETERS_SCHEMA_MAJOR,
+  PM_TOOL_PARAMETERS_SCHEMA_VERSION,
 } from "../../src/sdk/cli-contracts.js";
 import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
@@ -35,9 +37,9 @@ const GLOBAL_OPTIONS: GlobalOptions = {
 describe("contracts command runtime", () => {
   it("returns schema, actions, command flags, and alias surfaces", async () => {
     const result = await runContracts({}, GLOBAL_OPTIONS);
-    expect(result.schema_version).toBe("4.0.2");
+    expect(result.schema_version).toBe(PM_TOOL_PARAMETERS_SCHEMA_VERSION);
     expect(result.schema_id).toBe(
-      "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
+      `https://schema.unbrained.dev/pm-cli/tool-parameters-v${PM_TOOL_PARAMETERS_SCHEMA_MAJOR}.schema.json`,
     );
     expect(result.selected.runtime_only).toBe(false);
     expect(result.actions ?? []).toContain("contracts");

@@ -140,3 +140,21 @@ rg -n "forbidden-private-token-or-path" README.md docs
 ```
 
 Replace the placeholder pattern with the actual sensitive term being guarded in the current task.
+
+## Contract Snapshot Gate
+
+Tracked by [pm-d6kq](../.agents/pm/tasks/pm-d6kq.toon).
+
+`pm contracts --full --json` is a public machine-readable SDK and agent surface.
+Keep its committed golden snapshot current when command contracts, schemas,
+aliases, or extension-provided command contracts intentionally change:
+
+```bash
+pnpm build
+pnpm contracts:update
+pnpm contracts:check
+```
+
+CI runs `pnpm contracts:check` in the static gate. Snapshot diffs should be
+reviewed like an API change and paired with the package-owned changelog flow
+when the contract surface changes intentionally.

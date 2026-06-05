@@ -310,6 +310,132 @@ pm contracts --runtime-only --schema-only --json
 pm contracts --command <command> --flags-only --json
 ```
 
+## Telemetry capture_level
+
+Every pm command records a telemetry event that is queued and flushed to the configured endpoint. The `telemetry.capture_level` setting controls how much payload detail those events carry. Extension commands participate in the same telemetry pipeline and inherit whatever level is configured in the project's global settings.
+
+### Allowed values and default
+
+| Value | Description |
+|-------|-------------|
+| `redacted` | **Default.** Full event payload: sanitized command args, options, result summary, and runtime environment. Sensitive tokens are replaced before the event is written. |
+| `minimal` | Hashed/digest-only payload. No raw or sanitized command text, no args, no options, no result summary, no runtime environment info. Only structural metadata (command taxonomy, outcome code, duration) and SHA-256 digests are kept. |
+| `max` | Same payload shape as `redacted`, but the per-string truncation cap is widened from 512 to 2048 characters. Useful when longer error messages or args need to be preserved for debugging. Not unredacted — all the same redaction passes still apply. |
+
+The default `redacted` is the right choice for most projects. The values `minimal`, `redacted`, and `max` are the only accepted strings; anything else is normalized to `redacted` at runtime.
+
+### What all levels redact
+
+Every level (including `max`) applies the same mandatory redaction passes before an event is written:
+
+- Inline secret assignments (`token=…`, `--password …`, `--api-key=…`, etc.) are replaced with `[redacted]`.
+- Absolute filesystem paths are replaced with `[redacted_path]`.
+- Email addresses are replaced with `[redacted_email]`.
+- Bearer tokens are replaced with `[redacted_token]`.
+- Private IPv4 addresses are replaced with `[redacted_ip]`.
+- Object keys whose names match sensitive keywords (`token`, `secret`, `password`, `api_key`, etc.) are replaced with `[redacted]` regardless of their value.
+
+`minimal` additionally replaces all arg/option values with their HMAC-SHA-256 digests so the event carries no readable content at all.
+
+### What each level records for extension commands
+
+Extension commands run through the same `startTelemetryCommand` / `finishTelemetryCommand` pair as built-in commands. The command string, the arg list, and the handler result are all passed through the same sanitizer.
+
+- At `minimal`: only the command taxonomy (command family slug), outcome code, exit code, duration, and one-way digests of the args and options are captured. An extension author cannot reconstruct which flags a user passed from these digests.
+- At `redacted`: sanitized command args (flag names preserved, sensitive values redacted), sanitized options object, and a result summary (type + key count + sanitized preview of the first 25 keys) are captured in addition to the structural metadata.
+- At `max`: same as `redacted` with a wider per-string truncation limit (2048 vs 512 chars).
+
+### Inspecting and changing the level
+
+```bash
+# Read current level
+pm health --json | jq '.details.capture_level'
+
+# Change for the current project's global settings
+pm config set telemetry.capture_level minimal
+pm config set telemetry.capture_level redacted
+pm config set telemetry.capture_level max
+```
+
+The setting lives in the global pm settings file (`~/.pm-cli/settings.json` by default), not in the project tracker, so it applies to all projects on the machine.
+
+## Item Write-Path Contract
+
+pm has two distinct write paths for items: the **create path** and the **mutateItem path**. Extension authors writing `onWrite` hooks, service overrides, or migrations need to understand what each path guarantees and which lifecycle surfaces it exposes.
+
+### Create path
+
+Used when: `pm create` (new item creation), importers via `registerImporter`.
+
+Source: `src/cli/commands/create.ts` (around line 1871).
+
+Execution order:
+
+1. **Lock acquired** — `acquireLock(pmRoot, id, ...)`.
+2. **Item file written** — `writeFileAtomic(itemPath, serializedDocument)`. The item format (toon/json_markdown) follows `settings.item_format`.
+3. **History entry written** — `createHistoryEntry(op="create", before=empty, after=afterDocument)` then `appendHistoryEntry(historyPath, entry)`. If `appendHistoryEntry` throws, the item file is removed and the error is re-thrown (rollback).
+4. **onWrite hooks fire** — two calls, in order:
+   - `op="create"`, `path=itemPath` (the new item file)
+   - `op="create:history"`, `path=historyPath` (the history stream)
+   Both calls include: `item_id`, `item_type`, `before` (empty document), `after`, `changed_fields`.
+5. **afterCommand telemetry snapshot recorded** — `recordAfterCommandAffectedItem`.
+6. **Lock released**.
+
+What the create path does NOT do:
+
+- It does not read an existing item file, so no `onRead` hook fires for the new item.
+- It does not invoke the `item_store_write` service override. If you need to intercept or redirect the physical write for new items, use the `onWrite` hook with `op="create"`.
+
+### mutateItem path
+
+Used when: `pm update`, `pm close`, `pm claim`, `pm release`, `pm restore`, `pm delete`, and all other operations on existing items.
+
+Source: `src/core/store/item-store.ts` (around line 347).
+
+Execution order:
+
+1. **Item located** — `locateItem` resolves the file path by scanning type folders.
+2. **Lock acquired** — `acquireLock(pmRoot, id, ...)`.
+3. **Item read** — `readLocatedItem`, which fires the `onRead` hook (`path=itemPath, scope="project"`).
+4. **Ownership check** — if `governance.ownership_enforcement` is `strict` and the item is assigned to someone else, the mutation is rejected unless `--force` is passed.
+5. **History stream policy enforced** — `enforceHistoryStreamPolicyForItem` (may emit `onWrite` warnings for policy events).
+6. **Mutation applied** — the caller's `mutate(document)` callback runs; `updated_at` is stamped; before/after canonical documents are produced.
+7. **`item_store_write` service override consulted** — registered service handlers for `"item_store_write"` receive the full `before`/`after` documents and the serialized content. A handler can redirect the target path (`target_item_path`), replace the content (`contents`), or skip the physical write entirely (`skip_write: true`). See service registration in the [Runtime APIs](#runtime-apis) section.
+8. **Item file written** — `writeFileAtomic(effectiveTargetItemPath, serializedAfter)` unless `skip_write` was set. If the format changed (path changed), the old file is removed.
+9. **History entry written** — `createHistoryEntry(op=params.op, before, after)` then `appendHistoryEntry(historyPath, entry)`. If `appendHistoryEntry` throws, the item file is rolled back to its original content and the error is re-thrown.
+10. **onWrite hooks fire** — two calls, in order:
+    - `op=params.op` (e.g., `"update"`, `"close"`, `"claim"`), `path=effectiveTargetItemPath`
+    - `op="${params.op}:history"`, `path=historyPath`
+    Both calls include: `item_id`, `item_type`, `before`, `after`, `changed_fields`.
+11. **afterCommand telemetry snapshot recorded** — `recordAfterCommandAffectedItem`.
+12. **Lock released** (always, via `finally`).
+
+### Invariants both paths guarantee
+
+- **Atomic file writes** — all file writes use `writeFileAtomic` (write-to-temp then rename) to prevent partial writes.
+- **Lock held across the full write+history sequence** — no other process can mutate the same item between the file write and the history append.
+- **History written after the item file** — if the item write succeeds but the history append fails, the item file is rolled back. If the item write itself fails, no history entry is written.
+- **onWrite hooks fire only after both the item file and the history entry have committed** — hooks see a consistent state.
+- **Hook failures are non-fatal** — if an `onWrite` hook throws, the warning `extension_hook_failed:<layer>:<name>:onWrite` is collected and returned, but the mutation is not rolled back.
+
+### Special changed_fields sentinel values
+
+| Value | Meaning |
+|-------|---------|
+| `["imported"]` | Item was written by an importer (`registerImporter`). |
+| `["restored"]` | Item was restored from a previous state. |
+| `["deleted"]` | Item was deleted (used in the delete path's `onWrite` hook). |
+
+### Which surfaces fire on which path
+
+| Surface | Create path | mutateItem path |
+|---------|------------|-----------------|
+| `onRead` hook | No | Yes (step 3) |
+| `item_store_write` service override | No | Yes (step 7) |
+| `history_append` service override | Yes | Yes |
+| `onWrite` hook (item file) | Yes (`op="create"`) | Yes (`op=<mutation op>`) |
+| `onWrite` hook (history file) | Yes (`op="create:history"`) | Yes (`op="<mutation op>:history"`) |
+
 ## Lifecycle Commands
 
 Explore installed runtime entries:

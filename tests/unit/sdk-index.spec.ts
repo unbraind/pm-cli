@@ -13,6 +13,7 @@ import {
   PM_TOOL_ACTIONS,
   PM_TOOL_ACTION_PARAMETER_CONTRACTS,
   PM_TOOL_PARAMETERS_SCHEMA,
+  PM_TOOL_PARAMETERS_SCHEMA_VERSION,
   STATUS_VALUES,
   assertRegisteredCommandContract as assertRegisteredCommandContractFromBarrel,
   assertRegisteredExporter as assertRegisteredExporterFromBarrel,
@@ -387,7 +388,7 @@ describe("public sdk entrypoint", () => {
       expect(optionObjectContracts.selected.command).toBe("init");
 
       const defaultContracts = await getContracts();
-      expect(defaultContracts.schema_version).toBe("4.0.2");
+      expect(defaultContracts.schema_version).toBe(PM_TOOL_PARAMETERS_SCHEMA_VERSION);
     });
   });
 });

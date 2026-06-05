@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { resolveAuthor } from "../../src/core/shared/author.js";
 import { isPathWithinDirectory } from "../../src/core/fs/path-utils.js";
 import { createLazyModule } from "../../src/core/shared/lazy-module.js";
+import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
 
 describe("core/shared/author: resolveAuthor", () => {
   it("returns the candidate when provided", () => {
@@ -102,5 +103,61 @@ describe("core/shared/lazy-module: createLazyModule", () => {
     expect(callCount).toBe(1);
     await load();
     expect(callCount).toBe(1);
+  });
+});
+
+describe("core/shared/serial-queue: createSerialQueue (pm-3puw)", () => {
+  it("runs tasks strictly one-at-a-time in arrival order", async () => {
+    const queue = createSerialQueue();
+    const events: string[] = [];
+    const makeTask = (label: string, delayMs: number) => async () => {
+      events.push(`start:${label}`);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      events.push(`end:${label}`);
+      return label;
+    };
+
+    // Enqueue a slow task first, then a fast one. With true serialization the
+    // fast task must not start until the slow task has fully settled.
+    const slow = queue.enqueue(makeTask("slow", 20));
+    const fast = queue.enqueue(makeTask("fast", 0));
+    await Promise.all([slow, fast]);
+
+    expect(events).toEqual(["start:slow", "end:slow", "start:fast", "end:fast"]);
+  });
+
+  it("resolves enqueue() with the task's return value", async () => {
+    const queue = createSerialQueue();
+    await expect(queue.enqueue(() => 7)).resolves.toBe(7);
+    await expect(queue.enqueue(async () => "async-result")).resolves.toBe("async-result");
+  });
+
+  it("isolates a rejecting task: its promise rejects but later tasks still run in order", async () => {
+    const queue = createSerialQueue();
+    const order: string[] = [];
+
+    const first = queue.enqueue(async () => {
+      order.push("first");
+      throw new Error("boom");
+    });
+    const second = queue.enqueue(async () => {
+      order.push("second");
+      return "ok";
+    });
+
+    await expect(first).rejects.toThrow("boom");
+    await expect(second).resolves.toBe("ok");
+    expect(order).toEqual(["first", "second"]);
+  });
+
+  it("idle() resolves only once the queue has drained", async () => {
+    const queue = createSerialQueue();
+    const order: string[] = [];
+    queue.enqueue(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      order.push("task");
+    });
+    await queue.idle();
+    expect(order).toEqual(["task"]);
   });
 });

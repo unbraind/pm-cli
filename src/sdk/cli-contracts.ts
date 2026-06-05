@@ -1990,11 +1990,35 @@ function createLazyContractSchema(
   });
 }
 
+/**
+ * Canonical version of the action-scoped strict MCP tool-parameters schema
+ * (`PM_TOOL_PARAMETERS_SCHEMA`). Exported as the single source of truth so the
+ * MCP server, the `pm contracts` command, SDK consumers, and the contract tests
+ * all bind to one constant instead of re-typing the `"4.0.2"` literal (pm-r9sz).
+ * Bump the patch/minor for additive, backward-compatible schema changes; bump
+ * the MAJOR for breaking changes — the major also drives the `$id`
+ * `tool-parameters-v{major}` slug, so the two never drift.
+ */
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.0.2" as const;
+
+/**
+ * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the
+ * schema `$id` slug so a breaking version bump renames the document in lockstep.
+ */
+export const PM_TOOL_PARAMETERS_SCHEMA_MAJOR = PM_TOOL_PARAMETERS_SCHEMA_VERSION.split(".")[0];
+
+/**
+ * Version of the provider-compatible flat tool-parameters schema
+ * (`PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`). Tracked separately from the strict
+ * schema because the flat projection evolves independently.
+ */
+export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION = "1.0.0" as const;
+
 export const PM_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = createLazyContractSchema(() => ({
   $schema: "https://json-schema.org/draft/2020-12/schema",
-  $id: "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
+  $id: `https://schema.unbrained.dev/pm-cli/tool-parameters-v${PM_TOOL_PARAMETERS_SCHEMA_MAJOR}.schema.json`,
   title: "pm-cli tool parameters (action-scoped strict schema)",
-  "x-schema-version": "4.0.2",
+  "x-schema-version": PM_TOOL_PARAMETERS_SCHEMA_VERSION,
   type: "object",
   oneOf: PM_TOOL_ACTIONS.map((action) => buildActionScopedToolSchema(action)),
 }));
@@ -2037,7 +2061,7 @@ function buildProviderCompatibleToolSchema(): Record<string, unknown> {
   }
   return {
     title: "pm-cli tool parameters (provider-compatible flat schema)",
-    "x-schema-version": "1.0.0",
+    "x-schema-version": PM_PROVIDER_TOOL_PARAMETERS_SCHEMA_VERSION,
     type: "object",
     additionalProperties: false,
     required: ["action"],

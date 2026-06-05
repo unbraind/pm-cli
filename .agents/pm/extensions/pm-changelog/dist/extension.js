@@ -1,11 +1,11 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { defineExtension, listAllFrontMatter, EXIT_CODE, PmCliError } from "@unbrained/pm-cli/sdk";
+import { defineExtension, listAllFrontMatter, locateItem, readLocatedItem, readSettings, resolveItemTypeRegistry, EXIT_CODE, PmCliError, } from "@unbrained/pm-cli/sdk";
 import { buildChangelogDocument, createChangelog, mergeChangelog, suggestSemver, writeChangelog } from "./generator.js";
 import { resolveReleaseContext, resolveReleaseTagWindows } from "./release-context.js";
 export default defineExtension({
     name: "pm-changelog",
-    version: "2026.6.5",
+    version: "2026.6.5-1",
     activate(api) {
         api.registerCommand({
             name: "changelog generate",
@@ -104,7 +104,13 @@ export default defineExtension({
                         pendingTimestamp: untilOption ?? dateOption,
                     })
                     : undefined;
-                const items = await listAllFrontMatter(ctx.pm_root);
+                const items = (await listAllFrontMatter(ctx.pm_root));
+                const bodyPreview = parseBodyPreviewOption(ctx.options);
+                // listAllFrontMatter omits item bodies, so --body-preview would silently
+                // render nothing (GH #27). Load bodies on demand only when previewing.
+                if (bodyPreview !== undefined && bodyPreview > 0) {
+                    await enrichItemBodies(ctx.pm_root, items);
+                }
                 const generationOptions = {
                     items,
                     title: titleOption,
@@ -121,7 +127,7 @@ export default defineExtension({
                     limit: limitValue,
                     sinceVersion: stringOption(ctx.options, "since-version", "sinceVersion"),
                     breakingChanges: booleanOption(ctx.options, "breaking-changes", "breakingChanges"),
-                    bodyPreview: parseBodyPreviewOption(ctx.options),
+                    bodyPreview,
                     emojiPrefix: booleanOption(ctx.options, "emoji-prefix", "emojiPrefix"),
                     suggestSemver: booleanOption(ctx.options, "suggest-semver", "suggestSemver"),
                     includeEmpty: booleanOption(ctx.options, "include-empty", "includeEmpty"),
@@ -269,6 +275,49 @@ export default defineExtension({
         }
     },
 });
+/**
+ * Best-effort enrichment of front-matter items with their on-disk body, used so
+ * `--body-preview` renders real body content in the extension path (GH #27).
+ * `listAllFrontMatter` omits bodies, so each item is re-read via the public SDK
+ * locate/read helpers. Items already carrying a body are skipped, and any
+ * per-item read failure is swallowed so changelog generation never breaks.
+ */
+async function enrichItemBodies(pmRoot, items) {
+    let settings;
+    try {
+        settings = await readSettings(pmRoot);
+    }
+    catch {
+        return; // cannot resolve settings → leave front matter as-is
+    }
+    const typeToFolder = resolveItemTypeRegistry(settings).type_to_folder;
+    const idPrefix = settings.id_prefix;
+    const format = settings.item_format;
+    const loadBody = async (item) => {
+        if (!item.id)
+            return;
+        if (typeof item.body === "string" && item.body.trim() !== "")
+            return;
+        try {
+            const located = await locateItem(pmRoot, item.id, idPrefix, format, typeToFolder);
+            if (!located)
+                return;
+            const { document } = await readLocatedItem(located);
+            if (typeof document.body === "string" && document.body.trim() !== "") {
+                item.body = document.body;
+            }
+        }
+        catch {
+            // best-effort: a single unreadable item must not fail generation
+        }
+    };
+    // Bound concurrency so a large workspace can't exhaust file descriptors
+    // (EMFILE) by issuing one locate+read per item all at once.
+    const CONCURRENCY_LIMIT = 16;
+    for (let i = 0; i < items.length; i += CONCURRENCY_LIMIT) {
+        await Promise.all(items.slice(i, i + CONCURRENCY_LIMIT).map(loadBody));
+    }
+}
 function stringOption(options, kebabKey, camelKey) {
     const value = options[kebabKey] ?? options[camelKey];
     return typeof value === "string" ? value : undefined;

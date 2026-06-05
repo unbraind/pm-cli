@@ -2,14 +2,15 @@ id: pm-77t3
 title: "As a coding agent, I want narrow MCP tools for notes/learnings/deps, so that I can self-document and inspect dependencies with the same ergonomics as pm_comments"
 description: "As a coding agent, I want narrow MCP tools for notes/learnings/deps, so that I can self-document and inspect dependencies with the same ergonomics as pm_comments"
 type: Story
-status: open
+status: closed
 priority: 3
 tags[4]: agent-ux,"area:mcp",living-map,story
 created_at: "2026-05-31T19:49:46.097Z"
-updated_at: "2026-05-31T19:49:46.097Z"
+updated_at: "2026-06-05T14:56:49.717Z"
 author: maintainer-agent
 acceptance_criteria: pm_notes/pm_learnings/pm_deps appear in tools/list with top-level id; instructions+docs+tool counts updated; tests added
 parent: pm-5k4v
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-hywv,related,"2026-05-31T19:49:46.097Z",null,null
+close_reason: "Satisfied by pm-hywv (same deliverable, story↔feature pair). Coding agents now get named-tool discoverability for notes/learnings/deps with the same ergonomics as pm_comments: pm_notes/pm_learnings/pm_deps appear in tools/list with a top-level id, instructions+docs+tool counts updated 18→21, and handshake + plugin-contract tests added. Verified via the full suite + manual MCP test in pm-at83."
 body: ""

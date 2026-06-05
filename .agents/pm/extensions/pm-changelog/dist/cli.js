@@ -289,6 +289,9 @@ async function loadItems(options) {
         pmBin: options.pmBin,
         pmArgs: options.pmArgs,
         cwd: options.pmCwd ? resolve(options.pmCwd) : undefined,
+        // Only request bodies when --body-preview needs them; otherwise keep the
+        // lighter default list payload (GH #27).
+        includeBody: options.bodyPreview !== undefined && options.bodyPreview > 0,
     });
 }
 function readStdin() {

@@ -193,7 +193,11 @@ export function buildChangelogDocument(options) {
         section_by: sectionBy,
         item_count: visibleSections.reduce((sum, section) => sum + section.items.length, 0),
         releases,
-        suggested_semver: options.suggestSemver ? suggestSemver(options) : undefined,
+        // Classify the same visible-section items emitted above, not the full
+        // filtered set, so the bump matches the released sections (GH #28).
+        suggested_semver: options.suggestSemver
+            ? suggestSemverForItems(visibleSections.flatMap((section) => section.items))
+            : undefined,
     };
 }
 function toDocumentItem(item) {
@@ -249,6 +253,9 @@ export function mergeChangelog(existingMarkdown, generatedMarkdown, options = {}
 export function readPmItems(options = {}) {
     const pmBin = options.pmBin ?? "pm";
     const args = [...(options.pmArgs ?? []), "list-all", "--json"];
+    if (options.includeBody) {
+        args.push("--include-body");
+    }
     if (options.pmRoot) {
         args.unshift("--path", options.pmRoot);
     }
@@ -718,7 +725,12 @@ const HEADING_EMOJI = {
 /**
  * Detect whether an item is a breaking change. Signals (any one suffices):
  *  - a truthy `breaking` flag on the item or in its metadata, OR
- *  - the substring "breaking" appearing in the type, any tag, or the title.
+ *  - an explicit breaking tag (`breaking`, `breaking-change`, `breaking_change`), OR
+ *  - the word "breaking" appearing as a standalone token in the type or title.
+ *
+ * Negated/safe phrasings such as "non-breaking", "non breaking", "not breaking"
+ * and "no breaking" are stripped before the token check, so describing a change
+ * as non-breaking no longer triggers a major-bump suggestion (GH #26).
  * Used only by the opt-in `--breaking-changes` / `--suggest-semver` features.
  */
 function isBreakingItem(item) {
@@ -726,15 +738,29 @@ function isBreakingItem(item) {
         return true;
     if (isTruthyFlag(item.metadata?.["breaking"]))
         return true;
-    const haystack = [
-        typeof item.type === "string" ? item.type : "",
-        ...(Array.isArray(item.tags) ? item.tags.filter((t) => typeof t === "string") : []),
-        typeof item.title === "string" ? item.title : "",
-    ]
+    const tags = Array.isArray(item.tags)
+        ? item.tags.filter((t) => typeof t === "string")
+        : [];
+    // An explicit tag is an unambiguous, intentional breaking signal.
+    if (tags.some((t) => BREAKING_TAGS.has(normalizeTag(t))))
+        return true;
+    const haystack = [typeof item.type === "string" ? item.type : "", typeof item.title === "string" ? item.title : "", ...tags]
         .join(" ")
         .toLowerCase();
-    return haystack.includes("breaking");
+    // Drop negated/safe phrasings first ("non-breaking", "not breaking", …) so
+    // they cannot satisfy the standalone-token check below.
+    const withoutNegations = haystack.replace(NEGATED_BREAKING, " ");
+    return BREAKING_TOKEN.test(withoutNegations);
 }
+/** Tags that explicitly mark a breaking change (compared after normalization). */
+const BREAKING_TAGS = new Set(["breaking", "breakingchange", "breaking-change", "breaking_change"]);
+function normalizeTag(tag) {
+    return tag.trim().toLowerCase();
+}
+/** Negated/safe "breaking" phrasings to strip before the standalone-token test. */
+const NEGATED_BREAKING = /\b(?:non[-\s]?breaking|not\s+(?:a\s+)?breaking|no\s+breaking)\b/g;
+/** "breaking" as a standalone word (not part of e.g. "nonbreaking"). */
+const BREAKING_TOKEN = /\bbreaking\b/;
 function isTruthyFlag(value) {
     if (value === true)
         return true;
@@ -752,7 +778,31 @@ function isTruthyFlag(value) {
  * footer note; never alters default markdown.
  */
 export function suggestSemver(options) {
-    const items = filterItems(options);
+    // Base the suggestion on the items that actually render (after section
+    // building, empty-section pruning and --limit/--since-version narrowing) so a
+    // bump is never reported from releases hidden by visibility flags (GH #28).
+    // With no narrowing flags this is exactly filterItems(options), so the
+    // default suggestion is unchanged.
+    return suggestSemverForItems(visibleChangelogItems(options));
+}
+/**
+ * The items that actually render for the given options: the union of all
+ * visible release-section items after filtering, empty-section pruning and
+ * `--limit`/`--since-version` narrowing. Exposed so semver suggestions and the
+ * structured `--changelog-json` document classify the same set the markdown
+ * emits (GH #28).
+ */
+export function visibleChangelogItems(options) {
+    const filtered = filterItems(options);
+    const sections = buildSections(filtered, options);
+    const candidateSections = options.includeEmpty
+        ? sections
+        : sections.filter((section) => section.items.length > 0);
+    const visibleSections = limitSections(candidateSections, options);
+    return visibleSections.flatMap((section) => section.items);
+}
+/** Classify an explicit item set into a semver bump (no option-driven filtering). */
+export function suggestSemverForItems(items) {
     let breaking = 0;
     let feature = 0;
     let fix = 0;

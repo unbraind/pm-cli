@@ -119,6 +119,7 @@ export default defineConfig({
         "src/core/shared/lazy-module.ts",
         "src/core/shared/levenshtein.ts",
         "src/core/shared/option-alias-visibility.ts",
+        "src/core/shared/serial-queue.ts",
         "src/core/shared/serialization.ts",
         "src/core/shared/split-comma-list.ts",
         "src/core/shared/time.ts",
