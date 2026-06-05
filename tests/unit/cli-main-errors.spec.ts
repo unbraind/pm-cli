@@ -1,7 +1,10 @@
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { _testOnly } from "../../src/cli/main.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("CLI main error helpers", () => {
   it("only treats Commander-owned codes as Commander errors", () => {
@@ -45,5 +48,54 @@ describe("CLI main error helpers", () => {
         process.env.PM_SENTRY_CAPTURE_EXPECTED_ERRORS = previous;
       }
     }
+  });
+});
+
+describe("CLI settings-read warning surfacing", () => {
+  it("surfaces settings_read_invalid_schema on stderr while keeping stdout JSON clean", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      await writeFile(
+        settingsPath,
+        `${JSON.stringify({ version: 1, id_prefix: 123, item_format: "toon" })}\n`,
+        "utf8",
+      );
+
+      const result = context.runCli(["list", "--json"], { expectJson: true });
+      expect(result.stderr).toContain("settings_read_invalid_schema");
+      expect(result.stderr).toContain("run pm health for remediation");
+      // stdout stays clean machine-readable JSON despite the stderr warning.
+      expect(result.code).toBe(0);
+      expect(result.stdout).not.toContain("settings_read_invalid_schema");
+      expect(() => JSON.parse(result.stdout)).not.toThrow();
+    });
+  });
+
+  it("surfaces settings_read_invalid_json on stderr when settings.json is not parseable", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      await writeFile(settingsPath, '{ "version": 1, "id_prefix":', "utf8");
+
+      const result = context.runCli(["list"]);
+      expect(result.stderr).toContain("settings_read_invalid_json");
+      expect(result.stderr).toContain("run pm health for remediation");
+      expect(result.stdout).not.toContain("settings_read_invalid_json");
+    });
+  });
+
+  it("surfaces the warning even with --no-extensions (the common safe mode)", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      await writeFile(
+        settingsPath,
+        `${JSON.stringify({ version: 1, id_prefix: 123, item_format: "toon" })}\n`,
+        "utf8",
+      );
+
+      const result = context.runCli(["--no-extensions", "list", "--json"], { expectJson: true });
+      expect(result.stderr).toContain("settings_read_invalid_schema");
+      expect(result.code).toBe(0);
+      expect(() => JSON.parse(result.stdout)).not.toThrow();
+    });
   });
 });

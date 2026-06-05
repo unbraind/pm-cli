@@ -71,7 +71,7 @@ import {
 } from "../core/sentry/helpers.js";
 import { ensureSentryInit } from "../core/sentry/instrument.js";
 import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
-import { readSettings } from "../core/store/settings.js";
+import { readSettings, readSettingsWithMetadata } from "../core/store/settings.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { PmSettings } from "../types/index.js";
 import {
@@ -213,6 +213,7 @@ interface RuntimeExtensionDiscoverySnapshot {
   settings: PmSettings;
   discovery: ExtensionDiscoveryResult;
   discoveryMs: number;
+  settingsReadWarnings: string[];
 }
 
 interface RuntimeExtensionActivationProbe {
@@ -1040,6 +1041,26 @@ function collectParsedActivationCommandArgs(command: Command): string[] {
   return commandArgs;
 }
 
+/**
+ * Surface settings-read warnings once per command on stderr. readSettings()
+ * silently falls back to defaults when settings.json is invalid, so most
+ * commands (create/list/search/...) generate the warning but never show it — a
+ * typo would change behavior with no explanation. Only the `settings_read_*`
+ * codes are surfaced (the corrupt-settings fallbacks: invalid_json /
+ * invalid_schema / merge_failed); other informational settings warnings (schema
+ * bootstrap, legacy-format coercion) stay quiet. Mirrors the same finding in
+ * `pm health`, which also carries a remediation_map for it.
+ */
+function emitSettingsReadWarnings(warnings: readonly string[]): void {
+  for (const warning of warnings) {
+    if (warning.startsWith("settings_read_")) {
+      printError(
+        `[pm] warning: ${warning} — settings.json could not be loaded and pm fell back to defaults; run pm health for remediation.`,
+      );
+    }
+  }
+}
+
 function emitExtensionProfile(globalOptions: GlobalOptions, snapshot: RuntimeExtensionSnapshot): void {
   if (!globalOptions.profile) {
     return;
@@ -1083,7 +1104,7 @@ async function loadRuntimeExtensionDiscoverySnapshot(pmRoot: string): Promise<Ru
 
   try {
     const startedAt = Date.now();
-    const settings = await readSettings(pmRoot);
+    const { settings, warnings: settingsReadWarnings } = await readSettingsWithMetadata(pmRoot);
     const discovery = await discoverExtensions({
       pmRoot,
       settings,
@@ -1095,6 +1116,7 @@ async function loadRuntimeExtensionDiscoverySnapshot(pmRoot: string): Promise<Ru
       settings,
       discovery,
       discoveryMs: Date.now() - startedAt,
+      settingsReadWarnings: [...settingsReadWarnings],
     };
     runtimeExtensionDiscoverySnapshotCache = {
       key: cacheKey,
@@ -1195,6 +1217,15 @@ async function maybeLoadRuntimeExtensions(
 > {
   const globalOptions = getGlobalOptions(command);
   if (globalOptions.noExtensions) {
+    // Extensions are disabled, so the discovery snapshot that normally carries
+    // the settings-read warnings is skipped. Surface them directly here (a single
+    // read on this uncommon path) so `pm --no-extensions <cmd>` — the common safe
+    // mode — still reports a corrupt settings.json instead of silently running on
+    // defaults.
+    const noExtPmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
+    if (await pathExists(getSettingsPath(noExtPmRoot))) {
+      emitSettingsReadWarnings((await readSettingsWithMetadata(noExtPmRoot)).warnings);
+    }
     return null;
   }
 
@@ -1203,6 +1234,10 @@ async function maybeLoadRuntimeExtensions(
   if (!discoverySnapshot) {
     return null;
   }
+  // Surface actionable settings-read warnings once per command, before the
+  // activation-skipped fast path returns, so create/list/search/... all report a
+  // corrupt settings.json instead of silently running on defaults.
+  emitSettingsReadWarnings(discoverySnapshot.settingsReadWarnings);
   const probe: RuntimeExtensionActivationProbe = {
     commandPath: getCommandPath(command),
     commandArgs: collectParsedActivationCommandArgs(command),

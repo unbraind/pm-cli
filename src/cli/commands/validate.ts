@@ -4,6 +4,7 @@ import type { Dirent } from "node:fs";
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
+import { buildRemediationCommands } from "../../core/diagnostics/remediation.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { scanHistoryDrift } from "../../core/history/drift-scan.js";
@@ -142,6 +143,7 @@ export interface ValidateCommandOptions {
   checkCommandReferences?: boolean;
   scanMode?: string;
   metadataProfile?: string;
+  fixHints?: boolean;
 }
 
 export interface ValidateCheck {
@@ -630,6 +632,37 @@ function buildResolutionRemediationCommand(row: { id: string; missing_fields: Re
     .map((field) => `${RESOLUTION_REMEDIATION_FLAG_BY_FIELD[field]} \"${RESOLUTION_REMEDIATION_PLACEHOLDER_BY_FIELD[field]}\"`)
     .join(" ");
   return `pm update ${row.id} ${fieldArguments} --message \"Backfill resolution metadata\"`;
+}
+
+/**
+ * Attach a uniform, machine-executable `fix_hints` array to a validate check's
+ * details when `--fix-hints` is requested. The resolution check's existing
+ * per-row remediation commands (which already carry concrete item ids) are
+ * aliased in so agents read one uniform field across every check; all other
+ * checks derive one generic command per distinct warning code from the shared
+ * remediation registry. Generic hints may contain `<id>`/`<field>`/`<path>`
+ * placeholders the caller substitutes before running — they are templates, not
+ * always directly executable as-is. Read-only: this only enriches the diagnostic
+ * output, never mutates any item.
+ */
+function attachValidateFixHints(check: ValidateCheck, checkWarnings: string[]): void {
+  const existingResolutionHints = check.details?.missing_resolution_remediation_hints;
+  const aliasedResolution = Array.isArray(existingResolutionHints) && existingResolutionHints.length > 0;
+  const fixHints = aliasedResolution
+    ? (existingResolutionHints as unknown[]).filter((hint): hint is string => typeof hint === "string")
+    : buildRemediationCommands(checkWarnings);
+  if (fixHints.length === 0) {
+    return;
+  }
+  // The resolution check truncates its per-row hint list for low-token output;
+  // carry that marker onto fix_hints so an agent knows the list is partial and
+  // there are more items to repair beyond the ones shown.
+  const truncated = aliasedResolution && check.details?.missing_resolution_remediation_hints_truncated === true;
+  check.details = {
+    ...check.details,
+    fix_hints: fixHints,
+    ...(truncated ? { fix_hints_truncated: true } : {}),
+  };
 }
 
 function resolveRequestedChecks(options: ValidateCommandOptions): Set<ValidateCheckName> {
@@ -1377,50 +1410,50 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   const workspaceRoot = resolveWorkspaceRoot(pmRoot);
   const checks: ValidateCheck[] = [];
   const warnings = [...new Set(itemReadWarnings)];
+  const fixHintsEnabled = options.fixHints === true;
+  const record = (built: { check: ValidateCheck; warnings: string[] }): void => {
+    if (fixHintsEnabled) {
+      attachValidateFixHints(built.check, built.warnings);
+    }
+    checks.push(built.check);
+    warnings.push(...built.warnings);
+  };
 
   if (requestedChecks.has("metadata")) {
-    const metadataCheck = buildMetadataCheck(items, metadataPolicy, statusRegistry, Boolean(options.verboseDiagnostics));
-    checks.push(metadataCheck.check);
-    warnings.push(...metadataCheck.warnings);
+    record(buildMetadataCheck(items, metadataPolicy, statusRegistry, Boolean(options.verboseDiagnostics)));
   }
   if (requestedChecks.has("resolution")) {
-    const resolutionCheck = buildResolutionCheck(items, statusRegistry, Boolean(options.verboseDiagnostics));
-    checks.push(resolutionCheck.check);
-    warnings.push(...resolutionCheck.warnings);
+    record(buildResolutionCheck(items, statusRegistry, Boolean(options.verboseDiagnostics)));
   }
   if (requestedChecks.has("lifecycle")) {
-    const lifecycleCheck = buildLifecycleCheck(
-      items,
-      Boolean(options.checkStaleBlockers),
-      dependencyCycleSeverity,
-      statusRegistry,
-      lifecyclePatternPolicy,
-      Boolean(options.verboseDiagnostics),
+    record(
+      buildLifecycleCheck(
+        items,
+        Boolean(options.checkStaleBlockers),
+        dependencyCycleSeverity,
+        statusRegistry,
+        lifecyclePatternPolicy,
+        Boolean(options.verboseDiagnostics),
+      ),
     );
-    checks.push(lifecycleCheck.check);
-    warnings.push(...lifecycleCheck.warnings);
   }
   if (requestedChecks.has("files")) {
-    const filesCheck = await buildFilesCheck(
-      items,
-      workspaceRoot,
-      pmRoot,
-      fileScanMode,
-      Boolean(options.includePmInternals),
-      Boolean(options.verboseFileLists),
+    record(
+      await buildFilesCheck(
+        items,
+        workspaceRoot,
+        pmRoot,
+        fileScanMode,
+        Boolean(options.includePmInternals),
+        Boolean(options.verboseFileLists),
+      ),
     );
-    checks.push(filesCheck.check);
-    warnings.push(...filesCheck.warnings);
   }
   if (requestedChecks.has("command_references")) {
-    const commandReferencesCheck = buildCommandReferencesCheck(items, settings.id_prefix, Boolean(options.verboseDiagnostics));
-    checks.push(commandReferencesCheck.check);
-    warnings.push(...commandReferencesCheck.warnings);
+    record(buildCommandReferencesCheck(items, settings.id_prefix, Boolean(options.verboseDiagnostics)));
   }
   if (requestedChecks.has("history_drift")) {
-    const historyDriftCheck = await buildHistoryDriftCheck(pmRoot, items, Boolean(options.verboseDiagnostics));
-    checks.push(historyDriftCheck.check);
-    warnings.push(...historyDriftCheck.warnings);
+    record(await buildHistoryDriftCheck(pmRoot, items, Boolean(options.verboseDiagnostics)));
   }
 
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));

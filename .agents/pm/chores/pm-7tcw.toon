@@ -2,13 +2,17 @@ id: pm-7tcw
 title: Surface settings_read_invalid_schema warning proactively on affected commands
 description: "On invalid settings.json, readSettings() silently falls back to defaults; create/list/search use readSettings (not WithMetadata) so the warning is generated but never shown; a typo breaks behavior with no explanation."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:config",dx,living-map
 created_at: "2026-05-31T19:45:40.518Z"
-updated_at: "2026-05-31T19:45:40.518Z"
+updated_at: "2026-06-04T22:17:45.430Z"
 author: maintainer-agent
 acceptance_criteria: main.ts dispatch uses readSettingsWithMetadata and emits settings_read_* warnings to stderr (or a pm health check catches it); corrupt-settings test confirms the warning reaches output.
 value: "On invalid settings.json, readSettings() silently falls back to defaults; create/list/search use readSettings (not WithMetadata) so the warning is generated but never shown; a typo breaks behavior with no explanation."
 parent: pm-8jdc
+resolution: main.ts threads settings_read_* warnings through the discovery snapshot (zero extra reads) and prints them once per command to stderr; readSettings fallback to defaults is no longer silent.
+expected_result: create/list/search surface settings_read_invalid_schema/json instead of silently using defaults.
+actual_result: pm list with corrupt settings.json prints the stderr warning; stdout/--json stays clean; verified in sandbox.
+close_reason: Settings-read warnings now surfaced to stderr
 body: ""

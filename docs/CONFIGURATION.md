@@ -49,6 +49,8 @@ Precedence:
 4. global settings
 5. built-in defaults
 
+When `settings.json` cannot be loaded, `pm` falls back to built-in defaults and prints a one-time `settings_read_invalid_json` or `settings_read_invalid_schema` warning to stderr (stdout output is unchanged); run `pm health` for remediation.
+
 ## Common Settings
 
 | Setting | Purpose |

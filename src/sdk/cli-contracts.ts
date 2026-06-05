@@ -737,6 +737,7 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--verbose-diagnostics" },
   { flag: "--strict-exit" },
   { flag: "--fail-on-warn" },
+  { flag: "--fix-hints" },
   { flag: "--check-history-drift" },
   { flag: "--check-command-references" },
 ];
@@ -1847,6 +1848,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "verboseDiagnostics",
       "strictExit",
       "failOnWarn",
+      "fixHints",
       "checkHistoryDrift",
       "checkCommandReferences",
     ],

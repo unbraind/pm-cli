@@ -195,6 +195,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   verboseFileLists: { type: "boolean" },
   strictExit: { type: "boolean" },
   failOnWarn: { type: "boolean" },
+  fixHints: { type: "boolean" },
   checkHistoryDrift: { type: "boolean" },
   checkCommandReferences: { type: "boolean" },
   allowAuditNote: { type: "boolean" },
@@ -791,6 +792,9 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   failOnWarn: {
     description: "Alias for strictExit in health/validate/extension-doctor action payloads.",
+  },
+  fixHints: {
+    description: "For validate action, add a machine-executable fix_hints[] of pm commands to each failing check's details.",
   },
   checkHistoryDrift: {
     description: "Run item/history hash drift checks.",

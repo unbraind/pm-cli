@@ -796,8 +796,14 @@ describe("runHealth", () => {
 
       const settingValuesCheck = health.checks.find((check) => check.name === "settings_values");
       expect(settingValuesCheck?.status).toBe("warn");
+      // settings_values is a remediation source, so a machine-executable
+      // remediation_map is attached alongside the warning list in full output.
       expect(settingValuesCheck?.details).toEqual({
         warnings: ["settings:id_prefix_empty", "settings:locks_ttl_non_positive"],
+        remediation_map: {
+          "settings:id_prefix_empty": "pm config list --json",
+          "settings:locks_ttl_non_positive": "pm config list --json",
+        },
       });
 
       const extensionCheck = health.checks.find((check) => check.name === "extensions");
@@ -1781,6 +1787,36 @@ describe("runHealth", () => {
       const driftCheck = health.checks.find((c) => c.name === "history_drift");
       expect(integrityCheck?.details).not.toMatchObject({ skipped: true });
       expect(driftCheck?.details).not.toMatchObject({ skipped: true });
+    });
+  });
+
+  it("attaches a machine-executable remediation_map to the history_drift check on missing-stream drift", async () => {
+    await withTempPmPath(async (context) => {
+      const missingId = createSeedItem(context);
+      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), { force: true });
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.ok).toBe(false);
+      expect(health.warnings).toContain(`history_drift_missing_stream:${missingId}`);
+
+      const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
+      expect(historyDriftCheck?.status).toBe("warn");
+      const remediationMap = (historyDriftCheck?.details as { remediation_map?: Record<string, string> }).remediation_map;
+      expect(remediationMap).toEqual({
+        history_drift_missing_stream: "pm history-repair <id>",
+      });
+    });
+  });
+
+  it("omits the remediation_map from history_drift details in brief projection mode", async () => {
+    await withTempPmPath(async (context) => {
+      const missingId = createSeedItem(context);
+      await rm(path.join(context.pmPath, "history", `${missingId}.jsonl`), { force: true });
+
+      const health = await runHealth({ path: context.pmPath }, { brief: true });
+      const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
+      expect(historyDriftCheck).toBeDefined();
+      expect(historyDriftCheck?.details).not.toHaveProperty("remediation_map");
     });
   });
 });

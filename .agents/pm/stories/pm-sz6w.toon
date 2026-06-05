@@ -2,15 +2,23 @@ id: pm-sz6w
 title: "As an agent gating on pm health/validate, I want machine-executable remediation commands, so that I can auto-repair findings without hardcoding warning-code mappings"
 description: "As an agent gating on pm health/validate, I want machine-executable remediation commands, so that I can auto-repair findings without hardcoding warning-code mappings"
 type: Story
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:observability",living-map,story
 created_at: "2026-05-31T19:49:46.325Z"
-updated_at: "2026-05-31T19:49:46.325Z"
+updated_at: "2026-06-04T22:17:45.910Z"
 author: maintainer-agent
 acceptance_criteria: health --json emits per-check remediation map; validate --fix-hints emits executable pm commands per check; tests assert non-empty maps for known codes
 parent: pm-5oj5
+resolution: "Delivered machine-executable remediation across pm health (remediation_map) and pm validate (--fix-hints) from one shared registry, plus proactive settings-warning surfacing; closes child features pm-0hnu and pm-6m3y."
+expected_result: Agents auto-repair pm health/validate findings without hardcoding warning-code mappings.
+actual_result: health remediation_map + validate fix_hints both consume src/core/diagnostics/remediation.ts; 100% covered; full suite green.
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-0hnu,related,"2026-05-31T19:49:46.325Z",null,null
   pm-6m3y,related,"2026-05-31T19:49:46.325Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-06-04T22:04:15.550Z",maintainer-agent,"Implemented shared remediation registry src/core/diagnostics/remediation.ts (single source of truth, code->fix-command). Consumed by: (1) pm-0hnu health --json per-check remediation_map (non-extension checks only; extensions keep details.triage.remediation); brief/summary omit it. (2) pm-6m3y validate --fix-hints adds uniform fix_hints[] per check (resolution aliases existing per-row commands; others derive generic registry commands). (3) pm-7tcw main.ts surfaces settings_read_* warnings to stderr once/command via discovery snapshot (zero extra reads). Registry resolver simplified to first-match (codes disjoint under colon-boundary) for 100% branch coverage. All 3 verified end-to-end in /tmp sandbox."
+  "2026-06-04T22:05:57.535Z",maintainer-agent,"Docs: documented self-repair remediation surface. COMMANDS.md (Validation and Maintenance): added --fix-hints flag prose + new 'Self-Repair Remediation' subsection showing remediation_map shapes (history_drift, vectorization) and the full/default-include vs brief/summary-omit rule. AGENT_GUIDE.md: new 'Self-Repair Remediation' section after Safe Defaults — agents read remediation_map / fix_hints[] instead of hardcoding warning-code->command, cross-links COMMANDS.md. CONFIGURATION.md (after Precedence): one sentence that invalid settings.json emits a settings_read_invalid_json/invalid_schema stderr warning and falls back to defaults, pointing at pm health."
+  "2026-06-04T22:08:26.749Z",maintainer-agent,"Added command-level tests for the remediation cluster (branch agent-self-repair-remediation-registry-20260604). Files touched (tests only, no src changes): (1) tests/unit/health-command.spec.ts — added 'attaches a machine-executable remediation_map to the history_drift check on missing-stream drift' (asserts details.remediation_map === {history_drift_missing_stream: 'pm history-repair <id>'}) and 'omits the remediation_map from history_drift details in brief projection mode'; ALSO updated the pre-existing 'reports warn checks for missing directories and invalid settings values' assertion, which the shipped feature broke: settings_values now carries remediation_map for both settings:id_prefix_empty and settings:locks_ttl_non_positive (toEqual exact-match needed the new key). (2) tests/unit/validate-command.spec.ts — added 'attaches executable fix_hints to the metadata check when --fix-hints is requested' (metadata details.fix_hints includes 'pm update <id> --acceptance-criteria ...'), 'aliases the resolution check per-row remediation commands into fix_hints' (fix_hints === missing_resolution_remediation_hints, contains real id + --resolution), and 'omits fix_hints from every check when --fix-hints is not requested'. (3) tests/unit/cli-main-errors.spec.ts — new 'CLI settings-read warning surfacing' describe with two runCli tests: schema-invalid settings.json yields stderr containing settings_read_invalid_schema (stdout JSON stays clean/parseable), JSON-invalid yields settings_read_invalid_json. Result: 87/87 passing across the 3 specs (pnpm build clean). No surprises — all actual output shapes matched the described shapes exactly; fix_hints/remediation_map placeholders use literal '<id>' for generic-registry-derived commands while the resolution alias path carries concrete ids."
+close_reason: Agent self-repair remediation delivered
 body: ""
