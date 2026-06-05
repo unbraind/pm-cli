@@ -1813,7 +1813,8 @@ complete -c pm -n '__fish_seen_subcommand_from get' -l fields -d 'Render custom 
 complete -c pm -n '__fish_seen_subcommand_from history'  -l limit -d 'Max history entries' -r
 complete -c pm -n '__fish_seen_subcommand_from history'  -l compact -d 'Condensed history projection'
 complete -c pm -n '__fish_seen_subcommand_from history'  -l full -d 'Show full history entries'
-complete -c pm -n '__fish_seen_subcommand_from history'  -l diff -d 'Include changed-field patch summary'
+complete -c pm -n '__fish_seen_subcommand_from history'  -l diff -d 'Include per-entry field-level before/after value diffs'
+complete -c pm -n '__fish_seen_subcommand_from history'  -l field -d 'With --diff, show only entries that changed this field' -r
 complete -c pm -n '__fish_seen_subcommand_from history'  -l verify -d 'Verify history hash chain and replay integrity'
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l literal -d 'Literal string matcher to redact from history/item payloads' -r
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l regex -d 'Regex matcher to redact (/pattern/flags or raw pattern)' -r
@@ -1940,7 +1941,10 @@ complete -c pm -n '__fish_seen_subcommand_from test-runs' -l author -d 'Resume a
 
 # gc flags
 complete -c pm -n '__fish_seen_subcommand_from gc' -l dry-run -d 'Preview cleanup targets without deleting files'
-complete -c pm -n '__fish_seen_subcommand_from gc' -l scope -d 'Limit cleanup to index/embeddings/runtime scopes' -r
+complete -c pm -n '__fish_seen_subcommand_from gc' -l scope -d 'Limit cleanup to index/embeddings/runtime/locks scopes' -r
+
+# stats flags
+complete -c pm -n '__fish_seen_subcommand_from stats' -l storage -d 'Include aggregate history-stream storage metrics'
 
 # append flags
 complete -c pm -n '__fish_seen_subcommand_from append' -s b -l body -d 'Item body' -r

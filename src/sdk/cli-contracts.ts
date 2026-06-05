@@ -1223,7 +1223,6 @@ const LIST_COMMAND_NAME_CONTRACTS = new Set([
 ]);
 
 const NO_SURFACE_COMMAND_NAME_CONTRACTS = new Set([
-  "stats",
   "reindex",
   "help",
 ]);
