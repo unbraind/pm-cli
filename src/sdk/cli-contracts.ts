@@ -324,6 +324,7 @@ export const HISTORY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--compact" },
   { flag: "--full" },
   { flag: "--diff" },
+  { flag: "--field" },
   { flag: "--verify" },
 ];
 
@@ -704,6 +705,10 @@ export const TEST_RUNS_FLAG_CONTRACTS: CliFlagContract[] = [
 export const GC_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--dry-run" },
   { flag: "--scope" },
+];
+
+export const STATS_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--storage" },
 ];
 
 export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1218,7 +1223,6 @@ const LIST_COMMAND_NAME_CONTRACTS = new Set([
 ]);
 
 const NO_SURFACE_COMMAND_NAME_CONTRACTS = new Set([
-  "stats",
   "reindex",
   "help",
 ]);
@@ -1361,6 +1365,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(VALIDATE_FLAG_CONTRACTS);
     case "gc":
       return withSubcommandGlobalFlags(GC_FLAG_CONTRACTS);
+    case "stats":
+      return withSubcommandGlobalFlags(STATS_FLAG_CONTRACTS);
     case "contracts":
       return withSubcommandGlobalFlags(CONTRACTS_FLAG_CONTRACTS);
     case "claim":
@@ -1815,7 +1821,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     required: ["runId"],
     optional: ["author"],
   },
-  stats: {},
+  stats: { optional: ["storage"] },
   health: {
     optional: [
       "strictDirectories",

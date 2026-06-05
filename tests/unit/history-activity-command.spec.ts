@@ -133,10 +133,16 @@ describe("runHistory and runActivity", () => {
       expect(cliDefault.json).toMatchObject({ compact: true, history: [] });
       expect((cliDefault.json as { compact_history?: unknown[] }).compact_history?.length).toBeGreaterThan(0);
 
+      // --diff is independent of the compact/full projection: it always replays the
+      // chain to surface field-level value diffs even when the entry list is compacted.
       const compactDiff = context.runCli(["history", id, "--json", "--diff"], { expectJson: true });
       expect(compactDiff.code).toBe(0);
       expect(compactDiff.json).toMatchObject({ compact: true, history: [] });
-      expect((compactDiff.json as { diff?: unknown[] }).diff).toEqual([]);
+      const compactDiffEntries = (compactDiff.json as {
+        diff?: Array<{ changed_fields: string[]; changes: unknown[] }>;
+      }).diff;
+      expect(compactDiffEntries?.length).toBeGreaterThan(0);
+      expect(compactDiffEntries?.some((entry) => entry.changed_fields.includes("body"))).toBe(true);
 
       const cliFull = context.runCli(["history", id, "--json", "--full"], { expectJson: true });
       expect(cliFull.code).toBe(0);
@@ -686,6 +692,62 @@ describe("runHistory and runActivity", () => {
         { path: context.pmPath },
       );
       expect(relativeWindow.count).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it("computes per-field before/after value diffs with --diff", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Diff Values");
+      const update = context.runCli(
+        ["update", id, "--json", "--priority", "3", "--author", "test-author", "--message", "Raise priority"],
+        { expectJson: true },
+      );
+      expect(update.code).toBe(0);
+
+      const result = await runHistory(id, { diff: true }, { path: context.pmPath });
+      expect(result.diff).toBeDefined();
+      const diff = result.diff ?? [];
+      // create sets priority (absent -> 1); update replaces 1 -> 3.
+      const updateEntry = diff.find((entry) =>
+        entry.changes.some((change) => change.field === "priority" && change.before === 1),
+      );
+      expect(updateEntry).toBeDefined();
+      expect(updateEntry?.changes.find((change) => change.field === "priority")).toMatchObject({
+        field: "priority",
+        before: 1,
+        after: 3,
+      });
+    });
+  });
+
+  it("restricts the diff to one field's transitions with --field (implying --diff)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Diff Field Filter");
+      const update = context.runCli(
+        ["update", id, "--json", "--priority", "4", "--author", "test-author", "--message", "Raise priority again"],
+        { expectJson: true },
+      );
+      expect(update.code).toBe(0);
+
+      // --field alone implies --diff at the command layer.
+      const result = await runHistory(id, { field: "priority" }, { path: context.pmPath });
+      expect(result.diff).toBeDefined();
+      const diff = result.diff ?? [];
+      for (const entry of diff) {
+        expect(entry.changed_fields).toEqual(["priority"]);
+        expect(entry.changes.every((change) => change.field === "priority")).toBe(true);
+      }
+      expect(
+        diff.some((entry) => entry.changes.some((change) => change.before === 1 && change.after === 4)),
+      ).toBe(true);
+    });
+  });
+
+  it("omits the diff when neither --diff nor --field is requested", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History No Diff");
+      const result = await runHistory(id, {}, { path: context.pmPath });
+      expect(result.diff).toBeUndefined();
     });
   });
 });

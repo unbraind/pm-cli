@@ -3,6 +3,7 @@ import path from "node:path";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { enforceHistoryStreamPolicyForItems } from "../../core/history/history-stream-policy.js";
+import { computeHistoryStorageStats, type HistoryStorageStats } from "../../core/history/history-storage-stats.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
@@ -14,6 +15,11 @@ import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemStatus, ItemType } from "../../types/index.js";
 
+export interface StatsCommandOptions {
+  /** Include aggregate per-stream history storage metrics (sizes, depth, oldest/newest). */
+  storage?: boolean;
+}
+
 export interface StatsResult {
   totals: {
     items: number;
@@ -22,6 +28,8 @@ export interface StatsResult {
   };
   by_type: Record<ItemType, number>;
   by_status: Record<ItemStatus, number>;
+  /** Present only with --storage: aggregate history-stream metrics for compaction/planning. */
+  storage?: HistoryStorageStats;
   generated_at: string;
 }
 
@@ -55,13 +63,10 @@ function countNonEmptyLines(raw: string): number {
     .length;
 }
 
-async function readHistorySummary(pmRoot: string): Promise<{ history_streams: number; history_entries: number }> {
+async function readHistoryStreamContents(pmRoot: string): Promise<Array<{ id: string; raw: string }>> {
   const historyDir = path.join(pmRoot, "history");
   if (!(await pathExists(historyDir))) {
-    return {
-      history_streams: 0,
-      history_entries: 0,
-    };
+    return [];
   }
 
   await runActiveOnReadHooks({
@@ -72,7 +77,7 @@ async function readHistorySummary(pmRoot: string): Promise<{ history_streams: nu
     .filter((entry) => entry.endsWith(".jsonl"))
     .sort((a, b) => a.localeCompare(b));
 
-  let historyEntries = 0;
+  const streams: Array<{ id: string; raw: string }> = [];
   for (const file of historyFiles) {
     const historyPath = path.join(historyDir, file);
     const raw = await fs.readFile(historyPath, "utf8");
@@ -80,16 +85,13 @@ async function readHistorySummary(pmRoot: string): Promise<{ history_streams: nu
       path: historyPath,
       scope: "project",
     });
-    historyEntries += countNonEmptyLines(raw);
+    streams.push({ id: file.slice(0, -".jsonl".length), raw });
   }
 
-  return {
-    history_streams: historyFiles.length,
-    history_entries: historyEntries,
-  };
+  return streams;
 }
 
-export async function runStats(global: GlobalOptions): Promise<StatsResult> {
+export async function runStats(global: GlobalOptions, options: StatsCommandOptions = {}): Promise<StatsResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
@@ -119,16 +121,22 @@ export async function runStats(global: GlobalOptions): Promise<StatsResult> {
     byStatus[item.status] += 1;
   }
 
-  const historySummary = await readHistorySummary(pmRoot);
+  const streams = await readHistoryStreamContents(pmRoot);
+  let historyEntries = 0;
+  for (const stream of streams) {
+    historyEntries += countNonEmptyLines(stream.raw);
+  }
+  const storage = options.storage ? computeHistoryStorageStats(streams) : undefined;
 
   return {
     totals: {
       items: items.length,
-      history_streams: historySummary.history_streams,
-      history_entries: historySummary.history_entries,
+      history_streams: streams.length,
+      history_entries: historyEntries,
     },
     by_type: byType,
     by_status: byStatus,
+    ...(storage ? { storage } : {}),
     generated_at: nowIso(),
   };
 }

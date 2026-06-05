@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { runActiveOnIndexHooks, runActiveOnReadHooks, runActiveOnWriteHooks } from "../../core/extensions/index.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
+import { runLockGc } from "../../core/lock/lock-gc.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
@@ -9,7 +10,7 @@ import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 
-const GC_SCOPE_VALUES = ["index", "embeddings", "runtime"] as const;
+const GC_SCOPE_VALUES = ["index", "embeddings", "runtime", "locks"] as const;
 type GcScope = (typeof GC_SCOPE_VALUES)[number];
 
 interface GcTarget {
@@ -51,6 +52,12 @@ export interface GcCommandOptions {
   scope?: string[];
 }
 
+export interface GcLocksSummary {
+  scanned: number;
+  removed: number;
+  retained: number;
+}
+
 export interface GcResult {
   ok: boolean;
   dry_run: boolean;
@@ -59,6 +66,8 @@ export interface GcResult {
   retained: string[];
   warnings: string[];
   guidance: string[];
+  /** Present only when the locks scope was selected. Summarizes the stale-lock sweep. */
+  locks?: GcLocksSummary;
   generated_at: string;
 }
 
@@ -195,6 +204,29 @@ export async function runGc(global: GlobalOptions, options: GcCommandOptions = {
     }
     warnings.push(...result.warnings);
   }
+
+  // The locks scope is not a path-based GC_TARGET: it sweeps the locks/ directory
+  // and removes only locks whose own embedded ttl has expired (crashed-process
+  // debris), retaining active and unparseable locks. See core/lock/lock-gc.ts.
+  let locksSummary: GcLocksSummary | undefined;
+  if (scopes.includes("locks")) {
+    const lockResult = await runLockGc(pmRoot, {
+      dryRun,
+      hooks: {
+        onRead: (lockPath) => runActiveOnReadHooks({ path: lockPath, scope: "project" }),
+        onWrite: (lockPath) => runActiveOnWriteHooks({ path: lockPath, scope: "project", op: "gc:lock_remove" }),
+      },
+    });
+    removed.push(...lockResult.removed);
+    retained.push(...lockResult.retained);
+    warnings.push(...lockResult.warnings);
+    locksSummary = {
+      scanned: lockResult.scanned,
+      removed: lockResult.removed.length,
+      retained: lockResult.retained.length,
+    };
+  }
+
   warnings.push(
     ...(await runActiveOnIndexHooks({
       mode: dryRun ? "gc:dry-run" : "gc",
@@ -214,6 +246,7 @@ export async function runGc(global: GlobalOptions, options: GcCommandOptions = {
     removed,
     retained,
     warnings,
+    ...(locksSummary ? { locks: locksSummary } : {}),
     guidance,
     generated_at: nowIso(),
   };

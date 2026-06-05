@@ -303,9 +303,12 @@ pm validate --check-files --scan-mode tracked-all
 pm validate --check-resolution --fix-hints --json
 pm normalize --dry-run --json
 pm gc --dry-run
+pm gc --scope locks --dry-run
 ```
 
 Use dry-run modes before broad lifecycle or cleanup changes.
+
+`pm gc` accepts `--scope` values `index`, `embeddings`, `runtime`, and `locks` (comma-separated or repeatable); with no `--scope` it sweeps all of them. The `locks` scope removes only **expired** lock files in `locks/` — those whose own embedded `created_at + ttl_seconds` has elapsed (debris left by crashed processes). Active locks and any lock file that cannot be parsed are always retained (never deleted when staleness cannot be proven), and the result includes a `locks` summary (`scanned`/`removed`/`retained`).
 
 `--fix-hints` is a read-only flag: each failing check gains `details.fix_hints`, an array of `pm` command templates derived from the warning codes it raised (for example `pm history-repair <id>` for history drift, or `pm update <id> --reviewer "<name>"` for a missing reviewer). Generic hints may contain `<id>`/`<field>`/`<path>` placeholders the agent substitutes from the check's detail rows; the resolution check aliases concrete per-row commands and marks `fix_hints_truncated` when the list is summarized. It never mutates items. The mapping comes from the shared remediation registry that also backs `pm health --json` (see Self-Repair Remediation below), so agents gating on `pm validate` can auto-repair findings without hardcoding warning-code-to-command lookups.
 
@@ -326,6 +329,8 @@ Use dry-run modes before broad lifecycle or cleanup changes.
 
 ```bash
 pm history <id> --limit 20
+pm history <id> --diff
+pm history <id> --diff --field status
 pm history <id> --full --diff --verify
 pm history-redact <id> --literal "[redacted_path_prefix]/private" --replacement "[redacted_path]"
 pm history-redact <id> --regex "/192\\.168\\.[0-9.]+/g" --dry-run
@@ -337,6 +342,15 @@ pm restore <id> <timestamp-or-version>
 ```
 
 History is append-only. Restore appends a new restore event instead of rewriting old history.
+
+`--diff` replays the history chain and emits, per entry, a `changes` array of `{ field, before, after }` field-level value transitions (alongside the `changed_fields` name list) — so you can see exactly what each field changed from and to without comparing snapshots. It is independent of the compact/full projection. `--field <name>` narrows the diff to a single field's transitions (implying `--diff`), answering "when did `<field>` change?" — e.g. `pm history <id> --diff --field status`.
+
+`pm stats` reports item and history totals plus per-type/per-status counts. Add `--storage` for aggregate history-stream metrics — `total_streams`, `total_lines`, `total_bytes`, the top streams by size (`largest_by_bytes`) and by depth (`deepest_by_lines`), and the global `oldest_entry`/`newest_entry` — to decide when to compact or redact streams and to plan storage:
+
+```bash
+pm stats
+pm stats --storage --json
+```
 `history-redact` rewrites matching history payloads deterministically, recomputes hash chains, and appends an auditable `history_redact` marker entry when changes are applied.
 `history-repair` re-anchors a drifted history chain when `pm health`/`pm validate --check-history-drift` report stale hashes: it replays the stream, recomputes every before/after hash, repairs legacy patch ops that no longer strictly apply, reconciles the latest hash with the on-disk item, and appends an auditable `history_repair` marker. It never modifies item content and is a safe no-op on a clean stream.
 

@@ -186,11 +186,15 @@ export function registerOperationCommands(program: Command): void {
   program
     .command("stats")
     .description("Show project tracker statistics.")
-    .action(async (_options: unknown, command) => {
+    .option(
+      "--storage",
+      "Include aggregate history-stream storage metrics (total streams/lines/bytes, largest + deepest streams, oldest/newest entries)",
+    )
+    .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const { runStats } = await import("./commands/stats.js");
-      const result = await runStats(globalOptions);
+      const result = await runStats(globalOptions, { storage: options.storage === true });
       printResult(result, globalOptions);
       if (globalOptions.profile) {
         printError(`profile:command=stats took_ms=${Date.now() - startedAt}`);
@@ -313,8 +317,8 @@ export function registerOperationCommands(program: Command): void {
   program
     .command("gc")
     .option("--dry-run", "Preview cleanup targets without deleting files; without this flag, pm gc deletes matched artifacts")
-    .option("--scope <value>", "Limit cleanup to one or more scopes (comma-separated or repeatable): index, embeddings, runtime", collect)
-    .description("Delete optional cache artifacts by default and show a summary.")
+    .option("--scope <value>", "Limit cleanup to one or more scopes (comma-separated or repeatable): index, embeddings, runtime, locks", collect)
+    .description("Delete optional cache artifacts by default (including expired lock debris) and show a summary.")
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();

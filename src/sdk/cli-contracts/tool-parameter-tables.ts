@@ -167,6 +167,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   checkContext: { type: "boolean" },
   autoPmContext: { type: "boolean" },
   diff: { type: "boolean" },
+  storage: { type: "boolean" },
   verify: { type: "boolean" },
   literal: { type: "array", items: { type: "string" } },
   regex: { type: "array", items: { type: "string" } },
@@ -217,7 +218,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   includeUnparented: { type: "boolean" },
   gcScope: {
     type: "array",
-    items: { type: "string", enum: ["index", "embeddings", "runtime"] },
+    items: { type: "string", enum: ["index", "embeddings", "runtime", "locks"] },
   },
   maxDepth: { anyOf: [{ type: "string" }, { type: "number" }] },
   collapse: { type: "string", enum: ["none", "repeated"] },
@@ -689,8 +690,12 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "Preview command effects without mutating storage artifacts.",
   },
   gcScope: {
-    description: "Repeatable gc scope selector values (index, embeddings, runtime).",
-    examples: [["index", "embeddings"], ["runtime"]],
+    description: "Repeatable gc scope selector values (index, embeddings, runtime, locks).",
+    examples: [["index", "embeddings"], ["runtime"], ["locks"]],
+  },
+  storage: {
+    description:
+      "For stats action: include aggregate history-stream storage metrics (total streams/lines/bytes, largest + deepest streams, oldest/newest entries) for compaction and storage planning.",
   },
   offset: {
     description: "Number of matching rows to skip before limit is applied.",

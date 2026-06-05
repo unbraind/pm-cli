@@ -2455,6 +2455,9 @@
           "flag": "--diff"
         },
         {
+          "flag": "--field"
+        },
+        {
           "flag": "--verify"
         }
       ],
@@ -4351,8 +4354,12 @@
     },
     {
       "command": "stats",
-      "flags": [],
-      "provider": "extension"
+      "flags": [
+        {
+          "flag": "--storage"
+        }
+      ],
+      "provider": "core"
     },
     {
       "command": "test",
@@ -17224,6 +17231,10 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "storage": {
+            "description": "For stats action: include aggregate history-stream storage metrics (total streams/lines/bytes, largest + deepest streams, oldest/newest entries) for compaction and storage planning.",
+            "type": "boolean"
+          },
           "timeoutMs": {
             "description": "Tool execution timeout in milliseconds.",
             "examples": [
@@ -17502,7 +17513,7 @@
             "type": "boolean"
           },
           "gcScope": {
-            "description": "Repeatable gc scope selector values (index, embeddings, runtime).",
+            "description": "Repeatable gc scope selector values (index, embeddings, runtime, locks).",
             "examples": [
               [
                 "index",
@@ -17510,13 +17521,17 @@
               ],
               [
                 "runtime"
+              ],
+              [
+                "locks"
               ]
             ],
             "items": {
               "enum": [
                 "index",
                 "embeddings",
-                "runtime"
+                "runtime",
+                "locks"
               ],
               "type": "string"
             },

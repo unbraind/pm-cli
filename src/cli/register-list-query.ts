@@ -313,7 +313,8 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--limit <n>", "Return only the latest n history entries")
       .option("--compact", "Condensed output: show entry index, timestamp, op, author, patch count, and changed fields")
       .option("--full", "Show full history entries with JSON Patch payloads")
-      .option("--diff", "Include per-entry changed field summaries from history patches")
+      .option("--diff", "Include per-entry field-level before/after value diffs computed by replaying the history chain")
+      .option("--field <name>", "With --diff, show only entries that changed this field (implies --diff)")
       .option("--verify", "Verify hash chain and replay integrity for the full history stream")
       .description("Show item history entries.")
       .action(async (id: string, options: Record<string, unknown>, command) => {
@@ -322,13 +323,15 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
         if (options.compact === true && options.full === true) {
           throw new PmCliError("History projection options are mutually exclusive. Use either --compact or --full.", EXIT_CODE.USAGE);
         }
+        const field = typeof options.field === "string" ? options.field : undefined;
         const { runHistory } = await import("./commands/history.js");
         const result = await runHistory(
           id,
           {
             limit: typeof options.limit === "string" ? options.limit : undefined,
             compact: options.full === true ? false : true,
-            diff: Boolean(options.diff),
+            diff: Boolean(options.diff) || field !== undefined,
+            field,
             verify: Boolean(options.verify),
           },
           globalOptions,

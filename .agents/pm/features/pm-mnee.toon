@@ -1,16 +1,21 @@
 id: pm-mnee
-title: "pm history --stats / pm stats --storage: aggregate history-stream metrics"
+title: "Add pm stats --storage: aggregate history-stream metrics"
 description: "No command surfaces per-stream sizes, line counts, or depth distribution; essential for deciding when to compact/redact and for storage planning."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[4]: "area:history","area:storage",diagnostics,living-map
 created_at: "2026-05-31T19:43:38.445Z"
-updated_at: "2026-05-31T20:15:41.450Z"
+updated_at: "2026-06-05T21:19:43.133Z"
 author: maintainer-agent
 acceptance_criteria: "Outputs total streams, lines, bytes, top-N by size/depth, oldest/newest entries; json+human; reuses drift cache where fresh (no full re-verify)."
 value: "No command surfaces per-stream sizes, line counts, or depth distribution; essential for deciding when to compact/redact and for storage planning."
 parent: pm-o2kc
+resolution: "Shipped pm stats --storage via core/history/history-storage-stats.ts: total_streams/lines/bytes, largest_by_bytes + deepest_by_lines top-N, global oldest/newest entry. Reads streams once with no hash re-verification (lighter than the drift cache). The per-item 'pm history --stats' surface was folded into pm stats --storage since the aggregate belongs on stats."
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-3pbq,related,"2026-05-31T20:10:00.000Z",maintainer-agent,null
+comments[2]{created_at,author,text}:
+  "2026-06-05T20:40:04.278Z",claude-code-agent,"Sub-agent starting: src/core/history/history-storage-stats.ts — pure aggregate of history streams (total streams/lines/bytes, top-N largest+deepest, global oldest/newest). Orchestrator wires into pm stats --storage."
+  "2026-06-05T20:44:07.560Z",claude-code-agent,"Sub-agent DONE: history-storage-stats.ts implemented and tested.\n\n**Exported signature:**\n- `HistoryStreamStat { id, bytes, lines, oldest_ts: string|null, newest_ts: string|null }`\n- `HistoryStorageEntryRef { id, ts }`\n- `HistoryStorageStats { total_streams, total_lines, total_bytes, largest_by_bytes, deepest_by_lines, oldest_entry, newest_entry }`\n- `computeHistoryStorageStats(streams, options?): HistoryStorageStats`\n\n**Behavior decisions:**\n- topN defaults to 5; `Math.max(0, Math.floor(topN))` clamps negatives to 0 and floors fractional values. topN=0 returns empty arrays for both top-N fields.\n- Unparseable JSON lines: counted toward `lines` total but ts is skipped for min/max tracking.\n- Lines with missing or non-string `ts` field: counted as lines, skipped for ts.\n- Invalid date strings (Date.parse → NaN): skipped for ts tracking.\n- CRLF line endings supported via `/\\r?\\n/` split.\n- Byte counting via `Buffer.byteLength(raw, 'utf8')` — correct for multibyte UTF-8.\n- Tie-breaking: all top-N sorts and global oldest/newest use `id` ascending as the secondary key for determinism.\n- Global oldest/newest: null when no stream has any parseable ts.\n\n**Edge cases covered:** empty streams array, empty raw string stream, single stream, single-entry stream, stream with zero parseable ts (null oldest/newest), CRLF line endings, whitespace-only lines (not counted), topN default (>5 streams → 5 returned), topN=0 (empty arrays), topN>count (all returned), negative topN (clamped to 0), fractional topN (floored), multibyte UTF-8 byte counting (emoji + accented chars + Japanese), global ts tie-breaking by id.\n\n**Test result:** 31 tests passed, 1 test file. Coverage: 100% statements (55/55), 100% branches (48/48), 100% functions (5/5), 100% lines (54/54).\n\n**NOTE for orchestrator:** Project vitest.config.ts uses `include: [\"tests/**/*.spec.ts\"]` so the test file was created as `tests/unit/core/history/history-storage-stats.spec.ts` (not .test.ts). Verification command: `npx vitest run tests/unit/core/history/history-storage-stats.spec.ts`"
+close_reason: "Shipped pm stats --storage aggregate history-stream metrics (total_streams/lines/bytes, largest_by_bytes + deepest_by_lines top-N, global oldest/newest) via pure core/history/history-storage-stats.ts. 31 module tests (100%) + command test + manual e2e. Per-item 'pm history --stats' folded into pm stats --storage."
 body: ""

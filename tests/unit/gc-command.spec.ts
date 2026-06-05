@@ -36,7 +36,7 @@ describe("runGc", () => {
       const gc = await runGc({ path: context.pmPath });
       expect(gc.ok).toBe(true);
       expect(gc.dry_run).toBe(false);
-      expect(gc.scope).toEqual(["index", "embeddings", "runtime"]);
+      expect(gc.scope).toEqual(["index", "embeddings", "runtime", "locks"]);
       expect(gc.removed).toEqual([
         "index/manifest.json",
         "search/embeddings.jsonl",
@@ -114,7 +114,7 @@ describe("runGc", () => {
       );
       expect(gc.ok).toBe(true);
       expect(gc.dry_run).toBe(true);
-      expect(gc.scope).toEqual(["index", "embeddings", "runtime"]);
+      expect(gc.scope).toEqual(["index", "embeddings", "runtime", "locks"]);
       expect(gc.removed).toEqual([
         "index/manifest.json",
         "search/embeddings.jsonl",
@@ -167,6 +167,65 @@ describe("runGc", () => {
         "search/lancedb",
       ]);
       expect(embeddingsOnly.retained).toEqual([]);
+    });
+  });
+
+  it("sweeps expired lock debris under the locks scope and retains active locks", async () => {
+    await withTempPmPath(async (context) => {
+      const locksDir = path.join(context.pmPath, "locks");
+      await mkdir(locksDir, { recursive: true });
+      const stale = {
+        id: "pm-old1",
+        pid: 4242,
+        owner: "crashed-agent",
+        created_at: new Date(Date.now() - 10 * 3600 * 1000).toISOString(),
+        ttl_seconds: 1800,
+      };
+      const fresh = {
+        id: "pm-new1",
+        pid: 99,
+        owner: "live-agent",
+        created_at: new Date().toISOString(),
+        ttl_seconds: 1800,
+      };
+      await writeFile(path.join(locksDir, "pm-old1.lock"), JSON.stringify(stale), "utf8");
+      await writeFile(path.join(locksDir, "pm-new1.lock"), JSON.stringify(fresh), "utf8");
+
+      const writeOps: string[] = [];
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onWrite: [
+          {
+            layer: "project",
+            name: "lock-gc-write-hook",
+            run: (hookContext) => {
+              writeOps.push(`${hookContext.op}:${path.basename(hookContext.path)}`);
+            },
+          },
+        ],
+        onRead: [],
+        onIndex: [],
+      });
+
+      const gc = await runGc({ path: context.pmPath }, { scope: ["locks"] });
+      expect(gc.scope).toEqual(["locks"]);
+      expect(gc.ok).toBe(true);
+      expect(gc.removed).toEqual(["locks/pm-old1.lock"]);
+      expect(gc.retained).toEqual(["locks/pm-new1.lock"]);
+      expect(gc.locks).toEqual({ scanned: 2, removed: 1, retained: 1 });
+      expect(writeOps).toEqual(["gc:lock_remove:pm-old1.lock"]);
+
+      await expect(fs.stat(path.join(locksDir, "pm-old1.lock"))).rejects.toBeTruthy();
+      await expect(fs.stat(path.join(locksDir, "pm-new1.lock"))).resolves.toBeTruthy();
+    });
+  });
+
+  it("omits the locks summary when the locks scope is not selected", async () => {
+    await withTempPmPath(async (context) => {
+      const gc = await runGc({ path: context.pmPath }, { scope: ["index"] });
+      expect(gc.scope).toEqual(["index"]);
+      expect(gc.locks).toBeUndefined();
     });
   });
 
