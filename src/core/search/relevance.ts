@@ -207,7 +207,7 @@ function cosineSimilarity(left: number[] | null | undefined, right: number[] | n
   if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) {
     return 0;
   }
-  return numerator / denominator;
+  return Math.max(-1, Math.min(1, numerator / denominator));
 }
 
 export async function rerankCandidatesWithEmbeddings(
