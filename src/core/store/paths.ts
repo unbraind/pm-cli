@@ -66,15 +66,34 @@ export function getSettingsPath(pmRoot: string): string {
 }
 
 function deriveDefaultTypeFolder(type: string): string {
-  const normalized = type
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  const normalized = toSlugToken(type);
   if (normalized.length === 0) {
     return "items";
   }
   return normalized.endsWith("s") ? normalized : `${normalized}s`;
+}
+
+function toSlugToken(value: string): string {
+  const trimmed = value.trim().toLowerCase();
+  let slug = "";
+  let pendingDash = false;
+  for (const character of trimmed) {
+    const code = character.charCodeAt(0);
+    const isAlpha = code >= 97 && code <= 122;
+    const isDigit = code >= 48 && code <= 57;
+    if (isAlpha || isDigit) {
+      if (pendingDash && slug.length > 0) {
+        slug += "-";
+      }
+      slug += character;
+      pendingDash = false;
+      continue;
+    }
+    if (slug.length > 0) {
+      pendingDash = true;
+    }
+  }
+  return slug;
 }
 
 export function getTypeDirPath(pmRoot: string, type: ItemType, typeToFolder: Record<string, string> = TYPE_TO_FOLDER): string {

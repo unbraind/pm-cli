@@ -87,7 +87,7 @@ const INLINE_SENSITIVE_FLAG_PATTERN = new RegExp(
   "giu",
 );
 const ABSOLUTE_PATH_TOKEN_PATTERN = /(^|[\s"'`(=])\/(?:[^\s"'`),;]+)/g;
-const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/giu;
+const EMAIL_PATTERN = /[^\s@]+@[^\s@]+\.[^\s@]+/g;
 const BEARER_TOKEN_PATTERN = /bearer\s+[a-z0-9._=-]+/giu;
 const PRIVATE_IP_PATTERN =
   /\b(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g;

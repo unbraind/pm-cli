@@ -75,10 +75,16 @@ function normalizeTimestampCandidates(input: string): string[] {
     push(`${datePart}T${hour}:${minute}${second}${normalizeFraction(fractionRaw)}${normalizeOffset(offsetRaw)}`);
   }
 
-  const spaceDateTime = /^(\d{4}-\d{2}-\d{2})\s+(.+)$/.exec(input);
-  if (spaceDateTime) {
-    const [, datePart, timePart] = spaceDateTime;
-    push(`${datePart}T${timePart}`);
+  const datePrefixLength = 10;
+  const datePrefix = input.slice(0, datePrefixLength);
+  if (isHyphenDatePrefix(datePrefix)) {
+    let index = datePrefixLength;
+    while (index < input.length && isWhitespaceCharacter(input[index])) {
+      index += 1;
+    }
+    if (index < input.length) {
+      push(`${datePrefix}T${input.slice(index)}`);
+    }
   }
 
   return candidates;
@@ -92,6 +98,40 @@ function parseTimestampWithFallbacks(input: string): number {
     if (Number.isFinite(parsed)) return parsed;
   }
   return Number.NaN;
+}
+
+function isHyphenDatePrefix(value: string): boolean {
+  if (value.length !== 10) {
+    return false;
+  }
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    if (index === 4 || index === 7) {
+      if (character !== "-") {
+        return false;
+      }
+      continue;
+    }
+    const code = character.charCodeAt(0);
+    if (code < 48 || code > 57) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isWhitespaceCharacter(character: string | undefined): boolean {
+  if (!character) {
+    return false;
+  }
+  return (
+    character === " " ||
+    character === "\t" ||
+    character === "\n" ||
+    character === "\r" ||
+    character === "\f" ||
+    character === "\v"
+  );
 }
 
 function daysInUtcMonth(year: number, monthIndex: number): number {

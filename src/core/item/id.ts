@@ -27,10 +27,9 @@ export function normalizeItemId(input: string, prefix: string): string {
 }
 
 function randomToken(length: number): string {
-  const bytes = crypto.randomBytes(length);
   let token = "";
-  for (const byte of bytes) {
-    token += (byte % 36).toString(36);
+  for (let index = 0; index < length; index += 1) {
+    token += crypto.randomInt(0, 36).toString(36);
   }
   return token;
 }

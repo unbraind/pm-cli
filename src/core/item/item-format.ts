@@ -951,7 +951,11 @@ function normalizeTypeOptions(values: Record<string, string> | undefined): Recor
 }
 
 function normalizeBody(body: string): string {
-  return body.replace(/^\n+/, "").replace(/\s+$/, "");
+  let start = 0;
+  while (start < body.length && body[start] === "\n") {
+    start += 1;
+  }
+  return body.slice(start).trimEnd();
 }
 
 function normalizeConfidenceValue(value: ItemMetadata["confidence"] | undefined): ItemMetadata["confidence"] | undefined {
