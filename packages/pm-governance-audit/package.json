@@ -18,7 +18,8 @@
     "project-management",
     "governance",
     "audit",
-    "normalize"
+    "normalize",
+    "hooks"
   ],
   "pm": {
     "aliases": [
@@ -34,7 +35,8 @@
       "tags": [
         "governance",
         "audit",
-        "normalize"
+        "normalize",
+        "hooks"
       ],
       "links": {
         "docs": "https://github.com/unbraind/pm-cli/tree/main/packages/pm-governance-audit#readme",

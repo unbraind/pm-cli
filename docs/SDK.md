@@ -361,6 +361,12 @@ declares only the `hooks` capability and registers a default-inert `afterCommand
 hook, so package authors can copy a lifecycle pattern that does not write files,
 produce output, or alter command behavior.
 
+The bundled `pm-governance-audit` package is the governance hook exemplar. It
+combines package-owned commands with `onRead` and `onWrite` hooks, declares the
+`hooks` capability, and only writes a compact JSONL sidecar when
+`PM_GOVERNANCE_AUDIT_HOOK_LOG` is set. Use that pattern for audit/cache/telemetry
+packages that need file-level context without storing item bodies by default.
+
 `afterCommand` receives the command outcome plus an optional `affected` array for
 item mutations. Each affected entry is a compact command context:
 `id`, `op`, `item_type`, `previous_status`, `status`, `changed_fields`, and

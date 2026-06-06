@@ -1,3 +1,5 @@
+import { appendFileSync, mkdirSync } from "node:fs";
+import path from "node:path";
 import {
   runCommentsAuditPackage,
   runDedupeAuditPackage,
@@ -9,8 +11,10 @@ export const manifest = {
   version: "0.1.0",
   entry: "./index.js",
   priority: 0,
-  capabilities: ["commands", "schema"],
+  capabilities: ["commands", "schema", "hooks"],
 };
+
+const HOOK_LOG_ENV = "PM_GOVERNANCE_AUDIT_HOOK_LOG";
 
 const dedupeAuditFlags = [
   { long: "--mode", value_name: "value", value_type: "string", description: "Audit mode: title_exact|title_fuzzy|parent_scope." },
@@ -105,10 +109,35 @@ function normalizeCommand() {
   };
 }
 
+function appendHookAuditRecord(kind, context) {
+  const logPath = process.env[HOOK_LOG_ENV]?.trim();
+  if (!logPath) {
+    return;
+  }
+  const absoluteLogPath = path.resolve(logPath);
+  mkdirSync(path.dirname(absoluteLogPath), { recursive: true });
+  const writeContext = kind === "on_write" ? context : undefined;
+  appendFileSync(
+    absoluteLogPath,
+    `${JSON.stringify({
+      kind,
+      path: context.path,
+      scope: context.scope,
+      op: writeContext?.op,
+      item_id: writeContext?.item_id,
+      item_type: writeContext?.item_type,
+      changed_fields: writeContext?.changed_fields,
+    })}\n`,
+    "utf8",
+  );
+}
+
 export function activate(api) {
   api.registerCommand(dedupeAuditCommand());
   api.registerCommand(commentsAuditCommand());
   api.registerCommand(normalizeCommand());
+  api.hooks.onRead((context) => appendHookAuditRecord("on_read", context));
+  api.hooks.onWrite((context) => appendHookAuditRecord("on_write", context));
 }
 
 export default {

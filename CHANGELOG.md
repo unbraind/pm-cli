@@ -4,6 +4,7 @@
 
 ### Added
 
+- pm-governance-audit: onWrite/onRead hooks exemplar \(hooks capability\) ([pm-7m8p](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7m8p.toon))
 - pm history-compact: checkpoint-based history stream compaction ([pm-3pbq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3pbq.toon))
 - Advanced relevance tuning \(post-v0.1\): cross-encoder reranking + query expansion ([pm-7tsx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7tsx.toon))
 - Configurable vector store collection name \(post-v0.1 adapter optimization\) ([pm-usw2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-usw2.toon))

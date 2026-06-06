@@ -177,6 +177,12 @@ export default defineExtension({
 });
 ```
 
+For package-owned governance hooks, use the `pm-governance-audit` shape: declare
+`hooks` in the manifest, register `api.hooks.onRead`/`api.hooks.onWrite`, and keep
+sidecar writes opt-in. Its `PM_GOVERNANCE_AUDIT_HOOK_LOG` logger records compact
+JSONL read/write metadata and omits full item bodies, which keeps hook packages
+useful for agents without inflating context or leaking private item content.
+
 ## Extension Manifest
 
 Runnable manifest examples are the source of truth:
