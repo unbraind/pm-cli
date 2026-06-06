@@ -1,0 +1,35 @@
+id: pm-01bm
+title: SDK testing helpers for schema package registrations
+description: "Add public SDK testing assertions for package-owned schema item fields and item types so package authors can verify custom project-management primitives without private registry imports. Duplicate check: searched existing SDK/schema assertion items; only closed work and open pm-ugqx lineage matched."
+type: Task
+status: closed
+priority: 2
+tags[4]: agent-ux,"area:extensions","area:schema","area:sdk"
+created_at: "2026-06-06T18:30:52.100Z"
+updated_at: "2026-06-06T18:39:40.395Z"
+author: codex-sdk-continuation
+parent: pm-ugqx
+resolution: "Delivered schema registration assertion helpers in the public SDK testing API, documented package-author usage, added transition-hook guidance, and verified with focused tests, coverage, temp consumer smoke, and repo gates."
+expected_result: "Package authors can assert custom item fields and item types through @unbrained/pm-cli/sdk/testing without private imports, and afterCommand context helpers stay covered by focused unit tests."
+actual_result: "assertRegisteredItemField/assertRegisteredItemType are exported from sdk/testing and the SDK barrel; docs and tests cover static, real extension, and in-memory activation usage; afterCommand affected-item helper branches have direct unit coverage."
+comments[3]{created_at,author,text}:
+  "2026-06-06T18:37:19.852Z",codex-sdk-continuation,"Evidence note: coverage gate passed: node scripts/run-tests.mjs coverage completed 146 files, 2521 tests, 100% statements/branches/functions/lines. Changelog gate passed directly in real repo: pnpm changelog:pm:check installed pm-changelog 2026.6.6 and reported CHANGELOG.md unchanged. The earlier linked-test changelog check was removed because linked tests intentionally sandbox PM_PATH, which makes repo CHANGELOG.md comparisons invalid."
+  "2026-06-06T18:38:16.693Z",codex-sdk-continuation,"Manual temp consumer smoke passed: created isolated npm project, installed <repo-root>, imported @unbrained/pm-cli/sdk/testing, activated schema-only in-memory extension, and assertRegisteredItemField/assertRegisteredItemType returned severity/Incident with failed=0."
+  "2026-06-06T18:39:40.395Z",codex-sdk-continuation,"Post-close verification passed: pnpm build; node scripts/release/static-quality-gate.mjs; pnpm changelog:pm then pnpm changelog:pm:check with pm-changelog 2026.6.6; node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/extensions-runtime.spec.ts tests/integration/extension-hooks.integration.spec.ts (43 tests); pm validate --check-resolution --check-history-drift had history_drift ok and only pre-existing resolution warnings outside pm-01bm; pnpm audit --audit-level moderate; node scripts/release/sentry-telemetry-gate.mjs --telemetry-mode best-effort --max-critical 0 --max-high 0 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0."
+files[4]{path,scope,note}:
+  src/sdk/index.ts,project,Re-export schema testing helpers from SDK barrel
+  src/sdk/testing.ts,project,Add public schema registration assertion helpers for package-author tests
+  tests/unit/extensions-runtime.spec.ts,project,Cover afterCommand affected-item helper branches
+  tests/unit/sdk-index.spec.ts,project,Cover schema assertion helpers and real/in-memory package activation
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/static-quality-gate.mjs,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts tests/unit/extensions-runtime.spec.ts tests/integration/extension-hooks.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mq2p0zlc-tdmikj,test,failed,"2026-06-06T18:34:36.411Z","2026-06-06T18:35:19.728Z","2026-06-06T18:35:19.728Z",null,null,3,1,0,null,null,null
+  test-local-mq2p3uz4-o4pax9,test,passed,"2026-06-06T18:37:19.800Z","2026-06-06T18:37:33.712Z","2026-06-06T18:37:33.712Z",null,null,3,0,0,null,null,null
+docs[2]{path,scope,note}:
+  docs/SDK.md,project,Document schema assertion helpers for package authors
+  packages/pm-lifecycle-hooks/README.md,project,Document copyable afterCommand transition filtering pattern
+close_reason: "Implemented public SDK schema testing assertions, package-author docs, lifecycle hook transition guidance, focused tests, 100% coverage, temp consumer smoke, security/audit/GitHub/Sentry triage."
+body: ""

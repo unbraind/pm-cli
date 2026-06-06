@@ -6,10 +6,12 @@ status: open
 priority: 1
 tags[5]: "area:observability","area:telemetry",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:12.693Z"
-updated_at: "2026-05-31T19:42:12.693Z"
+updated_at: "2026-06-06T18:32:16.466Z"
 author: maintainer-agent
 goal: project management = context management
 objective: "Improve observability: structured remediation, local telemetry analytics, validate --fix-hints, schema versioning"
 value: "Actionable, privacy-preserving diagnostics for agents and operators"
 parent: pm-doxj
+comments[1]{created_at,author,text}:
+  "2026-06-06T18:32:16.466Z",github-triage-subagent,"Observability/telemetry triage 2026-06-06: latest scheduled Nightly Validation run 27055539337 succeeded across Node 20/22/24/25 plus macOS/Windows matrix. Local node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort --max-critical 0 --max-high 0 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0 returned ok=true: Sentry checked with 0 critical/high issues, 14 ignored expected CLI errors, telemetry finish_error_rate_pct 1.9, and failures_without_error_code_rows 0. First attempted mode 'warn' was rejected because supported values are off, best-effort, required."
 body: ""

@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   runActiveCommandHandler,
   clearActiveExtensionHooks,
+  consumeAfterCommandAffectedItems,
+  projectAfterCommandItemSnapshot,
+  recordAfterCommandAffectedItem,
   runActiveCommandOverride,
   runActiveOnIndexHooks,
   runActiveParserOverride,
@@ -24,6 +27,51 @@ import {
 describe("core/extensions runtime wrappers", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
+  });
+
+  it("records afterCommand affected items only when afterCommand hooks are active", () => {
+    recordAfterCommandAffectedItem({ id: "pm-skip", op: "update", status: "open" });
+    expect(consumeAfterCommandAffectedItems()).toBeUndefined();
+
+    setActiveExtensionHooks({
+      beforeCommand: [],
+      afterCommand: [{ layer: "project", name: "after-ext", run: () => undefined }],
+      onWrite: [],
+      onRead: [],
+      onIndex: [],
+    });
+
+    recordAfterCommandAffectedItem({ id: "pm-one", op: "update", previous_status: "open", status: "closed" });
+
+    expect(consumeAfterCommandAffectedItems()).toEqual([
+      { id: "pm-one", op: "update", previous_status: "open", status: "closed" },
+    ]);
+    expect(consumeAfterCommandAffectedItems()).toBeUndefined();
+  });
+
+  it("projects compact afterCommand item snapshots from changed front matter", () => {
+    const snapshot = projectAfterCommandItemSnapshot(
+      {
+        id: "pm-one",
+        title: "Important item",
+        type: "Task",
+        status: "open",
+        priority: 1,
+        assignee: "agent",
+        body: "large body",
+        comments: [{ text: "large comment", created_at: "2026-06-06T00:00:00.000Z" }],
+        tests: [{ command: "pnpm test", scope: "project" }],
+      },
+      ["title", "unset:assignee", "body", "comments", "tests", "missing", 42 as unknown as string],
+    );
+
+    expect(snapshot).toEqual({
+      id: "pm-one",
+      type: "Task",
+      status: "open",
+      title: "Important item",
+      assignee: "agent",
+    });
   });
 
   it("returns empty warnings when no active hooks are registered", async () => {

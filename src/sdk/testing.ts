@@ -11,7 +11,11 @@ import type {
   RegisteredExtensionExporter,
   RegisteredExtensionHook,
   RegisteredExtensionImporter,
+  RegisteredExtensionSchemaFieldDefinitions,
+  RegisteredExtensionSchemaItemTypeDefinitions,
   RegisteredExtensionSearchProvider,
+  SchemaFieldDefinition,
+  SchemaItemTypeDefinition,
 } from "../core/extensions/loader.js";
 import { activateExtensions } from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
@@ -73,6 +77,28 @@ export interface RegisteredImporterExpectation {
 export interface RegisteredExporterExpectation {
   exporter: string;
   extensionName?: string;
+}
+
+export interface RegisteredItemFieldExpectation {
+  field: string;
+  extensionName?: string;
+  type?: SchemaFieldDefinition["type"];
+}
+
+export interface RegisteredItemFieldAssertion {
+  registration: RegisteredExtensionSchemaFieldDefinitions;
+  field: SchemaFieldDefinition;
+}
+
+export interface RegisteredItemTypeExpectation {
+  itemType: string;
+  extensionName?: string;
+  folder?: string;
+}
+
+export interface RegisteredItemTypeAssertion {
+  registration: RegisteredExtensionSchemaItemTypeDefinitions;
+  itemType: SchemaItemTypeDefinition;
 }
 
 function normalizeSdkIdentifier(value: string): string {
@@ -388,4 +414,76 @@ export function assertRegisteredExporter(
   }
 
   return exporter;
+}
+
+/**
+ * Assert that an activated extension registration registry contains a custom
+ * item field definition (optionally scoped to a specific extension).
+ */
+export function assertRegisteredItemField(
+  registrations: ExtensionRegistrationRegistry,
+  expectation: RegisteredItemFieldExpectation,
+): RegisteredItemFieldAssertion {
+  const expectedField = normalizeSdkIdentifier(expectation.field);
+  if (expectedField.length === 0) {
+    throw new Error("Expected item field name must be a non-empty string");
+  }
+
+  const candidates = registrations.item_fields
+    .filter((entry) => expectation.extensionName === undefined || entry.name === expectation.extensionName)
+    .map((registration) => ({
+      registration,
+      field: registration.fields.find((field) => normalizeSdkIdentifier(field.name) === expectedField),
+    }))
+    .filter((entry): entry is RegisteredItemFieldAssertion => entry.field !== undefined);
+
+  const match = candidates.find((entry) => expectation.type === undefined || entry.field.type === expectation.type);
+  if (!match) {
+    const available = sortedUnique(
+      registrations.item_fields.flatMap((entry) => entry.fields.map((field) => `${field.name}:${field.type}`)),
+    );
+    throw new Error(
+      `Expected item field "${expectedField}"${extensionNameSuffix(
+        expectation.extensionName,
+      )} to be registered. Available item fields: ${formatAvailable(available)}`,
+    );
+  }
+
+  return match;
+}
+
+/**
+ * Assert that an activated extension registration registry contains a custom
+ * item type definition (optionally scoped to a specific extension).
+ */
+export function assertRegisteredItemType(
+  registrations: ExtensionRegistrationRegistry,
+  expectation: RegisteredItemTypeExpectation,
+): RegisteredItemTypeAssertion {
+  const expectedType = normalizeSdkIdentifier(expectation.itemType);
+  if (expectedType.length === 0) {
+    throw new Error("Expected item type name must be a non-empty string");
+  }
+
+  const candidates = registrations.item_types
+    .filter((entry) => expectation.extensionName === undefined || entry.name === expectation.extensionName)
+    .map((registration) => ({
+      registration,
+      itemType: registration.types.find((itemType) => normalizeSdkIdentifier(itemType.name) === expectedType),
+    }))
+    .filter((entry): entry is RegisteredItemTypeAssertion => entry.itemType !== undefined);
+
+  const match = candidates.find((entry) => expectation.folder === undefined || entry.itemType.folder === expectation.folder);
+  if (!match) {
+    const available = sortedUnique(
+      registrations.item_types.flatMap((entry) => entry.types.map((itemType) => `${itemType.name}:${itemType.folder}`)),
+    );
+    throw new Error(
+      `Expected item type "${expectedType}"${extensionNameSuffix(
+        expectation.extensionName,
+      )} to be registered. Available item types: ${formatAvailable(available)}`,
+    );
+  }
+
+  return match;
 }

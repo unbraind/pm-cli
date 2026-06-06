@@ -22,6 +22,7 @@
 
 ### Other
 
+- SDK testing helpers for schema package registrations ([pm-01bm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-01bm.toon))
 - PR \#123 review: make governance hook sidecar logging fail-open ([pm-mzlu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mzlu.toon))
 - Config-driven optional close reason via governance.require\_close\_reason ([pm-peyv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-peyv.toon))
 
