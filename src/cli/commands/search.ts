@@ -16,6 +16,18 @@ import {
   type EmbeddingProviderConfig,
   type EmbeddingProviderResolution,
 } from "../../core/search/providers.js";
+import {
+  buildDeterministicQueryExpansions,
+  mergeQueryExpansions,
+  normalizeQueryExpansionOutput,
+  normalizeRerankOutput,
+  rerankCandidatesWithEmbeddings,
+  resolveQueryExpansionConfig,
+  resolveRerankConfig,
+  type QueryExpansionConfig,
+  type RerankCandidate,
+  type RerankConfig,
+} from "../../core/search/relevance.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
 import {
   executeVectorQuery,
@@ -192,6 +204,37 @@ interface ExtensionSearchProviderHit {
 type ExtensionSearchProviderQuery = (
   context: ExtensionSearchProviderContext,
 ) => Promise<ExtensionSearchProviderHit[] | { hits?: ExtensionSearchProviderHit[] }> | ExtensionSearchProviderHit[] | { hits?: ExtensionSearchProviderHit[] };
+
+interface ExtensionSearchProviderQueryExpansionContext {
+  query: string;
+  mode: Exclude<SearchMode, "keyword">;
+  settings: PmSettings;
+}
+
+type ExtensionSearchProviderQueryExpansion = (
+  context: ExtensionSearchProviderQueryExpansionContext,
+) => Promise<string[] | { queries?: string[] }> | string[] | { queries?: string[] };
+
+interface ExtensionSearchProviderRerankCandidate {
+  id: string;
+  text: string;
+  score: number;
+}
+
+interface ExtensionSearchProviderRerankContext {
+  query: string;
+  mode: "hybrid";
+  model: string;
+  top_k: number;
+  settings: PmSettings;
+  candidates: ExtensionSearchProviderRerankCandidate[];
+}
+
+type ExtensionSearchProviderRerank = (
+  context: ExtensionSearchProviderRerankContext,
+) => Promise<Array<{ id?: unknown; score?: unknown }> | { hits?: Array<{ id?: unknown; score?: unknown }> }>
+  | Array<{ id?: unknown; score?: unknown }>
+  | { hits?: Array<{ id?: unknown; score?: unknown }> };
 
 type ExtensionVectorQuery = (
   context: {
@@ -859,6 +902,8 @@ function emptySearchResult(
   includeLinked: boolean,
   scoreThreshold: number,
   hybridSemanticWeight: number,
+  queryExpansion: QueryExpansionConfig,
+  rerank: RerankConfig,
   projection: SearchProjectionConfig,
   warnings: string[],
 ): SearchResult {
@@ -881,6 +926,11 @@ function emptySearchResult(
       phrase_exact: options.phraseExact === true,
       score_threshold: scoreThreshold,
       hybrid_semantic_weight: mode === "hybrid" ? hybridSemanticWeight : null,
+      query_expansion_enabled: queryExpansion.enabled,
+      query_expansion_provider: queryExpansion.provider,
+      rerank_enabled: rerank.enabled,
+      rerank_model: rerank.model,
+      rerank_top_k: rerank.top_k,
       limit: options.limit ?? null,
     },
     projection: {
@@ -918,18 +968,25 @@ function requireSemanticDependencies(
 
 const toOptionalNonEmptyString = toNonEmptyStringOrUndefined;
 
-function resolveExtensionSearchProvider(settings: PmSettings): { providerName: string; query: ExtensionSearchProviderQuery } | null {
+interface ExtensionSearchProviderHooks {
+  providerName: string;
+  query?: ExtensionSearchProviderQuery;
+  queryExpansion?: ExtensionSearchProviderQueryExpansion;
+  rerank?: ExtensionSearchProviderRerank;
+}
+
+function resolveExtensionSearchProviderByName(providerName: string | undefined): ExtensionSearchProviderHooks | null {
   const registrations = getActiveExtensionRegistrations();
-  const providerName = toOptionalNonEmptyString((settings.search as { provider?: unknown } | undefined)?.provider);
   const resolved = resolveRegisteredSearchProvider(registrations, providerName);
   if (!resolved) {
     return null;
   }
   const runtimeDefinition = resolved.runtime_definition ?? resolved.definition;
   const query = (runtimeDefinition as { query?: unknown }).query;
-  if (typeof query !== "function") {
-    return null;
-  }
+  const queryExpansion =
+    (runtimeDefinition as { queryExpansion?: unknown; query_expansion?: unknown }).queryExpansion ??
+    (runtimeDefinition as { queryExpansion?: unknown; query_expansion?: unknown }).query_expansion;
+  const rerank = (runtimeDefinition as { rerank?: unknown }).rerank;
   const registeredName =
     toOptionalNonEmptyString((runtimeDefinition as { name?: unknown }).name) ??
     toOptionalNonEmptyString((resolved.definition as { name?: unknown }).name) ??
@@ -937,9 +994,29 @@ function resolveExtensionSearchProvider(settings: PmSettings): { providerName: s
   if (!registeredName) {
     return null;
   }
-  return {
+  const hooks: ExtensionSearchProviderHooks = {
     providerName: registeredName,
-    query: query as ExtensionSearchProviderQuery,
+    ...(typeof query === "function" ? { query: query as ExtensionSearchProviderQuery } : {}),
+    ...(typeof queryExpansion === "function"
+      ? { queryExpansion: queryExpansion as ExtensionSearchProviderQueryExpansion }
+      : {}),
+    ...(typeof rerank === "function" ? { rerank: rerank as ExtensionSearchProviderRerank } : {}),
+  };
+  if (!hooks.query && !hooks.queryExpansion && !hooks.rerank) {
+    return null;
+  }
+  return hooks;
+}
+
+function resolveExtensionSearchProvider(settings: PmSettings): { providerName: string; query: ExtensionSearchProviderQuery } | null {
+  const providerName = toOptionalNonEmptyString((settings.search as { provider?: unknown } | undefined)?.provider);
+  const resolved = resolveExtensionSearchProviderByName(providerName);
+  if (!resolved?.query) {
+    return null;
+  }
+  return {
+    providerName: resolved.providerName,
+    query: resolved.query,
   };
 }
 
@@ -1082,6 +1159,11 @@ interface SemanticQueryContext {
   provider: EmbeddingProviderConfig;
   vectorStore: VectorStoreConfig | null;
   extensionVectorAdapter: ExtensionVectorAdapter | null;
+  queryExpansion: QueryExpansionConfig;
+  queryExpansionExtension: { providerName: string; expand: ExtensionSearchProviderQueryExpansion } | null;
+  rerank: RerankConfig;
+  rerankExtension: { providerName: string; rerank: ExtensionSearchProviderRerank } | null;
+  warnings: string[];
   settings: PmSettings;
   embeddingTimeoutMs?: number;
   vectorQueryTimeoutMs?: number;
@@ -1095,47 +1177,214 @@ interface SemanticQueryResult {
   vectorMatchCount: number;
 }
 
+function mergeVectorHitsById(vectorHitGroups: VectorQueryHit[][]): VectorQueryHit[] {
+  const bestById = new Map<string, VectorQueryHit>();
+  for (const group of vectorHitGroups) {
+    for (const hit of group) {
+      const existing = bestById.get(hit.id);
+      if (!existing || hit.score > existing.score) {
+        bestById.set(hit.id, hit);
+      }
+    }
+  }
+  const merged = [...bestById.values()];
+  merged.sort((left, right) => {
+    if (left.score !== right.score) {
+      return right.score - left.score;
+    }
+    return left.id.localeCompare(right.id);
+  });
+  return merged;
+}
+
+function buildRerankCorpus(document: ItemDocument): string {
+  const metadata = (document as { metadata?: ItemDocument["metadata"] | null }).metadata;
+  const tags = Array.isArray(metadata?.tags) ? metadata.tags.join(" ") : "";
+  return [
+    metadata?.title,
+    metadata?.description,
+    metadata?.type,
+    metadata?.status,
+    tags,
+    document.body,
+  ]
+    .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+    .filter((entry) => entry.length > 0)
+    .join("\n");
+}
+
 async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promise<SemanticQueryResult> {
   const semanticLimit = context.limit ?? context.maxResults;
   const embeddingOptions = context.embeddingTimeoutMs !== undefined ? { timeout_ms: context.embeddingTimeoutMs } : {};
   const vectorQueryOptions = context.vectorQueryTimeoutMs !== undefined ? { timeout_ms: context.vectorQueryTimeoutMs } : {};
-  const queryVectors = await executeEmbeddingRequest(context.provider, context.query.trim(), embeddingOptions);
-  const semanticVector = queryVectors[0];
-  let vectorHits: VectorQueryHit[];
-  if (context.extensionVectorAdapter?.query) {
-    try {
-      vectorHits = await Promise.resolve(
-        context.extensionVectorAdapter.query({
-          vector: semanticVector,
-          limit: semanticLimit,
-          settings: context.settings,
-        }),
-      );
-    } catch (error: unknown) {
-      if (!context.vectorStore) {
-        throw new PmCliError(
-          `Extension vector adapter query failed and no built-in fallback store is configured (${error instanceof Error ? error.message : String(error)})`,
-          EXIT_CODE.GENERIC_FAILURE,
+  const queryTrimmed = context.query.trim();
+  const baseExpandedQueries = context.queryExpansion.enabled
+    ? buildDeterministicQueryExpansions(queryTrimmed, context.queryExpansion.max_queries)
+    : [queryTrimmed];
+  let expandedQueries = baseExpandedQueries.length > 0 ? baseExpandedQueries : [queryTrimmed];
+  if (context.queryExpansion.enabled) {
+    if (context.queryExpansionExtension?.expand) {
+      try {
+        const rawExpansion = await Promise.resolve(
+          context.queryExpansionExtension.expand({
+            query: queryTrimmed,
+            mode: context.requestedMode,
+            settings: context.settings,
+          }),
+        );
+        const extensionExpansion = normalizeQueryExpansionOutput(rawExpansion);
+        expandedQueries = mergeQueryExpansions(expandedQueries, extensionExpansion, context.queryExpansion.max_queries);
+      } catch {
+        context.warnings.push(
+          `search_query_expansion_provider_failed:${context.queryExpansionExtension.providerName}:using_builtin`,
         );
       }
-      vectorHits = await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit, vectorQueryOptions);
+    } else if (
+      context.queryExpansion.provider &&
+      context.queryExpansion.provider !== "openai" &&
+      context.queryExpansion.provider !== "ollama"
+    ) {
+      context.warnings.push(
+        `search_query_expansion_provider_unavailable:${context.queryExpansion.provider}:using_builtin`,
+      );
     }
-  } else if (context.vectorStore) {
-    vectorHits = await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit, vectorQueryOptions);
-  } else {
+  }
+
+  const queryVectors = await executeEmbeddingRequest(context.provider, expandedQueries, embeddingOptions);
+
+  const executeVectorQueryWithFallback = async (semanticVector: number[]): Promise<VectorQueryHit[]> => {
+    if (context.extensionVectorAdapter?.query) {
+      try {
+        return await Promise.resolve(
+          context.extensionVectorAdapter.query({
+            vector: semanticVector,
+            limit: semanticLimit,
+            settings: context.settings,
+          }),
+        );
+      } catch (error: unknown) {
+        if (!context.vectorStore) {
+          throw new PmCliError(
+            `Extension vector adapter query failed and no built-in fallback store is configured (${error instanceof Error ? error.message : String(error)})`,
+            EXIT_CODE.GENERIC_FAILURE,
+          );
+        }
+        return await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit, vectorQueryOptions);
+      }
+    }
+    if (context.vectorStore) {
+      return await executeVectorQuery(context.vectorStore, semanticVector, semanticLimit, vectorQueryOptions);
+    }
     throw new PmCliError(
       "Semantic search requires either a configured vector store or an extension vector adapter query handler",
       EXIT_CODE.USAGE,
     );
-  }
+  };
+
+  const queryVectorGroups = await Promise.all(
+    queryVectors.map(async (semanticVector) => await executeVectorQueryWithFallback(semanticVector)),
+  );
+  const vectorHits = mergeVectorHitsById(queryVectorGroups);
   const filteredById = new Map(context.filteredDocuments.map((document) => [document.metadata.id, document]));
   const { semanticHits, semanticScores } = buildSemanticHits(vectorHits, filteredById);
   const vectorMatchCount = semanticScores.size;
   if (context.requestedMode === "semantic") {
     return { hits: semanticHits, vectorMatchCount };
   }
+  let hybridHits = combineHybridHits(filteredById, semanticScores, context.keywordHits, context.hybridSemanticWeight);
+  if (context.rerank.enabled && hybridHits.length > 1) {
+    const sortedForCandidates = [...hybridHits].sort((left, right) => {
+      if (left.score !== right.score) {
+        return right.score - left.score;
+      }
+      return left.item.id.localeCompare(right.item.id);
+    });
+    const candidateHits = sortedForCandidates.slice(0, context.rerank.top_k);
+    const candidateContexts = candidateHits
+      .map((hit) => {
+        const document = filteredById.get(hit.item.id);
+        if (!document) {
+          return null;
+        }
+        return { hit, text: buildRerankCorpus(document) };
+      })
+      .filter((entry): entry is { hit: SearchHit; text: string } => entry !== null);
+    const rerankCandidates: RerankCandidate[] = candidateContexts.map((entry) => ({
+      id: entry.hit.item.id,
+      text: entry.text,
+    }));
+    let rerankScores: Map<string, number> | null = null;
+    if (context.rerankExtension?.rerank) {
+      try {
+        const rawRerank = await Promise.resolve(
+          context.rerankExtension.rerank({
+            query: queryTrimmed,
+            mode: "hybrid",
+            model: context.rerank.model,
+            top_k: context.rerank.top_k,
+            settings: context.settings,
+            candidates: candidateContexts.map((entry) => ({
+              id: entry.hit.item.id,
+              text: entry.text,
+              score: entry.hit.score,
+            })),
+          }),
+        );
+        const normalizedRerank = normalizeRerankOutput(rawRerank);
+        if (normalizedRerank.length > 0) {
+          rerankScores = new Map(normalizedRerank.map((entry) => [entry.id, entry.score]));
+        } else {
+          context.warnings.push(
+            `search_rerank_provider_invalid_response:${context.rerankExtension.providerName}:using_builtin`,
+          );
+        }
+      } catch {
+        context.warnings.push(`search_rerank_provider_failed:${context.rerankExtension.providerName}:using_builtin`);
+      }
+    }
+    if (!rerankScores) {
+      try {
+        rerankScores = await rerankCandidatesWithEmbeddings(
+          context.provider,
+          context.rerank.model,
+          queryTrimmed,
+          rerankCandidates,
+          context.embeddingTimeoutMs,
+        );
+      } catch {
+        context.warnings.push("search_rerank_failed:using_hybrid_scores");
+      }
+    }
+    if (rerankScores && rerankScores.size > 0) {
+      const rerankedIds = new Set(rerankScores.keys());
+      hybridHits = hybridHits.map((hit) => {
+        const rerankScore = rerankScores.get(hit.item.id);
+        if (rerankScore === undefined) {
+          return hit;
+        }
+        const matchedFields = new Set(hit.matched_fields);
+        matchedFields.add("rerank");
+        return {
+          ...hit,
+          score: rerankScore,
+          matched_fields: [...matchedFields].sort((left, right) => left.localeCompare(right)),
+        };
+      });
+      hybridHits.sort((left, right) => {
+        const leftWasReranked = rerankedIds.has(left.item.id);
+        const rightWasReranked = rerankedIds.has(right.item.id);
+        if (leftWasReranked !== rightWasReranked) {
+          return leftWasReranked ? -1 : 1;
+        }
+        if (left.score !== right.score) {
+          return right.score - left.score;
+        }
+        return left.item.id.localeCompare(right.item.id);
+      });
+    }
+  }
   return {
-    hits: combineHybridHits(filteredById, semanticScores, context.keywordHits, context.hybridSemanticWeight),
+    hits: hybridHits,
     vectorMatchCount,
   };
 }
@@ -1297,6 +1546,19 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const vectorResolution = resolveVectorStores(settings);
   const extensionSearchProvider = resolveExtensionSearchProvider(settings);
   const extensionVectorAdapter = resolveExtensionVectorAdapter(settings);
+  const queryExpansion = resolveQueryExpansionConfig(settings, providerResolution.active?.name ?? null);
+  const rerank = resolveRerankConfig(
+    settings,
+    providerResolution.active?.model ?? toOptionalNonEmptyString(settings.search?.embedding_model) ?? "text-embedding-3-small",
+  );
+  const queryExpansionProvider = resolveExtensionSearchProviderByName(queryExpansion.provider ?? undefined);
+  const queryExpansionExtension = queryExpansionProvider?.queryExpansion
+    ? { providerName: queryExpansionProvider.providerName, expand: queryExpansionProvider.queryExpansion }
+    : null;
+  const rerankProvider = resolveExtensionSearchProviderByName(toOptionalNonEmptyString(settings.search?.provider));
+  const rerankExtension = rerankProvider?.rerank
+    ? { providerName: rerankProvider.providerName, rerank: rerankProvider.rerank }
+    : null;
   let effectiveMode = parseMode(options.mode, {
     hasProvider: providerResolution.active !== null || extensionSearchProvider !== null,
     hasVectorStore: vectorResolution.active !== null || extensionVectorAdapter !== null,
@@ -1318,7 +1580,18 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     phraseExact,
   });
   if (effectiveMode === "keyword" && (filteredDocuments.length === 0 || limit === 0)) {
-    return emptySearchResult(query, effectiveMode, options, includeLinked, scoreThreshold, hybridSemanticWeight, projection, warnings);
+    return emptySearchResult(
+      query,
+      effectiveMode,
+      options,
+      includeLinked,
+      scoreThreshold,
+      hybridSemanticWeight,
+      queryExpansion,
+      rerank,
+      projection,
+      warnings,
+    );
   }
 
   const projectRoot = process.cwd();
@@ -1367,6 +1640,8 @@ export async function runSearch(query: string, options: SearchOptions, global: G
           includeLinked,
           scoreThreshold,
           hybridSemanticWeight,
+          queryExpansion,
+          rerank,
           projection,
           warnings,
         );
@@ -1415,6 +1690,11 @@ export async function runSearch(query: string, options: SearchOptions, global: G
           provider,
           vectorStore,
           extensionVectorAdapter,
+          queryExpansion,
+          queryExpansionExtension,
+          rerank,
+          rerankExtension,
+          warnings,
           settings,
           ...(implicitHybridMode
             ? {
@@ -1476,6 +1756,11 @@ export async function runSearch(query: string, options: SearchOptions, global: G
       phrase_exact: phraseExact,
       score_threshold: scoreThreshold,
       hybrid_semantic_weight: effectiveMode === "hybrid" ? hybridSemanticWeight : null,
+      query_expansion_enabled: queryExpansion.enabled,
+      query_expansion_provider: queryExpansion.provider,
+      rerank_enabled: rerank.enabled,
+      rerank_model: rerank.model,
+      rerank_top_k: rerank.top_k,
       limit: options.limit ?? null,
       runtime_filters: runtimeFieldFilters,
     },

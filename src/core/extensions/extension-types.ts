@@ -496,6 +496,38 @@ export interface SearchProviderHit {
 
 export type SearchProviderQueryResult = SearchProviderHit[] | { hits?: SearchProviderHit[] };
 
+export interface SearchProviderQueryExpansionContext {
+  query: string;
+  mode: Exclude<ExtensionSearchMode, "keyword">;
+  settings: PmSettings;
+  [key: string]: unknown;
+}
+
+export type SearchProviderQueryExpansionResult = string[] | { queries?: string[] };
+
+export interface SearchProviderRerankCandidate {
+  id: string;
+  text: string;
+  score: number;
+}
+
+export interface SearchProviderRerankHit {
+  id: string;
+  score: number;
+}
+
+export type SearchProviderRerankResult = SearchProviderRerankHit[] | { hits?: SearchProviderRerankHit[] };
+
+export interface SearchProviderRerankContext {
+  query: string;
+  mode: "hybrid";
+  model: string;
+  top_k: number;
+  settings: PmSettings;
+  candidates: SearchProviderRerankCandidate[];
+  [key: string]: unknown;
+}
+
 export interface SearchProviderEmbedBatchContext {
   inputs: string[];
   settings: PmSettings;
@@ -513,6 +545,13 @@ export interface SearchProviderEmbedContext {
 export interface SearchProviderDefinition {
   name: string;
   query?: (context: SearchProviderQueryContext) => SearchProviderQueryResult | Promise<SearchProviderQueryResult>;
+  queryExpansion?: (
+    context: SearchProviderQueryExpansionContext,
+  ) => SearchProviderQueryExpansionResult | Promise<SearchProviderQueryExpansionResult>;
+  query_expansion?: (
+    context: SearchProviderQueryExpansionContext,
+  ) => SearchProviderQueryExpansionResult | Promise<SearchProviderQueryExpansionResult>;
+  rerank?: (context: SearchProviderRerankContext) => SearchProviderRerankResult | Promise<SearchProviderRerankResult>;
   embedBatch?: (context: SearchProviderEmbedBatchContext) => number[][] | Promise<number[][]>;
   embed_batch?: (context: SearchProviderEmbedBatchContext) => number[][] | Promise<number[][]>;
   embed?: (context: SearchProviderEmbedContext) => number[] | Promise<number[]>;

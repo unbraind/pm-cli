@@ -191,6 +191,17 @@ For local Ollama or slower embedding providers, tune `search.embedding_batch_siz
 
 `search.embedding_corpus_max_characters` optionally overrides provider defaults for corpus truncation (`8000` for OpenAI-compatible providers, `3200` for Ollama). Invalid values fall back to the provider default and emit `search_embedding_corpus_max_characters_invalid:using_provider_default` warnings in semantic indexing workflows.
 
+Advanced relevance tuning is opt-in:
+
+- `search.query_expansion.enabled` enables pre-embedding query expansion for semantic/hybrid runs.
+- `search.query_expansion.provider` selects the expansion provider name. Built-in names are `openai` and `ollama`; extension providers can expose `queryExpansion`/`query_expansion` hooks under the same provider name.
+- `search.rerank.enabled` enables post-retrieval reranking for hybrid mode.
+- `search.rerank.model` overrides the model used by built-in rerank execution.
+- `search.rerank.top_k` controls how many top hybrid candidates are reranked.
+
+When query expansion or rerank providers fail, `pm search` degrades gracefully and keeps the query runnable; warning codes are emitted in the result payload.
+`pm search` filter metadata now reports `query_expansion_*` and `rerank_*` fields so automation can detect when advanced tuning is active.
+
 Mutation commands invalidate keyword search caches immediately. Semantic vector refresh is controlled by `search.mutation_refresh_policy`:
 
 | Policy | Behavior |
@@ -204,6 +215,11 @@ Useful commands:
 ```bash
 pm config project set search_mutation_refresh_policy cache_only
 pm config project set search_embedding_corpus_max_characters 12000
+pm config project set search_query_expansion_enabled true
+pm config project set search_query_expansion_provider openai
+pm config project set search_rerank_enabled true
+pm config project set search_rerank_model text-embedding-3-small
+pm config project set search_rerank_top_k 20
 pm search "calendar reminders" --mode hybrid --semantic-weight 0.35 --limit 10
 pm reindex --mode hybrid --progress
 pm health --check-only
@@ -254,10 +270,12 @@ pm config project set search_provider openai
 
 ```bash
 pm config project set vector_store_adapter lancedb
+pm config project set vector_store_collection_name pm_items
 pm config project set lancedb_path .agents/pm/search/lancedb
 
 # or, with Qdrant:
 pm config project set vector_store_adapter qdrant
+pm config project set vector_store_collection_name workspace_items
 pm config project set qdrant_url http://localhost:6333
 pm config project set qdrant_api_key '<QDRANT_API_KEY>'   # omit on unauthenticated dev servers
 ```

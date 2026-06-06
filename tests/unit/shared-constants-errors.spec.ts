@@ -94,6 +94,15 @@ describe("shared constants and errors contracts", () => {
       scanner_max_batch_retries: 3,
       provider: "",
       mutation_refresh_policy: "semantic_configured",
+      query_expansion: {
+        enabled: false,
+        provider: "",
+      },
+      rerank: {
+        enabled: false,
+        model: "",
+        top_k: 20,
+      },
     });
     expect(SETTINGS_DEFAULTS.providers).toEqual({
       openai: {
@@ -108,6 +117,7 @@ describe("shared constants and errors contracts", () => {
     });
     expect(SETTINGS_DEFAULTS.vector_store).toEqual({
       adapter: "",
+      collection_name: "pm_items",
       qdrant: {
         url: "",
         api_key: "",

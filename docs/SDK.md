@@ -500,6 +500,14 @@ embedding-backed providers (for example Ollama or a hosted model) implement
 `embed`/`embedBatch` on the same `SearchProviderDefinition` shape, and may also
 `registerVectorStoreAdapter` for a custom vector store.
 
+Optional advanced relevance hooks:
+
+- `queryExpansion` (or `query_expansion`) for `search.query_expansion.provider`
+- `rerank` for hybrid rerank candidates when `search.rerank.enabled=true`
+
+Both hooks are best-effort. If a hook throws or returns an invalid shape, core
+search degrades gracefully and emits warning codes instead of hard-failing.
+
 ## Robust Automation Pattern
 
 1. Read `PM_TOOL_ACTIONS` or `PM_TOOL_PARAMETERS_SCHEMA` for baseline static validation.

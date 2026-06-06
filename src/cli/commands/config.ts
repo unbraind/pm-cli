@@ -179,7 +179,7 @@ export interface NestedSettingResultValue {
   key: string;
   path: string;
   kind: NestedSettingDescriptor["kind"];
-  value: string | number | null;
+  value: string | number | boolean | null;
 }
 
 export interface ConfigResult {

@@ -1038,7 +1038,7 @@ Examples:
   - `{ item, appended, changed_fields }`
 - `test-all`:
   - `{ totals, failed, passed, skipped, results }`
-- roadmap examples (advanced semantic/hybrid tuning expansion) remain post-v0.1.
+- roadmap examples (future semantic/hybrid tuning iterations) remain post-v0.1.
 
 Determinism requirements:
 
@@ -1118,6 +1118,8 @@ Keyword/hybrid lexical scoring baseline also applies a deterministic exact-title
   - `embedding_corpus_max_characters` (optional)
   - `embedding_batch_size`
   - `scanner_max_batch_retries`
+  - `query_expansion` (optional object: `enabled`, `provider`)
+  - `rerank` (optional object: `enabled`, `model`, `top_k`)
   - `tuning` (optional object: `title_exact_bonus`, `title_weight`, `description_weight`, `tags_weight`, `status_weight`, `body_weight`, `comments_weight`, `notes_weight`, `learnings_weight`, `reminders_weight`, `events_weight`, `dependencies_weight`, `linked_content_weight`)
 - `search.score_threshold` runtime semantics:
   - keyword mode compares against raw lexical score
@@ -1137,6 +1139,15 @@ Keyword/hybrid lexical scoring baseline also applies a deterministic exact-title
   - optional object controlling deterministic multi-factor lexical weighting in keyword mode and the hybrid lexical component
   - non-numeric/negative tuning values fall back to deterministic defaults per field
   - default weights when unset: `title_exact_bonus=10`, `title_weight=8`, `description_weight=5`, `tags_weight=6`, `status_weight=2`, `body_weight=1`, `comments_weight=1`, `notes_weight=1`, `learnings_weight=1`, `reminders_weight=2`, `events_weight=2`, `dependencies_weight=3`, `linked_content_weight=1`
+- `search.query_expansion` runtime semantics:
+  - optional block that enables deterministic pre-embedding query expansion for semantic/hybrid search
+  - `provider` accepts built-in names (`openai`, `ollama`) and extension-provider names
+  - provider failures are non-fatal and emit deterministic warning codes while preserving search execution
+- `search.rerank` runtime semantics:
+  - optional block that enables hybrid top-k reranking after lexical+semantic candidate generation
+  - `model` overrides the built-in rerank embedding model
+  - `top_k` controls the rerank candidate window (positive integer)
+  - rerank failures are non-fatal and emit deterministic warning codes while preserving search execution
 
 ### 13.4 Providers and vector stores (semantic/hybrid execution baseline)
 
@@ -1162,8 +1173,15 @@ Implemented baseline:
 
 - Deterministic vector-store configuration resolution for Qdrant and LanceDB is available in core search runtime plumbing.
 - Qdrant/LanceDB settings blocks are normalized from `settings.json` and surfaced through a vector-store abstraction layer for command-time validation.
+- Optional `vector_store.collection_name` is normalized with deterministic fallback to `pm_items` and is wired through Qdrant collection targets plus LanceDB table/snapshot naming.
 - Request-target planning, request payload/response normalization, deterministic Qdrant request-execution helper behavior, deterministic LanceDB local query/upsert execution helper behavior, and deterministic query-hit ordering normalization (score desc, id asc tie-break) are available through this abstraction layer.
 - `pm search --mode semantic|hybrid` and `pm reindex --mode semantic|hybrid` use this abstraction for deterministic vector query/upsert execution after configuration validation.
+
+Advanced relevance tuning baseline:
+
+- `search.query_expansion` supports opt-in pre-embedding expansion for semantic/hybrid execution.
+- `search.rerank` supports opt-in hybrid top-k reranking with model override.
+- Extension search providers can optionally expose `queryExpansion/query_expansion` and `rerank` hooks; failures degrade gracefully with deterministic warnings.
 
 ### 13.5 Health integrity, drift, and vectorization diagnostics
 
@@ -1682,10 +1700,10 @@ Definition of Done:
 
 Checklist:
 
-- [x] keyword indexing + search command (keyword command surface + deterministic reindex artifact rebuild implemented; deterministic exact-title token boost and configurable multi-factor lexical tuning via `search.tuning` implemented; `--limit 0` short-circuit implemented; advanced relevance tuning is post-v0.1 roadmap)
+- [x] keyword indexing + search command (keyword command surface + deterministic reindex artifact rebuild implemented; deterministic exact-title token boost and configurable multi-factor lexical tuning via `search.tuning` implemented; `--limit 0` short-circuit implemented)
 - [x] embedding provider abstraction (deterministic provider configuration resolution, request-target planning including OpenAI-compatible `base_url` normalization for root/`/v1`/`/embeddings`, provider-specific request payload/response normalization with deterministic OpenAI data-entry index ordering, deterministic request-execution helper behavior, deterministic embedding cardinality validation, deterministic per-request normalized-input dedupe with output fan-out, configurable batch sizing and per-batch retry, command-path embedding execution, and mutation-triggered embedding refresh are implemented; additional advanced provider optimizations are post-v0.1 roadmap)
-- [x] vector store adapters (Qdrant/LanceDB deterministic configuration resolution, request-target planning, request payload/response normalization, deterministic request-execution helpers, deterministic LanceDB local query/upsert/delete execution helper behavior, deterministic local snapshot persistence + reload across process boundaries, query-hit ordering normalization, and command-path vector query/upsert integration implemented; broader adapter optimization is post-v0.1 roadmap)
-- [x] hybrid ranking + include-linked option (`--include-linked` lexical baseline implemented for keyword mode and hybrid lexical blending; deterministic hybrid lexical+semantic blend with configurable `search.hybrid_semantic_weight` implemented; per-query `--semantic-weight` hybrid override implemented with deterministic fallback warning behavior; deterministic exact-title token lexical boost implemented; configurable multi-factor lexical tuning via `search.tuning` implemented; broader advanced semantic/hybrid tuning is post-v0.1 roadmap)
+- [x] vector store adapters (Qdrant/LanceDB deterministic configuration resolution, request-target planning, request payload/response normalization, deterministic request-execution helpers, deterministic LanceDB local query/upsert/delete execution helper behavior, deterministic local snapshot persistence + reload across process boundaries, query-hit ordering normalization, configurable `vector_store.collection_name` wiring, and command-path vector query/upsert integration implemented)
+- [x] hybrid ranking + include-linked option (`--include-linked` lexical baseline implemented for keyword mode and hybrid lexical blending; deterministic hybrid lexical+semantic blend with configurable `search.hybrid_semantic_weight` implemented; per-query `--semantic-weight` hybrid override implemented with deterministic fallback warning behavior; deterministic exact-title token lexical boost implemented; configurable multi-factor lexical tuning via `search.tuning` implemented; opt-in `search.query_expansion` and `search.rerank` advanced relevance tuning implemented)
 - [x] reindex command (keyword baseline complete; semantic/hybrid embedding+vector upsert implemented; mutation command paths invalidate stale keyword artifacts, trigger best-effort semantic embedding refresh for affected item IDs, and prune vectors for missing/deleted IDs when semantic configuration is available)
 
 Definition of Done:

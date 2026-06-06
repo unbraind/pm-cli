@@ -304,6 +304,15 @@ export const SETTINGS_DEFAULTS: PmSettings = {
     scanner_max_batch_retries: 3,
     provider: "",
     mutation_refresh_policy: "semantic_configured",
+    query_expansion: {
+      enabled: false,
+      provider: "",
+    },
+    rerank: {
+      enabled: false,
+      model: "",
+      top_k: 20,
+    },
   },
   providers: {
     openai: {
@@ -333,6 +342,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
   },
   vector_store: {
     adapter: "",
+    collection_name: "pm_items",
     qdrant: {
       url: "",
       api_key: "",

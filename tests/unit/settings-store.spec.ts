@@ -221,7 +221,11 @@ describe("core/store/settings", () => {
         "scanner_max_batch_retries",
         "provider",
         "mutation_refresh_policy",
+        "query_expansion",
+        "rerank",
       ]);
+      expectOrderedObjectKeys((parsed.search as Record<string, unknown>).query_expansion, ["enabled", "provider"]);
+      expectOrderedObjectKeys((parsed.search as Record<string, unknown>).rerank, ["enabled", "model", "top_k"]);
 
       const providers = parsed.providers as Record<string, unknown>;
       expectOrderedObjectKeys(providers, ["openai", "ollama"]);
@@ -229,7 +233,7 @@ describe("core/store/settings", () => {
       expectOrderedObjectKeys(providers.ollama, ["base_url", "model"]);
 
       const vectorStore = parsed.vector_store as Record<string, unknown>;
-      expectOrderedObjectKeys(vectorStore, ["adapter", "qdrant", "lancedb"]);
+      expectOrderedObjectKeys(vectorStore, ["adapter", "collection_name", "qdrant", "lancedb"]);
       expectOrderedObjectKeys(vectorStore.qdrant, ["url", "api_key"]);
       expectOrderedObjectKeys(vectorStore.lancedb, ["path"]);
 
@@ -393,6 +397,32 @@ describe("core/store/settings", () => {
     expect(providers.ollama).toEqual({});
     expect(vectorStore.qdrant).toEqual({});
     expect(vectorStore.lancedb).toEqual({});
+  });
+
+  it("sanitizes vector_store.collection_name to safe storage identifiers", () => {
+    const settings = structuredClone(SETTINGS_DEFAULTS);
+    settings.vector_store.collection_name = "workspace docs/../prod";
+
+    const serialized = serializeSettings(settings);
+    const parsed = JSON.parse(serialized) as Record<string, unknown>;
+    const vectorStore = parsed.vector_store as Record<string, unknown>;
+    const collectionName = vectorStore.collection_name as string;
+
+    expect(collectionName).toMatch(/^[a-zA-Z0-9_-]+$/);
+    expect(collectionName).toContain("workspace_docs");
+  });
+
+  it("truncates sanitized vector_store.collection_name to deterministic maximum length", () => {
+    const settings = structuredClone(SETTINGS_DEFAULTS);
+    settings.vector_store.collection_name = `${"workspace".repeat(30)} docs`;
+
+    const serialized = serializeSettings(settings);
+    const parsed = JSON.parse(serialized) as Record<string, unknown>;
+    const vectorStore = parsed.vector_store as Record<string, unknown>;
+    const collectionName = vectorStore.collection_name as string;
+
+    expect(collectionName).toMatch(/^[a-zA-Z0-9_-]+$/);
+    expect(collectionName.length).toBe(128);
   });
 
   it("resolves governance knobs for built-in presets and custom overrides", () => {
