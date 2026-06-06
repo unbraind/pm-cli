@@ -76,7 +76,8 @@ function singularizeSimple(token: string): string {
     (normalizedToken.endsWith("ches") ||
       normalizedToken.endsWith("shes") ||
       normalizedToken.endsWith("xes") ||
-      normalizedToken.endsWith("zes"))
+      normalizedToken.endsWith("zes") ||
+      normalizedToken.endsWith("sses"))
   ) {
     return normalizedToken.slice(0, -2);
   }
@@ -95,7 +96,7 @@ function singularizeSimple(token: string): string {
 
 function pluralizeSimple(token: string): string {
   const normalizedToken = token.toLowerCase();
-  if (normalizedToken.length > 2 && !normalizedToken.endsWith("s")) {
+  if (normalizedToken.length > 2 && (!normalizedToken.endsWith("s") || normalizedToken.endsWith("ss"))) {
     if (normalizedToken.endsWith("y") && !/[aeiou]y$/u.test(normalizedToken)) {
       return `${normalizedToken.slice(0, -1)}ies`;
     }
@@ -103,7 +104,8 @@ function pluralizeSimple(token: string): string {
       normalizedToken.endsWith("ch") ||
       normalizedToken.endsWith("sh") ||
       normalizedToken.endsWith("x") ||
-      normalizedToken.endsWith("z")
+      normalizedToken.endsWith("z") ||
+      normalizedToken.endsWith("ss")
     ) {
       return `${normalizedToken}es`;
     }

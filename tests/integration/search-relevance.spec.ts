@@ -36,7 +36,7 @@ describe("search relevance helpers", () => {
   it("keeps stable singular tokens and improves simple plural forms", () => {
     const expanded = buildDeterministicQueryExpansions("status query category branch class", 6);
     expect(expanded).toContain("status query category branch class");
-    expect(expanded).toContain("status queries categories branches class");
+    expect(expanded).toContain("status queries categories branches classes");
     expect(expanded.some((entry) => /(^|\s)statu(\s|$)/u.test(entry))).toBe(false);
     expect(expanded.some((entry) => /(^|\s)clas(\s|$)/u.test(entry))).toBe(false);
   });
@@ -48,6 +48,13 @@ describe("search relevance helpers", () => {
     expect(expanded.some((entry) => /(^|\s)querie(\s|$)/u.test(entry))).toBe(false);
     expect(expanded.some((entry) => /(^|\s)categorie(\s|$)/u.test(entry))).toBe(false);
     expect(expanded.some((entry) => /(^|\s)branche(\s|$)/u.test(entry))).toBe(false);
+  });
+
+  it("handles ss and sses inflection variants", () => {
+    const expanded = buildDeterministicQueryExpansions("classes processes address", 6);
+    expect(expanded).toContain("classes processes address");
+    expect(expanded).toContain("class process address");
+    expect(expanded).toContain("classes processes addresses");
   });
 
   it("normalizes and merges expansion output safely", () => {
