@@ -65,7 +65,6 @@ export default defineConfig({
         "src/cli/extension-command-options.ts",
         "src/core/config/positional-value.ts",
         "src/core/diagnostics/remediation.ts",
-        "src/core/extensions/index.ts",
         "src/core/extensions/item-fields.ts",
         "src/core/extensions/loader.ts",
         "src/core/extensions/runtime-registrations.ts",
