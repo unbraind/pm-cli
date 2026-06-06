@@ -1,4 +1,4 @@
-import type { PmSettings } from "../../types/index.js";
+import type { PmSettings } from "../../types.js";
 import { coercePositiveInteger, toNonEmptyString } from "../shared/primitives.js";
 import { tokenizeAlphaNumeric } from "../shared/text-normalization.js";
 import { executeEmbeddingRequest, type EmbeddingProviderConfig } from "./providers.js";
@@ -68,7 +68,14 @@ function dedupeQueries(values: string[], limit: number): string[] {
 
 function singularizeSimple(token: string): string {
   const normalizedToken = token.toLowerCase();
-  if (normalizedToken.length > 3 && normalizedToken.endsWith("s")) {
+  if (
+    normalizedToken.length > 3 &&
+    normalizedToken.endsWith("s") &&
+    !normalizedToken.endsWith("ss") &&
+    !normalizedToken.endsWith("us") &&
+    !normalizedToken.endsWith("is") &&
+    !normalizedToken.endsWith("as")
+  ) {
     return normalizedToken.slice(0, -1);
   }
   return normalizedToken;
@@ -77,6 +84,17 @@ function singularizeSimple(token: string): string {
 function pluralizeSimple(token: string): string {
   const normalizedToken = token.toLowerCase();
   if (normalizedToken.length > 2 && !normalizedToken.endsWith("s")) {
+    if (normalizedToken.endsWith("y") && !/[aeiou]y$/u.test(normalizedToken)) {
+      return `${normalizedToken.slice(0, -1)}ies`;
+    }
+    if (
+      normalizedToken.endsWith("ch") ||
+      normalizedToken.endsWith("sh") ||
+      normalizedToken.endsWith("x") ||
+      normalizedToken.endsWith("z")
+    ) {
+      return `${normalizedToken}es`;
+    }
     return `${normalizedToken}s`;
   }
   return normalizedToken;

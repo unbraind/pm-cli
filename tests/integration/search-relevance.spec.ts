@@ -31,6 +31,14 @@ describe("search relevance helpers", () => {
     expect(buildDeterministicQueryExpansions("!!!")).toEqual(["!!!"]);
   });
 
+  it("keeps stable singular tokens and improves simple plural forms", () => {
+    const expanded = buildDeterministicQueryExpansions("status query category branch class", 6);
+    expect(expanded).toContain("status query category branch class");
+    expect(expanded).toContain("status queries categories branches class");
+    expect(expanded.some((entry) => /(^|\s)statu(\s|$)/u.test(entry))).toBe(false);
+    expect(expanded.some((entry) => /(^|\s)clas(\s|$)/u.test(entry))).toBe(false);
+  });
+
   it("normalizes and merges expansion output safely", () => {
     expect(normalizeQueryExpansionOutput([" status update ", 7, "status update"])).toEqual(["status update"]);
     expect(normalizeQueryExpansionOutput(["   ", "release status"])).toEqual(["release status"]);
