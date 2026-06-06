@@ -4,6 +4,7 @@
 
 ### Added
 
+- pm history-compact: checkpoint-based history stream compaction ([pm-3pbq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-3pbq.toon))
 - Advanced relevance tuning \(post-v0.1\): cross-encoder reranking + query expansion ([pm-7tsx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7tsx.toon))
 - Configurable vector store collection name \(post-v0.1 adapter optimization\) ([pm-usw2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-usw2.toon))
 - pm copy <id\>: clone an item to a new ID with optional title override ([pm-m4nn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-m4nn.toon))
@@ -14,6 +15,7 @@
 
 ### Fixed
 
+- Track removal of TOON upstream bracket-bug workaround when upstream fix ships ([pm-idnz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-idnz.toon))
 - Drift-scan cache can false-hit on mtime-preserving file copies ([pm-up22](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-up22.toon))
 - Search relevance evaluation harness \(golden queries, nDCG\) for regression detection ([pm-22x2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-22x2.toon))
 

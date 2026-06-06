@@ -711,6 +711,10 @@ describe("contracts command runtime", () => {
         },
         { command: "history", flags: ["--limit", "--compact", "--full", "--diff", "--verify"] },
         {
+          command: "history-compact",
+          flags: ["--before", "--dry-run", "--author", "--message", "--force"],
+        },
+        {
           command: "history-redact",
           flags: ["--literal", "--regex", "--replacement", "--dry-run", "--author", "--message", "--force"],
         },

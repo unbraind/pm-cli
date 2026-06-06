@@ -43,6 +43,7 @@ export default defineConfig({
         "src/cli/commands/get.ts",
         "src/cli/commands/health.ts",
         "src/cli/commands/history.ts",
+        "src/cli/commands/history-compact.ts",
         "src/cli/commands/list.ts",
         "src/cli/commands/calendar.ts",
         "src/cli/commands/search.ts",

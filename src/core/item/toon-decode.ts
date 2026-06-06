@@ -1,5 +1,15 @@
 import { decode as decodeToon } from "@toon-format/toon";
 
+export const TOON_SCALAR_BRACKET_ESCAPE_UPSTREAM_PR = "https://github.com/toon-format/toon/pull/314" as const;
+
+export const TOON_SCALAR_BRACKET_ESCAPE_TRACKING = {
+  dependency: "@toon-format/toon",
+  affected_versions: "<=2.3.0",
+  upstream_pr: TOON_SCALAR_BRACKET_ESCAPE_UPSTREAM_PR,
+  removal_condition:
+    "Remove escapeBracketsInQuotedScalars retry once the upstream strict decoder fix ships in a released @toon-format/toon version and this repository upgrades to it.",
+} as const;
+
 export interface ToonDecodeResult {
   /** The decoded TOON document. */
   value: unknown;
@@ -28,6 +38,8 @@ export interface ToonDecodeResult {
  * bracket trigger and nothing else, so the retry stays in strict mode and every
  * other strict invariant (duplicate sibling keys, array-count mismatches, tabs
  * in indentation, ...) is still enforced.
+ *
+ * Upstream tracking metadata lives in {@link TOON_SCALAR_BRACKET_ESCAPE_TRACKING}.
  */
 function escapeBracketsInQuotedScalars(content: string): string {
   return content

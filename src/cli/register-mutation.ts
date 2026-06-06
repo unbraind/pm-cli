@@ -933,6 +933,37 @@ export function registerMutationCommands(program: Command): void {
       }
     });
 
+  program
+    .command("history-compact")
+    .argument("<id>", "Item id")
+    .option("--before <value>", "Compact entries strictly before this version number or ISO timestamp")
+    .option("--dry-run", "Preview compaction impact without writing the history file")
+    .option("--author <value>", "Mutation author")
+    .option("--message <value>", "Audit history message for the compaction marker entry")
+    .option("--force", "Force ownership/lock override")
+    .description("Compact an item history stream into a synthetic baseline plus retained tail entries.")
+    .action(async (id: string, options: Record<string, unknown>, command) => {
+      const globalOptions = getGlobalOptions(command);
+      const startedAt = Date.now();
+      const { runHistoryCompact } = await import("./commands/history-compact.js");
+      const result = await runHistoryCompact(
+        id,
+        {
+          before: typeof options.before === "string" ? options.before : undefined,
+          dryRun: options.dryRun === true,
+          author: typeof options.author === "string" ? options.author : undefined,
+          message: typeof options.message === "string" ? options.message : undefined,
+          force: Boolean(options.force),
+        },
+        globalOptions,
+      );
+      // history-compact only rewrites the history stream; item content is untouched.
+      printResult(result, globalOptions);
+      if (globalOptions.profile) {
+        printError(`profile:command=history-compact took_ms=${Date.now() - startedAt}`);
+      }
+    });
+
   const schemaCommand = program
     .command("schema")
     .argument("[subcommand]", "Schema subcommand: list, show, add-type, remove-type, add-status, remove-status, or a custom item type name shorthand")

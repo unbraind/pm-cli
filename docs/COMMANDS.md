@@ -29,7 +29,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 | Logs | `comments`, `notes`, `learnings`, `comments-audit` | record progress and durable context |
 | Links | `files`, `docs`, `test`, `deps` | connect items to artifacts, tests, and relationships |
 | Verification | `test`, `test-all`, `test-runs`, `validate`, `gc` | run linked tests and repository checks |
-| History | `history`, `history-redact`, `history-repair`, `activity`, `restore`, `stats` | inspect, redact, re-anchor, and recover item state |
+| History | `history`, `history-compact`, `history-redact`, `history-repair`, `activity`, `restore`, `stats` | inspect, compact, redact, re-anchor, and recover item state |
 | Schema | `schema add-type` / `remove-type` / `add-status` / `remove-status` | manage config-driven custom item types (`.agents/pm/schema/types.json`) and statuses (`.agents/pm/schema/statuses.json`) |
 | Calendar | `calendar`, `cal` | project deadlines, reminders, and events |
 | Packages | `install`, `upgrade`, `package`, `packages`, `extension`, package/extension command groups | install, upgrade, manage, and run package-backed extension commands |
@@ -349,6 +349,9 @@ pm history <id> --limit 20
 pm history <id> --diff
 pm history <id> --diff --field status
 pm history <id> --full --diff --verify
+pm history-compact <id> --dry-run
+pm history-compact <id> --before 25 --message "compact early entries"
+pm history-compact <id> --before 2026-06-01T00:00:00.000Z
 pm history-redact <id> --literal "[redacted_path_prefix]/private" --replacement "[redacted_path]"
 pm history-redact <id> --regex "/192\\.168\\.[0-9.]+/g" --dry-run
 pm history-repair <id> --dry-run
@@ -369,6 +372,7 @@ pm stats
 pm stats --storage --json
 ```
 `history-redact` rewrites matching history payloads deterministically, recomputes hash chains, and appends an auditable `history_redact` marker entry when changes are applied.
+`history-compact` rewrites long streams into a synthetic checkpoint baseline plus a retained tail (`--before` accepts a 1-based version or ISO timestamp), re-anchors hashes, verifies integrity, and appends an auditable `history_compact` marker when applied.
 `history-repair` re-anchors a drifted history chain when `pm health`/`pm validate --check-history-drift` report stale hashes: it replays the stream, recomputes every before/after hash, repairs legacy patch ops that no longer strictly apply, reconciles the latest hash with the on-disk item, and appends an auditable `history_repair` marker. It never modifies item content and is a safe no-op on a clean stream.
 
 ## Custom Item Types

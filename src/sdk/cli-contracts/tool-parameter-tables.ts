@@ -117,6 +117,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   view: { type: "string", enum: ["agenda", "day", "week", "month"] },
   date: { type: "string" },
   from: { type: "string" },
+  before: { type: "string" },
   to: { type: "string" },
   past: { type: "boolean" },
   fullPeriod: { type: "boolean" },
@@ -709,6 +710,11 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   offset: {
     description: "Number of matching rows to skip before limit is applied.",
     examples: [0, 50, "100"],
+  },
+  before: {
+    description:
+      "For history-compact, compact entries strictly before this boundary (version number or ISO timestamp).",
+    examples: ["5", "2026-06-01T00:00:00.000Z"],
   },
   limitItems: {
     description: "Maximum number of filtered items to include in comments-audit output (alias: --limit).",

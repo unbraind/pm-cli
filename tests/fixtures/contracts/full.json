@@ -381,6 +381,16 @@
       "requires_extension": false
     },
     {
+      "action": "history-compact",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "history-compact",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "history-redact",
       "available": true,
       "cli_exposed": true,
@@ -839,6 +849,7 @@
     "get",
     "health",
     "history",
+    "history-compact",
     "history-redact",
     "history-repair",
     "init",
@@ -2501,6 +2512,27 @@
         },
         {
           "flag": "--verify"
+        }
+      ],
+      "provider": "core"
+    },
+    {
+      "command": "history-compact",
+      "flags": [
+        {
+          "flag": "--before"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--author"
+        },
+        {
+          "flag": "--message"
+        },
+        {
+          "flag": "--force"
         }
       ],
       "provider": "core"
@@ -6586,6 +6618,7 @@
     "health",
     "help",
     "history",
+    "history-compact",
     "history-redact",
     "history-repair",
     "init",
@@ -14128,6 +14161,94 @@
           "id"
         ],
         "title": "pm action \"history-repair\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "history-compact",
+            "description": "Tool action to execute."
+          },
+          "author": {
+            "description": "Mutation author identity.",
+            "examples": [
+              "codex-agent"
+            ],
+            "type": "string"
+          },
+          "before": {
+            "description": "For history-compact, compact entries strictly before this boundary (version number or ISO timestamp).",
+            "examples": [
+              "5",
+              "2026-06-01T00:00:00.000Z"
+            ],
+            "type": "string"
+          },
+          "dryRun": {
+            "description": "Preview command effects without mutating storage artifacts.",
+            "type": "boolean"
+          },
+          "force": {
+            "description": "Force.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "Item identifier for read or mutation actions.",
+            "examples": [
+              "pm-a1b2"
+            ],
+            "type": "string"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "message": {
+            "description": "History message for mutation audit trail.",
+            "type": "string"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Pm Executable.",
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "action",
+          "id"
+        ],
+        "title": "pm action \"history-compact\" parameters",
         "type": "object"
       },
       {

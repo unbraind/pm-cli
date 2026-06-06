@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { decodeToonItemContent } from "../../src/core/item/toon-decode.js";
+import {
+  TOON_SCALAR_BRACKET_ESCAPE_TRACKING,
+  TOON_SCALAR_BRACKET_ESCAPE_UPSTREAM_PR,
+  decodeToonItemContent,
+} from "../../src/core/item/toon-decode.js";
 import { parseItemDocument } from "../../src/core/item/item-format.js";
 
 describe("decodeToonItemContent", () => {
@@ -33,6 +37,30 @@ describe("decodeToonItemContent", () => {
 
   it("surfaces escaped strict retry errors for genuinely malformed documents", () => {
     expect(() => decodeToonItemContent('a: "p[x]: y"\nb: "unterminated')).toThrow(/Unterminated string/);
+  });
+
+  it("preserves array headers while escaping only quoted scalar brackets", () => {
+    const result = decodeToonItemContent([
+      "tags[2]: alpha,beta",
+      'body: "POST [redacted_endpoint]: HTTP 200"',
+    ].join("\n"));
+    expect(result.usedScalarBracketEscape).toBe(true);
+    expect(result.value).toMatchObject({
+      tags: ["alpha", "beta"],
+      body: "POST [redacted_endpoint]: HTTP 200",
+    });
+  });
+});
+
+describe("TOON scalar bracket workaround tracking", () => {
+  it("keeps explicit upstream linkage for future workaround removal", () => {
+    expect(TOON_SCALAR_BRACKET_ESCAPE_UPSTREAM_PR).toBe("https://github.com/toon-format/toon/pull/314");
+    expect(TOON_SCALAR_BRACKET_ESCAPE_TRACKING).toMatchObject({
+      dependency: "@toon-format/toon",
+      affected_versions: "<=2.3.0",
+      upstream_pr: TOON_SCALAR_BRACKET_ESCAPE_UPSTREAM_PR,
+    });
+    expect(TOON_SCALAR_BRACKET_ESCAPE_TRACKING.removal_condition).toMatch(/Remove escapeBracketsInQuotedScalars retry/);
   });
 });
 
