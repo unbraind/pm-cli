@@ -204,7 +204,7 @@ function cosineSimilarity(left: number[] | null | undefined, right: number[] | n
   }
   const numerator = dotProduct(left, right);
   const denominator = l2Norm(left) * l2Norm(right);
-  if (!Number.isFinite(denominator) || denominator === 0) {
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) {
     return 0;
   }
   return numerator / denominator;

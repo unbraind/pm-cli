@@ -255,6 +255,36 @@ describe("search relevance helpers", () => {
     expect(scores.get("pm-dim")).toBe(0.5);
   });
 
+  it("handles non-finite cosine intermediates by returning neutral normalized rerank scores", async () => {
+    globalThis.fetch = (async () =>
+      ({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => ({
+          data: [
+            { index: 0, embedding: [1e308, 1e308] },
+            { index: 1, embedding: [1e308, 1e308] },
+          ],
+        }),
+        text: async () => "",
+      }) as unknown as Response) as typeof globalThis.fetch;
+
+    const scores = await rerankCandidatesWithEmbeddings(
+      {
+        name: "openai",
+        base_url: "https://api.example.test/v1",
+        model: "text-embedding-3-small",
+        api_key: "",
+      },
+      "text-embedding-3-small",
+      "release notes",
+      [{ id: "pm-overflow", text: "release docs checklist" }],
+    );
+
+    expect(scores.get("pm-overflow")).toBe(0.5);
+  });
+
   it("throws when embedding cardinality does not match rerank payload", async () => {
     globalThis.fetch = (async () =>
       ({
