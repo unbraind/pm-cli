@@ -39,6 +39,15 @@ describe("search relevance helpers", () => {
     expect(expanded.some((entry) => /(^|\s)clas(\s|$)/u.test(entry))).toBe(false);
   });
 
+  it("handles common ies/es plural suffixes during singularization", () => {
+    const expanded = buildDeterministicQueryExpansions("queries categories branches", 6);
+    expect(expanded).toContain("queries categories branches");
+    expect(expanded).toContain("query category branch");
+    expect(expanded.some((entry) => /(^|\s)querie(\s|$)/u.test(entry))).toBe(false);
+    expect(expanded.some((entry) => /(^|\s)categorie(\s|$)/u.test(entry))).toBe(false);
+    expect(expanded.some((entry) => /(^|\s)branche(\s|$)/u.test(entry))).toBe(false);
+  });
+
   it("normalizes and merges expansion output safely", () => {
     expect(normalizeQueryExpansionOutput([" status update ", 7, "status update"])).toEqual(["status update"]);
     expect(normalizeQueryExpansionOutput(["   ", "release status"])).toEqual(["release status"]);

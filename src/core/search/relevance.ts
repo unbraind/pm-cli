@@ -68,6 +68,18 @@ function dedupeQueries(values: string[], limit: number): string[] {
 
 function singularizeSimple(token: string): string {
   const normalizedToken = token.toLowerCase();
+  if (normalizedToken.length > 4 && normalizedToken.endsWith("ies")) {
+    return `${normalizedToken.slice(0, -3)}y`;
+  }
+  if (
+    normalizedToken.length > 4 &&
+    (normalizedToken.endsWith("ches") ||
+      normalizedToken.endsWith("shes") ||
+      normalizedToken.endsWith("xes") ||
+      normalizedToken.endsWith("zes"))
+  ) {
+    return normalizedToken.slice(0, -2);
+  }
   if (
     normalizedToken.length > 3 &&
     normalizedToken.endsWith("s") &&
