@@ -1,0 +1,33 @@
+id: pm-izid
+title: Harden afterCommand coverage and GitHub code-scanning visibility
+description: "Continue open epics with one scoped delivery: harden afterCommand affected-item runtime coverage and close the GitHub code-scanning reporting gap so gh-based security triage has complete signals."
+type: Task
+status: in_progress
+priority: 1
+tags[4]: "area:ci","area:extensions","area:security",pm-cli
+created_at: "2026-06-06T20:41:22.500Z"
+updated_at: "2026-06-06T21:26:52.147Z"
+assignee: codex-open-cycle
+author: codex-open-cycle
+parent: pm-ugqx
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-u9d0,related,"2026-06-06T20:41:22.500Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-06-06T20:41:38.132Z",unknown,"Execution kickoff: continuing active open-item work under pm-ugqx (linked pm-u9d0) with scoped implementation for afterCommand coverage hardening plus GitHub code-scanning report visibility, followed by full verification, temp-dir manual smoke, PR loop, and merge."
+  "2026-06-06T21:26:52.147Z",unknown,"Verification evidence (continuation cycle):\n- Local gates passed: pnpm build, pnpm typecheck, node scripts/run-tests.mjs coverage => 2528 tests, 100% statements/branches/functions/lines.\n- Focused regression suite passed: node scripts/run-tests.mjs test -- tests/unit/extensions-runtime.spec.ts tests/integration/extension-hooks.integration.spec.ts tests/unit/sdk-index.spec.ts (48 tests).\n- Security scan passed: pnpm security:scan => no credential-like secrets detected.\n- Vulnerability scan passed with timeout override: PNPM_FETCH_TIMEOUT=600000 pnpm audit --json => 0 vulnerabilities (info/low/moderate/high/critical all zero).\n- Dependency updates: PNPM_FETCH_TIMEOUT=600000 pnpm outdated --format json => only commander 14.0.3 -> latest 15.0.0; still intentionally pinned to 14.x because project engine floor is Node >=20 while commander 15 requires newer Node runtime.\n- GitHub triage via gh: open issues [], open PRs [], open dependabot alerts [], open secret-scanning alerts [].\n- Code-scanning endpoint currently returns 404 no analysis found; remediation delivered by adding .github/workflows/codeql.yml so analysis uploads once the branch/PR workflow runs.\n- Sentry/telemetry gate passed: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 0 --max-high 0 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0 => ok true, critical 0, high 0, telemetry finish_error_rate_pct 1.89, missing_error_code_rows 0.\n- Manual temp-dir smoke passed (fresh workspace): init/create/update/comments/list/contracts/health/validate/close/list-closed all succeeded for item pm-r1kj. Temp path: /tmp/tmp.O7PQ3KcCps.\n- Changelog contract verified with package-owned generator check path: node dist/cli.js changelog generate --output CHANGELOG.md --title \\\"Changelog\\\" --mode replace --all-release-tags --status closed --item-url-base https://github.com/unbraind/pm-cli/blob/main/.agents/pm --check => unchanged."
+files[4]{path,scope,note}:
+  .github/workflows/codeql.yml,project,Enable GitHub CodeQL analysis for code-scanning visibility
+  docs/TESTING.md,project,Document GitHub security signal checks and code-scanning availability note
+  tests/unit/extensions-runtime.spec.ts,project,Add afterCommand runtime edge-case coverage
+  vitest.config.ts,project,Tighten coverage exclude list by removing core extension runtime
+tests[7]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 0 --max-high 0 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Sentry and telemetry reliability gate
+  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,Full repository coverage gate remains 100 percent
+  node scripts/run-tests.mjs test -- tests/unit/extensions-runtime.spec.ts tests/integration/extension-hooks.integration.spec.ts tests/unit/sdk-index.spec.ts,null,project,480,null,null,null,null,null,null,null,null,null,null,null,Focused afterCommand/SDK regression coverage
+  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Build gate
+  pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Type safety gate
+  PNPM_FETCH_TIMEOUT=600000 pnpm audit --json,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Dependency vulnerability audit
+  PNPM_FETCH_TIMEOUT=600000 pnpm outdated --format json,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Dependency update report
+docs[1]{path,scope,note}:
+  docs/TESTING.md,project,Added reproducible gh security triage commands plus code-scanning 404 bootstrap note
+body: ""

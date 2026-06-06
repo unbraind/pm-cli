@@ -132,6 +132,20 @@ pm validate --check-resolution --check-history-drift
 pm health --check-only
 ```
 
+When release readiness requires external GitHub security telemetry in addition to
+local checks, run:
+
+```bash
+gh issue list --state open --limit 100 --json number,title,updatedAt,url
+gh pr list --state open --limit 50 --json number,title,headRefName,reviewDecision,url
+gh api "repos/unbraind/pm-cli/dependabot/alerts?state=open&per_page=100"
+gh api "repos/unbraind/pm-cli/secret-scanning/alerts?state=open&per_page=100"
+gh api "repos/unbraind/pm-cli/code-scanning/alerts?state=open&per_page=100"
+```
+
+`code-scanning/alerts` can return `404 no analysis found` until at least one
+CodeQL run has completed.
+
 For documentation-only changes, at minimum run:
 
 ```bash

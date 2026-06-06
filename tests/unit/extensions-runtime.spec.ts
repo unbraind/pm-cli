@@ -49,6 +49,26 @@ describe("core/extensions runtime wrappers", () => {
     expect(consumeAfterCommandAffectedItems()).toBeUndefined();
   });
 
+  it("drops invalid affected-item payloads and clears queue on hook reset", () => {
+    setActiveExtensionHooks({
+      beforeCommand: [],
+      afterCommand: [{ layer: "project", name: "after-ext", run: () => undefined }],
+      onWrite: [],
+      onRead: [],
+      onIndex: [],
+    });
+
+    recordAfterCommandAffectedItem({ id: "pm-one", op: "update", previous_status: "open", status: "closed" });
+    recordAfterCommandAffectedItem(null as unknown as { id: string });
+    expect(consumeAfterCommandAffectedItems()).toEqual([
+      { id: "pm-one", op: "update", previous_status: "open", status: "closed" },
+    ]);
+
+    recordAfterCommandAffectedItem({ id: "pm-two", op: "delete", previous_status: "closed" });
+    clearActiveExtensionHooks();
+    expect(consumeAfterCommandAffectedItems()).toBeUndefined();
+  });
+
   it("projects compact afterCommand item snapshots from changed front matter", () => {
     const snapshot = projectAfterCommandItemSnapshot(
       {
@@ -72,6 +92,35 @@ describe("core/extensions runtime wrappers", () => {
       title: "Important item",
       assignee: "agent",
     });
+  });
+
+  it("projects fallback snapshots when changed fields are malformed or metadata has no id", () => {
+    expect(
+      projectAfterCommandItemSnapshot(
+        {
+          id: "pm-base",
+          type: "Task",
+          status: "open",
+          title: "Fallback",
+        },
+        null as unknown as readonly string[],
+      ),
+    ).toEqual({
+      id: "pm-base",
+      type: "Task",
+      status: "open",
+    });
+
+    expect(
+      projectAfterCommandItemSnapshot(
+        {
+          type: "Task",
+          status: "open",
+          title: "No id",
+        } as unknown as { id: string; type: string; status: string; title: string },
+        ["title"],
+      ),
+    ).toEqual({});
   });
 
   it("returns empty warnings when no active hooks are registered", async () => {
