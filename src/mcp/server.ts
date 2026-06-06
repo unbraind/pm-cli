@@ -857,8 +857,10 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
         {
           subcommand: readString(args, "subcommand") ?? readString(options, "subcommand"),
           limit:
-            typeof options.limit === "number" && Number.isFinite(options.limit)
-              ? options.limit
+            typeof args.limit === "number" && Number.isFinite(args.limit)
+              ? args.limit
+              : typeof options.limit === "number" && Number.isFinite(options.limit)
+                ? options.limit
               : readString(args, "limit") ?? readString(options, "limit"),
         },
         global,

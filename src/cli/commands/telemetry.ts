@@ -104,7 +104,7 @@ function parseTelemetryStatsLimit(raw: string | number | undefined): number {
     return raw;
   }
   const trimmed = raw.trim();
-  if (trimmed.length === 0) {
+  if (trimmed.length === 0 || !/^\d+$/.test(trimmed)) {
     throw new PmCliError("--limit must be a positive integer", EXIT_CODE.USAGE);
   }
   const parsed = Number.parseInt(trimmed, 10);
@@ -304,10 +304,16 @@ export async function runTelemetry(options: TelemetryCommandOptions, _global: Gl
   }
 
   const settings = await readSettings(globalPmRoot);
-  const settingsChanged = settings.telemetry.enabled !== false || settings.telemetry.installation_id.trim().length > 0;
+  const previousEnabled = settings.telemetry.enabled;
+  const previousInstallationId = settings.telemetry.installation_id;
+  const previousFirstRunPromptCompleted = settings.telemetry.first_run_prompt_completed;
   settings.telemetry.enabled = false;
   settings.telemetry.first_run_prompt_completed = true;
   settings.telemetry.installation_id = "";
+  const settingsChanged =
+    previousEnabled !== settings.telemetry.enabled ||
+    previousInstallationId !== settings.telemetry.installation_id ||
+    previousFirstRunPromptCompleted !== settings.telemetry.first_run_prompt_completed;
   if (settingsChanged) {
     await writeSettings(globalPmRoot, settings, "telemetry:clear");
   }

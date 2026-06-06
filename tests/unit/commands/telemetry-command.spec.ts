@@ -187,6 +187,33 @@ describe("runTelemetry", () => {
     });
   });
 
+  it("persists first-run prompt completion during clear even when telemetry was already disabled", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-clear-prompt-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.enabled = false;
+      settings.telemetry.installation_id = "";
+      settings.telemetry.first_run_prompt_completed = false;
+      await writeSettings(globalRoot, settings, "test:telemetry_clear_prompt");
+
+      const result = await runTelemetry({ subcommand: "clear" }, {});
+      expect(result.settings_changed).toBe(true);
+      const refreshed = await readSettings(globalRoot);
+      expect(refreshed.telemetry.enabled).toBe(false);
+      expect(refreshed.telemetry.installation_id).toBe("");
+      expect(refreshed.telemetry.first_run_prompt_completed).toBe(true);
+    });
+  });
+
+  it("rejects non-numeric stats limits", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-limit-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      await expect(runTelemetry({ subcommand: "stats", limit: "10abc" }, {})).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("rejects unsupported telemetry subcommands", async () => {
     await withTempGlobalRoot("pm-cli-telemetry-usage-", async (globalRoot) => {
       process.env.PM_GLOBAL_PATH = globalRoot;

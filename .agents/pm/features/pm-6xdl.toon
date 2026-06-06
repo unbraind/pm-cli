@@ -6,16 +6,18 @@ status: closed
 priority: 3
 tags[4]: agent-ux,"area:observability","area:telemetry",living-map
 created_at: "2026-05-31T19:45:02.912Z"
-updated_at: "2026-06-06T05:12:52.138Z"
+updated_at: "2026-06-06T05:26:04.603Z"
 author: maintainer-agent
 acceptance_criteria: "pm telemetry status (queue depth/last flush/endpoint), flush (inline flushTelemetryQueueNow), stats [--limit N] (group local events by command, offline), clear (disable+delete queue); advisory; pm_run action=telemetry; empty-queue exits 0."
 value: "No direct command to inspect the local queue, trigger a flush, or see per-command frequency from local JSONL; today only pm health surfaces telemetry state."
 parent: pm-5oj5
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-06-06T04:45:12.384Z",codex-telemetry-batch,"Kickoff: implementing pm telemetry status/flush/stats/clear command surface, MCP/contracts wiring, token-efficient output defaults, and full validation as part of one combined observability PR with pm-t4wb."
   "2026-06-06T05:04:53.481Z",codex-telemetry-batch,"Implemented pm telemetry local analytics command surface: pm telemetry status/flush/stats/clear wired in CLI registration, command help content, SDK contracts, MCP pm_run action=telemetry dispatch, and refreshed contracts snapshot. New command behavior: status reports queue depth + endpoint + last flush metadata; stats groups queued events by command with --limit; flush triggers inline queue flush and reports before/after depth; clear disables telemetry and removes runtime queue/state artifacts. Added dedicated unit coverage at tests/unit/commands/telemetry-command.spec.ts plus release-readiness + MCP contract parity tests. Manual temp-dir smoke (dist CLI) executed status/stats/flush/clear/status in a fresh PM_PATH+PM_GLOBAL_PATH sandbox and confirmed clear leaves telemetry disabled with queue_entries=0 and no runtime telemetry artifacts."
   "2026-06-06T05:12:52.138Z",codex-telemetry-batch,"Post-PR CI static gate reported changelog drift after closing pm-t4wb/pm-6xdl. Resolved by regenerating CHANGELOG.md via pnpm changelog:pm and verifying pnpm changelog:pm:check passes; static gate parity command (version/check/contracts/security/quality/npm pack dry-run) now passes locally."
-files[11]{path,scope,note}:
+  "2026-06-06T05:26:04.603Z",codex-telemetry-batch,"Addressed review feedback with additional hardening: telemetry stats now rejects partial numeric limits (e.g. 10abc), telemetry clear persists first_run_prompt_completed even when telemetry was already disabled, MCP telemetry action now accepts numeric args.limit passthrough, telemetry action schema no longer requires subcommand (runtime default remains status), release-readiness now documents why telemetry.ts stays outside coverage include patterns, and contracts provider metadata now reports telemetry command flags as core. Revalidated with full gates + coverage + changelog check."
+files[12]{path,scope,note}:
+  src/cli/commands/contracts.ts,project,mark telemetry command flag surface as core provider in contracts output
   src/cli/commands/index.ts,project,export telemetry command handler
   src/cli/commands/telemetry.ts,project,implement local analytics status flush stats clear with token-efficient defaults
   src/cli/help-content.ts,project,add telemetry command why/examples help content

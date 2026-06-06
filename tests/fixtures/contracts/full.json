@@ -4374,8 +4374,12 @@
     },
     {
       "command": "telemetry",
-      "flags": [],
-      "provider": "extension"
+      "flags": [
+        {
+          "flag": "--limit"
+        }
+      ],
+      "provider": "core"
     },
     {
       "command": "test",
@@ -13927,18 +13931,6 @@
           },
           "subcommand": {
             "description": "Subcommand selector for schema and telemetry actions.",
-            "examples": [
-              "list",
-              "show",
-              "add-type",
-              "remove-type",
-              "add-status",
-              "remove-status",
-              "status",
-              "flush",
-              "stats",
-              "clear"
-            ],
             "type": "string"
           },
           "timeoutMs": {
@@ -17265,18 +17257,6 @@
           },
           "subcommand": {
             "description": "Subcommand selector for schema and telemetry actions.",
-            "examples": [
-              "list",
-              "show",
-              "add-type",
-              "remove-type",
-              "add-status",
-              "remove-status",
-              "status",
-              "flush",
-              "stats",
-              "clear"
-            ],
             "type": "string"
           },
           "timeoutMs": {
@@ -17288,8 +17268,7 @@
           }
         },
         "required": [
-          "action",
-          "subcommand"
+          "action"
         ],
         "title": "pm action \"telemetry\" parameters",
         "type": "object"

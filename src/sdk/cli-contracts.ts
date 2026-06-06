@@ -1810,8 +1810,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     ],
   },
   telemetry: {
-    required: ["subcommand"],
-    optional: ["limit"],
+    optional: ["subcommand", "limit"],
   },
   "test-runs-list": {
     optional: ["status", "limit"],

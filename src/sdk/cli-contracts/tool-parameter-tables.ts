@@ -478,7 +478,6 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   subcommand: {
     description: "Subcommand selector for schema and telemetry actions.",
-    examples: ["list", "show", "add-type", "remove-type", "add-status", "remove-status", "status", "flush", "stats", "clear"],
   },
   name: {
     description:
