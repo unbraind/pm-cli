@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it } from "vitest";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type {
@@ -252,17 +252,35 @@ interface CapturedExporter {
   options?: ImportExportRegistrationOptions;
 }
 
+interface CapturedHook<Context> {
+  run: (context: Context) => Promise<void> | void;
+}
+
+interface CapturedHooks {
+  onRead: Array<CapturedHook<{ path: string; scope: "project" | "global" }>>;
+  onWrite: Array<CapturedHook<{
+    path: string;
+    scope: "project" | "global";
+    op: string;
+    item_id?: string;
+    item_type?: string;
+    changed_fields?: string[];
+  }>>;
+}
+
 function createCommandOnlyApi(): {
   api: ExtensionApi;
   commands: CommandDefinition[];
   services: Array<{ service: ExtensionServiceName; override: ServiceOverride }>;
   importers: CapturedImporter[];
   exporters: CapturedExporter[];
+  hooks: CapturedHooks;
 } {
   const commands: CommandDefinition[] = [];
   const services: Array<{ service: ExtensionServiceName; override: ServiceOverride }> = [];
   const importers: CapturedImporter[] = [];
   const exporters: CapturedExporter[] = [];
+  const hooks: CapturedHooks = { onRead: [], onWrite: [] };
   const api: ExtensionApi = {
     registerCommand(first: string | CommandDefinition, _override?: CommandOverride): void {
       if (typeof first === "string") {
@@ -309,12 +327,16 @@ function createCommandOnlyApi(): {
     hooks: {
       beforeCommand: () => undefined,
       afterCommand: () => undefined,
-      onWrite: () => undefined,
-      onRead: () => undefined,
+      onWrite: (hook) => {
+        hooks.onWrite.push({ run: hook });
+      },
+      onRead: (hook) => {
+        hooks.onRead.push({ run: hook });
+      },
       onIndex: () => undefined,
     },
   };
-  return { api, commands, services, importers, exporters };
+  return { api, commands, services, importers, exporters, hooks };
 }
 
 describe("built-in extension entrypoints", () => {
@@ -364,7 +386,7 @@ describe("built-in extension entrypoints", () => {
       version: "0.1.0",
       entry: "./index.js",
       priority: 0,
-      capabilities: ["commands", "schema"],
+      capabilities: ["commands", "schema", "hooks"],
     });
     expect(governanceBuiltin).toEqual({
       manifest: governanceManifest,
@@ -445,6 +467,74 @@ describe("built-in extension entrypoints", () => {
       },
     });
     expect(rendered).toBe("# package calendar\n");
+  });
+
+  it("registers governance audit commands and opt-in read/write hook sidecar logging", async () => {
+    const { api, commands, hooks } = createCommandOnlyApi();
+    const previousLogPath = process.env.PM_GOVERNANCE_AUDIT_HOOK_LOG;
+    const hookLogPath = path.join(await mkdtemp(path.join(os.tmpdir(), "pm-governance-hook-log-")), "audit.jsonl");
+
+    try {
+      activateGovernance(api);
+      expect(commands.map((command) => command.name)).toEqual(["dedupe-audit", "comments-audit", "normalize"]);
+      expect(hooks.onRead).toHaveLength(1);
+      expect(hooks.onWrite).toHaveLength(1);
+
+      await hooks.onWrite[0]?.run({
+        path: "/tmp/project/tasks/pm-demo.md",
+        scope: "project",
+        op: "update",
+        item_id: "pm-demo",
+        item_type: "Task",
+        changed_fields: ["status"],
+      });
+      await expect(readFile(hookLogPath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+
+      process.env.PM_GOVERNANCE_AUDIT_HOOK_LOG = hookLogPath;
+      await hooks.onRead[0]?.run({ path: "/tmp/project/tasks/pm-demo.md", scope: "project" });
+      await hooks.onWrite[0]?.run({
+        path: "/tmp/project/tasks/pm-demo.md",
+        scope: "project",
+        op: "update",
+        item_id: "pm-demo",
+        item_type: "Task",
+        changed_fields: ["status"],
+      });
+
+      const records = (await readFile(hookLogPath, "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line) as Record<string, unknown>);
+      expect(records).toEqual([
+        { kind: "on_read", path: "/tmp/project/tasks/pm-demo.md", scope: "project" },
+        {
+          kind: "on_write",
+          path: "/tmp/project/tasks/pm-demo.md",
+          scope: "project",
+          op: "update",
+          item_id: "pm-demo",
+          item_type: "Task",
+          changed_fields: ["status"],
+        },
+      ]);
+
+      process.env.PM_GOVERNANCE_AUDIT_HOOK_LOG = path.dirname(hookLogPath);
+      await expect(Promise.resolve(
+        hooks.onWrite[0]?.run({
+          path: "/tmp/project/tasks/pm-demo.md",
+          scope: "project",
+          op: "update",
+          item_id: "pm-demo",
+        }),
+      )).resolves.toBeUndefined();
+    } finally {
+      if (previousLogPath === undefined) {
+        delete process.env.PM_GOVERNANCE_AUDIT_HOOK_LOG;
+      } else {
+        process.env.PM_GOVERNANCE_AUDIT_HOOK_LOG = previousLogPath;
+      }
+      await rm(path.dirname(hookLogPath), { recursive: true, force: true });
+    }
   });
 
   it("accepts a positional view combined with --date (loose flag tokens are not extra positionals)", async () => {
