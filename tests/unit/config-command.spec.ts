@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runConfig } from "../../src/cli/commands/config.js";
-import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
+import { DEFAULT_STATUS_DEFINITIONS, EXIT_CODE, SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { canonicalDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
 import { getItemPath, getSettingsPath } from "../../src/core/store/paths.js";
@@ -1078,6 +1078,54 @@ describe("runConfig", () => {
       expect(result.changed).toBe(true);
       expect(result.format).toBe("toon");
       expect(result.has_explicit_item_format).toBe(true);
+    });
+  });
+
+  it("does not persist merged file-backed schema sections during unrelated config writes", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      const settingsPath = path.join(pmRoot, "settings.json");
+      const legacySettings = { ...structuredClone(SETTINGS_DEFAULTS) } as Record<string, unknown>;
+      delete legacySettings.schema;
+      await fs.mkdir(path.dirname(settingsPath), { recursive: true });
+      await fs.writeFile(settingsPath, `${JSON.stringify(legacySettings, null, 2)}\n`, "utf8");
+
+      const schemaDir = path.join(pmRoot, "schema");
+      await fs.mkdir(schemaDir, { recursive: true });
+      await fs.writeFile(
+        path.join(schemaDir, "statuses.json"),
+        `${JSON.stringify(
+          {
+            statuses: [...structuredClone(DEFAULT_STATUS_DEFINITIONS), { id: "qa_ready", roles: ["active"] }],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      const setResult = await runConfig(
+        "project",
+        "set",
+        "telemetry-tracking",
+        { policy: "disabled" },
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+      );
+      expect(setResult.changed).toBe(true);
+
+      const persisted = JSON.parse(await fs.readFile(settingsPath, "utf8")) as Record<string, unknown>;
+      const persistedSchema = (persisted.schema ?? {}) as Record<string, unknown>;
+      expect(persistedSchema.statuses ?? []).toEqual([]);
+      expect(persistedSchema.fields ?? []).toEqual([]);
+      expect(Array.isArray(persistedSchema.type_workflows) ? persistedSchema.type_workflows : []).toEqual([]);
+
+      await fs.writeFile(
+        path.join(schemaDir, "statuses.json"),
+        `${JSON.stringify({ statuses: structuredClone(DEFAULT_STATUS_DEFINITIONS) }, null, 2)}\n`,
+        "utf8",
+      );
+      const afterRemoval = await readSettings(pmRoot);
+      expect(afterRemoval.schema.statuses.map((definition) => definition.id)).not.toContain("qa_ready");
     });
   });
 

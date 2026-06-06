@@ -2,14 +2,26 @@ id: pm-3puw
 title: MCP stdio server processes JSON-RPC lines concurrently → pipelined mutations on the same item lock-conflict
 description: "Found during pm-at83 dogfooding (manual MCP test). startMcpServer's readline 'line' handler runs each request fire-and-forget (`void (async () => {...})()` in src/mcp/server.ts), so requests are handled CONCURRENTLY rather than in arrival order. A client that pipelines two mutations on the same item without waiting for the first response gets a lock error on the second: e.g. sending pm_notes(add) + pm_learnings(add) for the same id in one stream returns id1=ok, id2=`Item pm-XXXX is locked (owner ...) (code 4)`. Well-behaved request/response stdio clients (Claude, Codex) serialize and do not hit this, so it is low severity and NOT a regression (the new narrow tools merely surface existing actions). Hardening options: (1) serialize tools/call handling via a simple async queue so requests are processed in arrival order; or (2) keep concurrency but document it and improve the lock-conflict message at the MCP boundary to hint 'await each response before sending the next'. Acceptance: a test pipelines two same-item mutations and both succeed (or the surfaced error explicitly explains serialization), existing MCP tests pass. Repro lives in the pm-at83 session notes."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[5]: agent-ux,"area:mcp",living-map,pm-cli,reliability
 created_at: "2026-06-05T14:55:24.290Z"
-updated_at: "2026-06-05T15:28:43.866Z"
+updated_at: "2026-06-06T03:08:53.143Z"
 author: maintainer-agent
 parent: pm-5k4v
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-06-05T15:09:42.495Z",maintainer-agent,"IMPLEMENTED (option 1: serialize stdio handling). Added src/core/shared/serial-queue.ts — a generic FIFO async queue (createSerialQueue: enqueue<T> returns the task's promise; internal tail is error-isolated so a rejecting task never wedges the chain; idle() awaits drain). startMcpServer now wraps each readline line in queue.enqueue(() => processRpcLine(line)) instead of fire-and-forget `void (async()=>{})()`, so JSON-RPC lines are processed in strict ARRIVAL ORDER. Extracted the per-line body into exported processRpcLine(line) for testability. RESULT: a client that pipelines two mutations on the same item (e.g. pm_notes add + pm_learnings add) no longer lock-conflicts on the second — the first releases its lock before the second begins. Coverage: serial-queue.ts added to vitest.config.ts include; unit tests merged into tests/unit/shared-helpers.spec.ts (arrival-order, result passthrough, reject-isolation, idle drain) to respect the 120-file tests/unit cap; integration test added to tests/integration/mcp-handshake.spec.ts proving pipelined same-item pm_notes+pm_learnings both succeed and both land (count=1 each). Targeted run: 2 files / 22 tests pass. server.ts itself stays out of the coverage allowlist (entry-point pattern) with the reusable primitive 100%-covered in core/shared."
   "2026-06-05T15:28:42.598Z",maintainer-agent,"Verification evidence: MCP serialization remains covered in full suite. Commands passed: focused MCP/shared/contracts tests earlier; node scripts/run-tests.mjs coverage (139 files, 2314 tests, 100% coverage); manual temp-project smoke exercised local dist CLI mutations and health. Status: code is in working tree only, not committed/pushed per run constraint."
+  "2026-06-06T03:03:25.232Z",codex-schema-integrity,"Carryover closure run started: will re-verify serialized MCP stdio queue behavior with focused tests + full gates before close/release."
+  "2026-06-06T03:08:46.894Z",codex-schema-integrity,"Carryover reverification passed: linked pm test run executed node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts tests/unit/shared-helpers.spec.ts (27 tests, pass). Additional focused run with contracts/shared/MCP bundle passed: node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts tests/unit/shared-helpers.spec.ts tests/unit/contracts-command.spec.ts (46 tests)."
+files[4]{path,scope,note}:
+  src/core/shared/serial-queue.ts,project,Reusable serial async queue used by MCP server.
+  src/mcp/server.ts,project,Serialize stdin JSON-RPC lines through FIFO queue.
+  tests/integration/mcp-handshake.spec.ts,project,Integration coverage for pipelined same-item mutation handling.
+  tests/unit/shared-helpers.spec.ts,project,Unit coverage for queue ordering/reject-isolation/idle drain semantics.
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts tests/unit/shared-helpers.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mq1rw5yr-rmakha,test,passed,"2026-06-06T03:07:34.979Z","2026-06-06T03:07:47.379Z","2026-06-06T03:07:47.379Z",null,null,1,0,0,null,null,null
+close_reason: "Re-verified serialized MCP request handling: focused linked tests passed and acceptance criteria are satisfied on current branch."
 body: ""
