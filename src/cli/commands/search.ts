@@ -1198,13 +1198,13 @@ function mergeVectorHitsById(vectorHitGroups: VectorQueryHit[][]): VectorQueryHi
 }
 
 function buildRerankCorpus(document: ItemDocument): string {
-  const metadata = document.metadata;
-  const tags = Array.isArray(metadata.tags) ? metadata.tags.join(" ") : "";
+  const metadata = (document as { metadata?: ItemDocument["metadata"] | null }).metadata;
+  const tags = Array.isArray(metadata?.tags) ? metadata.tags.join(" ") : "";
   return [
-    metadata.title,
-    metadata.description,
-    metadata.type,
-    metadata.status,
+    metadata?.title,
+    metadata?.description,
+    metadata?.type,
+    metadata?.status,
     tags,
     document.body,
   ]

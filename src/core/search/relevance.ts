@@ -124,7 +124,7 @@ export function buildDeterministicQueryExpansions(
   if (tokens.length === 0) {
     return [normalizedQuery];
   }
-  const contentTokens = tokens.filter((token) => !QUERY_EXPANSION_STOP_WORDS.has(token));
+  const contentTokens = tokens.filter((token) => !QUERY_EXPANSION_STOP_WORDS.has(token.toLowerCase()));
   const singularized = tokens.map((token) => singularizeSimple(token));
   const pluralized = contentTokens.map((token) => pluralizeSimple(token));
   return dedupeQueries(
