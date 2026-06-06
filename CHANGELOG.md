@@ -1,11 +1,16 @@
 # Changelog
 
-## 2026.6.6 - 2026-06-06
+## Unreleased
 
 ### Added
 
 - Configurable semantic corpus character limit \(search.embedding\_corpus\_max\_characters\) ([pm-cxdg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cxdg.toon))
 - Per-query hybrid weight override: pm search --semantic-weight \(post-v0.1\) ([pm-cy8i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cy8i.toon))
+
+## 2026.6.6 - 2026-06-06
+
+### Added
+
 - pm telemetry local-analytics subcommand \(status/flush/stats/clear\) ([pm-6xdl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-6xdl.toon))
 - Add Claude Code rows to docs read-path and README start-here tables ([pm-pwdx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-pwdx.toon))
 - Add AGENTS.md/README workflow-update checkbox to the PR template ([pm-0sqs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-0sqs.toon))
