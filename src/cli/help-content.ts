@@ -487,6 +487,14 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Inspects item mutation timeline and audit trail.",
     examples: ["pm history pm-a1b2 --limit 20", "pm history pm-a1b2 --full --verify"],
   },
+  "history-compact": {
+    why: "Compacts long history streams into a synthetic checkpoint while preserving replay integrity.",
+    examples: [
+      "pm history-compact pm-a1b2 --dry-run",
+      "pm history-compact pm-a1b2 --before 25 --author codex-agent --message \"Compact early history\"",
+      "pm history-compact pm-a1b2 --before 2026-06-01T00:00:00.000Z",
+    ],
+  },
   activity: {
     why: "Reviews recent tracker-wide activity across items.",
     examples: [

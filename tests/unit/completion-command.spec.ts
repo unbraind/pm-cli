@@ -43,6 +43,7 @@ describe("generateBashScript", () => {
       "search",
       "reindex",
       "history",
+      "history-compact",
       "history-redact",
       "activity",
       "restore",
@@ -358,6 +359,20 @@ describe("generateBashScript", () => {
     expect(script).toContain("--stream");
   });
 
+  it("includes history-compact flags across completion scripts", () => {
+    const bashScript = generateBashScript();
+    expect(bashScript).toContain("history-compact)");
+    expect(bashScript).toContain("--before --dry-run --author --message --force");
+
+    const zshScript = generateZshScript();
+    expect(zshScript).toContain("history-compact)");
+    expect(zshScript).toContain("--before[Compact entries strictly before this version number or ISO timestamp]:before");
+
+    const fishScript = generateFishScript();
+    expect(fishScript).toContain("__fish_seen_subcommand_from history-compact");
+    expect(fishScript).toContain("-l before -d 'Compact entries strictly before this version number or ISO timestamp'");
+  });
+
   it("includes get projection flags", () => {
     const bashScript = generateBashScript();
     expect(bashScript).toContain("get)");
@@ -486,6 +501,7 @@ describe("generateZshScript", () => {
     expect(script).toContain("cal:Alias for calendar");
     expect(script).toContain("context:Show a token-efficient project context snapshot");
     expect(script).toContain("ctx:Alias for context");
+    expect(script).toContain("history-compact:Compact history streams into a synthetic baseline + retained tail");
     expect(script).toContain("history-redact:Redact sensitive literals/patterns and recompute history hashes");
     expect(script).toContain("plan:Agent-optimized Plan item workflow");
     expect(script).toContain("notes:List or add notes for an item");
@@ -644,6 +660,7 @@ describe("generateFishScript", () => {
       ["contracts", "machine-readable command and schema contracts"],
       ["health", "project tracker health"],
       ["stats", "project tracker statistics"],
+      ["history-compact", "synthetic baseline + retained tail"],
       ["history-redact", "Redact sensitive literals/patterns and recompute history hashes"],
       ["plan", "Agent-optimized Plan workflow"],
     ] as [string, string][]) {

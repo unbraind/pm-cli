@@ -2,13 +2,23 @@ id: pm-idnz
 title: Track removal of TOON upstream bracket-bug workaround when upstream fix ships
 description: toon-decode.ts carries escapeBracketsInQuotedScalars to work around a known @toon-format/toon strict-decoder bug; extra code on the hot parse path with no watch item for the upstream fix.
 type: Chore
-status: open
+status: in_progress
 priority: 3
 tags[4]: "area:storage",dependencies,living-map,tech-debt
 created_at: "2026-05-31T19:43:39.093Z"
-updated_at: "2026-05-31T19:43:39.093Z"
+updated_at: "2026-06-06T16:50:36.194Z"
+assignee: codex-agent
 author: maintainer-agent
 acceptance_criteria: "Track the upstream issue/PR; on fix: upgrade dep, verify toon-decode.spec passes without the escape function, remove the workaround+retry branch; no parse-coverage regression."
 value: toon-decode.ts carries escapeBracketsInQuotedScalars to work around a known @toon-format/toon strict-decoder bug; extra code on the hot parse path with no watch item for the upstream fix.
 parent: pm-o2kc
+comments[3]{created_at,author,text}:
+  "2026-06-06T16:21:58.761Z",codex-agent,"Orientation baseline: @toon-format/toon latest npm=2.3.0; upstream decoder fix appears as open PR https://github.com/toon-format/toon/pull/314 (not merged/released yet). Therefore workaround remains required for now; this cycle will add explicit traceability + tests and keep removal guarded for post-release upgrade."
+  "2026-06-06T16:31:55.721Z",codex-agent,"Added explicit in-repo tracking constants for the upstream fix watch (dependency=@toon-format/toon, affected_versions<=2.3.0, upstream_pr=https://github.com/toon-format/toon/pull/314, removal_condition text) and guard tests that (1) ensure quoted-scalar bracket recovery still works while preserving array-header semantics and (2) assert upstream linkage remains documented for future removal. Verification: node scripts/run-tests.mjs test -- tests/unit/toon-decode.spec.ts."
+  "2026-06-06T16:50:36.194Z",manual-smoke,"Verification evidence for TOON workaround tracking changes: node scripts/run-tests.mjs test -- tests/unit/toon-decode.spec.ts passed; full gate suite and packed-install manual smoke (including history/history-compact/restore round-trip) also passed on this branch without parse-regression symptoms."
+files[2]{path,scope,note}:
+  src/core/item/toon-decode.ts,project,Explicit upstream tracking metadata + retained strict retry workaround
+  tests/unit/toon-decode.spec.ts,project,Guard tests for workaround behavior and upstream linkage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/toon-decode.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,Validate scalar-bracket workaround behavior and tracking metadata
 body: ""

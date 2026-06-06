@@ -351,6 +351,14 @@ export const HISTORY_REPAIR_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--force" },
 ];
 
+export const HISTORY_COMPACT_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--before" },
+  { flag: "--dry-run" },
+  { flag: "--author" },
+  { flag: "--message" },
+  { flag: "--force" },
+];
+
 export const SCHEMA_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--description" },
   { flag: "--default-status", aliases: ["--default_status"] },
@@ -1345,6 +1353,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(HISTORY_REDACT_FLAG_CONTRACTS);
     case "history-repair":
       return withSubcommandGlobalFlags(HISTORY_REPAIR_FLAG_CONTRACTS);
+    case "history-compact":
+      return withSubcommandGlobalFlags(HISTORY_COMPACT_FLAG_CONTRACTS);
     case "schema":
       return withSubcommandGlobalFlags(SCHEMA_FLAG_CONTRACTS);
     case "plan":
@@ -1655,6 +1665,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   "history-repair": {
     required: ["id"],
     optional: ["dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+  },
+  "history-compact": {
+    required: ["id"],
+    optional: ["before", "dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
   },
   schema: {
     required: ["subcommand"],
