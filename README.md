@@ -126,6 +126,8 @@ For token-aware local routing, install `guide-shell` with `pm install guide-shel
 
 `search.tuning` lexical defaults include `reminders_weight=2` and `events_weight=2` in addition to title/description/tag/status/body/comment/note/learning/dependency/linked-content weights. Keep docs and contracts aligned with runtime defaults when tuning behavior changes.
 
+Hybrid queries can override blend weight per call via `pm search --mode hybrid --semantic-weight <0..1>`, and semantic corpus truncation can be tuned via `pm config project set search_embedding_corpus_max_characters <positive-int>` (provider defaults still apply when unset).
+
 ## Tracker References
 
 Current documentation work is tracked through:

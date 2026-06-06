@@ -826,6 +826,7 @@ describe("release readiness runtime coverage", () => {
       const searchHelp = context.runCli(["search", "--help"]);
       expect(searchHelp.code).toBe(0);
       expect(searchHelp.stdout).toContain("--mode");
+      expect(searchHelp.stdout).toContain("--semantic-weight");
       expect(searchHelp.stdout).toContain("--include-linked");
       expect(searchHelp.stdout).toContain("--title-exact");
       expect(searchHelp.stdout).toContain("--phrase-exact");

@@ -109,6 +109,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
     type: "string",
     enum: ["keyword", "semantic", "hybrid", "title_exact", "title_fuzzy", "parent_scope"],
   },
+  semanticWeight: { anyOf: [{ type: "string" }, { type: "number" }] },
   op: { type: "string" },
   compact: { type: "boolean" },
   brief: { type: "boolean" },
@@ -633,6 +634,11 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description:
       "Mode selector for search/reindex (keyword|semantic|hybrid) and dedupe-audit (title_exact|title_fuzzy|parent_scope).",
     examples: ["keyword", "hybrid", "title_exact"],
+  },
+  semanticWeight: {
+    description:
+      "Per-query hybrid semantic weight override in [0,1] for search action; invalid values fall back to settings.",
+    examples: [0.2, "0.7"],
   },
   op: {
     description: "History operation filter for activity output.",

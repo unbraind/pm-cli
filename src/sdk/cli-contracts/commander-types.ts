@@ -39,6 +39,7 @@ export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContrac
 
 export const SEARCH_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
   { target: "mode", keys: ["mode"] },
+  { target: "semanticWeight", keys: ["semanticWeight", "semantic_weight"] },
   { target: "status", keys: ["status"] },
   { target: "type", keys: ["type"] },
   { target: "tag", keys: ["tag"] },

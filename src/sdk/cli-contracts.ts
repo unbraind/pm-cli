@@ -1166,6 +1166,7 @@ export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--mode" },
   { flag: "--semantic" },
   { flag: "--hybrid" },
+  { flag: "--semantic-weight" },
   { flag: "--include-linked" },
   { flag: "--title-exact" },
   { flag: "--phrase-exact" },

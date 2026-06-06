@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runReindex } from "../../src/cli/commands/reindex.js";
 import { readVectorizationStatusLedger, writeVectorizationStatusLedger } from "../../src/core/search/cache.js";
+import { SEARCH_EMBEDDING_CORPUS_MAX_CHARACTERS_INVALID_WARNING } from "../../src/core/search/corpus.js";
 import { executeVectorUpsert } from "../../src/core/search/vector-stores.js";
 import {
   clearActiveExtensionHooks,
@@ -687,6 +688,58 @@ describe("runReindex", () => {
         expect(result.ok).toBe(true);
         expect(embeddedInputLengths).toHaveLength(1);
         expect(embeddedInputLengths[0]).toBeGreaterThan(300);
+        expect(embeddedInputLengths[0]).toBeLessThanOrEqual(8_000);
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
+
+  it("honors configured semantic corpus character limit during embedding", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context, "Configured Semantic Corpus", "x".repeat(20_000), false);
+
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      settings.search.embedding_corpus_max_characters = 1200;
+      await writeSettings(context.pmPath, settings);
+
+      const semanticMock = installSemanticFetchMock();
+      const embeddedInputLengths = semanticMock.inputLengths;
+
+      try {
+        const result = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+        expect(result.ok).toBe(true);
+        expect(embeddedInputLengths).toHaveLength(1);
+        expect(embeddedInputLengths[0]).toBeGreaterThan(300);
+        expect(embeddedInputLengths[0]).toBeLessThanOrEqual(1200);
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
+
+  it("falls back to provider corpus default and warns when configured semantic corpus limit is invalid", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context, "Invalid Semantic Corpus Limit", "x".repeat(20_000), false);
+
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      settings.search.embedding_corpus_max_characters = 0;
+      await writeSettings(context.pmPath, settings);
+
+      const semanticMock = installSemanticFetchMock();
+      const embeddedInputLengths = semanticMock.inputLengths;
+
+      try {
+        const result = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+        expect(result.ok).toBe(true);
+        expect(result.warnings).toContain(SEARCH_EMBEDDING_CORPUS_MAX_CHARACTERS_INVALID_WARNING);
+        expect(embeddedInputLengths).toHaveLength(1);
         expect(embeddedInputLengths[0]).toBeLessThanOrEqual(8_000);
       } finally {
         semanticMock.restore();

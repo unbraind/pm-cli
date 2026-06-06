@@ -7,7 +7,10 @@ import { locateItem, readLocatedItem } from "../store/item-store.js";
 import { getSettingsPath } from "../store/paths.js";
 import { readSettings } from "../store/settings.js";
 import { executeEmbeddingBatchesWithRetry } from "./embedding-batches.js";
-import { buildSemanticCorpusInput } from "./corpus.js";
+import {
+  buildSemanticCorpusInput,
+  resolveSemanticCorpusCharacterLimit,
+} from "./corpus.js";
 import { resolveEmbeddingProviders } from "./providers.js";
 import type { EmbeddingProviderConfig } from "./providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "./semantic-defaults.js";
@@ -329,9 +332,14 @@ async function embedLocatedSemanticVectors(
   provider: EmbeddingProviderConfig,
   documents: Array<{ id: string; document: ItemDocument }>,
 ): Promise<SemanticEmbeddingOperationResult> {
+  const corpusCharacterLimit = resolveSemanticCorpusCharacterLimit(
+    provider.name,
+    settings.search.embedding_corpus_max_characters,
+  ).maxCharacters;
   const corpusInputs = documents.map((entry) =>
     buildSemanticCorpusInput(entry.document, {
       providerName: provider.name,
+      maxCharacters: corpusCharacterLimit,
     }),
   );
   const embeddingResult = await executeEmbeddingBatchesWithRetry(provider, settings, corpusInputs);

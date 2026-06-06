@@ -189,6 +189,8 @@ Semantic and hybrid search can use built-in OpenAI-compatible or Ollama provider
 
 For local Ollama or slower embedding providers, tune `search.embedding_batch_size`, `search.embedding_timeout_ms`, and `search.scanner_max_batch_retries` in project config before assuming semantic search is broken. Keyword search remains the fast baseline while semantic indexing catches up.
 
+`search.embedding_corpus_max_characters` optionally overrides provider defaults for corpus truncation (`8000` for OpenAI-compatible providers, `3200` for Ollama). Invalid values fall back to the provider default and emit `search_embedding_corpus_max_characters_invalid:using_provider_default` warnings in semantic indexing workflows.
+
 Mutation commands invalidate keyword search caches immediately. Semantic vector refresh is controlled by `search.mutation_refresh_policy`:
 
 | Policy | Behavior |
@@ -201,7 +203,8 @@ Useful commands:
 
 ```bash
 pm config project set search_mutation_refresh_policy cache_only
-pm search "calendar reminders" --mode hybrid --limit 10
+pm config project set search_embedding_corpus_max_characters 12000
+pm search "calendar reminders" --mode hybrid --semantic-weight 0.35 --limit 10
 pm reindex --mode hybrid --progress
 pm health --check-only
 ```

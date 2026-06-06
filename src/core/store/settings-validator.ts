@@ -84,6 +84,7 @@ export interface ParsedSettings {
     hybrid_semantic_weight?: number;
     max_results: number;
     embedding_model: string;
+    embedding_corpus_max_characters?: number;
     embedding_batch_size: number;
     embedding_timeout_ms?: number;
     scanner_max_batch_retries: number;
@@ -403,6 +404,7 @@ const settingsCheck = vObject({
     hybrid_semantic_weight: vOptional(vNumber()),
     max_results: vNumber({ int: true }),
     embedding_model: vString,
+    embedding_corpus_max_characters: vOptional(vNumber()),
     embedding_batch_size: vNumber({ int: true }),
     embedding_timeout_ms: vOptional(vNumber({ int: true })),
     scanner_max_batch_retries: vNumber({ int: true }),

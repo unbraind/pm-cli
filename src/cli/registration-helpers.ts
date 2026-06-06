@@ -611,6 +611,7 @@ export function normalizeSearchOptions(options: Record<string, unknown>): Record
     : readSearchString("mode");
   const normalized: Record<string, unknown> = {
     mode,
+    semanticWeight: readSearchString("semanticWeight"),
     includeLinked: options.includeLinked === true ? true : undefined,
     titleExact: options.titleExact === true ? true : undefined,
     phraseExact: options.phraseExact === true ? true : undefined,

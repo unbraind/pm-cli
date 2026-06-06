@@ -1115,6 +1115,7 @@ Keyword/hybrid lexical scoring baseline also applies a deterministic exact-title
   - `hybrid_semantic_weight`
   - `max_results`
   - `embedding_model`
+  - `embedding_corpus_max_characters` (optional)
   - `embedding_batch_size`
   - `scanner_max_batch_retries`
   - `tuning` (optional object: `title_exact_bonus`, `title_weight`, `description_weight`, `tags_weight`, `status_weight`, `body_weight`, `comments_weight`, `notes_weight`, `learnings_weight`, `reminders_weight`, `events_weight`, `dependencies_weight`, `linked_content_weight`)
@@ -1127,6 +1128,11 @@ Keyword/hybrid lexical scoring baseline also applies a deterministic exact-title
   - numeric range `0..1` (out-of-range or non-numeric values fall back to default)
   - hybrid combined score uses: `(semantic_normalized * hybrid_semantic_weight) + (keyword_normalized * (1 - hybrid_semantic_weight))`
   - default `0.7` keeps semantic ranking primary while preserving deterministic lexical influence
+  - `pm search --mode hybrid --semantic-weight <0..1>` overrides the blend for that query only; invalid override values fall back to `search.hybrid_semantic_weight` and emit a deterministic warning
+- `search.embedding_corpus_max_characters` runtime semantics:
+  - optional positive integer override for semantic corpus truncation in both `pm reindex --mode semantic|hybrid` and mutation-triggered semantic refresh
+  - when unset, provider defaults apply (`8000` for OpenAI-compatible providers, `3200` for Ollama)
+  - invalid values fall back to provider default and emit `search_embedding_corpus_max_characters_invalid:using_provider_default`
 - `search.tuning` runtime semantics:
   - optional object controlling deterministic multi-factor lexical weighting in keyword mode and the hybrid lexical component
   - non-numeric/negative tuning values fall back to deterministic defaults per field
@@ -1435,6 +1441,7 @@ Schema-capability registrations are also validated deterministically at activati
 - `search.hybrid_semantic_weight`
 - `search.max_results`
 - `search.embedding_model`
+- `search.embedding_corpus_max_characters` (optional)
 - `search.embedding_batch_size`
 - `search.scanner_max_batch_retries`
 - `search.tuning` (optional object)
@@ -1445,6 +1452,7 @@ Schema-capability registrations are also validated deterministically at activati
 
 `search.score_threshold` defaults to `0` and applies mode-specific minimum-score filtering as defined in section `13.3`.
 `search.hybrid_semantic_weight` defaults to `0.7` and controls semantic-vs-lexical blend weight in hybrid mode as defined in section `13.3`.
+`search.embedding_corpus_max_characters` is optional; when unset, semantic corpus truncation uses provider defaults (`8000` OpenAI-compatible, `3200` Ollama) as defined in section `13.3`.
 `search.tuning` is optional; when unset or partially invalid, lexical scoring defaults remain deterministic (`title_exact_bonus=10`, `title_weight=8`, `description_weight=5`, `tags_weight=6`, `status_weight=2`, `body_weight=1`, `comments_weight=1`, `notes_weight=1`, `learnings_weight=1`, `reminders_weight=2`, `events_weight=2`, `dependencies_weight=3`, `linked_content_weight=1`).
 
 Default `settings.json` object written by `pm init`:
@@ -1677,7 +1685,7 @@ Checklist:
 - [x] keyword indexing + search command (keyword command surface + deterministic reindex artifact rebuild implemented; deterministic exact-title token boost and configurable multi-factor lexical tuning via `search.tuning` implemented; `--limit 0` short-circuit implemented; advanced relevance tuning is post-v0.1 roadmap)
 - [x] embedding provider abstraction (deterministic provider configuration resolution, request-target planning including OpenAI-compatible `base_url` normalization for root/`/v1`/`/embeddings`, provider-specific request payload/response normalization with deterministic OpenAI data-entry index ordering, deterministic request-execution helper behavior, deterministic embedding cardinality validation, deterministic per-request normalized-input dedupe with output fan-out, configurable batch sizing and per-batch retry, command-path embedding execution, and mutation-triggered embedding refresh are implemented; additional advanced provider optimizations are post-v0.1 roadmap)
 - [x] vector store adapters (Qdrant/LanceDB deterministic configuration resolution, request-target planning, request payload/response normalization, deterministic request-execution helpers, deterministic LanceDB local query/upsert/delete execution helper behavior, deterministic local snapshot persistence + reload across process boundaries, query-hit ordering normalization, and command-path vector query/upsert integration implemented; broader adapter optimization is post-v0.1 roadmap)
-- [x] hybrid ranking + include-linked option (`--include-linked` lexical baseline implemented for keyword mode and hybrid lexical blending; deterministic hybrid lexical+semantic blend with configurable `search.hybrid_semantic_weight` implemented; deterministic exact-title token lexical boost implemented; configurable multi-factor lexical tuning via `search.tuning` implemented; broader advanced semantic/hybrid tuning is post-v0.1 roadmap)
+- [x] hybrid ranking + include-linked option (`--include-linked` lexical baseline implemented for keyword mode and hybrid lexical blending; deterministic hybrid lexical+semantic blend with configurable `search.hybrid_semantic_weight` implemented; per-query `--semantic-weight` hybrid override implemented with deterministic fallback warning behavior; deterministic exact-title token lexical boost implemented; configurable multi-factor lexical tuning via `search.tuning` implemented; broader advanced semantic/hybrid tuning is post-v0.1 roadmap)
 - [x] reindex command (keyword baseline complete; semantic/hybrid embedding+vector upsert implemented; mutation command paths invalidate stale keyword artifacts, trigger best-effort semantic embedding refresh for affected item IDs, and prune vectors for missing/deleted IDs when semantic configuration is available)
 
 Definition of Done:

@@ -239,6 +239,10 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--mode <value>", "Search mode: keyword|semantic|hybrid (default: keyword)")
       .option("--semantic", "Shorthand for --mode semantic")
       .option("--hybrid", "Shorthand for --mode hybrid")
+      .option(
+        "--semantic-weight <value>",
+        "Override hybrid semantic weight for this query (0..1); invalid values fall back to settings",
+      )
       .option("--include-linked", "Include linked files, docs, and tests in the searchable corpus")
       .option("--title-exact", "Require exact normalized title match for the full query string")
       .option("--phrase-exact", "Require exact normalized phrase match in searchable text")

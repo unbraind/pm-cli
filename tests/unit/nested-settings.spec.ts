@@ -111,7 +111,12 @@ describe("nested-settings helpers (pm-7ilo)", () => {
       // carry min: 1 because the runtime falls back to the default when 0 is
       // supplied. Reject explicitly so agents see the error instead of
       // silently storing a useless value.
-      for (const key of ["search_max_results", "search_embedding_batch_size", "search_embedding_timeout_ms"]) {
+      for (const key of [
+        "search_max_results",
+        "search_embedding_corpus_max_characters",
+        "search_embedding_batch_size",
+        "search_embedding_timeout_ms",
+      ]) {
         const descriptor = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === key)!;
         const result = parseNestedSettingValue(descriptor, "0");
         expect(result.ok).toBe(false);

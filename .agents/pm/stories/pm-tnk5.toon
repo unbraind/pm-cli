@@ -2,14 +2,29 @@ id: pm-tnk5
 title: "As a PM with large item bodies, I want to raise the semantic corpus character limit, so that search indexes my full content instead of truncating it"
 description: "As a PM with large item bodies, I want to raise the semantic corpus character limit, so that search indexes my full content instead of truncating it"
 type: Story
-status: open
+status: closed
 priority: 3
 tags[4]: "area:search","area:semantic",living-map,story
 created_at: "2026-05-31T19:49:45.373Z"
-updated_at: "2026-05-31T19:49:45.373Z"
+updated_at: "2026-06-06T06:22:00.613Z"
 author: maintainer-agent
 acceptance_criteria: search.embedding_corpus_max_characters raises/lowers the limit; invalid falls back to default with a warning; reindex+background refresh honor it
 parent: pm-ydp6
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-cxdg,related,"2026-05-31T19:49:45.373Z",null,null
+comments[3]{created_at,author,text}:
+  "2026-06-06T06:02:21.531Z",codex-search-bundle,"Kickoff: delivering linked story acceptance via pm-cxdg implementation and explicit validation that corpus limit increase/decrease behavior works without search regression."
+  "2026-06-06T06:19:18.014Z",codex-search-bundle,"Story acceptance met through pm-cxdg implementation: PMs can raise/lower corpus truncation via search_embedding_corpus_max_characters and reindex/mutation refresh paths honor the configured limit. Invalid values deterministically fall back to provider defaults with warning. Validation includes focused reindex/search-cache tests plus full coverage gate pass."
+  "2026-06-06T06:21:58.349Z",codex-search-bundle,"Final story evidence: manual temp smoke confirmed operator workflow for large-body corpus setting via pm config project set/get search_embedding_corpus_max_characters 1200 and subsequent search/reindex flows. Focused regression tests for reindex/search-cache plus full coverage remained green. Story acceptance criteria met via implemented configurable corpus limit with deterministic fallback behavior."
+files[4]{path,scope,note}:
+  src/cli/commands/reindex.ts,project,"story acceptance: corpus limit raise/lower behavior across reindex and mutation refresh"
+  src/core/search/cache.ts,project,"story acceptance: corpus limit raise/lower behavior across reindex and mutation refresh"
+  src/core/search/corpus.ts,project,"story acceptance: corpus limit raise/lower behavior across reindex and mutation refresh"
+  src/core/search/embedding-batches.ts,project,"story acceptance: corpus limit raise/lower behavior across reindex and mutation refresh"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+docs[2]{path,scope,note}:
+  docs/CONFIGURATION.md,project,story narrative and operator guidance
+  PRD.md,project,story narrative and operator guidance
+close_reason: "Delivered story acceptance: PMs can raise/lower semantic corpus truncation via setting and reindex/mutation-refresh paths honor the configured value with validated regression coverage."
 body: ""
