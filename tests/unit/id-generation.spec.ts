@@ -18,9 +18,9 @@ describe("id generation and normalization", () => {
   });
 
   it("generates 4-character tokens by default", async () => {
-    const randomBytesSpy = vi
-      .spyOn(crypto, "randomBytes")
-      .mockImplementation((size: number) => Buffer.from([0, 1, 2, 3].slice(0, size)));
+    const sequence = [0, 1, 2, 3];
+    let call = 0;
+    const randomIntSpy = vi.spyOn(crypto, "randomInt").mockImplementation(() => sequence[call++] ?? 0);
 
     try {
       await withTempPmPath(async (context) => {
@@ -29,16 +29,16 @@ describe("id generation and normalization", () => {
         expect(id).toMatch(/^pm-[a-z0-9]{4}$/);
       });
     } finally {
-      randomBytesSpy.mockRestore();
+      randomIntSpy.mockRestore();
     }
   });
 
   it("retries when an id already exists", async () => {
-    let invocation = 0;
-    const randomBytesSpy = vi.spyOn(crypto, "randomBytes").mockImplementation((size: number) => {
-      const fill = Math.min(invocation, 35);
-      invocation += 1;
-      return Buffer.alloc(size, fill);
+    let call = 0;
+    const randomIntSpy = vi.spyOn(crypto, "randomInt").mockImplementation(() => {
+      const tokenAttempt = Math.floor(call / 4);
+      call += 1;
+      return Math.min(tokenAttempt, 35);
     });
 
     try {
@@ -48,12 +48,12 @@ describe("id generation and normalization", () => {
         expect(id).toBe("pm-1111");
       });
     } finally {
-      randomBytesSpy.mockRestore();
+      randomIntSpy.mockRestore();
     }
   });
 
   it("throws after bounded attempts when every candidate collides", async () => {
-    const randomBytesSpy = vi.spyOn(crypto, "randomBytes").mockImplementation((size: number) => Buffer.alloc(size, 0));
+    const randomIntSpy = vi.spyOn(crypto, "randomInt").mockImplementation(() => 0);
 
     try {
       await withTempPmPath(async (context) => {
@@ -67,7 +67,7 @@ describe("id generation and normalization", () => {
         );
       });
     } finally {
-      randomBytesSpy.mockRestore();
+      randomIntSpy.mockRestore();
     }
   });
 });

@@ -1010,7 +1010,7 @@ export function renderCalendarMarkdown(result: CalendarResult): string {
     }
     lines.push("");
   }
-  return lines.join("\n").replace(/\n+$/, "");
+  return trimTrailingNewlines(lines.join("\n"));
 }
 
 /**
@@ -1022,6 +1022,14 @@ export function renderCalendarMarkdown(result: CalendarResult): string {
  */
 export function renderCalendarToon(result: CalendarResult): string {
   return encodeToon(result as unknown as Parameters<typeof encodeToon>[0]);
+}
+
+function trimTrailingNewlines(value: string): string {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === "\n") {
+    end -= 1;
+  }
+  return value.slice(0, end);
 }
 
 export async function runCalendar(options: CalendarOptions, global: GlobalOptions): Promise<CalendarResult> {

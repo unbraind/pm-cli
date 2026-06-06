@@ -377,6 +377,36 @@ function dedupeStrings(values: string[]): string[] {
   return Array.from(new Set(values));
 }
 
+function firstWhitespaceSeparatedToken(input: string): string {
+  let token = "";
+  for (const character of input) {
+    if (
+      character === " " ||
+      character === "\t" ||
+      character === "\n" ||
+      character === "\r" ||
+      character === "\f" ||
+      character === "\v"
+    ) {
+      break;
+    }
+    token += character;
+  }
+  return token;
+}
+
+function trimTrailingPunctuationToken(token: string): string {
+  let end = token.length;
+  while (end > 0) {
+    const character = token[end - 1];
+    if (character !== "," && character !== ":" && character !== ";") {
+      break;
+    }
+    end -= 1;
+  }
+  return token.slice(0, end);
+}
+
 export function resolveChildCommandByToken(parent: Command, token: string): Command | undefined {
   const normalizedToken = token.trim().toLowerCase();
   return parent.commands.find((candidate) => {
@@ -451,7 +481,9 @@ export async function resolveCommanderUsageContext(
   }
   if (!suggestedRetryCommand) {
     const missingRequiredOption = message.match(/required option '([^']+)' not specified/i);
-    const requiredOptionToken = missingRequiredOption?.[1]?.trim().split(/\s+/)[0]?.replace(/[,:;]+$/g, "");
+    const requiredOptionToken = missingRequiredOption?.[1]
+      ? trimTrailingPunctuationToken(firstWhitespaceSeparatedToken(missingRequiredOption[1].trim()))
+      : undefined;
     if (requiredOptionToken?.startsWith("--")) {
       const hasFlag = invocationArgv.some((token) => token.startsWith(requiredOptionToken));
       if (!hasFlag) {
