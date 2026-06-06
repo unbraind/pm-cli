@@ -47,6 +47,8 @@ export interface ListOptions {
   fields?: string;
   sort?: string;
   order?: string;
+  tree?: boolean;
+  treeDepth?: string;
   excludeTerminal?: boolean;
   [key: string]: unknown;
 }
@@ -68,6 +70,7 @@ export type ListSortOrder = (typeof LIST_SORT_ORDER_VALUES)[number];
 
 const DEFAULT_COMPACT_LIST_FIELDS = ["id", "title", "status", "type", "priority", "parent", "updated_at"] as const;
 const BRIEF_LIST_FIELDS = ["id", "status", "type", "title"] as const;
+const TREE_METADATA_FIELDS = ["tree_depth", "tree_parent", "tree_children", "tree_title"] as const;
 
 // A projection that selects any heavy collection field (or `--full`, which returns
 // items verbatim) must load the full metadata; everything else takes the light path.
@@ -220,7 +223,7 @@ function validateListProjectionFields(projection: ListProjectionConfig, runtimeM
   if (projection.mode !== "fields") {
     return;
   }
-  const allowed = new Set([...FRONT_MATTER_KEY_ORDER, "body", ...runtimeMetadataKeys]);
+  const allowed = new Set([...FRONT_MATTER_KEY_ORDER, "body", ...TREE_METADATA_FIELDS, ...runtimeMetadataKeys]);
   const unknown = projection.fields.filter((field) => !allowed.has(normalizeProjectionField(field)));
   if (unknown.length > 0) {
     throw new PmCliError(`Unknown list --fields value(s): ${unknown.join(", ")}`, EXIT_CODE.USAGE, {
@@ -272,6 +275,10 @@ function parseSortOrder(raw: string | undefined): ListSortOrder | undefined {
     throw new PmCliError(`Sort order must be one of ${LIST_SORT_ORDER_VALUES.join("|")}`, EXIT_CODE.USAGE);
   }
   return normalized as ListSortOrder;
+}
+
+function parseTreeDepth(raw: string | undefined): number | undefined {
+  return parseIntegerLimit(raw, "--tree-depth");
 }
 
 function parseAssigneeFilter(raw: string | undefined): "assigned" | "unassigned" | undefined {
@@ -351,7 +358,7 @@ function applyFilters(
     if (assigneeFilter !== undefined && item.assignee !== assigneeFilter) {
       return false;
     }
-    if (parentFilter !== undefined && item.parent !== parentFilter) return false;
+    if (parentFilter !== undefined && options.tree !== true && item.parent !== parentFilter) return false;
     if (sprintFilter !== undefined && item.sprint !== sprintFilter) return false;
     if (releaseFilter !== undefined && item.release !== releaseFilter) return false;
     if (!matchesRuntimeFilters(item as Record<string, unknown>, runtimeFieldFilters)) {
@@ -359,6 +366,76 @@ function applyFilters(
     }
     return true;
   });
+}
+
+function trimNonEmpty(value: string | undefined): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function withTreeMetadata(item: ListedItem, depth: number, childCount: number): ListedItem {
+  const itemRecord = toItemRecord(item);
+  const title = typeof itemRecord.title === "string" ? itemRecord.title : "";
+  const parent = trimNonEmpty(typeof itemRecord.parent === "string" ? itemRecord.parent : undefined) ?? null;
+  return {
+    ...item,
+    tree_depth: depth,
+    tree_parent: parent,
+    tree_children: childCount,
+    tree_title: `${"  ".repeat(depth)}${title}`,
+  } as ListedItem;
+}
+
+function orderItemsAsTree(
+  sortedItems: ListedItem[],
+  parentRoot: string | undefined,
+  maxDepth: number | undefined,
+): ListedItem[] {
+  const byId = new Map<string, ListedItem>();
+  const childrenByParent = new Map<string, ListedItem[]>();
+  for (const item of sortedItems) {
+    byId.set(item.id, item);
+    const parentId = trimNonEmpty(item.parent);
+    if (!parentId) {
+      continue;
+    }
+    const bucket = childrenByParent.get(parentId);
+    if (bucket) {
+      bucket.push(item);
+    } else {
+      childrenByParent.set(parentId, [item]);
+    }
+  }
+
+  const roots = parentRoot
+    ? [...(childrenByParent.get(parentRoot) ?? [])]
+    : sortedItems.filter((item) => {
+        const parentId = trimNonEmpty(item.parent);
+        return !parentId || !byId.has(parentId);
+      });
+  const ordered: ListedItem[] = [];
+  const visited = new Set<string>();
+  const pushNode = (node: ListedItem, depth: number): void => {
+    if (visited.has(node.id)) {
+      return;
+    }
+    visited.add(node.id);
+    const children = childrenByParent.get(node.id) ?? [];
+    ordered.push(withTreeMetadata(node, depth, children.length));
+    if (maxDepth !== undefined && depth >= maxDepth) {
+      return;
+    }
+    for (const child of children) {
+      pushNode(child, depth + 1);
+    }
+  };
+  for (const root of roots) {
+    pushNode(root, 0);
+  }
+  return ordered;
 }
 
 function compareNullableString(left: string | null, right: string | null): number {
@@ -425,26 +502,29 @@ function sortItems(
   });
 }
 
-function readListFieldValue(item: ListedItem, field: string): unknown {
+function readListFieldValue(item: ListedItem, field: string, treeMode = false): unknown {
   const normalized = normalizeProjectionField(field.trim());
   if (normalized.length === 0) {
     return null;
   }
   const itemRecord = toItemRecord(item);
+  if (treeMode && normalized === "title" && typeof itemRecord.tree_title === "string") {
+    return itemRecord.tree_title;
+  }
   if (Object.prototype.hasOwnProperty.call(itemRecord, normalized)) {
     return itemRecord[normalized] ?? null;
   }
   return null;
 }
 
-function projectListItems(items: ListedItem[], projection: ListProjectionConfig): ListedItem[] {
+function projectListItems(items: ListedItem[], projection: ListProjectionConfig, treeMode = false): ListedItem[] {
   if (projection.mode === "full") {
     return items;
   }
   return items.map((item) => {
     const projected: Record<string, unknown> = {};
     for (const field of projection.fields) {
-      projected[field] = readListFieldValue(item, field);
+      projected[field] = readListFieldValue(item, field, treeMode);
     }
     return projected as unknown as ListedItem;
   });
@@ -481,6 +561,12 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   }
   const sortField = parseSortField(options.sort);
   const sortOrder = parseSortOrder(options.order) ?? "asc";
+  const treeEnabled = options.tree === true;
+  if (!treeEnabled && options.treeDepth !== undefined) {
+    throw new PmCliError("List --tree-depth requires --tree", EXIT_CODE.USAGE);
+  }
+  const treeDepth = treeEnabled ? parseTreeDepth(options.treeDepth) : undefined;
+  const parentRoot = treeEnabled ? trimNonEmpty(options.parent) : undefined;
   if (!sortField && options.order !== undefined) {
     throw new PmCliError("List --order requires --sort", EXIT_CODE.USAGE);
   }
@@ -495,10 +581,11 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
         ? resolvedStatus[0]
         : resolvedStatus;
   const sorted = sortItems(filtered, sortField, sortOrder, statusRegistry);
+  const ordered = treeEnabled ? orderItemsAsTree(sorted, parentRoot, treeDepth) : sorted;
   const limit = parseIntegerLimit(options.limit);
   const offset = parseOffset(options.offset) ?? 0;
-  const limited = limit === undefined ? sorted.slice(offset) : sorted.slice(offset, offset + limit);
-  const projected = projectListItems(limited, projection);
+  const limited = limit === undefined ? ordered.slice(offset) : ordered.slice(offset, offset + limit);
+  const projected = projectListItems(limited, projection, treeEnabled);
   const now = nowIso();
   const warnings = [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right));
   const projectionFields = projection.mode === "full" ? null : [...projection.fields];
@@ -527,6 +614,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       include_body: options.includeBody ?? null,
       compact: options.compact ?? null,
       fields: options.fields ?? null,
+      ...(treeEnabled ? { tree: true, tree_depth: treeDepth ?? null } : {}),
       sort: sortField ?? null,
       order: sortField ? sortOrder : null,
       runtime_filters: runtimeFieldFilters,

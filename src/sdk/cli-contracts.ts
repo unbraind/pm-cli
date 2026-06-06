@@ -205,6 +205,9 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--fields", list: true },
   { flag: "--sort" },
   { flag: "--order" },
+  { flag: "--tree" },
+  { flag: "--tree-depth" },
+  { flag: "--tree_depth" },
   { flag: "--include-body" },
   { flag: "--stream" },
 ];
@@ -212,6 +215,8 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
 export const AGGREGATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--group-by", list: true },
   { flag: "--count" },
+  { flag: "--sum" },
+  { flag: "--avg" },
   { flag: "--include-unparented" },
   { flag: "--include_unparented" },
   { flag: "--status" },
@@ -848,6 +853,12 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--clear-type-options" },
 ];
 
+export const COPY_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--title" },
+  { flag: "--author" },
+  { flag: "--message" },
+];
+
 export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { short: "-t", flag: "--title" },
   { short: "-d", flag: "--description" },
@@ -1148,6 +1159,9 @@ export const GET_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--depth" },
   { flag: "--full" },
   { flag: "--fields", list: true },
+  { flag: "--tree" },
+  { flag: "--tree-depth" },
+  { flag: "--tree_depth" },
 ];
 
 export const GUIDE_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -1313,6 +1327,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(UPGRADE_FLAG_CONTRACTS);
     case "create":
       return withSubcommandGlobalFlags(CREATE_FLAG_CONTRACTS);
+    case "copy":
+      return withSubcommandGlobalFlags(COPY_FLAG_CONTRACTS);
     case "aggregate":
       return withSubcommandGlobalFlags(AGGREGATE_FLAG_CONTRACTS);
     case "calendar":
@@ -1610,6 +1626,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     required: ["title", "description", "type", "status", "priority", "message"],
     optional: CREATE_CONTRACT_PARAMETER_KEYS,
   },
+  copy: { required: ["id"], optional: ["title", "author", "message"] },
   list: { optional: LIST_CONTRACT_PARAMETER_KEYS },
   "list-all": { optional: LIST_CONTRACT_PARAMETER_KEYS },
   "list-draft": { optional: LIST_CONTRACT_PARAMETER_KEYS },
@@ -1623,7 +1640,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   guide: { optional: ["format", "depth"] },
   context: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
   ctx: { optional: CONTEXT_CONTRACT_PARAMETER_KEYS },
-  get: { required: ["id"], optional: ["depth", "full", "fields"] },
+  get: { required: ["id"], optional: ["depth", "full", "fields", "tree", "treeDepth"] },
   search: {
     optional: SEARCH_CONTRACT_PARAMETER_KEYS,
     anyOfRequired: [["query"], ["keywords"]],
@@ -1713,7 +1730,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   update: { required: ["id"], optional: UPDATE_CONTRACT_PARAMETER_KEYS },
   "update-many": { optional: UPDATE_MANY_CONTRACT_PARAMETER_KEYS },
   normalize: { optional: NORMALIZE_CONTRACT_PARAMETER_KEYS },
-  close: { required: ["id", "text"], optional: ["validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  close: { required: ["id"], optional: ["text", "validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   "close-many": { optional: CLOSE_MANY_CONTRACT_PARAMETER_KEYS },
   delete: { required: ["id"], optional: ["dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
@@ -1877,7 +1894,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   release: { required: ["id"], optional: ["allowAuditRelease", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   "start-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   "pause-task": { required: ["id"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
-  "close-task": { required: ["id", "text"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
+  "close-task": { required: ["id"], optional: ["text", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
 };
 
 export const PM_TOOL_ACTION_PARAMETER_CONTRACTS: Readonly<Record<PmToolAction, PmActionSchemaContract>> =

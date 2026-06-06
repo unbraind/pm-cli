@@ -282,6 +282,7 @@ const governanceSettings = vOptional(
     ownership_enforcement: vOptional(vLiteral("none", "warn", "strict")),
     create_mode_default: vOptional(vLiteral("progressive", "strict")),
     close_validation_default: vOptional(vLiteral("off", "warn", "strict")),
+    require_close_reason: vOptional(vBoolean),
     parent_reference: vOptional(vLiteral("warn", "strict_error")),
     metadata_profile: vOptional(vLiteral("core", "strict", "custom")),
     force_required_for_stale_lock: vOptional(vBoolean),

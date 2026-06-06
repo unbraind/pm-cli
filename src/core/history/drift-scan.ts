@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { getHistoryPath } from "../store/paths.js";
 import { writeFileAtomic } from "../fs/fs-utils.js";
@@ -14,13 +15,14 @@ export interface DriftScanResult {
   driftedItems: string[];
 }
 
-const DRIFT_CACHE_VERSION = 1;
+const DRIFT_CACHE_VERSION = 2;
 const DRIFT_CACHE_FILENAME = "history-drift-cache.json";
 
 interface DriftCacheEntry {
   mtime_ms: number;
   ctime_ms: number;
   size: number;
+  content_hash: string;
   latest_after_hash: string;
   chain_ok: boolean;
 }
@@ -54,6 +56,16 @@ function isErrno(error: unknown, code: string): boolean {
 interface StreamVerification {
   latestAfterHash: string;
   chainOk: boolean;
+  contentHash: string;
+}
+
+function hashContent(raw: string): string {
+  return createHash("sha256").update(raw).digest("hex");
+}
+
+async function readHistoryContentHash(historyPath: string): Promise<string> {
+  const raw = await fs.readFile(historyPath, "utf8");
+  return hashContent(raw);
 }
 
 /**
@@ -62,6 +74,7 @@ interface StreamVerification {
  */
 async function verifyHistoryStream(historyPath: string): Promise<StreamVerification | null> {
   const raw = await fs.readFile(historyPath, "utf8");
+  const contentHash = hashContent(raw);
   if (raw.trim().length === 0) {
     return null;
   }
@@ -84,7 +97,11 @@ async function verifyHistoryStream(historyPath: string): Promise<StreamVerificat
     return null;
   }
   /* c8 ignore stop */
-  return { latestAfterHash, chainOk: verifyHistoryChain(entries).ok };
+  return {
+    latestAfterHash,
+    chainOk: verifyHistoryChain(entries).ok,
+    contentHash,
+  };
 }
 
 /**
@@ -93,10 +110,9 @@ async function verifyHistoryStream(historyPath: string): Promise<StreamVerificat
  *
  * Full chain re-verification of a 17MB+ history tree is the dominant cost of
  * `pm health`. We cache the per-stream verification keyed by the history file's
- * mtime/size: an unchanged file has an identical chain and latest stored hash, so
- * we skip re-reading and re-hashing it. Item-side changes are still caught every
- * run because the current document hash is recomputed and compared to the cached
- * `latest_after_hash`.
+ * mtime/ctime/size + content hash: metadata-stable replacements (same stat tuple)
+ * can still happen, so each metadata hit recomputes a content hash guard before
+ * trusting the cached chain/hash verification.
  */
 export async function scanHistoryDrift(
   pmRoot: string,
@@ -127,24 +143,66 @@ export async function scanHistoryDrift(
       continue;
     }
 
+    const loadStreamVerification = async (): Promise<StreamVerification | null | "unreadable"> => {
+      try {
+        return await verifyHistoryStream(historyPath);
+      } catch {
+        return "unreadable";
+      }
+    };
+
+    const loadFreshVerification = async (): Promise<StreamVerification | null> => {
+      const loaded = await loadStreamVerification();
+      if (loaded === "unreadable") {
+        unreadableStreams.push(item.id);
+        return null;
+      }
+      if (!loaded) {
+        missingStreams.push(item.id);
+        return null;
+      }
+      return loaded;
+    };
+
     const cached = previousEntries[item.id];
     let verification: StreamVerification;
-    if (cached && cached.mtime_ms === stat.mtimeMs && cached.ctime_ms === stat.ctimeMs && cached.size === stat.size) {
-      verification = { latestAfterHash: cached.latest_after_hash, chainOk: cached.chain_ok };
-    } else {
-      cacheDirty = true;
-      let result: StreamVerification | null;
+    const metadataMatchesCache =
+      cached !== undefined &&
+      cached.mtime_ms === stat.mtimeMs &&
+      cached.ctime_ms === stat.ctimeMs &&
+      cached.size === stat.size;
+    const cachedContentHash =
+      typeof cached?.content_hash === "string" && cached.content_hash.length > 0 ? cached.content_hash : undefined;
+    const canUseCache = metadataMatchesCache && cachedContentHash !== undefined;
+    if (canUseCache && cached) {
+      let currentContentHash: string;
       try {
-        result = await verifyHistoryStream(historyPath);
+        currentContentHash = await readHistoryContentHash(historyPath);
       } catch {
         unreadableStreams.push(item.id);
         continue;
       }
-      if (!result) {
-        missingStreams.push(item.id);
+      if (currentContentHash === cachedContentHash) {
+        verification = {
+          latestAfterHash: cached.latest_after_hash,
+          chainOk: cached.chain_ok,
+          contentHash: currentContentHash,
+        };
+      } else {
+        cacheDirty = true;
+        const refreshed = await loadFreshVerification();
+        if (!refreshed) {
+          continue;
+        }
+        verification = refreshed;
+      }
+    } else {
+      cacheDirty = true;
+      const refreshed = await loadFreshVerification();
+      if (!refreshed) {
         continue;
       }
-      verification = result;
+      verification = refreshed;
     }
 
     if (!verification.chainOk) {
@@ -154,6 +212,7 @@ export async function scanHistoryDrift(
       mtime_ms: stat.mtimeMs,
       ctime_ms: stat.ctimeMs,
       size: stat.size,
+      content_hash: verification.contentHash,
       latest_after_hash: verification.latestAfterHash,
       chain_ok: verification.chainOk,
     };

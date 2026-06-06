@@ -37,6 +37,7 @@ import {
   runContracts,
   runContext,
   runCreate,
+  runCopy,
   runConfig,
   runDelete,
   runDeps,
@@ -244,6 +245,20 @@ const TOOLS: ToolDefinition[] = [
     ),
   },
   {
+    name: "pm_copy",
+    description:
+      "Copy an existing pm item into a new id while resetting lifecycle fields. " +
+      "Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields array.",
+    inputSchema: objectSchema(
+      {
+        id: idSchema,
+        fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
+        options: { type: "object", description: "Copy options such as title override, author, and message." },
+      },
+      ["id"],
+    ),
+  },
+  {
     name: "pm_update",
     description:
       "Update pm item metadata/body/dependencies/log seeds natively. " +
@@ -270,16 +285,16 @@ const TOOLS: ToolDefinition[] = [
   {
     name: "pm_close",
     description:
-      "Close a pm item with a reason and optional close validation. " +
+      "Close a pm item with optional close reason and optional close validation (reason requirement follows governance settings). " +
       "Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields array.",
     inputSchema: objectSchema(
       {
         id: idSchema,
-        reason: { type: "string" },
+        reason: { type: "string", description: "Close reason text when provided or required by governance settings." },
         fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
         options: { type: "object" },
       },
-      ["id", "reason"],
+      ["id"],
     ),
   },
   {
@@ -804,6 +819,17 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       const { changedFields, runnerOptions } = withMutationCompaction(args, options);
       return projectMutationResult(await runCreate(runnerOptions as never, global), { changedFields });
     }
+    case "copy": {
+      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
+      return projectMutationResult(
+        await runCopy(
+          id ?? readRequiredString(runnerOptions, "id"),
+          runnerOptions as never,
+          global,
+        ),
+        { changedFields },
+      );
+    }
     case "update": {
       const { changedFields, runnerOptions } = withMutationCompaction(args, options);
       return projectMutationResult(
@@ -820,7 +846,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return projectMutationResult(
         await runClose(
           id ?? readRequiredString(runnerOptions, "id"),
-          readRequiredString(args, "reason"),
+          readString(args, "reason"),
           runnerOptions as never,
           global,
         ),
@@ -1053,6 +1079,7 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_list: (args) => runAction({ ...args, action: "list" }),
   pm_get: (args) => runAction({ ...args, action: "get" }),
   pm_create: (args) => runAction({ ...args, action: "create" }),
+  pm_copy: (args) => runAction({ ...args, action: "copy" }),
   pm_update: (args) => runAction({ ...args, action: "update" }),
   pm_claim: (args) => runAction({ ...args, action: "claim" }),
   pm_release: (args) => runAction({ ...args, action: "release" }),
@@ -1113,7 +1140,7 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
       instructions:
         "You have access to native pm CLI tools for git-based project management. " +
         "Use pm_context or pm_search before creating new work. " +
-        "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_update, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_test, pm_validate, pm_health, pm_contracts, pm_plan) over pm_run when they cover the operation. " +
+        "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_copy, pm_update, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_test, pm_validate, pm_health, pm_contracts, pm_plan) over pm_run when they cover the operation. " +
         "Use pm_plan for agent harness Plan workflows: it provides Codex/Claude/Cursor-style planning with durable steps, dependencies, decisions, discoveries, validation, and materialization. " +
         "Use pm_run with an explicit action for package-owned operations (calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume), plus activity, aggregate, history, stats, append, test-all, and gc. " +
         "Use history-redact for audited history-stream redaction workflows, and history-repair to re-anchor a drifted history chain so pm health/validate report ok. " +

@@ -510,13 +510,13 @@ export function registerOperationCommands(program: Command): void {
   program
     .command("close-task")
     .argument("<id>", "Item id")
-    .argument("<reason>", "Close reason text")
+    .argument("[reason]", "Close reason text")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--validate-close <value>", "Close-time validation mode: off|warn|strict")
     .option("--force", "Force ownership or terminal override when required")
-    .description("Lifecycle alias: close an item with reason and release assignment metadata.")
-    .action(async (id: string, reason: string, options: Record<string, unknown>, command) => {
+    .description("Lifecycle alias: close an item and release assignment metadata.")
+    .action(async (id: string, reason: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const force = Boolean(options.force);

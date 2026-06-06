@@ -9,6 +9,7 @@ import { PmCliError } from "../../core/shared/errors.js";
 import { buildItemNotFoundError, locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { parseIntegerLimit } from "../shared-parsers.js";
 import type { ItemFrontMatter, LinkedDoc, LinkedFile, LinkedTest } from "../../types/index.js";
 import { readHistoryEntries } from "./history.js";
 
@@ -41,6 +42,13 @@ export interface GetResult {
     docs: LinkedDoc[];
   };
   claim_state?: ClaimStateContext;
+  tree?: {
+    root_id: string;
+    root_title: string | null;
+    depth_limit: number | null;
+    count: number;
+    items: Record<string, unknown>[];
+  };
 }
 
 const GET_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
@@ -51,6 +59,8 @@ export interface GetOptions {
   depth?: string;
   fields?: string;
   full?: boolean;
+  tree?: boolean;
+  treeDepth?: string;
 }
 
 function toClaimHistoryContext(
@@ -183,7 +193,11 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
   if (options.full && (options.fields !== undefined || options.depth !== undefined)) {
     throw new PmCliError("Get projection options are mutually exclusive; remove the extra projection flag and retry.", EXIT_CODE.USAGE);
   }
+  if (options.tree !== true && options.treeDepth !== undefined) {
+    throw new PmCliError("Get --tree-depth requires --tree", EXIT_CODE.USAGE);
+  }
   const depth = options.full ? "deep" : parseGetDepth(options.depth);
+  const treeDepth = options.tree === true ? parseIntegerLimit(options.treeDepth, "--tree-depth") : undefined;
   const fields = parseGetFields(options.fields);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -239,6 +253,26 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
   }
   if (claimState) {
     result.claim_state = claimState;
+  }
+  if (options.tree === true) {
+    const { runList } = await import("./list.js");
+    const subtree = await runList(
+      undefined,
+      {
+        parent: located.id,
+        tree: true,
+        treeDepth: treeDepth === undefined ? undefined : String(treeDepth),
+        full: true,
+      },
+      global,
+    );
+    result.tree = {
+      root_id: located.id,
+      root_title: loaded.document.metadata.title,
+      depth_limit: treeDepth ?? null,
+      count: subtree.count,
+      items: subtree.items.map((entry) => toItemRecord(entry)),
+    };
   }
   return result;
 }

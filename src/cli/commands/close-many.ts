@@ -148,11 +148,14 @@ function activeListOptions(list: ListOptions | undefined): ListOptions {
   return active;
 }
 
-function ensureReason(reason: unknown): string {
+function resolveReason(reason: unknown, required: boolean): string | undefined {
   const trimmed = String(reason ?? "").trim();
-  if (trimmed.length === 0) {
+  if (trimmed.length > 0) {
+    return trimmed;
+  }
+  if (required) {
     throw new PmCliError(
-      "pm close-many requires a shared close reason via --reason. Close mutations are auditable.",
+      "pm close-many requires a shared close reason via --reason because governance.require_close_reason is enabled.",
       EXIT_CODE.USAGE,
       {
         code: "missing_required_argument",
@@ -163,7 +166,7 @@ function ensureReason(reason: unknown): string {
       },
     );
   }
-  return trimmed;
+  return undefined;
 }
 
 // Build a parent -> non-terminal child id map in a single light scan so each
@@ -292,7 +295,7 @@ export async function runCloseMany(options: CloseManyCommandOptions, global: Glo
     );
   }
 
-  const reason = ensureReason(options.reason);
+  const reason = resolveReason(options.reason, settings.governance.require_close_reason);
   const validateCloseMode = options.validateClose;
   const force = options.force === true;
 
@@ -329,7 +332,7 @@ export async function runCloseMany(options: CloseManyCommandOptions, global: Glo
       mode: "dry_run",
       matched_count: matched.length,
       dry_run: true,
-      reason,
+      ...(reason !== undefined ? { reason } : {}),
       filters: listed.filters,
       ...(validateCloseMode ? { validate_close: validateCloseMode } : {}),
       item_plans: planRows,
@@ -352,7 +355,7 @@ export async function runCloseMany(options: CloseManyCommandOptions, global: Glo
       id: checkpointId,
       created_at: nowValue,
       author: resolveAuthor(options.author, "unknown"),
-      reason,
+      ...(reason !== undefined ? { reason } : {}),
       filters: listed.filters,
       items: checkpointItems,
     });
@@ -399,7 +402,7 @@ export async function runCloseMany(options: CloseManyCommandOptions, global: Glo
     mode: "apply",
     matched_count: matched.length,
     dry_run: false,
-    reason,
+    ...(reason !== undefined ? { reason } : {}),
     filters: listed.filters,
     ...(validateCloseMode ? { validate_close: validateCloseMode } : {}),
     ...(checkpointInfo ? { checkpoint: checkpointInfo } : {}),

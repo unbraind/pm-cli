@@ -404,6 +404,7 @@ describe("core/store/settings", () => {
       parent_reference: "warn",
       metadata_profile: "core",
       force_required_for_stale_lock: false,
+      require_close_reason: true,
     });
     expect(resolveGovernanceKnobs({ governance: { preset: "default" } })).toEqual({
       preset: "default",
@@ -413,6 +414,7 @@ describe("core/store/settings", () => {
       parent_reference: "warn",
       metadata_profile: "core",
       force_required_for_stale_lock: true,
+      require_close_reason: true,
     });
     expect(resolveGovernanceKnobs({ governance: { preset: "strict" } })).toEqual({
       preset: "strict",
@@ -422,6 +424,7 @@ describe("core/store/settings", () => {
       parent_reference: "strict_error",
       metadata_profile: "strict",
       force_required_for_stale_lock: true,
+      require_close_reason: true,
     });
     expect(
       resolveGovernanceKnobs({
@@ -439,6 +442,15 @@ describe("core/store/settings", () => {
       parent_reference: "warn",
       metadata_profile: "core",
       force_required_for_stale_lock: false,
+      require_close_reason: true,
     });
+    expect(
+      resolveGovernanceKnobs({
+        governance: {
+          preset: "strict",
+          require_close_reason: false,
+        },
+      }).require_close_reason,
+    ).toBe(false);
   });
 });

@@ -60,7 +60,7 @@ describe("runConfig", () => {
 
       const result = await runConfig("project", "list", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
       expect(result.changed).toBe(false);
-      expect(result.count).toBe(23);
+      expect(result.count).toBe(24);
       expect(result.keys?.map((entry) => entry.key)).toEqual([
         "definition_of_done",
         "item_format",
@@ -77,6 +77,7 @@ describe("runConfig", () => {
         "governance_ownership_enforcement",
         "governance_create_mode_default",
         "governance_close_validation_default",
+        "governance_require_close_reason",
         "governance_create_default_type",
         "governance_workflow_enforcement",
         "governance_parent_reference_policy",
@@ -145,6 +146,7 @@ describe("runConfig", () => {
         governance_create_mode_default: "strict",
         governance_close_validation_default: "strict",
         governance_create_default_type: "",
+        governance_require_close_reason: "enabled",
         governance_workflow_enforcement: "off",
         governance_parent_reference_policy: "strict_error",
         governance_metadata_validation_profile: "strict",

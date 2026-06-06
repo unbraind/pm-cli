@@ -216,6 +216,10 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   force: { type: "boolean" },
   run: { type: "boolean" },
   count: { type: "boolean" },
+  sum: { type: "string" },
+  avg: { type: "string" },
+  tree: { type: "boolean" },
+  treeDepth: { anyOf: [{ type: "string" }, { type: "number" }] },
   includeUnparented: { type: "boolean" },
   gcScope: {
     type: "array",
@@ -898,6 +902,21 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   count: {
     description: "Enable grouped count output for aggregate action.",
+  },
+  sum: {
+    description: "Numeric field to sum per aggregate group (count and null_count are still returned).",
+    examples: ["estimated_minutes", "priority"],
+  },
+  avg: {
+    description: "Numeric field to average per aggregate group (count and null_count are still returned).",
+    examples: ["estimated_minutes", "priority"],
+  },
+  tree: {
+    description: "When true for list/get actions, render recursive parent/child tree ordering.",
+  },
+  treeDepth: {
+    description: "Maximum recursion depth for tree output (0 keeps root rows only).",
+    examples: [0, 1, "2"],
   },
   includeUnparented: {
     description: "Include unparented rows when aggregate grouping includes parent.",

@@ -57,6 +57,7 @@ type CanonicalConfigKey =
   | "governance_ownership_enforcement"
   | "governance_create_mode_default"
   | "governance_close_validation_default"
+  | "governance_require_close_reason"
   | "governance_create_default_type"
   | "governance_workflow_enforcement"
   | "governance_parent_reference_policy"
@@ -86,11 +87,13 @@ const POLICY_KEYS: ReadonlySet<CanonicalConfigKey> = new Set<CanonicalConfigKey>
   "governance_ownership_enforcement",
   "governance_create_mode_default",
   "governance_close_validation_default",
+  "governance_require_close_reason",
   "governance_create_default_type",
   "governance_workflow_enforcement",
   "governance_parent_reference_policy",
   "governance_metadata_validation_profile",
   "governance_force_required_for_stale_lock",
+  "governance_require_close_reason",
   "test_result_tracking",
   "telemetry_tracking",
 ]);

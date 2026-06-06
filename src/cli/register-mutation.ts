@@ -181,6 +181,33 @@ export function registerMutationCommands(program: Command): void {
       }
     });
 
+  program
+    .command("copy")
+    .argument("<id>", "Source item id")
+    .option("--title <value>", "Optional title override for the copied item")
+    .option("--author <value>", "Mutation author")
+    .option("--message <value>", "History message")
+    .description("Copy an item into a new item id while resetting lifecycle fields.")
+    .action(async (id: string, options: Record<string, unknown>, command) => {
+      const globalOptions = getGlobalOptions(command);
+      const startedAt = Date.now();
+      const { runCopy } = await import("./commands/copy.js");
+      const result = await runCopy(
+        id,
+        {
+          title: typeof options.title === "string" ? options.title : undefined,
+          author: typeof options.author === "string" ? options.author : undefined,
+          message: typeof options.message === "string" ? options.message : undefined,
+        },
+        globalOptions,
+      );
+      await invalidateSearchCachesForMutation(globalOptions, result);
+      printResult(result, globalOptions);
+      if (globalOptions.profile) {
+        printError(`profile:command=copy took_ms=${Date.now() - startedAt}`);
+      }
+    });
+
   const updateCommand = program
     .command("update")
     .argument("<id>", "Item id")
@@ -408,7 +435,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--actual-result <value>", "Set the actual-result note inline (closure validation field)")
     .option("--actual <value>", "Short alias for --actual-result")
     .option("--force", "Force ownership override")
-    .description("Close an item with a required reason.");
+    .description("Close an item. Close reason requirement follows governance.require_close_reason.");
   // pm-fl0c #11 (2026-05-28): expose snake_case aliases alongside the canonical
   // kebab-case so agents using --expected_result/--actual_result do not get an
   // Unknown option error; the rendered help stays clean (aliases hidden).
@@ -424,23 +451,6 @@ export function registerMutationCommands(program: Command): void {
         (typeof options.closeReason === "string" && options.closeReason.trim().length > 0 && options.closeReason) ||
         undefined;
       const resolvedText = typeof text === "string" && text.length > 0 ? text : reasonFromOption;
-      if (typeof resolvedText !== "string" || resolvedText.length === 0) {
-        throw new PmCliError(
-          "pm close requires a close reason as the second positional argument or via --reason.",
-          EXIT_CODE.USAGE,
-          {
-            code: "missing_required_argument",
-            why: "Close mutations are auditable; a reason is mandatory for the history record.",
-            examples: [
-              `pm close ${id} "All acceptance criteria met"`,
-              `pm close ${id} --reason "Verified by integration test"`,
-            ],
-            nextSteps: [
-              "Re-run with the close reason as the second positional argument, or pass --reason \"<text>\".",
-            ],
-          },
-        );
-      }
       const pickInlineString = (...candidates: unknown[]): string | undefined => {
         for (const candidate of candidates) {
           if (typeof candidate === "string") {
@@ -496,7 +506,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--ids <value>", "Restrict to an explicit comma-separated ID allowlist (intersected with other filters)")
     .option("--limit <n>", "Limit matched item count before apply/preview")
     .option("--offset <n>", "Skip first n matched rows before apply/preview")
-    .option("--reason <value>", "Shared close reason applied to every matched item (required for dry-run/apply)")
+    .option("--reason <value>", "Shared close reason applied to matched items (required when governance.require_close_reason is enabled)")
     .option("--resolution <value>", "Shared closure resolution applied to every matched item (closure-validation field)")
     .option("--expected-result <value>", "Shared expected-result note (closure-validation field)")
     .option("--expected <value>", "Short alias for --expected-result")

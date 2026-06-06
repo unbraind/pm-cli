@@ -240,6 +240,62 @@ describe("runGet and runAppend", () => {
     });
   });
 
+  it("validates tree-depth usage and returns descendant subtree payloads", async () => {
+    await withTempPmPath(async (context) => {
+      const rootId = createTask(context, {
+        title: "get-tree-root",
+        body: "root body",
+      });
+      const childId = createTask(context, {
+        title: "get-tree-child",
+        body: "child body",
+      });
+      const grandchildId = createTask(context, {
+        title: "get-tree-grandchild",
+        body: "grandchild body",
+      });
+
+      const childLink = context.runCli(
+        ["update", "--json", childId, "--parent", rootId, "--author", "test-author", "--message", "link child to root"],
+        { expectJson: true },
+      );
+      expect(childLink.code).toBe(0);
+      const grandchildLink = context.runCli(
+        [
+          "update",
+          "--json",
+          grandchildId,
+          "--parent",
+          childId,
+          "--author",
+          "test-author",
+          "--message",
+          "link grandchild to child",
+        ],
+        { expectJson: true },
+      );
+      expect(grandchildLink.code).toBe(0);
+
+      await expect(runGet(rootId, { path: context.pmPath }, { treeDepth: "1" })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+
+      const treeResult = await runGet(rootId, { path: context.pmPath }, { tree: true, treeDepth: "1" });
+      expect(treeResult.tree).toBeDefined();
+      expect(treeResult.tree?.root_id).toBe(rootId);
+      expect(treeResult.tree?.depth_limit).toBe(1);
+      expect(treeResult.tree?.count).toBe(2);
+      const ids = (treeResult.tree?.items ?? []).map((entry) => String(entry.id));
+      expect(ids).toEqual([childId, grandchildId]);
+      expect((treeResult.tree?.items[0] as { tree_depth?: number }).tree_depth).toBe(0);
+      expect((treeResult.tree?.items[1] as { tree_depth?: number }).tree_depth).toBe(1);
+
+      const unboundedTree = await runGet(rootId, { path: context.pmPath }, { tree: true });
+      expect(unboundedTree.tree?.depth_limit).toBeNull();
+      expect(unboundedTree.tree?.count).toBe(2);
+    });
+  });
+
   it("allows configured runtime metadata fields in get projections", async () => {
     await withTempPmPath(async (context) => {
       const settings = await readSettings(context.pmPath);

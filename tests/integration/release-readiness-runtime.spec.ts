@@ -921,7 +921,9 @@ describe("release readiness runtime coverage", () => {
       const closeHelp = context.runCli(["close", "--help"]);
       expect(closeHelp.code).toBe(0);
       expect(closeHelp.stdout).toContain("Usage: pm close [options] <id> [text]");
-      expect(closeHelp.stdout).toContain("Close an item with a required reason.");
+      expect(closeHelp.stdout).toContain(
+        "Close an item. Close reason requirement follows governance.require_close_reason.",
+      );
       expect(closeHelp.stdout).toContain("Close reason text (alias: --reason)");
       for (const flag of REQUIRED_CLOSE_FLAGS) {
         expect(closeHelp.stdout).toContain(flag);
