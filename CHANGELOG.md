@@ -20,6 +20,10 @@
 - Drift-scan cache can false-hit on mtime-preserving file copies ([pm-up22](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-up22.toon))
 - Search relevance evaluation harness \(golden queries, nDCG\) for regression detection ([pm-22x2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-22x2.toon))
 
+### Security
+
+- Harden afterCommand coverage and GitHub code-scanning visibility ([pm-izid](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-izid.toon))
+
 ### Other
 
 - Publish pm-github starter package as a community reference \(credential-requiring pattern\) ([pm-zw0n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-zw0n.toon))

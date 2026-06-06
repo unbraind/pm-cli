@@ -2,20 +2,20 @@ id: pm-izid
 title: Harden afterCommand coverage and GitHub code-scanning visibility
 description: "Continue open epics with one scoped delivery: harden afterCommand affected-item runtime coverage and close the GitHub code-scanning reporting gap so gh-based security triage has complete signals."
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[4]: "area:ci","area:extensions","area:security",pm-cli
 created_at: "2026-06-06T20:41:22.500Z"
-updated_at: "2026-06-06T21:49:10.010Z"
-assignee: codex-open-cycle
+updated_at: "2026-06-06T22:10:43.650Z"
 author: codex-open-cycle
 parent: pm-ugqx
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-u9d0,related,"2026-06-06T20:41:22.500Z",null,null
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-06-06T20:41:38.132Z",unknown,"Execution kickoff: continuing active open-item work under pm-ugqx (linked pm-u9d0) with scoped implementation for afterCommand coverage hardening plus GitHub code-scanning report visibility, followed by full verification, temp-dir manual smoke, PR loop, and merge."
   "2026-06-06T21:26:52.147Z",unknown,"Verification evidence (continuation cycle):\n- Local gates passed: pnpm build, pnpm typecheck, node scripts/run-tests.mjs coverage => 2528 tests, 100% statements/branches/functions/lines.\n- Focused regression suite passed: node scripts/run-tests.mjs test -- tests/unit/extensions-runtime.spec.ts tests/integration/extension-hooks.integration.spec.ts tests/unit/sdk-index.spec.ts (48 tests).\n- Security scan passed: pnpm security:scan => no credential-like secrets detected.\n- Vulnerability scan passed with timeout override: PNPM_FETCH_TIMEOUT=600000 pnpm audit --json => 0 vulnerabilities (info/low/moderate/high/critical all zero).\n- Dependency updates: PNPM_FETCH_TIMEOUT=600000 pnpm outdated --format json => only commander 14.0.3 -> latest 15.0.0; still intentionally pinned to 14.x because project engine floor is Node >=20 while commander 15 requires newer Node runtime.\n- GitHub triage via gh: open issues [], open PRs [], open dependabot alerts [], open secret-scanning alerts [].\n- Code-scanning endpoint currently returns 404 no analysis found; remediation delivered by adding .github/workflows/codeql.yml so analysis uploads once the branch/PR workflow runs.\n- Sentry/telemetry gate passed: node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 0 --max-high 0 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0 => ok true, critical 0, high 0, telemetry finish_error_rate_pct 1.89, missing_error_code_rows 0.\n- Manual temp-dir smoke passed (fresh workspace): init/create/update/comments/list/contracts/health/validate/close/list-closed all succeeded for item pm-r1kj. Temp path: /tmp/tmp.O7PQ3KcCps.\n- Changelog contract verified with package-owned generator check path: node dist/cli.js changelog generate --output CHANGELOG.md --title \\\"Changelog\\\" --mode replace --all-release-tags --status closed --item-url-base https://github.com/unbraind/pm-cli/blob/main/.agents/pm --check => unchanged."
   "2026-06-06T21:49:05.632Z",unknown,"CodeQL follow-up evidence after merge:\n- After main-branch CodeQL completed, `gh api repos/unbraind/pm-cli/code-scanning/alerts?state=open&per_page=100` returned 10 open alerts (7 polynomial-redos, 1 biased cryptographic random, 2 bad-code-sanitization in test harness code).\n- Implemented targeted remediations instead of suppressing queries: unbiased ID token generation (`crypto.randomInt`), linear-time slug/tail parsers replacing flagged regex hotspots, safer date-space parsing, bounded trailing-token cleanup, and generated test extension source cleanup for hook logging strings.\n- Updated deterministic ID tests to mock `crypto.randomInt` and verified focused suites plus full coverage gate still pass at 100%.\n- Next ship step: open remediation PR and verify CodeQL alert count drops to zero on the PR branch before re-merge."
+  "2026-06-06T22:10:38.926Z",unknown,"Ship-loop completion evidence:\n- PR #129 (afterCommand coverage + CodeQL workflow) merged to main: https://github.com/unbraind/pm-cli/pull/129\n- PR #130 (CodeQL alert remediation follow-up) merged to main: https://github.com/unbraind/pm-cli/pull/130\n- Both PR CI suites reached green (CI + CodeQL + Docs where applicable) and post-merge push workflows on main completed successfully.\n- Code-scanning availability gap is closed: `gh api repos/unbraind/pm-cli/code-scanning/alerts?state=open&per_page=100` now returns [] after final merge.\n- Final security/telemetry gates: PNPM_FETCH_TIMEOUT=600000 pnpm audit --json => 0 vulnerabilities; sentry-telemetry-gate => ok true (critical 0, high 0, telemetry error rate 1.9%, missing error-code rows 0).\n- AI-review trigger loop executed after each pushed commit (`@codex review`, `/gemini review`, `@gemini-code-assist review`). External bot quotas/connectors reported availability warnings but no actionable code findings on the final merged commits.\n- Current GitHub snapshot after merge: open PRs [], dependabot alerts [], secret-scanning alerts [], code-scanning alerts []; open issues now include #131 (agent onboarding npx scoped package invocation follow-up) created during this cycle."
 files[14]{path,scope,note}:
   .github/workflows/codeql.yml,project,Enable GitHub CodeQL analysis for code-scanning visibility
   docs/TESTING.md,project,Document GitHub security signal checks and code-scanning availability note
@@ -42,4 +42,5 @@ tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   PNPM_FETCH_TIMEOUT=600000 pnpm outdated --format json,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Dependency update report
 docs[1]{path,scope,note}:
   docs/TESTING.md,project,Added reproducible gh security triage commands plus code-scanning 404 bootstrap note
+close_reason: "Merged PRs #129 and #130 delivered afterCommand/runtime coverage hardening, CodeQL workflow enablement, CodeQL alert remediation to zero open alerts, full validation evidence, and final green CI on main."
 body: ""
