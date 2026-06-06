@@ -110,6 +110,7 @@ const CORE_COMMANDS = [
   "deps",
   "test",
   "test-all",
+  "telemetry",
   "stats",
   "health",
   "validate",
@@ -1803,6 +1804,9 @@ describe("release readiness runtime coverage", () => {
       "src/cli/commands/metadata-normalizers.ts",
       "src/cli/commands/normalize.ts",
       "src/cli/commands/plan.ts",
+      // Command-module behavior is validated by dedicated unit coverage in
+      // tests/unit/commands/telemetry-command.spec.ts.
+      "src/cli/commands/telemetry.ts",
       "src/cli/commands/templates.ts",
       "src/cli/commands/test-runs.ts",
       "src/cli/commands/test/linked-command-detection.ts",

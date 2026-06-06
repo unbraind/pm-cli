@@ -205,6 +205,16 @@ pm contracts --command create --flags-only --json
 pm help create --json
 ```
 
+## Telemetry Schema Negotiation
+
+Telemetry preserves wire compatibility through an explicit client/server negotiation split:
+
+- Event payloads keep `event.schema_version` as the event-document schema (currently v1).
+- Queue envelopes include `client_schema_version` so client/runtime evolution can be tracked independently from event payload versioning.
+- `pm health --check-telemetry` probes `/healthz` and records any advertised max-version header for observability/debugging.
+
+This keeps v1 behavior stable while providing a forward path for future telemetry schema upgrades.
+
 ## Output Pipeline
 
 Core output formats:

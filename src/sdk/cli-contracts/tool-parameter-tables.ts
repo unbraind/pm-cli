@@ -477,8 +477,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     examples: ["Task", "Feature"],
   },
   subcommand: {
-    description: "Subcommand for the schema action.",
-    examples: ["list", "show", "add-type", "remove-type", "add-status", "remove-status"],
+    description: "Subcommand selector for schema and telemetry actions.",
   },
   name: {
     description:

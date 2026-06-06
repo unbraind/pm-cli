@@ -334,7 +334,12 @@ describe("runHealth", () => {
       await writeSettings(context.pmPath, settings);
 
       const originalFetch = globalThis.fetch;
-      const fetchMock = vi.fn(async () => new Response("service unavailable", { status: 503 }));
+      const fetchMock = vi.fn(async () => new Response("service unavailable", {
+        status: 503,
+        headers: {
+          "x-pm-telemetry-max-schema-version": "2",
+        },
+      }));
       globalThis.fetch = fetchMock as unknown as typeof fetch;
       try {
         const health = await runHealth({ path: context.pmPath }, { checkTelemetry: true });
@@ -352,6 +357,7 @@ describe("runHealth", () => {
             ok: false,
             status: 503,
             probe_url: "https://pm-cli.unbrained.dev/healthz",
+            max_schema_version: "2",
           },
         });
       } finally {

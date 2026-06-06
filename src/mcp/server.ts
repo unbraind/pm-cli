@@ -64,6 +64,7 @@ import {
   runSchemaShow,
   runSearch,
   runStats,
+  runTelemetry,
   runTest,
   runTestAll,
   runUpdate,
@@ -851,6 +852,19 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runTest(id ?? readRequiredString(options, "id"), options, global);
     case "test-all":
       return runTestAll(options, global);
+    case "telemetry":
+      return runTelemetry(
+        {
+          subcommand: readString(args, "subcommand") ?? readString(options, "subcommand"),
+          limit:
+            typeof args.limit === "number" && Number.isFinite(args.limit)
+              ? args.limit
+              : typeof options.limit === "number" && Number.isFinite(options.limit)
+                ? options.limit
+              : readString(args, "limit") ?? readString(options, "limit"),
+        },
+        global,
+      );
     case "validate":
       return runValidate(options, global);
     case "health":

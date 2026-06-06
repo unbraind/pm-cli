@@ -74,7 +74,7 @@ const MUTATION_ROOT_COMMANDS = new Set([
   "close-task",
 ]);
 const TESTING_ROOT_COMMANDS = new Set(["test", "test-all", "test-runs", "test-verify", "trace-test", "test-ping"]);
-const DIAGNOSTICS_ROOT_COMMANDS = new Set(["health", "validate", "normalize", "reindex", "gc", "extension-doctor"]);
+const DIAGNOSTICS_ROOT_COMMANDS = new Set(["health", "validate", "normalize", "reindex", "gc", "telemetry", "extension-doctor"]);
 
 function normalizeCommandPath(commandPath: string): string {
   return commandPath
