@@ -2,13 +2,26 @@ id: pm-bvns
 title: "pm aggregate --sum/--avg: numeric aggregation over filtered items"
 description: aggregate only counts. Sprint planning/throughput need sum/avg of estimated_minutes by sprint/type. Existing group_by+filters already handle the hard part.
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: "area:cli",living-map,query
 created_at: "2026-05-31T19:43:36.830Z"
-updated_at: "2026-05-31T19:43:36.830Z"
+updated_at: "2026-06-06T10:41:41.661Z"
 author: maintainer-agent
 acceptance_criteria: pm aggregate --sum/--avg <numeric-field> --group-by <f> outputs per-group sum/avg+count+null_count; filters pass through.
 value: aggregate only counts. Sprint planning/throughput need sum/avg of estimated_minutes by sprint/type. Existing group_by+filters already handle the hard part.
 parent: pm-mpbb
+comments[1]{created_at,author,text}:
+  "2026-06-06T10:40:43.079Z",codex-5-3,"Evidence: implemented aggregate numeric --sum/--avg grouped stats with null_count and filter passthrough, plus completion and contracts updates. Verified via node scripts/run-tests.mjs test -- tests/unit/aggregate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts and manual sandbox run pm aggregate --group-by parent --sum estimate --avg estimate --json."
+files[7]{path,scope,note}:
+  src/cli/commands/aggregate.ts,project,Implement grouped numeric sum/avg aggregation with null_count
+  src/cli/commands/completion.ts,project,Expose sum/avg in shell completions
+  src/cli/register-list-query.ts,project,Register aggregate --sum and --avg flags
+  src/cli/registration-helpers.ts,project,Normalize aggregate sum/avg options
+  src/sdk/cli-contracts.ts,project,Expose sum/avg flag contracts
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,Map sum/avg tool parameters to flags
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Publish sum/avg schema metadata
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/aggregate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Implemented aggregate sum/avg with contracts/completion and verified with tests and manual aggregate run.
 body: ""

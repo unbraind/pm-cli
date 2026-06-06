@@ -554,6 +554,7 @@ export interface GovernanceSettings {
   ownership_enforcement: GovernanceOwnershipEnforcement;
   create_mode_default: GovernanceCreateModeDefault;
   close_validation_default: GovernanceCloseValidationDefault;
+  require_close_reason: boolean;
   parent_reference: ParentReferencePolicy;
   metadata_profile: ValidateMetadataProfile;
   force_required_for_stale_lock: boolean;

@@ -2,13 +2,32 @@ id: pm-peyv
 title: Config-driven optional close reason via governance.require_close_reason
 description: "pm close hard-requires a non-empty reason; for solo repos / agent automation the history record can suffice. A settings key (default true = no change) relaxes it, mirroring the validate-close config pattern."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[5]: agent-ux,"area:cli","area:lifecycle",governance,living-map
 created_at: "2026-05-31T19:43:37.485Z"
-updated_at: "2026-05-31T19:43:37.485Z"
+updated_at: "2026-06-06T10:41:42.502Z"
 author: maintainer-agent
 acceptance_criteria: "governance.require_close_reason boolean (default true); when false, empty-reason close proceeds; CLI+MCP contracts mark reason conditionally required; validator+docs updated; default fully backward compatible."
 value: "pm close hard-requires a non-empty reason; for solo repos / agent automation the history record can suffice. A settings key (default true = no change) relaxes it, mirroring the validate-close config pattern."
 parent: pm-mpbb
+comments[1]{created_at,author,text}:
+  "2026-06-06T10:40:53.171Z",codex-5-3,"Evidence: added governance.require_close_reason default-on setting through types/constants/settings/config/positional routing, close-close-many-close-task runtime behavior, MCP close schema, and contract/help updates. Verified via node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/settings-validator.spec.ts tests/unit/config-positional-value.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/release-readiness-runtime.spec.ts and manual sandbox close without reason after disabling policy."
+files[13]{path,scope,note}:
+  src/cli/commands/close-many.ts,project,Make bulk close reason optional when governance allows
+  src/cli/commands/close.ts,project,Make close reason requirement conditional on governance setting
+  src/cli/commands/config.ts,project,Expose governance_require_close_reason config get/set/list/export surfaces
+  src/cli/register-mutation.ts,project,Align close command docs and positional reason handling
+  src/cli/register-operations.ts,project,Allow close-task reason argument to be optional
+  src/cli/register-setup.ts,project,Update config help text for governance-require-close-reason
+  src/core/config/positional-value.ts,project,Route governance_require_close_reason positional config key
+  src/core/shared/constants.ts,project,Set default require_close_reason=true across governance presets
+  src/core/store/settings-validator.ts,project,Validate governance.require_close_reason setting
+  src/core/store/settings.ts,project,Persist and resolve require_close_reason through settings pipeline
+  src/mcp/server.ts,project,Make pm_close reason optional in MCP schema and routing
+  src/sdk/cli-contracts.ts,project,Reflect optional close text and updated action schemas
+  src/types.ts,project,Add governance.require_close_reason type contract
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/settings-validator.spec.ts tests/unit/config-positional-value.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Implemented governance.require_close_reason end-to-end and verified close behavior via unit/integration/manual tests.
 body: ""

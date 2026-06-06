@@ -65,6 +65,11 @@ describe("resolveConfigPositionalValue", () => {
       flag: "policy",
       value: "enabled",
     });
+    expect(resolveConfigPositionalValue("governance-require-close-reason", "off")).toEqual({
+      routable: true,
+      flag: "policy",
+      value: "disabled",
+    });
   });
 
   it("passes non-synonym values through unchanged for boolean-style policy keys", () => {

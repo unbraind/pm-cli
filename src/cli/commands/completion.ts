@@ -1,6 +1,7 @@
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import {
+  AGGREGATE_FLAG_CONTRACTS,
   ACTIVITY_FLAG_CONTRACTS,
   APPEND_FLAG_CONTRACTS,
   CALENDAR_FLAG_CONTRACTS,
@@ -8,8 +9,10 @@ import {
   COMPLETION_FLAG_CONTRACTS,
   CONTRACTS_FLAG_CONTRACTS,
   CONTEXT_FLAG_CONTRACTS,
+  COPY_FLAG_CONTRACTS,
   CREATE_FLAG_CONTRACTS,
   DEPS_FLAG_CONTRACTS,
+  GET_FLAG_CONTRACTS,
   GUIDE_FLAG_CONTRACTS,
   GLOBAL_FLAG_CONTRACTS,
   HEALTH_FLAG_CONTRACTS,
@@ -48,8 +51,11 @@ export interface CompletionRuntimeConfig {
 
 const ALL_COMMANDS = [...PM_CORE_COMMAND_NAMES];
 const LIST_FLAGS = toCompletionFlagString(LIST_FILTER_FLAG_CONTRACTS);
+const AGGREGATE_FLAGS = toCompletionFlagString(AGGREGATE_FLAG_CONTRACTS);
 const APPEND_FLAGS = toCompletionFlagString(APPEND_FLAG_CONTRACTS);
+const COPY_FLAGS = toCompletionFlagString(COPY_FLAG_CONTRACTS);
 const CREATE_FLAGS = toCompletionFlagString(CREATE_FLAG_CONTRACTS);
+const GET_FLAGS = toCompletionFlagString(GET_FLAG_CONTRACTS);
 const UPDATE_FLAGS = toCompletionFlagString(UPDATE_FLAG_CONTRACTS);
 const UPDATE_MANY_FLAGS = toCompletionFlagString(UPDATE_MANY_FLAG_CONTRACTS);
 const CLOSE_MANY_FLAGS = toCompletionFlagString(CLOSE_MANY_FLAG_CONTRACTS);
@@ -308,13 +314,16 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(listFlags)})`,
     "      ;;",
     "    aggregate)",
-    `      COMPREPLY=(${compgen("--group-by --count --include-unparented --status --type --tag --priority --deadline-before --deadline-after --assignee --assignee-filter --parent --sprint --release --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen(AGGREGATE_FLAGS)})`,
     "      ;;",
     "    dedupe-audit)",
     `      COMPREPLY=(${compgen("--mode --limit --threshold --status --type --tag --priority --deadline-before --deadline-after --assignee --assignee-filter --parent --sprint --release --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    create)",
     `      COMPREPLY=(${compgen(createFlags)})`,
+    "      ;;",
+    "    copy)",
+    `      COMPREPLY=(${compgen(COPY_FLAGS)})`,
     "      ;;",
     "    update)",
     `      COMPREPLY=(${compgen(updateFlags)})`,
@@ -392,7 +401,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--limit --compact --full --diff --field --verify --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    get)",
-    `      COMPREPLY=(${compgen("--depth --full --fields --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen(GET_FLAGS)})`,
     "      ;;",
     "    history-redact)",
     `      COMPREPLY=(${compgen("--literal --regex --replacement --dry-run --author --message --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
@@ -501,6 +510,7 @@ _pm_commands() {
     'config:Read or update pm settings'
     'extension:Manage extension lifecycle operations'
     'create:Create a new project management item'
+    'copy:Copy an existing item to a new ID'
     'list:List active items with optional filters'
     'list-all:List all items with optional filters'
     'list-draft:List draft items with optional filters'
@@ -509,7 +519,7 @@ _pm_commands() {
     'list-blocked:List blocked items with optional filters'
     'list-closed:List closed items with optional filters'
     'list-canceled:List canceled items with optional filters'
-    'aggregate:Aggregate grouped item counts for governance queries'
+    'aggregate:Aggregate grouped item counts and numeric stats for governance queries'
     'dedupe-audit:Audit potential duplicate items and emit merge suggestions'
     'guide:Browse local progressive-disclosure guides'
     'calendar:Show calendar views for deadlines and reminders'
@@ -529,8 +539,8 @@ _pm_commands() {
     'update:Update item fields and metadata'
     'update-many:Bulk-update matched items with dry-run and rollback checkpoints'
     'normalize:Normalize lifecycle metadata with dry-run planning or apply mode'
-    'close:Close an item with a required reason'
-    'close-many:Bulk-close matched items with a shared reason and rollback checkpoint'
+    'close:Close an item (reason requirement follows governance settings)'
+    'close-many:Bulk-close matched items with an optional shared reason and rollback checkpoint'
     'delete:Delete an item and record the change'
     'append:Append text to an item body'
     'comments:List or add comments for an item'
@@ -601,6 +611,8 @@ _pm() {
             '--include-body[Include item body in each returned list row]' \\
             '--compact[Render compact list projection fields]' \\
             '--fields[Render custom comma-separated list fields]:fields' \\
+            '--tree[Render hierarchical subtree output rooted at --parent or top-level parents]' \\
+            '--tree-depth[Cap recursion depth for --tree (0 = root only)]:number' \\
             '--sort[Sort field]:(priority deadline updated_at created_at title parent)' \\
             '--order[Sort order (requires --sort)]:(asc desc)' \\
             '--stream[Emit line-delimited JSON rows (requires --json)]' \\
@@ -612,6 +624,8 @@ ${zshListRuntimeFieldFlags}            '--json[Output JSON]' \\
           _arguments \\
             '--group-by[Comma-separated group-by fields (supported: parent,type,priority,status,assignee,tags,sprint,release)]:fields' \\
             '--count[Return grouped counts]' \\
+            '--sum[Numeric field to sum per group]:field' \\
+            '--avg[Numeric field to average per group]:field' \\
             '--include-unparented[Include unparented rows when grouping by parent]' \\
             '--status[Filter by status]:(${statusChoices})' \\
             '--type[Filter by item type]:(${typeChoices})' \\
@@ -681,6 +695,15 @@ ${zshListRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--message[History message]:message' \\
             '--assignee[Assignee]:assignee' \\
 ${zshCreateRuntimeFieldFlags}            '--json[Output JSON]' \\
+            '--quiet[Suppress stdout]'
+          ;;
+        copy)
+          _arguments \\
+            '--title[Override copied title]:title' \\
+            '--author[Mutation author]:author' \\
+            '--message[History message]:message' \\
+            '--force[Force ownership override]' \\
+            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
         update)
@@ -836,7 +859,7 @@ ${zshUpdateManyRuntimeFieldFlags}            '--allow-audit-update[Allow non-own
             '--ids[Explicit comma-separated ID allowlist]:ids' \\
             '--limit[Limit matched item count]:number' \\
             '--offset[Skip first n matched rows]:number' \\
-            '--reason[Shared close reason applied to every matched item]:reason' \\
+            '--reason[Optional shared close reason applied to every matched item]:reason' \\
             '--resolution[Shared closure resolution]:resolution' \\
             '--expected-result[Shared expected-result note]:expected_result' \\
             '--actual-result[Shared actual-result note]:actual_result' \\
@@ -963,6 +986,8 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--depth[Detail depth]:(brief standard deep full)' \\
             '--full[Explicit full item read]' \\
             '--fields[Render custom comma-separated item fields]:fields' \\
+            '--tree[Include descendant subtree in result payload]' \\
+            '--tree-depth[Cap subtree depth for --tree (0 = root only)]:number' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1448,6 +1473,7 @@ complete -c pm -n __pm_no_subcommand -a init          -d 'Initialize pm storage 
 complete -c pm -n __pm_no_subcommand -a config        -d 'Read or update pm settings'
 complete -c pm -n __pm_no_subcommand -a extension     -d 'Manage extension lifecycle operations'
 complete -c pm -n __pm_no_subcommand -a create        -d 'Create a new project management item'
+complete -c pm -n __pm_no_subcommand -a copy          -d 'Copy an existing item to a new ID'
 complete -c pm -n __pm_no_subcommand -a list          -d 'List active items with optional filters'
 complete -c pm -n __pm_no_subcommand -a list-all      -d 'List all items with optional filters'
 complete -c pm -n __pm_no_subcommand -a list-draft    -d 'List draft items with optional filters'
@@ -1456,7 +1482,7 @@ complete -c pm -n __pm_no_subcommand -a list-in-progress -d 'List in-progress it
 complete -c pm -n __pm_no_subcommand -a list-blocked  -d 'List blocked items with optional filters'
 complete -c pm -n __pm_no_subcommand -a list-closed   -d 'List closed items with optional filters'
 complete -c pm -n __pm_no_subcommand -a list-canceled -d 'List canceled items with optional filters'
-complete -c pm -n __pm_no_subcommand -a aggregate     -d 'Aggregate grouped item counts for governance queries'
+complete -c pm -n __pm_no_subcommand -a aggregate     -d 'Aggregate grouped item counts and numeric stats for governance queries'
 complete -c pm -n __pm_no_subcommand -a dedupe-audit  -d 'Audit potential duplicate items and emit merge suggestions'
 complete -c pm -n __pm_no_subcommand -a guide         -d 'Browse local progressive-disclosure guides'
 complete -c pm -n __pm_no_subcommand -a calendar      -d 'Show deadline/reminder calendar views'
@@ -1476,8 +1502,8 @@ complete -c pm -n __pm_no_subcommand -a restore       -d 'Restore an item to an 
 complete -c pm -n __pm_no_subcommand -a update        -d 'Update item fields and metadata'
 complete -c pm -n __pm_no_subcommand -a update-many   -d 'Bulk-update matched items with dry-run and rollback checkpoints'
 complete -c pm -n __pm_no_subcommand -a normalize     -d 'Normalize lifecycle metadata with dry-run planning or apply mode'
-complete -c pm -n __pm_no_subcommand -a close         -d 'Close an item with a required reason'
-complete -c pm -n __pm_no_subcommand -a close-many    -d 'Bulk-close matched items with a shared reason and rollback checkpoint'
+complete -c pm -n __pm_no_subcommand -a close         -d 'Close an item (reason requirement follows governance settings)'
+complete -c pm -n __pm_no_subcommand -a close-many    -d 'Bulk-close matched items with an optional shared reason and rollback checkpoint'
 complete -c pm -n __pm_no_subcommand -a delete        -d 'Delete an item and record the change'
 complete -c pm -n __pm_no_subcommand -a append        -d 'Append text to an item body'
 complete -c pm -n __pm_no_subcommand -a comments      -d 'List or add comments for an item'
@@ -1517,6 +1543,8 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l include-body -d 'Include item body in each returned list row'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l compact -d 'Render compact list projection fields'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l fields -d 'Render custom comma-separated list fields' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l tree -d 'Render hierarchical subtree output rooted at --parent or top-level parents'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l tree-depth -d 'Cap recursion depth for --tree (0 = root only)' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l sort -d 'Sort field' -r -a 'priority deadline updated_at created_at title parent'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l order -d 'Sort order (requires --sort)' -r -a 'asc desc'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l stream -d 'Emit line-delimited JSON rows (requires --json)'
@@ -1532,6 +1560,8 @@ ${fishListRuntimeFieldFlags}
 # aggregate flags
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l group-by -d 'Comma-separated group-by fields (supported: parent,type,priority,status,assignee,tags,sprint,release)' -r
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l count -d 'Return grouped counts'
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l sum -d 'Numeric field to sum per group' -r
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l avg -d 'Numeric field to average per group' -r
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l include-unparented -d 'Include unparented rows when grouping by parent'
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l status -d 'Filter by status' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l type -d 'Filter by item type' -r -a '${typeChoices}'
@@ -1593,6 +1623,12 @@ complete -c pm -n '__fish_seen_subcommand_from create' -l clear-reminders       
 complete -c pm -n '__fish_seen_subcommand_from create' -l clear-events            -d 'Clear events'
 complete -c pm -n '__fish_seen_subcommand_from create' -l clear-type-options      -d 'Clear type options'
 ${fishCreateRuntimeFieldFlags}
+
+# copy flags
+complete -c pm -n '__fish_seen_subcommand_from copy' -l title   -d 'Override copied title' -r
+complete -c pm -n '__fish_seen_subcommand_from copy' -l author  -d 'Mutation author' -r
+complete -c pm -n '__fish_seen_subcommand_from copy' -l message -d 'History message' -r
+complete -c pm -n '__fish_seen_subcommand_from copy' -l force   -d 'Force ownership override'
 
 # update flags
 complete -c pm -n '__fish_seen_subcommand_from update' -s t -l title              -d 'Item title' -r
@@ -1808,6 +1844,8 @@ complete -c pm -n '__fish_seen_subcommand_from reindex' -l progress -d 'Emit pro
 complete -c pm -n '__fish_seen_subcommand_from get' -l depth -d 'Detail depth' -r -a 'brief standard deep full'
 complete -c pm -n '__fish_seen_subcommand_from get' -l full -d 'Explicit full item read'
 complete -c pm -n '__fish_seen_subcommand_from get' -l fields -d 'Render custom comma-separated item fields' -r
+complete -c pm -n '__fish_seen_subcommand_from get' -l tree -d 'Include descendant subtree in result payload'
+complete -c pm -n '__fish_seen_subcommand_from get' -l tree-depth -d 'Cap subtree depth for --tree (0 = root only)' -r
 
 # history / activity flags
 complete -c pm -n '__fish_seen_subcommand_from history'  -l limit -d 'Max history entries' -r
@@ -1986,7 +2024,7 @@ complete -c pm -n '__fish_seen_subcommand_from close-many' -l filter-release    
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l ids                    -d 'Explicit comma-separated ID allowlist' -r
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l limit                  -d 'Limit matched item count' -r
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l offset                 -d 'Skip first n matched rows' -r
-complete -c pm -n '__fish_seen_subcommand_from close-many' -l reason                 -d 'Shared close reason applied to every matched item' -r
+complete -c pm -n '__fish_seen_subcommand_from close-many' -l reason                 -d 'Optional shared close reason applied to every matched item' -r
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l resolution             -d 'Shared closure resolution' -r
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l expected-result        -d 'Shared expected-result note' -r
 complete -c pm -n '__fish_seen_subcommand_from close-many' -l actual-result          -d 'Shared actual-result note' -r

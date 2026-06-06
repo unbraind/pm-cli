@@ -493,6 +493,8 @@ export function normalizeListOptions(options: Record<string, unknown>): ListOpti
     fields: readListOptionString(options, "fields"),
     sort: readListOptionString(options, "sort"),
     order: readListOptionString(options, "order"),
+    tree: options.tree === true ? true : undefined,
+    treeDepth: readListOptionString(options, "treeDepth"),
   };
   for (const [key, value] of Object.entries(options)) {
     if (Object.hasOwn(normalized, key)) {
@@ -507,6 +509,8 @@ export function normalizeAggregateOptions(options: Record<string, unknown>): Agg
   return {
     groupBy: typeof options.groupBy === "string" ? options.groupBy : undefined,
     count: options.count === true ? true : undefined,
+    sum: typeof options.sum === "string" ? options.sum : undefined,
+    avg: typeof options.avg === "string" ? options.avg : undefined,
     includeUnparented: options.includeUnparented === true || options.include_unparented === true,
     status: typeof options.status === "string" ? options.status : undefined,
     type: readListOptionString(options, "type"),

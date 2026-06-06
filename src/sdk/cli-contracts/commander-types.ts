@@ -35,6 +35,7 @@ export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContrac
   { target: "fields", keys: ["fields"] },
   { target: "sort", keys: ["sort"] },
   { target: "order", keys: ["order"] },
+  { target: "treeDepth", keys: ["treeDepth", "tree_depth"] },
 ];
 
 export const SEARCH_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [

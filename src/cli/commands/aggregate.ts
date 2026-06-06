@@ -38,6 +38,8 @@ const AGGREGATE_GROUP_FIELDS: AggregateGroupField[] = [
 export interface AggregateOptions {
   groupBy?: string;
   count?: boolean;
+  sum?: string;
+  avg?: string;
   includeUnparented?: boolean;
   status?: string;
   type?: string;
@@ -55,6 +57,9 @@ export interface AggregateOptions {
 export interface AggregateRow {
   group: AggregateGroupRecord;
   count: number;
+  null_count?: number;
+  sum?: number | null;
+  avg?: number | null;
 }
 
 export interface AggregateResult {
@@ -68,6 +73,9 @@ export interface AggregateResult {
   filters: {
     group_by: AggregateGroupField[];
     count: boolean;
+    sum?: string | null;
+    avg?: string | null;
+    numeric_field?: string | null;
     include_unparented: boolean;
     status: ItemStatus | null;
     type: string | null;
@@ -97,6 +105,30 @@ function parseStatus(raw: string | undefined, statusRegistry: RuntimeStatusRegis
     );
   }
   return normalized;
+}
+
+interface NumericAggregation {
+  field: string;
+  sum: boolean;
+  avg: boolean;
+}
+
+function parseNumericAggregation(options: AggregateOptions): NumericAggregation | null {
+  const sumField = options.sum?.trim();
+  const avgField = options.avg?.trim();
+  const normalizedSum = sumField && sumField.length > 0 ? sumField : undefined;
+  const normalizedAvg = avgField && avgField.length > 0 ? avgField : undefined;
+  if (!normalizedSum && !normalizedAvg) {
+    return null;
+  }
+  if (normalizedSum && normalizedAvg && normalizedSum !== normalizedAvg) {
+    throw new PmCliError("Aggregate --sum and --avg must target the same numeric field", EXIT_CODE.USAGE);
+  }
+  return {
+    field: normalizedSum ?? normalizedAvg ?? "",
+    sum: normalizedSum !== undefined,
+    avg: normalizedAvg !== undefined,
+  };
 }
 
 function parseGroupBy(raw: string | undefined): AggregateGroupField[] {
@@ -188,9 +220,35 @@ function compareAggregateRows(
   return 0;
 }
 
+function readNumericAggregateValue(item: AggregateListedItem, field: string): number | null {
+  const source = item as unknown as Record<string, unknown>;
+  const raw = source[field];
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    return raw;
+  }
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) {
+      return null;
+    }
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
+interface AggregateAccumulator {
+  row: AggregateRow;
+  numeric_count: number;
+  numeric_sum: number;
+  null_count: number;
+}
+
 export async function runAggregate(options: AggregateOptions, global: GlobalOptions): Promise<AggregateResult> {
   if (options.count === false) {
-    throw new PmCliError("Aggregate currently supports grouped counts only. Pass --count.", EXIT_CODE.USAGE);
+    throw new PmCliError("Aggregate grouped counts are always enabled; omit count=false.", EXIT_CODE.USAGE);
   }
 
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
@@ -198,6 +256,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const groupBy = parseGroupBy(options.groupBy);
   const status = parseStatus(options.status, statusRegistry);
+  const numericAggregation = parseNumericAggregation(options);
   const includeUnparented = options.includeUnparented === true;
 
   const listed = await runList(
@@ -217,7 +276,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
     global,
   );
 
-  const grouped = new Map<string, AggregateRow>();
+  const grouped = new Map<string, AggregateAccumulator>();
   let skippedUnparented = 0;
   let groupedItemCount = 0;
 
@@ -233,18 +292,52 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
     }
     const key = buildGroupKey(groupBy, group);
     const existing = grouped.get(key);
+    const numericValue =
+      numericAggregation === null
+        ? null
+        : readNumericAggregateValue(item, numericAggregation.field);
     if (existing) {
-      existing.count += 1;
+      existing.row.count += 1;
+      if (numericAggregation !== null) {
+        if (numericValue === null) {
+          existing.null_count += 1;
+        } else {
+          existing.numeric_count += 1;
+          existing.numeric_sum += numericValue;
+        }
+      }
     } else {
       grouped.set(key, {
-        group,
-        count: 1,
+        row: {
+          group,
+          count: 1,
+        },
+        numeric_count: numericValue === null ? 0 : 1,
+        numeric_sum: numericValue ?? 0,
+        null_count: numericValue === null ? 1 : 0,
       });
     }
     groupedItemCount += 1;
   }
 
-  const groups = [...grouped.values()].sort((left, right) => compareAggregateRows(left, right, groupBy));
+  const groups = [...grouped.values()]
+    .map((entry) => {
+      if (numericAggregation === null) {
+        return entry.row;
+      }
+      const withNumeric: AggregateRow = {
+        ...entry.row,
+        null_count: entry.null_count,
+      };
+      if (numericAggregation.sum) {
+        withNumeric.sum = entry.numeric_sum;
+      }
+      if (numericAggregation.avg) {
+        withNumeric.avg = entry.numeric_count === 0 ? null : entry.numeric_sum / entry.numeric_count;
+      }
+      return withNumeric;
+    })
+    .sort((left, right) => compareAggregateRows(left, right, groupBy));
   const warnings = listed.warnings && listed.warnings.length > 0 ? listed.warnings : undefined;
 
   return {
@@ -270,6 +363,13 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
       parent: options.parent ?? null,
       sprint: options.sprint ?? null,
       release: options.release ?? null,
+      ...(numericAggregation !== null
+        ? {
+            sum: options.sum ?? null,
+            avg: options.avg ?? null,
+            numeric_field: numericAggregation.field,
+          }
+        : {}),
     },
     now: nowIso(),
     ...(warnings ? { warnings } : {}),

@@ -21,6 +21,7 @@ export default defineConfig({
         "src/constants.ts",
         "src/cli/commands/init.ts",
         "src/cli/commands/create.ts",
+        "src/cli/commands/copy.ts",
         "src/cli/commands/close.ts",
         "src/cli/commands/delete.ts",
         "src/cli/commands/append.ts",

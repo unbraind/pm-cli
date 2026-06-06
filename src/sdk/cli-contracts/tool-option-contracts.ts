@@ -22,10 +22,14 @@ export const TOOL_LIST_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "fields", flag: "--fields" },
   { param: "sort", flag: "--sort" },
   { param: "order", flag: "--order" },
+  { param: "tree", flag: "--tree" },
+  { param: "treeDepth", flag: "--tree-depth" },
 ];
 
 export const TOOL_AGGREGATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "groupBy", flag: "--group-by" },
+  { param: "sum", flag: "--sum" },
+  { param: "avg", flag: "--avg" },
   { param: "status", flag: "--status" },
   { param: "type", flag: "--type" },
   { param: "tag", flag: "--tag" },

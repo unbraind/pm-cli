@@ -37,12 +37,18 @@ function toAuthor(candidate: string | undefined, defaultAuthor: string): string 
   return trimmed || "unknown";
 }
 
-function ensureCloseReason(reasonText: string): string {
-  const reason = reasonText.trim();
-  if (reason.length === 0) {
-    throw new PmCliError("Close reason text must not be empty", EXIT_CODE.USAGE);
+function normalizeCloseReason(reasonText: string | undefined, required: boolean): string | undefined {
+  const reason = (reasonText ?? "").trim();
+  if (reason.length > 0) {
+    return reason;
   }
-  return reason;
+  if (required) {
+    throw new PmCliError(
+      "Close reason text is required because governance.require_close_reason is enabled",
+      EXIT_CODE.USAGE,
+    );
+  }
+  return undefined;
 }
 
 type ValidateCloseMode = "off" | "warn" | "strict";
@@ -103,7 +109,7 @@ async function findActiveChildIds(
 
 export async function runClose(
   id: string,
-  closeReasonText: string,
+  closeReasonText: string | undefined,
   options: CloseCommandOptions,
   global: GlobalOptions,
 ): Promise<CloseResult> {
@@ -115,7 +121,7 @@ export async function runClose(
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const author = toAuthor(options.author, settings.author_default);
-  const closeReason = ensureCloseReason(closeReasonText);
+  const closeReason = normalizeCloseReason(closeReasonText, settings.governance.require_close_reason);
   const validateCloseMode = parseValidateCloseMode(options.validateClose) ?? settings.governance.close_validation_default;
   // C3 (pm-fu5d): scan for active children even under minimal governance so
   // closing a parent is never silently orphaning — off mode emits an
@@ -177,9 +183,14 @@ export async function runClose(
       }
 
       document.metadata.status = statusRegistry.close_status;
-      document.metadata.close_reason = closeReason;
-
-      const changedFields = ["status", "close_reason"];
+      const changedFields = ["status"];
+      if (closeReason !== undefined) {
+        document.metadata.close_reason = closeReason;
+        changedFields.push("close_reason");
+      } else if (document.metadata.close_reason !== undefined) {
+        delete document.metadata.close_reason;
+        changedFields.push("close_reason");
+      }
       for (const { option, key } of inlineCloseFields) {
         if (typeof option === "string" && option.trim().length > 0) {
           changedFields.push(key);

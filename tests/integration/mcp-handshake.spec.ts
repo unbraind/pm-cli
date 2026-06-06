@@ -6,7 +6,7 @@ import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 // pm-kl11: MCP protocol handshake coverage. These tests drive handleRequest
 // directly (the same entry point the stdio transport calls per JSON-RPC line)
-// to lock the initialize/tools-list/tools-call contract, the 21-tool surface
+// to lock the initialize/tools-list/tools-call contract, the 22-tool surface
 // (incl. the pm-hywv narrow tools), the unknown-tool error path, and the
 // pm-qxwu typo-warning behavior.
 
@@ -17,6 +17,7 @@ const EXPECTED_TOOL_NAMES = [
   "pm_list",
   "pm_get",
   "pm_create",
+  "pm_copy",
   "pm_update",
   "pm_claim",
   "pm_release",
@@ -61,10 +62,11 @@ describe("MCP protocol handshake", () => {
     expect(result.instructions).toContain("pm_notes");
     expect(result.instructions).toContain("pm_learnings");
     expect(result.instructions).toContain("pm_deps");
+    expect(result.instructions).toContain("pm_copy");
     expect(result.capabilities).toMatchObject({ tools: {} });
   });
 
-  it("tools/list returns exactly the 21 expected tools including the new narrow tools", async () => {
+  it("tools/list returns exactly the 22 expected tools including the new narrow tools", async () => {
     const result = (await handleRequest({
       jsonrpc: "2.0",
       id: 2,
@@ -72,7 +74,7 @@ describe("MCP protocol handshake", () => {
     })) as { tools?: Array<{ name?: string; description?: string; inputSchema?: unknown }> };
 
     const tools = result.tools ?? [];
-    expect(tools).toHaveLength(21);
+    expect(tools).toHaveLength(22);
 
     const names = tools.map((tool) => tool.name);
     expect(new Set(names)).toEqual(new Set(EXPECTED_TOOL_NAMES));

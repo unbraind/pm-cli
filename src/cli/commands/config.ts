@@ -72,6 +72,8 @@ const CONFIG_KEY_VALUES = [
   "governance_create_mode_default",
   "governance-close-validation-default",
   "governance_close_validation_default",
+  "governance-require-close-reason",
+  "governance_require_close_reason",
   "governance-create-default-type",
   "governance_create_default_type",
   "governance-workflow-enforcement",
@@ -105,6 +107,7 @@ type ConfigKey =
   | "governance_ownership_enforcement"
   | "governance_create_mode_default"
   | "governance_close_validation_default"
+  | "governance_require_close_reason"
   | "governance_create_default_type"
   | "governance_workflow_enforcement"
   | "governance_parent_reference_policy"
@@ -117,6 +120,7 @@ type HistoryMissingStreamPolicy = "auto_create" | "strict_error";
 type TestResultTrackingPolicy = "enabled" | "disabled";
 type TelemetryTrackingPolicy = "enabled" | "disabled";
 type GovernanceForceRequiredForStaleLockPolicy = "enabled" | "disabled";
+type GovernanceRequireCloseReasonPolicy = "enabled" | "disabled";
 type ConfigValue =
   | string
   | string[]
@@ -129,6 +133,7 @@ type ConfigValue =
   | GovernanceOwnershipEnforcement
   | GovernanceCreateModeDefault
   | GovernanceCloseValidationDefault
+  | GovernanceRequireCloseReasonPolicy
   | GovernanceWorkflowEnforcement
   | GovernanceForceRequiredForStaleLockPolicy
   | TestResultTrackingPolicy
@@ -191,6 +196,7 @@ export interface ConfigResult {
     | GovernanceOwnershipEnforcement
     | GovernanceCreateModeDefault
     | GovernanceCloseValidationDefault
+    | GovernanceRequireCloseReasonPolicy
     | GovernanceWorkflowEnforcement
     | GovernanceForceRequiredForStaleLockPolicy
     | TestResultTrackingPolicy
@@ -246,6 +252,10 @@ const CONFIG_KEY_ALIASES: Record<ConfigKey, string[]> = {
     "governance-close-validation-default",
     "governance_close_validation_default",
   ],
+  governance_require_close_reason: [
+    "governance-require-close-reason",
+    "governance_require_close_reason",
+  ],
   governance_create_default_type: ["governance-create-default-type", "governance_create_default_type"],
   governance_workflow_enforcement: ["governance-workflow-enforcement", "governance_workflow_enforcement"],
   governance_parent_reference_policy: ["governance-parent-reference-policy", "governance_parent_reference_policy"],
@@ -289,6 +299,7 @@ const CONFIG_KEY_SUMMARIES: Record<ConfigKey, string> = {
   governance_ownership_enforcement: "Governance ownership enforcement policy (none|warn|strict).",
   governance_create_mode_default: "Governance default create mode (progressive|strict).",
   governance_close_validation_default: "Governance default close validation mode (off|warn|strict).",
+  governance_require_close_reason: "Governance close-reason requirement policy (enabled|disabled).",
   governance_create_default_type: "Governance default item type for `pm create` when --type is omitted.",
   governance_workflow_enforcement: "Governance per-type transition enforcement mode (off|warn|strict).",
   governance_parent_reference_policy: "Governance parent reference policy (warn|strict_error).",
@@ -382,6 +393,9 @@ function normalizeKey(value: string): ConfigKey {
     }
     if (value === "governance-close-validation-default" || value === "governance_close_validation_default") {
       return "governance_close_validation_default";
+    }
+    if (value === "governance-require-close-reason" || value === "governance_require_close_reason") {
+      return "governance_require_close_reason";
     }
     if (value === "governance-create-default-type" || value === "governance_create_default_type") {
       return "governance_create_default_type";
@@ -577,6 +591,19 @@ function normalizeGovernanceForceRequiredForStaleLockPolicy(
   );
 }
 
+function normalizeGovernanceRequireCloseReasonPolicy(
+  value: string | undefined,
+): GovernanceRequireCloseReasonPolicy {
+  const normalized = value?.trim().toLowerCase().replaceAll("-", "_");
+  if (normalized === "enabled" || normalized === "disabled") {
+    return normalized;
+  }
+  throw new PmCliError(
+    "Config set governance-require-close-reason requires --policy with one of: enabled, disabled",
+    EXIT_CODE.USAGE,
+  );
+}
+
 function normalizePolicyForConflict(key: ConfigKey | undefined, value: string): string {
   switch (key) {
     case "history_missing_stream_policy":
@@ -597,6 +624,8 @@ function normalizePolicyForConflict(key: ConfigKey | undefined, value: string): 
       return normalizeGovernanceCreateModeDefault(value);
     case "governance_close_validation_default":
       return normalizeGovernanceCloseValidationDefault(value);
+    case "governance_require_close_reason":
+      return normalizeGovernanceRequireCloseReasonPolicy(value);
     case "governance_workflow_enforcement":
       return normalizeGovernanceWorkflowEnforcement(value);
     case "governance_force_required_for_stale_lock":
@@ -733,6 +762,7 @@ function readConfigValue(settings: {
     ownership_enforcement: GovernanceOwnershipEnforcement;
     create_mode_default: GovernanceCreateModeDefault;
     close_validation_default: GovernanceCloseValidationDefault;
+    require_close_reason: boolean;
     parent_reference: ParentReferencePolicy;
     metadata_profile: ValidateMetadataProfile;
     force_required_for_stale_lock: boolean;
@@ -784,6 +814,9 @@ function readConfigValue(settings: {
   }
   if (key === "governance_close_validation_default") {
     return settings.governance.close_validation_default;
+  }
+  if (key === "governance_require_close_reason") {
+    return settings.governance.require_close_reason ? "enabled" : "disabled";
   }
   if (key === "governance_create_default_type") {
     return settings.governance.create_default_type ?? "";
@@ -1151,6 +1184,7 @@ export async function runConfig(
       governance_ownership_enforcement: readConfigValue(settings, "governance_ownership_enforcement"),
       governance_create_mode_default: readConfigValue(settings, "governance_create_mode_default"),
       governance_close_validation_default: readConfigValue(settings, "governance_close_validation_default"),
+      governance_require_close_reason: readConfigValue(settings, "governance_require_close_reason"),
       governance_create_default_type: readConfigValue(settings, "governance_create_default_type"),
       governance_workflow_enforcement: readConfigValue(settings, "governance_workflow_enforcement"),
       governance_parent_reference_policy: readConfigValue(settings, "governance_parent_reference_policy"),
@@ -1298,6 +1332,15 @@ export async function runConfig(
         scope,
         key,
         policy: settings.governance.close_validation_default,
+        settings_path: target.settingsPath,
+        changed: false,
+      }, warnings);
+    }
+    if (key === "governance_require_close_reason") {
+      return withWarnings({
+        scope,
+        key,
+        policy: settings.governance.require_close_reason ? "enabled" : "disabled",
         settings_path: target.settingsPath,
         changed: false,
       }, warnings);
@@ -1660,6 +1703,23 @@ export async function runConfig(
       scope,
       key,
       policy: settings.governance.close_validation_default,
+      settings_path: target.settingsPath,
+      changed,
+    }, warnings);
+  }
+
+  if (key === "governance_require_close_reason") {
+    const nextPolicy = normalizeGovernanceRequireCloseReasonPolicy(options.policy);
+    const nextEnabled = nextPolicy === "enabled";
+    const changed = settings.governance.require_close_reason !== nextEnabled;
+    settings.governance.require_close_reason = nextEnabled;
+    if (changed) {
+      await writeSettings(target.pmRoot, settings, "config:set:governance_require_close_reason");
+    }
+    return withWarnings({
+      scope,
+      key,
+      policy: settings.governance.require_close_reason ? "enabled" : "disabled",
       settings_path: target.settingsPath,
       changed,
     }, warnings);

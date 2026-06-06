@@ -87,6 +87,9 @@ function withGovernanceExtras(
   ) {
     base.workflow_enforcement = governance.workflow_enforcement;
   }
+  if (governance.require_close_reason === false) {
+    base.require_close_reason = false;
+  }
   return base;
 }
 
@@ -117,18 +120,25 @@ function normalizeGovernanceForPersist(governance: GovernanceSettings): Partial<
 // governance regardless of preset (see normalizeGovernanceForPersist).
 function resolveGovernanceExtras(
   rawGovernance: Partial<GovernanceSettings>,
-): Pick<GovernanceSettings, "create_default_type" | "workflow_enforcement"> {
+): Partial<Pick<GovernanceSettings, "create_default_type" | "workflow_enforcement" | "require_close_reason">> {
   const createDefaultType =
     typeof rawGovernance.create_default_type === "string" ? rawGovernance.create_default_type.trim() : undefined;
-  return {
-    create_default_type: createDefaultType && createDefaultType.length > 0 ? createDefaultType : undefined,
-    workflow_enforcement:
-      rawGovernance.workflow_enforcement === "off" ||
-      rawGovernance.workflow_enforcement === "warn" ||
-      rawGovernance.workflow_enforcement === "strict"
-        ? rawGovernance.workflow_enforcement
-        : undefined,
-  };
+  const extras: Partial<Pick<GovernanceSettings, "create_default_type" | "workflow_enforcement" | "require_close_reason">> =
+    {};
+  if (createDefaultType && createDefaultType.length > 0) {
+    extras.create_default_type = createDefaultType;
+  }
+  if (
+    rawGovernance.workflow_enforcement === "off" ||
+    rawGovernance.workflow_enforcement === "warn" ||
+    rawGovernance.workflow_enforcement === "strict"
+  ) {
+    extras.workflow_enforcement = rawGovernance.workflow_enforcement;
+  }
+  if (typeof rawGovernance.require_close_reason === "boolean") {
+    extras.require_close_reason = rawGovernance.require_close_reason;
+  }
+  return extras;
 }
 
 export function resolveGovernanceKnobs(
@@ -139,6 +149,7 @@ export function resolveGovernanceKnobs(
   const extras = resolveGovernanceExtras(rawGovernance);
   if (preset === "custom") {
     const baseline = resolveGovernanceKnobsFromPreset("default");
+    const requireCloseReason = extras.require_close_reason ?? baseline.require_close_reason;
     return {
       preset,
       ownership_enforcement: rawGovernance.ownership_enforcement ?? baseline.ownership_enforcement,
@@ -148,12 +159,16 @@ export function resolveGovernanceKnobs(
       metadata_profile: rawGovernance.metadata_profile ?? baseline.metadata_profile,
       force_required_for_stale_lock: rawGovernance.force_required_for_stale_lock ?? baseline.force_required_for_stale_lock,
       ...extras,
+      require_close_reason: requireCloseReason,
     };
   }
+  const baseline = resolveGovernanceKnobsFromPreset(preset);
+  const requireCloseReason = extras.require_close_reason ?? baseline.require_close_reason;
   return {
     preset,
-    ...resolveGovernanceKnobsFromPreset(preset),
+    ...baseline,
     ...extras,
+    require_close_reason: requireCloseReason,
   };
 }
 
@@ -660,6 +675,7 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     "ownership_enforcement",
     "create_mode_default",
     "close_validation_default",
+    "require_close_reason",
     "parent_reference",
     "metadata_profile",
     "force_required_for_stale_lock",

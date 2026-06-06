@@ -86,6 +86,8 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       )
       .option("--sort <value>", "Sort field: priority|deadline|updated_at|created_at|title|parent (aliases: updated, created)")
       .option("--order <value>", "Sort order: asc|desc (requires --sort)")
+      .option("--tree", "Render rows in parent/child tree order")
+      .option("--tree-depth <n>", "Maximum recursion depth with --tree (0 keeps root rows only)")
       .option("--stream", "Emit line-delimited JSON rows (requires --json)")
       .action(async (options: Record<string, unknown>, actionCommand) => {
         const globalOptions = getGlobalOptions(actionCommand);
@@ -119,6 +121,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       });
     // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
     addHiddenOption(command, "--assignee_filter <value>", "Alias for --assignee-filter");
+    addHiddenOption(command, "--tree_depth <n>", "Alias for --tree-depth");
   }
 
   if (shouldRegister("list")) {
@@ -155,6 +158,8 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
         "Comma-separated group-by fields (supported: parent,type,priority,status,assignee,tags,sprint,release)",
       )
       .option("--count", "Return grouped counts (default behavior)")
+      .option("--sum <field>", "Sum a numeric field per group")
+      .option("--avg <field>", "Average a numeric field per group")
       .option("--include-unparented", "Include unparented rows when grouping by parent")
       .option("--status <value>", "Filter by item status")
       .option("--type <value>", "Filter by item type")
@@ -283,12 +288,14 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
   }
 
   if (shouldRegister("get")) {
-    program
+    const getCommand = program
       .command("get")
       .argument("<id>", "Item id")
       .option("--depth <value>", "Detail depth: brief|standard|deep|full (full aliases deep; default: standard)")
       .option("--full", "Explicit full item read; equivalent to --depth deep (mutually exclusive with --depth/--fields)")
       .option("--fields <value>", "Render custom comma-separated item metadata fields (for example: --fields id,title,status,parent,type)")
+      .option("--tree", "Include descendants rooted at the requested item")
+      .option("--tree-depth <n>", "Maximum subtree depth for --tree descendants")
       .description("Show item details by ID.")
       .action(async (id: string, options: Record<string, unknown>, command) => {
         const globalOptions = getGlobalOptions(command);
@@ -301,6 +308,13 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
             depth: typeof options.depth === "string" ? options.depth : undefined,
             fields: typeof options.fields === "string" ? options.fields : undefined,
             full: Boolean(options.full),
+            tree: options.tree === true,
+            treeDepth:
+              typeof options.treeDepth === "string"
+                ? options.treeDepth
+                : typeof options.tree_depth === "string"
+                  ? options.tree_depth
+                  : undefined,
           },
         );
         printResult(result, globalOptions);
@@ -308,6 +322,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
           printError(`profile:command=get took_ms=${Date.now() - startedAt}`);
         }
       });
+    addHiddenOption(getCommand, "--tree_depth <n>", "Alias for --tree-depth");
   }
 
   if (shouldRegister("history")) {
