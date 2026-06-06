@@ -42,7 +42,7 @@ Use the npm registry package for global installs and updates. Avoid `npm install
 Project-local invocation also works:
 
 ```bash
-npx @unbrained/pm-cli --help
+npx --yes @unbrained/pm-cli@latest --help
 ```
 
 For Claude Code, install the native plugin (no `pm` CLI required):

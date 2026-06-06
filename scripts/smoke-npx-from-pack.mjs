@@ -31,7 +31,7 @@ function run() {
   const npx = resolveCommand("npx");
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-pack-smoke-"));
 
-  const packOutput = execFileSync(npm, ["pack", "--silent"], { encoding: "utf8" })
+  const packOutput = execFileSync(npm, ["pack", "--silent", "--pack-destination", tempRoot], { encoding: "utf8" })
     .trim()
     .split("\n")
     .filter((line) => line.trim().length > 0);
@@ -39,7 +39,8 @@ function run() {
   if (!tarball) {
     throw new Error("npm pack did not produce a tarball name.");
   }
-  const tarballPath = path.resolve(tarball);
+  const tarballPath = path.resolve(tempRoot, tarball);
+  const tarballSpec = `file:${tarballPath}`;
 
   function runPackedPm(args, options = {}) {
     try {
@@ -60,6 +61,22 @@ function run() {
     const version = runPackedPm(["--version"]);
     if (version.length === 0) {
       throw new Error("npx smoke test returned empty version output.");
+    }
+    const directVersion = runSmokeCommand(npx, ["--yes", tarballSpec, "--version"]);
+    if (directVersion !== version) {
+      throw new Error(`Bare npx package smoke returned ${directVersion || "empty output"} instead of ${version}.`);
+    }
+    const directHelp = runSmokeCommand(npx, ["--yes", tarballSpec, "--help"]);
+    if (!directHelp.includes("Usage: pm") || !directHelp.includes("Universal, flexible")) {
+      throw new Error("Bare npx package smoke did not render pm help output.");
+    }
+    const aliasVersion = runSmokeCommand(npx, ["--yes", "--package", tarballPath, "pm-cli", "--version"]);
+    if (aliasVersion !== version) {
+      throw new Error(`pm-cli bin alias smoke returned ${aliasVersion || "empty output"} instead of ${version}.`);
+    }
+    const aliasHelp = runSmokeCommand(npx, ["--yes", "--package", tarballPath, "pm-cli", "--help"]);
+    if (!aliasHelp.includes("Usage: pm") || !aliasHelp.includes("Universal, flexible")) {
+      throw new Error("pm-cli bin alias smoke did not render pm help output.");
     }
 
     const projectRoot = path.join(tempRoot, "project");
@@ -126,7 +143,6 @@ function run() {
 
     console.log(`npx packed package smoke passed (${version}, packages=${packages.length}).`);
   } finally {
-    rmSync(tarball, { force: true, maxRetries: 5, retryDelay: 100 });
     rmSync(tempRoot, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 }

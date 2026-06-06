@@ -122,15 +122,26 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
 
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-cli-published-verify-"));
   try {
-    const npx = verifyExecutor(
-      "npx",
+    const npxDirect = verifyExecutor(
+      "npx-direct",
+      [commandFor("npx"), "--yes", `@unbrained/pm-cli@${version}`, "--version"],
+      version,
+      executorAttempts,
+      tempRoot,
+    );
+    if (!npxDirect.ok) {
+      fail(`direct npx verification failed: ${npxDirect.reason}`);
+    }
+
+    const npxPackage = verifyExecutor(
+      "npx-package",
       [commandFor("npx"), "--yes", "--package", `@unbrained/pm-cli@${version}`, "--", "pm", "--version"],
       version,
       executorAttempts,
       tempRoot,
     );
-    if (!npx.ok) {
-      fail(`npx verification failed: ${npx.reason}`);
+    if (!npxPackage.ok) {
+      fail(`explicit npx package verification failed: ${npxPackage.reason}`);
     }
 
     const bunx = verifyExecutor(
@@ -144,7 +155,7 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
       fail(`bunx verification failed: ${bunx.reason}`);
     }
 
-    return { npm: npmMetadata, npx, bunx };
+    return { npm: npmMetadata, npx_direct: npxDirect, npx_package: npxPackage, bunx };
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
   }

@@ -42,7 +42,7 @@ Both `pm` and `pm-cli` marketplace IDs resolve to the same plugin.
 ### Option C: Global MCP server via Claude Code CLI (MCP tools only)
 
 ```bash
-claude mcp add --transport stdio pm-mcp -- npx -y @unbrained/pm-cli pm-mcp
+claude mcp add --transport stdio pm-mcp -- npx -y --package=@unbrained/pm-cli@latest pm-mcp
 ```
 
 This gives you the 21 MCP tools but not the skills, slash commands, or session hook.
@@ -194,7 +194,7 @@ All skills and commands implement this pattern for every claimed item:
 ## Session Context Injection
 
 At session start, the hook runs natively (no `pm` CLI required):
-- Uses `npx @unbrained/pm-cli` without requiring a global install
+- Uses `npx --package=@unbrained/pm-cli@latest pm-mcp` without requiring a global install
 - Injects a compact summary of in-progress/open/blocked items
 
 Example output:
@@ -216,7 +216,7 @@ Use pm_context tool or /pm-status for full details.
 ## Requirements
 
 - Node.js ≥ 20
-- pm CLI resolved automatically via local dist (in repo) or `npx @unbrained/pm-cli` (no global install needed)
+- pm CLI resolved automatically via local dist (in repo) or `npx --package=@unbrained/pm-cli@latest pm-mcp` (no global install needed)
 - Project initialized with `pm init` (or use `/pm-init`)
 
 ## Links

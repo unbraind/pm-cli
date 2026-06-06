@@ -23,7 +23,7 @@ Keep this page as the public docs router so the MCP tool/action list has one mai
 The plugin launcher uses the local repository build when `dist/mcp/server.js` is present. When the plugin is cached outside the repo, it falls back to:
 
 ```bash
-npx -y @unbrained/pm-cli@latest pm-mcp
+npx -y --package=@unbrained/pm-cli@latest pm-mcp
 ```
 
 The fallback starts the package MCP server, not the `pm` CLI command. Tool calls import pm command modules and return JSON-compatible structured results.
