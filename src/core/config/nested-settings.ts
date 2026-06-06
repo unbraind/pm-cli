@@ -9,7 +9,7 @@
  *
  * Shape conventions:
  * - `path` is the dotted JSON path in {@link PmSettings} (e.g. `search.provider`).
- * - `kind` is the value shape: "string" | "integer" | "number" | "ratio"
+ * - `kind` is the value shape: "string" | "boolean" | "integer" | "number" | "ratio"
  *   - "ratio" must be a finite number in [0, 1].
  *   - "integer" must be a finite non-negative integer. Set `min: 1` for keys
  *     where the runtime silently falls back when 0 is supplied (e.g. batch
@@ -23,7 +23,7 @@
  * already-validated PmSettings shape.
  */
 
-export type NestedSettingKind = "string" | "integer" | "number" | "ratio";
+export type NestedSettingKind = "string" | "boolean" | "integer" | "number" | "ratio";
 
 export interface NestedSettingDescriptor {
   /** CLI key (snake_case). Kebab-case form is accepted by normalizing `-` → `_`. */
@@ -36,6 +36,8 @@ export interface NestedSettingDescriptor {
   summary: string;
   /** Optional accepted values for string settings. */
   choices?: readonly string[];
+  /** Require a non-empty trimmed string value for string settings. */
+  non_empty?: boolean;
   /**
    * Optional minimum value for `integer` / `number` kinds. When set,
    * `parseNestedSettingValue` rejects values strictly below `min`. Useful for
@@ -62,6 +64,37 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     kind: "string",
     choices: ["cache_only", "semantic_configured", "semantic_auto"],
     summary: "Mutation-time search refresh policy: cache_only, semantic_configured, or semantic_auto.",
+  },
+  {
+    key: "search_query_expansion_enabled",
+    path: "search.query_expansion.enabled",
+    kind: "boolean",
+    summary: "Enable or disable query expansion for semantic/hybrid search.",
+  },
+  {
+    key: "search_query_expansion_provider",
+    path: "search.query_expansion.provider",
+    kind: "string",
+    summary: "Query expansion provider name (built-in openai/ollama or extension provider).",
+  },
+  {
+    key: "search_rerank_enabled",
+    path: "search.rerank.enabled",
+    kind: "boolean",
+    summary: "Enable or disable post-retrieval reranking for hybrid search.",
+  },
+  {
+    key: "search_rerank_model",
+    path: "search.rerank.model",
+    kind: "string",
+    summary: "Rerank model name override used by built-in providers.",
+  },
+  {
+    key: "search_rerank_top_k",
+    path: "search.rerank.top_k",
+    kind: "integer",
+    min: 1,
+    summary: "Number of top hybrid candidates to rerank when rerank is enabled.",
   },
   {
     key: "search_embedding_model",
@@ -146,6 +179,13 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     summary: "Vector store adapter name (lancedb, qdrant, or an extension adapter).",
   },
   {
+    key: "vector_store_collection_name",
+    path: "vector_store.collection_name",
+    kind: "string",
+    non_empty: true,
+    summary: "Vector collection/table name shared by Qdrant and LanceDB adapters.",
+  },
+  {
     key: "qdrant_url",
     path: "vector_store.qdrant.url",
     kind: "string",
@@ -193,7 +233,7 @@ export function resolveNestedSettingDescriptor(raw: string | undefined): NestedS
 /** Recoverable parsed value with the descriptor it satisfied. */
 export interface NestedSettingParsedValue {
   descriptor: NestedSettingDescriptor;
-  value: string | number;
+  value: string | number | boolean;
 }
 
 /** Throwable validation error returned as a structured result. */
@@ -209,7 +249,7 @@ export type NestedSettingParseResult =
  * Validate and coerce a raw string value for a nested-leaf setting. The
  * returned value is the typed leaf that should be written into PmSettings.
  *
- * Empty strings are allowed for "string" leaves (used to clear a value).
+ * Empty strings are allowed for "string" leaves unless `non_empty` is set.
  */
 export function parseNestedSettingValue(
   descriptor: NestedSettingDescriptor,
@@ -219,7 +259,28 @@ export function parseNestedSettingValue(
     return { ok: false, error: { message: `Config set ${descriptor.key} requires a string value` } };
   }
   const trimmed = rawValue.trim();
+  if (descriptor.kind === "boolean") {
+    const normalized = trimmed.toLowerCase();
+    if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on") {
+      return { ok: true, parsed: { descriptor, value: true } };
+    }
+    if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "off") {
+      return { ok: true, parsed: { descriptor, value: false } };
+    }
+    return {
+      ok: false,
+      error: {
+        message: `Config set ${descriptor.key} requires a boolean value (true|false), got "${rawValue}"`,
+      },
+    };
+  }
   if (descriptor.kind === "string") {
+    if (descriptor.non_empty === true && trimmed.length === 0) {
+      return {
+        ok: false,
+        error: { message: `Config set ${descriptor.key} requires a non-empty value` },
+      };
+    }
     if (descriptor.choices && !descriptor.choices.includes(trimmed)) {
       return {
         ok: false,
@@ -284,7 +345,10 @@ export function parseNestedSettingValue(
 }
 
 /** Walk a dotted path on an arbitrary record (best-effort, returns null on miss). */
-export function readNestedSettingValue(settings: unknown, descriptor: NestedSettingDescriptor): string | number | null {
+export function readNestedSettingValue(
+  settings: unknown,
+  descriptor: NestedSettingDescriptor,
+): string | number | boolean | null {
   const segments = descriptor.path.split(".");
   let cursor: unknown = settings;
   for (const segment of segments) {
@@ -293,7 +357,7 @@ export function readNestedSettingValue(settings: unknown, descriptor: NestedSett
     }
     cursor = (cursor as Record<string, unknown>)[segment];
   }
-  if (typeof cursor === "string" || typeof cursor === "number") {
+  if (typeof cursor === "string" || typeof cursor === "number" || typeof cursor === "boolean") {
     return cursor;
   }
   return null;
@@ -307,7 +371,7 @@ export function readNestedSettingValue(settings: unknown, descriptor: NestedSett
 export function writeNestedSettingValue(
   settings: Record<string, unknown>,
   descriptor: NestedSettingDescriptor,
-  value: string | number,
+  value: string | number | boolean,
 ): boolean {
   const segments = descriptor.path.split(".");
   let cursor: Record<string, unknown> = settings;

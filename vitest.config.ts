@@ -110,6 +110,7 @@ export default defineConfig({
         "src/core/search/embedding-batches.ts",
         "src/core/search/http-client.ts",
         "src/core/search/providers.ts",
+        "src/core/search/relevance.ts",
         "src/core/search/semantic-defaults.ts",
         "src/core/search/staleness.ts",
         "src/core/search/vectorization-metadata.ts",

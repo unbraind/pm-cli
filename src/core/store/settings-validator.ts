@@ -90,6 +90,15 @@ export interface ParsedSettings {
     scanner_max_batch_retries: number;
     provider?: string;
     mutation_refresh_policy?: "cache_only" | "semantic_configured" | "semantic_auto";
+    query_expansion?: {
+      enabled?: boolean;
+      provider?: string;
+    };
+    rerank?: {
+      enabled?: boolean;
+      model?: string;
+      top_k?: number;
+    };
   };
   providers: {
     openai: { base_url: string; api_key: string; model: string };
@@ -97,6 +106,7 @@ export interface ParsedSettings {
   };
   vector_store: {
     adapter?: string;
+    collection_name?: string;
     qdrant: { url: string; api_key: string };
     lancedb: { path: string };
   };
@@ -411,6 +421,19 @@ const settingsCheck = vObject({
     scanner_max_batch_retries: vNumber({ int: true }),
     provider: vOptional(vString),
     mutation_refresh_policy: vOptional(vLiteral("cache_only", "semantic_configured", "semantic_auto")),
+    query_expansion: vOptional(
+      vObject({
+        enabled: vOptional(vBoolean),
+        provider: vOptional(vString),
+      }),
+    ),
+    rerank: vOptional(
+      vObject({
+        enabled: vOptional(vBoolean),
+        model: vOptional(vString),
+        top_k: vOptional(vNumber({ int: true, positive: true })),
+      }),
+    ),
   }),
   providers: vObject({
     openai: vObject({ base_url: vString, api_key: vString, model: vString }),
@@ -418,6 +441,7 @@ const settingsCheck = vObject({
   }),
   vector_store: vObject({
     adapter: vOptional(vString),
+    collection_name: vOptional(vString),
     qdrant: vObject({ url: vString, api_key: vString }),
     lancedb: vObject({ path: vString }),
   }),

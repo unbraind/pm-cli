@@ -620,6 +620,17 @@ export interface AgentGuidanceSettings {
 
 export type SearchMutationRefreshPolicy = "cache_only" | "semantic_configured" | "semantic_auto";
 
+export interface SearchQueryExpansionSettings {
+  enabled: boolean;
+  provider: string;
+}
+
+export interface SearchRerankSettings {
+  enabled: boolean;
+  model: string;
+  top_k: number;
+}
+
 export interface PmSettings {
   version: number;
   id_prefix: string;
@@ -680,6 +691,8 @@ export interface PmSettings {
     scanner_max_batch_retries: number;
     provider?: string;
     mutation_refresh_policy: SearchMutationRefreshPolicy;
+    query_expansion: SearchQueryExpansionSettings;
+    rerank: SearchRerankSettings;
     tuning?: {
       title_exact_bonus?: number;
       title_weight?: number;
@@ -708,6 +721,7 @@ export interface PmSettings {
   context: ContextSettings;
   vector_store: {
     adapter?: string;
+    collection_name: string;
     qdrant: {
       url: string;
       api_key: string;

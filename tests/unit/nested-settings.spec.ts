@@ -11,6 +11,8 @@ const STRING_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "sear
 const INTEGER_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "search_embedding_batch_size")!;
 const NUMBER_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "search_score_threshold")!;
 const RATIO_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "search_hybrid_semantic_weight")!;
+const BOOLEAN_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "search_query_expansion_enabled")!;
+const NON_EMPTY_STRING_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "vector_store_collection_name")!;
 const NESTED_PATH_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "qdrant_url")!;
 const CHOICE_DESCRIPTOR = NESTED_SETTING_DESCRIPTORS.find((d) => d.key === "search_mutation_refresh_policy")!;
 
@@ -54,6 +56,37 @@ describe("nested-settings helpers (pm-7ilo)", () => {
       const result = parseNestedSettingValue(STRING_DESCRIPTOR, 7 as unknown as string);
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.error.message).toContain("requires a string value");
+    });
+
+    it("parses boolean settings from true/false and common aliases", () => {
+      for (const [raw, expected] of [
+        ["true", true],
+        ["false", false],
+        ["1", true],
+        ["0", false],
+        ["yes", true],
+        ["no", false],
+        ["on", true],
+        ["off", false],
+      ] as const) {
+        const result = parseNestedSettingValue(BOOLEAN_DESCRIPTOR, raw);
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.parsed.value).toBe(expected);
+        }
+      }
+    });
+
+    it("rejects invalid boolean input", () => {
+      const result = parseNestedSettingValue(BOOLEAN_DESCRIPTOR, "sometimes");
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error.message).toContain("requires a boolean value");
+    });
+
+    it("rejects empty strings for descriptors marked non_empty", () => {
+      const result = parseNestedSettingValue(NON_EMPTY_STRING_DESCRIPTOR, "   ");
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error.message).toContain("non-empty");
     });
 
     it("rejects non-finite numbers", () => {
@@ -159,6 +192,9 @@ describe("nested-settings helpers (pm-7ilo)", () => {
       expect(
         readNestedSettingValue({ search: { embedding_batch_size: 16 } }, INTEGER_DESCRIPTOR),
       ).toBe(16);
+      expect(
+        readNestedSettingValue({ search: { query_expansion: { enabled: true } } }, BOOLEAN_DESCRIPTOR),
+      ).toBe(true);
     });
   });
 
@@ -168,6 +204,8 @@ describe("nested-settings helpers (pm-7ilo)", () => {
       const changed = writeNestedSettingValue(settings, NESTED_PATH_DESCRIPTOR, "http://localhost:6333");
       expect(changed).toBe(true);
       expect(readNestedSettingValue(settings, NESTED_PATH_DESCRIPTOR)).toBe("http://localhost:6333");
+      expect(writeNestedSettingValue(settings, BOOLEAN_DESCRIPTOR, true)).toBe(true);
+      expect(readNestedSettingValue(settings, BOOLEAN_DESCRIPTOR)).toBe(true);
     });
 
     it("replaces non-object intermediates (string / array) with a fresh object before writing", () => {

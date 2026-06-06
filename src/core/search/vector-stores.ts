@@ -19,12 +19,14 @@ export type VectorStoreName = "qdrant" | "lancedb";
 export interface QdrantVectorStoreConfig {
   name: "qdrant";
   url: string;
+  collection_name?: string;
   api_key?: string;
 }
 
 export interface LanceDbVectorStoreConfig {
   name: "lancedb";
   path: string;
+  collection_name?: string;
 }
 
 export type VectorStoreConfig = QdrantVectorStoreConfig | LanceDbVectorStoreConfig;
@@ -89,6 +91,7 @@ export interface ExecuteVectorRequestOptions {
 
 type VectorSettingsInput = {
   vector_store?: {
+    collection_name?: string;
     qdrant?: {
       url?: string;
       api_key?: string;
@@ -111,6 +114,10 @@ interface LanceDbLocalTableCacheEntry {
 }
 
 const lanceDbLocalTables = new Map<string, LanceDbLocalTableCacheEntry>();
+
+function resolveStoreCollectionName(store: VectorStoreConfig): string {
+  return toNonEmptyString(store.collection_name) ?? DEFAULT_COLLECTION;
+}
 
 function normalizeVector(value: unknown): number[] {
   if (!isFiniteNumberArray(value) || value.length === 0) {
@@ -207,10 +214,12 @@ function resolveQdrantStore(settings: VectorSettingsInput): QdrantVectorStoreCon
   if (!url) {
     return null;
   }
+  const collectionName = toNonEmptyString(settings.vector_store?.collection_name);
   const apiKey = toNonEmptyString(settings.vector_store?.qdrant?.api_key);
   return {
     name: "qdrant",
     url,
+    ...(collectionName && collectionName !== DEFAULT_COLLECTION ? { collection_name: collectionName } : {}),
     ...(apiKey ? { api_key: apiKey } : {}),
   };
 }
@@ -220,9 +229,11 @@ function resolveLanceDbStore(settings: VectorSettingsInput): LanceDbVectorStoreC
   if (!lancedbPath) {
     return null;
   }
+  const collectionName = toNonEmptyString(settings.vector_store?.collection_name);
   return {
     name: "lancedb",
     path: lancedbPath,
+    ...(collectionName && collectionName !== DEFAULT_COLLECTION ? { collection_name: collectionName } : {}),
   };
 }
 
@@ -513,19 +524,22 @@ export function resolveVectorStores(settings: PmSettings | VectorSettingsInput):
 }
 
 export function resolveVectorStoreRequestTarget(store: VectorStoreConfig): VectorStoreRequestTarget {
+  const collectionName = resolveStoreCollectionName(store);
   if (store.name === "qdrant") {
     const baseUrl = trimTrailingSlashes(store.url);
+    const encodedCollection = encodeURIComponent(collectionName);
     return {
       store: "qdrant",
-      query_target: `${baseUrl}/collections/${DEFAULT_COLLECTION}/points/search`,
-      upsert_target: `${baseUrl}/collections/${DEFAULT_COLLECTION}/points?wait=true`,
+      query_target: `${baseUrl}/collections/${encodedCollection}/points/search`,
+      upsert_target: `${baseUrl}/collections/${encodedCollection}/points?wait=true`,
     };
   }
   const encodedPath = encodeURIComponent(store.path);
+  const encodedCollection = encodeURIComponent(collectionName);
   return {
     store: "lancedb",
-    query_target: `lancedb://${encodedPath}#${DEFAULT_COLLECTION}`,
-    upsert_target: `lancedb://${encodedPath}#${DEFAULT_COLLECTION}`,
+    query_target: `lancedb://${encodedPath}#${encodedCollection}`,
+    upsert_target: `lancedb://${encodedPath}#${encodedCollection}`,
   };
 }
 
@@ -550,7 +564,7 @@ export function buildVectorQueryPlan(store: VectorStoreConfig, vector: number[],
     method: "LOCAL",
     headers: {},
     body: {
-      table: DEFAULT_COLLECTION,
+      table: resolveStoreCollectionName(store),
       vector: normalizedVector,
       limit: normalizedLimit,
     },
@@ -575,7 +589,7 @@ export function buildVectorUpsertPlan(store: VectorStoreConfig, records: VectorR
     method: "LOCAL",
     headers: {},
     body: {
-      table: DEFAULT_COLLECTION,
+      table: resolveStoreCollectionName(store),
       records: normalizedRecords,
     },
   };
@@ -599,7 +613,7 @@ export function buildVectorDeletePlan(store: VectorStoreConfig, ids: string[]): 
     method: "LOCAL",
     headers: {},
     body: {
-      table: DEFAULT_COLLECTION,
+      table: resolveStoreCollectionName(store),
       ids: normalizedIds,
     },
   };
@@ -767,7 +781,7 @@ export async function executeVectorReset(
   vectorDimension?: number,
 ): Promise<VectorUpsertResult> {
   if (store.name === "lancedb") {
-    await resetLanceDbLocalTable(store.path, DEFAULT_COLLECTION);
+    await resetLanceDbLocalTable(store.path, resolveStoreCollectionName(store));
     return { status: "ok" };
   }
   if (vectorDimension !== undefined) {

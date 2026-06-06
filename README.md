@@ -128,6 +128,8 @@ For token-aware local routing, install `guide-shell` with `pm install guide-shel
 
 Hybrid queries can override blend weight per call via `pm search --mode hybrid --semantic-weight <0..1>`, and semantic corpus truncation can be tuned via `pm config project set search_embedding_corpus_max_characters <positive-int>` (provider defaults still apply when unset).
 
+Advanced semantic tuning is opt-in: `search.query_expansion` can expand semantic/hybrid queries before embedding, and `search.rerank` can rerank hybrid top-k candidates (with graceful fallback warnings when providers are unavailable). Vector backends now also support `vector_store.collection_name` for multi-workspace/shared-store isolation.
+
 ## Tracker References
 
 Current documentation work is tracked through:

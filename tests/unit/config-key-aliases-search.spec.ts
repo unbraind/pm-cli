@@ -22,6 +22,11 @@ const DEFAULT_GLOBAL_OPTIONS: GlobalOptions = {
 const EXPECTED_ALIASES: Record<string, string> = {
   search_provider: "search.provider",
   search_mutation_refresh_policy: "search.mutation_refresh_policy",
+  search_query_expansion_enabled: "search.query_expansion.enabled",
+  search_query_expansion_provider: "search.query_expansion.provider",
+  search_rerank_enabled: "search.rerank.enabled",
+  search_rerank_model: "search.rerank.model",
+  search_rerank_top_k: "search.rerank.top_k",
   search_embedding_model: "search.embedding_model",
   search_embedding_corpus_max_characters: "search.embedding_corpus_max_characters",
   search_embedding_batch_size: "search.embedding_batch_size",
@@ -35,6 +40,7 @@ const EXPECTED_ALIASES: Record<string, string> = {
   ollama_base_url: "providers.ollama.base_url",
   ollama_model: "providers.ollama.model",
   vector_store_adapter: "vector_store.adapter",
+  vector_store_collection_name: "vector_store.collection_name",
   qdrant_url: "vector_store.qdrant.url",
   qdrant_api_key: "vector_store.qdrant.api_key",
   lancedb_path: "vector_store.lancedb.path",
@@ -48,7 +54,7 @@ describe("config nested-setting aliases (pm-7ilo)", () => {
       expect(descriptor, `missing nested-setting alias: ${alias}`).toBeDefined();
       expect(descriptor!.path).toBe(expectedPath);
     }
-    expect(Object.keys(EXPECTED_ALIASES)).toHaveLength(18);
+    expect(Object.keys(EXPECTED_ALIASES)).toHaveLength(24);
   });
 
   it("resolves both kebab-case and snake_case forms of each alias", () => {
@@ -113,6 +119,29 @@ describe("config nested-setting aliases (pm-7ilo)", () => {
         path: "search.hybrid_semantic_weight",
         kind: "ratio",
         value: 0.5,
+      });
+    });
+  });
+
+  it("`pm config project set search_rerank_enabled true` parses booleans", async () => {
+    await withTempRoot("pm-cli-7ilo-aliases-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const result = await runConfig(
+        "project",
+        "set",
+        "search_rerank_enabled",
+        {},
+        { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+        "true",
+      );
+
+      expect(result.nested_setting).toEqual({
+        key: "search_rerank_enabled",
+        path: "search.rerank.enabled",
+        kind: "boolean",
+        value: true,
       });
     });
   });
@@ -203,7 +232,7 @@ describe("config nested-setting aliases (pm-7ilo)", () => {
       const result = await runConfig("project", "list", undefined, {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot });
 
       expect(result.nested_settings).toBeDefined();
-      expect(result.nested_settings).toHaveLength(18);
+      expect(result.nested_settings).toHaveLength(24);
       const keys = (result.nested_settings ?? []).map((entry) => entry.key).sort();
       expect(keys).toEqual(Object.keys(EXPECTED_ALIASES).sort());
     });

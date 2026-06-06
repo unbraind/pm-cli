@@ -183,6 +183,49 @@ function normalizeSearchMutationRefreshPolicy(value: unknown): SearchMutationRef
   return SETTINGS_DEFAULTS.search.mutation_refresh_policy;
 }
 
+function normalizeSearchQueryExpansionEnabled(value: unknown): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  return SETTINGS_DEFAULTS.search.query_expansion.enabled;
+}
+
+function normalizeSearchQueryExpansionProvider(value: unknown): string {
+  if (typeof value !== "string") {
+    return SETTINGS_DEFAULTS.search.query_expansion.provider;
+  }
+  return value.trim();
+}
+
+function normalizeSearchRerankEnabled(value: unknown): boolean {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  return SETTINGS_DEFAULTS.search.rerank.enabled;
+}
+
+function normalizeSearchRerankModel(value: unknown): string {
+  if (typeof value !== "string") {
+    return SETTINGS_DEFAULTS.search.rerank.model;
+  }
+  return value.trim();
+}
+
+function normalizeSearchRerankTopK(value: unknown): number {
+  if (typeof value === "number" && Number.isFinite(value) && Number.isInteger(value) && value > 0) {
+    return value;
+  }
+  return SETTINGS_DEFAULTS.search.rerank.top_k;
+}
+
+function normalizeVectorStoreCollectionName(value: unknown): string {
+  if (typeof value !== "string") {
+    return SETTINGS_DEFAULTS.vector_store.collection_name;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : SETTINGS_DEFAULTS.vector_store.collection_name;
+}
+
 function buildSettingsPersistSourceSnapshot(
   parsedSettings: ParsedSettings,
   runtimeSettings: PmSettings,
@@ -555,6 +598,19 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
       ...defaults.search,
       ...settings.search,
       mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(settings.search?.mutation_refresh_policy),
+      query_expansion: {
+        ...defaults.search.query_expansion,
+        ...(settings.search?.query_expansion ?? {}),
+        enabled: normalizeSearchQueryExpansionEnabled(settings.search?.query_expansion?.enabled),
+        provider: normalizeSearchQueryExpansionProvider(settings.search?.query_expansion?.provider),
+      },
+      rerank: {
+        ...defaults.search.rerank,
+        ...(settings.search?.rerank ?? {}),
+        enabled: normalizeSearchRerankEnabled(settings.search?.rerank?.enabled),
+        model: normalizeSearchRerankModel(settings.search?.rerank?.model),
+        top_k: normalizeSearchRerankTopK(settings.search?.rerank?.top_k),
+      },
     },
     providers: {
       openai: { ...defaults.providers.openai, ...settings.providers.openai },
@@ -562,6 +618,7 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
     },
     vector_store: {
       adapter: settings.vector_store.adapter ?? defaults.vector_store.adapter,
+      collection_name: normalizeVectorStoreCollectionName(settings.vector_store.collection_name),
       qdrant: { ...defaults.vector_store.qdrant, ...settings.vector_store.qdrant },
       lancedb: { ...defaults.vector_store.lancedb, ...settings.vector_store.lancedb },
     },
@@ -612,6 +669,19 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
       ...SETTINGS_DEFAULTS.search,
       ...settings.search,
       mutation_refresh_policy: normalizeSearchMutationRefreshPolicy(settings.search?.mutation_refresh_policy),
+      query_expansion: {
+        ...SETTINGS_DEFAULTS.search.query_expansion,
+        ...(settings.search?.query_expansion ?? {}),
+        enabled: normalizeSearchQueryExpansionEnabled(settings.search?.query_expansion?.enabled),
+        provider: normalizeSearchQueryExpansionProvider(settings.search?.query_expansion?.provider),
+      },
+      rerank: {
+        ...SETTINGS_DEFAULTS.search.rerank,
+        ...(settings.search?.rerank ?? {}),
+        enabled: normalizeSearchRerankEnabled(settings.search?.rerank?.enabled),
+        model: normalizeSearchRerankModel(settings.search?.rerank?.model),
+        top_k: normalizeSearchRerankTopK(settings.search?.rerank?.top_k),
+      },
     },
     context: {
       default_depth: settings.context?.default_depth ?? SETTINGS_DEFAULTS.context.default_depth,
@@ -626,6 +696,13 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
       enabled: normalizeStringList(settings.extensions?.enabled),
       disabled: normalizeStringList(settings.extensions?.disabled),
       policy: normalizeExtensionPolicySettings(settings.extensions?.policy),
+    },
+    vector_store: {
+      ...(settings.vector_store ?? {}),
+      adapter: settings.vector_store?.adapter ?? SETTINGS_DEFAULTS.vector_store.adapter,
+      collection_name: normalizeVectorStoreCollectionName(settings.vector_store?.collection_name),
+      qdrant: { ...(settings.vector_store?.qdrant ?? {}) },
+      lancedb: { ...(settings.vector_store?.lancedb ?? {}) },
     },
   };
   const ordered = orderObject(
@@ -783,7 +860,17 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     "scanner_max_batch_retries",
     "provider",
     "mutation_refresh_policy",
+    "query_expansion",
+    "rerank",
   ]);
+  (ordered.search as Record<string, unknown>).query_expansion = orderObject(
+    ((ordered.search as Record<string, unknown>).query_expansion ?? {}) as Record<string, unknown>,
+    ["enabled", "provider"],
+  );
+  (ordered.search as Record<string, unknown>).rerank = orderObject(
+    ((ordered.search as Record<string, unknown>).rerank ?? {}) as Record<string, unknown>,
+    ["enabled", "model", "top_k"],
+  );
   ordered.providers = orderObject(ordered.providers as Record<string, unknown>, ["openai", "ollama"]);
   (ordered.providers as Record<string, unknown>).openai = orderObject(
     ((ordered.providers as Record<string, unknown>).openai ?? {}) as Record<string, unknown>,
@@ -793,7 +880,12 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     ((ordered.providers as Record<string, unknown>).ollama ?? {}) as Record<string, unknown>,
     ["base_url", "model"],
   );
-  ordered.vector_store = orderObject(ordered.vector_store as Record<string, unknown>, ["adapter", "qdrant", "lancedb"]);
+  ordered.vector_store = orderObject(ordered.vector_store as Record<string, unknown>, [
+    "adapter",
+    "collection_name",
+    "qdrant",
+    "lancedb",
+  ]);
   (ordered.vector_store as Record<string, unknown>).qdrant = orderObject(
     ((ordered.vector_store as Record<string, unknown>).qdrant ?? {}) as Record<string, unknown>,
     ["url", "api_key"],
