@@ -328,10 +328,7 @@ async function runFixtureEvaluation(fixture, global) {
 
 async function runReindexEvaluation(fixturesPath, global) {
   const fixtures = await loadEvalFixtures(fixturesPath);
-  const results = [];
-  for (const fixture of fixtures) {
-    results.push(await runFixtureEvaluation(fixture, global));
-  }
+  const results = await Promise.all(fixtures.map((fixture) => runFixtureEvaluation(fixture, global)));
   const passCount = results.filter((result) => result.passed).length;
   const averageNdcg = roundMetric(results.reduce((sum, result) => sum + result.ndcg_at_5, 0) / results.length);
   return {
