@@ -6,13 +6,14 @@ status: closed
 priority: 3
 tags[5]: agent-ux,"area:cli","area:lifecycle",governance,living-map
 created_at: "2026-05-31T19:43:37.485Z"
-updated_at: "2026-06-06T10:41:42.502Z"
+updated_at: "2026-06-06T11:31:15.251Z"
 author: maintainer-agent
 acceptance_criteria: "governance.require_close_reason boolean (default true); when false, empty-reason close proceeds; CLI+MCP contracts mark reason conditionally required; validator+docs updated; default fully backward compatible."
 value: "pm close hard-requires a non-empty reason; for solo repos / agent automation the history record can suffice. A settings key (default true = no change) relaxes it, mirroring the validate-close config pattern."
 parent: pm-mpbb
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-06-06T10:40:53.171Z",codex-5-3,"Evidence: added governance.require_close_reason default-on setting through types/constants/settings/config/positional routing, close-close-many-close-task runtime behavior, MCP close schema, and contract/help updates. Verified via node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/settings-validator.spec.ts tests/unit/config-positional-value.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/release-readiness-runtime.spec.ts and manual sandbox close without reason after disabling policy."
+  "2026-06-06T11:31:15.251Z",codex-5-3,"Post-close follow-up on PR #120: added governance_require_close_reason to enabled/disabled synonym normalization and accepted pm_close text alias in MCP runAction close reason resolution. Re-verified targeted tests and full 100% coverage. Commit dc016aa4."
 files[13]{path,scope,note}:
   src/cli/commands/close-many.ts,project,Make bulk close reason optional when governance allows
   src/cli/commands/close.ts,project,Make close reason requirement conditional on governance setting

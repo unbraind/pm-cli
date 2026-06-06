@@ -6,13 +6,14 @@ status: closed
 priority: 3
 tags[4]: agent-ux,"area:cli","area:lifecycle",living-map
 created_at: "2026-05-31T19:43:36.545Z"
-updated_at: "2026-06-06T10:41:41.949Z"
+updated_at: "2026-06-06T11:31:14.964Z"
 author: maintainer-agent
 acceptance_criteria: "pm copy <id> [--title] [--status open] copies type/priority/desc/body/tags/parent/assignee/etc.; resets id/status/timestamps/close fields; history notes source; MCP contract."
 value: "Agents re-create same-shape items (recurring audits, template issues) by re-specifying all fields. pm copy clones non-lifecycle fields into a fresh open item."
 parent: pm-mpbb
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-06-06T10:40:48.149Z",codex-5-3,"Evidence: added pm copy command with lifecycle field reset, source-id history suffix, MCP pm_copy tool wiring, enum/contracts, completion surfaces, and dedicated unit coverage. Verified via node scripts/run-tests.mjs test -- tests/unit/copy-command.spec.ts tests/integration/mcp-handshake.spec.ts tests/integration/release-readiness-runtime.spec.ts and manual sandbox copy+close flow."
+  "2026-06-06T11:31:14.964Z",codex-5-3,"Post-close follow-up on PR #120: wired MCP runAction copy path to honor top-level title/message/author args, added fish completion --force parity for pm copy, and validated with targeted tests plus full coverage (100%). Commit dc016aa4."
 files[8]{path,scope,note}:
   src/cli/commands/completion.ts,project,Add copy command completion surfaces
   src/cli/commands/copy.ts,project,Add copy command implementation with lifecycle reset semantics
