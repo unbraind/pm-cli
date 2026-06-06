@@ -6,14 +6,15 @@ status: closed
 priority: 3
 tags[6]: "area:search",eval,living-map,quality,roadmap,testing
 created_at: "2026-05-31T19:44:24.148Z"
-updated_at: "2026-06-06T08:12:33.698Z"
+updated_at: "2026-06-06T08:18:51.648Z"
 author: maintainer-agent
 acceptance_criteria: "tests/search-eval/ JSON fixtures {query,mode,expected_top_ids}; pm test --eval-search (or pm reindex --eval) scores nDCG@5 with per-fixture pass/fail; optional non-blocking CI gate; seeded with 10-20 real corpus queries."
 value: No automated way to verify a ranking change improves/regresses quality. A golden-query fixture set scored via nDCG@5 gives a tuning feedback loop and catches regressions.
 parent: pm-ydp6
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-06-06T07:16:54.484Z",codex-search-eval-bundle,"Kickoff: implementing package-owned reindex eval harness (pm reindex --eval) with golden-query fixtures and nDCG@5 scoring/output, plus contract/tests/docs updates in one combined PR with pm-fhsg."
   "2026-06-06T07:52:19.485Z",codex-search-eval-bundle,"Implementation complete: added package-owned reindex eval harness (--eval, --eval-fixtures) with fixture parsing/validation, per-query nDCG@5 scoring, pass/fail thresholds, aggregate summary, and deterministic JSON append under eval. Seeded default fixtures at tests/search-eval/golden-queries.json and documented fixture schema/usage in pm-search-advanced README. Verification evidence: focused tests (search-advanced runtime + release-readiness runtime) passed; contracts update/check passed; full coverage passed at 100/100/100/100. Manual temp-dir validation evidence: tmp_root=/tmp/tmp.0RrM2zV3ti, fixture_count=2, pass_count=2, fail_count=0, average_ndcg_at_5=1, passed=true. Both fixtures returned ndcg_at_5=1 and passed=true with per-fixture actual_top_ids emitted. PM validate check-resolution/check-history-drift and pm health --check-only both returned ok (validate includes existing resolution warnings unrelated to this change set)."
+  "2026-06-06T08:18:51.648Z",codex-search-eval-bundle,"Follow-up: regenerated CHANGELOG.md via pnpm changelog:pm and verified pnpm changelog:pm:check passes after final lifecycle close/release updates."
 files[8]{path,scope,note}:
   .github/workflows/ci.yml,project,Add non-blocking advisory CI step for reindex eval visibility.
   packages/pm-search-advanced/extensions/search-advanced/index.js,project,Keep JS command registration aligned with TS flag updates.
@@ -29,7 +30,8 @@ tests[5]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   pm health --check-only,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
   pm validate --check-resolution --check-history-drift,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
   "pnpm contracts:update && pnpm contracts:check",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
-docs[1]{path,scope,note}:
+docs[2]{path,scope,note}:
+  CHANGELOG.md,project,Regenerated with pm-changelog after final item closure updates.
   packages/pm-search-advanced/README.md,project,Document reindex eval usage and fixture schema.
 close_reason: "Implemented reindex eval harness with nDCG@5 fixtures, pass/fail output, and full verification evidence."
 body: ""
