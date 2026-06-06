@@ -25,6 +25,7 @@ export {
 export * from "./cli-contracts.js";
 export * from "./runtime.js";
 export {
+  assertPackageManifest,
   assertRegisteredCommandContract,
   assertRegisteredExporter,
   assertRegisteredHook,
@@ -32,8 +33,11 @@ export {
   assertRegisteredItemField,
   assertRegisteredItemType,
   assertRegisteredSearchProvider,
+  assertRegisteredVectorStoreAdapter,
   activateExtensionForTest,
   type ActivateExtensionForTestOptions,
+  type PackageManifestExpectation,
+  type PackageManifestResourceExpectation,
   type RegisteredCommandContractAssertion,
   type RegisteredCommandContractExpectation,
   type RegisteredExporterExpectation,
@@ -45,6 +49,7 @@ export {
   type RegisteredItemTypeAssertion,
   type RegisteredItemTypeExpectation,
   type RegisteredSearchProviderExpectation,
+  type RegisteredVectorStoreAdapterExpectation,
 } from "./testing.js";
 
 /**
@@ -150,6 +155,7 @@ export type {
   RegisteredExtensionHook,
   RegisteredExtensionImporter,
   RegisteredExtensionSearchProvider,
+  RegisteredExtensionVectorStoreAdapter,
   RendererOverride,
   RendererOverrideContext,
   SchemaFieldDefinition,

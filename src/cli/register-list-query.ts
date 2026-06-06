@@ -68,7 +68,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--updated-before <value>", "Filter by updated_at upper bound: ISO timestamp or signed relative (-2h/+1d)")
       .option("--created-after <value>", "Filter by created_at lower bound: ISO timestamp or signed relative (-2h/+1d)")
       .option("--created-before <value>", "Filter by created_at upper bound: ISO timestamp or signed relative (-2h/+1d)")
-      .option("--ids <value>", "Filter by explicit item IDs (comma-separated)")
+      .option("--ids <value>", "Filter by explicit item IDs (comma-separated or repeatable)")
       .option("--assignee <value>", "Filter by assignee")
       .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
       .option("--parent <value>", "Filter by parent item ID")

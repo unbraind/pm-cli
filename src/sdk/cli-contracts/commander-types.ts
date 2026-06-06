@@ -25,6 +25,7 @@ export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContrac
   { target: "updatedBefore", keys: ["updatedBefore"] },
   { target: "createdAfter", keys: ["createdAfter"] },
   { target: "createdBefore", keys: ["createdBefore"] },
+  { target: "ids", keys: ["ids"] },
   { target: "assignee", keys: ["assignee"] },
   { target: "assigneeFilter", keys: ["assigneeFilter", "assignee_filter"] },
   { target: "parent", keys: ["parent"] },

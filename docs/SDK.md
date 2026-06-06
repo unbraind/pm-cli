@@ -66,11 +66,13 @@ Command/action contract exports:
 Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 
 - `activateExtensionForTest`
+- `assertPackageManifest`
 - `assertRegisteredCommandContract`
 - `assertRegisteredHook`
 - `assertRegisteredSearchProvider`
 - `assertRegisteredImporter`
 - `assertRegisteredExporter`
+- `assertRegisteredVectorStoreAdapter`
 
 Commander option contract exports:
 
@@ -151,6 +153,28 @@ pm schema show Experiment --json
 When a package-owned command is missing at runtime, CLI usage guidance now includes a deterministic install hint (for example `pm install calendar` or `pm install search-advanced`) so agents can recover in one retry.
 
 Package installs currently activate only extension resources. Additional package resource kinds (`docs`, `examples`) are metadata-first and available through package manifest/catalog inspection.
+
+Package tests can assert the normalized manifest through the SDK without
+reimplementing resource sorting, alias normalization, or package.json parsing:
+
+```ts
+import {
+  assertPackageManifest,
+  readPmPackageManifest,
+} from "@unbrained/pm-cli/sdk";
+
+const manifest = await readPmPackageManifest(packageRoot);
+
+assertPackageManifest(manifest, {
+  packageName: "@acme/pm-incident-workflow",
+  aliases: ["incident-workflow"],
+  resources: {
+    extensions: ["extensions/incident-workflow"],
+    docs: ["README.md"],
+    examples: ["examples/basic.md"],
+  },
+});
+```
 
 For provider-safe schemas, use `PM_PROVIDER_TOOL_PARAMETERS_SCHEMA`. It is flat and avoids advanced schema constructs such as root `oneOf`.
 
@@ -332,6 +356,7 @@ import {
   assertRegisteredExporter,
   assertRegisteredImporter,
   assertRegisteredSearchProvider,
+  assertRegisteredVectorStoreAdapter,
 } from "@unbrained/pm-cli/sdk/testing";
 
 assertRegisteredImporter(activation.registrations, { importer: "jsonl" });
@@ -340,7 +365,13 @@ assertRegisteredExporter(activation.registrations, {
   extensionName: "my-ext",
 });
 assertRegisteredSearchProvider(activation.registrations, { provider: "semantic-local" });
+assertRegisteredVectorStoreAdapter(activation.registrations, { adapter: "pinecone" });
 ```
+
+Use `assertRegisteredVectorStoreAdapter` for packages that call
+`registerVectorStoreAdapter`. It proves the semantic-storage integration is
+present without importing private registry internals or configuring a live
+vector store in unit tests.
 
 Assert package-owned schema registrations the same way. This lets packages prove
 their custom project-management primitives without importing private registry

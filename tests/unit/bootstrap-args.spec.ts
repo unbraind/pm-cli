@@ -329,6 +329,16 @@ describe("normalizeBootstrapInvocation", () => {
     expect(normalized.trace.some((entry) => entry.reason === "list_merge")).toBe(true);
   });
 
+  it("accumulates repeated list-filter --ids occurrences", () => {
+    const normalized = normalizeBootstrapInvocation(["list-open", "--ids", "pm-a", "--ids=pm-b,pm-c"]);
+    expect(normalized.argv).toEqual(["list-open", "--ids=pm-a,pm-b,pm-c"]);
+    expect(normalized.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ from: "--ids (x2)", to: ["--ids=pm-a,pm-b,pm-c"], reason: "list_merge" }),
+      ]),
+    );
+  });
+
   it("accumulates repeated --fields occurrences for get (pm-cf1u)", () => {
     const normalized = normalizeBootstrapInvocation(["get", "pm-1", "--fields", "id", "--fields", "title"]);
     expect(normalized.argv).toEqual(["get", "pm-1", "--fields=id,title"]);

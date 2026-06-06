@@ -1,0 +1,29 @@
+id: pm-xevy
+title: SDK testing helper for package manifest resource assertions
+description: "Add assertPackageManifest to the public SDK testing surface so package authors can verify normalized package names, aliases, and pm.extensions/docs/examples resources without duplicating pm manifest parsing and normalization logic. Duplicate check: searched package manifest resource assertions SDK testing helper; related package resource model items are closed and do not provide this assertion helper."
+type: Task
+status: closed
+priority: 2
+tags: []
+created_at: "2026-06-06T19:14:55.058Z"
+updated_at: "2026-06-06T19:33:03.236Z"
+author: codex-sdk-continuation
+parent: pm-ugqx
+resolution: Delivered public SDK package manifest assertion helper with docs and full coverage.
+expected_result: "Package authors can verify normalized package name, aliases, and resource paths without duplicating manifest parsing."
+actual_result: "assertPackageManifest is exported from sdk/testing and sdk barrel, documented, unit-covered, and temp-consumer verified."
+comments[1]{created_at,author,text}:
+  "2026-06-06T19:32:32.039Z",codex-sdk-continuation,"Evidence: added assertPackageManifest to sdk/testing and SDK barrel, documented package-manifest assertions in docs/SDK.md and docs/EXTENSIONS.md, covered package name/alias/resource success and actionable missing-value errors. Verification: linked sdk-index spec passed; full coverage passed 2526 tests with 100% statements/branches/functions/lines; manual temp npm consumer read a package manifest and asserted resources; pnpm build passed; audit/security/Sentry/telemetry gates passed."
+files[3]{path,scope,note}:
+  src/sdk/index.ts,project,Re-export package manifest assertion helper/types from SDK barrel.
+  src/sdk/testing.ts,project,Add assertPackageManifest helper and expectation types.
+  tests/unit/sdk-index.spec.ts,project,Cover package manifest assertion success and actionable failure.
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mq2r0plm-fip0vq,test,passed,"2026-06-06T19:30:55.158Z","2026-06-06T19:31:06.010Z","2026-06-06T19:31:06.010Z",null,null,1,0,0,null,null,null
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Point package authors to SDK manifest assertion helper.
+  docs/SDK.md,project,Document package manifest assertion workflow.
+close_reason: "Delivered package manifest SDK testing helper with docs, linked tests, manual temp smoke, and 100% coverage."
+body: ""
