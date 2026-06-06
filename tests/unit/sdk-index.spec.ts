@@ -19,6 +19,8 @@ import {
   assertRegisteredExporter as assertRegisteredExporterFromBarrel,
   assertRegisteredHook as assertRegisteredHookFromBarrel,
   assertRegisteredImporter as assertRegisteredImporterFromBarrel,
+  assertRegisteredItemField as assertRegisteredItemFieldFromBarrel,
+  assertRegisteredItemType as assertRegisteredItemTypeFromBarrel,
   assertRegisteredSearchProvider as assertRegisteredSearchProviderFromBarrel,
   activateExtensionForTest as activateExtensionForTestFromBarrel,
   appendHistoryEntry,
@@ -45,6 +47,8 @@ import {
   assertRegisteredExporter,
   assertRegisteredHook,
   assertRegisteredImporter,
+  assertRegisteredItemField,
+  assertRegisteredItemType,
   assertRegisteredSearchProvider,
   activateExtensionForTest,
 } from "../../src/sdk/testing.js";
@@ -76,8 +80,30 @@ function createRegistrationRegistry(): ExtensionRegistrationRegistry {
         flags: [{ long: "--shout" }, { short: "-n", long: "--name", value_name: "value" }],
       },
     ],
-    item_fields: [],
-    item_types: [],
+    item_fields: [
+      {
+        layer: "project",
+        name: "schema-ext",
+        fields: [
+          { name: "severity", type: "string" },
+          { name: "impact", type: "number", optional: true },
+        ],
+      },
+    ],
+    item_types: [
+      {
+        layer: "project",
+        name: "schema-ext",
+        types: [
+          {
+            name: "Incident",
+            folder: "incidents",
+            aliases: ["incident"],
+            required_create_fields: ["severity"],
+          },
+        ],
+      },
+    ],
     migrations: [],
     importers: [
       { layer: "project", name: "todos-ext", importer: "todos" },
@@ -268,6 +294,8 @@ describe("public sdk entrypoint", () => {
     expect(typeof assertRegisteredSearchProviderFromBarrel).toBe("function");
     expect(typeof assertRegisteredImporterFromBarrel).toBe("function");
     expect(typeof assertRegisteredExporterFromBarrel).toBe("function");
+    expect(typeof assertRegisteredItemFieldFromBarrel).toBe("function");
+    expect(typeof assertRegisteredItemTypeFromBarrel).toBe("function");
     expect(typeof activateExtensionForTestFromBarrel).toBe("function");
   });
 
@@ -613,6 +641,70 @@ describe("sdk testing helpers", () => {
     ).toThrow(/Available exporters: \(none\)/);
   });
 
+  it("asserts schema item field registrations with actionable failures", () => {
+    const field = assertRegisteredItemField(createRegistrationRegistry(), {
+      field: "Severity",
+      extensionName: "schema-ext",
+      type: "string",
+    });
+    expect(field.registration.name).toBe("schema-ext");
+    expect(field.field).toEqual({ name: "severity", type: "string" });
+
+    expect(() =>
+      assertRegisteredItemField(createRegistrationRegistry(), {
+        field: "severity",
+        type: "boolean",
+      }),
+    ).toThrow(/Expected item field "severity".*Available item fields: impact:number, severity:string/);
+
+    expect(() =>
+      assertRegisteredItemField(createRegistrationRegistry(), {
+        field: "severity",
+        extensionName: "other-ext",
+      }),
+    ).toThrow(/from extension "other-ext".*Available item fields: impact:number, severity:string/);
+
+    expect(() =>
+      assertRegisteredItemField({ ...createRegistrationRegistry(), item_fields: [] }, { field: "severity" }),
+    ).toThrow(/Available item fields: \(none\)/);
+
+    expect(() => assertRegisteredItemField(createRegistrationRegistry(), { field: "   " })).toThrow(
+      "Expected item field name must be a non-empty string",
+    );
+  });
+
+  it("asserts schema item type registrations with actionable failures", () => {
+    const itemType = assertRegisteredItemType(createRegistrationRegistry(), {
+      itemType: "incident",
+      extensionName: "schema-ext",
+      folder: "incidents",
+    });
+    expect(itemType.registration.name).toBe("schema-ext");
+    expect(itemType.itemType.required_create_fields).toEqual(["severity"]);
+
+    expect(() =>
+      assertRegisteredItemType(createRegistrationRegistry(), {
+        itemType: "Incident",
+        folder: "wrong-folder",
+      }),
+    ).toThrow(/Expected item type "incident".*Available item types: Incident:incidents/);
+
+    expect(() =>
+      assertRegisteredItemType(createRegistrationRegistry(), {
+        itemType: "Incident",
+        extensionName: "other-ext",
+      }),
+    ).toThrow(/from extension "other-ext".*Available item types: Incident:incidents/);
+
+    expect(() => assertRegisteredItemType({ ...createRegistrationRegistry(), item_types: [] }, { itemType: "Incident" })).toThrow(
+      /Available item types: \(none\)/,
+    );
+
+    expect(() => assertRegisteredItemType(createRegistrationRegistry(), { itemType: "   " })).toThrow(
+      "Expected item type name must be a non-empty string",
+    );
+  });
+
   it("asserts importer, exporter, search provider, and hook registrations from a real extension activation", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       await writeTestExtension({
@@ -623,7 +715,7 @@ describe("sdk testing helpers", () => {
           name: "capability-ext",
           version: "1.0.0",
           entry: "./index.mjs",
-          capabilities: ["importers", "search", "hooks"],
+          capabilities: ["importers", "search", "hooks", "schema"],
         },
         entryFilename: "index.mjs",
         entrySource: [
@@ -631,6 +723,8 @@ describe("sdk testing helpers", () => {
           "  api.registerImporter('jsonl', async () => ({ items: [] }));",
           "  api.registerExporter('jsonl', async () => ({ content: '' }));",
           "  api.registerSearchProvider({ name: 'capability-search', query: async () => ({ hits: [] }) });",
+          "  api.registerItemFields([{ name: 'risk', type: 'string' }]);",
+          "  api.registerItemTypes([{ name: 'Risk', folder: 'risks', aliases: ['risk'], required_create_fields: ['risk'] }]);",
           "  api.hooks.onWrite(() => undefined);",
           "}",
           "",
@@ -660,6 +754,18 @@ describe("sdk testing helpers", () => {
         extensionName: "capability-ext",
       });
       expect(typeof hook.run).toBe("function");
+
+      const field = assertRegisteredItemField(activation.registrations, {
+        field: "risk",
+        extensionName: "capability-ext",
+      });
+      expect(field.field.type).toBe("string");
+
+      const itemType = assertRegisteredItemType(activation.registrations, {
+        itemType: "Risk",
+        extensionName: "capability-ext",
+      });
+      expect(itemType.itemType.folder).toBe("risks");
     });
   });
 
@@ -683,6 +789,8 @@ describe("sdk testing helpers", () => {
           flags: [{ long: "--name", value_type: "string" }],
           run: async () => ({ ok: true }),
         });
+        api.registerItemFields([{ name: "severity", type: "string" }]);
+        api.registerItemTypes([{ name: "Incident", folder: "incidents", required_create_fields: ["severity"] }]);
         api.hooks.afterCommand(() => undefined);
       },
     });
@@ -700,6 +808,20 @@ describe("sdk testing helpers", () => {
       extensionName: "memory-ext",
     });
     expect(typeof hook.run).toBe("function");
+
+    const field = assertRegisteredItemField(activation.registrations, {
+      field: "severity",
+      extensionName: "memory-ext",
+      type: "string",
+    });
+    expect(field.field.name).toBe("severity");
+
+    const itemType = assertRegisteredItemType(activation.registrations, {
+      itemType: "Incident",
+      extensionName: "memory-ext",
+      folder: "incidents",
+    });
+    expect(itemType.itemType.required_create_fields).toEqual(["severity"]);
   });
 
   it("uses a default manifest for simple in-memory extension tests", async () => {

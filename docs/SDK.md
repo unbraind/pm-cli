@@ -342,6 +342,27 @@ assertRegisteredExporter(activation.registrations, {
 assertRegisteredSearchProvider(activation.registrations, { provider: "semantic-local" });
 ```
 
+Assert package-owned schema registrations the same way. This lets packages prove
+their custom project-management primitives without importing private registry
+types or reading generated schema files:
+
+```ts
+import {
+  assertRegisteredItemField,
+  assertRegisteredItemType,
+} from "@unbrained/pm-cli/sdk/testing";
+
+assertRegisteredItemField(activation.registrations, {
+  field: "severity",
+  extensionName: "incident-ext",
+  type: "string",
+});
+assertRegisteredItemType(activation.registrations, {
+  itemType: "Incident",
+  folder: "incidents",
+});
+```
+
 Hooks are surfaced via `activation.hooks` (an `ExtensionHookRegistry`), not the command
 registry, so `assertRegisteredHook` takes the hook registry and a lifecycle `kind`
 (`before_command` | `after_command` | `on_read` | `on_write` | `on_index`):

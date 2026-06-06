@@ -29,6 +29,8 @@ export {
   assertRegisteredExporter,
   assertRegisteredHook,
   assertRegisteredImporter,
+  assertRegisteredItemField,
+  assertRegisteredItemType,
   assertRegisteredSearchProvider,
   activateExtensionForTest,
   type ActivateExtensionForTestOptions,
@@ -38,6 +40,10 @@ export {
   type RegisteredHookExpectation,
   type RegisteredHookKind,
   type RegisteredImporterExpectation,
+  type RegisteredItemFieldAssertion,
+  type RegisteredItemFieldExpectation,
+  type RegisteredItemTypeAssertion,
+  type RegisteredItemTypeExpectation,
   type RegisteredSearchProviderExpectation,
 } from "./testing.js";
 
