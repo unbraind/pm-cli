@@ -2,12 +2,11 @@ id: pm-fhsg
 title: "As a maintainer tuning relevance, I want a golden-query eval harness, so that I can catch ranking regressions before release"
 description: "As a maintainer tuning relevance, I want a golden-query eval harness, so that I can catch ranking regressions before release"
 type: Story
-status: in_progress
+status: closed
 priority: 3
 tags[4]: "area:search",living-map,quality,story
 created_at: "2026-05-31T19:49:45.631Z"
-updated_at: "2026-06-06T07:52:32.970Z"
-assignee: codex-search-eval-bundle
+updated_at: "2026-06-06T08:12:34.502Z"
 author: maintainer-agent
 acceptance_criteria: "A relevance/ranking change can be validated against a stored baseline before release: regressions surface as a measurable nDCG@5 drop on the golden-query set, and the maintainer gets a clear per-query pass/fail signal. (Implemented by the eval-harness task pm-22x2, which owns the fixture format and runner.)"
 parent: pm-ydp6
@@ -26,4 +25,5 @@ tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
 docs[1]{path,scope,note}:
   packages/pm-search-advanced/README.md,project,Operator guidance for interpreting eval output and fixture schema.
+close_reason: Delivered maintainer golden-query regression workflow through pm reindex --eval with measurable nDCG@5 signals.
 body: ""
