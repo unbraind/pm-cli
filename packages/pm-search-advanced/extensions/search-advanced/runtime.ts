@@ -5,7 +5,6 @@ import type {
   GlobalOptions,
   ReindexOptions,
   ReindexResult,
-  SearchResultItem,
   SearchOptions,
   SearchResult,
 } from "../../../../src/sdk/runtime.js";
@@ -383,7 +382,7 @@ async function runFixtureEvaluation(fixture: SearchEvalFixture, global: GlobalOp
     },
     global,
   );
-  const actualTopIds = searchResult.items.map((item) => (item as SearchResultItem & { id: string }).id).slice(0, EVAL_RANK_CUTOFF);
+  const actualTopIds = searchResult.items.map((item) => (item as { id: string }).id).slice(0, EVAL_RANK_CUTOFF);
   const ndcgAt5 = roundMetric(computeNdcgAt5(actualTopIds, fixture.expected_top_ids));
   const minNdcgAt5 = roundMetric(fixture.min_ndcg_at_5);
   return {
