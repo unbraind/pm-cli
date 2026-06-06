@@ -184,6 +184,33 @@ export function registerOperationCommands(program: Command): void {
     });
 
   program
+    .command("telemetry")
+    .argument("[subcommand]", "Telemetry subcommand: status, flush, stats, clear (default: status)")
+    .option("--limit <n>", "Maximum command groups returned by telemetry stats")
+    .description("Inspect and manage local telemetry queue/runtime state.")
+    .action(async (subcommand: string | undefined, options: Record<string, unknown>, command) => {
+      const globalOptions = getGlobalOptions(command);
+      const startedAt = Date.now();
+      const { runTelemetry } = await import("./commands/telemetry.js");
+      const result = await runTelemetry(
+        {
+          subcommand,
+          limit:
+            typeof options.limit === "string"
+              ? options.limit
+              : typeof options.limit === "number" && Number.isFinite(options.limit)
+                ? options.limit
+                : undefined,
+        },
+        globalOptions,
+      );
+      printResult(result, globalOptions);
+      if (globalOptions.profile) {
+        printError(`profile:command=telemetry took_ms=${Date.now() - startedAt}`);
+      }
+    });
+
+  program
     .command("stats")
     .description("Show project tracker statistics.")
     .option(

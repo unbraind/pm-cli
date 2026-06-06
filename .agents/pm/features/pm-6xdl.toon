@@ -2,13 +2,36 @@ id: pm-6xdl
 title: pm telemetry local-analytics subcommand (status/flush/stats/clear)
 description: "No direct command to inspect the local queue, trigger a flush, or see per-command frequency from local JSONL; today only pm health surfaces telemetry state."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[4]: agent-ux,"area:observability","area:telemetry",living-map
 created_at: "2026-05-31T19:45:02.912Z"
-updated_at: "2026-05-31T19:45:02.912Z"
+updated_at: "2026-06-06T05:05:00.205Z"
 author: maintainer-agent
 acceptance_criteria: "pm telemetry status (queue depth/last flush/endpoint), flush (inline flushTelemetryQueueNow), stats [--limit N] (group local events by command, offline), clear (disable+delete queue); advisory; pm_run action=telemetry; empty-queue exits 0."
 value: "No direct command to inspect the local queue, trigger a flush, or see per-command frequency from local JSONL; today only pm health surfaces telemetry state."
 parent: pm-5oj5
+comments[2]{created_at,author,text}:
+  "2026-06-06T04:45:12.384Z",codex-telemetry-batch,"Kickoff: implementing pm telemetry status/flush/stats/clear command surface, MCP/contracts wiring, token-efficient output defaults, and full validation as part of one combined observability PR with pm-t4wb."
+  "2026-06-06T05:04:53.481Z",codex-telemetry-batch,"Implemented pm telemetry local analytics command surface: pm telemetry status/flush/stats/clear wired in CLI registration, command help content, SDK contracts, MCP pm_run action=telemetry dispatch, and refreshed contracts snapshot. New command behavior: status reports queue depth + endpoint + last flush metadata; stats groups queued events by command with --limit; flush triggers inline queue flush and reports before/after depth; clear disables telemetry and removes runtime queue/state artifacts. Added dedicated unit coverage at tests/unit/commands/telemetry-command.spec.ts plus release-readiness + MCP contract parity tests. Manual temp-dir smoke (dist CLI) executed status/stats/flush/clear/status in a fresh PM_PATH+PM_GLOBAL_PATH sandbox and confirmed clear leaves telemetry disabled with queue_entries=0 and no runtime telemetry artifacts."
+files[11]{path,scope,note}:
+  src/cli/commands/index.ts,project,export telemetry command handler
+  src/cli/commands/telemetry.ts,project,implement local analytics status flush stats clear with token-efficient defaults
+  src/cli/help-content.ts,project,add telemetry command why/examples help content
+  src/cli/register-operations.ts,project,register pm telemetry status flush stats clear command surface
+  src/mcp/server.ts,project,wire pm_run action telemetry dispatch
+  src/sdk/cli-contracts.ts,project,add telemetry action contract schema and flag contracts
+  src/sdk/cli-contracts/enum-contracts.ts,project,register telemetry in command/action enums
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,expand subcommand metadata examples to include telemetry
+  tests/fixtures/contracts/full.json,project,refresh full contract snapshot for telemetry action
+  tests/integration/release-readiness-runtime.spec.ts,project,include telemetry command in readiness and coverage allowlist expectations
+  tests/unit/commands/telemetry-command.spec.ts,project,unit coverage for telemetry status stats flush clear behavior
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,full suite remains at 100 percent coverage with telemetry command
+  node scripts/run-tests.mjs test -- tests/unit/commands/telemetry-command.spec.ts tests/integration/release-readiness-runtime.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/sdk-index.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,telemetry CLI contracts and MCP alignment regression tests
+  "pnpm changelog:pm:check",null,project,900,null,null,null,null,null,null,null,null,null,null,null,validate latest pm-changelog package output in check mode
+docs[2]{path,scope,note}:
+  docs/ARCHITECTURE.md,project,document telemetry schema negotiation contract surfaced by status/health
+  docs/COMMANDS.md,project,document pm telemetry status flush stats clear workflow
+close_reason: "Completed pm telemetry local analytics command surface (status/flush/stats/clear), MCP/contracts alignment, contract snapshot refresh, manual temp-dir smoke validation, and passing full quality/security gates."
 body: ""

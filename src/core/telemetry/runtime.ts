@@ -23,6 +23,7 @@ import {
 const TELEMETRY_QUEUE_RELATIVE_PATH = path.join("runtime", "telemetry", "events.jsonl");
 const TELEMETRY_STATE_RELATIVE_PATH = path.join("runtime", "telemetry", "state.json");
 const TELEMETRY_SCHEMA_VERSION = 1;
+const TELEMETRY_CLIENT_SCHEMA_VERSION = 1;
 const TELEMETRY_FLUSH_BATCH_SIZE = 100;
 const TELEMETRY_MAX_RETRY_DELAY_MS = 3_600_000;
 const TELEMETRY_RETRY_BASE_DELAY_MS = 30_000;
@@ -103,6 +104,7 @@ interface TelemetryEvent {
 }
 
 interface QueuedTelemetryEvent {
+  client_schema_version?: number;
   event: TelemetryEvent;
   attempts: number;
   last_attempt_at?: string;
@@ -970,13 +972,18 @@ async function ensureInstallationId(
 
 async function enqueueTelemetryEvent(globalPmRoot: string, event: TelemetryEvent): Promise<void> {
   const queued: QueuedTelemetryEvent = {
+    client_schema_version: TELEMETRY_CLIENT_SCHEMA_VERSION,
     event,
     attempts: 0,
   };
   let serialized = JSON.stringify(queued);
   if (serialized.length > TELEMETRY_MAX_EVENT_BYTES) {
     const trimmed = { ...event, payload: { ...event.payload, result_summary: { truncated: true, reason: "payload_size_exceeded", original_bytes: serialized.length } } };
-    const trimmedQueued: QueuedTelemetryEvent = { event: trimmed, attempts: 0 };
+    const trimmedQueued: QueuedTelemetryEvent = {
+      client_schema_version: TELEMETRY_CLIENT_SCHEMA_VERSION,
+      event: trimmed,
+      attempts: 0,
+    };
     serialized = JSON.stringify(trimmedQueued);
   }
   await withQueueMutation(async () => {
@@ -998,7 +1005,11 @@ function parseQueueLines(raw: string): QueuedTelemetryEvent[] {
         typeof parsed === "object" &&
         parsed.event &&
         typeof parsed.event === "object" &&
-        typeof parsed.attempts === "number"
+        typeof parsed.attempts === "number" &&
+        (
+          parsed.client_schema_version === undefined ||
+          (typeof parsed.client_schema_version === "number" && Number.isFinite(parsed.client_schema_version))
+        )
       ) {
         entries.push(parsed);
       }
@@ -1446,6 +1457,12 @@ export async function flushTelemetryQueueNow(globalPmRoot = resolveGlobalPmRoot(
 
 export async function startTelemetryCommand(context: TelemetryCommandContext): Promise<ActiveTelemetryCommand | null> {
   if (telemetryDisabledByEnvironment()) {
+    return null;
+  }
+  if (
+    context.command === "telemetry" &&
+    context.args.some((token) => token.trim().toLowerCase() === "clear")
+  ) {
     return null;
   }
   try {

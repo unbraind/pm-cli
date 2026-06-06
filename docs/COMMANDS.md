@@ -22,7 +22,7 @@ Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
 | Family | Commands | Purpose |
 |--------|----------|---------|
-| Bootstrap | `init`, `config`, `health` | create and inspect tracker setup |
+| Bootstrap | `init`, `config`, `health`, `telemetry` | create and inspect tracker setup |
 | Triage | `context`, `search`, `list*`, `aggregate`, `dedupe-audit` | find work and audit decomposition |
 | Lifecycle | `create`, `claim`, `update`, `append`, `close`, `release`, `delete`, `start-task`, `pause-task`, `close-task` | mutate item state |
 | Planning | `plan create`, `plan add-step`, `plan update-step`, `plan complete-step`, `plan link`, `plan approve`, `plan materialize` | agent-optimized living plans with ordered steps, evidence, decisions, validation, and materialization |
@@ -44,6 +44,7 @@ pm init --agent-guidance status
 pm init --agent-guidance add
 pm config project list
 pm health --check-only --summary --json
+pm telemetry status
 ```
 
 `pm init` creates `.agents/pm`. `pm health --check-only --summary --json` gives the smallest machine-readable health gate without refreshing optional search artifacts.
@@ -311,6 +312,22 @@ Use dry-run modes before broad lifecycle or cleanup changes.
 `pm gc` accepts `--scope` values `index`, `embeddings`, `runtime`, and `locks` (comma-separated or repeatable); with no `--scope` it sweeps all of them. The `locks` scope removes only **expired** lock files in `locks/` — those whose own embedded `created_at + ttl_seconds` has elapsed (debris left by crashed processes). Active locks and any lock file that cannot be parsed are always retained (never deleted when staleness cannot be proven), and the result includes a `locks` summary (`scanned`/`removed`/`retained`).
 
 `--fix-hints` is a read-only flag: each failing check gains `details.fix_hints`, an array of `pm` command templates derived from the warning codes it raised (for example `pm history-repair <id>` for history drift, or `pm update <id> --reviewer "<name>"` for a missing reviewer). Generic hints may contain `<id>`/`<field>`/`<path>` placeholders the agent substitutes from the check's detail rows; the resolution check aliases concrete per-row commands and marks `fix_hints_truncated` when the list is summarized. It never mutates items. The mapping comes from the shared remediation registry that also backs `pm health --json` (see Self-Repair Remediation below), so agents gating on `pm validate` can auto-repair findings without hardcoding warning-code-to-command lookups.
+
+### Telemetry Local Analytics
+
+`pm telemetry` surfaces local queue/runtime telemetry state without running full health checks:
+
+```bash
+pm telemetry status
+pm telemetry stats --limit 10
+pm telemetry flush
+pm telemetry clear
+```
+
+- `status` reports queue depth, endpoint, and latest flush metadata.
+- `stats` groups queued local telemetry events by command name.
+- `flush` runs an immediate local queue flush attempt.
+- `clear` disables telemetry and deletes local queue/runtime telemetry artifacts.
 
 ### Self-Repair Remediation
 

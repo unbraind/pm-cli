@@ -693,6 +693,10 @@ export const TEST_ALL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--auto-pm-context" },
 ];
 
+export const TELEMETRY_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--limit" },
+];
+
 export const TEST_RUNS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--status" },
   { flag: "--limit" },
@@ -1359,6 +1363,8 @@ export function resolveSubcommandFlagContractsForCommand(commandName: string | u
       return withSubcommandGlobalFlags(TEST_FLAG_CONTRACTS);
     case "test-all":
       return withSubcommandGlobalFlags(TEST_ALL_FLAG_CONTRACTS);
+    case "telemetry":
+      return withSubcommandGlobalFlags(TELEMETRY_FLAG_CONTRACTS);
     case "health":
       return withSubcommandGlobalFlags(HEALTH_FLAG_CONTRACTS);
     case "validate":
@@ -1802,6 +1808,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "checkContext",
       "autoPmContext",
     ],
+  },
+  telemetry: {
+    required: ["subcommand"],
+    optional: ["limit"],
   },
   "test-runs-list": {
     optional: ["status", "limit"],

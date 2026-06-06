@@ -279,6 +279,97 @@ describe("core/telemetry/runtime", () => {
     });
   });
 
+  it("skips instrumentation for telemetry clear commands", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const active = await startTelemetryCommand({
+        command: "telemetry",
+        pm_version: "9.9.9-test",
+        args: ["clear"],
+        options: {},
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(active).toBeNull();
+      await expect(fs.readFile(telemetryQueuePath(globalRoot), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("stamps schema_version and client_schema_version on command_start/finish/error queue entries", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      globalThis.fetch = vi.fn(async () => {
+        throw new Error("network_down");
+      }) as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: ["--limit", "5"],
+        options: {},
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(active).not.toBeNull();
+      await finishTelemetryCommand(active, {
+        ok: true,
+        result: { count: 1 },
+      });
+      await emitTelemetryErrorEvent({
+        command: "lst",
+        args: ["lst"],
+        options: {},
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_version: "9.9.9-test",
+        pm_root: "/tmp/project/.agents/pm",
+        error_code: "unknown_command",
+        error_message: "unknown command 'lst'",
+        exit_code: 2,
+      });
+      await waitForPendingFlush();
+
+      const queueRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
+      const entries = queueRaw
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+        .map((line) =>
+          JSON.parse(line) as {
+            client_schema_version?: number;
+            event: {
+              event_type: string;
+              schema_version?: number;
+            };
+          },
+        );
+      const byType = new Map(entries.map((entry) => [entry.event.event_type, entry]));
+      expect(byType.has("command_start")).toBe(true);
+      expect(byType.has("command_finish")).toBe(true);
+      expect(byType.has("command_error")).toBe(true);
+      for (const eventType of ["command_start", "command_finish", "command_error"] as const) {
+        const entry = byType.get(eventType);
+        expect(entry?.event.schema_version).toBe(1);
+        expect(entry?.client_schema_version).toBe(1);
+      }
+    });
+  });
+
   it("redacts inline secrets and paths in command_finish result summaries", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       await setTelemetryCaptureLevel(globalRoot, "redacted");

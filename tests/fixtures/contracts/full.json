@@ -721,6 +721,16 @@
       "requires_extension": false
     },
     {
+      "action": "telemetry",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "telemetry",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "test",
       "available": true,
       "cli_exposed": true,
@@ -853,6 +863,7 @@
     "search",
     "start-task",
     "stats",
+    "telemetry",
     "test",
     "test-all",
     "update",
@@ -4362,6 +4373,11 @@
       "provider": "core"
     },
     {
+      "command": "telemetry",
+      "flags": [],
+      "provider": "extension"
+    },
+    {
       "command": "test",
       "flags": [
         {
@@ -6493,6 +6509,7 @@
     "search",
     "start-task",
     "stats",
+    "telemetry",
     "test",
     "test-all",
     "update",
@@ -13909,14 +13926,18 @@
             "type": "array"
           },
           "subcommand": {
-            "description": "Subcommand for the schema action.",
+            "description": "Subcommand selector for schema and telemetry actions.",
             "examples": [
               "list",
               "show",
               "add-type",
               "remove-type",
               "add-status",
-              "remove-status"
+              "remove-status",
+              "status",
+              "flush",
+              "stats",
+              "clear"
             ],
             "type": "string"
           },
@@ -17190,6 +17211,87 @@
           "action"
         ],
         "title": "pm action \"test-all\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "const": "telemetry",
+            "description": "Tool action to execute."
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Limit."
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Pm Executable.",
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "subcommand": {
+            "description": "Subcommand selector for schema and telemetry actions.",
+            "examples": [
+              "list",
+              "show",
+              "add-type",
+              "remove-type",
+              "add-status",
+              "remove-status",
+              "status",
+              "flush",
+              "stats",
+              "clear"
+            ],
+            "type": "string"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          }
+        },
+        "required": [
+          "action",
+          "subcommand"
+        ],
+        "title": "pm action \"telemetry\" parameters",
         "type": "object"
       },
       {

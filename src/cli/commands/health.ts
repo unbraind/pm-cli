@@ -138,6 +138,10 @@ const TELEMETRY_QUEUE_RELATIVE_PATH = path.join("runtime", "telemetry", "events.
 const TELEMETRY_STATE_RELATIVE_PATH = path.join("runtime", "telemetry", "state.json");
 const TELEMETRY_ENDPOINT_PROBE_TIMEOUT_MS = 2_500;
 const TELEMETRY_QUEUE_HIGH_WATER_MARK = 500;
+const TELEMETRY_SERVER_MAX_SCHEMA_VERSION_HEADERS = [
+  "x-pm-telemetry-max-schema-version",
+  "x-pm-telemetry-max-version",
+] as const;
 
 /**
  * Advisory warnings are surfaced for visibility but never flip overall health to
@@ -1066,6 +1070,7 @@ async function probeTelemetryEndpointHealth(endpoint: string): Promise<{
   probe_url: string;
   ok: boolean;
   status?: number;
+  max_schema_version?: string;
   error?: string;
 }> {
   let probeUrl = endpoint;
@@ -1087,6 +1092,15 @@ async function probeTelemetryEndpointHealth(endpoint: string): Promise<{
       probe_url: normalizeEndpointForDisplay(probeUrl),
       ok: response.ok,
       status: response.status,
+      max_schema_version: (() => {
+        for (const headerName of TELEMETRY_SERVER_MAX_SCHEMA_VERSION_HEADERS) {
+          const value = response.headers.get(headerName)?.trim();
+          if (value && value.length > 0) {
+            return value;
+          }
+        }
+        return undefined;
+      })(),
     };
   } catch (error: unknown) {
     return {
@@ -1134,6 +1148,7 @@ async function buildTelemetryCheck(
         probe_url: string;
         ok: boolean;
         status?: number;
+        max_schema_version?: string;
         error?: string;
       }
     | undefined;

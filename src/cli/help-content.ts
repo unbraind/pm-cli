@@ -620,6 +620,15 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     why: "Reports tracker-level totals and distribution by type/status.",
     examples: ["pm stats", "pm stats --json"],
   },
+  telemetry: {
+    why: "Inspects and manages local telemetry queue/runtime state for observability diagnostics.",
+    examples: [
+      "pm telemetry status",
+      "pm telemetry stats --limit 10",
+      "pm telemetry flush",
+      "pm telemetry clear",
+    ],
+  },
   health: {
     why: "Validates tracker/runtime health including extension triage, migration, and integrity diagnostics.",
     examples: [

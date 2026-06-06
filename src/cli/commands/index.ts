@@ -73,6 +73,7 @@ export {
 export { runSearch } from "./search.js";
 export { runRestore } from "./restore.js";
 export { runStats } from "./stats.js";
+export { runTelemetry, TELEMETRY_SUBCOMMANDS, type TelemetryCommandOptions, type TelemetrySubcommand } from "./telemetry.js";
 export { runTest } from "./test.js";
 export { runTestAll } from "./test-all.js";
 export {
