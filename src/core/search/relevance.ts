@@ -271,11 +271,17 @@ export async function rerankCandidatesWithEmbeddings(
   const payload = [query.trim(), ...candidates.map((entry) => entry.text)];
   const vectors = await executeEmbeddingRequest(rerankProvider, payload, timeoutMs ? { timeout_ms: timeoutMs } : {});
   const queryVector = vectors[0];
+  if (!queryVector) {
+    return new Map();
+  }
   const queryNorm = l2Norm(queryVector);
   const scoreById = new Map<string, number>();
   for (let index = 0; index < candidates.length; index += 1) {
     const candidate = candidates[index];
     const candidateVector = vectors[index + 1];
+    if (!candidateVector) {
+      continue;
+    }
     const similarity = cosineSimilarityWithKnownLeftNorm(queryVector, candidateVector, queryNorm);
     scoreById.set(candidate.id, Math.max(0, Math.min(1, (similarity + 1) / 2)));
   }

@@ -1224,14 +1224,15 @@ describe("runSearch", () => {
       }
       if (target.endsWith("/collections/pm_items/points/search")) {
         queryCallCount += 1;
+        const callIndex = queryCallCount;
         return {
           ok: true,
           status: 200,
           statusText: "OK",
           json: async () => ({
-            result: queryCallCount === 1
+            result: callIndex === 1
               ? [{ id: "pm-qe-a", score: 0.5 }]
-              : queryCallCount === 2
+              : callIndex === 2
                 ? [{ id: "pm-qe-b", score: 0.9 }]
                 : [],
           }),

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildDeterministicQueryExpansions,
   mergeQueryExpansions,
@@ -8,6 +8,7 @@ import {
   resolveQueryExpansionConfig,
   resolveRerankConfig,
 } from "../../src/core/search/relevance.js";
+import * as providers from "../../src/core/search/providers.js";
 import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 
 function makeSettings() {
@@ -19,6 +20,7 @@ describe("search relevance helpers", () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    vi.restoreAllMocks();
   });
 
   it("builds deterministic query expansion variants and caps the count", () => {
@@ -212,6 +214,42 @@ describe("search relevance helpers", () => {
       [],
     );
 
+    expect(scores.size).toBe(0);
+  });
+
+  it("returns empty rerank scores when provider omits query vector unexpectedly", async () => {
+    const executeSpy = vi.spyOn(providers, "executeEmbeddingRequest").mockResolvedValue([]);
+    const scores = await rerankCandidatesWithEmbeddings(
+      {
+        name: "openai",
+        base_url: "https://api.example.test/v1",
+        model: "text-embedding-3-small",
+        api_key: "",
+      },
+      "text-embedding-3-small",
+      "release notes",
+      [{ id: "pm-missing-query", text: "release docs checklist" }],
+    );
+
+    expect(executeSpy).toHaveBeenCalledTimes(1);
+    expect(scores.size).toBe(0);
+  });
+
+  it("skips candidates when provider omits candidate vectors unexpectedly", async () => {
+    const executeSpy = vi.spyOn(providers, "executeEmbeddingRequest").mockResolvedValue([[1, 0]]);
+    const scores = await rerankCandidatesWithEmbeddings(
+      {
+        name: "openai",
+        base_url: "https://api.example.test/v1",
+        model: "text-embedding-3-small",
+        api_key: "",
+      },
+      "text-embedding-3-small",
+      "release notes",
+      [{ id: "pm-missing-candidate", text: "release docs checklist" }],
+    );
+
+    expect(executeSpy).toHaveBeenCalledTimes(1);
     expect(scores.size).toBe(0);
   });
 
