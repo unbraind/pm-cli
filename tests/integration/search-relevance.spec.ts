@@ -79,6 +79,7 @@ describe("search relevance helpers", () => {
           null,
           "invalid",
           { id: "pm-b", score: 0.2 },
+          { id: "pm-b", score: 0.6 },
           { id: "pm-a", score: 0.8 },
           { id: "pm-a", score: 0.1 },
           { id: "", score: 1 },
@@ -87,7 +88,7 @@ describe("search relevance helpers", () => {
       }),
     ).toEqual([
       { id: "pm-a", score: 0.8 },
-      { id: "pm-b", score: 0.2 },
+      { id: "pm-b", score: 0.6 },
     ]);
     expect(normalizeRerankOutput([{ id: "pm-b", score: 0.5 }, { id: "pm-a", score: 0.5 }])).toEqual([
       { id: "pm-a", score: 0.5 },
@@ -222,6 +223,36 @@ describe("search relevance helpers", () => {
     );
 
     expect(scores.get("pm-a")).toBe(0.5);
+  });
+
+  it("handles dimension-mismatched vectors by returning neutral normalized rerank scores", async () => {
+    globalThis.fetch = (async () =>
+      ({
+        ok: true,
+        status: 200,
+        statusText: "OK",
+        json: async () => ({
+          data: [
+            { index: 0, embedding: [1, 0] },
+            { index: 1, embedding: [1, 0, 0] },
+          ],
+        }),
+        text: async () => "",
+      }) as unknown as Response) as typeof globalThis.fetch;
+
+    const scores = await rerankCandidatesWithEmbeddings(
+      {
+        name: "openai",
+        base_url: "https://api.example.test/v1",
+        model: "text-embedding-3-small",
+        api_key: "",
+      },
+      "text-embedding-3-small",
+      "release notes",
+      [{ id: "pm-dim", text: "release docs checklist" }],
+    );
+
+    expect(scores.get("pm-dim")).toBe(0.5);
   });
 
   it("throws when embedding cardinality does not match rerank payload", async () => {

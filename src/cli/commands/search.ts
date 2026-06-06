@@ -1301,9 +1301,18 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
       return left.item.id.localeCompare(right.item.id);
     });
     const candidateHits = sortedForCandidates.slice(0, context.rerank.top_k);
-    const rerankCandidates: RerankCandidate[] = candidateHits.map((hit) => ({
-      id: hit.item.id,
-      text: buildRerankCorpus(filteredById.get(hit.item.id)!),
+    const candidateContexts = candidateHits
+      .map((hit) => {
+        const document = filteredById.get(hit.item.id);
+        if (!document) {
+          return null;
+        }
+        return { hit, text: buildRerankCorpus(document) };
+      })
+      .filter((entry): entry is { hit: SearchHit; text: string } => entry !== null);
+    const rerankCandidates: RerankCandidate[] = candidateContexts.map((entry) => ({
+      id: entry.hit.item.id,
+      text: entry.text,
     }));
     let rerankScores: Map<string, number> | null = null;
     if (context.rerankExtension?.rerank) {
@@ -1315,10 +1324,10 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
             model: context.rerank.model,
             top_k: context.rerank.top_k,
             settings: context.settings,
-            candidates: candidateHits.map((hit) => ({
-              id: hit.item.id,
-              text: buildRerankCorpus(filteredById.get(hit.item.id)!),
-              score: hit.score,
+            candidates: candidateContexts.map((entry) => ({
+              id: entry.hit.item.id,
+              text: entry.text,
+              score: entry.hit.score,
             })),
           }),
         );
@@ -1360,6 +1369,12 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
           score: rerankScore,
           matched_fields: [...matchedFields].sort((left, right) => left.localeCompare(right)),
         };
+      });
+      hybridHits.sort((left, right) => {
+        if (left.score !== right.score) {
+          return right.score - left.score;
+        }
+        return left.item.id.localeCompare(right.item.id);
       });
     }
   }

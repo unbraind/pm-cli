@@ -152,8 +152,8 @@ describe("resolveVectorStoreRequestTarget", () => {
       }),
     ).toEqual({
       store: "lancedb",
-      query_target: "lancedb://%2Ftmp%2Flance%20index#workspace%20docs",
-      upsert_target: "lancedb://%2Ftmp%2Flance%20index#workspace%20docs",
+      query_target: "lancedb://%2Ftmp%2Flance%20index#workspace_docs",
+      upsert_target: "lancedb://%2Ftmp%2Flance%20index#workspace_docs",
     });
   });
 });

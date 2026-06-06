@@ -105,6 +105,7 @@ type VectorSettingsInput = {
 type RemoteVectorMethod = "DELETE" | "POST" | "PUT";
 
 const DEFAULT_COLLECTION = "pm_items";
+const COLLECTION_SANITIZE_PATTERN = /[^a-zA-Z0-9_-]/g;
 const LANCE_DB_LOCAL_SNAPSHOT_DIR = ".pm-cli-local-vectors";
 const LANCE_DB_LOCAL_SNAPSHOT_VERSION = 1;
 interface LanceDbLocalTableCacheEntry {
@@ -116,7 +117,8 @@ interface LanceDbLocalTableCacheEntry {
 const lanceDbLocalTables = new Map<string, LanceDbLocalTableCacheEntry>();
 
 function resolveStoreCollectionName(store: VectorStoreConfig): string {
-  return toNonEmptyString(store.collection_name) ?? DEFAULT_COLLECTION;
+  const candidate = toNonEmptyString(store.collection_name) ?? DEFAULT_COLLECTION;
+  return candidate.replaceAll(COLLECTION_SANITIZE_PATTERN, "_");
 }
 
 function normalizeVector(value: unknown): number[] {

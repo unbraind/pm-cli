@@ -222,8 +222,8 @@ function normalizeVectorStoreCollectionName(value: unknown): string {
   if (typeof value !== "string") {
     return SETTINGS_DEFAULTS.vector_store.collection_name;
   }
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : SETTINGS_DEFAULTS.vector_store.collection_name;
+  const sanitized = value.trim().replaceAll(/[^a-zA-Z0-9_-]/g, "_");
+  return sanitized.length > 0 ? sanitized : SETTINGS_DEFAULTS.vector_store.collection_name;
 }
 
 function buildSettingsPersistSourceSnapshot(

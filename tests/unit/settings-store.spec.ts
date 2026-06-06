@@ -399,6 +399,19 @@ describe("core/store/settings", () => {
     expect(vectorStore.lancedb).toEqual({});
   });
 
+  it("sanitizes vector_store.collection_name to safe storage identifiers", () => {
+    const settings = structuredClone(SETTINGS_DEFAULTS);
+    settings.vector_store.collection_name = "workspace docs/../prod";
+
+    const serialized = serializeSettings(settings);
+    const parsed = JSON.parse(serialized) as Record<string, unknown>;
+    const vectorStore = parsed.vector_store as Record<string, unknown>;
+    const collectionName = vectorStore.collection_name as string;
+
+    expect(collectionName).toMatch(/^[a-zA-Z0-9_-]+$/);
+    expect(collectionName).toContain("workspace_docs");
+  });
+
   it("resolves governance knobs for built-in presets and custom overrides", () => {
     expect(resolveGovernanceKnobs({ governance: { preset: "minimal" } })).toEqual({
       preset: "minimal",

@@ -156,20 +156,22 @@ export function normalizeRerankOutput(raw: unknown): RerankScoredHit[] {
   if (!Array.isArray(rawHits)) {
     return [];
   }
-  const seen = new Set<string>();
-  const normalized: RerankScoredHit[] = [];
+  const bestById = new Map<string, number>();
   for (const entry of rawHits) {
     if (typeof entry !== "object" || entry === null) {
       continue;
     }
     const id = toNonEmptyString((entry as { id?: unknown }).id);
     const score = (entry as { score?: unknown }).score;
-    if (!id || typeof score !== "number" || !Number.isFinite(score) || seen.has(id)) {
+    if (!id || typeof score !== "number" || !Number.isFinite(score)) {
       continue;
     }
-    seen.add(id);
-    normalized.push({ id, score });
+    const existing = bestById.get(id);
+    if (existing === undefined || score > existing) {
+      bestById.set(id, score);
+    }
   }
+  const normalized = [...bestById.entries()].map(([id, score]) => ({ id, score }));
   normalized.sort((left, right) => {
     if (left.score !== right.score) {
       return right.score - left.score;
@@ -196,8 +198,8 @@ function l2Norm(vector: number[]): number {
   return Math.sqrt(sumSquares);
 }
 
-function cosineSimilarity(left: number[], right: number[]): number {
-  if (left.length === 0 || right.length === 0) {
+function cosineSimilarity(left: number[] | null | undefined, right: number[] | null | undefined): number {
+  if (!left || !right || left.length === 0 || right.length === 0 || left.length !== right.length) {
     return 0;
   }
   const numerator = dotProduct(left, right);
