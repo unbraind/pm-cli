@@ -20,15 +20,18 @@ pm guide release --json
 | Reader | First page | Then read |
 |--------|------------|-----------|
 | New user | [Quickstart](QUICKSTART.md) | [Command Reference](COMMANDS.md) |
+| New maintainer | [Onboarding](ONBOARDING.md) | [Agent Guide](AGENT_GUIDE.md), [Testing](TESTING.md), [Releasing](RELEASING.md) |
 | Coding agent | [Agent Guide](AGENT_GUIDE.md) | [Configuration](CONFIGURATION.md), then command help |
 | Maintainer | [Contributing](../CONTRIBUTING.md) | [Testing](TESTING.md), [Releasing](RELEASING.md), [Architecture](ARCHITECTURE.md) |
 | Package author | [Packages and Extensions](EXTENSIONS.md) | [SDK](SDK.md), [starter extension](examples/starter-extension/README.md) |
 | Codex user | [Codex Plugin](CODEX_PLUGIN.md) | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md) |
+| Claude Code user | [Claude Code Plugin](CLAUDE_CODE_PLUGIN.md) | [Agent Guide](AGENT_GUIDE.md), then [Command Reference](COMMANDS.md) |
 | Machine client | `pm contracts --json` | [Command Reference](COMMANDS.md#machine-contracts), optionally `pm install guide-shell --project && pm guide commands` |
 
 ## Documentation Map
 
 - [Quickstart](QUICKSTART.md) - install, initialize, create, claim, link, test, close.
+- [Onboarding](ONBOARDING.md) - first-two-hours maintainer and contributor setup.
 - [Agent Guide](AGENT_GUIDE.md) - canonical agent loop, tracker linking, and token-minimal command choices.
 - [Command Reference](COMMANDS.md) - command families with examples and when to use each family.
 - [Configuration](CONFIGURATION.md) - settings, storage formats, output, search, validation, and environment variables.
@@ -37,6 +40,7 @@ pm guide release --json
 - [Packages and Extensions](EXTENSIONS.md) - package install workflows, runtime extension lifecycle, and API reference.
 - [SDK](SDK.md) - public import surfaces and typed authoring examples.
 - [Codex Plugin](CODEX_PLUGIN.md) - native MCP plugin install, tools, skills, and safety notes.
+- [Claude Code Plugin](CLAUDE_CODE_PLUGIN.md) - native Claude Code plugin architecture and install flow.
 - [Releasing](RELEASING.md) - maintainer release checklist and failure handling.
 - [starter extension](examples/starter-extension/README.md) - compact extension scaffold reference.
 
@@ -71,11 +75,15 @@ Community files:
 
 ## Tracker References
 
-This documentation structure is tracked through:
+Current documentation structure work is tracked through:
 
-- [pm-3042](../.agents/pm/epics/pm-3042.toon)
-- [pm-r9gu](../.agents/pm/features/pm-r9gu.toon)
-- [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon)
+- [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon)
+
+Legacy documentation baseline references (closed):
+
+- [pm-3042](../.agents/pm/epics/pm-3042.toon) (closed)
+- [pm-r9gu](../.agents/pm/features/pm-r9gu.toon) (closed)
+- [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon) (closed)
 
 When changing docs, link files back to the active item:
 

@@ -6,13 +6,15 @@ status: open
 priority: 1
 tags[6]: "area:ci","area:docs","area:release",backlog,living-map,pm-cli
 created_at: "2026-05-31T19:42:13.323Z"
-updated_at: "2026-06-04T05:46:45.337Z"
+updated_at: "2026-06-06T02:39:36.004Z"
 author: maintainer-agent
 goal: project management = context management
 objective: "Keep docs/onboarding/release/CI healthy: onboarding guide, classifier docs, link-checking, changelog/release hygiene"
 value: Low-friction contribution and reliable releases
 parent: pm-doxj
-comments[2]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-06-04T05:37:37.958Z",codex-gh-triage,"GitHub triage evidence 2026-06-04: gh pr list open -> none; gh issue list open -> none; default branch main public active, latest main CI run 26921051508 success for 21f2bab2; workflows active: Auto Release, CI, Docs, Nightly Validation, Release, Dependabot Updates. Security/dependency: dependabot open alerts [], secret-scanning open alerts [], security-advisories open [], vulnerability-alerts endpoint HTTP 204 enabled/no body; code-scanning alerts endpoint returned 404 no analysis found plus admin:repo_hook scope hint. Dependabot update workflow latest runs succeeded on 2026-06-02. Release state: latest GitHub release remains v2026.5.31; npm @unbrained/pm-cli latest 2026.5.31 while local package is 2026.6.2. Auto Release latest scheduled runs 2026-06-01/02/03 all failed; run 26870058549 fails intentionally because SENTRY_PERSONAL_ADMIN_TOKEN is empty before push/tag creation. pm-changelog: npm latest 2026.6.3; project managed extension active 2026.6.3; pm package doctor deep ok. Bootstrap for this comment: npm install -g ., pm --version 2026.6.2, node v25.9.0, pnpm 10.33.4, pnpm build passed. No code changes made by codex-gh-triage."
   "2026-06-04T05:46:45.337Z",codex-sdk-cli-impl,"Follow-up fix: Sentry gate reported one high handled CommandError, PM-CLI-19 (Validation failed: 1 structural error(s)). This matches the existing handled validation CommandError allowlist class, so the combined branch adds the exact one-error validation wording to scripts/release/sentry-telemetry-gate.mjs and covers it in tests/integration/release-automation-contract.spec.ts."
+  "2026-06-06T02:28:43.943Z",codex-docs-release-bundle,"Execution kickoff: implementing combined docs/release bundle across pm-oh5h, pm-10ml, pm-5vsv, pm-ijd9, pm-mp6c, pm-0sqs, pm-e376, pm-pwdx, pm-g3xl, pm-75du, and pm-7j8t on one branch with linked evidence and full verification gates."
+  "2026-06-06T02:39:36.004Z",codex-docs-release-bundle,"Combined docs/release implementation branch now covers onboarding, changelog classifier docs, docs link CI gate + PR checklist hygiene, plugin marketplace drift lock, and search tuning docs drift correction. Full local verification, manual temp-dir workflow smoke, GitHub security/dependabot checks, and Sentry/telemetry gate checks completed."
 body: ""

@@ -2,13 +2,28 @@ id: pm-oh5h
 title: Create ONBOARDING.md for new maintainers and first-time contributors
 description: No single 'first two hours' onboarding doc; setup/testing/workflow/release info is scattered across CONTRIBUTING/AGENTS/RELEASING/ARCHITECTURE. Also the right target for the ShareOnboardingGuide tool.
 type: Task
-status: open
+status: closed
 priority: 2
 tags[4]: "area:docs",contributor-ux,living-map,onboarding
 created_at: "2026-05-31T19:45:41.512Z"
-updated_at: "2026-05-31T19:45:41.512Z"
+updated_at: "2026-06-06T02:39:47.756Z"
 author: maintainer-agent
 acceptance_criteria: "docs/ONBOARDING.md covers prerequisites, first build, safe test runs, real tracker mutation workflow (PM_AUTHOR+claim/update/close), auto-release+same-day release, hard never-do list (no hand-edit CHANGELOG, no manual npm publish, no PM_PATH on real repo), diagnostics, private-ops pointer; linked from README+CONTRIBUTING; docs-skills gate passes."
 value: No single 'first two hours' onboarding doc; setup/testing/workflow/release info is scattered across CONTRIBUTING/AGENTS/RELEASING/ARCHITECTURE. Also the right target for the ShareOnboardingGuide tool.
 parent: pm-u9d0
+comments[1]{created_at,author,text}:
+  "2026-06-06T02:39:34.170Z",codex-docs-release-bundle,"Implemented onboarding deliverable: added docs/ONBOARDING.md with first-two-hours bootstrap, safe tests, canonical tracker loop, release overview, never-do list, diagnostics, and redaction/repair guidance. Linked from README, CONTRIBUTING, and docs/README. Verification: pnpm build; pnpm typecheck; pnpm quality:docs-skills; pnpm quality:docs-links; node scripts/run-tests.mjs coverage (100%)."
+files[4]{path,scope,note}:
+  CONTRIBUTING.md,project,Contributor workflow links
+  docs/ONBOARDING.md,project,Primary onboarding guide
+  docs/README.md,project,Docs index routing
+  README.md,project,Start-here links to onboarding
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm quality:docs-skills",null,project,240,null,null,null,null,null,null,null,null,null,null,null,Docs gate verification
+docs[4]{path,scope,note}:
+  CONTRIBUTING.md,project,Contributor entrypoint link
+  docs/ONBOARDING.md,project,Single onboarding handbook
+  docs/README.md,project,Documentation map link
+  README.md,project,Public entrypoint link
+close_reason: Completed onboarding guide and linked README/CONTRIBUTING/docs index updates; verification gates passed.
 body: ""

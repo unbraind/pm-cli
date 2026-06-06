@@ -97,6 +97,7 @@ Behavior expectations to preserve:
 
 Start with the [documentation index](docs/README.md). Focused pages:
 
+- [Onboarding](docs/ONBOARDING.md) - first-two-hours maintainer and contributor setup.
 - [Quickstart](docs/QUICKSTART.md) - first repository setup and item lifecycle.
 - [Agent Guide](docs/AGENT_GUIDE.md) - canonical `pm` workflow for coding agents.
 - [Command Reference](docs/COMMANDS.md) - command families and examples.

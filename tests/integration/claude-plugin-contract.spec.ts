@@ -146,6 +146,42 @@ describe("Claude Code plugin contract", () => {
     ).toEqual(claudePluginMarketplace);
   });
 
+  it("keeps .agents/plugins pm-local marketplace in sync with local plugin manifests", async () => {
+    const localMarketplace = (await readJson(path.join(repoRoot, ".agents", "plugins", "marketplace.json"))) as Record<
+      string,
+      unknown
+    >;
+    expect(localMarketplace.name).toBe("pm-local");
+
+    const localPlugins = localMarketplace.plugins as Array<Record<string, unknown>>;
+    expect(Array.isArray(localPlugins)).toBe(true);
+
+    const codexManifest = (await readJson(
+      path.join(repoRoot, "plugins", "pm-codex", ".codex-plugin", "plugin.json"),
+    )) as Record<string, unknown>;
+    const claudeManifest = (await readJson(
+      path.join(repoRoot, "plugins", "pm-claude", ".claude-plugin", "plugin.json"),
+    )) as Record<string, unknown>;
+
+    const expectedPlugins = [
+      { name: codexManifest.name, version: codexManifest.version, sourcePath: "./plugins/pm-codex" },
+      { name: claudeManifest.name, version: claudeManifest.version, sourcePath: "./plugins/pm-claude" },
+    ];
+
+    const localPluginNames = localPlugins.map((plugin) => plugin.name).sort();
+    const expectedNames = expectedPlugins.map((plugin) => plugin.name).sort();
+    expect(localPluginNames, "pm-local marketplace plugin set drifted from local manifests").toEqual(expectedNames);
+
+    for (const expected of expectedPlugins) {
+      const localEntry = localPlugins.find((plugin) => plugin.name === expected.name);
+      expect(localEntry, `pm-local marketplace missing ${expected.name}`).toBeTruthy();
+      expect(localEntry?.version).toBe(expected.version);
+      const source = localEntry?.source as Record<string, unknown> | undefined;
+      expect(source?.source).toBe("local");
+      expect(source?.path).toBe(expected.sourcePath);
+    }
+  });
+
   it("has valid MCP server .mcp.json with pm-mcp server", async () => {
     const mcpJson = (await readJson(path.join(pluginRoot, ".mcp.json"))) as Record<string, unknown>;
     const servers = mcpJson.mcpServers as Record<string, unknown>;

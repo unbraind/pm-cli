@@ -19,6 +19,7 @@ const REQUIRED_DOC_FILES = [
 ];
 
 const REQUIRED_PM_GUIDE_DOCS = ["README.md", "docs/README.md", "docs/COMMANDS.md", "docs/AGENT_GUIDE.md"];
+const DOC_LINK_CHECK_ROOT_FILES = ["README.md", "AGENTS.md", "CONTRIBUTING.md"];
 
 const REQUIRED_SKILLS = ["pm-developer", "pm-user", "pm-extensions", "pm-sdk"];
 const SKILLS_ROOT = ".agents/skills";
@@ -27,10 +28,11 @@ const DOC_LINE_LIMITS = new Map([["docs/EXTENSIONS.md", 450]]);
 
 function usage() {
   console.log(`Usage:
-  node scripts/release/docs-skills-gate.mjs [--json]
+  node scripts/release/docs-skills-gate.mjs [--json] [--links-only]
 
 Validates docs and .agents/skills freshness gates:
 - required docs and skills existence
+- relative markdown links in docs + README/AGENTS/CONTRIBUTING
 - agentskills frontmatter validity for required skills
 - pm guide topic/doc routing integrity
 - guide command examples match runtime command contracts
@@ -55,6 +57,19 @@ async function fileExists(relativePath) {
   try {
     const stats = await stat(absolutePath);
     return stats.isFile();
+  } catch (error) {
+    if (isMissingError(error)) {
+      return false;
+    }
+    throw error;
+  }
+}
+
+async function pathExists(relativePath) {
+  const absolutePath = path.resolve(REPO_ROOT, relativePath);
+  try {
+    await stat(absolutePath);
+    return true;
   } catch (error) {
     if (isMissingError(error)) {
       return false;
@@ -191,10 +206,45 @@ async function validateSkillLinks(skillName, failures) {
     const content = await readUtf8(markdownFile);
     const links = extractRelativeMarkdownLinks(content);
     for (const link of links) {
-      const [pathWithoutAnchor] = link.split("#");
-      const targetRelative = path.posix.normalize(path.posix.join(path.posix.dirname(markdownFile), pathWithoutAnchor));
-      if (!(await fileExists(targetRelative))) {
+      const targetRelative = resolveMarkdownLink(markdownFile, link);
+      if (!targetRelative) {
+        continue;
+      }
+      if (!(await pathExists(targetRelative))) {
         failures.push(`Skill ${skillName}: broken relative link "${link}" in ${markdownFile}`);
+      }
+    }
+  }
+}
+
+function resolveMarkdownLink(markdownFile, linkTarget) {
+  const cleaned = linkTarget.trim().replace(/^<|>$/g, "");
+  if (!cleaned) {
+    return null;
+  }
+  const [pathWithoutQueryOrAnchor] = cleaned.split(/[?#]/);
+  if (!pathWithoutQueryOrAnchor) {
+    return null;
+  }
+  if (pathWithoutQueryOrAnchor.startsWith("/")) {
+    return path.posix.normalize(pathWithoutQueryOrAnchor.slice(1));
+  }
+  return path.posix.normalize(path.posix.join(path.posix.dirname(markdownFile), pathWithoutQueryOrAnchor));
+}
+
+async function validateDocsLinks(failures) {
+  const docsMarkdownFiles = await collectMarkdownFiles("docs");
+  const filesToCheck = [...new Set([...DOC_LINK_CHECK_ROOT_FILES, ...docsMarkdownFiles])];
+  for (const markdownFile of filesToCheck) {
+    const content = await readUtf8(markdownFile);
+    const links = extractRelativeMarkdownLinks(content);
+    for (const link of links) {
+      const targetRelative = resolveMarkdownLink(markdownFile, link);
+      if (!targetRelative) {
+        continue;
+      }
+      if (!(await pathExists(targetRelative))) {
+        failures.push(`Broken relative documentation link "${link}" in ${markdownFile}`);
       }
     }
   }
@@ -394,20 +444,27 @@ async function main() {
     return;
   }
   const outputJson = flagBool(flags, "json", false);
+  const linksOnly = flagBool(flags, "links-only", false);
   const failures = [];
 
-  await requireFiles(REQUIRED_DOC_FILES, failures);
-  await validatePublicDocBudgets(failures);
-  await validateRequiredGuideMentions(failures);
-  await runSkillChecks(failures);
-  await runGuideChecks(failures);
+  if (linksOnly) {
+    await validateDocsLinks(failures);
+  } else {
+    await requireFiles(REQUIRED_DOC_FILES, failures);
+    await validatePublicDocBudgets(failures);
+    await validateRequiredGuideMentions(failures);
+    await runSkillChecks(failures);
+    await runGuideChecks(failures);
+  }
 
   const payload = {
     ok: failures.length === 0,
     checks: {
-      required_docs: REQUIRED_DOC_FILES.length,
-      required_skills: REQUIRED_SKILLS.length,
-      required_harness_doc: REQUIRED_HARNESS_DOC,
+      mode: linksOnly ? "links-only" : "full",
+      required_docs: linksOnly ? 0 : REQUIRED_DOC_FILES.length,
+      required_skills: linksOnly ? 0 : REQUIRED_SKILLS.length,
+      required_harness_doc: linksOnly ? null : REQUIRED_HARNESS_DOC,
+      docs_link_root_files: DOC_LINK_CHECK_ROOT_FILES.length,
     },
     failures,
   };

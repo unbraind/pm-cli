@@ -19,7 +19,7 @@ pm guide workflows
 If a relevant item exists, reuse it. If not, create a parent lineage, then create and claim the child implementation item.
 When AGENTS/CLAUDE guidance is missing, use `pm init --agent-guidance add` to inject compact workflow guardrails, or `pm init --agent-guidance skip` to persist an explicit decline.
 
-Tracked documentation work: [pm-3042](../.agents/pm/epics/pm-3042.toon), [pm-r9gu](../.agents/pm/features/pm-r9gu.toon), [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
+Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
 ## Canonical Loop
 

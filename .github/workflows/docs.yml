@@ -60,3 +60,6 @@ jobs:
 
       - name: Docs and skills gate
         run: pnpm quality:docs-skills
+
+      - name: Docs relative-link check
+        run: pnpm quality:docs-links

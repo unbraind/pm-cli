@@ -74,6 +74,7 @@
     "test:coverage": "node scripts/run-tests.mjs coverage",
     "quality:static": "node scripts/release/static-quality-gate.mjs",
     "quality:docs-skills": "node scripts/release/docs-skills-gate.mjs",
+    "quality:docs-links": "node scripts/release/docs-skills-gate.mjs --links-only",
     "contracts:update": "node scripts/contracts-snapshot.mjs --update",
     "contracts:check": "node scripts/contracts-snapshot.mjs --check",
     "dogfood:package-first": "node scripts/dogfood-package-first.mjs",
@@ -131,7 +132,7 @@
   },
   "devDependencies": {
     "@sentry/cli": "^3.5.0",
-    "@types/node": "^25.9.1",
+    "@types/node": "^25.9.2",
     "@vitest/coverage-v8": "^4.1.8",
     "esbuild": "0.28.0",
     "tsx": "^4.22.4",

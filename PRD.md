@@ -1117,7 +1117,7 @@ Keyword/hybrid lexical scoring baseline also applies a deterministic exact-title
   - `embedding_model`
   - `embedding_batch_size`
   - `scanner_max_batch_retries`
-  - `tuning` (optional object: `title_exact_bonus`, `title_weight`, `description_weight`, `tags_weight`, `status_weight`, `body_weight`, `comments_weight`, `notes_weight`, `learnings_weight`, `dependencies_weight`, `linked_content_weight`)
+  - `tuning` (optional object: `title_exact_bonus`, `title_weight`, `description_weight`, `tags_weight`, `status_weight`, `body_weight`, `comments_weight`, `notes_weight`, `learnings_weight`, `reminders_weight`, `events_weight`, `dependencies_weight`, `linked_content_weight`)
 - `search.score_threshold` runtime semantics:
   - keyword mode compares against raw lexical score
   - semantic mode compares against vector similarity score
@@ -1130,7 +1130,7 @@ Keyword/hybrid lexical scoring baseline also applies a deterministic exact-title
 - `search.tuning` runtime semantics:
   - optional object controlling deterministic multi-factor lexical weighting in keyword mode and the hybrid lexical component
   - non-numeric/negative tuning values fall back to deterministic defaults per field
-  - default weights when unset: `title_exact_bonus=10`, `title_weight=8`, `description_weight=5`, `tags_weight=6`, `status_weight=2`, `body_weight=1`, `comments_weight=1`, `notes_weight=1`, `learnings_weight=1`, `dependencies_weight=3`, `linked_content_weight=1`
+  - default weights when unset: `title_exact_bonus=10`, `title_weight=8`, `description_weight=5`, `tags_weight=6`, `status_weight=2`, `body_weight=1`, `comments_weight=1`, `notes_weight=1`, `learnings_weight=1`, `reminders_weight=2`, `events_weight=2`, `dependencies_weight=3`, `linked_content_weight=1`
 
 ### 13.4 Providers and vector stores (semantic/hybrid execution baseline)
 
@@ -1445,7 +1445,7 @@ Schema-capability registrations are also validated deterministically at activati
 
 `search.score_threshold` defaults to `0` and applies mode-specific minimum-score filtering as defined in section `13.3`.
 `search.hybrid_semantic_weight` defaults to `0.7` and controls semantic-vs-lexical blend weight in hybrid mode as defined in section `13.3`.
-`search.tuning` is optional; when unset or partially invalid, lexical scoring defaults remain deterministic (`title_exact_bonus=10`, `title_weight=8`, `description_weight=5`, `tags_weight=6`, `status_weight=2`, `body_weight=1`, `comments_weight=1`, `notes_weight=1`, `learnings_weight=1`, `dependencies_weight=3`, `linked_content_weight=1`).
+`search.tuning` is optional; when unset or partially invalid, lexical scoring defaults remain deterministic (`title_exact_bonus=10`, `title_weight=8`, `description_weight=5`, `tags_weight=6`, `status_weight=2`, `body_weight=1`, `comments_weight=1`, `notes_weight=1`, `learnings_weight=1`, `reminders_weight=2`, `events_weight=2`, `dependencies_weight=3`, `linked_content_weight=1`).
 
 Default `settings.json` object written by `pm init`:
 

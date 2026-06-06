@@ -2,13 +2,22 @@ id: pm-0sqs
 title: Add AGENTS.md/README workflow-update checkbox to the PR template
 description: "The PR template lacks a reminder to update AGENTS.md/README workflow sections when new agent-facing commands/flags ship, so the agent quickstart drifts behind."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[5]: "area:ci","area:docs",contributor-ux,dx,living-map
 created_at: "2026-05-31T19:45:43.014Z"
-updated_at: "2026-05-31T19:45:43.014Z"
+updated_at: "2026-06-06T02:39:48.976Z"
 author: maintainer-agent
 acceptance_criteria: Add a single non-blocking checklist item to PULL_REQUEST_TEMPLATE.md.
 value: "The PR template lacks a reminder to update AGENTS.md/README workflow sections when new agent-facing commands/flags ship, so the agent quickstart drifts behind."
 parent: pm-u9d0
+comments[1]{created_at,author,text}:
+  "2026-06-06T02:39:34.794Z",codex-docs-release-bundle,"Added non-blocking PR checklist reminder in .github/PULL_REQUEST_TEMPLATE.md: update AGENTS.md/README workflow guidance when command/workflow behavior changes."
+files[1]{path,scope,note}:
+  .github/PULL_REQUEST_TEMPLATE.md,project,Workflow docs-update reminder checkbox
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm quality:docs-skills",null,project,240,null,null,null,null,null,null,null,null,null,null,null,Template change doesn't regress docs gate
+docs[1]{path,scope,note}:
+  .github/PULL_REQUEST_TEMPLATE.md,project,PR checklist update
+close_reason: PR template now includes AGENTS.md/README workflow-update reminder checkbox.
 body: ""

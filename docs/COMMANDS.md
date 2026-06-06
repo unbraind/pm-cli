@@ -16,7 +16,7 @@ pm contracts --command <command> --flags-only --json
 - Use `pm contracts` for machine clients.
 - Every mutation writes history.
 
-Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
+Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
 ## Command Families
 
