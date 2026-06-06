@@ -218,7 +218,7 @@ export function normalizeRerankOutput(raw: unknown): RerankScoredHit[] {
 }
 
 function dotProduct(left: number[], right: number[]): number {
-  const size = Math.min(left.length, right.length);
+  const size = left.length;
   let result = 0;
   for (let index = 0; index < size; index += 1) {
     result += left[index] * right[index];
