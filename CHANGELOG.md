@@ -4,6 +4,7 @@
 
 ### Added
 
+- pm telemetry local-analytics subcommand \(status/flush/stats/clear\) ([pm-6xdl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-6xdl.toon))
 - Add Claude Code rows to docs read-path and README start-here tables ([pm-pwdx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-pwdx.toon))
 - Add AGENTS.md/README workflow-update checkbox to the PR template ([pm-0sqs](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-0sqs.toon))
 - Create ONBOARDING.md for new maintainers and first-time contributors ([pm-oh5h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-oh5h.toon))
@@ -28,6 +29,7 @@
 
 ### Other
 
+- Telemetry schema versioning/negotiation preparation ([pm-t4wb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-t4wb.toon))
 - Contract schema golden-file snapshot gate in CI ([pm-d6kq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-d6kq.toon))
 - Document changelog classifier keyword routing for contributors ([pm-5vsv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5vsv.toon))
 - Evaluate commander 15.0.0 major upgrade \(current 14.0.3\) ([pm-7j8t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7j8t.toon))
