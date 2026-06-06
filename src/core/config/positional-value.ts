@@ -93,7 +93,6 @@ const POLICY_KEYS: ReadonlySet<CanonicalConfigKey> = new Set<CanonicalConfigKey>
   "governance_parent_reference_policy",
   "governance_metadata_validation_profile",
   "governance_force_required_for_stale_lock",
-  "governance_require_close_reason",
   "test_result_tracking",
   "telemetry_tracking",
 ]);
@@ -104,6 +103,7 @@ const POLICY_KEYS: ReadonlySet<CanonicalConfigKey> = new Set<CanonicalConfigKey>
  * their own validators report the precise allowed set.
  */
 const ENABLED_DISABLED_POLICY_KEYS: ReadonlySet<CanonicalConfigKey> = new Set<CanonicalConfigKey>([
+  "governance_require_close_reason",
   "governance_force_required_for_stale_lock",
   "test_result_tracking",
   "telemetry_tracking",

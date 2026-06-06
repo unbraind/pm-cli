@@ -1628,6 +1628,7 @@ ${fishCreateRuntimeFieldFlags}
 complete -c pm -n '__fish_seen_subcommand_from copy' -l title   -d 'Override copied title' -r
 complete -c pm -n '__fish_seen_subcommand_from copy' -l author  -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from copy' -l message -d 'History message' -r
+complete -c pm -n '__fish_seen_subcommand_from copy' -l force   -d 'Force ownership override'
 
 # update flags
 complete -c pm -n '__fish_seen_subcommand_from update' -s t -l title              -d 'Item title' -r

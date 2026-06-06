@@ -821,10 +821,16 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
     }
     case "copy": {
       const { changedFields, runnerOptions } = withMutationCompaction(args, options);
+      const copyOptions: Record<string, unknown> = {
+        ...runnerOptions,
+        ...(runnerOptions.title === undefined && typeof args.title === "string" ? { title: args.title } : {}),
+        ...(runnerOptions.message === undefined && typeof args.message === "string" ? { message: args.message } : {}),
+        ...(runnerOptions.author === undefined && typeof args.author === "string" ? { author: args.author } : {}),
+      };
       return projectMutationResult(
         await runCopy(
-          id ?? readRequiredString(runnerOptions, "id"),
-          runnerOptions as never,
+          id ?? readRequiredString(copyOptions, "id"),
+          copyOptions as never,
           global,
         ),
         { changedFields },
@@ -843,10 +849,15 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runRelease(id ?? readRequiredString(options, "id"), force, global, options);
     case "close": {
       const { changedFields, runnerOptions } = withMutationCompaction(args, options);
+      const closeReason =
+        readString(args, "reason") ??
+        readString(args, "text") ??
+        readString(runnerOptions, "reason") ??
+        readString(runnerOptions, "text");
       return projectMutationResult(
         await runClose(
           id ?? readRequiredString(runnerOptions, "id"),
-          readString(args, "reason"),
+          closeReason,
           runnerOptions as never,
           global,
         ),
