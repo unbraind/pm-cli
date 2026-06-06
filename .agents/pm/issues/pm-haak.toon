@@ -2,12 +2,33 @@ id: pm-haak
 title: File-backed schema sections (types/statuses/fields/type_workflows) leak into settings.json on writeSettings
 description: "readSettings merges file-backed schema sections from schema/types.json, schema/statuses.json, schema/fields.json and schema/workflows.json into the resolved settings object (settings.item_types.definitions and settings.schema.statuses/fields/type_workflows). Because callers like `pm config set` read via that merged object and then call writeSettings(settings), serializeSettings persists the MERGED schema back into settings.json. After that, editing or DELETING a rule in the schema/*.json file is silently ignored, because the stale copy baked into settings.json remains active (settings.json + file merge keeps the stale settings entry)."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:config","area:schema",data-durability,living-map
 created_at: "2026-06-03T23:24:08.579Z"
-updated_at: "2026-06-03T23:24:08.579Z"
+updated_at: "2026-06-06T03:20:45.275Z"
 author: claude-code-agent
 value: "Pre-existing data-integrity bug surfaced during PR #106 (Codex review). Affects all file-backed schema sections; extended to type_workflows by the per-type workflow feature. Without it, file-driven schema customization (the documented workflow) becomes unreliable after any settings write."
 parent: pm-8jdc
+comments[4]{created_at,author,text}:
+  "2026-06-06T03:03:24.893Z",codex-schema-integrity,"Execution kickoff: implementing schema-integrity fix so writeSettings no longer persists file-backed schema sections merged at read time; adding regression coverage in settings/config command specs plus manual temp-dir reproduction/verification."
+  "2026-06-06T03:06:53.201Z",codex-schema-integrity,"Implemented read/write persist-source tracking in settings store: readSettingsWithMetadata now attaches source-vs-runtime schema snapshots, and serializeSettings/writeSettings persist source-authored file-backed sections (item_types.definitions, schema.statuses/fields/type_workflows) unless explicitly modified by the caller. Added regression coverage in settings-store and config-command specs; focused verification passed: node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/sdk-index.spec.ts (176 tests)."
+  "2026-06-06T03:15:15.387Z",codex-schema-integrity,"Full verification stack passed after changelog regen: pnpm build; pnpm contracts:check; node scripts/run-tests.mjs coverage (2426 tests, 100% statements/branches/functions/lines); pnpm typecheck; pnpm quality:static; pnpm security:scan; pnpm audit --audit-level low; pnpm changelog:pm and pnpm changelog:pm:check. GitHub checks during this cycle: gh pr list/issue list/dependabot alerts/secret-scanning alerts all empty. Sentry+telemetry gate passed in best-effort mode via node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort (critical=0, high=0, telemetry finish_error_rate_pct=1.88, missing_error_code_rows=0). Manual temp-dir smoke (/tmp/tmp.EtPt0hJnU3): init + create item + add custom status qa_ready in schema/statuses.json; update to qa_ready succeeded; config set telemetry-tracking disabled wrote settings with no qa_ready leakage (settings_statuses_count=6, settings_contains_qa_ready=false, fields/type_workflows empty); after removing qa_ready from schema file, update --status qa_ready failed with invalid-argument, and health/validate checks remained ok."
+  "2026-06-06T03:20:45.275Z",codex-schema-integrity,"Final pre-PR rerun after lint fix passed end-to-end: pnpm build; pnpm contracts:check; node scripts/run-tests.mjs coverage (2426 tests, 100%); pnpm typecheck; pnpm quality:static; pnpm security:scan; pnpm audit --audit-level low; pnpm changelog:pm; pnpm changelog:pm:check; node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort (ok=true)."
+files[3]{path,scope,note}:
+  src/core/store/settings.ts,project,Persist only source-authored file-backed schema sections unless explicitly changed.
+  tests/unit/config-command.spec.ts,project,Add config set regression coverage for schema section leakage.
+  tests/unit/settings-store.spec.ts,project,Add regression proving file-backed schema edits stay authoritative after unrelated writes.
+tests[10]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts tests/unit/config-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm audit --audit-level low,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented and verified schema-integrity persistence fix with regression tests, full gates, and manual temp-dir reproduction."
 body: ""

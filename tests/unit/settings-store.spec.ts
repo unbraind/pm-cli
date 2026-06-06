@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import type { ExtensionHookRegistry } from "../../src/core/extensions/loader.js";
 import { normalizeRuntimeSchemaSettings } from "../../src/core/schema/runtime-schema.js";
-import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
+import { DEFAULT_STATUS_DEFINITIONS, SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { getSettingsPath } from "../../src/core/store/paths.js";
 import { readSettings, readSettingsWithMetadata, resolveGovernanceKnobs, serializeSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempRoot } from "../helpers/temp.js";
@@ -244,6 +244,41 @@ describe("core/store/settings", () => {
       expect(loaded.schema.statuses.map((definition) => definition.id)).toEqual(
         normalizeRuntimeSchemaSettings(custom.schema).statuses.map((definition) => definition.id),
       );
+    });
+  });
+
+  it("keeps runtime schema file sections out of settings writes after read-time merges", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      // Legacy fixture omits schema/item_type blocks from persisted JSON.
+      await writeLegacySettings(pmRoot, { workflow: { definition_of_done: [] } });
+
+      // Initial read scaffolds schema files and attaches read-time persist source.
+      await readSettings(pmRoot);
+      const statusesPath = path.join(pmRoot, "schema", "statuses.json");
+      const seededStatuses = [...structuredClone(DEFAULT_STATUS_DEFINITIONS), { id: "qa_ready", roles: ["active"] as const }];
+      await fs.writeFile(statusesPath, `${JSON.stringify({ statuses: seededStatuses }, null, 2)}\n`, "utf8");
+
+      const merged = await readSettings(pmRoot);
+      expect(merged.schema.statuses.map((definition) => definition.id)).toContain("qa_ready");
+
+      // Unrelated settings write should not copy merged file-backed sections.
+      merged.telemetry.enabled = false;
+      await writeSettings(pmRoot, merged);
+
+      const persisted = JSON.parse(await fs.readFile(getSettingsPath(pmRoot), "utf8")) as Record<string, unknown>;
+      const persistedSchema = (persisted.schema ?? {}) as Record<string, unknown>;
+      expect(persistedSchema.statuses ?? []).toEqual([]);
+      expect(persistedSchema.fields ?? []).toEqual([]);
+      expect(Array.isArray(persistedSchema.type_workflows) ? persistedSchema.type_workflows : []).toEqual([]);
+
+      // File edits remain authoritative after the write.
+      await fs.writeFile(
+        statusesPath,
+        `${JSON.stringify({ statuses: structuredClone(DEFAULT_STATUS_DEFINITIONS) }, null, 2)}\n`,
+        "utf8",
+      );
+      const afterRemoval = await readSettings(pmRoot);
+      expect(afterRemoval.schema.statuses.map((definition) => definition.id)).not.toContain("qa_ready");
     });
   });
 

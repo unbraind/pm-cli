@@ -8,7 +8,7 @@ import {
   normalizeRuntimeSchemaSettings,
 } from "../schema/runtime-schema.js";
 import { getSettingsPath } from "./paths.js";
-import { orderObject } from "../shared/serialization.js";
+import { orderObject, stableValueEquals } from "../shared/serialization.js";
 import { normalizeItemTypeDefinition } from "../item/item-type-definition.js";
 import type {
   ExtensionSandboxProfile,
@@ -25,6 +25,26 @@ import type {
 } from "../../types/index.js";
 
 const SETTINGS_WRITE_OP = "settings:write";
+const SETTINGS_PERSIST_SOURCE_SYMBOL = Symbol("pm.settings.persist_source");
+
+interface SettingsPersistSourceSnapshot {
+  has_source_item_type_definitions: boolean;
+  source_item_type_definitions: ItemTypeDefinition[];
+  has_source_schema_statuses: boolean;
+  source_schema_statuses: PmSettings["schema"]["statuses"];
+  has_source_schema_fields: boolean;
+  source_schema_fields: PmSettings["schema"]["fields"];
+  has_source_schema_type_workflows: boolean;
+  source_schema_type_workflows: NonNullable<PmSettings["schema"]["type_workflows"]>;
+  runtime_item_type_definitions: ItemTypeDefinition[];
+  runtime_schema_statuses: PmSettings["schema"]["statuses"];
+  runtime_schema_fields: PmSettings["schema"]["fields"];
+  runtime_schema_type_workflows: NonNullable<PmSettings["schema"]["type_workflows"]>;
+}
+
+interface SerializeSettingsOptions {
+  persist_source?: SettingsPersistSourceSnapshot;
+}
 
 export interface SettingsReadMetadata {
   has_explicit_item_format: boolean;
@@ -146,6 +166,97 @@ function normalizeSearchMutationRefreshPolicy(value: unknown): SearchMutationRef
     return value;
   }
   return SETTINGS_DEFAULTS.search.mutation_refresh_policy;
+}
+
+function buildSettingsPersistSourceSnapshot(
+  parsedSettings: ParsedSettings,
+  runtimeSettings: PmSettings,
+): SettingsPersistSourceSnapshot {
+  const sourceSchema = parsedSettings.schema;
+  const sourceStatuses = Array.isArray(sourceSchema?.statuses) ? sourceSchema?.statuses : undefined;
+  const sourceFields = Array.isArray(sourceSchema?.fields) ? sourceSchema?.fields : undefined;
+  const sourceTypeWorkflows = Array.isArray(sourceSchema?.type_workflows) ? sourceSchema?.type_workflows : undefined;
+  return {
+    has_source_item_type_definitions: Array.isArray(parsedSettings.item_types?.definitions),
+    source_item_type_definitions: normalizeItemTypeDefinitions(parsedSettings.item_types?.definitions),
+    has_source_schema_statuses: sourceStatuses !== undefined,
+    source_schema_statuses: sourceStatuses ? structuredClone(sourceStatuses) : [],
+    has_source_schema_fields: sourceFields !== undefined,
+    source_schema_fields: sourceFields ? structuredClone(sourceFields) : [],
+    has_source_schema_type_workflows: sourceTypeWorkflows !== undefined,
+    source_schema_type_workflows: sourceTypeWorkflows ? structuredClone(sourceTypeWorkflows) : [],
+    runtime_item_type_definitions: normalizeItemTypeDefinitions(runtimeSettings.item_types?.definitions),
+    runtime_schema_statuses: structuredClone(runtimeSettings.schema.statuses),
+    runtime_schema_fields: structuredClone(runtimeSettings.schema.fields),
+    runtime_schema_type_workflows: structuredClone(runtimeSettings.schema.type_workflows ?? []),
+  };
+}
+
+function attachSettingsPersistSourceSnapshot(settings: PmSettings, source: SettingsPersistSourceSnapshot): void {
+  Object.defineProperty(settings as unknown as Record<PropertyKey, unknown>, SETTINGS_PERSIST_SOURCE_SYMBOL, {
+    value: source,
+    writable: true,
+    configurable: true,
+    enumerable: false,
+  });
+}
+
+function getSettingsPersistSourceSnapshot(settings: PmSettings): SettingsPersistSourceSnapshot | undefined {
+  const candidate = (settings as unknown as Record<PropertyKey, unknown>)[SETTINGS_PERSIST_SOURCE_SYMBOL];
+  if (!candidate || typeof candidate !== "object") {
+    return undefined;
+  }
+  return candidate as SettingsPersistSourceSnapshot;
+}
+
+function resolvePersistedFileBackedSchemaSections(
+  settings: PmSettings,
+  source: SettingsPersistSourceSnapshot | undefined,
+): {
+  item_type_definitions: ItemTypeDefinition[];
+  schema_statuses: PmSettings["schema"]["statuses"];
+  schema_fields: PmSettings["schema"]["fields"];
+  schema_type_workflows: PmSettings["schema"]["type_workflows"];
+} {
+  const normalizedSchema = normalizeRuntimeSchemaSettings(settings.schema);
+  const currentItemTypeDefinitions = normalizeItemTypeDefinitions(settings.item_types?.definitions);
+  if (!source) {
+    return {
+      item_type_definitions: currentItemTypeDefinitions,
+      schema_statuses: normalizedSchema.statuses,
+      schema_fields: normalizedSchema.fields,
+      schema_type_workflows: normalizedSchema.type_workflows,
+    };
+  }
+
+  const currentTypeWorkflows = normalizedSchema.type_workflows ?? [];
+  const itemTypeDefinitionsUnchanged = stableValueEquals(currentItemTypeDefinitions, source.runtime_item_type_definitions);
+  const schemaStatusesUnchanged = stableValueEquals(normalizedSchema.statuses, source.runtime_schema_statuses);
+  const schemaFieldsUnchanged = stableValueEquals(normalizedSchema.fields, source.runtime_schema_fields);
+  const schemaTypeWorkflowsUnchanged = stableValueEquals(currentTypeWorkflows, source.runtime_schema_type_workflows);
+
+  return {
+    item_type_definitions: itemTypeDefinitionsUnchanged
+      ? source.has_source_item_type_definitions
+        ? normalizeItemTypeDefinitions(source.source_item_type_definitions)
+        : []
+      : currentItemTypeDefinitions,
+    schema_statuses: schemaStatusesUnchanged
+      ? source.has_source_schema_statuses
+        ? structuredClone(source.source_schema_statuses)
+        : []
+      : normalizedSchema.statuses,
+    schema_fields: schemaFieldsUnchanged
+      ? source.has_source_schema_fields
+        ? structuredClone(source.source_schema_fields)
+        : []
+      : normalizedSchema.fields,
+    schema_type_workflows: schemaTypeWorkflowsUnchanged
+      ? source.has_source_schema_type_workflows
+        ? structuredClone(source.source_schema_type_workflows)
+        : undefined
+      : normalizedSchema.type_workflows,
+  };
 }
 
 function buildFallbackSettingsReadResult(warning?: string): SettingsReadResult {
@@ -442,8 +553,10 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
   };
 }
 
-export function serializeSettings(settings: PmSettings): string {
+export function serializeSettings(settings: PmSettings, options: SerializeSettingsOptions = {}): string {
   const governance = resolveGovernanceKnobs(settings);
+  const normalizedSchema = normalizeRuntimeSchemaSettings(settings.schema);
+  const persistedFileBackedSections = resolvePersistedFileBackedSchemaSections(settings, options.persist_source);
   const normalizedSettings: PmSettings = {
     ...settings,
     item_format: "toon",
@@ -472,9 +585,14 @@ export function serializeSettings(settings: PmSettings): string {
     governance,
     agent_guidance: normalizeAgentGuidanceSettings(settings.agent_guidance),
     item_types: {
-      definitions: normalizeItemTypeDefinitions(settings.item_types?.definitions),
+      definitions: persistedFileBackedSections.item_type_definitions,
     },
-    schema: normalizeRuntimeSchemaSettings(settings.schema),
+    schema: {
+      ...normalizedSchema,
+      statuses: persistedFileBackedSections.schema_statuses,
+      fields: persistedFileBackedSections.schema_fields,
+      type_workflows: persistedFileBackedSections.schema_type_workflows,
+    },
     search: {
       ...SETTINGS_DEFAULTS.search,
       ...settings.search,
@@ -698,7 +816,7 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
     const mergedSettings = mergeSettings(validated.data);
     const schemaScaffold = await ensureRuntimeSchemaFileScaffold(pmRoot, mergedSettings.schema);
     const loadedSchemaSections = await loadRuntimeSchemaFromOptionalFiles(pmRoot, mergedSettings.schema);
-    const settings = {
+    const settings: PmSettings = {
       ...mergedSettings,
       item_types: {
         definitions: normalizeItemTypeDefinitions([
@@ -708,6 +826,7 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
       },
       schema: loadedSchemaSections.schema,
     };
+    attachSettingsPersistSourceSnapshot(settings, buildSettingsPersistSourceSnapshot(validated.data, settings));
     return {
       settings,
       metadata: {
@@ -732,7 +851,12 @@ export async function readSettings(pmRoot: string): Promise<PmSettings> {
 
 export async function writeSettings(pmRoot: string, settings: PmSettings, op = SETTINGS_WRITE_OP): Promise<void> {
   const settingsPath = getSettingsPath(pmRoot);
-  await writeFileAtomic(settingsPath, serializeSettings(settings));
+  await writeFileAtomic(
+    settingsPath,
+    serializeSettings(settings, {
+      persist_source: getSettingsPersistSourceSnapshot(settings),
+    }),
+  );
   await runActiveOnWriteHooks({
     path: settingsPath,
     scope: "project",
