@@ -2,14 +2,16 @@ id: pm-pgew
 title: Stabilize npx onboarding path for scoped pm package
 description: "Fix GitHub issue #131 by making the first-command package execution path obvious and regression-tested for agents. Scope includes canonical npx docs, package/release smoke coverage, dependency/security triage, changelog validation, and temp-project dogfood."
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[6]: agent-ux,"area:cli","area:docs","area:packages","area:release","github-issue:131"
 created_at: "2026-06-06T22:32:48.822Z"
-updated_at: "2026-06-06T22:52:30.450Z"
-assignee: codex-gpt5
+updated_at: "2026-06-06T22:59:21.236Z"
 author: codex-gpt5
 parent: pm-u9d0
+resolution: "Merged PR #135 to add the pm-cli bin alias, hardened npx release smokes, corrected onboarding/MCP docs, and verified CI/review gates."
+expected_result: Agents can run npx --yes @unbrained/pm-cli@latest --help after the next package release; MCP fallbacks explicitly select pm-mcp; release smokes catch regressions.
+actual_result: "PR #135 merged to main; issue #131 closed by GitHub; current package source exposes pm-cli, pm, and pm-mcp bins and packed npx smoke passed."
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-mpbb,related_to,"2026-06-06T22:32:48.822Z",null,null
   pm-ugqx,related_to,"2026-06-06T22:32:48.822Z",null,null
@@ -45,4 +47,5 @@ docs[6]{path,scope,note}:
   plugins/pm-claude/README.md,project,Align Claude plugin fallback docs with executable npx form
   plugins/pm-codex/README.md,project,Align Codex plugin fallback docs with executable npx form
   README.md,project,Document direct npx CLI onboarding command
+close_reason: "Merged PR #135; GitHub issue #131 closed; local and remote verification passed including 100% coverage, package npx smoke, docs/static/security/audit/changelog checks, Sentry/telemetry gate, and review follow-up."
 body: ""
