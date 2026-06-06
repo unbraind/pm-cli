@@ -114,6 +114,14 @@ function verifyExecutor(name, args, version, attempts, tempRoot) {
   });
 }
 
+function verifyRequiredExecutor(label, args, version, attempts, tempRoot) {
+  const result = verifyExecutor(label, args, version, attempts, tempRoot);
+  if (!result.ok) {
+    fail(`${label} verification failed: ${result.reason}`);
+  }
+  return result;
+}
+
 function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
   const npmMetadata = verifyNpmMetadata(version, npmAttempts);
   if (!npmMetadata.ok) {
@@ -122,40 +130,31 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
 
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-cli-published-verify-"));
   try {
-    const npxDirect = verifyExecutor(
+    const npxDirect = verifyRequiredExecutor(
       "npx-direct",
       [commandFor("npx"), "--yes", `@unbrained/pm-cli@${version}`, "--version"],
       version,
       executorAttempts,
       tempRoot,
     );
-    if (!npxDirect.ok) {
-      fail(`direct npx verification failed: ${npxDirect.reason}`);
-    }
 
-    const npxPackage = verifyExecutor(
+    const npxPackage = verifyRequiredExecutor(
       "npx-package",
       [commandFor("npx"), "--yes", "--package", `@unbrained/pm-cli@${version}`, "--", "pm", "--version"],
       version,
       executorAttempts,
       tempRoot,
     );
-    if (!npxPackage.ok) {
-      fail(`explicit npx package verification failed: ${npxPackage.reason}`);
-    }
 
-    const bunx = verifyExecutor(
+    const bunx = verifyRequiredExecutor(
       "bunx",
       [commandFor("bunx"), "--bun", `@unbrained/pm-cli@${version}`, "pm", "--version"],
       version,
       executorAttempts,
       tempRoot,
     );
-    if (!bunx.ok) {
-      fail(`bunx verification failed: ${bunx.reason}`);
-    }
 
-    return { npm: npmMetadata, npx_direct: npxDirect, npx_package: npxPackage, bunx };
+    return { npm: npmMetadata, npx: { direct: npxDirect, package: npxPackage }, bunx };
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
   }

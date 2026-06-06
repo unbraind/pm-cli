@@ -193,8 +193,8 @@ All skills and commands implement this pattern for every claimed item:
 
 ## Session Context Injection
 
-At session start, the hook runs natively (no `pm` CLI required):
-- Uses `npx --package=@unbrained/pm-cli@latest pm-mcp` without requiring a global install
+At session start, the hook runs the published `pm` CLI without requiring a global install:
+- Uses `npx --yes --package=@unbrained/pm-cli@latest pm context --limit 5 --json`
 - Injects a compact summary of in-progress/open/blocked items
 
 Example output:
@@ -216,7 +216,7 @@ Use pm_context tool or /pm-status for full details.
 ## Requirements
 
 - Node.js ≥ 20
-- pm CLI resolved automatically via local dist (in repo) or `npx --package=@unbrained/pm-cli@latest pm-mcp` (no global install needed)
+- pm CLI resolved automatically via local dist (in repo) or `npx --yes @unbrained/pm-cli@latest` (no global install needed)
 - Project initialized with `pm init` (or use `/pm-init`)
 
 ## Links
