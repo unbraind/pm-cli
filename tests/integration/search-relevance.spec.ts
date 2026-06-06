@@ -70,6 +70,9 @@ describe("search relevance helpers", () => {
       model: "fallback-model",
       top_k: 20,
     });
+
+    settings.search.rerank.top_k = 5000;
+    expect(resolveRerankConfig(settings, "fallback-model").top_k).toBe(200);
   });
 
   it("normalizes rerank provider output into deterministic score hits", () => {

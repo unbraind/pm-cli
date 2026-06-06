@@ -412,6 +412,19 @@ describe("core/store/settings", () => {
     expect(collectionName).toContain("workspace_docs");
   });
 
+  it("truncates sanitized vector_store.collection_name to deterministic maximum length", () => {
+    const settings = structuredClone(SETTINGS_DEFAULTS);
+    settings.vector_store.collection_name = `${"workspace".repeat(30)} docs`;
+
+    const serialized = serializeSettings(settings);
+    const parsed = JSON.parse(serialized) as Record<string, unknown>;
+    const vectorStore = parsed.vector_store as Record<string, unknown>;
+    const collectionName = vectorStore.collection_name as string;
+
+    expect(collectionName).toMatch(/^[a-zA-Z0-9_-]+$/);
+    expect(collectionName.length).toBe(128);
+  });
+
   it("resolves governance knobs for built-in presets and custom overrides", () => {
     expect(resolveGovernanceKnobs({ governance: { preset: "minimal" } })).toEqual({
       preset: "minimal",

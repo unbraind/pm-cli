@@ -26,6 +26,7 @@ import type {
 
 const SETTINGS_WRITE_OP = "settings:write";
 const SETTINGS_PERSIST_SOURCE_SYMBOL = Symbol("pm.settings.persist_source");
+const MAX_VECTOR_STORE_COLLECTION_NAME_LENGTH = 128;
 
 interface SettingsPersistSourceSnapshot {
   has_source_item_type_definitions: boolean;
@@ -223,7 +224,8 @@ function normalizeVectorStoreCollectionName(value: unknown): string {
     return SETTINGS_DEFAULTS.vector_store.collection_name;
   }
   const sanitized = value.trim().replaceAll(/[^a-zA-Z0-9_-]/g, "_");
-  return sanitized.length > 0 ? sanitized : SETTINGS_DEFAULTS.vector_store.collection_name;
+  const truncated = sanitized.slice(0, MAX_VECTOR_STORE_COLLECTION_NAME_LENGTH);
+  return truncated.length > 0 ? truncated : SETTINGS_DEFAULTS.vector_store.collection_name;
 }
 
 function buildSettingsPersistSourceSnapshot(

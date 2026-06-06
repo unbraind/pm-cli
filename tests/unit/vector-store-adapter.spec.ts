@@ -156,6 +156,34 @@ describe("resolveVectorStoreRequestTarget", () => {
       upsert_target: "lancedb://%2Ftmp%2Flance%20index#workspace_docs",
     });
   });
+
+  it("truncates overlong collection names for request targets", () => {
+    const rawCollectionName = `${"workspace_docs_".repeat(20)}tail`;
+    const expectedCollectionName = rawCollectionName.slice(0, 128);
+    expect(
+      resolveVectorStoreRequestTarget({
+        name: "qdrant",
+        url: "https://qdrant.example.test:6333/",
+        collection_name: rawCollectionName,
+      }),
+    ).toEqual({
+      store: "qdrant",
+      query_target: `https://qdrant.example.test:6333/collections/${expectedCollectionName}/points/search`,
+      upsert_target: `https://qdrant.example.test:6333/collections/${expectedCollectionName}/points?wait=true`,
+    });
+
+    expect(
+      resolveVectorStoreRequestTarget({
+        name: "lancedb",
+        path: "/tmp/lance index",
+        collection_name: rawCollectionName,
+      }),
+    ).toEqual({
+      store: "lancedb",
+      query_target: `lancedb://%2Ftmp%2Flance%20index#${expectedCollectionName}`,
+      upsert_target: `lancedb://%2Ftmp%2Flance%20index#${expectedCollectionName}`,
+    });
+  });
 });
 
 describe("buildVectorQueryPlan", () => {

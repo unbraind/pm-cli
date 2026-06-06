@@ -5,6 +5,7 @@ import { executeEmbeddingRequest, type EmbeddingProviderConfig } from "./provide
 
 export const DEFAULT_QUERY_EXPANSION_MAX_QUERIES = 4;
 export const DEFAULT_RERANK_TOP_K = 20;
+const MAX_RERANK_TOP_K = 200;
 
 const QUERY_EXPANSION_STOP_WORDS = new Set([
   "a",
@@ -66,17 +67,19 @@ function dedupeQueries(values: string[], limit: number): string[] {
 }
 
 function singularizeSimple(token: string): string {
-  if (token.length > 3 && token.endsWith("s")) {
-    return token.slice(0, -1);
+  const normalizedToken = token.toLowerCase();
+  if (normalizedToken.length > 3 && normalizedToken.endsWith("s")) {
+    return normalizedToken.slice(0, -1);
   }
-  return token;
+  return normalizedToken;
 }
 
 function pluralizeSimple(token: string): string {
-  if (token.length > 2 && !token.endsWith("s")) {
-    return `${token}s`;
+  const normalizedToken = token.toLowerCase();
+  if (normalizedToken.length > 2 && !normalizedToken.endsWith("s")) {
+    return `${normalizedToken}s`;
   }
-  return token;
+  return normalizedToken;
 }
 
 export function buildDeterministicQueryExpansions(
@@ -142,10 +145,11 @@ export function resolveRerankConfig(settings: PmSettings, fallbackModel: string)
   const rerank = search?.rerank;
   const configuredModel = toNonEmptyString(rerank?.model);
   const configuredTopK = coercePositiveInteger(rerank?.top_k);
+  const normalizedTopK = configuredTopK ?? DEFAULT_RERANK_TOP_K;
   return {
     enabled: rerank?.enabled === true,
     model: configuredModel ?? fallbackModel,
-    top_k: configuredTopK ?? DEFAULT_RERANK_TOP_K,
+    top_k: Math.min(MAX_RERANK_TOP_K, normalizedTopK),
   };
 }
 
@@ -198,13 +202,24 @@ function l2Norm(vector: number[]): number {
   return Math.sqrt(sumSquares);
 }
 
-function cosineSimilarity(left: number[] | null | undefined, right: number[] | null | undefined): number {
+function cosineSimilarityWithKnownLeftNorm(
+  left: number[] | null | undefined,
+  right: number[] | null | undefined,
+  leftNorm: number,
+): number {
   if (!left || !right || left.length === 0 || right.length === 0 || left.length !== right.length) {
     return 0;
   }
   const numerator = dotProduct(left, right);
-  const denominator = l2Norm(left) * l2Norm(right);
-  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) {
+  const rightNorm = l2Norm(right);
+  const denominator = leftNorm * rightNorm;
+  if (
+    !Number.isFinite(numerator) ||
+    !Number.isFinite(leftNorm) ||
+    !Number.isFinite(rightNorm) ||
+    !Number.isFinite(denominator) ||
+    denominator === 0
+  ) {
     return 0;
   }
   return Math.max(-1, Math.min(1, numerator / denominator));
@@ -226,11 +241,12 @@ export async function rerankCandidatesWithEmbeddings(
   const payload = [query.trim(), ...candidates.map((entry) => entry.text)];
   const vectors = await executeEmbeddingRequest(rerankProvider, payload, timeoutMs ? { timeout_ms: timeoutMs } : {});
   const queryVector = vectors[0];
+  const queryNorm = l2Norm(queryVector);
   const scoreById = new Map<string, number>();
   for (let index = 0; index < candidates.length; index += 1) {
     const candidate = candidates[index];
     const candidateVector = vectors[index + 1];
-    const similarity = cosineSimilarity(queryVector, candidateVector);
+    const similarity = cosineSimilarityWithKnownLeftNorm(queryVector, candidateVector, queryNorm);
     scoreById.set(candidate.id, Math.max(0, Math.min(1, (similarity + 1) / 2)));
   }
   return scoreById;
