@@ -1434,6 +1434,112 @@ describe("runSearch", () => {
     }
   });
 
+  it("keeps reranked candidates ahead of non-reranked candidates", async () => {
+    const docA = makeFrontMatter({
+      id: "pm-rerank-priority-a",
+      title: "tok alpha",
+      updated_at: "2026-02-18T00:01:00.000Z",
+    });
+    const docB = makeFrontMatter({
+      id: "pm-rerank-priority-b",
+      title: "tok beta",
+      updated_at: "2026-02-18T00:02:00.000Z",
+    });
+    const docs = [docA, docB];
+    listAllFrontMatterMock.mockResolvedValue(docs);
+    readFileMock.mockImplementation(async (targetPath) => {
+      const match = docs.find((item) => targetPath.endsWith(`${item.id}.md`));
+      if (!match) {
+        throw new Error(`Unexpected path: ${targetPath}`);
+      }
+      return serializeDocument(match, "rerank priority body");
+    });
+    readSettingsMock.mockResolvedValue({
+      search: {
+        max_results: 5,
+        rerank: {
+          enabled: true,
+          model: "rerank-model-v1",
+          top_k: 1,
+        },
+      },
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string });
+
+    const originalFetch = globalThis.fetch;
+    let embeddingCallCount = 0;
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      const target = resolveFetchTarget(url);
+      if (target.endsWith("/v1/embeddings")) {
+        embeddingCallCount += 1;
+        if (embeddingCallCount === 1) {
+          return {
+            ok: true,
+            status: 200,
+            statusText: "OK",
+            json: async () => ({ data: [{ embedding: [1, 0] }] }),
+            text: async () => "",
+          } as unknown as Response;
+        }
+        const body = parseJsonBody<{ input?: string | string[] }>(init?.body);
+        const rerankInputs = Array.isArray(body.input) ? body.input : [body.input ?? ""];
+        expect(rerankInputs).toHaveLength(2);
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({
+            data: [
+              { index: 0, embedding: [1, 0] },
+              { index: 1, embedding: [0, 1] },
+            ],
+          }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      if (target.endsWith("/collections/pm_items/points/search")) {
+        return {
+          ok: true,
+          status: 200,
+          statusText: "OK",
+          json: async () => ({
+            result: [
+              { id: "pm-rerank-priority-a", score: 0.95 },
+              { id: "pm-rerank-priority-b", score: 0.9 },
+            ],
+          }),
+          text: async () => "",
+        } as unknown as Response;
+      }
+      throw new Error(`Unexpected fetch target: ${target}`);
+    }) as typeof globalThis.fetch;
+
+    try {
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const result = await runSearch("tok", { mode: "hybrid" }, { path: "/tmp/pm-search" });
+      expect(result.mode).toBe("hybrid");
+      expect(result.items.map((entry) => entry.item.id)).toEqual([
+        "pm-rerank-priority-a",
+        "pm-rerank-priority-b",
+      ]);
+      expect(result.items[0]?.matched_fields).toContain("rerank");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("falls back to hybrid scores when rerank embeddings fail", async () => {
     const docA = makeFrontMatter({
       id: "pm-rerank-fail-a",

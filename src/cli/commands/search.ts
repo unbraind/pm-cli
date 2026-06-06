@@ -1357,6 +1357,7 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
       }
     }
     if (rerankScores && rerankScores.size > 0) {
+      const rerankedIds = new Set(rerankScores.keys());
       hybridHits = hybridHits.map((hit) => {
         const rerankScore = rerankScores.get(hit.item.id);
         if (rerankScore === undefined) {
@@ -1371,6 +1372,11 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
         };
       });
       hybridHits.sort((left, right) => {
+        const leftWasReranked = rerankedIds.has(left.item.id);
+        const rightWasReranked = rerankedIds.has(right.item.id);
+        if (leftWasReranked !== rightWasReranked) {
+          return leftWasReranked ? -1 : 1;
+        }
         if (left.score !== right.score) {
           return right.score - left.score;
         }
