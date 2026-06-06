@@ -1251,7 +1251,6 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
   }
 
   const queryVectors = await executeEmbeddingRequest(context.provider, expandedQueries, embeddingOptions);
-  const queryVectorGroups: VectorQueryHit[][] = [];
 
   const executeVectorQueryWithFallback = async (semanticVector: number[]): Promise<VectorQueryHit[]> => {
     if (context.extensionVectorAdapter?.query) {
@@ -1282,9 +1281,9 @@ async function computeSemanticOrHybridHits(context: SemanticQueryContext): Promi
     );
   };
 
-  for (const semanticVector of queryVectors) {
-    queryVectorGroups.push(await executeVectorQueryWithFallback(semanticVector));
-  }
+  const queryVectorGroups = await Promise.all(
+    queryVectors.map(async (semanticVector) => await executeVectorQueryWithFallback(semanticVector)),
+  );
   const vectorHits = mergeVectorHitsById(queryVectorGroups);
   const filteredById = new Map(context.filteredDocuments.map((document) => [document.metadata.id, document]));
   const { semanticHits, semanticScores } = buildSemanticHits(vectorHits, filteredById);
