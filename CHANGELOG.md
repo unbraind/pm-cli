@@ -22,6 +22,7 @@
 
 ### Other
 
+- PR \#123 review: make governance hook sidecar logging fail-open ([pm-mzlu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mzlu.toon))
 - Config-driven optional close reason via governance.require\_close\_reason ([pm-peyv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-peyv.toon))
 
 ## 2026.6.6 - 2026-06-06

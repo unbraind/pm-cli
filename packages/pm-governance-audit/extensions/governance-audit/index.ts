@@ -16,6 +16,7 @@ export const manifest = {
 };
 
 const HOOK_LOG_ENV = "PM_GOVERNANCE_AUDIT_HOOK_LOG";
+const createdHookLogDirs = new Set<string>();
 
 const dedupeAuditFlags = [
   { long: "--mode", value_name: "value", value_type: "string", description: "Audit mode: title_exact|title_fuzzy|parent_scope." },
@@ -115,22 +116,30 @@ function appendHookAuditRecord(kind: "on_read" | "on_write", context: OnReadHook
   if (!logPath) {
     return;
   }
-  const absoluteLogPath = path.resolve(logPath);
-  mkdirSync(path.dirname(absoluteLogPath), { recursive: true });
-  const writeContext = kind === "on_write" ? (context as OnWriteHookContext) : undefined;
-  appendFileSync(
-    absoluteLogPath,
-    `${JSON.stringify({
-      kind,
-      path: context.path,
-      scope: context.scope,
-      op: writeContext?.op,
-      item_id: writeContext?.item_id,
-      item_type: writeContext?.item_type,
-      changed_fields: writeContext?.changed_fields,
-    })}\n`,
-    "utf8",
-  );
+  try {
+    const absoluteLogPath = path.resolve(logPath);
+    const logDir = path.dirname(absoluteLogPath);
+    if (!createdHookLogDirs.has(logDir)) {
+      mkdirSync(logDir, { recursive: true });
+      createdHookLogDirs.add(logDir);
+    }
+    const writeContext = kind === "on_write" ? (context as OnWriteHookContext) : undefined;
+    appendFileSync(
+      absoluteLogPath,
+      `${JSON.stringify({
+        kind,
+        path: context.path,
+        scope: context.scope,
+        op: writeContext?.op,
+        item_id: writeContext?.item_id,
+        item_type: writeContext?.item_type,
+        changed_fields: writeContext?.changed_fields,
+      })}\n`,
+      "utf8",
+    );
+  } catch {
+    // Best-effort sidecar logging must not interrupt core read/write flows.
+  }
 }
 
 export function activate(api: ExtensionApi): void {

@@ -1,0 +1,28 @@
+id: pm-mzlu
+title: "PR #123 review: make governance hook sidecar logging fail-open"
+description: Follow-up to pm-7m8p from CodeRabbit/Gemini review. Make PM_GOVERNANCE_AUDIT_HOOK_LOG sidecar filesystem writes best-effort so permissions/ENOSPC/invalid path do not break core read/write hook flows; cache created directories; add regression coverage; rerun focused validation and retrigger review agents.
+type: Task
+status: closed
+priority: 1
+tags[5]: "area:extensions","area:packages","area:sdk",hooks,review-followup
+created_at: "2026-06-06T18:10:18.340Z"
+updated_at: "2026-06-06T18:14:16.002Z"
+author: codex-implementation
+parent: pm-7m8p
+resolution: Made optional governance hook sidecar logging best-effort so filesystem errors cannot interrupt core read/write hook flows.
+expected_result: Invalid or unwritable sidecar paths do not throw from governance audit hooks; normal compact sidecar logging still works.
+actual_result: "Hook helper wraps mkdir/append in try/catch, caches log directories, keeps compact records unchanged, and tests/smoke/coverage all passed."
+comments[2]{created_at,author,text}:
+  "2026-06-06T18:10:25.398Z",codex-implementation,"Investigation note: duplicate check reused closed parent pm-7m8p and created this narrow child because terminal items cannot be reclaimed without force. Review findings from CodeRabbit/Gemini are valid: optional sidecar logging must not propagate filesystem errors."
+  "2026-06-06T18:14:15.313Z",codex-implementation,"Evidence: addressed PR #123 CodeRabbit/Gemini feedback by making governance hook sidecar filesystem writes fail-open and caching created log directories in TS and shipped JS. Added regression coverage for invalid log path resolving to a directory. Verification passed: focused unit/package/SDK tests 62/62; pnpm build; temp PM_PATH/PM_GLOBAL_PATH governance-audit install smoke with valid sidecar logging plus invalid sidecar path fail-open; full coverage 146 files, 2517 tests, 100% statements/branches/functions/lines."
+files[3]{path,scope,note}:
+  packages/pm-governance-audit/extensions/governance-audit/index.js,project,Keep shipped JS hook sidecar behavior in sync
+  packages/pm-governance-audit/extensions/governance-audit/index.ts,project,Make governance hook sidecar logging fail-open and cache directories
+  tests/unit/builtin-extension-entrypoints.spec.ts,project,Regression for invalid sidecar path not throwing from hook
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/builtin-extension-entrypoints.spec.ts tests/unit/package-manifest.spec.ts tests/unit/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Resolved PR #123 review feedback: PM_GOVERNANCE_AUDIT_HOOK_LOG sidecar logging now fails open, caches created directories, and has regression coverage plus focused/temp/full validation."
+body: ""

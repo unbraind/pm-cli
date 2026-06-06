@@ -517,6 +517,16 @@ describe("built-in extension entrypoints", () => {
           changed_fields: ["status"],
         },
       ]);
+
+      process.env.PM_GOVERNANCE_AUDIT_HOOK_LOG = path.dirname(hookLogPath);
+      await expect(Promise.resolve(
+        hooks.onWrite[0]?.run({
+          path: "/tmp/project/tasks/pm-demo.md",
+          scope: "project",
+          op: "update",
+          item_id: "pm-demo",
+        }),
+      )).resolves.toBeUndefined();
     } finally {
       if (previousLogPath === undefined) {
         delete process.env.PM_GOVERNANCE_AUDIT_HOOK_LOG;
