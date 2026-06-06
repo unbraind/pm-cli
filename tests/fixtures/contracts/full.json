@@ -141,6 +141,16 @@
       "requires_extension": false
     },
     {
+      "action": "copy",
+      "available": true,
+      "cli_exposed": true,
+      "command_path": "copy",
+      "disabled_reason": null,
+      "invocable": true,
+      "provider": "core",
+      "requires_extension": false
+    },
+    {
       "action": "create",
       "available": true,
       "cli_exposed": true,
@@ -805,6 +815,7 @@
     "config",
     "context",
     "contracts",
+    "copy",
     "create",
     "ctx",
     "delete",
@@ -930,6 +941,12 @@
         },
         {
           "flag": "--count"
+        },
+        {
+          "flag": "--sum"
+        },
+        {
+          "flag": "--avg"
         },
         {
           "aliases": [
@@ -1602,6 +1619,11 @@
         }
       ],
       "provider": "core"
+    },
+    {
+      "command": "copy",
+      "flags": [],
+      "provider": "extension"
     },
     {
       "command": "create",
@@ -2393,6 +2415,15 @@
         {
           "flag": "--fields",
           "list": true
+        },
+        {
+          "flag": "--tree"
+        },
+        {
+          "aliases": [
+            "--tree_depth"
+          ],
+          "flag": "--tree-depth"
         }
       ],
       "provider": "core"
@@ -2686,6 +2717,15 @@
           "flag": "--order"
         },
         {
+          "flag": "--tree"
+        },
+        {
+          "aliases": [
+            "--tree_depth"
+          ],
+          "flag": "--tree-depth"
+        },
+        {
           "flag": "--include-body"
         },
         {
@@ -2774,6 +2814,15 @@
         },
         {
           "flag": "--order"
+        },
+        {
+          "flag": "--tree"
+        },
+        {
+          "aliases": [
+            "--tree_depth"
+          ],
+          "flag": "--tree-depth"
         },
         {
           "flag": "--include-body"
@@ -2866,6 +2915,15 @@
           "flag": "--order"
         },
         {
+          "flag": "--tree"
+        },
+        {
+          "aliases": [
+            "--tree_depth"
+          ],
+          "flag": "--tree-depth"
+        },
+        {
           "flag": "--include-body"
         },
         {
@@ -2954,6 +3012,15 @@
         },
         {
           "flag": "--order"
+        },
+        {
+          "flag": "--tree"
+        },
+        {
+          "aliases": [
+            "--tree_depth"
+          ],
+          "flag": "--tree-depth"
         },
         {
           "flag": "--include-body"
@@ -3046,6 +3113,15 @@
           "flag": "--order"
         },
         {
+          "flag": "--tree"
+        },
+        {
+          "aliases": [
+            "--tree_depth"
+          ],
+          "flag": "--tree-depth"
+        },
+        {
           "flag": "--include-body"
         },
         {
@@ -3134,6 +3210,15 @@
         },
         {
           "flag": "--order"
+        },
+        {
+          "flag": "--tree"
+        },
+        {
+          "aliases": [
+            "--tree_depth"
+          ],
+          "flag": "--tree-depth"
         },
         {
           "flag": "--include-body"
@@ -3226,6 +3311,15 @@
           "flag": "--order"
         },
         {
+          "flag": "--tree"
+        },
+        {
+          "aliases": [
+            "--tree_depth"
+          ],
+          "flag": "--tree-depth"
+        },
+        {
           "flag": "--include-body"
         },
         {
@@ -3314,6 +3408,15 @@
         },
         {
           "flag": "--order"
+        },
+        {
+          "flag": "--tree"
+        },
+        {
+          "aliases": [
+            "--tree_depth"
+          ],
+          "flag": "--tree-depth"
         },
         {
           "flag": "--include-body"
@@ -5991,6 +6094,13 @@
           "order"
         ],
         "target": "order"
+      },
+      {
+        "keys": [
+          "treeDepth",
+          "tree_depth"
+        ],
+        "target": "treeDepth"
       }
     ],
     "search_string_options": [
@@ -6451,6 +6561,7 @@
     "config",
     "context",
     "contracts",
+    "copy",
     "create",
     "ctx",
     "delete",
@@ -10638,6 +10749,82 @@
         "additionalProperties": false,
         "properties": {
           "action": {
+            "const": "copy",
+            "description": "Tool action to execute."
+          },
+          "author": {
+            "description": "Mutation author identity.",
+            "examples": [
+              "codex-agent"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "description": "Item identifier for read or mutation actions.",
+            "examples": [
+              "pm-a1b2"
+            ],
+            "type": "string"
+          },
+          "json": {
+            "default": true,
+            "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "message": {
+            "description": "History message for mutation audit trail.",
+            "type": "string"
+          },
+          "noExtensions": {
+            "description": "Disable extension loading for this invocation.",
+            "type": "boolean"
+          },
+          "noPager": {
+            "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Optional PM data root override for this invocation.",
+            "examples": [
+              ".agents/pm"
+            ],
+            "type": "string"
+          },
+          "pmExecutable": {
+            "description": "Pm Executable.",
+            "type": "string"
+          },
+          "profile": {
+            "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "quiet": {
+            "description": "Suppress stdout payload output.",
+            "type": "boolean"
+          },
+          "timeoutMs": {
+            "description": "Tool execution timeout in milliseconds.",
+            "examples": [
+              120000
+            ],
+            "type": "number"
+          },
+          "title": {
+            "description": "Item title text.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "id"
+        ],
+        "title": "pm action \"copy\" parameters",
+        "type": "object"
+      },
+      {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
             "const": "list",
             "description": "Tool action to execute."
           },
@@ -10855,6 +11042,26 @@
               120000
             ],
             "type": "number"
+          },
+          "tree": {
+            "description": "When true for list/get actions, render recursive parent/child tree ordering.",
+            "type": "boolean"
+          },
+          "treeDepth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum recursion depth for tree output (0 keeps root rows only).",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
           },
           "type": {
             "description": "Item type name from the active runtime type registry.",
@@ -11101,6 +11308,26 @@
             ],
             "type": "number"
           },
+          "tree": {
+            "description": "When true for list/get actions, render recursive parent/child tree ordering.",
+            "type": "boolean"
+          },
+          "treeDepth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum recursion depth for tree output (0 keeps root rows only).",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
+          },
           "type": {
             "description": "Item type name from the active runtime type registry.",
             "examples": [
@@ -11345,6 +11572,26 @@
               120000
             ],
             "type": "number"
+          },
+          "tree": {
+            "description": "When true for list/get actions, render recursive parent/child tree ordering.",
+            "type": "boolean"
+          },
+          "treeDepth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum recursion depth for tree output (0 keeps root rows only).",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
           },
           "type": {
             "description": "Item type name from the active runtime type registry.",
@@ -11591,6 +11838,26 @@
             ],
             "type": "number"
           },
+          "tree": {
+            "description": "When true for list/get actions, render recursive parent/child tree ordering.",
+            "type": "boolean"
+          },
+          "treeDepth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum recursion depth for tree output (0 keeps root rows only).",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
+          },
           "type": {
             "description": "Item type name from the active runtime type registry.",
             "examples": [
@@ -11835,6 +12102,26 @@
               120000
             ],
             "type": "number"
+          },
+          "tree": {
+            "description": "When true for list/get actions, render recursive parent/child tree ordering.",
+            "type": "boolean"
+          },
+          "treeDepth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum recursion depth for tree output (0 keeps root rows only).",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
           },
           "type": {
             "description": "Item type name from the active runtime type registry.",
@@ -12081,6 +12368,26 @@
             ],
             "type": "number"
           },
+          "tree": {
+            "description": "When true for list/get actions, render recursive parent/child tree ordering.",
+            "type": "boolean"
+          },
+          "treeDepth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum recursion depth for tree output (0 keeps root rows only).",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
+          },
           "type": {
             "description": "Item type name from the active runtime type registry.",
             "examples": [
@@ -12325,6 +12632,26 @@
               120000
             ],
             "type": "number"
+          },
+          "tree": {
+            "description": "When true for list/get actions, render recursive parent/child tree ordering.",
+            "type": "boolean"
+          },
+          "treeDepth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum recursion depth for tree output (0 keeps root rows only).",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
           },
           "type": {
             "description": "Item type name from the active runtime type registry.",
@@ -12571,6 +12898,26 @@
             ],
             "type": "number"
           },
+          "tree": {
+            "description": "When true for list/get actions, render recursive parent/child tree ordering.",
+            "type": "boolean"
+          },
+          "treeDepth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum recursion depth for tree output (0 keeps root rows only).",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
+          },
           "type": {
             "description": "Item type name from the active runtime type registry.",
             "examples": [
@@ -12617,6 +12964,14 @@
             "examples": [
               "assigned",
               "unassigned"
+            ],
+            "type": "string"
+          },
+          "avg": {
+            "description": "Numeric field to average per aggregate group (count and null_count are still returned).",
+            "examples": [
+              "estimated_minutes",
+              "priority"
             ],
             "type": "string"
           },
@@ -12715,6 +13070,14 @@
             "examples": [
               "open",
               "in_progress"
+            ],
+            "type": "string"
+          },
+          "sum": {
+            "description": "Numeric field to sum per aggregate group (count and null_count are still returned).",
+            "examples": [
+              "estimated_minutes",
+              "priority"
             ],
             "type": "string"
           },
@@ -13249,6 +13612,26 @@
               120000
             ],
             "type": "number"
+          },
+          "tree": {
+            "description": "When true for list/get actions, render recursive parent/child tree ordering.",
+            "type": "boolean"
+          },
+          "treeDepth": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Maximum recursion depth for tree output (0 keeps root rows only).",
+            "examples": [
+              0,
+              1,
+              "2"
+            ]
           }
         },
         "required": [
@@ -15392,8 +15775,7 @@
         },
         "required": [
           "action",
-          "id",
-          "text"
+          "id"
         ],
         "title": "pm action \"close\" parameters",
         "type": "object"
@@ -18162,8 +18544,7 @@
         },
         "required": [
           "action",
-          "id",
-          "text"
+          "id"
         ],
         "title": "pm action \"close-task\" parameters",
         "type": "object"
