@@ -12,7 +12,7 @@ For local progressive-disclosure routing, install `guide-shell` with `pm install
 - Run local parity gates before pushing release tags.
 - Use `pm guide release --json` for machine-readable release docs routing after `guide-shell` is installed.
 
-Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
+Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
 ## Version Policy
 
@@ -73,6 +73,41 @@ The pipeline performs:
 6. commit and tag creation (plus optional push)
 
 The generated changelog includes clickable pm item links to the tracked `.toon` files. Missing release evidence should be fixed in pm item history, not by hand-editing `CHANGELOG.md`.
+
+## Changelog Classification (Contributor-Facing)
+
+`pnpm changelog:pm` routes closed pm items into keep-a-changelog sections using `pm-changelog` classification logic. Use explicit type/tag metadata when you want deterministic section routing.
+
+Signal tiers:
+
+- **Strong signals**: item `type` + `tags`
+- **Weak signal**: item `title` (after stripping CLI-flag-like tokens such as `--add`)
+
+Category precedence (first matching bucket wins):
+
+| Priority | Category | Trigger terms (from strong + weak signals unless noted) |
+|---|---|---|
+| 1 | `Security` | `security`, `cve`, `vulnerability` |
+| 2 | `Deprecated` | `deprecated`, `deprecation` |
+| 3 | `Removed` | `removed`, `remove`, `deleted`, `delete` |
+| 4 | `Fixed` | `fix`, `fixed`, `bug`, `bugfix`, `hotfix`, `regression` |
+| 5 | `Added` | `feature`, `feat`, `added`, `add`, `new` |
+| 6 | `Changed` | strong-signal `change`, `changed`, `refactor`, `update`, `updated`, `improve`; for non-bug-like types only, title fallback is also used |
+| 7 | `Other` | no classifier match |
+
+Bug-like default:
+
+- Items with type `Issue`, `Bug`, `Bugfix`, or `Defect` default to `Fixed` unless a higher-priority category already matched.
+- This bug-like default runs before title-only `Changed` fallback to avoid misrouting command-name issue titles (for example "`pm update ...`" issue reports).
+
+Practical examples:
+
+- `Issue` + title `pm update --add-tags fails` -> `Fixed`
+- `Task` + tag `refactor` -> `Changed`
+- `Feature` + tag `security` -> `Security`
+- `Issue` + tag `feature` -> `Added` (explicit stronger signal beats default)
+
+If a changelog routing rule appears incorrect, fix classifier behavior in the `pm-changelog` package/repo and then consume the updated package here. Do not patch generator internals in this repository.
 
 ## Local Release Parity Checklist
 

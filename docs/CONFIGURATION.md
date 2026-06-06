@@ -9,7 +9,7 @@
 - Use `--json` only when strict parsing is needed.
 - Use `pm contracts` for current command/schema metadata.
 
-Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon), [pm-1lkm](../.agents/pm/features/pm-1lkm.toon), [pm-qq69](../.agents/pm/features/pm-qq69.toon).
+Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
 ## Configuration Commands
 
@@ -176,6 +176,14 @@ Keyword search is always available:
 ```bash
 pm search "release docs" --mode keyword --limit 10
 ```
+
+`search.tuning` controls deterministic lexical weighting in keyword mode and the lexical component of hybrid mode. Default runtime weights:
+
+- `title_exact_bonus=10`
+- `title_weight=8`, `description_weight=5`, `tags_weight=6`, `status_weight=2`
+- `body_weight=1`, `comments_weight=1`, `notes_weight=1`, `learnings_weight=1`
+- `reminders_weight=2`, `events_weight=2`
+- `dependencies_weight=3`, `linked_content_weight=1`
 
 Semantic and hybrid search can use built-in OpenAI-compatible or Ollama providers plus vector stores such as Qdrant or LanceDB. If local Ollama is available and semantic settings are unset, `pm` can resolve local defaults automatically.
 

@@ -12,12 +12,14 @@
 | Need | Read |
 |------|------|
 | Install and create the first item | [Quickstart](docs/QUICKSTART.md) |
+| New maintainer onboarding | [Onboarding](docs/ONBOARDING.md) |
 | Agent workflow and token-minimal loops | [Agent Guide](docs/AGENT_GUIDE.md) |
 | Command families and examples | [Command Reference](docs/COMMANDS.md) |
 | Settings, storage, search, and output | [Configuration](docs/CONFIGURATION.md) |
 | Safe test execution and linked tests | [Testing](docs/TESTING.md) |
 | Package and extension authoring | [Packages and Extensions](docs/EXTENSIONS.md) and [SDK](docs/SDK.md) |
 | Codex native integration | [Codex Plugin](docs/CODEX_PLUGIN.md) |
+| Claude Code native integration | [Claude Code Plugin](docs/CLAUDE_CODE_PLUGIN.md) |
 | Maintainer release process (daily auto-release + local parity) | [Releasing](docs/RELEASING.md) |
 | Contributor internals | [Architecture](docs/ARCHITECTURE.md) |
 
@@ -122,13 +124,19 @@ For token-aware local routing, install `guide-shell` with `pm install guide-shel
 - `pm contracts` is the machine-readable command and schema contract surface for agents.
 - `pm guide` is the optional local progressive-disclosure docs and skills index for agents after installing `guide-shell`.
 
+`search.tuning` lexical defaults include `reminders_weight=2` and `events_weight=2` in addition to title/description/tag/status/body/comment/note/learning/dependency/linked-content weights. Keep docs and contracts aligned with runtime defaults when tuning behavior changes.
+
 ## Tracker References
 
-This documentation refresh is tracked through `pm`:
+Current documentation work is tracked through:
 
-- [pm-3042](.agents/pm/epics/pm-3042.toon) - documentation overhaul epic
-- [pm-r9gu](.agents/pm/features/pm-r9gu.toon) - documentation structure feature
-- [pm-1sb2](.agents/pm/tasks/pm-1sb2.toon) - README and public docs rewrite task
+- [pm-u9d0](.agents/pm/epics/pm-u9d0.toon) - docs, onboarding, release, and CI capability epic
+
+Legacy documentation baseline references (closed):
+
+- [pm-3042](.agents/pm/epics/pm-3042.toon) - documentation overhaul epic (closed)
+- [pm-r9gu](.agents/pm/features/pm-r9gu.toon) - documentation structure feature (closed)
+- [pm-1sb2](.agents/pm/tasks/pm-1sb2.toon) - README and public docs rewrite task (closed)
 
 Docs should link to relevant `pm` items, and `pm` items should link back to changed docs through `pm docs`.
 

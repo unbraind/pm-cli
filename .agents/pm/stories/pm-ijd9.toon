@@ -2,14 +2,24 @@ id: pm-ijd9
 title: "As a contributor closing items, I want documented changelog classification, so that my change appears in the correct CHANGELOG section without reading the generator source"
 description: "As a contributor closing items, I want documented changelog classification, so that my change appears in the correct CHANGELOG section without reading the generator source"
 type: Story
-status: open
+status: closed
 priority: 2
 tags[5]: "area:docs","area:release",changelog,living-map,story
 created_at: "2026-05-31T19:49:47.247Z"
-updated_at: "2026-05-31T19:49:47.247Z"
+updated_at: "2026-06-06T02:39:51.635Z"
 author: maintainer-agent
 acceptance_criteria: "RELEASING.md documents the two-tier classifier, a keyword->category table, BUG_LIKE default, and tag-override examples"
 parent: pm-u9d0
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-5vsv,related,"2026-05-31T19:49:47.247Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-06T02:39:35.839Z",codex-docs-release-bundle,"Story implemented by documenting changelog routing behavior in docs/RELEASING.md so contributors can predict Added/Changed/Fixed/Security buckets without reading generator source. Validation: pnpm changelog:pm:check + pnpm quality:docs-skills + full coverage run."
+files[1]{path,scope,note}:
+  docs/RELEASING.md,project,Contributor-facing changelog routing docs
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,Classifier documentation validated with generator check
+  "pnpm quality:docs-skills",null,project,240,null,null,null,null,null,null,null,null,null,null,null,Story docs gate
+docs[1]{path,scope,note}:
+  docs/RELEASING.md,project,Story acceptance docs
+close_reason: Contributor changelog classification story completed with deterministic routing documentation and examples.
 body: ""

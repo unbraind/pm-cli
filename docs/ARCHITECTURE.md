@@ -10,7 +10,7 @@ This page is for contributors changing `pm-cli` internals. Users should start wi
 - Items are stored as TOON by default; history is append-only JSONL.
 - `pm contracts` is the machine-readable runtime contract source.
 
-Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
+Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
 ## System Overview
 

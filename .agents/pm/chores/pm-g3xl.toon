@@ -2,12 +2,22 @@ id: pm-g3xl
 title: Drift-lock the .agents/plugins/marketplace.json (pm-local) manifest in the plugin contract test
 description: "The repo has three marketplace manifests; the drift test reconciles only root marketplace.json and .claude-plugin/marketplace.json. The third, .agents/plugins/marketplace.json (name pm-local), has no test/code/docs reference and can silently rot (it currently lists only pm-codex and omits pm-claude, with no enforced version)."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[6]: "area:ci","area:docs",governance,living-map,plugins,pm-cli
 created_at: "2026-05-31T20:15:19.768Z"
-updated_at: "2026-05-31T20:15:19.768Z"
+updated_at: "2026-06-06T02:39:47.636Z"
 author: maintainer-agent
 acceptance_criteria: tests/integration/claude-plugin-contract.spec.ts (or scripts/smoke-claude-plugin.mjs) reads .agents/plugins/marketplace.json and asserts its plugin list and version stay consistent with plugins/*/.codex-plugin/plugin.json and plugins/*/.claude-plugin/plugin.json; CI fails if the manifest drifts.
 parent: pm-u9d0
+comments[1]{created_at,author,text}:
+  "2026-06-06T02:39:34.156Z",codex-docs-release-bundle,"Drift-lock implemented for .agents/plugins/marketplace.json: added pm-claude + version fields and expanded tests/integration/claude-plugin-contract.spec.ts to assert pm-local marketplace plugin set/version/source stays aligned with plugins/pm-codex/.codex-plugin/plugin.json and plugins/pm-claude/.claude-plugin/plugin.json."
+files[4]{path,scope,note}:
+  .agents/plugins/marketplace.json,project,pm-local marketplace manifest under test
+  plugins/pm-claude/.claude-plugin/plugin.json,project,Claude manifest source of truth
+  plugins/pm-codex/.codex-plugin/plugin.json,project,Codex manifest source of truth
+  tests/integration/claude-plugin-contract.spec.ts,project,Manifest drift lock assertions
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/claude-plugin-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Plugin contract drift lock regression
+close_reason: pm-local marketplace drift lock implemented with manifest alignment assertions in plugin contract tests.
 body: ""

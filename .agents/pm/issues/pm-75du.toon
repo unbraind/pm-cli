@@ -2,13 +2,25 @@ id: pm-75du
 title: "PRD/contract drift: reminders_weight and events_weight missing from search.tuning docs"
 description: "resolveSearchTuning() implements reminders_weight=2 and events_weight=2 but PRD 13.3 search.tuning table and README list neither; the authoritative contract is wrong, so the weights are undiscoverable/unconfigurable."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[5]: "area:search",docs,living-map,prd-drift,tuning
 created_at: "2026-05-31T19:44:22.562Z"
-updated_at: "2026-05-31T19:44:22.562Z"
+updated_at: "2026-06-06T02:39:48.727Z"
 author: maintainer-agent
 acceptance_criteria: Add both fields+defaults to PRD 13.3 and README; verify pm contracts surfaces the full tuning object; doc-only fix.
 value: "resolveSearchTuning() implements reminders_weight=2 and events_weight=2 but PRD 13.3 search.tuning table and README list neither; the authoritative contract is wrong, so the weights are undiscoverable/unconfigurable."
 parent: pm-ydp6
+comments[1]{created_at,author,text}:
+  "2026-06-06T02:39:34.693Z",codex-docs-release-bundle,"Resolved search tuning docs drift by adding reminders_weight/events_weight fields and defaults to PRD search.tuning sections and adding README runtime-defaults mention (plus Configuration page default-weight summary). Contract sanity command run: pm contracts --command search --flags-only --json."
+files[2]{path,scope,note}:
+  PRD.md,project,Search tuning defaults documentation
+  README.md,project,Top-level tuning contract mention
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  pm contracts --command search --flags-only --json,null,project,120,null,null,null,null,null,null,null,null,null,null,null,Contract exposure sanity
+  "pnpm quality:docs-skills",null,project,240,null,null,null,null,null,null,null,null,null,null,null,Doc drift fix gate
+docs[2]{path,scope,note}:
+  PRD.md,project,Add reminders/events weights
+  README.md,project,Public contract alignment
+close_reason: Updated PRD/README tuning docs to include reminders_weight/events_weight defaults and aligned config docs.
 body: ""

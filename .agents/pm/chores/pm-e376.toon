@@ -2,13 +2,38 @@ id: pm-e376
 title: Clean up stale closed tracker-item references in docs/ header lines
 description: "Six docs files carry 'Tracked documentation work: pm-1sb2/pm-3042/pm-r9gu' header lines pointing to closed items, implying active tracking and confusing agents that orient on headers."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[4]: "area:docs",cleanup,hygiene,living-map
 created_at: "2026-05-31T19:45:42.689Z"
-updated_at: "2026-05-31T19:45:42.689Z"
+updated_at: "2026-06-06T02:39:50.391Z"
 author: maintainer-agent
 acceptance_criteria: Remove or replace the stale header lines (point to the living docs epic); keep docs/README history refs marked as closed; build+docs-skills pass.
 value: "Six docs files carry 'Tracked documentation work: pm-1sb2/pm-3042/pm-r9gu' header lines pointing to closed items, implying active tracking and confusing agents that orient on headers."
 parent: pm-u9d0
+comments[1]{created_at,author,text}:
+  "2026-06-06T02:39:35.371Z",codex-docs-release-bundle,"Cleaned stale closed tracker header references across docs/QUICKSTART.md, docs/COMMANDS.md, docs/AGENT_GUIDE.md, docs/RELEASING.md, docs/CONFIGURATION.md, docs/TESTING.md, and docs/ARCHITECTURE.md by pointing tracked documentation work to living epic pm-u9d0. Updated README/docs/README tracker sections to show active epic plus explicitly marked legacy closed references."
+files[9]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Stale tracker header cleanup
+  docs/ARCHITECTURE.md,project,Stale tracker header cleanup
+  docs/COMMANDS.md,project,Stale tracker header cleanup
+  docs/CONFIGURATION.md,project,Stale tracker header cleanup
+  docs/QUICKSTART.md,project,Stale tracker header cleanup
+  docs/README.md,project,Tracker reference cleanup
+  docs/RELEASING.md,project,Stale tracker header cleanup
+  docs/TESTING.md,project,Stale tracker header cleanup
+  README.md,project,Tracker reference cleanup
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm quality:docs-skills",null,project,240,null,null,null,null,null,null,null,null,null,null,null,Docs links + formatting gate
+docs[9]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Replace stale references
+  docs/ARCHITECTURE.md,project,Replace stale references
+  docs/COMMANDS.md,project,Replace stale references
+  docs/CONFIGURATION.md,project,Replace stale references
+  docs/QUICKSTART.md,project,Replace stale references
+  docs/README.md,project,Replace stale references
+  docs/RELEASING.md,project,Replace stale references
+  docs/TESTING.md,project,Replace stale references
+  README.md,project,Replace stale references
+close_reason: Replaced stale closed tracker references with living docs epic references; legacy refs explicitly marked closed.
 body: ""

@@ -9,7 +9,7 @@ This page describes safe local tests, linked tests, coverage, and release-readin
 - Linked tests added through `pm test` should use sandbox-safe commands.
 - Run linked tests before closing the item that owns the work.
 
-Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
+Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
 ## Standard Local Checks
 

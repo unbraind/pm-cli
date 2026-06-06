@@ -11,7 +11,7 @@ Use this page to get from a clean repository to a tracked, verified item.
 - Close only after evidence is recorded.
 - Use `pm install guide-shell --project` before `pm guide quickstart` or `pm guide workflows` when you need local docs routing.
 
-Tracked documentation work: [pm-1sb2](../.agents/pm/tasks/pm-1sb2.toon).
+Tracked documentation work: [pm-u9d0](../.agents/pm/epics/pm-u9d0.toon).
 
 ## Install
 

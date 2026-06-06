@@ -2,14 +2,29 @@ id: pm-10ml
 title: "As a new teammate, I want a single ONBOARDING.md, so that I become productive in two hours without accidentally triggering a release or corrupting the tracker"
 description: "As a new teammate, I want a single ONBOARDING.md, so that I become productive in two hours without accidentally triggering a release or corrupting the tracker"
 type: Story
-status: open
+status: closed
 priority: 2
 tags[5]: "area:docs",contributor-ux,living-map,onboarding,story
 created_at: "2026-05-31T19:49:47.011Z"
-updated_at: "2026-05-31T19:49:47.011Z"
+updated_at: "2026-06-06T02:39:49.050Z"
 author: maintainer-agent
 acceptance_criteria: "ONBOARDING.md covers setup, safe tests, real tracker workflow, release overview, hard never-do list, diagnostics; linked from README+CONTRIBUTING"
 parent: pm-u9d0
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-oh5h,related,"2026-05-31T19:49:47.011Z",null,null
+comments[1]{created_at,author,text}:
+  "2026-06-06T02:39:34.644Z",codex-docs-release-bundle,"Story completed via new unified onboarding path. docs/ONBOARDING.md now centralizes setup/testing/tracker/release guidance and is linked from README, CONTRIBUTING, and docs/README for discoverability. Verification gates passed including docs-skills/docs-links and full 100% coverage run."
+files[4]{path,scope,note}:
+  CONTRIBUTING.md,project,Contributor discoverability
+  docs/ONBOARDING.md,project,Story deliverable
+  docs/README.md,project,Read-path discoverability
+  README.md,project,Onboarding discoverability
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm quality:docs-skills",null,project,240,null,null,null,null,null,null,null,null,null,null,null,Story docs gate
+docs[4]{path,scope,note}:
+  CONTRIBUTING.md,project,Contributing path update
+  docs/ONBOARDING.md,project,Story acceptance artifact
+  docs/README.md,project,Documentation read path update
+  README.md,project,Start-here update
+close_reason: "Story delivered: single onboarding guide implemented and discoverability links added; verification passed."
 body: ""

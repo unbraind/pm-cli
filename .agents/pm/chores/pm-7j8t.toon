@@ -2,12 +2,22 @@ id: pm-7j8t
 title: Evaluate commander 15.0.0 major upgrade (current 14.0.3)
 description: "pnpm outdated flags commander 15.0.0 available (current 14.0.3). Major bump — needs a breaking-changes review before adopting, since commander underpins all CLI arg parsing, the bootstrap rewrite, and the flag-contract drift tests. Out of scope for the remediation PR #111 (mixing a risky major dep bump into a feature PR is poor practice)."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[3]: "area:dependencies",chore,maintenance
 created_at: "2026-06-05T04:24:16.004Z"
-updated_at: "2026-06-05T04:24:16.004Z"
+updated_at: "2026-06-06T02:39:50.396Z"
 author: maintainer-agent
 acceptance_criteria: Review commander 15 changelog for breaking changes; bump in an isolated PR; full suite + flag-contract drift tests green; manual smoke of create/list/update/search bootstrap parsing.
 parent: pm-u9d0
+comments[1]{created_at,author,text}:
+  "2026-06-06T02:39:35.344Z",codex-docs-release-bundle,"Dependency evaluation results: commander@15.0.0 requires node >=22.12.0, which conflicts with project engines node >=20, so major bump is not currently safe. Applied low-risk dependency maintenance by updating @types/node from 25.9.1 to 25.9.2. Verification suite remained green (build/typecheck/docs gates/changelog check/security scan/full 100% coverage)."
+files[2]{path,scope,note}:
+  package.json,project,commander major bump evaluation
+  pnpm-lock.yaml,project,Dependency lock update if adopted
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,Full regression + coverage after major bump
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Build compatibility
+  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,Type surface compatibility
+close_reason: Commander 15 evaluated and deferred due Node >=22.12 requirement; dependency maintenance and full validation completed.
 body: ""
