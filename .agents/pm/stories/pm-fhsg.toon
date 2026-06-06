@@ -2,15 +2,28 @@ id: pm-fhsg
 title: "As a maintainer tuning relevance, I want a golden-query eval harness, so that I can catch ranking regressions before release"
 description: "As a maintainer tuning relevance, I want a golden-query eval harness, so that I can catch ranking regressions before release"
 type: Story
-status: open
+status: in_progress
 priority: 3
 tags[4]: "area:search",living-map,quality,story
 created_at: "2026-05-31T19:49:45.631Z"
-updated_at: "2026-05-31T20:15:20.271Z"
+updated_at: "2026-06-06T07:52:32.970Z"
+assignee: codex-search-eval-bundle
 author: maintainer-agent
 acceptance_criteria: "A relevance/ranking change can be validated against a stored baseline before release: regressions surface as a measurable nDCG@5 drop on the golden-query set, and the maintainer gets a clear per-query pass/fail signal. (Implemented by the eval-harness task pm-22x2, which owns the fixture format and runner.)"
 parent: pm-ydp6
 dependencies[2]{id,kind,created_at,author,source_kind}:
   pm-22x2,related,"2026-05-31T19:49:45.631Z",null,null
   pm-7tsx,related,"2026-05-31T19:49:45.631Z",null,null
+comments[2]{created_at,author,text}:
+  "2026-06-06T07:16:55.470Z",codex-search-eval-bundle,"Kickoff: story execution started via pm-22x2 implementation path. This PR will deliver per-query pass/fail + nDCG regression signal through reindex eval flow and close both items with shared verification evidence."
+  "2026-06-06T07:52:28.281Z",codex-search-eval-bundle,"Story acceptance delivered through pm-22x2 implementation: maintainers can now run pm reindex --eval with golden-query fixtures and receive measurable nDCG@5 regression signals plus clear per-query pass/fail output. Shared verification evidence: focused runtime/integration tests passed, contracts update/check passed, full coverage remained 100/100/100/100, and manual temp-dir eval produced fixture_count=2 with pass_count=2 and average_ndcg_at_5=1."
+files[3]{path,scope,note}:
+  packages/pm-search-advanced/extensions/search-advanced/runtime.ts,project,"Story delivery path: eval runner emits per-query pass/fail and nDCG signals."
+  tests/integration/release-readiness-runtime.spec.ts,project,Runtime output contract includes eval summary and per-fixture results.
+  tests/search-eval/golden-queries.json,project,Golden-query baseline fixture set used for regression signaling.
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node dist/cli.js --path <temp/.agents/pm> reindex --mode keyword --eval --eval-fixtures <temp/manual-search-eval.json> --json,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  packages/pm-search-advanced/README.md,project,Operator guidance for interpreting eval output and fixture schema.
 body: ""

@@ -208,6 +208,13 @@ jobs:
           pnpm dogfood:package-first
           node scripts/smoke-claude-plugin.mjs
 
+      - name: Run advisory search eval harness
+        if: matrix.gate == 'smokes'
+        continue-on-error: true
+        run: |
+          node dist/cli.js install search-advanced --project --json
+          node dist/cli.js reindex --mode keyword --eval --eval-fixtures tests/search-eval/golden-queries.json --json
+
       - name: Upload coverage artifact
         if: always() && matrix.gate == 'coverage'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

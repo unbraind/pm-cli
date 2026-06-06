@@ -186,7 +186,7 @@ describe("search-advanced package runtime", () => {
     });
   });
 
-  it("validates empty queries and normalizes reindex options", async () => {
+  it("validates empty queries, normalizes reindex options, and scores eval fixtures", async () => {
     await withTempPmPath(async (context) => {
       const runtime = await loadRuntimeModule();
       const global = { json: true, quiet: true, noPager: true, path: context.pmPath };
@@ -203,6 +203,383 @@ describe("search-advanced package runtime", () => {
 
       const quietReindex = await runtime.runAdvancedReindexPackage({ mode: "keyword", progress: "false" }, global);
       expect(quietReindex.mode).toBe("keyword");
+
+      const createAlpha = context.runCli(
+        [
+          "--json",
+          "create",
+          "--title",
+          "Runtime eval alpha signal",
+          "--description",
+          "Seed for reindex eval fixture scoring",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--create-mode",
+          "progressive",
+        ],
+        { expectJson: true },
+      );
+      expect(createAlpha.code).toBe(0);
+      const alphaId = (createAlpha.json as { item: { id: string } }).item.id;
+
+      const createBeta = context.runCli(
+        [
+          "--json",
+          "create",
+          "--title",
+          "Runtime eval beta signal",
+          "--description",
+          "Second seed for reindex eval fixture scoring",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--create-mode",
+          "progressive",
+        ],
+        { expectJson: true },
+      );
+      expect(createBeta.code).toBe(0);
+      const betaId = (createBeta.json as { item: { id: string } }).item.id;
+
+      const fixturePath = path.join(context.tempRoot, "runtime-reindex-eval.json");
+      await writeFile(
+        fixturePath,
+        JSON.stringify(
+          {
+            fixtures: [
+              {
+                name: "alpha-query",
+                query: "Runtime eval alpha signal",
+                mode: "keyword",
+                expected_top_ids: [alphaId],
+                min_ndcg_at_5: 0.9,
+              },
+              {
+                name: "beta-query",
+                query: "Runtime eval beta signal",
+                mode: "keyword",
+                expected_top_ids: [betaId],
+                min_ndcg_at_5: 0.9,
+              },
+            ],
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+
+      const evalReindex = await runtime.runAdvancedReindexPackage(
+        {
+          mode: "keyword",
+          progress: "false",
+          eval: "true",
+          evalFixtures: fixturePath,
+        },
+        global,
+      );
+      expect(evalReindex.mode).toBe("keyword");
+      expect(evalReindex.eval).toBeDefined();
+      expect(evalReindex.eval?.fixture_count).toBe(2);
+      expect(evalReindex.eval?.pass_count).toBe(2);
+      expect(evalReindex.eval?.fail_count).toBe(0);
+      expect(evalReindex.eval?.passed).toBe(true);
+      expect(evalReindex.eval?.average_ndcg_at_5).toBeGreaterThanOrEqual(0.9);
+      expect(evalReindex.eval?.results.map((entry) => entry.fixture)).toEqual(["alpha-query", "beta-query"]);
+      expect(evalReindex.eval?.results.map((entry) => entry.passed)).toEqual([true, true]);
+
+      const failingFixturePath = path.join(context.tempRoot, "runtime-reindex-eval-failing.json");
+      await writeFile(
+        failingFixturePath,
+        JSON.stringify([
+          {
+            name: "known-failure",
+            query: "Runtime eval alpha signal",
+            expected_top_ids: ["pm-does-not-exist"],
+            min_ndcg_at_5: 0.1,
+          },
+        ]),
+        "utf8",
+      );
+
+      const failingEval = await runtime.runAdvancedReindexPackage(
+        {
+          mode: "keyword",
+          eval: true,
+          eval_fixtures: failingFixturePath,
+        },
+        global,
+      );
+      expect(failingEval.eval?.fixture_count).toBe(1);
+      expect(failingEval.eval?.pass_count).toBe(0);
+      expect(failingEval.eval?.fail_count).toBe(1);
+      expect(failingEval.eval?.passed).toBe(false);
+      expect(failingEval.eval?.results[0]?.ndcg_at_5).toBe(0);
+      expect(failingEval.eval?.results[0]?.passed).toBe(false);
+
+      const defaultThresholdFixturePath = path.join(context.tempRoot, "runtime-reindex-eval-default-threshold.json");
+      await writeFile(
+        defaultThresholdFixturePath,
+        JSON.stringify([
+          {
+            name: "default-threshold",
+            query: "Runtime eval alpha signal",
+            expected_top_ids: [alphaId],
+          },
+        ]),
+        "utf8",
+      );
+      const defaultThresholdEval = await runtime.runAdvancedReindexPackage(
+        {
+          mode: "keyword",
+          eval: true,
+          evalFixtures: defaultThresholdFixturePath,
+        },
+        global,
+      );
+      expect(defaultThresholdEval.eval?.results[0]?.min_ndcg_at_5).toBe(0.7);
+
+      const defaultFixturesEval = await runtime.runAdvancedReindexPackage(
+        {
+          mode: "keyword",
+          eval: true,
+        },
+        global,
+      );
+      expect(defaultFixturesEval.eval?.fixtures_path).toContain(path.join("tests", "search-eval", "golden-queries.json"));
+      expect(defaultFixturesEval.eval?.fixture_count).toBeGreaterThan(0);
+
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            evalFixtures: fixturePath,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: "`--eval-fixtures` requires `--eval`.",
+      });
+
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            eval: true,
+            evalFixtures: path.join(context.tempRoot, "missing-fixtures.json"),
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("Unable to read reindex eval fixtures"),
+      });
+
+      const invalidJsonFixturePath = path.join(context.tempRoot, "invalid-json-fixtures.json");
+      await writeFile(invalidJsonFixturePath, "{not-valid-json", "utf8");
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            eval: true,
+            evalFixtures: invalidJsonFixturePath,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("must be valid JSON"),
+      });
+
+      const emptyExpectedIdsFixturePath = path.join(context.tempRoot, "empty-expected-ids.json");
+      await writeFile(emptyExpectedIdsFixturePath, JSON.stringify([{ query: "Runtime eval alpha signal", expected_top_ids: [] }]), "utf8");
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            eval: true,
+            evalFixtures: emptyExpectedIdsFixturePath,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("must provide a non-empty expected_top_ids array"),
+      });
+
+      const blankExpectedIdsFixturePath = path.join(context.tempRoot, "blank-expected-ids.json");
+      await writeFile(
+        blankExpectedIdsFixturePath,
+        JSON.stringify([{ query: "Runtime eval alpha signal", expected_top_ids: ["", "   "] }]),
+        "utf8",
+      );
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            eval: true,
+            evalFixtures: blankExpectedIdsFixturePath,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("must provide at least one non-empty expected_top_ids value"),
+      });
+
+      const invalidEnvelopePath = path.join(context.tempRoot, "invalid-envelope-fixtures.json");
+      await writeFile(invalidEnvelopePath, JSON.stringify({ foo: "bar" }), "utf8");
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            eval: true,
+            evalFixtures: invalidEnvelopePath,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("must be an array or an object with a fixtures array"),
+      });
+
+      const emptyFixturesPath = path.join(context.tempRoot, "empty-fixtures.json");
+      await writeFile(emptyFixturesPath, JSON.stringify([]), "utf8");
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            eval: true,
+            evalFixtures: emptyFixturesPath,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("must contain at least one fixture"),
+      });
+
+      const missingQueryFixturePath = path.join(context.tempRoot, "missing-query-fixtures.json");
+      await writeFile(
+        missingQueryFixturePath,
+        JSON.stringify([{ expected_top_ids: [alphaId], min_ndcg_at_5: 0.8 }]),
+        "utf8",
+      );
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            eval: true,
+            evalFixtures: missingQueryFixturePath,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("must provide a non-empty query"),
+      });
+
+      const invalidModeFixturePath = path.join(context.tempRoot, "invalid-mode-fixtures.json");
+      await writeFile(
+        invalidModeFixturePath,
+        JSON.stringify([{ query: "Runtime eval alpha signal", mode: "vector", expected_top_ids: [alphaId] }]),
+        "utf8",
+      );
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            eval: true,
+            evalFixtures: invalidModeFixturePath,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("unsupported mode"),
+      });
+
+      const invalidModeTypeFixturePath = path.join(context.tempRoot, "invalid-mode-type-fixtures.json");
+      await writeFile(
+        invalidModeTypeFixturePath,
+        JSON.stringify([{ query: "Runtime eval alpha signal", mode: 123, expected_top_ids: [alphaId] }]),
+        "utf8",
+      );
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            eval: true,
+            evalFixtures: invalidModeTypeFixturePath,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("unsupported mode"),
+      });
+
+      const invalidThresholdFixturePath = path.join(context.tempRoot, "invalid-threshold-fixtures.json");
+      await writeFile(
+        invalidThresholdFixturePath,
+        JSON.stringify([{ query: "Runtime eval alpha signal", expected_top_ids: [alphaId], min_ndcg_at_5: 2 }]),
+        "utf8",
+      );
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            eval: true,
+            evalFixtures: invalidThresholdFixturePath,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("invalid min_ndcg_at_5"),
+      });
+
+      const invalidThresholdTypeFixturePath = path.join(context.tempRoot, "invalid-threshold-type-fixtures.json");
+      await writeFile(
+        invalidThresholdTypeFixturePath,
+        JSON.stringify([{ query: "Runtime eval alpha signal", expected_top_ids: [alphaId], min_ndcg_at_5: "bad" }]),
+        "utf8",
+      );
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            eval: true,
+            evalFixtures: invalidThresholdTypeFixturePath,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("invalid min_ndcg_at_5"),
+      });
+
+      const invalidFixtureTypePath = path.join(context.tempRoot, "invalid-fixture-type.json");
+      await writeFile(invalidFixtureTypePath, JSON.stringify([null]), "utf8");
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            eval: true,
+            evalFixtures: invalidFixtureTypePath,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("must be an object"),
+      });
+
+      const primitiveFixturePath = path.join(context.tempRoot, "primitive-fixtures.json");
+      await writeFile(primitiveFixturePath, JSON.stringify(42), "utf8");
+      await expect(
+        runtime.runAdvancedReindexPackage(
+          {
+            mode: "keyword",
+            eval: true,
+            evalFixtures: primitiveFixturePath,
+          },
+          global,
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("must be an array or an object with a fixtures array"),
+      });
     });
   });
 

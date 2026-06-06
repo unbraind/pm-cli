@@ -200,6 +200,23 @@ const reindexFlags = [
     value_type: "boolean",
     description: "Emit non-interactive progress lines to stderr.",
   },
+  {
+    long: "--eval",
+    value_type: "boolean",
+    description: "Run golden-query relevance eval and append nDCG@5 summary output.",
+  },
+  {
+    long: "--eval-fixtures",
+    value_name: "path",
+    value_type: "string",
+    description: "Path to reindex eval fixtures JSON (default: tests/search-eval/golden-queries.json).",
+  },
+  {
+    long: "--eval_fixtures",
+    value_name: "path",
+    value_type: "string",
+    description: "Alias for --eval-fixtures.",
+  },
 ];
 
 function searchAdvancedCommand() {
