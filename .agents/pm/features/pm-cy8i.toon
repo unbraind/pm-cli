@@ -6,15 +6,16 @@ status: closed
 priority: 3
 tags[6]: "area:search",hybrid,living-map,post-v0.1,roadmap,tuning
 created_at: "2026-05-31T19:44:23.684Z"
-updated_at: "2026-06-06T06:21:59.130Z"
+updated_at: "2026-06-06T06:59:19.609Z"
 author: maintainer-agent
 acceptance_criteria: pm search --mode hybrid --semantic-weight <0..1>; in SEARCH_FLAG_CONTRACTS+MCP+completions; range-validated; falls back to setting; effective value in filters; tests.
 value: PRD line 1680 defers broader hybrid tuning; hybrid_semantic_weight is global-only. A per-query --semantic-weight lets agents bias keyword-heavy (exact IDs) vs concept-heavy queries.
 parent: pm-ydp6
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-06-06T06:02:21.025Z",codex-search-bundle,"Kickoff: implementing per-query --semantic-weight override on top of existing hybrid weighting, with CLI/contracts/MCP/completion parity and regression coverage."
   "2026-06-06T06:19:17.137Z",codex-search-bundle,"Implemented --semantic-weight end-to-end: CLI registration + option normalization + hybrid runtime override. Invalid override values now fall back to search.hybrid_semantic_weight with warning code search_hybrid_semantic_weight_override_invalid:using_settings_default. Contracts/completion surfaces updated and contracts snapshot regenerated. Verification: node scripts/run-tests.mjs test -- tests/unit/search-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/completion-command.spec.ts tests/integration/release-readiness-runtime.spec.ts; pnpm contracts:update && pnpm contracts:check."
   "2026-06-06T06:21:57.683Z",codex-search-bundle,"Final verification evidence: gh issue list/pr list are empty; dependabot alerts [] and secret-scanning alerts []; code-scanning endpoint currently returns no-analysis 404 in this repository context. Local security/release checks passed: pnpm audit --prod --json reports 0 vulnerabilities, npm view pm-changelog version returned 2026.6.5-1, and pnpm changelog:pm:check reported CHANGELOG unchanged. Manual temp smoke (/tmp/tmp.3k7y0NJriy) validated search package install + hybrid query override: pm search --mode hybrid --semantic-weight 0.35 returned filters.hybrid_semantic_weight=0.35 with deterministic warnings only for stale/degraded vector path. Telemetry status/stats showed fresh queue events for search/telemetry commands; Sentry connectivity returned recent releases including pm-cli@2026.6.6 released ~1 minute ago."
+  "2026-06-06T06:59:19.609Z",codex-search-bundle,"Final delivery: PR #118 merged to main as commit 7c745c88 after green CI (build/docs/static/typecheck/coverage/smokes/runtime matrices) and repeated AI-review trigger loop comments (@codex review, /gemini review, @gemini-code-assist)."
 files[8]{path,scope,note}:
   src/cli/commands/search.ts,project,search semantic-weight override + contract/completion surface
   src/cli/register-list-query.ts,project,search semantic-weight override + contract/completion surface
