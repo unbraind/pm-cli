@@ -22,6 +22,9 @@
 
 ### Other
 
+- Make list --ids repeatable for focused agent working-set refresh ([pm-42tb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-42tb.toon))
+- SDK testing helper for vector store adapter registrations ([pm-475h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-475h.toon))
+- SDK testing helper for package manifest resource assertions ([pm-xevy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-xevy.toon))
 - SDK testing helpers for schema package registrations ([pm-01bm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-01bm.toon))
 - PR \#123 review: make governance hook sidecar logging fail-open ([pm-mzlu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-mzlu.toon))
 - Config-driven optional close reason via governance.require\_close\_reason ([pm-peyv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-peyv.toon))

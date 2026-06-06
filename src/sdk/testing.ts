@@ -14,11 +14,13 @@ import type {
   RegisteredExtensionSchemaFieldDefinitions,
   RegisteredExtensionSchemaItemTypeDefinitions,
   RegisteredExtensionSearchProvider,
+  RegisteredExtensionVectorStoreAdapter,
   SchemaFieldDefinition,
   SchemaItemTypeDefinition,
 } from "../core/extensions/loader.js";
 import { activateExtensions } from "../core/extensions/loader.js";
 import { createDefaultExtensionGovernancePolicy } from "../core/extensions/extension-types.js";
+import type { PmPackageManifest, PmPackageResourceKind } from "../core/packages/manifest.js";
 
 interface TestExtensionModule {
   manifest?: Partial<ExtensionManifest>;
@@ -69,6 +71,11 @@ export interface RegisteredSearchProviderExpectation {
   extensionName?: string;
 }
 
+export interface RegisteredVectorStoreAdapterExpectation {
+  adapter: string;
+  extensionName?: string;
+}
+
 export interface RegisteredImporterExpectation {
   importer: string;
   extensionName?: string;
@@ -101,6 +108,14 @@ export interface RegisteredItemTypeAssertion {
   itemType: SchemaItemTypeDefinition;
 }
 
+export type PackageManifestResourceExpectation = Partial<Record<PmPackageResourceKind, readonly string[]>>;
+
+export interface PackageManifestExpectation {
+  packageName?: string;
+  aliases?: readonly string[];
+  resources?: PackageManifestResourceExpectation;
+}
+
 function normalizeSdkIdentifier(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -124,6 +139,22 @@ function normalizeSdkCommandName(command: string): string {
 
 function formatAvailable(values: readonly string[]): string {
   return values.length > 0 ? values.join(", ") : "(none)";
+}
+
+function assertStringSetIncludes(
+  actual: readonly string[] | undefined,
+  expected: readonly string[],
+  label: string,
+): void {
+  const actualValues = new Set(actual ?? []);
+  const missing = sortedUnique(expected.filter((value) => !actualValues.has(value)));
+  if (missing.length > 0) {
+    throw new Error(
+      `Expected package manifest ${label} to include ${missing.join(", ")}; available: ${formatAvailable(
+        sortedUnique(actual ?? []),
+      )}`,
+    );
+  }
 }
 
 function collectFlagLabels(flags: readonly FlagDefinition[]): Set<string> {
@@ -225,6 +256,34 @@ export async function activateExtensionForTest(
       },
     ],
   });
+}
+
+/**
+ * Assert that a normalized package manifest advertises expected package
+ * resources. Pair with `readPmPackageManifest(packageRoot)` in package tests.
+ */
+export function assertPackageManifest(
+  manifest: PmPackageManifest,
+  expectation: PackageManifestExpectation,
+): PmPackageManifest {
+  if (expectation.packageName !== undefined && manifest.package_name !== expectation.packageName) {
+    throw new Error(
+      `Expected package manifest package_name to be "${expectation.packageName}"; received "${
+        manifest.package_name ?? "(none)"
+      }"`,
+    );
+  }
+  if (expectation.aliases !== undefined) {
+    assertStringSetIncludes(manifest.aliases, expectation.aliases, "aliases");
+  }
+  if (expectation.resources !== undefined) {
+    for (const [kind, expectedPaths] of Object.entries(expectation.resources) as Array<
+      [PmPackageResourceKind, readonly string[]]
+    >) {
+      assertStringSetIncludes(manifest.resources[kind], expectedPaths, `pm.${kind}`);
+    }
+  }
+  return manifest;
 }
 
 /**
@@ -352,6 +411,38 @@ export function assertRegisteredSearchProvider(
   }
 
   return provider;
+}
+
+/**
+ * Assert that an activated extension registration registry contains a vector
+ * store adapter with the expected name (optionally scoped to a specific
+ * extension).
+ */
+export function assertRegisteredVectorStoreAdapter(
+  registrations: ExtensionRegistrationRegistry,
+  expectation: RegisteredVectorStoreAdapterExpectation,
+): RegisteredExtensionVectorStoreAdapter {
+  const expectedAdapter = normalizeSdkIdentifier(expectation.adapter);
+  if (expectedAdapter.length === 0) {
+    throw new Error("Expected vector store adapter name must be a non-empty string");
+  }
+
+  const candidates = registrations.vector_store_adapters.filter(
+    (entry) => normalizeSdkIdentifier(entry.definition.name) === expectedAdapter,
+  );
+  const adapter = expectation.extensionName
+    ? candidates.find((entry) => entry.name === expectation.extensionName)
+    : candidates[0];
+  if (!adapter) {
+    const available = sortedUnique(registrations.vector_store_adapters.map((entry) => entry.definition.name));
+    throw new Error(
+      `Expected vector store adapter "${expectedAdapter}"${extensionNameSuffix(
+        expectation.extensionName,
+      )} to be registered. Available vector store adapters: ${formatAvailable(available)}`,
+    );
+  }
+
+  return adapter;
 }
 
 /**

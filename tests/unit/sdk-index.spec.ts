@@ -15,6 +15,7 @@ import {
   PM_TOOL_PARAMETERS_SCHEMA,
   PM_TOOL_PARAMETERS_SCHEMA_VERSION,
   STATUS_VALUES,
+  assertPackageManifest as assertPackageManifestFromBarrel,
   assertRegisteredCommandContract as assertRegisteredCommandContractFromBarrel,
   assertRegisteredExporter as assertRegisteredExporterFromBarrel,
   assertRegisteredHook as assertRegisteredHookFromBarrel,
@@ -22,6 +23,7 @@ import {
   assertRegisteredItemField as assertRegisteredItemFieldFromBarrel,
   assertRegisteredItemType as assertRegisteredItemTypeFromBarrel,
   assertRegisteredSearchProvider as assertRegisteredSearchProviderFromBarrel,
+  assertRegisteredVectorStoreAdapter as assertRegisteredVectorStoreAdapterFromBarrel,
   activateExtensionForTest as activateExtensionForTestFromBarrel,
   appendHistoryEntry,
   createHistoryEntry,
@@ -37,12 +39,14 @@ import {
   normalizeItemId,
   pathExists,
   readFileIfExists,
+  readPmPackageManifest,
   readSettings,
   resolvePmRoot,
   isPmCliExpectedError,
   writeFileAtomic,
 } from "../../src/sdk/index.js";
 import {
+  assertPackageManifest,
   assertRegisteredCommandContract,
   assertRegisteredExporter,
   assertRegisteredHook,
@@ -50,6 +54,7 @@ import {
   assertRegisteredItemField,
   assertRegisteredItemType,
   assertRegisteredSearchProvider,
+  assertRegisteredVectorStoreAdapter,
   activateExtensionForTest,
 } from "../../src/sdk/testing.js";
 import { readSettings as readCoreSettings, writeSettings } from "../../src/core/store/settings.js";
@@ -118,7 +123,14 @@ function createRegistrationRegistry(): ExtensionRegistrationRegistry {
         runtime_definition: { name: "semantic-local" },
       },
     ],
-    vector_store_adapters: [],
+    vector_store_adapters: [
+      {
+        layer: "project",
+        name: "search-ext",
+        definition: { name: "pinecone", query: async () => [] },
+        runtime_definition: { name: "pinecone", query: async () => [] },
+      },
+    ],
   };
 }
 
@@ -209,6 +221,91 @@ describe("public sdk entrypoint", () => {
     ]);
   });
 
+  it("asserts package manifest resources for package-author tests", async () => {
+    await withTempPmPath(async ({ tempRoot }) => {
+      const packageRoot = path.join(tempRoot, "package-author-helper");
+      await mkdir(packageRoot, { recursive: true });
+      await writeFile(
+        path.join(packageRoot, "package.json"),
+        JSON.stringify({
+          name: "package-author-helper",
+          version: "1.0.0",
+          keywords: ["pm-package"],
+          pm: {
+            aliases: ["author-helper"],
+            extensions: ["extensions/helper"],
+            docs: ["README.md"],
+            examples: ["examples/basic.md"],
+          },
+        }),
+        "utf8",
+      );
+
+      const manifest = await readPmPackageManifest(packageRoot);
+
+      expect(
+        assertPackageManifestFromBarrel(manifest, {
+          packageName: "package-author-helper",
+          aliases: ["author-helper"],
+          resources: {
+            extensions: ["extensions/helper"],
+            docs: ["README.md"],
+          },
+        }),
+      ).toBe(manifest);
+      expect(
+        assertPackageManifest(manifest, {
+          packageName: "package-author-helper",
+        }),
+      ).toBe(manifest);
+      expect(
+        assertPackageManifest(manifest, {
+          resources: {
+            examples: ["examples/basic.md"],
+          },
+        }),
+      ).toBe(manifest);
+      expect(() =>
+        assertPackageManifest(manifest, {
+          packageName: "wrong-package",
+        }),
+      ).toThrow('Expected package manifest package_name to be "wrong-package"; received "package-author-helper"');
+      expect(() =>
+        assertPackageManifest(manifest, {
+          aliases: ["missing-alias"],
+        }),
+      ).toThrow("Expected package manifest aliases to include missing-alias; available: author-helper");
+      expect(() =>
+        assertPackageManifest(manifest, {
+          resources: {
+            extensions: ["extensions/missing"],
+          },
+        }),
+      ).toThrow(
+        "Expected package manifest pm.extensions to include extensions/missing; available: extensions/helper",
+      );
+
+      const emptyManifest = { resources: {} } as Parameters<typeof assertPackageManifest>[0];
+      expect(() =>
+        assertPackageManifest(emptyManifest, {
+          packageName: "missing-package-name",
+        }),
+      ).toThrow('Expected package manifest package_name to be "missing-package-name"; received "(none)"');
+      expect(() =>
+        assertPackageManifest(emptyManifest, {
+          aliases: ["missing-alias"],
+        }),
+      ).toThrow("Expected package manifest aliases to include missing-alias; available: (none)");
+      expect(() =>
+        assertPackageManifest(emptyManifest, {
+          resources: {
+            docs: ["README.md"],
+          },
+        }),
+      ).toThrow("Expected package manifest pm.docs to include README.md; available: (none)");
+    });
+  });
+
   it("exposes stable pm tool contract constants through the sdk barrel", () => {
     expect(BUILTIN_ITEM_TYPE_VALUES).toContain("Task");
     expect(ITEM_TYPE_VALUES).toContain("Plan");
@@ -296,6 +393,7 @@ describe("public sdk entrypoint", () => {
     expect(typeof assertRegisteredExporterFromBarrel).toBe("function");
     expect(typeof assertRegisteredItemFieldFromBarrel).toBe("function");
     expect(typeof assertRegisteredItemTypeFromBarrel).toBe("function");
+    expect(typeof assertRegisteredVectorStoreAdapterFromBarrel).toBe("function");
     expect(typeof activateExtensionForTestFromBarrel).toBe("function");
   });
 
@@ -578,6 +676,37 @@ describe("sdk testing helpers", () => {
     ).toThrow(/Available search providers: \(none\)/);
   });
 
+  it("asserts a registered vector store adapter by name and extension", () => {
+    const adapter = assertRegisteredVectorStoreAdapter(createRegistrationRegistry(), {
+      adapter: " Pinecone ",
+      extensionName: "search-ext",
+    });
+    expect(adapter.definition.name).toBe("pinecone");
+  });
+
+  it("throws actionable errors for missing vector store adapter registrations", () => {
+    expect(() =>
+      assertRegisteredVectorStoreAdapter(createRegistrationRegistry(), { adapter: "   " }),
+    ).toThrow("Expected vector store adapter name must be a non-empty string");
+
+    expect(() =>
+      assertRegisteredVectorStoreAdapter(createRegistrationRegistry(), { adapter: "missing-store" }),
+    ).toThrow(/Available vector store adapters: pinecone/);
+
+    expect(() =>
+      assertRegisteredVectorStoreAdapter(createRegistrationRegistry(), {
+        adapter: "pinecone",
+        extensionName: "other-ext",
+      }),
+    ).toThrow(/from extension "other-ext".*Available vector store adapters: pinecone/);
+
+    expect(() =>
+      assertRegisteredVectorStoreAdapter({ ...createRegistrationRegistry(), vector_store_adapters: [] }, {
+        adapter: "pinecone",
+      }),
+    ).toThrow(/Available vector store adapters: \(none\)/);
+  });
+
   it("asserts a registered importer by format and extension", () => {
     const importer = assertRegisteredImporter(createRegistrationRegistry(), {
       importer: " Beads ",
@@ -705,7 +834,7 @@ describe("sdk testing helpers", () => {
     );
   });
 
-  it("asserts importer, exporter, search provider, and hook registrations from a real extension activation", async () => {
+  it("asserts importer, exporter, search provider, vector store adapter, and hook registrations from a real extension activation", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       await writeTestExtension({
         root: pmPath,
@@ -723,6 +852,7 @@ describe("sdk testing helpers", () => {
           "  api.registerImporter('jsonl', async () => ({ items: [] }));",
           "  api.registerExporter('jsonl', async () => ({ content: '' }));",
           "  api.registerSearchProvider({ name: 'capability-search', query: async () => ({ hits: [] }) });",
+          "  api.registerVectorStoreAdapter({ name: 'capability-vector', query: async () => [] });",
           "  api.registerItemFields([{ name: 'risk', type: 'string' }]);",
           "  api.registerItemTypes([{ name: 'Risk', folder: 'risks', aliases: ['risk'], required_create_fields: ['risk'] }]);",
           "  api.hooks.onWrite(() => undefined);",
@@ -748,6 +878,12 @@ describe("sdk testing helpers", () => {
         provider: "capability-search",
       });
       expect(provider.definition.name).toBe("capability-search");
+
+      const adapter = assertRegisteredVectorStoreAdapter(activation.registrations, {
+        adapter: "capability-vector",
+        extensionName: "capability-ext",
+      });
+      expect(adapter.definition.name).toBe("capability-vector");
 
       const hook = assertRegisteredHook(activation.hooks, {
         kind: "on_write",

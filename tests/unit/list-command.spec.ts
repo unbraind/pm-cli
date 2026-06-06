@@ -199,6 +199,40 @@ describe("runList", () => {
     });
   });
 
+  it("accumulates repeated --ids filters before list execution", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createItem(context, {
+        title: "Repeated IDs Alpha",
+        status: "open",
+        priority: "1",
+        tags: "ids,repeat",
+        deadline: "+1d",
+      });
+      const secondId = createItem(context, {
+        title: "Repeated IDs Beta",
+        status: "open",
+        priority: "1",
+        tags: "ids,repeat",
+        deadline: "+1d",
+      });
+      createItem(context, {
+        title: "Repeated IDs Gamma",
+        status: "open",
+        priority: "1",
+        tags: "ids,repeat",
+        deadline: "+1d",
+      });
+
+      const result = context.runCli(["list-open", "--ids", firstId, "--ids", secondId, "--json"], { expectJson: true });
+
+      expect(result.code).toBe(0);
+      const payload = result.json as { count: number; filters: Record<string, unknown>; items: Array<{ id: string }> };
+      expect(payload.count).toBe(2);
+      expect(payload.items.map((item) => item.id).sort()).toEqual([firstId, secondId].sort());
+      expect(payload.filters.ids).toBe(`${firstId},${secondId}`);
+    });
+  });
+
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-list-not-init-"));
     try {

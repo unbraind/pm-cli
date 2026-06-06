@@ -110,6 +110,11 @@ Installation activates `pm.extensions`. `pm.docs` and `pm.examples` are catalog 
 
 `pm package init` emits a root extension (`"extensions": ["."]`) so local package installs can activate without dependency bootstrapping. Larger packages may point at nested extension directories after declaring runtime dependencies and validating with `pm package doctor`.
 
+Package tests can pair `readPmPackageManifest(packageRoot)` with
+`assertPackageManifest(manifest, { resources: ... })` from
+`@unbrained/pm-cli/sdk` to prove aliases and resource paths without duplicating
+pm's manifest normalization logic.
+
 When no package manifest is present, `pm` discovers conventional extension directories:
 
 - `.agents/pm/extensions/`
