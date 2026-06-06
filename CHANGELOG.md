@@ -7,6 +7,10 @@
 - Configurable semantic corpus character limit \(search.embedding\_corpus\_max\_characters\) ([pm-cxdg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cxdg.toon))
 - Per-query hybrid weight override: pm search --semantic-weight \(post-v0.1\) ([pm-cy8i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cy8i.toon))
 
+### Fixed
+
+- Search relevance evaluation harness \(golden queries, nDCG\) for regression detection ([pm-22x2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-22x2.toon))
+
 ## 2026.6.6 - 2026-06-06
 
 ### Added

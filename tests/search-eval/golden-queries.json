@@ -1,0 +1,76 @@
+{
+  "description": "Seed golden-query fixtures for advisory reindex nDCG@5 evaluation.",
+  "k": 5,
+  "fixtures": [
+    {
+      "name": "search-eval-task",
+      "query": "pm-22x2 search relevance evaluation harness nDCG regression detection",
+      "mode": "keyword",
+      "expected_top_ids": ["pm-22x2", "pm-fhsg"],
+      "min_ndcg_at_5": 0.85
+    },
+    {
+      "name": "search-eval-story",
+      "query": "pm-fhsg maintainer tuning relevance golden-query eval harness",
+      "mode": "keyword",
+      "expected_top_ids": ["pm-fhsg", "pm-22x2"],
+      "min_ndcg_at_5": 0.8
+    },
+    {
+      "name": "search-capability-epic",
+      "query": "pm-ydp6 capability search semantic retrieval post-v0.1 roadmap",
+      "mode": "keyword",
+      "expected_top_ids": ["pm-ydp6", "pm-22x2"],
+      "min_ndcg_at_5": 0.75
+    },
+    {
+      "name": "extensions-capability-epic",
+      "query": "pm-ugqx capability extension package platform maturity",
+      "mode": "keyword",
+      "expected_top_ids": ["pm-ugqx"],
+      "min_ndcg_at_5": 0.9
+    },
+    {
+      "name": "cli-ux-capability-epic",
+      "query": "pm-mpbb capability CLI command surface agent ergonomics",
+      "mode": "keyword",
+      "expected_top_ids": ["pm-mpbb"],
+      "min_ndcg_at_5": 0.9
+    },
+    {
+      "name": "storage-capability-epic",
+      "query": "pm-o2kc capability storage history data durability",
+      "mode": "keyword",
+      "expected_top_ids": ["pm-o2kc"],
+      "min_ndcg_at_5": 0.9
+    },
+    {
+      "name": "telemetry-capability-epic",
+      "query": "pm-5oj5 capability observability telemetry health",
+      "mode": "keyword",
+      "expected_top_ids": ["pm-5oj5"],
+      "min_ndcg_at_5": 0.9
+    },
+    {
+      "name": "schema-capability-epic",
+      "query": "pm-8jdc capability schema config universal customization",
+      "mode": "keyword",
+      "expected_top_ids": ["pm-8jdc"],
+      "min_ndcg_at_5": 0.9
+    },
+    {
+      "name": "docs-release-capability-epic",
+      "query": "pm-u9d0 capability docs onboarding release CI",
+      "mode": "keyword",
+      "expected_top_ids": ["pm-u9d0"],
+      "min_ndcg_at_5": 0.9
+    },
+    {
+      "name": "post-v01-backlog-milestone",
+      "query": "pm-doxj post-v0.1 roadmap living backlog milestone",
+      "mode": "keyword",
+      "expected_top_ids": ["pm-doxj"],
+      "min_ndcg_at_5": 0.85
+    }
+  ]
+}

@@ -1397,6 +1397,15 @@ describe("release readiness runtime coverage", () => {
       );
       expect(flagNames).toEqual(expect.arrayContaining(["--fields", "--limit", "--type", "--semantic", "--hybrid"]));
 
+      const reindexFlags = context.runCli(["contracts", "--command", "reindex", "--runtime-only", "--flags-only", "--json"], {
+        expectJson: true,
+      });
+      expect(reindexFlags.code).toBe(0);
+      const reindexFlagNames = (
+        (reindexFlags.json as { command_flags?: Array<{ flags?: Array<{ flag: string }> }> }).command_flags?.[0]?.flags ?? []
+      ).map((entry) => entry.flag);
+      expect(reindexFlagNames).toEqual(expect.arrayContaining(["--mode", "--progress", "--eval", "--eval-fixtures"]));
+
       const searchAdvancedDefault = context.runCli(
         ["search-advanced", "runtime", "--fields", "id,title,score", "--json"],
         {
@@ -1418,6 +1427,56 @@ describe("release readiness runtime coverage", () => {
         "warnings",
         "generated_at",
       ]);
+
+      const evalFixturePath = path.join(context.tempRoot, "release-reindex-eval.json");
+      await writeFile(
+        evalFixturePath,
+        JSON.stringify([
+          {
+            name: "release-readiness-eval",
+            query: "Output contract sample",
+            mode: "keyword",
+            expected_top_ids: [createdId],
+            min_ndcg_at_5: 0.5,
+          },
+        ]),
+        "utf8",
+      );
+
+      const reindexEvalResult = context.runCli(
+        ["reindex", "--mode", "keyword", "--eval", "--eval-fixtures", evalFixturePath, "--json"],
+        { expectJson: true },
+      );
+      expect(reindexEvalResult.code).toBe(0);
+      expectTopLevelKeyOrder(reindexEvalResult.json, [
+        "ok",
+        "mode",
+        "total_items",
+        "semantic",
+        "artifacts",
+        "warnings",
+        "generated_at",
+        "eval",
+      ]);
+      const reindexEvalJson = reindexEvalResult.json as {
+        eval?: {
+          fixture_count: number;
+          pass_count: number;
+          fail_count: number;
+          passed: boolean;
+          average_ndcg_at_5: number;
+          results: Array<{ fixture: string; query: string }>;
+        };
+      };
+      expect(reindexEvalJson.eval?.fixture_count).toBe(1);
+      expect(reindexEvalJson.eval?.pass_count).toBe(1);
+      expect(reindexEvalJson.eval?.fail_count).toBe(0);
+      expect(reindexEvalJson.eval?.passed).toBe(true);
+      expect(reindexEvalJson.eval?.average_ndcg_at_5).toBeGreaterThan(0);
+      expect(reindexEvalJson.eval?.results[0]).toMatchObject({
+        fixture: "release-readiness-eval",
+        query: "Output contract sample",
+      });
 
       const historyResult = context.runCli(["history", createdId, "--limit", "20", "--json", "--full"], { expectJson: true });
       expect(historyResult.code).toBe(0);
