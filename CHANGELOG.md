@@ -4,12 +4,20 @@
 
 ### Added
 
+- pm copy <id\>: clone an item to a new ID with optional title override ([pm-m4nn](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-m4nn.toon))
+- pm aggregate --sum/--avg: numeric aggregation over filtered items ([pm-bvns](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-bvns.toon))
+- pm list --tree: recursive subtree rendering with indented hierarchy ([pm-vbzc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-vbzc.toon))
 - Configurable semantic corpus character limit \(search.embedding\_corpus\_max\_characters\) ([pm-cxdg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cxdg.toon))
 - Per-query hybrid weight override: pm search --semantic-weight \(post-v0.1\) ([pm-cy8i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cy8i.toon))
 
 ### Fixed
 
+- Drift-scan cache can false-hit on mtime-preserving file copies ([pm-up22](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-up22.toon))
 - Search relevance evaluation harness \(golden queries, nDCG\) for regression detection ([pm-22x2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-22x2.toon))
+
+### Other
+
+- Config-driven optional close reason via governance.require\_close\_reason ([pm-peyv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-peyv.toon))
 
 ## 2026.6.6 - 2026-06-06
 
