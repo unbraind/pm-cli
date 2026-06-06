@@ -87,7 +87,6 @@ const INLINE_SENSITIVE_FLAG_PATTERN = new RegExp(
   "giu",
 );
 const ABSOLUTE_PATH_TOKEN_PATTERN = /(^|[\s"'`(=])\/(?:[^\s"'`),;]+)/g;
-const EMAIL_PATTERN = /[^\s@]+@[^\s@]+\.[^\s@]+/g;
 const BEARER_TOKEN_PATTERN = /bearer\s+[a-z0-9._=-]+/giu;
 const PRIVATE_IP_PATTERN =
   /\b(?:10\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|172\.(?:1[6-9]|2\d|3[01])\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)|192\.168\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.(?:25[0-5]|2[0-4]\d|[01]?\d?\d))\b/g;
@@ -280,8 +279,95 @@ function redactAbsolutePathTokens(input: string): string {
   );
 }
 
+function isAsciiLetterOrDigitCode(code: number): boolean {
+  const isUpper = code >= 65 && code <= 90;
+  const isLower = code >= 97 && code <= 122;
+  const isDigit = code >= 48 && code <= 57;
+  return isUpper || isLower || isDigit;
+}
+
+function isEmailLocalCharacter(character: string | undefined): boolean {
+  if (!character) {
+    return false;
+  }
+  const code = character.charCodeAt(0);
+  if (isAsciiLetterOrDigitCode(code)) {
+    return true;
+  }
+  return character === "." || character === "_" || character === "%" || character === "+" || character === "-";
+}
+
+function isEmailDomainCharacter(character: string | undefined): boolean {
+  if (!character) {
+    return false;
+  }
+  const code = character.charCodeAt(0);
+  if (isAsciiLetterOrDigitCode(code)) {
+    return true;
+  }
+  return character === "." || character === "-";
+}
+
+function looksLikeEmailToken(token: string): boolean {
+  const atIndex = token.indexOf("@");
+  if (atIndex <= 0 || atIndex !== token.lastIndexOf("@") || atIndex === token.length - 1) {
+    return false;
+  }
+  const localPart = token.slice(0, atIndex);
+  const domainPart = token.slice(atIndex + 1);
+  const lastDot = domainPart.lastIndexOf(".");
+  if (lastDot <= 0 || lastDot === domainPart.length - 1) {
+    return false;
+  }
+  if (domainPart.length - (lastDot + 1) < 2) {
+    return false;
+  }
+  for (const character of localPart) {
+    if (!isEmailLocalCharacter(character)) {
+      return false;
+    }
+  }
+  for (const character of domainPart) {
+    if (!isEmailDomainCharacter(character)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function redactEmailTokens(input: string): string {
+  let redacted = "";
+  let cursor = 0;
+  while (cursor < input.length) {
+    const atIndex = input.indexOf("@", cursor);
+    if (atIndex < 0) {
+      redacted += input.slice(cursor);
+      break;
+    }
+    let start = atIndex - 1;
+    while (start >= cursor && isEmailLocalCharacter(input[start])) {
+      start -= 1;
+    }
+    start += 1;
+    let end = atIndex + 1;
+    while (end < input.length && isEmailDomainCharacter(input[end])) {
+      end += 1;
+    }
+    const candidate = input.slice(start, end);
+    if (looksLikeEmailToken(candidate)) {
+      redacted += input.slice(cursor, start);
+      redacted += "[redacted_email]";
+      cursor = end;
+      continue;
+    }
+    redacted += input.slice(cursor, atIndex + 1);
+    cursor = atIndex + 1;
+  }
+  return redacted;
+}
+
 function sanitizeCommonSensitiveTokens(input: string): string {
-  const withoutEmails = input.replaceAll(EMAIL_PATTERN, "[redacted_email]");
+  const withoutEmails = redactEmailTokens(input);
   const withoutBearer = withoutEmails.replaceAll(BEARER_TOKEN_PATTERN, "bearer [redacted_token]");
   return withoutBearer.replaceAll(PRIVATE_IP_PATTERN, "[redacted_ip]");
 }

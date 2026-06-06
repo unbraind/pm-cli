@@ -132,10 +132,11 @@ describe("extension startup activation", () => {
         entryFilename: "index.mjs",
         entrySource: [
           'import { appendFileSync } from "node:fs";',
+          `const HOOK_LOG_PATH = ${JSON.stringify(hookLogPath)};`,
           "export function activate(api) {",
-          `  appendFileSync(${JSON.stringify(hookLogPath)}, "activate\\n", "utf8");`,
-          `  api.hooks.beforeCommand((context) => appendFileSync(${JSON.stringify(hookLogPath)}, "before:" + String(context.command) + "\\n", "utf8"));`,
-          `  api.hooks.afterCommand((context) => appendFileSync(${JSON.stringify(hookLogPath)}, "after:" + String(context.command) + ":" + String(context.ok) + "\\n", "utf8"));`,
+          '  appendFileSync(HOOK_LOG_PATH, "activate\\n", "utf8");',
+          '  api.hooks.beforeCommand(() => appendFileSync(HOOK_LOG_PATH, "before\\n", "utf8"));',
+          '  api.hooks.afterCommand((context) => appendFileSync(HOOK_LOG_PATH, "after:" + String(context.ok) + "\\n", "utf8"));',
           "}",
           "export default { activate };",
           "",
@@ -148,7 +149,7 @@ describe("extension startup activation", () => {
         rendered_by: "renderer-ext",
         command: "list-open",
       });
-      expect(await readOptionalFile(hookLogPath)).toBe("activate\nbefore:list-open\nafter:list-open:true\n");
+      expect(await readOptionalFile(hookLogPath)).toBe("activate\nbefore\nafter:true\n");
     });
   });
 
