@@ -3,9 +3,9 @@ import { executeEmbeddingRequest } from "./providers.js";
 import type { EmbeddingProviderConfig } from "./providers.js";
 import { toErrorMessage } from "../shared/primitives.js";
 import {
-  DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
   OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
   SEMANTIC_CORPUS_TRUNCATION_SUFFIX,
+  resolveSemanticCorpusCharacterLimit,
 } from "./corpus.js";
 
 export interface EmbeddingBatchExecutionResult {
@@ -35,7 +35,10 @@ interface EmbeddingBatchRuntime {
   maxInputCharacters: number;
 }
 
-function resolveBatchRuntime(settings: PmSettings): EmbeddingBatchRuntime {
+function resolveBatchRuntime(
+  settings: PmSettings,
+  maxInputCharacters: number,
+): EmbeddingBatchRuntime {
   const batchSizeCandidate = settings.search.embedding_batch_size;
   const timeoutMsCandidate = settings.search.embedding_timeout_ms;
   const maxRetriesCandidate = settings.search.scanner_max_batch_retries;
@@ -48,7 +51,7 @@ function resolveBatchRuntime(settings: PmSettings): EmbeddingBatchRuntime {
     timeoutMs,
     maxRetries,
     maxBatchInputCharacters: Number.POSITIVE_INFINITY,
-    maxInputCharacters: DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
+    maxInputCharacters,
   };
 }
 
@@ -81,7 +84,6 @@ function resolveProviderBatchRuntime(provider: EmbeddingProviderConfig, runtime:
   return {
     ...runtime,
     maxBatchInputCharacters: OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
-    maxInputCharacters: OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
   };
 }
 
@@ -167,8 +169,18 @@ export async function executeEmbeddingBatchesWithRetry(
       warnings: [],
     };
   }
-  const runtime = resolveProviderBatchRuntime(provider, resolveBatchRuntime(settings));
   const warnings: string[] = [];
+  const corpusLimitResolution = resolveSemanticCorpusCharacterLimit(
+    provider.name,
+    settings.search.embedding_corpus_max_characters,
+  );
+  if (corpusLimitResolution.warning) {
+    warnings.push(corpusLimitResolution.warning);
+  }
+  const runtime = resolveProviderBatchRuntime(
+    provider,
+    resolveBatchRuntime(settings, corpusLimitResolution.maxCharacters),
+  );
   let truncatedInputCount = 0;
   const normalizedInputs = inputs.map((input) => {
     const normalized = truncateInputForRuntime(input, runtime.maxInputCharacters);

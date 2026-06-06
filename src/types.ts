@@ -673,6 +673,7 @@ export interface PmSettings {
     hybrid_semantic_weight: number;
     max_results: number;
     embedding_model: string;
+    embedding_corpus_max_characters?: number;
     embedding_batch_size: number;
     embedding_timeout_ms: number;
     scanner_max_batch_retries: number;

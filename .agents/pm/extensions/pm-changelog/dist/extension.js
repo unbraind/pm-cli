@@ -5,7 +5,7 @@ import { buildChangelogDocument, createChangelog, mergeChangelog, suggestSemver,
 import { resolveReleaseContext, resolveReleaseTagWindows } from "./release-context.js";
 export default defineExtension({
     name: "pm-changelog",
-    version: "2026.6.5-1",
+    version: "2026.6.6",
     activate(api) {
         api.registerCommand({
             name: "changelog generate",
@@ -283,16 +283,18 @@ export default defineExtension({
  * per-item read failure is swallowed so changelog generation never breaks.
  */
 async function enrichItemBodies(pmRoot, items) {
-    let settings;
+    let typeToFolder;
+    let idPrefix;
+    let format;
     try {
-        settings = await readSettings(pmRoot);
+        const settings = await readSettings(pmRoot);
+        typeToFolder = resolveItemTypeRegistry(settings).type_to_folder;
+        idPrefix = settings.id_prefix;
+        format = settings.item_format;
     }
     catch {
-        return; // cannot resolve settings → leave front matter as-is
+        return; // cannot resolve settings/registry → leave front matter as-is
     }
-    const typeToFolder = resolveItemTypeRegistry(settings).type_to_folder;
-    const idPrefix = settings.id_prefix;
-    const format = settings.item_format;
     const loadBody = async (item) => {
         if (!item.id)
             return;

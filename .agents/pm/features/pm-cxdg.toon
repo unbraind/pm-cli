@@ -2,13 +2,34 @@ id: pm-cxdg
 title: Configurable semantic corpus character limit (search.embedding_corpus_max_characters)
 description: "Corpus truncation (8000 default, 3200 Ollama) is hardcoded in corpus.ts; large-body items truncate with no override and cost-sensitive users cannot lower it. buildSemanticCorpusInput already accepts maxCharacters."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[5]: "area:search","area:semantic",config,corpus,living-map
 created_at: "2026-05-31T19:44:23.168Z"
-updated_at: "2026-05-31T19:44:23.168Z"
+updated_at: "2026-06-06T06:21:59.890Z"
 author: maintainer-agent
 acceptance_criteria: New positive-integer setting wired through corpus build call sites; validator falls back to defaults on unset/invalid; reindex+background refresh honor it; PRD+README+tests.
 value: "Corpus truncation (8000 default, 3200 Ollama) is hardcoded in corpus.ts; large-body items truncate with no override and cost-sensitive users cannot lower it. buildSemanticCorpusInput already accepts maxCharacters."
 parent: pm-ydp6
+comments[3]{created_at,author,text}:
+  "2026-06-06T06:02:21.275Z",codex-search-bundle,"Kickoff: implementing configurable search.embedding_corpus_max_characters setting wired through semantic corpus builders for reindex + mutation refresh paths, with fallback warning semantics and docs/tests updates."
+  "2026-06-06T06:19:17.624Z",codex-search-bundle,"Implemented optional search.embedding_corpus_max_characters setting across type/validator/store/config alias surfaces; semantic corpus builders in reindex + mutation refresh now resolve provider defaults (8000 openai-compatible / 3200 ollama) when unset and emit search_embedding_corpus_max_characters_invalid:using_provider_default on invalid configured values. Added deterministic coverage for override + fallback behavior in corpus/reindex/cache/config tests; docs updated in CONFIGURATION/PRD/README. Verification: node scripts/run-tests.mjs test -- tests/unit/search-corpus.spec.ts tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/config-key-aliases-search.spec.ts tests/unit/nested-settings.spec.ts; node scripts/run-tests.mjs coverage."
+  "2026-06-06T06:21:58.000Z",codex-search-bundle,"Final verification evidence: full quality sequence passed (pnpm build, pnpm contracts:update, pnpm contracts:check, node scripts/run-tests.mjs coverage with 100/100/100/100, pm validate --check-resolution --check-history-drift, pm health --check-only). Manual temp smoke validated search_embedding_corpus_max_characters set/get at 1200 and successful keyword reindex/search baseline without regressions. Focused tests confirmed configured limit and invalid-fallback warning behavior across corpus/reindex/cache flows."
+files[8]{path,scope,note}:
+  src/cli/commands/reindex.ts,project,add configurable embedding corpus max character limit
+  src/core/config/nested-settings.ts,project,add configurable embedding corpus max character limit
+  src/core/search/cache.ts,project,add configurable embedding corpus max character limit
+  src/core/search/corpus.ts,project,add configurable embedding corpus max character limit
+  src/core/search/embedding-batches.ts,project,add configurable embedding corpus max character limit
+  src/core/store/settings-validator.ts,project,add configurable embedding corpus max character limit
+  src/core/store/settings.ts,project,add configurable embedding corpus max character limit
+  src/types.ts,project,add configurable embedding corpus max character limit
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/search-corpus.spec.ts tests/unit/reindex-command.spec.ts tests/unit/search-cache.spec.ts tests/unit/config-key-aliases-search.spec.ts tests/unit/nested-settings.spec.ts,null,project,1200,null,null,null,null,null,null,null,null,null,null,null,null
+docs[3]{path,scope,note}:
+  docs/CONFIGURATION.md,project,document embedding corpus limit setting and fallback warnings
+  PRD.md,project,document embedding corpus limit setting and fallback warnings
+  README.md,project,document embedding corpus limit setting and fallback warnings
+close_reason: Delivered configurable search.embedding_corpus_max_characters through settings/config/runtime corpus builders with deterministic invalid fallback warning semantics and comprehensive test+docs evidence.
 body: ""

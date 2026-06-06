@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.6.6 - 2026-06-06
+
+### Fixed
+
+- Make body enrichment registry resolution best-effort ([pmc-xl7x](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-xl7x.toon))
+
 ## 2026.6.5-1 - 2026-06-05
 
 ### Fixed

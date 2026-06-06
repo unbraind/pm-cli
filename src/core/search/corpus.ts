@@ -1,8 +1,11 @@
 import type { ItemDocument, ItemMetadata } from "../../types/index.js";
+import { coercePositiveInteger } from "../shared/primitives.js";
 
 export const DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS = 8_000;
 export const OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS = 3_200;
 export const SEMANTIC_CORPUS_TRUNCATION_SUFFIX = "...[semantic corpus truncated]";
+export const SEARCH_EMBEDDING_CORPUS_MAX_CHARACTERS_INVALID_WARNING =
+  "search_embedding_corpus_max_characters_invalid:using_provider_default";
 
 function compactParts(parts: Array<string | boolean | number | null | undefined>): string {
   return parts
@@ -134,18 +137,37 @@ export function buildSearchCorpus(document: ItemDocument): Record<string, unknow
   return corpus;
 }
 
-function resolveSemanticCorpusInputMaxCharacters(candidate: number | undefined): number {
-  if (Number.isFinite(candidate) && Number(candidate) > 0) {
-    return Math.floor(Number(candidate));
-  }
-  return DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS;
-}
-
 export function resolveSemanticCorpusInputCharacterLimit(providerName: string | undefined): number {
   if (providerName?.trim().toLowerCase() === "ollama") {
     return OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS;
   }
   return DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS;
+}
+
+export interface SemanticCorpusCharacterLimitResolution {
+  maxCharacters: number;
+  warning: string | null;
+}
+
+export function resolveSemanticCorpusCharacterLimit(
+  providerName: string | undefined,
+  configuredMaxCharacters: unknown,
+): SemanticCorpusCharacterLimitResolution {
+  const providerDefaultLimit = resolveSemanticCorpusInputCharacterLimit(providerName);
+  const parsed = coercePositiveInteger(configuredMaxCharacters);
+  if (parsed !== null) {
+    return {
+      maxCharacters: parsed,
+      warning: null,
+    };
+  }
+  return {
+    maxCharacters: providerDefaultLimit,
+    warning:
+      configuredMaxCharacters === undefined || configuredMaxCharacters === null
+        ? null
+        : SEARCH_EMBEDDING_CORPUS_MAX_CHARACTERS_INVALID_WARNING,
+  };
 }
 
 export interface SemanticCorpusInputOptions {
@@ -155,9 +177,8 @@ export interface SemanticCorpusInputOptions {
 
 export function buildSemanticCorpusInput(document: ItemDocument, options: SemanticCorpusInputOptions = {}): string {
   const serialized = JSON.stringify(buildSearchCorpus(document));
-  const maxCharacters = resolveSemanticCorpusInputMaxCharacters(
-    options.maxCharacters ?? resolveSemanticCorpusInputCharacterLimit(options.providerName),
-  );
+  const maxCharacters = resolveSemanticCorpusCharacterLimit(options.providerName, options.maxCharacters)
+    .maxCharacters;
   if (serialized.length <= maxCharacters) {
     return serialized;
   }

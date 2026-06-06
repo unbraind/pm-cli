@@ -11,7 +11,11 @@ import { pathExists, writeFileAtomic } from "../../core/fs/fs-utils.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { acquireLock } from "../../core/lock/lock.js";
-import { buildSearchCorpus, buildSemanticCorpusInput } from "../../core/search/corpus.js";
+import {
+  buildSearchCorpus,
+  buildSemanticCorpusInput,
+  resolveSemanticCorpusCharacterLimit,
+} from "../../core/search/corpus.js";
 import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
 import { readVectorizationStatusLedger, writeVectorizationStatusLedger } from "../../core/search/cache.js";
 import { REINDEX_LOCK_ID } from "../../core/search/background-refresh.js";
@@ -350,7 +354,16 @@ async function executeReindexEmbedding(
   progressEnabled: boolean,
 ): Promise<ReindexEmbeddingExecutionResult> {
   const semanticProviderName = extensionEmbedding?.name ?? activeEmbeddingProvider?.name;
-  const corpusInputs = documents.map((document) => buildSemanticCorpusInput(document, { providerName: semanticProviderName }));
+  const corpusCharacterLimit = resolveSemanticCorpusCharacterLimit(
+    semanticProviderName,
+    settings.search.embedding_corpus_max_characters,
+  ).maxCharacters;
+  const corpusInputs = documents.map((document) =>
+    buildSemanticCorpusInput(document, {
+      providerName: semanticProviderName,
+      maxCharacters: corpusCharacterLimit,
+    }),
+  );
   let vectors: number[][] = [];
   let embeddingIdentity: VectorizationEmbeddingIdentity | null = null;
   if (extensionEmbedding) {

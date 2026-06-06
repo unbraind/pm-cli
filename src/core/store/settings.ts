@@ -761,6 +761,7 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     "hybrid_semantic_weight",
     "max_results",
     "embedding_model",
+    "embedding_corpus_max_characters",
     "embedding_batch_size",
     "embedding_timeout_ms",
     "scanner_max_batch_retries",

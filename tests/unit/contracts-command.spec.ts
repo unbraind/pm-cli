@@ -784,7 +784,7 @@ describe("contracts command runtime", () => {
         },
         {
           command: "search",
-          flags: ["--mode", "--semantic", "--hybrid", "--include-linked"],
+          flags: ["--mode", "--semantic", "--hybrid", "--semantic-weight", "--include-linked"],
         },
         {
           command: "extension",

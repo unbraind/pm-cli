@@ -184,6 +184,50 @@ describe("runSearch", () => {
     expect(resolveHybridSemanticWeight({ search: { hybrid_semantic_weight: "bad" } })).toBe(0.7);
   });
 
+  it("applies per-query semantic-weight override for hybrid mode and warns on invalid override", async () => {
+    const { runSearch } = await import("../../src/cli/commands/search.js");
+    const semanticSearchSettings = {
+      search: {
+        hybrid_semantic_weight: 0.2,
+      },
+      providers: {
+        openai: {
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+      },
+      vector_store: {
+        qdrant: {
+          url: "https://qdrant.example.test:6333",
+          api_key: "",
+        },
+      },
+    } as unknown as { id_prefix: string };
+
+    readSettingsMock.mockResolvedValueOnce(semanticSearchSettings);
+    const validOverride = await runSearch(
+      "token",
+      { mode: "hybrid", semanticWeight: "0.9" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(validOverride.mode).toBe("hybrid");
+    expect(validOverride.filters).toMatchObject({ hybrid_semantic_weight: 0.9 });
+    expect(validOverride.warnings).toBeUndefined();
+
+    readSettingsMock.mockResolvedValueOnce(semanticSearchSettings);
+    const invalidOverride = await runSearch(
+      "token",
+      { mode: "hybrid", semanticWeight: "not-a-number" },
+      { path: "/tmp/pm-search" },
+    );
+    expect(invalidOverride.mode).toBe("hybrid");
+    expect(invalidOverride.filters).toMatchObject({ hybrid_semantic_weight: 0.2 });
+    expect(invalidOverride.warnings).toContain(
+      "search_hybrid_semantic_weight_override_invalid:using_settings_default",
+    );
+  });
+
   it("validates query, mode, and filter inputs", async () => {
     const { runSearch } = await import("../../src/cli/commands/search.js");
 

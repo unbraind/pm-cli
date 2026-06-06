@@ -9,6 +9,7 @@ import {
   SEARCH_CACHE_ARTIFACT_PATHS,
   writeVectorizationStatusLedger,
 } from "../../src/core/search/cache.js";
+import { SEARCH_EMBEDDING_CORPUS_MAX_CHARACTERS_INVALID_WARNING } from "../../src/core/search/corpus.js";
 import {
   buildVectorizationEmbeddingIdentity,
   buildVectorizationEmbeddingMetadata,
@@ -254,6 +255,64 @@ describe("core/search/cache", () => {
         expect(result.warnings).toEqual([]);
         expect(inputLengths).toHaveLength(1);
         expect(inputLengths[0]).toBeGreaterThan(300);
+        expect(inputLengths[0]).toBeLessThanOrEqual(8_000);
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
+
+  it("honors configured semantic corpus character limit during mutation refresh embedding", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context, "Configured mutation refresh corpus source");
+      const oversizedCommentChunk = "x".repeat(900);
+      for (let index = 0; index < 12; index += 1) {
+        const commentResult = context.runCli(["comments", "--json", itemId, `${oversizedCommentChunk}-${index}`], {
+          expectJson: true,
+        });
+        expect(commentResult.code).toBe(0);
+      }
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      settings.search.embedding_corpus_max_characters = 1200;
+      await writeSettings(context.pmPath, settings);
+
+      const semanticMock = installSemanticFetchMock();
+      const inputLengths = semanticMock.inputLengths;
+
+      try {
+        const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, [itemId]);
+        expect(result.refreshed).toEqual([itemId]);
+        expect(result.warnings).toEqual([]);
+        expect(inputLengths).toHaveLength(1);
+        expect(inputLengths[0]).toBeGreaterThan(300);
+        expect(inputLengths[0]).toBeLessThanOrEqual(1200);
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
+
+  it("falls back to provider corpus default and warns when configured semantic corpus limit is invalid", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context, "Invalid mutation refresh corpus limit source");
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      settings.search.embedding_corpus_max_characters = 0;
+      await writeSettings(context.pmPath, settings);
+
+      const semanticMock = installSemanticFetchMock();
+      const inputLengths = semanticMock.inputLengths;
+
+      try {
+        const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, [itemId]);
+        expect(result.refreshed).toEqual([itemId]);
+        expect(result.warnings).toContain(SEARCH_EMBEDDING_CORPUS_MAX_CHARACTERS_INVALID_WARNING);
+        expect(inputLengths).toHaveLength(1);
         expect(inputLengths[0]).toBeLessThanOrEqual(8_000);
       } finally {
         semanticMock.restore();

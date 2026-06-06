@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
+import { coerceNumberInRange, toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
@@ -52,6 +52,7 @@ import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemStatus, ItemType, P
 
 export interface SearchOptions {
   mode?: string;
+  semanticWeight?: string | number;
   includeLinked?: boolean;
   titleExact?: boolean;
   phraseExact?: boolean;
@@ -337,6 +338,10 @@ function parseTitleExact(raw: boolean | undefined): boolean {
 
 function parsePhraseExact(raw: boolean | undefined): boolean {
   return raw === true;
+}
+
+function parseSemanticWeightOverride(raw: unknown): number | undefined {
+  return coerceNumberInRange(raw, 0, 1) ?? undefined;
 }
 
 function normalizeSearchPhrase(value: string): string {
@@ -1284,7 +1289,9 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const maxResults = resolveSearchMaxResults(settings);
   const scoreThreshold = resolveSearchScoreThreshold(settings);
-  const hybridSemanticWeight = resolveHybridSemanticWeight(settings);
+  const semanticWeightProvided = options.semanticWeight !== undefined;
+  const semanticWeightOverride = parseSemanticWeightOverride(options.semanticWeight);
+  const hybridSemanticWeight = semanticWeightOverride ?? resolveHybridSemanticWeight(settings);
   const tuning = resolveSearchTuning(settings);
   const providerResolution = resolveEmbeddingProviders(settings);
   const vectorResolution = resolveVectorStores(settings);
@@ -1301,6 +1308,9 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     settings.schema,
   );
   const warnings = loadedDocuments.warnings;
+  if (effectiveMode === "hybrid" && semanticWeightProvided && semanticWeightOverride === undefined) {
+    warnings.push("search_hybrid_semantic_weight_override_invalid:using_settings_default");
+  }
   const allDocuments = loadedDocuments.documents;
   const metadataFilteredDocuments = applyFilters(allDocuments, options, typeRegistry, runtimeFieldFilters, statusFilter);
   const filteredDocuments = applyExactQueryFilters(metadataFilteredDocuments, normalizedQuery, {

@@ -4305,6 +4305,9 @@
           "flag": "--hybrid"
         },
         {
+          "flag": "--semantic-weight"
+        },
+        {
           "flag": "--include-linked"
         },
         {
@@ -5996,6 +5999,13 @@
           "mode"
         ],
         "target": "mode"
+      },
+      {
+        "keys": [
+          "semanticWeight",
+          "semantic_weight"
+        ],
+        "target": "semanticWeight"
       },
       {
         "keys": [
@@ -13390,6 +13400,21 @@
           "semantic": {
             "description": "Semantic.",
             "type": "boolean"
+          },
+          "semanticWeight": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Per-query hybrid semantic weight override in [0,1] for search action; invalid values fall back to settings.",
+            "examples": [
+              0.2,
+              "0.7"
+            ]
           },
           "status": {
             "description": "Item status value. Statuses are project-configurable via .agents/pm/settings.json (schema block); the built-in defaults are draft, open, in_progress, blocked, closed, canceled. Custom statuses defined for the project are accepted — discover the active set with the pm_contracts tool (workspace.statuses) or `pm contracts`. Unknown statuses are rejected at runtime with a did-you-mean hint rather than blocked by a fixed schema enum.",

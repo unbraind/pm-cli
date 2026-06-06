@@ -70,6 +70,13 @@ export const NESTED_SETTING_DESCRIPTORS: readonly NestedSettingDescriptor[] = [
     summary: "Default embedding model name (overrides provider-specific model when set).",
   },
   {
+    key: "search_embedding_corpus_max_characters",
+    path: "search.embedding_corpus_max_characters",
+    kind: "integer",
+    min: 1,
+    summary: "Maximum semantic corpus characters per item before truncation.",
+  },
+  {
     key: "search_embedding_batch_size",
     path: "search.embedding_batch_size",
     kind: "integer",

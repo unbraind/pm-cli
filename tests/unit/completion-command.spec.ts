@@ -377,6 +377,7 @@ describe("generateBashScript", () => {
   it("includes search-specific flags", () => {
     const script = generateBashScript();
     expect(script).toContain("--mode");
+    expect(script).toContain("--semantic-weight");
     expect(script).toContain("--include-linked");
     expect(script).toContain("--title-exact");
     expect(script).toContain("--phrase-exact");

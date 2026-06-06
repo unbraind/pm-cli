@@ -4,6 +4,9 @@ import {
   asRecordClone,
   asRecordLoose,
   asRecordOrNull,
+  coerceFiniteNumber,
+  coerceNumberInRange,
+  coercePositiveInteger,
   isFiniteNumberArray,
   toErrorMessage,
   toNonEmptyString,
@@ -76,6 +79,46 @@ describe("toErrorMessage", () => {
   it("stringifies non-Error values", () => {
     expect(toErrorMessage("plain")).toBe("plain");
     expect(toErrorMessage(123)).toBe("123");
+  });
+});
+
+describe("coerceFiniteNumber", () => {
+  it("parses numbers and numeric strings", () => {
+    expect(coerceFiniteNumber(2.5)).toBe(2.5);
+    expect(coerceFiniteNumber(" 42 ")).toBe(42);
+  });
+
+  it("returns null for invalid or empty values", () => {
+    expect(coerceFiniteNumber("")).toBeNull();
+    expect(coerceFiniteNumber("nan")).toBeNull();
+    expect(coerceFiniteNumber(Number.NaN)).toBeNull();
+    expect(coerceFiniteNumber(undefined)).toBeNull();
+  });
+});
+
+describe("coercePositiveInteger", () => {
+  it("accepts positive integer literals and numeric strings", () => {
+    expect(coercePositiveInteger(7)).toBe(7);
+    expect(coercePositiveInteger("9")).toBe(9);
+  });
+
+  it("rejects zero, negatives, and fractional values", () => {
+    expect(coercePositiveInteger(0)).toBeNull();
+    expect(coercePositiveInteger(-1)).toBeNull();
+    expect(coercePositiveInteger(1.5)).toBeNull();
+  });
+});
+
+describe("coerceNumberInRange", () => {
+  it("returns parsed number when value lies within inclusive bounds", () => {
+    expect(coerceNumberInRange("0.4", 0, 1)).toBe(0.4);
+    expect(coerceNumberInRange(1, 0, 1)).toBe(1);
+  });
+
+  it("returns null when value is out of range or invalid", () => {
+    expect(coerceNumberInRange("1.5", 0, 1)).toBeNull();
+    expect(coerceNumberInRange("-0.1", 0, 1)).toBeNull();
+    expect(coerceNumberInRange("bad", 0, 1)).toBeNull();
   });
 });
 

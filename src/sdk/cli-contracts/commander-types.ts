@@ -39,6 +39,7 @@ export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContrac
 
 export const SEARCH_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
   { target: "mode", keys: ["mode"] },
+  { target: "semanticWeight", keys: ["semanticWeight", "semantic_weight"] },
   { target: "status", keys: ["status"] },
   { target: "type", keys: ["type"] },
   { target: "tag", keys: ["tag"] },
@@ -105,6 +106,18 @@ export function readFirstStringFromCommanderOptions(
     const candidate = options[key];
     if (typeof candidate === "string") {
       return candidate;
+    }
+  }
+  return undefined;
+}
+
+export function readFirstValueFromCommanderOptions(
+  options: Record<string, unknown>,
+  contract: CommanderOptionAliasContract,
+): unknown {
+  for (const key of contract.keys) {
+    if (Object.hasOwn(options, key)) {
+      return options[key];
     }
   }
   return undefined;

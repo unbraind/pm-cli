@@ -6,7 +6,9 @@ import {
   buildSemanticCorpusInput,
   DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
   OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
+  resolveSemanticCorpusCharacterLimit,
   resolveSemanticCorpusInputCharacterLimit,
+  SEARCH_EMBEDDING_CORPUS_MAX_CHARACTERS_INVALID_WARNING,
   SEMANTIC_CORPUS_TRUNCATION_SUFFIX,
 } from "../../src/core/search/corpus.js";
 import type { ItemDocument, ItemMetadata } from "../../src/types.js";
@@ -37,6 +39,25 @@ describe("core/search/corpus semantic helpers", () => {
     expect(resolveSemanticCorpusInputCharacterLimit("ollama")).toBe(OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS);
     expect(resolveSemanticCorpusInputCharacterLimit(" OPENAI ")).toBe(DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS);
     expect(resolveSemanticCorpusInputCharacterLimit(undefined)).toBe(DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS);
+  });
+
+  it("resolves configured semantic corpus override and fallback warning deterministically", () => {
+    expect(resolveSemanticCorpusCharacterLimit("ollama", 4096)).toEqual({
+      maxCharacters: 4096,
+      warning: null,
+    });
+    expect(resolveSemanticCorpusCharacterLimit("ollama", " 3072 ")).toEqual({
+      maxCharacters: 3072,
+      warning: null,
+    });
+    expect(resolveSemanticCorpusCharacterLimit("ollama", 0)).toEqual({
+      maxCharacters: OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
+      warning: SEARCH_EMBEDDING_CORPUS_MAX_CHARACTERS_INVALID_WARNING,
+    });
+    expect(resolveSemanticCorpusCharacterLimit(undefined, undefined)).toEqual({
+      maxCharacters: DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS,
+      warning: null,
+    });
   });
 
   it("falls back to default semantic corpus limit when maxCharacters is invalid", () => {
