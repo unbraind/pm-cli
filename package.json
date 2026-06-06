@@ -13,6 +13,7 @@
     "url": "https://github.com/unbraind/pm-cli/issues"
   },
   "bin": {
+    "pm-cli": "dist/cli.js",
     "pm": "dist/cli.js",
     "pm-mcp": "dist/mcp/server.js"
   },

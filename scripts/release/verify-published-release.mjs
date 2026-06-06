@@ -114,6 +114,14 @@ function verifyExecutor(name, args, version, attempts, tempRoot) {
   });
 }
 
+function verifyRequiredExecutor(label, args, version, attempts, tempRoot) {
+  const result = verifyExecutor(label, args, version, attempts, tempRoot);
+  if (!result.ok) {
+    fail(`${label} verification failed: ${result.reason}`);
+  }
+  return result;
+}
+
 function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
   const npmMetadata = verifyNpmMetadata(version, npmAttempts);
   if (!npmMetadata.ok) {
@@ -122,29 +130,31 @@ function verifyPackageSurfaces(version, npmAttempts, executorAttempts) {
 
   const tempRoot = mkdtempSync(path.join(tmpdir(), "pm-cli-published-verify-"));
   try {
-    const npx = verifyExecutor(
-      "npx",
+    const npxDirect = verifyRequiredExecutor(
+      "npx-direct",
+      [commandFor("npx"), "--yes", `@unbrained/pm-cli@${version}`, "--version"],
+      version,
+      executorAttempts,
+      tempRoot,
+    );
+
+    const npxPackage = verifyRequiredExecutor(
+      "npx-package",
       [commandFor("npx"), "--yes", "--package", `@unbrained/pm-cli@${version}`, "--", "pm", "--version"],
       version,
       executorAttempts,
       tempRoot,
     );
-    if (!npx.ok) {
-      fail(`npx verification failed: ${npx.reason}`);
-    }
 
-    const bunx = verifyExecutor(
+    const bunx = verifyRequiredExecutor(
       "bunx",
       [commandFor("bunx"), "--bun", `@unbrained/pm-cli@${version}`, "pm", "--version"],
       version,
       executorAttempts,
       tempRoot,
     );
-    if (!bunx.ok) {
-      fail(`bunx verification failed: ${bunx.reason}`);
-    }
 
-    return { npm: npmMetadata, npx, bunx };
+    return { npm: npmMetadata, npx: { direct: npxDirect, package: npxPackage }, bunx };
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
   }

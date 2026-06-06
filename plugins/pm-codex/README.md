@@ -17,7 +17,7 @@ codex plugin marketplace add .
 
 Restart Codex, then install **pm CLI** from the repo marketplace. The bundled MCP server starts through `plugins/pm-codex/scripts/pm-mcp-server.mjs`.
 
-For a published package install, keep `@unbrained/pm-cli` available through npm. The launcher uses the local repo build when present and falls back to `npx -y @unbrained/pm-cli@latest pm-mcp` when the plugin is cached outside the repository.
+For a published package install, keep `@unbrained/pm-cli` available through npm. The launcher uses the local repo build when present and falls back to `npx -y --package=@unbrained/pm-cli@latest pm-mcp` when the plugin is cached outside the repository.
 
 ## Native Tools
 

@@ -1797,6 +1797,11 @@ describe("release readiness runtime coverage", () => {
     expect(packageJson.scripts?.["smoke:npx"]).toBe("node scripts/smoke-npx-from-pack.mjs");
     expect(packageJson.types).toBe("dist/sdk/index.d.ts");
     expect(packageJson.exports).toBeDefined();
+    expect(packageJson.bin).toMatchObject({
+      "pm-cli": "dist/cli.js",
+      pm: "dist/cli.js",
+      "pm-mcp": "dist/mcp/server.js",
+    });
     const packageExports = packageJson.exports as Record<string, unknown>;
     expect(Object.keys(packageExports)).toEqual(expect.arrayContaining([".", "./sdk", "./cli", "./package.json"]));
     const rootExport = packageExports["."] as Record<string, unknown>;

@@ -62,7 +62,7 @@ This clones the repo, reads `.claude-plugin/marketplace.json` at the root, insta
 ### 2. Global MCP via Claude Code CLI (MCP tools only)
 
 ```bash
-claude mcp add --transport stdio pm-mcp -- npx -y @unbrained/pm-cli pm-mcp
+claude mcp add --transport stdio pm-mcp -- npx -y --package=@unbrained/pm-cli@latest pm-mcp
 ```
 
 Gives you the 21 MCP tools without skills or slash commands.
@@ -91,7 +91,7 @@ The repo root `.mcp.json` uses this approach — activates automatically when Cl
 
 1. `PM_CLI_MCP_SERVER` env var (explicit override)
 2. `dist/mcp/server.js` walking up from the launcher (repo checkout)
-3. `npx -y @unbrained/pm-cli@latest pm-mcp` (npm-installed fallback)
+3. `npx -y --package=@unbrained/pm-cli@latest pm-mcp` (npm-installed fallback)
 
 This means the plugin works both from a repo checkout and from an npm-cached plugin install.
 

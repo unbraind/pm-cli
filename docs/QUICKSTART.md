@@ -31,7 +31,7 @@ pm upgrade --cli-only
 For one-off use:
 
 ```bash
-npx @unbrained/pm-cli --help
+npx --yes @unbrained/pm-cli@latest --help
 ```
 
 Optional first-party packages are installable during init or on demand:
