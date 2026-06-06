@@ -53,7 +53,10 @@ npm search "pm-cli pm-package"
 pm install npm:pm-changelog --project
 pm install npm:pm-github --project
 pm package doctor --project --detail deep --trace
+pm github validate --repo owner/repo
 ```
+
+For `pm-github`, run `pm github validate --repo owner/repo` before mutating commands; write paths require `GITHUB_TOKEN`/`GH_TOKEN` or `gh auth login`.
 
 For ecosystem maintenance, use the reusable external package smoke harness after
 building `dist/`:

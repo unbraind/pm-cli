@@ -2,13 +2,29 @@ id: pm-zw0n
 title: Publish pm-github starter package as a community reference (credential-requiring pattern)
 description: "docs/EXTENSIONS.md cites 'pm install npm:pm-github' but the package does not exist; it would validate the npm-install path end-to-end and model service-credential packages (GitHub/Jira/Linear/Slack)."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[5]: "area:packages",community,dx,ecosystem,living-map
 created_at: "2026-05-31T19:44:25.917Z"
-updated_at: "2026-05-31T19:44:25.917Z"
+updated_at: "2026-06-06T20:11:45.759Z"
 author: maintainer-agent
 acceptance_criteria: Minimal published @unbrained/pm-github registers a command that errors with clear credential-setup guidance when unconfigured; manifest has pm_min_version+catalog+commands; install+doctor work; docs reference published version.
 value: "docs/EXTENSIONS.md cites 'pm install npm:pm-github' but the package does not exist; it would validate the npm-install path end-to-end and model service-credential packages (GitHub/Jira/Linear/Slack)."
 parent: pm-ugqx
+resolution: "Validated published pm-github package path and credential preflight UX from pm-cli: install/doctor/runtime contracts/auth guidance."
+expected_result: "pm-github install+doctor works, command/contracts are visible, unauthenticated mutating path returns explicit credential guidance, and docs reference published package usage."
+actual_result: "All checks passed: pm-github@2026.6.4 installs and doctors cleanly, command/action availability includes github export/import/sync/validate, isolated no-credential run emits explicit token requirement, and docs/EXTENSIONS.md now documents validate/auth preflight."
+comments[3]{created_at,author,text}:
+  "2026-06-06T20:03:36.401Z",codex-zw0n,"Investigation note: Re-ran pm context/list-open/list-in-progress/search; no in-progress item overlaps this scope and no duplicate open chore for pm-github publication/credential-pattern evidence was found."
+  "2026-06-06T20:08:08.017Z",codex-zw0n,"Evidence: Manual temp validation completed. In /tmp/pm-zw0n-8v7IkI, ran 'node dist/cli.js install npm:pm-github --project' (installed pm-github@2026.6.4) and 'node dist/cli.js package doctor --project --detail deep --trace' (status=ok, warning_count=0, command paths include github export/import/sync/validate + gh-issues import). Runtime contracts availability includes github actions/commands. Auth preflight verified via isolated no-credential run in /tmp/pm-zw0n-auth3-qQBmWM with HOME empty + PATH node-only (no gh): 'pm github export --repo unbraind/pm-cli --apply --json' returned expected preflight warning and error detail '--apply requires a GitHub token (set GITHUB_TOKEN/GH_TOKEN or run gh auth login)'. Added UX doc clarification in docs/EXTENSIONS.md. Linked integration tests passed via pm test run (46 tests)."
+  "2026-06-06T20:11:45.759Z",codex-zw0n,"Verification sweep: pnpm build + pnpm typecheck + node scripts/run-tests.mjs coverage passed (2526 tests, 100% statements/branches/functions/lines). pm validate --check-resolution --check-history-drift returned expected repo-wide warning count for legacy closed-item resolution fields (88 pre-existing rows) and history drift clean (0). pm health --check-only passed. pnpm security:scan found no credential-like secrets; pnpm audit found no vulnerabilities. GitHub checks via gh: open issues=0, open PRs=0, Dependabot open alerts=[]. Note: manual credential probes created temporary GitHub issues #126 and #127 in unbraind/pm-cli; both were immediately closed with audit comments."
+files[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Document pm-github credential preflight UX guidance.
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mq2sc4yz-k5jpgl,test,passed,"2026-06-06T20:07:30.420Z","2026-06-06T20:07:58.763Z","2026-06-06T20:07:58.763Z",null,null,1,0,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Clarify pm-github validate/auth usage before mutating commands.
+close_reason: "pm-github is now published and validated end-to-end: install+doctor pass, runtime command/contracts available, no-credential path returns explicit token guidance, and docs now include credential preflight usage."
 body: ""
