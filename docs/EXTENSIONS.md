@@ -53,7 +53,14 @@ npm search "pm-cli pm-package"
 pm install npm:pm-changelog --project
 pm install npm:pm-github --project
 pm package doctor --project --detail deep --trace
+# credential-gated packages should expose a read-only auth check before writes
+pm github validate --repo owner/repo
 ```
+
+For `pm-github`, mutating commands (`pm github export --apply`, `pm github sync`)
+require a resolvable token (`GITHUB_TOKEN`/`GH_TOKEN`) or an authenticated `gh`
+session (`gh auth login`). `pm github validate` is the fast preflight check before
+running write paths.
 
 For ecosystem maintenance, use the reusable external package smoke harness after
 building `dist/`:
