@@ -111,6 +111,18 @@ export function readFirstStringFromCommanderOptions(
   return undefined;
 }
 
+export function readFirstValueFromCommanderOptions(
+  options: Record<string, unknown>,
+  contract: CommanderOptionAliasContract,
+): unknown {
+  for (const key of contract.keys) {
+    if (Object.hasOwn(options, key)) {
+      return options[key];
+    }
+  }
+  return undefined;
+}
+
 export function readStringArrayFromCommanderOptions(
   options: Record<string, unknown>,
   contract: CommanderOptionAliasContract,

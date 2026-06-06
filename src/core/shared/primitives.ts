@@ -37,6 +37,37 @@ export function toErrorMessage(error: unknown): string {
 }
 
 /**
+ * Parse either a finite numeric literal or a non-empty numeric string.
+ * Returns `null` for unsupported input types, empty strings, and non-finite
+ * numeric values.
+ */
+export function coerceFiniteNumber(value: unknown): number | null {
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim().length > 0
+        ? Number(value.trim())
+        : Number.NaN;
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function coercePositiveInteger(value: unknown): number | null {
+  const parsed = coerceFiniteNumber(value);
+  if (parsed === null || parsed <= 0 || !Number.isInteger(parsed)) {
+    return null;
+  }
+  return parsed;
+}
+
+export function coerceNumberInRange(value: unknown, min: number, max: number): number | null {
+  const parsed = coerceFiniteNumber(value);
+  if (parsed === null || parsed < min || parsed > max) {
+    return null;
+  }
+  return parsed;
+}
+
+/**
  * Narrow a value to a plain object, returning `null` for non-objects,
  * `null`, and arrays. Returns the original reference (no clone).
  *

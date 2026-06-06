@@ -1,4 +1,5 @@
 import type { ItemDocument, ItemMetadata } from "../../types/index.js";
+import { coercePositiveInteger } from "../shared/primitives.js";
 
 export const DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS = 8_000;
 export const OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS = 3_200;
@@ -148,25 +149,12 @@ export interface SemanticCorpusCharacterLimitResolution {
   warning: string | null;
 }
 
-function toPositiveInteger(value: unknown): number | null {
-  const numeric =
-    typeof value === "number"
-      ? value
-      : typeof value === "string" && value.trim().length > 0
-        ? Number(value.trim())
-        : Number.NaN;
-  if (!Number.isFinite(numeric) || numeric <= 0 || !Number.isInteger(numeric)) {
-    return null;
-  }
-  return numeric;
-}
-
 export function resolveSemanticCorpusCharacterLimit(
   providerName: string | undefined,
   configuredMaxCharacters: unknown,
 ): SemanticCorpusCharacterLimitResolution {
   const providerDefaultLimit = resolveSemanticCorpusInputCharacterLimit(providerName);
-  const parsed = toPositiveInteger(configuredMaxCharacters);
+  const parsed = coercePositiveInteger(configuredMaxCharacters);
   if (parsed !== null) {
     return {
       maxCharacters: parsed,

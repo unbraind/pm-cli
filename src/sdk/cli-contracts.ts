@@ -5,6 +5,7 @@ export {
   CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS,
   LIST_COMMANDER_STRING_OPTION_CONTRACTS,
   SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
+  readFirstValueFromCommanderOptions,
   readFirstStringFromCommanderOptions,
   readStringArrayFromCommanderOptions,
 } from "./cli-contracts/commander-types.js";

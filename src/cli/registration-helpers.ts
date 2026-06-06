@@ -22,6 +22,7 @@ import {
   SEARCH_COMMANDER_STRING_OPTION_CONTRACTS,
   UPDATE_COMMANDER_REPEATABLE_OPTION_CONTRACTS,
   UPDATE_COMMANDER_STRING_OPTION_CONTRACTS,
+  readFirstValueFromCommanderOptions,
   readFirstStringFromCommanderOptions,
   readStringArrayFromCommanderOptions,
 } from "../sdk/cli-contracts.js";
@@ -602,6 +603,22 @@ export function normalizeSearchOptions(options: Record<string, unknown>): Record
         keys: [target],
       },
     );
+  const readSearchStringOrNumber = (target: string): string | number | undefined => {
+    const candidate = readFirstValueFromCommanderOptions(
+      options,
+      SEARCH_COMMANDER_STRING_OPTION_CONTRACTS.find((entry) => entry.target === target) ?? {
+        target,
+        keys: [target],
+      },
+    );
+    if (typeof candidate === "string") {
+      return candidate;
+    }
+    if (typeof candidate === "number" && Number.isFinite(candidate)) {
+      return candidate;
+    }
+    return undefined;
+  };
   const fields = readSearchString("fields");
   const compactRequested = options.compact === true;
   const fullRequested = options.full === true;
@@ -611,7 +628,7 @@ export function normalizeSearchOptions(options: Record<string, unknown>): Record
     : readSearchString("mode");
   const normalized: Record<string, unknown> = {
     mode,
-    semanticWeight: readSearchString("semanticWeight"),
+    semanticWeight: readSearchStringOrNumber("semanticWeight"),
     includeLinked: options.includeLinked === true ? true : undefined,
     titleExact: options.titleExact === true ? true : undefined,
     phraseExact: options.phraseExact === true ? true : undefined,

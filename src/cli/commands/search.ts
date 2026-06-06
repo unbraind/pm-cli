@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
+import { coerceNumberInRange, toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { isPathWithinDirectory } from "../../core/fs/path-utils.js";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
 import { collectRegisteredItemFieldNames } from "../../core/extensions/item-fields.js";
@@ -341,16 +341,7 @@ function parsePhraseExact(raw: boolean | undefined): boolean {
 }
 
 function parseSemanticWeightOverride(raw: unknown): number | undefined {
-  const candidate =
-    typeof raw === "number"
-      ? raw
-      : typeof raw === "string" && raw.trim().length > 0
-        ? Number(raw.trim())
-        : undefined;
-  if (typeof candidate === "number" && Number.isFinite(candidate) && candidate >= 0 && candidate <= 1) {
-    return candidate;
-  }
-  return undefined;
+  return coerceNumberInRange(raw, 0, 1) ?? undefined;
 }
 
 function normalizeSearchPhrase(value: string): string {
