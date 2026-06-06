@@ -125,9 +125,10 @@ function parseBeforeBoundary(before: string | undefined, entries: HistoryEntry[]
         EXIT_CODE.GENERIC_FAILURE,
       );
     }
-    if (entryTs < beforeTs) {
-      compactCount += 1;
+    if (entryTs >= beforeTs) {
+      break;
     }
+    compactCount += 1;
   }
 
   return {
@@ -188,6 +189,7 @@ function replayHistoryAndResolveCheckpoint(
 function reanchorRetainedEntries(
   retainedEntries: HistoryEntry[],
   seed: ReplayDocument,
+  retainedEntryOffset: number,
 ): {
   entries: HistoryEntry[];
   finalReplay: ReplayDocument;
@@ -196,7 +198,7 @@ function reanchorRetainedEntries(
   const rewritten: HistoryEntry[] = [];
   for (const [index, entry] of retainedEntries.entries()) {
     const beforeHash = replayHash(replay);
-    replay = applyHistoryPatch(replay, entry, index + 1);
+    replay = applyHistoryPatch(replay, entry, retainedEntryOffset + index + 1);
     rewritten.push({
       ...entry,
       before_hash: beforeHash,
@@ -266,7 +268,7 @@ export async function runHistoryCompact(
   if (changed) {
     const { checkpoint, finalReplay } = replayHistoryAndResolveCheckpoint(historyEntries, boundary.compactCount);
     const retained = historyEntries.slice(boundary.compactCount);
-    const reanchored = reanchorRetainedEntries(retained, checkpoint);
+    const reanchored = reanchorRetainedEntries(retained, checkpoint, boundary.compactCount);
     const baselineEntry = createHistoryEntry({
       nowIso: nowIso(),
       author,

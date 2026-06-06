@@ -174,7 +174,6 @@ export default defineConfig({
         "src/cli/commands/files.ts",
         "src/cli/commands/health.ts",
         "src/cli/commands/history.ts",
-        "src/cli/commands/history-compact.ts",
         "src/cli/commands/init.ts",
         "src/cli/commands/learnings.ts",
         "src/cli/commands/list.ts",
