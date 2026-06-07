@@ -2,19 +2,22 @@ id: pm-qpus
 title: Add schema show-status status inspection
 description: "Add a first-class pm schema show-status subcommand so agents can inspect one resolved status definition (id, roles, aliases, source, description, order) without parsing full schema lists."
 type: Feature
-status: in_progress
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:schema",pm-cli
 created_at: "2026-06-07T07:18:14.259Z"
-updated_at: "2026-06-07T07:55:14.792Z"
-assignee: codex-schema-show-status-20260607
+updated_at: "2026-06-07T08:11:07.075Z"
 author: codex-schema-show-status-20260607
 parent: pm-8jdc
-comments[4]{created_at,author,text}:
+resolution: "Implemented in src/cli/commands/schema.ts with dispatch in register-mutation, MCP wiring in src/mcp/server.ts, contract sync in tests/fixtures/contracts/full.json, and merged to main at 3a519a4f72ac47d65b47561620e1ae3865d9665d."
+expected_result: pm schema show-status inspects one resolved status definition with alias support and contract/MCP parity.
+actual_result: "Delivered via PR #141: show-status works for builtin/custom/alias paths, docs/contracts/tests updated, full gates + manual smoke passed."
+comments[5]{created_at,author,text}:
   "2026-06-07T07:18:19.263Z",codex-schema-show-status-20260607,"Kickoff: duplicate check complete (pm search \"schema show-status status inspection\" + pm list-open --parent pm-8jdc) found no active equivalent child item. Starting implementation for status-level schema inspection with CLI/MCP/contracts/tests/docs parity."
   "2026-06-07T07:55:00.184Z",codex-schema-show-status-20260607,"Implementation complete: added pm schema show-status end-to-end across CLI runtime/dispatch, MCP pm_run schema action, contract metadata, and docs/tests. New schema subcommand behavior resolves status aliases, returns builtin/custom source, roles, aliases, description/order in JSON, and human-readable output via formatSchemaShowStatusHuman. Updated command discovery/help strings and regenerated contracts fixture after action contract changes."
   "2026-06-07T07:55:00.510Z",codex-schema-show-status-20260607,"Verification evidence: pnpm build; node scripts/run-tests.mjs test -- tests/unit/schema-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/mcp-handshake.spec.ts (55 passed); pnpm contracts:update + pnpm contracts:check; pnpm changelog:pm + pnpm changelog:pm:check; pnpm release:gates (2540 tests, 100% coverage, static/docs/security/smoke gates passed). Manual temp-dir smoke passed at /tmp/tmp.EWFMSbmb1D using node dist/cli.js: init -> schema add-status review -> schema show-status review/in_review/open -> create+update status -> schema remove-status review -> show-status review expected unknown_status failure -> schema show Task."
   "2026-06-07T07:55:00.828Z",codex-schema-show-status-20260607,"GitHub/Sentry triage 2026-06-07: gh issue list open = none, gh pr list open = none, dependabot/code-scanning/secret-scanning open alerts all empty ([]). Sentry telemetry gate passed in best-effort mode: critical=0, high=0, finish_error_rate_pct=1.88, missing_error_code_rows=0. Dependency review: commander 15 remains blocked by engines (node >=22.12) while repo supports node >=20. Updated managed pm-changelog extension to latest available npm version 2026.6.7 during changelog verification."
+  "2026-06-07T08:11:00.034Z",codex-schema-show-status-20260607,"Follow-up after bot feedback: refactored SchemaStatusSummary construction into shared helper in src/cli/commands/schema.ts; no additional functional drift. PR #141 merged to main (merge commit 3a519a4f72ac47d65b47561620e1ae3865d9665d)."
 files[11]{path,scope,note}:
   .agents/pm/extensions/.managed-extensions.json,project,Track pm-changelog upgrade to latest available version
   .agents/pm/extensions/pm-changelog/package.json,project,Managed changelog package updated during changelog verification
@@ -37,4 +40,5 @@ test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resum
   test-local-mq3hlotf-dvqrdc,test,passed,"2026-06-07T07:39:14.447Z","2026-06-07T07:55:14.787Z","2026-06-07T07:55:14.787Z",null,null,3,0,0,null,null,null
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,Describe schema show-status command and examples
+close_reason: "Delivered pm schema show-status feature with CLI/MCP/contracts/docs/tests parity, passed full release gates and manual smoke, and merged via PR #141."
 body: ""
