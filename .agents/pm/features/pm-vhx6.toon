@@ -1,0 +1,12 @@
+id: pm-vhx6
+title: "list/search: trim default filters/projection/sorting/now trailer in compact/agent mode"
+description: "agent-UX audit F3: list/search always emit a ~19-key filters trailer + projection/sorting/now even in compact mode (more metadata than data on small result sets). Emit only non-default/agent-supplied keys in compact mode and gate the trailer behind --full/--explain. Complements [[pm-rmjy]]."
+type: Feature
+status: open
+priority: 2
+tags[3]: agent-ux,"area:cli",token-efficiency
+created_at: "2026-06-07T17:04:17.220Z"
+updated_at: "2026-06-07T17:04:17.220Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

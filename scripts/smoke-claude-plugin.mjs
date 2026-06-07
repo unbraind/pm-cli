@@ -116,7 +116,7 @@ try {
   const toolNames = new Set(tools.tools.map((tool) => tool.name));
   const required = [
     "pm_run", "pm_context", "pm_search", "pm_list", "pm_get",
-    "pm_create", "pm_update", "pm_claim", "pm_release", "pm_close",
+    "pm_create", "pm_copy", "pm_update", "pm_claim", "pm_release", "pm_close",
     "pm_comments", "pm_files", "pm_docs", "pm_notes", "pm_learnings",
     "pm_deps", "pm_test",
     "pm_validate", "pm_health", "pm_contracts", "pm_plan",
@@ -125,6 +125,13 @@ try {
     if (!toolNames.has(name)) {
       throw new Error(`Missing required MCP tool: ${name}`);
     }
+  }
+  // Tie the required list to the live surface so a tool added/removed in the
+  // server (or a stale enumeration here) fails the smoke instead of drifting.
+  if (tools.tools.length !== required.length) {
+    throw new Error(
+      `tools/list returned ${tools.tools.length} tools but the smoke expects ${required.length}; update the required[] list and docs.`,
+    );
   }
   console.log(`tools/list: ${tools.tools.length} tools (all ${required.length} required tools present)`);
 

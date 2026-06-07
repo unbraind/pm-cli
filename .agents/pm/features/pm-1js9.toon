@@ -6,10 +6,12 @@ status: open
 priority: 3
 tags[4]: "area:extensions","area:packages",dx,exemplar
 created_at: "2026-06-07T10:05:50.627Z"
-updated_at: "2026-06-07T10:22:15.937Z"
+updated_at: "2026-06-07T17:04:45.923Z"
 author: audit-platform-agent
 acceptance_criteria: "- A first-party exemplar package demonstrates registerCommand + registerFlags + registerParser\n- Ships hand-maintained .js alongside .ts (per ADR pm-tsio)\n- Listed in marketplace.json + docs; smoke-tested"
 parent: pm-ugqx
 risk: low
 confidence: high
+comments[1]{created_at,author,text}:
+  "2026-06-07T17:04:45.923Z",maintainer-agent,"Audit 2026-06-07 (SDK agent F2/F3): 7 of 13 registration APIs have NO first-party exemplar (registerParser, registerPreflight, registerRenderer, registerItemTypes, registerItemFields, registerVectorStoreAdapter, registerMigration). The custom item-type path (the 'any kind of project' differentiator) is prose-only in SDK.md. The scaffold (extension/scaffold.ts) only emits registerCommand + capabilities:['commands']. Suggest a pm-incident exemplar (Incident type + severity field + renderer + parser/preflight) and richer scaffold capability stubs."
 body: ""

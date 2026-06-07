@@ -1,0 +1,12 @@
+id: pm-96wm
+title: "ADR: 2026-06-07 deep audit + remediation pass (never-block, MCP/version coherence, docs/CI hardening)"
+description: "Context: full manual audit of pm CLI + SDK + ecosystem. Method: 4 specialized READ-ONLY sub-agents in parallel (code-quality/perf, SDK/extensions/packages, agent-UX/token-efficiency, docs/CI) reporting findings back; ecosystem verified in a temp sandbox + project smoke harnesses (dogfood-package-first, smoke:claude-plugin) + full coverage gate (2559 tests, 100%). Decision 1: recorded all agent findings CENTRALLY (this maintainer) rather than letting agents mutate pm, to avoid the documented history-drift/reindex races from concurrent cross-process pm writes AND to guarantee no duplicate items. Decision 2: shipped a focused low-risk batch this PR (pm-g799 close-reason never-block, pm-ryik --path discovery, pm-yjub pm_health summary default, pm-7tvx tool-count drift, pm-t73k CONTRIBUTING matrix, pm-wrqk dead-code+version dedup, pm-2nvw, pm-l40h, pm-ji5c). Decision 3: DEFERRED the #1 perf lever (settings read cache [[pm-2bn5]]) to its own PR because safe memoization must key on settings.json AND schema/*.json mtimes (schema files change independently) and stay correct for the long-lived MCP server — too risky to bundle. Decision 4: pm_health default = summary (22x smaller) over brief (2x) since remediation lives only in full anyway. New deferred items: [[pm-2bn5]] [[pm-e7dn]] [[pm-ul02]] [[pm-vhx6]] [[pm-6l17]] [[pm-jozc]] [[pm-q0kr]] [[pm-oll8]] [[pm-l0jd]]. Verified clean: GitHub (0 PRs/issues/alerts), secrets (tracked + pm history), as-any/ts-ignore count = 0."
+type: Decision
+status: open
+priority: 2
+tags[3]: adr,"area:meta",audit
+created_at: "2026-06-07T17:05:16.319Z"
+updated_at: "2026-06-07T17:05:16.319Z"
+author: maintainer-agent
+parent: pm-m2u1
+body: ""

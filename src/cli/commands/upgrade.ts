@@ -1,5 +1,4 @@
 import { execFile } from "node:child_process";
-import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import {
@@ -15,7 +14,7 @@ import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
-import { resolvePmPackageRootFromModule } from "../../core/packages/root.js";
+import { resolvePmCliVersion } from "../../core/packages/root.js";
 
 const execFileAsync = promisify(execFile);
 const DEFAULT_CLI_PACKAGE = "@unbrained/pm-cli";
@@ -150,13 +149,7 @@ async function defaultCommandRunner(
 }
 
 async function readCurrentVersion(): Promise<string | undefined> {
-  const packageJsonPath = path.join(resolvePmPackageRootFromModule(import.meta.url, ["../../.."]), "package.json");
-  try {
-    const parsed = JSON.parse(await fs.readFile(packageJsonPath, "utf8")) as { version?: unknown };
-    return typeof parsed.version === "string" ? parsed.version : undefined;
-  } catch {
-    return undefined;
-  }
+  return resolvePmCliVersion(import.meta.url, ["../../.."]);
 }
 
 function resolveTag(options: UpgradeCommandOptions): string {

@@ -209,11 +209,6 @@ const DESCRIPTOR_BY_KEY: ReadonlyMap<string, NestedSettingDescriptor> = new Map(
   NESTED_SETTING_DESCRIPTORS.map((descriptor) => [descriptor.key, descriptor]),
 );
 
-/** Canonical CLI keys (in declaration order). */
-export const NESTED_SETTING_KEYS: readonly string[] = NESTED_SETTING_DESCRIPTORS.map(
-  (descriptor) => descriptor.key,
-);
-
 /**
  * Map a raw user-supplied key (kebab or snake case, any casing) onto a known
  * nested-leaf descriptor. Returns `undefined` when the key is not a nested

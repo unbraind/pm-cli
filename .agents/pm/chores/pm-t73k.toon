@@ -1,0 +1,13 @@
+id: pm-t73k
+title: Fix inaccurate PR CI matrix description in CONTRIBUTING.md
+description: "CONTRIBUTING claimed PRs run a reduced free-tier matrix (ubuntu+macos Node 20), but ci.yml pull_request has no reduction: PRs run the full ubuntu 20/22/24 + macos 20 matrix. Corrected the doc to match the workflow. Found by docs/CI audit."
+type: Chore
+status: closed
+priority: 3
+tags[2]: "area:ci","area:docs"
+created_at: "2026-06-07T17:03:26.095Z"
+updated_at: "2026-06-07T17:03:45.212Z"
+author: maintainer-agent
+parent: pm-u9d0
+close_reason: "Shipped: CONTRIBUTING PR-matrix description corrected to match ci.yml (full matrix on PRs)."
+body: ""

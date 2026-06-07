@@ -98,12 +98,21 @@ describe("runClose", () => {
     });
   });
 
-  it("rejects blank close reason text", async () => {
+  it("rejects blank close reason text with actionable guidance", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-blank-reason");
-      await expect(runClose(id, "   ", {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
-        exitCode: EXIT_CODE.USAGE,
-      });
+      const error = await runClose(id, "   ", {}, { path: context.pmPath }).then(
+        () => {
+          throw new Error("expected runClose to reject");
+        },
+        (caught: unknown) => caught as PmCliError,
+      );
+      expect(error.exitCode).toBe(EXIT_CODE.USAGE);
+      // Never-block: the error must tell an agent how to recover, not just name
+      // the internal governance knob.
+      expect(error.context.code).toBe("close_reason_required");
+      expect(error.context.examples?.some((example) => example.includes("--reason"))).toBe(true);
+      expect(error.context.nextSteps?.some((step) => step.includes("governance-require-close-reason"))).toBe(true);
     });
   });
 

@@ -66,6 +66,10 @@ describe("MCP protocol handshake", () => {
     expect(result.protocolVersion).toBe("2025-06-18");
     expect(result.serverInfo).toMatchObject({ name: "pm-mcp" });
     expect(typeof result.serverInfo?.version).toBe("string");
+    // pm-2nvw: serverInfo.version must reflect the real package.json version,
+    // not the former hard-coded "1.0.0".
+    expect(result.serverInfo?.version).not.toBe("1.0.0");
+    expect(result.serverInfo?.version).toMatch(/^\d+\.\d+\./);
     expect(typeof result.instructions).toBe("string");
     expect(result.instructions).toContain("pm_context");
     // pm-hywv: the narrow tools are advertised in the prefer-narrow guidance.
@@ -126,6 +130,65 @@ describe("MCP protocol handshake", () => {
         params: { name: "pm_not_a_real_tool", arguments: {} },
       }),
     ).rejects.toThrow(/Unknown pm MCP tool: pm_not_a_real_tool/);
+  });
+
+  it("pm_health defaults to the compact summary projection and full=true opts into detail (F2)", async () => {
+    await withTempPmPath(async (context) => {
+      const callHealth = (options: Record<string, unknown>) =>
+        handleRequest({
+          jsonrpc: "2.0",
+          id: 70,
+          method: "tools/call",
+          params: { name: "pm_health", arguments: { path: context.pmPath, options } },
+        }) as Promise<{
+          structuredContent?: {
+            result?: { projection?: { mode?: string }; checks?: Array<{ details?: Record<string, unknown> }> };
+          };
+        }>;
+
+      // No projection flag -> summary by default (ok + per-check status only).
+      const summary = await callHealth({});
+      expect(summary.structuredContent?.result?.projection?.mode).toBe("summary");
+      for (const check of summary.structuredContent?.result?.checks ?? []) {
+        expect(Object.keys(check.details ?? {})).toHaveLength(0);
+      }
+
+      // full=true opts back into the deep payload with populated check details.
+      const full = await callHealth({ full: true });
+      expect(full.structuredContent?.result?.projection?.mode).not.toBe("summary");
+      const fullChecks = full.structuredContent?.result?.checks ?? [];
+      expect(fullChecks.some((check) => Object.keys(check.details ?? {}).length > 0)).toBe(true);
+    });
+  });
+
+  it("error envelope keeps structuredContent.result present (null) for uniform parsing (pm-l40h)", async () => {
+    await withTempPmPath(async (context) => {
+      const writes: string[] = [];
+      const write = vi.spyOn(process.stdout, "write").mockImplementation((chunk: unknown) => {
+        writes.push(String(chunk));
+        return true;
+      });
+      try {
+        await processRpcLine(
+          JSON.stringify({
+            jsonrpc: "2.0",
+            id: 71,
+            method: "tools/call",
+            params: { name: "pm_get", arguments: { path: context.pmPath, id: "pm-does-not-exist" } },
+          }),
+        );
+      } finally {
+        write.mockRestore();
+      }
+      const response = JSON.parse(writes.join("")) as {
+        result?: { isError?: boolean; structuredContent?: { result?: unknown; error?: unknown; code?: unknown } };
+      };
+      expect(response.result?.isError).toBe(true);
+      // `result` must always be present so a consumer can read structuredContent.result uniformly.
+      expect(response.result?.structuredContent).toHaveProperty("result", null);
+      expect(typeof response.result?.structuredContent?.error).toBe("string");
+      expect(typeof response.result?.structuredContent?.code).toBe("number");
+    });
   });
 
   it("warns on a typo'd top-level key but not on a clean call (pm-qxwu)", async () => {

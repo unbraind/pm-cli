@@ -1,0 +1,13 @@
+id: pm-g799
+title: "Fix: pm close/close-many hard-failed without a reason via a generic, non-actionable error (P0 never-block)"
+description: "governance.require_close_reason is enabled by default in all presets, so nearly every agent close hit a bare PmCliError that named the internal knob but never told the agent to pass --reason. Enriched both close.ts and close-many.ts errors with required/why/examples/nextSteps (incl. how to disable via pm config set governance-require-close-reason --policy disabled). Found by agent-UX audit (F1)."
+type: Issue
+status: closed
+priority: 1
+tags[3]: agent-ux,"area:cli",never-block
+created_at: "2026-06-07T17:03:25.100Z"
+updated_at: "2026-06-07T17:03:43.626Z"
+author: maintainer-agent
+parent: pm-mpbb
+close_reason: "Shipped: actionable close-reason guidance in close.ts + close-many.ts (verified end-to-end). Resolution: never-block error now lists --reason usage, examples, and how to disable the knob."
+body: ""

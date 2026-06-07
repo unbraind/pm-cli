@@ -1,0 +1,13 @@
+id: pm-7tvx
+title: "Fix MCP tool-count doc drift (18/21 -> 22, add pm_copy) and lock the claude-plugin smoke to the live tools/list count"
+description: "README said 18 MCP tools, plugin docs said 21, actual is 22 (pm_copy missing from every enumeration + the smoke required[] list). Corrected README, plugin README, CLAUDE_CODE_PLUGIN.md, pm-init.md, marketplace.json x2, plugin.json (also 3->4 subagents), and made the smoke assert tools.length === required.length. Found by docs/CI audit."
+type: Chore
+status: closed
+priority: 2
+tags[2]: "area:docs","area:mcp"
+created_at: "2026-06-07T17:03:25.851Z"
+updated_at: "2026-06-07T17:03:44.769Z"
+author: maintainer-agent
+parent: pm-u9d0
+close_reason: "Shipped: corrected all MCP tool-count docs to 22 (+pm_copy), fixed subagent count 3->4, and the smoke now asserts the live tools/list count. Code count was already locked at 22 by mcp-handshake."
+body: ""

@@ -14,6 +14,7 @@ import {
   setActiveExtensionServices,
 } from "../core/extensions/index.js";
 import { pathExists } from "../core/fs/fs-utils.js";
+import { resolvePmCliVersion } from "../core/packages/root.js";
 import { projectMutationResult } from "../core/output/mutation-projection.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -103,6 +104,10 @@ function resolvePmPackageRoot(): string {
 if (typeof process.env[PM_PACKAGE_ROOT_ENV] !== "string" || process.env[PM_PACKAGE_ROOT_ENV]?.trim().length === 0) {
   process.env[PM_PACKAGE_ROOT_ENV] = resolvePmPackageRoot();
 }
+
+// Reflect the real package.json version so agents/telemetry can identify the
+// build serving requests (was hard-coded "1.0.0"; see pm-2nvw).
+const PM_MCP_SERVER_VERSION = resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
 
 const TOOL_SCHEMA_BASE = {
   type: "object",
@@ -906,8 +911,21 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       );
     case "validate":
       return runValidate(options, global);
-    case "health":
-      return runHealth(global, options);
+    case "health": {
+      // Default to the compact `summary` projection for agents (ok + per-check
+      // status + warning samples; ~22x smaller than the full payload). Callers
+      // opt into detail with brief/summary/full or the deep remediation payload
+      // via full=true. Mirrors the compact-by-default list/search behavior (F2).
+      const healthOptions: Record<string, unknown> = { ...options };
+      if (
+        healthOptions.brief === undefined &&
+        healthOptions.summary === undefined &&
+        healthOptions.full === undefined
+      ) {
+        healthOptions.summary = true;
+      }
+      return runHealth(global, healthOptions as never);
+    }
     case "contracts":
       return runContracts(options, global);
     case "config":
@@ -1142,7 +1160,9 @@ function errorContent(error: unknown): Record<string, unknown> {
         text: JSON.stringify({ error: message, code }, null, 2),
       },
     ],
-    structuredContent: { error: message, code },
+    // Keep `result` present on the error envelope so consumers can read
+    // `structuredContent.result` uniformly across success and failure (pm-l40h).
+    structuredContent: { result: null, error: message, code },
   };
 }
 
@@ -1157,7 +1177,7 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
     return {
       protocolVersion: "2025-06-18",
       capabilities: { tools: {} },
-      serverInfo: { name: "pm-mcp", version: "1.0.0" },
+      serverInfo: { name: "pm-mcp", version: PM_MCP_SERVER_VERSION },
       instructions:
         "You have access to native pm CLI tools for git-based project management. " +
         "Use pm_context or pm_search before creating new work. " +

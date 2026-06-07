@@ -1,6 +1,4 @@
 #!/usr/bin/env node
-import fs from "node:fs";
-import path from "node:path";
 import { Command } from "commander";
 import {
   activateExtensions,
@@ -36,7 +34,7 @@ import {
   type ExtensionRendererRegistry,
 } from "../core/extensions/index.js";
 import { pathExists } from "../core/fs/fs-utils.js";
-import { resolvePmPackageRootFromModule } from "../core/packages/root.js";
+import { resolvePmCliVersion, resolvePmPackageRootFromModule } from "../core/packages/root.js";
 import {
   resolveItemTypeRegistry,
 } from "../core/item/type-registry.js";
@@ -1582,18 +1580,7 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
   }
 }
 
-function resolveCliVersion(): string {
-  try {
-    const packageJsonPath = path.join(resolvePmPackageRoot(), "package.json");
-    const raw = fs.readFileSync(packageJsonPath, "utf8");
-    const parsed = JSON.parse(raw) as { version?: unknown };
-    return typeof parsed.version === "string" ? parsed.version : "0.0.0";
-  } catch {
-    return "0.0.0";
-  }
-}
-
-const CLI_VERSION = resolveCliVersion();
+const CLI_VERSION = resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
 
 const program = new Command();
 program
