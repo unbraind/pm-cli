@@ -44,18 +44,10 @@ export function buildStarterExtensionScaffoldFiles(
     null,
     2,
   )}\n`;
-  // pm-fl0c B-1 (2026-05-28): emit the documented `defineExtension({...})`
-  // shape so the generated module gets full TypeScript narrowing on the
-  // `activate(api)` signature (matches docs/EXTENSIONS.md, docs/SDK.md and
-  // docs/examples/starter-extension/index.js). Codex P2 follow-up
-  // (PR #78 review): a bare `import "@unbrained/pm-cli/sdk"` cannot resolve
-  // in extension-only mode — there is no package.json with a dep on
-  // @unbrained/pm-cli, so the loader's `import(<file-url>)` would raise
-  // ERR_MODULE_NOT_FOUND. We therefore emit the typed shape ONLY in package
-  // mode (peerDependencies make the import resolvable from the package's
-  // own node_modules) and keep the import-free shape in extension-only
-  // mode, decorated with a JSDoc @param hint so editors that follow JSDoc
-  // still narrow the `api` parameter.
+  // Keep scaffolds dependency-light by default: even package mode can be
+  // installed before peer dependencies are materialized in the generated root.
+  // The JSDoc import preserves editor narrowing without forcing the runtime
+  // loader to resolve @unbrained/pm-cli/sdk from a freshly generated scaffold.
   const entrypoint = [
     '/** @param {import("@unbrained/pm-cli/sdk").ExtensionApi} api */',
     "export function activate(api) {",

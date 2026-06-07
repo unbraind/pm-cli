@@ -71,6 +71,7 @@ export interface InitCommandOptions {
   withPackages?: boolean;
   agentGuidance?: string;
   typePreset?: string;
+  force?: boolean;
 }
 
 /**
@@ -320,6 +321,57 @@ async function registerInitTypePreset(
   };
 }
 
+async function isLikelyWorkspaceRoot(candidate: string): Promise<boolean> {
+  const indicators = [
+    ".git",
+    "package.json",
+    "pnpm-workspace.yaml",
+    "AGENTS.md",
+    path.join(".agents", "pm"),
+  ];
+  for (const indicator of indicators) {
+    if (await pathExists(path.join(candidate, indicator))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+async function assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot: string, global: GlobalOptions, force: boolean): Promise<void> {
+  if (global.path === undefined || force) {
+    return;
+  }
+  if (await pathExists(path.join(pmRoot, "settings.json"))) {
+    return;
+  }
+  if (!(await isLikelyWorkspaceRoot(pmRoot))) {
+    return;
+  }
+  const nestedTracker = path.join(pmRoot, ".agents", "pm");
+  throw new PmCliError(
+    `Refusing to initialize tracker files directly in workspace root "${pmRoot}".`,
+    EXIT_CODE.USAGE,
+    {
+      code: "workspace_root_pm_path",
+      type: "urn:pm-cli:error:workspace_root_pm_path",
+      why: "--pm-path/--path points at the tracker storage directory itself, not the repository workspace. Point it at .agents/pm or pass --force if you intentionally want root-level tracker files.",
+      examples: [
+        `pm --pm-path ${nestedTracker} init --yes`,
+        "pm init --yes",
+        `pm --pm-path ${pmRoot} init --yes --force`,
+      ],
+      nextSteps: [
+        "Use --pm-path <repo>/.agents/pm for repository-local tracker storage.",
+        "Use PM_PATH only for sandboxed tests or explicit tracker roots.",
+        "Pass --force only when root-level tracker files are intentional.",
+      ],
+      recovery: {
+        next_best_command: `pm --pm-path ${nestedTracker} init --yes`,
+      },
+    },
+  );
+}
+
 async function runInitWizard(initialPrefix: string, telemetryDefault: boolean): Promise<{
   prefix: string;
   preset: BuiltinGovernancePreset;
@@ -366,6 +418,7 @@ export async function runInit(
 ): Promise<InitResult> {
   const cwd = process.cwd();
   const pmRoot = resolvePmRoot(cwd, global.path);
+  await assertExplicitTrackerPathIsNotWorkspaceRoot(pmRoot, global, options.force === true);
   const createdDirs: string[] = [];
   const warnings: string[] = [];
   let wizardUsed = false;

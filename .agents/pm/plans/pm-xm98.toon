@@ -1,0 +1,23 @@
+id: pm-xm98
+title: 2026-06-07 pm CLI ecosystem audit lanes
+description: "pm-yo3f: CLI/SDK/package/GitHub/observability audit with sub-agent lanes"
+type: Plan
+status: closed
+priority: 2
+tags: []
+created_at: "2026-06-07T08:15:48.718Z"
+updated_at: "2026-06-07T08:58:36.477Z"
+author: codex-broad-ecosystem-audit-20260607
+resolution: Completed and closed all audit plan lanes with evidence recorded on pm-yo3f.
+expected_result: All delegated audit lanes complete with tracker evidence and no open plan steps.
+actual_result: All four plan steps completed and pm-xm98 was closed/released after integration.
+close_reason: "Audit lane plan completed: all four sub-agent lanes completed with evidence on pm-yo3f; implementation and verification integrated by main agent."
+plan_mode: approved
+plan_scope: "pm-yo3f: CLI/SDK/package/GitHub/observability audit with sub-agent lanes"
+plan_harness: codex
+plan_steps[4]{id,order,title,status,created_at,updated_at,body,evidence,completed_at}:
+  plan-step-001,1,External package temp-project smoke,completed,"2026-06-07T08:15:58.680Z","2026-06-07T08:41:55.384Z","Discover current external pm packages, smoke install in temporary projects, and record compatibility or package-author SDK gaps on pm-yo3f.","External package smoke sub-agent: pnpm build passed; discovered 17 current npm packages via pnpm smoke:external-packages -- --discover-only --limit 25; full smoke pnpm smoke:external-packages -- --limit 25 --timeout-ms 180000 completed ok=true tested=17 failed=0 with install/doctor/contracts for all packages; project pm-changelog doctor clean and changelog actions invocable. Non-blocking doctor warnings observed in successful full run: pm-todos extension_command_handler_collision; pm-ts-starter and pm-starter output renderer/service override warnings. Duplicate focused rerun later timed out during installs under concurrent smoke/changelog processes, treated as environmental contention not compatibility failure.","2026-06-07T08:41:55.384Z"
+  plan-step-002,2,SDK and extension API review,completed,"2026-06-07T08:15:58.909Z","2026-06-07T08:22:52.837Z","Review public SDK exports, testing helpers, package creation ergonomics, and type-safety surfaces; record actionable findings on pm-yo3f.","SDK/API review complete. Evidence recorded on pm-yo3f by codex-sdk-review-20260607: SDK/package docs and tests reviewed; focused SDK/package tests passed (5 files, 73 tests); temp package-author smoke passed; findings are stale contracts snapshot missing init --force and low-risk package scaffold comment/docs-code mismatch around defineExtension vs import-free scaffold.","2026-06-07T08:22:52.837Z"
+  plan-step-003,3,Agent output and docs progressive-disclosure review,completed,"2026-06-07T08:15:59.143Z","2026-06-07T08:19:36.730Z","Review token-efficient CLI output, README/docs progressive disclosure, duplicated/legacy docs, and agent UX; record findings on pm-yo3f.","Docs/agent-UX review complete. Reviewed README, AGENTS, COMMANDS, CONFIGURATION, TESTING, EXTENSIONS, SDK. Removed duplicate registry-404 fallback paragraph in docs/EXTENSIONS.md, linked doc/test evidence to pm-yo3f, and verified with pm test pm-yo3f --run --progress (pnpm build + pnpm quality:docs-links passed).","2026-06-07T08:19:36.730Z"
+  plan-step-004,4,GitHub CI security observability review,completed,"2026-06-07T08:15:59.359Z","2026-06-07T08:24:00.589Z",Review gh issue/PR/check/security surfaces plus Sentry/telemetry gates; record findings on pm-yo3f.,"GitHub/observability sub-agent complete: no open PRs; issue #140 in scope; latest main CI red on changelog:pm:check stale CHANGELOG.md; CodeQL and Nightly green; pnpm audit/security scan clean; Sentry/telemetry gate passed with critical=0 high=0 telemetry error rate=2.07 missing rows=0; telemetry stack healthy with queue=0 consumers=1 and 17099 events/24h; local release-gate subset red due concurrent --path/--pm-path tests, no source files edited by this lane.","2026-06-07T08:24:00.589Z"
+body: ""

@@ -612,6 +612,7 @@ function extractCommandScopedOptions(
   delete scoped.json;
   delete scoped.quiet;
   delete scoped.path;
+  delete scoped.pmPath;
   delete scoped.noExtensions;
   delete scoped.extensions;
   delete scoped.profile;
@@ -1612,7 +1613,8 @@ program
   .option("--json", "Output JSON instead of TOON")
   .option("--quiet", "Suppress stdout output")
   .option("--no-changed-fields", "Omit the changed_fields array from mutation output (keeps changed_field_count)")
-  .option("--path <dir>", "Override PM path for this command")
+  .option("--pm-path <dir>", "Explicit tracker storage path for this command (preferred over --path)")
+  .option("--path <dir>", "Backward-compatible alias for --pm-path; this is the tracker storage path, not a workspace cwd")
   .option("--no-extensions", "Disable extension loading")
   .option("--no-pager", "Disable pager integration for help and long output")
   .option("--explain", "Render extended rationale and examples in help output")

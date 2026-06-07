@@ -292,7 +292,7 @@ describe("generateBashScript", () => {
   it("includes strict health flags in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--strict-directories --strict-exit --fail-on-warn --check-only --check-telemetry --no-refresh --refresh-vectors --verbose-stale-items --brief --summary --skip-vectors --skip-integrity --skip-drift --full --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help",
+      "--strict-directories --strict-exit --fail-on-warn --check-only --check-telemetry --no-refresh --refresh-vectors --verbose-stale-items --brief --summary --skip-vectors --skip-integrity --skip-drift --full --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help",
     );
   });
 
@@ -522,6 +522,7 @@ describe("generateZshScript", () => {
     const script = generateZshScript();
     expect(script).toContain("--json");
     expect(script).toContain("--quiet");
+    expect(script).toContain("--pm-path");
     expect(script).toContain("--path");
     expect(script).toContain("--no-extensions");
     expect(script).toContain("--no-pager");
@@ -635,6 +636,7 @@ describe("generateFishScript", () => {
     const script = generateFishScript();
     expect(script).toContain("-l json");
     expect(script).toContain("-l quiet");
+    expect(script).toContain("-l pm-path");
     expect(script).toContain("-l path");
     expect(script).toContain("-l no-extensions");
     expect(script).toContain("-l profile");

@@ -335,6 +335,7 @@ export function registerSetupCommands(program: Command): void {
     .option("--agent-guidance <mode>", "Agent guidance mode: ask|add|skip|status")
     .option("--type-preset <name>", "Register domain item types during init: agile|ops|research")
     .option("--with-packages", "Install all bundled first-party packages during initialization")
+    .option("--force", "Allow initializing tracker files directly in a directory that looks like a workspace root")
     .option("--verbose", "Include the full resolved settings tree in the output (default output is a concise summary)")
     .description("Initialize pm storage and defaults for the current workspace.")
     .action(async (prefix: string | undefined, options: Record<string, unknown>, command) => {
@@ -351,6 +352,7 @@ export function registerSetupCommands(program: Command): void {
           agentGuidance: typeof options.agentGuidance === "string" ? options.agentGuidance : undefined,
           typePreset: typeof options.typePreset === "string" ? options.typePreset : undefined,
           withPackages: options.withPackages === true,
+          force: options.force === true,
         },
       );
       // Default (toon) output is a concise summary to minimize agent token cost.

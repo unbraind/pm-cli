@@ -78,7 +78,11 @@ export function getGlobalOptions(command: Command): GlobalOptions {
     json: opts.json === true ? true : undefined,
     quiet: Boolean(opts.quiet),
     noChangedFields: opts.changedFields === false,
-    path: typeof opts.path === "string" ? opts.path : undefined,
+    path: typeof opts.pmPath === "string"
+      ? opts.pmPath
+      : typeof opts.path === "string"
+        ? opts.path
+        : undefined,
     noExtensions: opts.extensions === false,
     noPager: Boolean(opts.noPager),
     profile: Boolean(opts.profile),

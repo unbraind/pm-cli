@@ -4,32 +4,41 @@ import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 function parseBootstrapPathToken(
   token: string,
   next: string | undefined,
-): { consumed: number; pathValue?: string } | null {
-  if (token === "--path") {
+): { consumed: number; pathValue?: string; preferred: boolean } | null {
+  if (token === "--path" || token === "--pm-path") {
     if (typeof next === "string" && next.length > 0) {
       return {
         consumed: 2,
         pathValue: next,
+        preferred: token === "--pm-path",
       };
     }
     return {
       consumed: 1,
+      preferred: token === "--pm-path",
     };
   }
 
-  if (!token.startsWith("--path=")) {
+  const inlinePrefix = token.startsWith("--path=")
+    ? "--path="
+    : token.startsWith("--pm-path=")
+      ? "--pm-path="
+      : undefined;
+  if (!inlinePrefix) {
     return null;
   }
 
-  const value = token.slice("--path=".length);
+  const value = token.slice(inlinePrefix.length);
   if (value.length > 0) {
     return {
       consumed: 1,
       pathValue: value,
+      preferred: inlinePrefix === "--pm-path=",
     };
   }
   return {
     consumed: 1,
+    preferred: inlinePrefix === "--pm-path=",
   };
 }
 
@@ -42,7 +51,8 @@ export interface BootstrapGlobalOptions {
 }
 
 export function parseBootstrapGlobalOptions(argv: string[]): BootstrapGlobalOptions {
-  let pathValue: string | undefined;
+  let legacyPathValue: string | undefined;
+  let pmPathValue: string | undefined;
   let noExtensions = false;
   let noPager = false;
   let json = false;
@@ -76,7 +86,11 @@ export function parseBootstrapGlobalOptions(argv: string[]): BootstrapGlobalOpti
     const parsedPath = parseBootstrapPathToken(token, argv[index + 1]);
     if (parsedPath) {
       if (parsedPath.pathValue !== undefined) {
-        pathValue = parsedPath.pathValue;
+        if (parsedPath.preferred) {
+          pmPathValue = parsedPath.pathValue;
+        } else {
+          legacyPathValue = parsedPath.pathValue;
+        }
       }
       index += parsedPath.consumed;
       continue;
@@ -84,7 +98,7 @@ export function parseBootstrapGlobalOptions(argv: string[]): BootstrapGlobalOpti
     index += 1;
   }
   return {
-    path: pathValue,
+    path: pmPathValue ?? legacyPathValue,
     noExtensions,
     noPager,
     json,
@@ -111,11 +125,11 @@ export function stripGlobalBootstrapTokens(argv: string[]): string[] {
       index += 1;
       continue;
     }
-    if (token === "--path") {
+    if (token === "--path" || token === "--pm-path") {
       index += 2;
       continue;
     }
-    if (token.startsWith("--path=")) {
+    if (token.startsWith("--path=") || token.startsWith("--pm-path=")) {
       index += 1;
       continue;
     }
@@ -182,12 +196,13 @@ function findCommandTokenIndex(argv: string[]): number | undefined {
     if (token === "--") {
       return undefined;
     }
-    if (token === "--path") {
+    if (token === "--path" || token === "--pm-path") {
       index += 1;
       continue;
     }
     if (
       token.startsWith("--path=") ||
+      token.startsWith("--pm-path=") ||
       token === "--json" ||
       token === "--quiet" ||
       token === "--no-extensions" ||
@@ -538,9 +553,10 @@ function normalizeLongOptionToken(
 
 // Global option flags whose value may legitimately begin with "--" (commander
 // accepts such values). Their value token must not be reinterpreted as a list
-// flag during coalescing. `--path <dir>` is the documented case; other globals
+// flag during coalescing. `--pm-path <dir>` and its legacy `--path <dir>`
+// alias are the documented cases; other globals
 // (--json/--quiet/--no-extensions/--no-pager/--profile) are boolean.
-const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>(["--path"]);
+const GLOBAL_VALUE_CONSUMING_FLAGS = new Set<string>(["--pm-path", "--path"]);
 
 function splitCanonicalListToken(token: string): { flag: string; inlineValue?: string } | null {
   if (!token.startsWith("--")) {

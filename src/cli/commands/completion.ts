@@ -76,13 +76,13 @@ const COMPLETION_FLAGS = toCompletionFlagString(COMPLETION_FLAG_CONTRACTS);
 const COMPLETION_SHELL_CHOICES = `${COMPLETION_FLAGS} bash zsh fish`;
 const GUIDE_TOPIC_CHOICES = joinCompletionValues(listGuideTopicIds());
 
-const MUTATION_FLAGS = "--author --message --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help";
-const DELETE_MUTATION_FLAGS = "--dry-run --author --message --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help";
-const CLOSE_MUTATION_FLAGS = "--author --message --validate-close --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help";
+const MUTATION_FLAGS = "--author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help";
+const DELETE_MUTATION_FLAGS = "--dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help";
+const CLOSE_MUTATION_FLAGS = "--author --message --validate-close --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help";
 const RELEASE_MUTATION_FLAGS =
-  "--allow-audit-release --author --message --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help";
+  "--allow-audit-release --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help";
 
-const GLOBAL_FLAGS = GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [entry.short, entry.flag])
+const GLOBAL_FLAGS = GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [entry.short, entry.flag, ...(entry.aliases ?? [])])
   .filter((value): value is string => Boolean(value))
   .join(" ");
 
@@ -317,7 +317,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(AGGREGATE_FLAGS)})`,
     "      ;;",
     "    dedupe-audit)",
-    `      COMPREPLY=(${compgen("--mode --limit --threshold --status --type --tag --priority --deadline-before --deadline-after --assignee --assignee-filter --parent --sprint --release --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--mode --limit --threshold --status --type --tag --priority --deadline-before --deadline-after --assignee --assignee-filter --parent --sprint --release --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    create)",
     `      COMPREPLY=(${compgen(createFlags)})`,
@@ -347,34 +347,34 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(searchFlags)})`,
     "      ;;",
     "    reindex)",
-    `      COMPREPLY=(${compgen("--mode --progress --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--mode --progress --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    init)",
-    `      COMPREPLY=(${compgen(`${INIT_FLAGS} --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help`)})`,
+    `      COMPREPLY=(${compgen(`${INIT_FLAGS} --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help`)})`,
     "      ;;",
     "    config)",
-    `      COMPREPLY=(${compgen("--criterion --clear-criteria --format --policy --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--criterion --clear-criteria --format --policy --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    extension)",
-    `      COMPREPLY=(${compgen("init scaffold install uninstall explore manage reload doctor adopt adopt-all activate deactivate --init --scaffold --install --uninstall --explore --manage --reload --watch --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("init scaffold install uninstall explore manage reload doctor adopt adopt-all activate deactivate --init --scaffold --install --uninstall --explore --manage --reload --watch --doctor --adopt --adopt-all --activate --deactivate --project --local --global --gh --github --ref --detail --trace --runtime-probe --fix-managed-state --strict-exit --fail-on-warn --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    comments)",
-    `      COMPREPLY=(${compgen("--add --stdin --file --limit --author --message --allow-audit-comment --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --stdin --file --limit --author --message --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    comments-audit)",
-    `      COMPREPLY=(${compgen("--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --limit --full-history --latest --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--status --type --tag --priority --parent --sprint --release --assignee --assignee-filter --limit-items --limit --full-history --latest --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    notes)",
-    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-note --allow-audit-comment --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-note --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    learnings)",
-    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-learning --allow-audit-comment --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --limit --author --message --allow-audit-learning --allow-audit-comment --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    files)",
-    `      COMPREPLY=(${compgen("discover --add --add-glob --remove --migrate --list --apply --note --append-stable --validate-paths --audit --author --message --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("discover --add --add-glob --remove --migrate --list --apply --note --append-stable --validate-paths --audit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    docs)",
-    `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --validate-paths --audit --author --message --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --validate-paths --audit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    append)",
     `      COMPREPLY=(${compgen(APPEND_FLAGS)})`,
@@ -383,37 +383,37 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(DEPS_FLAGS)})`,
     "      ;;",
     "    test)",
-    `      COMPREPLY=(${compgen("--add --remove --run --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --author --message --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --remove --run --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    test-all)",
-    `      COMPREPLY=(${compgen("--status --limit --offset --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--status --limit --offset --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    test-runs)",
-    `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    validate)",
-    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --verbose-diagnostics --strict-exit --fail-on-warn --fix-hints --check-history-drift --check-command-references --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --verbose-diagnostics --strict-exit --fail-on-warn --fix-hints --check-history-drift --check-command-references --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    health)",
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
     "      ;;",
     "    history)",
-    `      COMPREPLY=(${compgen("--limit --compact --full --diff --field --verify --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--limit --compact --full --diff --field --verify --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    history-compact)",
-    `      COMPREPLY=(${compgen("--before --dry-run --author --message --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--before --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    get)",
     `      COMPREPLY=(${compgen(GET_FLAGS)})`,
     "      ;;",
     "    history-redact)",
-    `      COMPREPLY=(${compgen("--literal --regex --replacement --dry-run --author --message --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--literal --regex --replacement --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    history-repair)",
-    `      COMPREPLY=(${compgen("--dry-run --author --message --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    schema)",
-    `      COMPREPLY=(${compgen("list show add-type remove-type add-status remove-status --description --default-status --folder --alias --role --order --author --force --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("list show add-type remove-type add-status remove-status --description --default-status --folder --alias --role --order --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    plan)",
     `      COMPREPLY=(${compgen(`${PLAN_SUBCOMMANDS_LIST} ${PLAN_FLAGS}`)})`,
@@ -425,10 +425,10 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(CONTRACTS_FLAGS)})`,
     "      ;;",
     "    gc)",
-    `      COMPREPLY=(${compgen("--dry-run --scope --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--dry-run --scope --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    stats)",
-    `      COMPREPLY=(${compgen("--storage --json --quiet --no-changed-fields --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--storage --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    close|close-task)",
     `      COMPREPLY=(${compgen(CLOSE_MUTATION_FLAGS)})`,
@@ -583,7 +583,8 @@ _pm() {
     '--json[Output JSON instead of TOON]' \\
     '--quiet[Suppress stdout output]' \\
     '--no-changed-fields[Omit changed_fields array from mutation output]' \\
-    '--path[Override PM path for this command]:path:_files -/' \\
+    '--pm-path[Explicit tracker storage path for this command]:path:_files -/' \\
+    '--path[Compatibility alias for --pm-path]:path:_files -/' \\
     '--no-extensions[Disable extension loading]' \\
     '--no-pager[Disable pager integration for help and long output]' \\
     '--profile[Print deterministic timing diagnostics]' \\
@@ -622,7 +623,8 @@ _pm() {
             '--stream[Emit line-delimited JSON rows (requires --json)]' \\
 ${zshListRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]' \\
-            '--path[Override PM path]:path:_files -/'
+            '--pm-path[Explicit tracker storage path]:path:_files -/' \\
+            '--path[Compatibility alias for --pm-path]:path:_files -/'
           ;;
         aggregate)
           _arguments \\
@@ -1468,6 +1470,7 @@ complete -c pm -f
 complete -c pm -l json -d 'Output JSON instead of TOON'
 complete -c pm -l quiet -d 'Suppress stdout output'
 complete -c pm -l no-changed-fields -d 'Omit changed_fields array from mutation output'
+complete -c pm -l pm-path -d 'Explicit tracker storage path for this command' -r
 complete -c pm -l path -d 'Override PM path for this command' -r
 complete -c pm -l no-extensions -d 'Disable extension loading'
 complete -c pm -l profile -d 'Print deterministic timing diagnostics'
