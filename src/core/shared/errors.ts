@@ -4,6 +4,12 @@ export interface PmCliErrorRecoveryPayload {
   provided_fields?: string[];
   missing?: string[];
   suggested_retry?: string;
+  fallback_candidates?: Array<{
+    source: string;
+    command: string;
+    reason: string;
+  }>;
+  next_best_command?: string;
 }
 
 export interface PmCliErrorContext {

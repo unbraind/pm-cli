@@ -10,6 +10,7 @@ import { EXIT_CODE } from "../../../core/shared/constants.js";
 import { PmCliError } from "../../../core/shared/errors.js";
 import { normalizeExtensionNameForMatch } from "./shared.js";
 import type {
+  ExtensionCollisionPlan,
   ExtensionCommandOptions,
   ExtensionDoctorDetailMode,
   ExtensionScope,
@@ -166,6 +167,7 @@ function isExtensionLayer(value: string | undefined): value is "project" | "glob
 
 interface RegistrationCollisionWarningParts {
   code: string;
+  surface: string;
   winner: { layer: "project" | "global"; name: string };
   displaced: { layer: "project" | "global"; name: string };
 }
@@ -192,6 +194,7 @@ function parseRegistrationCollisionWarning(warning: string): RegistrationCollisi
   }
   return {
     code,
+    surface: parts.slice(1, -4).join(":") || "global",
     winner: { layer: winnerLayer, name: winnerName },
     displaced: { layer: displacedLayer, name: displacedName },
   };
@@ -225,6 +228,74 @@ export function buildRegistrationCollisionRemediation(
     `Deactivate one conflicting package with ${commands.deactivate}, ` +
     `or scope registration surfaces in extensions.policy.extension_overrides, then rerun ${commands.doctor}.`
   );
+}
+
+function buildRegistrationCollisionPlan(
+  scope: ExtensionScope,
+  warnings: string[],
+  extensions: ManagedExtensionSummary[],
+  options: ExtensionCommandOptions,
+): ExtensionCollisionPlan | undefined {
+  const collisions = warnings
+    .map((warning) => parseRegistrationCollisionWarning(warning))
+    .filter((entry): entry is RegistrationCollisionWarningParts => entry !== null)
+    .sort((left, right) =>
+      `${left.code}:${left.surface}:${left.winner.name}:${left.displaced.name}`.localeCompare(
+        `${right.code}:${right.surface}:${right.winner.name}:${right.displaced.name}`,
+      ),
+    );
+  if (collisions.length === 0) {
+    return undefined;
+  }
+  const scopeFlag = scope === "global" ? "--global" : "--project";
+  const deactivatePrefix = lifecycleFlagCommand(options, "deactivate");
+  const doctorCommand = `${lifecycleFlagCommand(options, "doctor")} ${scopeFlag} --detail deep --trace`;
+  const extensionByName = new Map(extensions.map((entry) => [normalizeExtensionNameForMatch(entry.name), entry]));
+  const affectedByName = new Map<string, number>();
+  for (const collision of collisions) {
+    for (const name of [collision.winner.name, collision.displaced.name]) {
+      const normalizedName = normalizeExtensionNameForMatch(name);
+      affectedByName.set(normalizedName, (affectedByName.get(normalizedName) ?? 0) + 1);
+    }
+  }
+  const remediationCandidates = [...affectedByName.entries()]
+    .map(([normalizedName, affectedCollisions]) => {
+      const extension = extensionByName.get(normalizedName);
+      const extensionName = extension?.name ?? normalizedName;
+      const commandPaths = extension?.command_paths ?? [];
+      const actionPaths = extension?.action_paths ?? [];
+      return {
+        action: "deactivate" as const,
+        extension: extensionName,
+        command: `${deactivatePrefix} ${extensionName} ${scopeFlag}`,
+        affected_collisions: affectedCollisions,
+        feature_loss: {
+          command_paths: [...commandPaths].sort((left, right) => left.localeCompare(right)),
+          action_paths: [...actionPaths].sort((left, right) => left.localeCompare(right)),
+        },
+      };
+    })
+    .sort((left, right) => {
+      const affectedDelta = right.affected_collisions - left.affected_collisions;
+      if (affectedDelta !== 0) {
+        return affectedDelta;
+      }
+      const leftSurfaceCount = left.feature_loss.command_paths.length + left.feature_loss.action_paths.length;
+      const rightSurfaceCount = right.feature_loss.command_paths.length + right.feature_loss.action_paths.length;
+      if (leftSurfaceCount !== rightSurfaceCount) {
+        return leftSurfaceCount - rightSurfaceCount;
+      }
+      return left.extension.localeCompare(right.extension);
+    });
+
+  return {
+    status: "conflicts_detected",
+    collision_count: collisions.length,
+    extension_count: affectedByName.size,
+    next_best_command: doctorCommand,
+    collisions,
+    remediation_candidates: remediationCandidates,
+  };
 }
 
 export function classifyDoctorLoadFailureWarnings(loadFailures: Array<{ name: string; error: string }>): string[] {
@@ -394,6 +465,7 @@ export function buildExtensionTriageSummary(
       );
     }
   }
+  const collisionPlan = buildRegistrationCollisionPlan(scope, normalizedWarnings, extensions, options);
   if (updateHealthPartial) {
     remediation.push(
       `Update-check coverage is partial because unmanaged extensions need adoption. Adopt existing installs via ${lifecycleFlagCommand(options, "manage")} ${scopeFlag} --fix-managed-state (or ${lifecycleFlagCommand(options, "adopt-all")} ${scopeFlag}, ${lifecycleFlagCommand(options, "adopt")} <name> ${scopeFlag}, or reinstall via ${lifecycleFlagCommand(options, "install")} ${scopeFlag} <source>).`,
@@ -439,6 +511,7 @@ export function buildExtensionTriageSummary(
     update_check_failed_total: updateCheckFailedTotal,
     top_warnings: effectiveWarnings.slice(0, 8),
     remediation,
+    ...(collisionPlan ? { collision_plan: collisionPlan } : {}),
   };
 }
 

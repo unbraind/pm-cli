@@ -56,6 +56,11 @@ pm package doctor --project --detail deep --trace
 pm github validate --repo owner/repo
 ```
 
+If `npm:<name>` returns a registry 404, JSON error output includes a compact
+recovery bundle with `fallback_candidates` and `next_best_command`. For
+unpublished first-party packages, the first fallback is the canonical GitHub
+source, for example `pm install --project github.com/unbraind/<name>`.
+
 For `pm-github`, run `pm github validate --repo owner/repo` before mutating commands; write paths require `GITHUB_TOKEN`/`GH_TOKEN` or `gh auth login`.
 
 For ecosystem maintenance, use the reusable external package smoke harness after
@@ -281,6 +286,11 @@ pm package doctor --project --detail deep --trace
 pm package deactivate <conflicting-package> --project
 pm package doctor --project --strict-exit
 ```
+
+Doctor JSON also includes `triage.collision_plan` when collisions are present.
+The plan groups the conflicting surfaces and ranks deterministic deactivation
+candidates with estimated command/action feature loss, so agents can choose the
+smallest useful remediation without rereading the full warning stream.
 
 For production stacks, keep broad demo/starter packages separate from packages that own real workflow behavior, or constrain registration surfaces through `extensions.policy.extension_overrides`.
 

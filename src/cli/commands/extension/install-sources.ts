@@ -185,6 +185,63 @@ async function runNpmCommand(args: string[], cwd?: string): Promise<string> {
   }
 }
 
+function npmPackageNameFromSpec(spec: string): string {
+  const trimmed = spec.trim();
+  const withoutAlias = trimmed.includes("@file:") ? trimmed.slice(0, trimmed.lastIndexOf("@file:")) : trimmed;
+  if (withoutAlias.startsWith("@")) {
+    const scoped = withoutAlias.match(/^(@[^/@\s]+\/[^/@\s]+)/);
+    return scoped?.[1] ?? withoutAlias;
+  }
+  const unscoped = withoutAlias.match(/^([^/@\s]+)/);
+  return unscoped?.[1] ?? withoutAlias;
+}
+
+function isNpmNotFoundError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("npm err! code e404") ||
+    normalized.includes("404 not found") ||
+    normalized.includes("is not in this registry") ||
+    normalized.includes("not found")
+  );
+}
+
+function buildNpmNotFoundRecovery(spec: string): {
+  message: string;
+  context: ConstructorParameters<typeof PmCliError>[2];
+} {
+  const packageName = npmPackageNameFromSpec(spec);
+  const repoName = packageName.split("/").at(-1) ?? packageName;
+  const githubSource = `github.com/unbraind/${repoName}`;
+  const nextBestCommand = `pm install --project ${githubSource}`;
+  return {
+    message: `npm package "${spec}" was not found in the registry. If this is an unpublished first-party pm package, install its GitHub repository instead.`,
+    context: {
+      code: "npm_package_not_found",
+      required: "Use an install source that exists, or publish the npm package before installing it with npm:<name>.",
+      why: "Classifying npm 404s avoids repeated registry retries and gives agents a deterministic fallback path.",
+      examples: [nextBestCommand, `pm package catalog --project --json`],
+      nextSteps: [
+        `Try ${nextBestCommand} if the repository exists.`,
+        "Use pm package catalog --project --json to inspect bundled package aliases before installing.",
+      ],
+      recovery: {
+        attempted_command: `pm install --project npm:${spec}`,
+        normalized_args: ["install", "--project", `npm:${spec}`],
+        fallback_candidates: [
+          {
+            source: githubSource,
+            command: nextBestCommand,
+            reason: "canonical first-party GitHub repository fallback for unpublished pm packages",
+          },
+        ],
+        next_best_command: nextBestCommand,
+      },
+    },
+  };
+}
+
 async function resolveLocalNpmPackagePath(spec: string): Promise<string | null> {
   if (path.isAbsolute(spec) || spec.startsWith(".") || spec.startsWith("..")) {
     const absolutePath = path.resolve(process.cwd(), spec);
@@ -315,6 +372,10 @@ async function resolveNpmSourceDirectory(source: NpmInstallSource): Promise<{
     };
   } catch (error: unknown) {
     await fs.rm(tempRoot, { recursive: true, force: true });
+    if (isNpmNotFoundError(error)) {
+      const recovery = buildNpmNotFoundRecovery(source.spec);
+      throw new PmCliError(recovery.message, EXIT_CODE.NOT_FOUND, recovery.context);
+    }
     throw error;
   }
 }

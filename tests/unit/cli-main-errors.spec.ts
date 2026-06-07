@@ -30,6 +30,41 @@ describe("CLI main error helpers", () => {
     expect(wrapped.exitCode).toBe(EXIT_CODE.USAGE);
   });
 
+  it("preserves command-specific fallback recovery while adding invocation context", () => {
+    const context = _testOnly.buildPmCliRecoveryContext(
+      {
+        code: "npm_package_not_found",
+        recovery: {
+          attempted_command: "pm install --project npm:pm-brief",
+          normalized_args: ["install", "--project", "npm:pm-brief"],
+          fallback_candidates: [
+            {
+              source: "github.com/unbraind/pm-brief",
+              command: "pm install --project github.com/unbraind/pm-brief",
+              reason: "canonical first-party GitHub repository fallback",
+            },
+          ],
+          next_best_command: "pm install --project github.com/unbraind/pm-brief",
+        },
+      },
+      ["--json", "install", "npm:pm-brief", "--project"],
+      "npm package \"pm-brief\" was not found in the registry.",
+    );
+
+    expect(context.recovery).toMatchObject({
+      attempted_command: "pm install --project npm:pm-brief",
+      normalized_args: ["install", "--project", "npm:pm-brief"],
+      provided_fields: ["--json", "--project"],
+      fallback_candidates: [
+        {
+          source: "github.com/unbraind/pm-brief",
+          command: "pm install --project github.com/unbraind/pm-brief",
+        },
+      ],
+      next_best_command: "pm install --project github.com/unbraind/pm-brief",
+    });
+  });
+
   it("keeps expected retry errors off the synchronous Sentry path by default", () => {
     const previous = process.env.PM_SENTRY_CAPTURE_EXPECTED_ERRORS;
     try {

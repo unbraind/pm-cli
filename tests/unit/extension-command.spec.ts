@@ -854,6 +854,26 @@ describe("extension command runtime", () => {
     expect(shouldRunNpmCommandInShell("linux")).toBe(false);
   });
 
+  it("classifies missing npm package installs with deterministic fallback recovery", async () => {
+    const source = parseExtensionInstallSource("npm:pm-definitely-missing-for-fallback-test-zzzzzz");
+    await expect(resolveInstallSource(source)).rejects.toMatchObject({
+      exitCode: EXIT_CODE.NOT_FOUND,
+      context: {
+        code: "npm_package_not_found",
+        recovery: {
+          next_best_command:
+            "pm install --project github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
+          fallback_candidates: [
+            {
+              source: "github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
+              command: "pm install --project github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
+            },
+          ],
+        },
+      },
+    });
+  });
+
   it("installs, explores, manages, toggles activation, and uninstalls a local extension", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "sample-source-ext");
@@ -1562,6 +1582,29 @@ describe("extension command runtime", () => {
     expect(summary.remediation.join(" ")).not.toContain("Conflicting extensions: project");
     expect(summary.remediation.join(" ")).toContain("pm package --deactivate <name> --project");
     expect(summary.remediation.join(" ")).toContain("pm package --doctor --project --detail deep --trace");
+    expect(summary.collision_plan).toMatchObject({
+      status: "conflicts_detected",
+      collision_count: 4,
+      extension_count: 2,
+      next_best_command: "pm package --doctor --project --detail deep --trace",
+      remediation_candidates: [
+        {
+          action: "deactivate",
+          extension: "pm-starter",
+          command: "pm package --deactivate pm-starter --project",
+          affected_collisions: 4,
+        },
+        {
+          action: "deactivate",
+          extension: "pm-ts-starter",
+          command: "pm package --deactivate pm-ts-starter --project",
+          affected_collisions: 4,
+        },
+      ],
+    });
+    expect(summary.collision_plan?.collisions.map((entry) => entry.surface)).toEqual(
+      expect.arrayContaining(["acme:sync", "json", "global"]),
+    );
   });
 
   it("reports extension governance policy diagnostics in doctor output", async () => {
