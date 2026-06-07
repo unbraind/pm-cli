@@ -28,8 +28,18 @@ describe("parseBootstrapGlobalOptions", () => {
     expect(result.path).toBe("/tmp/pm");
   });
 
+  it("parses preferred --pm-path with space-separated value", () => {
+    const result = parseBootstrapGlobalOptions(["--pm-path", "/tmp/pm"]);
+    expect(result.path).toBe("/tmp/pm");
+  });
+
   it("parses --path= inline syntax", () => {
     const result = parseBootstrapGlobalOptions(["--path=/custom/dir"]);
+    expect(result.path).toBe("/custom/dir");
+  });
+
+  it("parses preferred --pm-path= inline syntax", () => {
+    const result = parseBootstrapGlobalOptions(["--pm-path=/custom/dir"]);
     expect(result.path).toBe("/custom/dir");
   });
 
@@ -57,6 +67,11 @@ describe("parseBootstrapGlobalOptions", () => {
     expect(result.json).toBe(true);
     expect(result.path).toBe("/foo");
   });
+
+  it("prefers --pm-path over legacy --path regardless of argument order", () => {
+    expect(parseBootstrapGlobalOptions(["--pm-path", "/preferred", "--path", "/legacy"]).path).toBe("/preferred");
+    expect(parseBootstrapGlobalOptions(["--path", "/legacy", "--pm-path", "/preferred"]).path).toBe("/preferred");
+  });
 });
 
 describe("stripGlobalBootstrapTokens", () => {
@@ -71,12 +86,19 @@ describe("stripGlobalBootstrapTokens", () => {
       "--explain",
       "--path",
       "/tmp",
+      "--pm-path",
+      "/tmp/pm",
     ]);
     expect(result).toEqual(["list"]);
   });
 
   it("strips --path= inline syntax", () => {
     const result = stripGlobalBootstrapTokens(["create", "--path=/foo", "--title", "hello"]);
+    expect(result).toEqual(["create", "--title", "hello"]);
+  });
+
+  it("strips --pm-path= inline syntax", () => {
+    const result = stripGlobalBootstrapTokens(["create", "--pm-path=/foo", "--title", "hello"]);
     expect(result).toEqual(["create", "--title", "hello"]);
   });
 
@@ -132,6 +154,7 @@ describe("parseBootstrapCommandName", () => {
   it("extracts command name skipping global flags", () => {
     expect(parseBootstrapCommandName(["--json", "list"])).toBe("list");
     expect(parseBootstrapCommandName(["--path", "/foo", "search"])).toBe("search");
+    expect(parseBootstrapCommandName(["--pm-path", "/foo", "search"])).toBe("search");
     expect(parseBootstrapCommandName(["create"])).toBe("create");
   });
 
@@ -370,8 +393,9 @@ describe("normalizeBootstrapInvocation", () => {
   });
 
   it("does not reinterpret a --path value beginning with -- as a list flag (pm-cf1u, codex P2)", () => {
-    // `--path` accepts values starting with "--"; coalescing must not treat the
-    // value as a list flag nor swallow the following command token.
+    // `--path` is normalized to `--pm-path`, but still accepts values starting
+    // with "--"; coalescing must not treat the value as a list flag nor swallow
+    // the following command token.
     const normalized = normalizeBootstrapInvocation([
       "--path",
       "--tags",
@@ -383,7 +407,23 @@ describe("normalizeBootstrapInvocation", () => {
       "--tags",
       "b",
     ]);
-    expect(normalized.argv).toEqual(["--path", "--tags", "create", "issue", "X", "--tags=a,b"]);
+    expect(normalized.argv).toEqual(["--pm-path", "--tags", "create", "issue", "X", "--tags=a,b"]);
+    expect(normalized.commandName).toBe("create");
+  });
+
+  it("does not reinterpret a --pm-path value beginning with -- as a list flag", () => {
+    const normalized = normalizeBootstrapInvocation([
+      "--pm-path",
+      "--tags",
+      "create",
+      "issue",
+      "X",
+      "--tags",
+      "a",
+      "--tags",
+      "b",
+    ]);
+    expect(normalized.argv).toEqual(["--pm-path", "--tags", "create", "issue", "X", "--tags=a,b"]);
     expect(normalized.commandName).toBe("create");
   });
 

@@ -2616,6 +2616,9 @@
           "flag": "--with-packages"
         },
         {
+          "flag": "--force"
+        },
+        {
           "flag": "--verbose"
         }
       ],
@@ -7107,6 +7110,10 @@
           },
           "defaults": {
             "description": "Use non-interactive setup defaults during initialization.",
+            "type": "boolean"
+          },
+          "force": {
+            "description": "Force.",
             "type": "boolean"
           },
           "json": {

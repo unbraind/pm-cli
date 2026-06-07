@@ -54,7 +54,7 @@ export PM_AUTHOR=<stable-agent-id>
 
 Use `PM_CMD=pm` only after `pm` clearly resolves to this checkout's current build. Otherwise run `node dist/cli.js` from the repository root.
 
-For real repository tracking, do not override `PM_PATH`. For tests and dogfood runs, use sandboxed `PM_PATH` and `PM_GLOBAL_PATH`; prefer `node scripts/run-tests.mjs ...` because it sets them automatically.
+For real repository tracking, do not override `PM_PATH`. If a script must target a tracker explicitly, prefer `--pm-path <repo>/.agents/pm`; `--path` is only a backward-compatible tracker-root alias, not a workspace/cwd flag. For tests and dogfood runs, use sandboxed `PM_PATH` and `PM_GLOBAL_PATH`; prefer `node scripts/run-tests.mjs ...` because it sets them automatically.
 
 <!-- pm-cli:agent-guidance:start:v1 -->
 ## pm Workflow Quickstart

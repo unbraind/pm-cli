@@ -305,6 +305,19 @@ describe("contracts command runtime", () => {
     );
   });
 
+  it("accepts init force in the action schema", async () => {
+    const result = await runContracts(
+      {
+        action: "init",
+        schemaOnly: true,
+      },
+      GLOBAL_OPTIONS,
+    );
+    const initSchema = (result.schema?.oneOf ?? [])[0] as { properties?: Record<string, unknown> } | undefined;
+
+    expect(initSchema?.properties).toHaveProperty("force");
+  });
+
   it("emits a usable plan action schema for strict clients", async () => {
     const result = await runContracts(
       {

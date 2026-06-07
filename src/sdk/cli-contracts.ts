@@ -167,7 +167,7 @@ export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--json" },
   { flag: "--quiet" },
   { flag: "--no-changed-fields" },
-  { flag: "--path" },
+  { flag: "--pm-path", aliases: ["--path"] },
   { flag: "--no-extensions" },
   { flag: "--no-pager" },
   { flag: "--profile" },
@@ -430,6 +430,7 @@ export const INIT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--author" },
   { flag: "--agent-guidance" },
   { flag: "--with-packages" },
+  { flag: "--force" },
   { flag: "--verbose" },
 ];
 
@@ -1426,7 +1427,9 @@ export function toCompletionFlagString(flagContracts: CliFlagContract[], include
   const all = includeGlobal
     ? [
         ...scoped,
-        ...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [entry.short, entry.flag]).filter((value): value is string => Boolean(value)),
+        ...SUBCOMMAND_GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [entry.short, entry.flag, ...(entry.aliases ?? [])]).filter(
+          (value): value is string => Boolean(value),
+        ),
       ]
     : scoped;
   return normalizeUniqueStringList(all).join(" ");
@@ -1536,7 +1539,7 @@ const SEARCH_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS = ["author", "message", "force"];
 
 const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = {
-  init: { optional: ["prefix", "preset", "typePreset", "defaults", "author", "agentGuidance", "withPackages", "verbose"] },
+  init: { optional: ["prefix", "preset", "typePreset", "defaults", "author", "agentGuidance", "withPackages", "force", "verbose"] },
   config: {
     required: ["scope", "configAction"],
     optional: ["key", "value", "criterion", "clearCriteria", "format", "policy"],

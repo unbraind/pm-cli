@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Add schema show-status status inspection ([pm-qpus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qpus.toon))
+
+### Other
+
+- 2026-06-07 agent UX package ecosystem and path guardrail hardening ([pm-yo3f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yo3f.toon))
+- 2026-06-07 pm CLI ecosystem audit lanes ([pm-xm98](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-xm98.toon))
+
 ## 2026.6.7 - 2026-06-07
 
 ### Added

@@ -5,6 +5,7 @@
 ## Agent Quick Context
 
 - Do not override `PM_PATH` for real repository tracking.
+- Prefer `--pm-path <repo>/.agents/pm` when a script must target tracker storage explicitly; `--path` remains a compatibility alias and is not a workspace/cwd flag.
 - Do set `PM_AUTHOR` for maintainer and agent mutations.
 - Use `--json` only when strict parsing is needed.
 - Use `pm contracts` for current command/schema metadata.
@@ -81,6 +82,11 @@ Runtime item types are context primitives. Use `pm schema list` to inspect the m
 | `PM_GLOBAL_PATH` | override global profile root for tests or sandboxes |
 | `PM_OLLAMA_MODEL` | choose default Ollama embedding model |
 | `PM_DISABLE_OLLAMA_AUTO_DEFAULTS` | disable implicit Ollama search defaults |
+
+For command-level tracker targeting, prefer `--pm-path <tracker-root>`. The old
+`--path` flag is still accepted, but it means the pm tracker storage directory
+itself, not the repository workspace. During `pm init`, explicit tracker paths
+that look like workspace roots are rejected unless `--force` is provided.
 
 Tests should set both `PM_PATH` and `PM_GLOBAL_PATH` to temporary directories. The wrapper `node scripts/run-tests.mjs ...` does that automatically.
 
