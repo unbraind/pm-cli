@@ -346,6 +346,7 @@ describe("runHealth", () => {
         // Telemetry endpoint probe failures are advisory: surfaced but not blocking.
         expect(health.ok).toBe(true);
         expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_endpoint_probe_http_status:503"]));
+        expect(health.warnings).not.toEqual(expect.arrayContaining(["telemetry_schema_version_behind:2"]));
         expect(fetchMock).toHaveBeenCalledTimes(1);
 
         const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
@@ -360,6 +361,85 @@ describe("runHealth", () => {
             max_schema_version: "2",
           },
         });
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
+
+  it("warns when telemetry endpoint advertises a newer schema version", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.telemetry.endpoint = "https://pm-cli.unbrained.dev/v1/events";
+      await writeSettings(context.pmPath, settings);
+
+      const originalFetch = globalThis.fetch;
+      const fetchMock = vi.fn(async () => new Response("ok", {
+        status: 200,
+        headers: {
+          "x-pm-telemetry-max-schema-version": "2",
+        },
+      }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+      try {
+        const health = await runHealth({ path: context.pmPath }, { checkTelemetry: true });
+        expect(health.ok).toBe(true);
+        expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_schema_version_behind:2"]));
+
+        const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+        expect(telemetryCheck?.details).toMatchObject({
+          endpoint_probe: {
+            attempted: true,
+            ok: true,
+            status: 200,
+            max_schema_version: "2",
+          },
+        });
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
+
+  it("does not warn when telemetry endpoint schema version matches the client", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.telemetry.endpoint = "https://pm-cli.unbrained.dev/v1/events";
+      await writeSettings(context.pmPath, settings);
+
+      const originalFetch = globalThis.fetch;
+      const fetchMock = vi.fn(async () => new Response("ok", {
+        status: 200,
+        headers: {
+          "x-pm-telemetry-max-schema-version": "1",
+        },
+      }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+      try {
+        const health = await runHealth({ path: context.pmPath }, { checkTelemetry: true });
+        expect(health.ok).toBe(true);
+        expect(health.warnings).not.toEqual(expect.arrayContaining(["telemetry_schema_version_behind:1"]));
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
+
+  it("does not warn when telemetry endpoint omits max schema version headers", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.telemetry.endpoint = "https://pm-cli.unbrained.dev/v1/events";
+      await writeSettings(context.pmPath, settings);
+
+      const originalFetch = globalThis.fetch;
+      const fetchMock = vi.fn(async () => new Response("ok", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+      try {
+        const health = await runHealth({ path: context.pmPath }, { checkTelemetry: true });
+        expect(health.ok).toBe(true);
+        expect(health.warnings).not.toEqual(
+          expect.arrayContaining([expect.stringMatching(/^telemetry_schema_version_behind:/)]),
+        );
       } finally {
         globalThis.fetch = originalFetch;
       }

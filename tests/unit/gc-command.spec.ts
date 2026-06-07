@@ -43,7 +43,7 @@ describe("runGc", () => {
         "search/vectorization-status.json",
         "search/lancedb",
       ]);
-      expect(gc.retained).toEqual(["runtime/test-runs"]);
+      expect(gc.retained).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json"]);
       expect(gc.warnings).toEqual([]);
       expect(gc.guidance).toEqual([
         'Search artifacts were removed; run "pm install search-advanced --project" if reindex is unavailable, then "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
@@ -59,6 +59,7 @@ describe("runGc", () => {
         "search/vectorization-status.json",
         "search/lancedb",
         "runtime/test-runs",
+        "runtime/history-drift-cache.json",
       ]);
       expect(gcSecondRun.warnings).toEqual([]);
       expect(gcSecondRun.guidance).toEqual([]);
@@ -78,6 +79,7 @@ describe("runGc", () => {
         "search/vectorization-status.json",
         "search/lancedb",
         "runtime/test-runs",
+        "runtime/history-drift-cache.json",
       ]);
       expect(gc.warnings).toEqual(["not_a_file:index/manifest.json"]);
     });
@@ -91,7 +93,7 @@ describe("runGc", () => {
       const gc = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
       expect(gc.ok).toBe(false);
       expect(gc.removed).toEqual([]);
-      expect(gc.retained).toEqual(["runtime/test-runs"]);
+      expect(gc.retained).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json"]);
       expect(gc.warnings).toEqual(["not_a_directory:runtime/test-runs"]);
     });
   });
@@ -122,7 +124,7 @@ describe("runGc", () => {
         "search/lancedb",
         "runtime/test-runs",
       ]);
-      expect(gc.retained).toEqual([]);
+      expect(gc.retained).toEqual(["runtime/history-drift-cache.json"]);
       expect(gc.guidance).toEqual([
         "Dry-run preview only: no cache artifacts were deleted.",
         'Search artifacts were removed; run "pm install search-advanced --project" if reindex is unavailable, then "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
@@ -145,6 +147,7 @@ describe("runGc", () => {
       await mkdir(path.join(context.pmPath, "search", "lancedb"), { recursive: true });
       await mkdir(path.join(context.pmPath, "runtime", "test-runs"), { recursive: true });
       await writeFile(path.join(context.pmPath, "runtime", "test-runs", "seed.log"), "seed\n", "utf8");
+      await writeFile(path.join(context.pmPath, "runtime", "history-drift-cache.json"), '{"version":1,"entries":[]}\n', "utf8");
 
       const indexOnly = await runGc({ path: context.pmPath }, { scope: ["index"] });
       expect(indexOnly.scope).toEqual(["index"]);
@@ -155,9 +158,13 @@ describe("runGc", () => {
 
       const runtimeOnly = await runGc({ path: context.pmPath }, { scope: ["runtime"] });
       expect(runtimeOnly.scope).toEqual(["runtime"]);
-      expect(runtimeOnly.removed).toEqual(["runtime/test-runs"]);
+      expect(runtimeOnly.removed).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json"]);
       expect(runtimeOnly.retained).toEqual([]);
+      expect(runtimeOnly.guidance).toEqual([
+        'History drift cache was removed; the next "pm health" run performs a full history-drift re-scan.',
+      ]);
       await expect(fs.stat(path.join(context.pmPath, "runtime", "test-runs"))).rejects.toBeTruthy();
+      await expect(fs.stat(path.join(context.pmPath, "runtime", "history-drift-cache.json"))).rejects.toBeTruthy();
 
       const embeddingsOnly = await runGc({ path: context.pmPath }, { scope: ["embeddings"] });
       expect(embeddingsOnly.scope).toEqual(["embeddings"]);
@@ -296,8 +303,9 @@ describe("runGc", () => {
         "search/vectorization-status.json",
         "search/lancedb",
       ]);
-      expect(gc.retained).toEqual(["runtime/test-runs"]);
+      expect(gc.retained).toEqual(["runtime/test-runs", "runtime/history-drift-cache.json"]);
       expect(gc.warnings).toEqual([
+        "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
         "extension_hook_failed:project:boom-read-hook:onRead",
@@ -309,11 +317,12 @@ describe("runGc", () => {
       expect(events).toContain("read:vectorization-status.json");
       expect(events).toContain("read:lancedb");
       expect(events).toContain("read:test-runs");
+      expect(events).toContain("read:history-drift-cache.json");
       expect(events).toContain("write:gc:remove:manifest.json");
       expect(events).toContain("write:gc:remove:embeddings.jsonl");
       expect(events).toContain("write:gc:remove:vectorization-status.json");
       expect(events).toContain("write:gc:remove:lancedb");
-      expect(events).toContain("index:gc:5");
+      expect(events).toContain("index:gc:6");
     });
   });
 
@@ -344,6 +353,7 @@ describe("runGc", () => {
         "search/vectorization-status.json",
         "search/lancedb",
         "runtime/test-runs",
+        "runtime/history-drift-cache.json",
       ]);
       expect(gc.warnings).toEqual(["extension_hook_failed:project:boom-index-hook:onIndex"]);
     });

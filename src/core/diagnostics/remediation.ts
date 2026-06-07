@@ -102,6 +102,11 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     command: "pm health --check-telemetry",
     summary: "The telemetry endpoint returned a non-success status; events stay queued until it recovers. Advisory only.",
   },
+  {
+    code: "telemetry_schema_version_behind",
+    command: "pm health --check-telemetry",
+    summary: "Client schema is behind server; upgrade pm-cli to emit the latest event shape.",
+  },
   // --- pm health: integrity ---
   {
     code: "integrity_item_unreadable",

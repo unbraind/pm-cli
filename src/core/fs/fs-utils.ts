@@ -1,4 +1,4 @@
-import fs from "node:fs/promises";
+import * as fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 
@@ -34,7 +34,28 @@ export async function writeFileAtomic(targetPath: string, contents: string): Pro
     `.${path.basename(targetPath)}.${process.pid}.${Date.now()}.${crypto.randomBytes(4).toString("hex")}.tmp`,
   );
   await fs.writeFile(tempPath, contents, "utf8");
-  await fs.rename(tempPath, targetPath);
+  try {
+    await fs.rename(tempPath, targetPath);
+  } catch (error: unknown) {
+    if (isErrno(error, "EXDEV")) {
+      try {
+        await fs.copyFile(tempPath, targetPath);
+      } finally {
+        try {
+          await fs.unlink(tempPath);
+        } catch {
+          // Best-effort cleanup only.
+        }
+      }
+      return;
+    }
+    try {
+      await fs.unlink(tempPath);
+    } catch {
+      // Best-effort cleanup only.
+    }
+    throw error;
+  }
 }
 
 export async function appendLineAtomic(targetPath: string, line: string): Promise<void> {

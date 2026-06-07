@@ -1,6 +1,6 @@
-import fs from "node:fs/promises";
+import * as fs from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   appendLineAtomic,
   ensureDir,
@@ -57,6 +57,45 @@ describe("core/fs/fs-utils", () => {
 
       await writeFileAtomic(filePath, "rewritten");
       expect(await fs.readFile(filePath, "utf8")).toBe("rewritten");
+    });
+  });
+
+  it("falls back to copy/unlink when rename fails with EXDEV", async () => {
+    await withTempDir("pm-cli-fs-utils-", async (tempDir) => {
+      const filePath = path.join(tempDir, "cross-device.txt");
+      await fs.writeFile(filePath, "before", "utf8");
+      try {
+        const copyFileMock = vi.fn(async (...args: [string, string]) => {
+          const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+          return actual.copyFile(...args);
+        });
+        const unlinkMock = vi.fn(async (...args: [string]) => {
+          const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+          return actual.unlink(...args);
+        });
+        vi.resetModules();
+        vi.doMock("node:fs/promises", async () => {
+          const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+          return {
+            ...actual,
+            rename: async () => {
+              const crossDevice = new Error("cross-device") as NodeJS.ErrnoException;
+              crossDevice.code = "EXDEV";
+              throw crossDevice;
+            },
+            copyFile: copyFileMock,
+            unlink: unlinkMock,
+          };
+        });
+        const reloadedModule = await import("../../src/core/fs/fs-utils.js");
+        await reloadedModule.writeFileAtomic(filePath, "after");
+        expect(await fs.readFile(filePath, "utf8")).toBe("after");
+        expect(copyFileMock).toHaveBeenCalledTimes(1);
+        expect(unlinkMock).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.doUnmock("node:fs/promises");
+        vi.resetModules();
+      }
     });
   });
 

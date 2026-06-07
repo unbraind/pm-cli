@@ -39,6 +39,12 @@ describe("shared remediation registry", () => {
       );
     });
 
+    it("resolves telemetry schema drift warnings to telemetry health guidance", () => {
+      expect(resolveRemediation("telemetry_schema_version_behind:2")?.command).toBe(
+        "pm health --check-telemetry",
+      );
+    });
+
     it("trims surrounding whitespace before matching", () => {
       expect(resolveRemediation("  history_drift_missing_stream:pm-abcd  ")?.code).toBe(
         "history_drift_missing_stream",

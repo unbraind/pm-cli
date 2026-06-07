@@ -3149,6 +3149,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         "search/embeddings.jsonl",
         "search/vectorization-status.json",
         "search/lancedb",
+        "runtime/history-drift-cache.json",
       ]);
       expect(gcJson.retained).toEqual(["runtime/test-runs"]);
       expect(gcJson.warnings).toEqual([]);

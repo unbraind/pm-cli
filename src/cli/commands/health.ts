@@ -30,6 +30,7 @@ import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { listAllFrontMatter, listAllFrontMatterWithBody } from "../../core/store/item-store.js";
+import { TELEMETRY_SCHEMA_VERSION } from "../../core/telemetry/runtime.js";
 import {
   getItemFormatFromPath,
   getSettingsPath,
@@ -1184,6 +1185,15 @@ async function buildTelemetryCheck(
     } else {
       warnings.push("telemetry_endpoint_probe_failed");
     }
+  }
+  const parsedMaxSchemaVersion = Number.parseInt(endpointProbe?.max_schema_version ?? "", 10);
+  if (
+    endpointProbe &&
+    endpointProbe.ok &&
+    Number.isInteger(parsedMaxSchemaVersion) &&
+    parsedMaxSchemaVersion > TELEMETRY_SCHEMA_VERSION
+  ) {
+    warnings.push(`telemetry_schema_version_behind:${parsedMaxSchemaVersion}`);
   }
 
   return {

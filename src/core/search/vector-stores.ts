@@ -1,6 +1,6 @@
 import type { PmSettings } from "../../types/index.js";
-import { mkdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
-import { basename, dirname, join, resolve } from "node:path";
+import { mkdir, readFile, stat, unlink } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import {
   executeSearchJsonRequest,
   normalizeSearchHttpTimeoutMs,
@@ -13,6 +13,7 @@ import {
   toNonEmptyString,
   trimTrailingSlashes,
 } from "../shared/primitives.js";
+import { writeFileAtomic } from "../fs/fs-utils.js";
 
 export type VectorStoreName = "qdrant" | "lancedb";
 
@@ -455,10 +456,6 @@ async function persistLanceDbLocalTable(storePath: string, tableName: string, ta
     );
   }
 
-  const tempPath = join(
-    snapshotDir,
-    `${basename(snapshotPath)}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-  );
   // Serialize compactly: the snapshot is an internal, gitignored cache re-read via
   // JSON.parse (whitespace-agnostic). Pretty-printing put every embedding float on its
   // own indented line, roughly doubling file size and parse/serialize cost — a real
@@ -469,10 +466,8 @@ async function persistLanceDbLocalTable(storePath: string, tableName: string, ta
     records: buildSnapshotRecords(table),
   })}\n`;
   try {
-    await writeFile(tempPath, serialized, "utf8");
-    await rename(tempPath, snapshotPath);
+    await writeFileAtomic(snapshotPath, serialized);
   } catch (error) {
-    await unlink(tempPath).catch(() => {});
     throw new Error(`LanceDB local snapshot write failed at '${snapshotPath}': ${toErrorMessage(error)}`);
   }
 }

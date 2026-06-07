@@ -22,7 +22,7 @@ import {
 
 const TELEMETRY_QUEUE_RELATIVE_PATH = path.join("runtime", "telemetry", "events.jsonl");
 const TELEMETRY_STATE_RELATIVE_PATH = path.join("runtime", "telemetry", "state.json");
-const TELEMETRY_SCHEMA_VERSION = 1;
+export const TELEMETRY_SCHEMA_VERSION = 1;
 const TELEMETRY_CLIENT_SCHEMA_VERSION = 1;
 const TELEMETRY_FLUSH_BATCH_SIZE = 100;
 const TELEMETRY_MAX_RETRY_DELAY_MS = 3_600_000;

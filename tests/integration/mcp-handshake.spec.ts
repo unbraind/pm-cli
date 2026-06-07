@@ -36,6 +36,16 @@ const EXPECTED_TOOL_NAMES = [
 ];
 
 describe("MCP protocol handshake", () => {
+  it("handles ping with an empty result payload", async () => {
+    await expect(
+      handleRequest({
+        jsonrpc: "2.0",
+        id: 0,
+        method: "ping",
+      }),
+    ).resolves.toEqual({});
+  });
+
   it("initialize returns protocolVersion, serverInfo, and instructions", async () => {
     const result = (await handleRequest({
       jsonrpc: "2.0",

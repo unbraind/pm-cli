@@ -204,3 +204,20 @@ Use the npm registry package for maintainer global updates. Do not use `npm inst
 - If the tag workflow fails before npm publish, confirm no package was published before moving or replacing a tag.
 - If npm publish succeeds but GitHub Release creation fails, rerun `.github/workflows/release.yml` with `workflow_dispatch` and `tag=v<version>`; the workflow skips duplicate npm publish, reruns public verification, and creates the GitHub Release for the existing tag.
 - Record failure evidence and remediation in the release `pm` item.
+
+### Silent skip debugging
+
+When auto-release exits green but does not cut a version, inspect the pipeline's JSON skip `reason` from `scripts/release/run-release-pipeline.mjs` (or rerun locally with `pnpm release:pipeline:dry-run -- --json`):
+
+- tracker-only skip family: `tracker_only_changes_since_last_tag` (all changed paths are `.agents/pm` only)
+- changelog-empty skip family: `empty_generated_changelog_section_for_target_version` (generated release section exists but has no non-empty entries)
+
+`pm-changelog` is maintained in a separate repository/package. Classifier or release-window bugs must be fixed and released there first, then consumed here via the latest npm package (`pm install npm:pm-changelog --project`) before rerunning release generation.
+
+Before local changelog regeneration diagnostics, always refresh tags first:
+
+```bash
+git fetch --tags --force
+```
+
+Without a forced tag refresh, local tag windows can drift from origin and produce misleading changelog or skip diagnostics.
