@@ -10,10 +10,13 @@ import {
   readManagedExtensionState,
 } from "../../src/cli/commands/extension.js";
 import {
+  isNpmNotFoundError,
+  isNpmPackNotFoundError,
   normalizeNpmLocalFileAliasSpec,
   resolveInstallSource,
   resolveNpmCommandName,
   shouldRunNpmCommandInShell,
+  wrapNpmPackResolutionError,
 } from "../../src/cli/commands/extension/install-sources.js";
 import { buildExtensionTriageSummary } from "../../src/cli/commands/extension/doctor.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
@@ -854,24 +857,61 @@ describe("extension command runtime", () => {
     expect(shouldRunNpmCommandInShell("linux")).toBe(false);
   });
 
-  it("classifies missing npm package installs with deterministic fallback recovery", async () => {
-    const source = parseExtensionInstallSource("npm:pm-definitely-missing-for-fallback-test-zzzzzz");
-    await expect(resolveInstallSource(source)).rejects.toMatchObject({
+  it("classifies missing first-party npm package installs with deterministic fallback recovery", () => {
+    const error = wrapNpmPackResolutionError(
+      "pm-definitely-missing-for-fallback-test-zzzzzz",
+      new Error("npm ERR! code E404\nnpm ERR! 404 Not Found - GET https://registry.npmjs.org/package"),
+    );
+    expect(error).toMatchObject({
       exitCode: EXIT_CODE.NOT_FOUND,
       context: {
         code: "npm_package_not_found",
         recovery: {
+          attempted_command:
+            "pm install --project npm:pm-definitely-missing-for-fallback-test-zzzzzz",
+          normalized_args: [
+            "install",
+            "--project",
+            "npm:pm-definitely-missing-for-fallback-test-zzzzzz",
+          ],
           next_best_command:
             "pm install --project github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
           fallback_candidates: [
             {
               source: "github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
               command: "pm install --project github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
+              reason: "canonical first-party GitHub repository fallback for unpublished pm packages",
             },
           ],
         },
       },
     });
+  });
+
+  it("does not emit first-party fallback candidates for third-party npm 404s", () => {
+    const error = wrapNpmPackResolutionError(
+      "left-pad-private-missing",
+      new Error("npm ERR! code E404\nnpm ERR! 404 Not Found - GET https://registry.npmjs.org/package"),
+    );
+    expect(error).toMatchObject({
+      exitCode: EXIT_CODE.NOT_FOUND,
+      context: {
+        code: "npm_package_not_found",
+        recovery: {
+          attempted_command: "pm install --project npm:left-pad-private-missing",
+          normalized_args: ["install", "--project", "npm:left-pad-private-missing"],
+        },
+      },
+    });
+    expect(error?.context.recovery?.fallback_candidates).toBeUndefined();
+    expect(error?.context.recovery?.next_best_command).toBeUndefined();
+  });
+
+  it("keeps generic not-found matching scoped to npm pack wrapping", () => {
+    const genericNotFound = new Error("tar command failed: archive member not found");
+    expect(isNpmNotFoundError(genericNotFound)).toBe(false);
+    expect(isNpmPackNotFoundError(genericNotFound)).toBe(true);
+    expect(wrapNpmPackResolutionError("pm-synthetic", genericNotFound)?.context.code).toBe("npm_package_not_found");
   });
 
   it("installs, explores, manages, toggles activation, and uninstalls a local extension", async () => {

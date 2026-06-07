@@ -59,6 +59,7 @@ describe("CLI main error helpers", () => {
         {
           source: "github.com/unbraind/pm-brief",
           command: "pm install --project github.com/unbraind/pm-brief",
+          reason: "canonical first-party GitHub repository fallback",
         },
       ],
       next_best_command: "pm install --project github.com/unbraind/pm-brief",
