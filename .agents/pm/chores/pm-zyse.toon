@@ -1,0 +1,15 @@
+id: pm-zyse
+title: Add wiring-checklist reference card to ARCHITECTURE.md for new command authors
+description: "Adding a new command involves wiring in 10+ separate locations across src/ and docs/. This checklist is tracked only in project MEMORY.md, not in any committed doc. Contributors without session memory will miss wiring sites and create silently broken commands."
+type: Chore
+status: open
+priority: 2
+tags[4]: "area:architecture","area:docs",commands,contributor-experience
+created_at: "2026-06-07T10:07:10.892Z"
+updated_at: "2026-06-07T10:15:43.079Z"
+author: audit-docs-tests-agent
+acceptance_criteria: "- docs/ARCHITECTURE.md has a 'Adding a new command: wiring checklist' section listing all 10+ sites\n- The coverage tactic (include-only vs include+exclude) is documented alongside the checklist\n- The checklist cross-references relevant source files so it stays findable by grep"
+parent: pm-u9d0
+risk: low
+confidence: high
+body: "## Context\nFrom MEMORY.md 'Architecture' section:\n'When adding a command file: to find EVERY wiring site, grep -rn \"<recent-command>\" src/ docs/ for a recently-added command and replicate each. Sites: commands/index.ts (export), register-mutation.ts (registration + subcommand dispatch), src/mcp/server.ts (action case), src/sdk/cli-contracts.ts (PM_CORE_COMMAND_NAMES, PM_TOOL_ACTIONS, *_FLAG_CONTRACTS + dispatch, PM_TOOL_ACTION_SCHEMA_CONTRACTS, param props/metadata), commands/contracts.ts, completion.ts (bash auto + zsh/fish hand-maintained lists), docs (COMMANDS/AGENT_GUIDE), CHANGELOG [Unreleased], vitest.config.ts. Coverage tactic: put pure logic in a small src/core/** module added to include (100% cover it); put the command file in BOTH include and exclude so it’s not gated.'\n\nThis is high-value institutional knowledge not in any committed document.\n\n## Acceptance criteria\n- docs/ARCHITECTURE.md has a 'Adding a new command: wiring checklist' section listing all 10+ sites\n- The coverage tactic (include-only vs include+exclude) is documented alongside the checklist\n- The checklist cross-references relevant source files so it stays findable by grep\n\n## Evidence\nMemory notes (MEMORY.md): 'When adding a command file'; docs/ARCHITECTURE.md: no such section; grep of docs/ for 'wiring checklist': 0 results"

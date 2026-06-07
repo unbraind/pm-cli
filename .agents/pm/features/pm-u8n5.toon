@@ -1,0 +1,18 @@
+id: pm-u8n5
+title: "Search relevance eval harness: implement nDCG/MRR runner and gate in CI"
+description: "pm-22x2 and pm-fhsg (golden-query eval harness) are closed but the harness was filed as a task/story, not necessarily shipped as a CI gate. There is no actual nDCG/MRR runner in src/core/search/ and no CI job measuring search quality regressions. This means relevance regressions from corpus changes, hybrid weight changes, or provider upgrades go undetected."
+type: Feature
+status: open
+priority: 2
+tags[5]: "area:search",ci,eval,quality,relevance
+created_at: "2026-06-07T10:03:46.324Z"
+updated_at: "2026-06-07T10:22:44.153Z"
+author: audit-data-agent
+acceptance_criteria: "- `pm eval` command or `pm reindex --eval` subcommand runs golden-query set against current index\n- Outputs nDCG@10, MRR@10 per query and aggregate\n- Golden queries stored in `.agents/pm/search/eval-queries.json` (gittracked, human-curated)\n- CI gate fails if nDCG drops below baseline by more than epsilon\n- Supports both keyword and hybrid modes"
+parent: pm-ydp6
+risk: medium
+confidence: medium
+dependencies[2]{id,kind,created_at,author,source_kind}:
+  pm-22x2,related,"2026-06-07T10:22:44.143Z",null,null
+  pm-fhsg,related,"2026-06-07T10:22:44.143Z",null,null
+body: "## Context\n\nSearch eval harness items pm-22x2 and pm-fhsg are closed. However, a grep for 'ndcg', 'mrr', 'precision', 'recall', or 'ground_truth' in src/ finds no results. The closed items may have been closed as 'deferred/post-v0.1' rather than shipped.\n\nThe `src/core/search/relevance.ts` module has the scoring primitives (cosine similarity) but no offline evaluation path.\n\n## Acceptance criteria\n\n- [ ] `pm eval` command or `pm reindex --eval` subcommand runs golden-query set against current index\n- [ ] Outputs nDCG@10, MRR@10 per query and aggregate\n- [ ] Golden queries stored in `.agents/pm/search/eval-queries.json` (gittracked, human-curated)\n- [ ] CI gate fails if nDCG drops below baseline by more than epsilon\n- [ ] Supports both keyword and hybrid modes\n\n## Evidence\n\n- `src/core/search/relevance.ts` — cosine similarity + rerank helpers but no eval runner\n- pm-22x2, pm-fhsg closed — check if actually shipped or deferred\n- No `eval` command in `src/cli/commands/`"

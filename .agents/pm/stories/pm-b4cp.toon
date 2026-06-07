@@ -1,0 +1,17 @@
+id: pm-b4cp
+title: "Audit (2026-06-07): MCP + SDK/extensions/packages"
+description: "Audit session covering src/mcp/server.ts, src/sdk/, src/core/extensions/, src/core/packages/, and packages/pm-*. Goal: identify genuine forward-backlog gaps in MCP protocol coverage, SDK surface, extension capabilities, package platform, and first-party exemplars."
+type: Story
+status: open
+priority: 2
+tags[5]: "area:extensions","area:mcp","area:packages","area:sdk",audit
+created_at: "2026-06-07T10:03:15.640Z"
+updated_at: "2026-06-07T10:06:18.170Z"
+author: audit-platform-agent
+parent: pm-5k4v
+notes[2]{created_at,author,text}:
+  "2026-06-07T10:03:24.471Z",audit-platform-agent,"Files audited: src/mcp/server.ts (1260L), src/sdk/index.ts, src/sdk/cli-contracts.ts (2126L), src/sdk/cli-contracts/enum-contracts.ts, src/sdk/cli-contracts/tool-parameter-tables.ts, src/sdk/runtime.ts, src/sdk/testing.ts, src/core/extensions/loader.ts (2279L), src/core/extensions/extension-types.ts (917L), src/core/extensions/extension-policy.ts, src/core/extensions/extension-hook-runtime.ts, src/core/packages/manifest.ts, all 9 packages/pm-*/manifest.json. Also read docs/SDK.md, docs/EXTENSIONS.md, docs/EXTENSION_AUTHOR_CONTRACTS.md, marketplace.json, tests/integration/mcp-handshake.spec.ts."
+  "2026-06-07T10:06:11.300Z",audit-platform-agent,"Items created under pm-5k4v (MCP epic): pm-2nvw (serverInfo.version hardcoded), pm-lold (ping method unhandled), pm-7u9j (narrow pm_append tool), pm-l40h (structuredContent envelope inconsistency), pm-rmjy (pm_list filter summary), pm-v68d (pm_schema/pm_config narrow tools), pm-4os2 (MCP tools in contract golden-file). Items created under pm-ugqx (Extension epic): pm-iljy (first-party manifests missing trusted/sandbox/permissions), pm-k5e8 (pm_max_version warn-only toggle), pm-qo36 (extension self-identity accessor), pm-aw7d (missing override testing helpers), pm-k1e4 (deactivation lifecycle), pm-z9ho (prompts/assets resource kinds), pm-pl53 (sandbox advisory trust model docs), pm-1js9 (commands capability exemplar), pm-ltbr (FlagDefinition list/default gap)."
+learnings[1]{created_at,author,text}:
+  "2026-06-07T10:06:18.170Z",audit-platform-agent,"pm_max_version is tracked in loader.ts line 907 with a // follow-up comment pointing to pm-4gw6 -- the comment uses the id format so it is easy to grep for follow-up todos. The sandbox advisory ADR already exists so the gap to track is only the user-visible warning surface, not a new design decision. FlagDefinition's [key: string]: unknown index signature silently accepts list:true but it is not enforced -- this is a real silent bug for multi-value extension flags. All 9 first-party package manifests confirmed missing trusted/sandbox_profile/permissions by direct manifest audit."
+body: ""

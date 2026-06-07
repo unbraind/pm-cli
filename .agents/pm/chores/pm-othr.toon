@@ -1,0 +1,15 @@
+id: pm-othr
+title: Add vitest.config.ts coverage include/exclude governance guidance to ARCHITECTURE.md
+description: "ARCHITECTURE.md and TESTING.md have no guidance on how to correctly wire new modules into the vitest.config.ts coverage include/exclude lists, or on the include-AND-exclude pattern for complex command files. As the project grows this omission leads contributors to accidentally skip coverage gates for new pure-logic modules or to inadvertently break 100% thresholds."
+type: Chore
+status: open
+priority: 2
+tags[4]: "area:docs","area:tests",contributor-experience,coverage
+created_at: "2026-06-07T10:05:19.369Z"
+updated_at: "2026-06-07T10:15:46.559Z"
+author: audit-docs-tests-agent
+acceptance_criteria: "- ARCHITECTURE.md or TESTING.md has a 'Coverage governance' section explaining:\n- pure-logic modules: add to include only (must be 100%)\n- complex command files: add to BOTH include and exclude (coverage tracked but not gated)\n- static-gate 120-file cap for tests/unit/ enforced via scripts/release/static-quality-gate.mjs --max-files-per-dir 120\n- new spawn entries need static-gate orphan allowlist + coverage include-alignment list updates"
+parent: pm-u9d0
+risk: low
+confidence: high
+body: "## Context\nFrom memory notes: 'Coverage tactic: put pure logic in a small src/core/** module added to include (100% cover it); put the command file in BOTH include and exclude (like create/update) so it’s not gated.' This is tribal knowledge not in any doc.\n\nvitest.config.ts has 100% threshold for lines/branches/functions/statements, a 150+ entry include list, and a ~50 entry exclude list. The interplay is non-obvious.\n\nTESTING.md (full file) has no section on adding coverage for new modules.\nARCHITECTURE.md Testing Architecture section (line 277+) mentions the structure but not the include/exclude governance.\n\n## Acceptance criteria\n- ARCHITECTURE.md or TESTING.md has a 'Coverage governance' section explaining:\n  - pure-logic modules: add to include only (must be 100%)\n  - complex command files: add to BOTH include and exclude (coverage tracked but not gated)\n  - static-gate 120-file cap for tests/unit/ enforced via scripts/release/static-quality-gate.mjs --max-files-per-dir 120\n  - new spawn entries need static-gate orphan allowlist + coverage include-alignment list updates\n\n## Evidence\ndocs/TESTING.md: no coverage governance section; docs/ARCHITECTURE.md lines 277-307; vitest.config.ts lines 16-208; scripts/release/static-quality-gate.mjs line 338"

@@ -1,0 +1,15 @@
+id: pm-3n3b
+title: Surface duration_ms percentile breakdown in pm telemetry stats (p50/p95 per command)
+description: "pm telemetry stats groups queued events by command and reports count and max_attempts, but does not surface latency distribution (duration_ms is present in command_finish payloads). Without percentile data in the local queue, the only way to detect p95 regressions is by querying Sentry or the remote stack. Adding p50/p95/max duration_ms to telemetry stats gives an always-available, zero-network performance signal for the most recent queued window."
+type: Feature
+status: open
+priority: 3
+tags[2]: "area:observability","area:telemetry"
+created_at: "2026-06-07T10:04:00.734Z"
+updated_at: "2026-06-07T10:16:04.166Z"
+author: audit-observability-agent
+acceptance_criteria: "- Each TelemetryStatsBucket gains optional fields: duration_p50_ms, duration_p95_ms, duration_max_ms (present only when command_finish events exist for that bucket).\n- Computed from command_finish events only; command_start / command_error events are excluded.\n- Output of pm telemetry stats includes the new fields when present.\n- Unit tests cover: empty bucket (fields absent), single entry, multi-entry percentile correctness."
+parent: pm-5oj5
+risk: low
+confidence: high
+body: "## Context\n\nFile: src/cli/commands/telemetry.ts lines 199-253 — buildTelemetryStatsBuckets groups events; only count and max_attempts are computed. command_finish events contain payload.duration_ms (set in buildCommandFinishPayload, runtime.ts:924).\n\nFile: src/core/telemetry/runtime.ts:924 — duration_ms is always present in command_finish payloads at all capture levels.\n\nThe queue inspector in telemetry.ts already reads the full event JSON; adding duration_ms extraction and a simple percentile sort costs a single pass over the existing entries array.\n\n## Acceptance criteria\n\n- Each TelemetryStatsBucket gains optional fields: duration_p50_ms, duration_p95_ms, duration_max_ms (present only when command_finish events exist for that bucket).\n- Computed from command_finish events only; command_start / command_error events are excluded.\n- Output of pm telemetry stats includes the new fields when present.\n- Unit tests cover: empty bucket (fields absent), single entry, multi-entry percentile correctness.\n\n## Evidence\n\nsrc/cli/commands/telemetry.ts:199 — bucket shape, no duration fields.\nsrc/core/telemetry/runtime.ts:924 — duration_ms in command_finish payload."

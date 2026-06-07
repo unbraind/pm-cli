@@ -1,0 +1,15 @@
+id: pm-iljy
+title: "Declare trusted=true, sandbox_profile, and permissions on all 9 first-party package manifests"
+description: "All 9 first-party package manifests (pm-beads, pm-calendar, pm-governance-audit, pm-guide-shell, pm-lifecycle-hooks, pm-linked-test-adapters, pm-search-advanced, pm-templates, pm-todos) are missing `trusted`, `sandbox_profile`, and `permissions` fields. These are the very features that extension governance policy evaluates. First-party packages serve as exemplars for third-party authors — if they don't declare these fields, authors copy the pattern and produce unsigned, unprofileable packages. The governance-audit manifest in particular should set sandbox_profile since it intentionally hooks onRead/onWrite. Evidence: all 9 manifests confirmed via audit 2026-06-07."
+type: Chore
+status: open
+priority: 2
+tags[4]: "area:extensions","area:packages",exemplar,security
+created_at: "2026-06-07T10:04:41.422Z"
+updated_at: "2026-06-07T10:22:13.515Z"
+author: audit-platform-agent
+acceptance_criteria: "- All 9 first-party manifests declare `trusted`, `sandbox_profile`, and `permissions`\n- governance-audit manifest declares a sandbox_profile consistent with its onRead/onWrite hooks\n- Governance test enforces presence of these fields on first-party manifests"
+parent: pm-ugqx
+risk: low
+confidence: high
+body: ""

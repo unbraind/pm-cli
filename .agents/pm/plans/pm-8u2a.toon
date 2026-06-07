@@ -1,0 +1,130 @@
+id: pm-8u2a
+title: Ecosystem-wide PM living-context audit & forward-backlog rebuild (2026-06-07)
+description: "Manual audit + inspection of ALL 1055 pm items against the entire pm-cli ecosystem (codebase, docs, tests, telemetry, Sentry). Finding: the forward/open backlog is empty again — all 9 capability epics have only closed children, so 'pm context' returns no actionable work, violating the philosophy 'project management = context management'. This plan rebuilds a rich, well-defined, non-duplicate OPEN forward backlog under every capability epic and fills ADR gaps, executed via 5 specialized read+write audit sub-agents (disjoint epic scopes) coordinated by the orchestrator, then shipped as a PR with full AI-bot review loop and merge."
+type: Plan
+status: open
+priority: 1
+tags[6]: 2026-06-07,audit,backlog,context-management,living-map,pm-cli
+created_at: "2026-06-07T09:53:26.457Z"
+updated_at: "2026-06-07T11:06:10.397Z"
+assignee: maintainer-agent
+author: maintainer-agent
+parent: pm-doxj
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-doxj,parent,"2026-06-07T09:53:26.457Z",null,null
+comments[4]{created_at,author,text}:
+  "2026-06-07T10:24:45.552Z",maintainer-agent,"Audit waves 1-5 complete: 71 OPEN backlog items created + AC backfilled + dedupe sweep clean (0 dups) + validate/health ok + 2 ADRs recorded. Proceeding to consolidation, commit, PR, bot-review loop."
+  "2026-06-07T10:45:40.829Z",maintainer-agent,"Continuation note: live GitHub check on 2026-06-07 found no open PRs and no PR attached to branch pm/forward-backlog-rebuild-and-adr-gaps-2026-06-07, despite the pending PR-review loop language. Local branch is clean with commit ee897da3 ahead of origin/main. Bootstrap before publish passed: npm install -g . and pnpm build."
+  "2026-06-07T10:46:53.162Z",maintainer-agent,"Evidence before PR publish: npm install -g . ok; pnpm build passed; pnpm changelog:pm left CHANGELOG.md unchanged; pnpm changelog:pm:check passed; pm validate --check-resolution --check-history-drift returned ok:true with history_drift ok and known resolution metadata warnings on older closed items; pm health --check-only --summary --json returned ok:true. GitHub live state: no open PRs before push."
+  "2026-06-07T10:59:34.934Z",maintainer-agent,"CI fix evidence: PR #143 Gates (static) failed in pnpm security:scan because pm-97yv contained local release-operation details: an absolute home path and shell-token note. Sanitized pm-97yv body via pm update and redacted the historical literals with pm history-redact; redaction verify_ok true. Local verification after fix: pnpm security:scan passed; direct changelog generate --check passed; pnpm contracts:check passed; pnpm quality:static passed; npm pack --dry-run passed; pm validate --check-resolution --check-history-drift ok:true with history_drift ok and the known older resolution warnings."
+files[2]{path,scope,note}:
+  .agents/pm/history/pm-8u2a.jsonl,project,History stream for publish-step tracker mutations
+  .agents/pm/plans/pm-8u2a.toon,project,Plan publish/review step status and continuation evidence
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  pm health --check-only --summary --json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pm validate --check-resolution --check-history-drift,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+plan_mode: executing
+plan_scope: Rebuild the living forward backlog (features/stories/tasks/chores/issues/improvements/ideas/goals) + ADR gaps across all capability epics; no source/code/docs changes (tracking-only); all new backlog items OPEN; new ADRs closed Decisions with final changelog regen.
+plan_harness: claude-code
+plan_steps[10]:
+  - id: plan-step-001
+    order: 1
+    title: "Audit CLI command surface & schema/config (epics pm-mpbb, pm-8jdc)"
+    status: completed
+    created_at: "2026-06-07T09:53:51.388Z"
+    updated_at: "2026-06-07T10:25:05.833Z"
+    body: "Deep-audit src/cli, command surface, completion, contracts, config/schema/governance/settings-validator vs tracked work; create OPEN forward backlog under pm-mpbb & pm-8jdc; verify pm-haak schema-leak fix is real."
+    owner: audit-cli-schema-agent
+    evidence: "Done. audit-cli-schema-agent: 8 items under pm-mpbb/pm-8jdc + audit Story pm-srex; verified pm-haak FIXED (SettingsPersistSourceSnapshot)."
+    completed_at: "2026-06-07T10:25:05.833Z"
+  - id: plan-step-002
+    order: 2
+    title: "Audit MCP server + SDK/extensions/packages (epics pm-5k4v, pm-ugqx)"
+    status: completed
+    created_at: "2026-06-07T09:53:51.648Z"
+    updated_at: "2026-06-07T10:25:06.053Z"
+    body: "Deep-audit src/mcp, src/sdk/cli-contracts, src/core/extensions, src/core/packages, packages/*; create OPEN forward backlog under pm-5k4v & pm-ugqx."
+    owner: audit-platform-agent
+    evidence: "Done. audit-platform-agent: 16 items under pm-5k4v/pm-ugqx + audit Story pm-b4cp; flagged MCP ping (pm-lold) + FlagDefinition list-field (pm-ltbr)."
+    completed_at: "2026-06-07T10:25:06.053Z"
+  - id: plan-step-003
+    order: 3
+    title: "Audit storage/history + search/semantic (epics pm-o2kc, pm-ydp6)"
+    status: completed
+    created_at: "2026-06-07T09:53:51.912Z"
+    updated_at: "2026-06-07T10:25:06.284Z"
+    body: "Deep-audit src/core/store, history, item, fs, checkpoint, search, vector snapshot; create OPEN forward backlog under pm-o2kc & pm-ydp6."
+    owner: audit-data-agent
+    evidence: "Done. audit-data-agent: 16 items under pm-o2kc/pm-ydp6 + audit Story pm-34gb; flagged gc-embeddings pending-refresh gap (pm-3b1t) + eval-harness re-file (pm-u8n5)."
+    completed_at: "2026-06-07T10:25:06.284Z"
+  - id: plan-step-004
+    order: 4
+    title: Audit observability/telemetry/health (epic pm-5oj5)
+    status: completed
+    created_at: "2026-06-07T09:53:52.140Z"
+    updated_at: "2026-06-07T10:25:06.499Z"
+    body: "Deep-audit src/core/telemetry, diagnostics, sentry, health/validate/stats commands + live telemetry stack + Sentry; create OPEN forward backlog under pm-5oj5."
+    owner: audit-observability-agent
+    evidence: "Done. audit-observability-agent: 10 items under pm-5oj5 + audit Story pm-lzrq; live telemetry+Sentry observed healthy; flagged retry-exhaustion visibility (pm-irc7). No secrets in items."
+    completed_at: "2026-06-07T10:25:06.499Z"
+  - id: plan-step-005
+    order: 5
+    title: Audit docs/onboarding/release/CI + tests/coverage (epic pm-u9d0)
+    status: completed
+    created_at: "2026-06-07T09:53:52.355Z"
+    updated_at: "2026-06-07T10:25:06.754Z"
+    body: "Deep-audit docs/*, .github/workflows, scripts, tests/*, coverage config, release automation; create OPEN forward backlog under pm-u9d0."
+    owner: audit-docs-tests-agent
+    evidence: "Done. audit-docs-tests-agent: 16 items under pm-u9d0 + audit Story pm-5dbn; flagged CodeQL float-tag (pm-ji5c) + ARCHITECTURE/docs drift."
+    completed_at: "2026-06-07T10:25:06.754Z"
+  - id: plan-step-006
+    order: 6
+    title: Record ADR gaps as closed Decisions under pm-m2u1
+    status: completed
+    created_at: "2026-06-07T09:53:52.589Z"
+    updated_at: "2026-06-07T10:25:06.985Z"
+    body: "From agent recommendations + recent decisions, record any architectural decisions not yet in the 27-ADR log; closed Decisions => regen changelog at end."
+    owner: orchestrator
+    evidence: "Done. Recorded 2 ADRs: pm-7sq6 (coverage governance), pm-cc04 (agent self-repair via remediation registry). ADR log now 29."
+    completed_at: "2026-06-07T10:25:06.985Z"
+  - id: plan-step-007
+    order: 7
+    title: "Consolidate: dedupe-audit, validate, reindex, health; enrich milestone roadmap"
+    status: completed
+    created_at: "2026-06-07T09:53:52.824Z"
+    updated_at: "2026-06-07T10:25:07.216Z"
+    body: "Run pm run dedupe-audit, pm validate, pm run reindex, pm health; cancel/merge any cross-agent duplicates; enrich pm-doxj roadmap + link new sub-epics; seed release-monitoring reminder/event."
+    owner: orchestrator
+    evidence: "Done. Dedupe sweep clean (0 dups); validate history_drift ok, health ok:true; AC backfilled on 66 items; milestone note + release reminder pm-7zs0 added."
+    completed_at: "2026-06-07T10:25:07.216Z"
+  - id: plan-step-008
+    order: 8
+    title: Commit + push + open descriptively-named PR
+    status: completed
+    created_at: "2026-06-07T09:53:53.051Z"
+    updated_at: "2026-06-07T10:47:39.007Z"
+    body: Commit all .agents/pm additions with detailed message; push branch; open PR (specific name reflecting the audit + backlog rebuild).
+    owner: orchestrator
+    evidence: "Pushed branch pm/forward-backlog-rebuild-and-adr-gaps-2026-06-07 and opened PR #143: https://github.com/unbraind/pm-cli/pull/143"
+    completed_at: "2026-06-07T10:47:39.007Z"
+  - id: plan-step-009
+    order: 9
+    title: AI-bot review loop until zero findings
+    status: completed
+    created_at: "2026-06-07T09:53:53.292Z"
+    updated_at: "2026-06-07T11:06:10.397Z"
+    body: Trigger @codex review + /gemini review + @gemini-code-assist; wait; address every finding; re-trigger after each push; loop until all bots report no findings; keep all GitHub checks green.
+    owner: orchestrator
+    evidence: "PR #143 review loop complete on latest commit 49a6d9b7: all GitHub checks green (CI build, typecheck, static, compat, smokes, coverage, runtime matrix; Docs; CodeQL; CodeRabbit status). Thread-aware review scan found zero review_threads. Bot limitations recorded: Gemini quota, Codex connector unavailable, Sourcery weekly diff-character rate limit/skipped, CodeRabbit skipped substantive review because 158 files exceeds 150-file limit; no actionable reviewer findings remained."
+    completed_at: "2026-06-07T11:06:10.397Z"
+  - id: plan-step-010
+    order: 10
+    title: Merge to main + verify Sentry + telemetry real-time data
+    status: pending
+    created_at: "2026-06-07T09:53:53.580Z"
+    updated_at: "2026-06-07T09:53:53.580Z"
+    body: Merge PR; return to main; confirm Sentry shows recent helpful data and telemetry stack logged all actions with real-time data.
+    owner: orchestrator
+body: ""

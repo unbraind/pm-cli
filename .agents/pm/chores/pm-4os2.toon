@@ -1,0 +1,15 @@
+id: pm-4os2
+title: Contract schema golden-file must cover MCP tool inputSchema shapes — current snapshot only covers CLI flags
+description: "tests/fixtures/contracts/full.json is the static gate for CLI contract drift (pm-d6kq). It covers command flag contracts and action availability but does NOT snapshot the TOOLS array from src/mcp/server.ts (tool names, inputSchema shapes, required fields, descriptions). A typo or refactor in TOOL_SCHEMA_BASE or any individual tool's inputSchema will pass the existing gate. Extending the golden file to include a MCP tool surface snapshot (names + required fields array) would catch regressions at CI before they reach agents."
+type: Chore
+status: open
+priority: 2
+tags[3]: "area:contracts","area:mcp",quality
+created_at: "2026-06-07T10:04:30.354Z"
+updated_at: "2026-06-07T10:22:13.252Z"
+author: audit-platform-agent
+acceptance_criteria: "- Contract golden-file snapshot includes each MCP tool's inputSchema shape\n- CI fails on unintended MCP inputSchema drift\n- `pnpm contracts:update` regenerates the expanded snapshot"
+parent: pm-5k4v
+risk: low
+confidence: high
+body: ""

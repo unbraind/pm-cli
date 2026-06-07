@@ -8,6 +8,8 @@
 
 ### Other
 
+- ADR: Agent self-repair via a centralized remediation registry surfaced through pm health --json and pm validate --fix-hints ([pm-cc04](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-cc04.toon))
+- ADR: Test-coverage governance — 100% V8 thresholds with a curated include/exclude allowlist, a tests/unit file-count cap, and pure-logic extraction into small core modules ([pm-7sq6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-7sq6.toon))
 - 2026-06-07 agent UX package ecosystem and path guardrail hardening ([pm-yo3f](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-yo3f.toon))
 - 2026-06-07 pm CLI ecosystem audit lanes ([pm-xm98](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-xm98.toon))
 

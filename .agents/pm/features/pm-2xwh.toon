@@ -1,0 +1,15 @@
+id: pm-2xwh
+title: "Search hybrid weight config: expose search.tuning.hybrid_semantic_weight as a persistent setting"
+description: "The per-query --semantic-weight override (pm-cy8i, closed) was shipped. However, there is no persistent search.tuning.hybrid_semantic_weight setting that applies as the project default without specifying it on every query. Agents and users who want a consistent hybrid bias must pass --semantic-weight on every invocation or configure it through an extension."
+type: Feature
+status: open
+priority: 2
+tags[4]: "area:search",config,hybrid,relevance
+created_at: "2026-06-07T10:05:24.769Z"
+updated_at: "2026-06-07T10:15:46.087Z"
+author: audit-data-agent
+acceptance_criteria: "- Add `search.tuning.hybrid_semantic_weight: number (0..1)` to PmSettings\n- Add to settings-validator; config nested-settings alias (search_hybrid_semantic_weight)\n- pm search uses the settings value as default when --semantic-weight is not passed\n- Contract test / MCP contract table updated\n- pm config set search_hybrid_semantic_weight 0.7 works end-to-end"
+parent: pm-ydp6
+risk: low
+confidence: high
+body: "## Context\n\nSession memory 2026-05-26 notes search.tuning reminders_weight and events_weight contract drift (pm-75du, closed). The `--semantic-weight` flag per-query was shipped as pm-cy8i.\n\nHowever, `src/core/shared/constants.ts` shows hybrid weight defaults but no `search.tuning.hybrid_semantic_weight` persistent settings key. An agent working primarily on code review might want to persist `semantic_weight: 0.8` to always favour semantic retrieval without specifying it each time.\n\n## Acceptance criteria\n\n- [ ] Add `search.tuning.hybrid_semantic_weight: number (0..1)` to PmSettings\n- [ ] Add to settings-validator; config nested-settings alias (search_hybrid_semantic_weight)\n- [ ] pm search uses the settings value as default when --semantic-weight is not passed\n- [ ] Contract test / MCP contract table updated\n- [ ] pm config set search_hybrid_semantic_weight 0.7 works end-to-end\n\n## Evidence\n\n- `src/core/shared/constants.ts` — hybrid weight defaults exist but not as a user-configurable settings key\n- pm-cy8i (closed) — per-query override shipped but no persistent setting\n- `src/types.ts` SearchSettings — check for hybrid_semantic_weight field absence"

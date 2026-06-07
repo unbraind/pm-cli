@@ -1,0 +1,15 @@
+id: pm-yj8n
+title: Document pm-linked-test-adapters package in EXTENSIONS.md and TESTING.md
+description: "packages/pm-linked-test-adapters exists as a first-party bundled package (pm-linked-test-adapters, version 0.1.0), but it is not mentioned anywhere in docs/EXTENSIONS.md, docs/TESTING.md, or docs/COMMANDS.md. The EXTENSIONS.md bundled-package catalog lists pm-beads, pm-todos, pm-lifecycle-hooks, pm-search-advanced but omits pm-linked-test-adapters, pm-calendar, pm-templates, and pm-guide-shell from the exemplar list."
+type: Chore
+status: open
+priority: 2
+tags[3]: "area:docs","area:extensions",staleness
+created_at: "2026-06-07T10:04:49.241Z"
+updated_at: "2026-06-07T10:15:47.971Z"
+author: audit-docs-tests-agent
+acceptance_criteria: "- docs/EXTENSIONS.md bundled-package exemplar table/list is complete: all packages/pm-* appear\n- docs/TESTING.md mentions pm-linked-test-adapters and what it adds\n- pm install linked-test-adapters --project example exists in TESTING.md"
+parent: pm-u9d0
+risk: low
+confidence: high
+body: "## Context\nThe bundled package catalog in docs/EXTENSIONS.md (around lines 220-227) mentions only pm-beads, pm-todos, pm-lifecycle-hooks, and pm-search-advanced as exemplars. pm-linked-test-adapters is shipped under packages/ but has zero presence in public docs.\n\ndocs/TESTING.md covers pm test / pm test-all / background runs but never mentions that pm install linked-test-adapters --project unlocks run management adapters and reporters.\n\n## Acceptance criteria\n- docs/EXTENSIONS.md bundled-package exemplar table/list is complete: all packages/pm-* appear\n- docs/TESTING.md mentions pm-linked-test-adapters and what it adds\n- pm install linked-test-adapters --project example exists in TESTING.md\n\n## Evidence\npackages/pm-linked-test-adapters/package.json (name, description); docs/EXTENSIONS.md lines 220-227; docs/TESTING.md full file — no mention"

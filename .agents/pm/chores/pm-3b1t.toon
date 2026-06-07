@@ -1,0 +1,15 @@
+id: pm-3b1t
+title: "LanceDB snapshot: add gc --scope embeddings to include pending-refresh.json and drift-cache coordination"
+description: "pm gc --scope embeddings removes search/embeddings.jsonl, search/vectorization-status.json, and search/lancedb/ but does NOT remove search/pending-refresh.json. If there are queued items in the pending-refresh queue when gc runs, the next spawned background worker will attempt to re-embed items that no longer have a vector store, potentially re-creating a partial ledger inconsistency."
+type: Chore
+status: open
+priority: 2
+tags[4]: "area:search","area:semantic",correctness,gc
+created_at: "2026-06-07T10:04:43.182Z"
+updated_at: "2026-06-07T10:15:48.481Z"
+author: audit-data-agent
+acceptance_criteria: "- Add `search/pending-refresh.json` to the embeddings GC_TARGETS\n- OR: when gc --scope embeddings runs, acquire the reindex lock briefly to flush and discard the pending queue\n- Document that gc --scope embeddings invalidates the entire semantic index (requires pm reindex --mode semantic to rebuild)\n- Add a test that verifies the pending queue is cleared after gc"
+parent: pm-ydp6
+risk: low
+confidence: high
+body: "## Context\n\n`src/cli/commands/gc.ts:22-48` defines GC_TARGETS. The embeddings scope covers:\n- `search/embeddings.jsonl`\n- `search/vectorization-status.json`\n- `search/lancedb/`\n\nBut NOT `search/pending-refresh.json` (written by `src/core/search/background-refresh.ts:136`).\n\nAfter gc --scope embeddings, if a background worker is still running or a queued file exists, the worker drains the queue, calls refreshSemanticEmbeddingsForMutatedItems, reads the (now empty) ledger as '{}', and upserts only the queued items into a fresh vector store — leaving the remaining 1056 items unindexed with no warning.\n\n## Acceptance criteria\n\n- [ ] Add `search/pending-refresh.json` to the embeddings GC_TARGETS\n- [ ] OR: when gc --scope embeddings runs, acquire the reindex lock briefly to flush and discard the pending queue\n- [ ] Document that gc --scope embeddings invalidates the entire semantic index (requires pm reindex --mode semantic to rebuild)\n- [ ] Add a test that verifies the pending queue is cleared after gc\n\n## Evidence\n\n- `src/cli/commands/gc.ts:29-47` — embeddings targets list; pending-refresh.json absent\n- `src/core/search/background-refresh.ts:61-66` — pending queue path = `search/pending-refresh.json`\n- `.agents/pm/search/pending-refresh.json` present in this repo (currently contains 11 bytes)"

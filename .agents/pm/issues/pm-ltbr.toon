@@ -1,0 +1,15 @@
+id: pm-ltbr
+title: Extension FlagDefinition lacks 'list' and 'default' fields — extension-registered flags cannot match core comma-list contract
+description: "The FlagDefinition interface in extension-types.ts (line 398) has: long, short, value_name, description, required, enabled, visible, type/value_type, plus an index signature `[key: string]: unknown`. The core CliFlagContract in cli-contracts.ts has an additional `list?: boolean` field (used by coalesceRepeatedListFlags) and there is no `default` field. An extension that registers a comma-list flag via registerFlags cannot declare list:true to get the same accumulation behavior as core flags (e.g. `--tags`). This means multi-value extension flags lose values on repeated invocations. The `[key: string]: unknown` index signature silently accepts list:true but it is not documented, typed, or enforced."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:extensions","area:sdk",bug,dx
+created_at: "2026-06-07T10:06:01.144Z"
+updated_at: "2026-06-07T10:22:16.174Z"
+author: audit-platform-agent
+acceptance_criteria: "- FlagDefinition gains typed `list?: boolean` and `default?` fields\n- Extension multi-value flags accumulate via coalesceRepeatedListFlags like core `--tags`\n- Typed (not via index signature); documented; covered by a test"
+parent: pm-ugqx
+risk: low
+confidence: high
+body: ""

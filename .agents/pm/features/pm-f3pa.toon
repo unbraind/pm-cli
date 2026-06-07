@@ -1,0 +1,15 @@
+id: pm-f3pa
+title: "History stream bulk-compaction: pm history-compact --all-over N to batch-compact large streams"
+description: "pm history-compact operates on a single item ID. There is no bulk mode to compact all streams exceeding a threshold in one invocation. With 1057 items, a maintainer wanting to compact all streams older than a date or over N entries must script individual calls."
+type: Feature
+status: open
+priority: 2
+tags[4]: "area:history",bulk,compaction,ux
+created_at: "2026-06-07T10:02:30.064Z"
+updated_at: "2026-06-07T10:15:53.614Z"
+author: audit-data-agent
+acceptance_criteria: "- `pm history-compact --all-over <N>` compacts every stream with more than N entries, defaulting to a configurable threshold\n- OR expose `pm history-compact --ids id1,id2,...` to support scripted bulk compaction\n- Progress output shows per-item result (changed/noop/error)\n- `--dry-run` supported for the bulk path\n- Max concurrent operations bounded (sequential is fine for initial ship)"
+parent: pm-o2kc
+risk: medium
+confidence: high
+body: "## Context\n\n`src/cli/commands/history-compact.ts` is well-designed for single-item compaction. `pm stats --storage` surfaces which streams are oversized. There is no bridge between the two: no `--all-over <N>`, `--all-before <timestamp>`, or batch mode.\n\nHistorically related: pm-3pbq (shipped pm history-compact) — closed. The bulk variant was not in scope.\n\n## Acceptance criteria\n\n- [ ] `pm history-compact --all-over <N>` compacts every stream with more than N entries, defaulting to a configurable threshold\n- [ ] OR expose `pm history-compact --ids id1,id2,...` to support scripted bulk compaction\n- [ ] Progress output shows per-item result (changed/noop/error)\n- [ ] `--dry-run` supported for the bulk path\n- [ ] Max concurrent operations bounded (sequential is fine for initial ship)\n\n## Evidence\n\n- `src/cli/commands/history-compact.ts:214` — `runHistoryCompact` takes a single `id` string\n- `src/core/history/history-storage-stats.ts:81` — `computeHistoryStorageStats` already has `deepest_by_lines` for bulk selection\n- `node dist/cli.js stats --storage` shows pm-th6y (686 entries), pm-wo8 (498 entries), pm-2c8 (155 entries) as prime candidates"

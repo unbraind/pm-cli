@@ -1,0 +1,15 @@
+id: pm-irc7
+title: "Telemetry queue max_attempts backlog health warning: surface items near retry exhaustion in pm health"
+description: "The telemetry queue prunes entries when attempts >= TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS (15). The current health check only warns when `active_failure || neverFlushed || highWater` (health.ts:1177). Events that are incrementally failing and approaching exhaustion (e.g. 10–14 attempts) silently disappear from the queue on the next flush cycle with no operator/agent signal. This is a loss of observability signal without any warning."
+type: Issue
+status: open
+priority: 2
+tags[4]: "area:health","area:observability","area:telemetry",reliability
+created_at: "2026-06-07T10:04:16.896Z"
+updated_at: "2026-06-07T10:15:49.793Z"
+author: audit-observability-agent
+acceptance_criteria: "- Health telemetry check warns `telemetry_queue_high_retries:<count>` when any queue entry has attempts >= TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS - 3 (i.e. 12+).\n- Remediation registry entry: `telemetry_queue_high_retries` → `pm telemetry flush` + summary about endpoint reachability.\n- The warning is advisory (does not flip ok:false per existing advisory policy).\n- Unit test for the threshold boundary."
+parent: pm-5oj5
+risk: low
+confidence: high
+body: "## Context\n\nFile: src/core/telemetry/runtime.ts:35 — TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS = 15.\nFile: src/core/telemetry/runtime.ts:1152 — entries with attempts >= 15 are pruned during flush.\nFile: src/cli/commands/health.ts:1163-1187 — warning generation; no check on max_attempts distribution.\nFile: src/cli/commands/telemetry.ts:232 — buildTelemetryStatsBuckets already tracks max_attempts per bucket.\n\nLive observation: pm telemetry stats shows max_attempts: 8 for several commands in the current queue. If the endpoint stays unreachable, entries will silently hit 15 and be purged.\n\n## Acceptance criteria\n\n- Health telemetry check warns `telemetry_queue_high_retries:<count>` when any queue entry has attempts >= TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS - 3 (i.e. 12+).\n- Remediation registry entry: `telemetry_queue_high_retries` → `pm telemetry flush` + summary about endpoint reachability.\n- The warning is advisory (does not flip ok:false per existing advisory policy).\n- Unit test for the threshold boundary.\n\n## Evidence\n\nsrc/core/telemetry/runtime.ts:35 — constant 15.\nsrc/cli/commands/health.ts:1170-1187 — warning block, no retry-exhaustion check.\nLive queue: max_attempts=8 observed (pm telemetry stats output 2026-06-07)."

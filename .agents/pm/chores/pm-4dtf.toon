@@ -1,0 +1,15 @@
+id: pm-4dtf
+title: Add integration test for schema add-type / remove-type round-trip with governance.workflow_enforcement
+description: "Schema customization (pm schema add-type, remove-type, add-status, remove-status) was shipped in PR #106 (2026-06-03). Unit tests cover settings-validator, item-type-definition, and schema-command. There is a governance-presets.integration.spec.ts for preset workflows but no integration test for the full schema customization round-trip: add custom type, create item of that type, enforce workflow transitions, remove type with items warning, then verify it is gone."
+type: Chore
+status: open
+priority: 2
+tags[4]: "area:tests",governance,integration,schema
+created_at: "2026-06-07T10:06:54.290Z"
+updated_at: "2026-06-07T10:15:43.592Z"
+author: audit-docs-tests-agent
+acceptance_criteria: "- An integration test (in tests/integration/ or as part of governance-presets.integration.spec.ts) exercises the full schema-customization lifecycle end-to-end\n- Test covers type creation + item creation + workflow enforcement + removal warning\n- Uses sandboxed PM_PATH"
+parent: pm-u9d0
+risk: medium
+confidence: high
+body: "## Context\nShipped: schema add-type, remove-type, add-status, remove-status, schema show, schema list, governance.workflow_enforcement, per-type type_workflows, create_default_type.\n\nUnit test coverage:\n- tests/unit/schema-command.spec.ts\n- tests/unit/settings-validator.spec.ts lines 180-213 (type_workflows, workflow_enforcement)\n- tests/unit/item-type-definition.spec.ts line 190\n- tests/unit/update-command.spec.ts line 2697 (runUpdate per-type workflow enforcement)\n\nIntegration test gap:\n- No integration test for: pm schema add-type Spike -> pm create Spike 'test' -> pm update -> pm schema remove-type Spike (warns) -> verify state\n- No integration test for schema add-status / remove-status with governance\n\n## Acceptance criteria\n- An integration test (in tests/integration/ or as part of governance-presets.integration.spec.ts) exercises the full schema-customization lifecycle end-to-end\n- Test covers type creation + item creation + workflow enforcement + removal warning\n- Uses sandboxed PM_PATH\n\n## Evidence\ntests/integration/governance-presets.integration.spec.ts; tests/unit/schema-command.spec.ts; docs/COMMANDS.md lines 388-408 (schema section)"

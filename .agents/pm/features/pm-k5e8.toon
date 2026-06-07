@@ -1,0 +1,17 @@
+id: pm-k5e8
+title: pm_max_version default-BLOCK should have a per-layer warn-only toggle in settings
+description: "loader.ts line 907 has a `// follow-up: pm-4gw6 recommends a future settings toggle to relax this default-BLOCK to warn-only per layer.` comment. Currently pm_max_version exceeded always BLOCKS the extension (allowed: false). This is intentional for safety but creates a footgun for project-layer pinned extensions during a CLI upgrade: the extension silently stops loading until the author publishes a new version. A settings flag like `extensions.policy.pm_max_version_exceeded_mode: 'block'|'warn'` (defaulting to 'block') would let operators running managed installations opt into warn-only during upgrade windows."
+type: Feature
+status: open
+priority: 3
+tags[3]: "area:extensions",compat,dx
+created_at: "2026-06-07T10:04:51.632Z"
+updated_at: "2026-06-07T10:22:13.855Z"
+author: audit-platform-agent
+acceptance_criteria: "- A per-layer setting toggles pm_max_version violation from block to warn\n- Default remains block (backward compatible)\n- Setting documented + validated; covered by tests"
+parent: pm-ugqx
+risk: low
+confidence: high
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-4gw6,related,"2026-06-07T10:04:51.632Z",null,null
+body: ""

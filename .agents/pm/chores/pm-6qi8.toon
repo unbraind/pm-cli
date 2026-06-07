@@ -1,0 +1,15 @@
+id: pm-6qi8
+title: "Shell completion drift: show-status missing from bash/zsh/fish schema subcommand lists"
+description: "The pm schema show-status subcommand exists in SCHEMA_SUBCOMMANDS and is fully implemented and documented, but it is absent from all three hand-maintained shell completion lists. Users typing 'pm schema <TAB>' will not see show-status as a suggestion."
+type: Chore
+status: open
+priority: 3
+tags[3]: "area:cli","area:completion",drift
+created_at: "2026-06-07T10:07:34.485Z"
+updated_at: "2026-06-07T10:15:57.407Z"
+author: audit-cli-schema-agent
+acceptance_criteria: "- show-status added to bash, zsh, and fish schema subcommand completion lists in src/cli/commands/completion.ts\n- All three shells: 'pm schema show-<TAB>' completes to show-status\n- No other schema subcommands missing from any shell"
+parent: pm-mpbb
+risk: low
+confidence: high
+body: "## Context\n\nSCHEMA_SUBCOMMANDS (src/cli/commands/schema.ts:42-51) = ['add-type','remove-type','add-status','remove-status','list','show','show-status'].\nBut the hand-maintained completion lists are:\n- bash (src/cli/commands/completion.ts:416): 'list show add-type remove-type add-status remove-status'\n- zsh (completion.ts:1033): '(list show add-type remove-type add-status remove-status)'\n- fish (completion.ts:1891): 'list show add-type remove-type add-status remove-status'\nAll three omit 'show-status'.\n\n## Acceptance criteria\n\n- show-status added to bash, zsh, and fish schema subcommand completion lists in src/cli/commands/completion.ts\n- All three shells: 'pm schema show-<TAB>' completes to show-status\n- No other schema subcommands missing from any shell\n\n## Evidence\n\n- src/cli/commands/schema.ts:42-51 (SCHEMA_SUBCOMMANDS has show-status)\n- src/cli/commands/completion.ts:416 (bash missing show-status)\n- src/cli/commands/completion.ts:1033 (zsh missing show-status)\n- src/cli/commands/completion.ts:1891 (fish missing show-status)"
