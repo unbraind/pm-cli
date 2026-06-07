@@ -14281,6 +14281,23 @@
             "if": {
               "properties": {
                 "subcommand": {
+                  "const": "show-status"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
                   "const": "add-type"
                 }
               },
@@ -14396,7 +14413,7 @@
             "type": "boolean"
           },
           "name": {
-            "description": "Custom item type name (schema add-type/remove-type/show) or custom status id (schema add-status/remove-status).",
+            "description": "Custom item type name (schema add-type/remove-type/show) or custom status id (schema show-status/add-status/remove-status).",
             "examples": [
               "Spike",
               "review"

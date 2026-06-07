@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026.6.7 - 2026-06-07
+
+### Added
+
+- Add optional item metadata to changelog entries ([pmc-q671](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/features/pmc-q671.toon))
+
+### Other
+
+- Align package dependencies to pm CLI/SDK 2026.6.6 ([pmc-rr5l](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/chores/pmc-rr5l.toon))
+
 ## 2026.6.6 - 2026-06-06
 
 ### Fixed

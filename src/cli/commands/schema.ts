@@ -39,7 +39,15 @@ import { getActiveExtensionRegistrations, runActiveOnWriteHooks } from "../../co
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings, resolveGovernanceKnobs } from "../../core/store/settings.js";
 
-export const SCHEMA_SUBCOMMANDS = ["add-type", "remove-type", "add-status", "remove-status", "list", "show"] as const;
+export const SCHEMA_SUBCOMMANDS = [
+  "add-type",
+  "remove-type",
+  "add-status",
+  "remove-status",
+  "list",
+  "show",
+  "show-status",
+] as const;
 export type SchemaSubcommand = (typeof SCHEMA_SUBCOMMANDS)[number];
 
 const SCHEMA_TYPES_LOCK_ID = "schema-types";
@@ -137,6 +145,7 @@ export interface SchemaStatusSummary {
   roles: string[];
   aliases: string[];
   description?: string;
+  order?: number;
 }
 
 export interface SchemaTypeDefinitionResult extends SchemaTypeSummary {
@@ -186,7 +195,16 @@ export interface SchemaShowResult {
   generated_at: string;
 }
 
-export type SchemaInspectResult = SchemaListResult | SchemaShowResult;
+export interface SchemaShowStatusResult {
+  action: "show-status";
+  status: SchemaStatusSummary;
+  file: {
+    path: string;
+  };
+  generated_at: string;
+}
+
+export type SchemaInspectResult = SchemaListResult | SchemaShowResult | SchemaShowStatusResult;
 
 function toAuthor(candidate: string | undefined, defaultAuthor: string): string {
   const resolved = candidate ?? process.env.PM_AUTHOR ?? defaultAuthor;
@@ -724,6 +742,7 @@ function buildSchemaStatusSummaries(
       roles: Array.isArray(definition.roles) ? [...definition.roles] : [],
       aliases: Array.isArray(definition.aliases) ? [...definition.aliases] : [],
       ...(definition.description ? { description: definition.description } : {}),
+      ...(typeof definition.order === "number" ? { order: definition.order } : {}),
     };
     if (source === "builtin") {
       builtin.push(summary);
@@ -736,6 +755,7 @@ function buildSchemaStatusSummaries(
 
 async function loadSchemaInspectionContext(global: GlobalOptions): Promise<{
   typesPath: string;
+  statusesPath: string;
   byType: Record<string, ResolvedItemTypeDefinition>;
   customNames: Set<string>;
   extensionProvenance: Map<string, SchemaTypeDefinitionResult["extension"]>;
@@ -748,6 +768,7 @@ async function loadSchemaInspectionContext(global: GlobalOptions): Promise<{
   const settings = await readSettings(pmRoot);
   const schema = normalizeRuntimeSchemaSettings(settings.schema);
   const typesPath = filePathForSchemaSection(pmRoot, schema.files.types, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types);
+  const statusesPath = statusesPathFor(pmRoot, schema);
   const registry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const extensionProvenance = collectExtensionTypeProvenance();
   const customNames = new Set(
@@ -757,6 +778,7 @@ async function loadSchemaInspectionContext(global: GlobalOptions): Promise<{
   );
   return {
     typesPath,
+    statusesPath,
     byType: registry.by_type,
     customNames,
     extensionProvenance,
@@ -840,6 +862,44 @@ export async function runSchemaShow(name: string | undefined, global: GlobalOpti
   };
 }
 
+export async function runSchemaShowStatus(
+  id: string | undefined,
+  global: GlobalOptions,
+): Promise<SchemaShowStatusResult> {
+  const statusToken = normalizeStatusToken(id);
+  if (statusToken.length === 0) {
+    throw new PmCliError("Status id must not be empty.", EXIT_CODE.USAGE);
+  }
+  const context = await loadSchemaInspectionContext(global);
+  const statusRegistry = resolveRuntimeStatusRegistry(context.schema);
+  const resolvedId = statusRegistry.alias_to_id.get(statusToken) ?? statusToken;
+  const match = statusRegistry.by_id.get(resolvedId);
+  if (!match) {
+    throw new PmCliError(
+      `Unknown status "${id}". Run pm schema list to inspect registered statuses, or pm schema add-status "${escapeForDoubleQuotes(
+        id ?? "",
+      )}" to register it.`,
+      EXIT_CODE.NOT_FOUND,
+      { code: "unknown_status" },
+    );
+  }
+  return {
+    action: "show-status",
+    status: {
+      id: match.id,
+      source: BUILTIN_STATUS_IDS.has(match.id) ? "builtin" : "custom",
+      roles: Array.isArray(match.roles) ? [...match.roles] : [],
+      aliases: Array.isArray(match.aliases) ? [...match.aliases] : [],
+      ...(match.description ? { description: match.description } : {}),
+      ...(typeof match.order === "number" ? { order: match.order } : {}),
+    },
+    file: {
+      path: context.statusesPath,
+    },
+    generated_at: nowIso(),
+  };
+}
+
 export function formatSchemaAddTypeHuman(result: SchemaAddTypeResult): string {
   const verb = result.replaced ? "Updated" : "Registered";
   const aliasSuffix =
@@ -899,6 +959,7 @@ export function formatSchemaListHuman(result: SchemaListResult): string {
     lines.push(`${label}: ${entries.map((entry) => entry.id).join(", ")}`);
   }
   lines.push(`Inspect one: pm schema show <Type>`);
+  lines.push(`Inspect one status: pm schema show-status <status>`);
   return lines.join("\n");
 }
 
@@ -919,6 +980,26 @@ export function formatSchemaShowHuman(result: SchemaShowResult): string {
   }
   if (result.type.options.length > 0) {
     parts.push(`options: ${result.type.options.map((option) => option.key).join(", ")}`);
+  }
+  return parts.join("\n");
+}
+
+export function formatSchemaShowStatusHuman(result: SchemaShowStatusResult): string {
+  const parts = [
+    `status: ${result.status.id}`,
+    `source: ${result.status.source}`,
+  ];
+  if (result.status.roles.length > 0) {
+    parts.push(`roles: ${result.status.roles.join(", ")}`);
+  }
+  if (result.status.aliases.length > 0) {
+    parts.push(`aliases: ${result.status.aliases.join(", ")}`);
+  }
+  if (result.status.description) {
+    parts.push(`description: ${result.status.description}`);
+  }
+  if (typeof result.status.order === "number") {
+    parts.push(`order: ${result.status.order}`);
   }
   return parts.join("\n");
 }

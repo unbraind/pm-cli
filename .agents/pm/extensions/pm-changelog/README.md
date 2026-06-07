@@ -40,6 +40,7 @@ npx pm-changelog --stdout --breaking-changes      # add a Breaking Changes secti
 npx pm-changelog --suggest-semver                 # print a suggested semver bump as JSON
 npx pm-changelog --stdout --body-preview 80       # append first 80 chars of each item body
 npx pm-changelog --stdout --emoji-prefix          # prefix headings with emoji (Added 🎉, Fixed 🐛, ...)
+npx pm-changelog --stdout --include-metadata      # append type/status/priority/release/milestone per item
 ```
 
 See [Usage](docs/usage.md#opt-in-enhancements) for details.

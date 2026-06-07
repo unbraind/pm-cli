@@ -5,7 +5,7 @@ import { buildChangelogDocument, createChangelog, mergeChangelog, suggestSemver,
 import { resolveReleaseContext, resolveReleaseTagWindows } from "./release-context.js";
 export default defineExtension({
     name: "pm-changelog",
-    version: "2026.6.6",
+    version: "2026.6.7",
     activate(api) {
         api.registerCommand({
             name: "changelog generate",
@@ -45,6 +45,7 @@ export default defineExtension({
                 { long: "--suggest-semver", description: "Return a suggested semver bump (major/minor/patch); never writes the changelog" },
                 { long: "--body-preview", value_name: "n", description: "Append the first N chars of each item body to its entry" },
                 { long: "--emoji-prefix", description: "Prefix section headings with conventional emoji (Added 🎉, Fixed 🐛, ...)" },
+                { long: "--include-metadata", description: "Append compact item metadata (type/status/priority/release/milestone) to each entry" },
                 { long: "--changelog-json", description: "Return the full structured changelog document (releases->sections->items)" },
                 { long: "--mode", value_name: "mode", description: "replace or prepend existing changelog (default: replace)" },
                 { long: "--include-empty", description: "Emit an empty release section when no items match" },
@@ -129,6 +130,7 @@ export default defineExtension({
                     breakingChanges: booleanOption(ctx.options, "breaking-changes", "breakingChanges"),
                     bodyPreview,
                     emojiPrefix: booleanOption(ctx.options, "emoji-prefix", "emojiPrefix"),
+                    includeMetadata: booleanOption(ctx.options, "include-metadata", "includeMetadata"),
                     suggestSemver: booleanOption(ctx.options, "suggest-semver", "suggestSemver"),
                     includeEmpty: booleanOption(ctx.options, "include-empty", "includeEmpty"),
                     includeLinks: booleanOption(ctx.options, "include-links", "includeLinks"),
@@ -208,6 +210,7 @@ export default defineExtension({
                 { long: "--group-by", value_name: "mode", description: "version, release, or milestone (default: version)" },
                 { long: "--include-empty", description: "Emit an empty release section when no items match" },
                 { long: "--include-links", description: "Include item URLs in generated entries (default: false)" },
+                { long: "--include-metadata", description: "Append compact item metadata (type/status/priority/release/milestone) to each entry" },
                 { long: "--item-url-base", value_name: "url", description: "Make item IDs clickable links to .toon files under the base URL" },
             ],
         };
@@ -248,6 +251,7 @@ export default defineExtension({
                 groupBy: groupByOption,
                 includeEmpty: booleanOption(ctx.options, "include-empty", "includeEmpty"),
                 includeLinks: booleanOption(ctx.options, "include-links", "includeLinks"),
+                includeMetadata: booleanOption(ctx.options, "include-metadata", "includeMetadata"),
                 itemUrlBase: stringOption(ctx.options, "item-url-base", "itemUrlBase"),
             });
             const outputPath = stringOption(ctx.options, "output", "output");

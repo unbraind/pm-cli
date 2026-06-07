@@ -53,12 +53,14 @@ export {
   runSchemaRemoveStatus,
   runSchemaList,
   runSchemaShow,
+  runSchemaShowStatus,
   formatSchemaAddTypeHuman,
   formatSchemaRemoveTypeHuman,
   formatSchemaAddStatusHuman,
   formatSchemaRemoveStatusHuman,
   formatSchemaListHuman,
   formatSchemaShowHuman,
+  formatSchemaShowStatusHuman,
   SCHEMA_SUBCOMMANDS,
   type SchemaSubcommand,
   type SchemaAddTypeCommandOptions,
@@ -71,6 +73,7 @@ export {
   type SchemaRemoveStatusResult,
   type SchemaListResult,
   type SchemaShowResult,
+  type SchemaShowStatusResult,
 } from "./schema.js";
 export { runSearch } from "./search.js";
 export { runRestore } from "./restore.js";

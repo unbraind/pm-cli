@@ -966,8 +966,11 @@ export function registerMutationCommands(program: Command): void {
 
   const schemaCommand = program
     .command("schema")
-    .argument("[subcommand]", "Schema subcommand: list, show, add-type, remove-type, add-status, remove-status, or a custom item type name shorthand")
-    .argument("[name]", "Item type name (add-type/remove-type/show) or status id (add-status/remove-status)")
+    .argument(
+      "[subcommand]",
+      "Schema subcommand: list, show, show-status, add-type, remove-type, add-status, remove-status, or a custom item type name shorthand",
+    )
+    .argument("[name]", "Item type name (add-type/remove-type/show) or status id (show-status/add-status/remove-status)")
     .option("--description <text>", "Human description for the custom item type or status")
     .option("--default-status <status>", "Default status hint recorded for the custom item type")
     .option("--folder <dir>", "Storage folder for items of this custom type")
@@ -995,12 +998,14 @@ export function registerMutationCommands(program: Command): void {
         runSchemaRemoveStatus,
         runSchemaList,
         runSchemaShow,
+        runSchemaShowStatus,
         formatSchemaAddTypeHuman,
         formatSchemaRemoveTypeHuman,
         formatSchemaAddStatusHuman,
         formatSchemaRemoveStatusHuman,
         formatSchemaListHuman,
         formatSchemaShowHuman,
+        formatSchemaShowStatusHuman,
         SCHEMA_SUBCOMMANDS,
       } = await import("./commands/schema.js");
       let normalizedSubcommand = (subcommand ?? "").trim().toLowerCase();
@@ -1014,6 +1019,7 @@ export function registerMutationCommands(program: Command): void {
             examples: [
               "pm schema list",
               "pm schema show Task",
+              "pm schema show-status open",
               'pm schema add-type Spike --description "Time-boxed investigation" --default-status open',
               "pm schema remove-type Spike",
               "pm schema add-status review --role active --alias in_review",
@@ -1059,6 +1065,8 @@ export function registerMutationCommands(program: Command): void {
           ? await runSchemaList(globalOptions)
           : normalizedSubcommand === "show"
             ? await runSchemaShow(typeName, globalOptions)
+            : normalizedSubcommand === "show-status"
+              ? await runSchemaShowStatus(typeName, globalOptions)
             : normalizedSubcommand === "remove-type"
               ? await runSchemaRemoveType(typeName, { author, force }, globalOptions)
               : normalizedSubcommand === "add-status"
@@ -1096,6 +1104,8 @@ export function registerMutationCommands(program: Command): void {
           writeStdout(`${formatSchemaListHuman(result)}\n`);
         } else if (result.action === "show") {
           writeStdout(`${formatSchemaShowHuman(result)}\n`);
+        } else if (result.action === "show-status") {
+          writeStdout(`${formatSchemaShowStatusHuman(result)}\n`);
         } else if (result.action === "remove-type") {
           writeStdout(`${formatSchemaRemoveTypeHuman(result)}\n`);
         } else if (result.action === "add-status") {
@@ -1107,7 +1117,12 @@ export function registerMutationCommands(program: Command): void {
         }
         // Surface extension on-write hook diagnostics so policy/enforcement
         // warnings are visible without forcing --json.
-        if (result.action !== "list" && result.action !== "show" && result.warnings.length > 0) {
+        if (
+          result.action !== "list" &&
+          result.action !== "show" &&
+          result.action !== "show-status" &&
+          result.warnings.length > 0
+        ) {
           printError(`schema ${result.action} warnings: ${formatHookWarnings(result.warnings)}`);
         }
       }

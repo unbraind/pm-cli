@@ -64,6 +64,7 @@ import {
   runSchemaRemoveStatus,
   runSchemaRemoveType,
   runSchemaShow,
+  runSchemaShowStatus,
   runSearch,
   runStats,
   runTelemetry,
@@ -162,13 +163,13 @@ const TOOLS: ToolDefinition[] = [
         force: { type: "boolean", description: "Force ownership/terminal-state override when supported." },
         subcommand: {
           type: "string",
-          enum: ["list", "show", "add-type", "remove-type", "add-status", "remove-status"],
+          enum: ["list", "show", "show-status", "add-type", "remove-type", "add-status", "remove-status"],
           description: "Schema subcommand when action=schema.",
         },
         name: {
           type: "string",
           description:
-            "Item type name for action=schema show/add-type/remove-type, or status id for add-status/remove-status.",
+            "Item type name for action=schema show/add-type/remove-type, or status id for show-status/add-status/remove-status.",
         },
         description: {
           type: "string",
@@ -993,6 +994,9 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       if (normalizedSubcommand === "show") {
         return runSchemaShow(schemaName, global);
       }
+      if (normalizedSubcommand === "show-status") {
+        return runSchemaShowStatus(schemaName, global);
+      }
       if (normalizedSubcommand === "remove-type") {
         return runSchemaRemoveType(schemaName, { author: schemaAuthor, force: schemaForce }, global);
       }
@@ -1033,7 +1037,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       }
       if (normalizedSubcommand !== "add-type") {
         throw new PmCliError(
-          `Unknown pm schema subcommand "${subcommand}". Allowed: add-type, remove-type, add-status, remove-status, list, show`,
+          `Unknown pm schema subcommand "${subcommand}". Allowed: add-type, remove-type, add-status, remove-status, list, show, show-status`,
           64,
         );
       }

@@ -487,7 +487,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   name: {
     description:
-      "Custom item type name (schema add-type/remove-type/show) or custom status id (schema add-status/remove-status).",
+      "Custom item type name (schema add-type/remove-type/show) or custom status id (schema show-status/add-status/remove-status).",
     examples: ["Spike", "review"],
   },
   defaultStatus: {
