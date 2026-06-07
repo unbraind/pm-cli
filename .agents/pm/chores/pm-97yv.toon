@@ -2,12 +2,11 @@ id: pm-97yv
 title: Document pm-changelog external repo dependency and pad-match fix in RELEASING.md
 description: "RELEASING.md documents the automated daily release pipeline but does not mention the critical external pm-changelog repo dependency, the padded-month version matching incident (2026.05.27 vs 2026.5.27), or the pattern for debugging silent release skips. The pm-changelog package is a SEPARATE repo that must be kept in sync — this is not documented anywhere in tracked docs."
 type: Chore
-status: in_progress
+status: closed
 priority: 2
 tags[4]: "area:docs","area:release",debugging,reliability
 created_at: "2026-06-07T10:07:52.923Z"
-updated_at: "2026-06-07T13:01:28.470Z"
-assignee: codex-active-pm-cycle-20260607
+updated_at: "2026-06-07T13:43:38.047Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- RELEASING.md 'Failure Handling' section has a 'Silent skip debugging' subsection covering:\n- run-release-pipeline.mjs exit reasons (tracker_only_changes, empty_generated_changelog_section)\n- pm-changelog as separate repo; bumping it requires coordinated publish\n- git fetch --tags --force before local changelog regen to avoid tag-drift"
 parent: pm-u9d0
@@ -22,4 +21,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resum
   test-local-mq3shp3z-jvrf12,test,passed,"2026-06-07T12:59:59.976Z","2026-06-07T13:00:04.319Z","2026-06-07T13:00:04.319Z",null,null,1,0,0,null,null,null
 docs[1]{path,scope,note}:
   docs/RELEASING.md,project,Add silent-skip debugging with external pm-changelog dependency guidance
+close_reason: "Documented release silent-skip debugging, external pm-changelog dependency workflow, and forced tag refresh guidance in RELEASING.md; docs link gate and full verification passed; merged via PR #144."
 body: "## Context\nFrom memory session 2026-05-28 (release unblock):\n- 'daily release silently skipped 05-25..27: pm-changelog padded month 2026.05.27 vs pm-cli's unpadded 2026.5.27 match -> exited 0 skipped (green but no release)'\n- 'pm-changelog is maintained as a separate release dependency and must stay coordinated with pm-cli release logic'\n- 'same-day -N = semver prerelease'\n- 'git fetch --tags --force + regenerate before checking CHANGELOG drift locally'\n\nRELEASING.md sections 'Automated Daily Driver' and 'Failure Handling' do not mention:\n1. pm-changelog is a separate npm package in a separate repo\n2. How to debug silent skips (check run-release-pipeline.mjs exit reason)\n3. The padded-month version matching gotcha\n4. The git fetch --tags --force requirement before local changelog regen\n\n## Acceptance criteria\n- RELEASING.md 'Failure Handling' section has a 'Silent skip debugging' subsection covering:\n  - run-release-pipeline.mjs exit reasons (tracker_only_changes, empty_generated_changelog_section)\n  - pm-changelog as separate repo; bumping it requires coordinated publish\n  - git fetch --tags --force before local changelog regen to avoid tag-drift\n\n## Evidence\ndocs/RELEASING.md lines 200-206 (failure handling); memory note 2026-05-28 release unblock"

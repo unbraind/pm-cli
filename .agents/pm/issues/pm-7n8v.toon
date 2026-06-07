@@ -2,12 +2,11 @@ id: pm-7n8v
 title: "Drift-cache gc scope: pm gc --scope runtime should clear history-drift-cache.json"
 description: The drift verification cache at .agents/pm/runtime/history-drift-cache.json is not covered by pm gc --scope runtime. The runtime scope target list in gc.ts only covers runtime/test-runs/. A stale drift cache after manual history edits can cause pm health to report false-clean results until it naturally invalidates.
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[4]: "area:history","area:storage",correctness,gc
 created_at: "2026-06-07T10:02:16.723Z"
-updated_at: "2026-06-07T13:01:27.604Z"
-assignee: codex-active-pm-cycle-20260607
+updated_at: "2026-06-07T13:43:36.058Z"
 author: audit-data-agent
 acceptance_criteria: "- Add `{ scope: 'runtime', relativePath: 'runtime/history-drift-cache.json', kind: 'file' }` to `GC_TARGETS`\n- `pm gc --scope runtime` removes the drift cache (triggers a fresh full-scan on next `pm health`)\n- GC guidance updated to mention that removing the drift cache forces a full re-scan\n- Unit test covering the new target path"
 parent: pm-o2kc
@@ -26,4 +25,5 @@ test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resum
   test-local-mq3sgwxg-cwrl14,test,passed,"2026-06-07T12:58:25.935Z","2026-06-07T12:59:27.796Z","2026-06-07T12:59:27.796Z",null,null,1,0,0,null,null,null
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,Document runtime GC drift-cache behavior and health full-scan implication
+close_reason: "Added runtime/history-drift-cache.json to gc runtime scope, updated guidance/docs, and expanded unit+integration coverage; linked/full verification passed; merged via PR #144."
 body: "## Context\n\n`src/core/history/drift-scan.ts:19` writes `DRIFT_CACHE_FILENAME = 'history-drift-cache.json'` to `runtime/`. The gc runtime scope target at `src/cli/commands/gc.ts:41-48` only includes `runtime/test-runs`.\n\nIf an operator manually edits a history JSONL file (e.g. to repair after an external tool), the mtime/ctime/size/content-hash in the drift cache will be stale. The health scan will re-verify on content-hash mismatch, but `pm gc --scope runtime` fails to purge the cache as expected.\n\n## Acceptance criteria\n\n- [ ] Add `{ scope: 'runtime', relativePath: 'runtime/history-drift-cache.json', kind: 'file' }` to `GC_TARGETS`\n- [ ] `pm gc --scope runtime` removes the drift cache (triggers a fresh full-scan on next `pm health`)\n- [ ] GC guidance updated to mention that removing the drift cache forces a full re-scan\n- [ ] Unit test covering the new target path\n\n## Evidence\n\n- `src/cli/commands/gc.ts:41-48` — `runtime` GC_TARGET only covers `runtime/test-runs`\n- `src/core/history/drift-scan.ts:19` — cache path is `runtime/history-drift-cache.json`\n- `src/core/history/drift-scan.ts:36-49` — `loadDriftCache` reads from this path"
