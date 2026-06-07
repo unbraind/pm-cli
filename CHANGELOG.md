@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2026.6.7 - 2026-06-07
 
 ### Added
 
