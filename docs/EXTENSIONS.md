@@ -12,13 +12,7 @@ pm upgrade --dry-run
 
 `pm extension ...` remains supported for compatibility and low-level runtime debugging.
 
-Related docs:
-
-- [SDK](SDK.md)
-- [Configuration](CONFIGURATION.md)
-- [Testing](TESTING.md)
-- [Command Reference](COMMANDS.md)
-- [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md)
+Related docs: [SDK](SDK.md), [Configuration](CONFIGURATION.md), [Testing](TESTING.md), [Command Reference](COMMANDS.md), [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md).
 
 ## Package Sources
 
@@ -46,7 +40,7 @@ pm install governance-audit --project
 
 `pm install '*'`, `pm install all`, and shell-expanded `pm install *` are normalized to the same bundled install-all request. First-party package aliases come from each package manifest, with a fallback derived from the `packages/pm-*` directory name.
 
-External registry packages are installed by exact package name:
+External registry packages are installed by exact package name. If `npm:<name>` returns a registry 404, JSON error output includes `fallback_candidates` and `next_best_command`; unpublished first-party packages fall back to `pm install --project github.com/unbraind/<name>`.
 
 ```bash
 npm search "pm-cli pm-package"
@@ -287,12 +281,7 @@ pm package deactivate <conflicting-package> --project
 pm package doctor --project --strict-exit
 ```
 
-Doctor JSON also includes `triage.collision_plan` when collisions are present.
-The plan groups the conflicting surfaces and ranks deterministic deactivation
-candidates with estimated command/action feature loss, so agents can choose the
-smallest useful remediation without rereading the full warning stream.
-
-For production stacks, keep broad demo/starter packages separate from packages that own real workflow behavior, or constrain registration surfaces through `extensions.policy.extension_overrides`.
+Doctor JSON also includes `triage.collision_plan` with grouped surfaces, ranked deactivation candidates, and command/action feature-loss hints. For production stacks, keep broad demo/starter packages separate from packages that own real workflow behavior, or constrain registration surfaces through `extensions.policy.extension_overrides`.
 
 ## Runtime APIs
 
