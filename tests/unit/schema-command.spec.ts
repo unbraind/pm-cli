@@ -327,6 +327,62 @@ describe("schema add-status / remove-status commands", () => {
     });
   });
 
+  it("shows one status definition by id or alias", async () => {
+    await withTempPmPath(async (context) => {
+      const added = context.runCli(
+        ["schema", "add-status", "review", "--role", "active", "--alias", "in_review", "--description", "needs eyes", "--order", "25"],
+      );
+      expect(added.code).toBe(0);
+
+      const custom = context.runCli(["schema", "show-status", "review", "--json"], { expectJson: true });
+      expect(custom.code).toBe(0);
+      expect(custom.json).toMatchObject({
+        action: "show-status",
+        status: {
+          id: "review",
+          source: "custom",
+          roles: ["active"],
+          aliases: ["in_review"],
+          description: "needs eyes",
+          order: 25,
+        },
+      });
+
+      const alias = context.runCli(["schema", "show-status", "in_review", "--json"], { expectJson: true });
+      expect(alias.code).toBe(0);
+      expect(alias.json).toMatchObject({
+        action: "show-status",
+        status: {
+          id: "review",
+          source: "custom",
+        },
+      });
+
+      const builtin = context.runCli(["schema", "show-status", "open", "--json"], { expectJson: true });
+      expect(builtin.code).toBe(0);
+      expect(builtin.json).toMatchObject({
+        action: "show-status",
+        status: {
+          id: "open",
+          source: "builtin",
+        },
+      });
+    });
+  });
+
+  it("errors for show-status when status id is missing or unknown", async () => {
+    await withTempPmPath(async (context) => {
+      const missing = context.runCli(["schema", "show-status"]);
+      expect(missing.code).not.toBe(0);
+      expect(missing.stderr).toContain("Status id must not be empty");
+
+      const unknown = context.runCli(["schema", "show-status", "review"]);
+      expect(unknown.code).not.toBe(0);
+      expect(unknown.stderr).toContain('Unknown status "review"');
+      expect(unknown.stderr).toContain("pm schema add-status \"review\"");
+    });
+  });
+
   it("is an idempotent upsert that replaces roles on re-add", async () => {
     await withTempPmPath(async (context) => {
       const first = context.runCli(["schema", "add-status", "review", "--role", "active", "--json"], { expectJson: true });
@@ -400,6 +456,7 @@ describe("schema add-status / remove-status commands", () => {
       const none = context.runCli(["schema"]);
       expect(none.code).not.toBe(0);
       expect(none.stderr).toContain("remove-type");
+      expect(none.stderr).toContain("show-status");
       expect(none.stderr).toContain("add-status");
       expect(none.stderr).toContain("remove-status");
     });

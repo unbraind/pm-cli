@@ -197,6 +197,13 @@ Prefix section headings with conventional emoji (`Added 🎉`, `Fixed 🐛`, ...
 npx pm-changelog --stdout --emoji-prefix
 ```
 
+Append compact per-item metadata when release notes need enough context to
+stand alone outside pm:
+
+```bash
+npx pm-changelog --stdout --include-metadata
+```
+
 The same flags are available on the pm extension command:
 
 ```bash
@@ -238,6 +245,7 @@ pm changelog generate --changelog-json
 | `--suggest-semver` | false | Print a suggested semver bump (`major`/`minor`/`patch`/`none`) as JSON to stdout; never writes the changelog. Computed from the same visible release sections as the output (respects `--limit`/`--since-version`). Also embedded in `--changelog-json` output |
 | `--body-preview <n>` | - | Append the first N characters of each item's body to its entry (single-lined, truncated with an ellipsis when longer). Loads bodies via `--include-body`; falls back to the item `description` when the body is empty |
 | `--emoji-prefix` | false | Prefix section headings with conventional emoji (`Added 🎉`, `Fixed 🐛`, ...); unknown headings pass through unchanged |
+| `--include-metadata` | false | Append compact item metadata (`type`, `status`, `priority`, `release`, `milestone`) to each entry |
 | `--mode <mode>` | `replace` | `replace` or `prepend` existing changelog |
 | `--json` | false | Print JSON summary for automation |
 | `--check` | false | Do not write; exit 1 if the output file would change |

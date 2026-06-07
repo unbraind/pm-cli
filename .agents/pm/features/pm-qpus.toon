@@ -1,0 +1,40 @@
+id: pm-qpus
+title: Add schema show-status status inspection
+description: "Add a first-class pm schema show-status subcommand so agents can inspect one resolved status definition (id, roles, aliases, source, description, order) without parsing full schema lists."
+type: Feature
+status: in_progress
+priority: 2
+tags[3]: agent-ux,"area:schema",pm-cli
+created_at: "2026-06-07T07:18:14.259Z"
+updated_at: "2026-06-07T07:55:14.792Z"
+assignee: codex-schema-show-status-20260607
+author: codex-schema-show-status-20260607
+parent: pm-8jdc
+comments[4]{created_at,author,text}:
+  "2026-06-07T07:18:19.263Z",codex-schema-show-status-20260607,"Kickoff: duplicate check complete (pm search \"schema show-status status inspection\" + pm list-open --parent pm-8jdc) found no active equivalent child item. Starting implementation for status-level schema inspection with CLI/MCP/contracts/tests/docs parity."
+  "2026-06-07T07:55:00.184Z",codex-schema-show-status-20260607,"Implementation complete: added pm schema show-status end-to-end across CLI runtime/dispatch, MCP pm_run schema action, contract metadata, and docs/tests. New schema subcommand behavior resolves status aliases, returns builtin/custom source, roles, aliases, description/order in JSON, and human-readable output via formatSchemaShowStatusHuman. Updated command discovery/help strings and regenerated contracts fixture after action contract changes."
+  "2026-06-07T07:55:00.510Z",codex-schema-show-status-20260607,"Verification evidence: pnpm build; node scripts/run-tests.mjs test -- tests/unit/schema-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/mcp-handshake.spec.ts (55 passed); pnpm contracts:update + pnpm contracts:check; pnpm changelog:pm + pnpm changelog:pm:check; pnpm release:gates (2540 tests, 100% coverage, static/docs/security/smoke gates passed). Manual temp-dir smoke passed at /tmp/tmp.EWFMSbmb1D using node dist/cli.js: init -> schema add-status review -> schema show-status review/in_review/open -> create+update status -> schema remove-status review -> show-status review expected unknown_status failure -> schema show Task."
+  "2026-06-07T07:55:00.828Z",codex-schema-show-status-20260607,"GitHub/Sentry triage 2026-06-07: gh issue list open = none, gh pr list open = none, dependabot/code-scanning/secret-scanning open alerts all empty ([]). Sentry telemetry gate passed in best-effort mode: critical=0, high=0, finish_error_rate_pct=1.88, missing_error_code_rows=0. Dependency review: commander 15 remains blocked by engines (node >=22.12) while repo supports node >=20. Updated managed pm-changelog extension to latest available npm version 2026.6.7 during changelog verification."
+files[11]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,Track pm-changelog upgrade to latest available version
+  .agents/pm/extensions/pm-changelog/package.json,project,Managed changelog package updated during changelog verification
+  docs/COMMANDS.md,project,Document schema show-status usage and JSON output
+  src/cli/commands/index.ts,project,Export show-status command helpers
+  src/cli/commands/schema.ts,project,Add show-status runtime and formatting
+  src/cli/register-mutation.ts,project,Wire show-status subcommand dispatch/help/output
+  src/mcp/server.ts,project,Add MCP schema show-status parity
+  src/sdk/cli-contracts.ts,project,Require schema name for show-status contract path
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,Update schema parameter descriptions for show-status
+  tests/fixtures/contracts/full.json,project,Regenerate contracts snapshot after schema contract changes
+  tests/unit/schema-command.spec.ts,project,Add show-status success and error coverage
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort --max-critical 0 --max-high 0 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/schema-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/mcp-handshake.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm release:gates",null,project,1500,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mq3gtl85-odnnqt,test,failed,"2026-06-07T07:28:02.562Z","2026-06-07T07:33:23.765Z","2026-06-07T07:33:23.766Z",null,null,3,2,0,null,null,null
+  test-local-mq3h0k92-777s9s,test,failed,"2026-06-07T07:33:38.267Z","2026-06-07T07:38:49.094Z","2026-06-07T07:38:49.094Z",null,null,3,2,0,null,null,null
+  test-local-mq3hlotf-dvqrdc,test,passed,"2026-06-07T07:39:14.447Z","2026-06-07T07:55:14.787Z","2026-06-07T07:55:14.787Z",null,null,3,0,0,null,null,null
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Describe schema show-status command and examples
+body: ""

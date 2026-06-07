@@ -1676,9 +1676,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     optional: ["name", "description", "defaultStatus", "folder", "alias", "role", "order", "author", "force"],
     conditionalRequired: [
       { property: "subcommand", value: "show", required: ["name"] },
+      { property: "subcommand", value: "show-status", required: ["name"] },
       { property: "subcommand", value: "add-type", required: ["name"] },
       { property: "subcommand", value: "remove-type", required: ["name"] },
-      // add-status/remove-status pass the status id as `name`.
+      // show-status/add-status/remove-status pass the status id as `name`.
       { property: "subcommand", value: "add-status", required: ["name"] },
       { property: "subcommand", value: "remove-status", required: ["name"] },
     ],

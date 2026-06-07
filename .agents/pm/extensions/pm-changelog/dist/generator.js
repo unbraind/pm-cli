@@ -206,7 +206,10 @@ function toDocumentItem(item) {
         title: toSingleLine(item.title),
         type: item.type,
         status: item.status,
+        priority: item.priority,
         tags: item.tags,
+        release: item.release,
+        milestone: item.milestone,
         url: item.url,
     };
 }
@@ -665,9 +668,30 @@ function hasAny(value, needles) {
 function formatItem(item, options) {
     const title = escapeMarkdown(toSingleLine(item.title));
     const id = formatItemId(item, options);
+    const metadata = formatItemMetadata(item, options);
     const link = options.includeLinks ? formatLink(item.url) : "";
     const preview = formatBodyPreview(item, options);
-    return `${title}${id}${link}${preview}`;
+    return `${title}${id}${metadata}${link}${preview}`;
+}
+function formatItemMetadata(item, options) {
+    if (!options.includeMetadata)
+        return "";
+    const parts = [];
+    if (typeof item.type === "string" && item.type.trim())
+        parts.push(`type:${item.type.trim()}`);
+    if (typeof item.status === "string" && item.status.trim())
+        parts.push(`status:${item.status.trim()}`);
+    if (typeof item.priority === "number" && Number.isFinite(item.priority))
+        parts.push(`P${item.priority}`);
+    const release = getStringField(item, "release");
+    if (release)
+        parts.push(`release:${release}`);
+    const milestone = getStringField(item, "milestone");
+    if (milestone)
+        parts.push(`milestone:${milestone}`);
+    if (parts.length === 0)
+        return "";
+    return ` _${parts.map((part) => escapeMarkdown(toSingleLine(part))).join("; ")}_`;
 }
 /**
  * OPT-IN (`--body-preview <n>`): append a truncated, single-lined, escaped

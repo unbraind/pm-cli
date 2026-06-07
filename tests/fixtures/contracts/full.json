@@ -1111,6 +1111,10 @@
           "flag": "--include-links"
         },
         {
+          "description": "Append compact item metadata (type/status/priority/release/milestone) to each entry",
+          "flag": "--include-metadata"
+        },
+        {
           "description": "Make item IDs clickable links to .toon files under the base URL",
           "flag": "--item-url-base",
           "value_name": "url",
@@ -1245,6 +1249,10 @@
         {
           "description": "Prefix section headings with conventional emoji (Added 🎉, Fixed 🐛, ...)",
           "flag": "--emoji-prefix"
+        },
+        {
+          "description": "Append compact item metadata (type/status/priority/release/milestone) to each entry",
+          "flag": "--include-metadata"
         },
         {
           "description": "Return the full structured changelog document (releases->sections->items)",
@@ -6774,6 +6782,10 @@
           "flag": "--include-links"
         },
         {
+          "description": "Append compact item metadata (type/status/priority/release/milestone) to each entry",
+          "flag": "--include-metadata"
+        },
+        {
           "description": "Make item IDs clickable links to .toon files under the base URL",
           "flag": "--item-url-base",
           "value_name": "url",
@@ -6920,6 +6932,10 @@
         {
           "description": "Prefix section headings with conventional emoji (Added 🎉, Fixed 🐛, ...)",
           "flag": "--emoji-prefix"
+        },
+        {
+          "description": "Append compact item metadata (type/status/priority/release/milestone) to each entry",
+          "flag": "--include-metadata"
         },
         {
           "description": "Return the full structured changelog document (releases->sections->items)",
@@ -14281,6 +14297,23 @@
             "if": {
               "properties": {
                 "subcommand": {
+                  "const": "show-status"
+                }
+              },
+              "required": [
+                "subcommand"
+              ]
+            },
+            "then": {
+              "required": [
+                "name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "subcommand": {
                   "const": "add-type"
                 }
               },
@@ -14396,7 +14429,7 @@
             "type": "boolean"
           },
           "name": {
-            "description": "Custom item type name (schema add-type/remove-type/show) or custom status id (schema add-status/remove-status).",
+            "description": "Custom item type name (schema add-type/remove-type/show) or custom status id (schema show-status/add-status/remove-status).",
             "examples": [
               "Spike",
               "review"
@@ -18704,6 +18737,10 @@
             "description": "Include item URLs in generated entries (default: false)",
             "type": "boolean"
           },
+          "includeMetadata": {
+            "description": "Append compact item metadata (type/status/priority/release/milestone) to each entry",
+            "type": "boolean"
+          },
           "itemUrlBase": {
             "description": "Make item IDs clickable links to .toon files under the base URL",
             "type": "string"
@@ -18816,6 +18853,10 @@
           },
           "includeLinks": {
             "description": "Include item URLs in generated entries (default: false)",
+            "type": "boolean"
+          },
+          "includeMetadata": {
+            "description": "Append compact item metadata (type/status/priority/release/milestone) to each entry",
             "type": "boolean"
           },
           "itemUrlBase": {

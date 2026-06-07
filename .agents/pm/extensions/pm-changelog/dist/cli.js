@@ -93,6 +93,7 @@ function parseArgs(args) {
         breakingChanges: false,
         suggestSemver: false,
         emojiPrefix: false,
+        includeMetadata: false,
         changelogJson: false,
         includeEmpty: false,
         includeLinks: false,
@@ -212,6 +213,9 @@ function parseArgs(args) {
                 break;
             case "--emoji-prefix":
                 options.emojiPrefix = true;
+                break;
+            case "--include-metadata":
+                options.includeMetadata = true;
                 break;
             case "--changelog-json":
                 options.changelogJson = true;
@@ -353,6 +357,7 @@ function buildGenerationOptions(options, items) {
         breakingChanges: options.breakingChanges,
         bodyPreview: options.bodyPreview,
         emojiPrefix: options.emojiPrefix,
+        includeMetadata: options.includeMetadata,
         suggestSemver: options.suggestSemver,
         includeEmpty: options.includeEmpty,
         includeLinks: options.includeLinks,
@@ -451,6 +456,7 @@ Options:
       --suggest-semver      Print a suggested semver bump (major/minor/patch) as JSON; never writes the changelog
       --body-preview <n>    Append the first N chars of each item body to its entry
       --emoji-prefix        Prefix section headings with conventional emoji (Added 🎉, Fixed 🐛, ...)
+      --include-metadata    Append compact item metadata to each entry
       --changelog-json      Print the full structured changelog document (releases->sections->items) to stdout
       --mode <mode>         replace or prepend existing changelog (default: replace)
       --include-empty       Emit an empty release section when no items match
