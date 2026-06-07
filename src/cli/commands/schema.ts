@@ -689,6 +689,17 @@ function toSchemaTypeDefinition(
   };
 }
 
+function toSchemaStatusSummary(definition: RuntimeStatusDefinition): SchemaStatusSummary {
+  return {
+    id: definition.id,
+    source: BUILTIN_STATUS_IDS.has(definition.id) ? "builtin" : "custom",
+    roles: Array.isArray(definition.roles) ? [...definition.roles] : [],
+    aliases: Array.isArray(definition.aliases) ? [...definition.aliases] : [],
+    ...(definition.description ? { description: definition.description } : {}),
+    ...(typeof definition.order === "number" ? { order: definition.order } : {}),
+  };
+}
+
 function classifyTypeSource(
   name: string,
   customNames: Set<string>,
@@ -735,16 +746,8 @@ function buildSchemaStatusSummaries(
   const builtin: SchemaStatusSummary[] = [];
   const custom: SchemaStatusSummary[] = [];
   for (const definition of registry.definitions) {
-    const source: SchemaStatusSummary["source"] = BUILTIN_STATUS_IDS.has(definition.id) ? "builtin" : "custom";
-    const summary: SchemaStatusSummary = {
-      id: definition.id,
-      source,
-      roles: Array.isArray(definition.roles) ? [...definition.roles] : [],
-      aliases: Array.isArray(definition.aliases) ? [...definition.aliases] : [],
-      ...(definition.description ? { description: definition.description } : {}),
-      ...(typeof definition.order === "number" ? { order: definition.order } : {}),
-    };
-    if (source === "builtin") {
+    const summary = toSchemaStatusSummary(definition);
+    if (summary.source === "builtin") {
       builtin.push(summary);
     } else {
       custom.push(summary);
@@ -885,14 +888,7 @@ export async function runSchemaShowStatus(
   }
   return {
     action: "show-status",
-    status: {
-      id: match.id,
-      source: BUILTIN_STATUS_IDS.has(match.id) ? "builtin" : "custom",
-      roles: Array.isArray(match.roles) ? [...match.roles] : [],
-      aliases: Array.isArray(match.aliases) ? [...match.aliases] : [],
-      ...(match.description ? { description: match.description } : {}),
-      ...(typeof match.order === "number" ? { order: match.order } : {}),
-    },
+    status: toSchemaStatusSummary(match),
     file: {
       path: context.statusesPath,
     },
