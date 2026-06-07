@@ -6,14 +6,24 @@ status: open
 priority: 1
 tags[6]: 2026-06-07,audit,backlog,context-management,living-map,pm-cli
 created_at: "2026-06-07T09:53:26.457Z"
-updated_at: "2026-06-07T10:25:07.216Z"
+updated_at: "2026-06-07T10:46:53.162Z"
 assignee: maintainer-agent
 author: maintainer-agent
 parent: pm-doxj
 dependencies[1]{id,kind,created_at,author,source_kind}:
   pm-doxj,parent,"2026-06-07T09:53:26.457Z",null,null
-comments[1]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-06-07T10:24:45.552Z",maintainer-agent,"Audit waves 1-5 complete: 71 OPEN backlog items created + AC backfilled + dedupe sweep clean (0 dups) + validate/health ok + 2 ADRs recorded. Proceeding to consolidation, commit, PR, bot-review loop."
+  "2026-06-07T10:45:40.829Z",maintainer-agent,"Continuation note: live GitHub check on 2026-06-07 found no open PRs and no PR attached to branch pm/forward-backlog-rebuild-and-adr-gaps-2026-06-07, despite the pending PR-review loop language. Local branch is clean with commit ee897da3 ahead of origin/main. Bootstrap before publish passed: npm install -g . and pnpm build."
+  "2026-06-07T10:46:53.162Z",maintainer-agent,"Evidence before PR publish: npm install -g . ok; pnpm build passed; pnpm changelog:pm left CHANGELOG.md unchanged; pnpm changelog:pm:check passed; pm validate --check-resolution --check-history-drift returned ok:true with history_drift ok and known resolution metadata warnings on older closed items; pm health --check-only --summary --json returned ok:true. GitHub live state: no open PRs before push."
+files[2]{path,scope,note}:
+  .agents/pm/history/pm-8u2a.jsonl,project,History stream for publish-step tracker mutations
+  .agents/pm/plans/pm-8u2a.toon,project,Plan publish/review step status and continuation evidence
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  pm health --check-only --summary --json,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pm validate --check-resolution --check-history-drift,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
 plan_mode: executing
 plan_scope: Rebuild the living forward backlog (features/stories/tasks/chores/issues/improvements/ideas/goals) + ADR gaps across all capability epics; no source/code/docs changes (tracking-only); all new backlog items OPEN; new ADRs closed Decisions with final changelog regen.
 plan_harness: claude-code
@@ -91,11 +101,12 @@ plan_steps[10]:
   - id: plan-step-008
     order: 8
     title: Commit + push + open descriptively-named PR
-    status: pending
+    status: in_progress
     created_at: "2026-06-07T09:53:53.051Z"
-    updated_at: "2026-06-07T09:53:53.051Z"
+    updated_at: "2026-06-07T10:45:56.544Z"
     body: Commit all .agents/pm additions with detailed message; push branch; open PR (specific name reflecting the audit + backlog rebuild).
     owner: orchestrator
+    evidence: Continuation agent started publish step after confirming no open PR exists for the branch.
   - id: plan-step-009
     order: 9
     title: AI-bot review loop until zero findings
