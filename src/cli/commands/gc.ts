@@ -45,6 +45,11 @@ const GC_TARGETS: readonly GcTarget[] = [
     relativePath: "runtime/test-runs",
     kind: "directory",
   },
+  {
+    scope: "runtime",
+    relativePath: "runtime/history-drift-cache.json",
+    kind: "file",
+  },
 ] as const;
 
 export interface GcCommandOptions {
@@ -176,6 +181,9 @@ function buildGcGuidance(params: {
     guidance.push(
       'Search artifacts were removed; run "pm install search-advanced --project" if reindex is unavailable, then "pm reindex --mode keyword" (and "--mode semantic" when semantic search is enabled) before search-heavy workflows.',
     );
+  }
+  if (params.removed.includes("runtime/history-drift-cache.json")) {
+    guidance.push('History drift cache was removed; the next "pm health" run performs a full history-drift re-scan.');
   }
   return guidance;
 }

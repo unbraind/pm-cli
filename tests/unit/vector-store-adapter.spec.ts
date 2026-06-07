@@ -1659,6 +1659,61 @@ describe("LanceDB local snapshot persistence", () => {
     }
   });
 
+  it("falls back to copy+unlink when snapshot rename hits EXDEV", async () => {
+    const sandboxRoot = await mkdtemp(join(tmpdir(), "pm-cli-lancedb-store-"));
+    const storePath = join(sandboxRoot, "store");
+    const snapshotPath = join(resolve(storePath), LANCE_DB_SNAPSHOT_DIR, "pm_items.json");
+    try {
+      const unlinkMock = vi.fn(async (...args: Parameters<typeof import("node:fs/promises").unlink>) => {
+        const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+        return actual.unlink(...args);
+      });
+      const copyFileMock = vi.fn(
+        async (...args: Parameters<typeof import("node:fs/promises").copyFile>) => {
+          const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+          return actual.copyFile(...args);
+        },
+      );
+      vi.resetModules();
+      vi.doMock("node:fs/promises", async () => {
+        const actual = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
+        return {
+          ...actual,
+          readFile: async () => {
+            const missing = new Error("missing") as NodeJS.ErrnoException;
+            missing.code = "ENOENT";
+            throw missing;
+          },
+          rename: async () => {
+            const crossDevice = new Error("cross-device") as NodeJS.ErrnoException;
+            crossDevice.code = "EXDEV";
+            throw crossDevice;
+          },
+          copyFile: copyFileMock,
+          unlink: unlinkMock,
+        };
+      });
+      const reloadedModule = await import("../../src/core/search/vector-stores.js");
+      await expect(
+        reloadedModule.executeVectorUpsert(
+          {
+            name: "lancedb",
+            path: storePath,
+          },
+          [{ id: "pm-a1", vector: [1, 0] }],
+        ),
+      ).resolves.toEqual({ status: "ok" });
+      expect(copyFileMock).toHaveBeenCalledTimes(1);
+      expect(unlinkMock).toHaveBeenCalledTimes(1);
+      const persisted = await readFile(snapshotPath, "utf8");
+      expect(persisted).toContain('"id":"pm-a1"');
+    } finally {
+      vi.doUnmock("node:fs/promises");
+      vi.resetModules();
+      await rm(sandboxRoot, { recursive: true, force: true });
+    }
+  });
+
   it("ignores ENOENT cleanup errors when deleting an emptied persisted table", async () => {
     const sandboxRoot = await mkdtemp(join(tmpdir(), "pm-cli-lancedb-store-"));
     const storePath = join(sandboxRoot, "store");

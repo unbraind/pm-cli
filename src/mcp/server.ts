@@ -1150,6 +1150,9 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
   if (!request.id && request.method?.startsWith("notifications/")) {
     return undefined;
   }
+  if (request.method === "ping") {
+    return {};
+  }
   if (request.method === "initialize") {
     return {
       protocolVersion: "2025-06-18",

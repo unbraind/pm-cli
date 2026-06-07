@@ -2,14 +2,25 @@ id: pm-lold
 title: MCP ping method not handled — returns 'Unsupported MCP method' instead of empty response
 description: "MCP protocol 2025-06-18 spec defines a `ping` method that should return an empty result `{}`. The pm-mcp server's handleRequest() falls through to `throw new PmCliError('Unsupported MCP method: ping', 64)` which writes a JSON-RPC error frame. Clients (e.g. Claude Code) that send ping for keep-alive get an error instead of a no-op. Evidence: server.ts line 1195 is the final throw; no case for 'ping' exists."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[3]: "area:mcp",bug,protocol
 created_at: "2026-06-07T10:03:42.103Z"
-updated_at: "2026-06-07T10:22:11.757Z"
+updated_at: "2026-06-07T13:01:27.334Z"
+assignee: codex-active-pm-cycle-20260607
 author: audit-platform-agent
 acceptance_criteria: "- MCP `ping` returns an empty result object `{}` per MCP 2025-06-18 spec\n- No JSON-RPC error frame emitted for ping\n- Integration test covers ping keep-alive handling"
 parent: pm-5k4v
 risk: low
 confidence: high
+comments[2]{created_at,author,text}:
+  "2026-06-07T12:58:07.549Z",codex-active-pm-cycle-20260607,"Implemented MCP protocol ping handling in src/mcp/server.ts: handleRequest now returns {} for method=ping instead of falling through to unsupported-method error. Added integration regression in tests/integration/mcp-handshake.spec.ts. Verification: node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts (pass)."
+  "2026-06-07T13:01:27.334Z",codex-active-pm-cycle-20260607,"Full verification stack passed on branch: pnpm build; pnpm typecheck; node scripts/run-tests.mjs coverage (2554 tests, 100% statements/branches/functions/lines); pnpm contracts:check; pnpm quality:static; pnpm security:scan; pnpm audit --audit-level low; node scripts/release/compatibility-check.mjs --json (ok true, item_count_before=2 item_count_after=2); node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort (critical=0, high=0, telemetry finish_error_rate_pct=2.06, missing_error_code_rows=0). Manual temp smoke also verified MCP ping returns empty result and runtime gc removes history-drift-cache.json."
+files[2]{path,scope,note}:
+  src/mcp/server.ts,project,Handle MCP ping with empty result payload
+  tests/integration/mcp-handshake.spec.ts,project,Add ping protocol regression coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Verify ping handshake behavior
+test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mq3sfkw8-sjtvfi,test,passed,"2026-06-07T12:58:16.603Z","2026-06-07T12:58:25.544Z","2026-06-07T12:58:25.544Z",null,null,1,0,0,null,null,null
 body: ""
