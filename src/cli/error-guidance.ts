@@ -123,6 +123,21 @@ function normalizeRecoveryPayload(payload: PmCliErrorRecoveryPayload | undefined
   if (typeof payload.suggested_retry === "string" && payload.suggested_retry.trim().length > 0) {
     normalized.suggested_retry = payload.suggested_retry.trim();
   }
+  if (Array.isArray(payload.fallback_candidates)) {
+    const fallbackCandidates = payload.fallback_candidates
+      .map((entry) => ({
+        source: typeof entry?.source === "string" ? entry.source.trim() : "",
+        command: typeof entry?.command === "string" ? entry.command.trim() : "",
+        reason: typeof entry?.reason === "string" ? entry.reason.trim() : "",
+      }))
+      .filter((entry) => entry.source.length > 0 && entry.command.length > 0 && entry.reason.length > 0);
+    if (fallbackCandidates.length > 0) {
+      normalized.fallback_candidates = fallbackCandidates;
+    }
+  }
+  if (typeof payload.next_best_command === "string" && payload.next_best_command.trim().length > 0) {
+    normalized.next_best_command = payload.next_best_command.trim();
+  }
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
@@ -146,6 +161,15 @@ function renderRecoveryBundle(recovery: PmCliErrorRecoveryPayload | undefined): 
   }
   if (normalized.suggested_retry) {
     lines.push(`  suggested_retry: ${normalized.suggested_retry}`);
+  }
+  if (normalized.next_best_command) {
+    lines.push(`  next_best_command: ${normalized.next_best_command}`);
+  }
+  if (normalized.fallback_candidates && normalized.fallback_candidates.length > 0) {
+    lines.push("  fallback_candidates:");
+    for (const candidate of normalized.fallback_candidates) {
+      lines.push(`    - ${candidate.source}: ${candidate.command} (${candidate.reason})`);
+    }
   }
   return lines;
 }

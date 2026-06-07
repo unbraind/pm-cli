@@ -12,13 +12,7 @@ pm upgrade --dry-run
 
 `pm extension ...` remains supported for compatibility and low-level runtime debugging.
 
-Related docs:
-
-- [SDK](SDK.md)
-- [Configuration](CONFIGURATION.md)
-- [Testing](TESTING.md)
-- [Command Reference](COMMANDS.md)
-- [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md)
+Related docs: [SDK](SDK.md), [Configuration](CONFIGURATION.md), [Testing](TESTING.md), [Command Reference](COMMANDS.md), [Extension Author Contracts](EXTENSION_AUTHOR_CONTRACTS.md).
 
 ## Package Sources
 
@@ -46,7 +40,7 @@ pm install governance-audit --project
 
 `pm install '*'`, `pm install all`, and shell-expanded `pm install *` are normalized to the same bundled install-all request. First-party package aliases come from each package manifest, with a fallback derived from the `packages/pm-*` directory name.
 
-External registry packages are installed by exact package name:
+External registry packages are installed by exact package name. If `npm:<name>` returns a registry 404, JSON error output includes `fallback_candidates` and `next_best_command`; unpublished first-party packages fall back to `pm install --project github.com/unbraind/<name>`.
 
 ```bash
 npm search "pm-cli pm-package"
@@ -55,6 +49,11 @@ pm install npm:pm-github --project
 pm package doctor --project --detail deep --trace
 pm github validate --repo owner/repo
 ```
+
+If `npm:<name>` returns a registry 404, JSON error output includes a compact
+recovery bundle with `fallback_candidates` and `next_best_command`. For
+unpublished first-party packages, the first fallback is the canonical GitHub
+source, for example `pm install --project github.com/unbraind/<name>`.
 
 For `pm-github`, run `pm github validate --repo owner/repo` before mutating commands; write paths require `GITHUB_TOKEN`/`GH_TOKEN` or `gh auth login`.
 
@@ -282,7 +281,7 @@ pm package deactivate <conflicting-package> --project
 pm package doctor --project --strict-exit
 ```
 
-For production stacks, keep broad demo/starter packages separate from packages that own real workflow behavior, or constrain registration surfaces through `extensions.policy.extension_overrides`.
+Doctor JSON also includes `triage.collision_plan` with grouped surfaces, ranked deactivation candidates, and command/action feature-loss hints. For production stacks, keep broad demo/starter packages separate from packages that own real workflow behavior, or constrain registration surfaces through `extensions.policy.extension_overrides`.
 
 ## Runtime APIs
 

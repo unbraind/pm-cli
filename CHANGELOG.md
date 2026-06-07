@@ -26,6 +26,7 @@
 
 ### Other
 
+- Package install fallback hints and extension collision plans ([pm-e48i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-e48i.toon))
 - Stabilize npx onboarding path for scoped pm package ([pm-pgew](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-pgew.toon))
 - Publish pm-github starter package as a community reference \(credential-requiring pattern\) ([pm-zw0n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-zw0n.toon))
 - Make list --ids repeatable for focused agent working-set refresh ([pm-42tb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-42tb.toon))

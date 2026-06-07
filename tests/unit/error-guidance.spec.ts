@@ -104,6 +104,32 @@ describe("pm cli error guidance context plumbing", () => {
     ]);
   });
 
+  it("preserves structured fallback recovery candidates in JSON and text output", () => {
+    const recovery = {
+      attempted_command: "pm install --project npm:pm-brief",
+      fallback_candidates: [
+        {
+          source: "github.com/unbraind/pm-brief",
+          command: "pm install --project github.com/unbraind/pm-brief",
+          reason: "canonical first-party GitHub repository fallback",
+        },
+      ],
+      next_best_command: "pm install --project github.com/unbraind/pm-brief",
+    };
+    const envelope = formatPmCliErrorForJson("npm package \"pm-brief\" was not found in the registry.", 3, {
+      code: "npm_package_not_found",
+      recovery,
+    });
+    expect(envelope.recovery).toMatchObject(recovery);
+
+    const text = formatPmCliErrorForDisplay("npm package \"pm-brief\" was not found in the registry.", {
+      code: "npm_package_not_found",
+      recovery,
+    });
+    expect(text).toContain("next_best_command: pm install --project github.com/unbraind/pm-brief");
+    expect(text).toContain("github.com/unbraind/pm-brief");
+  });
+
   it("surfaces nearest options and cross-command flag hints for unknown options", () => {
     const envelope = formatCommanderErrorForJson("unknown option '--type'", "test-all", "Task|Issue", 2, {
       unknownOptionSuggestions: ["--tag"],

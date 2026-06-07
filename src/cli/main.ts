@@ -341,6 +341,8 @@ function buildPmCliRecoveryContext(
     provided_fields: existingRecovery?.provided_fields ?? (providedFields.length > 0 ? providedFields : undefined),
     missing: existingRecovery?.missing ?? inferredMissing,
     ...(suggestedRetry ? { suggested_retry: suggestedRetry } : {}),
+    ...(existingRecovery?.fallback_candidates ? { fallback_candidates: existingRecovery.fallback_candidates } : {}),
+    ...(existingRecovery?.next_best_command ? { next_best_command: existingRecovery.next_best_command } : {}),
   };
   return {
     ...(context ?? {}),
@@ -2425,6 +2427,7 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
 }
 
 export const _testOnly = {
+  buildPmCliRecoveryContext,
   isCommanderError,
   normalizeThrownExitCode,
   readThrownExitCode,

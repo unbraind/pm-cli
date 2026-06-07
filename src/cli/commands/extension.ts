@@ -196,6 +196,30 @@ export interface ExtensionTriageSummary {
   update_check_failed_total: number;
   top_warnings: string[];
   remediation: string[];
+  collision_plan?: ExtensionCollisionPlan;
+}
+
+export interface ExtensionCollisionPlan {
+  status: "ok" | "conflicts_detected";
+  collision_count: number;
+  extension_count: number;
+  next_best_command: string;
+  collisions: Array<{
+    code: string;
+    surface: string;
+    winner: { layer: ExtensionScope; name: string };
+    displaced: { layer: ExtensionScope; name: string };
+  }>;
+  remediation_candidates: Array<{
+    action: "deactivate";
+    extension: string;
+    command: string;
+    affected_collisions: number;
+    feature_loss: {
+      command_paths: string[];
+      action_paths: string[];
+    };
+  }>;
 }
 
 export type ExtensionUpdateCheckStatus = "checked" | "skipped_unmanaged" | "skipped_non_github" | "failed" | "not_checked";

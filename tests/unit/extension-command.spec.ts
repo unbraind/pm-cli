@@ -10,10 +10,13 @@ import {
   readManagedExtensionState,
 } from "../../src/cli/commands/extension.js";
 import {
+  isNpmNotFoundError,
+  isNpmPackNotFoundError,
   normalizeNpmLocalFileAliasSpec,
   resolveInstallSource,
   resolveNpmCommandName,
   shouldRunNpmCommandInShell,
+  wrapNpmPackResolutionError,
 } from "../../src/cli/commands/extension/install-sources.js";
 import { buildExtensionTriageSummary } from "../../src/cli/commands/extension/doctor.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
@@ -854,6 +857,63 @@ describe("extension command runtime", () => {
     expect(shouldRunNpmCommandInShell("linux")).toBe(false);
   });
 
+  it("classifies missing first-party npm package installs with deterministic fallback recovery", () => {
+    const error = wrapNpmPackResolutionError(
+      "pm-definitely-missing-for-fallback-test-zzzzzz",
+      new Error("npm ERR! code E404\nnpm ERR! 404 Not Found - GET https://registry.npmjs.org/package"),
+    );
+    expect(error).toMatchObject({
+      exitCode: EXIT_CODE.NOT_FOUND,
+      context: {
+        code: "npm_package_not_found",
+        recovery: {
+          attempted_command:
+            "pm install --project npm:pm-definitely-missing-for-fallback-test-zzzzzz",
+          normalized_args: [
+            "install",
+            "--project",
+            "npm:pm-definitely-missing-for-fallback-test-zzzzzz",
+          ],
+          next_best_command:
+            "pm install --project github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
+          fallback_candidates: [
+            {
+              source: "github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
+              command: "pm install --project github.com/unbraind/pm-definitely-missing-for-fallback-test-zzzzzz",
+              reason: "canonical first-party GitHub repository fallback for unpublished pm packages",
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  it("does not emit first-party fallback candidates for third-party npm 404s", () => {
+    const error = wrapNpmPackResolutionError(
+      "left-pad-private-missing",
+      new Error("npm ERR! code E404\nnpm ERR! 404 Not Found - GET https://registry.npmjs.org/package"),
+    );
+    expect(error).toMatchObject({
+      exitCode: EXIT_CODE.NOT_FOUND,
+      context: {
+        code: "npm_package_not_found",
+        recovery: {
+          attempted_command: "pm install --project npm:left-pad-private-missing",
+          normalized_args: ["install", "--project", "npm:left-pad-private-missing"],
+        },
+      },
+    });
+    expect(error?.context.recovery?.fallback_candidates).toBeUndefined();
+    expect(error?.context.recovery?.next_best_command).toBeUndefined();
+  });
+
+  it("keeps generic not-found matching scoped to npm pack wrapping", () => {
+    const genericNotFound = new Error("tar command failed: archive member not found");
+    expect(isNpmNotFoundError(genericNotFound)).toBe(false);
+    expect(isNpmPackNotFoundError(genericNotFound)).toBe(true);
+    expect(wrapNpmPackResolutionError("pm-synthetic", genericNotFound)?.context.code).toBe("npm_package_not_found");
+  });
+
   it("installs, explores, manages, toggles activation, and uninstalls a local extension", async () => {
     await withTempPmPath(async (context) => {
       const sourceDir = path.join(context.tempRoot, "sample-source-ext");
@@ -1562,6 +1622,29 @@ describe("extension command runtime", () => {
     expect(summary.remediation.join(" ")).not.toContain("Conflicting extensions: project");
     expect(summary.remediation.join(" ")).toContain("pm package --deactivate <name> --project");
     expect(summary.remediation.join(" ")).toContain("pm package --doctor --project --detail deep --trace");
+    expect(summary.collision_plan).toMatchObject({
+      status: "conflicts_detected",
+      collision_count: 4,
+      extension_count: 2,
+      next_best_command: "pm package --doctor --project --detail deep --trace",
+      remediation_candidates: [
+        {
+          action: "deactivate",
+          extension: "pm-starter",
+          command: "pm package --deactivate pm-starter --project",
+          affected_collisions: 4,
+        },
+        {
+          action: "deactivate",
+          extension: "pm-ts-starter",
+          command: "pm package --deactivate pm-ts-starter --project",
+          affected_collisions: 4,
+        },
+      ],
+    });
+    expect(summary.collision_plan?.collisions.map((entry) => entry.surface)).toEqual(
+      expect.arrayContaining(["acme:sync", "json", "global"]),
+    );
   });
 
   it("reports extension governance policy diagnostics in doctor output", async () => {
