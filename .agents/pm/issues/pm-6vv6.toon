@@ -2,12 +2,11 @@ id: pm-6vv6
 title: "writeFileAtomic cross-device rename safety: handle EXDEV when tmp and target are on different mounts"
 description: "writeFileAtomic writes a .tmp file in the same directory as the target then renames. If the item store is on a different filesystem mount than the temp-file directory (e.g. symlinked paths, container bind mounts, or network FS), fs.rename raises EXDEV (cross-device link not permitted). There is no fallback to copy+unlink."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[3]: "area:storage",correctness,durability
 created_at: "2026-06-07T10:02:44.972Z"
-updated_at: "2026-06-07T13:01:27.891Z"
-assignee: codex-active-pm-cycle-20260607
+updated_at: "2026-06-07T13:43:36.740Z"
 author: audit-data-agent
 acceptance_criteria: "- `writeFileAtomic` catches `EXDEV` and falls back to: write to a tmp in `os.tmpdir()`, copy to target, unlink tmp\n- OR falls back to a non-atomic `writeFile` with a warning so the file is never left corrupt\n- Both `fs-utils.ts` and the LanceDB snapshot writer handle this case\n- Unit test covering the EXDEV code path (mock `rename` to throw EXDEV)"
 parent: pm-o2kc
@@ -25,4 +24,5 @@ tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test -- tests/unit/fs-utils.spec.ts tests/unit/vector-store-adapter.spec.ts,null,project,600,null,null,null,null,null,null,null,null,null,null,null,Validate EXDEV fallback behavior
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mq3sh1zt-ak8nga,test,passed,"2026-06-07T12:59:28.079Z","2026-06-07T12:59:34.361Z","2026-06-07T12:59:34.361Z",null,null,1,0,0,null,null,null
+close_reason: Hardened writeFileAtomic for EXDEV fallback and routed LanceDB snapshot persistence through shared atomic writer with regressions; linked/full verification passed; merged via PR #144.
 body: "## Context\n\n`src/core/fs/fs-utils.ts:29-38`:\n```ts\nawait fs.writeFile(tempPath, contents, 'utf8');\nawait fs.rename(tempPath, targetPath);\n```\n\nOn Linux/macOS, `rename(2)` is atomic within a filesystem but raises `EXDEV` across mounts. The same temp-in-same-dir pattern is used for both the LanceDB snapshot (`src/core/search/vector-stores.ts:458-477`) and the drift cache (`src/core/history/drift-scan.ts`). Any deployment where `.agents/pm/` is a bind mount or symlink to a different device will see silent write failures on every mutation.\n\n## Acceptance criteria\n\n- [ ] `writeFileAtomic` catches `EXDEV` and falls back to: write to a tmp in `os.tmpdir()`, copy to target, unlink tmp\n- [ ] OR falls back to a non-atomic `writeFile` with a warning so the file is never left corrupt\n- [ ] Both `fs-utils.ts` and the LanceDB snapshot writer handle this case\n- [ ] Unit test covering the EXDEV code path (mock `rename` to throw EXDEV)\n\n## Evidence\n\n- `src/core/fs/fs-utils.ts:29-38` — no EXDEV handling\n- `src/core/search/vector-stores.ts:456-478` — `persistLanceDbLocalTable` also uses writeFile+rename without EXDEV handling"

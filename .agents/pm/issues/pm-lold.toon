@@ -2,12 +2,11 @@ id: pm-lold
 title: MCP ping method not handled — returns 'Unsupported MCP method' instead of empty response
 description: "MCP protocol 2025-06-18 spec defines a `ping` method that should return an empty result `{}`. The pm-mcp server's handleRequest() falls through to `throw new PmCliError('Unsupported MCP method: ping', 64)` which writes a JSON-RPC error frame. Clients (e.g. Claude Code) that send ping for keep-alive get an error instead of a no-op. Evidence: server.ts line 1195 is the final throw; no case for 'ping' exists."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[3]: "area:mcp",bug,protocol
 created_at: "2026-06-07T10:03:42.103Z"
-updated_at: "2026-06-07T13:01:27.334Z"
-assignee: codex-active-pm-cycle-20260607
+updated_at: "2026-06-07T13:43:35.390Z"
 author: audit-platform-agent
 acceptance_criteria: "- MCP `ping` returns an empty result object `{}` per MCP 2025-06-18 spec\n- No JSON-RPC error frame emitted for ping\n- Integration test covers ping keep-alive handling"
 parent: pm-5k4v
@@ -23,4 +22,5 @@ tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
   node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,Verify ping handshake behavior
 test_runs[1]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mq3sfkw8-sjtvfi,test,passed,"2026-06-07T12:58:16.603Z","2026-06-07T12:58:25.544Z","2026-06-07T12:58:25.544Z",null,null,1,0,0,null,null,null
+close_reason: "Implemented MCP ping {} handling with integration regression coverage; full gate stack and linked tests passed; merged via PR #144."
 body: ""

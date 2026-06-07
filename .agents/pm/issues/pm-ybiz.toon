@@ -2,12 +2,11 @@ id: pm-ybiz
 title: pm-changelog classifier mis-routes feature titles containing the word 'remove'/'delete' into the Removed section
 description: "The pm-changelog classifyItem 'Removed' rule fires on \\bremove\\b/\\bdelete\\b anywhere in allValues (strong tier + sanitized title) BEFORE the strong-tier Changed/type defaults. A closed item whose title legitimately contains 'remove-type' as part of a feature name (e.g. the schema-customization plan 'Complete schema customization epic: remove-type, add-status, ...') is published under '### Removed', which misleads readers into thinking a capability was removed. The existing flag-stripping guard only neutralizes --flags, not plain words like 'remove-type'."
 type: Issue
-status: in_progress
+status: closed
 priority: 4
 tags[5]: "area:changelog","area:ci",classifier,living-map,pm-changelog
 created_at: "2026-06-07T10:38:58.087Z"
-updated_at: "2026-06-07T13:01:28.749Z"
-assignee: codex-active-pm-cycle-20260607
+updated_at: "2026-06-07T13:43:38.695Z"
 author: maintainer-agent
 acceptance_criteria: "- A title containing 'remove'/'delete' only as a substring of a feature/command name is NOT routed to Removed when type+tags carry no removal signal\\n- Strong-tier (type/tags) signals can override the weak title-only Removed match (mirroring the Changed/Added precedence)\\n- Regression test covers 'remove-type'/'create_default_type'-style titles\\n- Verified against the live pm-cli tracker (e.g. pm-z5nb no longer mis-routes)"
 parent: pm-u9d0
@@ -22,4 +21,5 @@ test_runs[3]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resum
   test-local-mq3shwjj-wlp10z,test,failed,"2026-06-07T13:00:04.587Z","2026-06-07T13:00:13.951Z","2026-06-07T13:00:13.951Z",null,null,0,1,0,null,null,null
   test-local-mq3sibxs-znksk2,test,failed,"2026-06-07T13:00:23.532Z","2026-06-07T13:00:33.904Z","2026-06-07T13:00:33.904Z",null,null,0,1,0,null,null,null
   test-local-mq3sj82t-2nce2p,test,passed,"2026-06-07T13:01:07.060Z","2026-06-07T13:01:15.557Z","2026-06-07T13:01:15.557Z",null,null,1,0,0,null,null,null
+close_reason: "External classifier fix delivered in pm-changelog PR #36, validated via pm-changelog gates and local latest-package install/check workflows; linkage documented and merged."
 body: "## Context\\nclassifyItem in the separate pm-changelog repo (src/generator.ts) checks Removed via hasAny(allValues, [removed,remove,deleted,delete]) which runs before the strong-tier Changed needles and the bug-like-type default. allValues includes the sanitized title; the sanitizer strips --flags but not plain hyphenated words.\\n\\n## Evidence\\n- pm-changelog src/generator.ts (Removed rule ordering + hasAny word-boundary match)\\n- Live repro: closing pm-z5nb ('...remove-type, add-status...') produced a '### Removed' changelog line for a plan that removed nothing (reverted in this PR by reopening pm-z5nb)\\n\\n## Acceptance criteria\\n- See structured acceptance_criteria field."
