@@ -23,6 +23,7 @@ export interface ExtensionCommandHelpDescriptor {
   source?: {
     layer: "global" | "project";
     name: string;
+    package?: string;
   };
 }
 
@@ -211,6 +212,7 @@ export function collectExtensionCommandHelpDescriptors(
       source: {
         layer: definition.layer,
         name: definition.name,
+        package: definition.source_package,
       },
     });
   }

@@ -233,6 +233,16 @@ describe("extension command runtime", () => {
           name: "starter-package",
         },
         activated: true,
+        command_paths: ["starter-package ping"],
+        action_paths: ["starter-package-ping"],
+        command_discovery: {
+          package_name: "starter-package",
+          extension_name: "starter-package",
+          command_paths: ["starter-package ping"],
+          action_paths: ["starter-package-ping"],
+          help_commands: ["pm starter-package ping --help"],
+          next_steps: ["pm starter-package ping --help"],
+        },
       });
       const invoked = spawnSync(process.execPath, [path.join(process.cwd(), "dist/cli.js"), "--path", context.pmPath, "starter-package", "ping", "--json"], {
         cwd: process.cwd(),
@@ -295,6 +305,16 @@ describe("extension command runtime", () => {
           name: "beads",
         },
         activated: true,
+        command_paths: expect.arrayContaining(["beads import"]),
+        action_paths: expect.arrayContaining(["beads-import"]),
+        command_discovery: {
+          package_name: "beads",
+          extension_name: "builtin-beads-import",
+          command_paths: expect.arrayContaining(["beads import"]),
+          action_paths: expect.arrayContaining(["beads-import"]),
+          help_commands: expect.arrayContaining(["pm beads import --help"]),
+          next_steps: expect.arrayContaining(["pm beads import --help"]),
+        },
       });
 
       const todosInstall = await runExtension("todos", { install: true, project: true }, { path: context.pmPath });
@@ -512,6 +532,16 @@ describe("extension command runtime", () => {
             alias: "beads",
             extension: { name: "builtin-beads-import" },
             activated: true,
+            command_paths: expect.arrayContaining(["beads import"]),
+            action_paths: expect.arrayContaining(["beads-import"]),
+            command_discovery: {
+              package_name: "beads",
+              extension_name: "builtin-beads-import",
+              command_paths: expect.arrayContaining(["beads import"]),
+              action_paths: expect.arrayContaining(["beads-import"]),
+              help_commands: expect.arrayContaining(["pm beads import --help"]),
+              next_steps: expect.arrayContaining(["pm beads import --help"]),
+            },
           },
           {
             alias: "calendar",

@@ -467,7 +467,7 @@ async function listExtensionDirectories(extensionsRoot: string): Promise<string[
 }
 
 function summarizeCandidate(candidate: ExtensionCandidate): EffectiveExtension {
-  return {
+  const summary: EffectiveExtension = {
     layer: candidate.layer,
     directory: candidate.directory,
     manifest_path: candidate.manifest_path,
@@ -491,6 +491,43 @@ function summarizeCandidate(candidate: ExtensionCandidate): EffectiveExtension {
         }
       : undefined,
   };
+  if (candidate.source_package) {
+    summary.source_package = candidate.source_package;
+  }
+  return summary;
+}
+
+function normalizeManagedSourcePackage(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+async function readManagedExtensionSourcePackages(extensionsRoot: string): Promise<Map<string, string>> {
+  const packages = new Map<string, string>();
+  try {
+    const parsed = JSON.parse(await fs.readFile(path.join(extensionsRoot, ".managed-extensions.json"), "utf8")) as unknown;
+    if (typeof parsed !== "object" || parsed === null || !Array.isArray((parsed as { entries?: unknown }).entries)) {
+      return packages;
+    }
+    for (const entry of (parsed as { entries: unknown[] }).entries) {
+      if (typeof entry !== "object" || entry === null) {
+        continue;
+      }
+      const record = entry as { directory?: unknown; name?: unknown; source?: { package?: unknown } };
+      const sourcePackage = normalizeManagedSourcePackage(record.source?.package);
+      if (!sourcePackage) {
+        continue;
+      }
+      if (typeof record.directory === "string" && record.directory.trim().length > 0) {
+        packages.set(`directory:${record.directory.trim()}`, sourcePackage);
+      }
+      if (typeof record.name === "string" && record.name.trim().length > 0) {
+        packages.set(`name:${record.name.trim()}`, sourcePackage);
+      }
+    }
+  } catch {
+    return packages;
+  }
+  return packages;
 }
 
 function sortCandidates(candidates: ExtensionCandidate[]): ExtensionCandidate[] {
@@ -532,9 +569,10 @@ async function scanExtensionLayer(
   const warnings: string[] = [];
   const candidates: ExtensionCandidate[] = [];
   const directories = await listExtensionDirectories(extensionsRoot);
+  const managedSourcePackages = await readManagedExtensionSourcePackages(extensionsRoot);
 
   for (const directory of directories) {
-    const scanned = await scanExtensionDirectory(layer, extensionsRoot, directory, enabled, disabled);
+    const scanned = await scanExtensionDirectory(layer, extensionsRoot, directory, enabled, disabled, managedSourcePackages);
     diagnostics.push(scanned.diagnostic);
     warnings.push(...scanned.warnings);
     if (scanned.candidate) {
@@ -551,6 +589,7 @@ async function scanExtensionDirectory(
   directory: string,
   enabled: Set<string>,
   disabled: Set<string>,
+  managedSourcePackages: ReadonlyMap<string, string>,
 ): Promise<ScannedExtensionDirectory> {
   const extensionDir = path.join(extensionsRoot, directory);
   const manifestPath = path.join(extensionDir, "manifest.json");
@@ -635,6 +674,8 @@ async function scanExtensionDirectory(
     entryExists &&
     pmVersionCompatibility.allowed &&
     pmMaxVersionCompatibility.allowed;
+  const sourcePackage =
+    managedSourcePackages.get(`directory:${directory}`) ?? managedSourcePackages.get(`name:${manifest.name}`);
 
   return {
     diagnostic: {
@@ -658,6 +699,7 @@ async function scanExtensionDirectory(
             manifest_path: manifestPath,
             entry_path: entryPath,
             manifest,
+            source_package: sourcePackage,
           }
         : null,
   };
@@ -1590,6 +1632,7 @@ function createExtensionApi(
       const registration: RegisteredExtensionCommandDefinition = {
         layer: extension.layer,
         name: extension.name,
+        source_package: extension.source_package,
         command: normalizedCommand,
         action,
         examples,
@@ -1797,6 +1840,7 @@ function createExtensionApi(
     const registration: RegisteredExtensionCommandDefinition = {
       layer: extension.layer,
       name: extension.name,
+      source_package: extension.source_package,
       command: commandPath,
       action,
       examples,

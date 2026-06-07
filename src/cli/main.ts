@@ -1095,15 +1095,6 @@ async function loadRuntimeExtensionDiscoverySnapshot(pmRoot: string): Promise<Ru
     return runtimeExtensionDiscoverySnapshotCache.snapshot;
   }
 
-  const settingsPath = getSettingsPath(pmRoot);
-  if (!(await pathExists(settingsPath))) {
-    runtimeExtensionDiscoverySnapshotCache = {
-      key: cacheKey,
-      snapshot: null,
-    };
-    return null;
-  }
-
   try {
     const startedAt = Date.now();
     const { settings, warnings: settingsReadWarnings } = await readSettingsWithMetadata(pmRoot);
@@ -1138,15 +1129,6 @@ async function loadRuntimeExtensionSnapshot(pmRoot: string): Promise<RuntimeExte
   const cacheKey = buildRuntimeExtensionSnapshotCacheKey(pmRoot);
   if (runtimeExtensionSnapshotCache?.key === cacheKey) {
     return runtimeExtensionSnapshotCache.snapshot;
-  }
-
-  const settingsPath = getSettingsPath(pmRoot);
-  if (!(await pathExists(settingsPath))) {
-    runtimeExtensionSnapshotCache = {
-      key: cacheKey,
-      snapshot: null,
-    };
-    return null;
   }
 
   try {
@@ -1265,6 +1247,11 @@ async function maybeLoadRuntimeExtensions(
     registrations: snapshot.registrations,
     pmRoot,
   };
+}
+
+async function loadRuntimeExtensionCommandDescriptorsForRecovery(pmRoot: string): Promise<Map<string, ExtensionCommandHelpDescriptor>> {
+  const snapshot = await loadRuntimeExtensionSnapshot(pmRoot);
+  return snapshot ? new Map(snapshot.commandDescriptors) : activeRuntimeExtensionCommandDescriptors;
 }
 
 async function executeRegisteredRuntimeMigrations(
@@ -2218,10 +2205,13 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
         if (helpRequest.requested && !isKnownHelpCommandPath(program, helpRequest.commandPathTokens)) {
           const unknownToken = helpRequest.commandPathTokens[0] ?? parseBootstrapCommandName(invocationArgv) ?? "<command>";
           const unknownMessage = `unknown command '${unknownToken}'`;
+          const recoveryCommandDescriptors = await loadRuntimeExtensionCommandDescriptorsForRecovery(
+            resolvePmRoot(process.cwd(), bootstrapGlobal.path),
+          );
           const usageContext = await resolveCommanderUsageContext(
             { message: unknownMessage },
             program,
-            activeRuntimeExtensionCommandDescriptors,
+            recoveryCommandDescriptors,
           );
           const classification = classifyCommanderError(
             usageContext.message,
@@ -2259,8 +2249,8 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
             source_context: activeTelemetryCommandContext?.source_context,
           });
           const renderedUsage = jsonErrors
-            ? await formatCommanderUsageJson({ message: unknownMessage }, program, activeRuntimeExtensionCommandDescriptors)
-            : await formatCommanderUsageMessage({ message: unknownMessage }, program, activeRuntimeExtensionCommandDescriptors);
+            ? await formatCommanderUsageJson({ message: unknownMessage }, program, recoveryCommandDescriptors)
+            : await formatCommanderUsageMessage({ message: unknownMessage }, program, recoveryCommandDescriptors);
           sentryFinishCommandSpan(false, unknownMessage, {
             error_code: classification.code,
             error_category: errorCategory,

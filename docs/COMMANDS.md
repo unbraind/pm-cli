@@ -322,12 +322,15 @@ pm telemetry status
 pm telemetry stats --limit 10
 pm telemetry flush
 pm telemetry clear
+# Legacy-compatible alias for older agent scripts:
+pm telemetry local-analytics status
 ```
 
 - `status` reports queue depth, endpoint, and latest flush metadata.
 - `stats` groups queued local telemetry events by command name.
 - `flush` runs an immediate local queue flush attempt.
 - `clear` disables telemetry and deletes local queue/runtime telemetry artifacts.
+- `local-analytics <status|stats|flush|clear>` is accepted as a backward-compatible namespace alias for older scripts; new scripts should use `pm telemetry <subcommand>`.
 
 ### Self-Repair Remediation
 

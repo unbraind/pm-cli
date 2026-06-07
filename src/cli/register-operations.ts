@@ -16,6 +16,34 @@ import {
   printResult,
 } from "./registration-helpers.js";
 
+function resolveTelemetrySubcommand(namespaceOrSubcommand: string | undefined, subcommand: string | undefined): string | undefined {
+  const normalizedNamespace = namespaceOrSubcommand?.trim().toLowerCase();
+  const normalizedSubcommand = subcommand?.trim().toLowerCase();
+  if (normalizedNamespace === undefined || normalizedNamespace.length === 0) {
+    return normalizedSubcommand;
+  }
+  if (normalizedNamespace === "local-analytics") {
+    return normalizedSubcommand && normalizedSubcommand.length > 0 ? normalizedSubcommand : "status";
+  }
+  if (normalizedSubcommand !== undefined && normalizedSubcommand.length > 0) {
+    throw new PmCliError(
+      `Unknown pm telemetry path "${namespaceOrSubcommand} ${subcommand}". Use "pm telemetry ${namespaceOrSubcommand}" or legacy alias "pm telemetry local-analytics ${normalizedSubcommand}".`,
+      EXIT_CODE.USAGE,
+      {
+        code: "unknown_subcommand",
+        examples: [
+          "pm telemetry status",
+          "pm telemetry flush",
+          "pm telemetry stats --limit 10",
+          "pm telemetry clear",
+          "pm telemetry local-analytics status --json",
+        ],
+      },
+    );
+  }
+  return normalizedNamespace;
+}
+
 
 
 export function registerOperationCommands(program: Command): void {
@@ -185,16 +213,17 @@ export function registerOperationCommands(program: Command): void {
 
   program
     .command("telemetry")
-    .argument("[subcommand]", "Telemetry subcommand: status, flush, stats, clear (default: status)")
+    .argument("[namespaceOrSubcommand]", "Telemetry subcommand: status, flush, stats, clear (default: status)")
+    .argument("[subcommand]", "Compatibility alias target for local-analytics: status, flush, stats, clear")
     .option("--limit <n>", "Maximum command groups returned by telemetry stats")
     .description("Inspect and manage local telemetry queue/runtime state.")
-    .action(async (subcommand: string | undefined, options: Record<string, unknown>, command) => {
+    .action(async (namespaceOrSubcommand: string | undefined, subcommand: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const { runTelemetry } = await import("./commands/telemetry.js");
       const result = await runTelemetry(
         {
-          subcommand,
+          subcommand: resolveTelemetrySubcommand(namespaceOrSubcommand, subcommand),
           limit:
             typeof options.limit === "string"
               ? options.limit

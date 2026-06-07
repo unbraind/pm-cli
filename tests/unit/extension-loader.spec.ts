@@ -25,6 +25,7 @@ import {
   type ExtensionGovernancePolicy,
 } from "../../src/core/extensions/extension-types.js";
 import { readSettings } from "../../src/core/store/settings.js";
+import { collectExtensionCommandHelpDescriptors } from "../../src/cli/extension-command-help.js";
 import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
@@ -73,6 +74,90 @@ describe("extension loader", () => {
         global: path.join(context.env.PM_GLOBAL_PATH as string, "extensions"),
         project: path.join(context.pmPath, "extensions"),
       });
+    });
+  });
+
+  it("threads managed npm package identifiers through discovered and loaded extensions", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "package-backed-ext",
+        {
+          name: "standup",
+          version: "1.0.0",
+          entry: "./index.mjs",
+        },
+        "export default {name: 'standup'};\n",
+      );
+      await writeFile(
+        path.join(roots.project, ".managed-extensions.json"),
+        `${JSON.stringify(
+          {
+            version: 1,
+            entries: [
+              {
+                name: "standup",
+                directory: "package-backed-ext",
+                source: {
+                  kind: "npm",
+                  input: "npm:@unbraind/pm-slack-standup",
+                  location: ".",
+                  package: "@unbraind/pm-slack-standup",
+                },
+              },
+            ],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+      expect(discovery.effective).toEqual([
+        expect.objectContaining({
+          name: "standup",
+          source_package: "@unbraind/pm-slack-standup",
+        }),
+      ]);
+
+      const loaded = await loadExtensions({ pmRoot: context.pmPath, settings });
+      expect(loaded.loaded).toEqual([
+        expect.objectContaining({
+          name: "standup",
+          source_package: "@unbraind/pm-slack-standup",
+        }),
+      ]);
+    });
+  });
+
+  it("exposes registered command package identifiers in command help descriptors", () => {
+    const descriptors = collectExtensionCommandHelpDescriptors(
+      [],
+      [
+        {
+          layer: "project",
+          name: "standup",
+          source_package: "@unbraind/pm-slack-standup",
+          command: "standup",
+          action: "standup",
+          examples: [],
+          failure_hints: [],
+          arguments: [],
+        },
+      ],
+      [],
+    );
+
+    expect(descriptors.get("standup")?.source).toEqual({
+      layer: "project",
+      name: "standup",
+      package: "@unbraind/pm-slack-standup",
     });
   });
 

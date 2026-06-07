@@ -164,6 +164,7 @@ export interface EffectiveExtension {
   directory: string;
   manifest_path: string;
   name: string;
+  source_package?: string;
   version: string;
   entry: string;
   priority: number;
@@ -671,6 +672,7 @@ export interface RegisteredExtensionFlagDefinitions {
 export interface RegisteredExtensionCommandDefinition {
   layer: ExtensionLayer;
   name: string;
+  source_package?: string;
   command: string;
   action: string;
   description?: string;
@@ -825,6 +827,7 @@ export interface ExtensionCandidate {
   manifest_path: string;
   entry_path: string;
   manifest: ExtensionManifest;
+  source_package?: string;
 }
 
 export interface ExtensionLayerScanResult {

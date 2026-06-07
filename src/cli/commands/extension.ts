@@ -732,6 +732,71 @@ interface GithubUpdateStatus {
   error?: string;
 }
 
+function summarizeRuntimeCommandPathsForExtension(
+  extensionName: string,
+  installed: ManagedExtensionSummary[],
+): { command_paths: string[]; action_paths: string[] } {
+  const normalizedName = normalizeExtensionNameForMatch(extensionName);
+  const entry = installed.find((candidate) => normalizeExtensionNameForMatch(candidate.name) === normalizedName);
+  return {
+    command_paths: [...(entry?.command_paths ?? [])].sort((left, right) => left.localeCompare(right)),
+    action_paths: [...(entry?.action_paths ?? [])].sort((left, right) => left.localeCompare(right)),
+  };
+}
+
+function resolveCommandDiscoveryPackageName(extensionName: string, source: ManagedExtensionSource): string {
+  if (source.kind === "npm" && typeof source.package === "string" && source.package.trim().length > 0) {
+    return source.package.trim();
+  }
+  if (source.kind === "builtin" && typeof source.name === "string" && source.name.trim().length > 0) {
+    return source.name.trim();
+  }
+  return extensionName;
+}
+
+function buildInstallCommandDiscovery(
+  extensionName: string,
+  source: ManagedExtensionSource,
+  commandSummary: { command_paths: string[]; action_paths: string[] },
+): Record<string, unknown> {
+  const helpCommands = commandSummary.command_paths.map((commandPath) => `pm ${commandPath} --help`);
+  return {
+    package_name: resolveCommandDiscoveryPackageName(extensionName, source),
+    extension_name: extensionName,
+    command_paths: commandSummary.command_paths,
+    action_paths: commandSummary.action_paths,
+    help_commands: helpCommands,
+    next_steps:
+      commandSummary.command_paths.length > 0
+        ? helpCommands
+        : ["Run pm package doctor --project --detail deep if expected package commands are missing."],
+  };
+}
+
+async function probeRuntimeCommandPathsForInstall(
+  pmRoot: string,
+  settings: PmSettings,
+  refreshedInstalled: ManagedExtensionSummary[],
+  global: GlobalOptions,
+): Promise<{ installed: ManagedExtensionSummary[]; warnings: string[] }> {
+  const loadResult = await loadExtensions({
+    pmRoot,
+    settings,
+    cwd: process.cwd(),
+    noExtensions: global.noExtensions === true,
+    reload_token: nextExtensionReloadToken(),
+    cache_bust: true,
+  });
+  const activationResult = await activateExtensions({
+    ...loadResult,
+    loaded: loadResult.loaded,
+  });
+  return {
+    installed: applyDoctorRuntimeActivationState(refreshedInstalled, loadResult, activationResult),
+    warnings: [...loadResult.warnings, ...activationResult.warnings],
+  };
+}
+
 async function checkGithubUpdate(source: ManagedExtensionSource): Promise<GithubUpdateStatus> {
   const checkedAt = nowIso();
   if (source.kind !== "github" || !source.repository) {
@@ -1108,6 +1173,9 @@ export async function runExtension(
           destination_path: (entry.result.details as { destination_path?: unknown }).destination_path,
           activated: (entry.result.details as { activated?: unknown }).activated,
           settings_changed: (entry.result.details as { settings_changed?: unknown }).settings_changed,
+          command_paths: (entry.result.details as { command_paths?: unknown }).command_paths,
+          action_paths: (entry.result.details as { action_paths?: unknown }).action_paths,
+          command_discovery: (entry.result.details as { command_discovery?: unknown }).command_discovery,
           warnings: entry.result.warnings,
         })),
       });
@@ -1196,6 +1264,16 @@ export async function runExtension(
         if (activationChanged) {
           await writeSettings(resolvedRoots.settings_root, settings, "settings:write");
         }
+        const refreshedInstalled = await listInstalledExtensions(resolvedRoots.selected_root, scope, settings, managedState);
+        warnings.push(...refreshedInstalled.warnings);
+        const runtimeProbe = await probeRuntimeCommandPathsForInstall(
+          resolvedRoots.pm_root,
+          settings,
+          refreshedInstalled.extensions,
+          global,
+        );
+        warnings.push(...runtimeProbe.warnings);
+        const commandSummary = summarizeRuntimeCommandPathsForExtension(validated.manifest.name, runtimeProbe.installed);
 
         return withResult({
           extension: {
@@ -1211,6 +1289,9 @@ export async function runExtension(
           installed_in_place: installInPlace,
           activated: true,
           settings_changed: activationChanged,
+          command_paths: commandSummary.command_paths,
+          action_paths: commandSummary.action_paths,
+          command_discovery: buildInstallCommandDiscovery(validated.manifest.name, sourceRecord, commandSummary),
         });
       });
     } finally {
