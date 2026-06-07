@@ -400,7 +400,7 @@ describe("generateBashScript", () => {
 
   it("includes deterministic tag suggestions for --tag completion", () => {
     const script = generateBashScript(["Task"], ["beta", "alpha", "alpha"]);
-    expect(script).toContain('"$prev" == "--tag"');
+    expect(script).toContain('"$prev" == "--tag" || "$prev" == "--tags"');
     expect(script).toContain('"alpha beta"');
   });
 
@@ -611,6 +611,7 @@ describe("generateZshScript", () => {
   it("includes deterministic tag choices for zsh --tag flags", () => {
     const script = generateZshScript(["Task"], ["beta", "alpha", "alpha"]);
     expect(script).toContain("--tag[Filter by tag]:(alpha beta)");
+    expect(script).toContain("--tags[Alias for --tag]:(alpha beta)");
   });
 
   it("includes zsh update close-reason completion", () => {
@@ -822,6 +823,7 @@ describe("generateFishScript", () => {
   it("includes deterministic tag choices for fish --tag flags", () => {
     const script = generateFishScript(["Task"], ["beta", "alpha", "alpha"]);
     expect(script).toContain("-l tag      -d 'Filter by tag' -r -a 'alpha beta'");
+    expect(script).toContain("-l tags           -d 'Alias for --tag' -r -a 'alpha beta'");
   });
 });
 

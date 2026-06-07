@@ -2484,17 +2484,8 @@ describe("runSearch", () => {
     });
 
     const compactResult = await runSearch("token", { mode: "keyword", compact: true }, { path: "/tmp/pm-search" });
-    expect(compactResult.projection.mode).toBe("compact");
-    expect(compactResult.projection.fields).toEqual([
-      "id",
-      "title",
-      "status",
-      "type",
-      "priority",
-      "updated_at",
-      "score",
-      "matched_fields",
-    ]);
+    expect((compactResult as Record<string, unknown>).projection).toBeUndefined();
+    expect((compactResult as Record<string, unknown>).now).toBeUndefined();
     expect(compactResult.items[0]).toMatchObject({
       id: "pm-projection",
       title: "Projection title token",

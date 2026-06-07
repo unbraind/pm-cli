@@ -285,13 +285,13 @@ export function generateBashScript(
     "",
     ...(useEagerTagExpansion
       ? [
-          '  if [[ "$prev" == "--tag" ]]; then',
+          '  if [[ "$prev" == "--tag" || "$prev" == "--tags" ]]; then',
           `    COMPREPLY=(${compgen(tagValues)})`,
           "    return 0",
           "  fi",
         ]
       : [
-          '  if [[ "$prev" == "--tag" ]]; then',
+          '  if [[ "$prev" == "--tag" || "$prev" == "--tags" ]]; then',
           '    local now ttl cache_ts tag_values',
           '    now="$(date +%s 2>/dev/null || echo 0)"',
           '    ttl="${PM_COMPLETION_TAG_TTL:-120}"',
@@ -600,6 +600,7 @@ _pm() {
           _arguments \\
             '--type[Filter by item type]:(${typeChoices})' \\
             '--tag[Filter by tag]:(${zshTagChoices})' \\
+            '--tags[Alias for --tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
             '--deadline-before[Filter by deadline upper bound (ISO/date string or relative)]:date' \\
             '--deadline-after[Filter by deadline lower bound (ISO/date string or relative)]:date' \\
@@ -965,6 +966,7 @@ ${zshContextRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--status[Filter by status (open/closed/canceled, csv)]:(${statusChoices})' \\
             '--type[Filter by type]:(${typeChoices})' \\
             '--tag[Filter by tag]:(${zshTagChoices})' \\
+            '--tags[Alias for --tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
 ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1551,6 +1553,7 @@ complete -c pm -n __pm_no_subcommand -a completion    -d 'Generate shell complet
 for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l type     -d 'Filter by item type' -r -a '${typeChoices}'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l tag      -d 'Filter by tag' -r -a ${fishTagChoices}
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l tags     -d 'Alias for --tag' -r -a ${fishTagChoices}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l priority -d 'Filter by priority' -r -a '0 1 2 3 4'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l assignee -d 'Filter by assignee' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
@@ -1806,6 +1809,7 @@ complete -c pm -n '__fish_seen_subcommand_from search' -l limit          -d 'Max
 complete -c pm -n '__fish_seen_subcommand_from search' -l status         -d 'Filter by status (open/closed/canceled, csv)' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from search' -l type           -d 'Filter by type' -r -a '${typeChoices}'
 complete -c pm -n '__fish_seen_subcommand_from search' -l tag            -d 'Filter by tag' -r -a ${fishTagChoices}
+complete -c pm -n '__fish_seen_subcommand_from search' -l tags           -d 'Alias for --tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from search' -l priority       -d 'Filter by priority' -r -a '0 1 2 3 4'
 ${fishSearchRuntimeFieldFlags}
 

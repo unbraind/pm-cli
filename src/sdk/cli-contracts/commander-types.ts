@@ -17,7 +17,7 @@ export interface CommanderOptionRegistrationContract extends CommanderOptionAlia
 export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
   { target: "status", keys: ["status"] },
   { target: "type", keys: ["type"] },
-  { target: "tag", keys: ["tag"] },
+  { target: "tag", keys: ["tag", "tags"] },
   { target: "priority", keys: ["priority"] },
   { target: "deadlineBefore", keys: ["deadlineBefore"] },
   { target: "deadlineAfter", keys: ["deadlineAfter"] },
@@ -44,7 +44,7 @@ export const SEARCH_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContr
   { target: "semanticWeight", keys: ["semanticWeight", "semantic_weight"] },
   { target: "status", keys: ["status"] },
   { target: "type", keys: ["type"] },
-  { target: "tag", keys: ["tag"] },
+  { target: "tag", keys: ["tag", "tags"] },
   { target: "priority", keys: ["priority"] },
   { target: "deadlineBefore", keys: ["deadlineBefore"] },
   { target: "deadlineAfter", keys: ["deadlineAfter"] },

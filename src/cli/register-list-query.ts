@@ -120,6 +120,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
         }
       });
     // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
+    addHiddenOption(command, "--tags <value>", "Alias for --tag");
     addHiddenOption(command, "--assignee_filter <value>", "Alias for --assignee-filter");
     addHiddenOption(command, "--tree_depth <n>", "Alias for --tree-depth");
   }
@@ -237,7 +238,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
   }
 
   if (shouldRegister("search")) {
-    program
+    const searchCommand = program
       .command("search")
       .argument("<keywords...>", "Keyword query tokens")
       .description("Search items with keyword, semantic, or hybrid retrieval.")
@@ -285,6 +286,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
           printError(`profile:command=search took_ms=${Date.now() - startedAt}`);
         }
       });
+    addHiddenOption(searchCommand, "--tags <value>", "Alias for --tag");
   }
 
   if (shouldRegister("get")) {

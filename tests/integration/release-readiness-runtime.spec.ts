@@ -1359,7 +1359,7 @@ describe("release readiness runtime coverage", () => {
         expectJson: true,
       });
       expect(searchResult.code).toBe(0);
-      expectTopLevelKeyOrder(searchResult.json, ["query", "mode", "items", "count", "filters", "projection", "now"]);
+      expectTopLevelKeyOrder(searchResult.json, ["query", "mode", "items", "count", "filters"]);
       expect((searchResult.json as { mode?: string }).mode).toBe("keyword");
 
       const explicitKeywordSearch = context.runCli(["search", "runtime", "--mode", "keyword", "--json"], {

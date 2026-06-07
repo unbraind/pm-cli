@@ -564,15 +564,12 @@ describe("MCP dynamic package actions", () => {
       expect(list?.isError).not.toBe(true);
       const listResult = (list?.structuredContent as {
         result?: {
-          projection?: { mode: string; fields: string[] | null };
           items?: Array<Record<string, unknown>>;
           filters?: { status?: unknown };
+          now?: unknown;
         };
       } | undefined)?.result;
-      expect(listResult?.projection).toEqual({
-        mode: "compact",
-        fields: ["id", "title", "status", "type", "priority", "parent", "updated_at"],
-      });
+      expect(listResult?.now).toBeUndefined();
       expect(listResult?.filters?.status).toEqual(["open", "in_progress"]);
       expect(listResult?.items?.[0]).toMatchObject({ id, title: "MCP compact target" });
       expect(listResult?.items?.[0]).not.toHaveProperty("body");
@@ -749,11 +746,11 @@ describe("MCP dynamic package actions", () => {
       expect(search?.isError).not.toBe(true);
       const searchResult = (search?.structuredContent as {
         result?: {
-          projection?: { mode: string; fields: string[] | null };
           items?: Array<Record<string, unknown>>;
+          now?: unknown;
         };
       } | undefined)?.result;
-      expect(searchResult?.projection?.mode).toBe("compact");
+      expect(searchResult?.now).toBeUndefined();
       const hit = searchResult?.items?.find((entry) => entry.id === id);
       expect(hit).toBeTruthy();
       expect(hit).not.toHaveProperty("body");

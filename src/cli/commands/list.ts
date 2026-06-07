@@ -94,6 +94,105 @@ export interface ListResult {
   warnings?: string[];
 }
 
+function isNonEmptyRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value) && Object.keys(value).length > 0;
+}
+
+function buildCompactListFilterSummary(params: {
+  filtersStatus: string | string[] | null;
+  options: ListOptions;
+  treeEnabled: boolean;
+  treeDepth: number | undefined;
+  sortField: ListSortField | undefined;
+  sortOrder: ListSortOrder;
+  runtimeFieldFilters: Record<string, unknown>;
+}): Record<string, unknown> {
+  const {
+    filtersStatus,
+    options,
+    treeEnabled,
+    treeDepth,
+    sortField,
+    sortOrder,
+    runtimeFieldFilters,
+  } = params;
+  const filters: Record<string, unknown> = {};
+  if (filtersStatus !== null) {
+    filters.status = filtersStatus;
+  }
+  if (options.type !== undefined) {
+    filters.type = options.type;
+  }
+  if (options.tag !== undefined) {
+    filters.tag = options.tag;
+  }
+  if (options.priority !== undefined) {
+    filters.priority = options.priority;
+  }
+  if (options.deadlineBefore !== undefined) {
+    filters.deadline_before = options.deadlineBefore;
+  }
+  if (options.deadlineAfter !== undefined) {
+    filters.deadline_after = options.deadlineAfter;
+  }
+  if (options.updatedAfter !== undefined) {
+    filters.updated_after = options.updatedAfter;
+  }
+  if (options.updatedBefore !== undefined) {
+    filters.updated_before = options.updatedBefore;
+  }
+  if (options.createdAfter !== undefined) {
+    filters.created_after = options.createdAfter;
+  }
+  if (options.createdBefore !== undefined) {
+    filters.created_before = options.createdBefore;
+  }
+  if (options.ids !== undefined) {
+    filters.ids = options.ids;
+  }
+  if (options.assignee !== undefined) {
+    filters.assignee = options.assignee;
+  }
+  if (options.assigneeFilter !== undefined) {
+    filters.assignee_filter = options.assigneeFilter;
+  }
+  if (options.parent !== undefined) {
+    filters.parent = options.parent;
+  }
+  if (options.sprint !== undefined) {
+    filters.sprint = options.sprint;
+  }
+  if (options.release !== undefined) {
+    filters.release = options.release;
+  }
+  if (options.limit !== undefined) {
+    filters.limit = options.limit;
+  }
+  if (options.offset !== undefined) {
+    filters.offset = options.offset;
+  }
+  if (options.includeBody === true) {
+    filters.include_body = true;
+  }
+  if (options.fields !== undefined) {
+    filters.fields = options.fields;
+  }
+  if (treeEnabled) {
+    filters.tree = true;
+    if (treeDepth !== undefined) {
+      filters.tree_depth = treeDepth;
+    }
+  }
+  if (sortField !== undefined) {
+    filters.sort = sortField;
+    filters.order = sortOrder;
+  }
+  if (isNonEmptyRecord(runtimeFieldFilters)) {
+    filters.runtime_filters = runtimeFieldFilters;
+  }
+  return filters;
+}
+
 function compareDefaultSort(left: ListedItem, right: ListedItem, statusRegistry: RuntimeStatusRegistry): number {
   const leftTerminal = isTerminalStatus(left.status, statusRegistry);
   const rightTerminal = isTerminalStatus(right.status, statusRegistry);
@@ -589,6 +688,27 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   const now = nowIso();
   const warnings = [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right));
   const projectionFields = projection.mode === "full" ? null : [...projection.fields];
+  // pm-vhx6: compact-mode list output is primarily consumed by agents. Keep the
+  // metadata trailer token-light by returning only active/user-supplied filters
+  // and omitting projection/sorting/now boilerplate in this path.
+  const compactSummaryMode = projection.mode === "compact" && options.compact === true;
+  if (compactSummaryMode) {
+    const compactFilters = buildCompactListFilterSummary({
+      filtersStatus,
+      options,
+      treeEnabled,
+      treeDepth,
+      sortField,
+      sortOrder,
+      runtimeFieldFilters,
+    });
+    return {
+      items: projected,
+      count: projected.length,
+      ...(Object.keys(compactFilters).length > 0 ? { filters: compactFilters } : {}),
+      ...(warnings.length > 0 ? { warnings } : {}),
+    } as unknown as ListResult;
+  }
   return {
     items: projected,
     count: projected.length,

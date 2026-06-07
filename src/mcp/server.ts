@@ -140,6 +140,24 @@ const PM_RUN_ACTION_DESCRIPTION =
   `Operation name (one of): ${PM_TOOL_ACTIONS.join(", ")}. ` +
   "Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.";
 
+const LIST_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = {
+  status: { type: "string", description: "Alias for options.status." },
+  type: { type: "string", description: "Alias for options.type." },
+  tag: { type: "string", description: "Alias for options.tag." },
+  priority: { type: "string", description: "Alias for options.priority." },
+  limit: { type: ["string", "number"], description: "Alias for options.limit." },
+  offset: { type: ["string", "number"], description: "Alias for options.offset." },
+};
+
+const SEARCH_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = {
+  mode: { type: "string", description: "Alias for options.mode." },
+  status: { type: "string", description: "Alias for options.status." },
+  type: { type: "string", description: "Alias for options.type." },
+  tag: { type: "string", description: "Alias for options.tag." },
+  priority: { type: "string", description: "Alias for options.priority." },
+  limit: { type: ["string", "number"], description: "Alias for options.limit." },
+};
+
 function objectSchema(properties: Record<string, unknown>, required: string[] = []): Record<string, unknown> {
   return {
     ...TOOL_SCHEMA_BASE,
@@ -216,7 +234,7 @@ const TOOLS: ToolDefinition[] = [
       "Defaults to a compact projection for token efficiency. " +
       "Pass options.mode=keyword|semantic|hybrid, options.limit=N to cap hits, " +
       "options.fields='id,title,score' for a custom projection, or options.full=true for full item bodies (can be large).",
-    inputSchema: objectSchema({ query: { type: "string" }, options: { type: "object" } }, ["query"]),
+    inputSchema: objectSchema({ query: { type: "string" }, options: { type: "object" }, ...SEARCH_TOP_LEVEL_OPTION_PROPERTIES }, ["query"]),
   },
   {
     name: "pm_list",
@@ -227,7 +245,7 @@ const TOOLS: ToolDefinition[] = [
       "Pass options.brief=true for ultra-terse (id/status/type/title only). " +
       "Pass options.fields='id,title,priority' for custom projection. " +
       "Pass options.limit=N to cap row count.",
-    inputSchema: objectSchema({ options: { type: "object" } }),
+    inputSchema: objectSchema({ options: { type: "object" }, ...LIST_TOP_LEVEL_OPTION_PROPERTIES }),
   },
   {
     name: "pm_get",
@@ -539,7 +557,30 @@ function normalizeMcpOptionsArrays(
 }
 
 function optionsWithAuthor(args: Record<string, unknown>, action?: string): Record<string, unknown> {
-  const options = normalizeMcpOptionsArrays(asRecordClone(args.options), action);
+  const baseOptions = asRecordClone(args.options);
+  const hoistedTopLevel: Record<string, unknown> = {};
+  const hoistKey = (key: string): void => {
+    if (baseOptions[key] !== undefined || args[key] === undefined) {
+      return;
+    }
+    hoistedTopLevel[key] = args[key];
+  };
+  if (action === "list") {
+    hoistKey("status");
+    hoistKey("type");
+    hoistKey("tag");
+    hoistKey("priority");
+    hoistKey("limit");
+    hoistKey("offset");
+  } else if (action === "search") {
+    hoistKey("mode");
+    hoistKey("status");
+    hoistKey("type");
+    hoistKey("tag");
+    hoistKey("priority");
+    hoistKey("limit");
+  }
+  const options = normalizeMcpOptionsArrays({ ...hoistedTopLevel, ...baseOptions }, action);
   const author = readString(args, "author");
   return author && options.author === undefined ? { ...options, author } : options;
 }

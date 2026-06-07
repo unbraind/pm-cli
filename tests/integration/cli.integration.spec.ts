@@ -2771,11 +2771,11 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(searchResult.code).toBe(0);
       const searchJson = searchResult.json as {
         mode: string;
-        projection: { mode: string; fields: string[] | null };
         items: Array<{ id: string; matched_fields: string[] }>;
+        now?: string;
       };
       expect(searchJson.mode).toBe("keyword");
-      expect(searchJson.projection.mode).toBe("compact");
+      expect(searchJson.now).toBeUndefined();
       expect(searchJson.items.some((entry) => entry.id === id)).toBe(true);
 
       const unquotedMultiWordSearch = context.runCli(
@@ -2785,11 +2785,11 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(unquotedMultiWordSearch.code).toBe(0);
       const unquotedSearchJson = unquotedMultiWordSearch.json as {
         query: string;
-        projection: { mode: string };
         items: Array<{ id: string }>;
+        now?: string;
       };
       expect(unquotedSearchJson.query).toBe("integration smoke");
-      expect(unquotedSearchJson.projection.mode).toBe("compact");
+      expect(unquotedSearchJson.now).toBeUndefined();
       expect(unquotedSearchJson.items.some((entry) => entry.id === id)).toBe(true);
 
       const fullProjectionSearch = context.runCli(
@@ -4032,22 +4032,24 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(listOpenJson.items.map((item) => item.status)).toEqual(["open", "open"]);
       expect(listOpenJson.items.map((item) => item.priority)).toEqual([0, 1]);
       expect(listOpenJson.items[0]).not.toHaveProperty("body");
-
       const listOpenCompact = context.runCli(
         ["list-open", "--json", "--type", "Task", "--compact", "--sort", "title", "--order", "asc"],
         { expectJson: true },
       );
       expect(listOpenCompact.code).toBe(0);
       const listOpenCompactJson = listOpenCompact.json as {
-        projection: { mode: string; fields: string[] | null };
-        sorting: { sort: string; order: string };
+        filters?: Record<string, unknown>;
+        projection?: unknown;
+        sorting?: unknown;
+        now?: unknown;
         items: Array<Record<string, unknown>>;
       };
-      expect(listOpenCompactJson.projection).toEqual({
-        mode: "compact",
-        fields: ["id", "title", "status", "type", "priority", "parent", "updated_at"],
-      });
-      expect(listOpenCompactJson.sorting).toEqual({
+      expect(listOpenCompactJson.projection).toBeUndefined();
+      expect(listOpenCompactJson.sorting).toBeUndefined();
+      expect(listOpenCompactJson.now).toBeUndefined();
+      expect(listOpenCompactJson.filters).toEqual({
+        status: "open",
+        type: "Task",
         sort: "title",
         order: "asc",
       });
