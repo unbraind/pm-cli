@@ -1,0 +1,15 @@
+id: pm-1js9
+title: First-party exemplar package for registerCommand + registerFlags + registerParser (commands capability pattern)
+description: "Existing first-party exemplars cover: importers (pm-todos/pm-beads), hooks (pm-lifecycle-hooks, pm-governance-audit), search (pm-search-advanced). Missing: a worked example of the `commands` capability that shows registerCommand with a full CommandDefinition (name, description, intent, arguments, flags, examples, failure_hints) + registerFlags to add flags to an existing command + registerParser to preprocess options. pm-linked-test-adapters uses commands+schema but its focus is test-run adapters; it doesn't demonstrate the parser or flag-injection patterns. A standalone pm-shell-commands or augmented pm-guide-shell exemplar would give authors a copy-paste pattern."
+type: Feature
+status: open
+priority: 3
+tags[4]: "area:extensions","area:packages",dx,exemplar
+created_at: "2026-06-07T10:05:50.627Z"
+updated_at: "2026-06-07T10:22:15.937Z"
+author: audit-platform-agent
+acceptance_criteria: "- A first-party exemplar package demonstrates registerCommand + registerFlags + registerParser\n- Ships hand-maintained .js alongside .ts (per ADR pm-tsio)\n- Listed in marketplace.json + docs; smoke-tested"
+parent: pm-ugqx
+risk: low
+confidence: high
+body: ""

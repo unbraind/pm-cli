@@ -1,0 +1,15 @@
+id: pm-v68d
+title: Add pm_schema and pm_config narrow MCP tools for workspace configuration via MCP
+description: "pm schema (add-type/remove-type/add-status/remove-status/list/show) and pm config (get/set/unset) are both fully wired in runAction switch cases but have no narrow tools — agents must use pm_run. These are primary workspace-configuration operations agents perform during project setup (e.g. adding a Story type, setting default status, enabling telemetry). Narrow pm_schema and pm_config tools would surface required args (subcommand, key/name) at top-level with proper descriptions, participate in the unexpected-key warning system, and be self-documenting. pm_schema already has a subcommand enum in pm_run's schema — that schema should migrate to a dedicated tool."
+type: Feature
+status: open
+priority: 3
+tags[3]: agent-ux,"area:mcp",dx
+created_at: "2026-06-07T10:04:19.682Z"
+updated_at: "2026-06-07T10:22:12.999Z"
+author: audit-platform-agent
+acceptance_criteria: "- Narrow `pm_schema` and `pm_config` MCP tools expose read (+ scoped write) of workspace schema/config\n- Registered in PM_TOOL_ACTIONS + schema/parameter contracts\n- Compact output; covered by tests; docs updated"
+parent: pm-5k4v
+risk: low
+confidence: high
+body: ""

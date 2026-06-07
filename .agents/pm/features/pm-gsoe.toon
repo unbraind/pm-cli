@@ -1,0 +1,15 @@
+id: pm-gsoe
+title: "pm telemetry stats: add error_rate and resolution breakdown per command bucket"
+description: pm telemetry stats buckets commands by count and event_type_counts (command_start / command_finish) but does not surface success/failure rates or command_resolution distribution within the local queue. This makes it impossible to detect a degraded-error-rate locally without querying the remote stack. command_finish events already carry ok (bool) and command_resolution fields.
+type: Feature
+status: open
+priority: 3
+tags[2]: "area:observability","area:telemetry"
+created_at: "2026-06-07T10:04:45.137Z"
+updated_at: "2026-06-07T10:16:02.620Z"
+author: audit-observability-agent
+acceptance_criteria: "- Each bucket gains: ok_count, error_count (derived from command_finish ok field); error_rate (0–1 float, absent when no finish events); command_resolution_counts (map of resolution -> count).\n- ok_count + error_count == number of command_finish events in that bucket.\n- pm telemetry stats output includes these fields.\n- Unit tests assert correct tallying and that missing/malformed payload.ok is treated as not-ok (conservative)."
+parent: pm-5oj5
+risk: low
+confidence: high
+body: "## Context\n\nFile: src/cli/commands/telemetry.ts:199-253 — buildTelemetryStatsBuckets. Currently tracks count, max_attempts, event_type_counts, schema versions. Fields ok and command_resolution from command_finish payload (runtime.ts:927-930) are not extracted.\n\nFile: src/core/telemetry/runtime.ts:927 — command_resolution emitted in command_finish payload at all capture levels.\n\n## Acceptance criteria\n\n- Each bucket gains: ok_count, error_count (derived from command_finish ok field); error_rate (0–1 float, absent when no finish events); command_resolution_counts (map of resolution -> count).\n- ok_count + error_count == number of command_finish events in that bucket.\n- pm telemetry stats output includes these fields.\n- Unit tests assert correct tallying and that missing/malformed payload.ok is treated as not-ok (conservative).\n\n## Evidence\n\nsrc/cli/commands/telemetry.ts:211 — eventType is parsed; payload fields are not.\nsrc/core/telemetry/runtime.ts:927 — command_resolution present in finish payload at all capture levels."

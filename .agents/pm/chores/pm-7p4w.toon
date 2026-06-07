@@ -1,0 +1,15 @@
+id: pm-7p4w
+title: Add integration test for close-many --rollback checkpoint restore
+description: "close-many supports --rollback <checkpoint-id> to undo a bulk close operation, and this is documented in COMMANDS.md. The unit test at tests/unit/close-command.spec.ts line 543 tests 'closes matched open items, skips already-terminal matches, and emits a rollback checkpoint' but does not test the rollback restore path. No integration test exercises the full close-many->checkpoint->rollback restore cycle end-to-end."
+type: Chore
+status: open
+priority: 2
+tags[4]: "area:tests",close-many,coverage,rollback
+created_at: "2026-06-07T10:05:45.606Z"
+updated_at: "2026-06-07T10:15:45.154Z"
+author: audit-docs-tests-agent
+acceptance_criteria: "- An integration test exercises the full close-many flow: create items, close-many with reason, capture checkpoint-id, rollback, verify items restored to pre-close state\n- Test uses sandbox PM_PATH (node scripts/run-tests.mjs pattern)"
+parent: pm-u9d0
+risk: low
+confidence: high
+body: "## Context\ndocs/COMMANDS.md line 126: 'pm close-many --rollback close-many-20260604-abc123'\nUnit test coverage (close-command.spec.ts line 543) tests checkpoint creation but not restoration.\nupdate-many-command.spec.ts line 132 tests rollback for update-many.\n\nThe mutation-checkpoint module is in vitest coverage include (src/core/checkpoint/mutation-checkpoint.ts line 94 of vitest.config.ts) but the rollback restore path relies on close command integration behavior that is not unit-testable in isolation.\n\n## Acceptance criteria\n- An integration test exercises the full close-many flow: create items, close-many with reason, capture checkpoint-id, rollback, verify items restored to pre-close state\n- Test uses sandbox PM_PATH (node scripts/run-tests.mjs pattern)\n\n## Evidence\ntests/unit/close-command.spec.ts line 543; tests/unit/update-many-command.spec.ts line 132; docs/COMMANDS.md lines 125-129"

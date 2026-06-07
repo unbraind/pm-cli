@@ -1,0 +1,15 @@
+id: pm-pl53
+title: Extension sandbox profiles are advisory-only — no runtime enforcement of declared permission boundaries
+description: "extension-policy.ts evaluates sandbox profiles (none/restricted/strict) and produces warnings/blocks based on the manifest `permissions` declaration and `sandbox_profile`. However, the actual extension module is loaded via dynamic import() in the same Node.js process with no VM isolation, permissions API restrictions, or OS-level sandbox. The 'restricted' and 'strict' profiles only block the extension from LOADING if it declares conflicting permissions — they do not prevent a malicious extension from actually spawning processes, writing files, or opening network connections at runtime. An ADR already records this as advisory design. The gap worth tracking: a clear user-facing warning in `pm extension doctor` and `pm health` that sandbox profiles are declaration-based, not runtime-enforced, so users understand the trust model."
+type: Feature
+status: open
+priority: 3
+tags[3]: "area:extensions",docs,security
+created_at: "2026-06-07T10:05:40.761Z"
+updated_at: "2026-06-07T10:22:15.633Z"
+author: audit-platform-agent
+acceptance_criteria: "- `pm health`/doctor surfaces the advisory-only sandbox trust caveat\n- Caveat documented wherever sandbox_profile is described\n- No false runtime-enforcement claim (consistent with ADR pm-6ef3)"
+parent: pm-ugqx
+risk: low
+confidence: high
+body: ""

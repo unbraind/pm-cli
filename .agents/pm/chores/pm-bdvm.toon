@@ -1,0 +1,15 @@
+id: pm-bdvm
+title: Add remediation registry entry for extension_update_health_partial_coverage warning
+description: "The remediation registry (src/core/diagnostics/remediation.ts) covers all core pm health / pm validate warning codes but is missing an entry for `extension_update_health_partial_coverage`, which is emitted by the extensions health check when unmanaged extensions are present (health.ts line 705). Agents gating on pm health --json get a warning with no remediation_map entry, so they must hardcode the fix command."
+type: Chore
+status: open
+priority: 3
+tags[3]: agent-ux,"area:health","area:observability"
+created_at: "2026-06-07T10:03:47.039Z"
+updated_at: "2026-06-07T10:16:05.087Z"
+author: audit-observability-agent
+acceptance_criteria: "- Add `extension_update_health_partial_coverage` code to REMEDIATION_REGISTRY with command: 'pm extension --adopt-all --project' and a summary explaining the adoption flow.\n- The existing mutually-exclusive-codes test in remediation-registry.spec.ts still passes.\n- pm health --json on a repo with unmanaged extensions shows remediation_map for this code."
+parent: pm-5oj5
+risk: low
+confidence: high
+body: "## Context\n\nFile: src/cli/commands/health.ts line 705 — warning `extension_update_health_partial_coverage:skipped_unmanaged:<count>` is emitted when extensions are unmanaged.\n\nFile: src/core/diagnostics/remediation.ts — no entry for `extension_update_health_partial_coverage`. The comment at line 40 says extension findings are excluded, but partial-coverage is not a per-extension triage result — it is a system-wide finding about adoption gaps, making it a legitimate registry candidate.\n\n## Acceptance criteria\n\n- Add `extension_update_health_partial_coverage` code to REMEDIATION_REGISTRY with command: 'pm extension --adopt-all --project' and a summary explaining the adoption flow.\n- The existing mutually-exclusive-codes test in remediation-registry.spec.ts still passes.\n- pm health --json on a repo with unmanaged extensions shows remediation_map for this code.\n\n## Evidence\n\nsrc/cli/commands/health.ts:705 — warning code emitted.\nsrc/core/diagnostics/remediation.ts:43 — registry list; no extension_update_health_partial_coverage entry."

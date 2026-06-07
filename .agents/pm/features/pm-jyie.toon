@@ -1,0 +1,15 @@
+id: pm-jyie
+title: "Search corpus: include type, priority, parent, assignee fields in keyword and semantic corpus"
+description: "The search corpus builder (buildSearchCorpus) includes title, description, tags, status, body, comments, notes, learnings, reminders, events, dependencies, and plan fields. It does NOT include type, priority, parent, assignee, goal, or value fields. Searching for 'epic high priority' or 'assigned to alice' via semantic search cannot match on these dimensions because they are absent from the embedded corpus."
+type: Feature
+status: open
+priority: 2
+tags[4]: "area:search","area:semantic",corpus,relevance
+created_at: "2026-06-07T10:04:56.338Z"
+updated_at: "2026-06-07T10:15:47.488Z"
+author: audit-data-agent
+acceptance_criteria: "- Add `type`, `priority`, `assignee`, `goal`, `value`, `why_now`, `ac`, `risk`, `confidence` to the semantic corpus\n- Make the corpus field inclusion config-driven so teams can opt fields in/out\n- Add `estimate` and `resolution` for richer closed-item recall\n- Evaluate corpus character budget impact and adjust `OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS` or truncation policy if needed"
+parent: pm-ydp6
+risk: low
+confidence: high
+body: "## Context\n\n`src/core/search/corpus.ts:115-138`:\n```ts\nconst corpus: Record<string, unknown> = {\n  title, description, tags, status, body,\n  comments, notes, learnings, reminders, events, dependencies\n};\n```\n\nFields absent: `type`, `priority`, `assignee`, `parent`, `goal`, `value`, `why_now`, `risk`, `confidence`, `estimate`, `ac` (acceptance criteria), `resolution`, `expected`, `actual`.\n\nFor keyword search the front-matter cache covers type/status/priority as filter dimensions, but semantic search embeds only the corpus JSON string. A query like 'high priority bugs blocking release' cannot semantically match on `priority: 0` because that field is not in the corpus.\n\n## Acceptance criteria\n\n- [ ] Add `type`, `priority`, `assignee`, `goal`, `value`, `why_now`, `ac`, `risk`, `confidence` to the semantic corpus\n- [ ] Make the corpus field inclusion config-driven so teams can opt fields in/out\n- [ ] Add `estimate` and `resolution` for richer closed-item recall\n- [ ] Evaluate corpus character budget impact and adjust `OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS` or truncation policy if needed\n\n## Evidence\n\n- `src/core/search/corpus.ts:115-138` — corpus fields list; no type/priority/assignee\n- `src/types.ts` — `ItemMetadata` has goal, value, why_now, ac, risk, confidence, estimate, assignee, parent"

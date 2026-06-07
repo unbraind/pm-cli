@@ -1,0 +1,15 @@
+id: pm-lold
+title: MCP ping method not handled — returns 'Unsupported MCP method' instead of empty response
+description: "MCP protocol 2025-06-18 spec defines a `ping` method that should return an empty result `{}`. The pm-mcp server's handleRequest() falls through to `throw new PmCliError('Unsupported MCP method: ping', 64)` which writes a JSON-RPC error frame. Clients (e.g. Claude Code) that send ping for keep-alive get an error instead of a no-op. Evidence: server.ts line 1195 is the final throw; no case for 'ping' exists."
+type: Issue
+status: open
+priority: 2
+tags[3]: "area:mcp",bug,protocol
+created_at: "2026-06-07T10:03:42.103Z"
+updated_at: "2026-06-07T10:22:11.757Z"
+author: audit-platform-agent
+acceptance_criteria: "- MCP `ping` returns an empty result object `{}` per MCP 2025-06-18 spec\n- No JSON-RPC error frame emitted for ping\n- Integration test covers ping keep-alive handling"
+parent: pm-5k4v
+risk: low
+confidence: high
+body: ""

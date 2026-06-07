@@ -1,0 +1,14 @@
+id: pm-7zs0
+title: Verify daily auto-release published to npm (release-health check)
+description: "Recurring release-health verification. The date-based daily auto-release has silently failed before (padded-month changelog match skip; publish/Sentry-gate step failing post-tag). After any merge to main, confirm the next daily release both tagged a new vYYYY.M.D AND advanced npm 'latest'."
+type: Reminder
+status: open
+priority: 2
+tags[3]: "area:release",living-map,reliability
+created_at: "2026-06-07T10:24:45.889Z"
+updated_at: "2026-06-07T10:24:45.889Z"
+reminders[1]{at,text}:
+  "2026-06-08T10:24:45.889Z",Confirm daily auto-release tagged a new version AND npm latest advanced; else inspect publish + Sentry-gate steps
+author: maintainer-agent
+parent: pm-u9d0
+body: ""

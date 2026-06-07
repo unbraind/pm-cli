@@ -6,10 +6,12 @@ status: open
 priority: 0
 tags[6]: backlog,context-management,living-map,pm-cli,post-v0.1,roadmap
 created_at: "2026-05-31T19:41:50.865Z"
-updated_at: "2026-05-31T19:41:50.865Z"
+updated_at: "2026-06-07T10:24:45.228Z"
 author: maintainer-agent
 goal: project management = context management
 objective: "Deliver a universal, fully-customizable PM tool whose baseline primitives (via the pm SDK) adapt to any project"
 value: A discoverable forward backlog turns the tracker from a completed-work log into a living context map for humans and agents
 why_now: Tracker had 902 items but zero open/forward work; pm context returned empty. This milestone seeds the forward layer.
+notes[1]{created_at,author,text}:
+  "2026-06-07T10:24:45.228Z",maintainer-agent,"2026-06-07 ecosystem audit (plan pm-8u2a): rebuilt the empty forward backlog — 71 new OPEN items across all 9 capability epics + 2 new ADRs (pm-7sq6 coverage governance, pm-cc04 agent self-repair). Delivered by 5 specialized audit sub-agents (disjoint epic scopes). pm context now returns actionable leaf work again."
 body: "Vision: pm is a universal, agent-optimized, git-native project management CLI that ships PM primitives via an SDK so any project can fully customize and optimize it. Guiding principle: project management = context management. This milestone groups the post-v0.1 capability epics and their open backlog (surfaced by the 2026-05-31 ecosystem audit pm-w7f2). PRD post-v0.1 roadmap items (advanced search tuning, adapter optimization, sandbox API surface) live here as concrete, dedup-checked work."

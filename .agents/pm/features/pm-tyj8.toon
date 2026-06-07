@@ -1,0 +1,15 @@
+id: pm-tyj8
+title: "gc --scope checkpoints: prune stale bulk-mutation checkpoint files"
+description: "pm gc currently covers scopes: index, embeddings, runtime, locks. The checkpoints/ directory (written by update-many and close-many rollback logic) is never collected. Old checkpoint files accumulate indefinitely under .agents/pm/checkpoints/. There is no TTL or gc coverage for this scope."
+type: Feature
+status: open
+priority: 3
+tags[3]: "area:storage",chore,gc
+created_at: "2026-06-07T10:02:04.103Z"
+updated_at: "2026-06-07T10:16:07.150Z"
+author: audit-data-agent
+acceptance_criteria: "- Add `checkpoints` to `GC_SCOPE_VALUES` in gc.ts\n- GC sweeps `checkpoints/` by `created_at` age (default: prune files older than N days, configurable)\n- `--dry-run` shows what would be removed\n- Contract/flag tests updated; `pm gc --scope checkpoints` documented\n- At minimum, document the checkpoints directory and advise manual cleanup in the guide"
+parent: pm-o2kc
+risk: low
+confidence: high
+body: "## Context\n\n`src/core/checkpoint/mutation-checkpoint.ts` writes checkpoint JSON files under `checkpoints/<subdir>/`. The `pm gc` command at `src/cli/commands/gc.ts:13` defines `GC_SCOPE_VALUES = ['index', 'embeddings', 'runtime', 'locks']` — checkpoints is absent.\n\nCheckpoint files include `created_at`, `author`, and `items` but have no TTL field. A project running bulk mutations regularly accumulates these files with no way to reclaim them other than manual deletion.\n\n## Acceptance criteria\n\n- [ ] Add `checkpoints` to `GC_SCOPE_VALUES` in gc.ts\n- [ ] GC sweeps `checkpoints/` by `created_at` age (default: prune files older than N days, configurable)\n- [ ] `--dry-run` shows what would be removed\n- [ ] Contract/flag tests updated; `pm gc --scope checkpoints` documented\n- [ ] At minimum, document the checkpoints directory and advise manual cleanup in the guide\n\n## Evidence\n\n- `src/cli/commands/gc.ts:13` — `GC_SCOPE_VALUES` does not include checkpoints\n- `src/core/checkpoint/mutation-checkpoint.ts:78-88` — writes to `checkpoints/<subdir>/`\n- `.agents/pm/checkpoints/update-many/` exists in this repo with accumulated files"

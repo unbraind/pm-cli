@@ -1,0 +1,15 @@
+id: pm-dfhp
+title: Warn in pm health when server-advertised max telemetry schema version exceeds client version
+description: "The endpoint probe in pm health --check-telemetry reads the x-pm-telemetry-max-schema-version / x-pm-telemetry-max-version response headers and surfaces them in details.endpoint_probe.max_schema_version, but emits no warning when the server supports a higher schema version than the client (TELEMETRY_SCHEMA_VERSION=1). Without this signal, agents and operators have no way to discover that the client is behind the ingest contract."
+type: Task
+status: open
+priority: 2
+tags[4]: "area:health","area:observability","area:telemetry",reliability
+created_at: "2026-06-07T10:02:59.746Z"
+updated_at: "2026-06-07T10:15:52.661Z"
+author: audit-observability-agent
+acceptance_criteria: "- When checkTelemetry is true AND endpoint probe succeeds AND max_schema_version parses to a valid integer > TELEMETRY_SCHEMA_VERSION, emit warning `telemetry_schema_version_behind:<server_version>`.\n- Add `telemetry_schema_version_behind` to the remediation registry (code → summary: 'Client schema is behind server; upgrade pm-cli to emit the latest event shape.').\n- Tests: one case where versions match (no warning), one where server > client (warning emitted), one where header is absent (no warning)."
+parent: pm-5oj5
+risk: low
+confidence: high
+body: "## Context\n\nFile: src/cli/commands/health.ts lines 1095-1103 — max_schema_version is stored in the probe result. Lines 1163-1187 build the warnings array but contain no branch comparing max_schema_version against the client constant.\n\nFile: src/core/telemetry/runtime.ts line 25 — TELEMETRY_SCHEMA_VERSION = 1 (client constant).\n\nThe gap: when a future ingest server advertises schema_version=2, the health check stays ok:true/warn-free. An operator would need to manually inspect the JSON to notice the drift.\n\n## Acceptance criteria\n\n- When checkTelemetry is true AND endpoint probe succeeds AND max_schema_version parses to a valid integer > TELEMETRY_SCHEMA_VERSION, emit warning `telemetry_schema_version_behind:<server_version>`.\n- Add `telemetry_schema_version_behind` to the remediation registry (code → summary: 'Client schema is behind server; upgrade pm-cli to emit the latest event shape.').\n- Tests: one case where versions match (no warning), one where server > client (warning emitted), one where header is absent (no warning).\n\n## Evidence\n\nsrc/cli/commands/health.ts:1095 — max_schema_version read but never compared.\nsrc/core/telemetry/runtime.ts:25 — TELEMETRY_SCHEMA_VERSION constant available for comparison."

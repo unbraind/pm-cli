@@ -1,0 +1,16 @@
+id: pm-86ob
+title: "pm schema apply-preset <agile|ops|research>: standalone type-preset for already-initialized projects"
+description: "pm init --type-preset agile|ops|research registers domain-specific item types (Spike, UserStory, etc.), but this option is only available on pm init. Existing projects that want to adopt a type preset must re-run pm init (potentially overwriting settings) or manually batch pm schema add-type calls. A standalone pm schema apply-preset subcommand would let any project adopt the domain vocabulary without re-initialization."
+type: Feature
+status: open
+priority: 3
+tags[4]: "area:cli","area:schema",customization,dx
+created_at: "2026-06-07T10:08:41.495Z"
+updated_at: "2026-06-07T10:15:55.479Z"
+author: audit-cli-schema-agent
+acceptance_criteria: "- pm schema apply-preset agile|ops|research registers the preset types into schema/types.json\n- Idempotent: re-running on an already-preset project reports replaced=true but makes no breaking changes\n- pm schema list shows the newly registered types as custom entries\n- COMMANDS.md schema section updated with example\n- Shell completions updated with apply-preset subcommand and agile|ops|research values"
+goal: Allow any project to adopt domain vocabulary without re-running pm init
+parent: pm-8jdc
+risk: low
+confidence: high
+body: "## Context\n\nThe type preset logic is implemented:\n- INIT_TYPE_PRESET_NAMES and TYPE_PRESETS (src/cli/commands/init.ts:44, 138+) define 3 presets: agile, ops, research\n- Each preset is an array of ItemTypeDefinition entries\n- normalizeInitTypePreset validates the preset name\n- The actual upsert uses the same upsertItemType + serializeItemTypesFile pattern as pm schema add-type\n\nAdding pm schema apply-preset <name> would:\n1. Load the same TYPE_PRESETS[name] array\n2. Batch-upsert each definition into schema/types.json (idempotent, same as individual add-type calls)\n3. Report registered/replaced counts\n\nSCHEMA_SUBCOMMANDS would need 'apply-preset' added; the preset definitions should be moved to a shared module (src/core/schema/item-types-file.ts) so both init.ts and schema.ts can import them.\n\n## Acceptance criteria\n\n- pm schema apply-preset agile|ops|research registers the preset types into schema/types.json\n- Idempotent: re-running on an already-preset project reports replaced=true but makes no breaking changes\n- pm schema list shows the newly registered types as custom entries\n- COMMANDS.md schema section updated with example\n- Shell completions updated with apply-preset subcommand and agile|ops|research values\n\n## Evidence\n\n- src/cli/commands/init.ts:44 (InitTypePresetName type)\n- src/cli/commands/init.ts:135-230 (normalizeInitTypePreset + preset definitions)\n- src/cli/commands/schema.ts:42-51 (SCHEMA_SUBCOMMANDS — no apply-preset)\n- docs/COMMANDS.md:410-416 (only documents --type-preset on pm init, not standalone)"

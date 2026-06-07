@@ -1,0 +1,15 @@
+id: pm-cc04
+title: "ADR: Agent self-repair via a centralized remediation registry surfaced through pm health --json and pm validate --fix-hints"
+description: Agent self-repair via a centralized remediation registry surfaced through pm health --json and pm validate --fix-hints
+type: Decision
+status: closed
+priority: 2
+tags[6]: adr,agent-ux,architecture,"area:diagnostics","area:observability",remediation
+created_at: "2026-06-07T10:24:05.849Z"
+updated_at: "2026-06-07T10:24:13.696Z"
+author: maintainer-agent
+parent: pm-m2u1
+dependencies[1]{id,kind,created_at,author,source_kind}:
+  pm-jezo,related,"2026-06-07T10:24:05.849Z",null,null
+close_reason: Recorded as an ADR for a decision already in effect; appended to the living ADR log (pm-m2u1).
+body: "CONTEXT: the guiding principle is 'project management = context management'; agents gating on pm health/validate need machine-executable next actions, not just human prose. DECISION: maintain a single source-of-truth remediation registry (src/core/diagnostics/remediation.ts) mapping each non-extension health/validate check code to a machine-executable remediation command; surface it as a per-check remediation_map on 'pm health --json' and as 'pm validate --fix-hints'. The resolver is FIRST-MATCH over disjoint check codes (not longest-prefix), so there is no dead tie-break branch and the module stays 100% covered. CONSEQUENCES: agents can self-repair deterministically; remediation guidance is centralized and testable; adding a check requires a registry entry; the resolver must remain first-match to preserve coverage. EVIDENCE: src/core/diagnostics/remediation.ts; closed pm-0hnu (health remediation_map), pm-6m3y (validate --fix-hints), pm-7tcw (settings_read warning surfacing); related ADR pm-jezo (advisory vs blocking health)."

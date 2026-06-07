@@ -1,0 +1,15 @@
+id: pm-9byd
+title: "Expose id_prefix, author_default, output.default_format, locks.ttl_seconds via pm config set"
+description: "id_prefix, author_default, output.default_format, and locks.ttl_seconds are listed in CONFIGURATION.md as configurable settings but have no pm config set key. They require manual editing of .agents/pm/settings.json. Adding them to NESTED_SETTING_DESCRIPTORS (the approved pattern for leaf settings) would make them script- and agent-friendly."
+type: Feature
+status: open
+priority: 2
+tags[4]: agent-ux,"area:cli","area:config",dx
+created_at: "2026-06-07T10:07:49.621Z"
+updated_at: "2026-06-07T10:15:41.693Z"
+author: audit-cli-schema-agent
+acceptance_criteria: "- pm config set id_prefix <prefix> updates id_prefix in settings.json\n- pm config set author_default <name> updates author_default\n- pm config set output_default_format <format> updates output.default_format\n- pm config set locks_ttl_seconds <n> updates locks.ttl_seconds (integer, min 1)\n- pm config get/list shows the new keys\n- CONFIGURATION.md updated with example config set commands\n- Shell completions updated"
+parent: pm-mpbb
+risk: low
+confidence: high
+body: "## Context\n\nCONFIGURATION.md lines 59-63 document id_prefix, author_default, output.default_format, and locks.ttl_seconds as user-facing settings.\nNone appear in CONFIG_KEY_VALUES (src/cli/commands/config.ts:44-92) nor in NESTED_SETTING_DESCRIPTORS (src/core/config/nested-settings.ts).\nThe established pattern for adding leaf settings is to add a NestedSettingDescriptor entry — adding them requires no other code changes per the module's JSDoc.\nNested-settings path for each:\n  id_prefix -> 'id_prefix'\n  author_default -> 'author_default'\n  output.default_format -> 'output.default_format'\n  locks.ttl_seconds -> 'locks.ttl_seconds'\n\n## Acceptance criteria\n\n- pm config set id_prefix <prefix> updates id_prefix in settings.json\n- pm config set author_default <name> updates author_default\n- pm config set output_default_format <format> updates output.default_format\n- pm config set locks_ttl_seconds <n> updates locks.ttl_seconds (integer, min 1)\n- pm config get/list shows the new keys\n- CONFIGURATION.md updated with example config set commands\n- Shell completions updated\n\n## Evidence\n\n- docs/CONFIGURATION.md:59-63 (mentions but no config set examples for these keys)\n- src/cli/commands/config.ts:44-92 (CONFIG_KEY_VALUES — none of the 4 keys present)\n- src/core/config/nested-settings.ts (NESTED_SETTING_DESCRIPTORS — none of the 4 keys present)\n- src/core/config/nested-settings.ts:25-48 (NestedSettingDescriptor pattern for new additions)"

@@ -1,0 +1,15 @@
+id: pm-ehbb
+title: "Add nightly.yml failure alerting: notify on Windows/Node25 smoke failures"
+description: "nightly.yml tests on windows-latest/Node20 and ubuntu/Node25 (cutting-edge) but on failure the result only appears in the GH Actions workflow run list. There is no alerting mechanism (GH issue, Slack, notification) when the nightly fails on a non-Ubuntu or non-Node20 matrix entry. A nightly Windows failure can go unnoticed for days, masking regressions that only appear on Windows paths (e.g. Win32 shell spawning, POSIX-skip vector-store tests)."
+type: Feature
+status: open
+priority: 3
+tags[4]: "area:ci","area:release",nightly,observability
+created_at: "2026-06-07T10:06:27.541Z"
+updated_at: "2026-06-07T10:15:58.793Z"
+author: audit-docs-tests-agent
+acceptance_criteria: "- nightly.yml has a failure notification step (e.g. create GH issue on failure, or a Slack/email webhook step)\n- OR: a ticket documents the deliberate decision to not alert and explains the monitoring approach\n- At minimum: RELEASING.md mentions that nightly failures should be investigated before release"
+parent: pm-u9d0
+risk: medium
+confidence: medium
+body: "## Context\nnightly.yml (lines 26-29) includes windows-latest/node20, ubuntu/node25.\nThe `test` step is only run for non-ubuntu-node20 entries (line 99-103): no coverage gate, no quality gate, just `pnpm test`.\n\nThere is no failure notification step in nightly.yml. A maintainer would only notice a failure if they regularly check the Actions tab.\n\n## Acceptance criteria\n- nightly.yml has a failure notification step (e.g. create GH issue on failure, or a Slack/email webhook step)\n- OR: a ticket documents the deliberate decision to not alert and explains the monitoring approach\n- At minimum: RELEASING.md mentions that nightly failures should be investigated before release\n\n## Evidence\n.github/workflows/nightly.yml; tests/unit/vector-store-adapter.spec.ts line 663 (itOnPosix = win32 skip); tests/unit/test-all-command.spec.ts line 896 (win32 timeout extended)\n\n## Options\n1. Add `if: failure()` step posting a GH issue\n2. Reference the nightly run URL from a TESTING.md 'Nightly coverage' section\n3. ADR: explicit decision that nightly is informational only"

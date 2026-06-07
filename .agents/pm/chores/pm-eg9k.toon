@@ -1,0 +1,15 @@
+id: pm-eg9k
+title: Document search eval golden-query harness usage in TESTING.md
+description: "tests/search-eval/golden-queries.json and the reindex --eval --eval-fixtures flow exist as an advisory CI gate (ci.yml line 212-216, continue-on-error: true). The harness is tested (tests/unit/search-advanced-runtime.spec.ts line 352) but TESTING.md has no explanation of how to use it, extend it, or interpret nDCG scores. New contributors to the search stack will not know this capability exists or how to add queries."
+type: Chore
+status: open
+priority: 3
+tags[4]: "area:docs","area:tests",eval,search
+created_at: "2026-06-07T10:06:09.752Z"
+updated_at: "2026-06-07T10:15:59.253Z"
+author: audit-docs-tests-agent
+acceptance_criteria: "- TESTING.md has a 'Search quality evaluation' section explaining:\n- location of golden-queries.json\n- how to run locally: reindex --eval --eval-fixtures\n- how to add new golden queries\n- advisory nature (continue-on-error in CI)\n- COMMANDS.md reindex section mentions --eval and --eval-fixtures flags"
+parent: pm-u9d0
+risk: low
+confidence: high
+body: "## Context\nCI gates (ci.yml lines 211-216) runs:\n```\nnode dist/cli.js install search-advanced --project --json\nnode dist/cli.js reindex --mode keyword --eval --eval-fixtures tests/search-eval/golden-queries.json --json\n```\nwith continue-on-error: true (advisory only).\n\ntests/search-eval/golden-queries.json exists with seeded fixture data.\n\ndocs/TESTING.md has no section on search quality evaluation or golden queries.\ndocs/COMMANDS.md has no mention of --eval or --eval-fixtures flags on reindex.\n\n## Acceptance criteria\n- TESTING.md has a 'Search quality evaluation' section explaining:\n  - location of golden-queries.json\n  - how to run locally: reindex --eval --eval-fixtures\n  - how to add new golden queries\n  - advisory nature (continue-on-error in CI)\n- COMMANDS.md reindex section mentions --eval and --eval-fixtures flags\n\n## Evidence\n.github/workflows/ci.yml lines 211-216; tests/search-eval/golden-queries.json; tests/unit/search-advanced-runtime.spec.ts line 352; docs/TESTING.md: no mention of eval/golden-queries"

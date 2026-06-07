@@ -1,0 +1,15 @@
+id: pm-fbyu
+title: "Add agent-identity dimension to telemetry events: surface PM_AUTHOR as hashed author_context"
+description: "Telemetry events record source_context (user/automation/test/dogfood/audit_smoke) and session_id but carry no signal identifying agent-driven invocations vs. human CLI use within the 'automation' bucket. PM_AUTHOR (e.g. 'maintainer-agent', 'claude-code-agent') is already set on mutations; exposing a hashed derivative in telemetry payloads would allow Sentry/dashboard queries to segment agent-driven usage patterns, error rates, and latency without leaking the raw author string."
+type: Feature
+status: open
+priority: 3
+tags[4]: agent-ux,"area:observability","area:telemetry",privacy
+created_at: "2026-06-07T10:03:35.109Z"
+updated_at: "2026-06-07T10:16:05.559Z"
+author: audit-observability-agent
+acceptance_criteria: "- When PM_AUTHOR env var is a non-empty string, include a stable `author_context_hash` field (HMAC-SHA256, keyed on installation_id) in command_start and command_finish payloads at capture_level != minimal.\n- At minimal capture_level, include only a boolean `has_author_context: true/false`.\n- No raw PM_AUTHOR value is ever included.\n- SENSITIVE_KEYWORDS check is not needed (it's a hash); document this in a comment.\n- Unit test: same PM_AUTHOR value + same installation_id = same hash; different installation_id = different hash."
+parent: pm-5oj5
+risk: low
+confidence: high
+body: "## Context\n\nFile: src/core/telemetry/runtime.ts lines 528-555 — resolveTelemetrySourceContext returns source_context. PM_AUTHOR env var is not read here.\n\nFile: src/core/telemetry/runtime.ts lines 818-871 — buildCommandStartPayload; no author_context field.\n\nThe source_context='automation' bucket currently conflates all non-TTY invocations: CI, MCP, agent loops, scripts. Hashing PM_AUTHOR (same HMAC-SHA256 keyed on installation_id as used for pm_root_hash) would be privacy-preserving but allow counting distinct agent types.\n\n## Acceptance criteria\n\n- When PM_AUTHOR env var is a non-empty string, include a stable `author_context_hash` field (HMAC-SHA256, keyed on installation_id) in command_start and command_finish payloads at capture_level != minimal.\n- At minimal capture_level, include only a boolean `has_author_context: true/false`.\n- No raw PM_AUTHOR value is ever included.\n- SENSITIVE_KEYWORDS check is not needed (it's a hash); document this in a comment.\n- Unit test: same PM_AUTHOR value + same installation_id = same hash; different installation_id = different hash.\n\n## Evidence\n\nsrc/core/telemetry/runtime.ts:52 — source_context values list; no 'agent' tier.\nsrc/core/telemetry/runtime.ts:859-870 — runtime object in payload; no PM_AUTHOR dimension."

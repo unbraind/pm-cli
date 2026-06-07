@@ -1,0 +1,15 @@
+id: pm-btwe
+title: Add importer/exporter options arg and command-def examples to SDK.md
+description: "PR #94 (2026-06-01) added an optional 3rd options argument to registerImporter/registerExporter enabling full command definition with flags. SDK.md has a basic registerImporter/registerExporter section (around line 478-520) but does not show the options arg for command definition, which is the primary use case for first-party packages like pm-beads and pm-todos."
+type: Chore
+status: open
+priority: 3
+tags[4]: "area:docs",extensions,importers,sdk
+created_at: "2026-06-07T10:08:04.897Z"
+updated_at: "2026-06-07T10:15:56.463Z"
+author: audit-docs-tests-agent
+acceptance_criteria: "- SDK.md registerImporter/registerExporter section shows the optional 3rd arg with a command-definition example\n- The example includes at minimum: command name, flags, description\n- The pm-beads or pm-todos pattern is cited as a first-party reference implementation"
+parent: pm-u9d0
+risk: low
+confidence: high
+body: "## Context\nFrom memory session 2026-06-01: 'SDK first-class importer/exporter registration (pm-7qjk: registerImporter/registerExporter optional 3rd options arg → full command def+flags)'\n\ndocs/SDK.md line 478: 'registerImporter(name, importer) and registerExporter(name, exporter) register...'\ndocs/SDK.md line 493: shows registerImporter with only 2 args\ndocs/SDK.md line 516: shows registerExporter 'jsonl' with only 2 args\n\nThe 3rd options argument (command definition with flags) is not shown in any SDK.md example.\n\n## Acceptance criteria\n- SDK.md registerImporter/registerExporter section shows the optional 3rd arg with a command-definition example\n- The example includes at minimum: command name, flags, description\n- The pm-beads or pm-todos pattern is cited as a first-party reference implementation\n\n## Evidence\ndocs/SDK.md lines 478-520; docs/examples/starter-extension/index.js lines 160-165 (only 2-arg form); memory note 2026-06-01 pm-7qjk"
