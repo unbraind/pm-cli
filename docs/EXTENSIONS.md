@@ -40,7 +40,7 @@ pm install governance-audit --project
 
 `pm install '*'`, `pm install all`, and shell-expanded `pm install *` are normalized to the same bundled install-all request. First-party package aliases come from each package manifest, with a fallback derived from the `packages/pm-*` directory name.
 
-External registry packages are installed by exact package name. If `npm:<name>` returns a registry 404, JSON error output includes `fallback_candidates` and `next_best_command`; unpublished first-party packages fall back to `pm install --project github.com/unbraind/<name>`.
+External registry packages are installed by exact package name. If `npm:<name>` returns a registry 404, JSON error output includes `fallback_candidates` and `next_best_command`; unpublished first-party packages fall back to `pm install --project github.com/unbraind/<name>`. Install results include package-owned `command_paths`, `action_paths`, and `command_discovery`; agents should read `details.command_discovery.command_paths` and `details.command_discovery.help_commands` instead of guessing from the package name.
 
 ```bash
 npm search "pm-cli pm-package"

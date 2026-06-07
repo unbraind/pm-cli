@@ -29,6 +29,7 @@ import {
 } from "./argv-utils.js";
 import { levenshteinDistanceWithinLimit } from "../core/shared/levenshtein.js";
 import type { ExtensionCommandHelpDescriptor } from "./extension-command-help.js";
+import { normalizeExtensionNameForMatch } from "./commands/extension/shared.js";
 
 export const BUILTIN_TYPE_HELP_VALUES = BUILTIN_ITEM_TYPE_VALUES.join("|");
 
@@ -185,6 +186,54 @@ function resolveOptionalPackageInstallHint(commandPath: string): string | null {
     return null;
   }
   return `If this command comes from an optional package, install it with: pm install ${packageAlias}`;
+}
+
+function normalizePackageCommandAliasToken(value: string): string {
+  let normalized = normalizeExtensionNameForMatch(value);
+  // Strip outer package/source prefixes and then the pm- package stem so scoped
+  // and builtin package guesses converge on the exported command alias.
+  for (const prefix of ["@unbraind/", "@unbrained/", "builtin-", "pm-"]) {
+    if (normalized.startsWith(prefix)) {
+      normalized = normalized.slice(prefix.length);
+    }
+  }
+  return normalized;
+}
+
+function collectInstalledPackageCommandPathHints(
+  unknownToken: string,
+  extensionDescriptors: ReadonlyMap<string, ExtensionCommandHelpDescriptor>,
+): string[] {
+  const normalizedUnknown = normalizePackageCommandAliasToken(unknownToken);
+  if (normalizedUnknown.length === 0) {
+    return [];
+  }
+  const hints: string[] = [];
+  for (const descriptor of extensionDescriptors.values()) {
+    const identifiers = new Set<string>();
+    const source = descriptor.source;
+    if (source) {
+      for (const identifier of [source.name, source.package]) {
+        const normalizedIdentifier = normalizePackageCommandAliasToken(identifier ?? "");
+        if (normalizedIdentifier.length > 0) {
+          identifiers.add(normalizedIdentifier);
+        }
+      }
+    }
+    if (identifiers.size === 0) {
+      continue;
+    }
+    const matches = [...identifiers].some(
+      (identifier) =>
+        identifier === normalizedUnknown ||
+        identifier.includes(normalizedUnknown) ||
+        normalizedUnknown.includes(identifier),
+    );
+    if (matches) {
+      hints.push(descriptor.command);
+    }
+  }
+  return [...new Set(hints)].sort((left, right) => left.localeCompare(right));
 }
 
 function collectKnownLongFlags(commandName: string | undefined): string[] {
@@ -353,7 +402,10 @@ export function buildUnknownCommandGuidanceFromRuntime(
   const aliasCandidates = (COMMON_COMMAND_ALIASES[primaryToken] ?? []).filter((aliasPath) =>
     commandPaths.includes(aliasPath),
   );
-  const combinedCandidates = dedupeStrings([...aliasCandidates, ...rankedCandidates]);
+  const installedPackageCandidates = collectInstalledPackageCommandPathHints(primaryToken, extensionDescriptors).filter((commandPath) =>
+    commandPaths.includes(commandPath),
+  );
+  const combinedCandidates = dedupeStrings([...aliasCandidates, ...rankedCandidates, ...installedPackageCandidates]);
 
   const fallbackTopLevel = [...new Set(commandPaths.map((commandPath) => commandPath.split(" ")[0]).filter((segment) => segment.length > 0))];
   fallbackTopLevel.sort((left, right) => left.localeCompare(right));

@@ -138,6 +138,44 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("suggests installed package command paths when agents guess the package alias", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "pm-slack-standup");
+      await writeTestExtension({
+        root: sourceDir,
+        name: "pm-slack-standup",
+        entrySource: [
+          "export default {",
+          "  activate(api) {",
+          "    api.registerCommand({",
+          "      name: 'standup',",
+          "      description: 'Generate a Slack standup.',",
+          "      run: () => ({ ok: true })",
+          "    });",
+          "  }",
+          "};",
+          "",
+        ].join("\n"),
+      });
+      const install = context.runCli(["install", sourceDir, "--project", "--json"], { expectJson: true });
+      expect(install.code).toBe(0);
+      expect(install.json).toMatchObject({
+        details: {
+          command_discovery: {
+            command_paths: ["standup"],
+            help_commands: ["pm standup --help"],
+          },
+        },
+      });
+
+      const guessedAlias = context.runCli(["slack-standup", "--help"]);
+      expect(guessedAlias.code).toBe(2);
+      expect(guessedAlias.stderr).toContain("Unknown command slack-standup");
+      expect(guessedAlias.stderr).toContain("Did you mean: standup");
+      expect(guessedAlias.stderr).toContain("pm standup --help");
+    });
+  });
+
   it("suggests the nearest command for edit-distance typos", async () => {
     await withTempPmPath(async (context) => {
       const result = context.runCli(["lst"]);
