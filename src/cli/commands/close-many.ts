@@ -158,10 +158,16 @@ function resolveReason(reason: unknown, required: boolean): string | undefined {
       "pm close-many requires a shared close reason via --reason because governance.require_close_reason is enabled.",
       EXIT_CODE.USAGE,
       {
-        code: "missing_required_argument",
+        code: "close_reason_required",
+        required: "Provide a shared closing summary via --reason for the whole batch.",
+        why: "governance.require_close_reason is enabled, so every close must record why the items are done.",
         examples: [
           'pm close-many --filter-sprint S-12 --reason "Sprint S-12 acceptance criteria met"',
           'pm close-many --ids pm-a,pm-b --reason "Superseded by redesign"',
+        ],
+        nextSteps: [
+          "Re-run with --reason describing the shared outcome.",
+          "To stop requiring reasons, run: pm config set governance-require-close-reason --policy disabled",
         ],
       },
     );

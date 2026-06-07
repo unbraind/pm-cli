@@ -1,0 +1,13 @@
+id: pm-yjub
+title: MCP pm_health defaults to the compact summary projection for token-efficient agent health checks
+description: "MCP pm_health returned the full ~12.8KB payload by default unlike pm_list/pm_search (compact-by-default). Now defaults to the summary projection (~22x smaller: ok + per-check status + warning samples); callers opt into the deep remediation payload via full=true. Found by agent-UX audit (F2)."
+type: Feature
+status: closed
+priority: 2
+tags[3]: agent-ux,"area:mcp",token-efficiency
+created_at: "2026-06-07T17:03:25.593Z"
+updated_at: "2026-06-07T17:03:44.384Z"
+author: maintainer-agent
+parent: pm-5k4v
+close_reason: "Shipped: MCP pm_health defaults to summary projection; full=true opts into detail. Locked with mcp-handshake tests."
+body: ""

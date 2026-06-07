@@ -46,6 +46,19 @@ function normalizeCloseReason(reasonText: string | undefined, required: boolean)
     throw new PmCliError(
       "Close reason text is required because governance.require_close_reason is enabled",
       EXIT_CODE.USAGE,
+      {
+        code: "close_reason_required",
+        required: "Provide a one-line closing summary as the positional text or via --reason.",
+        why: "governance.require_close_reason is enabled, so every close must record why the item is done.",
+        examples: [
+          'pm close <id> "Done: <what changed and why>"',
+          'pm close <id> --reason "<closing summary>"',
+        ],
+        nextSteps: [
+          "Re-run the close with a closing summary.",
+          "To stop requiring reasons, run: pm config set governance-require-close-reason --policy disabled",
+        ],
+      },
     );
   }
   return undefined;

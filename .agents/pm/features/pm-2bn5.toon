@@ -1,0 +1,12 @@
+id: pm-2bn5
+title: "Settings read cache: memoize readSettingsWithMetadata across the 3-5 reads per command"
+description: "Biggest remaining per-command perf lever (code-quality audit F1): readSettingsWithMetadata is re-read+validated+merged+schema-loaded 3-5x per command (~9 FS syscalls each). DESIGN CONSTRAINTS: must key the cache on settings.json AND schema/*.json mtimes (schema files change independently via pm schema commands -> a settings.json-only key serves stale schema), keep onRead hooks firing each call, stay correct for the long-lived MCP server (external edits), and invalidate on writeSettings. Add a small tested src/core/store module to vitest include at 100%."
+type: Feature
+status: open
+priority: 1
+tags[1]: "area:performance"
+created_at: "2026-06-07T17:04:16.436Z"
+updated_at: "2026-06-07T17:04:16.436Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

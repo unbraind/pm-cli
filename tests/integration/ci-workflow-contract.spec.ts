@@ -310,4 +310,20 @@ describe("GitHub workflow contract", () => {
       "gh run watch \"${RELEASE_RUN_ID}\" --compact --exit-status --interval 30",
     ]);
   });
+
+  it("keeps CodeQL actions SHA-pinned for supply-chain safety (pm-ji5c)", async () => {
+    const codeqlPath = path.resolve(repoRoot, ".github/workflows/codeql.yml");
+    const codeqlWorkflow = normalizeWorkflow(await readFile(codeqlPath, "utf8"));
+
+    expectContainsAll(codeqlWorkflow, [
+      PINNED_ACTIONS.checkout,
+      new RegExp(`uses: github/codeql-action/init@${SHA_PATTERN}`),
+      new RegExp(`uses: github/codeql-action/analyze@${SHA_PATTERN}`),
+    ]);
+    // No mutable tag refs (e.g. @v3) may remain — every `uses:` must be a 40-char SHA.
+    const unpinnedUses = codeqlWorkflow
+      .split("\n")
+      .filter((line) => /uses:/.test(line) && !new RegExp(`@${SHA_PATTERN}(\\s|$)`).test(line));
+    expect(unpinnedUses, `codeql.yml has unpinned actions: ${unpinnedUses.join(", ")}`).toEqual([]);
+  });
 });

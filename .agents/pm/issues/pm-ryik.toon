@@ -1,0 +1,13 @@
+id: pm-ryik
+title: "Fix: --path/PM_PATH did not discover .agents/pm under a project root (never-block dead-end)"
+description: "resolvePmRoot returned an explicit --path/PM_PATH verbatim with no discovery, so passing the project root where pm init created .agents/pm hard-failed 'tracker not initialized', while cwd-mode walks up to find it. Now redirects an explicit project-root path into its initialized .agents/pm while keeping pm init --path <dir> and existing tracker roots verbatim."
+type: Issue
+status: closed
+priority: 1
+tags[3]: agent-ux,"area:storage",never-block
+created_at: "2026-06-07T17:03:25.350Z"
+updated_at: "2026-06-07T17:03:43.933Z"
+author: maintainer-agent
+parent: pm-mpbb
+close_reason: "Shipped: resolvePmRoot redirects explicit project-root --path/PM_PATH into .agents/pm (verified the previously-failing case now works). Back-compat preserved for pm init --path and direct tracker roots."
+body: ""

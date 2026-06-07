@@ -1,0 +1,12 @@
+id: pm-q0kr
+title: Slim guided-error boilerplate in agent contexts; lead unknown-command Examples with the did-you-mean candidate
+description: "agent-UX audit F8/F9: every guided error injects a constant 'Why' line + generic 'pm --help' Examples (150-210 tokens of noise). Drop/shorten the constant Why in --json/agent contexts; when a did-you-mean candidate exists lead Examples with it instead of an alphabetical command dump."
+type: Chore
+status: open
+priority: 3
+tags[3]: agent-ux,"area:cli",token-efficiency
+created_at: "2026-06-07T17:04:17.997Z"
+updated_at: "2026-06-07T17:04:17.997Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

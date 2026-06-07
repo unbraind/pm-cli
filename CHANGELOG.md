@@ -4,10 +4,17 @@
 
 ### Added
 
+- MCP pm\_health defaults to the compact summary projection for token-efficient agent health checks ([pm-yjub](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yjub.toon))
 - Add schema show-status status inspection ([pm-qpus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qpus.toon))
 
 ### Fixed
 
+- MCP tools/call structuredContent.result is always present but isError path lacks it — inconsistent envelope ([pm-l40h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l40h.toon))
+- MCP server serverInfo.version is hardcoded '1.0.0' — should reflect package.json version ([pm-2nvw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2nvw.toon))
+- Fix inaccurate PR CI matrix description in CONTRIBUTING.md ([pm-t73k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-t73k.toon))
+- Fix MCP tool-count doc drift \(18/21 -\> 22, add pm\_copy\) and lock the claude-plugin smoke to the live tools/list count ([pm-7tvx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-7tvx.toon))
+- Fix: --path/PM\_PATH did not discover .agents/pm under a project root \(never-block dead-end\) ([pm-ryik](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ryik.toon))
+- Fix: pm close/close-many hard-failed without a reason via a generic, non-actionable error \(P0 never-block\) ([pm-g799](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-g799.toon))
 - Document pm-changelog external repo dependency and pad-match fix in RELEASING.md ([pm-97yv](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-97yv.toon))
 - writeFileAtomic cross-device rename safety: handle EXDEV when tmp and target are on different mounts ([pm-6vv6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6vv6.toon))
 - Drift-cache gc scope: pm gc --scope runtime should clear history-drift-cache.json ([pm-7n8v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7n8v.toon))
@@ -15,7 +22,12 @@
 
 ### Removed
 
+- Remove dead code and dedupe pm-cli version readers into resolvePmCliVersion ([pm-wrqk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-wrqk.toon))
 - pm-changelog classifier mis-routes feature titles containing the word 'remove'/'delete' into the Removed section ([pm-ybiz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ybiz.toon))
+
+### Security
+
+- Pin CodeQL action refs to immutable SHAs in codeql.yml ([pm-ji5c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ji5c.toon))
 
 ### Other
 

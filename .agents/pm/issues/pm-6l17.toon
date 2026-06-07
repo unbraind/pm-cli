@@ -1,0 +1,12 @@
+id: pm-6l17
+title: list/search --tags hard-refuses (exit 2) while create --tag auto-corrects — accept --tags as a never-block alias
+description: "agent-UX audit F4: read commands use --tag, write commands use --tags; only create/update degrade gracefully. list --tags returns 'Refusing to auto-correct' exit 2 (dead-end). Accept --tags as a single-value alias on list/search (never-block) or downgrade the refusal to a warn + run corrected."
+type: Issue
+status: open
+priority: 2
+tags[3]: agent-ux,"area:cli",never-block
+created_at: "2026-06-07T17:04:17.473Z"
+updated_at: "2026-06-07T17:04:17.473Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

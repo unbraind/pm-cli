@@ -530,10 +530,7 @@ export async function loadRuntimeSchemaFromOptionalFiles(
     DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.workflows,
   );
 
-  const typeDefinitionsFromFile = (() => {
-    return undefined as ItemTypeDefinition[] | undefined;
-  })();
-  let loadedTypeDefinitions = typeDefinitionsFromFile;
+  let loadedTypeDefinitions: ItemTypeDefinition[] | undefined;
   let loadedStatuses: RuntimeStatusDefinition[] | undefined;
   let loadedFields: RuntimeFieldDefinition[] | undefined;
   let loadedWorkflow: RuntimeWorkflowDefinition | undefined;

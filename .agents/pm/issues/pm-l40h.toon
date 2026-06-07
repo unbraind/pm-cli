@@ -2,14 +2,15 @@ id: pm-l40h
 title: MCP tools/call structuredContent.result is always present but isError path lacks it — inconsistent envelope
 description: "On success, resultContent() returns `{ content: [...], structuredContent: { result, warnings? } }`. On error (errorContent()), it returns `{ isError: true, content: [...], structuredContent: { error, code } }`. The two envelopes are structurally different: success uses `structuredContent.result`, error uses `structuredContent.error`. MCP 2025-06-18 spec does not mandate a unified envelope, but clients that parse structuredContent generically must branch. A consistent shape would be `structuredContent: { ok: boolean, result?: ..., error?: string, code?: number, warnings?: string[] }` which allows typed SDK consumers to handle both cases uniformly."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[3]: "area:mcp",dx,protocol
 created_at: "2026-06-07T10:04:00.498Z"
-updated_at: "2026-06-07T10:22:12.422Z"
+updated_at: "2026-06-07T17:03:46.318Z"
 author: audit-platform-agent
 acceptance_criteria: "- Success and isError tools/call responses use a consistent structuredContent envelope shape\n- Error path envelope parity with success path (both include or both omit the result wrapper)\n- Test asserts envelope parity across success/error"
 parent: pm-5k4v
 risk: low
 confidence: medium
+close_reason: "Fixed: MCP error envelope now includes structuredContent.result = null so consumers read .result uniformly across success and error. Locked with a processRpcLine envelope test."
 body: ""

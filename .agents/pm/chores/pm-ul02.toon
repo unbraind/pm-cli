@@ -1,0 +1,12 @@
+id: pm-ul02
+title: Replace 'as unknown as ItemMetadata' double-casts (9 sites) with typed mutation/replay returns
+description: "code-quality audit F5: plan.ts/replay.ts/restore.ts force-cast mutation/replay results through unknown, defeating the compiler if return shapes drift. Give mutateItem/replayItemHistory/restore properly-typed returns or validated converters."
+type: Chore
+status: open
+priority: 2
+tags[2]: "area:type-safety",refactor
+created_at: "2026-06-07T17:04:16.950Z"
+updated_at: "2026-06-07T17:04:16.950Z"
+author: maintainer-agent
+parent: pm-o2kc
+body: ""

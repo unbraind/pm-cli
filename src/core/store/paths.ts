@@ -45,7 +45,21 @@ export function resolvePmRoot(cwd: string, cliPath?: string): string {
   const envPath = process.env.PM_PATH;
   const explicitPath = cliPath?.trim() || envPath?.trim();
   if (explicitPath) {
-    return path.resolve(cwd, explicitPath);
+    const resolved = path.resolve(cwd, explicitPath);
+    // When an explicit --path/PM_PATH points at a project root that contains an
+    // initialized `.agents/pm`, resolve into it. Without this, an agent passing
+    // the directory where it ran `pm init` (which creates `<dir>/.agents/pm`)
+    // hits a hard "tracker not initialized" dead-end, while cwd discovery walks
+    // up to find the same `.agents/pm`. We only redirect when the path itself is
+    // not already a tracker root, so `pm init --path <dir>` (which writes
+    // `<dir>/settings.json` directly) and existing tracker roots keep working.
+    if (!pathExists(getSettingsPath(resolved))) {
+      const nestedRoot = path.join(resolved, PM_DIRNAME);
+      if (pathExists(getSettingsPath(nestedRoot))) {
+        return nestedRoot;
+      }
+    }
+    return resolved;
   }
   const discoveredRoot = discoverPmRootFromAncestors(cwd);
   if (discoveredRoot) {

@@ -6,9 +6,11 @@ status: open
 priority: 2
 tags[5]: "area:extensions","area:mcp","area:packages","area:sdk",audit
 created_at: "2026-06-07T10:03:15.640Z"
-updated_at: "2026-06-07T10:06:18.170Z"
+updated_at: "2026-06-07T17:05:16.588Z"
 author: audit-platform-agent
 parent: pm-5k4v
+comments[1]{created_at,author,text}:
+  "2026-06-07T17:05:16.588Z",maintainer-agent,"Audit 2026-06-07 (PR pass): MCP+SDK findings — SHIPPED pm-2nvw (serverInfo.version), pm-l40h (error envelope result:null), pm-yjub (pm_health summary default). TRACKED: pm-jozc (MCP hoist top-level filter keys), pm-oll8 (registerItemFields type validation), pm-l0jd (SDK manifest schema/getWorkspaceContracts memo/FlagDefinition unify). Enriched pm-ltbr, pm-1js9, pm-k1e4. See ADR pm-96wm."
 notes[2]{created_at,author,text}:
   "2026-06-07T10:03:24.471Z",audit-platform-agent,"Files audited: src/mcp/server.ts (1260L), src/sdk/index.ts, src/sdk/cli-contracts.ts (2126L), src/sdk/cli-contracts/enum-contracts.ts, src/sdk/cli-contracts/tool-parameter-tables.ts, src/sdk/runtime.ts, src/sdk/testing.ts, src/core/extensions/loader.ts (2279L), src/core/extensions/extension-types.ts (917L), src/core/extensions/extension-policy.ts, src/core/extensions/extension-hook-runtime.ts, src/core/packages/manifest.ts, all 9 packages/pm-*/manifest.json. Also read docs/SDK.md, docs/EXTENSIONS.md, docs/EXTENSION_AUTHOR_CONTRACTS.md, marketplace.json, tests/integration/mcp-handshake.spec.ts."
   "2026-06-07T10:06:11.300Z",audit-platform-agent,"Items created under pm-5k4v (MCP epic): pm-2nvw (serverInfo.version hardcoded), pm-lold (ping method unhandled), pm-7u9j (narrow pm_append tool), pm-l40h (structuredContent envelope inconsistency), pm-rmjy (pm_list filter summary), pm-v68d (pm_schema/pm_config narrow tools), pm-4os2 (MCP tools in contract golden-file). Items created under pm-ugqx (Extension epic): pm-iljy (first-party manifests missing trusted/sandbox/permissions), pm-k5e8 (pm_max_version warn-only toggle), pm-qo36 (extension self-identity accessor), pm-aw7d (missing override testing helpers), pm-k1e4 (deactivation lifecycle), pm-z9ho (prompts/assets resource kinds), pm-pl53 (sandbox advisory trust model docs), pm-1js9 (commands capability exemplar), pm-ltbr (FlagDefinition list/default gap)."

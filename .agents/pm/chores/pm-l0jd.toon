@@ -1,0 +1,12 @@
+id: pm-l0jd
+title: "SDK author-ergonomics batch: extension-manifest JSON Schema, getWorkspaceContracts memoization, FlagDefinition type/value_type unification"
+description: "SDK audit F4/F7/F8: (1) publish an extension-manifest.schema.json + $schema pointer for inline IDE validation; (2) getWorkspaceContracts re-loads+activates all extensions per call when extensionRegistrations isn't passed — memoize per pmRoot or document; (3) FlagDefinition exposes both type and value_type with silent 'type ?? value_type' precedence — unify on value_type (deprecate the other) to stop the footgun."
+type: Chore
+status: open
+priority: 3
+tags[3]: "area:sdk",ergonomics,extensions
+created_at: "2026-06-07T17:04:18.516Z"
+updated_at: "2026-06-07T17:04:18.516Z"
+author: maintainer-agent
+parent: pm-ugqx
+body: ""

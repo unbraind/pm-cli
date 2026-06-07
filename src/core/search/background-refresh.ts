@@ -325,11 +325,3 @@ export async function runSemanticRefreshWorker(
 
   return { processed: [...new Set(processed)].sort((a, b) => a.localeCompare(b)), rounds, warnings };
 }
-
-// Expose internals for focused tests without widening the production surface
-// used by the mutation hot path.
-export const _backgroundRefreshInternals = {
-  pendingQueuePath,
-  acquireQueueGate,
-  releaseQueueGate,
-};

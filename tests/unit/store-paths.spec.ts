@@ -98,6 +98,42 @@ describe("core/store/paths", () => {
     }
   });
 
+  it("resolvePmRoot redirects an explicit project-root path into its initialized .agents/pm", () => {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-explicit-projectroot-"));
+    try {
+      const projectRoot = path.join(tempRoot, "project");
+      const nestedPmRoot = path.join(projectRoot, ".agents", "pm");
+      mkdirSync(nestedPmRoot, { recursive: true });
+      writeFileSync(path.join(nestedPmRoot, "settings.json"), "{}\n", "utf8");
+
+      withEnvVar("PM_PATH", undefined, () => {
+        // Passing the project root (where `pm init` created `.agents/pm`) must
+        // resolve into the tracker instead of hard-failing as "not initialized".
+        expect(resolvePmRoot(tempRoot, projectRoot)).toBe(path.resolve(nestedPmRoot));
+      });
+      // Same redirect honored via PM_PATH.
+      withEnvVar("PM_PATH", projectRoot, () => {
+        expect(resolvePmRoot(tempRoot)).toBe(path.resolve(nestedPmRoot));
+      });
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("resolvePmRoot keeps an explicit path that is already a tracker root verbatim", () => {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "pm-path-explicit-trackerroot-"));
+    try {
+      // `pm init --path <dir>` writes settings.json directly at <dir>.
+      writeFileSync(path.join(tempRoot, "settings.json"), "{}\n", "utf8");
+
+      withEnvVar("PM_PATH", undefined, () => {
+        expect(resolvePmRoot(tempRoot, tempRoot)).toBe(path.resolve(tempRoot));
+      });
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it("resolveGlobalPmRoot uses PM_GLOBAL_PATH when present or homedir fallback", () => {
     const cwd = "/tmp/pm-global-test";
 

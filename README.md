@@ -51,7 +51,7 @@ For Claude Code, install the native plugin (no `pm` CLI required):
 /plugin install pm-cli@pm
 ```
 
-This registers 18 MCP tools, 5 workflow skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and a session-start context hook — all without shelling out to the `pm` CLI.
+This registers 22 MCP tools, 5 workflow skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and a session-start context hook — all without shelling out to the `pm` CLI.
 
 `pm` packages use the same package-first vocabulary:
 
