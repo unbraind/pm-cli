@@ -708,9 +708,12 @@ async function runDynamicExtensionAction(
     setActiveExtensionServices(createEmptyExtensionServiceRegistry());
     setActiveExtensionRenderers(createEmptyExtensionRendererRegistry());
     setActiveExtensionRegistrations(createEmptyExtensionRegistrationRegistry());
-    // Best-effort teardown of extensions that activated successfully. Guard
-    // defensively so an unexpected throw cannot escape the finally.
-    await deactivateExtensions(loadResult, activationResult).catch(() => undefined);
+    // Best-effort teardown of extensions that activated successfully. Skip
+    // entirely if activation itself never produced a result (nothing was set
+    // up), and guard so an unexpected throw cannot escape the finally.
+    if (activationResult) {
+      await deactivateExtensions(loadResult, activationResult).catch(() => undefined);
+    }
   }
 }
 
