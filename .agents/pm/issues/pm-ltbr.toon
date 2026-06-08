@@ -2,11 +2,11 @@ id: pm-ltbr
 title: Extension FlagDefinition lacks 'list' and 'default' fields — extension-registered flags cannot match core comma-list contract
 description: "The FlagDefinition interface in extension-types.ts (line 398) has: long, short, value_name, description, required, enabled, visible, type/value_type, plus an index signature `[key: string]: unknown`. The core CliFlagContract in cli-contracts.ts has an additional `list?: boolean` field (used by coalesceRepeatedListFlags) and there is no `default` field. An extension that registers a comma-list flag via registerFlags cannot declare list:true to get the same accumulation behavior as core flags (e.g. `--tags`). This means multi-value extension flags lose values on repeated invocations. The `[key: string]: unknown` index signature silently accepts list:true but it is not documented, typed, or enforced."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: "area:extensions","area:sdk",bug,dx
 created_at: "2026-06-07T10:06:01.144Z"
-updated_at: "2026-06-07T17:04:45.682Z"
+updated_at: "2026-06-08T13:51:50.211Z"
 author: audit-platform-agent
 acceptance_criteria: "- FlagDefinition gains typed `list?: boolean` and `default?` fields\n- Extension multi-value flags accumulate via coalesceRepeatedListFlags like core `--tags`\n- Typed (not via index signature); documented; covered by a test"
 parent: pm-ugqx
@@ -14,4 +14,5 @@ risk: low
 confidence: high
 comments[1]{created_at,author,text}:
   "2026-06-07T17:04:45.682Z",maintainer-agent,"Audit 2026-06-07 (SDK agent F1): root cause is deeper than missing list/default fields — extension-registered flags bypass the bootstrap argv normalizer ENTIRELY. resolveSubcommandFlagContractsForCommand (sdk/cli-contracts.ts) is a hard-coded switch over CORE commands only and never consults ExtensionRegistrationRegistry.flags, so extension flags get no alias/typo/comma-list normalization (parsed via the separate loose-option path in cli/extension-command-options.ts). Fix must add list/default to FlagDefinition AND merge active extension flag registrations into the normalizer lookup."
+close_reason: "FlagDefinition gained typed list?/default? fields; extension list flags now accumulate comma-joined/repeated values and apply defaults via coerceLooseCommandOptionsWithFlagDefinitions, with validateFlagDefinitions enforcing the new fields. Covered by main-loose-options.spec.ts."
 body: ""

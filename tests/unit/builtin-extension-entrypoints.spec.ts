@@ -282,6 +282,7 @@ function createCommandOnlyApi(): {
   const exporters: CapturedExporter[] = [];
   const hooks: CapturedHooks = { onRead: [], onWrite: [] };
   const api: ExtensionApi = {
+    extension: { name: "test-extension", layer: "project", version: "0.0.0", capabilities: [] },
     registerCommand(first: string | CommandDefinition, _override?: CommandOverride): void {
       if (typeof first === "string") {
         throw new TypeError(`Unexpected command override registration: ${first}`);

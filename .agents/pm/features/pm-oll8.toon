@@ -2,11 +2,12 @@ id: pm-oll8
 title: "registerItemFields/registerItemTypes: validate declared field type against known coercion kinds with did-you-mean"
 description: "SDK audit F6: validateItemFieldDefinitions only checks name/type are non-empty strings; a typo'd field type (e.g. 'strnig') passes activation and fails opaquely at use time though SDK.md says --field coerces by declared type. Validate type against the known field-type enum at registration with a did-you-mean hint (Damerau-Levenshtein helper exists)."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[3]: "area:sdk",extensions,never-block
 created_at: "2026-06-07T17:04:18.252Z"
-updated_at: "2026-06-07T17:04:18.252Z"
+updated_at: "2026-06-08T13:51:50.610Z"
 author: maintainer-agent
 parent: pm-ugqx
+close_reason: "registerItemFields now validates declared field type against canonical kinds (string/number/boolean/array/object) at activation via shared item-field-types.ts module, with a Damerau-Levenshtein did-you-mean hint. Covered at 100% in extension-loader.spec.ts."
 body: ""

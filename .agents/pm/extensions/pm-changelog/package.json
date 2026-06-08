@@ -1,6 +1,6 @@
 {
   "name": "pm-changelog",
-  "version": "2026.6.7",
+  "version": "2026.6.8",
   "description": "Generate CHANGELOG.md files from pm-cli items for local and CI usage",
   "repository": {
     "type": "git",
@@ -92,7 +92,7 @@
     ]
   },
   "peerDependencies": {
-    "@unbrained/pm-cli": ">=2026.5.31"
+    "@unbrained/pm-cli": ">=2026.6.7"
   },
   "keywords": [
     "pm-cli",

@@ -135,6 +135,42 @@ describe("pm package manifest model", () => {
     });
   });
 
+  it("reads asset and prompt resource kinds as first-class manifest entries", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-asset-prompt-"));
+    await writeFile(
+      path.join(tempRoot, "package.json"),
+      JSON.stringify({
+        name: "pm-agent-assets",
+        pm: {
+          assets: ["assets/logo.svg", "assets/banner.png", "assets/logo.svg"],
+          prompts: "prompts/review.md",
+        },
+      }),
+      "utf8",
+    );
+
+    await expect(readPmPackageManifest(tempRoot)).resolves.toMatchObject({
+      source: "pm",
+      package_name: "pm-agent-assets",
+      resources: {
+        assets: ["assets/banner.png", "assets/logo.svg"],
+        prompts: ["prompts/review.md"],
+      },
+    });
+  });
+
+  it("declares conventional roots for every package resource kind, including assets and prompts", () => {
+    expect(PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS.assets).toEqual(["assets", ".agents/pm/assets"]);
+    expect(PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS.prompts).toEqual(["prompts", ".agents/pm/prompts"]);
+    expect(Object.keys(PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS)).toEqual([
+      "extensions",
+      "docs",
+      "examples",
+      "assets",
+      "prompts",
+    ]);
+  });
+
   it("collects extension resources from explicit and conventional package roots", async () => {
     const explicitRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-explicit-"));
     const explicitExtension = await createExtension(path.join(explicitRoot, "runtime"), "explicit-ext");

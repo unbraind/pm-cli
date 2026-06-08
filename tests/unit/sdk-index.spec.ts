@@ -48,17 +48,26 @@ import {
 import {
   assertPackageManifest,
   assertRegisteredCommandContract,
+  assertRegisteredCommandOverride,
   assertRegisteredExporter,
   assertRegisteredHook,
   assertRegisteredImporter,
   assertRegisteredItemField,
   assertRegisteredItemType,
+  assertRegisteredParserOverride,
+  assertRegisteredPreflightOverride,
+  assertRegisteredRendererOverride,
   assertRegisteredSearchProvider,
   assertRegisteredVectorStoreAdapter,
   activateExtensionForTest,
 } from "../../src/sdk/testing.js";
 import { readSettings as readCoreSettings, writeSettings } from "../../src/core/store/settings.js";
-import { activateExtensions, loadExtensions } from "../../src/core/extensions/loader.js";
+import {
+  activateExtensions,
+  loadExtensions,
+  type ExtensionActivationResult,
+  type OutputRendererFormat,
+} from "../../src/core/extensions/loader.js";
 import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -218,6 +227,8 @@ describe("public sdk entrypoint", () => {
       "extensions",
       "docs",
       "examples",
+      "assets",
+      "prompts",
     ]);
   });
 
@@ -1126,5 +1137,133 @@ describe("sdk testing helpers", () => {
     expect(activation.failed).toHaveLength(1);
     expect(activation.warnings).toContain("extension_activate_failed:project:missing-capability-ext");
     expect(activation.failed[0]?.trace?.missing_capability).toBe("schema");
+  });
+
+  const activateOverrideExtensionForTest = async (name: string): Promise<ExtensionActivationResult> =>
+    activateExtensionForTest(
+      {
+        activate(api: ExtensionApi) {
+          api.registerCommand("override run", () => ({ ok: true }));
+          api.registerParser("override run", () => ({}));
+          api.registerPreflight(() => ({}));
+          api.registerRenderer("toon", () => null);
+        },
+      },
+      { name, capabilities: ["commands", "parser", "preflight", "renderers"] },
+    );
+
+  it("asserts a registered command override by command and extension", async () => {
+    const activation = await activateOverrideExtensionForTest("override-ext");
+
+    const override = assertRegisteredCommandOverride(activation.commands, { command: " Override  Run " });
+    expect(override.command).toBe("override run");
+    expect(typeof override.run).toBe("function");
+
+    const scoped = assertRegisteredCommandOverride(activation.commands, {
+      command: "override run",
+      extensionName: "override-ext",
+    });
+    expect(scoped.name).toBe("override-ext");
+  });
+
+  it("throws actionable errors for missing command override registrations", async () => {
+    const activation = await activateOverrideExtensionForTest("override-ext");
+
+    expect(() => assertRegisteredCommandOverride(activation.commands, { command: "   " })).toThrow(
+      /must be a non-empty string/,
+    );
+    expect(() => assertRegisteredCommandOverride(activation.commands, { command: "missing command" })).toThrow(
+      /Available command overrides: override run/,
+    );
+    expect(() =>
+      assertRegisteredCommandOverride(activation.commands, {
+        command: "override run",
+        extensionName: "other-ext",
+      }),
+    ).toThrow(/from extension "other-ext".*Available command overrides: override run/);
+  });
+
+  it("asserts a registered parser override by command and extension", async () => {
+    const activation = await activateOverrideExtensionForTest("override-ext");
+
+    const override = assertRegisteredParserOverride(activation.parsers, { command: " Override  Run " });
+    expect(override.command).toBe("override run");
+    expect(typeof override.run).toBe("function");
+
+    const scoped = assertRegisteredParserOverride(activation.parsers, {
+      command: "override run",
+      extensionName: "override-ext",
+    });
+    expect(scoped.name).toBe("override-ext");
+  });
+
+  it("throws actionable errors for missing parser override registrations", async () => {
+    const activation = await activateOverrideExtensionForTest("override-ext");
+
+    expect(() => assertRegisteredParserOverride(activation.parsers, { command: "   " })).toThrow(
+      /must be a non-empty string/,
+    );
+    expect(() => assertRegisteredParserOverride(activation.parsers, { command: "missing command" })).toThrow(
+      /Available parser overrides: override run/,
+    );
+    expect(() =>
+      assertRegisteredParserOverride(activation.parsers, {
+        command: "override run",
+        extensionName: "other-ext",
+      }),
+    ).toThrow(/from extension "other-ext".*Available parser overrides: override run/);
+  });
+
+  it("asserts a registered preflight override globally and by extension", async () => {
+    const activation = await activateOverrideExtensionForTest("override-ext");
+
+    const override = assertRegisteredPreflightOverride(activation.preflight);
+    expect(typeof override.run).toBe("function");
+    expect(override.name).toBe("override-ext");
+
+    const scoped = assertRegisteredPreflightOverride(activation.preflight, { extensionName: "override-ext" });
+    expect(scoped.name).toBe("override-ext");
+  });
+
+  it("throws actionable errors for missing preflight override registrations", async () => {
+    const activation = await activateOverrideExtensionForTest("override-ext");
+
+    expect(() =>
+      assertRegisteredPreflightOverride(activation.preflight, { extensionName: "other-ext" }),
+    ).toThrow(/from extension "other-ext".*Available preflight overrides: override-ext/);
+    expect(() => assertRegisteredPreflightOverride({ overrides: [] })).toThrow(
+      /Available preflight overrides: \(none\)/,
+    );
+  });
+
+  it("asserts a registered renderer override by format and extension", async () => {
+    const activation = await activateOverrideExtensionForTest("override-ext");
+
+    const override = assertRegisteredRendererOverride(activation.renderers, { format: "toon" });
+    expect(override.format).toBe("toon");
+    expect(typeof override.run).toBe("function");
+
+    const scoped = assertRegisteredRendererOverride(activation.renderers, {
+      format: "toon",
+      extensionName: "override-ext",
+    });
+    expect(scoped.name).toBe("override-ext");
+  });
+
+  it("throws actionable errors for missing renderer override registrations", async () => {
+    const activation = await activateOverrideExtensionForTest("override-ext");
+
+    expect(() =>
+      assertRegisteredRendererOverride(activation.renderers, { format: "  " as OutputRendererFormat }),
+    ).toThrow(/must be a non-empty string/);
+    expect(() => assertRegisteredRendererOverride(activation.renderers, { format: "json" })).toThrow(
+      /Available renderer overrides: toon/,
+    );
+    expect(() =>
+      assertRegisteredRendererOverride(activation.renderers, {
+        format: "toon",
+        extensionName: "other-ext",
+      }),
+    ).toThrow(/from extension "other-ext".*Available renderer overrides: toon/);
   });
 });

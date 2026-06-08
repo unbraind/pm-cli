@@ -2,11 +2,11 @@ id: pm-k1e4
 title: "Extension activation: no teardown/deactivation hook — extensions cannot clean up timers, connections, or state"
 description: "Extensions can register hooks and overrides during activate(api), but there is no corresponding deactivate() or onTeardown() lifecycle. An extension that opens a database connection, starts a timer, or allocates a buffer at activation has no way to clean up when the CLI process exits or when 'pm extension reload' is called. This matters most for: (1) packages running long search-index connections (pm-search-advanced with an external vector store), (2) lifecycle-hooks that hold open log sinks, (3) reload scenarios in MCP where extensions are re-loaded per request. An optional `deactivate(): Promise<void> | void` export on the extension module (analogous to VS Code's deactivate export) would close this gap."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[4]: "area:extensions","area:sdk",extensibility,lifecycle
 created_at: "2026-06-07T10:05:20.632Z"
-updated_at: "2026-06-07T17:04:46.205Z"
+updated_at: "2026-06-08T13:51:51.303Z"
 author: audit-platform-agent
 acceptance_criteria: "- Extension API supports a deactivate/teardown lifecycle hook invoked on shutdown/reload\n- Long-running MCP server invokes teardown on extension reload\n- Covered by tests; lifecycle documented"
 parent: pm-ugqx
@@ -14,4 +14,5 @@ risk: medium
 confidence: medium
 comments[1]{created_at,author,text}:
   "2026-06-07T17:04:46.205Z",maintainer-agent,"Audit 2026-06-07 (SDK agent F5): pair the missing teardown/deactivation hook with a missing hooks.onError(context) — ExtensionApi.hooks only exposes before/after/onWrite/onRead/onIndex, so extensions can neither clean up on abort nor observe failures. Consider api.onTeardown(fn) / module deactivate(api) + hooks.onError together."
+close_reason: "Added optional module deactivate() teardown lifecycle + exported deactivateExtensions() runner (best-effort, never-block); MCP server invokes teardown in a finally between native-action requests. Documented + tested."
 body: ""

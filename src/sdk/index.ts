@@ -27,11 +27,15 @@ export * from "./runtime.js";
 export {
   assertPackageManifest,
   assertRegisteredCommandContract,
+  assertRegisteredCommandOverride,
   assertRegisteredExporter,
   assertRegisteredHook,
   assertRegisteredImporter,
   assertRegisteredItemField,
   assertRegisteredItemType,
+  assertRegisteredParserOverride,
+  assertRegisteredPreflightOverride,
+  assertRegisteredRendererOverride,
   assertRegisteredSearchProvider,
   assertRegisteredVectorStoreAdapter,
   activateExtensionForTest,
@@ -40,6 +44,7 @@ export {
   type PackageManifestResourceExpectation,
   type RegisteredCommandContractAssertion,
   type RegisteredCommandContractExpectation,
+  type RegisteredCommandOverrideExpectation,
   type RegisteredExporterExpectation,
   type RegisteredHookExpectation,
   type RegisteredHookKind,
@@ -48,6 +53,9 @@ export {
   type RegisteredItemFieldExpectation,
   type RegisteredItemTypeAssertion,
   type RegisteredItemTypeExpectation,
+  type RegisteredParserOverrideExpectation,
+  type RegisteredPreflightOverrideExpectation,
+  type RegisteredRendererOverrideExpectation,
   type RegisteredSearchProviderExpectation,
   type RegisteredVectorStoreAdapterExpectation,
 } from "./testing.js";
@@ -87,6 +95,11 @@ export interface ExtensionModule {
    */
   manifest?: ExtensionManifest;
   activate(api: ExtensionApi): void | Promise<void>;
+  /**
+   * Optional teardown lifecycle hook (VS Code-style `deactivate`). Invoked by
+   * the host on shutdown/reload to release resources opened during `activate`.
+   */
+  deactivate?(): void | Promise<void>;
 }
 
 /**
@@ -116,9 +129,12 @@ export type {
   ExtensionActivationResult,
   ExtensionApi,
   ExtensionCommandRegistry,
+  ExtensionDeactivationFailure,
+  ExtensionDeactivationResult,
   ExtensionDiagnostic,
   ExtensionDiscoveryResult,
   ExtensionHookRegistry,
+  ExtensionSelfIdentity,
   ExtensionLoadResult,
   ExtensionManifest,
   ExtensionManifestEngines,

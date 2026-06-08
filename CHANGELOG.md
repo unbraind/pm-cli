@@ -1,12 +1,34 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- PmPackageResourceKind is missing 'assets' and 'prompts' as canonical resource types ([pm-z9ho](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-z9ho.toon))
+- Extension activation: no teardown/deactivation hook — extensions cannot clean up timers, connections, or state ([pm-k1e4](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-k1e4.toon))
+- Extension API missing self-identity accessor: extensions cannot read their own name, layer, or version at activation ([pm-qo36](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qo36.toon))
+- registerItemFields/registerItemTypes: validate declared field type against known coercion kinds with did-you-mean ([pm-oll8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-oll8.toon))
+
+### Fixed
+
+- Extension FlagDefinition lacks 'list' and 'default' fields — extension-registered flags cannot match core comma-list contract ([pm-ltbr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ltbr.toon))
+
+### Other
+
+- SDK lacks assertRegisteredCommandOverride testing helper \(coverage gap in testing.ts\) ([pm-aw7d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-aw7d.toon))
+
 ## 2026.6.8 - 2026-06-08
 
 ### Added
 
 - list/search: trim default filters/projection/sorting/now trailer in compact/agent mode ([pm-vhx6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-vhx6.toon))
 - MCP pm\_health defaults to the compact summary projection for token-efficient agent health checks ([pm-yjub](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yjub.toon))
+- pm-changelog classifier mis-routes feature titles containing the word 'remove'/'delete' into the Removed section ([pm-ybiz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ybiz.toon))
 - Add schema show-status status inspection ([pm-qpus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qpus.toon))
+
+### Changed
+
+- Remove dead code and dedupe pm-cli version readers into resolvePmCliVersion ([pm-wrqk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-wrqk.toon))
 
 ### Fixed
 
@@ -23,11 +45,6 @@
 - writeFileAtomic cross-device rename safety: handle EXDEV when tmp and target are on different mounts ([pm-6vv6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6vv6.toon))
 - Drift-cache gc scope: pm gc --scope runtime should clear history-drift-cache.json ([pm-7n8v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-7n8v.toon))
 - MCP ping method not handled — returns 'Unsupported MCP method' instead of empty response ([pm-lold](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-lold.toon))
-
-### Removed
-
-- Remove dead code and dedupe pm-cli version readers into resolvePmCliVersion ([pm-wrqk](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-wrqk.toon))
-- pm-changelog classifier mis-routes feature titles containing the word 'remove'/'delete' into the Removed section ([pm-ybiz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-ybiz.toon))
 
 ### Security
 
@@ -385,8 +402,13 @@
 
 ### Added
 
+- Default-safety policy for destructive pm commands \(gc keeps delete-by-default; add pm delete --dry-run\) ([pm-tobi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-tobi.toon))
 - pm schema add-type CLI + invalid-type error hint \(pm-e1va\) ([pm-fy8o](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-fy8o.toon))
 - Config-driven custom item types: wire schema/types.json into runtime schema ([pm-e1va](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-e1va.toon))
+
+### Changed
+
+- Remove dead code: command-aware.ts module, 5 orphaned exported functions, unused undici dependency ([pm-b7do](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-b7do.toon))
 
 ### Fixed
 
@@ -404,8 +426,6 @@
 
 - Deduplicate item-store mutation and delete lifecycle setup ([pm-za3c](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-za3c.toon))
 - CLI ergonomics polish: concise init, help alias collapse, named priorities, package install hints, starter templates, delete dry-run ([pm-fuat](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-fuat.toon))
-- Default-safety policy for destructive pm commands \(gc keeps delete-by-default; add pm delete --dry-run\) ([pm-tobi](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/decisions/pm-tobi.toon))
-- Remove dead code: command-aware.ts module, 5 orphaned exported functions, unused undici dependency ([pm-b7do](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-b7do.toon))
 
 ### Security
 
@@ -517,6 +537,7 @@
 - Task: implement update close\_reason flag and reopen auto-clear ([pm-g8jp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-g8jp.toon))
 - Update completion and Pi wrapper for event recurrence flags ([pm-5hbj](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5hbj.toon))
 - Pi wrapper all-fields create/update parity ([pm-096j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-096j.toon))
+- M1: Core command set init create get update append delete claim release close ([pm-06t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-06t.toon))
 
 ### Fixed
 
@@ -562,7 +583,6 @@
 
 - Remove session-based ownership model ([pm-5rh2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5rh2.toon))
 - Implement pm delete command ([pm-4yl0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-4yl0.toon))
-- M1: Core command set init create get update append delete claim release close ([pm-06t](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-06t.toon))
 
 ### Security
 
@@ -869,6 +889,7 @@
 - Implement CLI telemetry consent and runtime pipeline ([pm-5v5w](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-5v5w.toon))
 - 2026-04-25 full dogfood audit remediation wave ([pm-2hrt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2hrt.toon))
 - List parent filtering and get recovery guidance ([pm-v7o7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-v7o7.toon))
+- Remove none token semantics across command surfaces ([pm-rl4e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rl4e.toon))
 - Search UX and projection controls ([pm-qb71](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qb71.toon))
 - Add compact/full/fields search output controls with compact default ([pm-nrxm](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-nrxm.toon))
 - Extension help and contracts runtime introspection ([pm-4bhw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-4bhw.toon))
@@ -971,6 +992,7 @@
 - Improve update-command close and audit-owner failure guidance from telemetry ([pm-syt7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-syt7.toon))
 - Align update-many status mutation support with help/contracts ([pm-3cx8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-3cx8.toon))
 - Implement pm update-many with dry-run checkpoints and rollback ([pm-lf6s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lf6s.toon))
+- Implement explicit clear/unassigned semantics and remove none token behavior ([pm-d7id](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-d7id.toon))
 - Update docs and changelog for six audit findings ([pm-9eaz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-9eaz.toon))
 - Improve required option error/help guidance with examples ([pm-bzyr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-bzyr.toon))
 - Installer scripts and update path ([pm-tq1](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-tq1.toon))
@@ -1033,17 +1055,15 @@
 - E1: Expand override and no-extension regression matrix ([pm-5chf](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5chf.toon))
 - Ship regression tests docs and verification evidence ([pm-r9dy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-r9dy.toon))
 - Expand recurrence regression and runtime contract tests ([pm-5xih](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-5xih.toon))
+- Remove TOON front\_matter wrapper from item files ([pm-h3tp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-h3tp.toon))
 - Expand regression and release-readiness tests for calendar/reminders ([pm-tyq3](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tyq3.toon))
 - Fix cross-platform CI regressions surfaced by GitHub checks ([pm-skyg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-skyg.toon))
 - Regression and release hardening ([pm-qwp7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qwp7.toon))
 
 ### Removed
 
-- Remove none token semantics across command surfaces ([pm-rl4e](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rl4e.toon))
-- Implement explicit clear/unassigned semantics and remove none token behavior ([pm-d7id](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-d7id.toon))
 - M4 follow-up: remove deleted items from semantic vector indexes ([pm-fdla](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fdla.toon))
 - Extend restore to recover missing or deleted item files from history ([pm-g6qd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-g6qd.toon))
-- Remove TOON front\_matter wrapper from item files ([pm-h3tp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-h3tp.toon))
 
 ### Security
 

@@ -123,4 +123,58 @@ describe("cli extension loose option parser", () => {
       d: true,
     });
   });
+
+  it("accumulates list-flag values across comma-joined and repeated occurrences (pm-ltbr)", () => {
+    const parsed = parseLooseCommandOptions(["--tag", "a,b", "--tag", "c", "--tag", "d,e"]);
+    const coerced = coerceLooseCommandOptionsWithFlagDefinitions(parsed, [
+      { long: "--tag", value_type: "string", list: true },
+    ]);
+    expect(coerced).toEqual({ tag: ["a", "b", "c", "d", "e"] });
+  });
+
+  it("wraps a single list-flag occurrence into an array even without a declared kind (pm-ltbr)", () => {
+    const parsed = parseLooseCommandOptions(["--id", "only", "--empty", ",, ,"]);
+    const coerced = coerceLooseCommandOptionsWithFlagDefinitions(parsed, [
+      { long: "--id", list: true },
+      { long: "--empty", list: true },
+    ]);
+    expect(coerced).toEqual({ id: ["only"], empty: [] });
+  });
+
+  it("coerces list-flag elements by declared value_type (pm-ltbr)", () => {
+    const parsed = parseLooseCommandOptions(["--n", "1,2", "--n", "3"]);
+    const coerced = coerceLooseCommandOptionsWithFlagDefinitions(parsed, [
+      { long: "--n", value_type: "number", list: true },
+    ]);
+    expect(coerced).toEqual({ n: [1, 2, 3] });
+  });
+
+  it("applies declared scalar and list defaults when a flag is omitted (pm-ltbr)", () => {
+    const coerced = coerceLooseCommandOptionsWithFlagDefinitions({}, [
+      { long: "--mode", value_type: "string", default: "auto" },
+      { long: "--limit", value_type: "number", default: 10 },
+      { long: "--strict", value_type: "boolean", default: true },
+      { long: "--raw", default: "kept" },
+      { long: "--tags", value_type: "string", list: true, default: "x,y" },
+      { long: "--absent", value_type: "string" },
+    ]);
+    expect(coerced).toEqual({ mode: "auto", limit: 10, strict: true, raw: "kept", tags: ["x", "y"] });
+    expect(Object.hasOwn(coerced, "absent")).toBe(false);
+  });
+
+  it("keeps a provided value over the declared default (pm-ltbr)", () => {
+    const parsed = parseLooseCommandOptions(["--mode", "manual"]);
+    const coerced = coerceLooseCommandOptionsWithFlagDefinitions(parsed, [
+      { long: "--mode", value_type: "string", default: "auto" },
+    ]);
+    expect(coerced).toEqual({ mode: "manual" });
+  });
+
+  it("prefers value_type over the deprecated type alias (pm-l0jd)", () => {
+    const parsed = parseLooseCommandOptions(["--count", "7"]);
+    const coerced = coerceLooseCommandOptionsWithFlagDefinitions(parsed, [
+      { long: "--count", type: "string", value_type: "number" },
+    ]);
+    expect(coerced).toEqual({ count: 7 });
+  });
 });

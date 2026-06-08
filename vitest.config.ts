@@ -66,6 +66,7 @@ export default defineConfig({
         "src/core/config/positional-value.ts",
         "src/core/diagnostics/remediation.ts",
         "src/core/extensions/item-fields.ts",
+        "src/core/extensions/item-field-types.ts",
         "src/core/extensions/loader.ts",
         "src/core/extensions/runtime-registrations.ts",
         "src/core/fs/fs-utils.ts",

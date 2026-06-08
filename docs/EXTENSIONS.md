@@ -102,8 +102,10 @@ Current resource kinds are:
 - `extensions`
 - `docs`
 - `examples`
+- `assets`
+- `prompts`
 
-Installation activates `pm.extensions`. `pm.docs` and `pm.examples` are catalog metadata. Agent-specific assets such as prompts, skills, or MCP servers should live in agent adapter packages, not in the core `pm` package contract.
+Installation activates `pm.extensions`. `pm.docs`, `pm.examples`, `pm.assets`, and `pm.prompts` are catalog metadata (metadata-only — they are discovered and surfaced in the catalog but not executed). Declare agent-facing prompt/slash-command markdown under `pm.prompts` and non-code assets (images, skills, fixtures) under `pm.assets`; their conventional roots are `prompts/` (also `.agents/pm/prompts/`) and `assets/` (also `.agents/pm/assets/`).
 
 `pm package init` emits a root extension (`"extensions": ["."]`) so local package installs can activate without dependency bootstrapping. Larger packages may point at nested extension directories after declaring runtime dependencies and validating with `pm package doctor`.
 
@@ -288,9 +290,10 @@ import { defineExtension } from "@unbrained/pm-cli/sdk";
 
 Common APIs:
 
+- `api.extension` is a read-only identity (`name`, `layer`, `version`, `capabilities`, `pm_min_version?`, `pm_max_version?`, `source_package?`) for self-identifying logs and version gating without re-reading the manifest.
 - `api.registerCommand(definition)` adds package-owned commands.
-- `api.registerFlags(command, flags)` adds runtime command flags.
-- `api.registerItemFields(fields)` adds custom metadata fields. Agents can set declared fields with repeatable `pm create --field name=value` and `pm update <id> --field name=value`; undeclared names are rejected.
+- `api.registerFlags(command, flags)` adds runtime command flags. A flag may declare `value_type` (canonical; the legacy `type` alias is honored only when `value_type` is absent), `list: true` to accumulate repeated/comma-joined values like core `--tags`, and a `default` applied when the flag is omitted.
+- `api.registerItemFields(fields)` adds custom metadata fields. Agents can set declared fields with repeatable `pm create --field name=value` and `pm update <id> --field name=value`; undeclared names are rejected. Each field `type` is validated against `string | number | boolean | array | object` at activation, with a did-you-mean hint on typos.
 - `api.registerItemTypes(types)` adds custom item types.
 - `api.registerMigration(definition)` adds schema migrations.
 - `api.registerService("output_format", handler)` customizes output formatting through the service override API. Return `context.payload`, `null`, or `undefined` for commands the extension does not own.
@@ -300,6 +303,7 @@ Common APIs:
   item entries for mutations, including `previous_status`, `status`,
   `changed_fields`, and partial `previous`/`current` front matter snapshots.
   `onWrite` always includes `path`, `scope`, and `op`; item mutations also add optional `item_id`, `item_type`, `before`, `after`, and `changed_fields`.
+- An optional module-level `deactivate()` export (VS Code-style) is invoked by the host on shutdown/reload — including by the long-running MCP server between native-action requests — to close connections, clear timers, and release resources opened during `activate`. Teardown is best-effort and never blocks other extensions.
 
 The bundled `pm-lifecycle-hooks` package is the hook exemplar: it declares only
 `hooks` and registers a default-inert `afterCommand` hook so authors can copy a

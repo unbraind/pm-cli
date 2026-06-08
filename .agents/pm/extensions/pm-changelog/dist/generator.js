@@ -604,6 +604,8 @@ function groupByCategory(items) {
     return grouped;
 }
 const BUG_LIKE_ITEM_TYPES = new Set(["issue", "bug", "bugfix", "defect"]);
+const CHANGED_NEEDLES = ["change", "changed", "refactor", "update", "updated", "improve"];
+const REMOVED_NEEDLES = ["removed", "remove", "deleted", "delete"];
 function classifyItem(item) {
     // Strip CLI-flag-like tokens from titles before scanning. Without this, an
     // item titled "pm <cmd> --add fails..." gets classified as "Added" because
@@ -633,12 +635,14 @@ function classifyItem(item) {
     const titleValue = sanitizedTitle.toLowerCase();
     const allValues = `${strongValues} ${titleValue}`.trim();
     const itemType = typeof item.type === "string" ? item.type.toLowerCase() : "";
-    const CHANGED_NEEDLES = ["change", "changed", "refactor", "update", "updated", "improve"];
     if (hasAny(allValues, ["security", "cve", "vulnerability"]))
         return "Security";
     if (hasAny(allValues, ["deprecated", "deprecation"]))
         return "Deprecated";
-    if (hasAny(allValues, ["removed", "remove", "deleted", "delete"]))
+    // Treat Removed as a strong signal by default. Title-only remove/delete terms
+    // are evaluated later, after Added/Changed defaults, so command/feature names
+    // like "remove-type" don't eclipse explicit non-removal intent.
+    if (hasAny(strongValues, REMOVED_NEEDLES))
         return "Removed";
     if (hasAny(allValues, ["fix", "fixed", "bug", "bugfix", "hotfix", "regression"]))
         return "Fixed";
@@ -659,6 +663,9 @@ function classifyItem(item) {
     }
     if (hasAny(titleValue, CHANGED_NEEDLES)) {
         return "Changed";
+    }
+    if (hasAny(titleValue, REMOVED_NEEDLES)) {
+        return "Removed";
     }
     return "Other";
 }
