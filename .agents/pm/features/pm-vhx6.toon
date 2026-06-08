@@ -2,15 +2,14 @@ id: pm-vhx6
 title: "list/search: trim default filters/projection/sorting/now trailer in compact/agent mode"
 description: "agent-UX audit F3: list/search always emit a ~19-key filters trailer + projection/sorting/now even in compact mode (more metadata than data on small result sets). Emit only non-default/agent-supplied keys in compact mode and gate the trailer behind --full/--explain. Complements [[pm-rmjy]]."
 type: Feature
-status: in_progress
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",token-efficiency
 created_at: "2026-06-07T17:04:17.220Z"
-updated_at: "2026-06-08T06:14:22.649Z"
-assignee: codex-agent-ux-reliability-20260607
+updated_at: "2026-06-08T06:26:03.000Z"
 author: maintainer-agent
 parent: pm-mpbb
-comments[7]{created_at,author,text}:
+comments[8]{created_at,author,text}:
   "2026-06-07T19:58:20.957Z",codex-agent-ux-reliability-20260607,"Execution kickoff: duplicate-check run via pm search/list/context (2026-06-07T19:57Z). Selected for this focused PR with pm-6l17 + pm-jozc to improve agent token efficiency and never-block UX in one coherent CLI surface batch."
   "2026-06-07T20:17:56.835Z",codex-agent-ux-reliability-20260607,"Implemented compact trailer trimming: when list/search run in explicit compact mode (including MCP narrow defaults), output now omits projection/sorting/now trailer metadata and emits only active/user-supplied filter keys (plus runtime filter summaries when present). Non-compact/full/fields flows remain unchanged for diagnostics. Updated unit/integration coverage for CLI and MCP compact output shape. Targeted verification passed (3 files, 134 tests)."
   "2026-06-07T20:47:40.556Z",codex-agent-ux-reliability-20260607,"Docs/contracts sync completed: updated docs/COMMANDS.md + docs/AGENT_GUIDE.md for compact list/search metadata behavior and read-command --tags alias support; refreshed contract snapshot (pnpm contracts:update, contracts:check clean). pm-changelog generation check passed via direct command (CHANGELOG unchanged). npm view pm-changelog latest-version lookup could not complete in this environment (network stall), so latest-version verification is limited to successful in-repo generator behavior."
@@ -18,6 +17,7 @@ comments[7]{created_at,author,text}:
   "2026-06-07T21:31:56.911Z",codex-agent-ux-reliability-20260607,"External observability note: sentry-cli project issue reads remain blocked by token scope (403 permission denied), so this run uses local telemetry + health evidence only, per agreed execution mode."
   "2026-06-07T21:35:50.937Z",codex-agent-ux-reliability-20260607,"Final pre-PR rerun after smoke-test relocation: node scripts/run-tests.mjs coverage still 100% across statements/branches/functions/lines; contracts snapshot check, static quality gate, and secret scan all pass."
   "2026-06-08T06:14:22.649Z",codex-agent-ux-reliability-20260607,"PR review-loop follow-up (CodeRabbit actionable comments): replaced compact list/search unsafe casts with explicit compact/verbose result unions; compact payloads now remain token-light while preserving typed contracts. Added compile-safe now timestamp fallbacks in comments-audit/normalize for list consumers that require deterministic generated timestamps. Verification rerun: focused list/search suites pass (155 tests), full coverage remains 100% (2564 tests), and contracts/static/security gates remain green."
+  "2026-06-08T06:26:00.349Z",codex-agent-ux-reliability-20260607,Merged in PR #147 (commit d05b21d529e3ed4f5734a029b98ed242fe8fb461). Final CI checks all green including coverage/static/smokes/compat/typecheck; compact list/search token-light output shipped with type-safe compact/verbose result contracts after review-loop follow-up.
 files[7]{path,scope,note}:
   src/cli/commands/comments-audit.ts,project,Handle compact list result now-field optionality with deterministic timestamp fallback
   src/cli/commands/list.ts,project,Compact-mode list responses now emit only active filter summary and omit projection/sorting/now trailer metadata
@@ -39,4 +39,5 @@ tests[9]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
 docs[2]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Agent workflow guidance updated for compact list/search output and filter-summary behavior
   docs/COMMANDS.md,project,Document compact list/search metadata trailer trimming behavior for token-efficient outputs
+close_reason: Completed via PR #147 merge; compact list/search metadata trimming and type-safe compact contract follow-up verified by 100% coverage + green CI.
 body: ""

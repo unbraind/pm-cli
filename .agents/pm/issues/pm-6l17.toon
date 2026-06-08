@@ -2,19 +2,19 @@ id: pm-6l17
 title: list/search --tags hard-refuses (exit 2) while create --tag auto-corrects — accept --tags as a never-block alias
 description: "agent-UX audit F4: read commands use --tag, write commands use --tags; only create/update degrade gracefully. list --tags returns 'Refusing to auto-correct' exit 2 (dead-end). Accept --tags as a single-value alias on list/search (never-block) or downgrade the refusal to a warn + run corrected."
 type: Issue
-status: in_progress
+status: closed
 priority: 2
 tags[3]: agent-ux,"area:cli",never-block
 created_at: "2026-06-07T17:04:17.473Z"
-updated_at: "2026-06-07T21:31:56.161Z"
-assignee: codex-agent-ux-reliability-20260607
+updated_at: "2026-06-08T06:26:03.261Z"
 author: maintainer-agent
 parent: pm-mpbb
-comments[4]{created_at,author,text}:
+comments[5]{created_at,author,text}:
   "2026-06-07T19:58:21.266Z",codex-agent-ux-reliability-20260607,"Execution kickoff: duplicate-check confirms this remains the canonical open read-command alias issue. Implementing --tags never-block alias behavior in list/search with parser/contracts/completion parity."
   "2026-06-07T20:09:06.452Z",codex-agent-ux-reliability-20260607,"Implemented never-block alias behavior for read commands: list/search now treat --tags as a declared alias for --tag through CLI flag contracts and command registration, so bootstrap normalization resolves via flag_alias instead of flag_typo/retry refusal. Added completion parity for alias value suggestions in bash/zsh/fish and regression coverage in bootstrap/help-runtime/completion specs. Targeted verification passed (3 files, 200 tests)."
   "2026-06-07T20:47:40.797Z",codex-agent-ux-reliability-20260607,"Docs/contracts sync evidence: docs now explicitly describe list/search --tags alias behavior; contracts snapshot refreshed and current after alias additions."
   "2026-06-07T21:31:56.161Z",codex-agent-ux-reliability-20260607,"Verification evidence: manual temp-project dogfood validated list/search --tags alias path end-to-end in CLI with compact projection enabled; targeted regression suites and full coverage pass."
+  "2026-06-08T06:26:00.575Z",codex-agent-ux-reliability-20260607,Merged in PR #147 (commit d05b21d529e3ed4f5734a029b98ed242fe8fb461). --tags alias now accepted for list/search read commands across parser/contracts/help/completion with regression coverage.
 files[7]{path,scope,note}:
   src/cli/commands/completion.ts,project,Completion parity for --tags alias in bash/zsh/fish list/search flows
   src/cli/register-list-query.ts,project,Register hidden --tags alias for list/search command parsing
@@ -29,4 +29,5 @@ tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,sh
 docs[2]{path,scope,note}:
   docs/AGENT_GUIDE.md,project,Agent guide now calls out --tags alias for list/search
   docs/COMMANDS.md,project,Document never-block --tags alias support for list/search read filters
+close_reason: Completed via PR #147 merge; --tags read-command alias behavior implemented and verified in unit/integration/help/runtime coverage.
 body: ""
