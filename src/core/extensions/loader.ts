@@ -1380,6 +1380,9 @@ function validateFlagDefinitions(flags: unknown): void {
     assertOptionalBooleanField(`registerFlags flags[${index}].visible`, record.visible);
     assertOptionalBooleanField(`registerFlags flags[${index}].list`, record.list);
     assertOptionalFlagDefaultField(`registerFlags flags[${index}].default`, record.default);
+    if (Array.isArray(record.default) && record.list !== true) {
+      throw new TypeError(`registerFlags flags[${index}].default cannot be an array unless list is true.`);
+    }
     assertFlagValueTypeAndDefault(`registerFlags flags[${index}]`, record);
   }
 }

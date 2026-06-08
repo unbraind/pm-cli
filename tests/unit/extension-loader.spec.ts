@@ -4184,6 +4184,20 @@ describe("registerFlags default validation (pm-ltbr)", () => {
     expect(result.failed[0].error).toContain("default[1] must be a string, number, or boolean");
   });
 
+  it("rejects an array default when list is not true", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--scope", value_type: "string", default: ["a", "b"] }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toContain("default cannot be an array unless list is true");
+  });
+
   it("rejects an unknown value_type", async () => {
     const loadResult = inMemoryLoadResult(
       {
