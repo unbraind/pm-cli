@@ -9,6 +9,7 @@ import {
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
 import { toErrorMessage, toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
+import { nowIso } from "../../core/shared/time.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemStatus } from "../../types/index.js";
@@ -341,6 +342,7 @@ export async function runNormalize(options: NormalizeCommandOptions, global: Glo
     changes: plan.changes,
   }));
   const rules = [...new Set(ruleCounts.map((entry) => entry.rule))].sort((left, right) => left.localeCompare(right));
+  const generatedAt = listed.now ?? nowIso();
 
   if (dryRun) {
     return {
@@ -353,7 +355,7 @@ export async function runNormalize(options: NormalizeCommandOptions, global: Glo
       warnings,
       item_plans: itemPlans,
       ids: [],
-      generated_at: listed.now,
+      generated_at: generatedAt,
     };
   }
 
@@ -419,6 +421,6 @@ export async function runNormalize(options: NormalizeCommandOptions, global: Glo
     failed_count: failedCount,
     rows: applyRows,
     ids: updatedIds,
-    generated_at: listed.now,
+    generated_at: generatedAt,
   };
 }

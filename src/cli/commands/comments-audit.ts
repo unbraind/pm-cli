@@ -1,6 +1,7 @@
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
+import { nowIso } from "../../core/shared/time.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
 import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
 import { resolvePmRoot } from "../../core/store/paths.js";
@@ -311,7 +312,7 @@ export async function runCommentsAudit(options: CommentsAuditOptions, global: Gl
       row_count: fullHistory ? rows?.length ?? 0 : latestRowCount,
     },
     ...(rows ? { rows } : {}),
-    now: listed.now,
+    now: listed.now ?? nowIso(),
     ...(listed.warnings && listed.warnings.length > 0 ? { warnings: listed.warnings } : {}),
   };
 }

@@ -78,9 +78,20 @@ const TREE_METADATA_FIELDS = ["tree_depth", "tree_parent", "tree_children", "tre
 // light/heavy split can never drift between the cache and the projection routing.
 const HEAVY_PROJECTION_FIELDS: ReadonlySet<string> = new Set<string>(HEAVY_METADATA_KEYS);
 
-export interface ListResult {
+interface ListResultBase {
   items: ListedItem[];
   count: number;
+  warnings?: string[];
+}
+
+export interface ListCompactResult extends ListResultBase {
+  filters: Record<string, unknown>;
+  projection?: undefined;
+  sorting?: undefined;
+  now?: undefined;
+}
+
+export interface ListVerboseResult extends ListResultBase {
   filters: Record<string, unknown>;
   projection: {
     mode: ListProjectionMode;
@@ -91,8 +102,9 @@ export interface ListResult {
     order: ListSortOrder;
   };
   now: string;
-  warnings?: string[];
 }
+
+export type ListResult = ListCompactResult | ListVerboseResult;
 
 function isNonEmptyRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value) && Object.keys(value).length > 0;
@@ -705,9 +717,9 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
     return {
       items: projected,
       count: projected.length,
-      ...(Object.keys(compactFilters).length > 0 ? { filters: compactFilters } : {}),
+      filters: compactFilters,
       ...(warnings.length > 0 ? { warnings } : {}),
-    } as unknown as ListResult;
+    };
   }
   return {
     items: projected,

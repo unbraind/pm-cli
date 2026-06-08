@@ -172,19 +172,30 @@ export interface SearchHit {
 
 export type SearchResultItem = SearchHit | Record<string, unknown>;
 
-export interface SearchResult {
+interface SearchResultBase {
   query: string;
   mode: SearchMode;
   items: SearchResultItem[];
   count: number;
+  warnings?: string[];
+}
+
+export interface SearchCompactResult extends SearchResultBase {
+  filters: Record<string, unknown>;
+  projection?: undefined;
+  now?: undefined;
+}
+
+export interface SearchVerboseResult extends SearchResultBase {
   filters: Record<string, unknown>;
   projection: {
     mode: SearchProjectionMode;
     fields: string[] | null;
   };
   now: string;
-  warnings?: string[];
 }
+
+export type SearchResult = SearchCompactResult | SearchVerboseResult;
 
 function isNonEmptyRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value) && Object.keys(value).length > 0;
@@ -992,9 +1003,9 @@ function emptySearchResult(
       mode,
       items: [],
       count: 0,
-      ...(Object.keys(compactFilters).length > 0 ? { filters: compactFilters } : {}),
+      filters: compactFilters,
       ...(warnings.length > 0 ? { warnings } : {}),
-    } as unknown as SearchResult;
+    };
   }
   const projectionFields = projection.mode === "full" ? null : [...projection.fields];
   return {
@@ -1845,9 +1856,9 @@ export async function runSearch(query: string, options: SearchOptions, global: G
       mode: effectiveMode,
       items: projectedItems,
       count: projectedItems.length,
-      ...(Object.keys(compactFilters).length > 0 ? { filters: compactFilters } : {}),
+      filters: compactFilters,
       ...(warnings.length > 0 ? { warnings } : {}),
-    } as unknown as SearchResult;
+    };
   }
 
   return {
