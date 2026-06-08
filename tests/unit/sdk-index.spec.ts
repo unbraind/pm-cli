@@ -17,11 +17,15 @@ import {
   STATUS_VALUES,
   assertPackageManifest as assertPackageManifestFromBarrel,
   assertRegisteredCommandContract as assertRegisteredCommandContractFromBarrel,
+  assertRegisteredCommandOverride as assertRegisteredCommandOverrideFromBarrel,
   assertRegisteredExporter as assertRegisteredExporterFromBarrel,
   assertRegisteredHook as assertRegisteredHookFromBarrel,
   assertRegisteredImporter as assertRegisteredImporterFromBarrel,
   assertRegisteredItemField as assertRegisteredItemFieldFromBarrel,
   assertRegisteredItemType as assertRegisteredItemTypeFromBarrel,
+  assertRegisteredParserOverride as assertRegisteredParserOverrideFromBarrel,
+  assertRegisteredPreflightOverride as assertRegisteredPreflightOverrideFromBarrel,
+  assertRegisteredRendererOverride as assertRegisteredRendererOverrideFromBarrel,
   assertRegisteredSearchProvider as assertRegisteredSearchProviderFromBarrel,
   assertRegisteredVectorStoreAdapter as assertRegisteredVectorStoreAdapterFromBarrel,
   activateExtensionForTest as activateExtensionForTestFromBarrel,
@@ -406,6 +410,12 @@ describe("public sdk entrypoint", () => {
     expect(typeof assertRegisteredItemTypeFromBarrel).toBe("function");
     expect(typeof assertRegisteredVectorStoreAdapterFromBarrel).toBe("function");
     expect(typeof activateExtensionForTestFromBarrel).toBe("function");
+    // Lock the new override-assertion helpers to the same implementation the
+    // testing entrypoint exports (barrel-contract for this PR's SDK surface).
+    expect(assertRegisteredCommandOverrideFromBarrel).toBe(assertRegisteredCommandOverride);
+    expect(assertRegisteredParserOverrideFromBarrel).toBe(assertRegisteredParserOverride);
+    expect(assertRegisteredPreflightOverrideFromBarrel).toBe(assertRegisteredPreflightOverride);
+    expect(assertRegisteredRendererOverrideFromBarrel).toBe(assertRegisteredRendererOverride);
   });
 
   it("exposes runtime contracts without requiring a pm subprocess", async () => {

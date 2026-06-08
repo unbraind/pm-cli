@@ -423,9 +423,10 @@ export interface FlagDefinition {
   list?: boolean;
   /**
    * Default value applied when the flag is omitted. Surfaced to runtime
-   * contracts and help output.
+   * contracts and help output. A `list` flag may default to an array of scalars
+   * (e.g. `["a", "b"]`); the array is flattened/coerced like any list value.
    */
-  default?: string | number | boolean;
+  default?: string | number | boolean | Array<string | number | boolean>;
   [key: string]: unknown;
 }
 
@@ -779,13 +780,13 @@ export interface ExtensionRegistrationCounts {
  * metadata in-module. Exposed as `api.extension`.
  */
 export interface ExtensionSelfIdentity {
-  name: string;
-  layer: ExtensionLayer;
-  version: string;
-  capabilities: ExtensionCapability[];
-  pm_min_version?: string;
-  pm_max_version?: string;
-  source_package?: string;
+  readonly name: string;
+  readonly layer: ExtensionLayer;
+  readonly version: string;
+  readonly capabilities: readonly ExtensionCapability[];
+  readonly pm_min_version?: string;
+  readonly pm_max_version?: string;
+  readonly source_package?: string;
 }
 
 export interface ExtensionApi {

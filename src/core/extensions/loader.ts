@@ -7,6 +7,7 @@ import { resolvePmPackageRootFromModule } from "../packages/root.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { asRecordLoose } from "../shared/primitives.js";
+import { isFlagDefaultValueCoercible, resolveFlagValueKind } from "./flag-value-types.js";
 import { KNOWN_ITEM_FIELD_TYPES, normalizeItemFieldType, suggestKnownItemFieldType } from "./item-field-types.js";
 import type { PmSettings } from "../../types/index.js";
 // Cohesive helper groups now live in sibling modules. They are imported for the
@@ -1197,12 +1198,24 @@ function assertOptionalStringField(name: string, value: unknown): void {
   }
 }
 
+function isFlagDefaultScalar(value: unknown): boolean {
+  return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
+}
+
 function assertOptionalFlagDefaultField(name: string, value: unknown): void {
   if (value === undefined) {
     return;
   }
-  if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") {
-    throw new TypeError(`${name} must be a string, number, or boolean when provided`);
+  if (Array.isArray(value)) {
+    for (const [index, item] of value.entries()) {
+      if (!isFlagDefaultScalar(item)) {
+        throw new TypeError(`${name}[${index}] must be a string, number, or boolean`);
+      }
+    }
+    return;
+  }
+  if (!isFlagDefaultScalar(value)) {
+    throw new TypeError(`${name} must be a string, number, or boolean, or an array of these when provided`);
   }
 }
 
@@ -1334,6 +1347,38 @@ function validateFlagDefinitions(flags: unknown): void {
     assertOptionalBooleanField(`registerFlags flags[${index}].visible`, record.visible);
     assertOptionalBooleanField(`registerFlags flags[${index}].list`, record.list);
     assertOptionalFlagDefaultField(`registerFlags flags[${index}].default`, record.default);
+    assertFlagValueTypeAndDefault(`registerFlags flags[${index}]`, record);
+  }
+}
+
+/**
+ * Reject a declared `value_type`/`type` that is not a known flag value kind, and
+ * a `default` whose value(s) would not cleanly coerce under that kind — so the
+ * typed-flag contract is enforced at registration instead of silently leaving
+ * an untyped value to surface at use time.
+ */
+function assertFlagValueTypeAndDefault(label: string, record: Record<string, unknown>): void {
+  const declaredType =
+    (typeof record.value_type === "string" ? record.value_type : undefined) ??
+    (typeof record.type === "string" ? record.type : undefined);
+  if (declaredType === undefined) {
+    return;
+  }
+  const kind = resolveFlagValueKind(declaredType);
+  if (kind === null) {
+    throw new TypeError(
+      `${label} value_type "${declaredType}" is not a known flag value type (expected one of: string, number, boolean).`,
+    );
+  }
+  if (record.default === undefined) {
+    return;
+  }
+  const defaults = Array.isArray(record.default) ? record.default : [record.default];
+  for (const [defaultIndex, defaultValue] of defaults.entries()) {
+    if (!isFlagDefaultValueCoercible(defaultValue as string | number | boolean, kind)) {
+      const suffix = Array.isArray(record.default) ? `default[${defaultIndex}]` : "default";
+      throw new TypeError(`${label}.${suffix} (${JSON.stringify(defaultValue)}) is not coercible to ${kind}.`);
+    }
   }
 }
 
@@ -1515,7 +1560,7 @@ function createExtensionApi(
       (extension.capabilities ?? []).filter((capability): capability is ExtensionCapability =>
         (KNOWN_EXTENSION_CAPABILITIES as readonly string[]).includes(capability),
       ),
-    ) as ExtensionCapability[],
+    ) as readonly ExtensionCapability[],
     pm_min_version: extension.pm_min_version,
     pm_max_version: extension.pm_max_version,
     source_package: extension.source_package,

@@ -2,6 +2,15 @@
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 import {
+  createEmptyExtensionCommandRegistry,
+  createEmptyExtensionHookRegistry,
+  createEmptyExtensionParserRegistry,
+  createEmptyExtensionPreflightRegistry,
+  createEmptyExtensionRegistrationRegistry,
+  createEmptyExtensionRendererRegistry,
+  createEmptyExtensionServiceRegistry,
+} from "../core/extensions/extension-registries.js";
+import {
   activateExtensions,
   deactivateExtensions,
   loadExtensions,
@@ -689,6 +698,16 @@ async function runDynamicExtensionAction(
     return handlerResult.result;
   } finally {
     await deactivateExtensions(loadResult);
+    // Reset the process-global active registries so a torn-down extension's
+    // overrides/hooks cannot leak into a later request in this long-running
+    // server (e.g. a subsequent pm_list/pm_create).
+    setActiveExtensionHooks(createEmptyExtensionHookRegistry());
+    setActiveExtensionCommands(createEmptyExtensionCommandRegistry());
+    setActiveExtensionParsers(createEmptyExtensionParserRegistry());
+    setActiveExtensionPreflight(createEmptyExtensionPreflightRegistry());
+    setActiveExtensionServices(createEmptyExtensionServiceRegistry());
+    setActiveExtensionRenderers(createEmptyExtensionRendererRegistry());
+    setActiveExtensionRegistrations(createEmptyExtensionRegistrationRegistry());
   }
 }
 

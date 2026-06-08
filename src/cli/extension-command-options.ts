@@ -1,5 +1,6 @@
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { resolveFlagValueKind } from "../core/extensions/flag-value-types.js";
 
 const UNSAFE_LOOSE_OPTION_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 
@@ -99,21 +100,12 @@ function isUnsafeLooseOptionKey(key: string): boolean {
 type LooseOptionCoercionKind = "string" | "number" | "boolean";
 
 function resolveLooseOptionCoercionKind(definition: Record<string, unknown>): LooseOptionCoercionKind | null {
-  const explicitType = typeof definition.type === "string" ? definition.type.trim().toLowerCase() : undefined;
-  const valueType = typeof definition.value_type === "string" ? definition.value_type.trim().toLowerCase() : undefined;
   // `value_type` is the canonical field; the deprecated `type` alias resolves
   // only when `value_type` is absent (FlagDefinition documents this precedence).
-  const kind = valueType ?? explicitType;
-  if (kind === "string") {
-    return "string";
-  }
-  if (kind === "number" || kind === "int" || kind === "integer" || kind === "float") {
-    return "number";
-  }
-  if (kind === "boolean" || kind === "bool") {
-    return "boolean";
-  }
-  return null;
+  const raw =
+    (typeof definition.value_type === "string" ? definition.value_type : undefined) ??
+    (typeof definition.type === "string" ? definition.type : undefined);
+  return resolveFlagValueKind(raw);
 }
 
 function collectLooseOptionKeys(definition: Record<string, unknown>): string[] {

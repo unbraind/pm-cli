@@ -65,6 +65,7 @@ export default defineConfig({
         "src/cli/extension-command-options.ts",
         "src/core/config/positional-value.ts",
         "src/core/diagnostics/remediation.ts",
+        "src/core/extensions/flag-value-types.ts",
         "src/core/extensions/item-fields.ts",
         "src/core/extensions/item-field-types.ts",
         "src/core/extensions/loader.ts",

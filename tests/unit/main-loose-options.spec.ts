@@ -177,4 +177,11 @@ describe("cli extension loose option parser", () => {
     ]);
     expect(coerced).toEqual({ count: 7 });
   });
+
+  it("accepts an array default for a list flag and flattens it (pm-ltbr)", () => {
+    const coerced = coerceLooseCommandOptionsWithFlagDefinitions({}, [
+      { long: "--scope", value_type: "string", list: true, default: ["a", "b,c"] },
+    ]);
+    expect(coerced).toEqual({ scope: ["a", "b", "c"] });
+  });
 });

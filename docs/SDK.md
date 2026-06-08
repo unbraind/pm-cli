@@ -308,14 +308,18 @@ export default defineExtension({
 `FlagDefinition` (used by `registerFlags` and inline command `flags`) supports the
 same list/default semantics as core flags:
 
-- `value_type` is the canonical coercion kind (`string` | `number` | `boolean`).
-  The deprecated `type` alias is still read, but `value_type` wins when both are
-  set (`value_type ?? type`).
+- `value_type` is the canonical coercion kind (`string` | `number` | `boolean`;
+  the aliases `int`/`integer`/`float` and `bool` are also accepted). The
+  deprecated `type` alias is still read, but `value_type` wins when both are set
+  (`value_type ?? type`). An unrecognized value type is rejected at registration.
 - `list: true` makes a repeated, comma-joined flag accumulate into an array —
   parity with core list flags such as `--tags`. `--scope a,b --scope c` resolves
   to `["a", "b", "c"]`, with each element coerced by `value_type`.
-- `default` (string | number | boolean) is applied when the flag is omitted; for
-  a `list` flag the default is wrapped into the accumulated array.
+- `default` (a scalar, or an array of scalars for a `list` flag) is applied when
+  the flag is omitted; for a `list` flag the default is flattened into the
+  accumulated array. A default that would not cleanly coerce under the declared
+  `value_type` (e.g. `value_type: "number", default: "abc"`) is rejected at
+  registration.
 
 ```ts
 api.registerFlags("report", [

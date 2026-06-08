@@ -33,6 +33,10 @@ import {
   normalizeItemFieldType,
   suggestKnownItemFieldType,
 } from "../../src/core/extensions/item-field-types.js";
+import {
+  isFlagDefaultValueCoercible,
+  resolveFlagValueKind,
+} from "../../src/core/extensions/flag-value-types.js";
 import { readSettings } from "../../src/core/store/settings.js";
 import { collectExtensionCommandHelpDescriptors } from "../../src/cli/extension-command-help.js";
 import { writeTestExtension } from "../helpers/extensions.js";
@@ -4111,5 +4115,106 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
     const loadResult = inMemoryLoadResult(null);
     const result = await deactivateExtensions(loadResult);
     expect(result.deactivated).toBe(0);
+  });
+});
+
+describe("registerFlags default validation (pm-ltbr)", () => {
+  it("accepts a scalar-array default for a list flag", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--scope", value_type: "string", list: true, default: ["a", "b"] }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(0);
+    expect(result.registration_counts.flags).toBe(1);
+  });
+
+  it("rejects a non-scalar element in an array default", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--scope", list: true, default: ["ok", { bad: true }] as never }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toContain("default[1] must be a string, number, or boolean");
+  });
+
+  it("rejects an unknown value_type", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--limit", value_type: "numbr" as never }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toContain('value_type "numbr" is not a known flag value type');
+  });
+
+  it("rejects a default that is not coercible under the declared value_type", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--limit", value_type: "number", default: "abc" }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toContain("is not coercible to number");
+  });
+
+  it("accepts a numeric-string default under a number value_type", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--limit", value_type: "int", default: "20" }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(0);
+    expect(result.registration_counts.flags).toBe(1);
+  });
+});
+
+describe("flag value type resolution (pm-ltbr/pm-l0jd)", () => {
+  it("resolves canonical kinds and aliases case-insensitively", () => {
+    expect(resolveFlagValueKind("String")).toBe("string");
+    expect(resolveFlagValueKind("number")).toBe("number");
+    expect(resolveFlagValueKind("int")).toBe("number");
+    expect(resolveFlagValueKind("integer")).toBe("number");
+    expect(resolveFlagValueKind("float")).toBe("number");
+    expect(resolveFlagValueKind("BOOL")).toBe("boolean");
+    expect(resolveFlagValueKind("boolean")).toBe("boolean");
+    expect(resolveFlagValueKind("numbr")).toBeNull();
+    expect(resolveFlagValueKind(7)).toBeNull();
+  });
+
+  it("validates default coercibility per kind", () => {
+    expect(isFlagDefaultValueCoercible("anything", "string")).toBe(true);
+    expect(isFlagDefaultValueCoercible(3, "number")).toBe(true);
+    expect(isFlagDefaultValueCoercible(Number.POSITIVE_INFINITY, "number")).toBe(false);
+    expect(isFlagDefaultValueCoercible("12", "number")).toBe(true);
+    expect(isFlagDefaultValueCoercible("abc", "number")).toBe(false);
+    expect(isFlagDefaultValueCoercible(" ", "number")).toBe(false);
+    expect(isFlagDefaultValueCoercible(true, "number")).toBe(false);
+    expect(isFlagDefaultValueCoercible(false, "boolean")).toBe(true);
+    expect(isFlagDefaultValueCoercible("TRUE", "boolean")).toBe(true);
+    expect(isFlagDefaultValueCoercible("0", "boolean")).toBe(true);
+    expect(isFlagDefaultValueCoercible("maybe", "boolean")).toBe(false);
+    expect(isFlagDefaultValueCoercible(1, "boolean")).toBe(false);
   });
 });
