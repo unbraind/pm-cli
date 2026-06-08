@@ -288,9 +288,11 @@ the object and its `capabilities` array are frozen.
 Modules may also export an optional VS Code-style `deactivate` teardown hook. The
 host runs it on shutdown/reload — the long-running MCP server invokes it between
 native-action requests — so an extension can close connections, clear timers, and
-release buffers opened during `activate`. Teardown is best-effort: a throwing
-`deactivate` is recorded as a warning, never propagated, so one extension cannot
-block another's cleanup.
+release buffers opened during `activate`. `deactivate` runs only for extensions
+that activated successfully (a failed `activate` never fully initialized), and
+teardowns run concurrently. Teardown is best-effort: a throwing `deactivate` is
+recorded as a warning, never propagated, so one extension cannot block another's
+cleanup.
 
 ```ts
 export default defineExtension({
@@ -317,9 +319,10 @@ same list/default semantics as core flags:
   to `["a", "b", "c"]`, with each element coerced by `value_type`.
 - `default` (a scalar, or an array of scalars for a `list` flag) is applied when
   the flag is omitted; for a `list` flag the default is flattened into the
-  accumulated array. A default that would not cleanly coerce under the declared
-  `value_type` (e.g. `value_type: "number", default: "abc"`) is rejected at
-  registration.
+  accumulated array exactly like a provided value — comma-joined strings (e.g.
+  `default: "a,b"` or `default: ["a,b", "c"]`) are split into elements. A default
+  that would not cleanly coerce under the declared `value_type` (e.g.
+  `value_type: "number", default: "abc"`) is rejected at registration.
 
 ```ts
 api.registerFlags("report", [

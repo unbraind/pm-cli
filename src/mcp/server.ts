@@ -660,8 +660,9 @@ async function runDynamicExtensionAction(
   // so each request is a fresh activation cycle. Run the extension teardown
   // lifecycle in a finally to release any resources opened during activate(),
   // matching the long-running-server reload contract (pm-k1e4).
+  let activationResult: Awaited<ReturnType<typeof activateExtensions>> | undefined;
   try {
-    const activationResult = await activateExtensions({
+    activationResult = await activateExtensions({
       ...loadResult,
       loaded: loadResult.loaded,
     });
@@ -697,10 +698,9 @@ async function runDynamicExtensionAction(
     }
     return handlerResult.result;
   } finally {
-    await deactivateExtensions(loadResult);
-    // Reset the process-global active registries so a torn-down extension's
-    // overrides/hooks cannot leak into a later request in this long-running
-    // server (e.g. a subsequent pm_list/pm_create).
+    // Reset the process-global active registries FIRST so a torn-down extension's
+    // overrides/hooks cannot leak into a later request in this long-running server
+    // (e.g. a subsequent pm_list/pm_create) even if teardown below misbehaves.
     setActiveExtensionHooks(createEmptyExtensionHookRegistry());
     setActiveExtensionCommands(createEmptyExtensionCommandRegistry());
     setActiveExtensionParsers(createEmptyExtensionParserRegistry());
@@ -708,6 +708,9 @@ async function runDynamicExtensionAction(
     setActiveExtensionServices(createEmptyExtensionServiceRegistry());
     setActiveExtensionRenderers(createEmptyExtensionRendererRegistry());
     setActiveExtensionRegistrations(createEmptyExtensionRegistrationRegistry());
+    // Best-effort teardown of extensions that activated successfully. Guard
+    // defensively so an unexpected throw cannot escape the finally.
+    await deactivateExtensions(loadResult, activationResult).catch(() => undefined);
   }
 }
 

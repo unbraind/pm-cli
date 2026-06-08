@@ -1027,23 +1027,50 @@ function resolveActivatableExtension(module: unknown): ActivatableExtension | nu
  * failure entry rather than propagated, so one extension cannot block another's
  * cleanup. Hosts call this on shutdown/reload (e.g. the MCP server between
  * native-action requests) to release resources opened during `activate`.
+ *
+ * Pass the `activationResult` to skip extensions whose `activate` failed — they
+ * never fully initialized, so (VS Code-style) their `deactivate` must not run.
+ * Teardowns run concurrently so one slow hook cannot serialize the rest; the
+ * returned warnings/failures preserve loaded order.
  */
-export async function deactivateExtensions(loadResult: ExtensionLoadResult): Promise<ExtensionDeactivationResult> {
-  const warnings: string[] = [];
-  const failed: ExtensionDeactivationFailure[] = [];
-  let deactivated = 0;
+export async function deactivateExtensions(
+  loadResult: ExtensionLoadResult,
+  activationResult?: Pick<ExtensionActivationResult, "failed">,
+): Promise<ExtensionDeactivationResult> {
+  const failedActivationKeys = new Set(
+    (activationResult?.failed ?? []).map((entry) => `${entry.layer}:${entry.name}`),
+  );
+  const targets: Array<{ extension: LoadedExtension; deactivate: () => void | Promise<void> }> = [];
   for (const extension of loadResult.loaded) {
+    if (failedActivationKeys.has(`${extension.layer}:${extension.name}`)) {
+      continue;
+    }
     const activatable = resolveActivatableExtension(extension.module);
     if (!activatable || typeof activatable.deactivate !== "function") {
       continue;
     }
-    try {
-      await activatable.deactivate();
+    targets.push({ extension, deactivate: activatable.deactivate });
+  }
+  const outcomes = await Promise.all(
+    targets.map(async ({ extension, deactivate }) => {
+      try {
+        await deactivate();
+        return { ok: true as const };
+      } catch (error: unknown) {
+        return { ok: false as const, layer: extension.layer, name: extension.name, error: formatUnknownError(error) };
+      }
+    }),
+  );
+  const warnings: string[] = [];
+  const failed: ExtensionDeactivationFailure[] = [];
+  let deactivated = 0;
+  for (const outcome of outcomes) {
+    if (outcome.ok) {
       deactivated += 1;
-    } catch (error: unknown) {
-      warnings.push(`extension_deactivate_failed:${extension.layer}:${extension.name}`);
-      failed.push({ layer: extension.layer, name: extension.name, error: formatUnknownError(error) });
+      continue;
     }
+    warnings.push(`extension_deactivate_failed:${outcome.layer}:${outcome.name}`);
+    failed.push({ layer: outcome.layer, name: outcome.name, error: outcome.error });
   }
   return { deactivated, warnings, failed };
 }

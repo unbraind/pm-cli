@@ -4116,6 +4116,26 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
     const result = await deactivateExtensions(loadResult);
     expect(result.deactivated).toBe(0);
   });
+
+  it("skips deactivate for extensions whose activation failed when given the activation result", async () => {
+    let cleaned = false;
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerItemFields([{ name: "sev", type: "strnig" }]);
+        },
+        deactivate() {
+          cleaned = true;
+        },
+      },
+      { name: "boom-ext", capabilities: ["schema"] },
+    );
+    const activation = await activateExtensions(loadResult);
+    expect(activation.failed).toHaveLength(1);
+    const result = await deactivateExtensions(loadResult, activation);
+    expect(result.deactivated).toBe(0);
+    expect(cleaned).toBe(false);
+  });
 });
 
 describe("registerFlags default validation (pm-ltbr)", () => {
