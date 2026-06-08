@@ -994,11 +994,17 @@ export async function loadExtensions(options: DiscoverExtensionsOptions): Promis
 type HookName = keyof ExtensionHookRegistry;
 
 function toActivatableExtension(source: Record<string, unknown>): ActivatableExtension {
+  // Bind to `source` so a module/default-export authored with methods (or a class
+  // instance) keeps its `this` across both lifecycle calls — `activate` is a
+  // method call on a fresh object and `deactivate` is invoked bare, so without
+  // binding the two would see different (or undefined) `this`.
+  const activate = source.activate as ActivatableExtension["activate"];
   const activatable: ActivatableExtension = {
-    activate: source.activate as ActivatableExtension["activate"],
+    activate: activate.bind(source),
   };
   if (typeof source.deactivate === "function") {
-    activatable.deactivate = source.deactivate as ActivatableExtension["deactivate"];
+    const deactivate = source.deactivate as NonNullable<ActivatableExtension["deactivate"]>;
+    activatable.deactivate = deactivate.bind(source);
   }
   return activatable;
 }

@@ -4136,6 +4136,23 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
     expect(result.deactivated).toBe(0);
     expect(cleaned).toBe(false);
   });
+
+  it("preserves the module `this` binding across activate and deactivate", async () => {
+    let deactivatedWithState = false;
+    const moduleObject = {
+      activate(this: { opened?: boolean }) {
+        this.opened = true;
+      },
+      deactivate(this: { opened?: boolean }) {
+        deactivatedWithState = this.opened === true;
+      },
+    };
+    const loadResult = inMemoryLoadResult(moduleObject, { name: "stateful-ext", capabilities: [] });
+    await activateExtensions(loadResult);
+    const result = await deactivateExtensions(loadResult);
+    expect(result.deactivated).toBe(1);
+    expect(deactivatedWithState).toBe(true);
+  });
 });
 
 describe("registerFlags default validation (pm-ltbr)", () => {
