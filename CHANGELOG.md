@@ -1,14 +1,18 @@
 # Changelog
 
-## Unreleased
+## 2026.6.8 - 2026-06-08
 
 ### Added
 
+- list/search: trim default filters/projection/sorting/now trailer in compact/agent mode ([pm-vhx6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-vhx6.toon))
 - MCP pm\_health defaults to the compact summary projection for token-efficient agent health checks ([pm-yjub](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yjub.toon))
 - Add schema show-status status inspection ([pm-qpus](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-qpus.toon))
 
 ### Fixed
 
+- CI smoke npx pack cleanup can fail with ENOTEMPTY ([pm-i2xg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-i2xg.toon))
+- MCP narrow tools silently drop top-level filter keys \(pm\_list {type:Task} returns unfiltered\) ([pm-jozc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-jozc.toon))
+- list/search --tags hard-refuses \(exit 2\) while create --tag auto-corrects — accept --tags as a never-block alias ([pm-6l17](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6l17.toon))
 - MCP tools/call structuredContent.result is always present but isError path lacks it — inconsistent envelope ([pm-l40h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-l40h.toon))
 - MCP server serverInfo.version is hardcoded '1.0.0' — should reflect package.json version ([pm-2nvw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-2nvw.toon))
 - Fix inaccurate PR CI matrix description in CONTRIBUTING.md ([pm-t73k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-t73k.toon))
