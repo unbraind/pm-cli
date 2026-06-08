@@ -646,10 +646,9 @@ describe("runList", () => {
       });
 
       const compact = await runList(undefined, { compact: true }, { path: context.pmPath });
-      expect(compact.projection).toEqual({
-        mode: "compact",
-        fields: ["id", "title", "status", "type", "priority", "parent", "updated_at"],
-      });
+      expect((compact as Record<string, unknown>).projection).toBeUndefined();
+      expect((compact as Record<string, unknown>).sorting).toBeUndefined();
+      expect((compact as Record<string, unknown>).now).toBeUndefined();
       const compactItem = compact.items[0] as unknown as Record<string, unknown>;
       expect(Object.keys(compactItem)).toEqual(["id", "title", "status", "type", "priority", "parent", "updated_at"]);
       expect(compactItem.id).toBe(id);

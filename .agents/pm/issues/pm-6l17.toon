@@ -2,11 +2,31 @@ id: pm-6l17
 title: list/search --tags hard-refuses (exit 2) while create --tag auto-corrects — accept --tags as a never-block alias
 description: "agent-UX audit F4: read commands use --tag, write commands use --tags; only create/update degrade gracefully. list --tags returns 'Refusing to auto-correct' exit 2 (dead-end). Accept --tags as a single-value alias on list/search (never-block) or downgrade the refusal to a warn + run corrected."
 type: Issue
-status: open
+status: in_progress
 priority: 2
 tags[3]: agent-ux,"area:cli",never-block
 created_at: "2026-06-07T17:04:17.473Z"
-updated_at: "2026-06-07T17:04:17.473Z"
+updated_at: "2026-06-07T21:31:56.161Z"
+assignee: codex-agent-ux-reliability-20260607
 author: maintainer-agent
 parent: pm-mpbb
+comments[4]{created_at,author,text}:
+  "2026-06-07T19:58:21.266Z",codex-agent-ux-reliability-20260607,"Execution kickoff: duplicate-check confirms this remains the canonical open read-command alias issue. Implementing --tags never-block alias behavior in list/search with parser/contracts/completion parity."
+  "2026-06-07T20:09:06.452Z",codex-agent-ux-reliability-20260607,"Implemented never-block alias behavior for read commands: list/search now treat --tags as a declared alias for --tag through CLI flag contracts and command registration, so bootstrap normalization resolves via flag_alias instead of flag_typo/retry refusal. Added completion parity for alias value suggestions in bash/zsh/fish and regression coverage in bootstrap/help-runtime/completion specs. Targeted verification passed (3 files, 200 tests)."
+  "2026-06-07T20:47:40.797Z",codex-agent-ux-reliability-20260607,"Docs/contracts sync evidence: docs now explicitly describe list/search --tags alias behavior; contracts snapshot refreshed and current after alias additions."
+  "2026-06-07T21:31:56.161Z",codex-agent-ux-reliability-20260607,"Verification evidence: manual temp-project dogfood validated list/search --tags alias path end-to-end in CLI with compact projection enabled; targeted regression suites and full coverage pass."
+files[7]{path,scope,note}:
+  src/cli/commands/completion.ts,project,Completion parity for --tags alias in bash/zsh/fish list/search flows
+  src/cli/register-list-query.ts,project,Register hidden --tags alias for list/search command parsing
+  src/sdk/cli-contracts.ts,project,Declare --tags as read-command alias for --tag in list/search flag contracts to avoid typo-retry refusal
+  src/sdk/cli-contracts/commander-types.ts,project,Accept both tag/tags keys in list/search option normalization contracts
+  tests/integration/help-runtime.spec.ts,project,Integration test proving list/search --tags executes without retry errors
+  tests/unit/bootstrap-args.spec.ts,project,Regression tests ensuring --tags resolves through flag_alias (not flag_typo) for list/search
+  tests/unit/completion-command.spec.ts,project,Completion script assertions include --tags alias behavior
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/bootstrap-args.spec.ts tests/unit/completion-command.spec.ts tests/integration/help-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:update && pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+docs[2]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,Agent guide now calls out --tags alias for list/search
+  docs/COMMANDS.md,project,Document never-block --tags alias support for list/search read filters
 body: ""

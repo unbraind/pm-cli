@@ -283,6 +283,48 @@ describe("CLI help runtime coverage (sandboxed)", () => {
     });
   });
 
+  it("accepts --tags as a read-command alias for list/search without retry errors (pm-6l17)", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli(
+        [
+          "create",
+          "--title",
+          "Read-command tags alias target",
+          "--description",
+          "Read-command tags alias target description",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--tags",
+          "alias-read-tags",
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      const listed = context.runCli(["list", "--tags", "alias-read-tags", "--json"], { expectJson: true });
+      expect(listed.code).toBe(0);
+      const listJson = listed.json as { count: number; filters: { tag: string | null }; items: Array<{ id: string }> };
+      expect(listJson.count).toBe(1);
+      expect(listJson.filters.tag).toBe("alias-read-tags");
+      expect(listJson.items).toEqual([expect.objectContaining({ id })]);
+
+      const searched = context.runCli(["search", "alias target", "--tags", "alias-read-tags", "--json"], { expectJson: true });
+      expect(searched.code).toBe(0);
+      const searchJson = searched.json as {
+        count: number;
+        filters: { tag: string | null };
+        items: Array<{ id: string }>;
+      };
+      expect(searchJson.count).toBe(1);
+      expect(searchJson.filters.tag).toBe("alias-read-tags");
+      expect(searchJson.items).toEqual([expect.objectContaining({ id })]);
+    });
+  });
+
   it("requires an explicit retry for operation-family mutating flag typos", async () => {
     await withTempPmPath(async (context) => {
       const created = context.runCli(["create", "--title", "Claim typo probe", "--type", "Task", "--json"], {

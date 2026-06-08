@@ -277,6 +277,143 @@ describe("MCP protocol handshake", () => {
     });
   });
 
+  it("hoists declared top-level pm_list/pm_search filters and preserves options precedence (pm-jozc)", async () => {
+    await withTempPmPath(async (context) => {
+      const targetCreate = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Top-level filter marker target task",
+          "--description",
+          "Top-level filter marker target task description",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--tags",
+          "mcp-top-level-filter-target",
+          "--author",
+          "mcp-test",
+        ],
+        { expectJson: true },
+      );
+      expect(targetCreate.code).toBe(0);
+      const targetId = (targetCreate.json as { item: { id: string } }).item.id;
+
+      const distractorCreate = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Top-level filter marker distractor issue",
+          "--description",
+          "Top-level filter marker distractor issue description",
+          "--type",
+          "Issue",
+          "--status",
+          "open",
+          "--tags",
+          "mcp-top-level-filter-target",
+          "--author",
+          "mcp-test",
+        ],
+        { expectJson: true },
+      );
+      expect(distractorCreate.code).toBe(0);
+
+      const topLevelList = await handleRequest({
+        jsonrpc: "2.0",
+        id: 8,
+        method: "tools/call",
+        params: {
+          name: "pm_list",
+          arguments: {
+            path: context.pmPath,
+            status: "open",
+            type: "Task",
+            tag: "mcp-top-level-filter-target",
+            limit: 1,
+          },
+        },
+      });
+      expect(topLevelList?.isError).not.toBe(true);
+      const topLevelListContent = topLevelList?.structuredContent as {
+        warnings?: string[];
+        result?: {
+          count?: number;
+          items?: Array<{ id?: string; type?: string }>;
+        };
+      } | undefined;
+      expect(topLevelListContent?.warnings).toBeUndefined();
+      expect(topLevelListContent?.result?.count).toBe(1);
+      expect(topLevelListContent?.result?.items).toEqual([
+        expect.objectContaining({ id: targetId, type: "Task" }),
+      ]);
+
+      const optionsOverrideList = await handleRequest({
+        jsonrpc: "2.0",
+        id: 9,
+        method: "tools/call",
+        params: {
+          name: "pm_list",
+          arguments: {
+            path: context.pmPath,
+            // Top-level type is intentionally contradictory; nested options must win.
+            type: "Issue",
+            options: {
+              status: "open",
+              type: "Task",
+              tag: "mcp-top-level-filter-target",
+            },
+          },
+        },
+      });
+      expect(optionsOverrideList?.isError).not.toBe(true);
+      const optionsOverrideContent = optionsOverrideList?.structuredContent as {
+        warnings?: string[];
+        result?: {
+          count?: number;
+          items?: Array<{ id?: string; type?: string }>;
+        };
+      } | undefined;
+      expect(optionsOverrideContent?.warnings).toBeUndefined();
+      expect(optionsOverrideContent?.result?.count).toBe(1);
+      expect(optionsOverrideContent?.result?.items).toEqual([
+        expect.objectContaining({ id: targetId, type: "Task" }),
+      ]);
+
+      const topLevelSearch = await handleRequest({
+        jsonrpc: "2.0",
+        id: 10,
+        method: "tools/call",
+        params: {
+          name: "pm_search",
+          arguments: {
+            path: context.pmPath,
+            query: "top-level filter marker",
+            type: "Task",
+            tag: "mcp-top-level-filter-target",
+            limit: 1,
+          },
+        },
+      });
+      expect(topLevelSearch?.isError).not.toBe(true);
+      const topLevelSearchContent = topLevelSearch?.structuredContent as {
+        warnings?: string[];
+        result?: {
+          count?: number;
+          items?: Array<{ id?: string; title?: string }>;
+        };
+      } | undefined;
+      expect(topLevelSearchContent?.warnings).toBeUndefined();
+      expect(topLevelSearchContent?.result?.count).toBe(1);
+      expect(topLevelSearchContent?.result?.items).toEqual([
+        expect.objectContaining({ id: targetId, title: "Top-level filter marker target task" }),
+      ]);
+    });
+  });
+
   it("does not warn on unexpected top-level keys for pm_run (catch-all passthrough)", async () => {
     await withTempPmPath(async (context) => {
       const spy = vi.spyOn(console, "error").mockImplementation(() => {});

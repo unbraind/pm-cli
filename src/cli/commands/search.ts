@@ -172,18 +172,96 @@ export interface SearchHit {
 
 export type SearchResultItem = SearchHit | Record<string, unknown>;
 
-export interface SearchResult {
+interface SearchResultBase {
   query: string;
   mode: SearchMode;
   items: SearchResultItem[];
   count: number;
+  warnings?: string[];
+}
+
+export interface SearchCompactResult extends SearchResultBase {
+  filters: Record<string, unknown>;
+  projection?: undefined;
+  now?: undefined;
+}
+
+export interface SearchVerboseResult extends SearchResultBase {
   filters: Record<string, unknown>;
   projection: {
     mode: SearchProjectionMode;
     fields: string[] | null;
   };
   now: string;
-  warnings?: string[];
+}
+
+export type SearchResult = SearchCompactResult | SearchVerboseResult;
+
+function isNonEmptyRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value) && Object.keys(value).length > 0;
+}
+
+function buildCompactSearchFilterSummary(params: {
+  mode: SearchMode;
+  options: SearchOptions;
+  includeLinked: boolean;
+  titleExact: boolean;
+  phraseExact: boolean;
+  scoreThreshold: number;
+  hybridSemanticWeight: number;
+  runtimeFieldFilters?: Record<string, unknown>;
+}): Record<string, unknown> {
+  const {
+    mode,
+    options,
+    includeLinked,
+    titleExact,
+    phraseExact,
+    scoreThreshold,
+    hybridSemanticWeight,
+    runtimeFieldFilters,
+  } = params;
+  const filters: Record<string, unknown> = {};
+  if (options.status !== undefined) {
+    filters.status = options.status;
+  }
+  if (options.type !== undefined) {
+    filters.type = options.type;
+  }
+  if (options.tag !== undefined) {
+    filters.tag = options.tag;
+  }
+  if (options.priority !== undefined) {
+    filters.priority = options.priority;
+  }
+  if (options.deadlineBefore !== undefined) {
+    filters.deadline_before = options.deadlineBefore;
+  }
+  if (options.deadlineAfter !== undefined) {
+    filters.deadline_after = options.deadlineAfter;
+  }
+  if (includeLinked) {
+    filters.include_linked = true;
+  }
+  if (titleExact) {
+    filters.title_exact = true;
+  }
+  if (phraseExact) {
+    filters.phrase_exact = true;
+  }
+  if (scoreThreshold > 0) {
+    filters.score_threshold = scoreThreshold;
+  }
+  if (mode === "hybrid" && options.semanticWeight !== undefined) {
+    filters.hybrid_semantic_weight = hybridSemanticWeight;
+  }
+  if (options.limit !== undefined) {
+    filters.limit = options.limit;
+  }
+  if (isNonEmptyRecord(runtimeFieldFilters)) {
+    filters.runtime_filters = runtimeFieldFilters;
+  }
+  return filters;
 }
 
 interface ExtensionSearchProviderContext {
@@ -906,7 +984,29 @@ function emptySearchResult(
   rerank: RerankConfig,
   projection: SearchProjectionConfig,
   warnings: string[],
+  runtimeFieldFilters?: Record<string, unknown>,
 ): SearchResult {
+  const compactSummaryMode = projection.mode === "compact" && options.compact === true;
+  if (compactSummaryMode) {
+    const compactFilters = buildCompactSearchFilterSummary({
+      mode,
+      options,
+      includeLinked,
+      titleExact: options.titleExact === true,
+      phraseExact: options.phraseExact === true,
+      scoreThreshold,
+      hybridSemanticWeight,
+      runtimeFieldFilters,
+    });
+    return {
+      query: query.trim(),
+      mode,
+      items: [],
+      count: 0,
+      filters: compactFilters,
+      ...(warnings.length > 0 ? { warnings } : {}),
+    };
+  }
   const projectionFields = projection.mode === "full" ? null : [...projection.fields];
   return {
     query: query.trim(),
@@ -1591,6 +1691,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
       rerank,
       projection,
       warnings,
+      runtimeFieldFilters,
     );
   }
 
@@ -1644,6 +1745,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
           rerank,
           projection,
           warnings,
+          runtimeFieldFilters,
         );
       }
       const filteredById = new Map(filteredDocuments.map((document) => [document.metadata.id, document]));
@@ -1737,6 +1839,27 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const limited = resolvedLimit === undefined ? sorted : sorted.slice(0, resolvedLimit);
   const projectedItems = projectSearchHits(limited, projection);
   const projectionFields = projection.mode === "full" ? null : [...projection.fields];
+  const compactSummaryMode = projection.mode === "compact" && options.compact === true;
+  if (compactSummaryMode) {
+    const compactFilters = buildCompactSearchFilterSummary({
+      mode: effectiveMode,
+      options,
+      includeLinked,
+      titleExact,
+      phraseExact,
+      scoreThreshold,
+      hybridSemanticWeight,
+      runtimeFieldFilters,
+    });
+    return {
+      query: query.trim(),
+      mode: effectiveMode,
+      items: projectedItems,
+      count: projectedItems.length,
+      filters: compactFilters,
+      ...(warnings.length > 0 ? { warnings } : {}),
+    };
+  }
 
   return {
     query: query.trim(),

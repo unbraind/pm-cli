@@ -106,7 +106,7 @@ pm list-all --created-after=-7d --status open
 pm search "reminder validation" --status open --limit 10
 ```
 
-Each filter echoes its raw input back in the result `filters` block so an agent can confirm exactly what window it queried.
+`list`/`search` full and fields projections echo full filter metadata. Compact mode emits only active filters (plus runtime schema filters when present) and omits the default projection/sorting/now trailer keys for lower token cost.
 
 ## Bulk Operations
 
@@ -172,7 +172,7 @@ pm create \
   --message "Create restore replay issue"
 ```
 
-Repeated singular/plural list flags now accumulate, so `--tag a --tag b` is equivalent to `--tags a,b` (the same holds for `--status`, `--ids`, and `--fields` on read commands). Earlier versions silently kept only the last value.
+Repeated singular/plural list flags now accumulate, so `--tag a --tag b` is equivalent to `--tags a,b` (the same holds for `--status`, `--ids`, and `--fields` on read commands). Earlier versions silently kept only the last value. `list`/`search` also accept `--tags` as a never-block alias for the canonical read filter `--tag`.
 
 `--tags` REPLACES the whole tag list. To edit tags without restating the full set, use the additive/subtractive flags on `create`/`update`/`update-many`:
 

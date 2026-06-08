@@ -182,7 +182,7 @@ export const GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
 export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--status", list: true },
   { flag: "--type" },
-  { flag: "--tag" },
+  { flag: "--tag", aliases: ["--tags"] },
   { flag: "--priority" },
   { flag: "--deadline-before" },
   { flag: "--deadline-after" },
@@ -1200,7 +1200,7 @@ export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--limit" },
   { flag: "--status", list: true },
   { flag: "--type" },
-  { flag: "--tag" },
+  { flag: "--tag", aliases: ["--tags"] },
   { flag: "--priority" },
   { flag: "--deadline-before" },
   { flag: "--deadline-after" },

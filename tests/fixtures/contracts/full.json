@@ -2689,6 +2689,9 @@
           "flag": "--type"
         },
         {
+          "aliases": [
+            "--tags"
+          ],
           "flag": "--tag"
         },
         {
@@ -2788,6 +2791,9 @@
           "flag": "--type"
         },
         {
+          "aliases": [
+            "--tags"
+          ],
           "flag": "--tag"
         },
         {
@@ -2887,6 +2893,9 @@
           "flag": "--type"
         },
         {
+          "aliases": [
+            "--tags"
+          ],
           "flag": "--tag"
         },
         {
@@ -2986,6 +2995,9 @@
           "flag": "--type"
         },
         {
+          "aliases": [
+            "--tags"
+          ],
           "flag": "--tag"
         },
         {
@@ -3085,6 +3097,9 @@
           "flag": "--type"
         },
         {
+          "aliases": [
+            "--tags"
+          ],
           "flag": "--tag"
         },
         {
@@ -3184,6 +3199,9 @@
           "flag": "--type"
         },
         {
+          "aliases": [
+            "--tags"
+          ],
           "flag": "--tag"
         },
         {
@@ -3283,6 +3301,9 @@
           "flag": "--type"
         },
         {
+          "aliases": [
+            "--tags"
+          ],
           "flag": "--tag"
         },
         {
@@ -3382,6 +3403,9 @@
           "flag": "--type"
         },
         {
+          "aliases": [
+            "--tags"
+          ],
           "flag": "--tag"
         },
         {
@@ -4483,6 +4507,9 @@
           "flag": "--type"
         },
         {
+          "aliases": [
+            "--tags"
+          ],
           "flag": "--tag"
         },
         {
@@ -6031,7 +6058,8 @@
       },
       {
         "keys": [
-          "tag"
+          "tag",
+          "tags"
         ],
         "target": "tag"
       },
@@ -6180,7 +6208,8 @@
       },
       {
         "keys": [
-          "tag"
+          "tag",
+          "tags"
         ],
         "target": "tag"
       },

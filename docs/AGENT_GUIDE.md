@@ -46,7 +46,7 @@ pm create --create-mode progressive \
 
 Priority accepts either numeric `0..4` or named aliases `critical`, `high`, `medium`, `low`, and `minimal`.
 
-Repeated singular/plural list flags accumulate, so `--tag a --tag b` is equivalent to `--tags a,b` (same for `--status` and `--fields` on read commands). You no longer have to pre-join values into one comma list.
+Repeated singular/plural list flags accumulate, so `--tag a --tag b` is equivalent to `--tags a,b` (same for `--status` and `--fields` on read commands). You no longer have to pre-join values into one comma list, and `list`/`search` accept `--tags` as a never-block alias for the canonical read filter `--tag`.
 
 `--tags` REPLACES the whole tag list. To edit tags without restating the full set, prefer `--add-tags <value>` (adds without replacing) and `--remove-tags <value>` (prunes) on `create`/`update`/`update-many` (both repeatable; CSV or JSON-array). `--remove-tags` is `update`/`update-many` only. Also note `--expected`/`--actual` are short aliases for `--expected-result`/`--actual-result` on these commands, matching `pm close`.
 
@@ -127,6 +127,8 @@ pm release <item-id>
 | Compact mutation echo | `pm --no-changed-fields create "..."` (drops the redundant `changed_fields` array, keeps `changed_field_count`) |
 
 Default TOON output is preferred for model-readable loops. Use `--json` only when strict parsing is needed.
+
+`list`/`search` compact mode is intentionally token-light: it returns compact items plus only active filters (and runtime schema filters when present), omitting default projection/sorting/now trailer metadata.
 
 Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_close`, and `pm_run` for `append`/`update-many`) are already compact by default: they return `changed_field_count` instead of the full `changed_fields` array. Pass `options.full=true` only when you need the explicit field-level delta.
 

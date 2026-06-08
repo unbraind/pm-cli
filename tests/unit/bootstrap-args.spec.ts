@@ -295,6 +295,32 @@ describe("normalizeBootstrapInvocation", () => {
     );
   });
 
+  it("treats list/search --tags as a declared alias for --tag (pm-6l17)", () => {
+    const listNormalized = normalizeBootstrapInvocation(["list", "--tags", "agent-ux"]);
+    expect(listNormalized.argv).toEqual(["list", "--tag", "agent-ux"]);
+    expect(listNormalized.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          from: "--tags",
+          to: ["--tag"],
+          reason: "flag_alias",
+        }),
+      ]),
+    );
+
+    const searchNormalized = normalizeBootstrapInvocation(["search", "agent", "--tags", "agent-ux"]);
+    expect(searchNormalized.argv).toEqual(["search", "agent", "--tag", "agent-ux"]);
+    expect(searchNormalized.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          from: "--tags",
+          to: ["--tag"],
+          reason: "flag_alias",
+        }),
+      ]),
+    );
+  });
+
   it("keeps truncated plural list flags in the typo path instead of aliasing them", () => {
     const normalized = normalizeBootstrapInvocation(["update", "pm-a1b2", "--statu", "closed"]);
     expect(normalized.argv).toEqual(["update", "pm-a1b2", "--status", "closed"]);
