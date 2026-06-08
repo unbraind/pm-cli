@@ -29,6 +29,39 @@ export function resolveFlagValueKind(raw: unknown): FlagValueKind | null {
 }
 
 /**
+ * Flatten a `list` flag value (or default) into its individual entries the same
+ * way the runtime does: nested arrays are flattened and comma-joined strings are
+ * split, with surrounding whitespace trimmed and empty segments dropped. No
+ * type coercion is applied. Shared by the CLI coercion path and the
+ * registration-time default validator so the two never disagree.
+ */
+export function flattenFlagListValue(value: unknown): unknown[] {
+  const entries: unknown[] = [];
+  const collect = (input: unknown): void => {
+    if (Array.isArray(input)) {
+      for (const item of input) {
+        collect(item);
+      }
+      return;
+    }
+    if (typeof input === "string") {
+      for (const part of input.split(",")) {
+        const trimmed = part.trim();
+        if (trimmed.length > 0) {
+          entries.push(trimmed);
+        }
+      }
+      return;
+    }
+    if (input !== undefined && input !== null) {
+      entries.push(input);
+    }
+  };
+  collect(value);
+  return entries;
+}
+
+/**
  * Whether a scalar flag default would cleanly coerce under the declared kind,
  * mirroring the runtime coercion rules in `coerceLooseCommandOptionsWithFlagDefinitions`.
  * Used to reject contradictory definitions (e.g. `value_type: "number"` with

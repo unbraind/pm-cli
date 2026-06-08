@@ -1,0 +1,12 @@
+id: pm-bujg
+title: "Extension teardown: per-deactivate timeout guard so a hanging deactivate() cannot block host shutdown/reload"
+description: "deactivateExtensions runs deactivate hooks concurrently via Promise.all. If one extension's deactivate() never resolves (unresolved promise / infinite await), Promise.all never settles and the host (e.g. the long-running MCP server's teardown finally) hangs indefinitely. Follow-up: race each deactivate() against a bounded timeout (e.g. 5s) so a hanging hook is recorded as a deactivate failure/warning and cannot block the rest or the host. Surfaced by Gemini on PR #150 (loader.ts:1069); deferred from the SDK PR to keep scope focused, but the lifecycle primitive is now in place."
+type: Feature
+status: open
+priority: 3
+tags[5]: "area:extensions","area:sdk",follow-up,lifecycle,robustness
+created_at: "2026-06-08T23:40:06.860Z"
+updated_at: "2026-06-08T23:40:06.860Z"
+author: maintainer-agent
+parent: pm-ugqx
+body: ""

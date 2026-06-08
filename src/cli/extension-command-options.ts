@@ -1,6 +1,6 @@
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
-import { resolveFlagValueKind } from "../core/extensions/flag-value-types.js";
+import { flattenFlagListValue, resolveFlagValueKind } from "../core/extensions/flag-value-types.js";
 
 const UNSAFE_LOOSE_OPTION_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 
@@ -241,28 +241,7 @@ function coerceLooseOptionValue(value: unknown, kind: LooseOptionCoercionKind): 
  * dropped and surrounding whitespace is trimmed.
  */
 function splitCommaListValue(value: unknown, kind: LooseOptionCoercionKind | null): unknown[] {
-  const entries: unknown[] = [];
-  const collect = (input: unknown): void => {
-    if (Array.isArray(input)) {
-      for (const entry of input) {
-        collect(entry);
-      }
-      return;
-    }
-    if (typeof input === "string") {
-      for (const part of input.split(",")) {
-        const trimmed = part.trim();
-        if (trimmed.length > 0) {
-          entries.push(trimmed);
-        }
-      }
-      return;
-    }
-    if (input !== undefined && input !== null) {
-      entries.push(input);
-    }
-  };
-  collect(value);
+  const entries = flattenFlagListValue(value);
   return kind ? entries.map((entry) => coerceLooseOptionValue(entry, kind)) : entries;
 }
 

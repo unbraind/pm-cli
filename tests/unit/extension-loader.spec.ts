@@ -34,6 +34,7 @@ import {
   suggestKnownItemFieldType,
 } from "../../src/core/extensions/item-field-types.js";
 import {
+  flattenFlagListValue,
   isFlagDefaultValueCoercible,
   resolveFlagValueKind,
 } from "../../src/core/extensions/flag-value-types.js";
@@ -4239,6 +4240,35 @@ describe("registerFlags default validation (pm-ltbr)", () => {
     expect(result.failed).toHaveLength(0);
     expect(result.registration_counts.flags).toBe(1);
   });
+
+  it("accepts a comma-string default for a number list flag (split like the runtime)", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--limits", value_type: "number", list: true, default: "10,20" }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(0);
+    expect(result.registration_counts.flags).toBe(1);
+  });
+
+  it("still rejects a non-numeric element inside a list flag comma default", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--limits", value_type: "number", list: true, default: "10,abc" }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toContain("default[1]");
+    expect(result.failed[0].error).toContain("is not coercible to number");
+  });
 });
 
 describe("flag value type resolution (pm-ltbr/pm-l0jd)", () => {
@@ -4252,6 +4282,14 @@ describe("flag value type resolution (pm-ltbr/pm-l0jd)", () => {
     expect(resolveFlagValueKind("boolean")).toBe("boolean");
     expect(resolveFlagValueKind("numbr")).toBeNull();
     expect(resolveFlagValueKind(7)).toBeNull();
+  });
+
+  it("flattens list values from arrays, comma strings, and scalars", () => {
+    expect(flattenFlagListValue("a, b ,,c")).toEqual(["a", "b", "c"]);
+    expect(flattenFlagListValue(["a,b", ["c", 2], true])).toEqual(["a", "b", "c", 2, true]);
+    expect(flattenFlagListValue([null, undefined, "x"])).toEqual(["x"]);
+    expect(flattenFlagListValue(5)).toEqual([5]);
+    expect(flattenFlagListValue(null)).toEqual([]);
   });
 
   it("validates default coercibility per kind", () => {

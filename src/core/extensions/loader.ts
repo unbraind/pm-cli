@@ -7,7 +7,7 @@ import { resolvePmPackageRootFromModule } from "../packages/root.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { asRecordLoose } from "../shared/primitives.js";
-import { isFlagDefaultValueCoercible, resolveFlagValueKind } from "./flag-value-types.js";
+import { flattenFlagListValue, isFlagDefaultValueCoercible, resolveFlagValueKind } from "./flag-value-types.js";
 import { KNOWN_ITEM_FIELD_TYPES, normalizeItemFieldType, suggestKnownItemFieldType } from "./item-field-types.js";
 import type { PmSettings } from "../../types/index.js";
 // Cohesive helper groups now live in sibling modules. They are imported for the
@@ -1409,10 +1409,13 @@ function assertFlagValueTypeAndDefault(label: string, record: Record<string, unk
   if (record.default === undefined) {
     return;
   }
-  const defaults = Array.isArray(record.default) ? record.default : [record.default];
+  // For list flags, validate the default exactly as the runtime will see it —
+  // comma-joined strings and nested arrays are flattened first — so a valid
+  // default like `value_type: "number", default: "10,20"` is not wrongly rejected.
+  const defaults = record.list === true ? flattenFlagListValue(record.default) : [record.default];
   for (const [defaultIndex, defaultValue] of defaults.entries()) {
     if (!isFlagDefaultValueCoercible(defaultValue as string | number | boolean, kind)) {
-      const suffix = Array.isArray(record.default) ? `default[${defaultIndex}]` : "default";
+      const suffix = defaults.length > 1 ? `default[${defaultIndex}]` : "default";
       throw new TypeError(`${label}.${suffix} (${JSON.stringify(defaultValue)}) is not coercible to ${kind}.`);
     }
   }
