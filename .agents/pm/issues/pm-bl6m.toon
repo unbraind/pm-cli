@@ -1,0 +1,12 @@
+id: pm-bl6m
+title: "MCP server: request-scoped extension registries (process-global set/clear can race under concurrent native-action requests)"
+description: "runDynamicExtensionAction sets process-global active extension registries (setActiveExtensionHooks/Commands/Parsers/...) then awaits the handler, and clears them in finally. The stdio MCP server processes native-action requests sequentially today, so the per-request set+clear is safe. But the process-global pattern is pre-existing and would race if requests are ever processed concurrently (a newer request overwrites globals; a completing request's finally clears them). Follow-up: scope the active registries per-request (pass them through the call instead of mutating module-global state) so the MCP server is concurrency-safe. Surfaced by Gemini on PR #150 (server.ts:668); deferred as a separate, larger refactor (the SDK PR only added the teardown finally)."
+type: Issue
+status: open
+priority: 3
+tags[3]: "area:mcp",follow-up,robustness
+created_at: "2026-06-08T23:40:06.610Z"
+updated_at: "2026-06-08T23:40:06.610Z"
+author: maintainer-agent
+parent: pm-5k4v
+body: ""

@@ -1,5 +1,6 @@
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
+import { flattenFlagListValue, resolveFlagValueKind } from "../core/extensions/flag-value-types.js";
 
 const UNSAFE_LOOSE_OPTION_KEYS = new Set(["__proto__", "prototype", "constructor"]);
 
@@ -99,19 +100,12 @@ function isUnsafeLooseOptionKey(key: string): boolean {
 type LooseOptionCoercionKind = "string" | "number" | "boolean";
 
 function resolveLooseOptionCoercionKind(definition: Record<string, unknown>): LooseOptionCoercionKind | null {
-  const explicitType = typeof definition.type === "string" ? definition.type.trim().toLowerCase() : undefined;
-  const valueType = typeof definition.value_type === "string" ? definition.value_type.trim().toLowerCase() : undefined;
-  const kind = explicitType ?? valueType;
-  if (kind === "string") {
-    return "string";
-  }
-  if (kind === "number" || kind === "int" || kind === "integer" || kind === "float") {
-    return "number";
-  }
-  if (kind === "boolean" || kind === "bool") {
-    return "boolean";
-  }
-  return null;
+  // `value_type` is the canonical field; the deprecated `type` alias resolves
+  // only when `value_type` is absent (FlagDefinition documents this precedence).
+  const raw =
+    (typeof definition.value_type === "string" ? definition.value_type : undefined) ??
+    (typeof definition.type === "string" ? definition.type : undefined);
+  return resolveFlagValueKind(raw);
 }
 
 function collectLooseOptionKeys(definition: Record<string, unknown>): string[] {
@@ -239,6 +233,33 @@ function coerceLooseOptionValue(value: unknown, kind: LooseOptionCoercionKind): 
   return value;
 }
 
+/**
+ * Flatten a (possibly repeated and/or comma-joined) value into a list, applying
+ * the declared coercion kind per element. Mirrors how core list flags such as
+ * `--tags` split comma values and accumulate repeated occurrences, so an
+ * extension flag declared `list: true` behaves identically. Empty segments are
+ * dropped and surrounding whitespace is trimmed.
+ */
+function splitCommaListValue(value: unknown, kind: LooseOptionCoercionKind | null): unknown[] {
+  const entries = flattenFlagListValue(value);
+  return kind ? entries.map((entry) => coerceLooseOptionValue(entry, kind)) : entries;
+}
+
+/**
+ * Resolve the value applied when a flag is omitted entirely. List flags wrap the
+ * default into an accumulated array; scalar flags coerce by declared kind.
+ */
+function applyFlagDefault(
+  defaultValue: unknown,
+  kind: LooseOptionCoercionKind | null,
+  isListFlag: boolean,
+): unknown {
+  if (isListFlag) {
+    return splitCommaListValue(defaultValue, kind);
+  }
+  return kind ? coerceLooseOptionValue(defaultValue, kind) : defaultValue;
+}
+
 export function coerceLooseCommandOptionsWithFlagDefinitions(
   options: Record<string, unknown>,
   definitions: Array<Record<string, unknown>>,
@@ -266,10 +287,19 @@ export function coerceLooseCommandOptionsWithFlagDefinitions(
       delete coerced[key];
     }
     const kind = resolveLooseOptionCoercionKind(definition);
-    if (!kind) {
+    const isListFlag = definition.list === true;
+    if (!Object.hasOwn(coerced, canonical)) {
+      // Flag was omitted entirely: apply the declared default when present.
+      if (definition.default !== undefined) {
+        coerced[canonical] = applyFlagDefault(definition.default, kind, isListFlag);
+      }
       continue;
     }
-    if (!Object.hasOwn(coerced, canonical)) {
+    if (isListFlag) {
+      coerced[canonical] = splitCommaListValue(coerced[canonical], kind);
+      continue;
+    }
+    if (!kind) {
       continue;
     }
     coerced[canonical] = coerceLooseOptionValue(coerced[canonical], kind);

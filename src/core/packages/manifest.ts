@@ -9,6 +9,8 @@ export const PM_PACKAGE_RESOURCE_KINDS = [
   "extensions",
   "docs",
   "examples",
+  "assets",
+  "prompts",
 ] as const;
 
 export type PmPackageResourceKind = (typeof PM_PACKAGE_RESOURCE_KINDS)[number];
@@ -67,6 +69,14 @@ export const PM_PACKAGE_CONVENTIONAL_RESOURCE_ROOTS: Readonly<Record<PmPackageRe
     examples: Object.freeze([
       "examples",
       "docs/examples",
+    ]),
+    assets: Object.freeze([
+      "assets",
+      ".agents/pm/assets",
+    ]),
+    prompts: Object.freeze([
+      "prompts",
+      ".agents/pm/prompts",
     ]),
   });
 

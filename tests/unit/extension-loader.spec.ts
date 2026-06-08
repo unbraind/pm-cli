@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   activateExtensions,
+  deactivateExtensions,
   discoverExtensions,
   loadExtensions,
   runCommandHandler,
@@ -18,12 +19,25 @@ import {
   runServiceOverride,
   runServiceOverrideSync,
   runOnWriteHooks,
+  type ExtensionApi,
+  type ExtensionLoadResult,
   type ExtensionManifest,
 } from "../../src/core/extensions/loader.js";
 import {
   createDefaultExtensionGovernancePolicy,
   type ExtensionGovernancePolicy,
+  type ExtensionSelfIdentity,
 } from "../../src/core/extensions/extension-types.js";
+import {
+  KNOWN_ITEM_FIELD_TYPES,
+  normalizeItemFieldType,
+  suggestKnownItemFieldType,
+} from "../../src/core/extensions/item-field-types.js";
+import {
+  flattenFlagListValue,
+  isFlagDefaultValueCoercible,
+  resolveFlagValueKind,
+} from "../../src/core/extensions/flag-value-types.js";
 import { readSettings } from "../../src/core/store/settings.js";
 import { collectExtensionCommandHelpDescriptors } from "../../src/cli/extension-command-help.js";
 import { writeTestExtension } from "../helpers/extensions.js";
@@ -3909,5 +3923,387 @@ describe("extension loader", () => {
         expect.stringContaining("extension_service_override_collision:history_append:project:service-two:project:service-one"),
       ]),
     );
+  });
+});
+
+function inMemoryLoadResult(
+  module: unknown,
+  options: {
+    name?: string;
+    version?: string;
+    capabilities?: string[];
+    layer?: "global" | "project";
+    source_package?: string;
+  } = {},
+): ExtensionLoadResult {
+  return {
+    disabled_by_flag: false,
+    roots: { global: "", project: "" },
+    configured_enabled: [],
+    configured_disabled: [],
+    discovered: [],
+    effective: [],
+    warnings: [],
+    policy: createDefaultExtensionGovernancePolicy(),
+    failed: [],
+    loaded: [
+      {
+        layer: options.layer ?? "project",
+        directory: "",
+        manifest_path: "",
+        name: options.name ?? "test-extension",
+        version: options.version ?? "1.2.3",
+        entry: "./index.js",
+        priority: 0,
+        entry_path: "",
+        capabilities: options.capabilities ?? [],
+        source_package: options.source_package,
+        module,
+      },
+    ],
+  };
+}
+
+describe("item field type validation (pm-oll8)", () => {
+  it("exposes the canonical coercion kinds", () => {
+    expect(KNOWN_ITEM_FIELD_TYPES).toEqual(["string", "number", "boolean", "array", "object"]);
+  });
+
+  it("normalizes known field types case-insensitively and rejects unknown ones", () => {
+    expect(normalizeItemFieldType(" String ")).toBe("string");
+    expect(normalizeItemFieldType("OBJECT")).toBe("object");
+    expect(normalizeItemFieldType("strnig")).toBeNull();
+    expect(normalizeItemFieldType("")).toBeNull();
+  });
+
+  it("suggests the closest known field type, including transpositions", () => {
+    expect(suggestKnownItemFieldType("strnig")).toBe("string");
+    expect(suggestKnownItemFieldType("nubmer")).toBe("number");
+    expect(suggestKnownItemFieldType("objet")).toBe("object");
+    expect(suggestKnownItemFieldType("")).toBeNull();
+    expect(suggestKnownItemFieldType("xkcd-nonsense")).toBeNull();
+  });
+
+  it("fails registerItemFields activation for an unknown field type with a did-you-mean hint", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerItemFields([{ name: "severity", type: "strnig" }]);
+        },
+      },
+      { name: "schema-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.registration_counts.item_fields).toBe(0);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toContain("is not a known field type");
+    expect(result.failed[0].error).toContain('Did you mean "string"');
+  });
+
+  it("accepts a valid (case-insensitive) registerItemFields type", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerItemFields([{ name: "severity", type: "STRING" }]);
+        },
+      },
+      { name: "schema-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(0);
+    expect(result.registration_counts.item_fields).toBe(1);
+  });
+});
+
+describe("extension self-identity (pm-qo36)", () => {
+  it("exposes a frozen, capability-filtered identity to activate via api.extension", async () => {
+    let captured: ExtensionSelfIdentity | undefined;
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          captured = api.extension;
+        },
+      },
+      {
+        name: "identity-ext",
+        version: "2.4.6",
+        capabilities: ["commands", "bogus-capability"],
+        source_package: "pm-demo",
+        layer: "global",
+      },
+    );
+    await activateExtensions(loadResult);
+    expect(captured?.name).toBe("identity-ext");
+    expect(captured?.layer).toBe("global");
+    expect(captured?.version).toBe("2.4.6");
+    expect(captured?.capabilities).toEqual(["commands"]);
+    expect(captured?.source_package).toBe("pm-demo");
+    expect(Object.isFrozen(captured)).toBe(true);
+    expect(Object.isFrozen(captured?.capabilities)).toBe(true);
+  });
+});
+
+describe("extension teardown lifecycle (pm-k1e4)", () => {
+  it("runs deactivate for loaded extensions that export it", async () => {
+    let cleaned = false;
+    const loadResult = inMemoryLoadResult({
+      activate() {},
+      deactivate() {
+        cleaned = true;
+      },
+    });
+    const result = await deactivateExtensions(loadResult);
+    expect(result).toEqual({ deactivated: 1, warnings: [], failed: [] });
+    expect(cleaned).toBe(true);
+  });
+
+  it("supports deactivate via the default export and async teardown", async () => {
+    let cleaned = 0;
+    const loadResult = inMemoryLoadResult({
+      default: {
+        activate() {},
+        async deactivate() {
+          cleaned += 1;
+        },
+      },
+    });
+    const result = await deactivateExtensions(loadResult);
+    expect(result.deactivated).toBe(1);
+    expect(cleaned).toBe(1);
+  });
+
+  it("skips loaded extensions without a deactivate hook", async () => {
+    const loadResult = inMemoryLoadResult({ activate() {} });
+    const result = await deactivateExtensions(loadResult);
+    expect(result).toEqual({ deactivated: 0, warnings: [], failed: [] });
+  });
+
+  it("captures a throwing deactivate as a warning + failure without blocking others", async () => {
+    let secondCleaned = false;
+    const loadResult: ExtensionLoadResult = {
+      ...inMemoryLoadResult(null),
+      loaded: [
+        inMemoryLoadResult(
+          {
+            activate() {},
+            deactivate() {
+              throw new Error("sink close failed");
+            },
+          },
+          { name: "boom", layer: "project" },
+        ).loaded[0],
+        inMemoryLoadResult(
+          {
+            activate() {},
+            deactivate() {
+              secondCleaned = true;
+            },
+          },
+          { name: "ok", layer: "global" },
+        ).loaded[0],
+      ],
+    };
+    const result = await deactivateExtensions(loadResult);
+    expect(result.deactivated).toBe(1);
+    expect(secondCleaned).toBe(true);
+    expect(result.warnings).toEqual(["extension_deactivate_failed:project:boom"]);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0]).toMatchObject({ layer: "project", name: "boom" });
+    expect(result.failed[0].error).toContain("sink close failed");
+  });
+
+  it("ignores non-activatable modules during teardown", async () => {
+    const loadResult = inMemoryLoadResult(null);
+    const result = await deactivateExtensions(loadResult);
+    expect(result.deactivated).toBe(0);
+  });
+
+  it("skips deactivate for extensions whose activation failed when given the activation result", async () => {
+    let cleaned = false;
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerItemFields([{ name: "sev", type: "strnig" }]);
+        },
+        deactivate() {
+          cleaned = true;
+        },
+      },
+      { name: "boom-ext", capabilities: ["schema"] },
+    );
+    const activation = await activateExtensions(loadResult);
+    expect(activation.failed).toHaveLength(1);
+    const result = await deactivateExtensions(loadResult, activation);
+    expect(result.deactivated).toBe(0);
+    expect(cleaned).toBe(false);
+  });
+
+  it("preserves the module `this` binding across activate and deactivate", async () => {
+    let deactivatedWithState = false;
+    const moduleObject = {
+      activate(this: { opened?: boolean }) {
+        this.opened = true;
+      },
+      deactivate(this: { opened?: boolean }) {
+        deactivatedWithState = this.opened === true;
+      },
+    };
+    const loadResult = inMemoryLoadResult(moduleObject, { name: "stateful-ext", capabilities: [] });
+    await activateExtensions(loadResult);
+    const result = await deactivateExtensions(loadResult);
+    expect(result.deactivated).toBe(1);
+    expect(deactivatedWithState).toBe(true);
+  });
+});
+
+describe("registerFlags default validation (pm-ltbr)", () => {
+  it("accepts a scalar-array default for a list flag", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--scope", value_type: "string", list: true, default: ["a", "b"] }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(0);
+    expect(result.registration_counts.flags).toBe(1);
+  });
+
+  it("rejects a non-scalar element in an array default", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--scope", list: true, default: ["ok", { bad: true }] as never }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toContain("default[1] must be a string, number, or boolean");
+  });
+
+  it("rejects an array default when list is not true", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--scope", value_type: "string", default: ["a", "b"] }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toContain("default cannot be an array unless list is true");
+  });
+
+  it("rejects an unknown value_type", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--limit", value_type: "numbr" as never }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toContain('value_type "numbr" is not a known flag value type');
+  });
+
+  it("rejects a default that is not coercible under the declared value_type", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--limit", value_type: "number", default: "abc" }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toContain("is not coercible to number");
+  });
+
+  it("accepts a numeric-string default under a number value_type", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--limit", value_type: "int", default: "20" }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(0);
+    expect(result.registration_counts.flags).toBe(1);
+  });
+
+  it("accepts a comma-string default for a number list flag (split like the runtime)", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--limits", value_type: "number", list: true, default: "10,20" }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(0);
+    expect(result.registration_counts.flags).toBe(1);
+  });
+
+  it("still rejects a non-numeric element inside a list flag comma default", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerFlags("report", [{ long: "--limits", value_type: "number", list: true, default: "10,abc" }]);
+        },
+      },
+      { name: "flags-ext", capabilities: ["schema"] },
+    );
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toContain("default[1]");
+    expect(result.failed[0].error).toContain("is not coercible to number");
+  });
+});
+
+describe("flag value type resolution (pm-ltbr/pm-l0jd)", () => {
+  it("resolves canonical kinds and aliases case-insensitively", () => {
+    expect(resolveFlagValueKind("String")).toBe("string");
+    expect(resolveFlagValueKind("number")).toBe("number");
+    expect(resolveFlagValueKind("int")).toBe("number");
+    expect(resolveFlagValueKind("integer")).toBe("number");
+    expect(resolveFlagValueKind("float")).toBe("number");
+    expect(resolveFlagValueKind("BOOL")).toBe("boolean");
+    expect(resolveFlagValueKind("boolean")).toBe("boolean");
+    expect(resolveFlagValueKind("numbr")).toBeNull();
+    expect(resolveFlagValueKind(7)).toBeNull();
+  });
+
+  it("flattens list values from arrays, comma strings, and scalars", () => {
+    expect(flattenFlagListValue("a, b ,,c")).toEqual(["a", "b", "c"]);
+    expect(flattenFlagListValue(["a,b", ["c", 2], true])).toEqual(["a", "b", "c", 2, true]);
+    expect(flattenFlagListValue([null, undefined, "x"])).toEqual(["x"]);
+    expect(flattenFlagListValue(5)).toEqual([5]);
+    expect(flattenFlagListValue(null)).toEqual([]);
+  });
+
+  it("validates default coercibility per kind", () => {
+    expect(isFlagDefaultValueCoercible("anything", "string")).toBe(true);
+    expect(isFlagDefaultValueCoercible(3, "number")).toBe(true);
+    expect(isFlagDefaultValueCoercible(Number.POSITIVE_INFINITY, "number")).toBe(false);
+    expect(isFlagDefaultValueCoercible("12", "number")).toBe(true);
+    expect(isFlagDefaultValueCoercible("abc", "number")).toBe(false);
+    expect(isFlagDefaultValueCoercible(" ", "number")).toBe(false);
+    expect(isFlagDefaultValueCoercible(true, "number")).toBe(false);
+    expect(isFlagDefaultValueCoercible(false, "boolean")).toBe(true);
+    expect(isFlagDefaultValueCoercible("TRUE", "boolean")).toBe(true);
+    expect(isFlagDefaultValueCoercible("0", "boolean")).toBe(true);
+    expect(isFlagDefaultValueCoercible("maybe", "boolean")).toBe(false);
+    expect(isFlagDefaultValueCoercible(1, "boolean")).toBe(false);
   });
 });

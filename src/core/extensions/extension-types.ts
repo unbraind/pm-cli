@@ -403,8 +403,30 @@ export interface FlagDefinition {
   required?: boolean;
   enabled?: boolean;
   visible?: boolean;
-  type?: FlagValueType;
+  /**
+   * Canonical flag value type. Prefer this field; it is the one runtime
+   * contracts and help output read first.
+   */
   value_type?: FlagValueType;
+  /**
+   * @deprecated Use `value_type`. Retained for backward compatibility: when
+   * both are present `value_type` wins, and `type` resolves only when
+   * `value_type` is absent (`value_type ?? type`).
+   */
+  type?: FlagValueType;
+  /**
+   * When true, a repeated comma-list flag accumulates values across repeats
+   * — parity with core list flags such as `--tags` — instead of the last
+   * value winning. Mirrors the core `CliFlagContract.list` field so
+   * extension-registered list flags coalesce through the same bootstrap path.
+   */
+  list?: boolean;
+  /**
+   * Default value applied when the flag is omitted. Surfaced to runtime
+   * contracts and help output. A `list` flag may default to an array of scalars
+   * (e.g. `["a", "b"]`); the array is flattened/coerced like any list value.
+   */
+  default?: string | number | boolean | Array<string | number | boolean>;
   [key: string]: unknown;
 }
 
@@ -751,7 +773,25 @@ export interface ExtensionRegistrationCounts {
   vector_store_adapters: number;
 }
 
+/**
+ * Read-only identity an extension's `activate(api)` receives about itself, so
+ * authors can emit self-identifying logs, gate on their own version, and build
+ * better error messages without re-reading the on-disk manifest or duplicating
+ * metadata in-module. Exposed as `api.extension`.
+ */
+export interface ExtensionSelfIdentity {
+  readonly name: string;
+  readonly layer: ExtensionLayer;
+  readonly version: string;
+  readonly capabilities: readonly ExtensionCapability[];
+  readonly pm_min_version?: string;
+  readonly pm_max_version?: string;
+  readonly source_package?: string;
+}
+
 export interface ExtensionApi {
+  /** Read-only identity of the extension this `api` was created for. */
+  readonly extension: ExtensionSelfIdentity;
   registerCommand(command: string, override: CommandOverride): void;
   registerCommand(definition: CommandDefinition): void;
   registerParser(command: string, override: ParserOverride): void;
@@ -858,6 +898,27 @@ export interface DiscoverExtensionsOptions {
 
 export interface ActivatableExtension {
   activate: (api: ExtensionApi) => void | Promise<void>;
+  /**
+   * Optional teardown lifecycle hook, analogous to VS Code's `deactivate`
+   * export. Invoked when the host tears the extension down — on long-running
+   * MCP-server reload between requests, or via the `deactivateExtensions`
+   * primitive — so an extension can close connections, clear timers, and
+   * release buffers it opened during `activate`.
+   */
+  deactivate?: () => void | Promise<void>;
+}
+
+export interface ExtensionDeactivationFailure {
+  layer: ExtensionLayer;
+  name: string;
+  error: string;
+}
+
+export interface ExtensionDeactivationResult {
+  /** Count of loaded extensions whose `deactivate` hook ran without throwing. */
+  deactivated: number;
+  warnings: string[];
+  failed: ExtensionDeactivationFailure[];
 }
 
 export interface ServiceOverrideResult {

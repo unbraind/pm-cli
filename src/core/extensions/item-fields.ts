@@ -1,4 +1,5 @@
 import type { ExtensionRegistrationRegistry } from "./loader.js";
+import { normalizeItemFieldType, type KnownItemFieldType } from "./item-field-types.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
 
@@ -12,21 +13,11 @@ function normalizeFieldName(value: unknown): string | null {
   return normalized.length > 0 ? normalized : null;
 }
 
-function normalizeFieldType(value: unknown): "string" | "number" | "boolean" | "array" | "object" | null {
+function normalizeFieldType(value: unknown): KnownItemFieldType | null {
   if (typeof value !== "string") {
     return null;
   }
-  const normalized = value.trim().toLowerCase();
-  if (
-    normalized === "string" ||
-    normalized === "number" ||
-    normalized === "boolean" ||
-    normalized === "array" ||
-    normalized === "object"
-  ) {
-    return normalized;
-  }
-  return null;
+  return normalizeItemFieldType(value);
 }
 
 function cloneFieldValue<T>(value: T): T {

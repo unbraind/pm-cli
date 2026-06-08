@@ -68,6 +68,10 @@ Testing helper exports (also under `@unbrained/pm-cli/sdk/testing`):
 - `activateExtensionForTest`
 - `assertPackageManifest`
 - `assertRegisteredCommandContract`
+- `assertRegisteredCommandOverride`
+- `assertRegisteredParserOverride`
+- `assertRegisteredPreflightOverride`
+- `assertRegisteredRendererOverride`
 - `assertRegisteredHook`
 - `assertRegisteredSearchProvider`
 - `assertRegisteredImporter`
@@ -259,6 +263,80 @@ Manifest typing also accepts optional `engines` metadata:
 
 Use `pm_min_version` for the loader gate. Keep `engines` as package-manager and tooling metadata.
 
+## Self-Identity and Lifecycle
+
+`activate(api)` receives a read-only `api.extension` describing the extension it
+was created for, so authors can emit self-identifying logs, gate on their own
+version, and build better error messages without re-reading the manifest:
+
+```ts
+export default defineExtension({
+  activate(api) {
+    // api.extension: { name, layer, version, capabilities, pm_min_version?, pm_max_version?, source_package? }
+    if (api.extension.version.startsWith("0.")) {
+      api.hooks.afterCommand(() => {
+        // ...pre-1.0 behaviour, labelled with api.extension.name
+      });
+    }
+  },
+});
+```
+
+`api.extension.capabilities` is filtered to the canonical capability set, and both
+the object and its `capabilities` array are frozen.
+
+Modules may also export an optional VS Code-style `deactivate` teardown hook. The
+host runs it on shutdown/reload — the long-running MCP server invokes it between
+native-action requests — so an extension can close connections, clear timers, and
+release buffers opened during `activate`. `deactivate` runs only for extensions
+that activated successfully (a failed `activate` never fully initialized), and
+teardowns run concurrently. Teardown is best-effort: a throwing `deactivate` is
+recorded as a warning, never propagated, so one extension cannot block another's
+cleanup.
+
+```ts
+export default defineExtension({
+  activate(api) {
+    /* open resources */
+  },
+  async deactivate() {
+    /* close connections, flush sinks, clear timers */
+  },
+});
+```
+
+## Flag Contracts
+
+`FlagDefinition` (used by `registerFlags` and inline command `flags`) supports the
+same list/default semantics as core flags:
+
+- `value_type` is the canonical coercion kind (`string` | `number` | `boolean`;
+  the aliases `int`/`integer`/`float` and `bool` are also accepted). The
+  deprecated `type` alias is still read, but `value_type` wins when both are set
+  (`value_type ?? type`). An unrecognized value type is rejected at registration.
+- `list: true` makes a repeated, comma-joined flag accumulate into an array —
+  parity with core list flags such as `--tags`. `--scope a,b --scope c` resolves
+  to `["a", "b", "c"]`, with each element coerced by `value_type`.
+- `default` (a scalar, or an array of scalars for a `list` flag) is applied when
+  the flag is omitted; for a `list` flag the default is flattened into the
+  accumulated array exactly like a provided value — comma-joined strings (e.g.
+  `default: "a,b"` or `default: ["a,b", "c"]`) are split into elements. A default
+  that would not cleanly coerce under the declared `value_type` (e.g.
+  `value_type: "number", default: "abc"`) is rejected at registration.
+
+```ts
+api.registerFlags("report", [
+  { long: "--scope", value_type: "string", list: true, default: "all" },
+  { long: "--limit", value_type: "number", default: 20 },
+]);
+```
+
+`registerItemFields` validates each declared field `type` against the canonical
+coercion kinds (`string`, `number`, `boolean`, `array`, `object`) at activation.
+A typo fails activation with a did-you-mean hint (e.g. `type: "strnig"` →
+`Did you mean "string"?`) instead of silently passing and failing opaquely at use
+time.
+
 ## Expected CLI Errors
 
 Package commands should throw expected user/action errors with the public SDK shape so the CLI can preserve exit codes and Sentry can filter expected retry failures:
@@ -406,6 +484,26 @@ const hook = assertRegisteredHook(activation.hooks, {
   extensionName: "my-ext",
 });
 // hook.run is the registered OnWriteHook handler
+```
+
+Override registrations from `registerCommand(command, override)`, `registerParser`,
+`registerPreflight`, and `registerRenderer` live on `activation.commands`,
+`activation.parsers`, `activation.preflight`, and `activation.renderers` (not the
+registration registry). Each override helper takes the matching registry and
+returns the registered entry (so you can invoke `entry.run` directly):
+
+```ts
+import {
+  assertRegisteredCommandOverride,
+  assertRegisteredParserOverride,
+  assertRegisteredPreflightOverride,
+  assertRegisteredRendererOverride,
+} from "@unbrained/pm-cli/sdk/testing";
+
+assertRegisteredCommandOverride(activation.commands, { command: "list" });
+assertRegisteredParserOverride(activation.parsers, { command: "list", extensionName: "my-ext" });
+assertRegisteredPreflightOverride(activation.preflight); // preflight overrides are global (no command)
+assertRegisteredRendererOverride(activation.renderers, { format: "toon" });
 ```
 
 The bundled `pm-lifecycle-hooks` package is the first-party hooks exemplar. It

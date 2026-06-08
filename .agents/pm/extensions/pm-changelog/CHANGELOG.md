@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.6.8 - 2026-06-08
+
+### Fixed
+
+- Classifier misroutes feature command names containing remove/delete to Removed section ([pmc-ph6q](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-ph6q.toon))
+
 ## 2026.6.7 - 2026-06-07
 
 ### Added

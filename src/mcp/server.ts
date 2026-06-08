@@ -2,7 +2,17 @@
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 import {
+  createEmptyExtensionCommandRegistry,
+  createEmptyExtensionHookRegistry,
+  createEmptyExtensionParserRegistry,
+  createEmptyExtensionPreflightRegistry,
+  createEmptyExtensionRegistrationRegistry,
+  createEmptyExtensionRendererRegistry,
+  createEmptyExtensionServiceRegistry,
+} from "../core/extensions/extension-registries.js";
+import {
   activateExtensions,
+  deactivateExtensions,
   loadExtensions,
   runActiveCommandHandler,
   setActiveExtensionCommands,
@@ -646,41 +656,65 @@ async function runDynamicExtensionAction(
     cwd: process.cwd(),
     noExtensions: false,
   });
-  const activationResult = await activateExtensions({
-    ...loadResult,
-    loaded: loadResult.loaded,
-  });
+  // This MCP server reloads + reactivates extensions per native-action request,
+  // so each request is a fresh activation cycle. Run the extension teardown
+  // lifecycle in a finally to release any resources opened during activate(),
+  // matching the long-running-server reload contract (pm-k1e4).
+  let activationResult: Awaited<ReturnType<typeof activateExtensions>> | undefined;
+  try {
+    activationResult = await activateExtensions({
+      ...loadResult,
+      loaded: loadResult.loaded,
+    });
 
-  const normalizedAction = normalizeActionName(action);
-  const definition = activationResult.registrations.commands.find((entry) =>
-    normalizeActionName(entry.action) === normalizedAction
-  );
-  const command = definition?.command ??
-    activationResult.commands.handlers.find((entry) => normalizeActionName(entry.command) === normalizedAction)?.command;
-  if (!command) {
-    throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
+    const normalizedAction = normalizeActionName(action);
+    const definition = activationResult.registrations.commands.find((entry) =>
+      normalizeActionName(entry.action) === normalizedAction
+    );
+    const command = definition?.command ??
+      activationResult.commands.handlers.find((entry) => normalizeActionName(entry.command) === normalizedAction)?.command;
+    if (!command) {
+      throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
+    }
+
+    setActiveExtensionHooks(activationResult.hooks);
+    setActiveExtensionCommands(activationResult.commands);
+    setActiveExtensionParsers(activationResult.parsers);
+    setActiveExtensionPreflight(activationResult.preflight);
+    setActiveExtensionServices(activationResult.services);
+    setActiveExtensionRenderers(activationResult.renderers);
+    setActiveExtensionRegistrations(activationResult.registrations);
+
+    const handlerResult = await runActiveCommandHandler({
+      command: normalizeCommandPath(command),
+      args: readStringArray(options.args ?? args.args),
+      options: extensionOptionsFromArgs(args, options),
+      global,
+      pm_root: pmRoot,
+    });
+    if (!handlerResult.handled) {
+      const suffix = handlerResult.warnings.length > 0 ? ` (${handlerResult.warnings.join(", ")})` : "";
+      throw new PmCliError(`Unsupported native pm action: ${action}${suffix}`, 64);
+    }
+    return handlerResult.result;
+  } finally {
+    // Reset the process-global active registries FIRST so a torn-down extension's
+    // overrides/hooks cannot leak into a later request in this long-running server
+    // (e.g. a subsequent pm_list/pm_create) even if teardown below misbehaves.
+    setActiveExtensionHooks(createEmptyExtensionHookRegistry());
+    setActiveExtensionCommands(createEmptyExtensionCommandRegistry());
+    setActiveExtensionParsers(createEmptyExtensionParserRegistry());
+    setActiveExtensionPreflight(createEmptyExtensionPreflightRegistry());
+    setActiveExtensionServices(createEmptyExtensionServiceRegistry());
+    setActiveExtensionRenderers(createEmptyExtensionRendererRegistry());
+    setActiveExtensionRegistrations(createEmptyExtensionRegistrationRegistry());
+    // Best-effort teardown of extensions that activated successfully. Skip
+    // entirely if activation itself never produced a result (nothing was set
+    // up), and guard so an unexpected throw cannot escape the finally.
+    if (activationResult) {
+      await deactivateExtensions(loadResult, activationResult).catch(() => undefined);
+    }
   }
-
-  setActiveExtensionHooks(activationResult.hooks);
-  setActiveExtensionCommands(activationResult.commands);
-  setActiveExtensionParsers(activationResult.parsers);
-  setActiveExtensionPreflight(activationResult.preflight);
-  setActiveExtensionServices(activationResult.services);
-  setActiveExtensionRenderers(activationResult.renderers);
-  setActiveExtensionRegistrations(activationResult.registrations);
-
-  const handlerResult = await runActiveCommandHandler({
-    command: normalizeCommandPath(command),
-    args: readStringArray(options.args ?? args.args),
-    options: extensionOptionsFromArgs(args, options),
-    global,
-    pm_root: pmRoot,
-  });
-  if (!handlerResult.handled) {
-    const suffix = handlerResult.warnings.length > 0 ? ` (${handlerResult.warnings.join(", ")})` : "";
-    throw new PmCliError(`Unsupported native pm action: ${action}${suffix}`, 64);
-  }
-  return handlerResult.result;
 }
 
 async function withCwd<T>(cwd: unknown, run: () => Promise<T>): Promise<T> {

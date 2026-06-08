@@ -7,6 +7,8 @@ import { resolvePmPackageRootFromModule } from "../packages/root.js";
 import { resolveGlobalPmRoot } from "../store/paths.js";
 import type { GlobalOptions } from "../shared/command-types.js";
 import { asRecordLoose } from "../shared/primitives.js";
+import { flattenFlagListValue, isFlagDefaultValueCoercible, resolveFlagValueKind } from "./flag-value-types.js";
+import { KNOWN_ITEM_FIELD_TYPES, normalizeItemFieldType, suggestKnownItemFieldType } from "./item-field-types.js";
 import type { PmSettings } from "../../types/index.js";
 // Cohesive helper groups now live in sibling modules. They are imported for the
 // discovery/activation code that stays here and re-exported below so existing
@@ -76,8 +78,12 @@ export {
   runRendererOverride,
 } from "./extension-hook-runtime.js";
 import {
+  KNOWN_EXTENSION_CAPABILITIES,
   KNOWN_EXTENSION_SERVICE_NAMES,
   createDefaultExtensionGovernancePolicy,
+  type ExtensionDeactivationFailure,
+  type ExtensionDeactivationResult,
+  type ExtensionSelfIdentity,
   type ExtensionCapability,
   type ExtensionPolicyMode,
   type ExtensionPolicySurface,
@@ -987,6 +993,22 @@ export async function loadExtensions(options: DiscoverExtensionsOptions): Promis
 
 type HookName = keyof ExtensionHookRegistry;
 
+function toActivatableExtension(source: Record<string, unknown>): ActivatableExtension {
+  // Bind to `source` so a module/default-export authored with methods (or a class
+  // instance) keeps its `this` across both lifecycle calls — `activate` is a
+  // method call on a fresh object and `deactivate` is invoked bare, so without
+  // binding the two would see different (or undefined) `this`.
+  const activate = source.activate as ActivatableExtension["activate"];
+  const activatable: ActivatableExtension = {
+    activate: activate.bind(source),
+  };
+  if (typeof source.deactivate === "function") {
+    const deactivate = source.deactivate as NonNullable<ActivatableExtension["deactivate"]>;
+    activatable.deactivate = deactivate.bind(source);
+  }
+  return activatable;
+}
+
 function resolveActivatableExtension(module: unknown): ActivatableExtension | null {
   const moduleRecord = asRecordLoose(module);
   if (!moduleRecord) {
@@ -994,19 +1016,69 @@ function resolveActivatableExtension(module: unknown): ActivatableExtension | nu
   }
 
   if (typeof moduleRecord.activate === "function") {
-    return {
-      activate: moduleRecord.activate as ActivatableExtension["activate"],
-    };
+    return toActivatableExtension(moduleRecord);
   }
 
   const defaultExport = asRecordLoose(moduleRecord.default);
   if (defaultExport && typeof defaultExport.activate === "function") {
-    return {
-      activate: defaultExport.activate as ActivatableExtension["activate"],
-    };
+    return toActivatableExtension(defaultExport);
   }
 
   return null;
+}
+
+/**
+ * Run the optional `deactivate` teardown hook for every loaded extension that
+ * exports one. Best-effort: a throwing teardown is captured as a warning and a
+ * failure entry rather than propagated, so one extension cannot block another's
+ * cleanup. Hosts call this on shutdown/reload (e.g. the MCP server between
+ * native-action requests) to release resources opened during `activate`.
+ *
+ * Pass the `activationResult` to skip extensions whose `activate` failed — they
+ * never fully initialized, so (VS Code-style) their `deactivate` must not run.
+ * Teardowns run concurrently so one slow hook cannot serialize the rest; the
+ * returned warnings/failures preserve loaded order.
+ */
+export async function deactivateExtensions(
+  loadResult: ExtensionLoadResult,
+  activationResult?: Pick<ExtensionActivationResult, "failed">,
+): Promise<ExtensionDeactivationResult> {
+  const failedActivationKeys = new Set(
+    (activationResult?.failed ?? []).map((entry) => `${entry.layer}:${entry.name}`),
+  );
+  const targets: Array<{ extension: LoadedExtension; deactivate: () => void | Promise<void> }> = [];
+  for (const extension of loadResult.loaded) {
+    if (failedActivationKeys.has(`${extension.layer}:${extension.name}`)) {
+      continue;
+    }
+    const activatable = resolveActivatableExtension(extension.module);
+    if (!activatable || typeof activatable.deactivate !== "function") {
+      continue;
+    }
+    targets.push({ extension, deactivate: activatable.deactivate });
+  }
+  const outcomes = await Promise.all(
+    targets.map(async ({ extension, deactivate }) => {
+      try {
+        await deactivate();
+        return { ok: true as const };
+      } catch (error: unknown) {
+        return { ok: false as const, layer: extension.layer, name: extension.name, error: formatUnknownError(error) };
+      }
+    }),
+  );
+  const warnings: string[] = [];
+  const failed: ExtensionDeactivationFailure[] = [];
+  let deactivated = 0;
+  for (const outcome of outcomes) {
+    if (outcome.ok) {
+      deactivated += 1;
+      continue;
+    }
+    warnings.push(`extension_deactivate_failed:${outcome.layer}:${outcome.name}`);
+    failed.push({ layer: outcome.layer, name: outcome.name, error: outcome.error });
+  }
+  return { deactivated, warnings, failed };
 }
 
 function isOutputRendererFormat(value: string): value is OutputRendererFormat {
@@ -1159,6 +1231,27 @@ function assertOptionalStringField(name: string, value: unknown): void {
   }
 }
 
+function isFlagDefaultScalar(value: unknown): boolean {
+  return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
+}
+
+function assertOptionalFlagDefaultField(name: string, value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const [index, item] of value.entries()) {
+      if (!isFlagDefaultScalar(item)) {
+        throw new TypeError(`${name}[${index}] must be a string, number, or boolean`);
+      }
+    }
+    return;
+  }
+  if (!isFlagDefaultScalar(value)) {
+    throw new TypeError(`${name} must be a string, number, or boolean, or an array of these when provided`);
+  }
+}
+
 function assertOptionalStringArrayField(name: string, value: unknown): void {
   if (value === undefined) {
     return;
@@ -1285,6 +1378,46 @@ function validateFlagDefinitions(flags: unknown): void {
     assertOptionalBooleanField(`registerFlags flags[${index}].required`, record.required);
     assertOptionalBooleanField(`registerFlags flags[${index}].enabled`, record.enabled);
     assertOptionalBooleanField(`registerFlags flags[${index}].visible`, record.visible);
+    assertOptionalBooleanField(`registerFlags flags[${index}].list`, record.list);
+    assertOptionalFlagDefaultField(`registerFlags flags[${index}].default`, record.default);
+    if (Array.isArray(record.default) && record.list !== true) {
+      throw new TypeError(`registerFlags flags[${index}].default cannot be an array unless list is true.`);
+    }
+    assertFlagValueTypeAndDefault(`registerFlags flags[${index}]`, record);
+  }
+}
+
+/**
+ * Reject a declared `value_type`/`type` that is not a known flag value kind, and
+ * a `default` whose value(s) would not cleanly coerce under that kind — so the
+ * typed-flag contract is enforced at registration instead of silently leaving
+ * an untyped value to surface at use time.
+ */
+function assertFlagValueTypeAndDefault(label: string, record: Record<string, unknown>): void {
+  const declaredType =
+    (typeof record.value_type === "string" ? record.value_type : undefined) ??
+    (typeof record.type === "string" ? record.type : undefined);
+  if (declaredType === undefined) {
+    return;
+  }
+  const kind = resolveFlagValueKind(declaredType);
+  if (kind === null) {
+    throw new TypeError(
+      `${label} value_type "${declaredType}" is not a known flag value type (expected one of: string, number, boolean).`,
+    );
+  }
+  if (record.default === undefined) {
+    return;
+  }
+  // For list flags, validate the default exactly as the runtime will see it —
+  // comma-joined strings and nested arrays are flattened first — so a valid
+  // default like `value_type: "number", default: "10,20"` is not wrongly rejected.
+  const defaults = record.list === true ? flattenFlagListValue(record.default) : [record.default];
+  for (const [defaultIndex, defaultValue] of defaults.entries()) {
+    if (!isFlagDefaultValueCoercible(defaultValue as string | number | boolean, kind)) {
+      const suffix = defaults.length > 1 ? `default[${defaultIndex}]` : "default";
+      throw new TypeError(`${label}.${suffix} (${JSON.stringify(defaultValue)}) is not coercible to ${kind}.`);
+    }
   }
 }
 
@@ -1295,7 +1428,15 @@ function validateItemFieldDefinitions(fields: unknown): void {
   for (const [index, raw] of fields.entries()) {
     const record = asRegistrationRecord(`registerItemFields fields[${index}]`, raw);
     assertNonEmptyString(`registerItemFields fields[${index}].name`, record.name);
-    assertNonEmptyString(`registerItemFields fields[${index}].type`, record.type);
+    const fieldType = assertNonEmptyString(`registerItemFields fields[${index}].type`, record.type);
+    if (normalizeItemFieldType(fieldType) === null) {
+      const suggestion = suggestKnownItemFieldType(fieldType);
+      const hint = suggestion ? ` Did you mean "${suggestion}"?` : "";
+      throw new TypeError(
+        `registerItemFields fields[${index}].type "${fieldType}" is not a known field type ` +
+          `(expected one of: ${KNOWN_ITEM_FIELD_TYPES.join(", ")}).${hint}`,
+      );
+    }
     assertOptionalBooleanField(`registerItemFields fields[${index}].optional`, record.optional);
   }
 }
@@ -1450,6 +1591,19 @@ function createExtensionApi(
   activationWarnings: string[],
   policy: NormalizedExtensionPolicy,
 ): ExtensionApi {
+  const selfIdentity: ExtensionSelfIdentity = Object.freeze({
+    name: extension.name,
+    layer: extension.layer,
+    version: extension.version,
+    capabilities: Object.freeze(
+      (extension.capabilities ?? []).filter((capability): capability is ExtensionCapability =>
+        (KNOWN_EXTENSION_CAPABILITIES as readonly string[]).includes(capability),
+      ),
+    ) as readonly ExtensionCapability[],
+    pm_min_version: extension.pm_min_version,
+    pm_max_version: extension.pm_max_version,
+    source_package: extension.source_package,
+  });
   const extensionRef: PolicyExtensionRef = {
     layer: extension.layer,
     name: extension.name,
@@ -2017,6 +2171,7 @@ function createExtensionApi(
   };
 
   return {
+    extension: selfIdentity,
     registerCommand,
     registerParser,
     registerPreflight,

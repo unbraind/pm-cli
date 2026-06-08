@@ -385,7 +385,7 @@ describe("extension command runtime", () => {
         total: 9,
         scope: "project",
         installable_resource_kinds: ["extensions"],
-        metadata_only_resource_kinds: ["docs", "examples"],
+        metadata_only_resource_kinds: ["docs", "examples", "assets", "prompts"],
         packages: [
           {
             alias: "beads",

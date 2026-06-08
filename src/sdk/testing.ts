@@ -1,16 +1,25 @@
 import type {
   ExtensionActivationResult,
   ExtensionCapability,
+  ExtensionCommandRegistry,
   ExtensionGovernancePolicy,
   ExtensionHookRegistry,
   ExtensionLayer,
   ExtensionManifest,
+  ExtensionParserRegistry,
+  ExtensionPreflightRegistry,
   ExtensionRegistrationRegistry,
+  ExtensionRendererRegistry,
   FlagDefinition,
+  OutputRendererFormat,
   RegisteredExtensionCommandDefinition,
+  RegisteredExtensionCommandOverride,
   RegisteredExtensionExporter,
   RegisteredExtensionHook,
   RegisteredExtensionImporter,
+  RegisteredExtensionParserOverride,
+  RegisteredExtensionPreflightOverride,
+  RegisteredExtensionRendererOverride,
   RegisteredExtensionSchemaFieldDefinitions,
   RegisteredExtensionSchemaItemTypeDefinitions,
   RegisteredExtensionSearchProvider,
@@ -106,6 +115,25 @@ export interface RegisteredItemTypeExpectation {
 export interface RegisteredItemTypeAssertion {
   registration: RegisteredExtensionSchemaItemTypeDefinitions;
   itemType: SchemaItemTypeDefinition;
+}
+
+export interface RegisteredCommandOverrideExpectation {
+  command: string;
+  extensionName?: string;
+}
+
+export interface RegisteredParserOverrideExpectation {
+  command: string;
+  extensionName?: string;
+}
+
+export interface RegisteredPreflightOverrideExpectation {
+  extensionName?: string;
+}
+
+export interface RegisteredRendererOverrideExpectation {
+  format: OutputRendererFormat;
+  extensionName?: string;
 }
 
 export type PackageManifestResourceExpectation = Partial<Record<PmPackageResourceKind, readonly string[]>>;
@@ -577,4 +605,133 @@ export function assertRegisteredItemType(
   }
 
   return match;
+}
+
+/**
+ * Assert that an activated extension command registry contains a command
+ * override registered via `api.registerCommand(command, override)` (optionally
+ * scoped to a specific extension).
+ *
+ * Command overrides are surfaced via `ExtensionActivationResult.commands`, not
+ * the command registration registry, so this helper accepts an
+ * `ExtensionCommandRegistry`.
+ */
+export function assertRegisteredCommandOverride(
+  commands: ExtensionCommandRegistry,
+  expectation: RegisteredCommandOverrideExpectation,
+): RegisteredExtensionCommandOverride {
+  const expectedCommand = normalizeSdkCommandName(expectation.command);
+  if (expectedCommand.length === 0) {
+    throw new Error("Expected command name must be a non-empty string");
+  }
+
+  const candidates = commands.overrides.filter((entry) => entry.command === expectedCommand);
+  const override = expectation.extensionName
+    ? candidates.find((entry) => entry.name === expectation.extensionName)
+    : candidates[0];
+  if (!override) {
+    const available = sortedUnique(commands.overrides.map((entry) => entry.command));
+    throw new Error(
+      `Expected command override "${expectedCommand}"${extensionNameSuffix(
+        expectation.extensionName,
+      )} to be registered. Available command overrides: ${formatAvailable(available)}`,
+    );
+  }
+
+  return override;
+}
+
+/**
+ * Assert that an activated extension parser registry contains a parser override
+ * registered via `api.registerParser(command, override)` (optionally scoped to
+ * a specific extension).
+ *
+ * Parser overrides are surfaced via `ExtensionActivationResult.parsers`, not the
+ * command registration registry, so this helper accepts an
+ * `ExtensionParserRegistry`.
+ */
+export function assertRegisteredParserOverride(
+  parsers: ExtensionParserRegistry,
+  expectation: RegisteredParserOverrideExpectation,
+): RegisteredExtensionParserOverride {
+  const expectedCommand = normalizeSdkCommandName(expectation.command);
+  if (expectedCommand.length === 0) {
+    throw new Error("Expected command name must be a non-empty string");
+  }
+
+  const candidates = parsers.overrides.filter((entry) => entry.command === expectedCommand);
+  const override = expectation.extensionName
+    ? candidates.find((entry) => entry.name === expectation.extensionName)
+    : candidates[0];
+  if (!override) {
+    const available = sortedUnique(parsers.overrides.map((entry) => entry.command));
+    throw new Error(
+      `Expected parser override "${expectedCommand}"${extensionNameSuffix(
+        expectation.extensionName,
+      )} to be registered. Available parser overrides: ${formatAvailable(available)}`,
+    );
+  }
+
+  return override;
+}
+
+/**
+ * Assert that an activated extension preflight registry contains a preflight
+ * override registered via `api.registerPreflight(override)` (optionally scoped
+ * to a specific extension).
+ *
+ * Preflight overrides are global (they run for every command and carry no
+ * `command` field), so the expectation only accepts an optional
+ * `extensionName`. Preflight overrides are surfaced via
+ * `ExtensionActivationResult.preflight`.
+ */
+export function assertRegisteredPreflightOverride(
+  preflight: ExtensionPreflightRegistry,
+  expectation: RegisteredPreflightOverrideExpectation = {},
+): RegisteredExtensionPreflightOverride {
+  const override = expectation.extensionName
+    ? preflight.overrides.find((entry) => entry.name === expectation.extensionName)
+    : preflight.overrides[0];
+  if (!override) {
+    const available = sortedUnique(preflight.overrides.map((entry) => entry.name));
+    throw new Error(
+      `Expected a preflight override${extensionNameSuffix(
+        expectation.extensionName,
+      )} to be registered. Available preflight overrides: ${formatAvailable(available)}`,
+    );
+  }
+
+  return override;
+}
+
+/**
+ * Assert that an activated extension renderer registry contains a renderer
+ * override registered via `api.registerRenderer(format, renderer)` for the
+ * expected output format (optionally scoped to a specific extension).
+ *
+ * Renderer overrides are surfaced via `ExtensionActivationResult.renderers`.
+ */
+export function assertRegisteredRendererOverride(
+  renderers: ExtensionRendererRegistry,
+  expectation: RegisteredRendererOverrideExpectation,
+): RegisteredExtensionRendererOverride {
+  const expectedFormat = normalizeSdkIdentifier(expectation.format);
+  if (expectedFormat.length === 0) {
+    throw new Error("Expected renderer format must be a non-empty string");
+  }
+
+  const candidates = renderers.overrides.filter((entry) => entry.format === expectedFormat);
+  const override = expectation.extensionName
+    ? candidates.find((entry) => entry.name === expectation.extensionName)
+    : candidates[0];
+  if (!override) {
+    const available = sortedUnique(renderers.overrides.map((entry) => entry.format));
+    throw new Error(
+      `Expected renderer override "${expectedFormat}"${extensionNameSuffix(
+        expectation.extensionName,
+      )} to be registered. Available renderer overrides: ${formatAvailable(available)}`,
+    );
+  }
+
+  return override;
 }

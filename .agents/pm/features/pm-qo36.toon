@@ -2,14 +2,15 @@ id: pm-qo36
 title: "Extension API missing self-identity accessor: extensions cannot read their own name, layer, or version at activation"
 description: "The ExtensionApi interface (extension-types.ts line 754) exposes only register* methods and hooks.*. An extension's activate(api) function has no way to read its own manifest metadata (name, version, layer) from the api object. Authors must either embed it redundantly in-module or access the file-system manifest. A read-only `api.manifest` or `api.extension` property (name, version, layer, capabilities, pm_min_version) would allow extensions to emit self-identifying logs, gate on their own version, and produce better error messages without duplicating manifest data."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[4]: "area:extensions","area:sdk",dx,extensibility
 created_at: "2026-06-07T10:05:01.492Z"
-updated_at: "2026-06-07T10:22:14.238Z"
+updated_at: "2026-06-08T13:51:50.961Z"
 author: audit-platform-agent
 acceptance_criteria: "- Extension `activate(api)` exposes the extension's own name, layer, and version (e.g. api.extension)\n- Available at activation without re-reading the manifest\n- SDK types + docs updated; covered by a test"
 parent: pm-ugqx
 risk: low
 confidence: high
+close_reason: ExtensionApi now exposes read-only frozen api.extension self-identity (name/layer/version/capabilities/pm_min_version/pm_max_version/source_package) built in createExtensionApi. Documented + tested.
 body: ""
