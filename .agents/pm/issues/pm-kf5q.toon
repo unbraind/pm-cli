@@ -1,0 +1,25 @@
+id: pm-kf5q
+title: Harden history replay and compact diff against malformed patch entries
+description: "Sentry PM-CLI-1G and PM-CLI-1H show TypeError crashes when history replay/compact diff receives an entry whose patch is missing or not iterable. Duplicate check: searched for Sentry history diff replay patch undefined map buildDiffEntries; only closed history/replay items matched, so this is a new post-merge hotfix under storage/history."
+type: Issue
+status: closed
+priority: 1
+tags[4]: "area:history","area:observability",hotfix,sentry
+created_at: "2026-06-09T19:56:03.514Z"
+updated_at: "2026-06-09T20:01:20.943Z"
+author: codex-implementation-agent
+parent: pm-o2kc
+resolution: Hardened history replay and compact history diff against missing or malformed patch arrays that caused Sentry PM-CLI-1G and PM-CLI-1H.
+expected_result: Malformed legacy history patch fields no longer crash history replay or compact history output.
+actual_result: normalizeReplayPatchOps now returns a safe filtered array for unknown patch payloads; compact history uses it and tests cover missing patch arrays.
+comments[1]{created_at,author,text}:
+  "2026-06-09T20:01:20.059Z",codex-implementation-agent,"Evidence: fixed Sentry PM-CLI-1G/PM-CLI-1H by normalizing non-array/malformed history patch payloads to a safe filtered patch op list and using the same normalizer for compact history diff entries. Verification passed: focused history tests (2 files, 45 tests), pnpm typecheck, pnpm security:scan, pnpm audit --audit-level low, and full coverage (149 files, 2623 tests, 100% statements/branches/functions/lines)."
+files[4]{path,scope,note}:
+  src/cli/commands/history.ts,project,compact history diff should tolerate malformed patch fields
+  src/core/history/replay.ts,project,normalize replay patch inputs defensively
+  tests/unit/history-activity-command.spec.ts,project,compact history regression for missing patch arrays
+  tests/unit/history-replay.spec.ts,project,regression coverage for malformed replay patch payloads
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/history-replay.spec.ts tests/unit/history-activity-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Fixed malformed history patch handling and verified focused tests plus full coverage.
+body: ""

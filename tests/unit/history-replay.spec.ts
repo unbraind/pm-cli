@@ -109,6 +109,18 @@ describe("history replay helpers", () => {
     ]);
   });
 
+  it("drops malformed patch payloads before replay normalization", () => {
+    expect(normalizeReplayPatchOps(undefined)).toEqual([]);
+    expect(normalizeReplayPatchOps({ op: "add", path: "/body" })).toEqual([]);
+    expect(
+      normalizeReplayPatchOps([
+        undefined,
+        { op: "add" },
+        { op: "add", path: "/front_matter/status", value: "open" },
+      ]),
+    ).toEqual([{ op: "add", path: "/metadata/status", value: "open", from: undefined }]);
+  });
+
   it("applies a valid patch and returns the new document", () => {
     const result = tryApplyReplayPatch({ metadata: {}, body: "" }, [
       { op: "add", path: "/metadata/id", value: "pm-x" },

@@ -182,6 +182,32 @@ describe("runHistory and runActivity", () => {
     });
   });
 
+  it("renders compact history when legacy entries have missing patch arrays", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Legacy Missing Patch");
+      const historyPath = path.join(context.pmPath, "history", `${id}.jsonl`);
+      await appendFile(
+        historyPath,
+        `${JSON.stringify({
+          ts: "2026-01-01T00:00:00.000Z",
+          author: "legacy-importer",
+          op: "legacy-import",
+          before_hash: "0".repeat(64),
+          after_hash: "0".repeat(64),
+        })}\n`,
+        "utf8",
+      );
+
+      const compact = await runHistory(id, { compact: true }, { path: context.pmPath });
+      const legacyEntry = compact.compact_history?.find((entry) => entry.op === "legacy-import");
+      expect(legacyEntry).toMatchObject({
+        author: "legacy-importer",
+        patch_ops: 0,
+        changed_fields: [],
+      });
+    });
+  });
+
   it("supports additive verification output for history hash chains", async () => {
     await withTempPmPath(async (context) => {
       const id = createItem(context, "History Verify");
