@@ -4,6 +4,9 @@
 
 ### Added
 
+- Embedding provider migration guide + pm reindex --migrate: automated full reindex on model/provider change ([pm-wt0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-wt0g.toon))
+- Incremental reindex --mode semantic --stale-only: skip already-up-to-date vectors ([pm-o3nr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-o3nr.toon))
+- Settings read cache: memoize readSettingsWithMetadata across the 3-5 reads per command ([pm-2bn5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2bn5.toon))
 - Add MCP pm\_context, pm\_contracts, pm\_plan, pm\_health integration tests ([pm-8d00](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8d00.toon))
 - First-party exemplar package for registerCommand + registerFlags + registerParser \(commands capability pattern\) ([pm-1js9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1js9.toon))
 - Add importer/exporter options arg and command-def examples to SDK.md ([pm-btwe](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-btwe.toon))
@@ -12,6 +15,7 @@
 
 ### Fixed
 
+- Telemetry queue max\_attempts backlog health warning: surface items near retry exhaustion in pm health ([pm-irc7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-irc7.toon))
 - Harden history replay and compact diff against malformed patch entries ([pm-kf5q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kf5q.toon))
 - MCP server: request-scoped extension registries \(process-global set/clear can race under concurrent native-action requests\) ([pm-bl6m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bl6m.toon))
 - Fix Windows Nightly smoke cleanup helper import ([pm-uzty](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-uzty.toon))
@@ -23,6 +27,8 @@
 
 ### Other
 
+- Run verification matrix and temp-dir smoke for active cycle ([pm-rav7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-rav7.toon))
+- Upgrade pm-changelog to 2026.6.9 and validate changelog fidelity ([pm-kx7v](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-kx7v.toon))
 - Close stale GH issues, clarify dedupe-audit docs, and bump @sentry/node ([pm-utd6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-utd6.toon))
 - SDK author-ergonomics batch: extension-manifest JSON Schema, getWorkspaceContracts memoization, FlagDefinition type/value\_type unification ([pm-l0jd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-l0jd.toon))
 - Document pm-linked-test-adapters package in EXTENSIONS.md and TESTING.md ([pm-yj8n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-yj8n.toon))
