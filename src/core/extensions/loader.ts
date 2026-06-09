@@ -1049,7 +1049,7 @@ export async function deactivateExtensions(
   activationResult?: Pick<ExtensionActivationResult, "failed">,
   options: ExtensionDeactivationOptions = {},
 ): Promise<ExtensionDeactivationResult> {
-  const timeoutMs = normalizeExtensionDeactivateTimeout(options.deactivate_timeout_ms);
+  const timeoutMs = normalizeExtensionDeactivateTimeout(options?.deactivate_timeout_ms);
   const failedActivationKeys = new Set(
     (activationResult?.failed ?? []).map((entry) => `${entry.layer}:${entry.name}`),
   );

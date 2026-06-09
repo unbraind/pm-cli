@@ -4171,6 +4171,18 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
     ]);
   });
 
+  it("treats a null deactivate options object as default timeout options for JavaScript consumers", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate() {},
+        deactivate() {},
+      },
+      { name: "null-options", layer: "project" },
+    );
+    const result = await deactivateExtensions(loadResult, undefined, null as never);
+    expect(result).toEqual({ deactivated: 1, warnings: [], failed: [] });
+  });
+
   it("consumes late deactivate rejections after timeout", async () => {
     const loadResult = inMemoryLoadResult(
       {
