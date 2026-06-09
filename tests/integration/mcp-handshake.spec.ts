@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { handleRequest, processRpcLine } from "../../src/mcp/server.js";
 import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
 import { PM_TOOL_ACTIONS } from "../../src/sdk/cli-contracts/enum-contracts.js";
+import { assertPmContextDepthProjection } from "../helpers/mcp-context-depth.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 // pm-kl11: MCP protocol handshake coverage. These tests drive handleRequest
@@ -133,84 +134,7 @@ describe("MCP protocol handshake", () => {
   });
 
   it("pm_context defaults to a brief compact snapshot and honors depth overrides", async () => {
-    await withTempPmPath(async (context) => {
-      const create = context.runCli(
-        [
-          "create",
-          "--json",
-          "--title",
-          "MCP context projection target",
-          "--description",
-          "MCP context projection target description",
-          "--type",
-          "Task",
-          "--status",
-          "open",
-          "--author",
-          "mcp-test",
-        ],
-        { expectJson: true },
-      );
-      expect(create.code).toBe(0);
-      const id = (create.json as { item: { id: string } }).item.id;
-
-      const brief = (await handleRequest({
-        jsonrpc: "2.0",
-        id: 68,
-        method: "tools/call",
-        params: { name: "pm_context", arguments: { path: context.pmPath } },
-      })) as {
-        structuredContent?: {
-          result?: {
-            depth?: string;
-            summary?: { active_items?: number; open?: number; low_level?: number };
-            low_level?: Array<Record<string, unknown>>;
-          };
-        };
-      };
-      expect(brief.structuredContent?.result?.depth).toBe("brief");
-      expect(brief.structuredContent?.result?.summary).toMatchObject({
-        active_items: 1,
-        open: 1,
-        low_level: 1,
-      });
-      expect(brief.structuredContent?.result?.low_level).toEqual([
-        expect.objectContaining({
-          id,
-          title: "MCP context projection target",
-          type: "Task",
-          status: "open",
-        }),
-      ]);
-      expect(brief.structuredContent?.result?.low_level?.[0]).not.toHaveProperty("description");
-      expect(brief.structuredContent?.result?.low_level?.[0]).not.toHaveProperty("body");
-
-      const deep = (await handleRequest({
-        jsonrpc: "2.0",
-        id: 69,
-        method: "tools/call",
-        params: { name: "pm_context", arguments: { path: context.pmPath, options: { depth: "deep" } } },
-      })) as {
-        structuredContent?: {
-          result?: {
-            depth?: string;
-            summary?: { active_items?: number; open?: number };
-            low_level?: Array<Record<string, unknown>>;
-          };
-        };
-      };
-      expect(deep.structuredContent?.result?.depth).toBe("deep");
-      expect(deep.structuredContent?.result?.summary).toMatchObject({
-        active_items: 1,
-        open: 1,
-      });
-      expect(deep.structuredContent?.result?.low_level).toEqual([
-        expect.objectContaining({
-          id,
-          title: "MCP context projection target",
-        }),
-      ]);
-    });
+    await withTempPmPath((context) => assertPmContextDepthProjection(context, "MCP context projection target"));
   });
 
   it("pm_health defaults to the compact summary projection and full=true opts into detail (F2)", async () => {

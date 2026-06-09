@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { handleRequest } from "../../src/mcp/server.js";
 import { writeTestExtension } from "../helpers/extensions.js";
+import { assertPmContextDepthProjection } from "../helpers/mcp-context-depth.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("MCP dynamic package actions", () => {
@@ -781,92 +782,7 @@ describe("MCP dynamic package actions", () => {
   });
 
   it("defaults pm_context to brief depth and supports explicit deeper projections", async () => {
-    await withTempPmPath(async (context) => {
-      const create = context.runCli([
-        "create",
-        "--json",
-        "--title",
-        "Context projection probe",
-        "--description",
-        "Context projection probe description",
-        "--type",
-        "Task",
-        "--status",
-        "open",
-        "--author",
-        "mcp-test",
-      ], { expectJson: true });
-      expect(create.code).toBe(0);
-      const id = (create.json as { item: { id: string } }).item.id;
-
-      const compact = await handleRequest({
-        jsonrpc: "2.0",
-        id: 12,
-        method: "tools/call",
-        params: {
-          name: "pm_context",
-          arguments: {
-            path: context.pmPath,
-          },
-        },
-      });
-      expect(compact?.isError).not.toBe(true);
-      const compactResult = (compact?.structuredContent as {
-        result?: {
-          depth?: string;
-          summary?: { active_items?: number; open?: number; low_level?: number };
-          low_level?: Array<Record<string, unknown>>;
-        };
-      } | undefined)?.result;
-      expect(compactResult?.depth).toBe("brief");
-      expect(compactResult?.summary).toMatchObject({
-        active_items: 1,
-        open: 1,
-        low_level: 1,
-      });
-      expect(compactResult?.low_level).toEqual([
-        expect.objectContaining({
-          id,
-          title: "Context projection probe",
-          type: "Task",
-          status: "open",
-        }),
-      ]);
-      expect(compactResult?.low_level?.[0]).not.toHaveProperty("description");
-      expect(compactResult?.low_level?.[0]).not.toHaveProperty("body");
-
-      const deep = await handleRequest({
-        jsonrpc: "2.0",
-        id: 13,
-        method: "tools/call",
-        params: {
-          name: "pm_context",
-          arguments: {
-            path: context.pmPath,
-            options: { depth: "deep" },
-          },
-        },
-      });
-      expect(deep?.isError).not.toBe(true);
-      const deepResult = (deep?.structuredContent as {
-        result?: {
-          depth?: string;
-          summary?: { active_items?: number; open?: number };
-          low_level?: Array<Record<string, unknown>>;
-        };
-      } | undefined)?.result;
-      expect(deepResult?.depth).toBe("deep");
-      expect(deepResult?.summary).toMatchObject({
-        active_items: 1,
-        open: 1,
-      });
-      expect(deepResult?.low_level).toEqual([
-        expect.objectContaining({
-          id,
-          title: "Context projection probe",
-        }),
-      ]);
-    });
+    await withTempPmPath((context) => assertPmContextDepthProjection(context, "Context projection probe"));
   });
 
   it("accepts top-level Plan step references through the narrow MCP tool", async () => {
