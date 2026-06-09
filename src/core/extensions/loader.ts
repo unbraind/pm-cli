@@ -994,6 +994,7 @@ export async function loadExtensions(options: DiscoverExtensionsOptions): Promis
 
 type HookName = keyof ExtensionHookRegistry;
 const DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS = 5_000;
+const MAX_EXTENSION_DEACTIVATE_TIMEOUT_MS = 2_147_483_647;
 
 function toActivatableExtension(source: Record<string, unknown>): ActivatableExtension {
   // Bind to `source` so a module/default-export authored with methods (or a class
@@ -1051,7 +1052,7 @@ export async function deactivateExtensions(
     typeof options.deactivate_timeout_ms === "number" &&
     Number.isFinite(options.deactivate_timeout_ms) &&
     options.deactivate_timeout_ms > 0
-      ? Math.max(1, Math.floor(options.deactivate_timeout_ms))
+      ? Math.min(MAX_EXTENSION_DEACTIVATE_TIMEOUT_MS, Math.max(1, Math.floor(options.deactivate_timeout_ms)))
       : DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS;
   const failedActivationKeys = new Set(
     (activationResult?.failed ?? []).map((entry) => `${entry.layer}:${entry.name}`),

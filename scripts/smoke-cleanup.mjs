@@ -8,7 +8,10 @@ function readErrorCode(error) {
 }
 
 function sleepSync(milliseconds) {
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+  const start = Date.now();
+  while (Date.now() - start < milliseconds) {
+    // Short, synchronous cleanup retry delay for this standalone smoke helper.
+  }
 }
 
 export function cleanupTempRoot(tempRoot) {
