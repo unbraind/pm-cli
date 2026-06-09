@@ -6,13 +6,14 @@ status: in_progress
 priority: 1
 tags[4]: adr,"area:ci","area:tests",coverage
 created_at: "2026-06-09T22:05:03.764Z"
-updated_at: "2026-06-09T22:47:30.704Z"
+updated_at: "2026-06-09T23:16:51.172Z"
 assignee: codex-active-pm-cycle-20260610
 author: codex-active-pm-cycle-20260610
 parent: pm-m2u1
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-06-09T22:05:15.975Z",codex-active-pm-cycle-20260610,"Duplicate-check evidence (active large-PR cycle 2026-06-10): pm context/search/list-open/list-in-progress plus targeted queries over coverage/reindex/settings/telemetry confirm this item is the canonical open lineage for its scope and is now claimed for implementation."
   "2026-06-09T22:47:30.704Z",codex-active-pm-cycle-20260610,"Current baseline after policy switch: full suite passes but coverage gate is 78.04% lines / 70.65% branches (all src now included). Decision remains in_progress until literal 100% all-src threshold is met with additional test/refactor work."
+  "2026-06-09T23:16:51.172Z",codex-active-pm-cycle-20260610,"PR #192 status (latest push 74419cb6): all CI checks green except Gates (coverage), which fails at 78.04% lines / 70.65% branches under literal all-src thresholds. CodeRabbit findings addressed and status now pass; gemini-code-assist unavailable due quota."
 files[1]{path,scope,note}:
   vitest.config.ts,project,coverage include switched to all src top-level + nested ts files with 100% thresholds
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
