@@ -454,6 +454,9 @@ describe("extension command runtime", () => {
     expect(() =>
       runEchoCommand({ command: "command-kit echo", args: [" "], options: {}, global: {}, pm_root: "/tmp" }),
     ).toThrow(/requires a message argument/);
+    expect(() => runEchoCommand({ command: "command-kit echo", args: null, options: null } as never)).toThrow(
+      /requires a message argument/,
+    );
 
     await withTempPmPath(async (context) => {
       const install = await runExtension("command-kit", { install: true, project: true }, { path: context.pmPath });

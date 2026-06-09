@@ -365,6 +365,10 @@ export function stripLooseCommandOptionTokens(
   const stripped: string[] = [];
   let index = 0;
   while (index < args.length) {
+    if (args[index] === "--") {
+      stripped.push(...args.slice(index + 1));
+      break;
+    }
     const parsed = parseLooseOptionToken(args, index);
     if (parsed) {
       const normalizedKey = toLooseOptionKey(parsed.key);

@@ -1978,20 +1978,7 @@ async function registerCoreCommandFamilies(
   }
 }
 
-function isKnownTopLevelCommandOrAlias(rootProgram: Command, commandName: string): boolean {
-  const normalized = commandName.trim().toLowerCase();
-  for (const command of rootProgram.commands) {
-    if (command.name().trim().toLowerCase() === normalized) {
-      return true;
-    }
-    if (command.aliases().some((alias) => alias.trim().toLowerCase() === normalized)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function shouldRegisterDynamicExtensionPaths(rootProgram: Command, invocationArgv: string[]): boolean {
+function shouldRegisterDynamicExtensionPaths(_rootProgram: Command, invocationArgv: string[]): boolean {
   if (invocationRequestsVersion(invocationArgv)) {
     return false;
   }
@@ -2003,12 +1990,7 @@ function shouldRegisterDynamicExtensionPaths(rootProgram: Command, invocationArg
   if (!commandName) {
     return false;
   }
-  if (!isKnownTopLevelCommandOrAlias(rootProgram, commandName)) {
-    return true;
-  }
-  const stripped = stripGlobalBootstrapTokens(invocationArgv);
-  const commandIndex = stripped.findIndex((token) => token.trim().length > 0 && !token.startsWith("-"));
-  return commandIndex >= 0 && stripped.slice(commandIndex + 1).some((token) => token.startsWith("-"));
+  return true;
 }
 
 function shouldRegisterRuntimeSchemaFlags(invocationArgv: string[]): boolean {

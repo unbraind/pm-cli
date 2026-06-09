@@ -178,7 +178,7 @@ export interface WorkspaceContracts {
  * every call — only the extension load+activate step is memoized.
  */
 const WORKSPACE_CONTRACTS_CACHE_LIMIT = 50;
-const workspaceExtensionRegistrationsCache = new Map<string, ExtensionRegistrationRegistry | null>();
+const workspaceExtensionRegistrationsCache = new Map<string, Promise<ExtensionRegistrationRegistry | null>>();
 
 function buildWorkspaceExtensionRegistrationsCacheKey(
   pmRoot: string,
@@ -213,11 +213,11 @@ async function resolveWorkspaceExtensionRegistrations(
   if (cached !== undefined) {
     return cached;
   }
-  const registrations = await loadWorkspaceExtensionRegistrations(pmRoot, settings, cwd);
   if (workspaceExtensionRegistrationsCache.size >= WORKSPACE_CONTRACTS_CACHE_LIMIT) {
     const oldestKey = workspaceExtensionRegistrationsCache.keys().next().value!;
     workspaceExtensionRegistrationsCache.delete(oldestKey);
   }
+  const registrations = loadWorkspaceExtensionRegistrations(pmRoot, settings, cwd);
   workspaceExtensionRegistrationsCache.set(cacheKey, registrations);
   return registrations;
 }
