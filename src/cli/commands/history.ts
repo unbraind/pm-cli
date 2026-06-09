@@ -1,7 +1,7 @@
 import { pathExists, readFileIfExists } from "../../core/fs/fs-utils.js";
 import { computeHistoryDiff, patchPathToChangedField, type HistoryDiffValueEntry } from "../../core/history/history-diff.js";
 import { hashDocument, hashEmptyDocument } from "../../core/history/history.js";
-import { verifyHistoryChain } from "../../core/history/replay.js";
+import { normalizeReplayPatchOps, verifyHistoryChain } from "../../core/history/replay.js";
 import { enforceHistoryStreamPolicyForItem } from "../../core/history/history-stream-policy.js";
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
@@ -64,7 +64,8 @@ function limitEntries<T>(values: T[], limit: number | undefined): T[] {
 function buildDiffEntries(entries: HistoryEntry[], startIndex: number): HistoryDiffEntry[] {
   return entries.map((entry, index) => {
     const changedFields = new Set<string>();
-    for (const op of entry.patch) {
+    const patch = normalizeReplayPatchOps(entry.patch);
+    for (const op of patch) {
       changedFields.add(patchPathToChangedField(op.path));
       if (op.from) {
         changedFields.add(patchPathToChangedField(op.from));
@@ -75,7 +76,7 @@ function buildDiffEntries(entries: HistoryEntry[], startIndex: number): HistoryD
       ts: entry.ts,
       op: entry.op,
       author: entry.author,
-      patch_ops: entry.patch.length,
+      patch_ops: patch.length,
       changed_fields: [...changedFields].sort((left, right) => left.localeCompare(right)),
     };
   });

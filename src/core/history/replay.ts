@@ -81,11 +81,23 @@ export function normalizeReplayPatchPath(path: string): string {
   return path;
 }
 
-export function normalizeReplayPatchOps(patch: HistoryPatchOp[]): HistoryPatchOp[] {
-  return patch.map((operation) => ({
+function isHistoryPatchOp(value: unknown): value is HistoryPatchOp {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as { op?: unknown }).op === "string" &&
+    typeof (value as { path?: unknown }).path === "string"
+  );
+}
+
+export function normalizeReplayPatchOps(patch: HistoryPatchOp[] | unknown): HistoryPatchOp[] {
+  if (!Array.isArray(patch)) {
+    return [];
+  }
+  return patch.filter(isHistoryPatchOp).map((operation) => ({
     ...operation,
     path: normalizeReplayPatchPath(operation.path),
-    from: operation.from ? normalizeReplayPatchPath(operation.from) : undefined,
+    from: typeof operation.from === "string" ? normalizeReplayPatchPath(operation.from) : undefined,
   }));
 }
 
