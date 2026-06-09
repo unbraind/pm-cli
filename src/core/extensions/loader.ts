@@ -1039,9 +1039,10 @@ function resolveActivatableExtension(module: unknown): ActivatableExtension | nu
  *
  * Pass the `activationResult` to skip extensions whose `activate` failed — they
  * never fully initialized, so (VS Code-style) their `deactivate` must not run.
- * Teardowns run concurrently and each hook has a bounded timeout, so one slow
- * or hanging hook cannot serialize the rest or block the host indefinitely; the
- * returned warnings/failures preserve loaded order.
+ * Teardowns run concurrently and each hook has a bounded timeout by default, so
+ * one slow or hanging hook cannot serialize the rest or block the host
+ * indefinitely unless the host explicitly disables the timeout; the returned
+ * warnings/failures preserve loaded order.
  */
 export async function deactivateExtensions(
   loadResult: ExtensionLoadResult,
@@ -1106,9 +1107,12 @@ async function runExtensionDeactivateWithTimeout(
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
   try {
     // A timed-out deactivate promise may still finish later; JavaScript promises
-    // are not cancellable, so the host only stops waiting for the hook.
+    // are not cancellable, so the host only stops waiting and consumes any late
+    // rejection from the hook.
+    const deactivatePromise = Promise.resolve().then(() => deactivate());
+    deactivatePromise.catch(() => {});
     await Promise.race([
-      Promise.resolve().then(() => deactivate()),
+      deactivatePromise,
       new Promise<never>((_, reject) => {
         timeoutHandle = setTimeout(() => {
           reject(new Error(`extension deactivate timed out after ${timeoutMs}ms`));
