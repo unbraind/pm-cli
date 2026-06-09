@@ -303,7 +303,7 @@ Common APIs:
   item entries for mutations, including `previous_status`, `status`,
   `changed_fields`, and partial `previous`/`current` front matter snapshots.
   `onWrite` always includes `path`, `scope`, and `op`; item mutations also add optional `item_id`, `item_type`, `before`, `after`, and `changed_fields`.
-- An optional module-level `deactivate()` export (VS Code-style) is invoked by the host on shutdown/reload — including by the long-running MCP server between native-action requests — to close connections, clear timers, and release resources opened during `activate`. Teardown is best-effort and never blocks other extensions.
+- An optional module-level `deactivate()` export (VS Code-style) is invoked by the host on shutdown/reload — including by the long-running MCP server between native-action requests — to close connections, clear timers, and release resources opened during `activate`. Teardown is best-effort, timeout-bounded, and never blocks other extensions.
 
 The bundled `pm-lifecycle-hooks` package is the hook exemplar: it declares only
 `hooks` and registers a default-inert `afterCommand` hook so authors can copy a

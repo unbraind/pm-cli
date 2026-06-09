@@ -82,6 +82,7 @@ import {
   KNOWN_EXTENSION_SERVICE_NAMES,
   createDefaultExtensionGovernancePolicy,
   type ExtensionDeactivationFailure,
+  type ExtensionDeactivationOptions,
   type ExtensionDeactivationResult,
   type ExtensionSelfIdentity,
   type ExtensionCapability,
@@ -992,6 +993,7 @@ export async function loadExtensions(options: DiscoverExtensionsOptions): Promis
 }
 
 type HookName = keyof ExtensionHookRegistry;
+const DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS = 5_000;
 
 function toActivatableExtension(source: Record<string, unknown>): ActivatableExtension {
   // Bind to `source` so a module/default-export authored with methods (or a class
@@ -1036,13 +1038,21 @@ function resolveActivatableExtension(module: unknown): ActivatableExtension | nu
  *
  * Pass the `activationResult` to skip extensions whose `activate` failed — they
  * never fully initialized, so (VS Code-style) their `deactivate` must not run.
- * Teardowns run concurrently so one slow hook cannot serialize the rest; the
+ * Teardowns run concurrently and each hook has a bounded timeout, so one slow
+ * or hanging hook cannot serialize the rest or block the host indefinitely; the
  * returned warnings/failures preserve loaded order.
  */
 export async function deactivateExtensions(
   loadResult: ExtensionLoadResult,
   activationResult?: Pick<ExtensionActivationResult, "failed">,
+  options: ExtensionDeactivationOptions = {},
 ): Promise<ExtensionDeactivationResult> {
+  const timeoutMs =
+    typeof options.deactivate_timeout_ms === "number" &&
+    Number.isFinite(options.deactivate_timeout_ms) &&
+    options.deactivate_timeout_ms > 0
+      ? Math.floor(options.deactivate_timeout_ms)
+      : DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS;
   const failedActivationKeys = new Set(
     (activationResult?.failed ?? []).map((entry) => `${entry.layer}:${entry.name}`),
   );
@@ -1060,7 +1070,7 @@ export async function deactivateExtensions(
   const outcomes = await Promise.all(
     targets.map(async ({ extension, deactivate }) => {
       try {
-        await deactivate();
+        await runExtensionDeactivateWithTimeout(deactivate, timeoutMs);
         return { ok: true as const };
       } catch (error: unknown) {
         return { ok: false as const, layer: extension.layer, name: extension.name, error: formatUnknownError(error) };
@@ -1079,6 +1089,28 @@ export async function deactivateExtensions(
     failed.push({ layer: outcome.layer, name: outcome.name, error: outcome.error });
   }
   return { deactivated, warnings, failed };
+}
+
+async function runExtensionDeactivateWithTimeout(
+  deactivate: () => void | Promise<void>,
+  timeoutMs: number,
+): Promise<void> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      Promise.resolve().then(() => deactivate()),
+      new Promise<never>((_, reject) => {
+        timeoutHandle = setTimeout(() => {
+          reject(new Error(`extension deactivate timed out after ${timeoutMs}ms`));
+        }, timeoutMs);
+        timeoutHandle.unref?.();
+      }),
+    ]);
+  } finally {
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
+  }
 }
 
 function isOutputRendererFormat(value: string): value is OutputRendererFormat {

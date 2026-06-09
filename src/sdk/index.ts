@@ -130,6 +130,7 @@ export type {
   ExtensionApi,
   ExtensionCommandRegistry,
   ExtensionDeactivationFailure,
+  ExtensionDeactivationOptions,
   ExtensionDeactivationResult,
   ExtensionDiagnostic,
   ExtensionDiscoveryResult,

@@ -3,7 +3,7 @@ import { rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { cleanupTempRoot } from "../../scripts/smoke-npx-from-pack.mjs";
+import { cleanupTempRoot } from "../../scripts/smoke-cleanup.mjs";
 
 describe("packed smoke cleanup helper", () => {
   it("removes nested smoke temp directories", async () => {

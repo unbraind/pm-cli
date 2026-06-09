@@ -291,8 +291,8 @@ native-action requests — so an extension can close connections, clear timers, 
 release buffers opened during `activate`. `deactivate` runs only for extensions
 that activated successfully (a failed `activate` never fully initialized), and
 teardowns run concurrently. Teardown is best-effort: a throwing `deactivate` is
-recorded as a warning, never propagated, so one extension cannot block another's
-cleanup.
+recorded as a warning, never propagated, and each hook is bounded by a host
+timeout so one extension cannot block another's cleanup or a host reload.
 
 ```ts
 export default defineExtension({
