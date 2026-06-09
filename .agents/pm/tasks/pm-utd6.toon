@@ -2,15 +2,17 @@ id: pm-utd6
 title: "Close stale GH issues, clarify dedupe-audit docs, and bump @sentry/node"
 description: "Continue active pm work: close stale GitHub issues with reproducible evidence, fix docs/COMMANDS dedupe-audit packaging note, verify history-repair malformed patch robustness, update @sentry/node, and run build/tests/manual validation before PR."
 type: Task
-status: in_progress
+status: closed
 priority: 1
 tags[5]: "area:dependencies","area:docs","area:observability",github,maintenance
 created_at: "2026-06-09T20:26:48.461Z"
-updated_at: "2026-06-09T21:11:17.836Z"
-assignee: codex-active-pm-cycle-20260609
+updated_at: "2026-06-09T21:29:32.285Z"
 author: codex-implementation-agent
 parent: pm-u9d0
-comments[10]{created_at,author,text}:
+resolution: "All scoped work delivered and merged: stale GH issue closures documented, dedupe-audit docs clarified, @sentry/node bumped, and full verification/security/manual smoke evidence recorded."
+expected_result: "Merged change set with green checks, preserved 100% coverage, and complete pm evidence for docs/dependency/security/verification steps."
+actual_result: PR #188 merged to main with all required checks green; 100% coverage remained intact and final pm comments/tests/files capture full execution evidence.
+comments[11]{created_at,author,text}:
   "2026-06-09T20:26:48.461Z",codex-implementation-agent,"Duplicate-check evidence: pm search for dedupe-audit/docs/sentry/stale issue closure found only closed/remediated items and no active task matching this combined execution scope."
   "2026-06-09T20:31:53.228Z",codex-implementation-agent,"GitHub issues closed with evidence comments: 159, 164, 165, 166, 169, 176, and 178."
   "2026-06-09T20:31:53.547Z",codex-implementation-agent,History repair robustness was validated by forcing a malformed history patch value in a temp tracker and running history-repair successfully with verify_ok true.
@@ -21,6 +23,7 @@ comments[10]{created_at,author,text}:
   "2026-06-09T21:02:13.007Z",codex-active-pm-cycle-20260609,"Post-verification platform snapshot: GitHub open issues currently 23 (153-183 range), Dependabot alerts 34 total (high 14, medium 14, low 6), code-scanning open 0, secret-scanning open 0. Sentry pm-cli currently shows 14 unresolved issues (dashboard: https://unbrained.sentry.io/issues/?project=pm-cli&query=is%3Aunresolved) and 24h error aggregate top issues PM-CLI-1G=4, PM-CLI-1F=1, PM-CLI-1H=1 (discover: https://unbrained.sentry.io/explore/discover/homepage/?dataset=errors&queryDataset=error-events&query=event.type%3Aerror&project=4511316775338064&field=issue&field=count%28%29&sort=-count%28%29&statsPeriod=24h&mode=aggregate&yAxis=count%28%29)."
   "2026-06-09T21:06:47.135Z",codex-active-pm-cycle-20260609,"Security hygiene pass (continuation): pnpm security:scan passed with no credential-like leaks. Targeted rg sweeps over .agents/pm/history for credential signatures (AWS/GitHub/Slack/OpenAI/private-key/token-password forms) found no real secrets; only historical prose/test-fixture references (for example documented token=abc123 fixture mention) and prior remediation notes. No history-redact/history-repair action was required."
   "2026-06-09T21:11:17.836Z",codex-active-pm-cycle-20260609,"Post-implementation rerun confirms green baseline with MCP additions: all major gates remain passing and 100% global coverage is preserved at 2626 tests."
+  "2026-06-09T21:29:31.257Z",codex-active-pm-cycle-20260609,"Final ship evidence: PR https://github.com/unbraind/pm-cli/pull/188 merged to main at 2026-06-09T21:28:54Z (merge commit aecae8952e561fdc90777d2c17f2527767d61566). All CI checks passed on final head (CodeQL/Docs/coverage/static/typecheck/smokes/runtime matrix). Review-loop notes: CodeRabbit nitpick was applied via helper extraction commit; Sourcery and Gemini bot reviews were quota-limited/non-actionable in this cycle."
 files[2]{path,scope,note}:
   package.json,project,Upgrade sentry node dependency to 10.57.0
   pnpm-lock.yaml,project,Lockfile update for sentry node upgrade
@@ -38,4 +41,5 @@ tests[11]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,s
   pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
 docs[1]{path,scope,note}:
   docs/COMMANDS.md,project,Clarify dedupe-audit is governance-audit package command
+close_reason: Merged PR #188 to main with green checks and full evidence.
 body: ""
