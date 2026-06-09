@@ -4,6 +4,7 @@
 
 ### Added
 
+- Add MCP pm\_context, pm\_contracts, pm\_plan, pm\_health integration tests ([pm-8d00](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-8d00.toon))
 - First-party exemplar package for registerCommand + registerFlags + registerParser \(commands capability pattern\) ([pm-1js9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1js9.toon))
 - Add importer/exporter options arg and command-def examples to SDK.md ([pm-btwe](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-btwe.toon))
 - pm\_max\_version default-BLOCK should have a per-layer warn-only toggle in settings ([pm-k5e8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-k5e8.toon))
@@ -22,6 +23,7 @@
 
 ### Other
 
+- Close stale GH issues, clarify dedupe-audit docs, and bump @sentry/node ([pm-utd6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-utd6.toon))
 - SDK author-ergonomics batch: extension-manifest JSON Schema, getWorkspaceContracts memoization, FlagDefinition type/value\_type unification ([pm-l0jd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-l0jd.toon))
 - Document pm-linked-test-adapters package in EXTENSIONS.md and TESTING.md ([pm-yj8n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-yj8n.toon))
 
