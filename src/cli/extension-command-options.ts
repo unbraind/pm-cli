@@ -348,9 +348,14 @@ export function stripLooseCommandOptionTokens(
     return [...args];
   }
   const knownKeys = new Set<string>();
+  const booleanKeys = new Set<string>();
   for (const definition of definitions) {
+    const valueKind = resolveLooseOptionCoercionKind(definition);
     for (const key of collectLooseOptionKeys(definition)) {
       knownKeys.add(key);
+      if (valueKind === "boolean") {
+        booleanKeys.add(key);
+      }
     }
   }
   if (knownKeys.size === 0) {
@@ -364,7 +369,9 @@ export function stripLooseCommandOptionTokens(
     if (parsed) {
       const normalizedKey = toLooseOptionKey(parsed.key);
       if (knownKeys.has(normalizedKey)) {
-        index += parsed.consumed;
+        const token = args[index] ?? "";
+        const consumed = booleanKeys.has(normalizedKey) && !token.includes("=") ? 1 : parsed.consumed;
+        index += consumed;
         continue;
       }
     }

@@ -624,6 +624,46 @@ describe("public sdk entrypoint", () => {
       clearWorkspaceContractsCache();
     });
   });
+
+  it("keys workspace contracts cache by extension enablement settings", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      clearWorkspaceContractsCache();
+      await writeTestExtension({
+        root: pmPath,
+        placement: "projectRoot",
+        directory: "workspace-contract-toggle-ext",
+        manifest: {
+          name: "workspace-contract-toggle-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerItemTypes([{ name: 'ToggleVisible', folder: 'toggle-visible' }]);",
+          "}",
+          "",
+        ].join("\n"),
+      });
+
+      const enabledContracts = await getWorkspaceContracts(pmPath);
+      expect(enabledContracts.types).toContain("ToggleVisible");
+
+      const settings = await readCoreSettings(pmPath);
+      await writeSettings(pmPath, {
+        ...settings,
+        extensions: {
+          ...settings.extensions,
+          disabled: ["workspace-contract-toggle-ext"],
+        },
+      });
+
+      const disabledContracts = await getWorkspaceContracts(pmPath);
+      expect(disabledContracts.types).not.toContain("ToggleVisible");
+      clearWorkspaceContractsCache();
+    });
+  });
 });
 
 describe("sdk testing helpers", () => {

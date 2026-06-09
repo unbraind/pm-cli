@@ -188,7 +188,7 @@ describe("cli extension loose option parser", () => {
 
   it("strips known extension option tokens from dynamic command positional args", () => {
     const stripped = stripLooseCommandOptionTokens(
-      ["hello", "--upper", "--repeat", "2", "--decorations=star,spark", "--unknown", "kept"],
+      ["--upper", "hello", "--repeat", "2", "--decorations=star,spark", "--unknown", "kept"],
       [
         { long: "--upper", value_type: "boolean" },
         { long: "--repeat", value_type: "number" },

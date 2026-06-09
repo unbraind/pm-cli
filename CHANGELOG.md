@@ -21,8 +21,8 @@
 
 ### Other
 
-- Document pm-linked-test-adapters package in EXTENSIONS.md and TESTING.md ([pm-yj8n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-yj8n.toon))
 - SDK author-ergonomics batch: extension-manifest JSON Schema, getWorkspaceContracts memoization, FlagDefinition type/value\_type unification ([pm-l0jd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-l0jd.toon))
+- Document pm-linked-test-adapters package in EXTENSIONS.md and TESTING.md ([pm-yj8n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-yj8n.toon))
 
 ## 2026.6.9 - 2026-06-09
 

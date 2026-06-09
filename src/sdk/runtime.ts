@@ -165,9 +165,10 @@ export interface WorkspaceContracts {
 
 /**
  * Process-lifetime memo of activated extension registrations, keyed by resolved
- * pm root + cwd. `getWorkspaceContracts` is frequently called by importers and
- * package runtimes that cannot thread a registry through; without the memo each
- * call re-discovers, re-imports, and re-activates every extension.
+ * pm root + cwd + extension settings. `getWorkspaceContracts` is frequently
+ * called by importers and package runtimes that cannot thread a registry
+ * through; without the memo each call re-discovers, re-imports, and re-activates
+ * every extension.
  *
  * Invalidation story: entries are size-bounded and otherwise live until cleared.
  * One-shot CLI processes are trivially correct. Long-lived hosts (e.g. the MCP
@@ -178,6 +179,20 @@ export interface WorkspaceContracts {
  */
 const WORKSPACE_CONTRACTS_CACHE_LIMIT = 50;
 const workspaceExtensionRegistrationsCache = new Map<string, ExtensionRegistrationRegistry | null>();
+
+function buildWorkspaceExtensionRegistrationsCacheKey(
+  pmRoot: string,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  cwd?: string,
+): string {
+  return JSON.stringify([
+    path.resolve(pmRoot),
+    path.resolve(cwd ?? process.cwd()),
+    settings.extensions.enabled,
+    settings.extensions.disabled,
+    settings.extensions.policy,
+  ]);
+}
 
 /**
  * Drop all memoized workspace extension registrations so the next
@@ -193,7 +208,7 @@ async function resolveWorkspaceExtensionRegistrations(
   settings: Awaited<ReturnType<typeof readSettings>>,
   cwd?: string,
 ): Promise<ExtensionRegistrationRegistry | null> {
-  const cacheKey = JSON.stringify([path.resolve(pmRoot), path.resolve(cwd ?? process.cwd())]);
+  const cacheKey = buildWorkspaceExtensionRegistrationsCacheKey(pmRoot, settings, cwd);
   const cached = workspaceExtensionRegistrationsCache.get(cacheKey);
   if (cached !== undefined) {
     return cached;

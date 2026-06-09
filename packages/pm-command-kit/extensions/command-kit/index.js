@@ -76,16 +76,19 @@ export function rewriteEchoOptions(context) {
  * @returns {Record<string, unknown>}
  */
 export function runEchoCommand(context) {
-  const message = context.args
-    .map((arg) => arg.trim())
+  const args = Array.isArray(context?.args) ? context.args : [];
+  const options =
+    context?.options && typeof context.options === "object" && !Array.isArray(context.options) ? context.options : {};
+  const message = args
+    .map((arg) => String(arg).trim())
     .filter((arg) => arg.length > 0)
     .join(" ");
   if (message.length === 0) {
     throw new Error('command-kit echo requires a message argument. Try: pm command-kit echo "hello world".');
   }
-  const upper = context.options.upper === true || context.options.upper === "true";
-  const repeat = toPositiveInteger(context.options.repeat, 1);
-  const decorations = toDecorationList(context.options.decorations);
+  const upper = options.upper === true || options.upper === "true";
+  const repeat = toPositiveInteger(options.repeat, 1);
+  const decorations = toDecorationList(options.decorations);
   const rendered = upper ? message.toUpperCase() : message;
   return {
     action: "command-kit-echo",
