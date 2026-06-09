@@ -1,0 +1,41 @@
+id: pm-utd6
+title: "Close stale GH issues, clarify dedupe-audit docs, and bump @sentry/node"
+description: "Continue active pm work: close stale GitHub issues with reproducible evidence, fix docs/COMMANDS dedupe-audit packaging note, verify history-repair malformed patch robustness, update @sentry/node, and run build/tests/manual validation before PR."
+type: Task
+status: in_progress
+priority: 1
+tags[5]: "area:dependencies","area:docs","area:observability",github,maintenance
+created_at: "2026-06-09T20:26:48.461Z"
+updated_at: "2026-06-09T21:11:17.836Z"
+assignee: codex-active-pm-cycle-20260609
+author: codex-implementation-agent
+parent: pm-u9d0
+comments[10]{created_at,author,text}:
+  "2026-06-09T20:26:48.461Z",codex-implementation-agent,"Duplicate-check evidence: pm search for dedupe-audit/docs/sentry/stale issue closure found only closed/remediated items and no active task matching this combined execution scope."
+  "2026-06-09T20:31:53.228Z",codex-implementation-agent,"GitHub issues closed with evidence comments: 159, 164, 165, 166, 169, 176, and 178."
+  "2026-06-09T20:31:53.547Z",codex-implementation-agent,History repair robustness was validated by forcing a malformed history patch value in a temp tracker and running history-repair successfully with verify_ok true.
+  "2026-06-09T20:31:53.839Z",codex-implementation-agent,"Verification: pnpm build passed; full coverage run passed with 149 files, 2623 tests, and 100 percent statements branches functions lines; manual smoke in /tmp/pm-manual-smoke covered init create list update search history."
+  "2026-06-09T20:31:54.190Z",codex-implementation-agent,"GitHub security snapshot after dependency update: dependabot alerts total 34 (high 14, medium 14, low 6), code scanning alerts 0, secret scanning alerts 0, top affected dependency undici."
+  "2026-06-09T20:56:58.966Z",codex-active-pm-cycle-20260609,"Continuation duplicate-check: pm context/search/list-open/list-in-progress confirms pm-utd6 remains the only in-progress execution item for this scope; no competing open task was found for the same combined docs+dependency+GH/Sentry verification slice."
+  "2026-06-09T21:02:12.680Z",codex-active-pm-cycle-20260609,"Continuation verification evidence (2026-06-09): pnpm build, pnpm typecheck, pnpm contracts:check, pnpm quality:static, pnpm quality:docs-links, pnpm security:scan, pnpm audit --audit-level low, node scripts/run-tests.mjs coverage (149 files, 2623 tests, 100% statements/branches/functions/lines), pnpm changelog:pm:check, pm health --check-only --summary (ok=true), and pm validate --check-resolution --check-history-drift (history_drift ok; known legacy resolution warning backlog 116 closed items). Manual smoke succeeded in /tmp/pm-manual-smoke-pOHfet: init, create, list-open, update, comments, search, history, contracts flags check, health summary, and validate all completed without regression."
+  "2026-06-09T21:02:13.007Z",codex-active-pm-cycle-20260609,"Post-verification platform snapshot: GitHub open issues currently 23 (153-183 range), Dependabot alerts 34 total (high 14, medium 14, low 6), code-scanning open 0, secret-scanning open 0. Sentry pm-cli currently shows 14 unresolved issues (dashboard: https://unbrained.sentry.io/issues/?project=pm-cli&query=is%3Aunresolved) and 24h error aggregate top issues PM-CLI-1G=4, PM-CLI-1F=1, PM-CLI-1H=1 (discover: https://unbrained.sentry.io/explore/discover/homepage/?dataset=errors&queryDataset=error-events&query=event.type%3Aerror&project=4511316775338064&field=issue&field=count%28%29&sort=-count%28%29&statsPeriod=24h&mode=aggregate&yAxis=count%28%29)."
+  "2026-06-09T21:06:47.135Z",codex-active-pm-cycle-20260609,"Security hygiene pass (continuation): pnpm security:scan passed with no credential-like leaks. Targeted rg sweeps over .agents/pm/history for credential signatures (AWS/GitHub/Slack/OpenAI/private-key/token-password forms) found no real secrets; only historical prose/test-fixture references (for example documented token=abc123 fixture mention) and prior remediation notes. No history-redact/history-repair action was required."
+  "2026-06-09T21:11:17.836Z",codex-active-pm-cycle-20260609,"Post-implementation rerun confirms green baseline with MCP additions: all major gates remain passing and 100% global coverage is preserved at 2626 tests."
+files[2]{path,scope,note}:
+  package.json,project,Upgrade sentry node dependency to 10.57.0
+  pnpm-lock.yaml,project,Lockfile update for sentry node upgrade
+tests[11]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  pm health --check-only --summary,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pm validate --check-resolution --check-history-drift,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm audit --audit-level low,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm build,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:check",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:docs-links",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,Clarify dedupe-audit is governance-audit package command
+body: ""

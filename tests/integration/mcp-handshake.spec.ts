@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { handleRequest, processRpcLine } from "../../src/mcp/server.js";
 import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
 import { PM_TOOL_ACTIONS } from "../../src/sdk/cli-contracts/enum-contracts.js";
+import { assertPmContextDepthProjection } from "../helpers/mcp-context-depth.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 // pm-kl11: MCP protocol handshake coverage. These tests drive handleRequest
@@ -130,6 +131,10 @@ describe("MCP protocol handshake", () => {
         params: { name: "pm_not_a_real_tool", arguments: {} },
       }),
     ).rejects.toThrow(/Unknown pm MCP tool: pm_not_a_real_tool/);
+  });
+
+  it("pm_context defaults to a brief compact snapshot and honors depth overrides", async () => {
+    await withTempPmPath((context) => assertPmContextDepthProjection(context, "MCP context projection target"));
   });
 
   it("pm_health defaults to the compact summary projection and full=true opts into detail (F2)", async () => {
