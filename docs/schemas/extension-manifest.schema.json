@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/unbraind/pm-cli/main/docs/schemas/extension-manifest.schema.json",
+  "title": "pm extension manifest",
+  "description": "Schema for a pm extension's manifest.json. The loader tolerates unknown fields (including $schema), so additionalProperties stays true; only the fields listed here are read. Note: sandbox_profile and permissions are advisory, declaration-based load gates — pm does not isolate extension code at runtime (ADR pm-6ef3).",
+  "type": "object",
+  "required": ["name", "version", "entry"],
+  "additionalProperties": true,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional pointer to this schema for inline IDE validation. Ignored by the loader."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Unique extension name. A project-layer extension with the same name overrides a global-layer one."
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Extension version (semver recommended)."
+    },
+    "entry": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Path to the entry module, relative to the extension directory. Must resolve inside the extension directory."
+    },
+    "priority": {
+      "type": "integer",
+      "description": "Load-order priority within a layer (lower loads first). Defaults to 100."
+    },
+    "manifest_version": {
+      "type": "integer",
+      "enum": [1, 2],
+      "description": "Optional manifest format version."
+    },
+    "pm_min_version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Minimum compatible pm CLI version. A leading \">=\" prefix is accepted. Unmet minimums block loading.",
+      "examples": ["2026.5.0", ">=2026.5.0"]
+    },
+    "pm_max_version": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^<>=~^]",
+      "description": "Maximum compatible pm CLI version as an exact version (range prefixes like >=, <, ~, ^ are rejected). Exceeding it blocks loading by default; extensions.policy.pm_max_version_exceeded_mode can relax this to warn-only.",
+      "examples": ["2026.12.31"]
+    },
+    "engines": {
+      "type": "object",
+      "description": "Engine compatibility declarations (e.g. pm, node). Every value must be a non-empty string.",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "trusted": {
+      "type": "boolean",
+      "description": "Declares the extension as trusted for extensions.policy.trust_mode evaluation."
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Optional provenance metadata used by require_provenance policy checks.",
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "signature": { "type": "string", "minLength": 1 },
+        "attestation": { "type": "string", "minLength": 1 },
+        "verified": { "type": "boolean" }
+      }
+    },
+    "sandbox_profile": {
+      "type": "string",
+      "enum": ["none", "restricted", "strict"],
+      "description": "Advisory sandbox profile evaluated against declared permissions when extensions.policy.mode is active. Declaration-based load gate only — not runtime isolation (ADR pm-6ef3)."
+    },
+    "permissions": {
+      "type": "object",
+      "description": "Advisory runtime permission declarations checked against the sandbox profile. Not enforced at runtime (ADR pm-6ef3).",
+      "properties": {
+        "fs_read": { "type": "boolean" },
+        "fs_write": { "type": "boolean" },
+        "network": { "type": "boolean" },
+        "env_read": { "type": "boolean" },
+        "env_write": { "type": "boolean" },
+        "process_spawn": { "type": "boolean" }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "Capabilities the extension's registrations may use. Known: commands, renderers, hooks, schema, importers, search, parser, preflight, services (legacy aliases migration/validation map to schema). Unknown values only warn.",
+      "items": {
+        "type": "string",
+        "examples": [
+          "commands",
+          "renderers",
+          "hooks",
+          "schema",
+          "importers",
+          "search",
+          "parser",
+          "preflight",
+          "services"
+        ]
+      }
+    },
+    "activation": {
+      "type": "object",
+      "description": "Lazy-activation metadata.",
+      "properties": {
+        "commands": {
+          "type": "array",
+          "description": "Command names that trigger activation.",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

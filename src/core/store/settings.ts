@@ -11,6 +11,11 @@ import { getSettingsPath } from "./paths.js";
 import { orderObject, stableValueEquals } from "../shared/serialization.js";
 import { normalizeItemTypeDefinition } from "../item/item-type-definition.js";
 import type {
+  ExtensionGovernancePolicy,
+  PmMaxVersionExceededMode,
+  PmMaxVersionExceededModeSetting,
+} from "../extensions/extension-types.js";
+import type {
   ExtensionSandboxProfile,
   ExtensionPolicyMode,
   ExtensionPolicyOverrideSettings,
@@ -466,11 +471,45 @@ function normalizeExtensionPolicyOverrides(
   return [...dedupedByName.values()].sort((left, right) => left.name.localeCompare(right.name));
 }
 
-function normalizeExtensionPolicySettings(policy: Partial<ExtensionPolicySettings> | undefined): ExtensionPolicySettings {
+function normalizePmMaxVersionExceededModeValue(value: unknown): PmMaxVersionExceededMode | undefined {
+  return value === "block" || value === "warn" ? value : undefined;
+}
+
+/**
+ * Preserve a configured `pm_max_version_exceeded_mode` (string mode or per-layer
+ * override object) through settings normalization. Unset/invalid values are
+ * omitted so existing settings.json files round-trip byte-identically and the
+ * loader applies its safe default ("block").
+ */
+function normalizePmMaxVersionExceededModeSetting(
+  value: PmMaxVersionExceededModeSetting | undefined,
+): PmMaxVersionExceededModeSetting | undefined {
+  if (typeof value === "string") {
+    return normalizePmMaxVersionExceededModeValue(value);
+  }
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    const global = normalizePmMaxVersionExceededModeValue(value.global);
+    const project = normalizePmMaxVersionExceededModeValue(value.project);
+    if (global === undefined && project === undefined) {
+      return undefined;
+    }
+    return {
+      ...(global !== undefined ? { global } : {}),
+      ...(project !== undefined ? { project } : {}),
+    };
+  }
+  return undefined;
+}
+
+function normalizeExtensionPolicySettings(
+  policy: Partial<ExtensionGovernancePolicy> | undefined,
+): ExtensionGovernancePolicy {
   const defaults = SETTINGS_DEFAULTS.extensions.policy;
+  const pmMaxVersionExceededMode = normalizePmMaxVersionExceededModeSetting(policy?.pm_max_version_exceeded_mode);
   return {
     mode: normalizeExtensionPolicyMode(policy?.mode),
     trust_mode: normalizeExtensionTrustMode(policy?.trust_mode),
+    ...(pmMaxVersionExceededMode !== undefined ? { pm_max_version_exceeded_mode: pmMaxVersionExceededMode } : {}),
     require_provenance: policy?.require_provenance === true,
     trusted_extensions: normalizeLowerStringList(policy?.trusted_extensions ?? defaults.trusted_extensions),
     default_sandbox_profile: normalizeExtensionSandboxProfile(policy?.default_sandbox_profile),
@@ -812,6 +851,7 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     [
       "mode",
       "trust_mode",
+      "pm_max_version_exceeded_mode",
       "require_provenance",
       "trusted_extensions",
       "default_sandbox_profile",

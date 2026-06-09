@@ -377,12 +377,121 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("activates the command-kit exemplar package and surfaces its command/flag/parser registrations", async () => {
+    const commandKitModule = await import("../../packages/pm-command-kit/extensions/command-kit/index.js");
+    const { activate: activateCommandKit, manifest: commandKitManifest, rewriteEchoOptions, runEchoCommand } = commandKitModule;
+    expect(commandKitModule.default).toMatchObject({ manifest: commandKitManifest });
+    expect(commandKitManifest).toMatchObject({
+      name: "builtin-command-kit",
+      capabilities: ["commands", "schema", "parser"],
+      activation: {
+        commands: ["command-kit echo", "list"],
+      },
+    });
+
+    const commands: Array<Record<string, unknown>> = [];
+    const parsers: Array<{ command: string; override: unknown }> = [];
+    const flagRegistrations: Array<{ target: string; flags: Array<Record<string, unknown>> }> = [];
+    activateCommandKit({
+      registerCommand: (definition: Record<string, unknown>) => commands.push(definition),
+      registerParser: (command: string, override: unknown) => parsers.push({ command, override }),
+      registerFlags: (target: string, flags: Array<Record<string, unknown>>) => flagRegistrations.push({ target, flags }),
+    } as never);
+
+    expect(commands).toHaveLength(1);
+    const echoDefinition = commands[0];
+    expect(echoDefinition).toMatchObject({
+      name: "command-kit echo",
+      action: "command-kit-echo",
+      description: expect.stringContaining("exemplar"),
+      intent: expect.stringContaining("CommandDefinition"),
+      run: expect.any(Function),
+    });
+    expect(echoDefinition.arguments).toEqual([
+      { name: "message", required: true, variadic: true, description: expect.any(String) },
+    ]);
+    expect((echoDefinition.flags as Array<{ long?: string }>).map((flag) => flag.long)).toEqual([
+      "--upper",
+      "--shout",
+      "--repeat",
+      "--decorations",
+    ]);
+    expect(echoDefinition.examples).toHaveLength(3);
+    expect(echoDefinition.failure_hints).toHaveLength(2);
+
+    expect(parsers).toEqual([{ command: "command-kit echo", override: rewriteEchoOptions }]);
+    expect(flagRegistrations).toEqual([
+      {
+        target: "list",
+        flags: [expect.objectContaining({ long: "--kit-note", value_type: "string" })],
+      },
+    ]);
+
+    const parserDelta = rewriteEchoOptions({
+      command: "command-kit echo",
+      args: ["hello"],
+      options: { shout: true, repeat: "2", decorations: " star , star ,spark" },
+      global: {},
+      pm_root: "/tmp",
+    });
+    expect(parserDelta.options).toMatchObject({ upper: true, repeat: 2, decorations: ["star", "spark"] });
+    expect(parserDelta.options).not.toHaveProperty("shout");
+
+    const echoResult = runEchoCommand({
+      command: "command-kit echo",
+      args: ["hello", "world"],
+      options: parserDelta.options ?? {},
+      global: {},
+      pm_root: "/tmp",
+    });
+    expect(echoResult).toMatchObject({
+      action: "command-kit-echo",
+      message: "HELLO WORLD",
+      lines: ["HELLO WORLD", "HELLO WORLD"],
+      repeat: 2,
+      upper: true,
+    });
+    expect(() =>
+      runEchoCommand({ command: "command-kit echo", args: [" "], options: {}, global: {}, pm_root: "/tmp" }),
+    ).toThrow(/requires a message argument/);
+    expect(() => runEchoCommand({ command: "command-kit echo", args: null, options: null } as never)).toThrow(
+      /requires a message argument/,
+    );
+
+    await withTempPmPath(async (context) => {
+      const install = await runExtension("command-kit", { install: true, project: true }, { path: context.pmPath });
+      expect(install.details).toMatchObject({
+        extension: {
+          name: "builtin-command-kit",
+        },
+        source: {
+          kind: "builtin",
+          input: "command-kit",
+          name: "command-kit",
+        },
+        activated: true,
+        command_paths: expect.arrayContaining(["command-kit echo"]),
+        action_paths: expect.arrayContaining(["command-kit-echo"]),
+      });
+
+      const listWithInjectedFlag = context.runCli(["list", "--kit-note", "smoke", "--json"], { expectJson: true });
+      expect(listWithInjectedFlag.code).toBe(0);
+      expect((listWithInjectedFlag.json as { items?: unknown[] }).items).toEqual([]);
+
+      const echoWithLeadingBooleanFlag = context.runCli(["command-kit", "echo", "--upper", "hello", "--json"], {
+        expectJson: true,
+      });
+      expect(echoWithLeadingBooleanFlag.code).toBe(0);
+      expect(echoWithLeadingBooleanFlag.json).toMatchObject({ message: "HELLO", upper: true });
+    });
+  });
+
   it("lists bundled first-party package catalog metadata", async () => {
     await withTempPmPath(async (context) => {
       const beforeInstall = await runExtension(undefined, { catalog: true, project: true, vocabulary: "package" }, { path: context.pmPath });
       expect(beforeInstall.action).toBe("catalog");
       expect(beforeInstall.details).toMatchObject({
-        total: 9,
+        total: 10,
         scope: "project",
         installable_resource_kinds: ["extensions"],
         metadata_only_resource_kinds: ["docs", "examples", "assets", "prompts"],
@@ -412,6 +521,16 @@ describe("extension command runtime", () => {
             catalog: {
               display_name: "Calendar Views",
               category: "workflow",
+            },
+          },
+          {
+            alias: "command-kit",
+            available: true,
+            installed: false,
+            package_name: "@unbrained/pm-command-kit",
+            catalog: {
+              display_name: "Command Kit Exemplar",
+              category: "sdk",
             },
           },
           {
@@ -509,6 +628,7 @@ describe("extension command runtime", () => {
       expect(packages.find((entry) => entry.alias === "todos")?.installed).toBe(true);
       expect(packages.find((entry) => entry.alias === "beads")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "calendar")?.installed).toBe(false);
+      expect(packages.find((entry) => entry.alias === "command-kit")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "governance-audit")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "guide-shell")?.installed).toBe(false);
       expect(packages.find((entry) => entry.alias === "lifecycle-hooks")?.installed).toBe(false);
@@ -526,7 +646,7 @@ describe("extension command runtime", () => {
       const wildcardInstall = await runExtension("*", { install: true, project: true }, { path: context.pmPath });
       expect(wildcardInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 9,
+        installed_count: 10,
         packages: [
           {
             alias: "beads",
@@ -546,6 +666,11 @@ describe("extension command runtime", () => {
           {
             alias: "calendar",
             extension: { name: "builtin-calendar" },
+            activated: true,
+          },
+          {
+            alias: "command-kit",
+            extension: { name: "builtin-command-kit" },
             activated: true,
           },
           {
@@ -589,7 +714,7 @@ describe("extension command runtime", () => {
       const allInstall = await runExtension("all", { install: true, project: true }, { path: context.pmPath });
       expect(allInstall.details).toMatchObject({
         installed_all: true,
-        installed_count: 9,
+        installed_count: 10,
       });
     });
   });

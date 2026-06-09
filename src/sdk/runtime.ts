@@ -1,3 +1,4 @@
+import path from "node:path";
 import {
   activateExtensions,
   loadExtensions,
@@ -162,6 +163,65 @@ export interface WorkspaceContracts {
   canceledStatus: string;
 }
 
+/**
+ * Process-lifetime memo of activated extension registrations, keyed by resolved
+ * pm root + cwd + extension settings. `getWorkspaceContracts` is frequently
+ * called by importers and package runtimes that cannot thread a registry
+ * through; without the memo each call re-discovers, re-imports, and re-activates
+ * every extension.
+ *
+ * Invalidation story: entries are size-bounded and otherwise live until cleared.
+ * One-shot CLI processes are trivially correct. Long-lived hosts (e.g. the MCP
+ * server) must either pass `options.extensionRegistrations` (which bypasses the
+ * memo) or call {@link clearWorkspaceContractsCache} after installing/removing/
+ * toggling extensions or editing settings. Settings themselves are re-read on
+ * every call — only the extension load+activate step is memoized.
+ */
+const WORKSPACE_CONTRACTS_CACHE_LIMIT = 50;
+const workspaceExtensionRegistrationsCache = new Map<string, Promise<ExtensionRegistrationRegistry | null>>();
+
+function buildWorkspaceExtensionRegistrationsCacheKey(
+  pmRoot: string,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  cwd?: string,
+): string {
+  return JSON.stringify([
+    path.resolve(pmRoot),
+    path.resolve(cwd ?? process.cwd()),
+    settings.extensions.enabled,
+    settings.extensions.disabled,
+    settings.extensions.policy,
+  ]);
+}
+
+/**
+ * Drop all memoized workspace extension registrations so the next
+ * `getWorkspaceContracts` call re-loads and re-activates extensions from disk.
+ * Long-lived hosts should call this after any extension or settings mutation.
+ */
+export function clearWorkspaceContractsCache(): void {
+  workspaceExtensionRegistrationsCache.clear();
+}
+
+async function resolveWorkspaceExtensionRegistrations(
+  pmRoot: string,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  cwd?: string,
+): Promise<ExtensionRegistrationRegistry | null> {
+  const cacheKey = buildWorkspaceExtensionRegistrationsCacheKey(pmRoot, settings, cwd);
+  const cached = workspaceExtensionRegistrationsCache.get(cacheKey);
+  if (cached !== undefined) {
+    return cached;
+  }
+  if (workspaceExtensionRegistrationsCache.size >= WORKSPACE_CONTRACTS_CACHE_LIMIT) {
+    const oldestKey = workspaceExtensionRegistrationsCache.keys().next().value!;
+    workspaceExtensionRegistrationsCache.delete(oldestKey);
+  }
+  const registrations = loadWorkspaceExtensionRegistrations(pmRoot, settings, cwd);
+  workspaceExtensionRegistrationsCache.set(cacheKey, registrations);
+  return registrations;
+}
+
 export async function getWorkspaceContracts(
   pmRoot: string,
   options: WorkspaceContractsOptions = {},
@@ -169,7 +229,7 @@ export async function getWorkspaceContracts(
   const settings = await readSettings(pmRoot);
   const extensionRegistrations =
     options.extensionRegistrations ??
-    (options.noExtensions === true ? null : await loadWorkspaceExtensionRegistrations(pmRoot, settings, options.cwd));
+    (options.noExtensions === true ? null : await resolveWorkspaceExtensionRegistrations(pmRoot, settings, options.cwd));
   const typeRegistry = resolveItemTypeRegistry(settings, extensionRegistrations);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
 

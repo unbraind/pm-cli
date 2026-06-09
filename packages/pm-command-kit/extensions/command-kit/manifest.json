@@ -1,22 +1,22 @@
 {
-  "name": "builtin-calendar",
+  "name": "builtin-command-kit",
   "version": "0.1.0",
   "entry": "./index.js",
   "priority": 0,
   "trusted": true,
   "sandbox_profile": "strict",
   "permissions": {
-    "fs_read": true,
+    "fs_read": false,
     "fs_write": false,
     "network": false,
-    "env_read": true,
+    "env_read": false,
     "env_write": false,
     "process_spawn": false
   },
-  "capabilities": ["commands", "schema", "services"],
+  "capabilities": ["commands", "schema", "parser"],
   "manifest_version": 1,
   "pm_min_version": "2026.5.0",
   "activation": {
-    "commands": ["cal", "calendar"]
+    "commands": ["command-kit echo", "list"]
   }
 }

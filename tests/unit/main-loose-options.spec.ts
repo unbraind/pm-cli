@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   coerceLooseCommandOptionsWithFlagDefinitions,
   parseLooseCommandOptions,
+  stripLooseCommandOptionTokens,
   validateLooseCommandOptionsWithFlagDefinitions,
 } from "../../src/cli/extension-command-options.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
@@ -183,5 +184,17 @@ describe("cli extension loose option parser", () => {
       { long: "--scope", value_type: "string", list: true, default: ["a", "b,c"] },
     ]);
     expect(coerced).toEqual({ scope: ["a", "b", "c"] });
+  });
+
+  it("strips known extension option tokens from dynamic command positional args", () => {
+    const stripped = stripLooseCommandOptionTokens(
+      ["--upper", "hello", "--repeat", "2", "--decorations=star,spark", "--", "--upper", "--unknown", "kept"],
+      [
+        { long: "--upper", value_type: "boolean" },
+        { long: "--repeat", value_type: "number" },
+        { long: "--decorations", value_type: "string", list: true },
+      ],
+    );
+    expect(stripped).toEqual(["hello", "--upper", "--unknown", "kept"]);
   });
 });

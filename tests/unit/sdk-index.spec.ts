@@ -32,6 +32,7 @@ import {
   appendHistoryEntry,
   createHistoryEntry,
   createPmCliExpectedError,
+  clearWorkspaceContractsCache,
   defineExtension,
   type ExtensionApi,
   type ExtensionHookRegistry,
@@ -521,6 +522,31 @@ describe("public sdk entrypoint", () => {
       const workspaceContracts = await getWorkspaceContracts(pmPath);
       expect(workspaceContracts.types).toEqual(expect.arrayContaining(["Task", "ExperimentRun"]));
 
+      await writeTestExtension({
+        root: pmPath,
+        placement: "projectRoot",
+        directory: "workspace-contract-second-ext",
+        manifest: {
+          name: "workspace-contract-second-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerItemTypes([{ name: 'CachedUntilClear', folder: 'cached-until-clear' }]);",
+          "}",
+          "",
+        ].join("\n"),
+      });
+
+      const cachedContracts = await getWorkspaceContracts(pmPath);
+      expect(cachedContracts.types).not.toContain("CachedUntilClear");
+      clearWorkspaceContractsCache();
+      const refreshedContracts = await getWorkspaceContracts(pmPath);
+      expect(refreshedContracts.types).toEqual(expect.arrayContaining(["ExperimentRun", "CachedUntilClear"]));
+
       const runtimeContracts = await getContracts(pmPath, {
         runtimeOnly: true,
       });
@@ -536,6 +562,106 @@ describe("public sdk entrypoint", () => {
 
       const defaultContracts = await getContracts();
       expect(defaultContracts.schema_version).toBe(PM_TOOL_PARAMETERS_SCHEMA_VERSION);
+    });
+  });
+
+  it("evicts the oldest workspace contracts cache entry when the process memo reaches its limit", async () => {
+    await withTempPmPath(async ({ pmPath, tempRoot }) => {
+      clearWorkspaceContractsCache();
+      await writeTestExtension({
+        root: pmPath,
+        placement: "projectRoot",
+        directory: "workspace-contract-eviction-ext",
+        manifest: {
+          name: "workspace-contract-eviction-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerItemTypes([{ name: 'EvictionBase', folder: 'eviction-base' }]);",
+          "}",
+          "",
+        ].join("\n"),
+      });
+
+      const cwdRoot = path.join(tempRoot, "workspace-contract-cwds");
+      await mkdir(cwdRoot, { recursive: true });
+      const firstCwd = path.join(cwdRoot, "cwd-0");
+      await mkdir(firstCwd, { recursive: true });
+      const firstContracts = await getWorkspaceContracts(pmPath, { cwd: firstCwd });
+      expect(firstContracts.types).toContain("EvictionBase");
+
+      await writeTestExtension({
+        root: pmPath,
+        placement: "projectRoot",
+        directory: "workspace-contract-after-eviction-ext",
+        manifest: {
+          name: "workspace-contract-after-eviction-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerItemTypes([{ name: 'EvictedThenVisible', folder: 'evicted-then-visible' }]);",
+          "}",
+          "",
+        ].join("\n"),
+      });
+
+      for (let index = 1; index <= 50; index += 1) {
+        const cwd = path.join(cwdRoot, `cwd-${index}`);
+        await mkdir(cwd, { recursive: true });
+        await getWorkspaceContracts(pmPath, { cwd });
+      }
+
+      const refreshedFirstContracts = await getWorkspaceContracts(pmPath, { cwd: firstCwd });
+      expect(refreshedFirstContracts.types).toEqual(expect.arrayContaining(["EvictionBase", "EvictedThenVisible"]));
+      clearWorkspaceContractsCache();
+    });
+  });
+
+  it("keys workspace contracts cache by extension enablement settings", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      clearWorkspaceContractsCache();
+      await writeTestExtension({
+        root: pmPath,
+        placement: "projectRoot",
+        directory: "workspace-contract-toggle-ext",
+        manifest: {
+          name: "workspace-contract-toggle-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerItemTypes([{ name: 'ToggleVisible', folder: 'toggle-visible' }]);",
+          "}",
+          "",
+        ].join("\n"),
+      });
+
+      const enabledContracts = await getWorkspaceContracts(pmPath);
+      expect(enabledContracts.types).toContain("ToggleVisible");
+
+      const settings = await readCoreSettings(pmPath);
+      await writeSettings(pmPath, {
+        ...settings,
+        extensions: {
+          ...settings.extensions,
+          disabled: ["workspace-contract-toggle-ext"],
+        },
+      });
+
+      const disabledContracts = await getWorkspaceContracts(pmPath);
+      expect(disabledContracts.types).not.toContain("ToggleVisible");
+      clearWorkspaceContractsCache();
     });
   });
 });

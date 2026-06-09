@@ -841,6 +841,80 @@ describe("extension loader", () => {
     });
   });
 
+  it("allows exceeded pm_max_version with a warn-only project-layer policy", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "warn-exceeded-max",
+        {
+          name: "warn-exceeded-max-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          pm_max_version: "0.0.1",
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      settings.extensions.policy.pm_max_version_exceeded_mode = {
+        project: "warn",
+      };
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.effective).toEqual([
+        expect.objectContaining({
+          name: "warn-exceeded-max-ext",
+          layer: "project",
+        }),
+      ]);
+      expect(discovery.warnings).toEqual([
+        expect.stringMatching(
+          /^extension_pm_max_version_exceeded_warn:project:warn-exceeded-max-ext:allowed=0\.0\.1:current=/,
+        ),
+      ]);
+
+      const loaded = await loadExtensions({ pmRoot: context.pmPath, settings });
+      expect(loaded.loaded.map((entry) => entry.name)).toEqual(["warn-exceeded-max-ext"]);
+      expect(loaded.failed).toEqual([]);
+      expect(loaded.warnings).toEqual(discovery.warnings);
+    });
+  });
+
+  it("keeps global pm_max_version blocking when only project layer is warn-only", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.global,
+        "global-exceeded-max",
+        {
+          name: "global-exceeded-max-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          pm_max_version: "0.0.1",
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      settings.extensions.policy.pm_max_version_exceeded_mode = {
+        project: "warn",
+      };
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.effective).toEqual([]);
+      expect(discovery.warnings).toEqual([
+        expect.stringMatching(/^extension_pm_max_version_exceeded:global:global-exceeded-max-ext:allowed=0\.0\.1:current=/),
+      ]);
+    });
+  });
+
   it("reports deterministic warnings for unknown manifest capabilities without blocking load", async () => {
     await withTempPmPath(async (context) => {
       const roots = resolveExtensionRoots(context.pmPath);

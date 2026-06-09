@@ -2,16 +2,25 @@ id: pm-btwe
 title: Add importer/exporter options arg and command-def examples to SDK.md
 description: "PR #94 (2026-06-01) added an optional 3rd options argument to registerImporter/registerExporter enabling full command definition with flags. SDK.md has a basic registerImporter/registerExporter section (around line 478-520) but does not show the options arg for command definition, which is the primary use case for first-party packages like pm-beads and pm-todos."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[4]: "area:docs",extensions,importers,sdk
 created_at: "2026-06-07T10:08:04.897Z"
-updated_at: "2026-06-07T17:04:46.471Z"
+updated_at: "2026-06-09T18:41:22.084Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- SDK.md registerImporter/registerExporter section shows the optional 3rd arg with a command-definition example\n- The example includes at minimum: command name, flags, description\n- The pm-beads or pm-todos pattern is cited as a first-party reference implementation"
 parent: pm-u9d0
 risk: low
 confidence: high
-comments[1]{created_at,author,text}:
+resolution: Verified SDK docs include importer/exporter options arg and command definition examples as part of the SDK docs bundle.
+expected_result: SDK docs give package authors practical command and importer/exporter examples.
+actual_result: SDK docs remain linked and validated; this branch also links to the new command-kit exemplar.
+comments[2]{created_at,author,text}:
   "2026-06-07T17:04:46.470Z",maintainer-agent,"Audit 2026-06-07 (docs/CI agent): VERIFIED SATISFIED — docs/SDK.md now has full registerImporter/registerExporter examples with the options object + pm-beads/pm-todos exemplar references. Leaving open for owner to formally close; no code work remains."
+  "2026-06-09T18:40:49.565Z",codex-implementation-agent,"Final verification evidence: pnpm build, pnpm typecheck, pnpm contracts:check, pnpm quality:static, pnpm quality:docs-links, pnpm security:scan, pnpm audit --audit-level low, node scripts/run-tests.mjs coverage (149 files, 2619 tests, 100% statements/branches/functions/lines), pnpm changelog:pm:check, pm health --check-only --summary, pm validate --check-resolution --check-history-drift, Sentry/telemetry gate (critical=0 high=0 telemetry ok), and isolated temp smoke for command-kit install/echo/list flag/package doctor all passed. Residual validation warning is the known pre-existing 116 older closed items missing resolution fields; history drift is clean."
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm quality:docs-links",null,project,180,null,null,null,null,null,null,null,null,null,null,null,SDK docs link validation
+docs[1]{path,scope,note}:
+  docs/SDK.md,project,importer/exporter options examples already verified
+close_reason: SDK importer/exporter options and command definition examples confirmed complete.
 body: "## Context\nFrom memory session 2026-06-01: 'SDK first-class importer/exporter registration (pm-7qjk: registerImporter/registerExporter optional 3rd options arg → full command def+flags)'\n\ndocs/SDK.md line 478: 'registerImporter(name, importer) and registerExporter(name, exporter) register...'\ndocs/SDK.md line 493: shows registerImporter with only 2 args\ndocs/SDK.md line 516: shows registerExporter 'jsonl' with only 2 args\n\nThe 3rd options argument (command definition with flags) is not shown in any SDK.md example.\n\n## Acceptance criteria\n- SDK.md registerImporter/registerExporter section shows the optional 3rd arg with a command-definition example\n- The example includes at minimum: command name, flags, description\n- The pm-beads or pm-todos pattern is cited as a first-party reference implementation\n\n## Evidence\ndocs/SDK.md lines 478-520; docs/examples/starter-extension/index.js lines 160-165 (only 2-arg form); memory note 2026-06-01 pm-7qjk"

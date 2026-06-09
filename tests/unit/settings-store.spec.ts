@@ -251,6 +251,41 @@ describe("core/store/settings", () => {
     });
   });
 
+  it("preserves configured pm_max_version_exceeded_mode through deterministic settings writes", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const settings = structuredClone(SETTINGS_DEFAULTS);
+      settings.extensions.policy.pm_max_version_exceeded_mode = {
+        global: "block",
+        project: "warn",
+      };
+
+      await writeSettings(pmRoot, settings);
+
+      const raw = await fs.readFile(getSettingsPath(pmRoot), "utf8");
+      const parsed = JSON.parse(raw) as {
+        extensions: {
+          policy: Record<string, unknown>;
+        };
+      };
+      expect(Object.keys(parsed.extensions.policy).slice(0, 4)).toEqual([
+        "mode",
+        "trust_mode",
+        "pm_max_version_exceeded_mode",
+        "require_provenance",
+      ]);
+      expect(parsed.extensions.policy.pm_max_version_exceeded_mode).toEqual({
+        global: "block",
+        project: "warn",
+      });
+
+      const loaded = await readSettings(pmRoot);
+      expect(loaded.extensions.policy.pm_max_version_exceeded_mode).toEqual({
+        global: "block",
+        project: "warn",
+      });
+    });
+  });
+
   it("keeps runtime schema file sections out of settings writes after read-time merges", async () => {
     await withTempPmRoot(async (pmRoot) => {
       // Legacy fixture omits schema/item_type blocks from persisted JSON.

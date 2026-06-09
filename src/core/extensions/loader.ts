@@ -91,6 +91,7 @@ import {
   type ExtensionSandboxProfile,
   type ExtensionGovernancePolicy,
   type ExtensionTrustMode,
+  type PmMaxVersionExceededMode,
   type ExtensionLayer,
   type ExtensionStatus,
   type ExtensionManifest,
@@ -571,6 +572,7 @@ async function scanExtensionLayer(
   extensionsRoot: string,
   enabled: Set<string>,
   disabled: Set<string>,
+  pmMaxVersionExceededMode: PmMaxVersionExceededMode,
 ): Promise<ExtensionLayerScanResult> {
   const diagnostics: ExtensionDiagnostic[] = [];
   const warnings: string[] = [];
@@ -579,7 +581,15 @@ async function scanExtensionLayer(
   const managedSourcePackages = await readManagedExtensionSourcePackages(extensionsRoot);
 
   for (const directory of directories) {
-    const scanned = await scanExtensionDirectory(layer, extensionsRoot, directory, enabled, disabled, managedSourcePackages);
+    const scanned = await scanExtensionDirectory(
+      layer,
+      extensionsRoot,
+      directory,
+      enabled,
+      disabled,
+      managedSourcePackages,
+      pmMaxVersionExceededMode,
+    );
     diagnostics.push(scanned.diagnostic);
     warnings.push(...scanned.warnings);
     if (scanned.candidate) {
@@ -597,6 +607,7 @@ async function scanExtensionDirectory(
   enabled: Set<string>,
   disabled: Set<string>,
   managedSourcePackages: ReadonlyMap<string, string>,
+  pmMaxVersionExceededMode: PmMaxVersionExceededMode,
 ): Promise<ScannedExtensionDirectory> {
   const extensionDir = path.join(extensionsRoot, directory);
   const manifestPath = path.join(extensionDir, "manifest.json");
@@ -672,7 +683,7 @@ async function scanExtensionDirectory(
   if (pmVersionCompatibility.warning) {
     extensionWarnings.push(pmVersionCompatibility.warning);
   }
-  const pmMaxVersionCompatibility = await evaluatePmMaxVersionCompatibility(layer, manifest);
+  const pmMaxVersionCompatibility = await evaluatePmMaxVersionCompatibility(layer, manifest, pmMaxVersionExceededMode);
   if (pmMaxVersionCompatibility.warning) {
     extensionWarnings.push(pmMaxVersionCompatibility.warning);
   }
@@ -735,8 +746,8 @@ export async function discoverExtensions(options: DiscoverExtensionsOptions): Pr
 
   const enabled = new Set(configured_enabled);
   const disabled = new Set(configured_disabled);
-  const globalScan = await scanExtensionLayer("global", roots.global, enabled, disabled);
-  const projectScan = await scanExtensionLayer("project", roots.project, enabled, disabled);
+  const globalScan = await scanExtensionLayer("global", roots.global, enabled, disabled, policy.pmMaxVersionExceededMode.global);
+  const projectScan = await scanExtensionLayer("project", roots.project, enabled, disabled, policy.pmMaxVersionExceededMode.project);
   const policyWarnings: string[] = [...policy.warnings];
   const effectiveCandidates = buildEffectiveExtensions(globalScan.candidates, projectScan.candidates);
   const effective: EffectiveExtension[] = [];
@@ -878,6 +889,7 @@ async function evaluatePmMinVersionCompatibility(
 async function evaluatePmMaxVersionCompatibility(
   layer: ExtensionLayer,
   manifest: ExtensionManifest,
+  exceededMode: PmMaxVersionExceededMode,
 ): Promise<{ allowed: boolean; warning?: string }> {
   if (typeof manifest.pm_max_version !== "string" || manifest.pm_max_version.trim().length === 0) {
     return { allowed: true };
@@ -911,8 +923,16 @@ async function evaluatePmMaxVersionCompatibility(
       warning: `extension_pm_max_version_unchecked:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}:current=${currentVersion}`,
     };
   }
-  // follow-up: pm-4gw6 recommends a future settings toggle to relax this default-BLOCK to warn-only per layer.
   if (comparison > 0) {
+    // pm-k5e8: `extensions.policy.pm_max_version_exceeded_mode` (default "block",
+    // per-layer overridable) relaxes this to warn-only so operators can keep
+    // pinned extensions loading during a CLI upgrade window.
+    if (exceededMode === "warn") {
+      return {
+        allowed: true,
+        warning: `extension_pm_max_version_exceeded_warn:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}:current=${currentVersion}`,
+      };
+    }
     return {
       allowed: false,
       warning: `extension_pm_max_version_exceeded:${layer}:${manifest.name}:allowed=${manifest.pm_max_version}:current=${currentVersion}`,

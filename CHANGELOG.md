@@ -4,11 +4,25 @@
 
 ### Added
 
+- First-party exemplar package for registerCommand + registerFlags + registerParser \(commands capability pattern\) ([pm-1js9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-1js9.toon))
+- Add importer/exporter options arg and command-def examples to SDK.md ([pm-btwe](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-btwe.toon))
+- pm\_max\_version default-BLOCK should have a per-layer warn-only toggle in settings ([pm-k5e8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-k5e8.toon))
 - Extension teardown: per-deactivate timeout guard so a hanging deactivate\(\) cannot block host shutdown/reload ([pm-bujg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-bujg.toon))
 
 ### Fixed
 
+- MCP server: request-scoped extension registries \(process-global set/clear can race under concurrent native-action requests\) ([pm-bl6m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bl6m.toon))
 - Fix Windows Nightly smoke cleanup helper import ([pm-uzty](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-uzty.toon))
+
+### Security
+
+- Extension sandbox profiles are advisory-only — no runtime enforcement of declared permission boundaries ([pm-pl53](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-pl53.toon))
+- Declare trusted=true, sandbox\_profile, and permissions on all 9 first-party package manifests ([pm-iljy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-iljy.toon))
+
+### Other
+
+- SDK author-ergonomics batch: extension-manifest JSON Schema, getWorkspaceContracts memoization, FlagDefinition type/value\_type unification ([pm-l0jd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-l0jd.toon))
+- Document pm-linked-test-adapters package in EXTENSIONS.md and TESTING.md ([pm-yj8n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-yj8n.toon))
 
 ## 2026.6.9 - 2026-06-09
 

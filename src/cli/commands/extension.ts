@@ -1579,6 +1579,9 @@ export async function runExtension(
       trust_mode: loadResult.policy.trust_mode,
       require_provenance: loadResult.policy.require_provenance,
       default_sandbox_profile: loadResult.policy.default_sandbox_profile,
+      // Honest trust model (ADR pm-6ef3): keep this caveat to one concise line.
+      sandbox_enforcement:
+        "advisory: sandbox_profile/permissions are declaration-based load gates, not runtime isolation (ADR pm-6ef3)",
       trusted_extensions_count: loadResult.policy.trusted_extensions.length,
       allowed_extensions_count: loadResult.policy.allowed_extensions.length,
       blocked_extensions_count: loadResult.policy.blocked_extensions.length,

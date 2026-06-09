@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "entry": "./index.js",
   "priority": 0,
+  "trusted": true,
+  "sandbox_profile": "restricted",
+  "permissions": {
+    "fs_read": true,
+    "fs_write": true,
+    "network": false,
+    "env_read": true,
+    "env_write": false,
+    "process_spawn": false
+  },
   "capabilities": ["commands", "schema"],
   "manifest_version": 1,
   "pm_min_version": "2026.5.0",

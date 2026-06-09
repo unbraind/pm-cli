@@ -37,6 +37,7 @@ import { readSettings } from "../core/store/settings.js";
 import { normalizeListOptions, normalizeUpdateOptions } from "../cli/registration-helpers.js";
 import { UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "../sdk/cli-contracts/commander-mutation-options.js";
 import { PM_TOOL_ACTIONS } from "../sdk/cli-contracts/enum-contracts.js";
+import { clearWorkspaceContractsCache } from "../sdk/runtime.js";
 import {
   runActivity,
   runAggregate,
@@ -635,6 +636,19 @@ function extensionOptionsFromArgs(args: Record<string, unknown>, options: Record
   return normalizedOptions;
 }
 
+// pm-bl6m: runDynamicExtensionAction mutates the process-global active extension
+// registries (set globals -> run handler -> clear globals in a finally). The stdio
+// transport already processes JSON-RPC lines sequentially, but handleRequest is a
+// public entry point (tests, future concurrent transports) — if two native-action
+// requests ever ran concurrently, the newer request would overwrite the globals
+// mid-flight and whichever finished first would clear them out from under the
+// other (its lazily-read hooks/overrides would silently vanish). Serialize the
+// whole activation cycle (load -> activate -> set -> run -> clear -> deactivate)
+// on a dedicated FIFO queue so the critical section can never interleave. Full
+// request-scoped registry plumbing remains possible later if true intra-server
+// concurrency is ever needed.
+const dynamicExtensionActionQueue = createSerialQueue();
+
 async function runDynamicExtensionAction(
   action: string,
   args: Record<string, unknown>,
@@ -648,7 +662,25 @@ async function runDynamicExtensionAction(
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
   }
+  return dynamicExtensionActionQueue.enqueue(async () => {
+    try {
+      return await runDynamicExtensionActionExclusively(action, args, options, global, pmRoot);
+    } finally {
+      clearWorkspaceContractsCache();
+    }
+  });
+}
 
+// Body of the dynamic-action activation cycle. Must only ever run under
+// dynamicExtensionActionQueue (see runDynamicExtensionAction above): it is the
+// exclusive owner of the process-global active extension registries while it runs.
+async function runDynamicExtensionActionExclusively(
+  action: string,
+  args: Record<string, unknown>,
+  options: Record<string, unknown>,
+  global: GlobalOptions,
+  pmRoot: string,
+): Promise<unknown> {
   const settings = await readSettings(pmRoot);
   const loadResult = await loadExtensions({
     pmRoot,

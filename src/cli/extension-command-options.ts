@@ -127,6 +127,18 @@ function collectLooseOptionKeys(definition: Record<string, unknown>): string[] {
   return [...new Set(keys)];
 }
 
+export function collectLooseCommandOptionKeysForDefinitions(
+  definitions: Array<Record<string, unknown>>,
+): Set<string> {
+  const keys = new Set<string>();
+  for (const definition of definitions) {
+    for (const key of collectLooseOptionKeys(definition)) {
+      keys.add(key);
+    }
+  }
+  return keys;
+}
+
 function resolveCanonicalLooseOptionKey(definition: Record<string, unknown>): string | null {
   const long = typeof definition.long === "string" ? definition.long.trim() : "";
   if (long.startsWith("--")) {
@@ -326,4 +338,49 @@ export function parseLooseCommandOptions(args: string[]): Record<string, unknown
     index += parsed.consumed;
   }
   return options;
+}
+
+export function stripLooseCommandOptionTokens(
+  args: string[],
+  definitions: Array<Record<string, unknown>>,
+): string[] {
+  if (definitions.length === 0) {
+    return [...args];
+  }
+  const knownKeys = new Set<string>();
+  const booleanKeys = new Set<string>();
+  for (const definition of definitions) {
+    const valueKind = resolveLooseOptionCoercionKind(definition);
+    for (const key of collectLooseOptionKeys(definition)) {
+      knownKeys.add(key);
+      if (valueKind === "boolean") {
+        booleanKeys.add(key);
+      }
+    }
+  }
+  if (knownKeys.size === 0) {
+    return [...args];
+  }
+
+  const stripped: string[] = [];
+  let index = 0;
+  while (index < args.length) {
+    if (args[index] === "--") {
+      stripped.push(...args.slice(index + 1));
+      break;
+    }
+    const parsed = parseLooseOptionToken(args, index);
+    if (parsed) {
+      const normalizedKey = toLooseOptionKey(parsed.key);
+      if (knownKeys.has(normalizedKey)) {
+        const token = args[index] ?? "";
+        const consumed = booleanKeys.has(normalizedKey) && !token.includes("=") ? 1 : parsed.consumed;
+        index += consumed;
+        continue;
+      }
+    }
+    stripped.push(args[index]);
+    index += 1;
+  }
+  return stripped;
 }

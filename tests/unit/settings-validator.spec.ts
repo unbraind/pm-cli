@@ -119,6 +119,31 @@ describe("core/store/settings-validator", () => {
     expect(validateSettings(raw).success).toBe(true);
   });
 
+  it("accepts pm_max_version_exceeded_mode as a mode literal or per-layer object", () => {
+    const literal = minimalValidSettings();
+    literal.extensions = {
+      enabled: [],
+      disabled: [],
+      policy: {
+        pm_max_version_exceeded_mode: "warn",
+      },
+    };
+    expect(validateSettings(literal).success).toBe(true);
+
+    const perLayer = minimalValidSettings();
+    perLayer.extensions = {
+      enabled: [],
+      disabled: [],
+      policy: {
+        pm_max_version_exceeded_mode: {
+          global: "block",
+          project: "warn",
+        },
+      },
+    };
+    expect(validateSettings(perLayer).success).toBe(true);
+  });
+
   it("rejects a non-boolean where a boolean is required", () => {
     const raw = minimalValidSettings();
     raw.testing = { record_results_to_items: "yes" };
