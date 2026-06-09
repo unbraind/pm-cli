@@ -440,6 +440,34 @@ describe("core/store/settings", () => {
     });
   });
 
+  it("invalidates merge-failure cache when tracked schema files change", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const settings = structuredClone(SETTINGS_DEFAULTS);
+      settings.schema.files.statuses = "schema-blocker/statuses.json";
+      await writeSettings(pmRoot, settings);
+
+      const schemaBlockerPath = path.join(pmRoot, "schema-blocker");
+      await fs.writeFile(schemaBlockerPath, "blocked\n", "utf8");
+
+      const firstRead = await readSettingsWithMetadata(pmRoot);
+      expect(firstRead.warnings).toContain("settings_read_merge_failed");
+
+      await fs.rm(schemaBlockerPath, { force: true });
+      await fs.mkdir(schemaBlockerPath, { recursive: true });
+      await fs.writeFile(
+        path.join(schemaBlockerPath, "statuses.json"),
+        `${JSON.stringify({ statuses: structuredClone(DEFAULT_STATUS_DEFINITIONS) }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const secondRead = await readSettingsWithMetadata(pmRoot);
+      expect(secondRead.warnings).not.toContain("settings_read_merge_failed");
+      expect(secondRead.settings.schema.statuses.map((definition) => definition.id)).toEqual(
+        DEFAULT_STATUS_DEFINITIONS.map((definition) => definition.id),
+      );
+    });
+  });
+
   it("normalizes item type command option policies deterministically", async () => {
     await withTempPmRoot(async (pmRoot) => {
       const settings = structuredClone(SETTINGS_DEFAULTS);

@@ -994,6 +994,7 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
 
 export async function readSettingsWithMetadata(pmRoot: string): Promise<SettingsReadResult> {
   const settingsPath = getSettingsPath(pmRoot);
+  let trackedPathsForFailure: string[] = [settingsPath];
   const raw = await readFileIfExists(settingsPath);
   if (raw === null) {
     const fallback = buildFallbackSettingsReadResult();
@@ -1032,6 +1033,7 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
   try {
     const mergedSettings = mergeSettings(validated.data);
     const trackedPaths = resolveSettingsReadTrackedPaths(pmRoot, mergedSettings.schema, settingsPath);
+    trackedPathsForFailure = trackedPaths;
     const schemaScaffold = await ensureRuntimeSchemaFileScaffold(pmRoot, mergedSettings.schema);
     const loadedSchemaSections = await loadRuntimeSchemaFromOptionalFiles(pmRoot, mergedSettings.schema);
     const settings: PmSettings = {
@@ -1067,7 +1069,7 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
     return result;
   } catch {
     const fallback = buildFallbackSettingsReadResult("settings_read_merge_failed");
-    await cacheSettingsReadResultSafe(pmRoot, [settingsPath], fallback);
+    await cacheSettingsReadResultSafe(pmRoot, trackedPathsForFailure, fallback);
     return fallback;
   }
 }

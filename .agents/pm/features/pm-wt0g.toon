@@ -6,15 +6,16 @@ status: closed
 priority: 1
 tags[5]: "area:search","area:semantic",embedding,migration,ux
 created_at: "2026-06-07T10:04:13.999Z"
-updated_at: "2026-06-09T22:47:14.512Z"
+updated_at: "2026-06-09T23:05:41.940Z"
 author: audit-data-agent
 acceptance_criteria: "- `pm health` surfaces a specific warning when `embedding_identity_changed` is detected (not just advisory)\n- `pm reindex` detects the identity mismatch and prompts/warns: 'Provider or model has changed since last index. Run pm reindex --mode semantic to rebuild.'\n- OR add `pm reindex --auto-migrate` that detects the mismatch and runs automatically\n- Document the provider-switch workflow in COMMANDS.md / AGENT_GUIDE"
 parent: pm-ydp6
 risk: low
 confidence: high
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-06-09T22:05:15.423Z",codex-active-pm-cycle-20260610,"Duplicate-check evidence (active large-PR cycle 2026-06-10): pm context/search/list-open/list-in-progress plus targeted queries over coverage/reindex/settings/telemetry confirm this item is the canonical open lineage for its scope and is now claimed for implementation."
   "2026-06-09T22:47:13.867Z",codex-active-pm-cycle-20260610,Added embedding identity drift detection in reindex/health paths with explicit migration hinting to run semantic reindex when provider/model changes.
+  "2026-06-09T23:05:41.940Z",codex-active-pm-cycle-20260610,"Post-PR-review docs tweak: clarified AGENT_GUIDE wording so --full is described as semantic-mode modifier (not standalone keyword-mode invocation)."
 files[2]{path,scope,note}:
   src/cli/commands/health.ts,project,health check surfaces embedding identity drift warnings
   src/cli/commands/reindex.ts,project,embedding identity mismatch guidance for keyword/semantic flows

@@ -6,12 +6,13 @@ status: closed
 priority: 1
 tags[1]: "area:performance"
 created_at: "2026-06-07T17:04:16.436Z"
-updated_at: "2026-06-09T22:47:09.537Z"
+updated_at: "2026-06-09T23:05:41.668Z"
 author: maintainer-agent
 parent: pm-mpbb
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-06-09T22:05:14.899Z",codex-active-pm-cycle-20260610,"Duplicate-check evidence (active large-PR cycle 2026-06-10): pm context/search/list-open/list-in-progress plus targeted queries over coverage/reindex/settings/telemetry confirm this item is the canonical open lineage for its scope and is now claimed for implementation."
   "2026-06-09T22:47:08.865Z",codex-active-pm-cycle-20260610,"Implemented settings read-cache layer with mtime/size signature invalidation across settings + schema tracked paths, including safe cloning and cache clear on writes."
+  "2026-06-09T23:05:41.668Z",codex-active-pm-cycle-20260610,"Post-PR-review fix: merge-failure fallback cache now keys on tracked schema paths (when available) instead of settings.json-only, preventing stale fallback reuse after schema-file remediation. Verified with settings-store regression test."
 files[2]{path,scope,note}:
   src/core/store/settings-read-cache.ts,project,new cache helper for tracked path signatures and root-scoped entries
   src/core/store/settings.ts,project,integrated memoized read cache with signature invalidation and write-path cache clears
