@@ -1049,15 +1049,7 @@ export async function deactivateExtensions(
   activationResult?: Pick<ExtensionActivationResult, "failed">,
   options: ExtensionDeactivationOptions = {},
 ): Promise<ExtensionDeactivationResult> {
-  const rawTimeout = options.deactivate_timeout_ms;
-  const timeoutMs =
-    typeof rawTimeout === "number" && rawTimeout >= 0
-      ? rawTimeout === 0 || rawTimeout === Infinity
-        ? 0
-        : Number.isFinite(rawTimeout)
-          ? Math.min(MAX_EXTENSION_DEACTIVATE_TIMEOUT_MS, Math.max(1, Math.floor(rawTimeout)))
-          : DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS
-      : DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS;
+  const timeoutMs = normalizeExtensionDeactivateTimeout(options.deactivate_timeout_ms);
   const failedActivationKeys = new Set(
     (activationResult?.failed ?? []).map((entry) => `${entry.layer}:${entry.name}`),
   );
@@ -1094,6 +1086,19 @@ export async function deactivateExtensions(
     failed.push({ layer: outcome.layer, name: outcome.name, error: outcome.error });
   }
   return { deactivated, warnings, failed };
+}
+
+function normalizeExtensionDeactivateTimeout(rawTimeout: unknown): number {
+  if (typeof rawTimeout !== "number" || rawTimeout < 0) {
+    return DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS;
+  }
+  if (rawTimeout === 0 || rawTimeout === Infinity) {
+    return 0;
+  }
+  if (!Number.isFinite(rawTimeout)) {
+    return DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS;
+  }
+  return Math.min(MAX_EXTENSION_DEACTIVATE_TIMEOUT_MS, Math.max(1, Math.floor(rawTimeout)));
 }
 
 async function runExtensionDeactivateWithTimeout(
