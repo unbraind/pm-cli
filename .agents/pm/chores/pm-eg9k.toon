@@ -6,7 +6,8 @@ status: open
 priority: 3
 tags[4]: "area:docs","area:tests",eval,search
 created_at: "2026-06-07T10:06:09.752Z"
-updated_at: "2026-06-07T10:15:59.253Z"
+updated_at: "2026-06-09T22:05:03.115Z"
+assignee: codex-active-pm-cycle-20260610
 author: audit-docs-tests-agent
 acceptance_criteria: "- TESTING.md has a 'Search quality evaluation' section explaining:\n- location of golden-queries.json\n- how to run locally: reindex --eval --eval-fixtures\n- how to add new golden queries\n- advisory nature (continue-on-error in CI)\n- COMMANDS.md reindex section mentions --eval and --eval-fixtures flags"
 parent: pm-u9d0

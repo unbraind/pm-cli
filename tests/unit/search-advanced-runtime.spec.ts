@@ -204,6 +204,13 @@ describe("search-advanced package runtime", () => {
       const quietReindex = await runtime.runAdvancedReindexPackage({ mode: "keyword", progress: "false" }, global);
       expect(quietReindex.mode).toBe("keyword");
 
+      const forcedFullKeyword = await runtime.runAdvancedReindexPackage(
+        { mode: "keyword", progress: "false", full: "true" },
+        global,
+      );
+      expect(forcedFullKeyword.mode).toBe("keyword");
+      expect(forcedFullKeyword.warnings).toEqual(expect.arrayContaining(["search_semantic_reindex_full_ignored:mode_keyword"]));
+
       const createAlpha = context.runCli(
         [
           "--json",

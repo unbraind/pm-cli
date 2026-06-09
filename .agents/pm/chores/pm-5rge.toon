@@ -6,7 +6,8 @@ status: open
 priority: 3
 tags[4]: "area:tests",background-refresh,performance,search
 created_at: "2026-06-07T10:07:23.722Z"
-updated_at: "2026-06-07T10:15:57.860Z"
+updated_at: "2026-06-09T22:05:02.817Z"
+assignee: codex-active-pm-cycle-20260610
 author: audit-docs-tests-agent
 acceptance_criteria: "- Integration test or expanded unit test that:\n- Creates an item\n- Verifies mutation returns promptly (not waiting for reindex)\n- Polls or waits for reindex completion\n- Verifies pm search can find the new item\n- OR: a documented reason why this is adequately covered by existing tests"
 parent: pm-u9d0

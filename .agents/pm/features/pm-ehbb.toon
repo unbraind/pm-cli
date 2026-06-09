@@ -6,7 +6,8 @@ status: open
 priority: 3
 tags[4]: "area:ci","area:release",nightly,observability
 created_at: "2026-06-07T10:06:27.541Z"
-updated_at: "2026-06-07T10:15:58.793Z"
+updated_at: "2026-06-09T22:05:03.412Z"
+assignee: codex-active-pm-cycle-20260610
 author: audit-docs-tests-agent
 acceptance_criteria: "- nightly.yml has a failure notification step (e.g. create GH issue on failure, or a Slack/email webhook step)\n- OR: a ticket documents the deliberate decision to not alert and explains the monitoring approach\n- At minimum: RELEASING.md mentions that nightly failures should be investigated before release"
 parent: pm-u9d0

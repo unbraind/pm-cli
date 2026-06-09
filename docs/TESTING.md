@@ -31,6 +31,38 @@ node scripts/run-tests.mjs test -- tests/integration/cli.integration.spec.ts
 
 Use focused runs while iterating, then run coverage before closure when risk or scope warrants it.
 
+## Coverage Governance
+
+Coverage gating now targets literal source coverage for `src/`:
+
+- `vitest.config.ts` includes `src/*.ts` and `src/**/*.ts`.
+- Thresholds remain 100% for lines, branches, functions, and statements.
+- Avoid reintroducing a curated `include`/`exclude` allowlist for production `src` modules.
+- Prefer extracting deterministic pure helpers (and unit-testing them) when an orchestration-heavy file is difficult to cover directly.
+
+## Search Quality Evaluation
+
+`search-advanced` exposes an advisory golden-query harness for relevance drift checks.
+
+Fixture source:
+
+- `tests/search-eval/golden-queries.json`
+
+Local run:
+
+```bash
+pm install search-advanced --project
+pm reindex --mode keyword --eval --eval-fixtures tests/search-eval/golden-queries.json --json
+```
+
+Fixture authoring notes:
+
+- Each fixture must include `query`, `expected_top_ids`, and optionally `mode` (`keyword|semantic|hybrid`) and `min_ndcg_at_5` (`0..1`).
+- Keep expected IDs deterministic and scoped to stable seed data so CI does not flap.
+- Add new fixtures for regressions before tuning search defaults.
+
+CI currently runs this gate in advisory mode (`continue-on-error: true`), so failures do not block merges by default; treat failing nDCG as a quality signal to investigate, not as a silent ignore.
+
 ## Linked Tests
 
 Add tests to the item that owns the work:

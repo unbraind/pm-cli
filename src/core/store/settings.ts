@@ -3,13 +3,22 @@ import { runActiveOnReadHooks, runActiveOnWriteHooks } from "../extensions/index
 import { GOVERNANCE_PRESET_DEFAULTS, SETTINGS_DEFAULTS } from "../shared/constants.js";
 import { readFileIfExists, writeFileAtomic } from "../fs/fs-utils.js";
 import {
+  DEFAULT_RUNTIME_SCHEMA_FILE_PATHS,
   ensureRuntimeSchemaFileScaffold,
+  filePathForSchemaSection,
   loadRuntimeSchemaFromOptionalFiles,
   normalizeRuntimeSchemaSettings,
 } from "../schema/runtime-schema.js";
 import { getSettingsPath } from "./paths.js";
 import { orderObject, stableValueEquals } from "../shared/serialization.js";
 import { normalizeItemTypeDefinition } from "../item/item-type-definition.js";
+import {
+  clearSettingsReadCache,
+  collectSettingsReadCacheSignatures,
+  getSettingsReadCacheEntry,
+  setSettingsReadCacheEntry,
+  settingsReadCacheSignaturesEqual,
+} from "./settings-read-cache.js";
 import type {
   ExtensionGovernancePolicy,
   PmMaxVersionExceededMode,
@@ -272,6 +281,49 @@ function getSettingsPersistSourceSnapshot(settings: PmSettings): SettingsPersist
     return undefined;
   }
   return candidate as SettingsPersistSourceSnapshot;
+}
+
+function cloneSettingsReadResult(result: SettingsReadResult): SettingsReadResult {
+  const clonedSettings = structuredClone(result.settings);
+  const persistSource = getSettingsPersistSourceSnapshot(result.settings);
+  if (persistSource) {
+    attachSettingsPersistSourceSnapshot(clonedSettings, structuredClone(persistSource));
+  }
+  return {
+    settings: clonedSettings,
+    metadata: {
+      has_explicit_item_format: result.metadata.has_explicit_item_format,
+    },
+    warnings: [...result.warnings],
+  };
+}
+
+function resolveSettingsReadTrackedPaths(pmRoot: string, schema: PmSettings["schema"], settingsPath: string): string[] {
+  const normalizedSchema = normalizeRuntimeSchemaSettings(schema);
+  return [
+    settingsPath,
+    filePathForSchemaSection(pmRoot, normalizedSchema.files.types, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.types),
+    filePathForSchemaSection(pmRoot, normalizedSchema.files.statuses, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.statuses),
+    filePathForSchemaSection(pmRoot, normalizedSchema.files.fields, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.fields),
+    filePathForSchemaSection(pmRoot, normalizedSchema.files.workflows, DEFAULT_RUNTIME_SCHEMA_FILE_PATHS.workflows),
+  ];
+}
+
+async function cacheSettingsReadResult(pmRoot: string, trackedPaths: string[], result: SettingsReadResult): Promise<void> {
+  const signatures = await collectSettingsReadCacheSignatures(trackedPaths);
+  setSettingsReadCacheEntry(pmRoot, {
+    tracked_paths: trackedPaths,
+    signatures,
+    value: cloneSettingsReadResult(result),
+  });
+}
+
+async function cacheSettingsReadResultSafe(pmRoot: string, trackedPaths: string[], result: SettingsReadResult): Promise<void> {
+  try {
+    await cacheSettingsReadResult(pmRoot, trackedPaths, result);
+  } catch {
+    clearSettingsReadCache(pmRoot);
+  }
 }
 
 function resolvePersistedFileBackedSchemaSections(
@@ -944,27 +996,42 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
   const settingsPath = getSettingsPath(pmRoot);
   const raw = await readFileIfExists(settingsPath);
   if (raw === null) {
-    return buildFallbackSettingsReadResult();
+    const fallback = buildFallbackSettingsReadResult();
+    await cacheSettingsReadResultSafe(pmRoot, [settingsPath], fallback);
+    return fallback;
   }
   await runActiveOnReadHooks({
     path: settingsPath,
     scope: "project",
   });
 
+  const cachedResult = getSettingsReadCacheEntry<SettingsReadResult>(pmRoot);
+  if (cachedResult) {
+    const currentSignatures = await collectSettingsReadCacheSignatures(cachedResult.tracked_paths);
+    if (settingsReadCacheSignaturesEqual(currentSignatures, cachedResult.signatures)) {
+      return cloneSettingsReadResult(cachedResult.value);
+    }
+  }
+
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw) as unknown;
   } catch {
-    return buildFallbackSettingsReadResult("settings_read_invalid_json");
+    const fallback = buildFallbackSettingsReadResult("settings_read_invalid_json");
+    await cacheSettingsReadResultSafe(pmRoot, [settingsPath], fallback);
+    return fallback;
   }
 
   const validated = validateSettings(parsed);
   if (!validated.success) {
-    return buildFallbackSettingsReadResult("settings_read_invalid_schema");
+    const fallback = buildFallbackSettingsReadResult("settings_read_invalid_schema");
+    await cacheSettingsReadResultSafe(pmRoot, [settingsPath], fallback);
+    return fallback;
   }
 
   try {
     const mergedSettings = mergeSettings(validated.data);
+    const trackedPaths = resolveSettingsReadTrackedPaths(pmRoot, mergedSettings.schema, settingsPath);
     const schemaScaffold = await ensureRuntimeSchemaFileScaffold(pmRoot, mergedSettings.schema);
     const loadedSchemaSections = await loadRuntimeSchemaFromOptionalFiles(pmRoot, mergedSettings.schema);
     const settings: PmSettings = {
@@ -978,7 +1045,7 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
       schema: loadedSchemaSections.schema,
     };
     attachSettingsPersistSourceSnapshot(settings, buildSettingsPersistSourceSnapshot(validated.data, settings));
-    return {
+    const result: SettingsReadResult = {
       settings,
       metadata: {
         has_explicit_item_format: hasExplicitItemFormat(parsed),
@@ -991,8 +1058,17 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
         ...loadedSchemaSections.warnings,
       ],
     };
+    if (schemaScaffold.created_paths.length === 0) {
+      await cacheSettingsReadResultSafe(pmRoot, trackedPaths, result);
+    } else {
+      // Bootstrap warnings are intentionally one-shot and should not be replayed from cache.
+      clearSettingsReadCache(pmRoot);
+    }
+    return result;
   } catch {
-    return buildFallbackSettingsReadResult("settings_read_merge_failed");
+    const fallback = buildFallbackSettingsReadResult("settings_read_merge_failed");
+    await cacheSettingsReadResultSafe(pmRoot, [settingsPath], fallback);
+    return fallback;
   }
 }
 
@@ -1008,9 +1084,13 @@ export async function writeSettings(pmRoot: string, settings: PmSettings, op = S
       persist_source: getSettingsPersistSourceSnapshot(settings),
     }),
   );
-  await runActiveOnWriteHooks({
-    path: settingsPath,
-    scope: "project",
-    op,
-  });
+  try {
+    await runActiveOnWriteHooks({
+      path: settingsPath,
+      scope: "project",
+      op,
+    });
+  } finally {
+    clearSettingsReadCache(pmRoot);
+  }
 }

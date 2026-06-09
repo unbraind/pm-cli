@@ -196,6 +196,12 @@ const reindexFlags = [
     description: "Reindex mode: keyword|semantic|hybrid.",
   },
   {
+    long: "--full",
+    value_type: "boolean",
+    description:
+      "Force full semantic/hybrid embedding rebuild; by default semantic/hybrid reindex only embeds stale items.",
+  },
+  {
     long: "--progress",
     value_type: "boolean",
     description: "Emit non-interactive progress lines to stderr.",

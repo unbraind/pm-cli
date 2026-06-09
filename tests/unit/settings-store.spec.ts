@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
@@ -6,6 +7,13 @@ import type { ExtensionHookRegistry } from "../../src/core/extensions/loader.js"
 import { normalizeRuntimeSchemaSettings } from "../../src/core/schema/runtime-schema.js";
 import { DEFAULT_STATUS_DEFINITIONS, SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { getSettingsPath } from "../../src/core/store/paths.js";
+import {
+  clearSettingsReadCache,
+  collectSettingsReadCacheSignatures,
+  getSettingsReadCacheEntry,
+  setSettingsReadCacheEntry,
+  settingsReadCacheSignaturesEqual,
+} from "../../src/core/store/settings-read-cache.js";
 import { readSettings, readSettingsWithMetadata, resolveGovernanceKnobs, serializeSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempRoot } from "../helpers/temp.js";
 
@@ -66,6 +74,7 @@ function expectOrderedObjectKeys(value: unknown, expectedKeys: string[]): void {
 describe("core/store/settings", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
+    clearSettingsReadCache();
   });
 
   it("returns cloned defaults when settings file is missing", async () => {
@@ -389,6 +398,48 @@ describe("core/store/settings", () => {
     });
   });
 
+  it("caches settings reads while still honoring onRead hooks and schema file invalidation", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const events: string[] = [];
+      const hooks: ExtensionHookRegistry = {
+        beforeCommand: [],
+        afterCommand: [],
+        onRead: [
+          {
+            layer: "project",
+            name: "cache-read-hook",
+            run: (context) => {
+              events.push(`read:${path.basename(context.path)}`);
+            },
+          },
+        ],
+        onWrite: [],
+        onIndex: [],
+      };
+      setActiveExtensionHooks(hooks);
+
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+      const firstRead = await readSettingsWithMetadata(pmRoot);
+      const secondRead = await readSettingsWithMetadata(pmRoot);
+      expect(firstRead.settings.id_prefix).toBe("pm-");
+      expect(secondRead.settings.id_prefix).toBe("pm-");
+      expect(secondRead.settings).not.toBe(firstRead.settings);
+      expect(events).toEqual(["read:settings.json", "read:settings.json"]);
+
+      const statusesPath = path.join(pmRoot, "schema", "statuses.json");
+      const statusesWithExtra = [...structuredClone(DEFAULT_STATUS_DEFINITIONS), { id: "qa_ready", roles: ["active"] as const }];
+      await fs.writeFile(statusesPath, `${JSON.stringify({ statuses: statusesWithExtra }, null, 2)}\n`, "utf8");
+
+      const thirdRead = await readSettingsWithMetadata(pmRoot);
+      expect(thirdRead.settings.schema.statuses.map((definition) => definition.id)).toContain("qa_ready");
+
+      const fourthRead = await readSettingsWithMetadata(pmRoot);
+      expect(fourthRead.settings.schema.statuses.map((definition) => definition.id)).toContain("qa_ready");
+      expect(events).toEqual(["read:settings.json", "read:settings.json", "read:settings.json", "read:settings.json"]);
+    });
+  });
+
   it("normalizes item type command option policies deterministically", async () => {
     await withTempPmRoot(async (pmRoot) => {
       const settings = structuredClone(SETTINGS_DEFAULTS);
@@ -517,5 +568,78 @@ describe("core/store/settings", () => {
         },
       }).require_close_reason,
     ).toBe(false);
+  });
+
+  it("collects deterministic settings-cache signatures and marks missing files with null stats", async () => {
+    const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "pm-settings-cache-signatures-"));
+    const existingPath = path.join(tempRoot, "settings.json");
+    const missingPath = path.join(tempRoot, "missing.json");
+    await fs.writeFile(existingPath, "{}\n", "utf8");
+
+    const signatures = await collectSettingsReadCacheSignatures([missingPath, existingPath, existingPath]);
+    expect(signatures.map((entry) => entry.path)).toEqual(
+      [existingPath, missingPath].sort((left, right) => left.localeCompare(right)),
+    );
+    const existingSignature = signatures.find((entry) => entry.path === existingPath);
+    const missingSignature = signatures.find((entry) => entry.path === missingPath);
+    expect(existingSignature?.mtime_ms).not.toBeNull();
+    expect(existingSignature?.size).toBeGreaterThan(0);
+    expect(missingSignature).toEqual({
+      path: missingPath,
+      mtime_ms: null,
+      size: null,
+    });
+  });
+
+  it("compares settings-cache signatures by path/mtime/size values", () => {
+    const base = [
+      { path: "/tmp/a", mtime_ms: 1, size: 10 },
+      { path: "/tmp/b", mtime_ms: null, size: null },
+    ];
+    expect(settingsReadCacheSignaturesEqual(base, [...base])).toBe(true);
+    expect(
+      settingsReadCacheSignaturesEqual(base, [
+        { path: "/tmp/a", mtime_ms: 2, size: 10 },
+        { path: "/tmp/b", mtime_ms: null, size: null },
+      ]),
+    ).toBe(false);
+    expect(
+      settingsReadCacheSignaturesEqual(base, [
+        { path: "/tmp/b", mtime_ms: null, size: null },
+        { path: "/tmp/a", mtime_ms: 1, size: 10 },
+      ]),
+    ).toBe(false);
+  });
+
+  it("stores, reads, and clears cache entries per pm root", () => {
+    setSettingsReadCacheEntry("/tmp/root-a", {
+      tracked_paths: [" /tmp/path-a ", "/tmp/path-a", "/tmp/path-b"],
+      signatures: [
+        { path: "/tmp/path-b", mtime_ms: 2, size: 20 },
+        { path: "/tmp/path-a", mtime_ms: 1, size: 10 },
+      ],
+      value: { value: "cached-a" },
+    });
+    setSettingsReadCacheEntry("/tmp/root-b", {
+      tracked_paths: ["/tmp/path-c"],
+      signatures: [{ path: "/tmp/path-c", mtime_ms: 3, size: 30 }],
+      value: { value: "cached-b" },
+    });
+
+    expect(getSettingsReadCacheEntry<{ value: string }>("/tmp/root-a")).toEqual({
+      tracked_paths: ["/tmp/path-a", "/tmp/path-b"],
+      signatures: [
+        { path: "/tmp/path-a", mtime_ms: 1, size: 10 },
+        { path: "/tmp/path-b", mtime_ms: 2, size: 20 },
+      ],
+      value: { value: "cached-a" },
+    });
+
+    clearSettingsReadCache("/tmp/root-a");
+    expect(getSettingsReadCacheEntry("/tmp/root-a")).toBeUndefined();
+    expect(getSettingsReadCacheEntry("/tmp/root-b")).toBeDefined();
+
+    clearSettingsReadCache();
+    expect(getSettingsReadCacheEntry("/tmp/root-b")).toBeUndefined();
   });
 });

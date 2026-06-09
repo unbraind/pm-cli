@@ -1416,7 +1416,7 @@ describe("release readiness runtime coverage", () => {
       const reindexFlagNames = (
         (reindexFlags.json as { command_flags?: Array<{ flags?: Array<{ flag: string }> }> }).command_flags?.[0]?.flags ?? []
       ).map((entry) => entry.flag);
-      expect(reindexFlagNames).toEqual(expect.arrayContaining(["--mode", "--progress", "--eval", "--eval-fixtures"]));
+      expect(reindexFlagNames).toEqual(expect.arrayContaining(["--mode", "--full", "--progress", "--eval", "--eval-fixtures"]));
 
       const searchAdvancedDefault = context.runCli(
         ["search-advanced", "runtime", "--fields", "id,title,score", "--json"],
@@ -1858,12 +1858,9 @@ describe("release readiness runtime coverage", () => {
     const sourceFiles = await listTsFilesRelativeToRepo("src");
     const uncoveredFiles = sourceFiles.filter((filePath) => !matchesAnyPattern(filePath, includePatterns));
     const sorted = uncoveredFiles.sort((left, right) => left.localeCompare(right));
-    // The curated include surface intentionally omits high-cost entrypoint/runtime
-    // modules; keep this list non-empty so accidental wildcard broadening is caught.
-    expect(sorted.length).toBeGreaterThan(0);
-    expect(sorted).toEqual(expect.arrayContaining(["src/cli.ts", "src/mcp/server.ts"]));
-    // Newly added history compaction command must stay in the covered surface.
-    expect(sorted).not.toContain("src/cli/commands/history-compact.ts");
+    // Coverage governance now gates literal all-src TypeScript files.
+    expect(includePatterns).toEqual(expect.arrayContaining(["src/**/*.ts"]));
+    expect(sorted).toEqual([]);
   });
 
   it("keeps mutation-triggered search refresh wiring for test run-tracking paths", async () => {

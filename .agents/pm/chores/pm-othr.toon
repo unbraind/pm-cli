@@ -6,7 +6,8 @@ status: open
 priority: 2
 tags[4]: "area:docs","area:tests",contributor-experience,coverage
 created_at: "2026-06-07T10:05:19.369Z"
-updated_at: "2026-06-07T10:15:46.559Z"
+updated_at: "2026-06-09T22:05:01.638Z"
+assignee: codex-active-pm-cycle-20260610
 author: audit-docs-tests-agent
 acceptance_criteria: "- ARCHITECTURE.md or TESTING.md has a 'Coverage governance' section explaining:\n- pure-logic modules: add to include only (must be 100%)\n- complex command files: add to BOTH include and exclude (coverage tracked but not gated)\n- static-gate 120-file cap for tests/unit/ enforced via scripts/release/static-quality-gate.mjs --max-files-per-dir 120\n- new spawn entries need static-gate orphan allowlist + coverage include-alignment list updates"
 parent: pm-u9d0

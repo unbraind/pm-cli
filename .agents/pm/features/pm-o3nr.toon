@@ -2,14 +2,26 @@ id: pm-o3nr
 title: "Incremental reindex --mode semantic --stale-only: skip already-up-to-date vectors"
 description: "pm reindex --mode semantic currently re-embeds the entire corpus (unless stale detection is applied). The staleness ledger at search/vectorization-status.json already tracks updated_at per item, and collectStaleVectorizationIds exists to identify only dirty items. However, pm reindex does not default to stale-only mode; it re-embeds all items unless --skip-fresh is passed or similar logic is internally active. Making stale-only the default or exposing a cleaner flag would cut reindex time proportional to corpus size."
 type: Feature
-status: open
+status: closed
 priority: 1
 tags[4]: "area:search","area:semantic",performance,ux
 created_at: "2026-06-07T10:04:28.723Z"
-updated_at: "2026-06-07T10:15:39.431Z"
+updated_at: "2026-06-09T22:47:11.876Z"
 author: audit-data-agent
 acceptance_criteria: "- `pm reindex --mode semantic` defaults to stale-only (only re-embeds items whose `updated_at` differs from ledger)\n- `pm reindex --mode semantic --full` forces a full re-embed (current behaviour)\n- Progress output shows `X stale of Y total items to re-embed`\n- Help text explains the default stale-only behaviour and the --full override"
 parent: pm-ydp6
 risk: low
 confidence: high
+comments[2]{created_at,author,text}:
+  "2026-06-09T22:05:15.174Z",codex-active-pm-cycle-20260610,"Duplicate-check evidence (active large-PR cycle 2026-06-10): pm context/search/list-open/list-in-progress plus targeted queries over coverage/reindex/settings/telemetry confirm this item is the canonical open lineage for its scope and is now claimed for implementation."
+  "2026-06-09T22:47:11.252Z",codex-active-pm-cycle-20260610,Reindex command now defaults semantic/hybrid runs to stale-only vectors and reports stale-vs-total progress; --full forces rebuild when requested.
+files[3]{path,scope,note}:
+  packages/pm-search-advanced/extensions/search-advanced/index.ts,project,registered --full flag in command contract
+  packages/pm-search-advanced/extensions/search-advanced/runtime.ts,project,runtime option normalization includes full rebuild flag
+  src/cli/commands/reindex.ts,project,semantic reindex defaults to stale-only with explicit --full override handling
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/reindex-command.spec.ts tests/unit/search-advanced-runtime.spec.ts,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
+docs[1]{path,scope,note}:
+  docs/COMMANDS.md,project,documented stale-first semantic reindex and explicit --full behavior
+close_reason: Delivered stale-first semantic reindex UX with explicit full rebuild override and test coverage.
 body: "## Context\n\n`src/core/search/staleness.ts:25-39` — `collectStaleVectorizationIds` is implemented and correct.\n\n`src/cli/commands/reindex.ts:609` — the reindex command reads `staleIds` and conditionally hydrates only stale documents when `hydrateDocuments` is called with `staleIds`. This suggests partial support already exists but the UX is unclear.\n\nFor a 1057-item corpus with only 5 items changed, a full semantic reindex at Ollama speeds takes 60-180 seconds instead of under 10 seconds for 5 items.\n\n## Acceptance criteria\n\n- [ ] `pm reindex --mode semantic` defaults to stale-only (only re-embeds items whose `updated_at` differs from ledger)\n- [ ] `pm reindex --mode semantic --full` forces a full re-embed (current behaviour)\n- [ ] Progress output shows `X stale of Y total items to re-embed`\n- [ ] Help text explains the default stale-only behaviour and the --full override\n\n## Evidence\n\n- `src/core/search/staleness.ts:25-39` — stale detection available\n- `src/cli/commands/reindex.ts:584-620` — conditional stale hydration exists but flag ergonomics unclear\n- Session memory 2026-05-31: 'non-blocking background semantic refresh' was the main perf fix; full reindex was left unchanged"

@@ -296,6 +296,43 @@ describe("runReindex", () => {
     });
   });
 
+  it("forces a full semantic/hybrid rebuild when --full is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context, "Force Full Alpha", "alpha body", false);
+      createSeedItem(context, "Force Full Beta", "beta body", false);
+
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      await writeSettings(context.pmPath, settings);
+
+      const semanticMock = installSemanticFetchMock();
+      try {
+        await runReindex({ mode: "semantic" }, { path: context.pmPath });
+
+        const incremental = await runReindex({ mode: "semantic" }, { path: context.pmPath });
+        expect(incremental.semantic).toMatchObject({
+          stale_items: 0,
+          unchanged_items: 2,
+          embedded_items: 0,
+          vector_upserted: 0,
+        });
+
+        const forcedFull = await runReindex({ mode: "hybrid", full: true }, { path: context.pmPath });
+        expect(forcedFull.semantic).toMatchObject({
+          stale_items: 2,
+          unchanged_items: 0,
+          embedded_items: 2,
+          vector_upserted: 2,
+        });
+        expect(forcedFull.warnings).toEqual(expect.arrayContaining(["search_semantic_reindex_full_rebuild_forced"]));
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
+
   it("resets the local vector store and re-embeds every item when embedding model metadata changes", async () => {
     await withTempPmPath(async (context) => {
       const idA = createSeedItem(context, "Semantic Model Reset Alpha", "alpha body", false);
@@ -366,6 +403,37 @@ describe("runReindex", () => {
       } finally {
         semanticMock.restore();
       }
+    });
+  });
+
+  it("warns keyword reindex when embedding identity changed since the last semantic index", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context, "Keyword Identity Drift", "keyword body", false);
+
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "old-model";
+      settings.vector_store.lancedb.path = path.join(context.pmPath, "search", "lancedb-keyword");
+      await writeSettings(context.pmPath, settings);
+
+      const semanticMock = installSemanticFetchMock();
+      try {
+        await runReindex({ mode: "semantic" }, { path: context.pmPath });
+      } finally {
+        semanticMock.restore();
+      }
+
+      const nextSettings = await readSettings(context.pmPath);
+      nextSettings.providers.openai.model = "new-model";
+      await writeSettings(context.pmPath, nextSettings);
+
+      const keywordReindex = await runReindex({ mode: "keyword" }, { path: context.pmPath });
+      expect(keywordReindex.warnings).toEqual(
+        expect.arrayContaining([
+          "search_semantic_reindex_requires_rebuild:embedding_identity_changed",
+          "Provider or model has changed since last index. Run pm reindex --mode semantic to rebuild.",
+        ]),
+      );
     });
   });
 

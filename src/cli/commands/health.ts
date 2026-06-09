@@ -21,6 +21,10 @@ import {
 import { resolveEmbeddingProviders } from "../../core/search/providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
 import { collectStaleVectorizationIds } from "../../core/search/staleness.js";
+import {
+  buildVectorizationEmbeddingIdentity,
+  hasVectorizationEmbeddingIdentityChanged,
+} from "../../core/search/vectorization-metadata.js";
 import { resolveVectorStores } from "../../core/search/vector-stores.js";
 import { EXIT_CODE, PM_CORE_REQUIRED_SUBDIRS, PM_OPTIONAL_TYPE_SUBDIRS } from "../../core/shared/constants.js";
 import { findFirstMergeConflictMarker } from "../../core/shared/conflict-markers.js";
@@ -30,7 +34,7 @@ import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { listAllFrontMatter, listAllFrontMatterWithBody } from "../../core/store/item-store.js";
-import { TELEMETRY_SCHEMA_VERSION } from "../../core/telemetry/runtime.js";
+import { TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS, TELEMETRY_SCHEMA_VERSION } from "../../core/telemetry/runtime.js";
 import {
   getItemFormatFromPath,
   getSettingsPath,
@@ -139,6 +143,7 @@ const TELEMETRY_QUEUE_RELATIVE_PATH = path.join("runtime", "telemetry", "events.
 const TELEMETRY_STATE_RELATIVE_PATH = path.join("runtime", "telemetry", "state.json");
 const TELEMETRY_ENDPOINT_PROBE_TIMEOUT_MS = 2_500;
 const TELEMETRY_QUEUE_HIGH_WATER_MARK = 500;
+const TELEMETRY_QUEUE_HIGH_RETRY_THRESHOLD = TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS - 3;
 const TELEMETRY_SERVER_MAX_SCHEMA_VERSION_HEADERS = [
   "x-pm-telemetry-max-schema-version",
   "x-pm-telemetry-max-version",
@@ -1039,10 +1044,18 @@ function normalizeEndpointForDisplay(rawEndpoint: string): string {
   }
 }
 
-function parseTelemetryQueue(raw: string): { validEntries: number; invalidRows: number; totalRows: number } {
+function parseTelemetryQueue(raw: string): {
+  validEntries: number;
+  invalidRows: number;
+  totalRows: number;
+  highRetryEntries: number;
+  maxAttempts: number;
+} {
   let validEntries = 0;
   let invalidRows = 0;
   let totalRows = 0;
+  let highRetryEntries = 0;
+  let maxAttempts = 0;
   for (const line of raw.split("\n")) {
     const trimmed = line.trim();
     if (trimmed.length === 0) {
@@ -1051,8 +1064,18 @@ function parseTelemetryQueue(raw: string): { validEntries: number; invalidRows: 
     totalRows += 1;
     try {
       const parsed = JSON.parse(trimmed) as Record<string, unknown>;
-      if (typeof parsed === "object" && parsed !== null && typeof parsed.attempts === "number") {
+      if (
+        typeof parsed === "object" &&
+        parsed !== null &&
+        typeof parsed.attempts === "number" &&
+        Number.isFinite(parsed.attempts)
+      ) {
+        const attempts = Math.max(0, Math.trunc(parsed.attempts));
         validEntries += 1;
+        maxAttempts = Math.max(maxAttempts, attempts);
+        if (attempts >= TELEMETRY_QUEUE_HIGH_RETRY_THRESHOLD) {
+          highRetryEntries += 1;
+        }
       } else {
         invalidRows += 1;
       }
@@ -1064,6 +1087,8 @@ function parseTelemetryQueue(raw: string): { validEntries: number; invalidRows: 
     validEntries,
     invalidRows,
     totalRows,
+    highRetryEntries,
+    maxAttempts,
   };
 }
 
@@ -1123,7 +1148,9 @@ async function buildTelemetryCheck(
   const queueRaw = await readFileIfExists(queuePath);
   const queueExists = queueRaw !== null;
   const queueSizeBytes = queueRaw ? Buffer.byteLength(queueRaw, "utf8") : 0;
-  const queueSummary = queueRaw ? parseTelemetryQueue(queueRaw) : { validEntries: 0, invalidRows: 0, totalRows: 0 };
+  const queueSummary = queueRaw
+    ? parseTelemetryQueue(queueRaw)
+    : { validEntries: 0, invalidRows: 0, totalRows: 0, highRetryEntries: 0, maxAttempts: 0 };
 
   const stateRaw = await readFileIfExists(statePath);
   let runtimeState: TelemetryRuntimeStateRecord = {};
@@ -1175,8 +1202,12 @@ async function buildTelemetryCheck(
     const activeFailure = lastFailure && (!lastSuccess || lastFailure > lastSuccess);
     const neverFlushed = !lastSuccess;
     const highWater = queueSummary.validEntries >= TELEMETRY_QUEUE_HIGH_WATER_MARK;
+    const highRetries = queueSummary.highRetryEntries > 0;
     if (activeFailure || neverFlushed || highWater) {
       warnings.push(`telemetry_queue_pending:${queueSummary.validEntries}`);
+    }
+    if (highRetries) {
+      warnings.push(`telemetry_queue_high_retries:${queueSummary.highRetryEntries}`);
     }
   }
   if (endpointProbe && !endpointProbe.ok) {
@@ -1208,10 +1239,18 @@ async function buildTelemetryCheck(
         queue_path: queuePath,
         queue_exists: queueExists,
         queue_entries: queueSummary.validEntries,
-        queue_draining: queueHasEntries && warnings.every((w) => !w.startsWith("telemetry_queue_pending:")),
+        queue_draining:
+          queueHasEntries &&
+          warnings.every(
+            (warning) =>
+              !warning.startsWith("telemetry_queue_pending:") && !warning.startsWith("telemetry_queue_high_retries:"),
+          ),
         queue_invalid_rows: queueSummary.invalidRows,
         queue_rows_total: queueSummary.totalRows,
         queue_size_bytes: queueSizeBytes,
+        queue_high_retry_entries: queueSummary.highRetryEntries,
+        queue_high_retry_threshold: TELEMETRY_QUEUE_HIGH_RETRY_THRESHOLD,
+        queue_max_attempts: queueSummary.maxAttempts,
         runtime_state_path: statePath,
         last_attempted_flush_at: runtimeState.last_attempted_flush_at ?? null,
         last_successful_flush_at: runtimeState.last_successful_flush_at ?? null,
@@ -1284,6 +1323,9 @@ async function buildVectorizationCheck(
   const runtimeDefaults = resolveSettingsWithSemanticRuntimeDefaults(settings);
   const providerResolution = resolveEmbeddingProviders(runtimeDefaults.settings);
   const vectorStoreResolution = resolveVectorStores(runtimeDefaults.settings);
+  const runtimeEmbeddingIdentity = providerResolution.active
+    ? buildVectorizationEmbeddingIdentity(providerResolution.active.name, providerResolution.active.model)
+    : null;
   const semanticRuntimeAvailable = Boolean(providerResolution.active && vectorStoreResolution.active);
   const ledgerBefore = await readVectorizationStatusLedger(pmRoot);
   const staleBefore = semanticRuntimeAvailable ? collectStaleVectorizationIds(items, ledgerBefore.entries) : [];
@@ -1301,11 +1343,22 @@ async function buildVectorizationCheck(
   const ledgerAfter = await readVectorizationStatusLedger(pmRoot);
   const staleAfter = semanticRuntimeAvailable ? collectStaleVectorizationIds(items, ledgerAfter.entries) : [];
   const strictVectorizationWarnings = !runtimeDefaults.auto_ollama_defaults_applied;
+  const embeddingIdentityChanged =
+    strictVectorizationWarnings &&
+    semanticRuntimeAvailable &&
+    Boolean(
+      ledgerBefore.embedding &&
+        runtimeEmbeddingIdentity &&
+        hasVectorizationEmbeddingIdentityChanged(ledgerBefore.embedding, runtimeEmbeddingIdentity),
+    );
   const warningSet = new Set<string>([...ledgerBefore.warnings, ...ledgerAfter.warnings]);
   if (strictVectorizationWarnings) {
     for (const warning of refreshResult.warnings) {
       warningSet.add(warning);
     }
+  }
+  if (embeddingIdentityChanged) {
+    warningSet.add("vectorization_embedding_identity_changed");
   }
   if (strictVectorizationWarnings && semanticRuntimeAvailable && staleAfter.length > 0) {
     warningSet.add(`vectorization_stale_items_remaining:${staleAfter.length}`);
@@ -1330,6 +1383,9 @@ async function buildVectorizationCheck(
         },
         provider_active: providerResolution.active?.name ?? null,
         vector_store_active: vectorStoreResolution.active?.name ?? null,
+        embedding_identity_changed: embeddingIdentityChanged,
+        embedding_identity_before: ledgerBefore.embedding ?? null,
+        embedding_identity_runtime: runtimeEmbeddingIdentity ?? null,
         items: items.length,
         ledger_entries_before: Object.keys(ledgerBefore.entries).length,
         stale_items_detail_mode: verboseStaleItems ? "full" : "summary",
