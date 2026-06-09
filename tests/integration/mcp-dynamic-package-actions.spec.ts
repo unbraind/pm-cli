@@ -780,6 +780,95 @@ describe("MCP dynamic package actions", () => {
     });
   });
 
+  it("defaults pm_context to brief depth and supports explicit deeper projections", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli([
+        "create",
+        "--json",
+        "--title",
+        "Context projection probe",
+        "--description",
+        "Context projection probe description",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--author",
+        "mcp-test",
+      ], { expectJson: true });
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      const compact = await handleRequest({
+        jsonrpc: "2.0",
+        id: 12,
+        method: "tools/call",
+        params: {
+          name: "pm_context",
+          arguments: {
+            path: context.pmPath,
+          },
+        },
+      });
+      expect(compact?.isError).not.toBe(true);
+      const compactResult = (compact?.structuredContent as {
+        result?: {
+          depth?: string;
+          summary?: { active_items?: number; open?: number; low_level?: number };
+          low_level?: Array<Record<string, unknown>>;
+        };
+      } | undefined)?.result;
+      expect(compactResult?.depth).toBe("brief");
+      expect(compactResult?.summary).toMatchObject({
+        active_items: 1,
+        open: 1,
+        low_level: 1,
+      });
+      expect(compactResult?.low_level).toEqual([
+        expect.objectContaining({
+          id,
+          title: "Context projection probe",
+          type: "Task",
+          status: "open",
+        }),
+      ]);
+      expect(compactResult?.low_level?.[0]).not.toHaveProperty("description");
+      expect(compactResult?.low_level?.[0]).not.toHaveProperty("body");
+
+      const deep = await handleRequest({
+        jsonrpc: "2.0",
+        id: 13,
+        method: "tools/call",
+        params: {
+          name: "pm_context",
+          arguments: {
+            path: context.pmPath,
+            options: { depth: "deep" },
+          },
+        },
+      });
+      expect(deep?.isError).not.toBe(true);
+      const deepResult = (deep?.structuredContent as {
+        result?: {
+          depth?: string;
+          summary?: { active_items?: number; open?: number };
+          low_level?: Array<Record<string, unknown>>;
+        };
+      } | undefined)?.result;
+      expect(deepResult?.depth).toBe("deep");
+      expect(deepResult?.summary).toMatchObject({
+        active_items: 1,
+        open: 1,
+      });
+      expect(deepResult?.low_level).toEqual([
+        expect.objectContaining({
+          id,
+          title: "Context projection probe",
+        }),
+      ]);
+    });
+  });
+
   it("accepts top-level Plan step references through the narrow MCP tool", async () => {
     await withTempPmPath(async (context) => {
       const created = await handleRequest({
@@ -800,8 +889,12 @@ describe("MCP dynamic package actions", () => {
           },
         },
       });
-      const planId = (created?.structuredContent as { result?: { plan?: { id?: string } } } | undefined)?.result?.plan?.id;
+      const createdResult = (created?.structuredContent as {
+        result?: { plan?: { id?: string; steps?: unknown } };
+      } | undefined)?.result;
+      const planId = createdResult?.plan?.id;
       expect(planId).toMatch(/^pm-/);
+      expect(createdResult?.plan).not.toHaveProperty("steps");
 
       await handleRequest({
         jsonrpc: "2.0",
@@ -841,6 +934,50 @@ describe("MCP dynamic package actions", () => {
       });
       const result = (updated?.structuredContent as { result?: { step?: { status?: string; evidence?: string } } } | undefined)?.result;
       expect(result?.step).toMatchObject({ status: "completed", evidence: "done" });
+
+      const shownDefault = await handleRequest({
+        jsonrpc: "2.0",
+        id: 4,
+        method: "tools/call",
+        params: {
+          name: "pm_plan",
+          arguments: {
+            path: context.pmPath,
+            id: planId,
+            options: {
+              subcommand: "show",
+            },
+          },
+        },
+      });
+      expect(shownDefault?.isError).not.toBe(true);
+      const shownDefaultResult = (shownDefault?.structuredContent as {
+        result?: { plan?: Record<string, unknown> };
+      } | undefined)?.result;
+      expect(shownDefaultResult?.plan).not.toHaveProperty("steps");
+
+      const shownDeep = await handleRequest({
+        jsonrpc: "2.0",
+        id: 5,
+        method: "tools/call",
+        params: {
+          name: "pm_plan",
+          arguments: {
+            path: context.pmPath,
+            id: planId,
+            options: {
+              subcommand: "show",
+              depth: "deep",
+            },
+          },
+        },
+      });
+      expect(shownDeep?.isError).not.toBe(true);
+      const shownDeepResult = (shownDeep?.structuredContent as {
+        result?: { plan?: { steps?: Array<Record<string, unknown>> } };
+      } | undefined)?.result;
+      expect(Array.isArray(shownDeepResult?.plan?.steps)).toBe(true);
+      expect(shownDeepResult?.plan?.steps?.[0]).toMatchObject({ title: "Read code" });
     });
   });
 
@@ -887,6 +1024,59 @@ describe("MCP dynamic package actions", () => {
         ok: true,
         exported: expect.any(Number),
       });
+    });
+  });
+
+  it("supports pm_contracts flags-only projection for compact command contract reads", async () => {
+    await withTempPmPath(async (context) => {
+      const fullContracts = await handleRequest({
+        jsonrpc: "2.0",
+        id: 6,
+        method: "tools/call",
+        params: {
+          name: "pm_contracts",
+          arguments: {
+            path: context.pmPath,
+            options: {
+              command: "health",
+            },
+          },
+        },
+      });
+      expect(fullContracts?.isError).not.toBe(true);
+      const fullResult = (fullContracts?.structuredContent as {
+        result?: Record<string, unknown>;
+      } | undefined)?.result;
+      expect(fullResult).toHaveProperty("runtime_schema");
+      expect(fullResult).toHaveProperty("command_flags");
+
+      const flagsOnlyContracts = await handleRequest({
+        jsonrpc: "2.0",
+        id: 7,
+        method: "tools/call",
+        params: {
+          name: "pm_contracts",
+          arguments: {
+            path: context.pmPath,
+            options: {
+              command: "health",
+              flagsOnly: true,
+            },
+          },
+        },
+      });
+      expect(flagsOnlyContracts?.isError).not.toBe(true);
+      const flagsOnlyResult = (flagsOnlyContracts?.structuredContent as {
+        result?: {
+          selected?: { command?: string; flags_only?: boolean };
+          command_flags?: Array<{ command?: string; flags?: Array<{ flag?: string }>; provider?: string }>;
+          runtime_schema?: unknown;
+        };
+      } | undefined)?.result;
+      expect(flagsOnlyResult?.selected).toMatchObject({ command: "health", flags_only: true });
+      expect(flagsOnlyResult?.runtime_schema).toBeUndefined();
+      expect(flagsOnlyResult?.command_flags?.[0]).toMatchObject({ command: "health", provider: "core" });
+      expect(flagsOnlyResult?.command_flags?.[0]?.flags?.some((entry) => entry.flag === "--summary")).toBe(true);
     });
   });
 
