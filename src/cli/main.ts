@@ -74,7 +74,9 @@ import type { GlobalOptions } from "../core/shared/command-types.js";
 import type { PmSettings } from "../types/index.js";
 import {
   coerceLooseCommandOptionsWithFlagDefinitions,
+  collectLooseCommandOptionKeysForDefinitions,
   parseLooseCommandOptions,
+  stripLooseCommandOptionTokens,
   validateLooseCommandOptionsWithFlagDefinitions,
 } from "./extension-command-options.js";
 import { attachRichHelpText } from "./help-content.js";
@@ -111,6 +113,7 @@ import {
   normalizeExtensionCommandPath,
   collectDynamicExtensionFlagHelpByCommand,
   collectExtensionCommandHelpDescriptors,
+  applyDynamicExtensionFlagOptions,
   applyDynamicExtensionArguments,
   buildDynamicExtensionCommandMetadataHelp,
   findCommandByPath,
@@ -620,15 +623,20 @@ function extractCommandScopedOptions(
   delete scoped.changedFields;
 
   const looseOptions = parseLooseCommandOptions(commandArgs);
-  if (extensionFlagDefinitions.length > 0) {
-    validateLooseCommandOptionsWithFlagDefinitions(looseOptions, extensionFlagDefinitions, getCommandPath(command));
-  }
   for (const [key, value] of Object.entries(looseOptions)) {
     if (scoped[key] === undefined) {
       scoped[key] = value;
     }
   }
   if (extensionFlagDefinitions.length > 0) {
+    const extensionOptionKeys = collectLooseCommandOptionKeysForDefinitions(extensionFlagDefinitions);
+    const optionsToValidate: Record<string, unknown> = { ...looseOptions };
+    for (const key of extensionOptionKeys) {
+      if (scoped[key] !== undefined) {
+        optionsToValidate[key] = scoped[key];
+      }
+    }
+    validateLooseCommandOptionsWithFlagDefinitions(optionsToValidate, extensionFlagDefinitions, getCommandPath(command));
     return coerceLooseCommandOptionsWithFlagDefinitions(scoped, extensionFlagDefinitions);
   }
   return scoped;
@@ -1300,9 +1308,10 @@ async function runRequiredExtensionCommand(
   command: Command,
   options: Record<string, unknown>,
   globalOptions: GlobalOptions,
+  extensionFlagDefinitions: Array<Record<string, unknown>> = [],
 ): Promise<unknown> {
   const commandPath = getCommandPath(command);
-  let commandArgs = command.args.map(String);
+  let commandArgs = stripLooseCommandOptionTokens(command.args.map(String), extensionFlagDefinitions);
   let commandOptions = { ...options };
   let resolvedGlobalOptions = { ...globalOptions };
   const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
@@ -1520,6 +1529,9 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
     const flagHelp = snapshot.commandFlagHelp.get(commandPath);
     const metadataHelp = descriptor ? buildDynamicExtensionCommandMetadataHelp(descriptor) : null;
     if (existingCommand) {
+      if (descriptor?.flags && descriptor.flags.length > 0) {
+        applyDynamicExtensionFlagOptions(existingCommand, descriptor.flags);
+      }
       if (flagHelp) {
         existingCommand.addHelpText("after", flagHelp);
       }
@@ -1538,6 +1550,9 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
     }
     if (descriptor) {
       applyDynamicExtensionArguments(dynamicCommand, descriptor);
+      if (descriptor.flags.length > 0) {
+        applyDynamicExtensionFlagOptions(dynamicCommand, descriptor.flags);
+      }
     }
     if (flagHelp) {
       dynamicCommand.addHelpText("after", flagHelp);
@@ -1564,7 +1579,7 @@ async function registerDynamicExtensionCommandPaths(rootProgram: Command, invoca
           command.args.map(String),
           extensionFlagDefinitions,
         );
-        const result = await runRequiredExtensionCommand(command, scopedOptions, globalOptions);
+        const result = await runRequiredExtensionCommand(command, scopedOptions, globalOptions, extensionFlagDefinitions);
         await invalidateSearchCachesForMutation(globalOptions, result);
         printResult(result, {
           ...globalOptions,
@@ -1988,7 +2003,12 @@ function shouldRegisterDynamicExtensionPaths(rootProgram: Command, invocationArg
   if (!commandName) {
     return false;
   }
-  return !isKnownTopLevelCommandOrAlias(rootProgram, commandName);
+  if (!isKnownTopLevelCommandOrAlias(rootProgram, commandName)) {
+    return true;
+  }
+  const stripped = stripGlobalBootstrapTokens(invocationArgv);
+  const commandIndex = stripped.findIndex((token) => token.trim().length > 0 && !token.startsWith("-"));
+  return commandIndex >= 0 && stripped.slice(commandIndex + 1).some((token) => token.startsWith("-"));
 }
 
 function shouldRegisterRuntimeSchemaFlags(invocationArgv: string[]): boolean {

@@ -2,14 +2,26 @@ id: pm-pl53
 title: Extension sandbox profiles are advisory-only — no runtime enforcement of declared permission boundaries
 description: "extension-policy.ts evaluates sandbox profiles (none/restricted/strict) and produces warnings/blocks based on the manifest `permissions` declaration and `sandbox_profile`. However, the actual extension module is loaded via dynamic import() in the same Node.js process with no VM isolation, permissions API restrictions, or OS-level sandbox. The 'restricted' and 'strict' profiles only block the extension from LOADING if it declares conflicting permissions — they do not prevent a malicious extension from actually spawning processes, writing files, or opening network connections at runtime. An ADR already records this as advisory design. The gap worth tracking: a clear user-facing warning in `pm extension doctor` and `pm health` that sandbox profiles are declaration-based, not runtime-enforced, so users understand the trust model."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: "area:extensions",docs,security
 created_at: "2026-06-07T10:05:40.761Z"
-updated_at: "2026-06-07T10:22:15.633Z"
+updated_at: "2026-06-09T18:41:21.557Z"
 author: audit-platform-agent
 acceptance_criteria: "- `pm health`/doctor surfaces the advisory-only sandbox trust caveat\n- Caveat documented wherever sandbox_profile is described\n- No false runtime-enforcement claim (consistent with ADR pm-6ef3)"
 parent: pm-ugqx
 risk: low
 confidence: high
+resolution: Documented advisory-only sandbox/permissions model and surfaced policy posture in package doctor output.
+expected_result: "Operators understand declared sandbox profiles are load-policy metadata, not runtime isolation."
+actual_result: EXTENSIONS docs and package doctor policy summary now state the advisory enforcement caveat; tests passed.
+comments[3]{created_at,author,text}:
+  "2026-06-09T17:46:48.641Z",sdk-core-agent,"sdk-core-agent starting: one-line advisory-trust-model caveat in pm extension doctor sandbox/permission output; verify pm health makes no runtime-enforcement claim."
+  "2026-06-09T18:09:32.053Z",codex-implementation-agent,"Trust-model evidence: EXTENSIONS.md and package doctor policy summary now state sandbox_profile/permissions are declaration-based load gates, not runtime isolation."
+  "2026-06-09T18:40:48.956Z",codex-implementation-agent,"Final verification evidence: pnpm build, pnpm typecheck, pnpm contracts:check, pnpm quality:static, pnpm quality:docs-links, pnpm security:scan, pnpm audit --audit-level low, node scripts/run-tests.mjs coverage (149 files, 2619 tests, 100% statements/branches/functions/lines), pnpm changelog:pm:check, pm health --check-only --summary, pm validate --check-resolution --check-history-drift, Sentry/telemetry gate (critical=0 high=0 telemetry ok), and isolated temp smoke for command-kit install/echo/list flag/package doctor all passed. Residual validation warning is the known pre-existing 116 older closed items missing resolution fields; history drift is clean."
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm quality:docs-links",null,project,180,null,null,null,null,null,null,null,null,null,null,null,extension trust-model docs validation
+docs[1]{path,scope,note}:
+  docs/EXTENSIONS.md,project,sandbox advisory trust model caveat
+close_reason: Sandbox profile advisory trust model documented and exposed.
 body: ""

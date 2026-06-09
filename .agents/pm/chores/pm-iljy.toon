@@ -2,14 +2,36 @@ id: pm-iljy
 title: "Declare trusted=true, sandbox_profile, and permissions on all 9 first-party package manifests"
 description: "All 9 first-party package manifests (pm-beads, pm-calendar, pm-governance-audit, pm-guide-shell, pm-lifecycle-hooks, pm-linked-test-adapters, pm-search-advanced, pm-templates, pm-todos) are missing `trusted`, `sandbox_profile`, and `permissions` fields. These are the very features that extension governance policy evaluates. First-party packages serve as exemplars for third-party authors — if they don't declare these fields, authors copy the pattern and produce unsigned, unprofileable packages. The governance-audit manifest in particular should set sandbox_profile since it intentionally hooks onRead/onWrite. Evidence: all 9 manifests confirmed via audit 2026-06-07."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[4]: "area:extensions","area:packages",exemplar,security
 created_at: "2026-06-07T10:04:41.422Z"
-updated_at: "2026-06-07T10:22:13.515Z"
+updated_at: "2026-06-09T18:41:20.785Z"
 author: audit-platform-agent
 acceptance_criteria: "- All 9 first-party manifests declare `trusted`, `sandbox_profile`, and `permissions`\n- governance-audit manifest declares a sandbox_profile consistent with its onRead/onWrite hooks\n- Governance test enforces presence of these fields on first-party manifests"
 parent: pm-ugqx
 risk: low
 confidence: high
+resolution: "Added trusted, sandbox_profile, and permissions declarations to all first-party manifests."
+expected_result: Every first-party manifest declares trust and permission posture consistently.
+actual_result: "All nine existing first-party manifests now declare trusted=true, sandbox_profile, and permissions; manifest tests passed."
+comments[4]{created_at,author,text}:
+  "2026-06-09T17:46:12.335Z",packages-agent,"Starting: declaring trusted/sandbox_profile/permissions across all 9 first-party extension manifests. Reading extension-policy.ts for exact keys first."
+  "2026-06-09T17:49:29.185Z",packages-agent,"Policy facts (extension-policy.ts + loader.ts): manifest fields trusted:boolean, sandbox_profile in none|restricted|strict, permissions keys fs_read/fs_write/network/env_read/env_write/process_spawn (loader rejects unknown non-boolean values). restricted disallows process_spawn+env_write; strict additionally network+fs_write; non-none profile without a permissions object = sandbox_permissions_missing. Chosen matrix: beads/todos/templates/governance-audit/search-advanced = restricted (mutate tracker or write files via SDK; search-advanced also network:true for embedding-backed reindex); calendar/guide-shell = strict (read-only views, fs_read+env_read only); lifecycle-hooks = strict (inert, all permissions false); linked-test-adapters = none + process_spawn:true (test-runs resume delegates to spawnBackgroundTestRunWorker, so restricted/strict would be violated). trusted:true everywhere."
+  "2026-06-09T18:00:07.870Z",packages-agent,"DONE: all 9 first-party extension manifests now declare trusted:true + sandbox_profile + full 6-key permissions (fs_read/fs_write/network/env_read/env_write/process_spawn). Profiles: restricted=beads,todos,templates,governance-audit,search-advanced (tracker/file writes; search-advanced also network:true for embedding reindex); strict=calendar,guide-shell (read-only),lifecycle-hooks (inert, all false); none=linked-test-adapters (test-runs resume spawns background worker via SDK, so process_spawn:true is incompatible with restricted/strict). Governance test merged into tests/unit/package-manifest.spec.ts: asserts the 3 fields on every packages/*/extensions/*/manifest.json, exact 6 permission keys all-boolean, AND profile-consistency mirroring resolvePolicySandboxReason (restricted forbids process_spawn/env_write; strict additionally network/fs_write). package-manifest.spec.ts 16/16 green; real loader accepted the new manifest fields end-to-end (dist install-all integration test green)."
+  "2026-06-09T18:40:47.993Z",codex-implementation-agent,"Final verification evidence: pnpm build, pnpm typecheck, pnpm contracts:check, pnpm quality:static, pnpm quality:docs-links, pnpm security:scan, pnpm audit --audit-level low, node scripts/run-tests.mjs coverage (149 files, 2619 tests, 100% statements/branches/functions/lines), pnpm changelog:pm:check, pm health --check-only --summary, pm validate --check-resolution --check-history-drift, Sentry/telemetry gate (critical=0 high=0 telemetry ok), and isolated temp smoke for command-kit install/echo/list flag/package doctor all passed. Residual validation warning is the known pre-existing 116 older closed items missing resolution fields; history drift is clean."
+files[10]{path,scope,note}:
+  packages/pm-beads/extensions/beads/manifest.json,project,first-party policy declaration
+  packages/pm-calendar/extensions/calendar/manifest.json,project,first-party policy declaration
+  packages/pm-governance-audit/extensions/governance-audit/manifest.json,project,first-party policy declaration
+  packages/pm-guide-shell/extensions/guide-shell/manifest.json,project,first-party policy declaration
+  packages/pm-lifecycle-hooks/extensions/lifecycle-hooks/manifest.json,project,first-party policy declaration
+  packages/pm-linked-test-adapters/extensions/linked-test-adapters/manifest.json,project,first-party policy declaration
+  packages/pm-search-advanced/extensions/search-advanced/manifest.json,project,first-party policy declaration
+  packages/pm-templates/extensions/templates/manifest.json,project,first-party policy declaration
+  packages/pm-todos/extensions/todos/manifest.json,project,first-party policy declaration
+  tests/unit/package-manifest.spec.ts,project,manifest policy declaration coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/package-manifest.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,first-party manifest governance coverage
+close_reason: "First-party package manifest trust, sandbox, and permissions declarations completed."
 body: ""

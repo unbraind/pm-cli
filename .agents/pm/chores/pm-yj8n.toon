@@ -2,14 +2,26 @@ id: pm-yj8n
 title: Document pm-linked-test-adapters package in EXTENSIONS.md and TESTING.md
 description: "packages/pm-linked-test-adapters exists as a first-party bundled package (pm-linked-test-adapters, version 0.1.0), but it is not mentioned anywhere in docs/EXTENSIONS.md, docs/TESTING.md, or docs/COMMANDS.md. The EXTENSIONS.md bundled-package catalog lists pm-beads, pm-todos, pm-lifecycle-hooks, pm-search-advanced but omits pm-linked-test-adapters, pm-calendar, pm-templates, and pm-guide-shell from the exemplar list."
 type: Chore
-status: open
+status: closed
 priority: 2
 tags[3]: "area:docs","area:extensions",staleness
 created_at: "2026-06-07T10:04:49.241Z"
-updated_at: "2026-06-07T10:15:47.971Z"
+updated_at: "2026-06-09T18:41:20.545Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- docs/EXTENSIONS.md bundled-package exemplar table/list is complete: all packages/pm-* appear\n- docs/TESTING.md mentions pm-linked-test-adapters and what it adds\n- pm install linked-test-adapters --project example exists in TESTING.md"
 parent: pm-u9d0
 risk: low
 confidence: high
+resolution: Documented pm-linked-test-adapters in EXTENSIONS and TESTING with linked verification.
+expected_result: Docs explain package usage and sandbox-safe linked-test workflows.
+actual_result: docs/EXTENSIONS.md and docs/TESTING.md now include the package guidance; docs link gate and full suite passed.
+comments[2]{created_at,author,text}:
+  "2026-06-09T18:09:31.794Z",codex-implementation-agent,"Docs evidence: first-party package exemplar list now covers all packages/pm-* entries and TESTING.md documents linked-test-adapters install/doctor/test-runs smoke path."
+  "2026-06-09T18:40:47.719Z",codex-implementation-agent,"Final verification evidence: pnpm build, pnpm typecheck, pnpm contracts:check, pnpm quality:static, pnpm quality:docs-links, pnpm security:scan, pnpm audit --audit-level low, node scripts/run-tests.mjs coverage (149 files, 2619 tests, 100% statements/branches/functions/lines), pnpm changelog:pm:check, pm health --check-only --summary, pm validate --check-resolution --check-history-drift, Sentry/telemetry gate (critical=0 high=0 telemetry ok), and isolated temp smoke for command-kit install/echo/list flag/package doctor all passed. Residual validation warning is the known pre-existing 116 older closed items missing resolution fields; history drift is clean."
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pnpm quality:docs-links",null,project,180,null,null,null,null,null,null,null,null,null,null,null,docs link validation
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,complete first-party package exemplar catalog
+  docs/TESTING.md,project,linked-test-adapters testing docs
+close_reason: Linked-test-adapters package documentation completed and verified.
 body: "## Context\nThe bundled package catalog in docs/EXTENSIONS.md (around lines 220-227) mentions only pm-beads, pm-todos, pm-lifecycle-hooks, and pm-search-advanced as exemplars. pm-linked-test-adapters is shipped under packages/ but has zero presence in public docs.\n\ndocs/TESTING.md covers pm test / pm test-all / background runs but never mentions that pm install linked-test-adapters --project unlocks run management adapters and reporters.\n\n## Acceptance criteria\n- docs/EXTENSIONS.md bundled-package exemplar table/list is complete: all packages/pm-* appear\n- docs/TESTING.md mentions pm-linked-test-adapters and what it adds\n- pm install linked-test-adapters --project example exists in TESTING.md\n\n## Evidence\npackages/pm-linked-test-adapters/package.json (name, description); docs/EXTENSIONS.md lines 220-227; docs/TESTING.md full file — no mention"

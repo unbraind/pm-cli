@@ -32,6 +32,7 @@ import {
   appendHistoryEntry,
   createHistoryEntry,
   createPmCliExpectedError,
+  clearWorkspaceContractsCache,
   defineExtension,
   type ExtensionApi,
   type ExtensionHookRegistry,
@@ -520,6 +521,31 @@ describe("public sdk entrypoint", () => {
 
       const workspaceContracts = await getWorkspaceContracts(pmPath);
       expect(workspaceContracts.types).toEqual(expect.arrayContaining(["Task", "ExperimentRun"]));
+
+      await writeTestExtension({
+        root: pmPath,
+        placement: "projectRoot",
+        directory: "workspace-contract-second-ext",
+        manifest: {
+          name: "workspace-contract-second-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerItemTypes([{ name: 'CachedUntilClear', folder: 'cached-until-clear' }]);",
+          "}",
+          "",
+        ].join("\n"),
+      });
+
+      const cachedContracts = await getWorkspaceContracts(pmPath);
+      expect(cachedContracts.types).not.toContain("CachedUntilClear");
+      clearWorkspaceContractsCache();
+      const refreshedContracts = await getWorkspaceContracts(pmPath);
+      expect(refreshedContracts.types).toEqual(expect.arrayContaining(["ExperimentRun", "CachedUntilClear"]));
 
       const runtimeContracts = await getContracts(pmPath, {
         runtimeOnly: true,

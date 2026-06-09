@@ -120,6 +120,20 @@ pm test-runs resume <run-id>
 
 Background run fingerprints prevent duplicate parallel runs for the same linked-test set.
 
+The bundled `pm-linked-test-adapters` package is the first-party package
+exemplar for background run management. Install it in an isolated project when
+validating package-provided test-run surfaces:
+
+```bash
+pm install linked-test-adapters --project
+pm package doctor --project --detail deep --trace
+pm test-runs list --json
+```
+
+The package activates the `test-runs` command family and keeps subprocess
+handling behind an explicit package permission declaration, so it is a useful
+smoke target for package, permission, and command-contract changes.
+
 ## Release-Readiness Checks
 
 For substantial changes:

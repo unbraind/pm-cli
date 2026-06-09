@@ -299,6 +299,24 @@ function formatDynamicExtensionOptionFlags(definition: Record<string, unknown>):
   return `${optionNames.join(", ")}${optionValueSuffix}`;
 }
 
+function formatDynamicExtensionParseOptionFlags(definition: Record<string, unknown>): string | null {
+  const visible = toOptionalBoolean(definition.visible);
+  if (visible === false) {
+    return null;
+  }
+  const longName = toNonEmptyFlagString(definition.long);
+  const shortName = toNonEmptyFlagString(definition.short);
+  const normalizedShort = shortName && shortName.startsWith("-") && !shortName.startsWith("--") ? shortName : null;
+  const normalizedLong = longName && longName.startsWith("--") && longName.length > 2 ? longName : null;
+  if (!normalizedLong && !normalizedShort) {
+    return null;
+  }
+  const valueName = toNonEmptyFlagString(definition.value_name);
+  const valueSuffix = valueName ? ` <${valueName}>` : " [value]";
+  const optionNames = [normalizedShort, normalizedLong].filter((entry): entry is string => entry !== null);
+  return `${optionNames.join(", ")}${valueSuffix}`;
+}
+
 function formatDynamicExtensionOptionDescription(definition: Record<string, unknown>): string {
   const description = toNonEmptyFlagString(definition.description) ?? "Extension-provided option.";
   const markers: string[] = [];
@@ -310,6 +328,31 @@ function formatDynamicExtensionOptionDescription(definition: Record<string, unkn
   }
   const markerSuffix = markers.length > 0 ? ` [${markers.join(", ")}]` : "";
   return `${description}${markerSuffix}`;
+}
+
+function commandAlreadyHasOption(command: Command, definition: Record<string, unknown>): boolean {
+  const longName = toNonEmptyFlagString(definition.long);
+  const shortName = toNonEmptyFlagString(definition.short);
+  return command.options.some((option) => {
+    const optionWithNames = option as { long?: string; short?: string };
+    return (
+      (longName !== null && optionWithNames.long === longName) ||
+      (shortName !== null && optionWithNames.short === shortName)
+    );
+  });
+}
+
+export function applyDynamicExtensionFlagOptions(command: Command, definitions: Array<Record<string, unknown>>): void {
+  for (const definition of definitions) {
+    if (commandAlreadyHasOption(command, definition)) {
+      continue;
+    }
+    const flags = formatDynamicExtensionParseOptionFlags(definition);
+    if (!flags) {
+      continue;
+    }
+    command.option(flags, formatDynamicExtensionOptionDescription(definition));
+  }
 }
 
 function buildDynamicExtensionHelpOptionSummary(definition: Record<string, unknown>): HelpOptionSummary | null {

@@ -1,6 +1,8 @@
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { handleRequest } from "../../src/mcp/server.js";
+import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("MCP dynamic package actions", () => {
@@ -885,6 +887,72 @@ describe("MCP dynamic package actions", () => {
         ok: true,
         exported: expect.any(Number),
       });
+    });
+  });
+
+  it("serializes concurrent native extension actions so registries cannot cross-corrupt (pm-bl6m)", async () => {
+    await withTempPmPath(async (context) => {
+      const logPath = path.join(context.tempRoot, "registry-concurrency.log");
+      await writeTestExtension({
+        root: path.join(context.pmPath, "extensions"),
+        directory: "concurrency-probe",
+        name: "concurrency-probe",
+        entrySource: [
+          "import fs from 'node:fs';",
+          "import { setTimeout as delay } from 'node:timers/promises';",
+          `const logPath = ${JSON.stringify(logPath)};`,
+          "export default {",
+          "  activate(api) {",
+          "    for (const probe of [{ name: 'probe-slow', wait: 120 }, { name: 'probe-fast', wait: 10 }]) {",
+          "      api.registerCommand({",
+          "        name: probe.name,",
+          "        description: 'Registry concurrency probe command.',",
+          "        run: async () => {",
+          "          fs.appendFileSync(logPath, 'start:' + probe.name + '\\n', 'utf8');",
+          "          await delay(probe.wait);",
+          "          fs.appendFileSync(logPath, 'end:' + probe.name + '\\n', 'utf8');",
+          "          return { ok: true, marker: probe.name };",
+          "        },",
+          "      });",
+          "    }",
+          "  },",
+          "};",
+          "",
+        ].join("\n"),
+      });
+
+      const invoke = (id: number, action: string) =>
+        handleRequest({
+          jsonrpc: "2.0",
+          id,
+          method: "tools/call",
+          params: {
+            name: "pm_run",
+            arguments: { path: context.pmPath, action },
+          },
+        });
+
+      // Fire both dynamic extension actions WITHOUT awaiting the first: the slow
+      // handler is still mid-await when the fast request arrives. Pre-serialization
+      // the fast request would overwrite the process-global registries mid-flight
+      // and clear them before the slow handler finished (interleaved log below).
+      const [slow, fast] = await Promise.all([invoke(40, "probe-slow"), invoke(41, "probe-fast")]);
+
+      expect(slow?.isError).not.toBe(true);
+      expect(fast?.isError).not.toBe(true);
+      const slowResult = (slow?.structuredContent as { result?: { ok?: boolean; marker?: string } } | undefined)?.result;
+      const fastResult = (fast?.structuredContent as { result?: { ok?: boolean; marker?: string } } | undefined)?.result;
+      expect(slowResult).toMatchObject({ ok: true, marker: "probe-slow" });
+      expect(fastResult).toMatchObject({ ok: true, marker: "probe-fast" });
+
+      // Each set-globals -> run handler -> clear-globals cycle must be atomic:
+      // one probe's start/end pair fully precedes the other's, in either order.
+      const log = (await readFile(logPath, "utf8")).trim().split("\n");
+      expect(log).toHaveLength(4);
+      expect([
+        "start:probe-slow,end:probe-slow,start:probe-fast,end:probe-fast",
+        "start:probe-fast,end:probe-fast,start:probe-slow,end:probe-slow",
+      ]).toContain(log.join(","));
     });
   });
 

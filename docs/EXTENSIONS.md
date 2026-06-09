@@ -142,6 +142,16 @@ A minimal standalone extension has a `manifest.json` and an import-free entrypoi
   "manifest_version": 1,
   "pm_min_version": "2026.5.0",
   "pm_max_version": "2027.0.0",
+  "trusted": true,
+  "sandbox_profile": "strict",
+  "permissions": {
+    "fs_read": false,
+    "fs_write": false,
+    "network": false,
+    "env_read": false,
+    "env_write": false,
+    "process_spawn": false
+  },
   "capabilities": ["commands"]
 }
 ```
@@ -194,12 +204,18 @@ Runnable manifest examples are the source of truth:
 - [starter extension manifest](examples/starter-extension/manifest.json)
 - [policy-restricted manifest](examples/policy-restricted-extension/manifest.json)
 
+Schema:
+
+- Use [extension-manifest.schema.json](schemas/extension-manifest.schema.json) as the
+  `$schema` value for inline editor validation. The loader ignores `$schema` and
+  tolerates future manifest fields, but the schema documents the fields pm reads.
+
 Rules:
 
 - `entry` must resolve inside the extension directory.
 - `manifest_version` is an optional integer identifying the manifest schema generation. Runtime contracts currently support manifest versions `1` and `2`, and first-party runnable examples use `2`. First-party packages declare it; the manifest governance test requires it on every first-party package.
 - `pm_min_version` is an inclusive minimum pm CLI version. If the running CLI is older, discovery emits `extension_pm_min_version_unmet:<layer>:<name>:required=<version>:current=<version>` and skips the extension before import.
-- `pm_max_version` is an optional inclusive maximum pm CLI version (the upper compatibility bound). If the running CLI is newer than this value, discovery emits `extension_pm_max_version_exceeded:<layer>:<name>:allowed=<version>:current=<version>` and skips the extension before import. Use it to stop a CLI major release from loading a stale package that would crash at activation.
+- `pm_max_version` is an optional inclusive maximum pm CLI version (the upper compatibility bound). If the running CLI is newer than this value, discovery emits `extension_pm_max_version_exceeded:<layer>:<name>:allowed=<version>:current=<version>` and skips the extension before import. Use it to stop a CLI major release from loading a stale package that would crash at activation. Operators can temporarily set `extensions.policy.pm_max_version_exceeded_mode` to `"warn"` (or `{ "project": "warn" }`) during controlled upgrade windows; the default remains `"block"`.
 - Both bounds share the same blocking semantics and warning-code shapes:
   - `*_invalid` (`required=`/`allowed=` only): the declared version is unparseable; the extension is **blocked**.
   - `*_unchecked` (`...:current=unknown` or an uncomparable current version): the bound could not be compared against the running CLI; the extension is **allowed** but a warning is recorded.
@@ -224,9 +240,16 @@ Supported capabilities:
 
 First-party package exemplars:
 
-- `pm-beads` and `pm-todos`: importer/exporter registration and generated command contracts.
+- `pm-beads`: beads JSON/JSONL importer/exporter package with generated command contracts.
+- `pm-calendar`: calendar view package for schedule/context surfaces.
+- `pm-command-kit`: command capability exemplar for `registerCommand`, `registerFlags`, and `registerParser`.
+- `pm-governance-audit`: governance hook exemplar for compact read/write sidecar logs.
+- `pm-guide-shell`: guide-topic package for bundled workflow docs.
 - `pm-lifecycle-hooks`: default-inert lifecycle hook registration.
+- `pm-linked-test-adapters`: linked-test run-management adapters and reporters.
 - `pm-search-advanced`: deterministic local search provider registration.
+- `pm-templates`: reusable create-template package.
+- `pm-todos`: todo import/export package with generated command contracts.
 
 ## Governance Policy
 
@@ -243,6 +266,29 @@ Sandbox profiles:
 - `none`: no extra sandbox restriction
 - `restricted`: safe default for normal package workflows
 - `strict`: most restrictive policy profile
+
+`sandbox_profile` and `permissions` are declaration-based load gates, not runtime
+isolation. They let policy decide whether to load an extension; they do not stop
+loaded JavaScript from using Node APIs at runtime. `pm package doctor --project`
+reports the same advisory trust-model caveat in its policy summary.
+
+`extensions.policy.pm_max_version_exceeded_mode` controls how `pm_max_version`
+violations are handled. Use `"block"` (the default) for both global and project
+layers, `"warn"` to allow exceeded extensions while emitting
+`extension_pm_max_version_exceeded_warn`, or a per-layer object such as:
+
+```json
+{
+  "extensions": {
+    "policy": {
+      "pm_max_version_exceeded_mode": {
+        "global": "block",
+        "project": "warn"
+      }
+    }
+  }
+}
+```
 
 Surface tokens include:
 

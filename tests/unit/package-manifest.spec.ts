@@ -308,6 +308,7 @@ describe("pm package manifest model", () => {
   it("recognizes first-party package roots as installable pm packages", async () => {
     const beadsRoot = path.join(repoRoot, "packages", "pm-beads");
     const calendarRoot = path.join(repoRoot, "packages", "pm-calendar");
+    const commandKitRoot = path.join(repoRoot, "packages", "pm-command-kit");
     const governanceAuditRoot = path.join(repoRoot, "packages", "pm-governance-audit");
     const guideShellRoot = path.join(repoRoot, "packages", "pm-guide-shell");
     const lifecycleHooksRoot = path.join(repoRoot, "packages", "pm-lifecycle-hooks");
@@ -348,6 +349,23 @@ describe("pm package manifest model", () => {
     });
     await expect(collectPackageExtensionDirectories(calendarRoot)).resolves.toEqual([
       path.join(calendarRoot, "extensions", "calendar"),
+    ]);
+
+    await expect(readPmPackageManifest(commandKitRoot)).resolves.toMatchObject({
+      source: "pm",
+      package_name: "@unbrained/pm-command-kit",
+      package_version: "0.1.0",
+      aliases: ["command-kit"],
+      catalog: {
+        display_name: "Command Kit Exemplar",
+        category: "sdk",
+      },
+      resources: {
+        extensions: ["extensions/command-kit"],
+      },
+    });
+    await expect(collectPackageExtensionDirectories(commandKitRoot)).resolves.toEqual([
+      path.join(commandKitRoot, "extensions", "command-kit"),
     ]);
 
     await expect(readPmPackageManifest(governanceAuditRoot)).resolves.toMatchObject({
@@ -472,6 +490,7 @@ describe("pm package manifest model", () => {
     for (const packageRoot of [
       beadsRoot,
       calendarRoot,
+      commandKitRoot,
       governanceAuditRoot,
       guideShellRoot,
       lifecycleHooksRoot,
@@ -493,6 +512,8 @@ describe("pm package manifest model", () => {
     await expect(access(path.join(repoRoot, "packages", "pm-beads", "extensions", "beads", "runtime.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.ts"))).resolves.toBeUndefined();
     await expect(access(path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.ts"))).resolves.toBeUndefined();
+    await expect(access(path.join(repoRoot, "packages", "pm-command-kit", "extensions", "command-kit", "index.ts"))).resolves
+      .toBeUndefined();
     await expect(
       access(path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "index.ts")),
     ).resolves.toBeUndefined();
@@ -609,6 +630,49 @@ describe("pm package manifest model", () => {
     }
   });
 
+  it("declares trusted, sandbox_profile, and permissions on every first-party package manifest", async () => {
+    const extensionDirectories = await collectBundledExtensionDirectories();
+    expect(extensionDirectories.length).toBeGreaterThan(0);
+
+    const knownSandboxProfiles = new Set(["none", "restricted", "strict"]);
+    const permissionKeys = ["fs_read", "fs_write", "network", "env_read", "env_write", "process_spawn"] as const;
+
+    for (const extensionDirectory of extensionDirectories) {
+      const manifestPath = path.join(extensionDirectory, "manifest.json");
+      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
+        trusted?: unknown;
+        sandbox_profile?: unknown;
+        permissions?: unknown;
+      };
+      expect(manifest.trusted, `trusted must be true in ${manifestPath}`).toBe(true);
+      expect(
+        typeof manifest.sandbox_profile === "string" && knownSandboxProfiles.has(manifest.sandbox_profile),
+        `sandbox_profile must be one of none|restricted|strict in ${manifestPath}`,
+      ).toBe(true);
+
+      const permissions = manifest.permissions as Record<string, unknown> | undefined;
+      expect(
+        typeof permissions === "object" && permissions !== null,
+        `permissions must be declared in ${manifestPath}`,
+      ).toBe(true);
+      expect(Object.keys(permissions ?? {}).sort(), manifestPath).toEqual([...permissionKeys].sort());
+      for (const permissionKey of permissionKeys) {
+        expect(typeof permissions?.[permissionKey], `${permissionKey} must be boolean in ${manifestPath}`).toBe("boolean");
+      }
+
+      // Declared permissions must satisfy the declared sandbox profile
+      // (mirrors resolvePolicySandboxReason in extension-policy.ts).
+      if (manifest.sandbox_profile === "restricted" || manifest.sandbox_profile === "strict") {
+        expect(permissions?.process_spawn, `${manifest.sandbox_profile} disallows process_spawn in ${manifestPath}`).toBe(false);
+        expect(permissions?.env_write, `${manifest.sandbox_profile} disallows env_write in ${manifestPath}`).toBe(false);
+      }
+      if (manifest.sandbox_profile === "strict") {
+        expect(permissions?.network, `strict disallows network in ${manifestPath}`).toBe(false);
+        expect(permissions?.fs_write, `strict disallows fs_write in ${manifestPath}`).toBe(false);
+      }
+    }
+  });
+
   it("declares manifest_version and pm_min_version on every first-party package manifest", async () => {
     const extensionDirectories = await collectBundledExtensionDirectories();
     expect(extensionDirectories.length).toBeGreaterThan(0);
@@ -642,6 +706,8 @@ describe("pm package manifest model", () => {
       path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.ts"),
       path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "index.js"),
       path.join(repoRoot, "packages", "pm-calendar", "extensions", "calendar", "runtime.js"),
+      path.join(repoRoot, "packages", "pm-command-kit", "extensions", "command-kit", "index.ts"),
+      path.join(repoRoot, "packages", "pm-command-kit", "extensions", "command-kit", "index.js"),
       path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "index.ts"),
       path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "runtime.ts"),
       path.join(repoRoot, "packages", "pm-governance-audit", "extensions", "governance-audit", "index.js"),

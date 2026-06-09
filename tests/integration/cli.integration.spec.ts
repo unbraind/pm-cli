@@ -99,7 +99,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         action: "install",
         details: {
           installed_all: true,
-          installed_count: 9,
+          installed_count: 10,
         },
       });
 
@@ -151,7 +151,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           action: "install",
           details: {
             installed_all: true,
-            installed_count: 9,
+            installed_count: 10,
           },
         });
       }
@@ -5232,7 +5232,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       };
       expect(dispatchedJson.ok).toBe(true);
       expect(dispatchedJson.source).toBe("acme-sync-flag-help-ext");
-      expect(dispatchedJson.args).toEqual(["--dry-run", "--limit", "2", "--required-flag", "ok", "artifact-Z"]);
+      expect(dispatchedJson.args).toEqual(["artifact-Z"]);
       expect(dispatchedJson.options).toEqual({
         dryRun: true,
         limit: "2",

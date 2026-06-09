@@ -3,6 +3,7 @@ import {
   KNOWN_EXTENSION_POLICY_SURFACES,
   KNOWN_EXTENSION_SANDBOX_PROFILES,
   KNOWN_EXTENSION_TRUST_MODES,
+  KNOWN_PM_MAX_VERSION_EXCEEDED_MODES,
   type ExtensionCapability,
   type ExtensionGovernancePolicy,
   type ExtensionLayer,
@@ -11,6 +12,8 @@ import {
   type ExtensionPolicySurface,
   type ExtensionSandboxProfile,
   type ExtensionTrustMode,
+  type PmMaxVersionExceededMode,
+  type PmMaxVersionExceededModeSetting,
 } from "./extension-types.js";
 import { isKnownExtensionCapability } from "./extension-capability-aliases.js";
 import { normalizeCommandName } from "./extension-runtime-helpers.js";
@@ -34,9 +37,16 @@ interface NormalizedExtensionPolicyOverride {
   blockedServices: Set<string>;
 }
 
+/** Concrete per-layer resolution of `pm_max_version_exceeded_mode` (default: block). */
+export interface NormalizedPmMaxVersionExceededMode {
+  global: PmMaxVersionExceededMode;
+  project: PmMaxVersionExceededMode;
+}
+
 export interface NormalizedExtensionPolicy {
   mode: ExtensionPolicyMode;
   trustMode: ExtensionTrustMode;
+  pmMaxVersionExceededMode: NormalizedPmMaxVersionExceededMode;
   requireProvenance: boolean;
   trustedExtensions: Set<string>;
   defaultSandboxProfile: ExtensionSandboxProfile;
@@ -130,6 +140,44 @@ export function normalizePolicySandboxProfile(value: string | undefined): Extens
   return "none";
 }
 
+function normalizePmMaxVersionExceededModeValue(value: unknown): PmMaxVersionExceededMode | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  return (KNOWN_PM_MAX_VERSION_EXCEEDED_MODES as readonly string[]).includes(normalized)
+    ? (normalized as PmMaxVersionExceededMode)
+    : undefined;
+}
+
+/**
+ * Resolve `extensions.policy.pm_max_version_exceeded_mode` to a concrete
+ * per-layer mode map. Accepts a single mode string (applied to both layers) or
+ * a `{ global?, project? }` override map; anything unset or unknown defaults to
+ * the safe `"block"`.
+ */
+export function normalizePmMaxVersionExceededMode(
+  value: PmMaxVersionExceededModeSetting | undefined,
+): NormalizedPmMaxVersionExceededMode {
+  if (typeof value === "string") {
+    const mode = normalizePmMaxVersionExceededModeValue(value) ?? "block";
+    return { global: mode, project: mode };
+  }
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    return {
+      global: normalizePmMaxVersionExceededModeValue(value.global) ?? "block",
+      project: normalizePmMaxVersionExceededModeValue(value.project) ?? "block",
+    };
+  }
+  return { global: "block", project: "block" };
+}
+
+function serializePmMaxVersionExceededMode(
+  mode: NormalizedPmMaxVersionExceededMode,
+): PmMaxVersionExceededModeSetting {
+  return mode.global === mode.project ? mode.global : { global: mode.global, project: mode.project };
+}
+
 function toSortedList(values: Iterable<string>): string[] {
   return [...new Set(values)].sort((left, right) => left.localeCompare(right));
 }
@@ -180,9 +228,10 @@ function collectExtensionPolicyOverrides(
 }
 
 export function normalizeExtensionPolicy(settings: PmSettings): NormalizedExtensionPolicy {
-  const policy = settings.extensions.policy;
+  const policy = settings.extensions.policy as ExtensionGovernancePolicy | undefined;
   const mode = normalizePolicyMode(policy?.mode);
   const trustMode = normalizePolicyTrustMode(policy?.trust_mode);
+  const pmMaxVersionExceededMode = normalizePmMaxVersionExceededMode(policy?.pm_max_version_exceeded_mode);
   const requireProvenance = policy?.require_provenance === true;
   const trustedExtensions = normalizePolicyStringSet(policy?.trusted_extensions);
   const defaultSandboxProfile = normalizePolicySandboxProfile(policy?.default_sandbox_profile);
@@ -230,6 +279,7 @@ export function normalizeExtensionPolicy(settings: PmSettings): NormalizedExtens
   return {
     mode,
     trustMode,
+    pmMaxVersionExceededMode,
     requireProvenance,
     trustedExtensions,
     defaultSandboxProfile,
@@ -273,6 +323,7 @@ export function serializeExtensionPolicy(policy: NormalizedExtensionPolicy): Ext
   return {
     mode: policy.mode,
     trust_mode: policy.trustMode,
+    pm_max_version_exceeded_mode: serializePmMaxVersionExceededMode(policy.pmMaxVersionExceededMode),
     require_provenance: policy.requireProvenance,
     trusted_extensions: toSortedList(policy.trustedExtensions),
     default_sandbox_profile: policy.defaultSandboxProfile,
@@ -297,6 +348,7 @@ export function hydrateExtensionPolicy(policy: ExtensionGovernancePolicy): Norma
   return {
     mode: normalizePolicyMode(policy.mode),
     trustMode: normalizePolicyTrustMode(policy.trust_mode),
+    pmMaxVersionExceededMode: normalizePmMaxVersionExceededMode(policy.pm_max_version_exceeded_mode),
     requireProvenance: policy.require_provenance === true,
     trustedExtensions: normalizePolicyStringSet(policy.trusted_extensions),
     defaultSandboxProfile: normalizePolicySandboxProfile(policy.default_sandbox_profile),

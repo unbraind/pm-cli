@@ -38,6 +38,21 @@ export type ExtensionTrustMode = (typeof KNOWN_EXTENSION_TRUST_MODES)[number];
 export const KNOWN_EXTENSION_SANDBOX_PROFILES = ["none", "restricted", "strict"] as const;
 export type ExtensionSandboxProfile = (typeof KNOWN_EXTENSION_SANDBOX_PROFILES)[number];
 
+export const KNOWN_PM_MAX_VERSION_EXCEEDED_MODES = ["block", "warn"] as const;
+/** How a `pm_max_version` violation is handled for an extension layer. */
+export type PmMaxVersionExceededMode = (typeof KNOWN_PM_MAX_VERSION_EXCEEDED_MODES)[number];
+/** Optional per-layer override map for `extensions.policy.pm_max_version_exceeded_mode`. */
+export interface PmMaxVersionExceededModeByLayer {
+  global?: PmMaxVersionExceededMode;
+  project?: PmMaxVersionExceededMode;
+}
+/**
+ * Settings value for `extensions.policy.pm_max_version_exceeded_mode`: either a
+ * single mode applied to both layers, or a per-layer override map. Unset (and
+ * any unset layer key) defaults to `"block"`.
+ */
+export type PmMaxVersionExceededModeSetting = PmMaxVersionExceededMode | PmMaxVersionExceededModeByLayer;
+
 export const KNOWN_EXTENSION_POLICY_SURFACES = [
   "commands.override",
   "commands.handler",
@@ -94,7 +109,15 @@ export interface ExtensionActivationMetadata {
 }
 
 export type ExtensionPolicyOverride = ExtensionPolicyOverrideSettings;
-export type ExtensionGovernancePolicy = ExtensionPolicySettings;
+/**
+ * Extension governance policy as read from / serialized to settings. Extends the
+ * stored settings shape with `pm_max_version_exceeded_mode` (pm-k5e8), which
+ * relaxes the default-BLOCK on `pm_max_version` violations to warn-only —
+ * globally or per extension layer.
+ */
+export type ExtensionGovernancePolicy = ExtensionPolicySettings & {
+  pm_max_version_exceeded_mode?: PmMaxVersionExceededModeSetting;
+};
 
 export interface ExtensionManifestEngines {
   pm?: string;
@@ -145,6 +168,32 @@ export interface ExtensionManifest {
   activation?: ExtensionActivationMetadata;
   legacy_capability_aliases?: LegacyExtensionCapabilityAliasMapping[];
 }
+
+/**
+ * Author-facing `manifest.json` fields recognized by the extension loader, plus
+ * `$schema` (tolerated for inline IDE validation against
+ * `docs/schemas/extension-manifest.schema.json`). `legacy_capability_aliases`
+ * is loader-derived, never authored, so it is intentionally absent. A
+ * governance test keeps the published JSON Schema's `properties` in sync with
+ * this list.
+ */
+export const KNOWN_EXTENSION_MANIFEST_FIELDS = Object.freeze([
+  "$schema",
+  "name",
+  "version",
+  "entry",
+  "priority",
+  "manifest_version",
+  "pm_min_version",
+  "pm_max_version",
+  "engines",
+  "trusted",
+  "provenance",
+  "sandbox_profile",
+  "permissions",
+  "capabilities",
+  "activation",
+] as const) satisfies readonly (Exclude<keyof ExtensionManifest, "legacy_capability_aliases"> | "$schema")[];
 
 export interface ExtensionDiagnostic {
   layer: ExtensionLayer;

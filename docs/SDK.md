@@ -263,6 +263,10 @@ Manifest typing also accepts optional `engines` metadata:
 
 Use `pm_min_version` for the loader gate. Keep `engines` as package-manager and tooling metadata.
 
+For a complete commands-capability package that combines `registerCommand`,
+`registerFlags`, and `registerParser`, see the first-party
+[pm-command-kit exemplar](../packages/pm-command-kit/README.md).
+
 ## Self-Identity and Lifecycle
 
 `activate(api)` receives a read-only `api.extension` describing the extension it

@@ -25,6 +25,7 @@ import type {
   ItemTypeDefinition,
   RuntimeSchemaSettings,
 } from "../../types.js";
+import type { PmMaxVersionExceededModeSetting } from "../extensions/extension-types.js";
 
 /** Validated, unknown-key-stripped settings input (pre-merge), matching the legacy zod inference. */
 export interface ParsedSettings {
@@ -77,7 +78,9 @@ export interface ParsedSettings {
   extensions: {
     enabled: string[];
     disabled: string[];
-    policy?: Partial<ExtensionPolicySettings>;
+    policy?: Partial<ExtensionPolicySettings> & {
+      pm_max_version_exceeded_mode?: PmMaxVersionExceededModeSetting;
+    };
   };
   search: {
     score_threshold: number;
@@ -319,10 +322,22 @@ const extensionPolicyOverride = vObject({
   blocked_services: vOptional(vArray(vString)),
 });
 
+// `pm_max_version_exceeded_mode` accepts either a single mode literal or a
+// per-layer override object (pm-k5e8); any other shape fails validation.
+const pmMaxVersionExceededModeLiteral = vLiteral("block", "warn");
+const pmMaxVersionExceededMode: Check<unknown> = (input) =>
+  typeof input === "string"
+    ? pmMaxVersionExceededModeLiteral(input)
+    : vObject({
+        global: vOptional(pmMaxVersionExceededModeLiteral),
+        project: vOptional(pmMaxVersionExceededModeLiteral),
+      })(input);
+
 const extensionPolicy = vOptional(
   vObject({
     mode: vOptional(vLiteral("off", "warn", "enforce")),
     trust_mode: vOptional(vLiteral("off", "warn", "enforce")),
+    pm_max_version_exceeded_mode: vOptional(pmMaxVersionExceededMode),
     require_provenance: vOptional(vBoolean),
     trusted_extensions: vOptional(vArray(vString)),
     default_sandbox_profile: vOptional(vLiteral("none", "restricted", "strict")),
