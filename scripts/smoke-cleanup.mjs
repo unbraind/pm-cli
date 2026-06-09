@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, rmSync } from "node:fs";
 import path from "node:path";
 
@@ -9,7 +8,7 @@ function readErrorCode(error) {
 }
 
 function sleepSync(milliseconds) {
-  spawnSync(process.execPath, ["-e", `setTimeout(() => {}, ${milliseconds})`], { stdio: "ignore" });
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
 }
 
 export function cleanupTempRoot(tempRoot) {
