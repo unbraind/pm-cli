@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Extension teardown: per-deactivate timeout guard so a hanging deactivate\(\) cannot block host shutdown/reload ([pm-bujg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-bujg.toon))
+
+### Fixed
+
+- Fix Windows Nightly smoke cleanup helper import ([pm-uzty](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-uzty.toon))
+
 ## 2026.6.9 - 2026-06-09
 
 ### Added

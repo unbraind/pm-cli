@@ -914,6 +914,15 @@ export interface ExtensionDeactivationFailure {
   error: string;
 }
 
+export interface ExtensionDeactivationOptions {
+  /**
+   * Maximum time to wait for each extension's `deactivate` hook. Defaults to
+   * 5000ms so a hanging teardown cannot block host shutdown or reload. Set to
+   * 0 or Infinity only when the host intentionally wants to wait indefinitely.
+   */
+  deactivate_timeout_ms?: number;
+}
+
 export interface ExtensionDeactivationResult {
   /** Count of loaded extensions whose `deactivate` hook ran without throwing. */
   deactivated: number;

@@ -2,11 +2,36 @@ id: pm-bujg
 title: "Extension teardown: per-deactivate timeout guard so a hanging deactivate() cannot block host shutdown/reload"
 description: "deactivateExtensions runs deactivate hooks concurrently via Promise.all. If one extension's deactivate() never resolves (unresolved promise / infinite await), Promise.all never settles and the host (e.g. the long-running MCP server's teardown finally) hangs indefinitely. Follow-up: race each deactivate() against a bounded timeout (e.g. 5s) so a hanging hook is recorded as a deactivate failure/warning and cannot block the rest or the host. Surfaced by Gemini on PR #150 (loader.ts:1069); deferred from the SDK PR to keep scope focused, but the lifecycle primitive is now in place."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[5]: "area:extensions","area:sdk",follow-up,lifecycle,robustness
 created_at: "2026-06-08T23:40:06.860Z"
-updated_at: "2026-06-08T23:40:06.860Z"
+updated_at: "2026-06-09T17:11:42.989Z"
 author: maintainer-agent
 parent: pm-ugqx
+resolution: "Added timeout-bounded extension deactivation with typed SDK options, docs, and regression coverage."
+expected_result: A hanging extension deactivate hook is reported as a failure and cannot block other teardown hooks or host reload/shutdown.
+actual_result: "deactivateExtensions races each hook against a 5000ms default timeout, reports timeout as extension_deactivate_failed, preserves successful teardown counts, and exports ExtensionDeactivationOptions."
+comments[9]{created_at,author,text}:
+  "2026-06-09T15:56:05.593Z",codex-impl-20260609,"Subagent GitHub triage: no open PRs/issues/dependabot/security/code scanning/secret scanning/advisories; daily Auto Release and Release succeeded on 2026-06-09. Actionable external finding: Nightly Validation run 27192052551 failed on windows-latest Node 20 while loading tests/integration/smoke-pack-cleanup.integration.spec.ts with SyntaxError; investigating before PR closeout."
+  "2026-06-09T16:02:01.463Z",codex-impl-20260609,"Evidence: implemented timeout-bounded deactivateExtensions with a 5000ms default and typed ExtensionDeactivationOptions, SDK barrel export, docs, and regression coverage for a hanging project extension not blocking a healthy global teardown. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts; node scripts/run-tests.mjs test -- tests/integration/smoke-pack-cleanup.integration.spec.ts tests/unit/extension-loader.spec.ts tests/unit/sdk-index.spec.ts; node scripts/run-tests.mjs coverage => 2606 tests, 100% statements/branches/functions/lines; pnpm typecheck; pnpm quality:static; pnpm contracts:check; pnpm security:scan; pnpm audit --audit-level moderate; package doctor ok; pm health ok; manual isolated temp smoke passed."
+  "2026-06-09T16:17:37.938Z",codex-impl-20260609,"Review polish: CodeRabbit noted that timed-out deactivate promises continue in the background because JavaScript promises are not cancellable. Added an inline note in runExtensionDeactivateWithTimeout; focused extension-loader coverage rerun before push."
+  "2026-06-09T16:24:22.513Z",codex-impl-20260609,"Review follow-up: Gemini found that positive fractional deactivate_timeout_ms values below 1ms could floor to 0 and timeout immediately. Changed normalization to Math.max(1, Math.floor(...)) and added extension-loader regression coverage for 0.5ms normalizing to a 1ms timeout."
+  "2026-06-09T16:31:04.039Z",codex-impl-20260609,"Review follow-up: Gemini flagged setTimeout overflow for extremely large deactivate_timeout_ms values. Added MAX_EXTENSION_DEACTIVATE_TIMEOUT_MS=2147483647 and cap normalized positive values after flooring/clamping to at least 1ms."
+  "2026-06-09T16:38:31.852Z",codex-impl-20260609,"Review follow-up: Gemini suggested explicit no-timeout handling for host-provided 0/Infinity and documenting the opt-out. Added normalization support, bypassed Promise.race for timeoutMs=0, documented SDK behavior, and added extension-loader tests for 0 and Infinity."
+  "2026-06-09T16:52:31.757Z",codex-impl-20260609,"Review follow-up: addressed CodeRabbit deactivate() docs caveat for host-side deactivate_timeout_ms opt-out and long-running MCP reload/shutdown behavior; addressed Gemini late rejection risk by consuming deactivate promises that reject after timeout and added regression coverage. Evidence: node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts; node scripts/run-tests.mjs test -- tests/integration/smoke-pack-cleanup.integration.spec.ts tests/unit/extension-loader.spec.ts; pnpm build; pnpm changelog:pm:check."
+  "2026-06-09T17:05:14.562Z",codex-impl-20260609,"Review follow-up: Gemini suggested making deactivate_timeout_ms normalization easier to read. Refactored nested ternary into normalizeExtensionDeactivateTimeout while preserving the tested 0/Infinity opt-out, finite clamp, and default fallback semantics. Evidence: node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts; pnpm build; pnpm quality:static."
+  "2026-06-09T17:11:42.989Z",codex-impl-20260609,"Review follow-up: Gemini flagged that JavaScript consumers could explicitly pass null for deactivateExtensions options. Added optional chaining for deactivate_timeout_ms access and regression coverage for null options falling back to defaults. Evidence: node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts; pnpm build; pnpm quality:static."
+files[4]{path,scope,note}:
+  src/core/extensions/extension-types.ts,project,Expose typed deactivation timeout options
+  src/core/extensions/loader.ts,project,Add per-extension deactivate timeout guard
+  src/sdk/index.ts,project,Re-export deactivation options type from SDK barrel
+  tests/unit/extension-loader.spec.ts,project,Cover hanging deactivate timeout behavior
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/smoke-pack-cleanup.integration.spec.ts tests/unit/extension-loader.spec.ts tests/unit/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+docs[2]{path,scope,note}:
+  docs/EXTENSIONS.md,project,Document timeout-bounded deactivate lifecycle for extension authors
+  docs/SDK.md,project,Document timeout-bounded deactivate lifecycle
+close_reason: "Implemented per-extension deactivate timeout guard with public SDK option type, docs, and regression coverage; verified full coverage and release gates."
 body: ""

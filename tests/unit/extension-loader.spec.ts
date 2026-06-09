@@ -4112,6 +4112,146 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
     expect(result.failed[0].error).toContain("sink close failed");
   });
 
+  it("times out a hanging deactivate without blocking other teardowns", async () => {
+    let secondCleaned = false;
+    const loadResult: ExtensionLoadResult = {
+      ...inMemoryLoadResult(null),
+      loaded: [
+        inMemoryLoadResult(
+          {
+            activate() {},
+            deactivate() {
+              return new Promise<void>(() => {});
+            },
+          },
+          { name: "stuck", layer: "project" },
+        ).loaded[0],
+        inMemoryLoadResult(
+          {
+            activate() {},
+            deactivate() {
+              secondCleaned = true;
+            },
+          },
+          { name: "ok", layer: "global" },
+        ).loaded[0],
+      ],
+    };
+    const result = await deactivateExtensions(loadResult, undefined, { deactivate_timeout_ms: 10 });
+    expect(result.deactivated).toBe(1);
+    expect(secondCleaned).toBe(true);
+    expect(result.warnings).toEqual(["extension_deactivate_failed:project:stuck"]);
+    expect(result.failed).toEqual([
+      {
+        layer: "project",
+        name: "stuck",
+        error: "extension deactivate timed out after 10ms",
+      },
+    ]);
+  });
+
+  it("normalizes sub-millisecond positive deactivate timeout options to 1ms", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate() {},
+        deactivate() {
+          return new Promise<void>(() => {});
+        },
+      },
+      { name: "fractional-timeout", layer: "project" },
+    );
+    const result = await deactivateExtensions(loadResult, undefined, { deactivate_timeout_ms: 0.5 });
+    expect(result.deactivated).toBe(0);
+    expect(result.failed).toEqual([
+      {
+        layer: "project",
+        name: "fractional-timeout",
+        error: "extension deactivate timed out after 1ms",
+      },
+    ]);
+  });
+
+  it("treats a null deactivate options object as default timeout options for JavaScript consumers", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate() {},
+        deactivate() {},
+      },
+      { name: "null-options", layer: "project" },
+    );
+    const result = await deactivateExtensions(loadResult, undefined, null as never);
+    expect(result).toEqual({ deactivated: 1, warnings: [], failed: [] });
+  });
+
+  it("consumes late deactivate rejections after timeout", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate() {},
+        async deactivate() {
+          await new Promise((resolve) => setTimeout(resolve, 25));
+          throw new Error("late cleanup failure");
+        },
+      },
+      { name: "late-rejection", layer: "project" },
+    );
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown) => {
+      unhandled.push(reason);
+    };
+    process.on("unhandledRejection", onUnhandled);
+    try {
+      const result = await deactivateExtensions(loadResult, undefined, { deactivate_timeout_ms: 1 });
+      await new Promise((resolve) => setTimeout(resolve, 35));
+      expect(result).toEqual({
+        deactivated: 0,
+        warnings: ["extension_deactivate_failed:project:late-rejection"],
+        failed: [
+          {
+            layer: "project",
+            name: "late-rejection",
+            error: "extension deactivate timed out after 1ms",
+          },
+        ],
+      });
+      expect(unhandled).toEqual([]);
+    } finally {
+      process.off("unhandledRejection", onUnhandled);
+    }
+  });
+
+  it("allows hosts to explicitly disable deactivate timeout with zero", async () => {
+    let cleaned = false;
+    const loadResult = inMemoryLoadResult(
+      {
+        activate() {},
+        async deactivate() {
+          await new Promise((resolve) => setTimeout(resolve, 15));
+          cleaned = true;
+        },
+      },
+      { name: "no-timeout", layer: "project" },
+    );
+    const result = await deactivateExtensions(loadResult, undefined, { deactivate_timeout_ms: 0 });
+    expect(result).toEqual({ deactivated: 1, warnings: [], failed: [] });
+    expect(cleaned).toBe(true);
+  });
+
+  it("allows hosts to explicitly disable deactivate timeout with Infinity", async () => {
+    let cleaned = false;
+    const loadResult = inMemoryLoadResult(
+      {
+        activate() {},
+        async deactivate() {
+          cleaned = true;
+        },
+      },
+      { name: "infinite-timeout", layer: "project" },
+    );
+    const result = await deactivateExtensions(loadResult, undefined, { deactivate_timeout_ms: Infinity });
+    expect(result).toEqual({ deactivated: 1, warnings: [], failed: [] });
+    expect(cleaned).toBe(true);
+  });
+
   it("ignores non-activatable modules during teardown", async () => {
     const loadResult = inMemoryLoadResult(null);
     const result = await deactivateExtensions(loadResult);
