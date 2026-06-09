@@ -29,6 +29,7 @@ export function cleanupTempRoot(tempRoot) {
     if (!existsSync(tempRoot)) {
       return;
     }
+    // Opportunistically remove first-level entries before retrying the root.
     try {
       for (const entry of readdirSync(tempRoot)) {
         rmSync(path.join(tempRoot, entry), { recursive: true, force: true, maxRetries: 8, retryDelay: 120 });

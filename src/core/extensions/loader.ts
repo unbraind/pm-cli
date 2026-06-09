@@ -1097,6 +1097,8 @@ async function runExtensionDeactivateWithTimeout(
 ): Promise<void> {
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
   try {
+    // A timed-out deactivate promise may still finish later; JavaScript promises
+    // are not cancellable, so the host only stops waiting for the hook.
     await Promise.race([
       Promise.resolve().then(() => deactivate()),
       new Promise<never>((_, reject) => {

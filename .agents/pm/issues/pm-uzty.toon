@@ -6,15 +6,16 @@ status: closed
 priority: 2
 tags[3]: "area:ci","area:release",windows
 created_at: "2026-06-09T15:57:31.721Z"
-updated_at: "2026-06-09T16:10:26.296Z"
+updated_at: "2026-06-09T16:17:38.229Z"
 author: codex-impl-20260609
 parent: pm-u9d0
 resolution: Extracted smoke cleanup logic into an import-safe helper module and updated the cleanup regression test to import that helper.
 expected_result: Windows Nightly can load the packed smoke cleanup test without parsing the executable smoke runner during suite setup.
 actual_result: tests/integration/smoke-pack-cleanup.integration.spec.ts imports scripts/smoke-cleanup.mjs; scripts/smoke-npx-from-pack.mjs still uses the same cleanup helper for pack smoke cleanup.
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-06-09T16:02:01.593Z",codex-impl-20260609,"Evidence: fixed GitHub Nightly Validation run 27192052551 failure path by extracting cleanupTempRoot from executable scripts/smoke-npx-from-pack.mjs into import-safe scripts/smoke-cleanup.mjs and updating the smoke cleanup test import. Verification passed: node scripts/run-tests.mjs test -- tests/integration/smoke-pack-cleanup.integration.spec.ts; npx -y node@20 node_modules/vitest/vitest.mjs run tests/integration/smoke-pack-cleanup.integration.spec.ts; node scripts/run-tests.mjs test -- tests/integration/smoke-pack-cleanup.integration.spec.ts tests/unit/extension-loader.spec.ts tests/unit/sdk-index.spec.ts; node scripts/run-tests.mjs coverage => 2606 tests, 100% statements/branches/functions/lines; pnpm build/typecheck/quality:static/contracts:check/changelog:pm:check/security:scan/audit moderate; manual isolated temp smoke passed."
   "2026-06-09T16:10:26.296Z",codex-impl-20260609,"Review follow-up: Gemini suggested treating EACCES as retryable for Windows cleanup locks. Applied to scripts/smoke-cleanup.mjs alongside ENOTEMPTY/EBUSY/EPERM; focused cleanup tests rerun before push."
+  "2026-06-09T16:17:38.229Z",codex-impl-20260609,"Review polish: CodeRabbit suggested restoring the cleanup helper's first-level-entry removal comment after extraction. Restored the comment in scripts/smoke-cleanup.mjs; focused cleanup tests rerun before push."
 files[3]{path,scope,note}:
   scripts/smoke-cleanup.mjs,project,Import-safe cleanup helper for smoke tests
   scripts/smoke-npx-from-pack.mjs,project,Reuse cleanup helper from executable pack smoke
