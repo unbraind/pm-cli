@@ -6,7 +6,7 @@ status: closed
 priority: 2
 tags[3]: "area:docs","area:extensions",staleness
 created_at: "2026-06-07T10:04:49.241Z"
-updated_at: "2026-06-09T18:41:20.545Z"
+updated_at: "2026-06-09T18:45:12.864Z"
 author: audit-docs-tests-agent
 acceptance_criteria: "- docs/EXTENSIONS.md bundled-package exemplar table/list is complete: all packages/pm-* appear\n- docs/TESTING.md mentions pm-linked-test-adapters and what it adds\n- pm install linked-test-adapters --project example exists in TESTING.md"
 parent: pm-u9d0
@@ -15,9 +15,10 @@ confidence: high
 resolution: Documented pm-linked-test-adapters in EXTENSIONS and TESTING with linked verification.
 expected_result: Docs explain package usage and sandbox-safe linked-test workflows.
 actual_result: docs/EXTENSIONS.md and docs/TESTING.md now include the package guidance; docs link gate and full suite passed.
-comments[2]{created_at,author,text}:
+comments[3]{created_at,author,text}:
   "2026-06-09T18:09:31.794Z",codex-implementation-agent,"Docs evidence: first-party package exemplar list now covers all packages/pm-* entries and TESTING.md documents linked-test-adapters install/doctor/test-runs smoke path."
   "2026-06-09T18:40:47.719Z",codex-implementation-agent,"Final verification evidence: pnpm build, pnpm typecheck, pnpm contracts:check, pnpm quality:static, pnpm quality:docs-links, pnpm security:scan, pnpm audit --audit-level low, node scripts/run-tests.mjs coverage (149 files, 2619 tests, 100% statements/branches/functions/lines), pnpm changelog:pm:check, pm health --check-only --summary, pm validate --check-resolution --check-history-drift, Sentry/telemetry gate (critical=0 high=0 telemetry ok), and isolated temp smoke for command-kit install/echo/list flag/package doctor all passed. Residual validation warning is the known pre-existing 116 older closed items missing resolution fields; history drift is clean."
+  "2026-06-09T18:45:12.864Z",codex-implementation-agent,"PR #152 CI feedback fix: Docs and Skills failed because docs/EXTENSIONS.md exceeded the 450-line public-doc budget (494 lines in CI). Compacted duplicated examples/lists while preserving extension schema, package, sandbox, and policy guidance; local wc now 449 lines and pnpm quality:docs-skills passes."
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   "pnpm quality:docs-links",null,project,180,null,null,null,null,null,null,null,null,null,null,null,docs link validation
 docs[2]{path,scope,note}:

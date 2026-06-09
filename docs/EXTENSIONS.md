@@ -52,8 +52,7 @@ pm github validate --repo owner/repo
 
 For `pm-github`, run `pm github validate --repo owner/repo` before mutating commands; write paths require `GITHUB_TOKEN`/`GH_TOKEN` or `gh auth login`.
 
-For ecosystem maintenance, use the reusable external package smoke harness after
-building `dist/`:
+For ecosystem maintenance, use the reusable external package smoke harness after building `dist/`:
 
 ```bash
 pnpm build
@@ -61,11 +60,7 @@ pnpm smoke:external-packages -- --limit 10
 pnpm smoke:external-packages -- --package pm-changelog
 ```
 
-The harness discovers npm packages with the `keywords:pm-package` query unless
-explicit packages are provided. Each package is installed in a temporary project
-with isolated `PM_PATH` and `PM_GLOBAL_PATH`, then checked with `pm package
-doctor --project --detail deep --trace` and runtime availability contracts. The
-JSON output is compact enough for agents to attach as tracker evidence.
+The harness discovers npm packages with the `keywords:pm-package` query unless explicit packages are provided, installs each package in a temporary project with isolated `PM_PATH`/`PM_GLOBAL_PATH`, then checks `pm package doctor --project --detail deep --trace` and runtime availability contracts.
 
 Prefer package-specific docs before invoking commands that require service credentials, such as GitHub, Jira, Linear, or Slack sync packages.
 
@@ -82,28 +77,12 @@ Package roots declare resources in `package.json` under `pm`:
     "extensions": ["."],
     "docs": ["README.md"],
     "examples": ["examples/basic.md"],
-    "catalog": {
-      "display_name": "My pm Package",
-      "category": "workflow",
-      "summary": "Adds a custom workflow to pm.",
-      "tags": ["workflow"],
-      "links": {
-        "docs": "https://example.com/docs",
-        "repository": "https://github.com/org/my-pm-package",
-        "report": "https://github.com/org/my-pm-package/issues"
-      }
-    }
+    "assets": ["assets"],
+    "prompts": ["prompts"],
+    "catalog": { "display_name": "My pm Package", "category": "workflow" }
   }
 }
 ```
-
-Current resource kinds are:
-
-- `extensions`
-- `docs`
-- `examples`
-- `assets`
-- `prompts`
 
 Installation activates `pm.extensions`. `pm.docs`, `pm.examples`, `pm.assets`, and `pm.prompts` are catalog metadata (metadata-only — they are discovered and surfaced in the catalog but not executed). Declare agent-facing prompt/slash-command markdown under `pm.prompts` and non-code assets (images, skills, fixtures) under `pm.assets`; their conventional roots are `prompts/` (also `.agents/pm/prompts/`) and `assets/` (also `.agents/pm/assets/`).
 
@@ -216,10 +195,7 @@ Rules:
 - `manifest_version` is an optional integer identifying the manifest schema generation. Runtime contracts currently support manifest versions `1` and `2`, and first-party runnable examples use `2`. First-party packages declare it; the manifest governance test requires it on every first-party package.
 - `pm_min_version` is an inclusive minimum pm CLI version. If the running CLI is older, discovery emits `extension_pm_min_version_unmet:<layer>:<name>:required=<version>:current=<version>` and skips the extension before import.
 - `pm_max_version` is an optional inclusive maximum pm CLI version (the upper compatibility bound). If the running CLI is newer than this value, discovery emits `extension_pm_max_version_exceeded:<layer>:<name>:allowed=<version>:current=<version>` and skips the extension before import. Use it to stop a CLI major release from loading a stale package that would crash at activation. Operators can temporarily set `extensions.policy.pm_max_version_exceeded_mode` to `"warn"` (or `{ "project": "warn" }`) during controlled upgrade windows; the default remains `"block"`.
-- Both bounds share the same blocking semantics and warning-code shapes:
-  - `*_invalid` (`required=`/`allowed=` only): the declared version is unparseable; the extension is **blocked**.
-  - `*_unchecked` (`...:current=unknown` or an uncomparable current version): the bound could not be compared against the running CLI; the extension is **allowed** but a warning is recorded.
-  - `extension_pm_min_version_unmet` / `extension_pm_max_version_exceeded`: the running CLI is outside the declared bound; the extension is **blocked**.
+- Both bounds share the same warning-code shapes: `*_invalid` blocks, `*_unchecked` allows with a warning, and `extension_pm_min_version_unmet` / `extension_pm_max_version_exceeded` blocks unless the max-version warn mode is enabled.
 - An empty-string or non-string `pm_min_version`/`pm_max_version` makes the whole manifest malformed (`extension_manifest_invalid:<layer>:<name>`). Omit the field instead of leaving it blank.
 - Optional `engines.pm` and `engines.node` metadata is accepted for tooling, but `pm_min_version`/`pm_max_version` are the loader-enforced compatibility fields.
 - Declare only capabilities the extension actually uses.
@@ -290,27 +266,7 @@ layers, `"warn"` to allow exceeded extensions while emitting
 }
 ```
 
-Surface tokens include:
-
-- `commands.handler`
-- `commands.override`
-- `parser.override`
-- `preflight.override`
-- `services.override`
-- `renderers.override`
-- `hooks.beforecommand`
-- `hooks.aftercommand`
-- `hooks.onwrite`
-- `hooks.onread`
-- `hooks.onindex`
-- `schema.flags`
-- `schema.itemfields`
-- `schema.itemtypes`
-- `schema.migrations`
-- `importers`
-- `search.provider`
-
-Use `pm package doctor --project --detail deep --trace` to inspect active policy state and warning codes.
+Surface tokens include command handlers/overrides, parser/preflight/services/renderers overrides, lifecycle hooks, schema registrations, importers, and search providers. Use `pm package doctor --project --detail deep --trace` for the exact active token names and policy warning codes.
 
 ## Registration Collisions
 
