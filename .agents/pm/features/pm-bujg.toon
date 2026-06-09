@@ -6,16 +6,17 @@ status: closed
 priority: 3
 tags[5]: "area:extensions","area:sdk",follow-up,lifecycle,robustness
 created_at: "2026-06-08T23:40:06.860Z"
-updated_at: "2026-06-09T16:17:37.938Z"
+updated_at: "2026-06-09T16:24:22.513Z"
 author: maintainer-agent
 parent: pm-ugqx
 resolution: "Added timeout-bounded extension deactivation with typed SDK options, docs, and regression coverage."
 expected_result: A hanging extension deactivate hook is reported as a failure and cannot block other teardown hooks or host reload/shutdown.
 actual_result: "deactivateExtensions races each hook against a 5000ms default timeout, reports timeout as extension_deactivate_failed, preserves successful teardown counts, and exports ExtensionDeactivationOptions."
-comments[3]{created_at,author,text}:
+comments[4]{created_at,author,text}:
   "2026-06-09T15:56:05.593Z",codex-impl-20260609,"Subagent GitHub triage: no open PRs/issues/dependabot/security/code scanning/secret scanning/advisories; daily Auto Release and Release succeeded on 2026-06-09. Actionable external finding: Nightly Validation run 27192052551 failed on windows-latest Node 20 while loading tests/integration/smoke-pack-cleanup.integration.spec.ts with SyntaxError; investigating before PR closeout."
   "2026-06-09T16:02:01.463Z",codex-impl-20260609,"Evidence: implemented timeout-bounded deactivateExtensions with a 5000ms default and typed ExtensionDeactivationOptions, SDK barrel export, docs, and regression coverage for a hanging project extension not blocking a healthy global teardown. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/extension-loader.spec.ts; node scripts/run-tests.mjs test -- tests/integration/smoke-pack-cleanup.integration.spec.ts tests/unit/extension-loader.spec.ts tests/unit/sdk-index.spec.ts; node scripts/run-tests.mjs coverage => 2606 tests, 100% statements/branches/functions/lines; pnpm typecheck; pnpm quality:static; pnpm contracts:check; pnpm security:scan; pnpm audit --audit-level moderate; package doctor ok; pm health ok; manual isolated temp smoke passed."
   "2026-06-09T16:17:37.938Z",codex-impl-20260609,"Review polish: CodeRabbit noted that timed-out deactivate promises continue in the background because JavaScript promises are not cancellable. Added an inline note in runExtensionDeactivateWithTimeout; focused extension-loader coverage rerun before push."
+  "2026-06-09T16:24:22.513Z",codex-impl-20260609,"Review follow-up: Gemini found that positive fractional deactivate_timeout_ms values below 1ms could floor to 0 and timeout immediately. Changed normalization to Math.max(1, Math.floor(...)) and added extension-loader regression coverage for 0.5ms normalizing to a 1ms timeout."
 files[4]{path,scope,note}:
   src/core/extensions/extension-types.ts,project,Expose typed deactivation timeout options
   src/core/extensions/loader.ts,project,Add per-extension deactivate timeout guard

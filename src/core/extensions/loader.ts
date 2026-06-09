@@ -1051,7 +1051,7 @@ export async function deactivateExtensions(
     typeof options.deactivate_timeout_ms === "number" &&
     Number.isFinite(options.deactivate_timeout_ms) &&
     options.deactivate_timeout_ms > 0
-      ? Math.floor(options.deactivate_timeout_ms)
+      ? Math.max(1, Math.floor(options.deactivate_timeout_ms))
       : DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS;
   const failedActivationKeys = new Set(
     (activationResult?.failed ?? []).map((entry) => `${entry.layer}:${entry.name}`),

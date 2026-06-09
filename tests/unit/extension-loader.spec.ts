@@ -4150,6 +4150,27 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
     ]);
   });
 
+  it("normalizes sub-millisecond positive deactivate timeout options to 1ms", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate() {},
+        deactivate() {
+          return new Promise<void>(() => {});
+        },
+      },
+      { name: "fractional-timeout", layer: "project" },
+    );
+    const result = await deactivateExtensions(loadResult, undefined, { deactivate_timeout_ms: 0.5 });
+    expect(result.deactivated).toBe(0);
+    expect(result.failed).toEqual([
+      {
+        layer: "project",
+        name: "fractional-timeout",
+        error: "extension deactivate timed out after 1ms",
+      },
+    ]);
+  });
+
   it("ignores non-activatable modules during teardown", async () => {
     const loadResult = inMemoryLoadResult(null);
     const result = await deactivateExtensions(loadResult);
