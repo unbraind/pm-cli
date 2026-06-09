@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, rmSync } from "node:fs";
 import path from "node:path";
 
@@ -8,10 +9,7 @@ function readErrorCode(error) {
 }
 
 function sleepSync(milliseconds) {
-  const start = Date.now();
-  while (Date.now() - start < milliseconds) {
-    // Short, synchronous cleanup retry delay for this standalone smoke helper.
-  }
+  spawnSync(process.execPath, ["-e", `setTimeout(() => {}, ${milliseconds})`], { stdio: "ignore" });
 }
 
 export function cleanupTempRoot(tempRoot) {

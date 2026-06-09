@@ -1048,11 +1048,14 @@ export async function deactivateExtensions(
   activationResult?: Pick<ExtensionActivationResult, "failed">,
   options: ExtensionDeactivationOptions = {},
 ): Promise<ExtensionDeactivationResult> {
+  const rawTimeout = options.deactivate_timeout_ms;
   const timeoutMs =
-    typeof options.deactivate_timeout_ms === "number" &&
-    Number.isFinite(options.deactivate_timeout_ms) &&
-    options.deactivate_timeout_ms > 0
-      ? Math.min(MAX_EXTENSION_DEACTIVATE_TIMEOUT_MS, Math.max(1, Math.floor(options.deactivate_timeout_ms)))
+    typeof rawTimeout === "number" && rawTimeout >= 0
+      ? rawTimeout === 0 || rawTimeout === Infinity
+        ? 0
+        : Number.isFinite(rawTimeout)
+          ? Math.min(MAX_EXTENSION_DEACTIVATE_TIMEOUT_MS, Math.max(1, Math.floor(rawTimeout)))
+          : DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS
       : DEFAULT_EXTENSION_DEACTIVATE_TIMEOUT_MS;
   const failedActivationKeys = new Set(
     (activationResult?.failed ?? []).map((entry) => `${entry.layer}:${entry.name}`),
@@ -1096,6 +1099,10 @@ async function runExtensionDeactivateWithTimeout(
   deactivate: () => void | Promise<void>,
   timeoutMs: number,
 ): Promise<void> {
+  if (timeoutMs === 0) {
+    await deactivate();
+    return;
+  }
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
   try {
     // A timed-out deactivate promise may still finish later; JavaScript promises

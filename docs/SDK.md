@@ -292,7 +292,9 @@ release buffers opened during `activate`. `deactivate` runs only for extensions
 that activated successfully (a failed `activate` never fully initialized), and
 teardowns run concurrently. Teardown is best-effort: a throwing `deactivate` is
 recorded as a warning, never propagated, and each hook is bounded by a host
-timeout so one extension cannot block another's cleanup or a host reload.
+timeout so one extension cannot block another's cleanup or a host reload. Hosts
+that call `deactivateExtensions` directly may pass `deactivate_timeout_ms: 0` or
+`Infinity` only when they intentionally want to wait indefinitely.
 
 ```ts
 export default defineExtension({

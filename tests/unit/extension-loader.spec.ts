@@ -4171,6 +4171,39 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
     ]);
   });
 
+  it("allows hosts to explicitly disable deactivate timeout with zero", async () => {
+    let cleaned = false;
+    const loadResult = inMemoryLoadResult(
+      {
+        activate() {},
+        async deactivate() {
+          await new Promise((resolve) => setTimeout(resolve, 15));
+          cleaned = true;
+        },
+      },
+      { name: "no-timeout", layer: "project" },
+    );
+    const result = await deactivateExtensions(loadResult, undefined, { deactivate_timeout_ms: 0 });
+    expect(result).toEqual({ deactivated: 1, warnings: [], failed: [] });
+    expect(cleaned).toBe(true);
+  });
+
+  it("allows hosts to explicitly disable deactivate timeout with Infinity", async () => {
+    let cleaned = false;
+    const loadResult = inMemoryLoadResult(
+      {
+        activate() {},
+        async deactivate() {
+          cleaned = true;
+        },
+      },
+      { name: "infinite-timeout", layer: "project" },
+    );
+    const result = await deactivateExtensions(loadResult, undefined, { deactivate_timeout_ms: Infinity });
+    expect(result).toEqual({ deactivated: 1, warnings: [], failed: [] });
+    expect(cleaned).toBe(true);
+  });
+
   it("ignores non-activatable modules during teardown", async () => {
     const loadResult = inMemoryLoadResult(null);
     const result = await deactivateExtensions(loadResult);
