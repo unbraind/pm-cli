@@ -169,13 +169,14 @@ export interface WorkspaceContracts {
  * package runtimes that cannot thread a registry through; without the memo each
  * call re-discovers, re-imports, and re-activates every extension.
  *
- * Invalidation story: entries live for the process lifetime. One-shot CLI
- * processes are trivially correct. Long-lived hosts (e.g. the MCP server) must
- * either pass `options.extensionRegistrations` (which bypasses the memo) or
- * call {@link clearWorkspaceContractsCache} after installing/removing/toggling
- * extensions or editing settings. Settings themselves are re-read on every
- * call — only the extension load+activate step is memoized.
+ * Invalidation story: entries are size-bounded and otherwise live until cleared.
+ * One-shot CLI processes are trivially correct. Long-lived hosts (e.g. the MCP
+ * server) must either pass `options.extensionRegistrations` (which bypasses the
+ * memo) or call {@link clearWorkspaceContractsCache} after installing/removing/
+ * toggling extensions or editing settings. Settings themselves are re-read on
+ * every call — only the extension load+activate step is memoized.
  */
+const WORKSPACE_CONTRACTS_CACHE_LIMIT = 50;
 const workspaceExtensionRegistrationsCache = new Map<string, ExtensionRegistrationRegistry | null>();
 
 /**
@@ -198,6 +199,10 @@ async function resolveWorkspaceExtensionRegistrations(
     return cached;
   }
   const registrations = await loadWorkspaceExtensionRegistrations(pmRoot, settings, cwd);
+  if (workspaceExtensionRegistrationsCache.size >= WORKSPACE_CONTRACTS_CACHE_LIMIT) {
+    const oldestKey = workspaceExtensionRegistrationsCache.keys().next().value!;
+    workspaceExtensionRegistrationsCache.delete(oldestKey);
+  }
   workspaceExtensionRegistrationsCache.set(cacheKey, registrations);
   return registrations;
 }

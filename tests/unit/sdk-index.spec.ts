@@ -564,6 +564,66 @@ describe("public sdk entrypoint", () => {
       expect(defaultContracts.schema_version).toBe(PM_TOOL_PARAMETERS_SCHEMA_VERSION);
     });
   });
+
+  it("evicts the oldest workspace contracts cache entry when the process memo reaches its limit", async () => {
+    await withTempPmPath(async ({ pmPath, tempRoot }) => {
+      clearWorkspaceContractsCache();
+      await writeTestExtension({
+        root: pmPath,
+        placement: "projectRoot",
+        directory: "workspace-contract-eviction-ext",
+        manifest: {
+          name: "workspace-contract-eviction-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerItemTypes([{ name: 'EvictionBase', folder: 'eviction-base' }]);",
+          "}",
+          "",
+        ].join("\n"),
+      });
+
+      const cwdRoot = path.join(tempRoot, "workspace-contract-cwds");
+      await mkdir(cwdRoot, { recursive: true });
+      const firstCwd = path.join(cwdRoot, "cwd-0");
+      await mkdir(firstCwd, { recursive: true });
+      const firstContracts = await getWorkspaceContracts(pmPath, { cwd: firstCwd });
+      expect(firstContracts.types).toContain("EvictionBase");
+
+      await writeTestExtension({
+        root: pmPath,
+        placement: "projectRoot",
+        directory: "workspace-contract-after-eviction-ext",
+        manifest: {
+          name: "workspace-contract-after-eviction-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          capabilities: ["schema"],
+        },
+        entryFilename: "index.mjs",
+        entrySource: [
+          "export function activate(api) {",
+          "  api.registerItemTypes([{ name: 'EvictedThenVisible', folder: 'evicted-then-visible' }]);",
+          "}",
+          "",
+        ].join("\n"),
+      });
+
+      for (let index = 1; index <= 50; index += 1) {
+        const cwd = path.join(cwdRoot, `cwd-${index}`);
+        await mkdir(cwd, { recursive: true });
+        await getWorkspaceContracts(pmPath, { cwd });
+      }
+
+      const refreshedFirstContracts = await getWorkspaceContracts(pmPath, { cwd: firstCwd });
+      expect(refreshedFirstContracts.types).toEqual(expect.arrayContaining(["EvictionBase", "EvictedThenVisible"]));
+      clearWorkspaceContractsCache();
+    });
+  });
 });
 
 describe("sdk testing helpers", () => {

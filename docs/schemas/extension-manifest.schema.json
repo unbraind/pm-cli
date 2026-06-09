@@ -32,6 +32,7 @@
     },
     "manifest_version": {
       "type": "integer",
+      "enum": [1, 2],
       "description": "Optional manifest format version."
     },
     "pm_min_version": {

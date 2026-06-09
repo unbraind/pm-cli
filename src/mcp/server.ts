@@ -37,6 +37,7 @@ import { readSettings } from "../core/store/settings.js";
 import { normalizeListOptions, normalizeUpdateOptions } from "../cli/registration-helpers.js";
 import { UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "../sdk/cli-contracts/commander-mutation-options.js";
 import { PM_TOOL_ACTIONS } from "../sdk/cli-contracts/enum-contracts.js";
+import { clearWorkspaceContractsCache } from "../sdk/runtime.js";
 import {
   runActivity,
   runAggregate,
@@ -661,7 +662,13 @@ async function runDynamicExtensionAction(
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Unsupported native pm action: ${action}`, 64);
   }
-  return dynamicExtensionActionQueue.enqueue(() => runDynamicExtensionActionExclusively(action, args, options, global, pmRoot));
+  return dynamicExtensionActionQueue.enqueue(async () => {
+    try {
+      return await runDynamicExtensionActionExclusively(action, args, options, global, pmRoot);
+    } finally {
+      clearWorkspaceContractsCache();
+    }
+  });
 }
 
 // Body of the dynamic-action activation cycle. Must only ever run under

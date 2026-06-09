@@ -474,6 +474,12 @@ describe("extension command runtime", () => {
       const listWithInjectedFlag = context.runCli(["list", "--kit-note", "smoke", "--json"], { expectJson: true });
       expect(listWithInjectedFlag.code).toBe(0);
       expect((listWithInjectedFlag.json as { items?: unknown[] }).items).toEqual([]);
+
+      const echoWithLeadingBooleanFlag = context.runCli(["command-kit", "echo", "--upper", "hello", "--json"], {
+        expectJson: true,
+      });
+      expect(echoWithLeadingBooleanFlag.code).toBe(0);
+      expect(echoWithLeadingBooleanFlag.json).toMatchObject({ message: "HELLO", upper: true });
     });
   });
 

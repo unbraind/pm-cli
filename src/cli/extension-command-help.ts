@@ -311,8 +311,9 @@ function formatDynamicExtensionParseOptionFlags(definition: Record<string, unkno
   if (!normalizedLong && !normalizedShort) {
     return null;
   }
+  const valueType = toNonEmptyFlagString(definition.value_type) ?? toNonEmptyFlagString(definition.type);
   const valueName = toNonEmptyFlagString(definition.value_name);
-  const valueSuffix = valueName ? ` <${valueName}>` : " [value]";
+  const valueSuffix = valueType === "boolean" ? "" : valueName ? ` <${valueName}>` : " [value]";
   const optionNames = [normalizedShort, normalizedLong].filter((entry): entry is string => entry !== null);
   return `${optionNames.join(", ")}${valueSuffix}`;
 }
