@@ -133,7 +133,7 @@ Default TOON output is preferred for model-readable loops. Use `--json` only whe
 
 `list`/`search` compact mode is intentionally token-light: it returns compact items plus only active filters (and runtime schema filters when present), omitting default projection/sorting/now trailer metadata.
 
-Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_close`, and `pm_run` for `append`/`update-many`) are already compact by default: they return `changed_field_count` instead of the full `changed_fields` array. Pass `fullChangedFields=true` only when you need the explicit field-level delta, or `idOnly=true` for single-item id/status output.
+Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_append`/`pm_close`, and `pm_run` for `update-many`) are already compact by default: they return `changed_field_count` instead of the full `changed_fields` array. Pass `fullChangedFields=true` only when you need the explicit field-level delta, or `idOnly=true` for single-item id/status output.
 
 `pm create --parent <id>` fails fast when the parent cannot be found. Use `--allow-missing-parent` only for deliberate imports or staged backlog reconstruction.
 

@@ -2,6 +2,7 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runContracts } from "../../src/cli/commands/contracts.js";
+import { buildMcpToolContracts, TOOLS } from "../../src/mcp/tool-definitions.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import {
@@ -1359,5 +1360,53 @@ describe("contracts command runtime", () => {
         }),
       }),
     });
+  });
+
+  it("snapshots the MCP tool surface in full output only (pm-4os2)", async () => {
+    const fullResult = await runContracts({ full: true }, GLOBAL_OPTIONS);
+    expect(fullResult.mcp_tools).toEqual(buildMcpToolContracts());
+
+    const names = (fullResult.mcp_tools ?? []).map((tool) => tool.name);
+    // Sorted, unique, and inclusive of the workspace-configuration narrow tools.
+    expect(names).toEqual([...names].sort((left, right) => left.localeCompare(right)));
+    expect(new Set(names).size).toBe(names.length);
+    expect(names).toEqual(expect.arrayContaining(["pm_run", "pm_append", "pm_schema", "pm_config", "pm_copy", "pm_plan"]));
+    expect(names).toHaveLength(TOOLS.length);
+
+    // Default brief / projection modes omit the MCP tool surface.
+    const briefResult = await runContracts({}, GLOBAL_OPTIONS);
+    expect(briefResult.mcp_tools).toBeUndefined();
+    const flagsOnlyResult = await runContracts({ full: true, flagsOnly: true }, GLOBAL_OPTIONS);
+    expect(flagsOnlyResult.mcp_tools).toBeUndefined();
+  });
+
+  it("builds stable MCP tool contracts with required fields and schema shapes (pm-4os2)", () => {
+    const contracts = buildMcpToolContracts();
+    const byName = new Map(contracts.map((tool) => [tool.name, tool]));
+
+    // Required top-level fields surface per tool (pm-v68d/pm-7u9j).
+    expect(byName.get("pm_schema")?.required).toEqual(["subcommand"]);
+    expect(byName.get("pm_config")?.required).toEqual(["configAction"]);
+    expect(byName.get("pm_append")?.required).toEqual(["id"]);
+    expect(byName.get("pm_update")?.required).toEqual(["id", "options"]);
+    expect(byName.get("pm_run")?.required).toEqual(["action"]);
+    expect(byName.get("pm_list")?.required).toEqual([]);
+
+    for (const tool of contracts) {
+      expect(tool.description.length).toBeGreaterThan(0);
+      const schema = tool.input_schema as {
+        type?: string;
+        properties?: Record<string, unknown>;
+        required?: string[];
+        additionalProperties?: boolean;
+      };
+      expect(schema.type).toBe("object");
+      // Every tool inherits the shared base properties (TOOL_SCHEMA_BASE).
+      expect(Object.keys(schema.properties ?? {})).toEqual(expect.arrayContaining(["cwd", "path", "author"]));
+      // The contract's required projection is the sorted schema required list.
+      expect(tool.required).toEqual([...(schema.required ?? [])].sort((left, right) => left.localeCompare(right)));
+      // Passthrough stays enabled so options forwarding keeps working.
+      expect(schema.additionalProperties).toBe(true);
+    }
   });
 });

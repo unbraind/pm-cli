@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildLinkedTestQuotedRetryCommand,
   classifyUnknownError,
   formatCommanderErrorForDisplay,
   formatCommanderErrorForJson,
@@ -249,5 +250,113 @@ describe("pm cli error guidance context plumbing", () => {
 
     const generic = formatUnknownErrorForJson("Unexpected runtime failure", 1);
     expect(generic.code).toBe("unknown_error");
+  });
+});
+
+describe("linked-test value quoting guidance (GH-191)", () => {
+  const ALLOWED_TYPES = "Task|Issue";
+  const TOO_MANY = "error: too many arguments for 'test'. Expected 1 argument but got 4.";
+
+  it("classifies an unquoted test --add value as linked_test_value_not_quoted with a re-joined retry", () => {
+    const envelope = formatCommanderErrorForJson(TOO_MANY, "test", ALLOWED_TYPES, 2, {
+      normalizedInvocationArgs: ["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"],
+      providedOptionFlags: ["--add"],
+    });
+
+    expect(envelope.code).toBe("linked_test_value_not_quoted");
+    expect(envelope.title).toBe("Linked-test --add value must be one argument");
+    expect(envelope.required).toContain('--add "command=npm test -- parser"');
+    expect(envelope.required).toContain("two-token form");
+    expect(envelope.recovery?.suggested_retry).toBe('pm test pm-a1b2 --add "command=npm test -- parser"');
+    expect(envelope.examples?.[0]).toBe('pm test pm-a1b2 --add "command=npm test -- parser"');
+    expect(envelope.examples).toContain('pm test pm-a1b2 --add command "npm test -- parser"');
+    expect(envelope.examples).toContain(`pm test pm-a1b2 --add-json '{"command":"npm test -- parser"}'`);
+    expect(envelope.next_steps?.[0]).toContain("Replay with the value re-joined into one argument:");
+  });
+
+  it("targets guidance without a retry when the value tokens cannot be re-joined unambiguously", () => {
+    const envelope = formatCommanderErrorForJson(TOO_MANY, "test", ALLOWED_TYPES, 2, {
+      normalizedInvocationArgs: ["test", "--add", "command", "echo x -- y", "pm-a1b2"],
+    });
+
+    expect(envelope.code).toBe("linked_test_value_not_quoted");
+    expect(envelope.recovery?.suggested_retry).toBeUndefined();
+    expect(envelope.next_steps?.[0]).toContain("--add-json");
+  });
+
+  it("detects --add-json and inline --add= forms as linked-test mutations", () => {
+    const addJson = formatCommanderErrorForJson(TOO_MANY, "test", ALLOWED_TYPES, 2, {
+      normalizedInvocationArgs: ["test", "pm-a1b2", "--add-json", "{command:", "x}"],
+    });
+    expect(addJson.code).toBe("linked_test_value_not_quoted");
+    expect(addJson.title).toBe("Linked-test --add-json value must be one argument");
+    expect(addJson.recovery?.suggested_retry).toBeUndefined();
+
+    const inline = formatCommanderErrorForJson(TOO_MANY, "test", ALLOWED_TYPES, 2, {
+      normalizedInvocationArgs: ["test", "pm-a1b2", "--add=command", "extra"],
+    });
+    expect(inline.code).toBe("linked_test_value_not_quoted");
+  });
+
+  it("keeps generic usage guidance for test excess arguments without linked-test flags", () => {
+    const envelope = formatCommanderErrorForJson(TOO_MANY, "test", ALLOWED_TYPES, 2, {
+      normalizedInvocationArgs: ["test", "pm-a1b2", "extra", "--run"],
+    });
+    expect(envelope.code).toBe("invalid_command_usage");
+
+    const noContext = formatCommanderErrorForJson(TOO_MANY, "test", ALLOWED_TYPES, 2);
+    expect(noContext.code).toBe("invalid_command_usage");
+  });
+
+  it("keeps generic usage guidance for other commands and other messages", () => {
+    const otherCommand = formatCommanderErrorForJson(
+      "error: too many arguments for 'get'. Expected 1 argument but got 2.",
+      "get",
+      ALLOWED_TYPES,
+      2,
+      { normalizedInvocationArgs: ["get", "pm-a1b2", "--add", "command", "x", "y"] },
+    );
+    expect(otherCommand.code).toBe("invalid_command_usage");
+
+    const otherMessage = formatCommanderErrorForJson("error: something else entirely", "test", ALLOWED_TYPES, 2, {
+      normalizedInvocationArgs: ["test", "pm-a1b2", "--add", "command", "x", "y"],
+    });
+    expect(otherMessage.code).toBe("invalid_command_usage");
+  });
+
+  it("renders the targeted guidance in text output", () => {
+    const text = formatCommanderErrorForDisplay(TOO_MANY, "test", ALLOWED_TYPES, {
+      normalizedInvocationArgs: ["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"],
+    });
+    expect(text).toContain("Linked-test --add value must be one argument");
+    expect(text).toContain('pm test pm-a1b2 --add "command=npm test -- parser"');
+  });
+});
+
+describe("buildLinkedTestQuotedRetryCommand", () => {
+  it("re-joins shell-split value tokens into a quoted key=value retry", () => {
+    expect(
+      buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"]),
+    ).toBe('pm test pm-a1b2 --add "command=npm test -- parser"');
+    expect(
+      buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--remove", "path", "tests/a", "b"]),
+    ).toBe('pm test pm-a1b2 --remove "path=tests/a b"');
+  });
+
+  it("stops the re-joined value at the next long flag", () => {
+    expect(
+      buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--add", "command", "npm", "test", "--run"]),
+    ).toBe('pm test pm-a1b2 --add "command=npm test" --run');
+  });
+
+  it("returns undefined when the shape is not the unquoted linked-test form", () => {
+    expect(buildLinkedTestQuotedRetryCommand(undefined)).toBeUndefined();
+    expect(buildLinkedTestQuotedRetryCommand(["get", "pm-a1b2", "extra"])).toBeUndefined();
+    expect(buildLinkedTestQuotedRetryCommand(["test"])).toBeUndefined();
+    expect(buildLinkedTestQuotedRetryCommand(["test", "--add", "command", "a", "b"])).toBeUndefined();
+    expect(buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--list"])).toBeUndefined();
+    expect(buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--add"])).toBeUndefined();
+    expect(buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--add", "scope", "a", "b"])).toBeUndefined();
+    expect(buildLinkedTestQuotedRetryCommand(["test", "pm-a1b2", "--add", "command", "single-token"])).toBeUndefined();
   });
 });

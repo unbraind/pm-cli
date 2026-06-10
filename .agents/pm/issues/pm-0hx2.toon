@@ -1,0 +1,11 @@
+id: pm-0hx2
+title: "Telemetry first-run prompt CI guard is inverted: CI=true does not skip, only CI=false/0/no/off does"
+description: "shouldSkipTelemetryPrompt (src/core/telemetry/consent.ts) reuses TELEMETRY_PROMPT_DISABLE_VALUES ('0','false','no','off') via parseBooleanLike for the CI env check. parseBooleanLike(process.env.CI) is therefore true only when CI is explicitly falsy — i.e. the prompt is skipped when CI=false and NOT skipped when CI=true. Masked in practice because real CI shells are non-TTY (the TTY guard fires first), but an interactive shell with CI=true would still prompt. Fix: use a truthy-value check (e.g. CI is set and not in the disable set) for the CI guard. Found while extending tests/unit/telemetry-consent.spec.ts (test asserts current behavior with a comment)."
+type: Issue
+status: open
+priority: 3
+tags[2]: "area:telemetry",bug
+created_at: "2026-06-10T20:20:07.984Z"
+updated_at: "2026-06-10T20:20:07.984Z"
+author: coverage-ratchet-agent
+body: ""

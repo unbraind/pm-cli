@@ -65,7 +65,7 @@ This clones the repo, reads `.claude-plugin/marketplace.json` at the root, insta
 claude mcp add --transport stdio pm-mcp -- npx -y --package=@unbrained/pm-cli@latest pm-mcp
 ```
 
-Gives you the 22 MCP tools without skills or slash commands.
+Gives you the 25 MCP tools without skills or slash commands.
 
 ### 3. Direct project `.mcp.json` (project-scoped MCP only)
 
@@ -123,7 +123,7 @@ node scripts/smoke-claude-plugin.mjs
 pnpm smoke:claude-plugin
 ```
 
-Verifies: plugin file structure, manifest name consistency, MCP initialize, 22 tools present, full workflow (init → create → claim → update → link files/docs/tests → get → context → search → validate → health), and session-start hook.
+Verifies: plugin file structure, manifest name consistency, MCP initialize, 25 tools present, full workflow (init → create → claim → update → link files/docs/tests → get → context → search → validate → health), and session-start hook.
 
 ### MCP server smoke test
 

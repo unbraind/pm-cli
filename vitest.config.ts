@@ -5,10 +5,10 @@ const coverageReporters = process.env.CI
   : (["text", "json-summary", "html"] as const);
 
 const allSourceCoverageThresholds = {
-  lines: 78,
-  branches: 70,
-  functions: 82,
-  statements: 78,
+  lines: 82,
+  branches: 74,
+  functions: 86,
+  statements: 82,
 };
 
 export default defineConfig({

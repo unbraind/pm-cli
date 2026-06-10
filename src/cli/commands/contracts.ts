@@ -24,6 +24,7 @@ import {
 } from "../../core/schema/runtime-schema.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import { buildMcpToolContracts, type McpToolContract } from "../../mcp/tool-definitions.js";
 import {
   ACTIVITY_COMMANDER_STRING_OPTION_CONTRACTS,
   ACTIVITY_FLAG_CONTRACTS,
@@ -184,6 +185,10 @@ export interface ContractsResult {
       breaking_strategy: string;
     };
   };
+  // pm-4os2: static MCP tool surface (tool names, required fields, inputSchema
+  // shapes) so the contract golden file catches unintended MCP schema drift.
+  // Emitted with --full only — the snapshot script runs `pm contracts --full`.
+  mcp_tools?: McpToolContract[];
 }
 
 type PmToolAction = (typeof PM_TOOL_ACTIONS)[number];
@@ -1818,6 +1823,13 @@ export async function runContracts(
     } else {
       result.commander_aliases_omitted_reason = "unfiltered_default_brief";
     }
+  }
+
+  // pm-4os2: snapshot the static MCP tool surface in the full projection so
+  // `pnpm contracts:check` (CI static gate) fails on unintended inputSchema
+  // drift in src/mcp/tool-definitions.ts.
+  if (fullOutput && !schemaOnly && !flagsOnly && !availabilityOnly) {
+    result.mcp_tools = buildMcpToolContracts();
   }
 
   return result;

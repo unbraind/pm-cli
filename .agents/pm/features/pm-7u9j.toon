@@ -2,14 +2,26 @@ id: pm-7u9j
 title: Add narrow pm_append MCP tool for agent log-seeding without pm_run passthrough
 description: "pm_run action='append' routes through the generic catch-all handler with no top-level schema. Agents that want to seed a body or log entry into an existing item must pass all options inside `options: {}`. A narrow pm_append tool would surface `id` and `options` at the top level (like pm_comments, pm_notes), participate in the unexpected-key warning system (pm-qxwu), and be self-documenting in tools/list. Append is a frequent agent operation — closing a task often involves adding evidence before close."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: agent-ux,"area:mcp",dx
 created_at: "2026-06-07T10:03:51.603Z"
-updated_at: "2026-06-07T10:22:12.156Z"
+updated_at: "2026-06-10T20:35:54.648Z"
 author: audit-platform-agent
 acceptance_criteria: "- Narrow `pm_append` MCP tool exists, mapping to `pm append`\n- Registered in PM_TOOL_ACTIONS + tool schema/parameter contracts\n- Compact-by-default output; covered by MCP tool-list test\n- docs/AGENT_GUIDE MCP tool table updated"
 parent: pm-5k4v
 risk: low
 confidence: high
+resolution: Added pm_append narrow tool (id required + body + fullChangedFields + options top-level; body hoisted into options with options.body precedence) routed through the existing append action with compact-by-default mutation output; removed append from the pm_run-only instruction list.
+expected_result: Agents seed body/log content on items without pm_run passthrough.
+actual_result: pm_append registered in TOOLS/dispatch/contracts/docs; mcp-handshake asserts tool surface and behavior; golden file snapshots its inputSchema.
+comments[1]{created_at,author,text}:
+  "2026-06-10T15:13:43.022Z",mcp-tools-agent,"Implemented narrow pm_append MCP tool mapping to pm append: id (required) + body + fullChangedFields + options top-level, like pm_comments/pm_notes. body is hoisted into options in optionsWithAuthor (action=append) so runAppend receives it; options.body still wins on conflict. Output is compact by default via the existing withMutationCompaction path (changed_field_count instead of changed_fields). Participates in the unexpected-key warning system; advertised in server instructions (and removed append from the pm_run-only action enumeration there). Verified end-to-end in the handshake spec: append via top-level body, no warnings, changed_field_count=1, body visible via pm_get depth=full."
+files[3]{path,scope,note}:
+  src/mcp/server.ts,project,pm_append HANDLERS dispatch + body hoist in optionsWithAuthor + instructions
+  src/mcp/tool-definitions.ts,project,pm_append tool definition (id+body+fullChangedFields+options)
+  tests/integration/mcp-handshake.spec.ts,project,pm_append compact-output behavior test
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,pm_append append+compact projection coverage
+close_reason: Shipped narrow pm_append MCP tool
 body: ""

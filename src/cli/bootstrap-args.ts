@@ -702,6 +702,95 @@ export function coalesceRepeatedListFlags(
   return { argv: result as string[], events };
 }
 
+/**
+ * Linked-test entry keys accepted in the two-token form `pm test <id> --add command
+ * "npm test -- parser"` (GH-191). Only entry-identity keys are merged: `command`/`cmd`
+ * name the shell command and `path` names the test file, so a single key=value entry is
+ * meaningful for them. Other structured keys (scope, env_set, assertions, ...) cannot
+ * form a valid standalone entry and are left for the normal parser to reject. `--remove`
+ * matches existing entries by `command=`/`path=` only, so `cmd` is excluded there.
+ * Key names mirror STRUCTURED_LINKED_TEST_KEYS in src/cli/commands/linked-test-entry.ts.
+ */
+const LINKED_TEST_TWO_TOKEN_KEYS_BY_FLAG: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ["--add", new Set(["command", "cmd", "path"])],
+  ["--remove", new Set(["command", "path"])],
+]);
+
+/**
+ * Sandbox-safe linked-test commands legitimately start with env assignments
+ * (`PM_PATH=... PM_GLOBAL_PATH=... vitest run -- parser`), which look like bare
+ * key=value settings tokens. When the two preceding tokens are a linked-test
+ * flag plus a bare two-token key (`--add command <value>`), the value must be
+ * left intact for mergeLinkedTestTwoTokenEntries instead of being rewritten
+ * into a canonical flag (e.g. PM_PATH= -> --pm-path), which would silently
+ * corrupt the command into `--add command --pm-path ...`.
+ */
+function isLinkedTestTwoTokenValuePosition(commandName: string | undefined, emittedTokens: readonly string[]): boolean {
+  if (commandName !== "test" || emittedTokens.length < 2) {
+    return false;
+  }
+  const key = emittedTokens[emittedTokens.length - 1];
+  const flag = emittedTokens[emittedTokens.length - 2];
+  const keys = LINKED_TEST_TWO_TOKEN_KEYS_BY_FLAG.get(flag);
+  return keys !== undefined && keys.has(key);
+}
+
+/**
+ * Accept the two-token linked-test form `pm test <id> --add command "npm test -- parser"`
+ * by merging the bare key token and its single quoted value into the documented
+ * `--add command=...` shape. Without this merge Commander binds the bare key as the
+ * option value and treats the quoted command as an excess positional, failing with
+ * "too many arguments" (GH-191). The merge only fires when EXACTLY ONE non-flag token
+ * follows the bare key, i.e. the value was quoted into one shell token — an unquoted
+ * multi-token value stays ambiguous (it may swallow the item id), still fails fast, and
+ * is routed to targeted quoting guidance by the commander error classifier instead.
+ */
+export function mergeLinkedTestTwoTokenEntries(
+  argv: string[],
+  commandName: string | undefined,
+  trace: BootstrapNormalizationEvent[],
+): string[] {
+  if (commandName !== "test") {
+    return argv;
+  }
+  const result: string[] = [];
+  let index = 0;
+  while (index < argv.length) {
+    const token = argv[index];
+    if (token === "--") {
+      result.push(...argv.slice(index));
+      return result;
+    }
+    const keys = LINKED_TEST_TWO_TOKEN_KEYS_BY_FLAG.get(token);
+    const key = keys ? argv[index + 1] : undefined;
+    if (!keys || typeof key !== "string" || !keys.has(key)) {
+      result.push(token);
+      index += 1;
+      continue;
+    }
+    let runEnd = index + 2;
+    while (runEnd < argv.length && !argv[runEnd].startsWith("-")) {
+      runEnd += 1;
+    }
+    if (runEnd - (index + 2) !== 1) {
+      result.push(token);
+      index += 1;
+      continue;
+    }
+    const value = argv[index + 2];
+    const mergedValue = `${key}=${value}`;
+    result.push(token, mergedValue);
+    trace.push({
+      from: `${token} ${key} ${value}`,
+      to: [token, mergedValue],
+      reason: "bare_key_value",
+      confidence: "high",
+    });
+    index += 3;
+  }
+  return result;
+}
+
 export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocationNormalizationResult {
   const trace: BootstrapNormalizationEvent[] = [];
   const legacyNormalized = normalizeLegacyExtensionActionSyntax(argv);
@@ -736,7 +825,8 @@ export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocatio
     const bareKeyValue = parseBareKeyValueToken(token);
     if (
       bareKeyValue &&
-      !(typeof previous === "string" && previous.startsWith("-"))
+      !(typeof previous === "string" && previous.startsWith("-")) &&
+      !isLinkedTestTwoTokenValuePosition(commandName, normalizedArgv)
     ) {
       const resolution = resolveCanonicalFlag(bareKeyValue.key, lookup);
       if (resolution) {
@@ -753,8 +843,9 @@ export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocatio
     }
     normalizedArgv.push(token);
   }
+  const linkedTestNormalized = mergeLinkedTestTwoTokenEntries(normalizedArgv, commandName, trace);
   const coalesced = coalesceRepeatedListFlags(
-    normalizedArgv,
+    linkedTestNormalized,
     lookup.listCanonicalFlags,
     GLOBAL_VALUE_CONSUMING_FLAGS,
   );

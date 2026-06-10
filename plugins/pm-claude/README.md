@@ -6,7 +6,7 @@ Native pm CLI integration for Claude Code. Use pm project management tools direc
 
 | Component | What it provides |
 |-----------|----------------|
-| **22 MCP tools** | Full pm surface: context, search, list, get, create, copy, update, claim, release, close, comments, files, docs, notes, learnings, deps, test, validate, health, contracts, plan + `pm_run` for everything else |
+| **25 MCP tools** | Full pm surface: context, search, list, get, create, copy, update, claim, release, close, comments, files, docs, notes, learnings, deps, test, validate, health, contracts, plan, append, schema, config + `pm_run` for everything else |
 | **5 skills** | `pm-workflow`, `pm-developer`, `pm-release`, `pm-audit`, `pm-planner` — auto-loaded as Claude Code skills |
 | **14 slash commands** | Full lifecycle coverage — status, start, close, triage, audit, search, new, list, calendar, developer, planner, release, workflow, init |
 | **4 subagents** | `pm-coordinator` (batch/multi-item), `pm-triage-agent` (duplicate-safe item creation), `pm-verification-agent` (evidence + close readiness), and `pm-delivery-chain` (orchestrated delivery) |
@@ -29,7 +29,7 @@ claude plugin marketplace add /path/to/pm-cli
 # claude plugin marketplace add unbraind/pm-cli
 ```
 
-This installs all 22 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and the session hook in one step.
+This installs all 25 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and the session hook in one step.
 
 ### Option B: Legacy marketplace alias (also works)
 
@@ -45,7 +45,7 @@ Both `pm` and `pm-cli` marketplace IDs resolve to the same plugin.
 claude mcp add --transport stdio pm-mcp -- npx -y --package=@unbrained/pm-cli@latest pm-mcp
 ```
 
-This gives you the 22 MCP tools but not the skills, slash commands, or session hook.
+This gives you the 25 MCP tools but not the skills, slash commands, or session hook.
 
 ### Option D: Direct `.mcp.json` (project-scoped MCP only)
 
@@ -152,7 +152,9 @@ Spawn pm-triage-agent to set up the pm item for: add OAuth2 login support
 | `pm_list` | Filtered item list |
 | `pm_get` | Single item detail |
 | `pm_create` | Create new item |
+| `pm_copy` | Copy item into a new id |
 | `pm_update` | Update metadata |
+| `pm_append` | Append text to item body |
 | `pm_claim` | Claim for active work |
 | `pm_release` | Release claim |
 | `pm_close` | Close with reason |
@@ -166,6 +168,8 @@ Spawn pm-triage-agent to set up the pm item for: add OAuth2 login support
 | `pm_validate` | Run validation checks |
 | `pm_health` | Run health diagnostics |
 | `pm_contracts` | Inspect command contracts |
+| `pm_schema` | Manage custom item types/statuses |
+| `pm_config` | Read or write settings keys |
 | `pm_plan` | Manage durable Plan workflows |
 
 ### General tool

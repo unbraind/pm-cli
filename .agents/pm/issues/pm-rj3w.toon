@@ -1,0 +1,12 @@
+id: pm-rj3w
+title: "Telemetry worker: no Postgres reconnect — ingestion stalls with events stuck in RabbitMQ after postgres restart"
+description: "Incident 2026-06-09/10: pm-telemetry-postgres restarted; pm-telemetry-worker kept its dead connection and failed every insert with 'worker_insert_failed: the connection is closed' for ~24h. 15,778 events backed up in pm.telemetry.events (RabbitMQ retained all — no data loss); Postgres ingested only 11 events/24h. Manual 'docker restart pm-telemetry-worker' reconnected and drained the full backlog in ~2 min (24h count restored to 15,731). Fix needed in the worker (remote stack, scripts/prod/telemetry host): (1) reconnect/retry on closed Postgres connection instead of failing forever, (2) container healthcheck that fails on repeated insert errors so docker restarts it automatically, (3) optional: stack-health script should WARN when queue depth high while 24h ingest count is near zero."
+type: Issue
+status: open
+priority: 2
+tags[3]: "area:telemetry",infra,reliability
+created_at: "2026-06-10T20:00:10.707Z"
+updated_at: "2026-06-10T20:00:10.707Z"
+author: maintainer-agent
+parent: pm-5oj5
+body: ""

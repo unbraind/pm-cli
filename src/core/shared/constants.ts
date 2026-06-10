@@ -378,6 +378,7 @@ export const TELEMETRY_ERROR_CATEGORY_BY_CODE: Readonly<Record<string, Telemetry
   missing_required_option: "usage",
   missing_required_argument: "usage",
   invalid_command_usage: "usage",
+  linked_test_value_not_quoted: "usage",
   invalid_argument_value: "validation",
   health_findings: "validation",
   validation_findings: "validation",

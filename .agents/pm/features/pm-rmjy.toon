@@ -2,14 +2,27 @@ id: pm-rmjy
 title: "MCP pm_list/pm_search: expose active filter summary in compact output so agents know what was applied"
 description: "When an agent calls pm_list with options.status='open' and options.type='Feature', the compact output already includes a `filters` section (from runList). But via the narrow pm_list tool, filters are nested inside `options: {}` with no top-level declaration, so the unexpected-key warning system (pm-qxwu) doesn't validate them, and the MCP tool description does not list the available filter keys. This creates a discoverability gap: agents must either call pm_run or read the option description prose. Adding a `query_summary` field in structuredContent.result that echoes back the resolved filters and projection mode would close the feedback loop."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: agent-ux,"area:mcp",dx
 created_at: "2026-06-07T10:04:09.891Z"
-updated_at: "2026-06-07T10:22:12.728Z"
+updated_at: "2026-06-10T20:36:07.082Z"
 author: audit-platform-agent
 acceptance_criteria: "- pm_list/pm_search compact MCP output includes an applied-filters summary\n- Agents can see which filters were applied without re-echoing inputs\n- Covered by a contract/snapshot test"
 parent: pm-5k4v
 risk: low
 confidence: medium
+resolution: "MCP pm_list/pm_search results (narrow tools and pm_run) now include structuredContent.result.query_summary = { filters, projection } via new pure module src/core/output/query-summary.ts; projection resolves compact/brief/fields/full; CLI output unchanged."
+expected_result: Agents see which filters/projection were actually applied without re-echoing inputs.
+actual_result: "query_summary asserted in mcp-handshake integration tests + output.spec unit tests; additive field, no consumer breakage in-repo."
+comments[1]{created_at,author,text}:
+  "2026-06-10T15:13:51.320Z",mcp-tools-agent,"Added query_summary to MCP pm_list/pm_search results (also pm_run action=list/search): structuredContent.result.query_summary = { filters, projection }. filters echoes the result's resolved filters (compact paths already compute the active-filter summary); projection is the resolved projection label (compact/brief/fields/full) — taken from the result's own projection.mode for verbose payloads, from the requested options for the compact summary paths, with brief winning outright (list reports brief as mode=compact). Pure logic lives in new src/core/output/query-summary.ts (withQuerySummary + resolveQueryProjectionLabel), 100% unit-covered in tests/unit/output.spec.ts; integration coverage in mcp-handshake.spec.ts asserts filters echo (status/type) and projection labels for default-compact and brief list calls plus compact search. Tool descriptions for pm_list/pm_search mention query_summary."
+files[4]{path,scope,note}:
+  src/core/output/query-summary.ts,project,"New pure module: withQuerySummary/resolveQueryProjectionLabel"
+  src/mcp/server.ts,project,list/search runAction cases wrap results with withQuerySummary
+  tests/integration/mcp-handshake.spec.ts,project,pm_list/pm_search query_summary integration test
+  tests/unit/output.spec.ts,project,"query-summary unit tests (labels,precedence,fallback)"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/integration/mcp-handshake.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,query_summary unit + integration coverage
+close_reason: Shipped query_summary applied-filters echo on MCP list/search
 body: ""
