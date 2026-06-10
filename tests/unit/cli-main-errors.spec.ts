@@ -1,8 +1,17 @@
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
+import { Command } from "commander";
 import { describe, expect, it } from "vitest";
 
 import { _testOnly } from "../../src/cli/main.js";
+import {
+  ROOT_HELP_BUNDLE,
+  attachRichHelpText,
+  normalizeHelpCommandPath,
+  resolveHelpBundleForPath,
+  resolveHelpDetailMode,
+  resolveHelpNarrative,
+} from "../../src/cli/help-content.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
@@ -133,5 +142,88 @@ describe("CLI settings-read warning surfacing", () => {
       expect(result.code).toBe(0);
       expect(() => JSON.parse(result.stdout)).not.toThrow();
     });
+  });
+});
+
+describe("CLI rich help content", () => {
+  it("normalizes help command paths and resolves --explain detail mode", () => {
+    expect(normalizeHelpCommandPath("  Package   INIT ")).toBe("package init");
+    expect(normalizeHelpCommandPath("")).toBe("");
+    expect(resolveHelpDetailMode(["list", "--explain"])).toBe("detailed");
+    expect(resolveHelpDetailMode(["list", "--help"])).toBe("compact");
+  });
+
+  it("resolves command help bundles including aliases and the root fallback", () => {
+    expect(resolveHelpBundleForPath(undefined)).toBe(ROOT_HELP_BUNDLE);
+    expect(resolveHelpBundleForPath("   ")).toBe(ROOT_HELP_BUNDLE);
+    expect(resolveHelpBundleForPath("no-such-command")).toBe(ROOT_HELP_BUNDLE);
+    expect(resolveHelpBundleForPath("ctx")).toBe(resolveHelpBundleForPath("context"));
+    expect(resolveHelpBundleForPath("list").why).toContain("Lists active items");
+  });
+
+  it("builds compact and detailed help narratives", () => {
+    const compact = resolveHelpNarrative("create", "compact");
+    expect(compact.examples).toHaveLength(1);
+    expect(compact.tips).toEqual([]);
+    expect(compact.detail_mode).toBe("compact");
+
+    const detailed = resolveHelpNarrative("create", "detailed");
+    expect(detailed.examples.length).toBeGreaterThan(1);
+    expect(detailed.tips.length).toBeGreaterThan(0);
+    expect(detailed.intent).toBe(compact.intent);
+
+    // list-blocked has no tips; detailed narratives still resolve cleanly.
+    expect(resolveHelpNarrative("list-blocked", "detailed").tips).toEqual([]);
+  });
+
+  it("attaches compact help text only to commands that exist on the program", () => {
+    const capture = (helpArgv: string[], detailArgv: string[]): string => {
+      let out = "";
+      const program = new Command().name("pm");
+      program.exitOverride().configureOutput({
+        writeOut: (chunk) => {
+          out += chunk;
+        },
+        writeErr: () => {},
+      });
+      program.command("list").description("List items");
+      const packageCommand = program.command("package").description("Packages");
+      packageCommand.command("init").description("Scaffold");
+      attachRichHelpText(program, detailArgv);
+      try {
+        program.parse(helpArgv, { from: "user" });
+      } catch {
+        // commander.helpDisplayed via exitOverride
+      }
+      return out;
+    };
+
+    expect(capture(["--help"], ["--help"])).toContain(ROOT_HELP_BUNDLE.why);
+    const listHelp = capture(["list", "--help"], ["--help"]);
+    expect(listHelp).toContain("Intent:");
+    expect(listHelp).toContain("Re-run with --explain.");
+    expect(capture(["package", "init", "--help"], ["--help"])).toContain("Intent:");
+  });
+
+  it("renders detailed bundles with tips under --explain", () => {
+    let out = "";
+    const program = new Command().name("pm");
+    program.exitOverride().configureOutput({
+      writeOut: (chunk) => {
+        out += chunk;
+      },
+      writeErr: () => {},
+    });
+    program.command("init").description("Initialize");
+    attachRichHelpText(program, ["init", "--explain"]);
+    try {
+      program.parse(["init", "--help"], { from: "user" });
+    } catch {
+      // commander.helpDisplayed via exitOverride
+    }
+
+    expect(out).toContain("Why use this command:");
+    expect(out).toContain("Tips:");
+    expect(out).not.toContain("Re-run with --explain.");
   });
 });

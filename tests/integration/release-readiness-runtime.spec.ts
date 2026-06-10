@@ -1831,7 +1831,7 @@ describe("release readiness runtime coverage", () => {
     };
 
     expect(vitestConfig).toContain("const allSourceCoverageThresholds = {");
-    for (const token of ["lines: 78", "branches: 70", "functions: 82", "statements: 78"]) {
+    for (const token of ["lines: 82", "branches: 74", "functions: 86", "statements: 82"]) {
       expect(vitestConfig).toContain(token);
     }
     expect(vitestConfig).toContain("thresholds: allSourceCoverageThresholds");
