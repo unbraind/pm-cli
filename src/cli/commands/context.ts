@@ -412,7 +412,7 @@ function daysInUtcMonth(year: number, monthIndex: number): number {
   return new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
 }
 
-function hasValidDatePrefix(value: string): boolean {
+function hasNoInvalidDatePrefix(value: string): boolean {
   const match = LEADING_HYPHEN_DATE.exec(value) ?? LEADING_COMPACT_DATE.exec(value);
   if (!match) {
     return true;
@@ -443,7 +443,7 @@ function parseContextTimestampMs(value: unknown): number {
     return Number.NaN;
   }
   const trimmed = value.trim();
-  if (trimmed.length === 0 || !hasValidDatePrefix(trimmed)) {
+  if (trimmed.length === 0 || !hasNoInvalidDatePrefix(trimmed)) {
     return Number.NaN;
   }
   const parsed = Date.parse(normalizeTimestampCandidate(trimmed));
