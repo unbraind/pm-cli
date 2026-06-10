@@ -111,6 +111,12 @@ async function assertDuplicateTargetExists(
   if (!rawTarget) {
     return undefined;
   }
+  if (rawTarget === closingId) {
+    throw new PmCliError("An item cannot be closed as a duplicate of itself.", EXIT_CODE.USAGE, {
+      code: "duplicate_target_self",
+      why: "--duplicate-of must identify the canonical item that should remain open or already represent the work.",
+    });
+  }
   const typeRegistry = resolveItemTypeRegistry(settings);
   const target = await listAllFrontMatterLight(
     pmRoot,
@@ -125,12 +131,6 @@ async function assertDuplicateTargetExists(
       why: "Duplicate closure should point at a real canonical pm item so future dedupe and changelog tooling can trace the relationship.",
       examples: [`pm close ${closingId} "Duplicate of ${rawTarget}" --duplicate-of ${rawTarget}`],
       nextSteps: ["Run pm search/list to find the canonical item, then retry with --duplicate-of <id>."],
-    });
-  }
-  if (target.id === closingId) {
-    throw new PmCliError("An item cannot be closed as a duplicate of itself.", EXIT_CODE.USAGE, {
-      code: "duplicate_target_self",
-      why: "--duplicate-of must identify the canonical item that should remain open or already represent the work.",
     });
   }
   return target.id;
@@ -200,6 +200,7 @@ export async function runClose(
         { option: options.expectedResult, key: "expected_result" },
         { option: options.actualResult, key: "actual_result" },
       ];
+      const duplicateFallbackFields: Array<"resolution" | "expected_result" | "actual_result"> = [];
       for (const { option, key } of inlineCloseFields) {
         if (typeof option !== "string") continue;
         const trimmed = option.trim();
@@ -208,9 +209,21 @@ export async function runClose(
       }
       if (duplicateOf !== undefined) {
         document.metadata.duplicate_of = duplicateOf;
-        document.metadata.resolution ??= `Duplicate of ${duplicateOf}`;
-        document.metadata.expected_result ??= `Canonical item ${duplicateOf} tracks the work.`;
-        document.metadata.actual_result ??= `Closed as duplicate of ${duplicateOf}.`;
+        const duplicateResolution = `Duplicate of ${duplicateOf}`;
+        const duplicateExpectedResult = `Canonical item ${duplicateOf} tracks the work.`;
+        const duplicateActualResult = `Closed as duplicate of ${duplicateOf}.`;
+        if (document.metadata.resolution === undefined) {
+          document.metadata.resolution = duplicateResolution;
+          duplicateFallbackFields.push("resolution");
+        }
+        if (document.metadata.expected_result === undefined) {
+          document.metadata.expected_result = duplicateExpectedResult;
+          duplicateFallbackFields.push("expected_result");
+        }
+        if (document.metadata.actual_result === undefined) {
+          document.metadata.actual_result = duplicateActualResult;
+          duplicateFallbackFields.push("actual_result");
+        }
       }
       if (validateCloseMode !== "off") {
         const missingFields = findMissingCloseValidationFields(document.metadata);
@@ -254,9 +267,15 @@ export async function runClose(
       }
       if (duplicateOf !== undefined) {
         changedFields.push("duplicate_of");
-        if (!changedFields.includes("resolution")) changedFields.push("resolution");
-        if (!changedFields.includes("expected_result")) changedFields.push("expected_result");
-        if (!changedFields.includes("actual_result")) changedFields.push("actual_result");
+        if (duplicateFallbackFields.includes("resolution") && !changedFields.includes("resolution")) {
+          changedFields.push("resolution");
+        }
+        if (duplicateFallbackFields.includes("expected_result") && !changedFields.includes("expected_result")) {
+          changedFields.push("expected_result");
+        }
+        if (duplicateFallbackFields.includes("actual_result") && !changedFields.includes("actual_result")) {
+          changedFields.push("actual_result");
+        }
       }
       if (document.metadata.assignee !== undefined) {
         delete document.metadata.assignee;

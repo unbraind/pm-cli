@@ -922,7 +922,8 @@ export function renderContextMarkdown(result: ContextResult): string {
   if (result.recently_created && result.recently_created.length > 0) {
     lines.push("## Recently created");
     for (const item of result.recently_created) {
-      lines.push(`- ${item.created_at.slice(0, 10)} ${formatFocusLine(item)}`);
+      const dateToken = typeof item.created_at === "string" ? item.created_at.slice(0, 10) : "unknown";
+      lines.push(`- ${dateToken} ${formatFocusLine(item)}`);
     }
     lines.push("");
   }

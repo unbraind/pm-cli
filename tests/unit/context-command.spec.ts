@@ -628,4 +628,43 @@ describe("context command module", () => {
       expect(markdown).toContain("## Test health");
     });
   });
+
+  it("renders malformed recently created timestamps defensively", () => {
+    const markdown = renderContextMarkdown({
+      now: "2026-05-01T00:00:00.000Z",
+      depth: "standard",
+      filters: {},
+      sections_included: ["recently_created"],
+      summary: {
+        active_items: 1,
+        in_progress: 0,
+        open: 1,
+        blocked: 0,
+        blocked_fallback_used: false,
+        agenda_events: 0,
+      },
+      high_level: [],
+      low_level: [],
+      blocked_fallback: [],
+      agenda: { summary: { events: 0, deadlines: 0, reminders: 0, scheduled: 0 }, events: [] },
+      recently_created: [
+        {
+          id: "pm-legacy",
+          title: "Legacy item",
+          type: "Task",
+          status: "open",
+          priority: 1,
+          order: null,
+          deadline: null,
+          assignee: null,
+          tags: [],
+          updated_at: "2026-05-01T00:00:00.000Z",
+          parent: null,
+          created_at: undefined,
+        },
+      ],
+    } as never);
+
+    expect(markdown).toContain("- unknown pm-legacy");
+  });
 });

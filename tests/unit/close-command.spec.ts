@@ -127,6 +127,51 @@ describe("runClose", () => {
     });
   });
 
+  it("does not report duplicate fallback fields when explicit close metadata already exists", async () => {
+    await withTempPmPath(async (context) => {
+      const canonicalId = createTask(context, "canonical duplicate existing metadata target");
+      const duplicateId = createTask(context, "duplicate existing metadata candidate");
+      const update = context.runCli(
+        [
+          "update",
+          duplicateId,
+          "--json",
+          "--resolution",
+          "Already triaged as duplicate",
+          "--expected-result",
+          "Existing expected result",
+          "--actual-result",
+          "Existing actual result",
+          "--message",
+          "Seed closure metadata",
+        ],
+        { expectJson: true },
+      );
+      expect(update.code).toBe(0);
+
+      const result = await runClose(
+        duplicateId,
+        "Duplicate of canonical target",
+        {
+          duplicateOf: canonicalId,
+          validateClose: "strict",
+          message: "Close duplicate",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["status", "close_reason", "duplicate_of"]));
+      expect(result.changed_fields).not.toContain("resolution");
+      expect(result.changed_fields).not.toContain("expected_result");
+      expect(result.changed_fields).not.toContain("actual_result");
+      expect(result.item).toMatchObject({
+        resolution: "Already triaged as duplicate",
+        expected_result: "Existing expected result",
+        actual_result: "Existing actual result",
+      });
+    });
+  });
+
   it("rejects duplicate closure when the canonical target does not exist", async () => {
     await withTempPmPath(async (context) => {
       const duplicateId = createTask(context, "duplicate missing target");
@@ -143,6 +188,27 @@ describe("runClose", () => {
         ),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("rejects duplicate closure when the item references itself", async () => {
+    await withTempPmPath(async (context) => {
+      const duplicateId = createTask(context, "duplicate self target");
+
+      await expect(
+        runClose(
+          duplicateId,
+          "Duplicate of itself",
+          {
+            duplicateOf: duplicateId,
+            validateClose: "warn",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "duplicate_target_self" }),
       });
     });
   });
