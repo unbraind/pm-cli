@@ -78,11 +78,13 @@ pm search "calendar reminder validation" --limit 10
 pm list-open --type Task --priority 1 --limit 20
 pm list-in-progress --limit 20
 pm aggregate --group-by parent,type --status open
+pm aggregate --group-by parent,type --completion --include-unparented
 pm install governance-audit --project   # if dedupe-audit is not available
 pm dedupe-audit --mode parent_scope --limit 20
 ```
 
 Use `context` first for a compact active-work snapshot. Use `search` when the request names a concept, component, or prior issue.
+Use `pm aggregate --completion` when you need per-group `open`, `in_progress`, `closed`, and `completion_pct` progress context.
 
 `--sort` accepts `priority|deadline|updated_at|created_at|title|parent`, plus the convenience aliases `updated` (→ `updated_at`) and `created` (→ `created_at`):
 
@@ -272,11 +274,15 @@ Linked files and docs keep reviews reproducible. `deps` is read-only and project
 
 ```bash
 pm test <id> --add command="node scripts/run-tests.mjs test -- tests/unit/output.spec.ts",timeout_seconds=240
+pm test <id> --add-json '{"command":"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts","timeout_seconds":240}'
 pm test <id> --run --progress
+pm test <id> --run --match output
+pm test <id> --run --only-index 2
+pm test <id> --run --only-last
 pm test-all --status in_progress --progress
 ```
 
-Linked test commands should be sandbox-safe. Prefer `node scripts/run-tests.mjs ...` because it sets temporary `PM_PATH` and `PM_GLOBAL_PATH`.
+Linked test commands should be sandbox-safe. Prefer `node scripts/run-tests.mjs ...` because it sets temporary `PM_PATH` and `PM_GLOBAL_PATH`. Use `--add-json` when command strings contain commas, nested quotes, shell variables, or `--` separators that are awkward to preserve through CSV-style `--add` parsing. `--match`, `--only-index`, and `--only-last` select which linked tests execute without mutating the stored linked-test list.
 
 Strict linked-test guards:
 

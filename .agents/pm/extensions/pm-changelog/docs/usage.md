@@ -55,6 +55,13 @@ Generate release notes in CI:
 npx pm-changelog --pm-root . --version "$GITHUB_REF_NAME" --since 2026-05-01
 ```
 
+Agent/automation-friendly value parsing (both forms are valid):
+
+```bash
+npx pm-changelog --version "$GITHUB_REF_NAME" --date 2026-05-28 --stdout
+npx pm-changelog --release-version="$GITHUB_REF_NAME" --date=2026-05-28 --stdout
+```
+
 Create or update `CHANGELOG.md` while preserving older entries:
 
 ```bash
@@ -204,12 +211,23 @@ stand alone outside pm:
 npx pm-changelog --stdout --include-metadata
 ```
 
+Emit an item-selection diagnostics report so agents can explain why expected
+items were excluded (status, time windows, release windows, or visibility
+limits). With `--json` / `--changelog-json`, the report is returned as
+`selection_report`; with plain markdown output it is printed to stderr:
+
+```bash
+npx pm-changelog --stdout --json --explain
+npx pm-changelog --stdout --explain
+```
+
 The same flags are available on the pm extension command:
 
 ```bash
 pm changelog generate --stdout --section-by status
 pm changelog generate --stdout --conventional --contributors
 pm changelog generate --changelog-json
+pm changelog generate --stdout --explain
 ```
 
 ## Options
@@ -225,6 +243,7 @@ pm changelog generate --changelog-json
 | `--pm-arg <arg>` | - | Extra argument passed before `list-all --json`; repeat for multiple args |
 | `--pm-cwd <dir>` | - | Working directory for running pm |
 | `--version <version>` | `Unreleased` | Version heading for the standalone CLI |
+| `--release-version <version>` | - | Compatibility alias for `--version` (matches extension syntax) |
 | `--release-version-from-package` | false | Read the version heading from the nearest `package.json` |
 | `--date <date>` | today | Release date |
 | `--since <date>` | - | Include items changed on or after date |
@@ -241,6 +260,7 @@ pm changelog generate --changelog-json
 | `--limit <n>` | - | Keep only the most recent N release sections (only affects `--all-release-tags`/`--group-by` history output) |
 | `--since-version <v>` | - | Keep only releases at or newer than version `<v>` (`Unreleased` is always kept; history output only) |
 | `--changelog-json` | false | Print the full structured changelog document (releases -> sections -> items) as JSON to stdout. Distinct from `--json` (CI summary) |
+| `--explain` | false | Emit item-selection diagnostics (`selection_report`) showing stage counts, exclusion reasons, sample items, and actionable hints |
 | `--breaking-changes` | false | Emit an additional `Breaking Changes` section per release listing items detected as breaking (a truthy `breaking` flag, a `breaking`/`breaking-change` tag, or the standalone word `breaking` in type/title; negated phrasings like `non-breaking` are ignored) |
 | `--suggest-semver` | false | Print a suggested semver bump (`major`/`minor`/`patch`/`none`) as JSON to stdout; never writes the changelog. Computed from the same visible release sections as the output (respects `--limit`/`--since-version`). Also embedded in `--changelog-json` output |
 | `--body-preview <n>` | - | Append the first N characters of each item's body to its entry (single-lined, truncated with an ellipsis when longer). Loads bodies via `--include-body`; falls back to the item `description` when the body is empty |

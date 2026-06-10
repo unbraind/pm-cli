@@ -1,0 +1,12 @@
+id: pm-jmld
+title: "Dedupe merge workflow: pm dedupe-audit --merge to consolidate duplicates (GH-163, builds on closed pm-4n1a detection)"
+description: "governance-audit package detects duplicates (title_exact/title_fuzzy/parent_scope). Remaining: guided merge — move children/comments/files to canonical, close dupes with duplicate_of (lands with pm-xnkd). GitHub issue #163."
+type: Feature
+status: open
+priority: 3
+tags[3]: backlog,cli,dedupe
+created_at: "2026-06-10T09:00:57.022Z"
+updated_at: "2026-06-10T09:00:57.022Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

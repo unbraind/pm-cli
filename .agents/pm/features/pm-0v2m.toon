@@ -1,0 +1,12 @@
+id: pm-0v2m
+title: "pm validate --check-files: classify stale linked paths (moved vs deleted) and offer --prune-missing (GH-184)"
+description: "Today validate --check-files lists missing paths and --fix-hints emits pm files --remove commands. Remaining: detect moved files (same basename elsewhere) vs deleted, and a --prune-missing bulk remediation. GitHub issue #184."
+type: Feature
+status: open
+priority: 3
+tags[3]: backlog,cli,validate
+created_at: "2026-06-10T09:00:35.536Z"
+updated_at: "2026-06-10T09:00:35.536Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

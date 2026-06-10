@@ -1,0 +1,12 @@
+id: pm-9ftr
+title: "pm history-repair --all: bulk drift repair across streams (GH-171)"
+description: history-repair takes a single id; add --all (and pm health fix_hint) to repair every drifted stream in one audited pass. GitHub issue #171.
+type: Feature
+status: open
+priority: 3
+tags[3]: backlog,cli,history
+created_at: "2026-06-10T09:00:36.506Z"
+updated_at: "2026-06-10T09:00:36.506Z"
+author: maintainer-agent
+parent: pm-o2kc
+body: ""

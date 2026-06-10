@@ -1,0 +1,12 @@
+id: pm-6mit
+title: "pm plan create: repeated --step silently keeps only the last value instead of accumulating steps"
+description: "Dogfood finding 2026-06-10: pm plan create --step A --step B --step C creates ONE step (C, last-wins) because --step aliases single-value --step-title. Agents naturally express multi-step plans in one command; repeated --step should accumulate into ordered steps (commander collect, NOT list:true per pm-1lws learning). Workaround: pm plan add-step per step."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,cli,dogfood,plan
+created_at: "2026-06-10T08:53:52.597Z"
+updated_at: "2026-06-10T08:53:52.597Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

@@ -156,7 +156,11 @@ function pushRepeatableValueFlag(args: string[], flag: string, values: unknown):
 export function buildBackgroundTestCommandArgs(id: string, options: Record<string, unknown>): string[] {
   const args: string[] = ["test", id, "--run", "--json", "--progress"];
   pushRepeatableValueFlag(args, "--add", options.add);
+  pushRepeatableValueFlag(args, "--add-json", options.addJson);
   pushRepeatableValueFlag(args, "--remove", options.remove);
+  pushOptionalValueFlag(args, "--match", options.match);
+  pushOptionalValueFlag(args, "--only-index", options.onlyIndex);
+  pushOptionalBooleanFlag(args, "--only-last", options.onlyLast);
   pushOptionalValueFlag(args, "--timeout", options.timeout);
   pushRepeatableValueFlag(args, "--env-set", options.envSet);
   pushRepeatableValueFlag(args, "--env-clear", options.envClear);
@@ -513,6 +517,7 @@ export function normalizeAggregateOptions(options: Record<string, unknown>): Agg
   return {
     groupBy: typeof options.groupBy === "string" ? options.groupBy : undefined,
     count: options.count === true ? true : undefined,
+    completion: options.completion === true ? true : undefined,
     sum: typeof options.sum === "string" ? options.sum : undefined,
     avg: typeof options.avg === "string" ? options.avg : undefined,
     includeUnparented: options.includeUnparented === true || options.include_unparented === true,

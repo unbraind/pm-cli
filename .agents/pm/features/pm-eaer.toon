@@ -1,0 +1,13 @@
+id: pm-eaer
+title: "pm aggregate --completion: closed/total ratio and completion_pct per group (GH-185)"
+description: "Add --completion to pm aggregate: per group emit total, open, in_progress, closed, completion_pct. Works with existing --group-by parent/tags for epic- and tag-level governance. Fixes GitHub issue #185."
+type: Feature
+status: open
+priority: 2
+tags[3]: agent-ux,aggregate,cli
+created_at: "2026-06-10T08:52:54.352Z"
+updated_at: "2026-06-10T08:55:46.109Z"
+assignee: context-agent
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

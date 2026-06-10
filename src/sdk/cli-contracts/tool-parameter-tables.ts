@@ -151,6 +151,10 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
     anyOf: [{ type: "boolean" }, { type: "string", enum: ["stdout", "stderr", "both", "rows", "ndjson", "jsonl"] }],
   },
   tail: { anyOf: [{ type: "string" }, { type: "number" }] },
+  addJson: { type: "array", items: { type: "string" } },
+  match: { type: "string" },
+  onlyIndex: { anyOf: [{ type: "string" }, { type: "number" }] },
+  onlyLast: { type: "boolean" },
   envSet: { type: "array", items: { type: "string" } },
   envClear: { type: "array", items: { type: "string" } },
   sharedHostSafe: { type: "boolean" },
@@ -278,6 +282,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   criterion: { type: "array", items: { type: "string" } },
   clearCriteria: { type: "boolean" },
   groupBy: { type: "string" },
+  completion: { type: "boolean" },
   threshold: { anyOf: [{ type: "string" }, { type: "number" }] },
   format: { type: "string" },
   depth: { type: "string", enum: ["brief", "standard", "deep"] },
@@ -658,6 +663,21 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   background: {
     description: "Run linked tests in managed background mode.",
   },
+  addJson: {
+    description: "Repeatable JSON object or array input for adding linked-test entries without CSV escaping loss.",
+    examples: [[`{"command":"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts","timeout_seconds":240}`]],
+  },
+  match: {
+    description: "Run only linked tests whose command or path contains this case-insensitive substring.",
+    examples: ["output.spec.ts", "coverage"],
+  },
+  onlyIndex: {
+    description: "Run only the 1-based linked-test index from pm test <id> --list order.",
+    examples: [1, "2"],
+  },
+  onlyLast: {
+    description: "Run only the most recently added linked-test entry.",
+  },
   envSet: {
     description: "Repeatable runtime environment KEY=VALUE overrides for linked-test execution.",
     examples: [["PORT=0", "PLAYWRIGHT_HTML_OPEN=never"]],
@@ -908,6 +928,9 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   count: {
     description: "Enable grouped count output for aggregate action.",
+  },
+  completion: {
+    description: "For aggregate action, add open/in_progress/closed counts and completion_pct per group.",
   },
   sum: {
     description: "Numeric field to sum per aggregate group (count and null_count are still returned).",

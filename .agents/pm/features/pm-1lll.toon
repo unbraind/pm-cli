@@ -1,0 +1,12 @@
+id: pm-1lll
+title: "pm list output formats: csv/table for human export (GH-154 remainder)"
+description: list already returns all rows + count with json/toon/stream; remaining ask is csv/table render modes. GitHub issue #154.
+type: Feature
+status: open
+priority: 4
+tags[3]: backlog,cli,output
+created_at: "2026-06-10T09:00:58.341Z"
+updated_at: "2026-06-10T09:00:58.341Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

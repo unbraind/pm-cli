@@ -1,0 +1,12 @@
+id: pm-c3sz
+title: "pm validate --auto-fix: apply safe remediations automatically (GH-179, GH-153 interactive part, GH-167 backfill part)"
+description: "validate has --fix-hints; add --auto-fix to apply the safe subset (metadata backfill via update-many semantics, stale file unlink with confirmation, lifecycle reparent suggestions). Covers automation asks from GitHub issues #179, #167, #153."
+type: Feature
+status: open
+priority: 3
+tags[3]: backlog,cli,validate
+created_at: "2026-06-10T09:00:35.762Z"
+updated_at: "2026-06-10T09:00:35.762Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

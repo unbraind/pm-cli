@@ -1,0 +1,12 @@
+id: pm-j0vc
+title: pm context --depth full and --fields projection customization (GH-156)
+description: "Add depth=full (all items with status) and --fields to customize per-row projection in context output. GitHub issue #156. Related: pm-ds0m (subtree scoping)."
+type: Feature
+status: open
+priority: 3
+tags[3]: backlog,cli,context
+created_at: "2026-06-10T09:00:57.732Z"
+updated_at: "2026-06-10T09:00:57.732Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

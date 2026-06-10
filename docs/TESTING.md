@@ -109,6 +109,20 @@ pm test <item-id> --run --pm-context tracker
 pm test <item-id> --run --pm-context auto --check-context --auto-pm-context
 ```
 
+For complex linked-test commands, prefer JSON input so shell syntax survives unchanged:
+
+```bash
+pm test <item-id> --add-json '{"command":"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts","timeout_seconds":240}'
+```
+
+To rerun a focused subset without editing linked-test metadata:
+
+```bash
+pm test <item-id> --run --match output
+pm test <item-id> --run --only-index 2
+pm test <item-id> --run --only-last
+```
+
 Strict governance flags:
 
 ```bash

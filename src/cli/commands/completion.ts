@@ -383,7 +383,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(DEPS_FLAGS)})`,
     "      ;;",
     "    test)",
-    `      COMPREPLY=(${compgen("--add --remove --run --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --add-json --remove --run --match --only-index --only-last --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    test-all)",
     `      COMPREPLY=(${compgen("--status --limit --offset --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -1157,8 +1157,12 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
         test)
           _arguments \\
             '--add[Add linked test entry]:entry' \\
+            '--add-json[Add linked test entry from JSON object/array]:json' \\
             '--remove[Remove linked test entry by command/path]:entry' \\
             '--run[Run linked tests]' \\
+            '--match[Run linked tests whose command/path contains substring]:substring' \\
+            '--only-index[Run one linked test by 1-based index]:number' \\
+            '--only-last[Run the most recently added linked test]' \\
             '--background[Run linked tests in managed background mode]' \\
             '--timeout[Default timeout seconds]:seconds' \\
             '--progress[Emit linked-test progress to stderr]' \\
@@ -1581,6 +1585,7 @@ ${fishListRuntimeFieldFlags}
 # aggregate flags
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l group-by -d 'Comma-separated group-by fields (supported: parent,type,priority,status,assignee,tags,sprint,release)' -r
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l count -d 'Return grouped counts'
+complete -c pm -n '__fish_seen_subcommand_from aggregate' -l completion -d 'Add completion counts and percentage per group'
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l sum -d 'Numeric field to sum per group' -r
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l avg -d 'Numeric field to average per group' -r
 complete -c pm -n '__fish_seen_subcommand_from aggregate' -l include-unparented -d 'Include unparented rows when grouping by parent'
@@ -1956,8 +1961,12 @@ complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l forc
 
 # test flags
 complete -c pm -n '__fish_seen_subcommand_from test' -l add -d 'Add linked test entry' -r
+complete -c pm -n '__fish_seen_subcommand_from test' -l add-json -d 'Add linked test entry from JSON object/array' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l remove -d 'Remove linked test entry' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l run -d 'Run linked tests'
+complete -c pm -n '__fish_seen_subcommand_from test' -l match -d 'Run linked tests whose command/path contains substring' -r
+complete -c pm -n '__fish_seen_subcommand_from test' -l only-index -d 'Run one linked test by 1-based index' -r
+complete -c pm -n '__fish_seen_subcommand_from test' -l only-last -d 'Run the most recently added linked test'
 complete -c pm -n '__fish_seen_subcommand_from test' -l background -d 'Run linked tests in managed background mode'
 complete -c pm -n '__fish_seen_subcommand_from test' -l timeout -d 'Default timeout seconds' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l progress -d 'Emit linked-test progress to stderr'

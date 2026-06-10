@@ -12,7 +12,7 @@ function createItem(
   params: {
     title: string;
     type: "Feature" | "Task" | "Issue" | "Chore";
-    status: "open" | "closed";
+    status: "open" | "in_progress" | "closed";
     parent?: string;
     priority?: number;
     tags?: string;
@@ -247,6 +247,57 @@ describe("runAggregate", () => {
       expect(Object.keys(result.groups[0]!.group)).toEqual(["type"]);
       expect(result.totals.items_skipped_unparented).toBe(0);
       expect(result.totals.items_grouped).toBe(2);
+    });
+  });
+
+  it("adds completion counters and percentage per aggregate group", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createItem(context, {
+        title: "Completion Parent",
+        type: "Feature",
+        status: "open",
+      });
+      createItem(context, {
+        title: "Completion Open Task",
+        type: "Task",
+        status: "open",
+        parent: parentId,
+      });
+      createItem(context, {
+        title: "Completion Active Task",
+        type: "Task",
+        status: "in_progress",
+        parent: parentId,
+      });
+      createItem(context, {
+        title: "Completion Closed Task",
+        type: "Task",
+        status: "closed",
+        parent: parentId,
+      });
+
+      const result = await runAggregate(
+        {
+          groupBy: "parent,type",
+          completion: true,
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.filters.completion).toBe(true);
+      expect(result.groups).toEqual([
+        {
+          group: {
+            parent: parentId,
+            type: "Task",
+          },
+          count: 3,
+          open: 1,
+          in_progress: 1,
+          closed: 1,
+          completion_pct: 33.33,
+        },
+      ]);
     });
   });
 

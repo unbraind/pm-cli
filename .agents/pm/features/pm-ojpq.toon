@@ -1,0 +1,13 @@
+id: pm-ojpq
+title: "pm context: per-epic completion stats + recently_created/unparented sections (GH-187, GH-182)"
+description: "high_level entries gain children_total/children_closed/completion_pct; add recently_created and unparented sections (available via --section, included at deep depth) so post-audit triage is visible in the context snapshot. Fixes GitHub issues #187 and #182."
+type: Feature
+status: open
+priority: 2
+tags[3]: agent-ux,cli,context
+created_at: "2026-06-10T08:52:48.298Z"
+updated_at: "2026-06-10T08:55:45.482Z"
+assignee: context-agent
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

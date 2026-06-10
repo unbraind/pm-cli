@@ -1,0 +1,12 @@
+id: pm-aer3
+title: "pm plan discoverability: templates and auto-suggest for complex work (GH-158 remainder)"
+description: "Plan family is complete; remaining ask: plan templates, suggest-plan-when-creating-large-epics, plan list progress view. GitHub issue #158."
+type: Feature
+status: open
+priority: 4
+tags[3]: backlog,cli,plan
+created_at: "2026-06-10T09:00:58.601Z"
+updated_at: "2026-06-10T09:00:58.601Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

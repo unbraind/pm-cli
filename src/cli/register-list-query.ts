@@ -159,6 +159,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
         "Comma-separated group-by fields (supported: parent,type,priority,status,assignee,tags,sprint,release)",
       )
       .option("--count", "Return grouped counts (default behavior)")
+      .option("--completion", "Add open/in_progress/closed counts and completion_pct per group")
       .option("--sum <field>", "Sum a numeric field per group")
       .option("--avg <field>", "Average a numeric field per group")
       .option("--include-unparented", "Include unparented rows when grouping by parent")

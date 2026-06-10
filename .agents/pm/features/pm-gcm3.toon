@@ -1,0 +1,12 @@
+id: pm-gcm3
+title: "pm get: include child rollup summary for Milestone/Epic items (GH-155)"
+description: pm get <milestone> should include children count + status rollup (aggregate --parent equivalent) inline. GitHub issue #155.
+type: Feature
+status: open
+priority: 3
+tags[3]: backlog,cli,ux
+created_at: "2026-06-10T09:00:58.047Z"
+updated_at: "2026-06-10T09:00:58.047Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""
