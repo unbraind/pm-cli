@@ -1117,19 +1117,20 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   );
 
   const childrenByParent = buildChildrenByParent(allItems);
+  const focusChildrenByParent = needsAllItems ? childrenByParent : undefined;
 
   const highLevel = activeItems
     .filter((item) => HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, limit)
-    .map((item) => toContextFocusItem(item, statusRegistry, childrenByParent));
+    .map((item) => toContextFocusItem(item, statusRegistry, focusChildrenByParent));
   const lowLevel = activeItems
     .filter((item) => !HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, limit)
-    .map((item) => toContextFocusItem(item, statusRegistry, childrenByParent));
+    .map((item) => toContextFocusItem(item, statusRegistry, focusChildrenByParent));
 
   const blockedFallbackUsed = activeItems.length === 0;
   const blockedFallback = blockedFallbackUsed
-    ? blockedItems.slice(0, limit).map((item) => toContextFocusItem(item, statusRegistry, childrenByParent))
+    ? blockedItems.slice(0, limit).map((item) => toContextFocusItem(item, statusRegistry, focusChildrenByParent))
     : [];
 
   const calendarOptions: CalendarOptions = {

@@ -1453,9 +1453,17 @@ const PM_TOOL_GLOBAL_PARAMETER_KEYS = [
   "path",
   "pmExecutable",
   "timeoutMs",
-  "fullChangedFields",
-  "idOnly",
 ] as const;
+
+const PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS: Partial<Record<PmToolAction, readonly string[]>> = {
+  create: ["fullChangedFields", "idOnly"],
+  copy: ["fullChangedFields", "idOnly"],
+  update: ["fullChangedFields", "idOnly"],
+  close: ["fullChangedFields", "idOnly"],
+  append: ["fullChangedFields"],
+  "update-many": ["fullChangedFields"],
+  "close-many": ["fullChangedFields"],
+};
 
 export interface PmActionSchemaContract {
   required?: string[];
@@ -1998,7 +2006,8 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
   const contract = PM_TOOL_ACTION_SCHEMA_CONTRACTS[action];
   const required = toSchemaKeyList(contract.required ?? []);
   const optional = toSchemaKeyList(contract.optional ?? []);
-  const allowedKeys = toSchemaKeyList([...PM_TOOL_GLOBAL_PARAMETER_KEYS, ...required, ...optional]);
+  const mutationParameterKeys = PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS[action] ?? [];
+  const allowedKeys = toSchemaKeyList([...PM_TOOL_GLOBAL_PARAMETER_KEYS, ...mutationParameterKeys, ...required, ...optional]);
   const properties: Record<string, unknown> = {
     action: {
       const: action,

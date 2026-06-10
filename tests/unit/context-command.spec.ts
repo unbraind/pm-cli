@@ -536,7 +536,7 @@ describe("context command module", () => {
         { path: context.pmPath },
       );
 
-      expect(result.recently_created?.map((entry) => entry.id)).toContain(currentId);
+      expect(result.recently_created?.[0]?.id).toBe(currentId);
     });
   });
 
