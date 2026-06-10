@@ -614,6 +614,83 @@ function appendIfMissing(entries: string[], value: string | undefined): string[]
   return [...entries, value];
 }
 
+// Linked-test mutation flags on `pm test` whose values commonly contain spaces and
+// nested "--" tokens (GH-191). Used to recognise the "too many arguments" failure
+// shape produced when such a value is not quoted into a single shell token.
+const LINKED_TEST_MUTATION_FLAGS = new Set(["--add", "--add-json", "--remove"]);
+// Entry-identity keys eligible for the two-token form; mirrors
+// LINKED_TEST_TWO_TOKEN_KEYS_BY_FLAG in bootstrap-args.ts.
+const LINKED_TEST_RETRY_KEYS = new Set(["command", "cmd", "path"]);
+
+function findLinkedTestMutationFlag(argv: string[] | undefined): string | undefined {
+  if (!Array.isArray(argv)) {
+    return undefined;
+  }
+  for (const token of argv) {
+    if (!token.startsWith("--")) {
+      continue;
+    }
+    const equalsIndex = token.indexOf("=");
+    const flag = equalsIndex >= 0 ? token.slice(0, equalsIndex) : token;
+    if (LINKED_TEST_MUTATION_FLAGS.has(flag)) {
+      return flag;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Synthesize a copy-pasteable retry for the unquoted linked-test value shape
+ * `pm test <id> --add command npm test -- parser` by re-joining the shell-split
+ * value tokens into the documented quoted `key=value` form. Only fires when the
+ * item id already precedes the flag (so trailing tokens unambiguously belong to
+ * the value) and the token after `--add`/`--remove` is an entry-identity key.
+ */
+export function buildLinkedTestQuotedRetryCommand(argv: string[] | undefined): string | undefined {
+  if (!Array.isArray(argv)) {
+    return undefined;
+  }
+  const commandIndex = argv.indexOf("test");
+  if (commandIndex < 0) {
+    return undefined;
+  }
+  const idToken = argv[commandIndex + 1];
+  if (typeof idToken !== "string" || idToken.startsWith("-")) {
+    return undefined;
+  }
+  for (let index = commandIndex + 2; index < argv.length; index += 1) {
+    const token = argv[index];
+    if (token !== "--add" && token !== "--remove") {
+      continue;
+    }
+    const key = argv[index + 1];
+    if (typeof key !== "string" || !LINKED_TEST_RETRY_KEYS.has(key)) {
+      return undefined;
+    }
+    const valueTokens: string[] = [];
+    for (let cursor = index + 2; cursor < argv.length; cursor += 1) {
+      const candidate = argv[cursor];
+      // A bare "--" belongs to the re-joined command value; real long flags end it.
+      if (candidate.startsWith("--") && candidate.length > 2) {
+        break;
+      }
+      valueTokens.push(candidate);
+    }
+    if (valueTokens.length < 2) {
+      // Single-token values are auto-merged at bootstrap; nothing to repair here.
+      return undefined;
+    }
+    const merged = `${key}=${valueTokens.join(" ")}`;
+    const rewritten = [
+      ...argv.slice(0, index + 1),
+      merged,
+      ...argv.slice(index + 2 + valueTokens.length),
+    ];
+    return renderPmCommand(rewritten);
+  }
+  return undefined;
+}
+
 function buildCommanderErrorGuidance(
   rawMessage: string,
   commandName: string | undefined,
@@ -749,6 +826,33 @@ function buildCommanderErrorGuidance(
       nextSteps: baseNextSteps,
       recovery: buildCommanderRecoveryPayload(context),
     });
+  }
+
+  if (/too many arguments/i.test(message) && commandName === "test") {
+    const argv = context?.normalizedInvocationArgs;
+    const mutationFlag = findLinkedTestMutationFlag(argv);
+    if (mutationFlag) {
+      const retryCommand = buildLinkedTestQuotedRetryCommand(argv);
+      return makeGuidanceMessage({
+        code: "linked_test_value_not_quoted",
+        title: `Linked-test ${mutationFlag} value must be one argument`,
+        happened: `Commander saw extra positional tokens after the item id — usually a ${mutationFlag} value containing spaces (for example a command with " -- ") that the shell split into multiple tokens.`,
+        required: `Quote the whole ${mutationFlag} value as a single argument. Accepted forms: --add "command=npm test -- parser", --add command "npm test -- parser" (two-token form with the value quoted), or --add-json for complex commands.`,
+        why: "The shell splits unquoted values before pm can see them, so pm cannot reassemble the intended command unambiguously.",
+        examples: [
+          ...(retryCommand ? [retryCommand] : []),
+          'pm test pm-a1b2 --add "command=npm test -- parser"',
+          'pm test pm-a1b2 --add command "npm test -- parser"',
+          `pm test pm-a1b2 --add-json '{"command":"npm test -- parser"}'`,
+        ],
+        nextSteps: [
+          ...(retryCommand ? [`Replay with the value re-joined into one argument: ${retryCommand}`] : []),
+          "Prefer --add-json for commands containing commas, equals signs, or quotes.",
+          'Run "pm test --help" for linked-test entry contracts.',
+        ],
+        recovery: buildCommanderRecoveryPayload(context, retryCommand ? { suggested_retry: retryCommand } : {}),
+      });
+    }
   }
 
   return makeGuidanceMessage({

@@ -6,6 +6,7 @@ import {
   parseBootstrapCommandName,
   normalizeLegacyExtensionActionSyntax,
   normalizeBootstrapInvocation,
+  mergeLinkedTestTwoTokenEntries,
   coalesceRepeatedListFlags,
   parseBootstrapTypeValue,
   listAliasPluralKeys,
@@ -508,6 +509,152 @@ describe("coalesceRepeatedListFlags", () => {
     const result = coalesceRepeatedListFlags(["--tags", "a", "--", "--tags", "b"], new Set(["--tags"]));
     expect(result.argv).toEqual(["--tags", "a", "--", "--tags", "b"]);
     expect(result.events).toHaveLength(0);
+  });
+});
+
+describe("mergeLinkedTestTwoTokenEntries (GH-191 two-token linked-test form)", () => {
+  const trace = () => [] as Parameters<typeof mergeLinkedTestTwoTokenEntries>[2];
+
+  it("merges the quoted two-token --add command form into command=<value>", () => {
+    const events = trace();
+    const merged = mergeLinkedTestTwoTokenEntries(
+      ["test", "pm-a1b2", "--add", "command", "npm test -- parser"],
+      "test",
+      events,
+    );
+    expect(merged).toEqual(["test", "pm-a1b2", "--add", "command=npm test -- parser"]);
+    expect(events).toEqual([
+      {
+        from: "--add command npm test -- parser",
+        to: ["--add", "command=npm test -- parser"],
+        reason: "bare_key_value",
+        confidence: "high",
+      },
+    ]);
+  });
+
+  it("merges the cmd alias and path keys for --add", () => {
+    const events = trace();
+    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add", "cmd", "echo q -- z"], "test", events)).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "cmd=echo q -- z",
+    ]);
+    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add", "path", "tests/foo.spec.ts"], "test", events)).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "path=tests/foo.spec.ts",
+    ]);
+  });
+
+  it("merges the two-token --remove command form but not the cmd alias", () => {
+    const events = trace();
+    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--remove", "command", "echo a -- b"], "test", events)).toEqual([
+      "test",
+      "pm-a1b2",
+      "--remove",
+      "command=echo a -- b",
+    ]);
+    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--remove", "cmd", "echo a -- b"], "test", events)).toEqual([
+      "test",
+      "pm-a1b2",
+      "--remove",
+      "cmd",
+      "echo a -- b",
+    ]);
+  });
+
+  it("merges when a flag follows the single quoted value", () => {
+    const merged = mergeLinkedTestTwoTokenEntries(
+      ["test", "pm-a1b2", "--add", "command", "echo a -- b", "--run"],
+      "test",
+      trace(),
+    );
+    expect(merged).toEqual(["test", "pm-a1b2", "--add", "command=echo a -- b", "--run"]);
+  });
+
+  it("does not merge for commands other than test", () => {
+    const argv = ["comments", "pm-a1b2", "--add", "command", "value"];
+    expect(mergeLinkedTestTwoTokenEntries(argv, "comments", trace())).toBe(argv);
+    expect(mergeLinkedTestTwoTokenEntries(argv, undefined, trace())).toBe(argv);
+  });
+
+  it("does not merge an unquoted multi-token value (ambiguous; routed to guidance)", () => {
+    const events = trace();
+    const argv = ["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"];
+    expect(mergeLinkedTestTwoTokenEntries(argv, "test", events)).toEqual(argv);
+    expect(events).toHaveLength(0);
+  });
+
+  it("does not merge when the bare key has no value or a flag follows it", () => {
+    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add", "command"], "test", trace())).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command",
+    ]);
+    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add", "command", "--run"], "test", trace())).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command",
+      "--run",
+    ]);
+    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add"], "test", trace())).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+    ]);
+  });
+
+  it("does not merge unknown keys or inline key=value tokens", () => {
+    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add", "scope", "project"], "test", trace())).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "scope",
+      "project",
+    ]);
+    expect(mergeLinkedTestTwoTokenEntries(["test", "pm-a1b2", "--add", "command=echo x"], "test", trace())).toEqual([
+      "test",
+      "pm-a1b2",
+      "--add",
+      "command=echo x",
+    ]);
+  });
+
+  it("passes the remainder verbatim after a -- terminator", () => {
+    const argv = ["test", "pm-a1b2", "--", "--add", "command", "value"];
+    expect(mergeLinkedTestTwoTokenEntries(argv, "test", trace())).toEqual(argv);
+  });
+
+  it("merges repeated two-token pairs independently", () => {
+    const merged = mergeLinkedTestTwoTokenEntries(
+      ["test", "pm-a1b2", "--add", "command", "echo a -- b", "--add", "command=echo c"],
+      "test",
+      trace(),
+    );
+    expect(merged).toEqual(["test", "pm-a1b2", "--add", "command=echo a -- b", "--add", "command=echo c"]);
+  });
+});
+
+describe("normalizeBootstrapInvocation linked-test two-token form (GH-191)", () => {
+  it("normalizes pm test <id> --add command \"... -- ...\" end to end", () => {
+    const normalized = normalizeBootstrapInvocation(["test", "pm-a1b2", "--add", "command", "npm test -- parser"]);
+    expect(normalized.argv).toEqual(["test", "pm-a1b2", "--add", "command=npm test -- parser"]);
+    expect(normalized.commandName).toBe("test");
+    expect(normalized.trace).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ reason: "bare_key_value", to: ["--add", "command=npm test -- parser"], confidence: "high" }),
+      ]),
+    );
+  });
+
+  it("leaves the unquoted multi-token form untouched for guidance", () => {
+    const normalized = normalizeBootstrapInvocation(["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"]);
+    expect(normalized.argv).toEqual(["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"]);
   });
 });
 

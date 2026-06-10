@@ -280,6 +280,7 @@ Linked files and docs keep reviews reproducible. `deps` is read-only and project
 
 ```bash
 pm test <id> --add command="node scripts/run-tests.mjs test -- tests/unit/output.spec.ts",timeout_seconds=240
+pm test <id> --add command "node scripts/run-tests.mjs test -- tests/unit/output.spec.ts"
 pm test <id> --add-json '{"command":"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts","timeout_seconds":240}'
 pm test <id> --run --progress
 pm test <id> --run --match output
@@ -288,7 +289,7 @@ pm test <id> --run --only-last
 pm test-all --status in_progress --progress
 ```
 
-Linked test commands should be sandbox-safe. Prefer `node scripts/run-tests.mjs ...` because it sets temporary `PM_PATH` and `PM_GLOBAL_PATH`. Use `--add-json` when command strings contain commas, nested quotes, shell variables, or `--` separators that are awkward to preserve through CSV-style `--add` parsing. `--match`, `--only-index`, and `--only-last` select which linked tests execute without mutating the stored linked-test list.
+Linked test commands should be sandbox-safe. Prefer `node scripts/run-tests.mjs ...` because it sets temporary `PM_PATH` and `PM_GLOBAL_PATH`. The two-token form `--add command "npm test -- parser"` (and `--add path "..."` / `--remove command "..."`) is accepted when the value is quoted into a single shell argument; it is normalized to `--add command=...` before parsing. Use `--add-json` when command strings contain commas, nested quotes, shell variables, or `--` separators that are awkward to preserve through CSV-style `--add` parsing. `--match`, `--only-index`, and `--only-last` select which linked tests execute without mutating the stored linked-test list.
 
 Strict linked-test guards:
 
