@@ -411,6 +411,8 @@ const settingsCheck = vObject({
           hierarchy: vOptional(vBoolean),
           activity: vOptional(vBoolean),
           progress: vOptional(vBoolean),
+          recently_created: vOptional(vBoolean),
+          unparented: vOptional(vBoolean),
           blockers: vOptional(vBoolean),
           files: vOptional(vBoolean),
           workload: vOptional(vBoolean),

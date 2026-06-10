@@ -1452,11 +1452,27 @@ describe("runCreate", () => {
     });
   });
 
-  it("warns for missing parent references under default policy", async () => {
+  it("rejects missing parent references by default", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            parent: "pm-parent-missing-default",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("allows missing parent references only with the explicit escape hatch", async () => {
     await withTempPmPath(async (context) => {
       const result = await runCreate(
         baseCreateOptions({
           parent: "pm-parent-missing-default",
+          allowMissingParent: true,
         }),
         { path: context.pmPath },
       );
@@ -1464,6 +1480,37 @@ describe("runCreate", () => {
       expect(result.item.parent).toBe("pm-parent-missing-default");
       expect(result.warnings).toEqual(
         expect.arrayContaining(["validation_warning:parent_reference_missing:pm-parent-missing-default"]),
+      );
+    });
+  });
+
+  it("allows missing parent references with the explicit escape hatch under strict policy", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const parsed = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        governance?: {
+          preset?: string;
+          parent_reference?: string;
+        };
+      };
+      parsed.governance = {
+        ...(parsed.governance ?? {}),
+        preset: "custom",
+        parent_reference: "strict_error",
+      };
+      await writeFile(settingsPath, `${JSON.stringify(parsed, null, 2)}\n`, "utf8");
+
+      const result = await runCreate(
+        baseCreateOptions({
+          parent: "pm-parent-missing-strict",
+          allowMissingParent: true,
+        }),
+        { path: context.pmPath },
+      );
+
+      expect(result.item.parent).toBe("pm-parent-missing-strict");
+      expect(result.warnings).toEqual(
+        expect.arrayContaining(["validation_warning:parent_reference_missing:pm-parent-missing-strict"]),
       );
     });
   });

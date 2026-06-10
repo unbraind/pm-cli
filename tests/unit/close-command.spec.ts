@@ -38,6 +38,11 @@ function itemStatus(context: TempPmContext, id: string): string {
   return (result.json as { item: { status: string } }).item.status;
 }
 
+async function patchTaskToon(context: TempPmContext, id: string, patch: (content: string) => string): Promise<void> {
+  const filePath = path.join(context.pmPath, "tasks", `${id}.toon`);
+  await writeFile(filePath, patch(await readFile(filePath, "utf8")), "utf8");
+}
+
 describe("runClose", () => {
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-close-not-init-"));
@@ -95,6 +100,230 @@ describe("runClose", () => {
       expect(item.status).toBe("closed");
       expect(item.close_reason).toBe("No assignee to clear");
       expect(item.assignee).toBeUndefined();
+    });
+  });
+
+  it("closes duplicate items with canonical target metadata and validation fields", async () => {
+    await withTempPmPath(async (context) => {
+      const canonicalId = createTask(context, "canonical duplicate target");
+      const duplicateId = createTask(context, "duplicate close candidate");
+
+      const result = await runClose(
+        duplicateId,
+        "Duplicate of canonical target",
+        {
+          duplicateOf: canonicalId,
+          validateClose: "strict",
+          message: "Close duplicate",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.warnings).toEqual([]);
+      expect(result.changed_fields).toEqual(
+        expect.arrayContaining(["status", "close_reason", "duplicate_of", "resolution", "expected_result", "actual_result"]),
+      );
+      expect(result.item).toMatchObject({
+        id: duplicateId,
+        status: "closed",
+        duplicate_of: canonicalId,
+        resolution: `Duplicate of ${canonicalId}`,
+      });
+    });
+  });
+
+  it("does not report duplicate fallback fields when explicit close metadata already exists", async () => {
+    await withTempPmPath(async (context) => {
+      const canonicalId = createTask(context, "canonical duplicate existing metadata target");
+      const duplicateId = createTask(context, "duplicate existing metadata candidate");
+      const update = context.runCli(
+        [
+          "update",
+          duplicateId,
+          "--json",
+          "--resolution",
+          "Already triaged as duplicate",
+          "--expected-result",
+          "Existing expected result",
+          "--actual-result",
+          "Existing actual result",
+          "--message",
+          "Seed closure metadata",
+        ],
+        { expectJson: true },
+      );
+      expect(update.code).toBe(0);
+
+      const result = await runClose(
+        duplicateId,
+        "Duplicate of canonical target",
+        {
+          duplicateOf: canonicalId,
+          validateClose: "strict",
+          message: "Close duplicate",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["status", "close_reason", "duplicate_of"]));
+      expect(result.changed_fields).not.toContain("resolution");
+      expect(result.changed_fields).not.toContain("expected_result");
+      expect(result.changed_fields).not.toContain("actual_result");
+      expect(result.item).toMatchObject({
+        resolution: "Already triaged as duplicate",
+        expected_result: "Existing expected result",
+        actual_result: "Existing actual result",
+      });
+    });
+  });
+
+  it("fills duplicate fallback fields when close metadata is blank", async () => {
+    await withTempPmPath(async (context) => {
+      const canonicalId = createTask(context, "canonical duplicate blank metadata target");
+      const duplicateId = createTask(context, "duplicate blank metadata candidate");
+      await patchTaskToon(context, duplicateId, (content) =>
+        content.replace(
+          "author: seed-author\n",
+          'author: seed-author\nresolution: "   "\nexpected_result: ""\nactual_result: "   "\n',
+        ),
+      );
+
+      const result = await runClose(
+        duplicateId,
+        "Duplicate of canonical target",
+        {
+          duplicateOf: canonicalId,
+          validateClose: "strict",
+          message: "Close duplicate",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["resolution", "expected_result", "actual_result"]));
+      expect(result.item).toMatchObject({
+        resolution: `Duplicate of ${canonicalId}`,
+        expected_result: `Canonical item ${canonicalId} tracks the work.`,
+        actual_result: `Closed as duplicate of ${canonicalId}.`,
+      });
+    });
+  });
+
+  it("rejects duplicate closure when the canonical target does not exist", async () => {
+    await withTempPmPath(async (context) => {
+      const duplicateId = createTask(context, "duplicate missing target");
+
+      await expect(
+        runClose(
+          duplicateId,
+          "Duplicate of missing item",
+          {
+            duplicateOf: "pm-missing-target",
+            validateClose: "warn",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("rejects duplicate closure when the item references itself", async () => {
+    await withTempPmPath(async (context) => {
+      const duplicateId = createTask(context, "duplicate self target");
+
+      await expect(
+        runClose(
+          duplicateId,
+          "Duplicate of itself",
+          {
+            duplicateOf: duplicateId,
+            validateClose: "warn",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "duplicate_target_self" }),
+      });
+    });
+  });
+
+  it("rejects duplicate closure when the canonical target points back to the closing item", async () => {
+    await withTempPmPath(async (context) => {
+      const closingId = createTask(context, "duplicate circular closing item");
+      const targetId = createTask(context, "duplicate circular target");
+      await patchTaskToon(context, targetId, (content) => content.replace("author: seed-author\n", `author: seed-author\nduplicate_of: ${closingId}\n`));
+
+      await expect(
+        runClose(
+          closingId,
+          "Duplicate of circular target",
+          {
+            duplicateOf: targetId,
+            validateClose: "warn",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "duplicate_target_circular" }),
+      });
+    });
+  });
+
+  it("rejects duplicate closure when the canonical target chain points back to the closing item", async () => {
+    await withTempPmPath(async (context) => {
+      const closingId = createTask(context, "duplicate indirect circular closing item");
+      const targetId = createTask(context, "duplicate indirect circular target");
+      const intermediateId = createTask(context, "duplicate indirect circular intermediate");
+      await patchTaskToon(context, targetId, (content) =>
+        content.replace("author: seed-author\n", `author: seed-author\nduplicate_of: ${intermediateId}\n`),
+      );
+      await patchTaskToon(context, intermediateId, (content) =>
+        content.replace("author: seed-author\n", `author: seed-author\nduplicate_of: ${closingId}\n`),
+      );
+
+      await expect(
+        runClose(
+          closingId,
+          "Duplicate of indirect circular target",
+          {
+            duplicateOf: targetId,
+            validateClose: "warn",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "duplicate_target_circular" }),
+      });
+    });
+  });
+
+  it("rejects duplicate closure when the canonical target is itself a duplicate", async () => {
+    await withTempPmPath(async (context) => {
+      const closingId = createTask(context, "duplicate target duplicate closing item");
+      const targetId = createTask(context, "duplicate target duplicate candidate");
+      const canonicalId = createTask(context, "duplicate target duplicate canonical");
+      await patchTaskToon(context, targetId, (content) =>
+        content.replace("author: seed-author\n", `author: seed-author\nduplicate_of: ${canonicalId}\n`),
+      );
+
+      await expect(
+        runClose(
+          closingId,
+          "Duplicate of duplicate target",
+          {
+            duplicateOf: targetId,
+            validateClose: "warn",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "duplicate_target_is_duplicate" }),
+      });
     });
   });
 

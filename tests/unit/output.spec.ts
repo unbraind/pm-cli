@@ -131,6 +131,14 @@ describe("core/output/output", () => {
     const nonMutationRendered = stdoutSpy.mock.calls.map((call) => String(call[0])).join("");
     expect(nonMutationRendered).toContain("changed_fields");
     expect(nonMutationRendered).not.toContain("changed_field_count");
+
+    stdoutSpy.mockClear();
+    printResult(
+      { item: { id: "pm-a1b2", status: "open", title: "verbose" }, changed_fields: ["id", "title", "status"] },
+      { json: true, idOnly: true },
+    );
+    const idOnlyRendered = stdoutSpy.mock.calls.map((call) => String(call[0])).join("");
+    expect(JSON.parse(idOnlyRendered)).toEqual({ id: "pm-a1b2", status: "open" });
   });
 
   it("suppresses synchronous stdout EPIPE and preserves success exit semantics", () => {

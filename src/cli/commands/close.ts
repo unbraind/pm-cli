@@ -6,7 +6,7 @@ import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { listAllFrontMatterLight, mutateItem } from "../../core/store/item-store.js";
+import { listAllFrontMatterLight, locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter } from "../../types/index.js";
@@ -23,6 +23,7 @@ export interface CloseCommandOptions {
   resolution?: string;
   expectedResult?: string;
   actualResult?: string;
+  duplicateOf?: string;
 }
 
 export interface CloseResult {
@@ -100,6 +101,89 @@ function findMissingCloseValidationFields(frontMatter: ItemFrontMatter): string[
   return missing;
 }
 
+async function duplicateChainReferencesClosingItem(
+  loadItemById: (id: string) => Promise<ItemFrontMatter | null>,
+  initialDuplicateOf: unknown,
+  closingId: string,
+): Promise<boolean> {
+  const visited = new Set<string>();
+  let current = initialDuplicateOf;
+  while (typeof current === "string" && current.trim().length > 0) {
+    const currentId = current.trim();
+    if (currentId === closingId) {
+      return true;
+    }
+    if (visited.has(currentId)) {
+      return false;
+    }
+    visited.add(currentId);
+    current = (await loadItemById(currentId))?.duplicate_of;
+  }
+  return false;
+}
+
+function shouldApplyDuplicateFallback(value: unknown): boolean {
+  return typeof value !== "string" || value.trim().length === 0;
+}
+
+async function assertDuplicateTargetExists(
+  pmRoot: string,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  duplicateOf: string | undefined,
+  closingId: string,
+): Promise<string | undefined> {
+  const rawTarget = duplicateOf?.trim();
+  if (!rawTarget) {
+    return undefined;
+  }
+  if (rawTarget === closingId) {
+    throw new PmCliError("An item cannot be closed as a duplicate of itself.", EXIT_CODE.USAGE, {
+      code: "duplicate_target_self",
+      why: "--duplicate-of must identify the canonical item that should remain open or already represent the work.",
+    });
+  }
+  const typeRegistry = resolveItemTypeRegistry(settings);
+  const itemCache = new Map<string, ItemFrontMatter | null>();
+  const loadItemById = async (id: string): Promise<ItemFrontMatter | null> => {
+    if (itemCache.has(id)) {
+      return itemCache.get(id) ?? null;
+    }
+    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+    if (!located) {
+      itemCache.set(id, null);
+      return null;
+    }
+    const { document } = await readLocatedItem(located, { schema: settings.schema });
+    itemCache.set(id, document.metadata);
+    return document.metadata;
+  };
+  const target = await loadItemById(rawTarget);
+  if (!target) {
+    throw new PmCliError(`Duplicate target "${rawTarget}" was not found. Create or locate the canonical item first.`, EXIT_CODE.USAGE, {
+      code: "duplicate_target_missing",
+      why: "Duplicate closure should point at a real canonical pm item so future dedupe and changelog tooling can trace the relationship.",
+      examples: [`pm close ${closingId} "Duplicate of ${rawTarget}" --duplicate-of ${rawTarget}`],
+      nextSteps: ["Run pm search/list to find the canonical item, then retry with --duplicate-of <id>."],
+    });
+  }
+  if (await duplicateChainReferencesClosingItem(loadItemById, target.duplicate_of, closingId)) {
+    throw new PmCliError(`Circular duplicate reference detected. Target "${rawTarget}" points back to "${closingId}".`, EXIT_CODE.USAGE, {
+      code: "duplicate_target_circular",
+      why: "Circular duplicate relationships create loops for dedupe and status propagation tooling.",
+      nextSteps: ["Choose the existing canonical item, or clear the target duplicate_of metadata before closing this item as a duplicate."],
+    });
+  }
+  if (typeof target.duplicate_of === "string" && target.duplicate_of.trim().length > 0) {
+    throw new PmCliError(`Duplicate target "${rawTarget}" is already marked as a duplicate of "${target.duplicate_of.trim()}".`, EXIT_CODE.USAGE, {
+      code: "duplicate_target_is_duplicate",
+      why: "Duplicate closure should point directly at the canonical item, not another duplicate.",
+      examples: [`pm close ${closingId} "Duplicate of ${target.duplicate_of.trim()}" --duplicate-of ${target.duplicate_of.trim()}`],
+      nextSteps: ["Use the canonical item referenced by duplicate_of as the --duplicate-of target."],
+    });
+  }
+  return target.id;
+}
+
 async function findActiveChildIds(
   pmRoot: string,
   settings: Awaited<ReturnType<typeof readSettings>>,
@@ -135,6 +219,7 @@ export async function runClose(
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const author = toAuthor(options.author, settings.author_default);
   const closeReason = normalizeCloseReason(closeReasonText, settings.governance.require_close_reason);
+  const duplicateOf = await assertDuplicateTargetExists(pmRoot, settings, options.duplicateOf, id);
   const validateCloseMode = parseValidateCloseMode(options.validateClose) ?? settings.governance.close_validation_default;
   // C3 (pm-fu5d): scan for active children even under minimal governance so
   // closing a parent is never silently orphaning — off mode emits an
@@ -163,11 +248,30 @@ export async function runClose(
         { option: options.expectedResult, key: "expected_result" },
         { option: options.actualResult, key: "actual_result" },
       ];
+      const duplicateFallbackFields: Array<"resolution" | "expected_result" | "actual_result"> = [];
       for (const { option, key } of inlineCloseFields) {
         if (typeof option !== "string") continue;
         const trimmed = option.trim();
         if (trimmed.length === 0) continue;
         document.metadata[key] = trimmed;
+      }
+      if (duplicateOf !== undefined) {
+        document.metadata.duplicate_of = duplicateOf;
+        const duplicateResolution = `Duplicate of ${duplicateOf}`;
+        const duplicateExpectedResult = `Canonical item ${duplicateOf} tracks the work.`;
+        const duplicateActualResult = `Closed as duplicate of ${duplicateOf}.`;
+        if (shouldApplyDuplicateFallback(document.metadata.resolution)) {
+          document.metadata.resolution = duplicateResolution;
+          duplicateFallbackFields.push("resolution");
+        }
+        if (shouldApplyDuplicateFallback(document.metadata.expected_result)) {
+          document.metadata.expected_result = duplicateExpectedResult;
+          duplicateFallbackFields.push("expected_result");
+        }
+        if (shouldApplyDuplicateFallback(document.metadata.actual_result)) {
+          document.metadata.actual_result = duplicateActualResult;
+          duplicateFallbackFields.push("actual_result");
+        }
       }
       if (validateCloseMode !== "off") {
         const missingFields = findMissingCloseValidationFields(document.metadata);
@@ -207,6 +311,18 @@ export async function runClose(
       for (const { option, key } of inlineCloseFields) {
         if (typeof option === "string" && option.trim().length > 0) {
           changedFields.push(key);
+        }
+      }
+      if (duplicateOf !== undefined) {
+        changedFields.push("duplicate_of");
+        if (duplicateFallbackFields.includes("resolution") && !changedFields.includes("resolution")) {
+          changedFields.push("resolution");
+        }
+        if (duplicateFallbackFields.includes("expected_result") && !changedFields.includes("expected_result")) {
+          changedFields.push("expected_result");
+        }
+        if (duplicateFallbackFields.includes("actual_result") && !changedFields.includes("actual_result")) {
+          changedFields.push("actual_result");
         }
       }
       if (document.metadata.assignee !== undefined) {

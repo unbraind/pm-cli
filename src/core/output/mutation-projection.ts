@@ -24,6 +24,8 @@ export type ChangedFieldsMode = "full" | "compact";
 export interface MutationProjectionOptions {
   /** Defaults to "full" (unchanged output). "compact" drops the array, keeping a count. */
   changedFields?: ChangedFieldsMode;
+  /** Return only id/status for single-item mutation envelopes. */
+  idOnly?: boolean;
 }
 
 const CHANGED_FIELDS_KEY = "changed_fields";
@@ -82,6 +84,14 @@ function replaceRows(envelope: Record<string, unknown>, rows: unknown[]): Record
  * not a mutation envelope (or full mode) are returned unchanged (same reference).
  */
 export function projectMutationResult(result: unknown, options: MutationProjectionOptions = {}): unknown {
+  if (options.idOnly === true && isPlainObject(result) && isPlainObject(result.item)) {
+    const id = typeof result.item.id === "string" ? result.item.id : undefined;
+    const status = typeof result.item.status === "string" ? result.item.status : undefined;
+    if (id) {
+      return status ? { id, status } : { id };
+    }
+  }
+
   const mode = options.changedFields ?? "full";
   if (mode === "full" || !isPlainObject(result)) {
     return result;

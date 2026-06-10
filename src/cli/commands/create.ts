@@ -120,6 +120,7 @@ export interface CreateCommandOptions {
   message?: string;
   assignee?: string;
   parent?: string;
+  allowMissingParent?: boolean;
   reviewer?: string;
   risk?: string;
   confidence?: string;
@@ -1652,7 +1653,10 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       ? undefined
       : parseOptionalString(resolvedOptions.confidence);
   const confidence = confidenceRaw !== undefined ? parseConfidenceInput(confidenceRaw) : undefined;
-  const parentReferencePolicy = settings.validation.parent_reference;
+  const parentReferencePolicy =
+    resolvedOptions.allowMissingParent === true && settings.validation.parent_reference === "strict_error"
+      ? "warn"
+      : settings.validation.parent_reference;
   const sprintReleasePolicy = settings.validation.sprint_release_format;
   const validationWarnings: string[] = [];
   // Event-type items with no attached schedule never surface on the calendar; warn (never block).

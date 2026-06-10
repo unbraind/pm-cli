@@ -712,6 +712,37 @@ describe("MCP dynamic package actions", () => {
     });
   });
 
+  it("forwards top-level allowMissingParent through pm_create", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await handleRequest({
+        jsonrpc: "2.0",
+        id: 34,
+        method: "tools/call",
+        params: {
+          name: "pm_create",
+          arguments: {
+            path: context.pmPath,
+            allowMissingParent: true,
+            options: {
+              title: "MCP allow missing parent target",
+              description: "MCP allow missing parent description",
+              type: "Task",
+              parent: "pm-missing-parent-mcp",
+              author: "mcp-agent",
+            },
+          },
+        },
+      });
+
+      expect(created?.isError).not.toBe(true);
+      const result = (created?.structuredContent as {
+        result?: { item?: { parent?: string }; warnings?: string[] };
+      } | undefined)?.result;
+      expect(result?.item?.parent).toBe("pm-missing-parent-mcp");
+      expect(result?.warnings).toEqual(expect.arrayContaining(["validation_warning:parent_reference_missing:pm-missing-parent-mcp"]));
+    });
+  });
+
   it("defaults pm_search output to a compact projection for token efficiency", async () => {
     await withTempPmPath(async (context) => {
       const create = context.runCli([

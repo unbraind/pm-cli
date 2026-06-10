@@ -64,7 +64,7 @@ When `settings.json` cannot be loaded, `pm` falls back to built-in defaults and 
 | `history.missing_stream` | `auto_create` or `strict_error` |
 | `testing.record_results_to_items` | persist bounded linked-test summaries |
 | `validation.sprint_release_format` | `warn` or `strict_error` |
-| `validation.parent_reference` | `warn` or `strict_error` |
+| `validation.parent_reference` | `warn` or `strict_error` (`strict_error` is the built-in default; `pm create --allow-missing-parent` is the explicit escape hatch) |
 | `item_types.definitions[]` | custom item types and type options |
 | `governance.create_default_type` | default `--type` used by `pm create "title"` when `--type` is omitted (defaults to `Task`); must resolve to a known item type |
 | `governance.workflow_enforcement` | per-type transition enforcement mode for `pm update --status` (`off` default, `warn`, or `strict`) |

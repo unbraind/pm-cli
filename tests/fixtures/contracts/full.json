@@ -1317,6 +1317,9 @@
           "flag": "--close-reason"
         },
         {
+          "flag": "--duplicate-of"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -1737,6 +1740,9 @@
         },
         {
           "flag": "--parent"
+        },
+        {
+          "flag": "--allow-missing-parent"
         },
         {
           "flag": "--reviewer"
@@ -5932,6 +5938,13 @@
       },
       {
         "keys": [
+          "allowMissingParent",
+          "allow_missing_parent"
+        ],
+        "target": "allowMissingParent"
+      },
+      {
+        "keys": [
           "reviewer"
         ],
         "target": "reviewer"
@@ -9717,6 +9730,10 @@
             "description": "Affected Version.",
             "type": "string"
           },
+          "allowMissingParent": {
+            "description": "Allow Missing Parent.",
+            "type": "boolean"
+          },
           "assignee": {
             "description": "Assignee identity.",
             "examples": [
@@ -9892,9 +9909,17 @@
             "description": "Fixed Version.",
             "type": "string"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "goal": {
             "description": "Goal.",
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "impact": {
             "description": "Impact.",
@@ -10873,12 +10898,20 @@
             ],
             "type": "string"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -15018,6 +15051,10 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "goal": {
             "description": "Goal.",
             "type": "string"
@@ -15028,6 +15065,10 @@
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "impact": {
             "description": "Impact.",
@@ -15596,6 +15637,10 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "goal": {
             "description": "Goal.",
             "type": "string"
@@ -15923,8 +15968,16 @@
             ],
             "type": "string"
           },
+          "duplicateOf": {
+            "description": "Duplicate Of.",
+            "type": "string"
+          },
           "force": {
             "description": "Force.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
             "type": "boolean"
           },
           "id": {
@@ -15933,6 +15986,10 @@
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -16102,6 +16159,10 @@
           },
           "force": {
             "description": "Force.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
             "type": "boolean"
           },
           "ids": {
@@ -16315,6 +16376,10 @@
           },
           "force": {
             "description": "Force.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
             "type": "boolean"
           },
           "id": {

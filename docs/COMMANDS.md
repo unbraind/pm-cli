@@ -84,6 +84,7 @@ pm dedupe-audit --mode parent_scope --limit 20
 ```
 
 Use `context` first for a compact active-work snapshot. Use `search` when the request names a concept, component, or prior issue.
+`context` standard/deep views include high-level child completion counters plus `recently_created` and `unparented` sections, so agents can spot new orphan work before creating duplicates.
 Use `pm aggregate --completion` when you need per-group `open`, `in_progress`, `closed`, `other`, and `completion_pct` progress context.
 
 `--sort` accepts `priority|deadline|updated_at|created_at|title|parent`, plus the convenience aliases `updated` (→ `updated_at`) and `created` (→ `created_at`):
@@ -209,9 +210,14 @@ Mutation commands (`create`/`update`/`close`/`append`/...) echo a `changed_field
 
 ```bash
 pm --no-changed-fields create "Probe item"   # output keeps changed_field_count, drops the array
+pm --id-only create "Probe item"             # output is only id + status
 ```
 
-Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_close`/`pm_run` append/update-many) are compact by default; pass `options.full=true` to restore the full `changed_fields` delta.
+Use `pm create --allow-missing-parent --parent <id>` only for deliberate imports or staged backlog reconstruction. Normal `pm create --parent <id>` fails fast when the parent id cannot be resolved.
+
+Use `pm close <duplicate-id> "Duplicate of <canonical-id>" --duplicate-of <canonical-id>` to close duplicates. The command validates the canonical target exists, records `duplicate_of`, and fills the resolution/expected/actual closure fields when they were not provided explicitly.
+
+Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_close`/`pm_run` append/update-many) are compact by default; pass `fullChangedFields=true` to restore the full `changed_fields` delta, or `idOnly=true` for single-item id/status output.
 
 ## Templates
 
@@ -318,6 +324,7 @@ pm reindex --mode keyword --eval --eval-fixtures tests/search-eval/golden-querie
 pm calendar --view week --date today --full-period
 pm calendar --from today --to +7d --include deadlines,reminders,events
 pm context --from today --to +7d --limit 10
+pm context --section recently_created --section unparented --limit 10
 ```
 
 `calendar` defaults to markdown for human and agent readability. Other commands default to TOON unless configured otherwise.

@@ -229,6 +229,10 @@ const TOOLS: ToolDefinition[] = [
           description:
             "For mutation actions, return the full changed_fields array instead of the default changed_field_count.",
         },
+        idOnly: {
+          type: "boolean",
+          description: "For single-item mutation actions, return only id and status.",
+        },
       },
       ["action"],
     ),
@@ -275,6 +279,7 @@ const TOOLS: ToolDefinition[] = [
     inputSchema: objectSchema(
       {
         fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
+        allowMissingParent: { type: "boolean", description: "Allow unresolved parent references and emit a validation warning." },
         options: { type: "object", description: "Create options. title and description are required." },
       },
       ["options"],
@@ -327,7 +332,9 @@ const TOOLS: ToolDefinition[] = [
       {
         id: idSchema,
         reason: { type: "string", description: "Close reason text when provided or required by governance settings." },
+        duplicateOf: { type: "string", description: "Canonical item id when closing this item as a duplicate." },
         fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
+        idOnly: { type: "boolean", description: "Return only id and status." },
         options: { type: "object" },
       },
       ["id"],
@@ -590,6 +597,10 @@ function optionsWithAuthor(args: Record<string, unknown>, action?: string): Reco
     hoistKey("tag");
     hoistKey("priority");
     hoistKey("limit");
+  } else if (action === "create") {
+    hoistKey("allowMissingParent");
+  } else if (action === "close") {
+    hoistKey("duplicateOf");
   }
   const options = normalizeMcpOptionsArrays({ ...hoistedTopLevel, ...baseOptions }, action);
   const author = readString(args, "author");
@@ -771,9 +782,10 @@ async function withCwd<T>(cwd: unknown, run: () => Promise<T>): Promise<T> {
  */
 function withMutationCompaction(args: Record<string, unknown>, options?: Record<string, unknown> | null): {
   changedFields: "full" | "compact";
+  idOnly: boolean;
   runnerOptions: Record<string, unknown>;
 } {
-  return { changedFields: args.fullChangedFields === true ? "full" : "compact", runnerOptions: { ...(options ?? {}) } };
+  return { changedFields: args.fullChangedFields === true ? "full" : "compact", idOnly: args.idOnly === true, runnerOptions: { ...(options ?? {}) } };
 }
 
 function mutationListOptions(options: Record<string, unknown>): ListOptions {
@@ -930,11 +942,11 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runSearch(readRequiredString(args, "query"), searchOptions, global);
     }
     case "create": {
-      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
-      return projectMutationResult(await runCreate(runnerOptions as never, global), { changedFields });
+      const { changedFields, idOnly, runnerOptions } = withMutationCompaction(args, options);
+      return projectMutationResult(await runCreate(runnerOptions as never, global), { changedFields, idOnly });
     }
     case "copy": {
-      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
+      const { changedFields, idOnly, runnerOptions } = withMutationCompaction(args, options);
       const copyOptions: Record<string, unknown> = {
         ...runnerOptions,
         ...(runnerOptions.title === undefined && typeof args.title === "string" ? { title: args.title } : {}),
@@ -947,14 +959,14 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
           copyOptions as never,
           global,
         ),
-        { changedFields },
+        { changedFields, idOnly },
       );
     }
     case "update": {
-      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
+      const { changedFields, idOnly, runnerOptions } = withMutationCompaction(args, options);
       return projectMutationResult(
         await runUpdate(id ?? readRequiredString(runnerOptions, "id"), runnerOptions as never, global),
-        { changedFields },
+        { changedFields, idOnly },
       );
     }
     case "claim":
@@ -962,7 +974,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
     case "release":
       return runRelease(id ?? readRequiredString(options, "id"), force, global, options);
     case "close": {
-      const { changedFields, runnerOptions } = withMutationCompaction(args, options);
+      const { changedFields, idOnly, runnerOptions } = withMutationCompaction(args, options);
       const closeReason =
         readString(args, "reason") ??
         readString(args, "text") ??
@@ -975,7 +987,7 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
           runnerOptions as never,
           global,
         ),
-        { changedFields },
+        { changedFields, idOnly },
       );
     }
     case "comments": {

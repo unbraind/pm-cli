@@ -122,6 +122,7 @@ export const TOOL_CREATE_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "author", flag: "--author" },
   { param: "message", flag: "--message", allowEmpty: true },
   { param: "assignee", flag: "--assignee" },
+  { param: "allowMissingParent", flag: "--allow-missing-parent" },
   { param: "reminder", flag: "--reminder", repeatable: true },
   { param: "event", flag: "--event", repeatable: true },
   { param: "typeOption", flag: "--type-option", repeatable: true },

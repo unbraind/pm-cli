@@ -67,6 +67,10 @@ export interface ContextFocusItem {
   assignee: string | null;
   tags: string[];
   updated_at: string;
+  parent: string | null;
+  children_total?: number;
+  children_closed?: number;
+  completion_pct?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -136,6 +140,10 @@ export interface StaleEntry {
   status: ItemStatus;
   updated_at: string;
   stale_days: number;
+}
+
+export interface RecentContextItem extends ContextFocusItem {
+  created_at?: string;
 }
 
 export interface TestHealthSummary {
@@ -215,6 +223,8 @@ export interface ContextResult {
   activity?: CompactActivityEntry[];
   progress?: ProgressEntry[];
   blockers?: BlockerEntry[];
+  recently_created?: RecentContextItem[];
+  unparented?: ContextFocusItem[];
   files?: HotFile[];
   workload?: WorkloadEntry[];
   staleness?: StaleEntry[];
@@ -230,7 +240,7 @@ export interface ContextResult {
 const HIGH_LEVEL_TYPES = new Set<string>(["Epic", "Feature"]);
 const DEFAULT_CONTEXT_LIMIT = 10;
 
-const STANDARD_SECTIONS: ContextSectionName[] = ["hierarchy", "activity", "progress", "workload"];
+const STANDARD_SECTIONS: ContextSectionName[] = ["hierarchy", "activity", "progress", "recently_created", "unparented", "workload"];
 const DEEP_SECTIONS: ContextSectionName[] = [
   ...STANDARD_SECTIONS,
   "blockers",
@@ -238,6 +248,10 @@ const DEEP_SECTIONS: ContextSectionName[] = [
   "staleness",
   "tests",
 ];
+const LEADING_HYPHEN_DATE = /^(\d{4})-(\d{2})-(\d{2})/;
+const LEADING_COMPACT_DATE = /^(\d{4})(\d{2})(\d{2})(?:[T ]?\d{2}|$)/;
+const COMPACT_DATE = /^(\d{4})(\d{2})(\d{2})$/;
+const COMPACT_DATETIME = /^(\d{4})(\d{2})(\d{2})(?:[T\s]?)(\d{2})(\d{2})(\d{2})?(Z|[+-]\d{2}:?\d{2})?$/i;
 
 // ---------------------------------------------------------------------------
 // Parsers
@@ -394,6 +408,66 @@ function compareOptionalDeadline(left: string | null | undefined, right: string 
   return compareTimestampStrings(leftValue, rightValue);
 }
 
+function daysInUtcMonth(year: number, monthIndex: number): number {
+  return new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+}
+
+function hasNoInvalidDatePrefix(value: string): boolean {
+  const match = LEADING_HYPHEN_DATE.exec(value) ?? LEADING_COMPACT_DATE.exec(value);
+  if (!match) {
+    return true;
+  }
+  const year = Number.parseInt(match[1], 10);
+  const month = Number.parseInt(match[2], 10);
+  const day = Number.parseInt(match[3], 10);
+  return month >= 1 && month <= 12 && day >= 1 && day <= daysInUtcMonth(year, month - 1);
+}
+
+function normalizeTimestampCandidate(value: string): string {
+  const compactDate = COMPACT_DATE.exec(value);
+  if (compactDate) {
+    return `${compactDate[1]}-${compactDate[2]}-${compactDate[3]}`;
+  }
+  const compactDateTime = COMPACT_DATETIME.exec(value);
+  if (compactDateTime) {
+    const [, year, month, day, hour, minute, secondRaw, offsetRaw] = compactDateTime;
+    const second = secondRaw ? `:${secondRaw}` : "";
+    const offset = offsetRaw && offsetRaw.length === 5 && offsetRaw !== "Z" ? `${offsetRaw.slice(0, 3)}:${offsetRaw.slice(3)}` : offsetRaw ?? "";
+    return `${year}-${month}-${day}T${hour}:${minute}${second}${offset}`;
+  }
+  return value;
+}
+
+function parseContextTimestampMs(value: unknown): number {
+  if (typeof value !== "string") {
+    return Number.NaN;
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || !hasNoInvalidDatePrefix(trimmed)) {
+    return Number.NaN;
+  }
+  const parsed = Date.parse(normalizeTimestampCandidate(trimmed));
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+function sortableTimestamp(value: unknown): string {
+  const parsed = parseContextTimestampMs(value);
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : "";
+}
+
+function dateTokenForTimestamp(value: unknown): string {
+  const parsed = parseContextTimestampMs(value);
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString().slice(0, 10) : "unknown";
+}
+
+function normalizedParentId(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 function compareCriticalItems(left: ItemFrontMatter, right: ItemFrontMatter, statusRegistry: RuntimeStatusRegistry): number {
   const byStatus = statusRank(left.status, statusRegistry) - statusRank(right.status, statusRegistry);
   if (byStatus !== 0) return byStatus;
@@ -403,13 +477,33 @@ function compareCriticalItems(left: ItemFrontMatter, right: ItemFrontMatter, sta
   if (byOrder !== 0) return byOrder;
   const byDeadline = compareOptionalDeadline(left.deadline, right.deadline);
   if (byDeadline !== 0) return byDeadline;
-  const byUpdated = compareTimestampStrings(right.updated_at, left.updated_at);
+  const byUpdated = compareTimestampStrings(sortableTimestamp(right.updated_at), sortableTimestamp(left.updated_at));
   const byId = left.id.localeCompare(right.id);
   return byUpdated !== 0 ? byUpdated : byId;
 }
 
-function toContextFocusItem(item: ItemFrontMatter): ContextFocusItem {
-  return {
+function completionPct(closed: number, total: number): number {
+  return total > 0 ? Math.round((closed / total) * 100) : 0;
+}
+
+function buildChildrenByParent(allItems: ItemFrontMatter[]): Map<string, ItemFrontMatter[]> {
+  const childrenByParent = new Map<string, ItemFrontMatter[]>();
+  for (const item of allItems) {
+    const parent = normalizedParentId(item.parent);
+    if (!parent) continue;
+    const children = childrenByParent.get(parent) ?? [];
+    children.push(item);
+    childrenByParent.set(parent, children);
+  }
+  return childrenByParent;
+}
+
+function toContextFocusItem(
+  item: ItemFrontMatter,
+  statusRegistry?: RuntimeStatusRegistry,
+  childrenByParent?: Map<string, ItemFrontMatter[]>,
+): ContextFocusItem {
+  const focus: ContextFocusItem = {
     id: item.id,
     title: item.title,
     type: item.type,
@@ -420,7 +514,19 @@ function toContextFocusItem(item: ItemFrontMatter): ContextFocusItem {
     assignee: item.assignee ?? null,
     tags: Array.isArray(item.tags) ? [...item.tags] : [],
     updated_at: item.updated_at,
+    parent: normalizedParentId(item.parent),
   };
+  if (statusRegistry && childrenByParent) {
+    const descendants = collectDescendants(item.id, childrenByParent);
+    const total = descendants.length;
+    if (total > 0) {
+      const closed = descendants.filter((desc) => isClosedStatus(desc.status, statusRegistry)).length;
+      focus.children_total = total;
+      focus.children_closed = closed;
+      focus.completion_pct = completionPct(closed, total);
+    }
+  }
+  return focus;
 }
 
 function summarizeAgenda(events: CalendarRow[]): ContextAgendaSummary {
@@ -468,13 +574,7 @@ function buildHierarchy(
     itemMap.set(item.id, item);
   }
 
-  const childrenByParent = new Map<string, ItemFrontMatter[]>();
-  for (const item of allItems) {
-    if (!item.parent) continue;
-    const children = childrenByParent.get(item.parent) ?? [];
-    children.push(item);
-    childrenByParent.set(item.parent, children);
-  }
+  const childrenByParent = buildChildrenByParent(allItems);
 
   const activeHighLevelIds = new Set(
     activeItems.filter((item) => HIGH_LEVEL_TYPES.has(item.type)).map((item) => item.id),
@@ -606,7 +706,7 @@ function buildProgress(
       open,
       in_progress: inProgress,
       blocked,
-      completion_pct: total > 0 ? Math.round((closed / total) * 100) : 0,
+      completion_pct: completionPct(closed, total),
     });
   }
 
@@ -702,6 +802,38 @@ function buildStaleness(
     .slice(0, limit);
 }
 
+function buildRecentlyCreated(
+  allNonTerminal: ItemFrontMatter[],
+  statusRegistry: RuntimeStatusRegistry,
+  childrenByParent: Map<string, ItemFrontMatter[]>,
+  limit: number,
+): RecentContextItem[] {
+  return allNonTerminal
+    .map((item) => ({ item, sortKey: sortableTimestamp(item.created_at) }))
+    .sort((left, right) => {
+      const byCreated = compareTimestampStrings(right.sortKey, left.sortKey);
+      return byCreated !== 0 ? byCreated : left.item.id.localeCompare(right.item.id);
+    })
+    .slice(0, limit)
+    .map(({ item }) => ({
+      ...toContextFocusItem(item, statusRegistry, childrenByParent),
+      created_at: item.created_at,
+    }));
+}
+
+function buildUnparented(
+  allNonTerminal: ItemFrontMatter[],
+  statusRegistry: RuntimeStatusRegistry,
+  childrenByParent: Map<string, ItemFrontMatter[]>,
+  limit: number,
+): ContextFocusItem[] {
+  return allNonTerminal
+    .filter((item) => !normalizedParentId(item.parent) && !HIGH_LEVEL_TYPES.has(item.type))
+    .sort((left, right) => compareCriticalItems(left, right, statusRegistry))
+    .slice(0, limit)
+    .map((item) => toContextFocusItem(item, statusRegistry, childrenByParent));
+}
+
 function buildTestHealth(
   activeItems: ItemFrontMatter[],
 ): TestHealthSummary {
@@ -753,7 +885,12 @@ function formatClock(timestamp: string): string {
 function formatFocusLine(item: ContextFocusItem): string {
   const orderToken = item.order === null ? "-" : String(item.order);
   const deadlineToken = item.deadline ?? "-";
-  return `${item.id} p${item.priority} ${item.status} ${item.type} order:${orderToken} deadline:${deadlineToken} ${item.title}`;
+  const parentToken = item.parent ? ` parent:${item.parent}` : "";
+  const progressToken =
+    item.children_total !== undefined && item.children_closed !== undefined && item.completion_pct !== undefined
+      ? ` children:${item.children_closed}/${item.children_total} done:${item.completion_pct}%`
+      : "";
+  return `${item.id} p${item.priority} ${item.status} ${item.type} order:${orderToken} deadline:${deadlineToken}${parentToken}${progressToken} ${item.title}`;
 }
 
 function formatAgendaLine(event: CalendarRow): string {
@@ -848,6 +985,22 @@ export function renderContextMarkdown(result: ContextResult): string {
     lines.push("");
   }
 
+  if (result.recently_created && result.recently_created.length > 0) {
+    lines.push("## Recently created");
+    for (const item of result.recently_created) {
+      lines.push(`- ${dateTokenForTimestamp(item.created_at)} ${formatFocusLine(item)}`);
+    }
+    lines.push("");
+  }
+
+  if (result.unparented && result.unparented.length > 0) {
+    lines.push("## Unparented");
+    for (const item of result.unparented) {
+      lines.push(`- ${formatFocusLine(item)}`);
+    }
+    lines.push("");
+  }
+
   if (result.activity && result.activity.length > 0) {
     lines.push("## Recent activity");
     for (const entry of result.activity) {
@@ -937,7 +1090,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   const staleThresholdDays = parseStaleThresholdDays(options.staleThreshold, contextSettings);
 
   const needsAllItems = sectionsIncluded.some((s) =>
-    ["hierarchy", "progress", "blockers", "staleness"].includes(s),
+    ["hierarchy", "progress", "blockers", "staleness", "recently_created", "unparented"].includes(s),
   );
 
   const baseListOptions = stripListProjectionFlags(options);
@@ -963,17 +1116,22 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
     blockedStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
   );
 
+  const childrenByParent = buildChildrenByParent(allItems);
+  const focusChildrenByParent = needsAllItems ? childrenByParent : undefined;
+
   const highLevel = activeItems
     .filter((item) => HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, limit)
-    .map(toContextFocusItem);
+    .map((item) => toContextFocusItem(item, statusRegistry, focusChildrenByParent));
   const lowLevel = activeItems
     .filter((item) => !HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, limit)
-    .map(toContextFocusItem);
+    .map((item) => toContextFocusItem(item, statusRegistry, focusChildrenByParent));
 
   const blockedFallbackUsed = activeItems.length === 0;
-  const blockedFallback = blockedFallbackUsed ? blockedItems.slice(0, limit).map(toContextFocusItem) : [];
+  const blockedFallback = blockedFallbackUsed
+    ? blockedItems.slice(0, limit).map((item) => toContextFocusItem(item, statusRegistry, focusChildrenByParent))
+    : [];
 
   const calendarOptions: CalendarOptions = {
     ...baseListOptions,
@@ -1010,6 +1168,12 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   const activity = has("activity") ? await buildActivity(activityLimit, global) : undefined;
   const progress = has("progress") ? buildProgress(allItems, activeItems, statusRegistry, limit) : undefined;
   const blockersSection = has("blockers") ? buildBlockers(blockedItems, itemMap, limit) : undefined;
+  const recentlyCreated = has("recently_created")
+    ? buildRecentlyCreated(allNonTerminal, statusRegistry, childrenByParent, limit)
+    : undefined;
+  const unparented = has("unparented")
+    ? buildUnparented(allNonTerminal, statusRegistry, childrenByParent, limit)
+    : undefined;
   const filesSection = has("files") ? buildHotFiles(activeItems, limit) : undefined;
   const workload = has("workload") ? buildWorkload(activeItems, statusRegistry, limit) : undefined;
   const staleness = has("staleness") ? buildStaleness(allNonTerminal, staleThresholdDays, now, limit) : undefined;
@@ -1075,6 +1239,8 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   if (activity) result.activity = activity;
   if (progress) result.progress = progress;
   if (blockersSection) result.blockers = blockersSection;
+  if (recentlyCreated) result.recently_created = recentlyCreated;
+  if (unparented) result.unparented = unparented;
   if (filesSection) result.files = filesSection;
   if (workload) result.workload = workload;
   if (staleness) result.staleness = staleness;

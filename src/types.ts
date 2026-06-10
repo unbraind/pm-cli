@@ -478,6 +478,7 @@ export interface ItemMetadata {
   test_runs?: ItemTestRunSummary[];
   docs?: LinkedDoc[];
   close_reason?: string;
+  duplicate_of?: string;
   plan_mode?: PlanMode;
   plan_scope?: string;
   plan_harness?: PlanHarness;
@@ -523,6 +524,8 @@ export const CONTEXT_SECTION_VALUES = [
   "hierarchy",
   "activity",
   "progress",
+  "recently_created",
+  "unparented",
   "blockers",
   "files",
   "workload",
@@ -535,6 +538,8 @@ export interface ContextSectionSettings {
   hierarchy: boolean;
   activity: boolean;
   progress: boolean;
+  recently_created: boolean;
+  unparented: boolean;
   blockers: boolean;
   files: boolean;
   workload: boolean;

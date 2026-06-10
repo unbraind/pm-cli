@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -315,7 +315,14 @@ describe("context command module", () => {
   it("parseContextSections resolves from depth and allows overrides", () => {
     const settings = SETTINGS_DEFAULTS.context;
     expect(parseContextSections(undefined, "brief", settings)).toEqual([]);
-    expect(parseContextSections(undefined, "standard", settings)).toEqual(["hierarchy", "activity", "progress", "workload"]);
+    expect(parseContextSections(undefined, "standard", settings)).toEqual([
+      "hierarchy",
+      "activity",
+      "progress",
+      "recently_created",
+      "unparented",
+      "workload",
+    ]);
     const deepSections = parseContextSections(undefined, "deep", settings);
     expect(deepSections).toContain("hierarchy");
     expect(deepSections).toContain("blockers");
@@ -388,6 +395,8 @@ describe("context command module", () => {
       expect(result.sections_included).toContain("hierarchy");
       expect(result.sections_included).toContain("activity");
       expect(result.sections_included).toContain("progress");
+      expect(result.sections_included).toContain("recently_created");
+      expect(result.sections_included).toContain("unparented");
       expect(result.sections_included).toContain("workload");
       expect(result.hierarchy).toBeDefined();
       expect(result.activity).toBeDefined();
@@ -410,6 +419,8 @@ describe("context command module", () => {
       expect(result.sections_included).toContain("hierarchy");
       expect(result.sections_included).toContain("activity");
       expect(result.sections_included).toContain("progress");
+      expect(result.sections_included).toContain("recently_created");
+      expect(result.sections_included).toContain("unparented");
       expect(result.sections_included).toContain("workload");
       expect(result.sections_included).toContain("blockers");
       expect(result.sections_included).toContain("files");
@@ -485,6 +496,64 @@ describe("context command module", () => {
       expect(epicProgress!.total).toBeGreaterThanOrEqual(1);
       expect(epicProgress!.completion_pct).toBeGreaterThanOrEqual(0);
       expect(epicProgress!.completion_pct).toBeLessThanOrEqual(100);
+      const epicFocus = result.high_level.find((entry) => entry.id === epicId);
+      expect(epicFocus).toMatchObject({
+        children_total: 1,
+        children_closed: 0,
+        completion_pct: 0,
+      });
+      expect(epicFocus?.parent).toBeNull();
+    });
+  });
+
+  it("includes recently-created and unparented sections for agent context recovery", async () => {
+    await withTempPmPath(async (context) => {
+      const orphanTask = createContextItem(context, { title: "Unparented task", type: "Task", status: "open", priority: "1" });
+      const orphanIssue = createContextItem(context, { title: "Unparented issue", type: "Issue", status: "open", priority: "1" });
+
+      const result = await runContext(
+        { section: ["recently_created", "unparented"], limit: "10" },
+        { path: context.pmPath },
+      );
+
+      expect(result.sections_included).toEqual(["recently_created", "unparented"]);
+      expect(result.recently_created?.map((entry) => entry.id)).toEqual(expect.arrayContaining([orphanTask, orphanIssue]));
+      expect(result.recently_created?.every((entry) => typeof entry.created_at === "string")).toBe(true);
+      expect(result.unparented?.map((entry) => entry.id)).toEqual(expect.arrayContaining([orphanTask, orphanIssue]));
+      expect(result.unparented?.every((entry) => entry.parent === null)).toBe(true);
+    });
+  });
+
+  it("sorts recently-created entries with malformed legacy timestamps", async () => {
+    await withTempPmPath(async (context) => {
+      const legacyId = createContextItem(context, { title: "Legacy recent task", type: "Task", status: "open", priority: "1" });
+      const currentId = createContextItem(context, { title: "Current recent task", type: "Task", status: "open", priority: "1" });
+      const legacyPath = path.join(context.pmPath, "tasks", `${legacyId}.toon`);
+      await writeFile(legacyPath, (await readFile(legacyPath, "utf8")).replace(/^created_at: .+\n/m, ""), "utf8");
+
+      const result = await runContext(
+        { section: ["recently_created"], limit: "10" },
+        { path: context.pmPath },
+      );
+
+      expect(result.recently_created?.[0]?.id).toBe(currentId);
+    });
+  });
+
+  it("treats whitespace-only parent values as unparented", async () => {
+    await withTempPmPath(async (context) => {
+      const legacyId = createContextItem(context, { title: "Whitespace parent task", type: "Task", status: "open", priority: "1" });
+      const legacyPath = path.join(context.pmPath, "tasks", `${legacyId}.toon`);
+      await writeFile(legacyPath, (await readFile(legacyPath, "utf8")).replace("author: context-test\n", 'author: context-test\nparent: "   "\n'), "utf8");
+
+      const result = await runContext(
+        { section: ["unparented"], limit: "10" },
+        { path: context.pmPath },
+      );
+
+      const entry = result.unparented?.find((item) => item.id === legacyId);
+      expect(entry).toBeDefined();
+      expect(entry?.parent).toBeNull();
     });
   });
 
@@ -591,5 +660,74 @@ describe("context command module", () => {
       expect(markdown).toContain("- depth: deep");
       expect(markdown).toContain("## Test health");
     });
+  });
+
+  it("renders malformed recently created timestamps defensively", () => {
+    const markdown = renderContextMarkdown({
+      now: "2026-05-01T00:00:00.000Z",
+      depth: "standard",
+      filters: {},
+      sections_included: ["recently_created"],
+      summary: {
+        active_items: 1,
+        in_progress: 0,
+        open: 1,
+        blocked: 0,
+        blocked_fallback_used: false,
+        agenda_events: 0,
+      },
+      high_level: [],
+      low_level: [],
+      blocked_fallback: [],
+      agenda: { summary: { events: 0, deadlines: 0, reminders: 0, scheduled: 0 }, events: [] },
+      recently_created: [
+        {
+          id: "pm-compact",
+          title: "Compact legacy item",
+          type: "Task",
+          status: "open",
+          priority: 1,
+          order: null,
+          deadline: null,
+          assignee: null,
+          tags: [],
+          updated_at: "2026-05-01T00:00:00.000Z",
+          parent: null,
+          created_at: "20260610",
+        },
+        {
+          id: "pm-impossible",
+          title: "Impossible legacy item",
+          type: "Task",
+          status: "open",
+          priority: 1,
+          order: null,
+          deadline: null,
+          assignee: null,
+          tags: [],
+          updated_at: "2026-05-01T00:00:00.000Z",
+          parent: null,
+          created_at: "2026-02-30T00:00:00.000Z",
+        },
+        {
+          id: "pm-legacy",
+          title: "Legacy item",
+          type: "Task",
+          status: "open",
+          priority: 1,
+          order: null,
+          deadline: null,
+          assignee: null,
+          tags: [],
+          updated_at: "2026-05-01T00:00:00.000Z",
+          parent: null,
+          created_at: undefined,
+        },
+      ],
+    } as never);
+
+    expect(markdown).toContain("- 2026-06-10 pm-compact");
+    expect(markdown).toContain("- unknown pm-impossible");
+    expect(markdown).toContain("- unknown pm-legacy");
   });
 });

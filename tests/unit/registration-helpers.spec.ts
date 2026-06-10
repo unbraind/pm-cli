@@ -18,6 +18,7 @@ describe("registration helpers", () => {
       noExtensions: false,
       noPager: false,
       profile: false,
+      idOnly: false,
     });
   });
 

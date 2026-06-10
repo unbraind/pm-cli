@@ -167,6 +167,7 @@ export const SUBCOMMAND_GLOBAL_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--json" },
   { flag: "--quiet" },
   { flag: "--no-changed-fields" },
+  { flag: "--id-only" },
   { flag: "--pm-path", aliases: ["--path"] },
   { flag: "--no-extensions" },
   { flag: "--no-pager" },
@@ -565,6 +566,7 @@ export const REINDEX_FLAG_CONTRACTS: CliFlagContract[] = [
 export const CLOSE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--reason" },
   { flag: "--close-reason" },
+  { flag: "--duplicate-of" },
   { flag: "--author" },
   { flag: "--message" },
   { flag: "--validate-close" },
@@ -800,6 +802,7 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--message" },
   { flag: "--assignee" },
   { flag: "--parent" },
+  { flag: "--allow-missing-parent" },
   { flag: "--reviewer" },
   { flag: "--risk" },
   { flag: "--confidence" },
@@ -1441,7 +1444,26 @@ export function toCompletionFlagString(flagContracts: CliFlagContract[], include
 }
 
 
-const PM_TOOL_GLOBAL_PARAMETER_KEYS = ["json", "quiet", "profile", "noExtensions", "noPager", "path", "pmExecutable", "timeoutMs"] as const;
+const PM_TOOL_GLOBAL_PARAMETER_KEYS = [
+  "json",
+  "quiet",
+  "profile",
+  "noExtensions",
+  "noPager",
+  "path",
+  "pmExecutable",
+  "timeoutMs",
+] as const;
+
+const PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS: Partial<Record<PmToolAction, readonly string[]>> = {
+  create: ["fullChangedFields", "idOnly"],
+  copy: ["fullChangedFields", "idOnly"],
+  update: ["fullChangedFields", "idOnly"],
+  close: ["fullChangedFields", "idOnly"],
+  append: ["fullChangedFields"],
+  "update-many": ["fullChangedFields"],
+  "close-many": ["fullChangedFields"],
+};
 
 export interface PmActionSchemaContract {
   required?: string[];
@@ -1754,7 +1776,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   update: { required: ["id"], optional: UPDATE_CONTRACT_PARAMETER_KEYS },
   "update-many": { optional: UPDATE_MANY_CONTRACT_PARAMETER_KEYS },
   normalize: { optional: NORMALIZE_CONTRACT_PARAMETER_KEYS },
-  close: { required: ["id"], optional: ["text", "validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
+  close: { required: ["id"], optional: ["text", "duplicateOf", "validateClose", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   "close-many": { optional: CLOSE_MANY_CONTRACT_PARAMETER_KEYS },
   delete: { required: ["id"], optional: ["dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS] },
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
@@ -1984,7 +2006,8 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
   const contract = PM_TOOL_ACTION_SCHEMA_CONTRACTS[action];
   const required = toSchemaKeyList(contract.required ?? []);
   const optional = toSchemaKeyList(contract.optional ?? []);
-  const allowedKeys = toSchemaKeyList([...PM_TOOL_GLOBAL_PARAMETER_KEYS, ...required, ...optional]);
+  const mutationParameterKeys = PM_TOOL_ACTION_MUTATION_PARAMETER_KEYS[action] ?? [];
+  const allowedKeys = toSchemaKeyList([...PM_TOOL_GLOBAL_PARAMETER_KEYS, ...mutationParameterKeys, ...required, ...optional]);
   const properties: Record<string, unknown> = {
     action: {
       const: action,
