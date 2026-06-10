@@ -717,6 +717,25 @@ const LINKED_TEST_TWO_TOKEN_KEYS_BY_FLAG: ReadonlyMap<string, ReadonlySet<string
 ]);
 
 /**
+ * Sandbox-safe linked-test commands legitimately start with env assignments
+ * (`PM_PATH=... PM_GLOBAL_PATH=... vitest run -- parser`), which look like bare
+ * key=value settings tokens. When the two preceding tokens are a linked-test
+ * flag plus a bare two-token key (`--add command <value>`), the value must be
+ * left intact for mergeLinkedTestTwoTokenEntries instead of being rewritten
+ * into a canonical flag (e.g. PM_PATH= -> --pm-path), which would silently
+ * corrupt the command into `--add command --pm-path ...`.
+ */
+function isLinkedTestTwoTokenValuePosition(commandName: string | undefined, emittedTokens: readonly string[]): boolean {
+  if (commandName !== "test" || emittedTokens.length < 2) {
+    return false;
+  }
+  const key = emittedTokens[emittedTokens.length - 1];
+  const flag = emittedTokens[emittedTokens.length - 2];
+  const keys = LINKED_TEST_TWO_TOKEN_KEYS_BY_FLAG.get(flag);
+  return keys !== undefined && keys.has(key);
+}
+
+/**
  * Accept the two-token linked-test form `pm test <id> --add command "npm test -- parser"`
  * by merging the bare key token and its single quoted value into the documented
  * `--add command=...` shape. Without this merge Commander binds the bare key as the
@@ -806,7 +825,8 @@ export function normalizeBootstrapInvocation(argv: string[]): BootstrapInvocatio
     const bareKeyValue = parseBareKeyValueToken(token);
     if (
       bareKeyValue &&
-      !(typeof previous === "string" && previous.startsWith("-"))
+      !(typeof previous === "string" && previous.startsWith("-")) &&
+      !isLinkedTestTwoTokenValuePosition(commandName, normalizedArgv)
     ) {
       const resolution = resolveCanonicalFlag(bareKeyValue.key, lookup);
       if (resolution) {

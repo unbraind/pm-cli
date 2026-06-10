@@ -656,6 +656,18 @@ describe("normalizeBootstrapInvocation linked-test two-token form (GH-191)", () 
     const normalized = normalizeBootstrapInvocation(["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"]);
     expect(normalized.argv).toEqual(["test", "pm-a1b2", "--add", "command", "npm", "test", "--", "parser"]);
   });
+
+  it("preserves sandbox-safe values starting with env assignments instead of promoting PM_PATH= to --pm-path", () => {
+    const value = "PM_PATH=/tmp/pm-x PM_GLOBAL_PATH=/tmp/pm-x-g vitest run -- parser";
+    const normalized = normalizeBootstrapInvocation(["test", "pm-a1b2", "--add", "command", value]);
+    expect(normalized.argv).toEqual(["test", "pm-a1b2", "--add", `command=${value}`]);
+    expect(normalized.trace.some((entry) => entry.to.includes("--pm-path"))).toBe(false);
+  });
+
+  it("still promotes bare key=value tokens on pm test outside the two-token value position", () => {
+    const normalized = normalizeBootstrapInvocation(["test", "pm-a1b2", "--add", "command", "echo ok", "match=parser"]);
+    expect(normalized.argv).toEqual(["test", "pm-a1b2", "--add", "command=echo ok", "--match", "parser"]);
+  });
 });
 
 describe("parseBootstrapTypeValue", () => {
