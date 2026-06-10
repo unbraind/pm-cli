@@ -13089,6 +13089,10 @@
             ],
             "type": "string"
           },
+          "completion": {
+            "description": "For aggregate action, add open/in_progress/closed/other counts and completion_pct per group.",
+            "type": "boolean"
+          },
           "count": {
             "description": "Enable grouped count output for aggregate action.",
             "type": "boolean"

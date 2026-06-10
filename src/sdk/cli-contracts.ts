@@ -1524,6 +1524,7 @@ const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const AGGREGATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_AGGREGATE_OPTION_CONTRACTS.map((entry) => entry.param),
   "count",
+  "completion",
   "includeUnparented",
 ]);
 const DEDUPE_AUDIT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList(TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS.map((entry) => entry.param));

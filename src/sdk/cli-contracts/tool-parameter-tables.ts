@@ -930,7 +930,7 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "Enable grouped count output for aggregate action.",
   },
   completion: {
-    description: "For aggregate action, add open/in_progress/closed counts and completion_pct per group.",
+    description: "For aggregate action, add open/in_progress/closed/other counts and completion_pct per group.",
   },
   sum: {
     description: "Numeric field to sum per aggregate group (count and null_count are still returned).",

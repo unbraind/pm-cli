@@ -112,7 +112,7 @@ export function registerOperationCommands(program: Command): void {
         list: Boolean(options.list),
         run: Boolean(options.run),
         match: typeof options.match === "string" ? options.match : undefined,
-        onlyIndex: typeof options.onlyIndex === "string" ? options.onlyIndex : undefined,
+        onlyIndex: typeof options.onlyIndex === "string" || typeof options.onlyIndex === "number" ? options.onlyIndex : undefined,
         onlyLast: Boolean(options.onlyLast),
         timeout: typeof options.timeout === "string" ? options.timeout : undefined,
         progress: Boolean(options.progress),

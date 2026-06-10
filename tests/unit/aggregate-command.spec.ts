@@ -12,7 +12,7 @@ function createItem(
   params: {
     title: string;
     type: "Feature" | "Task" | "Issue" | "Chore";
-    status: "open" | "in_progress" | "closed";
+    status: "draft" | "open" | "in_progress" | "closed";
     parent?: string;
     priority?: number;
     tags?: string;
@@ -275,6 +275,12 @@ describe("runAggregate", () => {
         status: "closed",
         parent: parentId,
       });
+      createItem(context, {
+        title: "Completion Draft Task",
+        type: "Task",
+        status: "draft",
+        parent: parentId,
+      });
 
       const result = await runAggregate(
         {
@@ -291,11 +297,12 @@ describe("runAggregate", () => {
             parent: parentId,
             type: "Task",
           },
-          count: 3,
+          count: 4,
           open: 1,
           in_progress: 1,
           closed: 1,
-          completion_pct: 33.33,
+          other: 1,
+          completion_pct: 25,
         },
       ]);
     });

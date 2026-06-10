@@ -84,7 +84,7 @@ pm dedupe-audit --mode parent_scope --limit 20
 ```
 
 Use `context` first for a compact active-work snapshot. Use `search` when the request names a concept, component, or prior issue.
-Use `pm aggregate --completion` when you need per-group `open`, `in_progress`, `closed`, and `completion_pct` progress context.
+Use `pm aggregate --completion` when you need per-group `open`, `in_progress`, `closed`, `other`, and `completion_pct` progress context.
 
 `--sort` accepts `priority|deadline|updated_at|created_at|title|parent`, plus the convenience aliases `updated` (→ `updated_at`) and `created` (→ `created_at`):
 

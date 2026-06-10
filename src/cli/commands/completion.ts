@@ -383,7 +383,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen(DEPS_FLAGS)})`,
     "      ;;",
     "    test)",
-    `      COMPREPLY=(${compgen("--add --add-json --remove --run --match --only-index --only-last --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --add-json --remove --list --run --match --only-index --only-last --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    test-all)",
     `      COMPREPLY=(${compgen("--status --limit --offset --background --timeout --progress --env-set --env-clear --shared-host-safe --pm-context --override-linked-pm-context --fail-on-context-mismatch --fail-on-skipped --fail-on-empty-test-run --require-assertions-for-pm --check-context --auto-pm-context --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
@@ -631,6 +631,7 @@ ${zshListRuntimeFieldFlags}            '--json[Output JSON]' \\
           _arguments \\
             '--group-by[Comma-separated group-by fields (supported: parent,type,priority,status,assignee,tags,sprint,release)]:fields' \\
             '--count[Return grouped counts]' \\
+            '--completion[Add open/in_progress/closed/other counts and completion percentage]' \\
             '--sum[Numeric field to sum per group]:field' \\
             '--avg[Numeric field to average per group]:field' \\
             '--include-unparented[Include unparented rows when grouping by parent]' \\
@@ -1159,6 +1160,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--add[Add linked test entry]:entry' \\
             '--add-json[Add linked test entry from JSON object/array]:json' \\
             '--remove[Remove linked test entry by command/path]:entry' \\
+            '--list[List linked tests without mutating]' \\
             '--run[Run linked tests]' \\
             '--match[Run linked tests whose command/path contains substring]:substring' \\
             '--only-index[Run one linked test by 1-based index]:number' \\
@@ -1963,6 +1965,7 @@ complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l forc
 complete -c pm -n '__fish_seen_subcommand_from test' -l add -d 'Add linked test entry' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l add-json -d 'Add linked test entry from JSON object/array' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l remove -d 'Remove linked test entry' -r
+complete -c pm -n '__fish_seen_subcommand_from test' -l list -d 'List linked tests without mutating'
 complete -c pm -n '__fish_seen_subcommand_from test' -l run -d 'Run linked tests'
 complete -c pm -n '__fish_seen_subcommand_from test' -l match -d 'Run linked tests whose command/path contains substring' -r
 complete -c pm -n '__fish_seen_subcommand_from test' -l only-index -d 'Run one linked test by 1-based index' -r

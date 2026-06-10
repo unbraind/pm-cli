@@ -61,6 +61,7 @@ export interface AggregateRow {
   open?: number;
   in_progress?: number;
   closed?: number;
+  other?: number;
   completion_pct?: number;
   null_count?: number;
   sum?: number | null;
@@ -253,6 +254,7 @@ interface AggregateAccumulator {
   open_count: number;
   in_progress_count: number;
   closed_count: number;
+  other_count: number;
 }
 
 function completionPct(closed: number, total: number): number {
@@ -274,7 +276,9 @@ function updateCompletionCounts(accumulator: AggregateAccumulator, status: ItemS
   }
   if (statusRegistry.terminal_done_statuses.has(normalizedStatus) || normalizedStatus === statusRegistry.close_status) {
     accumulator.closed_count += 1;
+    return;
   }
+  accumulator.other_count += 1;
 }
 
 export async function runAggregate(options: AggregateOptions, global: GlobalOptions): Promise<AggregateResult> {
@@ -353,6 +357,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
         open_count: 0,
         in_progress_count: 0,
         closed_count: 0,
+        other_count: 0,
       };
       if (includeCompletion) {
         updateCompletionCounts(accumulator, item.status, statusRegistry);
@@ -371,6 +376,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
         withNumeric.open = entry.open_count;
         withNumeric.in_progress = entry.in_progress_count;
         withNumeric.closed = entry.closed_count;
+        withNumeric.other = entry.other_count;
         withNumeric.completion_pct = completionPct(entry.closed_count, entry.row.count);
       }
       if (numericAggregation !== null) {
