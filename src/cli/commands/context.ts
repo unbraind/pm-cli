@@ -745,7 +745,9 @@ function buildRecentlyCreated(
 ): RecentContextItem[] {
   return [...allNonTerminal]
     .sort((left, right) => {
-      const byCreated = compareTimestampStrings(right.created_at, left.created_at);
+      const leftCreated = typeof left.created_at === "string" ? left.created_at : "";
+      const rightCreated = typeof right.created_at === "string" ? right.created_at : "";
+      const byCreated = compareTimestampStrings(rightCreated, leftCreated);
       return byCreated !== 0 ? byCreated : left.id.localeCompare(right.id);
     })
     .slice(0, limit)

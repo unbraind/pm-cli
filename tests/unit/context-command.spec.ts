@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -521,6 +521,22 @@ describe("context command module", () => {
       expect(result.recently_created?.every((entry) => typeof entry.created_at === "string")).toBe(true);
       expect(result.unparented?.map((entry) => entry.id)).toEqual(expect.arrayContaining([orphanTask, orphanIssue]));
       expect(result.unparented?.every((entry) => entry.parent === null)).toBe(true);
+    });
+  });
+
+  it("sorts recently-created entries with malformed legacy timestamps", async () => {
+    await withTempPmPath(async (context) => {
+      const legacyId = createContextItem(context, { title: "Legacy recent task", type: "Task", status: "open", priority: "1" });
+      const currentId = createContextItem(context, { title: "Current recent task", type: "Task", status: "open", priority: "1" });
+      const legacyPath = path.join(context.pmPath, "tasks", `${legacyId}.toon`);
+      await writeFile(legacyPath, (await readFile(legacyPath, "utf8")).replace(/^created_at: .+\n/m, ""), "utf8");
+
+      const result = await runContext(
+        { section: ["recently_created"], limit: "10" },
+        { path: context.pmPath },
+      );
+
+      expect(result.recently_created?.map((entry) => entry.id)).toContain(currentId);
     });
   });
 

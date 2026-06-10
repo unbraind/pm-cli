@@ -38,6 +38,11 @@ function itemStatus(context: TempPmContext, id: string): string {
   return (result.json as { item: { status: string } }).item.status;
 }
 
+async function patchTaskToon(context: TempPmContext, id: string, patch: (content: string) => string): Promise<void> {
+  const filePath = path.join(context.pmPath, "tasks", `${id}.toon`);
+  await writeFile(filePath, patch(await readFile(filePath, "utf8")), "utf8");
+}
+
 describe("runClose", () => {
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-close-not-init-"));
@@ -209,6 +214,29 @@ describe("runClose", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
         context: expect.objectContaining({ code: "duplicate_target_self" }),
+      });
+    });
+  });
+
+  it("rejects duplicate closure when the canonical target points back to the closing item", async () => {
+    await withTempPmPath(async (context) => {
+      const closingId = createTask(context, "duplicate circular closing item");
+      const targetId = createTask(context, "duplicate circular target");
+      await patchTaskToon(context, targetId, (content) => content.replace("author: seed-author\n", `author: seed-author\nduplicate_of: ${closingId}\n`));
+
+      await expect(
+        runClose(
+          closingId,
+          "Duplicate of circular target",
+          {
+            duplicateOf: targetId,
+            validateClose: "warn",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "duplicate_target_circular" }),
       });
     });
   });

@@ -133,6 +133,13 @@ async function assertDuplicateTargetExists(
       nextSteps: ["Run pm search/list to find the canonical item, then retry with --duplicate-of <id>."],
     });
   }
+  if (target.duplicate_of === closingId) {
+    throw new PmCliError(`Circular duplicate reference detected. Target "${rawTarget}" is already marked as a duplicate of "${closingId}".`, EXIT_CODE.USAGE, {
+      code: "duplicate_target_circular",
+      why: "Circular duplicate relationships create loops for dedupe and status propagation tooling.",
+      nextSteps: ["Choose the existing canonical item, or clear the target duplicate_of metadata before closing this item as a duplicate."],
+    });
+  }
   return target.id;
 }
 
