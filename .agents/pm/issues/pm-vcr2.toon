@@ -2,14 +2,16 @@ id: pm-vcr2
 title: "GH-191: test --add command parser should accept quoted commands containing --"
 description: Mirror GitHub issue #191. Improve parser handling and diagnostics for --add command values that contain nested '--' tokens so agent-generated commands are accepted reliably.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "area:cli","area:tests","external:github","gh:191"
 created_at: "2026-06-09T22:33:17.335Z"
-updated_at: "2026-06-10T15:11:43.294Z"
-assignee: test-parser-agent
+updated_at: "2026-06-10T20:36:13.792Z"
 author: codex-active-pm-cycle-20260610
 parent: pm-u9d0
+resolution: "Bootstrap normalization (mergeLinkedTestTwoTokenEntries) rewrites the unambiguous two-token --add/--remove <key> <quoted value> shape into key=value before Commander parses (test command only, keys command/cmd/path, exactly one non-flag value token); follow-up fix keeps sandbox-safe env-assignment values (PM_PATH=... PM_GLOBAL_PATH=...) intact by skipping bare key=value promotion in the two-token value position. Ambiguous unquoted form gets new linked_test_value_not_quoted guidance with a synthesized suggested_retry re-joining the shell-split tokens."
+expected_result: "pm test <id> --add command \"npm test -- parser\" works; unquoted misuse gets copy-pasteable guidance instead of a generic too-many-arguments error."
+actual_result: "Manual temp-dir smoke: quoted two-token form stores the command verbatim incl nested -- and env assignments; unquoted form emits targeted guidance listing all three accepted forms; 79 bootstrap-args + error-guidance tests green."
 comments[5]{created_at,author,text}:
   "2026-06-09T22:33:32.486Z",codex-active-pm-cycle-20260610,"Source: GitHub issue https://github.com/unbraind/pm-cli/issues/191. Duplicate-check run (pm search test --add command parsing terms) found no open canonical item for this scope, so this issue captures that lineage."
   "2026-06-10T14:12:58.594Z",codex-impl,"Post-merge note: PR #198 added robust --add-json linked-test input, parser docs, and regression coverage for complex commands, which resolved GH-193. This item remains open because GH-191 specifically asks for the two-token form pm test <id> --add command \"... -- ...\" to be accepted or produce targeted syntax guidance; that exact UX remains intentionally unresolved."
@@ -23,4 +25,5 @@ files[6]{path,scope,note}:
   src/core/shared/constants.ts,project,telemetry category registration for linked_test_value_not_quoted (usage)
   tests/unit/bootstrap-args.spec.ts,project,two-token merge branch coverage + e2e normalizeBootstrapInvocation cases
   tests/unit/error-guidance.spec.ts,project,guidance classification + retry synthesis coverage
+close_reason: GH-191 two-token pm test --add form accepted with targeted guidance fallback
 body: ""

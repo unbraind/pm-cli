@@ -6,8 +6,7 @@ status: in_progress
 priority: 1
 tags[4]: adr,"area:ci","area:tests",coverage
 created_at: "2026-06-09T22:05:03.764Z"
-updated_at: "2026-06-10T20:23:27.869Z"
-assignee: coverage-ratchet-agent
+updated_at: "2026-06-10T20:36:14.032Z"
 author: codex-active-pm-cycle-20260610
 parent: pm-m2u1
 comments[12]{created_at,author,text}:

@@ -2,17 +2,19 @@ id: pm-v68d
 title: Add pm_schema and pm_config narrow MCP tools for workspace configuration via MCP
 description: "pm schema (add-type/remove-type/add-status/remove-status/list/show) and pm config (get/set/unset) are both fully wired in runAction switch cases but have no narrow tools — agents must use pm_run. These are primary workspace-configuration operations agents perform during project setup (e.g. adding a Story type, setting default status, enabling telemetry). Narrow pm_schema and pm_config tools would surface required args (subcommand, key/name) at top-level with proper descriptions, participate in the unexpected-key warning system, and be self-documenting. pm_schema already has a subcommand enum in pm_run's schema — that schema should migrate to a dedicated tool."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: agent-ux,"area:mcp",dx
 created_at: "2026-06-07T10:04:19.682Z"
-updated_at: "2026-06-10T15:14:39.411Z"
-assignee: mcp-tools-agent
+updated_at: "2026-06-10T20:35:52.010Z"
 author: audit-platform-agent
 acceptance_criteria: "- Narrow `pm_schema` and `pm_config` MCP tools expose read (+ scoped write) of workspace schema/config\n- Registered in PM_TOOL_ACTIONS + schema/parameter contracts\n- Compact output; covered by tests; docs updated"
 parent: pm-5k4v
 risk: low
 confidence: high
+resolution: Added dedicated pm_schema (subcommand enum of 7 + name/description/defaultStatus/folder/alias/role/order/force top-level) and pm_config (configAction enum get/set/list/export + key/value/scope) narrow MCP tools; TOOLS surface extracted to src/mcp/tool-definitions.ts consumed by both server and contracts command; pm_run's schema-specific enum migrated to the dedicated tool; both participate in unexpected-key warnings and server instructions.
+expected_result: Agents configure workspace schema/config via self-documenting narrow tools instead of pm_run passthrough.
+actual_result: tools/list now exposes 25 tools incl pm_schema/pm_config; integration tests assert dispatch + compact output; docs/manifests updated 22->25; contract golden file drift-locks the inputSchemas.
 comments[2]{created_at,author,text}:
   "2026-06-10T15:13:02.675Z",mcp-tools-agent,"Implemented narrow pm_schema + pm_config MCP tools. pm_schema surfaces subcommand (enum list/show/show-status/add-type/remove-type/add-status/remove-status, required) plus name/description/defaultStatus/folder/alias/role/order/force top-level; pm_config surfaces configAction (enum get/set/list/export, required), key, value, scope (project|global). Both participate in the unexpected-key warning system via TOOL_DECLARED_KEYS and are listed in server instructions. pm_run migration done: the schema-specific subcommand enum and add-type/add-status properties were removed from pm_run inputSchema (generalized subcommand description points to pm_schema); runAction passthrough still accepts them. runAction config case now reads top-level configAction with options.configAction/options.action fallback and a clear missing-argument error. Tool surface moved to new src/mcp/tool-definitions.ts (dependency-light) so contracts can snapshot it."
   "2026-06-10T15:14:39.411Z",mcp-tools-agent,"Docs/manifests updated for the 22->25 tool-count: README.md, docs/CLAUDE_CODE_PLUGIN.md (x2), marketplace.json + .claude-plugin/marketplace.json (kept reconciled for the drift-lock test), plugins/pm-claude/commands/pm-init.md (count + enumeration), plugins/pm-claude/README.md tool table (also repaired pre-existing drift: pm_copy was missing), plugins/pm-codex/README.md narrow-tools sentence, docs/AGENT_GUIDE.md compact-mutations sentence (pm_append narrow now), scripts/smoke-claude-plugin.mjs required[] (length-locked to live surface; smoke run green)."
@@ -22,4 +24,5 @@ files[3]{path,scope,note}:
   tests/integration/mcp-handshake.spec.ts,project,25-tool surface + pm_schema/pm_config behavior test
 tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,MCP handshake suite incl. pm_schema/pm_config coverage
+close_reason: Shipped narrow pm_schema + pm_config MCP tools
 body: ""

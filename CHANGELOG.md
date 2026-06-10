@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- MCP pm\_list/pm\_search: expose active filter summary in compact output so agents know what was applied ([pm-rmjy](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-rmjy.toon))
+- Add narrow pm\_append MCP tool for agent log-seeding without pm\_run passthrough ([pm-7u9j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7u9j.toon))
+- Add pm\_schema and pm\_config narrow MCP tools for workspace configuration via MCP ([pm-v68d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-v68d.toon))
+
+### Fixed
+
+- GH-191: test --add command parser should accept quoted commands containing -- ([pm-vcr2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-vcr2.toon))
+
+### Other
+
+- Contract schema golden-file must cover MCP tool inputSchema shapes — current snapshot only covers CLI flags ([pm-4os2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-4os2.toon))
+
 ## 2026.6.10 - 2026-06-10
 
 ### Added
