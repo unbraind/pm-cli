@@ -1742,6 +1742,9 @@
           "flag": "--parent"
         },
         {
+          "flag": "--allow-missing-parent"
+        },
+        {
           "flag": "--reviewer"
         },
         {
@@ -7177,6 +7180,14 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -7296,6 +7307,14 @@
             "description": "Format.",
             "type": "string"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -7374,6 +7393,14 @@
           "action": {
             "const": "extension-init",
             "description": "Tool action to execute."
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -7462,12 +7489,20 @@
             "const": "extension-install",
             "description": "Tool action to execute."
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "github": {
             "description": "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
             "examples": [
               "org/repo/extensions/sample"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -7551,6 +7586,14 @@
             "const": "extension-uninstall",
             "description": "Tool action to execute."
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -7626,6 +7669,14 @@
             "const": "extension-explore",
             "description": "Tool action to execute."
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -7693,6 +7744,14 @@
           },
           "fixManagedState": {
             "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
             "type": "boolean"
           },
           "json": {
@@ -7763,6 +7822,14 @@
           "action": {
             "const": "extension-reload",
             "description": "Tool action to execute."
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -7853,6 +7920,14 @@
             "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -7934,6 +8009,14 @@
             ],
             "type": "string"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -7999,12 +8082,20 @@
             "const": "extension-adopt",
             "description": "Tool action to execute."
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "github": {
             "description": "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
             "examples": [
               "org/repo/extensions/sample"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -8089,6 +8180,14 @@
             "const": "extension-adopt-all",
             "description": "Tool action to execute."
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -8153,6 +8252,14 @@
           "action": {
             "const": "extension-activate",
             "description": "Tool action to execute."
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -8228,6 +8335,14 @@
           "action": {
             "const": "extension-deactivate",
             "description": "Tool action to execute."
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -8324,12 +8439,20 @@
             "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "github": {
             "description": "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
             "examples": [
               "org/repo/extensions/sample"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -8433,6 +8556,14 @@
             "const": "package-init",
             "description": "Tool action to execute."
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -8520,12 +8651,20 @@
             "const": "package-install",
             "description": "Tool action to execute."
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "github": {
             "description": "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
             "examples": [
               "org/repo/extensions/sample"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -8609,6 +8748,14 @@
             "const": "package-uninstall",
             "description": "Tool action to execute."
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -8684,6 +8831,14 @@
             "const": "package-explore",
             "description": "Tool action to execute."
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -8751,6 +8906,14 @@
           },
           "fixManagedState": {
             "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
             "type": "boolean"
           },
           "json": {
@@ -8821,6 +8984,14 @@
           "action": {
             "const": "package-reload",
             "description": "Tool action to execute."
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -8911,6 +9082,14 @@
             "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -8992,6 +9171,14 @@
             ],
             "type": "string"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -9057,12 +9244,20 @@
             "const": "package-adopt",
             "description": "Tool action to execute."
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "github": {
             "description": "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
             "examples": [
               "org/repo/extensions/sample"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -9147,6 +9342,14 @@
             "const": "package-adopt-all",
             "description": "Tool action to execute."
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -9211,6 +9414,14 @@
           "action": {
             "const": "package-activate",
             "description": "Tool action to execute."
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -9286,6 +9497,14 @@
           "action": {
             "const": "package-deactivate",
             "description": "Tool action to execute."
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -9382,12 +9601,20 @@
             "description": "When true for extension-manage/extension-doctor, adopt unmanaged extensions before diagnostics/update checks.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "github": {
             "description": "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
             "examples": [
               "org/repo/extensions/sample"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -9503,12 +9730,20 @@
             "const": "install",
             "description": "Tool action to execute."
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "github": {
             "description": "GitHub shorthand owner/repo[/path] source for package/extension install actions.",
             "examples": [
               "org/repo/extensions/sample"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -9598,6 +9833,14 @@
           },
           "dryRun": {
             "description": "Preview command effects without mutating storage artifacts.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
             "type": "boolean"
           },
           "json": {
@@ -9905,9 +10148,17 @@
             "description": "Fixed Version.",
             "type": "string"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "goal": {
             "description": "Goal.",
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "impact": {
             "description": "Impact.",
@@ -10886,12 +11137,20 @@
             ],
             "type": "string"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -11008,6 +11267,14 @@
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
             "type": "boolean"
           },
           "ids": {
@@ -11275,6 +11542,14 @@
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "ids": {
             "description": "Ids.",
             "type": "string"
@@ -11538,6 +11813,14 @@
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
             "type": "boolean"
           },
           "ids": {
@@ -11805,6 +12088,14 @@
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "ids": {
             "description": "Ids.",
             "type": "string"
@@ -12068,6 +12359,14 @@
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
             "type": "boolean"
           },
           "ids": {
@@ -12335,6 +12634,14 @@
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "ids": {
             "description": "Ids.",
             "type": "string"
@@ -12598,6 +12905,14 @@
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
             "type": "boolean"
           },
           "ids": {
@@ -12865,6 +13180,14 @@
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "ids": {
             "description": "Ids.",
             "type": "string"
@@ -13118,6 +13441,10 @@
             "description": "Deadline Before.",
             "type": "string"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "groupBy": {
             "description": "Comma-separated aggregate grouping fields (supported: parent,type,priority,status,assignee,tags,sprint,release).",
             "examples": [
@@ -13128,6 +13455,10 @@
               "sprint,release"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "includeUnparented": {
             "description": "Include unparented rows when aggregate grouping includes parent.",
@@ -13310,6 +13641,14 @@
           "from": {
             "description": "From.",
             "type": "string"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -13522,6 +13861,14 @@
             "description": "From.",
             "type": "string"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -13698,12 +14045,20 @@
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -13815,8 +14170,16 @@
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "hybrid": {
             "description": "Hybrid.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
             "type": "boolean"
           },
           "includeLinked": {
@@ -13992,12 +14355,20 @@
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -14095,12 +14466,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -14203,12 +14582,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -14291,12 +14678,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -14499,6 +14894,14 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -14618,12 +15021,20 @@
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -14742,12 +15153,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -15031,6 +15450,10 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "goal": {
             "description": "Goal.",
             "type": "string"
@@ -15041,6 +15464,10 @@
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "impact": {
             "description": "Impact.",
@@ -15609,9 +16036,17 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "goal": {
             "description": "Goal.",
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "ids": {
             "description": "Ids.",
@@ -15944,12 +16379,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -16121,6 +16564,14 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "ids": {
             "description": "Ids.",
             "type": "string"
@@ -16254,12 +16705,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -16334,12 +16793,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -16429,12 +16896,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -16636,6 +17111,10 @@
             "description": "From Search.",
             "type": "string"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "harness": {
             "description": "Harness.",
             "enum": [
@@ -16652,6 +17131,10 @@
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -16971,12 +17454,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -17077,12 +17568,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -17205,12 +17704,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -17317,12 +17824,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -17416,12 +17931,20 @@
             "description": "Format.",
             "type": "string"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -17576,12 +18099,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -17769,6 +18300,14 @@
             "description": "Treat skipped linked tests as dependency-failed policy violations.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -17898,6 +18437,14 @@
             "const": "telemetry",
             "description": "Tool action to execute."
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -17965,6 +18512,14 @@
           "action": {
             "const": "stats",
             "description": "Tool action to execute."
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -18037,6 +18592,14 @@
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
             "type": "boolean"
           },
           "json": {
@@ -18178,6 +18741,14 @@
             "description": "For validate action, add a machine-executable fix_hints[] of pm commands to each failing check's details.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "includePmInternals": {
             "description": "Include PM storage internals in tracked-all candidate scans.",
             "type": "boolean"
@@ -18279,6 +18850,10 @@
             "description": "Preview command effects without mutating storage artifacts.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "gcScope": {
             "description": "Repeatable gc scope selector values (index, embeddings, runtime, locks).",
             "examples": [
@@ -18303,6 +18878,10 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -18386,6 +18965,14 @@
             "description": "When true, contracts action returns only command flag surface payloads (mutually exclusive projection mode).",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
@@ -18458,12 +19045,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -18538,12 +19133,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -18614,12 +19217,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -18690,12 +19301,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,
@@ -18766,12 +19385,20 @@
             "description": "Force.",
             "type": "boolean"
           },
+          "fullChangedFields": {
+            "description": "Full Changed Fields.",
+            "type": "boolean"
+          },
           "id": {
             "description": "Item identifier for read or mutation actions.",
             "examples": [
               "pm-a1b2"
             ],
             "type": "string"
+          },
+          "idOnly": {
+            "description": "Id Only.",
+            "type": "boolean"
           },
           "json": {
             "default": true,

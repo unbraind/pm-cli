@@ -159,6 +159,14 @@ async function assertDuplicateTargetExists(
       nextSteps: ["Choose the existing canonical item, or clear the target duplicate_of metadata before closing this item as a duplicate."],
     });
   }
+  if (typeof target.duplicate_of === "string" && target.duplicate_of.trim().length > 0) {
+    throw new PmCliError(`Duplicate target "${rawTarget}" is already marked as a duplicate of "${target.duplicate_of.trim()}".`, EXIT_CODE.USAGE, {
+      code: "duplicate_target_is_duplicate",
+      why: "Duplicate closure should point directly at the canonical item, not another duplicate.",
+      examples: [`pm close ${closingId} "Duplicate of ${target.duplicate_of.trim()}" --duplicate-of ${target.duplicate_of.trim()}`],
+      nextSteps: ["Use the canonical item referenced by duplicate_of as the --duplicate-of target."],
+    });
+  }
   return target.id;
 }
 

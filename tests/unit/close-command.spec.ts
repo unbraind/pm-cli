@@ -270,6 +270,32 @@ describe("runClose", () => {
     });
   });
 
+  it("rejects duplicate closure when the canonical target is itself a duplicate", async () => {
+    await withTempPmPath(async (context) => {
+      const closingId = createTask(context, "duplicate target duplicate closing item");
+      const targetId = createTask(context, "duplicate target duplicate candidate");
+      const canonicalId = createTask(context, "duplicate target duplicate canonical");
+      await patchTaskToon(context, targetId, (content) =>
+        content.replace("author: seed-author\n", `author: seed-author\nduplicate_of: ${canonicalId}\n`),
+      );
+
+      await expect(
+        runClose(
+          closingId,
+          "Duplicate of duplicate target",
+          {
+            duplicateOf: targetId,
+            validateClose: "warn",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "duplicate_target_is_duplicate" }),
+      });
+    });
+  });
+
   it("rejects blank close reason text with actionable guidance", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-blank-reason");

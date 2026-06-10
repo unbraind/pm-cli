@@ -802,6 +802,7 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--message" },
   { flag: "--assignee" },
   { flag: "--parent" },
+  { flag: "--allow-missing-parent" },
   { flag: "--reviewer" },
   { flag: "--risk" },
   { flag: "--confidence" },
@@ -1443,7 +1444,18 @@ export function toCompletionFlagString(flagContracts: CliFlagContract[], include
 }
 
 
-const PM_TOOL_GLOBAL_PARAMETER_KEYS = ["json", "quiet", "profile", "noExtensions", "noPager", "path", "pmExecutable", "timeoutMs"] as const;
+const PM_TOOL_GLOBAL_PARAMETER_KEYS = [
+  "json",
+  "quiet",
+  "profile",
+  "noExtensions",
+  "noPager",
+  "path",
+  "pmExecutable",
+  "timeoutMs",
+  "fullChangedFields",
+  "idOnly",
+] as const;
 
 export interface PmActionSchemaContract {
   required?: string[];
