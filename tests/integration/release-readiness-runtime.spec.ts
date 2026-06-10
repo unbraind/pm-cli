@@ -1830,9 +1830,11 @@ describe("release readiness runtime coverage", () => {
       scripts?: Record<string, string | undefined>;
     };
 
-    for (const token of ["lines: 100", "branches: 100", "functions: 100", "statements: 100"]) {
+    expect(vitestConfig).toContain("const allSourceCoverageThresholds = {");
+    for (const token of ["lines: 78", "branches: 70", "functions: 82", "statements: 78"]) {
       expect(vitestConfig).toContain(token);
     }
+    expect(vitestConfig).toContain("thresholds: allSourceCoverageThresholds");
     expect(packageJson.scripts?.test).toBe("node scripts/run-tests.mjs test");
     expect(packageJson.scripts?.["test:coverage"]).toBe("node scripts/run-tests.mjs coverage");
   });

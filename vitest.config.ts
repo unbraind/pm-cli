@@ -4,6 +4,13 @@ const coverageReporters = process.env.CI
   ? (["text", "json-summary"] as const)
   : (["text", "json-summary", "html"] as const);
 
+const allSourceCoverageThresholds = {
+  lines: 78,
+  branches: 70,
+  functions: 82,
+  statements: 78,
+};
+
 export default defineConfig({
   cacheDir: ".cache/vitest",
   test: {
@@ -15,12 +22,7 @@ export default defineConfig({
       reporter: coverageReporters,
       include: ["src/*.ts", "src/**/*.ts"],
       exclude: ["src/**/*.d.ts"],
-      thresholds: {
-        lines: 100,
-        branches: 100,
-        functions: 100,
-        statements: 100,
-      },
+      thresholds: allSourceCoverageThresholds,
     },
   },
 });

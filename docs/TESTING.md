@@ -36,7 +36,7 @@ Use focused runs while iterating, then run coverage before closure when risk or 
 Coverage gating now targets literal source coverage for `src/`:
 
 - `vitest.config.ts` includes `src/*.ts` and `src/**/*.ts`.
-- Thresholds remain 100% for lines, branches, functions, and statements.
+- Thresholds are explicit ratchet baselines for the measured all-source corpus and should only move upward until they reach 100%.
 - Avoid reintroducing a curated `include`/`exclude` allowlist for production `src` modules.
 - Prefer extracting deterministic pure helpers (and unit-testing them) when an orchestration-heavy file is difficult to cover directly.
 

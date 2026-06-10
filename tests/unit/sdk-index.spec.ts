@@ -41,6 +41,7 @@ import {
   getContracts,
   getWorkspaceContracts,
   getItemPath,
+  locateItem,
   normalizeItemId,
   pathExists,
   readFileIfExists,
@@ -66,6 +67,7 @@ import {
   assertRegisteredVectorStoreAdapter,
   activateExtensionForTest,
 } from "../../src/sdk/testing.js";
+import { serializeItemDocument } from "../../src/core/item/item-format.js";
 import { readSettings as readCoreSettings, writeSettings } from "../../src/core/store/settings.js";
 import {
   activateExtensions,
@@ -397,8 +399,46 @@ describe("public sdk entrypoint", () => {
     expect(typeof generateItemId).toBe("function");
     expect(typeof normalizeItemId).toBe("function");
     expect(typeof getItemPath).toBe("function");
+    expect(typeof locateItem).toBe("function");
     expect(typeof readSettings).toBe("function");
     expect(typeof resolvePmRoot).toBe("function");
+  });
+
+  it("locates default-prefixed items from the sdk barrel without explicit idPrefix", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-sdk-locate-default-prefix";
+      const itemPath = getItemPath(pmPath, "Task", id, "toon");
+      await mkdir(path.dirname(itemPath), { recursive: true });
+      await writeFile(
+        itemPath,
+        serializeItemDocument(
+          {
+            metadata: {
+              id,
+              title: "SDK locateItem default prefix",
+              description: "package authors can omit the default pm id prefix",
+              type: "Task",
+              status: "open",
+              priority: 1,
+              tags: ["sdk"],
+              created_at: "2026-06-10T00:00:00.000Z",
+              updated_at: "2026-06-10T00:00:00.000Z",
+            },
+            body: "",
+          },
+          { format: "toon" },
+        ),
+        "utf8",
+      );
+
+      const located = await locateItem(pmPath, id);
+
+      expect(located).toMatchObject({
+        id,
+        type: "Task",
+        item_format: "toon",
+      });
+    });
   });
 
   it("re-exports the sdk testing assertion helpers through the barrel", () => {

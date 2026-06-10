@@ -70,7 +70,7 @@ function resolveItemFormatSearchOrder(preferredFormat?: ItemFormat): ItemFormat[
 export async function locateItem(
   pmRoot: string,
   rawId: string,
-  idPrefix: string,
+  idPrefix = "pm-",
   preferredFormat?: ItemFormat,
   typeToFolder: Record<string, string> = TYPE_TO_FOLDER,
 ): Promise<LocatedItem | null> {

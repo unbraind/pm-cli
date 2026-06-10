@@ -15,6 +15,7 @@
 
 ### Fixed
 
+- GH-190: SDK locateItem should default idPrefix or throw explicit argument errors ([pm-rjh9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rjh9.toon))
 - Telemetry queue max\_attempts backlog health warning: surface items near retry exhaustion in pm health ([pm-irc7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-irc7.toon))
 - Harden history replay and compact diff against malformed patch entries ([pm-kf5q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-kf5q.toon))
 - MCP server: request-scoped extension registries \(process-global set/clear can race under concurrent native-action requests\) ([pm-bl6m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-bl6m.toon))
