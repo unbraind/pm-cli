@@ -101,11 +101,7 @@ function findMissingCloseValidationFields(frontMatter: ItemFrontMatter): string[
   return missing;
 }
 
-function duplicateChainReferencesClosingItem(items: ItemFrontMatter[], duplicateTargetId: string, closingId: string): boolean {
-  const byId = new Map<string, ItemFrontMatter>();
-  for (const item of items) {
-    byId.set(item.id, item);
-  }
+function duplicateChainReferencesClosingItem(byId: ReadonlyMap<string, ItemFrontMatter>, duplicateTargetId: string, closingId: string): boolean {
   const visited = new Set<string>([duplicateTargetId]);
   let current = byId.get(duplicateTargetId)?.duplicate_of;
   while (typeof current === "string" && current.trim().length > 0) {
@@ -150,7 +146,11 @@ async function assertDuplicateTargetExists(
     undefined,
     settings.schema,
   );
-  const target = items.find((item) => item.id === rawTarget);
+  const itemsById = new Map<string, ItemFrontMatter>();
+  for (const item of items) {
+    itemsById.set(item.id, item);
+  }
+  const target = itemsById.get(rawTarget);
   if (!target) {
     throw new PmCliError(`Duplicate target "${rawTarget}" was not found. Create or locate the canonical item first.`, EXIT_CODE.USAGE, {
       code: "duplicate_target_missing",
@@ -159,7 +159,7 @@ async function assertDuplicateTargetExists(
       nextSteps: ["Run pm search/list to find the canonical item, then retry with --duplicate-of <id>."],
     });
   }
-  if (duplicateChainReferencesClosingItem(items, target.id, closingId)) {
+  if (duplicateChainReferencesClosingItem(itemsById, target.id, closingId)) {
     throw new PmCliError(`Circular duplicate reference detected. Target "${rawTarget}" points back to "${closingId}".`, EXIT_CODE.USAGE, {
       code: "duplicate_target_circular",
       why: "Circular duplicate relationships create loops for dedupe and status propagation tooling.",

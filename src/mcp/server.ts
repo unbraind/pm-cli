@@ -599,6 +599,8 @@ function optionsWithAuthor(args: Record<string, unknown>, action?: string): Reco
     hoistKey("limit");
   } else if (action === "create") {
     hoistKey("allowMissingParent");
+  } else if (action === "close") {
+    hoistKey("duplicateOf");
   }
   const options = normalizeMcpOptionsArrays({ ...hoistedTopLevel, ...baseOptions }, action);
   const author = readString(args, "author");
@@ -973,9 +975,6 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runRelease(id ?? readRequiredString(options, "id"), force, global, options);
     case "close": {
       const { changedFields, idOnly, runnerOptions } = withMutationCompaction(args, options);
-      if (runnerOptions.duplicateOf === undefined && typeof args.duplicateOf === "string") {
-        runnerOptions.duplicateOf = args.duplicateOf;
-      }
       const closeReason =
         readString(args, "reason") ??
         readString(args, "text") ??
