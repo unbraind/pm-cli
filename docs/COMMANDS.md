@@ -288,6 +288,24 @@ pm test <id> --run \
   --require-assertions-for-pm
 ```
 
+## Search Reindex and Eval
+
+`reindex` is provided by the `search-advanced` package (`pm install search-advanced --project`).
+
+```bash
+pm reindex --mode keyword
+pm reindex --mode semantic
+pm reindex --mode semantic --full
+pm reindex --mode hybrid --progress
+pm reindex --mode keyword --eval --eval-fixtures tests/search-eval/golden-queries.json
+```
+
+- `--mode semantic` and `--mode hybrid` are stale-first by default: only items whose `updated_at` no longer matches `search/vectorization-status.json` are re-embedded.
+- `--full` forces a complete semantic/hybrid re-embed and vector upsert, even when ledger entries are unchanged.
+- Progress now includes a stale-vs-total line so agents can estimate semantic reindex cost before embedding starts.
+- When `pm reindex --mode keyword` detects an embedding provider/model mismatch against the last semantic ledger, it emits a migration warning so agents can run `pm reindex --mode semantic` to rebuild vectors.
+- `--eval` runs the golden-query nDCG@5 harness and appends an `eval` summary to JSON output; `--eval-fixtures` overrides the fixture file path.
+
 ## Calendar and Context
 
 ```bash

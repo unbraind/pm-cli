@@ -138,6 +138,7 @@ function normalizeAdvancedSearchOptions(rawOptions, args) {
 function normalizeReindexOptions(rawOptions) {
   return {
     mode: readStringOption(rawOptions, "mode"),
+    full: readBooleanOption(rawOptions, "full") === true ? true : undefined,
     progress: readBooleanOption(rawOptions, "progress") === true ? true : undefined,
   };
 }

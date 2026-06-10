@@ -6,7 +6,8 @@ status: open
 priority: 3
 tags[4]: "area:tests",coverage,cross-platform,windows
 created_at: "2026-06-07T10:07:36.935Z"
-updated_at: "2026-06-07T10:15:56.956Z"
+updated_at: "2026-06-09T22:05:02.504Z"
+assignee: codex-active-pm-cycle-20260610
 author: audit-docs-tests-agent
 acceptance_criteria: "- fs-utils.spec.ts has at least one test verifying path construction on simulated win32 (or a comment explaining the platform is safe)\n- store-paths.spec.ts verifies path outputs are platform-appropriate\n- OR: a review of fs-utils.ts and paths.ts confirms path.join() is used throughout with no hardcoded separators"
 parent: pm-u9d0

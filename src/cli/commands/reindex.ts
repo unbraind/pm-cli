@@ -44,10 +44,13 @@ import type { ItemDocument, PmSettings } from "../../types/index.js";
 
 const MANIFEST_PATH = "index/manifest.json";
 const EMBEDDINGS_PATH = "search/embeddings.jsonl";
+const EMBEDDING_MIGRATION_REINDEX_HINT =
+  "Provider or model has changed since last index. Run pm reindex --mode semantic to rebuild.";
 
 export interface ReindexOptions {
   mode?: string;
   progress?: boolean;
+  full?: boolean;
 }
 
 export interface ReindexResult {
@@ -490,6 +493,7 @@ async function pruneReindexOrphanVectors(
 export async function runReindex(options: ReindexOptions, global: GlobalOptions): Promise<ReindexResult> {
   const requestedMode = parseMode(options.mode);
   const progressEnabled = shouldEmitReindexProgress(options);
+  const forceFullSemantic = options.full === true;
   emitReindexProgress(progressEnabled, `start mode=${requestedMode}`);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
@@ -594,6 +598,26 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
     vector_upserted: 0,
     batches_completed: 0,
   };
+  if (mode === "keyword") {
+    const ledger = await readVectorizationStatusLedger(pmRoot);
+    reindexWarnings.push(...ledger.warnings);
+    if (forceFullSemantic) {
+      reindexWarnings.push("search_semantic_reindex_full_ignored:mode_keyword");
+    }
+    if (ledger.embedding) {
+      const currentEmbeddingIdentity = (() => {
+        try {
+          return resolveReindexEmbeddingIdentity(settings, resolveEmbeddingProviders(settings).active, extensionEmbedding);
+        } catch {
+          return null;
+        }
+      })();
+      if (currentEmbeddingIdentity && hasVectorizationEmbeddingIdentityChanged(ledger.embedding, currentEmbeddingIdentity)) {
+        reindexWarnings.push("search_semantic_reindex_requires_rebuild:embedding_identity_changed");
+        reindexWarnings.push(EMBEDDING_MIGRATION_REINDEX_HINT);
+      }
+    }
+  }
   if (mode !== "keyword" && metadataDocuments.length > 0) {
     const ledger = await readVectorizationStatusLedger(pmRoot);
     semanticWarnings.push(...ledger.warnings);
@@ -601,9 +625,15 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
     const currentIds = new Set(metadataDocuments.map((document) => document.metadata.id));
     const orphanIds = collectLedgerOrphanIds(ledger.entries, currentIds);
     let resetRequired = hasVectorizationEmbeddingIdentityChanged(ledger.embedding, embeddingIdentity);
+    if (forceFullSemantic && !resetRequired) {
+      semanticWarnings.push("search_semantic_reindex_full_rebuild_forced");
+    }
+    const staleSourceDocuments =
+      forceFullSemantic || resetRequired
+        ? metadataDocuments
+        : metadataDocuments.filter((document) => ledger.entries[document.metadata.id] !== document.metadata.updated_at);
     let staleIds = new Set(
-      (resetRequired ? metadataDocuments : metadataDocuments.filter((document) => ledger.entries[document.metadata.id] !== document.metadata.updated_at))
-        .map((document) => document.metadata.id),
+      staleSourceDocuments.map((document) => document.metadata.id),
     );
     let staleDocuments = staleIds.size > 0
       ? await hydrateDocuments(pmRoot, documentCandidates, settings.schema, reindexWarnings, staleIds)
@@ -614,6 +644,10 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
     for (const document of metadataDocuments) {
       vectorizationLedgerEntries[document.metadata.id] = document.metadata.updated_at;
     }
+    emitReindexProgress(
+      progressEnabled,
+      `semantic_stale_items stale=${staleDocuments.length} total=${metadataDocuments.length} unchanged=${freshDocuments} full=${forceFullSemantic || resetRequired}`,
+    );
     if (staleDocuments.length === 0) {
       emitReindexProgress(progressEnabled, `embedding_skipped unchanged_items=${freshDocuments}`);
       semanticWarnings.push(`search_semantic_reindex_skipped_unchanged:count=${freshDocuments}`);

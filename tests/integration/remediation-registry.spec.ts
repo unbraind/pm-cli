@@ -45,6 +45,10 @@ describe("shared remediation registry", () => {
       );
     });
 
+    it("resolves telemetry high-retry warnings to explicit flush guidance", () => {
+      expect(resolveRemediation("telemetry_queue_high_retries:3")?.command).toBe("pm telemetry flush");
+    });
+
     it("trims surrounding whitespace before matching", () => {
       expect(resolveRemediation("  history_drift_missing_stream:pm-abcd  ")?.code).toBe(
         "history_drift_missing_stream",

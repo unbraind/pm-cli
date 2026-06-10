@@ -1,0 +1,24 @@
+id: pm-kx7v
+title: Upgrade pm-changelog to 2026.6.9 and validate changelog fidelity
+description: Upgrade project-managed pm-changelog extension to latest npm release and verify changelog generation/check parity against tracker state.
+type: Task
+status: closed
+priority: 1
+tags[3]: "area:docs","area:release","extension:pm-changelog"
+created_at: "2026-06-09T22:37:46.014Z"
+updated_at: "2026-06-09T22:37:56.664Z"
+author: codex-active-pm-cycle-20260610
+parent: pm-u9d0
+comments[1]{created_at,author,text}:
+  "2026-06-09T22:37:55.993Z",codex-active-pm-cycle-20260610,"Installed pm-changelog 2026.6.9 (npm latest) via project extension flow. Validation: pnpm changelog:pm reported CHANGELOG.md action=unchanged (item_count=1059), and pnpm changelog:pm:check passed with check=true and changed=false."
+files[4]{path,scope,note}:
+  .agents/pm/extensions/.managed-extensions.json,project,project extension registry updated to latest pm-changelog
+  .agents/pm/extensions/pm-changelog/dist/extension.js,project,runtime bundle updated to 2026.6.9
+  .agents/pm/extensions/pm-changelog/manifest.json,project,manifest refreshed by reinstall
+  .agents/pm/extensions/pm-changelog/package.json,project,pm-changelog package now at 2026.6.9
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "pm install npm:pm-changelog --project",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm changelog:pm:check",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Upgraded pm-changelog to 2026.6.9 and verified CHANGELOG generation/check fidelity without drift.
+body: ""

@@ -211,6 +211,7 @@ function normalizeAdvancedSearchOptions(rawOptions: Record<string, unknown>, arg
 function normalizeReindexOptions(rawOptions: Record<string, unknown>): ReindexOptions {
   return {
     mode: readStringOption(rawOptions, "mode"),
+    full: readBooleanOption(rawOptions, "full") === true ? true : undefined,
     progress: readBooleanOption(rawOptions, "progress") === true ? true : undefined,
   };
 }

@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runHealth } from "../../src/cli/commands/health.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
+import { writeVectorizationStatusLedger } from "../../src/core/search/cache.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -323,6 +324,51 @@ describe("runHealth", () => {
         queue_entries: 1,
         queue_draining: false,
         queue_exists: true,
+      });
+    });
+  });
+
+  it("warns when telemetry queue entries approach retry exhaustion", async () => {
+    await withTempPmPath(async (context) => {
+      const globalRoot = context.env.PM_GLOBAL_PATH as string;
+      const telemetryRuntimeDir = path.join(globalRoot, "runtime", "telemetry");
+      await mkdir(telemetryRuntimeDir, { recursive: true });
+      await writeFile(
+        path.join(telemetryRuntimeDir, "events.jsonl"),
+        [
+          JSON.stringify({ attempts: 12, event: { event_id: "evt-near-exhaustion" } }),
+          JSON.stringify({ attempts: 1, event: { event_id: "evt-fresh" } }),
+        ].join("\n") + "\n",
+        "utf8",
+      );
+      await writeFile(
+        path.join(telemetryRuntimeDir, "state.json"),
+        `${JSON.stringify(
+          {
+            last_successful_flush_at: "2026-04-26T10:00:00.000Z",
+            queue_entries: 2,
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.ok).toBe(true);
+      expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_queue_high_retries:1"]));
+
+      const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+      expect(telemetryCheck?.status).toBe("warn");
+      expect(telemetryCheck?.details).toMatchObject({
+        queue_entries: 2,
+        queue_high_retry_entries: 1,
+        queue_high_retry_threshold: 12,
+        queue_max_attempts: 12,
+        queue_draining: false,
+      });
+      expect((telemetryCheck?.details as { remediation_map?: Record<string, string> }).remediation_map).toMatchObject({
+        telemetry_queue_high_retries: "pm telemetry flush",
       });
     });
   });
@@ -652,6 +698,49 @@ describe("runHealth", () => {
       } finally {
         semanticMock.restore();
       }
+    });
+  });
+
+  it("warns when vectorization embedding identity differs from current runtime provider settings", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context);
+      const getResult = context.runCli(["get", itemId, "--json"], { expectJson: true });
+      expect(getResult.code).toBe(0);
+      const updatedAt = (getResult.json as { item: { updated_at: string } }).item.updated_at;
+
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "new-model";
+      settings.vector_store.lancedb.path = path.join(context.pmPath, "search", "lancedb-health-identity");
+      await writeSettings(context.pmPath, settings);
+
+      await writeVectorizationStatusLedger(
+        context.pmPath,
+        { [itemId]: updatedAt },
+        {
+          provider: "openai",
+          model: "old-model",
+          vector_dimension: 2,
+        },
+      );
+
+      const health = await runHealth({ path: context.pmPath }, { checkOnly: true });
+      expect(health.warnings).toEqual(expect.arrayContaining(["vectorization_embedding_identity_changed"]));
+      const vectorizationCheck = health.checks.find((check) => check.name === "vectorization");
+      expect(vectorizationCheck?.status).toBe("warn");
+      expect(vectorizationCheck?.details).toMatchObject({
+        semantic_runtime_available: true,
+        embedding_identity_changed: true,
+        embedding_identity_before: {
+          provider: "openai",
+          model: "old-model",
+          vector_dimension: 2,
+        },
+        embedding_identity_runtime: {
+          provider: "openai",
+          model: "new-model",
+        },
+      });
     });
   });
 

@@ -292,6 +292,13 @@ node scripts/run-tests.mjs coverage
 
 Linked-test execution also creates sandbox roots and can seed settings/extensions for schema parity. See [Testing](TESTING.md).
 
+Coverage governance is literal all-source under `src/`:
+
+- `vitest.config.ts` coverage include patterns are `src/*.ts` and `src/**/*.ts`.
+- Global thresholds are explicit ratchet baselines for the measured all-source corpus and should only move upward until they reach 100%.
+- Do not maintain a curated include/exclude allowlist for production `src` modules.
+- When a module is hard to test end-to-end (for example CLI orchestration), extract pure logic helpers into small modules and cover those directly instead of weakening thresholds.
+
 ## Terminal Compatibility
 
 Runtime behavior should remain terminal-neutral:

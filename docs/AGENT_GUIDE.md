@@ -109,6 +109,7 @@ pm release <item-id>
 | Full machine payload | `pm get <id> --full --json` |
 | Command flags | `pm <command> --help --json` |
 | Low-noise machine contracts | `pm contracts --command <command> --flags-only --json` |
+| Semantic index refresh | `pm reindex --mode semantic --progress` (stale-first by default; add `--full` to force full rebuild) |
 | Timeline | `pm activity --id <id> --limit 20` |
 | Audited history redaction | `pm history-redact <id> --literal "<secret>" --replacement "[redacted]" --dry-run` |
 | Audited history re-anchor | `pm history-repair <id> --dry-run` (clears drift flagged by `pm health`/`pm validate`) |
@@ -167,6 +168,7 @@ Use these defaults unless the task requires otherwise:
 - `pm schema add-type <Name>` when `pm create`/`pm update` reject a project-specific type as invalid; it registers the type in `.agents/pm/schema/types.json` so `pm create <Name> "..."` works. Built-in types are reserved; the upsert is idempotent. `pm schema remove-type <Name>` removes a custom type (warns, non-blocking, if items still use it).
 - `pm schema add-status <id> --role <role>` / `pm schema remove-status <id>` manage custom lifecycle statuses in `.agents/pm/schema/statuses.json`; roles come from the runtime status-role vocabulary, the upsert is idempotent, and built-in default statuses cannot be removed. `pm schema list` now reports statuses (builtin vs custom) alongside types.
 - `pm init --type-preset agile|ops|research` for new projects that should start with domain item types instead of generic tasks only.
+- After switching embedding provider/model, run `pm reindex --mode semantic --full` or `pm reindex --mode hybrid --full` to rebuild vectors completely; `pm reindex --mode keyword` ignores `--full` and now warns when ledger identity drift is detected.
 - `pm normalize --dry-run --json` before lifecycle metadata cleanups.
 - `pm health --check-only` when inspecting repository health without refresh side effects.
 

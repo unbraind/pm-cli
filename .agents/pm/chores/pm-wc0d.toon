@@ -6,7 +6,8 @@ status: open
 priority: 2
 tags[4]: "area:ci","area:tests",governance,quality-gate
 created_at: "2026-06-07T10:05:34.173Z"
-updated_at: "2026-06-07T10:15:45.629Z"
+updated_at: "2026-06-09T22:05:01.915Z"
+assignee: codex-active-pm-cycle-20260610
 author: audit-docs-tests-agent
 acceptance_criteria: "- A test or note confirms whether 122 files in tests/unit/ is expected to pass the static gate (e.g. subdirectory counting only, or the cap is directory-specific)\n- If tests/unit/ has exceeded the cap: add a failing test + doc explaining the merge strategy\n- If tests/unit/ has a subdirectory that splits load (tests/unit/core/, tests/unit/commands/): document the strategy in TESTING.md"
 parent: pm-u9d0

@@ -93,6 +93,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     summary: "Telemetry events are queued; they flush automatically on the next reachable command. Advisory only.",
   },
   {
+    code: "telemetry_queue_high_retries",
+    command: "pm telemetry flush",
+    summary:
+      "Some queued telemetry events are near retry exhaustion; flush now and verify endpoint reachability before entries are dropped.",
+  },
+  {
     code: "telemetry_endpoint_probe_failed",
     command: "pm health --check-telemetry",
     summary: "The telemetry endpoint is unreachable; events stay queued until it recovers. Advisory only.",
@@ -164,6 +170,11 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     code: "vectorization_stale_items_remaining",
     command: "pm health --refresh-vectors",
     summary: "Some items have stale embeddings; refresh vectors so semantic search results stay current.",
+  },
+  {
+    code: "vectorization_embedding_identity_changed",
+    command: "pm reindex --mode semantic",
+    summary: "Embedding provider/model changed since the last index; run a semantic reindex to rebuild vectors.",
   },
   // --- pm validate: metadata ---
   // Note: validate_metadata_missing_author has no entry on purpose. `pm update

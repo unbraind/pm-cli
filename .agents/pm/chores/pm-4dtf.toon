@@ -6,7 +6,8 @@ status: open
 priority: 2
 tags[4]: "area:tests",governance,integration,schema
 created_at: "2026-06-07T10:06:54.290Z"
-updated_at: "2026-06-07T10:15:43.592Z"
+updated_at: "2026-06-09T22:05:02.227Z"
+assignee: codex-active-pm-cycle-20260610
 author: audit-docs-tests-agent
 acceptance_criteria: "- An integration test (in tests/integration/ or as part of governance-presets.integration.spec.ts) exercises the full schema-customization lifecycle end-to-end\n- Test covers type creation + item creation + workflow enforcement + removal warning\n- Uses sandboxed PM_PATH"
 parent: pm-u9d0

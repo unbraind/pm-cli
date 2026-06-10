@@ -1,0 +1,25 @@
+id: pm-rjh9
+title: "GH-190: SDK locateItem should default idPrefix or throw explicit argument errors"
+description: Mirror GitHub issue #190. locateItem currently throws low-signal TypeError when idPrefix is omitted from JS callers. Add ergonomic default and/or explicit validation error messaging.
+type: Issue
+status: closed
+priority: 1
+tags[4]: "area:runtime","area:sdk","external:github","gh:190"
+created_at: "2026-06-09T22:33:17.019Z"
+updated_at: "2026-06-10T05:14:40.707Z"
+author: codex-active-pm-cycle-20260610
+parent: pm-5k4v
+resolution: Implemented in src/core/store/item-store.ts by defaulting locateItem idPrefix to pm- and verified through the public SDK barrel test.
+expected_result: "Package authors can call locateItem(pmRoot, id) for default pm-prefixed trackers without a low-signal TypeError."
+actual_result: "locateItem(pmRoot, id) resolves default pm-prefixed items; tests/unit/sdk-index.spec.ts covers the public SDK barrel path."
+comments[3]{created_at,author,text}:
+  "2026-06-09T22:33:32.211Z",codex-active-pm-cycle-20260610,"Source: GitHub issue https://github.com/unbraind/pm-cli/issues/190. Duplicate-check run (pm search locateItem/idPrefix/runtime-SDK terms) found no open canonical item for this scope, so this issue captures that lineage."
+  "2026-06-10T05:11:07.148Z",codex-active-pm-cycle-20260610,"Implementation note: bundled small GH-190 SDK ergonomics fix into PR #192 because it is package-author-facing and low-risk: locateItem now defaults to the standard pm- prefix, with public SDK barrel regression coverage."
+  "2026-06-10T05:14:20.091Z",codex-active-pm-cycle-20260610,"Verification evidence: node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts passed (46 tests); full node scripts/run-tests.mjs coverage passed (149 files / 2638 tests). Release gates also passed in the bundled PR run: typecheck, static, contracts, security scan, pnpm audit low, npm pack dry-run."
+files[2]{path,scope,note}:
+  src/core/store/item-store.ts,project,default public locateItem idPrefix for package-author SDK callers
+  tests/unit/sdk-index.spec.ts,project,regression for SDK barrel locateItem without explicit idPrefix
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/sdk-index.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Implemented GH-190 SDK locateItem ergonomics: locateItem now defaults to pm- for package-author callers, with SDK barrel regression coverage and full gate evidence recorded."
+body: ""

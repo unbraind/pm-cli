@@ -1,0 +1,26 @@
+id: pm-rav7
+title: Run verification matrix and temp-dir smoke for active cycle
+description: "Execute release gates, security/audit/contracts checks, and manual temporary-directory e2e smoke flow; capture blockers and remediation."
+type: Task
+status: closed
+priority: 1
+tags[2]: "area:release","area:verification"
+created_at: "2026-06-09T22:44:09.217Z"
+updated_at: "2026-06-09T22:47:35.796Z"
+author: codex-active-pm-cycle-20260610
+parent: pm-u9d0
+comments[1]{created_at,author,text}:
+  "2026-06-09T22:44:22.396Z",codex-active-pm-cycle-20260610,"Verification snapshot: build/typecheck/static/contracts/security/audit/health checks pass. Manual temp-dir smoke succeeded in /tmp/tmp.tUHTn4wjPj (init, install search-advanced, create/update/comments/search/reindex/history/contracts/health/validate/telemetry/close). Remaining blocker: coverage gate fails at 78.04% lines and 70.65% branches after switching vitest include to all src with 100% global thresholds."
+files[1]{path,scope,note}:
+  tests/unit/settings-store.spec.ts,project,merged cache helper tests to keep tests/unit under 120-file static gate limit
+tests[8]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
+  pm health --strict-exit,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  pm validate --check-resolution --check-history-drift,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm audit --audit-level high,null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm contracts:check",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm release:gates",null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan",null,project,600,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Completed verification matrix and temp smoke; only remaining gate blocker is all-src 100% coverage threshold.
+body: ""
