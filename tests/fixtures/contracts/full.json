@@ -1262,6 +1262,10 @@
           "flag": "--changelog-json"
         },
         {
+          "description": "Return item-selection diagnostics (counts, exclusions, hints)",
+          "flag": "--explain"
+        },
+        {
           "description": "replace or prepend existing changelog (default: replace)",
           "flag": "--mode",
           "value_name": "mode",
@@ -6987,6 +6991,10 @@
         {
           "description": "Return the full structured changelog document (releases->sections->items)",
           "flag": "--changelog-json"
+        },
+        {
+          "description": "Return item-selection diagnostics (counts, exclusions, hints)",
+          "flag": "--explain"
         },
         {
           "description": "replace or prepend existing changelog (default: replace)",
@@ -18931,6 +18939,10 @@
           },
           "emojiPrefix": {
             "description": "Prefix section headings with conventional emoji (Added 🎉, Fixed 🐛, ...)",
+            "type": "boolean"
+          },
+          "explain": {
+            "description": "Return item-selection diagnostics (counts, exclusions, hints)",
             "type": "boolean"
           },
           "groupBy": {
