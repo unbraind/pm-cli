@@ -98,6 +98,55 @@ describe("runClose", () => {
     });
   });
 
+  it("closes duplicate items with canonical target metadata and validation fields", async () => {
+    await withTempPmPath(async (context) => {
+      const canonicalId = createTask(context, "canonical duplicate target");
+      const duplicateId = createTask(context, "duplicate close candidate");
+
+      const result = await runClose(
+        duplicateId,
+        "Duplicate of canonical target",
+        {
+          duplicateOf: canonicalId,
+          validateClose: "strict",
+          message: "Close duplicate",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.warnings).toEqual([]);
+      expect(result.changed_fields).toEqual(
+        expect.arrayContaining(["status", "close_reason", "duplicate_of", "resolution", "expected_result", "actual_result"]),
+      );
+      expect(result.item).toMatchObject({
+        id: duplicateId,
+        status: "closed",
+        duplicate_of: canonicalId,
+        resolution: `Duplicate of ${canonicalId}`,
+      });
+    });
+  });
+
+  it("rejects duplicate closure when the canonical target does not exist", async () => {
+    await withTempPmPath(async (context) => {
+      const duplicateId = createTask(context, "duplicate missing target");
+
+      await expect(
+        runClose(
+          duplicateId,
+          "Duplicate of missing item",
+          {
+            duplicateOf: "pm-missing-target",
+            validateClose: "warn",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("rejects blank close reason text with actionable guidance", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-blank-reason");

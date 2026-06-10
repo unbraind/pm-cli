@@ -120,6 +120,7 @@ export function stripGlobalBootstrapTokens(argv: string[]): string[] {
       token === "--no-extensions" ||
       token === "--no-pager" ||
       token === "--profile" ||
+      token === "--id-only" ||
       token === "--explain"
     ) {
       index += 1;
@@ -208,6 +209,7 @@ function findCommandTokenIndex(argv: string[]): number | undefined {
       token === "--no-extensions" ||
       token === "--no-pager" ||
       token === "--profile" ||
+      token === "--id-only" ||
       token === "--explain"
     ) {
       continue;

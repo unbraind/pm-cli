@@ -315,7 +315,14 @@ describe("context command module", () => {
   it("parseContextSections resolves from depth and allows overrides", () => {
     const settings = SETTINGS_DEFAULTS.context;
     expect(parseContextSections(undefined, "brief", settings)).toEqual([]);
-    expect(parseContextSections(undefined, "standard", settings)).toEqual(["hierarchy", "activity", "progress", "workload"]);
+    expect(parseContextSections(undefined, "standard", settings)).toEqual([
+      "hierarchy",
+      "activity",
+      "progress",
+      "recently_created",
+      "unparented",
+      "workload",
+    ]);
     const deepSections = parseContextSections(undefined, "deep", settings);
     expect(deepSections).toContain("hierarchy");
     expect(deepSections).toContain("blockers");
@@ -388,6 +395,8 @@ describe("context command module", () => {
       expect(result.sections_included).toContain("hierarchy");
       expect(result.sections_included).toContain("activity");
       expect(result.sections_included).toContain("progress");
+      expect(result.sections_included).toContain("recently_created");
+      expect(result.sections_included).toContain("unparented");
       expect(result.sections_included).toContain("workload");
       expect(result.hierarchy).toBeDefined();
       expect(result.activity).toBeDefined();
@@ -410,6 +419,8 @@ describe("context command module", () => {
       expect(result.sections_included).toContain("hierarchy");
       expect(result.sections_included).toContain("activity");
       expect(result.sections_included).toContain("progress");
+      expect(result.sections_included).toContain("recently_created");
+      expect(result.sections_included).toContain("unparented");
       expect(result.sections_included).toContain("workload");
       expect(result.sections_included).toContain("blockers");
       expect(result.sections_included).toContain("files");
@@ -485,6 +496,31 @@ describe("context command module", () => {
       expect(epicProgress!.total).toBeGreaterThanOrEqual(1);
       expect(epicProgress!.completion_pct).toBeGreaterThanOrEqual(0);
       expect(epicProgress!.completion_pct).toBeLessThanOrEqual(100);
+      const epicFocus = result.high_level.find((entry) => entry.id === epicId);
+      expect(epicFocus).toMatchObject({
+        children_total: 1,
+        children_closed: 0,
+        completion_pct: 0,
+      });
+      expect(epicFocus?.parent).toBeNull();
+    });
+  });
+
+  it("includes recently-created and unparented sections for agent context recovery", async () => {
+    await withTempPmPath(async (context) => {
+      const orphanTask = createContextItem(context, { title: "Unparented task", type: "Task", status: "open", priority: "1" });
+      const orphanIssue = createContextItem(context, { title: "Unparented issue", type: "Issue", status: "open", priority: "1" });
+
+      const result = await runContext(
+        { section: ["recently_created", "unparented"], limit: "10" },
+        { path: context.pmPath },
+      );
+
+      expect(result.sections_included).toEqual(["recently_created", "unparented"]);
+      expect(result.recently_created?.map((entry) => entry.id)).toEqual(expect.arrayContaining([orphanTask, orphanIssue]));
+      expect(result.recently_created?.every((entry) => typeof entry.created_at === "string")).toBe(true);
+      expect(result.unparented?.map((entry) => entry.id)).toEqual(expect.arrayContaining([orphanTask, orphanIssue]));
+      expect(result.unparented?.every((entry) => entry.parent === null)).toBe(true);
     });
   });
 

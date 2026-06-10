@@ -84,6 +84,7 @@ export const CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS: CommanderOptionRegi
   { target: "message", keys: ["message"], option: "--message <value>", description: "History message (allow empty string)" },
   { target: "assignee", keys: ["assignee"], option: "--assignee <value>", description: "Item assignee" },
   { target: "parent", keys: ["parent"], option: "--parent <value>", description: "Parent item ID" },
+  { target: "allowMissingParent", keys: ["allowMissingParent"], option: "--allow-missing-parent", description: "Allow creating with an unresolved parent reference and emit a validation warning" },
   { target: "reviewer", keys: ["reviewer"], option: "--reviewer <value>", description: "Reviewer" },
   { target: "risk", keys: ["risk"], option: "--risk <value>", description: "Risk level: low|med|medium|high|critical (med persists as medium)" },
   {

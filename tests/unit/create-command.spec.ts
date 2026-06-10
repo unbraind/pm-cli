@@ -1452,11 +1452,27 @@ describe("runCreate", () => {
     });
   });
 
-  it("warns for missing parent references under default policy", async () => {
+  it("rejects missing parent references by default", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            parent: "pm-parent-missing-default",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("allows missing parent references only with the explicit escape hatch", async () => {
     await withTempPmPath(async (context) => {
       const result = await runCreate(
         baseCreateOptions({
           parent: "pm-parent-missing-default",
+          allowMissingParent: true,
         }),
         { path: context.pmPath },
       );

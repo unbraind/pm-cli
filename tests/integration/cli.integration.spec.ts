@@ -1921,6 +1921,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           "Create with extended optional fields",
           "--assignee",
           "none",
+          "--allow-missing-parent",
           "--parent",
           "pm-parent-create",
           "--reviewer",
@@ -2045,39 +2046,32 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
       expect(createdItem.regression).toBe(true);
       expect(createdItem.customer_impact).toBe("create impact summary");
 
+      const updateParentResult = context.runCli(
+        ["create", "--json", "--title", "Extended optional update parent", "--type", "Task", "--status", "open"],
+        { expectJson: true },
+      );
+      expect(updateParentResult.code).toBe(0);
+      const updateParentId = (updateParentResult.json as { item: { id: string } }).item.id;
+
       const updateResult = context.runCli(
         [
           "update",
           createdItem.id,
           "--json",
-          "--parent",
-          "pm-parent-update",
-          "--reviewer",
-          "reviewer-update",
-          "--risk",
-          "med",
-          "--confidence",
-          "73",
-          "--sprint",
-          "sprint-update",
-          "--release",
-          "release-update",
-          "--definition-of-ready",
-          "Ready after update",
-          "--order",
-          "3",
-          "--goal",
-          "goal-update",
-          "--objective",
-          "objective-update",
-          "--value",
-          "value-update",
-          "--impact",
-          "impact-update",
-          "--outcome",
-          "outcome-update",
-          "--why-now",
-          "why-now-update",
+          "--parent", updateParentId,
+          "--reviewer", "reviewer-update",
+          "--risk", "med",
+          "--confidence", "73",
+          "--sprint", "sprint-update",
+          "--release", "release-update",
+          "--definition-of-ready", "Ready after update",
+          "--order", "3",
+          "--goal", "goal-update",
+          "--objective", "objective-update",
+          "--value", "value-update",
+          "--impact", "impact-update",
+          "--outcome", "outcome-update",
+          "--why-now", "why-now-update",
           "--blocked-by",
           "pm-block-update",
           "--blocked-reason",
@@ -2149,7 +2143,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
           customer_impact: string;
         };
       }).item;
-      expect(updatedItem.parent).toBe("pm-parent-update");
+      expect(updatedItem.parent).toBe(updateParentId);
       expect(updatedItem.reviewer).toBe("reviewer-update");
       expect(updatedItem.risk).toBe("medium");
       expect(updatedItem.confidence).toBe(73);

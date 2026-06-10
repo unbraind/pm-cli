@@ -1317,6 +1317,9 @@
           "flag": "--close-reason"
         },
         {
+          "flag": "--duplicate-of"
+        },
+        {
           "flag": "--author"
         },
         {
@@ -5932,6 +5935,12 @@
       },
       {
         "keys": [
+          "allowMissingParent"
+        ],
+        "target": "allowMissingParent"
+      },
+      {
+        "keys": [
           "reviewer"
         ],
         "target": "reviewer"
@@ -9716,6 +9725,10 @@
           "affectedVersion": {
             "description": "Affected Version.",
             "type": "string"
+          },
+          "allowMissingParent": {
+            "description": "Allow Missing Parent.",
+            "type": "boolean"
           },
           "assignee": {
             "description": "Assignee identity.",
@@ -15921,6 +15934,10 @@
             "examples": [
               "codex-agent"
             ],
+            "type": "string"
+          },
+          "duplicateOf": {
+            "description": "Duplicate Of.",
             "type": "string"
           },
           "force": {

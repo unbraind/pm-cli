@@ -131,6 +131,7 @@ describe("core/store/settings", () => {
       const custom = structuredClone(SETTINGS_DEFAULTS);
       custom.id_prefix = "zz-";
       custom.author_default = "settings-author";
+      custom.validation.parent_reference = "strict_error";
       custom.search.max_results = 12;
       custom.search.hybrid_semantic_weight = 0.25;
       custom.extensions.enabled = ["ext-a"];
@@ -584,7 +585,7 @@ describe("core/store/settings", () => {
       ownership_enforcement: "none",
       create_mode_default: "progressive",
       close_validation_default: "off",
-      parent_reference: "warn",
+      parent_reference: "strict_error",
       metadata_profile: "core",
       force_required_for_stale_lock: false,
       require_close_reason: true,
@@ -594,7 +595,7 @@ describe("core/store/settings", () => {
       ownership_enforcement: "warn",
       create_mode_default: "progressive",
       close_validation_default: "warn",
-      parent_reference: "warn",
+      parent_reference: "strict_error",
       metadata_profile: "core",
       force_required_for_stale_lock: true,
       require_close_reason: true,
@@ -622,7 +623,7 @@ describe("core/store/settings", () => {
       ownership_enforcement: "none",
       create_mode_default: "progressive",
       close_validation_default: "warn",
-      parent_reference: "warn",
+      parent_reference: "strict_error",
       metadata_profile: "core",
       force_required_for_stale_lock: false,
       require_close_reason: true,

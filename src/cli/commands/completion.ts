@@ -76,11 +76,11 @@ const COMPLETION_FLAGS = toCompletionFlagString(COMPLETION_FLAG_CONTRACTS);
 const COMPLETION_SHELL_CHOICES = `${COMPLETION_FLAGS} bash zsh fish`;
 const GUIDE_TOPIC_CHOICES = joinCompletionValues(listGuideTopicIds());
 
-const MUTATION_FLAGS = "--author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help";
-const DELETE_MUTATION_FLAGS = "--dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help";
-const CLOSE_MUTATION_FLAGS = "--author --message --validate-close --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help";
+const MUTATION_FLAGS = "--author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
+const DELETE_MUTATION_FLAGS = "--dry-run --author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
+const CLOSE_MUTATION_FLAGS = "--author --message --validate-close --duplicate-of --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
 const RELEASE_MUTATION_FLAGS =
-  "--allow-audit-release --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help";
+  "--allow-audit-release --author --message --force --json --quiet --no-changed-fields --id-only --pm-path --path --no-extensions --no-pager --profile --help";
 
 const GLOBAL_FLAGS = GLOBAL_FLAG_CONTRACTS.flatMap((entry) => [entry.short, entry.flag, ...(entry.aliases ?? [])])
   .filter((value): value is string => Boolean(value))
@@ -1478,6 +1478,7 @@ complete -c pm -f
 complete -c pm -l json -d 'Output JSON instead of TOON'
 complete -c pm -l quiet -d 'Suppress stdout output'
 complete -c pm -l no-changed-fields -d 'Omit changed_fields array from mutation output'
+complete -c pm -l id-only -d 'Print only id and status for single-item mutation output'
 complete -c pm -l pm-path -d 'Explicit tracker storage path for this command' -r
 complete -c pm -l path -d 'Override PM path for this command' -r
 complete -c pm -l no-extensions -d 'Disable extension loading'

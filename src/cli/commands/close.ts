@@ -23,6 +23,7 @@ export interface CloseCommandOptions {
   resolution?: string;
   expectedResult?: string;
   actualResult?: string;
+  duplicateOf?: string;
 }
 
 export interface CloseResult {
@@ -100,6 +101,41 @@ function findMissingCloseValidationFields(frontMatter: ItemFrontMatter): string[
   return missing;
 }
 
+async function assertDuplicateTargetExists(
+  pmRoot: string,
+  settings: Awaited<ReturnType<typeof readSettings>>,
+  duplicateOf: string | undefined,
+  closingId: string,
+): Promise<string | undefined> {
+  const rawTarget = duplicateOf?.trim();
+  if (!rawTarget) {
+    return undefined;
+  }
+  const typeRegistry = resolveItemTypeRegistry(settings);
+  const target = await listAllFrontMatterLight(
+    pmRoot,
+    settings.item_format,
+    typeRegistry.type_to_folder,
+    undefined,
+    settings.schema,
+  ).then((items) => items.find((item) => item.id === rawTarget));
+  if (!target) {
+    throw new PmCliError(`Duplicate target "${rawTarget}" was not found. Create or locate the canonical item first.`, EXIT_CODE.USAGE, {
+      code: "duplicate_target_missing",
+      why: "Duplicate closure should point at a real canonical pm item so future dedupe and changelog tooling can trace the relationship.",
+      examples: [`pm close ${closingId} "Duplicate of ${rawTarget}" --duplicate-of ${rawTarget}`],
+      nextSteps: ["Run pm search/list to find the canonical item, then retry with --duplicate-of <id>."],
+    });
+  }
+  if (target.id === closingId) {
+    throw new PmCliError("An item cannot be closed as a duplicate of itself.", EXIT_CODE.USAGE, {
+      code: "duplicate_target_self",
+      why: "--duplicate-of must identify the canonical item that should remain open or already represent the work.",
+    });
+  }
+  return target.id;
+}
+
 async function findActiveChildIds(
   pmRoot: string,
   settings: Awaited<ReturnType<typeof readSettings>>,
@@ -135,6 +171,7 @@ export async function runClose(
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const author = toAuthor(options.author, settings.author_default);
   const closeReason = normalizeCloseReason(closeReasonText, settings.governance.require_close_reason);
+  const duplicateOf = await assertDuplicateTargetExists(pmRoot, settings, options.duplicateOf, id);
   const validateCloseMode = parseValidateCloseMode(options.validateClose) ?? settings.governance.close_validation_default;
   // C3 (pm-fu5d): scan for active children even under minimal governance so
   // closing a parent is never silently orphaning — off mode emits an
@@ -168,6 +205,12 @@ export async function runClose(
         const trimmed = option.trim();
         if (trimmed.length === 0) continue;
         document.metadata[key] = trimmed;
+      }
+      if (duplicateOf !== undefined) {
+        document.metadata.duplicate_of = duplicateOf;
+        document.metadata.resolution ??= `Duplicate of ${duplicateOf}`;
+        document.metadata.expected_result ??= `Canonical item ${duplicateOf} tracks the work.`;
+        document.metadata.actual_result ??= `Closed as duplicate of ${duplicateOf}.`;
       }
       if (validateCloseMode !== "off") {
         const missingFields = findMissingCloseValidationFields(document.metadata);
@@ -208,6 +251,12 @@ export async function runClose(
         if (typeof option === "string" && option.trim().length > 0) {
           changedFields.push(key);
         }
+      }
+      if (duplicateOf !== undefined) {
+        changedFields.push("duplicate_of");
+        if (!changedFields.includes("resolution")) changedFields.push("resolution");
+        if (!changedFields.includes("expected_result")) changedFields.push("expected_result");
+        if (!changedFields.includes("actual_result")) changedFields.push("actual_result");
       }
       if (document.metadata.assignee !== undefined) {
         delete document.metadata.assignee;

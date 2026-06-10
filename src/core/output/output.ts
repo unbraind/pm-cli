@@ -12,6 +12,8 @@ export interface OutputOptions {
   quiet?: boolean;
   /** When true, mutation results drop the verbose changed_fields array (keeps changed_field_count). */
   noChangedFields?: boolean;
+  /** When true, single-item mutation results print only id and status. */
+  idOnly?: boolean;
   defaultOutputFormat?: "toon" | "json";
   command?: string;
   commandArgs?: string[];
@@ -274,7 +276,11 @@ export function formatOutput(result: unknown, options: OutputOptions): string {
 }
 
 export function printResult(result: unknown, options: OutputOptions): void {
-  const projected = options.noChangedFields ? projectMutationResult(result, { changedFields: "compact" }) : result;
+  const projected = options.idOnly
+    ? projectMutationResult(result, { idOnly: true })
+    : options.noChangedFields
+      ? projectMutationResult(result, { changedFields: "compact" })
+      : result;
   const rendered = formatOutput(projected, options);
   if (options.quiet) {
     return;

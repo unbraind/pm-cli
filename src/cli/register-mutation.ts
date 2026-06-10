@@ -426,6 +426,7 @@ export function registerMutationCommands(program: Command): void {
     .argument("[text]", "Close reason text (alias: --reason)")
     .option("--reason <value>", "Close reason text (alias for positional <text>)")
     .option("--close-reason <value>", "Close reason text (alias for positional <text>)")
+    .option("--duplicate-of <id>", "Close as a duplicate of the canonical item id and auto-fill duplicate closure metadata")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "History message")
     .option("--validate-close [mode]", 'Validate closure metadata before close: "off", "warn", or "strict" (default: settings governance preset)')
@@ -472,6 +473,7 @@ export function registerMutationCommands(program: Command): void {
                 ? options.validateClose
                 : undefined,
           force: Boolean(options.force),
+          duplicateOf: typeof options.duplicateOf === "string" ? options.duplicateOf : undefined,
           resolution: typeof options.resolution === "string" ? options.resolution : undefined,
           expectedResult: pickInlineString(options.expectedResult, options.expected_result, options.expected),
           actualResult: pickInlineString(options.actualResult, options.actual_result, options.actual),

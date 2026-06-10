@@ -618,9 +618,9 @@ function extractCommandScopedOptions(
   delete scoped.extensions;
   delete scoped.profile;
   delete scoped.pager;
-  // --no-changed-fields is a global output control (commander exposes it as `changedFields`),
-  // not a per-command mutation field; strip it so it never counts as an update input.
+  // Global output controls must not leak into per-command mutation fields.
   delete scoped.changedFields;
+  delete scoped.idOnly;
 
   const looseOptions = parseLooseCommandOptions(commandArgs);
   for (const [key, value] of Object.entries(looseOptions)) {
@@ -1615,6 +1615,7 @@ program
   .option("--json", "Output JSON instead of TOON")
   .option("--quiet", "Suppress stdout output")
   .option("--no-changed-fields", "Omit the changed_fields array from mutation output (keeps changed_field_count)")
+  .option("--id-only", "Print only id and status for single-item mutation output")
   .option("--pm-path <dir>", "Explicit tracker storage path for this command (preferred over --path)")
   .option("--path <dir>", "Backward-compatible alias for --pm-path; this is the tracker storage path, not a workspace cwd")
   .option("--no-extensions", "Disable extension loading")

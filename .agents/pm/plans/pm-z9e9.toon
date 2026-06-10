@@ -2,11 +2,11 @@ id: pm-z9e9
 title: "Combined PR: duplicate-aware close, parent fail-fast, id-only output, context/aggregate completion stats, robust test add/run"
 description: "Three parallel sub-agent clusters (mutations / read-surface / test) + lead integration, one PR closing 8 tracker items and ~11 GitHub issues"
 type: Plan
-status: open
+status: in_progress
 priority: 2
 tags: []
 created_at: "2026-06-10T08:53:16.326Z"
-updated_at: "2026-06-10T11:08:46.556Z"
+updated_at: "2026-06-10T12:28:33.119Z"
 assignee: codex-impl
 author: maintainer-agent
 parent: pm-mpbb
@@ -20,39 +20,73 @@ dependencies[9]{id,kind,created_at,author,source_kind}:
   pm-p9hw,related,"2026-06-10T08:53:16.326Z",null,null
   pm-vcr2,related,"2026-06-10T08:53:16.326Z",null,null
   pm-xnkd,related,"2026-06-10T08:53:16.326Z",null,null
-comments[6]{created_at,author,text}:
+comments[10]{created_at,author,text}:
   "2026-06-10T10:33:45.487Z",codex-impl,"Mutation-surface specialist read-only pass: pm-xnkd close --duplicate-of, pm-p9hw create --parent fail-fast/default escape hatch, and pm-esf6 root --id-only are not implemented in current branch. close.ts/register-mutation.ts have no duplicateOf/--duplicate-of path; create.ts still uses settings.validation.parent_reference with default governance parent_reference=warn and tests assert warning behavior; global contracts/main/MCP/completions expose --no-changed-fields/fullChangedFields only, no --id-only. Expected follow-up surfaces: src/cli/commands/close.ts, src/cli/register-mutation.ts, src/cli/commands/create.ts, src/core/item/parent-reference-policy.ts, src/core/shared/constants.ts, src/cli/main.ts, src/sdk/cli-contracts.ts, src/mcp/server.ts, src/cli/commands/completion.ts, tests/fixtures/contracts/full.json, docs/COMMANDS.md, docs/AGENT_GUIDE.md, and focused unit/integration/MCP regressions."
   "2026-06-10T10:33:54.434Z",codex-impl,"Read-surface inspection: pm-awfr is implemented via DEFAULT_COMPACT_LIST_FIELDS including parent and has unit coverage. pm-ojpq is only partially present: hierarchy/progress completion-style stats exist, but high_level entries lack children_total/children_closed/completion_pct and recently_created/unparented sections are absent from section types, defaults, builders, and renderers. pm-eaer is not implemented: aggregate has no --completion option, no completion counters/pct fields, no registration/contracts/completion/docs/tests. No files edited by specialist."
   "2026-06-10T10:35:03.757Z",codex-impl,"Linked-test specialist read-only pass: pm-vcr2/GH-191 and GH-193 are partially implemented via --add-json parser/wiring, but the GH-191 two-token --add command UX/guidance is not implemented. pm-p86h/GH-194 selectors are partially implemented via src/core/test/run-selectors.ts and runTest selection metadata. Specialist tsc check failed at src/cli/commands/test.ts optional linkedTest.command passed to string-only safety helpers. Remaining gaps noted: selector/add-json tests, background arg propagation for selectors, contracts/completions/docs/full.json refresh."
   "2026-06-10T10:46:38.613Z",codex-impl,"Evidence: implemented linked-test --add-json for complex command metadata, pm test --run selectors (--match/--only-index/--only-last) with selection metadata and background arg preservation, and aggregate --completion progress counters. Focused gates passed: tsc --noEmit; node scripts/run-tests.mjs test -- tests/unit/linked-test-parsers.spec.ts tests/unit/test-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/runtime-schema-command-flags.spec.ts; node scripts/run-tests.mjs test -- tests/unit/aggregate-command.spec.ts tests/unit/completion-command.spec.ts; node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts; pnpm contracts:check. PM-owned linked tests passed after setting the contracts gate to tracker context. Manual temp-dir smoke passed for init/create/test --add-json/test --run --match/aggregate --completion with isolated PM_PATH and PM_GLOBAL_PATH. Wider gates passed: node scripts/run-tests.mjs coverage (149 files, 2645 tests), pnpm quality:static, pnpm security:scan, pnpm audit --audit-level low, pnpm changelog:pm:check with pm-changelog@2026.6.10, pm health --check-only --summary --json, pm validate --check-resolution --check-history-drift (history drift ok; pre-existing resolution metadata warnings remain)."
   "2026-06-10T10:59:37.752Z",codex-impl,"Review response evidence: addressed Gemini review findings by using Object.hasOwn for --add-json key reads, rejecting empty numeric strings, requiring positive integer timeout_seconds, requiring --match/--only-index/--only-last to be paired with --run, and normalizing aggregate completion statuses against the runtime registry. Verification passed: pnpm exec tsc --noEmit --pretty false; node scripts/run-tests.mjs test -- tests/unit/linked-test-parsers.spec.ts tests/unit/test-command.spec.ts tests/unit/aggregate-command.spec.ts (92 tests); pnpm contracts:check; pnpm changelog:pm:check && pnpm contracts:check with pm-changelog@2026.6.10; pnpm security:scan."
   "2026-06-10T11:08:46.556Z",codex-impl,"Review response evidence: addressed follow-up Gemini/CodeRabbit findings by preserving numeric onlyIndex values in command wiring, exposing pm test --list in bash/zsh/fish completions, exposing aggregate --completion in zsh completion, adding aggregate completion other counts for non-open/non-active/non-done statuses, and adding the aggregate completion action schema property. Verification passed: pnpm exec tsc --noEmit --pretty false; node scripts/run-tests.mjs test -- tests/unit/aggregate-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/runtime-schema-command-flags.spec.ts tests/unit/test-command.spec.ts tests/unit/linked-test-parsers.spec.ts (208 tests); pnpm contracts:check; pnpm changelog:pm:check && pnpm contracts:check with pm-changelog@2026.6.10; pnpm security:scan."
-files[15]{path,scope,note}:
+  "2026-06-10T12:05:06.662Z",codex-read-surface-20260610,"Read-surface sub-agent finding: pm-awfr and pm-eaer are implemented on main; remaining pm-ojpq gap is context focus/recent sections: add children_total/children_closed/completion_pct to high_level focus items and add recently_created/unparented context sections plus section enums/settings/renderers/contracts/tests."
+  "2026-06-10T12:05:14.842Z",codex-mutation-surface-20260610,"Mutation-surface sub-agent finding: remaining gaps persist on current main. pm-xnkd needs close --duplicate-of wiring/validation/metadata/canonical comment; pm-p9hw needs create --parent fail-fast default plus explicit allow-missing-parent escape hatch; pm-esf6 needs root/MCP id-only projection. Change src/cli/commands/{close,create}.ts, src/cli/register-mutation.ts, src/core/{item/parent-reference-policy,output/mutation-projection,shared/command-types}.ts, src/core/output/output.ts, src/cli/{main,registration-helpers}.ts, src/mcp/server.ts, src/sdk/cli-contracts*.ts, src/cli/commands/completion.ts, tests/unit/{close-command,create-command,mutation-projection,output,registration-helpers,completion-command,contracts-command}.spec.ts, tests/integration/{cli,mcp-handshake,release-readiness-runtime}.spec.ts, tests/fixtures/contracts/full.json, docs/{COMMANDS,AGENT_GUIDE}.md."
+  "2026-06-10T12:16:40.525Z",codex-impl,"Evidence: implemented remaining mutation/context surfaces: close --duplicate-of with duplicate_of metadata and auto closure fields, create --parent fail-fast default with --allow-missing-parent escape hatch, global --id-only output, MCP idOnly/duplicateOf controls, and context high-level completion plus recently_created/unparented sections. Focused verification passed: pnpm exec tsc --noEmit --pretty false; node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/close-command.spec.ts tests/unit/context-command.spec.ts tests/unit/output.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts; pnpm contracts:check."
+  "2026-06-10T12:28:33.119Z",codex-impl,"Evidence: completed remaining pm SDK/CLI primitives bundle and tracker plan steps. Manual isolated temp smoke passed for create --json --id-only, strict missing parent rejection, --allow-missing-parent, close --duplicate-of metadata, and context recently_created/unparented sections. Verification passed: npm install -g .; pm --version 2026.6.9; node -v v25.9.0; pnpm -v 10.33.4; pnpm build; pnpm exec tsc --noEmit --pretty false; focused mutation/context tests; pnpm contracts:check; node scripts/run-tests.mjs coverage (149 files, 2650 tests); pnpm quality:static; pnpm quality:docs-links; pnpm security:scan; pnpm audit --audit-level low; pnpm changelog:pm:check with pm-changelog@2026.6.10; pm health --check-only --summary --json; pm validate --check-resolution --check-history-drift (history drift ok, pre-existing closed-item resolution warnings remain)."
+files[38]{path,scope,note}:
+  src/cli/bootstrap-args.ts,project,global id-only bootstrap parsing
   src/cli/commands/aggregate.ts,project,aggregate completion metrics
+  src/cli/commands/close.ts,project,duplicate-aware close metadata
   src/cli/commands/completion.ts,project,shell completions for test add-json and selectors
+  src/cli/commands/context.ts,project,context completion stats and recent/unparented sections
+  src/cli/commands/create.ts,project,strict parent reference default escape hatch
   src/cli/commands/linked-test-parsers.ts,project,"--add-json linked-test parser"
   src/cli/commands/test.ts,project,linked-test JSON add and run selectors
+  src/cli/main.ts,project,global id-only CLI option
   src/cli/register-list-query.ts,project,aggregate --completion registration
+  src/cli/register-mutation.ts,project,duplicate close option wiring
   src/cli/register-operations.ts,project,CLI option wiring for add-json and selectors
   src/cli/registration-helpers.ts,project,background test arg preservation for selectors
+  src/core/output/mutation-projection.ts,project,id-only mutation projection
+  src/core/output/output.ts,project,id-only output projection wiring
+  src/core/shared/command-types.ts,project,global id-only option type
+  src/core/shared/constants.ts,project,strict parent defaults and context section defaults
+  src/core/store/settings-validator.ts,project,context section settings validation
   src/core/test/run-selectors.ts,project,pure linked-test run selector logic
+  src/mcp/server.ts,project,MCP idOnly and duplicate close controls
   src/sdk/cli-contracts.ts,project,contracts for test add-json and selectors
+  src/sdk/cli-contracts/commander-mutation-options.ts,project,allow-missing-parent commander contract
+  src/sdk/cli-contracts/tool-option-contracts.ts,project,allow-missing-parent tool contract
   src/sdk/cli-contracts/tool-parameter-tables.ts,project,tool parameter schema for test add-json and selectors
+  src/types.ts,project,duplicate metadata and context section types
   tests/fixtures/contracts/full.json,project,contract snapshot refresh
+  tests/integration/cli.integration.spec.ts,project,strict parent integration coverage
   tests/integration/release-readiness-runtime.spec.ts,project,release-readiness invariant for add-json mutation refresh
   tests/unit/aggregate-command.spec.ts,project,aggregate completion regression coverage
+  tests/unit/close-command.spec.ts,project,duplicate close regression coverage
+  tests/unit/config-command.spec.ts,project,strict parent and context default config coverage
+  tests/unit/context-command.spec.ts,project,context completion and recent/unparented coverage
+  tests/unit/create-command.spec.ts,project,strict parent and allow-missing-parent coverage
   tests/unit/linked-test-parsers.spec.ts,project,add-json parser regression coverage
+  tests/unit/output.spec.ts,project,id-only projection coverage
+  tests/unit/settings-store.spec.ts,project,governance default coverage
   tests/unit/test-command.spec.ts,project,linked-test add-json and selector regression coverage
-tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  tests/unit/update-command.spec.ts,project,strict parent update coverage
+tests[9]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs coverage,null,project,900,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/integration/release-readiness-runtime.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/aggregate-command.spec.ts tests/unit/completion-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/create-command.spec.ts tests/unit/close-command.spec.ts tests/unit/context-command.spec.ts tests/unit/output.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/integration/release-readiness-runtime.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
   node scripts/run-tests.mjs test -- tests/unit/linked-test-parsers.spec.ts tests/unit/test-command.spec.ts tests/unit/completion-command.spec.ts tests/unit/contracts-command.spec.ts tests/unit/runtime-schema-command-flags.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/integration/cli.integration.spec.ts tests/unit/config-command.spec.ts tests/unit/settings-store.spec.ts tests/unit/registration-helpers.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
   "pnpm contracts:check",null,project,120,tracker,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:docs-links && pnpm security:scan && pnpm audit --audit-level low && pnpm changelog:pm:check && pm health --check-only --summary --json && pm validate --check-resolution --check-history-drift",null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm quality:static",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
 test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
   test-local-mq7xt3cf-56ad8q,test,failed,"2026-06-10T10:39:27.039Z","2026-06-10T10:39:58.767Z","2026-06-10T10:39:58.767Z",null,null,2,1,0,null,null,null
   test-local-mq7xu8sq-3rxqc8,test,passed,"2026-06-10T10:40:19.969Z","2026-06-10T10:40:52.490Z","2026-06-10T10:40:52.490Z",null,null,3,0,0,null,null,null
-docs[2]{path,scope,note}:
+docs[4]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,agent workflow docs
   docs/COMMANDS.md,project,linked-test add-json and selector docs
+  docs/CONFIGURATION.md,project,parent-reference default docs
   docs/TESTING.md,project,testing docs for add-json and focused linked-test runs
 plan_mode: draft
 plan_scope: "Three parallel sub-agent clusters (mutations / read-surface / test) + lead integration, one PR closing 8 tracker items and ~11 GitHub issues"
@@ -60,27 +94,35 @@ plan_steps[5]:
   - id: plan-step-002
     order: 1
     title: "Agent A (mutations): pm-xnkd close --duplicate-of, pm-p9hw parent fail-fast default + --allow-missing-parent, pm-esf6 root --id-only"
-    status: pending
+    status: completed
     created_at: "2026-06-10T08:53:49.075Z"
-    updated_at: "2026-06-10T08:53:49.879Z"
+    updated_at: "2026-06-10T12:28:11.109Z"
+    evidence: "Implemented close --duplicate-of, create --allow-missing-parent with strict default parent validation, and global/MCP id-only mutation output."
+    completed_at: "2026-06-10T12:28:11.109Z"
   - id: plan-step-003
     order: 2
     title: "Agent B (read surface): pm-ojpq context completion+recent sections, pm-awfr list parent projection, pm-eaer aggregate --completion"
-    status: pending
+    status: completed
     created_at: "2026-06-10T08:53:49.280Z"
-    updated_at: "2026-06-10T08:53:49.879Z"
+    updated_at: "2026-06-10T12:28:11.338Z"
+    evidence: Implemented context high-level child completion counters plus recently_created and unparented sections; prior list parent and aggregate completion work remains in this combined lineage.
+    completed_at: "2026-06-10T12:28:11.338Z"
   - id: plan-step-004
     order: 3
     title: "Agent C (test): pm-vcr2 robust --add via dedicated flags/--add-json, pm-p86h --run selectors"
-    status: pending
+    status: completed
     created_at: "2026-06-10T08:53:49.484Z"
-    updated_at: "2026-06-10T08:53:49.879Z"
+    updated_at: "2026-06-10T12:28:11.534Z"
+    evidence: Prior linked-test add-json/selector work verified in this lineage; touched regression suite remains green.
+    completed_at: "2026-06-10T12:28:11.534Z"
   - id: plan-step-005
     order: 4
     title: "Lead: contracts golden regen, completions/docs sweep, full coverage gate, manual temp-dir smoke test"
-    status: pending
+    status: completed
     created_at: "2026-06-10T08:53:49.689Z"
-    updated_at: "2026-06-10T08:53:49.879Z"
+    updated_at: "2026-06-10T12:28:11.745Z"
+    evidence: "Focused tests, contracts, coverage, static quality, docs links, security, audit, changelog, health, validation, and isolated temp smoke all passed; validation has pre-existing resolution warnings only."
+    completed_at: "2026-06-10T12:28:11.745Z"
   - id: plan-step-001
     order: 5
     title: "Changelog regen LAST, PR, bot review loop until clean, merge, close GH issues, Sentry+telemetry verification"

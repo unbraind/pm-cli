@@ -78,6 +78,7 @@ export function getGlobalOptions(command: Command): GlobalOptions {
     json: opts.json === true ? true : undefined,
     quiet: Boolean(opts.quiet),
     noChangedFields: opts.changedFields === false,
+    idOnly: opts.idOnly === true,
     path: typeof opts.pmPath === "string"
       ? opts.pmPath
       : typeof opts.path === "string"
@@ -260,6 +261,7 @@ export function normalizeCreateOptions(
     message: readCreateString("message"),
     assignee: readCreateString("assignee"),
     parent: readCreateString("parent"),
+    allowMissingParent: commandOptions.allowMissingParent === true,
     reviewer: readCreateString("reviewer"),
     risk: readCreateString("risk"),
     confidence: readCreateString("confidence"),

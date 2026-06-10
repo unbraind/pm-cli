@@ -868,22 +868,22 @@ describe("runUpdate", () => {
     });
   });
 
-  it("warns for missing parent references under default policy", async () => {
+  it("rejects missing parent references under default policy", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-parent-warn");
-      const result = await runUpdate(
-        id,
-        {
-          parent: "pm-parent-missing-default",
-          message: "set missing parent reference under warn policy",
-        },
-        { path: context.pmPath },
-      );
 
-      expect((result.item as Record<string, unknown>).parent).toBe("pm-parent-missing-default");
-      expect(result.warnings).toEqual(
-        expect.arrayContaining(["validation_warning:parent_reference_missing:pm-parent-missing-default"]),
-      );
+      await expect(
+        runUpdate(
+          id,
+          {
+            parent: "pm-parent-missing-default",
+            message: "attempt missing parent under default strict policy",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 

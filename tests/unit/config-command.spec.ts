@@ -166,6 +166,8 @@ describe("runConfig", () => {
             workload: true,
             staleness: true,
             tests: true,
+            recently_created: true,
+            unparented: true,
           },
         },
       });
@@ -707,7 +709,7 @@ describe("runConfig", () => {
         { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
       );
       expect(getDefault.key).toBe("parent_reference_policy");
-      expect(getDefault.policy).toBe("warn");
+      expect(getDefault.policy).toBe("strict_error");
       expect(getDefault.changed).toBe(false);
 
       const setStrictAlias = await runConfig(

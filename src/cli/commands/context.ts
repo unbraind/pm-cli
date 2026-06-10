@@ -67,6 +67,10 @@ export interface ContextFocusItem {
   assignee: string | null;
   tags: string[];
   updated_at: string;
+  parent: string | null;
+  children_total?: number;
+  children_closed?: number;
+  completion_pct?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -136,6 +140,10 @@ export interface StaleEntry {
   status: ItemStatus;
   updated_at: string;
   stale_days: number;
+}
+
+export interface RecentContextItem extends ContextFocusItem {
+  created_at: string;
 }
 
 export interface TestHealthSummary {
@@ -215,6 +223,8 @@ export interface ContextResult {
   activity?: CompactActivityEntry[];
   progress?: ProgressEntry[];
   blockers?: BlockerEntry[];
+  recently_created?: RecentContextItem[];
+  unparented?: ContextFocusItem[];
   files?: HotFile[];
   workload?: WorkloadEntry[];
   staleness?: StaleEntry[];
@@ -230,7 +240,7 @@ export interface ContextResult {
 const HIGH_LEVEL_TYPES = new Set<string>(["Epic", "Feature"]);
 const DEFAULT_CONTEXT_LIMIT = 10;
 
-const STANDARD_SECTIONS: ContextSectionName[] = ["hierarchy", "activity", "progress", "workload"];
+const STANDARD_SECTIONS: ContextSectionName[] = ["hierarchy", "activity", "progress", "recently_created", "unparented", "workload"];
 const DEEP_SECTIONS: ContextSectionName[] = [
   ...STANDARD_SECTIONS,
   "blockers",
@@ -408,8 +418,27 @@ function compareCriticalItems(left: ItemFrontMatter, right: ItemFrontMatter, sta
   return byUpdated !== 0 ? byUpdated : byId;
 }
 
-function toContextFocusItem(item: ItemFrontMatter): ContextFocusItem {
-  return {
+function completionPct(closed: number, total: number): number {
+  return total > 0 ? Math.round((closed / total) * 100) : 0;
+}
+
+function buildChildrenByParent(allItems: ItemFrontMatter[]): Map<string, ItemFrontMatter[]> {
+  const childrenByParent = new Map<string, ItemFrontMatter[]>();
+  for (const item of allItems) {
+    if (!item.parent) continue;
+    const children = childrenByParent.get(item.parent) ?? [];
+    children.push(item);
+    childrenByParent.set(item.parent, children);
+  }
+  return childrenByParent;
+}
+
+function toContextFocusItem(
+  item: ItemFrontMatter,
+  statusRegistry?: RuntimeStatusRegistry,
+  childrenByParent?: Map<string, ItemFrontMatter[]>,
+): ContextFocusItem {
+  const focus: ContextFocusItem = {
     id: item.id,
     title: item.title,
     type: item.type,
@@ -420,7 +449,19 @@ function toContextFocusItem(item: ItemFrontMatter): ContextFocusItem {
     assignee: item.assignee ?? null,
     tags: Array.isArray(item.tags) ? [...item.tags] : [],
     updated_at: item.updated_at,
+    parent: item.parent ?? null,
   };
+  if (statusRegistry && childrenByParent) {
+    const descendants = collectDescendants(item.id, childrenByParent);
+    const total = descendants.length;
+    if (total > 0) {
+      const closed = descendants.filter((desc) => isClosedStatus(desc.status, statusRegistry)).length;
+      focus.children_total = total;
+      focus.children_closed = closed;
+      focus.completion_pct = completionPct(closed, total);
+    }
+  }
+  return focus;
 }
 
 function summarizeAgenda(events: CalendarRow[]): ContextAgendaSummary {
@@ -468,13 +509,7 @@ function buildHierarchy(
     itemMap.set(item.id, item);
   }
 
-  const childrenByParent = new Map<string, ItemFrontMatter[]>();
-  for (const item of allItems) {
-    if (!item.parent) continue;
-    const children = childrenByParent.get(item.parent) ?? [];
-    children.push(item);
-    childrenByParent.set(item.parent, children);
-  }
+  const childrenByParent = buildChildrenByParent(allItems);
 
   const activeHighLevelIds = new Set(
     activeItems.filter((item) => HIGH_LEVEL_TYPES.has(item.type)).map((item) => item.id),
@@ -606,7 +641,7 @@ function buildProgress(
       open,
       in_progress: inProgress,
       blocked,
-      completion_pct: total > 0 ? Math.round((closed / total) * 100) : 0,
+      completion_pct: completionPct(closed, total),
     });
   }
 
@@ -702,6 +737,37 @@ function buildStaleness(
     .slice(0, limit);
 }
 
+function buildRecentlyCreated(
+  allNonTerminal: ItemFrontMatter[],
+  statusRegistry: RuntimeStatusRegistry,
+  childrenByParent: Map<string, ItemFrontMatter[]>,
+  limit: number,
+): RecentContextItem[] {
+  return [...allNonTerminal]
+    .sort((left, right) => {
+      const byCreated = compareTimestampStrings(right.created_at, left.created_at);
+      return byCreated !== 0 ? byCreated : left.id.localeCompare(right.id);
+    })
+    .slice(0, limit)
+    .map((item) => ({
+      ...toContextFocusItem(item, statusRegistry, childrenByParent),
+      created_at: item.created_at,
+    }));
+}
+
+function buildUnparented(
+  allNonTerminal: ItemFrontMatter[],
+  statusRegistry: RuntimeStatusRegistry,
+  childrenByParent: Map<string, ItemFrontMatter[]>,
+  limit: number,
+): ContextFocusItem[] {
+  return allNonTerminal
+    .filter((item) => !item.parent && !HIGH_LEVEL_TYPES.has(item.type))
+    .sort((left, right) => compareCriticalItems(left, right, statusRegistry))
+    .slice(0, limit)
+    .map((item) => toContextFocusItem(item, statusRegistry, childrenByParent));
+}
+
 function buildTestHealth(
   activeItems: ItemFrontMatter[],
 ): TestHealthSummary {
@@ -753,7 +819,12 @@ function formatClock(timestamp: string): string {
 function formatFocusLine(item: ContextFocusItem): string {
   const orderToken = item.order === null ? "-" : String(item.order);
   const deadlineToken = item.deadline ?? "-";
-  return `${item.id} p${item.priority} ${item.status} ${item.type} order:${orderToken} deadline:${deadlineToken} ${item.title}`;
+  const parentToken = item.parent ? ` parent:${item.parent}` : "";
+  const progressToken =
+    item.children_total !== undefined && item.children_closed !== undefined && item.completion_pct !== undefined
+      ? ` children:${item.children_closed}/${item.children_total} done:${item.completion_pct}%`
+      : "";
+  return `${item.id} p${item.priority} ${item.status} ${item.type} order:${orderToken} deadline:${deadlineToken}${parentToken}${progressToken} ${item.title}`;
 }
 
 function formatAgendaLine(event: CalendarRow): string {
@@ -848,6 +919,22 @@ export function renderContextMarkdown(result: ContextResult): string {
     lines.push("");
   }
 
+  if (result.recently_created && result.recently_created.length > 0) {
+    lines.push("## Recently created");
+    for (const item of result.recently_created) {
+      lines.push(`- ${item.created_at.slice(0, 10)} ${formatFocusLine(item)}`);
+    }
+    lines.push("");
+  }
+
+  if (result.unparented && result.unparented.length > 0) {
+    lines.push("## Unparented");
+    for (const item of result.unparented) {
+      lines.push(`- ${formatFocusLine(item)}`);
+    }
+    lines.push("");
+  }
+
   if (result.activity && result.activity.length > 0) {
     lines.push("## Recent activity");
     for (const entry of result.activity) {
@@ -937,7 +1024,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   const staleThresholdDays = parseStaleThresholdDays(options.staleThreshold, contextSettings);
 
   const needsAllItems = sectionsIncluded.some((s) =>
-    ["hierarchy", "progress", "blockers", "staleness"].includes(s),
+    ["hierarchy", "progress", "blockers", "staleness", "recently_created", "unparented"].includes(s),
   );
 
   const baseListOptions = stripListProjectionFlags(options);
@@ -963,17 +1050,21 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
     blockedStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)),
   );
 
+  const childrenByParent = buildChildrenByParent(allItems);
+
   const highLevel = activeItems
     .filter((item) => HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, limit)
-    .map(toContextFocusItem);
+    .map((item) => toContextFocusItem(item, statusRegistry, childrenByParent));
   const lowLevel = activeItems
     .filter((item) => !HIGH_LEVEL_TYPES.has(item.type))
     .slice(0, limit)
-    .map(toContextFocusItem);
+    .map((item) => toContextFocusItem(item, statusRegistry, childrenByParent));
 
   const blockedFallbackUsed = activeItems.length === 0;
-  const blockedFallback = blockedFallbackUsed ? blockedItems.slice(0, limit).map(toContextFocusItem) : [];
+  const blockedFallback = blockedFallbackUsed
+    ? blockedItems.slice(0, limit).map((item) => toContextFocusItem(item, statusRegistry, childrenByParent))
+    : [];
 
   const calendarOptions: CalendarOptions = {
     ...baseListOptions,
@@ -1010,6 +1101,12 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   const activity = has("activity") ? await buildActivity(activityLimit, global) : undefined;
   const progress = has("progress") ? buildProgress(allItems, activeItems, statusRegistry, limit) : undefined;
   const blockersSection = has("blockers") ? buildBlockers(blockedItems, itemMap, limit) : undefined;
+  const recentlyCreated = has("recently_created")
+    ? buildRecentlyCreated(allNonTerminal, statusRegistry, childrenByParent, limit)
+    : undefined;
+  const unparented = has("unparented")
+    ? buildUnparented(allNonTerminal, statusRegistry, childrenByParent, limit)
+    : undefined;
   const filesSection = has("files") ? buildHotFiles(activeItems, limit) : undefined;
   const workload = has("workload") ? buildWorkload(activeItems, statusRegistry, limit) : undefined;
   const staleness = has("staleness") ? buildStaleness(allNonTerminal, staleThresholdDays, now, limit) : undefined;
@@ -1075,6 +1172,8 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   if (activity) result.activity = activity;
   if (progress) result.progress = progress;
   if (blockersSection) result.blockers = blockersSection;
+  if (recentlyCreated) result.recently_created = recentlyCreated;
+  if (unparented) result.unparented = unparented;
   if (filesSection) result.files = filesSection;
   if (workload) result.workload = workload;
   if (staleness) result.staleness = staleness;

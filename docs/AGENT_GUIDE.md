@@ -126,12 +126,16 @@ pm release <item-id>
 | Audited bulk close (sprint closeout) | `pm close-many --filter-sprint <s> --reason "<text>" --dry-run` (full `pm close` semantics per item; `--rollback <id>` to undo) |
 | Local docs routing | `pm install guide-shell --project`, then `pm guide <topic>` |
 | Compact mutation echo | `pm --no-changed-fields create "..."` (drops the redundant `changed_fields` array, keeps `changed_field_count`) |
+| Minimal mutation echo | `pm --id-only create "..."` (prints only id and status for single-item mutations) |
+| Duplicate close | `pm close <duplicate> "Duplicate of <canonical>" --duplicate-of <canonical>` |
 
 Default TOON output is preferred for model-readable loops. Use `--json` only when strict parsing is needed.
 
 `list`/`search` compact mode is intentionally token-light: it returns compact items plus only active filters (and runtime schema filters when present), omitting default projection/sorting/now trailer metadata.
 
-Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_close`, and `pm_run` for `append`/`update-many`) are already compact by default: they return `changed_field_count` instead of the full `changed_fields` array. Pass `options.full=true` only when you need the explicit field-level delta.
+Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_close`, and `pm_run` for `append`/`update-many`) are already compact by default: they return `changed_field_count` instead of the full `changed_fields` array. Pass `fullChangedFields=true` only when you need the explicit field-level delta, or `idOnly=true` for single-item id/status output.
+
+`pm create --parent <id>` fails fast when the parent cannot be found. Use `--allow-missing-parent` only for deliberate imports or staged backlog reconstruction.
 
 ## Guide Routing for Agents
 
