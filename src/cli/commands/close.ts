@@ -101,6 +101,24 @@ function findMissingCloseValidationFields(frontMatter: ItemFrontMatter): string[
   return missing;
 }
 
+function duplicateChainReferencesClosingItem(items: ItemFrontMatter[], duplicateTargetId: string, closingId: string): boolean {
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const visited = new Set<string>([duplicateTargetId]);
+  let current = byId.get(duplicateTargetId)?.duplicate_of;
+  while (typeof current === "string" && current.trim().length > 0) {
+    const currentId = current.trim();
+    if (currentId === closingId) {
+      return true;
+    }
+    if (visited.has(currentId)) {
+      return false;
+    }
+    visited.add(currentId);
+    current = byId.get(currentId)?.duplicate_of;
+  }
+  return false;
+}
+
 async function assertDuplicateTargetExists(
   pmRoot: string,
   settings: Awaited<ReturnType<typeof readSettings>>,
@@ -118,13 +136,14 @@ async function assertDuplicateTargetExists(
     });
   }
   const typeRegistry = resolveItemTypeRegistry(settings);
-  const target = await listAllFrontMatterLight(
+  const items = await listAllFrontMatterLight(
     pmRoot,
     settings.item_format,
     typeRegistry.type_to_folder,
     undefined,
     settings.schema,
-  ).then((items) => items.find((item) => item.id === rawTarget));
+  );
+  const target = items.find((item) => item.id === rawTarget);
   if (!target) {
     throw new PmCliError(`Duplicate target "${rawTarget}" was not found. Create or locate the canonical item first.`, EXIT_CODE.USAGE, {
       code: "duplicate_target_missing",
@@ -133,8 +152,8 @@ async function assertDuplicateTargetExists(
       nextSteps: ["Run pm search/list to find the canonical item, then retry with --duplicate-of <id>."],
     });
   }
-  if (target.duplicate_of === closingId) {
-    throw new PmCliError(`Circular duplicate reference detected. Target "${rawTarget}" is already marked as a duplicate of "${closingId}".`, EXIT_CODE.USAGE, {
+  if (duplicateChainReferencesClosingItem(items, target.id, closingId)) {
+    throw new PmCliError(`Circular duplicate reference detected. Target "${rawTarget}" points back to "${closingId}".`, EXIT_CODE.USAGE, {
       code: "duplicate_target_circular",
       why: "Circular duplicate relationships create loops for dedupe and status propagation tooling.",
       nextSteps: ["Choose the existing canonical item, or clear the target duplicate_of metadata before closing this item as a duplicate."],

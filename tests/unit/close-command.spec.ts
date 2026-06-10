@@ -241,6 +241,35 @@ describe("runClose", () => {
     });
   });
 
+  it("rejects duplicate closure when the canonical target chain points back to the closing item", async () => {
+    await withTempPmPath(async (context) => {
+      const closingId = createTask(context, "duplicate indirect circular closing item");
+      const targetId = createTask(context, "duplicate indirect circular target");
+      const intermediateId = createTask(context, "duplicate indirect circular intermediate");
+      await patchTaskToon(context, targetId, (content) =>
+        content.replace("author: seed-author\n", `author: seed-author\nduplicate_of: ${intermediateId}\n`),
+      );
+      await patchTaskToon(context, intermediateId, (content) =>
+        content.replace("author: seed-author\n", `author: seed-author\nduplicate_of: ${closingId}\n`),
+      );
+
+      await expect(
+        runClose(
+          closingId,
+          "Duplicate of indirect circular target",
+          {
+            duplicateOf: targetId,
+            validateClose: "warn",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "duplicate_target_circular" }),
+      });
+    });
+  });
+
   it("rejects blank close reason text with actionable guidance", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-blank-reason");

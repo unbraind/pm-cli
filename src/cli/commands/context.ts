@@ -143,7 +143,7 @@ export interface StaleEntry {
 }
 
 export interface RecentContextItem extends ContextFocusItem {
-  created_at: string;
+  created_at?: string;
 }
 
 export interface TestHealthSummary {
