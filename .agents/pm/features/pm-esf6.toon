@@ -2,12 +2,15 @@ id: pm-esf6
 title: "Root --id-only flag: minimal mutation output (id+status) for agent automation loops (GH-195)"
 description: "Add a root-level --id-only flag (mirroring --no-changed-fields wiring incl. extractCommandScopedOptions delete) that reduces mutation command output to a minimal stable schema: id, status, and warnings if any. Applies to create/update/close/claim/release/copy and MCP mutation tools. Fixes GitHub issue #195."
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[3]: agent-ux,cli,token-efficiency
 created_at: "2026-06-10T08:52:45.833Z"
-updated_at: "2026-06-10T08:55:19.560Z"
-assignee: mutation-agent
+updated_at: "2026-06-10T14:15:40.213Z"
 author: maintainer-agent
 parent: pm-mpbb
+resolution: Implemented and merged in PR #198 (merge commit df639239).
+expected_result: "The requested pm SDK/CLI behavior is available with docs, contracts, tests, and CI evidence."
+actual_result: Merged in PR #198; GitHub checks passed and child item was released during post-merge closeout.
+close_reason: Implemented and merged in PR #198 (merge commit df639239). GitHub CI passed including coverage/static/typecheck/compat/smokes/runtime/CodeQL; relevant GitHub issues were closed where fully covered. Evidence is consolidated under pm-z9e9. Remaining exact GH-191 work stays open under pm-vcr2.
 body: ""

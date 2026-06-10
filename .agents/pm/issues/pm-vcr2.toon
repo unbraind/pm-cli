@@ -6,10 +6,11 @@ status: open
 priority: 1
 tags[4]: "area:cli","area:tests","external:github","gh:191"
 created_at: "2026-06-09T22:33:17.335Z"
-updated_at: "2026-06-10T09:01:05.969Z"
+updated_at: "2026-06-10T14:12:58.594Z"
 assignee: test-agent
 author: codex-active-pm-cycle-20260610
 parent: pm-u9d0
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-06-09T22:33:32.486Z",codex-active-pm-cycle-20260610,"Source: GitHub issue https://github.com/unbraind/pm-cli/issues/191. Duplicate-check run (pm search test --add command parsing terms) found no open canonical item for this scope, so this issue captures that lineage."
+  "2026-06-10T14:12:58.594Z",codex-impl,"Post-merge note: PR #198 added robust --add-json linked-test input, parser docs, and regression coverage for complex commands, which resolved GH-193. This item remains open because GH-191 specifically asks for the two-token form pm test <id> --add command \"... -- ...\" to be accepted or produce targeted syntax guidance; that exact UX remains intentionally unresolved."
 body: ""

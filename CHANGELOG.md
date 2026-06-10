@@ -4,6 +4,13 @@
 
 ### Added
 
+- pm close --duplicate-of: structured duplicate tracking with auto-populated closure fields \(GH-183, GH-160\) ([pm-xnkd](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-xnkd.toon))
+- pm test --run selectors: --match / --only-index / --only-last \(GH-194\) ([pm-p86h](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-p86h.toon))
+- pm context: per-epic completion stats + recently\_created/unparented sections \(GH-187, GH-182\) ([pm-ojpq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ojpq.toon))
+- Root --id-only flag: minimal mutation output \(id+status\) for agent automation loops \(GH-195\) ([pm-esf6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-esf6.toon))
+- pm aggregate --completion: closed/total ratio and completion\_pct per group \(GH-185\) ([pm-eaer](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-eaer.toon))
+- pm list: include parent in default compact projection when set \(GH-180\) ([pm-awfr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-awfr.toon))
+- Combined PR: duplicate-aware close, parent fail-fast, id-only output, context/aggregate completion stats, robust test add/run ([pm-z9e9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-z9e9.toon))
 - Embedding provider migration guide + pm reindex --migrate: automated full reindex on model/provider change ([pm-wt0g](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-wt0g.toon))
 - Settings read cache: memoize readSettingsWithMetadata across the 3-5 reads per command ([pm-2bn5](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2bn5.toon))
 - Incremental reindex --mode semantic --stale-only: skip already-up-to-date vectors ([pm-o3nr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-o3nr.toon))
@@ -15,6 +22,7 @@
 
 ### Fixed
 
+- GH-189: create --parent should fail fast on unresolved references ([pm-p9hw](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-p9hw.toon))
 - Classify tracker-not-initialized Sentry CommandErrors as expected handled CLI errors ([pm-w7jq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-w7jq.toon))
 - GH-190: SDK locateItem should default idPrefix or throw explicit argument errors ([pm-rjh9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-rjh9.toon))
 - Telemetry queue max\_attempts backlog health warning: surface items near retry exhaustion in pm health ([pm-irc7](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-irc7.toon))

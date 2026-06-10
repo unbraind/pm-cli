@@ -2,14 +2,17 @@ id: pm-p9hw
 title: "GH-189: create --parent should fail fast on unresolved references"
 description: Mirror GitHub issue #189. Current create flow can persist unresolved parent references with warning-only behavior. Evaluate fail-fast default plus explicit remediation guidance and optional escape hatch for import flows.
 type: Issue
-status: open
+status: closed
 priority: 1
 tags[4]: "area:cli","area:lifecycle","external:github","gh:189"
 created_at: "2026-06-09T22:33:16.712Z"
-updated_at: "2026-06-10T08:55:19.298Z"
-assignee: mutation-agent
+updated_at: "2026-06-10T14:15:40.978Z"
 author: codex-active-pm-cycle-20260610
 parent: pm-mpbb
+resolution: Implemented and merged in PR #198 (merge commit df639239).
+expected_result: "The requested pm SDK/CLI behavior is available with docs, contracts, tests, and CI evidence."
+actual_result: Merged in PR #198; GitHub checks passed and child item was released during post-merge closeout.
 comments[1]{created_at,author,text}:
   "2026-06-09T22:33:31.962Z",codex-active-pm-cycle-20260610,"Source: GitHub issue https://github.com/unbraind/pm-cli/issues/189. Duplicate-check run (pm search on parent-reference/create validation terms) found no open canonical item for this scope, so this issue captures that lineage."
+close_reason: Implemented and merged in PR #198 (merge commit df639239). GitHub CI passed including coverage/static/typecheck/compat/smokes/runtime/CodeQL; relevant GitHub issues were closed where fully covered. Evidence is consolidated under pm-z9e9. Remaining exact GH-191 work stays open under pm-vcr2.
 body: ""
