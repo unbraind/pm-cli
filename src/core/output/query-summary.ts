@@ -29,6 +29,11 @@ export function resolveQueryProjectionLabel(options: Record<string, unknown>): s
   if (typeof options.fields === "string" && options.fields.trim().length > 0) {
     return "fields";
   }
+  // The MCP boundary coerces fields arrays to CSV, but tolerate array input
+  // here too so direct callers get the same projection label.
+  if (Array.isArray(options.fields) && options.fields.length > 0) {
+    return "fields";
+  }
   if (options.compact === true) {
     return "compact";
   }

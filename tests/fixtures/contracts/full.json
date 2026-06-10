@@ -7281,7 +7281,7 @@
       ]
     },
     {
-      "description": "Read or write pm workspace configuration (pm config). configAction selects get/set/list/export; key/value address a single dotted setting for get/set. scope chooses the project (default) or global settings file.",
+      "description": "Read or write pm workspace configuration (pm config). configAction selects get/set/list/export; key/value address a single setting for get/set. scope chooses the project (default) or global settings file.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -7964,6 +7964,17 @@
           "role": {
             "description": "Lifecycle roles for add-status: draft, active, blocked, terminal, terminal_done, terminal_canceled, default_open, default_close, default_cancel.",
             "items": {
+              "enum": [
+                "draft",
+                "active",
+                "blocked",
+                "terminal",
+                "terminal_done",
+                "terminal_canceled",
+                "default_open",
+                "default_close",
+                "default_cancel"
+              ],
               "type": "string"
             },
             "type": "array"

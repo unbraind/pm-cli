@@ -1,4 +1,5 @@
 import { PM_TOOL_ACTIONS } from "../sdk/cli-contracts/enum-contracts.js";
+import { RUNTIME_STATUS_ROLE_VALUES } from "../types.js";
 
 /**
  * Static MCP tool surface for the pm MCP server.
@@ -321,9 +322,8 @@ export const TOOLS: ToolDefinition[] = [
         },
         role: {
           type: "array",
-          items: { type: "string" },
-          description:
-            "Lifecycle roles for add-status: draft, active, blocked, terminal, terminal_done, terminal_canceled, default_open, default_close, default_cancel.",
+          items: { type: "string", enum: [...RUNTIME_STATUS_ROLE_VALUES] },
+          description: `Lifecycle roles for add-status: ${RUNTIME_STATUS_ROLE_VALUES.join(", ")}.`,
         },
         order: { type: "number", description: "Display/sort order for add-status." },
         force: { type: "boolean", description: "Override removal guardrails for destructive schema changes when supported." },
@@ -336,7 +336,7 @@ export const TOOLS: ToolDefinition[] = [
     name: "pm_config",
     description:
       "Read or write pm workspace configuration (pm config). " +
-      "configAction selects get/set/list/export; key/value address a single dotted setting for get/set. " +
+      "configAction selects get/set/list/export; key/value address a single setting for get/set. " +
       "scope chooses the project (default) or global settings file.",
     inputSchema: objectSchema(
       {
@@ -392,8 +392,9 @@ export interface McpToolContract {
 
 export function buildMcpToolContracts(): McpToolContract[] {
   return TOOLS.map((tool) => {
-    const required = Array.isArray(tool.inputSchema.required)
-      ? tool.inputSchema.required.map((entry) => String(entry)).sort((left, right) => left.localeCompare(right))
+    const schemaRequired = tool.inputSchema["required"];
+    const required = Array.isArray(schemaRequired)
+      ? schemaRequired.map((entry) => String(entry)).sort((left, right) => left.localeCompare(right))
       : [];
     return {
       name: tool.name,

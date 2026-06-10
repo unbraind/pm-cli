@@ -225,7 +225,7 @@ function globalOptions(args: Record<string, unknown>): GlobalOptions {
   };
 }
 
-const ARRAY_TO_CSV_FIELDS = new Set(["tags", "blockedBy", "blocked_by", "skills"]);
+const ARRAY_TO_CSV_FIELDS = new Set(["tags", "blockedBy", "blocked_by", "skills", "fields"]);
 
 const SCALAR_TO_ARRAY_FIELDS = new Set([
   "comment",

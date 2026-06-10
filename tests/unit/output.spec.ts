@@ -364,6 +364,9 @@ describe("core/output/query-summary", () => {
     expect(resolveQueryProjectionLabel({ compact: true })).toBe("compact");
     expect(resolveQueryProjectionLabel({ brief: true })).toBe("brief");
     expect(resolveQueryProjectionLabel({ fields: "id,title" })).toBe("fields");
+    // Array fields selectors (direct callers; MCP coerces arrays to CSV) count too.
+    expect(resolveQueryProjectionLabel({ fields: ["id", "title"] })).toBe("fields");
+    expect(resolveQueryProjectionLabel({ fields: [] })).toBe("full");
     // Blank fields selectors do not count as a fields projection.
     expect(resolveQueryProjectionLabel({ fields: "   " })).toBe("full");
     // brief wins over other labels because it is the most specific request.
