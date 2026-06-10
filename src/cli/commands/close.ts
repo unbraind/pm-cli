@@ -102,7 +102,10 @@ function findMissingCloseValidationFields(frontMatter: ItemFrontMatter): string[
 }
 
 function duplicateChainReferencesClosingItem(items: ItemFrontMatter[], duplicateTargetId: string, closingId: string): boolean {
-  const byId = new Map(items.map((item) => [item.id, item]));
+  const byId = new Map<string, ItemFrontMatter>();
+  for (const item of items) {
+    byId.set(item.id, item);
+  }
   const visited = new Set<string>([duplicateTargetId]);
   let current = byId.get(duplicateTargetId)?.duplicate_of;
   while (typeof current === "string" && current.trim().length > 0) {
