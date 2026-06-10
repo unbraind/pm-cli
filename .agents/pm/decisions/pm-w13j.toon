@@ -6,19 +6,28 @@ status: in_progress
 priority: 1
 tags[4]: adr,"area:ci","area:tests",coverage
 created_at: "2026-06-09T22:05:03.764Z"
-updated_at: "2026-06-09T23:16:51.172Z"
+updated_at: "2026-06-10T04:26:41.105Z"
 assignee: codex-active-pm-cycle-20260610
 author: codex-active-pm-cycle-20260610
 parent: pm-m2u1
-comments[3]{created_at,author,text}:
+comments[7]{created_at,author,text}:
   "2026-06-09T22:05:15.975Z",codex-active-pm-cycle-20260610,"Duplicate-check evidence (active large-PR cycle 2026-06-10): pm context/search/list-open/list-in-progress plus targeted queries over coverage/reindex/settings/telemetry confirm this item is the canonical open lineage for its scope and is now claimed for implementation."
   "2026-06-09T22:47:30.704Z",codex-active-pm-cycle-20260610,"Current baseline after policy switch: full suite passes but coverage gate is 78.04% lines / 70.65% branches (all src now included). Decision remains in_progress until literal 100% all-src threshold is met with additional test/refactor work."
   "2026-06-09T23:16:51.172Z",codex-active-pm-cycle-20260610,"PR #192 status (latest push 74419cb6): all CI checks green except Gates (coverage), which fails at 78.04% lines / 70.65% branches under literal all-src thresholds. CodeRabbit findings addressed and status now pass; gemini-code-assist unavailable due quota."
-files[1]{path,scope,note}:
+  "2026-06-10T04:25:47.595Z",codex-active-pm-cycle-20260610,"GitHub/security triage evidence: PR #192 open/non-draft; all checks green except Gates (coverage). gh checks/issues plus security endpoints found no open Dependabot alerts, no secret-scanning alerts, no open repository security advisories, vulnerability alerts enabled, pnpm audit --audit-level low clean, pnpm security:scan clean. Code scanning endpoint returned 404/inaccessible. Reviewer state: CodeRabbit completed with cache/coverage comments; Gemini and Sourcery were quota-limited."
+  "2026-06-10T04:25:58.512Z",codex-active-pm-cycle-20260610,"Evidence: PR #192 continuation fixed CodeRabbit settings-cache race by validating signatures around onRead/read/schema-load phases and clarified reindex docs. Verification passed: node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts (21 tests), pnpm typecheck. Full coverage suite still fails after 149 files / 2637 tests pass: 78.04% lines, 70.65% branches, 82.26% functions, 78% statements vs literal 100% thresholds; subagent coverage map identified 109 non-100% source files, led by src/cli/main.ts and register-* modules, so PR remains blocked for honest 100% all-src coverage."
+  "2026-06-10T04:26:28.245Z",codex-active-pm-cycle-20260610,"Validation note: pm validate --check-resolution --check-history-drift passed history integrity with 0 drifted items and warned on pre-existing resolution metadata backlog (122 closed items missing resolution fields). First temp smoke intentionally isolated PM_GLOBAL_PATH but used unsupported config key author_default; rerunning with supported governance-create-default-type key."
+  "2026-06-10T04:26:41.105Z",codex-active-pm-cycle-20260610,"Manual temp-smoke evidence: in a fresh mktemp project with isolated PM_GLOBAL_PATH, ran pm init cache-smoke, pm config set/get governance-create-default-type Task, pm schema add-status qa_ready --role active, pm schema list --json, and pm health --check-only --summary --json. Result: health ok with warning_count 0."
+files[3]{path,scope,note}:
+  src/core/store/settings.ts,project,fixed settings read-cache stale-value race from PR review
+  tests/unit/settings-store.spec.ts,project,added regression for onRead settings mutation cache stability
   vitest.config.ts,project,coverage include switched to all src top-level + nested ts files with 100% thresholds
-tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+tests[3]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
   node scripts/run-tests.mjs coverage,null,project,1800,null,null,null,null,null,null,null,null,null,null,null,null
-docs[2]{path,scope,note}:
+  node scripts/run-tests.mjs test -- tests/unit/settings-store.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm typecheck,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+docs[3]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,clarified semantic/hybrid --full reindex guidance from review
   docs/ARCHITECTURE.md,project,testing architecture section now states all-src coverage governance
   docs/TESTING.md,project,coverage governance docs updated to literal all-src policy intent
 body: ""

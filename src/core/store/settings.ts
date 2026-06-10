@@ -326,6 +326,54 @@ async function cacheSettingsReadResultSafe(pmRoot: string, trackedPaths: string[
   }
 }
 
+type SettingsReadCacheSignatures = Awaited<ReturnType<typeof collectSettingsReadCacheSignatures>>;
+
+function findSettingsReadCacheSignature(signatures: SettingsReadCacheSignatures, targetPath: string) {
+  return signatures.find((signature) => signature.path === targetPath);
+}
+
+function selectedSettingsReadCacheSignaturesEqual(
+  before: SettingsReadCacheSignatures,
+  after: SettingsReadCacheSignatures,
+  targetPaths: string[],
+): boolean {
+  for (const targetPath of targetPaths) {
+    const beforeSignature = findSettingsReadCacheSignature(before, targetPath);
+    const afterSignature = findSettingsReadCacheSignature(after, targetPath);
+    if (
+      !beforeSignature ||
+      !afterSignature ||
+      !settingsReadCacheSignaturesEqual([beforeSignature], [afterSignature])
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+async function cacheSettingsReadResultIfStable(
+  pmRoot: string,
+  trackedPaths: string[],
+  result: SettingsReadResult,
+  stableSignatures: SettingsReadCacheSignatures,
+  stablePaths: string[],
+): Promise<void> {
+  try {
+    const currentSignatures = await collectSettingsReadCacheSignatures(trackedPaths);
+    if (!selectedSettingsReadCacheSignaturesEqual(stableSignatures, currentSignatures, stablePaths)) {
+      clearSettingsReadCache(pmRoot);
+      return;
+    }
+    setSettingsReadCacheEntry(pmRoot, {
+      tracked_paths: trackedPaths,
+      signatures: currentSignatures,
+      value: cloneSettingsReadResult(result),
+    });
+  } catch {
+    clearSettingsReadCache(pmRoot);
+  }
+}
+
 function resolvePersistedFileBackedSchemaSections(
   settings: PmSettings,
   source: SettingsPersistSourceSnapshot | undefined,
@@ -995,12 +1043,6 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
 export async function readSettingsWithMetadata(pmRoot: string): Promise<SettingsReadResult> {
   const settingsPath = getSettingsPath(pmRoot);
   let trackedPathsForFailure: string[] = [settingsPath];
-  const raw = await readFileIfExists(settingsPath);
-  if (raw === null) {
-    const fallback = buildFallbackSettingsReadResult();
-    await cacheSettingsReadResultSafe(pmRoot, [settingsPath], fallback);
-    return fallback;
-  }
   await runActiveOnReadHooks({
     path: settingsPath,
     scope: "project",
@@ -1014,19 +1056,33 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
     }
   }
 
+  const settingsOnlySignatures = await collectSettingsReadCacheSignatures([settingsPath]);
+  const raw = await readFileIfExists(settingsPath);
+  if (raw === null) {
+    const fallback = buildFallbackSettingsReadResult();
+    await cacheSettingsReadResultIfStable(pmRoot, [settingsPath], fallback, settingsOnlySignatures, [settingsPath]);
+    return fallback;
+  }
+
+  const settingsSignaturesAfterRead = await collectSettingsReadCacheSignatures([settingsPath]);
+  if (!settingsReadCacheSignaturesEqual(settingsOnlySignatures, settingsSignaturesAfterRead)) {
+    clearSettingsReadCache(pmRoot);
+    return readSettingsWithMetadata(pmRoot);
+  }
+
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw) as unknown;
   } catch {
     const fallback = buildFallbackSettingsReadResult("settings_read_invalid_json");
-    await cacheSettingsReadResultSafe(pmRoot, [settingsPath], fallback);
+    await cacheSettingsReadResultIfStable(pmRoot, [settingsPath], fallback, settingsSignaturesAfterRead, [settingsPath]);
     return fallback;
   }
 
   const validated = validateSettings(parsed);
   if (!validated.success) {
     const fallback = buildFallbackSettingsReadResult("settings_read_invalid_schema");
-    await cacheSettingsReadResultSafe(pmRoot, [settingsPath], fallback);
+    await cacheSettingsReadResultIfStable(pmRoot, [settingsPath], fallback, settingsSignaturesAfterRead, [settingsPath]);
     return fallback;
   }
 
@@ -1034,8 +1090,10 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
     const mergedSettings = mergeSettings(validated.data);
     const trackedPaths = resolveSettingsReadTrackedPaths(pmRoot, mergedSettings.schema, settingsPath);
     trackedPathsForFailure = trackedPaths;
+    const signaturesBeforeSchemaLoad = await collectSettingsReadCacheSignatures(trackedPaths);
     const schemaScaffold = await ensureRuntimeSchemaFileScaffold(pmRoot, mergedSettings.schema);
     const loadedSchemaSections = await loadRuntimeSchemaFromOptionalFiles(pmRoot, mergedSettings.schema);
+    const signaturesAfterSchemaLoad = await collectSettingsReadCacheSignatures(trackedPaths);
     const settings: PmSettings = {
       ...mergedSettings,
       item_types: {
@@ -1061,7 +1119,15 @@ export async function readSettingsWithMetadata(pmRoot: string): Promise<Settings
       ],
     };
     if (schemaScaffold.created_paths.length === 0) {
-      await cacheSettingsReadResultSafe(pmRoot, trackedPaths, result);
+      if (!settingsReadCacheSignaturesEqual(signaturesBeforeSchemaLoad, signaturesAfterSchemaLoad)) {
+        clearSettingsReadCache(pmRoot);
+      } else {
+        setSettingsReadCacheEntry(pmRoot, {
+          tracked_paths: trackedPaths,
+          signatures: signaturesAfterSchemaLoad,
+          value: cloneSettingsReadResult(result),
+        });
+      }
     } else {
       // Bootstrap warnings are intentionally one-shot and should not be replayed from cache.
       clearSettingsReadCache(pmRoot);

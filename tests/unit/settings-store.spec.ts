@@ -440,6 +440,45 @@ describe("core/store/settings", () => {
     });
   });
 
+  it("does not cache settings parsed before an onRead hook updates settings.json", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const initialSettings = structuredClone(SETTINGS_DEFAULTS);
+      initialSettings.author_default = "before-hook";
+      await writeSettings(pmRoot, initialSettings);
+
+      let hookRuns = 0;
+      const hooks: ExtensionHookRegistry = {
+        beforeCommand: [],
+        afterCommand: [],
+        onRead: [
+          {
+            layer: "project",
+            name: "settings-refresh-hook",
+            run: async () => {
+              hookRuns += 1;
+              if (hookRuns !== 1) {
+                return;
+              }
+              const refreshedSettings = structuredClone(SETTINGS_DEFAULTS);
+              refreshedSettings.author_default = "after-hook";
+              await fs.writeFile(getSettingsPath(pmRoot), serializeSettings(refreshedSettings), "utf8");
+            },
+          },
+        ],
+        onWrite: [],
+        onIndex: [],
+      };
+      setActiveExtensionHooks(hooks);
+
+      const firstRead = await readSettingsWithMetadata(pmRoot);
+      const secondRead = await readSettingsWithMetadata(pmRoot);
+
+      expect(firstRead.settings.author_default).toBe("after-hook");
+      expect(secondRead.settings.author_default).toBe("after-hook");
+      expect(hookRuns).toBe(2);
+    });
+  });
+
   it("invalidates merge-failure cache when tracked schema files change", async () => {
     await withTempPmRoot(async (pmRoot) => {
       const settings = structuredClone(SETTINGS_DEFAULTS);
