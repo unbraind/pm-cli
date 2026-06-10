@@ -248,6 +248,10 @@ const DEEP_SECTIONS: ContextSectionName[] = [
   "staleness",
   "tests",
 ];
+const LEADING_HYPHEN_DATE = /^(\d{4})-(\d{2})-(\d{2})/;
+const LEADING_COMPACT_DATE = /^(\d{4})(\d{2})(\d{2})(?:[T ]?\d{2}|$)/;
+const COMPACT_DATE = /^(\d{4})(\d{2})(\d{2})$/;
+const COMPACT_DATETIME = /^(\d{4})(\d{2})(\d{2})(?:[T\s]?)(\d{2})(\d{2})(\d{2})?(Z|[+-]\d{2}:?\d{2})?$/i;
 
 // ---------------------------------------------------------------------------
 // Parsers
@@ -404,8 +408,56 @@ function compareOptionalDeadline(left: string | null | undefined, right: string 
   return compareTimestampStrings(leftValue, rightValue);
 }
 
+function daysInUtcMonth(year: number, monthIndex: number): number {
+  return new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+}
+
+function hasRealLeadingDate(value: string): boolean {
+  const match = LEADING_HYPHEN_DATE.exec(value) ?? LEADING_COMPACT_DATE.exec(value);
+  if (!match) {
+    return true;
+  }
+  const year = Number.parseInt(match[1], 10);
+  const month = Number.parseInt(match[2], 10);
+  const day = Number.parseInt(match[3], 10);
+  return month >= 1 && month <= 12 && day >= 1 && day <= daysInUtcMonth(year, month - 1);
+}
+
+function normalizeTimestampCandidate(value: string): string {
+  const compactDate = COMPACT_DATE.exec(value);
+  if (compactDate) {
+    return `${compactDate[1]}-${compactDate[2]}-${compactDate[3]}`;
+  }
+  const compactDateTime = COMPACT_DATETIME.exec(value);
+  if (compactDateTime) {
+    const [, year, month, day, hour, minute, secondRaw, offsetRaw] = compactDateTime;
+    const second = secondRaw ? `:${secondRaw}` : "";
+    const offset = offsetRaw && offsetRaw.length === 5 && offsetRaw !== "Z" ? `${offsetRaw.slice(0, 3)}:${offsetRaw.slice(3)}` : offsetRaw ?? "";
+    return `${year}-${month}-${day}T${hour}:${minute}${second}${offset}`;
+  }
+  return value;
+}
+
+function parseContextTimestampMs(value: unknown): number {
+  if (typeof value !== "string") {
+    return Number.NaN;
+  }
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || !hasRealLeadingDate(trimmed)) {
+    return Number.NaN;
+  }
+  const parsed = Date.parse(normalizeTimestampCandidate(trimmed));
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
 function sortableTimestamp(value: unknown): string {
-  return typeof value === "string" && Number.isFinite(Date.parse(value)) ? value : "";
+  const parsed = parseContextTimestampMs(value);
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : "";
+}
+
+function dateTokenForTimestamp(value: unknown): string {
+  const parsed = parseContextTimestampMs(value);
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString().slice(0, 10) : "unknown";
 }
 
 function normalizedParentId(value: unknown): string | null {
@@ -937,8 +989,7 @@ export function renderContextMarkdown(result: ContextResult): string {
   if (result.recently_created && result.recently_created.length > 0) {
     lines.push("## Recently created");
     for (const item of result.recently_created) {
-      const dateToken = typeof item.created_at === "string" ? item.created_at.slice(0, 10) : "unknown";
-      lines.push(`- ${dateToken} ${formatFocusLine(item)}`);
+      lines.push(`- ${dateTokenForTimestamp(item.created_at)} ${formatFocusLine(item)}`);
     }
     lines.push("");
   }

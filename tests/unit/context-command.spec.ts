@@ -682,6 +682,34 @@ describe("context command module", () => {
       agenda: { summary: { events: 0, deadlines: 0, reminders: 0, scheduled: 0 }, events: [] },
       recently_created: [
         {
+          id: "pm-compact",
+          title: "Compact legacy item",
+          type: "Task",
+          status: "open",
+          priority: 1,
+          order: null,
+          deadline: null,
+          assignee: null,
+          tags: [],
+          updated_at: "2026-05-01T00:00:00.000Z",
+          parent: null,
+          created_at: "20260610",
+        },
+        {
+          id: "pm-impossible",
+          title: "Impossible legacy item",
+          type: "Task",
+          status: "open",
+          priority: 1,
+          order: null,
+          deadline: null,
+          assignee: null,
+          tags: [],
+          updated_at: "2026-05-01T00:00:00.000Z",
+          parent: null,
+          created_at: "2026-02-30T00:00:00.000Z",
+        },
+        {
           id: "pm-legacy",
           title: "Legacy item",
           type: "Task",
@@ -698,6 +726,8 @@ describe("context command module", () => {
       ],
     } as never);
 
+    expect(markdown).toContain("- 2026-06-10 pm-compact");
+    expect(markdown).toContain("- unknown pm-impossible");
     expect(markdown).toContain("- unknown pm-legacy");
   });
 });

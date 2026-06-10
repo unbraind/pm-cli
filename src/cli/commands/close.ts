@@ -6,7 +6,7 @@ import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { listAllFrontMatterLight, mutateItem } from "../../core/store/item-store.js";
+import { listAllFrontMatterLight, locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter } from "../../types/index.js";
@@ -101,9 +101,13 @@ function findMissingCloseValidationFields(frontMatter: ItemFrontMatter): string[
   return missing;
 }
 
-function duplicateChainReferencesClosingItem(byId: ReadonlyMap<string, ItemFrontMatter>, duplicateTargetId: string, closingId: string): boolean {
-  const visited = new Set<string>([duplicateTargetId]);
-  let current = byId.get(duplicateTargetId)?.duplicate_of;
+async function duplicateChainReferencesClosingItem(
+  loadItemById: (id: string) => Promise<ItemFrontMatter | null>,
+  initialDuplicateOf: unknown,
+  closingId: string,
+): Promise<boolean> {
+  const visited = new Set<string>();
+  let current = initialDuplicateOf;
   while (typeof current === "string" && current.trim().length > 0) {
     const currentId = current.trim();
     if (currentId === closingId) {
@@ -113,7 +117,7 @@ function duplicateChainReferencesClosingItem(byId: ReadonlyMap<string, ItemFront
       return false;
     }
     visited.add(currentId);
-    current = byId.get(currentId)?.duplicate_of;
+    current = (await loadItemById(currentId))?.duplicate_of;
   }
   return false;
 }
@@ -139,18 +143,21 @@ async function assertDuplicateTargetExists(
     });
   }
   const typeRegistry = resolveItemTypeRegistry(settings);
-  const items = await listAllFrontMatterLight(
-    pmRoot,
-    settings.item_format,
-    typeRegistry.type_to_folder,
-    undefined,
-    settings.schema,
-  );
-  const itemsById = new Map<string, ItemFrontMatter>();
-  for (const item of items) {
-    itemsById.set(item.id, item);
-  }
-  const target = itemsById.get(rawTarget);
+  const itemCache = new Map<string, ItemFrontMatter | null>();
+  const loadItemById = async (id: string): Promise<ItemFrontMatter | null> => {
+    if (itemCache.has(id)) {
+      return itemCache.get(id) ?? null;
+    }
+    const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeRegistry.type_to_folder);
+    if (!located) {
+      itemCache.set(id, null);
+      return null;
+    }
+    const { document } = await readLocatedItem(located, { schema: settings.schema });
+    itemCache.set(id, document.metadata);
+    return document.metadata;
+  };
+  const target = await loadItemById(rawTarget);
   if (!target) {
     throw new PmCliError(`Duplicate target "${rawTarget}" was not found. Create or locate the canonical item first.`, EXIT_CODE.USAGE, {
       code: "duplicate_target_missing",
@@ -159,7 +166,7 @@ async function assertDuplicateTargetExists(
       nextSteps: ["Run pm search/list to find the canonical item, then retry with --duplicate-of <id>."],
     });
   }
-  if (duplicateChainReferencesClosingItem(itemsById, target.id, closingId)) {
+  if (await duplicateChainReferencesClosingItem(loadItemById, target.duplicate_of, closingId)) {
     throw new PmCliError(`Circular duplicate reference detected. Target "${rawTarget}" points back to "${closingId}".`, EXIT_CODE.USAGE, {
       code: "duplicate_target_circular",
       why: "Circular duplicate relationships create loops for dedupe and status propagation tooling.",
