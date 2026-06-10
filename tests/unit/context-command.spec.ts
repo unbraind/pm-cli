@@ -540,6 +540,23 @@ describe("context command module", () => {
     });
   });
 
+  it("treats whitespace-only parent values as unparented", async () => {
+    await withTempPmPath(async (context) => {
+      const legacyId = createContextItem(context, { title: "Whitespace parent task", type: "Task", status: "open", priority: "1" });
+      const legacyPath = path.join(context.pmPath, "tasks", `${legacyId}.toon`);
+      await writeFile(legacyPath, (await readFile(legacyPath, "utf8")).replace("author: context-test\n", 'author: context-test\nparent: "   "\n'), "utf8");
+
+      const result = await runContext(
+        { section: ["unparented"], limit: "10" },
+        { path: context.pmPath },
+      );
+
+      const entry = result.unparented?.find((item) => item.id === legacyId);
+      expect(entry).toBeDefined();
+      expect(entry?.parent).toBeNull();
+    });
+  });
+
   it("builds workload grouped by assignee", async () => {
     await withTempPmPath(async (context) => {
       createContextItem(context, { title: "W1", type: "Task", status: "open", priority: "1", assignee: "alice" });

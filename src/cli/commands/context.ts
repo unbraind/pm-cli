@@ -404,6 +404,18 @@ function compareOptionalDeadline(left: string | null | undefined, right: string 
   return compareTimestampStrings(leftValue, rightValue);
 }
 
+function sortableTimestamp(value: unknown): string {
+  return typeof value === "string" && Number.isFinite(Date.parse(value)) ? value : "";
+}
+
+function normalizedParentId(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 function compareCriticalItems(left: ItemFrontMatter, right: ItemFrontMatter, statusRegistry: RuntimeStatusRegistry): number {
   const byStatus = statusRank(left.status, statusRegistry) - statusRank(right.status, statusRegistry);
   if (byStatus !== 0) return byStatus;
@@ -413,7 +425,7 @@ function compareCriticalItems(left: ItemFrontMatter, right: ItemFrontMatter, sta
   if (byOrder !== 0) return byOrder;
   const byDeadline = compareOptionalDeadline(left.deadline, right.deadline);
   if (byDeadline !== 0) return byDeadline;
-  const byUpdated = compareTimestampStrings(right.updated_at, left.updated_at);
+  const byUpdated = compareTimestampStrings(sortableTimestamp(right.updated_at), sortableTimestamp(left.updated_at));
   const byId = left.id.localeCompare(right.id);
   return byUpdated !== 0 ? byUpdated : byId;
 }
@@ -425,10 +437,11 @@ function completionPct(closed: number, total: number): number {
 function buildChildrenByParent(allItems: ItemFrontMatter[]): Map<string, ItemFrontMatter[]> {
   const childrenByParent = new Map<string, ItemFrontMatter[]>();
   for (const item of allItems) {
-    if (!item.parent) continue;
-    const children = childrenByParent.get(item.parent) ?? [];
+    const parent = normalizedParentId(item.parent);
+    if (!parent) continue;
+    const children = childrenByParent.get(parent) ?? [];
     children.push(item);
-    childrenByParent.set(item.parent, children);
+    childrenByParent.set(parent, children);
   }
   return childrenByParent;
 }
@@ -449,7 +462,7 @@ function toContextFocusItem(
     assignee: item.assignee ?? null,
     tags: Array.isArray(item.tags) ? [...item.tags] : [],
     updated_at: item.updated_at,
-    parent: item.parent ?? null,
+    parent: normalizedParentId(item.parent),
   };
   if (statusRegistry && childrenByParent) {
     const descendants = collectDescendants(item.id, childrenByParent);
@@ -745,8 +758,8 @@ function buildRecentlyCreated(
 ): RecentContextItem[] {
   return [...allNonTerminal]
     .sort((left, right) => {
-      const leftCreated = typeof left.created_at === "string" ? left.created_at : "";
-      const rightCreated = typeof right.created_at === "string" ? right.created_at : "";
+      const leftCreated = sortableTimestamp(left.created_at);
+      const rightCreated = sortableTimestamp(right.created_at);
       const byCreated = compareTimestampStrings(rightCreated, leftCreated);
       return byCreated !== 0 ? byCreated : left.id.localeCompare(right.id);
     })
@@ -764,7 +777,7 @@ function buildUnparented(
   limit: number,
 ): ContextFocusItem[] {
   return allNonTerminal
-    .filter((item) => !item.parent && !HIGH_LEVEL_TYPES.has(item.type))
+    .filter((item) => !normalizedParentId(item.parent) && !HIGH_LEVEL_TYPES.has(item.type))
     .sort((left, right) => compareCriticalItems(left, right, statusRegistry))
     .slice(0, limit)
     .map((item) => toContextFocusItem(item, statusRegistry, childrenByParent));

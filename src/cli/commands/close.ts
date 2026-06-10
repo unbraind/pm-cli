@@ -119,6 +119,10 @@ function duplicateChainReferencesClosingItem(items: ItemFrontMatter[], duplicate
   return false;
 }
 
+function shouldApplyDuplicateFallback(value: unknown): boolean {
+  return typeof value !== "string" || value.trim().length === 0;
+}
+
 async function assertDuplicateTargetExists(
   pmRoot: string,
   settings: Awaited<ReturnType<typeof readSettings>>,
@@ -246,15 +250,15 @@ export async function runClose(
         const duplicateResolution = `Duplicate of ${duplicateOf}`;
         const duplicateExpectedResult = `Canonical item ${duplicateOf} tracks the work.`;
         const duplicateActualResult = `Closed as duplicate of ${duplicateOf}.`;
-        if (document.metadata.resolution === undefined) {
+        if (shouldApplyDuplicateFallback(document.metadata.resolution)) {
           document.metadata.resolution = duplicateResolution;
           duplicateFallbackFields.push("resolution");
         }
-        if (document.metadata.expected_result === undefined) {
+        if (shouldApplyDuplicateFallback(document.metadata.expected_result)) {
           document.metadata.expected_result = duplicateExpectedResult;
           duplicateFallbackFields.push("expected_result");
         }
-        if (document.metadata.actual_result === undefined) {
+        if (shouldApplyDuplicateFallback(document.metadata.actual_result)) {
           document.metadata.actual_result = duplicateActualResult;
           duplicateFallbackFields.push("actual_result");
         }

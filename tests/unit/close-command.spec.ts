@@ -177,6 +177,37 @@ describe("runClose", () => {
     });
   });
 
+  it("fills duplicate fallback fields when close metadata is blank", async () => {
+    await withTempPmPath(async (context) => {
+      const canonicalId = createTask(context, "canonical duplicate blank metadata target");
+      const duplicateId = createTask(context, "duplicate blank metadata candidate");
+      await patchTaskToon(context, duplicateId, (content) =>
+        content.replace(
+          "author: seed-author\n",
+          'author: seed-author\nresolution: "   "\nexpected_result: ""\nactual_result: "   "\n',
+        ),
+      );
+
+      const result = await runClose(
+        duplicateId,
+        "Duplicate of canonical target",
+        {
+          duplicateOf: canonicalId,
+          validateClose: "strict",
+          message: "Close duplicate",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["resolution", "expected_result", "actual_result"]));
+      expect(result.item).toMatchObject({
+        resolution: `Duplicate of ${canonicalId}`,
+        expected_result: `Canonical item ${canonicalId} tracks the work.`,
+        actual_result: `Closed as duplicate of ${canonicalId}.`,
+      });
+    });
+  });
+
   it("rejects duplicate closure when the canonical target does not exist", async () => {
     await withTempPmPath(async (context) => {
       const duplicateId = createTask(context, "duplicate missing target");

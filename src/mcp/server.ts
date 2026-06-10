@@ -279,6 +279,7 @@ const TOOLS: ToolDefinition[] = [
     inputSchema: objectSchema(
       {
         fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
+        allowMissingParent: { type: "boolean", description: "Allow unresolved parent references and emit a validation warning." },
         options: { type: "object", description: "Create options. title and description are required." },
       },
       ["options"],
@@ -596,6 +597,8 @@ function optionsWithAuthor(args: Record<string, unknown>, action?: string): Reco
     hoistKey("tag");
     hoistKey("priority");
     hoistKey("limit");
+  } else if (action === "create") {
+    hoistKey("allowMissingParent");
   }
   const options = normalizeMcpOptionsArrays({ ...hoistedTopLevel, ...baseOptions }, action);
   const author = readString(args, "author");
