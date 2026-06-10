@@ -1789,6 +1789,10 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
       EXIT_CODE.USAGE,
     );
   }
+  const hasSelectorFlags = options.match !== undefined || options.onlyIndex !== undefined || options.onlyLast === true;
+  if (hasSelectorFlags && options.run !== true) {
+    throw new PmCliError("--match, --only-index, and --only-last require --run", EXIT_CODE.USAGE);
+  }
   const selectorInput = {
     match: options.match,
     onlyIndex: options.onlyIndex === undefined ? undefined : parseOnlyIndexValue(options.onlyIndex),

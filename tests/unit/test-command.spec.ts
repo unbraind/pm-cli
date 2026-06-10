@@ -999,6 +999,15 @@ describe("runTest", () => {
       await expect(runTest(id, { run: true, match: "missing" }, { path: context.pmPath })).rejects.toMatchObject({
         exitCode: EXIT_CODE.USAGE,
       });
+      await expect(runTest(id, { match: "node" }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTest(id, { onlyIndex: 1 }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTest(id, { onlyLast: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
     });
   });
 

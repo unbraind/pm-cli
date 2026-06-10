@@ -262,16 +262,17 @@ function completionPct(closed: number, total: number): number {
   return Math.round((closed / total) * 10000) / 100;
 }
 
-function updateCompletionCounts(accumulator: AggregateAccumulator, status: ItemStatus): void {
-  if (status === "open") {
+function updateCompletionCounts(accumulator: AggregateAccumulator, status: ItemStatus, statusRegistry: RuntimeStatusRegistry): void {
+  const normalizedStatus = normalizeStatusInput(String(status), statusRegistry) ?? status;
+  if (normalizedStatus === statusRegistry.open_status) {
     accumulator.open_count += 1;
     return;
   }
-  if (status === "in_progress") {
+  if (normalizedStatus === "in_progress" || (statusRegistry.active_statuses.has(normalizedStatus) && normalizedStatus !== statusRegistry.open_status)) {
     accumulator.in_progress_count += 1;
     return;
   }
-  if (status === "closed") {
+  if (statusRegistry.terminal_done_statuses.has(normalizedStatus) || normalizedStatus === statusRegistry.close_status) {
     accumulator.closed_count += 1;
   }
 }
@@ -330,7 +331,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
     if (existing) {
       existing.row.count += 1;
       if (includeCompletion) {
-        updateCompletionCounts(existing, item.status);
+        updateCompletionCounts(existing, item.status, statusRegistry);
       }
       if (numericAggregation !== null) {
         if (numericValue === null) {
@@ -354,7 +355,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
         closed_count: 0,
       };
       if (includeCompletion) {
-        updateCompletionCounts(accumulator, item.status);
+        updateCompletionCounts(accumulator, item.status, statusRegistry);
       }
       grouped.set(key, accumulator);
     }

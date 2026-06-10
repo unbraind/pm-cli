@@ -262,4 +262,16 @@ describe("parseLinkedTestJsonEntries", () => {
       parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", cmd: "node --help" }), "--add-json"),
     ).toThrow(/command and cmd must match/);
   });
+
+  it("rejects empty numeric strings and non-positive or fractional timeouts", () => {
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", assert_stdout_min_lines: "" }), "--add-json"),
+    ).toThrow(/finite number/);
+    expect(() => parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", timeout_seconds: 0 }), "--add-json")).toThrow(
+      /positive integer/,
+    );
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", timeout_seconds: 1.5 }), "--add-json"),
+    ).toThrow(/positive integer/);
+  });
 });

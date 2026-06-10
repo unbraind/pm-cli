@@ -245,7 +245,7 @@ function normalizeJsonEntryKeys(entry: JsonRecord, fail: (message: string) => Pm
       unknownKeys.push(key);
       continue;
     }
-    if (normalizedKey in normalized) {
+    if (Object.hasOwn(normalized, normalizedKey)) {
       throw fail(`provides key "${key}" more than once after case normalization`);
     }
     normalized[normalizedKey] = value;
@@ -259,6 +259,9 @@ function normalizeJsonEntryKeys(entry: JsonRecord, fail: (message: string) => Pm
 }
 
 function readJsonEntryString(entry: JsonRecord, key: string, fail: (message: string) => PmCliError): string | undefined {
+  if (!Object.hasOwn(entry, key)) {
+    return undefined;
+  }
   const value = entry[key];
   if (value === undefined) {
     return undefined;
@@ -270,6 +273,9 @@ function readJsonEntryString(entry: JsonRecord, key: string, fail: (message: str
 }
 
 function readJsonEntryStringList(entry: JsonRecord, key: string, fail: (message: string) => PmCliError): string[] | undefined {
+  if (!Object.hasOwn(entry, key)) {
+    return undefined;
+  }
   const value = entry[key];
   if (value === undefined) {
     return undefined;
@@ -301,7 +307,12 @@ function readJsonEntryRegexList(entry: JsonRecord, key: string, fail: (message: 
 }
 
 function readJsonEntryNumber(value: unknown, key: string, fail: (message: string) => PmCliError): number {
-  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value.trim()) : Number.NaN;
+  const parsed =
+    typeof value === "number"
+      ? value
+      : typeof value === "string" && value.trim().length > 0
+        ? Number(value.trim())
+        : Number.NaN;
   if (typeof value === "boolean" || !Number.isFinite(parsed)) {
     throw fail(`field "${key}" must be a finite number (or numeric string)`);
   }
@@ -319,7 +330,11 @@ function readJsonEntryTimeoutSeconds(entry: JsonRecord, fail: (message: string) 
   if (timeoutSeconds !== undefined && timeoutAlias !== undefined && timeoutSeconds !== timeoutAlias) {
     throw fail("timeout and timeout_seconds must match when both are provided");
   }
-  return Math.floor(timeoutSeconds ?? (timeoutAlias as number));
+  const timeout = timeoutSeconds ?? (timeoutAlias as number);
+  if (!Number.isInteger(timeout) || timeout <= 0) {
+    throw fail("timeout_seconds must be a positive integer");
+  }
+  return timeout;
 }
 
 function readJsonEntryScope(entry: JsonRecord, fail: (message: string) => PmCliError): LinkScope {
@@ -334,6 +349,9 @@ function readJsonEntryScope(entry: JsonRecord, fail: (message: string) => PmCliE
 }
 
 function readJsonEntryEnvSet(entry: JsonRecord, fail: (message: string) => PmCliError): Record<string, string> | undefined {
+  if (!Object.hasOwn(entry, "env_set")) {
+    return undefined;
+  }
   const value = entry.env_set;
   if (value === undefined) {
     return undefined;
@@ -374,6 +392,9 @@ function readJsonEntryEnvClear(entry: JsonRecord, fail: (message: string) => PmC
 }
 
 function readJsonEntryBoolean(entry: JsonRecord, key: string, fail: (message: string) => PmCliError): boolean | undefined {
+  if (!Object.hasOwn(entry, key)) {
+    return undefined;
+  }
   const value = entry[key];
   if (value === undefined) {
     return undefined;
@@ -385,6 +406,9 @@ function readJsonEntryBoolean(entry: JsonRecord, key: string, fail: (message: st
 }
 
 function readJsonEntryMinLines(entry: JsonRecord, fail: (message: string) => PmCliError): number | undefined {
+  if (!Object.hasOwn(entry, "assert_stdout_min_lines")) {
+    return undefined;
+  }
   const value = entry.assert_stdout_min_lines;
   if (value === undefined) {
     return undefined;
@@ -397,6 +421,9 @@ function readJsonEntryMinLines(entry: JsonRecord, fail: (message: string) => PmC
 }
 
 function readJsonEntryEqualsMap(entry: JsonRecord, fail: (message: string) => PmCliError): Record<string, string> | undefined {
+  if (!Object.hasOwn(entry, "assert_json_field_equals")) {
+    return undefined;
+  }
   const value = entry.assert_json_field_equals;
   if (value === undefined) {
     return undefined;
@@ -418,6 +445,9 @@ function readJsonEntryEqualsMap(entry: JsonRecord, fail: (message: string) => Pm
 }
 
 function readJsonEntryGteMap(entry: JsonRecord, fail: (message: string) => PmCliError): Record<string, number> | undefined {
+  if (!Object.hasOwn(entry, "assert_json_field_gte")) {
+    return undefined;
+  }
   const value = entry.assert_json_field_gte;
   if (value === undefined) {
     return undefined;
