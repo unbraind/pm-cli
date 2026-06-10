@@ -7111,6 +7111,1052 @@
       "enforce"
     ]
   },
+  "mcp_tools": [
+    {
+      "description": "Append markdown text to a pm item body and write pm history. Useful for seeding evidence/log entries before close. Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields array.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "body": {
+            "description": "Markdown text to append to the item body. Required here or as options.body.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "fullChangedFields": {
+            "description": "Return full changed_fields instead of changed_field_count.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "description": "Append options such as body, author, and message.",
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "pm_append",
+      "required": [
+        "id"
+      ]
+    },
+    {
+      "description": "Claim a pm item.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "force": {
+            "type": "boolean"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "pm_claim",
+      "required": [
+        "id"
+      ]
+    },
+    {
+      "description": "Close a pm item with optional close reason and optional close validation (reason requirement follows governance settings). Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields array.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "duplicateOf": {
+            "description": "Canonical item id when closing this item as a duplicate.",
+            "type": "string"
+          },
+          "fullChangedFields": {
+            "description": "Return full changed_fields instead of changed_field_count.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "idOnly": {
+            "description": "Return only id and status.",
+            "type": "boolean"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Close reason text when provided or required by governance settings.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "pm_close",
+      "required": [
+        "id"
+      ]
+    },
+    {
+      "description": "List or add comments on a pm item. Use options.add to append. List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "pm_comments",
+      "required": [
+        "id"
+      ]
+    },
+    {
+      "description": "Read or write pm workspace configuration (pm config). configAction selects get/set/list/export; key/value address a single dotted setting for get/set. scope chooses the project (default) or global settings file.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "configAction": {
+            "description": "Config operation to perform. get/set require key; list/export dump the resolved settings surface.",
+            "enum": [
+              "get",
+              "set",
+              "list",
+              "export"
+            ],
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "key": {
+            "description": "Settings key for get/set, for example governance-require-close-reason, telemetry-tracking, or a nested leaf such as search_provider (dash and underscore variants accepted; configAction=get without a key lists supported keys in the error).",
+            "type": "string"
+          },
+          "options": {
+            "description": "Additional config options such as criterion, clearCriteria, format, or policy.",
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          },
+          "scope": {
+            "description": "Settings scope to read or write. Defaults to project.",
+            "enum": [
+              "project",
+              "global"
+            ],
+            "type": "string"
+          },
+          "value": {
+            "description": "New value for configAction=set.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "configAction"
+        ],
+        "type": "object"
+      },
+      "name": "pm_config",
+      "required": [
+        "configAction"
+      ]
+    },
+    {
+      "description": "Return the agent-oriented project context snapshot.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "pm_context",
+      "required": []
+    },
+    {
+      "description": "Inspect pm command, flag, schema, and availability contracts.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "pm_contracts",
+      "required": []
+    },
+    {
+      "description": "Copy an existing pm item into a new id while resetting lifecycle fields. Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields array.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "fullChangedFields": {
+            "description": "Return full changed_fields instead of changed_field_count.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "description": "Copy options such as title override, author, and message.",
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "pm_copy",
+      "required": [
+        "id"
+      ]
+    },
+    {
+      "description": "Create a pm item natively and write pm history. Output is compact by default (changed_fields replaced with changed_field_count for token efficiency); pass fullChangedFields=true for the full changed_fields array.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "allowMissingParent": {
+            "description": "Allow unresolved parent references and emit a validation warning.",
+            "type": "boolean"
+          },
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "fullChangedFields": {
+            "description": "Return full changed_fields instead of changed_field_count.",
+            "type": "boolean"
+          },
+          "options": {
+            "description": "Create options. title and description are required.",
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "options"
+        ],
+        "type": "object"
+      },
+      "name": "pm_create",
+      "required": [
+        "options"
+      ]
+    },
+    {
+      "description": "List, add, or remove dependencies for a pm item. Use options.add to declare a dependency and options.remove to drop one; omit both to list current dependencies.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "pm_deps",
+      "required": [
+        "id"
+      ]
+    },
+    {
+      "description": "List, add, or remove linked docs for a pm item.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "pm_docs",
+      "required": [
+        "id"
+      ]
+    },
+    {
+      "description": "List, add, remove, audit, or validate linked files for a pm item.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "pm_files",
+      "required": [
+        "id"
+      ]
+    },
+    {
+      "description": "Read one pm item. Pass options.depth='brief' or options.fields='id,title,status' for low-token inspection.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "description": "Get options such as depth=brief|standard|deep|full or fields=id,title,status.",
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "pm_get",
+      "required": [
+        "id"
+      ]
+    },
+    {
+      "description": "Run pm health diagnostics. Pass options.brief=true for compact low-token details, options.skipIntegrity=true, options.skipDrift=true, options.skipVectors=true for a fast status-only check, or options.full=true for the complete deep check.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "pm_health",
+      "required": []
+    },
+    {
+      "description": "List or add learnings on a pm item. Use options.add to capture a learning/insight; omit it to list existing learnings.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "pm_learnings",
+      "required": [
+        "id"
+      ]
+    },
+    {
+      "description": "List pm items with status/type/tag/priority filters. Defaults to compact projection for token efficiency. options.status accepts CSV (open,in_progress). Pass options.compact=false or options.includeBody=true for full bodies/comments. Pass options.brief=true for ultra-terse (id/status/type/title only). Pass options.fields='id,title,priority' for custom projection. Pass options.limit=N to cap row count. The result echoes the applied filters and projection mode in query_summary.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "limit": {
+            "description": "Alias for options.limit.",
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "offset": {
+            "description": "Alias for options.offset.",
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          },
+          "priority": {
+            "description": "Alias for options.priority.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Alias for options.status.",
+            "type": "string"
+          },
+          "tag": {
+            "description": "Alias for options.tag.",
+            "type": "string"
+          },
+          "type": {
+            "description": "Alias for options.type.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "pm_list",
+      "required": []
+    },
+    {
+      "description": "List or add structured notes on a pm item. Use options.add to append a note; omit it to list existing notes.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "pm_notes",
+      "required": [
+        "id"
+      ]
+    },
+    {
+      "description": "Run agent-optimized Plan workflows. options.subcommand selects: create|show|add-step|update-step|complete-step|block-step|reorder-step|remove-step|link|unlink|decision|discovery|validation|resume|approve|materialize. Provide id for all non-create subcommands; provide stepRef for step lifecycle subcommands. Plans store agent-readable steps with dependencies, decisions, discoveries, validation, and resume context.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Plan id (required for all subcommands except create).",
+            "type": "string"
+          },
+          "options": {
+            "description": "Plan options including subcommand, stepRef, stepStatus, link, depth, etc.",
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          },
+          "reorderTo": {
+            "description": "New order for reorder-step.",
+            "type": "number"
+          },
+          "stepRef": {
+            "description": "Step id or order for step lifecycle subcommands.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "pm_plan",
+      "required": []
+    },
+    {
+      "description": "Release a pm item claim.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "force": {
+            "type": "boolean"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "pm_release",
+      "required": [
+        "id"
+      ]
+    },
+    {
+      "description": "Run any supported pm operation natively through the pm library. Use this for commands not covered by narrower pm_* tools.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "action": {
+            "description": "Operation name (one of): init, config, extension-init, extension-install, extension-uninstall, extension-explore, extension-manage, extension-reload, extension-doctor, extension-catalog, extension-adopt, extension-adopt-all, extension-activate, extension-deactivate, extension, package-init, package-install, package-uninstall, package-explore, package-manage, package-reload, package-doctor, package-catalog, package-adopt, package-adopt-all, package-activate, package-deactivate, package, install, upgrade, create, copy, list, list-all, list-draft, list-open, list-in-progress, list-blocked, list-closed, list-canceled, aggregate, context, ctx, get, search, history, history-redact, history-repair, history-compact, schema, activity, restore, update, update-many, close, close-many, delete, append, comments, plan, notes, learnings, files, docs, deps, test, test-all, telemetry, stats, health, validate, gc, contracts, claim, release, start-task, pause-task, close-task. Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.",
+            "type": "string"
+          },
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "force": {
+            "description": "Force ownership/terminal-state override when supported.",
+            "type": "boolean"
+          },
+          "fullChangedFields": {
+            "description": "For mutation actions, return the full changed_fields array instead of the default changed_field_count.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "idOnly": {
+            "description": "For single-item mutation actions, return only id and status.",
+            "type": "boolean"
+          },
+          "options": {
+            "description": "Underlying pm command options using camelCase keys.",
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          },
+          "query": {
+            "description": "Search query for action=search.",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Close reason for action=close.",
+            "type": "string"
+          },
+          "subcommand": {
+            "description": "Subcommand selector for actions that take one (for example telemetry, or schema — prefer the dedicated pm_schema tool for schema operations).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "type": "object"
+      },
+      "name": "pm_run",
+      "required": [
+        "action"
+      ]
+    },
+    {
+      "description": "Inspect or modify the workspace item-type/status schema (pm schema). subcommand selects the operation; name carries the item type name (show/add-type/remove-type) or status id (show-status/add-status/remove-status). Schema mutations write workspace config files, not item history.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "alias": {
+            "description": "Aliases for add-type/add-status.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "defaultStatus": {
+            "description": "Default status for add-type.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Custom item type or status description for add-type/add-status.",
+            "type": "string"
+          },
+          "folder": {
+            "description": "Storage folder for add-type.",
+            "type": "string"
+          },
+          "force": {
+            "description": "Override removal guardrails for destructive schema changes when supported.",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "Item type name for show/add-type/remove-type, or status id for show-status/add-status/remove-status. Required for every subcommand except list.",
+            "type": "string"
+          },
+          "options": {
+            "description": "Additional schema options using camelCase keys.",
+            "type": "object"
+          },
+          "order": {
+            "description": "Display/sort order for add-status.",
+            "type": "number"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          },
+          "role": {
+            "description": "Lifecycle roles for add-status: draft, active, blocked, terminal, terminal_done, terminal_canceled, default_open, default_close, default_cancel.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "subcommand": {
+            "description": "Schema subcommand to run.",
+            "enum": [
+              "list",
+              "show",
+              "show-status",
+              "add-type",
+              "remove-type",
+              "add-status",
+              "remove-status"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "subcommand"
+        ],
+        "type": "object"
+      },
+      "name": "pm_schema",
+      "required": [
+        "subcommand"
+      ]
+    },
+    {
+      "description": "Search pm items with keyword, semantic, or hybrid search. Defaults to a compact projection for token efficiency. Pass options.mode=keyword|semantic|hybrid, options.limit=N to cap hits, options.fields='id,title,score' for a custom projection, or options.full=true for full item bodies (can be large). The result echoes the applied filters and projection mode in query_summary.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "limit": {
+            "description": "Alias for options.limit.",
+            "type": [
+              "string",
+              "number"
+            ]
+          },
+          "mode": {
+            "description": "Alias for options.mode.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          },
+          "priority": {
+            "description": "Alias for options.priority.",
+            "type": "string"
+          },
+          "query": {
+            "type": "string"
+          },
+          "status": {
+            "description": "Alias for options.status.",
+            "type": "string"
+          },
+          "tag": {
+            "description": "Alias for options.tag.",
+            "type": "string"
+          },
+          "type": {
+            "description": "Alias for options.type.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "name": "pm_search",
+      "required": [
+        "query"
+      ]
+    },
+    {
+      "description": "List, add, remove, or run linked tests for a pm item.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "type": "object"
+      },
+      "name": "pm_test",
+      "required": [
+        "id"
+      ]
+    },
+    {
+      "description": "Update pm item metadata/body/dependencies/log seeds natively. Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields delta.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "fullChangedFields": {
+            "description": "Return full changed_fields instead of changed_field_count.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "pm item id, for example pm-abc1.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "options"
+        ],
+        "type": "object"
+      },
+      "name": "pm_update",
+      "required": [
+        "id",
+        "options"
+      ]
+    },
+    {
+      "description": "Run pm validation checks.",
+      "input_schema": {
+        "additionalProperties": true,
+        "properties": {
+          "author": {
+            "description": "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
+            "type": "string"
+          },
+          "cwd": {
+            "description": "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
+            "type": "string"
+          },
+          "options": {
+            "type": "object"
+          },
+          "path": {
+            "description": "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "pm_validate",
+      "required": []
+    }
+  ],
   "runtime_schema": {
     "canceled_status": "canceled",
     "close_status": "closed",

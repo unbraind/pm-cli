@@ -7,6 +7,7 @@ import {
   setActiveExtensionServices,
 } from "../../src/core/extensions/index.js";
 import { formatOutput, printError, printResult } from "../../src/core/output/output.js";
+import { resolveQueryProjectionLabel, withQuerySummary } from "../../src/core/output/query-summary.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 
 describe("core/output/output", () => {
@@ -354,5 +355,55 @@ describe("core/output/output", () => {
     const stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
     printError("boom");
     expect(stderrSpy).toHaveBeenCalledWith("ERR:boom\n");
+  });
+});
+
+describe("core/output/query-summary", () => {
+  it("resolves projection labels from list/search projection options", () => {
+    expect(resolveQueryProjectionLabel({})).toBe("full");
+    expect(resolveQueryProjectionLabel({ compact: true })).toBe("compact");
+    expect(resolveQueryProjectionLabel({ brief: true })).toBe("brief");
+    expect(resolveQueryProjectionLabel({ fields: "id,title" })).toBe("fields");
+    // Blank fields selectors do not count as a fields projection.
+    expect(resolveQueryProjectionLabel({ fields: "   " })).toBe("full");
+    // brief wins over other labels because it is the most specific request.
+    expect(resolveQueryProjectionLabel({ brief: true, compact: true })).toBe("brief");
+  });
+
+  it("attaches query_summary from the result filters and the requested options", () => {
+    const compactResult = { items: [], count: 0, filters: { status: "open", type: "Task" } };
+    const summarized = withQuerySummary(compactResult, { compact: true });
+    expect(summarized.query_summary).toEqual({ filters: { status: "open", type: "Task" }, projection: "compact" });
+    // The original result fields are preserved untouched.
+    expect(summarized.items).toEqual([]);
+    expect(summarized.count).toBe(0);
+  });
+
+  it("prefers the result's own projection mode for verbose payloads", () => {
+    const verboseResult = {
+      items: [],
+      count: 0,
+      filters: { status: null },
+      projection: { mode: "fields", fields: ["id"] },
+    };
+    expect(withQuerySummary(verboseResult, {}).query_summary.projection).toBe("fields");
+    // brief is reported as projection mode "compact" by the list command, so
+    // the requested brief label wins outright.
+    const briefResult = {
+      items: [],
+      count: 0,
+      filters: {},
+      projection: { mode: "compact", fields: ["id", "status", "type", "title"] },
+    };
+    expect(withQuerySummary(briefResult, { brief: true }).query_summary.projection).toBe("brief");
+  });
+
+  it("defaults filters to an empty object when the result has none", () => {
+    expect(withQuerySummary({ items: [], count: 0 }, {}).query_summary).toEqual({ filters: {}, projection: "full" });
+    // Non-record filters/projection values are ignored rather than echoed.
+    expect(
+      withQuerySummary({ filters: ["not-a-record"], projection: "compact" } as unknown as Record<string, unknown>, { compact: true })
+        .query_summary,
+    ).toEqual({ filters: {}, projection: "compact" });
   });
 });

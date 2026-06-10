@@ -26,6 +26,7 @@ import {
 import { pathExists } from "../core/fs/fs-utils.js";
 import { resolvePmCliVersion } from "../core/packages/root.js";
 import { projectMutationResult } from "../core/output/mutation-projection.js";
+import { withQuerySummary } from "../core/output/query-summary.js";
 import type { GlobalOptions } from "../core/shared/command-types.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { decodeHtmlEntitiesInOptions } from "../core/shared/html-entity-decode.js";
@@ -36,8 +37,8 @@ import { getSettingsPath, resolvePmRoot } from "../core/store/paths.js";
 import { readSettings } from "../core/store/settings.js";
 import { normalizeListOptions, normalizeUpdateOptions } from "../cli/registration-helpers.js";
 import { UPDATE_COMMANDER_STRING_OPTION_CONTRACTS } from "../sdk/cli-contracts/commander-mutation-options.js";
-import { PM_TOOL_ACTIONS } from "../sdk/cli-contracts/enum-contracts.js";
 import { clearWorkspaceContractsCache } from "../sdk/runtime.js";
+import { TOOLS } from "./tool-definitions.js";
 import {
   runActivity,
   runAggregate,
@@ -98,12 +99,6 @@ interface JsonRpcRequest {
   params?: Record<string, unknown>;
 }
 
-interface ToolDefinition {
-  name: string;
-  description: string;
-  inputSchema: Record<string, unknown>;
-}
-
 type ToolHandler = (args: Record<string, unknown>) => Promise<unknown>;
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
@@ -120,294 +115,9 @@ if (typeof process.env[PM_PACKAGE_ROOT_ENV] !== "string" || process.env[PM_PACKA
 // build serving requests (was hard-coded "1.0.0"; see pm-2nvw).
 const PM_MCP_SERVER_VERSION = resolvePmCliVersion(import.meta.url, ["../.."]) ?? "0.0.0";
 
-const TOOL_SCHEMA_BASE = {
-  type: "object",
-  properties: {
-    cwd: {
-      type: "string",
-      description: "Workspace directory to run the native pm operation in. Defaults to the MCP server process cwd.",
-    },
-    path: {
-      type: "string",
-      description: "Optional pm data root, equivalent to PM_PATH/global --path. Leave unset for real repository tracking.",
-    },
-    author: {
-      type: "string",
-      description: "Mutation author. Defaults to PM_AUTHOR or pm settings when supported by the underlying operation.",
-    },
-  },
-  additionalProperties: true,
-} as const;
-
-const idSchema = {
-  type: "string",
-  description: "pm item id, for example pm-abc1.",
-};
-
-// pm-fd8n: derive the pm_run action enumeration from the canonical
-// PM_TOOL_ACTIONS contract instead of a hand-maintained prose list, so the
-// MCP-facing description can never drift from the actual supported actions.
-const PM_RUN_ACTION_DESCRIPTION =
-  `Operation name (one of): ${PM_TOOL_ACTIONS.join(", ")}. ` +
-  "Package-owned actions (for example calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume) are available dynamically when installed.";
-
-const LIST_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = {
-  status: { type: "string", description: "Alias for options.status." },
-  type: { type: "string", description: "Alias for options.type." },
-  tag: { type: "string", description: "Alias for options.tag." },
-  priority: { type: "string", description: "Alias for options.priority." },
-  limit: { type: ["string", "number"], description: "Alias for options.limit." },
-  offset: { type: ["string", "number"], description: "Alias for options.offset." },
-};
-
-const SEARCH_TOP_LEVEL_OPTION_PROPERTIES: Record<string, unknown> = {
-  mode: { type: "string", description: "Alias for options.mode." },
-  status: { type: "string", description: "Alias for options.status." },
-  type: { type: "string", description: "Alias for options.type." },
-  tag: { type: "string", description: "Alias for options.tag." },
-  priority: { type: "string", description: "Alias for options.priority." },
-  limit: { type: ["string", "number"], description: "Alias for options.limit." },
-};
-
-function objectSchema(properties: Record<string, unknown>, required: string[] = []): Record<string, unknown> {
-  return {
-    ...TOOL_SCHEMA_BASE,
-    properties: {
-      ...TOOL_SCHEMA_BASE.properties,
-      ...properties,
-    },
-    required,
-  };
-}
-
-const TOOLS: ToolDefinition[] = [
-  {
-    name: "pm_run",
-    description:
-      "Run any supported pm operation natively through the pm library. Use this for commands not covered by narrower pm_* tools.",
-    inputSchema: objectSchema(
-      {
-        action: {
-          type: "string",
-          description: PM_RUN_ACTION_DESCRIPTION,
-        },
-        id: idSchema,
-        query: { type: "string", description: "Search query for action=search." },
-        reason: { type: "string", description: "Close reason for action=close." },
-        force: { type: "boolean", description: "Force ownership/terminal-state override when supported." },
-        subcommand: {
-          type: "string",
-          enum: ["list", "show", "show-status", "add-type", "remove-type", "add-status", "remove-status"],
-          description: "Schema subcommand when action=schema.",
-        },
-        name: {
-          type: "string",
-          description:
-            "Item type name for action=schema show/add-type/remove-type, or status id for show-status/add-status/remove-status.",
-        },
-        description: {
-          type: "string",
-          description: "Custom item type or status description for action=schema add-type/add-status.",
-        },
-        defaultStatus: { type: "string", description: "Default status for action=schema add-type." },
-        folder: { type: "string", description: "Storage folder for action=schema add-type." },
-        alias: {
-          type: "array",
-          items: { type: "string" },
-          description: "Aliases for action=schema add-type/add-status.",
-        },
-        role: {
-          type: "array",
-          items: { type: "string" },
-          description:
-            "Lifecycle roles for action=schema add-status: draft, active, blocked, terminal, terminal_done, terminal_canceled, default_open, default_close, default_cancel.",
-        },
-        order: { type: "number", description: "Display/sort order for action=schema add-status." },
-        options: { type: "object", description: "Underlying pm command options using camelCase keys." },
-        fullChangedFields: {
-          type: "boolean",
-          description:
-            "For mutation actions, return the full changed_fields array instead of the default changed_field_count.",
-        },
-        idOnly: {
-          type: "boolean",
-          description: "For single-item mutation actions, return only id and status.",
-        },
-      },
-      ["action"],
-    ),
-  },
-  {
-    name: "pm_context",
-    description: "Return the agent-oriented project context snapshot.",
-    inputSchema: objectSchema({ options: { type: "object" } }),
-  },
-  {
-    name: "pm_search",
-    description:
-      "Search pm items with keyword, semantic, or hybrid search. " +
-      "Defaults to a compact projection for token efficiency. " +
-      "Pass options.mode=keyword|semantic|hybrid, options.limit=N to cap hits, " +
-      "options.fields='id,title,score' for a custom projection, or options.full=true for full item bodies (can be large).",
-    inputSchema: objectSchema({ query: { type: "string" }, options: { type: "object" }, ...SEARCH_TOP_LEVEL_OPTION_PROPERTIES }, ["query"]),
-  },
-  {
-    name: "pm_list",
-    description:
-      "List pm items with status/type/tag/priority filters. Defaults to compact projection for token efficiency. " +
-      "options.status accepts CSV (open,in_progress). " +
-      "Pass options.compact=false or options.includeBody=true for full bodies/comments. " +
-      "Pass options.brief=true for ultra-terse (id/status/type/title only). " +
-      "Pass options.fields='id,title,priority' for custom projection. " +
-      "Pass options.limit=N to cap row count.",
-    inputSchema: objectSchema({ options: { type: "object" }, ...LIST_TOP_LEVEL_OPTION_PROPERTIES }),
-  },
-  {
-    name: "pm_get",
-    description:
-      "Read one pm item. Pass options.depth='brief' or options.fields='id,title,status' for low-token inspection.",
-    inputSchema: objectSchema({
-      id: idSchema,
-      options: { type: "object", description: "Get options such as depth=brief|standard|deep|full or fields=id,title,status." },
-    }, ["id"]),
-  },
-  {
-    name: "pm_create",
-    description:
-      "Create a pm item natively and write pm history. " +
-      "Output is compact by default (changed_fields replaced with changed_field_count for token efficiency); pass fullChangedFields=true for the full changed_fields array.",
-    inputSchema: objectSchema(
-      {
-        fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
-        allowMissingParent: { type: "boolean", description: "Allow unresolved parent references and emit a validation warning." },
-        options: { type: "object", description: "Create options. title and description are required." },
-      },
-      ["options"],
-    ),
-  },
-  {
-    name: "pm_copy",
-    description:
-      "Copy an existing pm item into a new id while resetting lifecycle fields. " +
-      "Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields array.",
-    inputSchema: objectSchema(
-      {
-        id: idSchema,
-        fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
-        options: { type: "object", description: "Copy options such as title override, author, and message." },
-      },
-      ["id"],
-    ),
-  },
-  {
-    name: "pm_update",
-    description:
-      "Update pm item metadata/body/dependencies/log seeds natively. " +
-      "Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields delta.",
-    inputSchema: objectSchema(
-      {
-        id: idSchema,
-        fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
-        options: { type: "object" },
-      },
-      ["id", "options"],
-    ),
-  },
-  {
-    name: "pm_claim",
-    description: "Claim a pm item.",
-    inputSchema: objectSchema({ id: idSchema, force: { type: "boolean" }, options: { type: "object" } }, ["id"]),
-  },
-  {
-    name: "pm_release",
-    description: "Release a pm item claim.",
-    inputSchema: objectSchema({ id: idSchema, force: { type: "boolean" }, options: { type: "object" } }, ["id"]),
-  },
-  {
-    name: "pm_close",
-    description:
-      "Close a pm item with optional close reason and optional close validation (reason requirement follows governance settings). " +
-      "Output is compact by default (changed_fields replaced with changed_field_count); pass fullChangedFields=true for the full changed_fields array.",
-    inputSchema: objectSchema(
-      {
-        id: idSchema,
-        reason: { type: "string", description: "Close reason text when provided or required by governance settings." },
-        duplicateOf: { type: "string", description: "Canonical item id when closing this item as a duplicate." },
-        fullChangedFields: { type: "boolean", description: "Return full changed_fields instead of changed_field_count." },
-        idOnly: { type: "boolean", description: "Return only id and status." },
-        options: { type: "object" },
-      },
-      ["id"],
-    ),
-  },
-  {
-    name: "pm_comments",
-    description:
-      "List or add comments on a pm item. Use options.add to append. " +
-      "List calls default to the most recent 20 comments with total_count/has_more metadata for token efficiency. " +
-      "Pass options.limit=N to choose a page size, options.limit=0 for summary-only metadata, or options.full=true for full history.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
-  },
-  {
-    name: "pm_files",
-    description: "List, add, remove, audit, or validate linked files for a pm item.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
-  },
-  {
-    name: "pm_docs",
-    description: "List, add, or remove linked docs for a pm item.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
-  },
-  {
-    name: "pm_notes",
-    description:
-      "List or add structured notes on a pm item. Use options.add to append a note; omit it to list existing notes.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
-  },
-  {
-    name: "pm_learnings",
-    description:
-      "List or add learnings on a pm item. Use options.add to capture a learning/insight; omit it to list existing learnings.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
-  },
-  {
-    name: "pm_deps",
-    description:
-      "List, add, or remove dependencies for a pm item. Use options.add to declare a dependency and options.remove to drop one; omit both to list current dependencies.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
-  },
-  {
-    name: "pm_test",
-    description: "List, add, remove, or run linked tests for a pm item.",
-    inputSchema: objectSchema({ id: idSchema, options: { type: "object" } }, ["id"]),
-  },
-  {
-    name: "pm_validate",
-    description: "Run pm validation checks.",
-    inputSchema: objectSchema({ options: { type: "object" } }),
-  },
-  {
-    name: "pm_health",
-    description: "Run pm health diagnostics. Pass options.brief=true for compact low-token details, options.skipIntegrity=true, options.skipDrift=true, options.skipVectors=true for a fast status-only check, or options.full=true for the complete deep check.",
-    inputSchema: objectSchema({ options: { type: "object" } }),
-  },
-  {
-    name: "pm_contracts",
-    description: "Inspect pm command, flag, schema, and availability contracts.",
-    inputSchema: objectSchema({ options: { type: "object" } }),
-  },
-  {
-    name: "pm_plan",
-    description:
-      "Run agent-optimized Plan workflows. options.subcommand selects: create|show|add-step|update-step|complete-step|block-step|reorder-step|remove-step|link|unlink|decision|discovery|validation|resume|approve|materialize. Provide id for all non-create subcommands; provide stepRef for step lifecycle subcommands. Plans store agent-readable steps with dependencies, decisions, discoveries, validation, and resume context.",
-    inputSchema: objectSchema({
-      id: { type: "string", description: "Plan id (required for all subcommands except create)." },
-      stepRef: { type: "string", description: "Step id or order for step lifecycle subcommands." },
-      reorderTo: { type: "number", description: "New order for reorder-step." },
-      options: { type: "object", description: "Plan options including subcommand, stepRef, stepStatus, link, depth, etc." },
-    }),
-  },
-];
+// Tool definitions (TOOLS) live in ./tool-definitions.ts so the `pm contracts`
+// golden-file snapshot can import the surface without loading the server
+// runtime (pm-4os2). This file owns dispatch, normalization, and transport.
 
 // pm-qxwu: TOOL_SCHEMA_BASE keeps additionalProperties:true so legitimate
 // passthrough keeps working, which means a typo'd top-level arg (e.g.
@@ -601,6 +311,12 @@ function optionsWithAuthor(args: Record<string, unknown>, action?: string): Reco
     hoistKey("allowMissingParent");
   } else if (action === "close") {
     hoistKey("duplicateOf");
+  } else if (action === "append") {
+    // pm-7u9j: the narrow pm_append tool declares `body` top-level; runAppend
+    // reads it from options, so hoist unless options.body already wins.
+    // (pm_schema/pm_config top-level args are consumed directly by runAction's
+    // schema/config cases, which read args before options — no hoist needed.)
+    hoistKey("body");
   }
   const options = normalizeMcpOptionsArrays({ ...hoistedTopLevel, ...baseOptions }, action);
   const author = readString(args, "author");
@@ -926,7 +642,12 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       ) {
         listOptions.compact = true;
       }
-      return runList(readString(args, "status"), listOptions as never, global);
+      // pm-rmjy: echo the applied filters + resolved projection mode so agents
+      // get structured confirmation of what the server actually ran.
+      return withQuerySummary(
+        (await runList(readString(args, "status"), listOptions as never, global)) as unknown as Record<string, unknown>,
+        listOptions,
+      );
     }
     case "get":
       return runGet(id ?? readRequiredString(options, "id"), global, options);
@@ -939,7 +660,11 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       ) {
         searchOptions.compact = true;
       }
-      return runSearch(readRequiredString(args, "query"), searchOptions, global);
+      // pm-rmjy: echo the applied filters + resolved projection mode (see list).
+      return withQuerySummary(
+        (await runSearch(readRequiredString(args, "query"), searchOptions, global)) as unknown as Record<string, unknown>,
+        searchOptions as Record<string, unknown>,
+      );
     }
     case "create": {
       const { changedFields, idOnly, runnerOptions } = withMutationCompaction(args, options);
@@ -1047,15 +772,23 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
     }
     case "contracts":
       return runContracts(options, global);
-    case "config":
+    case "config": {
+      // pm-v68d: the narrow pm_config tool declares configAction top-level;
+      // options.configAction/options.action remain accepted for pm_run parity.
+      const configAction =
+        readString(args, "configAction") ?? readString(options, "configAction") ?? readString(options, "action");
+      if (configAction === undefined) {
+        throw new PmCliError("Missing required argument: configAction", 64);
+      }
       return runConfig(
         readString(args, "scope") ?? readString(options, "scope") ?? "project",
-        readString(args, "configAction") ?? readRequiredString(options, "action"),
+        configAction,
         readString(args, "key") ?? readString(options, "key"),
         options,
         global,
         readString(args, "value") ?? readString(options, "value"),
       );
+    }
     case "activity": {
       const activityOptions = { ...options } as Parameters<typeof runActivity>[0] & { full?: unknown };
       if (activityOptions.compact === undefined) {
@@ -1236,6 +969,7 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_create: (args) => runAction({ ...args, action: "create" }),
   pm_copy: (args) => runAction({ ...args, action: "copy" }),
   pm_update: (args) => runAction({ ...args, action: "update" }),
+  pm_append: (args) => runAction({ ...args, action: "append" }),
   pm_claim: (args) => runAction({ ...args, action: "claim" }),
   pm_release: (args) => runAction({ ...args, action: "release" }),
   pm_close: (args) => runAction({ ...args, action: "close" }),
@@ -1249,6 +983,8 @@ const HANDLERS: Record<string, ToolHandler> = {
   pm_validate: (args) => runAction({ ...args, action: "validate" }),
   pm_health: (args) => runAction({ ...args, action: "health" }),
   pm_contracts: (args) => runAction({ ...args, action: "contracts" }),
+  pm_schema: (args) => runAction({ ...args, action: "schema" }),
+  pm_config: (args) => runAction({ ...args, action: "config" }),
   pm_plan: (args) => runAction({ ...args, action: "plan" }),
 };
 
@@ -1300,9 +1036,10 @@ export async function handleRequest(request: JsonRpcRequest): Promise<Record<str
       instructions:
         "You have access to native pm CLI tools for git-based project management. " +
         "Use pm_context or pm_search before creating new work. " +
-        "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_copy, pm_update, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_test, pm_validate, pm_health, pm_contracts, pm_plan) over pm_run when they cover the operation. " +
+        "Prefer narrow tools (pm_context, pm_list, pm_get, pm_search, pm_create, pm_copy, pm_update, pm_append, pm_claim, pm_release, pm_close, pm_comments, pm_files, pm_docs, pm_notes, pm_learnings, pm_deps, pm_test, pm_validate, pm_health, pm_contracts, pm_schema, pm_config, pm_plan) over pm_run when they cover the operation. " +
         "Use pm_plan for agent harness Plan workflows: it provides Codex/Claude/Cursor-style planning with durable steps, dependencies, decisions, discoveries, validation, and materialization. " +
-        "Use pm_run with an explicit action for package-owned operations (calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume), plus activity, aggregate, history, stats, append, test-all, and gc. " +
+        "Use pm_schema and pm_config for workspace configuration: pm_schema manages custom item types/statuses and pm_config reads or writes settings keys. " +
+        "Use pm_run with an explicit action for package-owned operations (calendar/templates/guide/dedupe-audit/normalize/reindex/comments-audit/completion/test-runs-list/test-runs-status/test-runs-logs/test-runs-stop/test-runs-resume), plus activity, aggregate, history, stats, test-all, and gc. " +
         "Use history-redact for audited history-stream redaction workflows, history-repair to re-anchor a drifted history chain, and history-compact to checkpoint/prune long history streams while preserving replay integrity. " +
         "Set author to 'claude-code-agent' on all mutations. " +
         "Do not pass path during real repository tracking — only pass path for sandbox or test runs.",

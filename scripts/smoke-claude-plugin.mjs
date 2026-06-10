@@ -116,10 +116,10 @@ try {
   const toolNames = new Set(tools.tools.map((tool) => tool.name));
   const required = [
     "pm_run", "pm_context", "pm_search", "pm_list", "pm_get",
-    "pm_create", "pm_copy", "pm_update", "pm_claim", "pm_release", "pm_close",
+    "pm_create", "pm_copy", "pm_update", "pm_append", "pm_claim", "pm_release", "pm_close",
     "pm_comments", "pm_files", "pm_docs", "pm_notes", "pm_learnings",
     "pm_deps", "pm_test",
-    "pm_validate", "pm_health", "pm_contracts", "pm_plan",
+    "pm_validate", "pm_health", "pm_contracts", "pm_schema", "pm_config", "pm_plan",
   ];
   for (const name of required) {
     if (!toolNames.has(name)) {

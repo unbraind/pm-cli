@@ -7,9 +7,9 @@ import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 // pm-kl11: MCP protocol handshake coverage. These tests drive handleRequest
 // directly (the same entry point the stdio transport calls per JSON-RPC line)
-// to lock the initialize/tools-list/tools-call contract, the 22-tool surface
-// (incl. the pm-hywv narrow tools), the unknown-tool error path, and the
-// pm-qxwu typo-warning behavior.
+// to lock the initialize/tools-list/tools-call contract, the 25-tool surface
+// (incl. the pm-hywv narrow tools and the pm-v68d/pm-7u9j workspace tools),
+// the unknown-tool error path, and the pm-qxwu typo-warning behavior.
 
 const EXPECTED_TOOL_NAMES = [
   "pm_run",
@@ -20,6 +20,7 @@ const EXPECTED_TOOL_NAMES = [
   "pm_create",
   "pm_copy",
   "pm_update",
+  "pm_append",
   "pm_claim",
   "pm_release",
   "pm_close",
@@ -33,6 +34,8 @@ const EXPECTED_TOOL_NAMES = [
   "pm_validate",
   "pm_health",
   "pm_contracts",
+  "pm_schema",
+  "pm_config",
   "pm_plan",
 ];
 
@@ -78,10 +81,14 @@ describe("MCP protocol handshake", () => {
     expect(result.instructions).toContain("pm_learnings");
     expect(result.instructions).toContain("pm_deps");
     expect(result.instructions).toContain("pm_copy");
+    // pm-v68d/pm-7u9j: workspace-configuration and append narrow tools.
+    expect(result.instructions).toContain("pm_schema");
+    expect(result.instructions).toContain("pm_config");
+    expect(result.instructions).toContain("pm_append");
     expect(result.capabilities).toMatchObject({ tools: {} });
   });
 
-  it("tools/list returns exactly the 22 expected tools including the new narrow tools", async () => {
+  it("tools/list returns exactly the 25 expected tools including the new narrow tools", async () => {
     const result = (await handleRequest({
       jsonrpc: "2.0",
       id: 2,
@@ -89,7 +96,7 @@ describe("MCP protocol handshake", () => {
     })) as { tools?: Array<{ name?: string; description?: string; inputSchema?: unknown }> };
 
     const tools = result.tools ?? [];
-    expect(tools).toHaveLength(22);
+    expect(tools).toHaveLength(25);
 
     const names = tools.map((tool) => tool.name);
     expect(new Set(names)).toEqual(new Set(EXPECTED_TOOL_NAMES));
@@ -416,6 +423,179 @@ describe("MCP protocol handshake", () => {
       expect(topLevelSearchContent?.result?.items).toEqual([
         expect.objectContaining({ id: targetId, title: "Top-level filter marker target task" }),
       ]);
+    });
+  });
+
+  it("pm_append appends body text with compact mutation output (pm-7u9j)", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Append tool target",
+          "--description",
+          "Append tool target description",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--author",
+          "mcp-test",
+        ],
+        { expectJson: true },
+      );
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      const appendResult = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 40,
+        method: "tools/call",
+        params: {
+          name: "pm_append",
+          arguments: { path: context.pmPath, id, author: "mcp-test", body: "Evidence: append narrow tool works." },
+        },
+      })) as { isError?: boolean; structuredContent?: { warnings?: unknown; result?: Record<string, unknown> } };
+      expect(appendResult?.isError).not.toBe(true);
+      // Declared top-level body must not trip the unexpected-key warning.
+      expect(appendResult?.structuredContent?.warnings).toBeUndefined();
+      // Compact-by-default mutation projection: count instead of changed_fields.
+      expect(appendResult?.structuredContent?.result?.changed_field_count).toBe(1);
+      expect(appendResult?.structuredContent?.result?.changed_fields).toBeUndefined();
+
+      const got = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 41,
+        method: "tools/call",
+        params: { name: "pm_get", arguments: { path: context.pmPath, id, options: { depth: "full" } } },
+      })) as { structuredContent?: { result?: { body?: string } } };
+      expect(got.structuredContent?.result?.body).toContain("Evidence: append narrow tool works.");
+    });
+  });
+
+  it("pm_schema and pm_config drive workspace configuration natively (pm-v68d)", async () => {
+    await withTempPmPath(async (context) => {
+      const schemaList = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 50,
+        method: "tools/call",
+        params: { name: "pm_schema", arguments: { path: context.pmPath, subcommand: "list" } },
+      })) as { isError?: boolean; structuredContent?: { warnings?: unknown; result?: { builtin?: unknown[] } } };
+      expect(schemaList?.isError).not.toBe(true);
+      expect(schemaList?.structuredContent?.warnings).toBeUndefined();
+      expect(Array.isArray(schemaList?.structuredContent?.result?.builtin)).toBe(true);
+
+      const addType = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 51,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: {
+            path: context.pmPath,
+            subcommand: "add-type",
+            name: "Story",
+            description: "User story",
+            author: "mcp-test",
+          },
+        },
+      })) as { isError?: boolean; structuredContent?: { warnings?: unknown; result?: { registered?: boolean; type?: { name?: string } } } };
+      expect(addType?.isError).not.toBe(true);
+      expect(addType?.structuredContent?.warnings).toBeUndefined();
+      expect(addType?.structuredContent?.result?.registered).toBe(true);
+      expect(addType?.structuredContent?.result?.type?.name).toBe("Story");
+
+      const configSet = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 52,
+        method: "tools/call",
+        params: {
+          name: "pm_config",
+          arguments: {
+            path: context.pmPath,
+            configAction: "set",
+            key: "governance-require-close-reason",
+            value: "true",
+            author: "mcp-test",
+          },
+        },
+      })) as { isError?: boolean; structuredContent?: { warnings?: unknown; result?: { policy?: string } } };
+      expect(configSet?.isError).not.toBe(true);
+      expect(configSet?.structuredContent?.warnings).toBeUndefined();
+      expect(configSet?.structuredContent?.result?.policy).toBe("enabled");
+
+      const configGet = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 53,
+        method: "tools/call",
+        params: {
+          name: "pm_config",
+          arguments: { path: context.pmPath, configAction: "get", key: "governance-require-close-reason" },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { policy?: string } } };
+      expect(configGet?.isError).not.toBe(true);
+      expect(configGet?.structuredContent?.result?.policy).toBe("enabled");
+    });
+  });
+
+  it("pm_list/pm_search echo applied filters and projection in query_summary (pm-rmjy)", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "Query summary marker task",
+          "--description",
+          "Query summary marker task description",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--author",
+          "mcp-test",
+        ],
+        { expectJson: true },
+      );
+      expect(create.code).toBe(0);
+
+      const list = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 60,
+        method: "tools/call",
+        params: {
+          name: "pm_list",
+          arguments: { path: context.pmPath, status: "open", type: "Task", limit: 5 },
+        },
+      })) as { structuredContent?: { result?: { query_summary?: { filters?: Record<string, unknown>; projection?: string } } } };
+      const listSummary = list.structuredContent?.result?.query_summary;
+      expect(listSummary?.projection).toBe("compact");
+      expect(listSummary?.filters).toMatchObject({ status: "open", type: "Task" });
+
+      const briefList = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 61,
+        method: "tools/call",
+        params: {
+          name: "pm_list",
+          arguments: { path: context.pmPath, options: { brief: true } },
+        },
+      })) as { structuredContent?: { result?: { query_summary?: { projection?: string } } } };
+      expect(briefList.structuredContent?.result?.query_summary?.projection).toBe("brief");
+
+      const search = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 62,
+        method: "tools/call",
+        params: {
+          name: "pm_search",
+          arguments: { path: context.pmPath, query: "query summary marker", type: "Task" },
+        },
+      })) as { structuredContent?: { result?: { query_summary?: { filters?: Record<string, unknown>; projection?: string } } } };
+      const searchSummary = search.structuredContent?.result?.query_summary;
+      expect(searchSummary?.projection).toBe("compact");
+      expect(searchSummary?.filters).toMatchObject({ type: "Task" });
     });
   });
 

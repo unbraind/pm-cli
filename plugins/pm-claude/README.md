@@ -152,7 +152,9 @@ Spawn pm-triage-agent to set up the pm item for: add OAuth2 login support
 | `pm_list` | Filtered item list |
 | `pm_get` | Single item detail |
 | `pm_create` | Create new item |
+| `pm_copy` | Copy item into a new id |
 | `pm_update` | Update metadata |
+| `pm_append` | Append text to item body |
 | `pm_claim` | Claim for active work |
 | `pm_release` | Release claim |
 | `pm_close` | Close with reason |
@@ -166,6 +168,8 @@ Spawn pm-triage-agent to set up the pm item for: add OAuth2 login support
 | `pm_validate` | Run validation checks |
 | `pm_health` | Run health diagnostics |
 | `pm_contracts` | Inspect command contracts |
+| `pm_schema` | Manage custom item types/statuses |
+| `pm_config` | Read or write settings keys |
 | `pm_plan` | Manage durable Plan workflows |
 
 ### General tool

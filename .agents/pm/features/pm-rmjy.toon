@@ -6,10 +6,20 @@ status: open
 priority: 3
 tags[3]: agent-ux,"area:mcp",dx
 created_at: "2026-06-07T10:04:09.891Z"
-updated_at: "2026-06-07T10:22:12.728Z"
+updated_at: "2026-06-10T15:13:52.609Z"
+assignee: mcp-tools-agent
 author: audit-platform-agent
 acceptance_criteria: "- pm_list/pm_search compact MCP output includes an applied-filters summary\n- Agents can see which filters were applied without re-echoing inputs\n- Covered by a contract/snapshot test"
 parent: pm-5k4v
 risk: low
 confidence: medium
+comments[1]{created_at,author,text}:
+  "2026-06-10T15:13:51.320Z",mcp-tools-agent,"Added query_summary to MCP pm_list/pm_search results (also pm_run action=list/search): structuredContent.result.query_summary = { filters, projection }. filters echoes the result's resolved filters (compact paths already compute the active-filter summary); projection is the resolved projection label (compact/brief/fields/full) — taken from the result's own projection.mode for verbose payloads, from the requested options for the compact summary paths, with brief winning outright (list reports brief as mode=compact). Pure logic lives in new src/core/output/query-summary.ts (withQuerySummary + resolveQueryProjectionLabel), 100% unit-covered in tests/unit/output.spec.ts; integration coverage in mcp-handshake.spec.ts asserts filters echo (status/type) and projection labels for default-compact and brief list calls plus compact search. Tool descriptions for pm_list/pm_search mention query_summary."
+files[4]{path,scope,note}:
+  src/core/output/query-summary.ts,project,"New pure module: withQuerySummary/resolveQueryProjectionLabel"
+  src/mcp/server.ts,project,list/search runAction cases wrap results with withQuerySummary
+  tests/integration/mcp-handshake.spec.ts,project,pm_list/pm_search query_summary integration test
+  tests/unit/output.spec.ts,project,"query-summary unit tests (labels,precedence,fallback)"
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/output.spec.ts tests/integration/mcp-handshake.spec.ts,null,project,null,null,null,null,null,null,null,null,null,null,null,null,query_summary unit + integration coverage
 body: ""
