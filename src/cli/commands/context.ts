@@ -808,15 +808,14 @@ function buildRecentlyCreated(
   childrenByParent: Map<string, ItemFrontMatter[]>,
   limit: number,
 ): RecentContextItem[] {
-  return [...allNonTerminal]
+  return allNonTerminal
+    .map((item) => ({ item, sortKey: sortableTimestamp(item.created_at) }))
     .sort((left, right) => {
-      const leftCreated = sortableTimestamp(left.created_at);
-      const rightCreated = sortableTimestamp(right.created_at);
-      const byCreated = compareTimestampStrings(rightCreated, leftCreated);
-      return byCreated !== 0 ? byCreated : left.id.localeCompare(right.id);
+      const byCreated = compareTimestampStrings(right.sortKey, left.sortKey);
+      return byCreated !== 0 ? byCreated : left.item.id.localeCompare(right.item.id);
     })
     .slice(0, limit)
-    .map((item) => ({
+    .map(({ item }) => ({
       ...toContextFocusItem(item, statusRegistry, childrenByParent),
       created_at: item.created_at,
     }));
