@@ -1,11 +1,11 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { defineExtension, listAllFrontMatter, locateItem, readLocatedItem, readSettings, resolveItemTypeRegistry, EXIT_CODE, PmCliError, } from "@unbrained/pm-cli/sdk";
-import { buildChangelogDocument, createChangelog, mergeChangelog, suggestSemver, writeChangelog } from "./generator.js";
+import { buildChangelogDocument, createChangelog, explainChangelogSelection, mergeChangelog, suggestSemver, writeChangelog } from "./generator.js";
 import { resolveReleaseContext, resolveReleaseTagWindows } from "./release-context.js";
 export default defineExtension({
     name: "pm-changelog",
-    version: "2026.6.9",
+    version: "2026.6.10",
     activate(api) {
         api.registerCommand({
             name: "changelog generate",
@@ -47,6 +47,7 @@ export default defineExtension({
                 { long: "--emoji-prefix", description: "Prefix section headings with conventional emoji (Added 🎉, Fixed 🐛, ...)" },
                 { long: "--include-metadata", description: "Append compact item metadata (type/status/priority/release/milestone) to each entry" },
                 { long: "--changelog-json", description: "Return the full structured changelog document (releases->sections->items)" },
+                { long: "--explain", description: "Return item-selection diagnostics (counts, exclusions, hints)" },
                 { long: "--mode", value_name: "mode", description: "replace or prepend existing changelog (default: replace)" },
                 { long: "--include-empty", description: "Emit an empty release section when no items match" },
                 { long: "--include-links", description: "Include item URLs in generated entries (default: false)" },
@@ -136,16 +137,28 @@ export default defineExtension({
                     includeLinks: booleanOption(ctx.options, "include-links", "includeLinks"),
                     itemUrlBase: stringOption(ctx.options, "item-url-base", "itemUrlBase"),
                 };
+                const selectionReport = booleanOption(ctx.options, "explain", "explain")
+                    ? explainChangelogSelection(generationOptions)
+                    : undefined;
                 // OPT-IN (`--changelog-json`): structured document; never writes a file.
                 if (booleanOption(ctx.options, "changelog-json", "changelogJson")) {
                     const document = buildChangelogDocument(generationOptions);
-                    return { document, format: "json", item_count: document.item_count };
+                    return {
+                        document,
+                        format: "json",
+                        item_count: document.item_count,
+                        ...(selectionReport ? { selection_report: selectionReport } : {}),
+                    };
                 }
                 // OPT-IN (`--suggest-semver`) standalone: emit only the semver analysis;
                 // never writes a file and never alters default markdown.
                 if (booleanOption(ctx.options, "suggest-semver", "suggestSemver")) {
                     const suggestion = suggestSemver(generationOptions);
-                    return { suggested_semver: suggestion, format: "json" };
+                    return {
+                        suggested_semver: suggestion,
+                        format: "json",
+                        ...(selectionReport ? { selection_report: selectionReport } : {}),
+                    };
                 }
                 const generated = createChangelog(generationOptions);
                 if (stdout) {
@@ -157,6 +170,7 @@ export default defineExtension({
                         action: merged.action,
                         changed: merged.changed,
                         item_count: generated.itemCount,
+                        ...(selectionReport ? { selection_report: selectionReport } : {}),
                     };
                 }
                 const result = writeChangelog({
@@ -175,6 +189,7 @@ export default defineExtension({
                     item_count: result.itemCount,
                     bytes: result.bytes,
                     check: Boolean(ctx.options["check"]),
+                    ...(selectionReport ? { selection_report: selectionReport } : {}),
                 };
             },
         });

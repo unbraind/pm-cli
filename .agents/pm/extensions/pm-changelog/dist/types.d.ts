@@ -200,4 +200,42 @@ export interface ChangelogDocument {
     /** Present only when `--suggest-semver` is set: recommended version bump. */
     suggested_semver?: SemverSuggestion;
 }
+/** Opt-in diagnostics describing how items flowed through changelog selection. */
+export interface ChangelogSelectionReport {
+    filters: {
+        statuses: string[];
+        since?: string;
+        until?: string;
+        release_windows: boolean;
+        include_empty: boolean;
+        limit?: number;
+        since_version?: string;
+    };
+    stage_counts: {
+        input: number;
+        after_title: number;
+        after_status: number;
+        after_time: number;
+        after_release_windows?: number;
+        candidate_sections: number;
+        visible_sections: number;
+        candidate_items: number;
+        visible_items: number;
+    };
+    excluded_counts: {
+        missing_title: number;
+        status: number;
+        time_window: number;
+        release_window: number;
+        hidden_by_visibility: number;
+    };
+    sample_items: {
+        missing_title: string[];
+        status: string[];
+        time_window: string[];
+        release_window: string[];
+        hidden_by_visibility: string[];
+    };
+    hints: string[];
+}
 //# sourceMappingURL=types.d.ts.map

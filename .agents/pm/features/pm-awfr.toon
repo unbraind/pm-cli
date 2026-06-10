@@ -1,0 +1,13 @@
+id: pm-awfr
+title: "pm list: include parent in default compact projection when set (GH-180)"
+description: "Default compact list projection adds parent field for items that have one, giving hierarchy context without --tree or per-item gets. Fixes GitHub issue #180 (tree mode already exists)."
+type: Feature
+status: open
+priority: 2
+tags[3]: agent-ux,cli,list
+created_at: "2026-06-10T08:52:54.069Z"
+updated_at: "2026-06-10T08:55:45.800Z"
+assignee: context-agent
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

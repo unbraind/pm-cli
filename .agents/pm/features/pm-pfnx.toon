@@ -1,0 +1,12 @@
+id: pm-pfnx
+title: "pm files/docs: standalone --note flag alongside --add (GH-170)"
+description: "pm files --add <path> --note <text> (and pm docs) instead of requiring embedded path=...,note=... pair syntax. GitHub issue #170."
+type: Feature
+status: open
+priority: 3
+tags[3]: backlog,cli,ux
+created_at: "2026-06-10T09:00:56.434Z"
+updated_at: "2026-06-10T09:00:56.434Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

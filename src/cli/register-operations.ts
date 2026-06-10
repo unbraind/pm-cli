@@ -51,9 +51,13 @@ export function registerOperationCommands(program: Command): void {
     .command("test")
     .argument("<id>", "Item id")
     .option("--add <value>", "Add linked test entry (CSV/markdown pairs or - for stdin)", collect)
+    .option("--add-json <value>", "Add linked test entry from JSON object/array (or - for stdin)", collect)
     .option("--remove <value>", "Remove linked test entry by command/path (command=<value>, path=<value>, markdown pairs, plain value, or - for stdin)", collect)
     .option("--list", "List linked tests without mutating")
     .option("--run", "Run linked test commands")
+    .option("--match <value>", "Run only linked tests whose command/path contains this substring")
+    .option("--only-index <n>", "Run only the 1-based linked-test index from --list order")
+    .option("--only-last", "Run only the most recently added linked test")
     .option("--background", "Run linked tests in managed background mode")
     .option("--timeout <seconds>", "Default run timeout in seconds")
     .option("--progress", "Emit linked-test progress to stderr (always shown in TTY, opt-in for non-TTY)")
@@ -76,19 +80,20 @@ export function registerOperationCommands(program: Command): void {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const addValues = Array.isArray(options.add) ? (options.add as string[]) : [];
+      const addJsonValues = Array.isArray(options.addJson) ? (options.addJson as string[]) : [];
       const removeValues = Array.isArray(options.remove) ? (options.remove as string[]) : [];
       const runInBackground = options.background === true;
       if (runInBackground && options.run !== true) {
         throw new PmCliError("--background requires --run", EXIT_CODE.USAGE);
       }
-      if (runInBackground && (addValues.length > 0 || removeValues.length > 0)) {
-        throw new PmCliError("--background does not support --add/--remove; update linked tests first, then run in background", EXIT_CODE.USAGE);
+      if (runInBackground && (addValues.length > 0 || addJsonValues.length > 0 || removeValues.length > 0)) {
+        throw new PmCliError("--background does not support --add/--add-json/--remove; update linked tests first, then run in background", EXIT_CODE.USAGE);
       }
       if (runInBackground) {
         const { runStartBackgroundRun } = await import("./commands/test-runs.js");
         const result = await runStartBackgroundRun({
           kind: "test",
-          commandArgs: buildBackgroundTestCommandArgs(id, { ...options, add: addValues, remove: removeValues }),
+          commandArgs: buildBackgroundTestCommandArgs(id, { ...options, add: addValues, addJson: addJsonValues, remove: removeValues }),
           targetId: id,
           author: typeof options.author === "string" ? options.author : undefined,
           noExtensions: globalOptions.noExtensions === true,
@@ -102,9 +107,13 @@ export function registerOperationCommands(program: Command): void {
       const { runTest } = await import("./commands/test.js");
       const result = await runTest(id, {
         add: addValues,
+        addJson: addJsonValues,
         remove: removeValues,
         list: Boolean(options.list),
         run: Boolean(options.run),
+        match: typeof options.match === "string" ? options.match : undefined,
+        onlyIndex: typeof options.onlyIndex === "string" || typeof options.onlyIndex === "number" ? options.onlyIndex : undefined,
+        onlyLast: Boolean(options.onlyLast),
         timeout: typeof options.timeout === "string" ? options.timeout : undefined,
         progress: Boolean(options.progress),
         envSet: Array.isArray(options.envSet) ? (options.envSet as string[]) : [],
@@ -122,7 +131,7 @@ export function registerOperationCommands(program: Command): void {
         message: typeof options.message === "string" ? options.message : undefined,
         force: Boolean(options.force),
       }, globalOptions);
-      if (addValues.length > 0 || removeValues.length > 0 || options.run === true) {
+      if (addValues.length > 0 || addJsonValues.length > 0 || removeValues.length > 0 || options.run === true) {
         await invalidateSearchCachesForMutation(globalOptions, result);
       }
       printResult(result, globalOptions);

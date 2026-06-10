@@ -1,4 +1,4 @@
-import type { ChangelogDocument, GeneratedChangelog, GenerateChangelogOptions, MergeChangelogOptions, MergeChangelogResult, PmItem, ReadPmItemsOptions, SemverSuggestion, WriteChangelogOptions, WriteChangelogResult } from "./types.js";
+import type { ChangelogDocument, ChangelogSelectionReport, GeneratedChangelog, GenerateChangelogOptions, MergeChangelogOptions, MergeChangelogResult, PmItem, ReadPmItemsOptions, SemverSuggestion, WriteChangelogOptions, WriteChangelogResult } from "./types.js";
 export declare function generateChangelog(options: GenerateChangelogOptions): string;
 export declare function createChangelog(options: GenerateChangelogOptions): GeneratedChangelog;
 /**
@@ -28,6 +28,13 @@ export declare function suggestSemver(options: GenerateChangelogOptions): Semver
  * emits (GH #28).
  */
 export declare function visibleChangelogItems(options: GenerateChangelogOptions): PmItem[];
+/**
+ * OPT-IN (`--explain`): return machine-readable diagnostics showing how input
+ * items moved through title/status/time/release-window filters and visibility
+ * narrowing (`--limit`/`--since-version`). Designed for agent/operator UX when
+ * output is unexpectedly empty or smaller than expected.
+ */
+export declare function explainChangelogSelection(options: GenerateChangelogOptions): ChangelogSelectionReport;
 /** Classify an explicit item set into a semver bump (no option-driven filtering). */
 export declare function suggestSemverForItems(items: PmItem[]): SemverSuggestion;
 //# sourceMappingURL=generator.d.ts.map

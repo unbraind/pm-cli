@@ -38,6 +38,7 @@ const AGGREGATE_GROUP_FIELDS: AggregateGroupField[] = [
 export interface AggregateOptions {
   groupBy?: string;
   count?: boolean;
+  completion?: boolean;
   sum?: string;
   avg?: string;
   includeUnparented?: boolean;
@@ -57,6 +58,11 @@ export interface AggregateOptions {
 export interface AggregateRow {
   group: AggregateGroupRecord;
   count: number;
+  open?: number;
+  in_progress?: number;
+  closed?: number;
+  other?: number;
+  completion_pct?: number;
   null_count?: number;
   sum?: number | null;
   avg?: number | null;
@@ -73,6 +79,7 @@ export interface AggregateResult {
   filters: {
     group_by: AggregateGroupField[];
     count: boolean;
+    completion: boolean;
     sum?: string | null;
     avg?: string | null;
     numeric_field?: string | null;
@@ -244,6 +251,34 @@ interface AggregateAccumulator {
   numeric_count: number;
   numeric_sum: number;
   null_count: number;
+  open_count: number;
+  in_progress_count: number;
+  closed_count: number;
+  other_count: number;
+}
+
+function completionPct(closed: number, total: number): number {
+  if (total <= 0) {
+    return 0;
+  }
+  return Math.round((closed / total) * 10000) / 100;
+}
+
+function updateCompletionCounts(accumulator: AggregateAccumulator, status: ItemStatus, statusRegistry: RuntimeStatusRegistry): void {
+  const normalizedStatus = normalizeStatusInput(String(status), statusRegistry) ?? status;
+  if (normalizedStatus === statusRegistry.open_status) {
+    accumulator.open_count += 1;
+    return;
+  }
+  if (normalizedStatus === "in_progress" || (statusRegistry.active_statuses.has(normalizedStatus) && normalizedStatus !== statusRegistry.open_status)) {
+    accumulator.in_progress_count += 1;
+    return;
+  }
+  if (statusRegistry.terminal_done_statuses.has(normalizedStatus) || normalizedStatus === statusRegistry.close_status) {
+    accumulator.closed_count += 1;
+    return;
+  }
+  accumulator.other_count += 1;
 }
 
 export async function runAggregate(options: AggregateOptions, global: GlobalOptions): Promise<AggregateResult> {
@@ -257,6 +292,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
   const groupBy = parseGroupBy(options.groupBy);
   const status = parseStatus(options.status, statusRegistry);
   const numericAggregation = parseNumericAggregation(options);
+  const includeCompletion = options.completion === true;
   const includeUnparented = options.includeUnparented === true;
 
   const listed = await runList(
@@ -298,6 +334,9 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
         : readNumericAggregateValue(item, numericAggregation.field);
     if (existing) {
       existing.row.count += 1;
+      if (includeCompletion) {
+        updateCompletionCounts(existing, item.status, statusRegistry);
+      }
       if (numericAggregation !== null) {
         if (numericValue === null) {
           existing.null_count += 1;
@@ -307,7 +346,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
         }
       }
     } else {
-      grouped.set(key, {
+      const accumulator: AggregateAccumulator = {
         row: {
           group,
           count: 1,
@@ -315,25 +354,39 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
         numeric_count: numericValue === null ? 0 : 1,
         numeric_sum: numericValue ?? 0,
         null_count: numericValue === null ? 1 : 0,
-      });
+        open_count: 0,
+        in_progress_count: 0,
+        closed_count: 0,
+        other_count: 0,
+      };
+      if (includeCompletion) {
+        updateCompletionCounts(accumulator, item.status, statusRegistry);
+      }
+      grouped.set(key, accumulator);
     }
     groupedItemCount += 1;
   }
 
   const groups = [...grouped.values()]
     .map((entry) => {
-      if (numericAggregation === null) {
-        return entry.row;
-      }
       const withNumeric: AggregateRow = {
         ...entry.row,
-        null_count: entry.null_count,
       };
-      if (numericAggregation.sum) {
-        withNumeric.sum = entry.numeric_sum;
+      if (includeCompletion) {
+        withNumeric.open = entry.open_count;
+        withNumeric.in_progress = entry.in_progress_count;
+        withNumeric.closed = entry.closed_count;
+        withNumeric.other = entry.other_count;
+        withNumeric.completion_pct = completionPct(entry.closed_count, entry.row.count);
       }
-      if (numericAggregation.avg) {
-        withNumeric.avg = entry.numeric_count === 0 ? null : entry.numeric_sum / entry.numeric_count;
+      if (numericAggregation !== null) {
+        withNumeric.null_count = entry.null_count;
+        if (numericAggregation.sum) {
+          withNumeric.sum = entry.numeric_sum;
+        }
+        if (numericAggregation.avg) {
+          withNumeric.avg = entry.numeric_count === 0 ? null : entry.numeric_sum / entry.numeric_count;
+        }
       }
       return withNumeric;
     })
@@ -351,6 +404,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
     filters: {
       group_by: groupBy,
       count: true,
+      completion: includeCompletion,
       include_unparented: includeUnparented,
       status: status ?? null,
       type: options.type ?? null,

@@ -27,11 +27,18 @@ import {
   parseLinkedTestContextMode as parseLinkedTestContextModeValue,
   parseLinkedTestEnvClear as parseLinkedTestEnvClearValue,
   parseLinkedTestEnvSet as parseLinkedTestEnvSetValue,
+  parseLinkedTestJsonEntries,
   parseLinkedTestMinLines,
   parseLinkedTestRegexList,
   parseLinkedTestStringList,
   type LinkedTestPmContextMode,
 } from "./linked-test-parsers.js";
+import {
+  parseOnlyIndexValue,
+  resolveLinkedTestRunSelection,
+  type LinkedTestRunSelection,
+  type LinkedTestSelectorKind,
+} from "../../core/test/run-selectors.js";
 import { SCOPE_VALUES } from "../../types/index.js";
 import type { LinkedTest, LinkScope } from "../../types/index.js";
 
@@ -142,9 +149,13 @@ interface LinkedTestRuntimeDirectives {
 
 export interface TestCommandOptions {
   add?: string[];
+  addJson?: string[];
   remove?: string[];
   list?: boolean;
   run?: boolean;
+  match?: string;
+  onlyIndex?: string | number;
+  onlyLast?: boolean;
   timeout?: string;
   progress?: boolean;
   envSet?: string[];
@@ -207,6 +218,7 @@ export interface TestResult {
   tests: LinkedTest[];
   run_results: TestRunResult[];
   failure_categories: Record<LinkedTestFailureCategory, number>;
+  selection?: Omit<LinkedTestRunSelection, "selected">;
   fail_on_skipped_triggered?: boolean;
   warnings?: string[];
   changed: boolean;
@@ -713,6 +725,22 @@ function parseAddEntries(raw: string[] | undefined): LinkedTest[] {
       assert_json_field_gte: parseLinkedTestAssertionGteMap(kv.assert_json_field_gte?.trim(), "--add"),
       note: kv.note?.trim() || undefined,
     };
+  });
+}
+
+function parseAddJsonEntries(raw: string[] | undefined): LinkedTest[] {
+  if (!raw) return [];
+  return raw.flatMap((entry) => {
+    const parsed = parseLinkedTestJsonEntries(entry, "--add-json");
+    for (const linkedTest of parsed) {
+      const command = linkedTest.command;
+      if (!command) {
+        throw new PmCliError("--add-json requires a non-empty command string", EXIT_CODE.USAGE);
+      }
+      assertNoRecursiveTestAllCommand(command);
+      assertSandboxSafeTestRunnerCommand(command);
+    }
+    return parsed;
   });
 }
 
@@ -1681,8 +1709,9 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
   const settings = await readSettings(pmRoot);
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const resolvedAdds = await stdinResolver.resolveList(options.add, "--add");
+  const resolvedAddJsons = await stdinResolver.resolveList(options.addJson, "--add-json");
   const resolvedRemoves = await stdinResolver.resolveList(options.remove, "--remove");
-  const adds = parseAddEntries(resolvedAdds);
+  const adds = [...parseAddEntries(resolvedAdds), ...parseAddJsonEntries(resolvedAddJsons)];
   const removes = parseRemoveEntries(resolvedRemoves);
   const shouldMutate = adds.length > 0 || removes.length > 0;
 
@@ -1760,10 +1789,21 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
       EXIT_CODE.USAGE,
     );
   }
+  const hasSelectorFlags = options.match !== undefined || options.onlyIndex !== undefined || options.onlyLast === true;
+  if (hasSelectorFlags && options.run !== true) {
+    throw new PmCliError("--match, --only-index, and --only-last require --run", EXIT_CODE.USAGE);
+  }
+  const selectorInput = {
+    match: options.match,
+    onlyIndex: options.onlyIndex === undefined ? undefined : parseOnlyIndexValue(options.onlyIndex),
+    onlyLast: options.onlyLast,
+  };
+  const runSelection = options.run === true ? resolveLinkedTestRunSelection(tests, selectorInput) : undefined;
+  const testsToRun = runSelection?.selected ?? tests;
 
   const runStartedAt = options.run === true ? nowIso() : undefined;
   const runResults = options.run === true
-    ? await runLinkedTests(tests, defaultTimeoutSeconds, {
+    ? await runLinkedTests(testsToRun, defaultTimeoutSeconds, {
         progress: options.progress,
         envSet: options.envSet,
         envClear: options.envClear,
@@ -1785,6 +1825,11 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
   const failOnSkippedTriggered =
     options.run === true && options.failOnSkipped === true && runResults.some((entry) => entry.status === "skipped");
   const warnings: string[] = [];
+  if (runSelection && runSelection.selector !== null) {
+    warnings.push(
+      `linked_test_selection:${runSelection.selector}=${runSelection.requested};selected=${runSelection.selected_count};skipped=${runSelection.skipped_count};indexes=${runSelection.selected_indexes.join(",")}`,
+    );
+  }
   if (options.run === true && options.checkContext === true) {
     const preflight = summarizeContextPreflight(runResults);
     warnings.push(
@@ -1834,6 +1879,15 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
     tests,
     run_results: runResults,
     failure_categories: failureCategories,
+    selection: runSelection
+      ? {
+          selector: runSelection.selector,
+          requested: runSelection.requested,
+          selected_indexes: runSelection.selected_indexes,
+          selected_count: runSelection.selected_count,
+          skipped_count: runSelection.skipped_count,
+        }
+      : undefined,
     fail_on_skipped_triggered: failOnSkippedTriggered ? true : undefined,
     warnings: warnings.length > 0 ? warnings : undefined,
     changed: shouldMutate,

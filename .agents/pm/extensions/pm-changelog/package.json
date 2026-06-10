@@ -1,6 +1,6 @@
 {
   "name": "pm-changelog",
-  "version": "2026.6.9",
+  "version": "2026.6.10",
   "description": "Generate CHANGELOG.md files from pm-cli items for local and CI usage",
   "repository": {
     "type": "git",
@@ -54,7 +54,8 @@
     "release:check": "npm run check && npm test && npm run audit:prod && npm run pack:dry-run && npm run changelog:check",
     "test": "npm run build && npm run build:test && node --test dist-test/*.js",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run release:check"
+    "prepublishOnly": "npm run release:check",
+    "release:notes": "node dist/cli.js --pm-root .agents/pm --stdout --since-previous-tag --until-release-tag --release-version-from-package --item-url-base https://github.com/unbraind/pm-changelog/blob/main/.agents/pm --pm-bin ./node_modules/.bin/pm --github-step-summary"
   },
   "pm": {
     "aliases": [

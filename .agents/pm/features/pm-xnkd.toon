@@ -1,0 +1,13 @@
+id: pm-xnkd
+title: "pm close --duplicate-of: structured duplicate tracking with auto-populated closure fields (GH-183, GH-160)"
+description: "Add --duplicate-of <id> to pm close: validates target exists and is not itself closed-as-duplicate, sets duplicate_of metadata on the closed item, auto-populates resolution/expected_result/actual_result (suppressing close_validation_missing_fields warnings), standardizes the close reason, and adds a comment on the canonical item. Fixes GitHub issues #183 and #160."
+type: Feature
+status: open
+priority: 1
+tags[3]: agent-ux,cli,close
+created_at: "2026-06-10T08:52:42.534Z"
+updated_at: "2026-06-10T08:55:19.075Z"
+assignee: mutation-agent
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

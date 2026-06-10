@@ -1,0 +1,12 @@
+id: pm-pmyq
+title: pm validate metadata report grouped by item type (GH-172)
+description: Metadata-required-field counts are global; group missing-field report per item type for targeted remediation. GitHub issue #172.
+type: Feature
+status: open
+priority: 3
+tags[3]: backlog,cli,validate
+created_at: "2026-06-10T09:00:36.272Z"
+updated_at: "2026-06-10T09:00:36.272Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

@@ -215,6 +215,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
 export const AGGREGATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--group-by", list: true },
   { flag: "--count" },
+  { flag: "--completion" },
   { flag: "--sum" },
   { flag: "--avg" },
   { flag: "--include-unparented" },
@@ -667,8 +668,12 @@ export const CLOSE_TASK_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const TEST_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--add" },
+  { flag: "--add-json" },
   { flag: "--remove" },
   { flag: "--run" },
+  { flag: "--match" },
+  { flag: "--only-index" },
+  { flag: "--only-last" },
   { flag: "--background" },
   { flag: "--timeout" },
   { flag: "--progress" },
@@ -1519,6 +1524,7 @@ const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const AGGREGATE_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_AGGREGATE_OPTION_CONTRACTS.map((entry) => entry.param),
   "count",
+  "completion",
   "includeUnparented",
 ]);
 const DEDUPE_AUDIT_CONTRACT_PARAMETER_KEYS = toSchemaKeyList(TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS.map((entry) => entry.param));
@@ -1806,8 +1812,12 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     required: ["id"],
     optional: [
       "add",
+      "addJson",
       "remove",
       "run",
+      "match",
+      "onlyIndex",
+      "onlyLast",
       "background",
       "timeout",
       "progress",

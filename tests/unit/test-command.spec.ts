@@ -907,6 +907,110 @@ describe("runTest", () => {
     });
   });
 
+  it("adds linked tests from JSON without losing complex command syntax", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "json-linked-test-add");
+      const command = "node -e \"process.stdout.write('comma,value -- flag $tmp')\"";
+
+      const result = await runTest(
+        id,
+        {
+          addJson: [
+            JSON.stringify({
+              command,
+              timeout_seconds: 30,
+              assert_stdout_contains: ["comma,value -- flag $tmp"],
+              note: "complex shell command",
+            }),
+          ],
+          message: "add json linked test",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.changed).toBe(true);
+      expect(result.count).toBe(1);
+      expect(result.tests[0]).toEqual(
+        expect.objectContaining({
+          command,
+          scope: "project",
+          timeout_seconds: 30,
+          assert_stdout_contains: ["comma,value -- flag $tmp"],
+          note: "complex shell command",
+        }),
+      );
+    });
+  });
+
+  it("runs selected linked tests without mutating the stored list", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "selected-linked-test-run");
+      await runTest(
+        id,
+        {
+          addJson: [
+            JSON.stringify([
+              { command: "node -e \"process.stdout.write('alpha')\"" },
+              { command: "node -e \"process.stdout.write('beta')\"" },
+              { command: "node -e \"process.stdout.write('gamma')\"" },
+            ]),
+          ],
+          message: "seed selector tests",
+        },
+        { path: context.pmPath },
+      );
+
+      const matched = await runTest(id, { run: true, match: "beta" }, { path: context.pmPath });
+      expect(matched.count).toBe(3);
+      expect(matched.run_results).toHaveLength(1);
+      expect(matched.run_results[0]?.stdout).toBe("beta");
+      expect(matched.selection).toEqual({
+        selector: "match",
+        requested: "beta",
+        selected_indexes: [2],
+        selected_count: 1,
+        skipped_count: 2,
+      });
+      expect(matched.warnings?.[0]).toContain("linked_test_selection:match=beta");
+
+      const indexed = await runTest(id, { run: true, onlyIndex: 1 }, { path: context.pmPath });
+      expect(indexed.run_results[0]?.stdout).toBe("alpha");
+
+      const last = await runTest(id, { run: true, onlyLast: true }, { path: context.pmPath });
+      expect(last.run_results[0]?.stdout).toBe("gamma");
+    });
+  });
+
+  it("rejects invalid linked-test run selector combinations", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "invalid-linked-test-selector");
+      await runTest(
+        id,
+        { addJson: [JSON.stringify({ command: "node --version" })], message: "seed selector validation" },
+        { path: context.pmPath },
+      );
+
+      await expect(runTest(id, { run: true, match: "node", onlyLast: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTest(id, { run: true, onlyIndex: 0 }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTest(id, { run: true, match: "missing" }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTest(id, { match: "node" }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTest(id, { onlyIndex: 1 }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runTest(id, { onlyLast: true }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
   it("accepts bare commands for agent-friendly linked test entries", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "bare-test-command");

@@ -25,6 +25,10 @@ npm install --save-dev pm-changelog @unbrained/pm-cli
 npx pm-changelog --mode prepend --output CHANGELOG.md
 ```
 
+The standalone CLI accepts both `--flag value` and `--flag=value` for value
+options, and supports `--release-version` as a compatibility alias for
+`--version` (matching `pm changelog generate` syntax).
+
 ## Opt-in extras
 
 These flags are strictly additive — omitting them keeps output byte-for-byte identical to the default:
@@ -41,6 +45,7 @@ npx pm-changelog --suggest-semver                 # print a suggested semver bum
 npx pm-changelog --stdout --body-preview 80       # append first 80 chars of each item body
 npx pm-changelog --stdout --emoji-prefix          # prefix headings with emoji (Added 🎉, Fixed 🐛, ...)
 npx pm-changelog --stdout --include-metadata      # append type/status/priority/release/milestone per item
+npx pm-changelog --stdout --json --explain        # emit selection diagnostics (counts + exclusion hints) for agents
 ```
 
 See [Usage](docs/usage.md#opt-in-enhancements) for details.

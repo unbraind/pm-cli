@@ -10,6 +10,7 @@ import {
   parseLinkedTestContextMode,
   parseLinkedTestEnvClear,
   parseLinkedTestEnvSet,
+  parseLinkedTestJsonEntries,
   parseLinkedTestMinLines,
   parseLinkedTestRegexList,
   parseLinkedTestStringList,
@@ -196,5 +197,81 @@ describe("parseLinkedTestAssertionGteMap", () => {
 
   it("throws on non-numeric value", () => {
     expect(() => parseLinkedTestAssertionGteMap("a=x", "--test")).toThrow(/must be numeric/);
+  });
+});
+
+describe("parseLinkedTestJsonEntries", () => {
+  it("preserves complex command strings and parses linked-test metadata", () => {
+    const command = "node scripts/run-tests.mjs test -- tests/unit/output.spec.ts --reporter='dot,verbose'";
+    expect(
+      parseLinkedTestJsonEntries(
+        JSON.stringify({
+          command,
+          scope: "project",
+          timeout_seconds: "240",
+          env_set: { PORT: "0" },
+          env_clear: ["NODE_OPTIONS"],
+          shared_host_safe: true,
+          assert_stdout_contains: ["ok"],
+          assert_json_field_equals: { "items[0].status": "passed" },
+          assert_json_field_gte: { count: 1 },
+          note: "focused run",
+        }),
+        "--add-json",
+      ),
+    ).toEqual([
+      {
+        command,
+        scope: "project",
+        timeout_seconds: 240,
+        env_set: { PORT: "0" },
+        env_clear: ["NODE_OPTIONS"],
+        shared_host_safe: true,
+        assert_stdout_contains: ["ok"],
+        assert_json_field_equals: { "items[0].status": "passed" },
+        assert_json_field_gte: { count: 1 },
+        note: "focused run",
+      },
+    ]);
+  });
+
+  it("accepts arrays and cmd alias", () => {
+    expect(
+      parseLinkedTestJsonEntries(
+        JSON.stringify([
+          { cmd: "node --version" },
+          { command: "pnpm build", timeout: 120 },
+        ]),
+        "--add-json",
+      ).map((entry) => ({ command: entry.command, timeout_seconds: entry.timeout_seconds, scope: entry.scope })),
+    ).toEqual([
+      { command: "node --version", timeout_seconds: undefined, scope: "project" },
+      { command: "pnpm build", timeout_seconds: 120, scope: "project" },
+    ]);
+  });
+
+  it("rejects invalid JSON, unknown keys, unsafe env, and conflicting aliases", () => {
+    expect(() => parseLinkedTestJsonEntries("{", "--add-json")).toThrow(/not valid JSON/);
+    expect(() => parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", bogus: 1 }), "--add-json")).toThrow(
+      /does not recognize key/,
+    );
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", env_set: { PM_PATH: "/tmp/unsafe" } }), "--add-json"),
+    ).toThrow(/reserved for sandbox safety/);
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", cmd: "node --help" }), "--add-json"),
+    ).toThrow(/command and cmd must match/);
+  });
+
+  it("rejects empty numeric strings and non-positive or fractional timeouts", () => {
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", assert_stdout_min_lines: "" }), "--add-json"),
+    ).toThrow(/finite number/);
+    expect(() => parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", timeout_seconds: 0 }), "--add-json")).toThrow(
+      /positive integer/,
+    );
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", timeout_seconds: 1.5 }), "--add-json"),
+    ).toThrow(/positive integer/);
   });
 });

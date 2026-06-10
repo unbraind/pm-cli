@@ -672,6 +672,49 @@ function classifyItem(item) {
 function hasAny(value, needles) {
     return needles.some((needle) => new RegExp(`\\b${escapeRegExp(needle)}\\b`).test(value));
 }
+const SELECTION_SAMPLE_LIMIT = 3;
+function sampleItems(items) {
+    const labels = [];
+    const seen = new Set();
+    for (const item of items) {
+        const label = sampleItemLabel(item);
+        if (seen.has(label))
+            continue;
+        seen.add(label);
+        labels.push(label);
+        if (labels.length >= SELECTION_SAMPLE_LIMIT)
+            break;
+    }
+    return labels;
+}
+function sampleItemLabel(item) {
+    const id = typeof item.id === "string" && item.id.trim() !== ""
+        ? item.id.trim()
+        : "(no-id)";
+    const title = typeof item.title === "string" && item.title.trim() !== ""
+        ? toSingleLine(item.title)
+        : "(untitled)";
+    return `${id}: ${title}`;
+}
+function buildSelectionHints(input) {
+    const hints = [];
+    if (input.excludedCounts.status > 0) {
+        hints.push("Some items were excluded by status; expand --status (for example: --status open,closed).");
+    }
+    if (input.excludedCounts.time_window > 0) {
+        hints.push("Time filtering excluded items; widen --since/--until if those items should be included.");
+    }
+    if (input.hasReleaseWindows && input.excludedCounts.release_window > 0) {
+        hints.push("Some items fell outside release tag windows; verify tag boundaries or item release metadata.");
+    }
+    if (input.excludedCounts.hidden_by_visibility > 0) {
+        hints.push("Visibility narrowing hid sections; relax --limit or --since-version to include older releases.");
+    }
+    if (input.visibleItemCount === 0 && hints.length === 0) {
+        hints.push("No items matched the current filters.");
+    }
+    return hints;
+}
 function formatItem(item, options) {
     const title = escapeMarkdown(toSingleLine(item.title));
     const id = formatItemId(item, options);
@@ -831,6 +874,102 @@ export function visibleChangelogItems(options) {
         : sections.filter((section) => section.items.length > 0);
     const visibleSections = limitSections(candidateSections, options);
     return visibleSections.flatMap((section) => section.items);
+}
+/**
+ * OPT-IN (`--explain`): return machine-readable diagnostics showing how input
+ * items moved through title/status/time/release-window filters and visibility
+ * narrowing (`--limit`/`--since-version`). Designed for agent/operator UX when
+ * output is unexpectedly empty or smaller than expected.
+ */
+export function explainChangelogSelection(options) {
+    const statuses = new Set((options.includeStatuses ?? DEFAULT_STATUSES).map((status) => status.toLowerCase()));
+    const hasReleaseWindows = Boolean(options.releaseWindows && options.releaseWindows.length > 0);
+    const withTitle = [];
+    const missingTitle = [];
+    for (const item of options.items) {
+        if (item.title)
+            withTitle.push(item);
+        else
+            missingTitle.push(item);
+    }
+    const afterStatus = [];
+    const excludedByStatus = [];
+    for (const item of withTitle) {
+        if (statuses.size === 0 || statuses.has(String(item.status ?? "").toLowerCase())) {
+            afterStatus.push(item);
+        }
+        else {
+            excludedByStatus.push(item);
+        }
+    }
+    const afterTime = hasReleaseWindows
+        ? afterStatus
+        : filterItemsByTime(afterStatus, {
+            since: options.since,
+            until: options.until,
+        });
+    const afterTimeRefs = new Set(afterTime);
+    const excludedByTime = hasReleaseWindows
+        ? []
+        : afterStatus.filter((item) => !afterTimeRefs.has(item));
+    const sections = buildSections(afterTime, options);
+    const assignedToReleaseWindows = new Set(hasReleaseWindows ? sections.flatMap((section) => section.items) : []);
+    const excludedByReleaseWindow = hasReleaseWindows
+        ? afterTime.filter((item) => !assignedToReleaseWindows.has(item))
+        : [];
+    const candidateSections = options.includeEmpty
+        ? sections
+        : sections.filter((section) => section.items.length > 0);
+    const visibleSections = limitSections(candidateSections, options);
+    const visibleSectionRefs = new Set(visibleSections);
+    const hiddenByVisibility = candidateSections
+        .filter((section) => !visibleSectionRefs.has(section))
+        .flatMap((section) => section.items);
+    const candidateItems = candidateSections.flatMap((section) => section.items);
+    const visibleItems = visibleSections.flatMap((section) => section.items);
+    const excludedCounts = {
+        missing_title: missingTitle.length,
+        status: excludedByStatus.length,
+        time_window: excludedByTime.length,
+        release_window: excludedByReleaseWindow.length,
+        hidden_by_visibility: hiddenByVisibility.length,
+    };
+    const visibleItemCount = visibleItems.length;
+    return {
+        filters: {
+            statuses: Array.from(statuses),
+            since: options.since,
+            until: options.until,
+            release_windows: hasReleaseWindows,
+            include_empty: Boolean(options.includeEmpty),
+            limit: options.limit,
+            since_version: options.sinceVersion,
+        },
+        stage_counts: {
+            input: options.items.length,
+            after_title: withTitle.length,
+            after_status: afterStatus.length,
+            after_time: afterTime.length,
+            after_release_windows: hasReleaseWindows ? afterTime.length - excludedByReleaseWindow.length : undefined,
+            candidate_sections: candidateSections.length,
+            visible_sections: visibleSections.length,
+            candidate_items: candidateItems.length,
+            visible_items: visibleItemCount,
+        },
+        excluded_counts: excludedCounts,
+        sample_items: {
+            missing_title: sampleItems(missingTitle),
+            status: sampleItems(excludedByStatus),
+            time_window: sampleItems(excludedByTime),
+            release_window: sampleItems(excludedByReleaseWindow),
+            hidden_by_visibility: sampleItems(hiddenByVisibility),
+        },
+        hints: buildSelectionHints({
+            visibleItemCount,
+            hasReleaseWindows,
+            excludedCounts,
+        }),
+    };
 }
 /** Classify an explicit item set into a semver bump (no option-driven filtering). */
 export function suggestSemverForItems(items) {

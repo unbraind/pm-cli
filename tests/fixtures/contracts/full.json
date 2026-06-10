@@ -954,6 +954,9 @@
           "flag": "--count"
         },
         {
+          "flag": "--completion"
+        },
+        {
           "flag": "--sum"
         },
         {
@@ -1257,6 +1260,10 @@
         {
           "description": "Return the full structured changelog document (releases->sections->items)",
           "flag": "--changelog-json"
+        },
+        {
+          "description": "Return item-selection diagnostics (counts, exclusions, hints)",
+          "flag": "--explain"
         },
         {
           "description": "replace or prepend existing changelog (default: replace)",
@@ -4564,10 +4571,22 @@
           "flag": "--add"
         },
         {
+          "flag": "--add-json"
+        },
+        {
           "flag": "--remove"
         },
         {
           "flag": "--run"
+        },
+        {
+          "flag": "--match"
+        },
+        {
+          "flag": "--only-index"
+        },
+        {
+          "flag": "--only-last"
         },
         {
           "flag": "--background"
@@ -6972,6 +6991,10 @@
         {
           "description": "Return the full structured changelog document (releases->sections->items)",
           "flag": "--changelog-json"
+        },
+        {
+          "description": "Return item-selection diagnostics (counts, exclusions, hints)",
+          "flag": "--explain"
         },
         {
           "description": "replace or prepend existing changelog (default: replace)",
@@ -13066,6 +13089,10 @@
             ],
             "type": "string"
           },
+          "completion": {
+            "description": "For aggregate action, add open/in_progress/closed/other counts and completion_pct per group.",
+            "type": "boolean"
+          },
           "count": {
             "description": "Enable grouped count output for aggregate action.",
             "type": "boolean"
@@ -17460,6 +17487,18 @@
             },
             "type": "array"
           },
+          "addJson": {
+            "description": "Repeatable JSON object or array input for adding linked-test entries without CSV escaping loss.",
+            "examples": [
+              [
+                "{\"command\":\"node scripts/run-tests.mjs test -- tests/unit/output.spec.ts\",\"timeout_seconds\":240}"
+              ]
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "author": {
             "description": "Mutation author identity.",
             "examples": [
@@ -17532,6 +17571,14 @@
             "description": "Emit machine-readable JSON output.",
             "type": "boolean"
           },
+          "match": {
+            "description": "Run only linked tests whose command or path contains this case-insensitive substring.",
+            "examples": [
+              "output.spec.ts",
+              "coverage"
+            ],
+            "type": "string"
+          },
           "message": {
             "description": "History message for mutation audit trail.",
             "type": "string"
@@ -17542,6 +17589,25 @@
           },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "onlyIndex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "Run only the 1-based linked-test index from pm test <id> --list order.",
+            "examples": [
+              1,
+              "2"
+            ]
+          },
+          "onlyLast": {
+            "description": "Run only the most recently added linked-test entry.",
             "type": "boolean"
           },
           "overrideLinkedPmContext": {
@@ -18877,6 +18943,10 @@
           },
           "emojiPrefix": {
             "description": "Prefix section headings with conventional emoji (Added 🎉, Fixed 🐛, ...)",
+            "type": "boolean"
+          },
+          "explain": {
+            "description": "Return item-selection diagnostics (counts, exclusions, hints)",
             "type": "boolean"
           },
           "groupBy": {

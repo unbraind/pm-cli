@@ -1,0 +1,12 @@
+id: pm-72xf
+title: "pm focus: session default parent/context inheritance for new items (GH-161)"
+description: Opt-in focused context (e.g. pm focus pm-epic1) so subsequent creates default --parent to the focused item; clear via pm focus --clear. GitHub issue #161.
+type: Feature
+status: open
+priority: 3
+tags[3]: agent-ux,backlog,cli
+created_at: "2026-06-10T09:00:57.343Z"
+updated_at: "2026-06-10T09:00:57.343Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""
