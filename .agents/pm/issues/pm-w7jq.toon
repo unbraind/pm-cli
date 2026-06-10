@@ -1,0 +1,24 @@
+id: pm-w7jq
+title: Classify tracker-not-initialized Sentry CommandErrors as expected handled CLI errors
+description: "Post-merge Sentry gate found PM-CLI-1J: a structured tracker_not_initialized CommandError from pm --pm-path ... --json list-all. Prior closed classifier work covered validation/import/integration errors but not tracker initialization failures, so the release gate still blocks on expected handled CLI output."
+type: Issue
+status: closed
+priority: 1
+tags: []
+created_at: "2026-06-10T11:16:46.777Z"
+updated_at: "2026-06-10T11:24:18.536Z"
+author: codex-impl
+parent: pm-mpbb
+resolution: Added tracker_not_initialized to the Sentry expected handled CLI classifier.
+expected_result: The release Sentry/telemetry gate treats structured tracker-not-initialized usage errors as expected handled CLI errors.
+actual_result: Live gate passes with PM-CLI-1J ignored as expected handled CLI error and zero relevant critical/high Sentry issues.
+comments[2]{created_at,author,text}:
+  "2026-06-10T11:16:46.777Z",codex-impl,"Duplicate check: searched sentry tracker_not_initialized release gate expected CLI error. Related closed lineage includes pm-yohx and pm-flbo for earlier expected CLI classifier refreshes, but no open item covers tracker_not_initialized; creating focused follow-up."
+  "2026-06-10T11:17:44.477Z",codex-impl,"Evidence: added tracker_not_initialized to the Sentry expected handled CLI classifier and covered it in release automation contract tests. Verification passed: node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts (13 tests); pnpm exec tsc --noEmit --pretty false; node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode best-effort (ok true, Sentry relevant critical=0 high=0, PM-CLI-1J in ignored expected CLI list, telemetry error rate 1.62%, missing error-code rows 0)."
+files[2]{path,scope,note}:
+  scripts/release/sentry-telemetry-gate.mjs,project,expected handled CLI classifier
+  tests/integration/release-automation-contract.spec.ts,project,release gate classifier regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Fixed Sentry release gate classifier for structured tracker_not_initialized CommandErrors; regression and live gate passed.
+body: ""

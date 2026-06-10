@@ -129,6 +129,9 @@ const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   // target's parent directory is missing ("could not write to <path>: the parent
   // directory does not exist — create it first ..."). Expected handled CLI error.
   "the parent directory does not exist",
+  // Structured problem+json payload for commands run before a tracker exists.
+  // This is a handled CLI usage error, not an unhandled runtime failure.
+  "tracker_not_initialized",
 ];
 
 function issueTextValue(issue) {
