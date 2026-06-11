@@ -1,0 +1,24 @@
+id: pm-60p0
+title: "PR #200 review: batch validate prune-missing auto-fix removals"
+description: "Gemini review on PR #200 found validate --auto-fix prune-missing applies each stale file/doc removal separately, causing repeated locks, writes, and hooks for multiple stale links on the same item. Batch prune removals by item and link kind."
+type: Task
+status: closed
+priority: 2
+tags[3]: agent-ux,"area:validation",review
+created_at: "2026-06-11T22:55:13.621Z"
+updated_at: "2026-06-11T22:57:05.772Z"
+author: codex-sdk-cli-continuation
+acceptance_criteria: Prune-missing auto-fix groups removals per item/link kind; tests cover multiple stale file/doc removals with one write path; focused validate tests and final gates pass.
+parent: pm-dhrp
+resolution: implemented
+expected_result: validate --prune-missing auto-fix removes multiple stale files/docs for the same item with one files/docs mutation per link kind.
+actual_result: Prune fixes are grouped by item and kind; the unit test verifies one runFiles and one runDocs removal call for multiple stale links while preserving per-fix output rows.
+comments[1]{created_at,author,text}:
+  "2026-06-11T22:57:04.789Z",codex-sdk-cli-continuation,"Evidence: addressed Gemini PR #200 efficiency finding by batching prune_file_link/prune_doc_link fixes per item. Focused validate unit suite passed: 63 tests."
+files[2]{path,scope,note}:
+  src/cli/commands/validate.ts,project,batch prune-missing auto-fix removals by item and link kind
+  tests/unit/validate-command.spec.ts,project,regression asserts one files/docs removal call per item for multiple stale links
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Batched validate --prune-missing auto-fix removals per item/link kind and covered the behavior with unit spies for runFiles/runDocs.
+body: ""

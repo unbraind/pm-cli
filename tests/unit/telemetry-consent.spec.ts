@@ -104,15 +104,45 @@ describe("core/telemetry/consent", () => {
         await maybeRunFirstUseTelemetryPrompt("list", baseGlobalOptions);
         delete process.env.PM_TELEMETRY_PROMPT;
 
-        // Current behavior: the CI guard reuses the PM_TELEMETRY_PROMPT
-        // disable-value set, so only CI=false/0/no/off skips here (CI=true is
-        // covered by the non-TTY guard in real CI environments).
-        process.env.CI = "false";
+        // pm-0hx2: the CI guard skips the prompt when CI is set to a truthy
+        // value (CI=true, CI=1, ...), matching common CI conventions.
+        process.env.CI = "true";
+        await maybeRunFirstUseTelemetryPrompt("list", baseGlobalOptions);
+        process.env.CI = "1";
         await maybeRunFirstUseTelemetryPrompt("list", baseGlobalOptions);
         delete process.env.CI;
       });
 
       await expect(fs.access(path.join(globalRoot, "settings.json"))).rejects.toBeDefined();
+    });
+  });
+
+  it("still prompts when CI is explicitly falsy or empty (treated as not-CI)", async () => {
+    await withTempGlobalRoot("pm-cli-telemetry-consent-test-", async (globalRoot) => {
+      process.env.PM_GLOBAL_PATH = globalRoot;
+      promptState.questionImpl = async () => "n";
+      await withInteractiveEnv(async () => {
+        // pm-0hx2: CI=false/0/no/off and CI="" behave like an unset CI — the
+        // first interactive invocation runs the prompt and persists the answer.
+        process.env.CI = "false";
+        await maybeRunFirstUseTelemetryPrompt("list", baseGlobalOptions);
+        delete process.env.CI;
+      });
+      let settings = await readSettings(globalRoot);
+      expect(settings.telemetry.enabled).toBe(false);
+      expect(settings.telemetry.first_run_prompt_completed).toBe(true);
+
+      settings.telemetry.first_run_prompt_completed = false;
+      await writeSettings(globalRoot, settings, "test:reset-consent");
+      promptState.questionImpl = async () => "y";
+      await withInteractiveEnv(async () => {
+        process.env.CI = "";
+        await maybeRunFirstUseTelemetryPrompt("list", baseGlobalOptions);
+        delete process.env.CI;
+      });
+      settings = await readSettings(globalRoot);
+      expect(settings.telemetry.enabled).toBe(true);
+      expect(settings.telemetry.first_run_prompt_completed).toBe(true);
     });
   });
 

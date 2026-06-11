@@ -75,6 +75,7 @@ pm append <item-id> --body "Implementation notes..."
 
 ```bash
 pm files <item-id> --add path=src/app.ts,note="entrypoint"
+pm files <item-id> --add src/app.ts --note "entrypoint"
 pm docs <item-id> --add path=docs/COMMANDS.md,note="public docs"
 pm test <item-id> --add command="node scripts/run-tests.mjs test -- tests/unit/app.spec.ts",timeout_seconds=240
 ```
@@ -118,6 +119,7 @@ pm release <item-id>
 | Register custom status | `pm schema add-status <id> --role <active\|terminal\|...> --alias <name> --order <n>` |
 | Remove custom status | `pm schema remove-status <id>` (warns if items use it; built-in statuses refused) |
 | Agent plan create | `pm plan create --title "<scope>" --harness claude-code --scope "<short>" --claim` |
+| Agent plan create with steps | `pm plan create --title "<scope>" --step "<step 1>" --step "<step 2>" --step "<step 3>"` (repeated `--step` seeds ordered steps) |
 | Agent plan step update | `pm plan update-step <plan-id> plan-step-001 --step-status in_progress --step-evidence "<short>"` |
 | Agent plan read | `pm plan show <plan-id> --depth brief` (or `--fields id,title,steps_summary`) |
 | Materialize plan steps | `pm plan materialize <plan-id> --steps plan-step-002 --materialize-type Task` |
@@ -180,7 +182,10 @@ Use these defaults unless the task requires otherwise:
 
 When gating on `pm health` / `pm validate`, read the executable fix command from the output instead of hardcoding a warning-code-to-command mapping:
 
-- `pm health --json` per-check `details.remediation_map` maps each warning-code prefix to a `pm` fix command (for example `{ "history_drift_missing_stream": "pm history-repair <id>" }`). It is present in default/`--full` output and omitted in `--brief`/`--summary`.
+- `pm health --json` per-check `details.remediation_map` maps each warning-code prefix to a `pm` fix command (for example `{ "history_drift_missing_stream": "pm history-repair <id>" }`). It is present in default/`--full` output and omitted in `--brief`/`--summary`. With more than one drifted stream the history_drift commands point at `pm history-repair --all` (one audited bulk pass) instead of the per-item template.
+- `pm health` includes a read-only `locks` check (stale/unreadable/unparseable lock counts using the same classification `pm gc --scope locks` acts on); `locks_stale_count:<n>` remediates via `pm gc --scope locks`, `locks_unreadable:<n>` via `pm gc --scope locks --dry-run`.
 - `pm validate --fix-hints` (read-only) adds `details.fix_hints[]` to each failing check — a uniform list of executable `pm` commands for that check's findings.
+- `pm validate --auto-fix` applies the safe, deterministic subset of those fixes itself (resolution/close_reason backfills derived from the item's own fields) and reports every action in `fixes.planned_fixes[]` / `applied_fixes[]` (item id + field + equivalent `pm` command). Preview with `--dry-run`. Structural lifecycle fixes (reparent an active child off a terminal parent, or clear the parent link) are gated behind an explicit `--fix-scope lifecycle`; they appear in `planned_fixes[]`/`gated_fixes[]` until granted. `--fix-scope` is an exact allowlist (default: `metadata`, `resolution`), so `--fix-scope lifecycle` applies only lifecycle fixes. Auto-fix never closes or deletes items.
+- `pm validate --prune-missing` removes stale linked-file/doc LINKS whose paths classify as `deleted` (no same-basename candidate left in the workspace scan); `moved` paths keep their relink candidate in `details.missing_linked_path_classifications` instead of being pruned. Honors `--dry-run`; never touches real files.
 
 Both draw from the same remediation registry, so an agent can substitute the concrete `<id>` and run the command to auto-repair findings. Extension health checks expose their remediation under `details.triage.remediation` instead. See [Command Reference](COMMANDS.md#self-repair-remediation).

@@ -13,6 +13,8 @@ export interface DocsCommandOptions {
   addGlob?: string[];
   remove?: string[];
   migrate?: string[];
+  /** GH-170 (pm-pfnx): standalone note applied to every --add/--add-glob link in this invocation. */
+  note?: string;
   list?: boolean;
   validatePaths?: boolean;
   audit?: boolean;

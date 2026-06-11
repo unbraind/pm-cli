@@ -132,6 +132,11 @@ const KNOWN_EXPECTED_HANDLED_CLI_ISSUE_PATTERNS = [
   // Structured problem+json payload for commands run before a tracker exists.
   // This is a handled CLI usage error, not an unhandled runtime failure.
   "tracker_not_initialized",
+  // Expected handled failures from package dogfood/release-smoke commands.
+  // These stay behind the CommandError/PmCliError + isUnhandled=false guard.
+  "pm-web exited with code",
+  "github api returned http 422",
+  "drift detected:",
 ];
 
 function issueTextValue(issue) {

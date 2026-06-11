@@ -102,6 +102,7 @@ describe("runHealth", () => {
         "telemetry",
         "extensions",
         "storage",
+        "locks",
         "integrity",
         "history_drift",
         "vectorization",
@@ -172,6 +173,15 @@ describe("runHealth", () => {
       expect(storageCheck?.details).toEqual({
         items: 1,
         history_streams: 1,
+      });
+
+      const locksCheck = health.checks.find((check) => check.name === "locks");
+      expect(locksCheck?.status).toBe("ok");
+      expect(locksCheck?.details).toEqual({
+        active_lock_count: 0,
+        stale_lock_count: 0,
+        unreadable_lock_count: 0,
+        unparseable_lock_count: 0,
       });
 
       const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
@@ -1950,6 +1960,7 @@ describe("runHealth", () => {
         "telemetry",
         "extensions",
         "storage",
+        "locks",
       ]);
       expect(health.checks.every((check) => Object.keys(check.details).length === 0)).toBe(true);
     });
@@ -1992,6 +2003,131 @@ describe("runHealth", () => {
       const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
       expect(historyDriftCheck).toBeDefined();
       expect(historyDriftCheck?.details).not.toHaveProperty("remediation_map");
+    });
+  });
+
+  it("rewrites history_drift remediation to pm history-repair --all when more than one stream is drifted", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createSeedItem(context);
+      const secondId = createSeedItem(context);
+      await rm(path.join(context.pmPath, "history", `${firstId}.jsonl`), { force: true });
+      await rm(path.join(context.pmPath, "history", `${secondId}.jsonl`), { force: true });
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.ok).toBe(false);
+      expect(health.warnings).toEqual(
+        expect.arrayContaining([
+          `history_drift_missing_stream:${firstId}`,
+          `history_drift_missing_stream:${secondId}`,
+        ]),
+      );
+      const historyDriftCheck = health.checks.find((check) => check.name === "history_drift");
+      const remediationMap = (historyDriftCheck?.details as { remediation_map?: Record<string, string> })
+        .remediation_map;
+      expect(remediationMap).toEqual({
+        history_drift_missing_stream: "pm history-repair --all",
+      });
+    });
+  });
+
+  it("reports stale/unreadable/unparseable locks with warnings and a remediation_map", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context);
+      const locksDir = path.join(context.pmPath, "locks");
+      await mkdir(locksDir, { recursive: true });
+      const lockPayload = (createdAt: string, ttlSeconds: number): string =>
+        JSON.stringify({ id: "pm-lock", pid: 1234, owner: "spec-owner", created_at: createdAt, ttl_seconds: ttlSeconds });
+      // active: fresh timestamp, generous ttl
+      await writeFile(path.join(locksDir, "pm-active.lock"), lockPayload(new Date().toISOString(), 3600), "utf8");
+      // stale: ttl elapsed long ago
+      await writeFile(
+        path.join(locksDir, "pm-stale.lock"),
+        lockPayload(new Date(Date.now() - 7200 * 1000).toISOString(), 60),
+        "utf8",
+      );
+      // unparseable: invalid JSON
+      await writeFile(path.join(locksDir, "pm-broken.lock"), "{not json", "utf8");
+      // unreadable: a directory with a .lock name makes readFile fail deterministically
+      await mkdir(path.join(locksDir, "pm-unreadable.lock"), { recursive: true });
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.warnings).toEqual(expect.arrayContaining(["locks_stale_count:1", "locks_unreadable:1"]));
+
+      const locksCheck = health.checks.find((check) => check.name === "locks");
+      expect(locksCheck?.status).toBe("warn");
+      expect(locksCheck?.details).toMatchObject({
+        active_lock_count: 1,
+        stale_lock_count: 1,
+        unreadable_lock_count: 1,
+        unparseable_lock_count: 1,
+      });
+      const remediationMap = (locksCheck?.details as { remediation_map?: Record<string, string> }).remediation_map;
+      expect(remediationMap).toEqual({
+        locks_stale_count: "pm gc --scope locks",
+        locks_unreadable: "pm gc --scope locks --dry-run",
+      });
+
+      // Read-only contract: the scan never removes or mutates lock files.
+      await expect(access(path.join(locksDir, "pm-stale.lock"))).resolves.toBeUndefined();
+      await expect(access(path.join(locksDir, "pm-broken.lock"))).resolves.toBeUndefined();
+    });
+  });
+
+  it("reports a warn check when the locks scan cannot read the locks directory", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context);
+      await rm(path.join(context.pmPath, "locks"), { recursive: true, force: true });
+      await writeFile(path.join(context.pmPath, "locks"), "not a directory", "utf8");
+
+      const health = await runHealth({ path: context.pmPath });
+      expect(health.warnings.some((warning) => warning.startsWith("locks_scan_failed:"))).toBe(true);
+      const locksCheck = health.checks.find((check) => check.name === "locks");
+      expect(locksCheck?.status).toBe("warn");
+      expect(locksCheck?.details).toMatchObject({
+        active_lock_count: 0,
+        stale_lock_count: 0,
+        unreadable_lock_count: 0,
+        unparseable_lock_count: 0,
+        scan_failed: true,
+        pm_root: context.pmPath,
+      });
+      expect((locksCheck?.details as { error?: string }).error).toContain("not a directory");
+    });
+  });
+
+  it("projects locks counts in brief mode without the remediation_map", async () => {
+    await withTempPmPath(async (context) => {
+      createSeedItem(context);
+      const locksDir = path.join(context.pmPath, "locks");
+      await mkdir(locksDir, { recursive: true });
+      await writeFile(
+        path.join(locksDir, "pm-stale.lock"),
+        JSON.stringify({
+          id: "pm-stale",
+          pid: 1234,
+          owner: "spec-owner",
+          created_at: new Date(Date.now() - 7200 * 1000).toISOString(),
+          ttl_seconds: 60,
+        }),
+        "utf8",
+      );
+
+      const health = await runHealth({ path: context.pmPath }, { brief: true });
+      const locksCheck = health.checks.find((check) => check.name === "locks");
+      expect(locksCheck?.status).toBe("warn");
+      expect(locksCheck?.details).toEqual({
+        active_lock_count: 0,
+        stale_lock_count: 1,
+        unreadable_lock_count: 0,
+        unparseable_lock_count: 0,
+      });
+      expect(locksCheck?.details).not.toHaveProperty("remediation_map");
+      expect(health.warnings).toContain("locks_stale_count:1");
+
+      const summary = await runHealth({ path: context.pmPath }, { summary: true });
+      const summaryLocks = summary.checks.find((check) => check.name === "locks");
+      expect(summaryLocks?.status).toBe("warn");
+      expect(summaryLocks?.details).toEqual({});
     });
   });
 });

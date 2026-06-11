@@ -145,25 +145,40 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     summary: "A history stream contains Git conflict markers; resolve the markers, then re-anchor the chain.",
   },
   // --- pm health: history_drift ---
+  // `pm health` rewrites these commands to `pm history-repair --all` in the
+  // per-check remediation_map when more than one stream is drifted.
   {
     code: "history_drift_missing_stream",
     command: "pm history-repair <id>",
-    summary: "The item has no history stream; re-anchor the chain to rebuild it.",
+    summary: "The item has no history stream; re-anchor the chain to rebuild it (pm history-repair --all repairs every drifted stream in one pass).",
   },
   {
     code: "history_drift_unreadable_stream",
     command: "pm history-repair <id>",
-    summary: "The item's history stream is unreadable; re-anchor the chain.",
+    summary: "The item's history stream is unreadable; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
   },
   {
     code: "history_drift_hash_mismatch",
     command: "pm history-repair <id>",
-    summary: "The item's content hash no longer matches its history; re-anchor the chain.",
+    summary: "The item's content hash no longer matches its history; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
   },
   {
     code: "history_drift_chain_mismatch",
     command: "pm history-repair <id>",
-    summary: "The item's history chain is broken; re-anchor the chain.",
+    summary: "The item's history chain is broken; re-anchor the chain (pm history-repair --all repairs every drifted stream in one pass).",
+  },
+  // --- pm health: locks ---
+  {
+    code: "locks_stale_count",
+    command: "pm gc --scope locks",
+    summary:
+      "Stale item-claim locks (embedded ttl elapsed) can block mutations; sweep them — gc retains active and unparseable locks.",
+  },
+  {
+    code: "locks_unreadable",
+    command: "pm gc --scope locks --dry-run",
+    summary:
+      "Some lock files could not be read; preview the sweep and inspect the unreadable files manually — gc never deletes what it cannot read.",
   },
   // --- pm health: vectorization ---
   {

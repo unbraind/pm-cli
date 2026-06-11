@@ -1,0 +1,25 @@
+id: pm-lg9i
+title: Refresh Sentry expected handled CLI classifier for 2026-06-11 dogfood CommandErrors
+description: "Live Sentry gate on 2026-06-11 reports three unresolved high handled CommandErrors from release/dogfood flows: PM-CLI-1N pm-web exited with code 1, PM-CLI-1M GitHub API HTTP 422 during issue import, and PM-CLI-1F beads diff strict drift. Refresh the release gate classifier narrowly so handled expected CLI outcomes do not block releases while unhandled errors still do."
+type: Task
+status: closed
+priority: 2
+tags[4]: "area:observability","area:release",sentry,telemetry
+created_at: "2026-06-11T22:40:14.057Z"
+updated_at: "2026-06-11T22:42:05.214Z"
+author: codex-sdk-cli-continuation
+acceptance_criteria: Gate classifier keeps the PmCliError/CommandError and isUnhandled=false guard; adds narrow patterns for the three live handled CommandError shapes; contract test asserts the patterns; live sentry-telemetry gate passes with critical=0/high=0 and ignored_expected_cli includes the live issue ids.
+parent: pm-5oj5
+resolution: implemented
+expected_result: Release Sentry gate classifies the three live 2026-06-11 handled CommandErrors as expected CLI outcomes while still blocking unhandled or non-allowlisted high severity issues.
+actual_result: "Classifier added narrow fragments for pm-web exited with code, github api returned http 422, and drift detected behind the existing handled CommandError guard; live gate reports critical=0 high=0."
+comments[1]{created_at,author,text}:
+  "2026-06-11T22:41:08.370Z",codex-sdk-cli-continuation,"Evidence: live Sentry issue view showed PM-CLI-1N/1M/1F are handled CommandError events from release/dogfood commands. Added narrow classifier fragments behind the existing CommandError/PmCliError and isUnhandled=false guard. Focused release-automation contract test passed (13 tests). Live Sentry/telemetry gate passed with critical=0 high=0, ignored_expected_cli_error_total=18 including PM-CLI-1N, PM-CLI-1M, PM-CLI-1F; telemetry finish_error_rate_pct=1.61 and missing error-code rows=0."
+files[2]{path,scope,note}:
+  scripts/release/sentry-telemetry-gate.mjs,project,refresh expected handled CLI classifier for live 2026-06-11 Sentry CommandErrors
+  tests/integration/release-automation-contract.spec.ts,project,contract coverage for new Sentry expected handled CLI patterns
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 0 --max-high 0 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/integration/release-automation-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Refreshed Sentry expected handled CLI classifier for live 2026-06-11 handled CommandErrors PM-CLI-1N/1M/1F; contract test and live Sentry/telemetry gate now pass with critical=0 high=0.
+body: ""

@@ -269,12 +269,14 @@ Use comments for progress and evidence, notes for implementation context, and le
 
 ```bash
 pm files <id> --add path=src/cli/main.ts,note="command wiring"
+pm files <id> --add src/cli/main.ts --note "command wiring"
 pm files <id> --add-glob "src/cli/**/*.ts"
 pm docs <id> --add path=docs/COMMANDS.md,note="public command docs"
+pm docs <id> --add docs/COMMANDS.md --note "public command docs"
 pm deps <id> --format tree
 ```
 
-Linked files and docs keep reviews reproducible. `deps` is read-only and projects item relationships.
+Linked files and docs keep reviews reproducible. `deps` is read-only and projects item relationships. The standalone `--note <text>` flag annotates every link added by `--add`/`--add-glob` in the same invocation (a per-entry embedded `note=` wins); `--note` without an add is a usage error.
 
 ## Linked Tests
 
@@ -337,6 +339,9 @@ For `--include events` without explicit `--to`, `--recurrence-lookahead-days`, o
 pm validate --check-resolution --check-history-drift
 pm validate --check-files --scan-mode tracked-all
 pm validate --check-resolution --fix-hints --json
+pm validate --auto-fix --dry-run --json
+pm validate --auto-fix --fix-scope lifecycle
+pm validate --prune-missing --dry-run --json
 pm normalize --dry-run --json
 pm gc --dry-run
 pm gc --scope locks --dry-run
@@ -347,6 +352,12 @@ Use dry-run modes before broad lifecycle or cleanup changes.
 `pm gc` accepts `--scope` values `index`, `embeddings`, `runtime`, and `locks` (comma-separated or repeatable); with no `--scope` it sweeps all of them. The `runtime` scope clears `runtime/test-runs/` and `runtime/history-drift-cache.json`; removing the drift cache forces the next `pm health` run to perform a full history-drift re-scan. The `locks` scope removes only **expired** lock files in `locks/` — those whose own embedded `created_at + ttl_seconds` has elapsed (debris left by crashed processes). Active locks and any lock file that cannot be parsed are always retained (never deleted when staleness cannot be proven), and the result includes a `locks` summary (`scanned`/`removed`/`retained`).
 
 `--fix-hints` is a read-only flag: each failing check gains `details.fix_hints`, an array of `pm` command templates derived from the warning codes it raised (for example `pm history-repair <id>` for history drift, or `pm update <id> --reviewer "<name>"` for a missing reviewer). Generic hints may contain `<id>`/`<field>`/`<path>` placeholders the agent substitutes from the check's detail rows; the resolution check aliases concrete per-row commands and marks `fix_hints_truncated` when the list is summarized. It never mutates items. The mapping comes from the shared remediation registry that also backs `pm health --json` (see Self-Repair Remediation below), so agents gating on `pm validate` can auto-repair findings without hardcoding warning-code-to-command lookups.
+
+`pm validate --check-metadata` also groups missing-required-field counts per item type in `details.missing_by_type` (for example `{ "Task": { "close_reason": 3 } }`) — counts only, zero-suppressed, and limited to the active metadata profile's required fields, so remediation can be targeted by type without verbose row dumps.
+
+`--auto-fix` applies the safe, deterministic subset of those remediations automatically and reports the result under a top-level `fixes` object (`planned_fixes[]`, `applied_fixes[]`, `gated_fixes[]`, `failed_fixes[]` — each row lists the item id, check, field, and the equivalent standalone `pm` command). Safe means derivable and non-destructive: a closed item missing `resolution` is backfilled from its own `close_reason` (or the `"completed"` default), and a closed item missing `close_reason` is backfilled from its existing `resolution`. Auto-fix NEVER closes, cancels, or deletes items, and every applied fix runs through the normal audited `pm update` path. Structural lifecycle fixes — an active item whose parent is terminal gets reparented to its active grandparent or has its parent link cleared — are always *planned* but only *applied* when the explicit `--fix-scope lifecycle` grant is passed. `--fix-scope` is an exact allowlist of what `--auto-fix` may mutate (`metadata`, `resolution`, `lifecycle`; comma-separated or repeatable) — `--fix-scope lifecycle` alone applies *only* lifecycle fixes; omitting the flag grants the safe field-backfill scopes (`metadata`, `resolution`) and never lifecycle. `--dry-run` previews the full plan without mutating anything. With `--auto-fix` and no explicit `--check-*` flags, only the fix-capable checks (metadata, resolution, lifecycle) run. The `checks` in the output always describe the pre-fix state; re-run `pm validate` to confirm convergence.
+
+`pm validate --check-files` classifies every stale linked path in `details.missing_linked_path_classifications` as either `moved` (a file with the same basename still exists in the scan — the row carries the top relink candidate, e.g. `old/path.md:moved:new/path.md`) or `deleted` (no candidate anywhere, e.g. `old/path.md:deleted`). `--prune-missing` bulk-removes the stale links classified `deleted` from their items (link removal only — real files are never touched; `moved` links are kept so their relink candidates are not lost) and reports each removal in `fixes.applied_fixes[]` as the equivalent `pm files <id> --remove <path>` / `pm docs <id> --remove <path>` command. It honors `--dry-run` and implies `--check-files`.
 
 ### Telemetry Local Analytics
 
@@ -376,9 +387,15 @@ pm telemetry local-analytics status
 "remediation_map": { "history_drift_missing_stream": "pm history-repair <id>" }
 // vectorization check
 "remediation_map": { "vectorization_stale_items_remaining": "pm health --refresh-vectors" }
+// locks check
+"remediation_map": { "locks_stale_count": "pm gc --scope locks" }
 ```
 
+When more than one history stream is drifted, the `history_drift` remediation commands are rewritten to `pm history-repair --all` so the whole tree is repaired in one audited pass instead of one command per stream.
+
 `remediation_map` appears in default and `--full` output and is omitted in `--brief`/`--summary` to stay token-efficient. Extension checks keep their existing richer `details.triage.remediation` instead.
+
+`pm health` also runs a read-only `locks` check alongside the storage check: it classifies every file in `locks/` with the exact policy `pm gc --scope locks` acts on and reports `active_lock_count`, `stale_lock_count`, `unreadable_lock_count`, and `unparseable_lock_count` (counts appear in all projection modes; nothing is ever removed). It warns with `locks_stale_count:<n>` when stale locks exist (fix: `pm gc --scope locks`) and `locks_unreadable:<n>` when lock files cannot be read (inspect first: `pm gc --scope locks --dry-run`).
 
 ## History and Recovery
 
@@ -394,6 +411,8 @@ pm history-redact <id> --literal "[redacted_path_prefix]/private" --replacement 
 pm history-redact <id> --regex "/192\\.168\\.[0-9.]+/g" --dry-run
 pm history-repair <id> --dry-run
 pm history-repair <id> --message "re-anchor legacy drift"
+pm history-repair --all --dry-run
+pm history-repair --all --message "bulk re-anchor drifted streams"
 pm activity --id <id> --limit 50
 pm activity --full --id <id> --limit 50
 pm restore <id> <timestamp-or-version>
@@ -412,6 +431,7 @@ pm stats --storage --json
 `history-redact` rewrites matching history payloads deterministically, recomputes hash chains, and appends an auditable `history_redact` marker entry when changes are applied.
 `history-compact` rewrites long streams into a synthetic checkpoint baseline plus a retained tail (`--before` accepts a 1-based version or ISO timestamp), re-anchors hashes, verifies integrity, and appends an auditable `history_compact` marker when applied.
 `history-repair` re-anchors a drifted history chain when `pm health`/`pm validate --check-history-drift` report stale hashes: it replays the stream, recomputes every before/after hash, repairs legacy patch ops that no longer strictly apply, reconciles the latest hash with the on-disk item, and appends an auditable `history_repair` marker. It never modifies item content and is a safe no-op on a clean stream.
+`history-repair --all` (mutually exclusive with `<id>`) runs the same drift scan `pm health` uses and applies the audited single-stream repair (ownership check, lock, post-repair no-drift verification, `--message` audit marker, per-stream `--force`) to every drifted stream in one pass. One failing stream never aborts the rest: the result lists one compact row per drifted stream (`repaired` / `skipped_clean` / `failed`) plus `totals`, and the command exits non-zero only if any stream failed.
 
 ## Custom Item Types
 
@@ -456,6 +476,7 @@ The option composes with `--defaults`, `--preset`, `--author`, `--agent-guidance
 
 ```bash
 pm plan create --title "Refactor lock retry" --scope "Improve retry semantics" --harness claude-code --parent pm-epic1 --related pm-rel1,pm-rel2 --claim
+pm plan create --title "Fix flaky retry test" --step "Read lock.ts" --step "Write the fix" --step "Run the tests"
 pm plan add-step <plan-id> --step-title "Read lock.ts" --step-body "Inspect retry path" --depends-on pm-task1
 pm plan update-step <plan-id> plan-step-001 --step-status in_progress --step-evidence "started reading lock.ts"
 pm plan complete-step <plan-id> plan-step-001 --step-evidence "lock.ts read; retry path captured"
@@ -497,6 +518,7 @@ Invariants:
 
 - Exactly one step is `in_progress` per Plan; pass `--allow-multiple-active` for explicit parallel branches.
 - Blocking a step requires `--step-blocked-reason` (or an already-recorded reason).
+- `create` accepts repeated `--step <title>` flags to seed ordered steps in argv order (values are never comma-split). When `--step-title` is also given it becomes the first step. Per-step detail flags (`--step-body`, `--step-status`, `--file`, ...) apply to a single initial step only; combining them with multiple `--step` values is a usage error — create the plan first, then refine steps with `add-step`/`update-step`. On step subcommands a single `--step` value still aliases `--step-title`.
 - `materialize` adds `discovered_from` + `parent` to each new item and an `implements` link back on the source step plus a `child` dependency on the Plan.
 - Search keyword corpus includes plan_scope, step titles/bodies, decisions, discoveries, validation, and step linked items.
 

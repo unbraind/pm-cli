@@ -2198,6 +2198,30 @@ describe("runCreate", () => {
     });
   });
 
+  it("keeps the calendar_item_without_schedule prefix stable and appends an actionable hint", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "schedule-less-milestone",
+          description: "milestone with no schedule",
+          type: "Milestone",
+          deadline: undefined,
+        }),
+        { path: context.pmPath },
+      );
+      expect(result.warnings).toHaveLength(1);
+      const warning = result.warnings[0]!;
+      // Structured token must stay the prefix — automation/telemetry match on it.
+      expect(
+        warning.startsWith(`calendar_item_without_schedule:${result.item.id}:no_deadline_or_reminder_or_event`),
+      ).toBe(true);
+      // The appended hint names every way to attach a schedule (pm-2cgu / GH-174).
+      expect(warning).toContain("--deadline");
+      expect(warning).toContain("--reminder");
+      expect(warning).toContain("--event");
+    });
+  });
+
   it("enforces create command_option_policies required and disabled options for custom types", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");

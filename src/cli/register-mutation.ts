@@ -699,7 +699,12 @@ export function registerMutationCommands(program: Command): void {
     .option("--claim", "Claim the plan on create for the author")
     .option("--from-search <value>", "Record the search query that led to plan creation")
     .option("--step-title <value>", "Step title for add-step / update-step")
-    .option("--step <value>", "Alias for --step-title")
+    // pm-6mit: --step is a Commander collect repeatable so `pm plan create
+    // --step A --step B` seeds ordered steps (previously a single-value alias
+    // for --step-title where the last value silently won). It must NOT be
+    // list:true in contracts — the bootstrap coalescer would comma-join values
+    // and corrupt titles containing commas.
+    .option("--step <value>", "Step title (repeatable on create: each --step appends an ordered step; elsewhere a single value aliases --step-title)", collect)
     .option("--step-body <value>", "Step body text")
     .option("--step-owner <value>", "Step owner")
     .option("--step-status <value>", "Step status: pending|in_progress|completed|blocked|skipped|superseded")
@@ -806,7 +811,10 @@ export function registerMutationCommands(program: Command): void {
         ["blocked_by", "blockedBy"],
         ["resume_context", "resumeContext"],
         ["from_search", "fromSearch"],
-        ["step", "stepTitle"],
+        // pm-6mit: "step" is no longer folded into stepTitle here — it is a
+        // first-class repeatable option normalized inside runPlan (create
+        // accumulates ordered steps; other subcommands accept a single value
+        // as a stepTitle alias).
         ["step_title", "stepTitle"],
         ["step_body", "stepBody"],
         ["step_owner", "stepOwner"],
@@ -907,29 +915,41 @@ export function registerMutationCommands(program: Command): void {
 
   program
     .command("history-repair")
-    .argument("<id>", "Item id")
+    .argument("[id]", "Item id (omit with --all)")
+    .option("--all", "Scan every stream for drift and repair each drifted stream in one audited pass")
     .option("--dry-run", "Preview the re-anchor impact without writing the history file")
     .option("--author <value>", "Mutation author")
     .option("--message <value>", "Audit history message for the repair marker entry")
     .option("--force", "Force ownership/lock override")
-    .description("Re-anchor a drifted item history chain (recompute hashes, reconcile with the on-disk item) and record an audit marker.")
-    .action(async (id: string, options: Record<string, unknown>, command) => {
+    .description("Re-anchor a drifted item history chain (recompute hashes, reconcile with the on-disk item) and record an audit marker. Use --all to repair every drifted stream.")
+    .action(async (id: string | undefined, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
-      const { runHistoryRepair } = await import("./commands/history-repair.js");
-      const result = await runHistoryRepair(
-        id,
-        {
-          dryRun: options.dryRun === true,
-          author: typeof options.author === "string" ? options.author : undefined,
-          message: typeof options.message === "string" ? options.message : undefined,
-          force: Boolean(options.force),
-        },
-        globalOptions,
+      const { runHistoryRepair, runHistoryRepairAll, assertHistoryRepairTarget } = await import(
+        "./commands/history-repair.js"
       );
+      const all = options.all === true;
+      assertHistoryRepairTarget(id, all);
+      const repairOptions = {
+        dryRun: options.dryRun === true,
+        author: typeof options.author === "string" ? options.author : undefined,
+        message: typeof options.message === "string" ? options.message : undefined,
+        force: Boolean(options.force),
+      };
       // history-repair only re-anchors the audit stream; item content is untouched,
       // so search caches do not need invalidation.
-      printResult(result, globalOptions);
+      if (all) {
+        const result = await runHistoryRepairAll(repairOptions, globalOptions);
+        printResult(result, globalOptions);
+        if (result.totals.failed > 0) {
+          // Per-stream failures are collected (one bad stream never aborts the
+          // pass) but must still fail the command for gating callers.
+          process.exitCode = EXIT_CODE.GENERIC_FAILURE;
+        }
+      } else {
+        const result = await runHistoryRepair(id as string, repairOptions, globalOptions);
+        printResult(result, globalOptions);
+      }
       if (globalOptions.profile) {
         printError(`profile:command=history-repair took_ms=${Date.now() - startedAt}`);
       }
@@ -1276,6 +1296,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--add-glob <value>", "Add linked file entries from a glob (plain glob or pattern=<glob>,scope=<scope>,note=<text>; repeatable)", collect)
     .option("--remove <value>", "Remove linked file by path (path=<value>, path:<value>, plain path, or - for stdin)", collect)
     .option("--migrate <value>", "Migrate linked file paths in-place (from=<prefix>,to=<prefix>; repeatable)", collect)
+    .option("--note <value>", "Note attached to every link added by --add/--add-glob in this invocation (embedded note= wins)")
     .option("--list", "List linked files without mutating")
     .option("--append-stable", "Preserve existing linked-file order and append new links without full-array resorting")
     .option("--validate-paths", "Validate linked file paths for existence and file shape")
@@ -1296,6 +1317,7 @@ export function registerMutationCommands(program: Command): void {
         addGlob: addGlobValues,
         remove: removeValues,
         migrate: migrateValues,
+        note: typeof options.note === "string" ? options.note : undefined,
         list: Boolean(options.list),
         appendStable: Boolean(options.appendStable),
         validatePaths: Boolean(options.validatePaths),
@@ -1326,14 +1348,18 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      // Flags also declared on the parent files command (--note/--append-stable/
+      // --author/--message/--force) are consumed by the parent during parse, so
+      // merge ancestor opts back in (own options win) instead of reading opts() alone.
+      const mergedOptions: Record<string, unknown> = { ...command.optsWithGlobals(), ...options };
       const { runFilesDiscover } = await import("./commands/files.js");
       const result = await runFilesDiscover(id, {
-        apply: Boolean(options.apply),
-        note: typeof options.note === "string" ? options.note : undefined,
-        appendStable: Boolean(options.appendStable),
-        author: typeof options.author === "string" ? options.author : undefined,
-        message: typeof options.message === "string" ? options.message : undefined,
-        force: Boolean(options.force),
+        apply: Boolean(mergedOptions.apply),
+        note: typeof mergedOptions.note === "string" ? mergedOptions.note : undefined,
+        appendStable: Boolean(mergedOptions.appendStable),
+        author: typeof mergedOptions.author === "string" ? mergedOptions.author : undefined,
+        message: typeof mergedOptions.message === "string" ? mergedOptions.message : undefined,
+        force: Boolean(mergedOptions.force),
       }, globalOptions);
       if (result.changed) {
         await invalidateSearchCachesForMutation(globalOptions, result);
@@ -1351,6 +1377,7 @@ export function registerMutationCommands(program: Command): void {
     .option("--add-glob <value>", "Add linked doc entries from a glob (plain glob or pattern=<glob>,scope=<scope>,note=<text>; repeatable)", collect)
     .option("--remove <value>", "Remove linked doc by path (path=<value>, path:<value>, plain path, or - for stdin)", collect)
     .option("--migrate <value>", "Migrate linked doc paths in-place (from=<prefix>,to=<prefix>; repeatable)", collect)
+    .option("--note <value>", "Note attached to every link added by --add/--add-glob in this invocation (embedded note= wins)")
     .option("--list", "List linked docs without mutating")
     .option("--validate-paths", "Validate linked doc paths for existence and file shape")
     .option("--audit", "Audit linked doc usage across all items for this item's linked paths")
@@ -1371,6 +1398,7 @@ export function registerMutationCommands(program: Command): void {
         addGlob: addGlobValues,
         remove: removeValues,
         migrate: migrateValues,
+        note: typeof options.note === "string" ? options.note : undefined,
         list: Boolean(options.list),
         validatePaths: Boolean(options.validatePaths),
         audit: Boolean(options.audit),

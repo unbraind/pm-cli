@@ -136,6 +136,9 @@ describe("release automation contract", () => {
     expect(gateSource).toContain('"structural error(s)"');
     expect(gateSource).toContain('"the parent directory does not exist"');
     expect(gateSource).toContain('"tracker_not_initialized"');
+    expect(gateSource).toContain('"pm-web exited with code"');
+    expect(gateSource).toContain('"github api returned http 422"');
+    expect(gateSource).toContain('"drift detected:"');
     expect(gateSource).toContain("ignored_expected_cli_error_total");
     expect(gateSource).toContain("function buildTelemetryCommandInvocation");
     expect(gateSource).toContain('commandPath.endsWith(".sh")');

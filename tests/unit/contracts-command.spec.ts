@@ -235,6 +235,46 @@ describe("contracts command runtime", () => {
     ).not.toEqual(expect.arrayContaining(["--dep", "--comment", "--doc", "--description"]));
   });
 
+  it("publishes strict MCP action contracts for docs list, add notes, and history repair", async () => {
+    const schemaResult = await runContracts({ schemaOnly: true, full: true }, GLOBAL_OPTIONS);
+    expect(schemaResult.schema?.["x-schema-version"]).toBe(PM_TOOL_PARAMETERS_SCHEMA_VERSION);
+    const actionSchemas = (schemaResult.schema?.oneOf ?? []) as Array<{
+      allOf?: unknown[];
+      oneOf?: unknown[];
+      properties?: Record<string, unknown>;
+    }>;
+    const findActionSchema = (action: string) =>
+      actionSchemas.find((entry) => {
+        const actionProperty = entry.properties?.action as { const?: string } | undefined;
+        return actionProperty?.const === action;
+    });
+
+    const docsFlags = await runContracts({ command: "docs", flagsOnly: true }, GLOBAL_OPTIONS);
+    expect(docsFlags.command_flags?.[0]?.flags).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--list" })]),
+    );
+
+    const addNotePrecondition = {
+      if: { required: ["addNote"] },
+      then: { anyOf: [{ required: ["add"] }, { required: ["addGlob"] }] },
+    };
+    const docsSchema = findActionSchema("docs");
+    expect(docsSchema?.properties).toHaveProperty("list");
+    expect(docsSchema?.allOf).toEqual(expect.arrayContaining([addNotePrecondition]));
+    const filesSchema = findActionSchema("files");
+    expect(filesSchema?.allOf).toEqual(expect.arrayContaining([addNotePrecondition]));
+
+    const historyRepairSchema = findActionSchema("history-repair");
+    expect(historyRepairSchema?.oneOf).toEqual([
+      { required: ["id"], not: { anyOf: [{ required: ["all"] }] } },
+      {
+        required: ["all"],
+        not: { anyOf: [{ required: ["id"] }] },
+        properties: { all: { const: true } },
+      },
+    ]);
+  });
+
   it("exposes activity projection flags in the action schema", async () => {
     const result = await runContracts(
       {
@@ -713,6 +753,7 @@ describe("contracts command runtime", () => {
           flags: [
             "--add",
             "--add-glob",
+            "--note",
             "--list",
             "--append-stable",
             "--validate-paths",
@@ -721,7 +762,7 @@ describe("contracts command runtime", () => {
         },
         {
           command: "docs",
-          flags: ["--add", "--add-glob", "--validate-paths", "--audit"],
+          flags: ["--add", "--add-glob", "--note", "--list", "--validate-paths", "--audit"],
         },
         { command: "history", flags: ["--limit", "--compact", "--full", "--diff", "--verify"] },
         {
@@ -741,6 +782,7 @@ describe("contracts command runtime", () => {
             "--mode",
             "--resume-context",
             "--step-title",
+            "--step",
             "--step-status",
             "--step-evidence",
             "--depends-on",
@@ -903,7 +945,10 @@ describe("contracts command runtime", () => {
       if (check.command === "plan") {
         expect(parityResult.command_flags?.[0]?.flags).toEqual(
           expect.arrayContaining([
-            expect.objectContaining({ flag: "--step-title", aliases: expect.arrayContaining(["--step"]) }),
+            // pm-6mit: --step is a standalone Commander collect repeatable (no
+            // longer an alias of --step-title).
+            expect.objectContaining({ flag: "--step-title", aliases: expect.arrayContaining(["--step_title"]) }),
+            expect.objectContaining({ flag: "--step" }),
           ]),
         );
       }

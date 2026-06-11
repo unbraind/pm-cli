@@ -2,13 +2,31 @@ import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { runClose } from "../../src/cli/commands/close.js";
+import * as docsCommand from "../../src/cli/commands/docs.js";
+import * as filesCommand from "../../src/cli/commands/files.js";
 import { runHistoryRedact } from "../../src/cli/commands/history-redact.js";
 import { runInit } from "../../src/cli/commands/init.js";
 import { runValidate } from "../../src/cli/commands/validate.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
+import {
+  DEFAULT_GRANTED_FIX_SCOPES,
+  partitionFixesByGrant,
+  planCloseReasonBackfillFixes,
+  planResolutionBackfillFixes,
+  planStaleLinkPruneFixes,
+  planTerminalParentFixes,
+  resolveGrantedFixScopes,
+  toFixOutputRow,
+  type ValidateFixRecord,
+} from "../../src/core/validate/fix-planning.js";
+import { buildMissingByTypeCounts } from "../../src/core/validate/missing-by-type.js";
+import {
+  classifyStaleLinkedPaths,
+  summarizeStaleLinkedPathClassifications,
+} from "../../src/core/validate/stale-file-classification.js";
 import { createTestItemId } from "../helpers/itemFactory.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
@@ -1404,6 +1422,554 @@ describe("runValidate", () => {
       expect(result.checks.every((check) => !Object.prototype.hasOwnProperty.call(check.details, "fix_hints"))).toBe(
         true,
       );
+    });
+  });
+
+  it("groups missing required-field counts per item type in metadata details", async () => {
+    await withTempPmPath(async (context) => {
+      // Bare creates leave acceptance_criteria and estimated_minutes unset.
+      const bareTask = context.runCli(["create", "--json", "--title", "missing-by-type-task", "--type", "Task"], {
+        expectJson: true,
+      });
+      expect(bareTask.code).toBe(0);
+      const bareFeature = context.runCli(
+        ["create", "--json", "--title", "missing-by-type-feature", "--type", "Feature"],
+        { expectJson: true },
+      );
+      expect(bareFeature.code).toBe(0);
+      const completeTask = createTask(context, "missing-by-type-complete");
+      expect(completeTask.length).toBeGreaterThan(0);
+
+      const result = await runValidate({ checkMetadata: true }, { path: context.pmPath });
+      const metadataCheck = checkByName(result, "metadata");
+      const details = metadataCheck.details as { missing_by_type: Record<string, Record<string, number>> };
+      expect(details.missing_by_type).toEqual({
+        Feature: { acceptance_criteria: 1, estimated_minutes: 1 },
+        Task: { acceptance_criteria: 1, estimated_minutes: 1 },
+      });
+    });
+  });
+
+  it("rejects --dry-run without --auto-fix or --prune-missing and --fix-scope without --auto-fix", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(runValidate({ dryRun: true }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runValidate({ fixScope: ["lifecycle"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runValidate({ autoFix: true, fixScope: ["bogus"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("previews resolution backfills with --auto-fix --dry-run and applies them without --dry-run", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "auto-fix-resolution-backfill");
+      await runClose(id, "verified in review", {}, { path: context.pmPath });
+
+      const preview = await runValidate({ autoFix: true, dryRun: true }, { path: context.pmPath });
+      expect(preview.checks.map((entry) => entry.name)).toEqual(["metadata", "resolution", "lifecycle"]);
+      expect(preview.fixes).toBeDefined();
+      expect(preview.fixes?.mode).toBe("dry_run");
+      expect(preview.fixes?.granted_fix_scopes).toEqual(["metadata", "resolution"]);
+      expect(preview.fixes?.applied_fixes).toEqual([]);
+      expect(preview.fixes?.planned_fixes).toEqual([
+        {
+          item_id: id,
+          check: "resolution",
+          field: "resolution",
+          command: `pm update ${id} --resolution "verified in review"`,
+          gate: "resolution",
+        },
+      ]);
+
+      const applied = await runValidate({ autoFix: true }, { path: context.pmPath });
+      expect(applied.fixes?.mode).toBe("apply");
+      expect(applied.fixes?.applied_count).toBe(1);
+      expect(applied.fixes?.failed_count).toBe(0);
+      expect(applied.fixes?.applied_fixes).toEqual(applied.fixes?.planned_fixes);
+
+      const after = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect(after.code).toBe(0);
+      expect((after.json as { item: { resolution?: string } }).item.resolution).toBe("verified in review");
+
+      // Convergence: a re-run plans nothing.
+      const rerun = await runValidate({ autoFix: true }, { path: context.pmPath });
+      expect(rerun.fixes?.planned_count).toBe(0);
+    });
+  });
+
+  it("withholds lifecycle terminal-parent fixes until --fix-scope lifecycle is granted", async () => {
+    await withTempPmPath(async (context) => {
+      const grandparentId = createTask(context, "auto-fix-grandparent");
+      const parentId = createTestItemId(context, {
+        title: "auto-fix-terminal-parent",
+        tags: "validate,unit",
+        estimate: "15",
+        parent: grandparentId,
+      });
+      const childId = createTestItemId(context, {
+        title: "auto-fix-active-child",
+        tags: "validate,unit",
+        estimate: "15",
+        parent: parentId,
+      });
+      await runClose(parentId, "parent done", {}, { path: context.pmPath });
+
+      const preview = await runValidate(
+        { checkLifecycle: true, autoFix: true, dryRun: true },
+        { path: context.pmPath },
+      );
+      expect(preview.fixes?.planned_fixes).toEqual([
+        {
+          item_id: childId,
+          check: "lifecycle",
+          field: "parent",
+          command: `pm update ${childId} --parent ${grandparentId}`,
+          gate: "lifecycle",
+        },
+      ]);
+      expect(preview.fixes?.gated_count).toBe(1);
+
+      // Without the explicit lifecycle grant nothing is applied.
+      const withheld = await runValidate({ checkLifecycle: true, autoFix: true }, { path: context.pmPath });
+      expect(withheld.fixes?.applied_count).toBe(0);
+      expect(withheld.fixes?.gated_count).toBe(1);
+      expect(withheld.fixes?.gated_fixes[0]).toMatchObject({
+        item_id: childId,
+        gate: "lifecycle",
+        gate_hint: "Withheld: re-run with --fix-scope lifecycle to apply.",
+      });
+
+      const granted = await runValidate(
+        { checkLifecycle: true, autoFix: true, fixScope: ["lifecycle"] },
+        { path: context.pmPath },
+      );
+      expect(granted.fixes?.granted_fix_scopes).toEqual(["lifecycle"]);
+      expect(granted.fixes?.applied_count).toBe(1);
+      expect(granted.fixes?.failed_count).toBe(0);
+
+      const after = context.runCli(["get", childId, "--json"], { expectJson: true });
+      expect((after.json as { item: { parent?: string } }).item.parent).toBe(grandparentId);
+    });
+  });
+
+  it("clears the parent link when no active grandparent exists and an exact --fix-scope withholds safe fixes", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createTask(context, "auto-fix-rootless-terminal-parent");
+      const childId = createTestItemId(context, {
+        title: "auto-fix-rootless-child",
+        tags: "validate,unit",
+        estimate: "15",
+        parent: parentId,
+      });
+      await runClose(parentId, "parent done", {}, { path: context.pmPath });
+
+      // --fix-scope lifecycle is an exact allowlist: the closed parent's own
+      // missing-resolution backfill is planned but withheld as gated.
+      const result = await runValidate({ autoFix: true, fixScope: ["lifecycle"] }, { path: context.pmPath });
+      expect(result.fixes?.planned_fixes).toContainEqual({
+        item_id: childId,
+        check: "lifecycle",
+        field: "parent",
+        command: `pm update ${childId} --unset parent`,
+        gate: "lifecycle",
+      });
+      expect(result.fixes?.gated_fixes.map((row) => row.item_id)).toEqual([parentId]);
+      expect(result.fixes?.applied_count).toBe(1);
+
+      const after = context.runCli(["get", childId, "--json"], { expectJson: true });
+      expect((after.json as { item: { parent?: string } }).item.parent).toBeUndefined();
+      const parentAfter = context.runCli(["get", parentId, "--json"], { expectJson: true });
+      expect((parentAfter.json as { item: { resolution?: string } }).item.resolution).toBeUndefined();
+    });
+  });
+
+  it("backfills close_reason from resolution under the metadata fix scope", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "auto-fix-close-reason-backfill");
+      await runClose(id, "done", {}, { path: context.pmPath });
+      const seeded = context.runCli(
+        ["update", id, "--json", "--resolution", "shipped in v2", "--unset", "close-reason", "--message", "seed"],
+        { expectJson: true },
+      );
+      expect(seeded.code).toBe(0);
+
+      const result = await runValidate({ checkMetadata: true, autoFix: true }, { path: context.pmPath });
+      expect(result.fixes?.applied_fixes).toEqual([
+        {
+          item_id: id,
+          check: "metadata",
+          field: "close_reason",
+          command: `pm update ${id} --close-reason "shipped in v2"`,
+          gate: "metadata",
+        },
+      ]);
+      const after = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect((after.json as { item: { close_reason?: string } }).item.close_reason).toBe("shipped in v2");
+    });
+  });
+
+  it("classifies stale linked paths as moved or deleted and prunes only deleted links", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "prune-missing-links");
+      const workspaceRoot = path.dirname(path.dirname(context.pmPath));
+      const newDir = path.join(workspaceRoot, "src", "new");
+      await mkdir(newDir, { recursive: true });
+      await writeFile(path.join(newDir, "moved-file.ts"), "export const moved = true;\n", "utf8");
+
+      const linkedFiles = context.runCli(
+        [
+          "files",
+          id,
+          "--json",
+          "--add",
+          "path=src/old/moved-file.ts,scope=project",
+          "--add",
+          "path=src/gone/deleted-file.ts,scope=project",
+          "--add",
+          "path=src/gone/another-deleted-file.ts,scope=project",
+        ],
+        { expectJson: true },
+      );
+      expect(linkedFiles.code).toBe(0);
+      const linkedDocs = context.runCli(
+        [
+          "docs",
+          id,
+          "--json",
+          "--add",
+          "path=docs/gone-doc.md,scope=project",
+          "--add",
+          "path=docs/another-gone-doc.md,scope=project",
+        ],
+        {
+          expectJson: true,
+        },
+      );
+      expect(linkedDocs.code).toBe(0);
+
+      const preview = await runValidate({ pruneMissing: true, dryRun: true }, { path: context.pmPath });
+      expect(preview.checks.map((entry) => entry.name)).toEqual(["files"]);
+      const filesCheck = checkByName(preview, "files");
+      const details = filesCheck.details as {
+        missing_linked_paths_moved_count: number;
+        missing_linked_paths_deleted_count: number;
+        missing_linked_path_classifications: string[];
+      };
+      expect(details.missing_linked_paths_moved_count).toBe(1);
+      expect(details.missing_linked_paths_deleted_count).toBe(4);
+      expect(details.missing_linked_path_classifications).toEqual([
+        "docs/another-gone-doc.md:deleted",
+        "docs/gone-doc.md:deleted",
+        "src/gone/another-deleted-file.ts:deleted",
+        "src/gone/deleted-file.ts:deleted",
+        "src/old/moved-file.ts:moved:src/new/moved-file.ts",
+      ]);
+      expect(preview.fixes?.mode).toBe("dry_run");
+      expect(preview.fixes?.planned_fixes).toEqual([
+        { item_id: id, check: "files", field: "docs", command: `pm docs ${id} --remove "docs/another-gone-doc.md"` },
+        { item_id: id, check: "files", field: "docs", command: `pm docs ${id} --remove "docs/gone-doc.md"` },
+        {
+          item_id: id,
+          check: "files",
+          field: "files",
+          command: `pm files ${id} --remove "src/gone/another-deleted-file.ts"`,
+        },
+        { item_id: id, check: "files", field: "files", command: `pm files ${id} --remove "src/gone/deleted-file.ts"` },
+      ]);
+
+      const filesSpy = vi.spyOn(filesCommand, "runFiles");
+      const docsSpy = vi.spyOn(docsCommand, "runDocs");
+      try {
+        const applied = await runValidate({ pruneMissing: true }, { path: context.pmPath });
+        expect(applied.fixes?.applied_count).toBe(4);
+        expect(applied.fixes?.failed_count).toBe(0);
+        const removeFileCalls = filesSpy.mock.calls.filter((call) => call[1]?.remove !== undefined);
+        const removeDocCalls = docsSpy.mock.calls.filter((call) => call[1]?.remove !== undefined);
+        expect(removeFileCalls).toHaveLength(1);
+        expect(removeFileCalls[0]?.[1]?.remove).toEqual(["src/gone/another-deleted-file.ts", "src/gone/deleted-file.ts"]);
+        expect(removeDocCalls).toHaveLength(1);
+        expect(removeDocCalls[0]?.[1]?.remove).toEqual(["docs/another-gone-doc.md", "docs/gone-doc.md"]);
+      } finally {
+        filesSpy.mockRestore();
+        docsSpy.mockRestore();
+      }
+
+      const filesAfter = context.runCli(["files", id, "--json", "--list"], { expectJson: true });
+      expect(
+        ((filesAfter.json as { files: Array<{ path: string }> }).files ?? []).map((entry) => entry.path),
+      ).toEqual(["src/old/moved-file.ts"]);
+      const docsAfter = context.runCli(["docs", id, "--json", "--list"], { expectJson: true });
+      expect((docsAfter.json as { docs: Array<{ path: string }> }).docs ?? []).toEqual([]);
+    });
+  });
+});
+
+describe("validate fix planning core modules", () => {
+  it("plans resolution backfills only for rows missing resolution, deriving from close_reason", () => {
+    const fixes = planResolutionBackfillFixes([
+      { id: "pm-a", missing_fields: ["resolution"], close_reason: "merged PR #5" },
+      { id: "pm-b", missing_fields: ["resolution", "expected_result"] },
+      { id: "pm-c", missing_fields: ["expected_result", "actual_result"], close_reason: "irrelevant" },
+      { id: "pm-d", missing_fields: ["resolution"], close_reason: "   " },
+    ]);
+    expect(fixes).toEqual([
+      {
+        item_id: "pm-a",
+        check: "resolution",
+        field: "resolution",
+        kind: "set_resolution",
+        value: "merged PR #5",
+        command: 'pm update pm-a --resolution "merged PR #5"',
+        gate: "resolution",
+      },
+      {
+        item_id: "pm-b",
+        check: "resolution",
+        field: "resolution",
+        kind: "set_resolution",
+        value: "completed",
+        command: 'pm update pm-b --resolution "completed"',
+        gate: "resolution",
+      },
+      {
+        item_id: "pm-d",
+        check: "resolution",
+        field: "resolution",
+        kind: "set_resolution",
+        value: "completed",
+        command: 'pm update pm-d --resolution "completed"',
+        gate: "resolution",
+      },
+    ]);
+  });
+
+  it("escapes quotes and backslashes in equivalent commands", () => {
+    const fixes = planResolutionBackfillFixes([
+      { id: "pm-q", missing_fields: ["resolution"], close_reason: 'fixed "edge\\case"' },
+    ]);
+    expect(fixes[0]?.command).toBe('pm update pm-q --resolution "fixed \\"edge\\\\case\\""');
+  });
+
+  it("plans close_reason backfills only when a resolution source exists", () => {
+    const fixes = planCloseReasonBackfillFixes([
+      { id: "pm-a", resolution: "shipped" },
+      { id: "pm-b" },
+      { id: "pm-c", resolution: "  " },
+    ]);
+    expect(fixes).toEqual([
+      {
+        item_id: "pm-a",
+        check: "metadata",
+        field: "close_reason",
+        kind: "set_close_reason",
+        value: "shipped",
+        command: 'pm update pm-a --close-reason "shipped"',
+        gate: "metadata",
+      },
+    ]);
+  });
+
+  it("plans reparent fixes toward active grandparents and unset-parent fixes otherwise", () => {
+    const fixes = planTerminalParentFixes([
+      { id: "pm-a", parent_id: "pm-p", grandparent_id: "pm-g", grandparent_active: true },
+      { id: "pm-b", parent_id: "pm-p" },
+      { id: "pm-c", parent_id: "pm-p", grandparent_id: "pm-g", grandparent_active: false },
+    ]);
+    expect(fixes).toEqual([
+      {
+        item_id: "pm-a",
+        check: "lifecycle",
+        field: "parent",
+        kind: "reparent",
+        parent_id: "pm-g",
+        command: "pm update pm-a --parent pm-g",
+        gate: "lifecycle",
+      },
+      {
+        item_id: "pm-b",
+        check: "lifecycle",
+        field: "parent",
+        kind: "unset_parent",
+        command: "pm update pm-b --unset parent",
+        gate: "lifecycle",
+      },
+      {
+        item_id: "pm-c",
+        check: "lifecycle",
+        field: "parent",
+        kind: "unset_parent",
+        command: "pm update pm-c --unset parent",
+        gate: "lifecycle",
+      },
+    ]);
+  });
+
+  it("plans link prunes for deleted classifications only, across files and docs", () => {
+    const fixes = planStaleLinkPruneFixes([
+      { item_id: "pm-a", path: "src/gone.ts", link_kind: "files", classification: "deleted" },
+      { item_id: "pm-a", path: "docs/gone.md", link_kind: "docs", classification: "deleted" },
+      { item_id: "pm-b", path: "src/moved.ts", link_kind: "files", classification: "moved" },
+    ]);
+    expect(fixes).toEqual([
+      {
+        item_id: "pm-a",
+        check: "files",
+        field: "files",
+        kind: "prune_file_link",
+        path: "src/gone.ts",
+        command: 'pm files pm-a --remove "src/gone.ts"',
+      },
+      {
+        item_id: "pm-a",
+        check: "files",
+        field: "docs",
+        kind: "prune_doc_link",
+        path: "docs/gone.md",
+        command: 'pm docs pm-a --remove "docs/gone.md"',
+      },
+    ]);
+  });
+
+  it("resolves granted fix scopes from defaults, repeats, comma lists, and aliases", () => {
+    expect([...resolveGrantedFixScopes(undefined)].sort()).toEqual([...DEFAULT_GRANTED_FIX_SCOPES].sort());
+    expect([...resolveGrantedFixScopes([])].sort()).toEqual([...DEFAULT_GRANTED_FIX_SCOPES].sort());
+    expect([...resolveGrantedFixScopes(["lifecycle"])]).toEqual(["lifecycle"]);
+    expect([...resolveGrantedFixScopes(["metadata,LIFECYCLE", "resolution"])].sort()).toEqual([
+      "lifecycle",
+      "metadata",
+      "resolution",
+    ]);
+    expect(() => resolveGrantedFixScopes(["bogus"])).toThrowError(PmCliError);
+    expect(() => resolveGrantedFixScopes(["  "])).toThrowError(PmCliError);
+  });
+
+  it("partitions fixes by granted gate scopes", () => {
+    const gatedFix: ValidateFixRecord = {
+      item_id: "pm-a",
+      check: "lifecycle",
+      field: "parent",
+      kind: "unset_parent",
+      command: "pm update pm-a --unset parent",
+      gate: "lifecycle",
+    };
+    const ungatedFix: ValidateFixRecord = {
+      item_id: "pm-b",
+      check: "files",
+      field: "files",
+      kind: "prune_file_link",
+      path: "src/gone.ts",
+      command: 'pm files pm-b --remove "src/gone.ts"',
+    };
+    const withheld = partitionFixesByGrant([gatedFix, ungatedFix], new Set(["metadata", "resolution"]));
+    expect(withheld.applicable).toEqual([ungatedFix]);
+    expect(withheld.gated).toEqual([gatedFix]);
+    const granted = partitionFixesByGrant([gatedFix, ungatedFix], new Set(["lifecycle"]));
+    expect(granted.applicable).toEqual([gatedFix, ungatedFix]);
+    expect(granted.gated).toEqual([]);
+  });
+
+  it("serializes compact fix output rows with optional gates", () => {
+    expect(
+      toFixOutputRow({
+        item_id: "pm-a",
+        check: "resolution",
+        field: "resolution",
+        kind: "set_resolution",
+        value: "done",
+        command: 'pm update pm-a --resolution "done"',
+        gate: "resolution",
+      }),
+    ).toEqual({
+      item_id: "pm-a",
+      check: "resolution",
+      field: "resolution",
+      command: 'pm update pm-a --resolution "done"',
+      gate: "resolution",
+    });
+    expect(
+      toFixOutputRow({
+        item_id: "pm-b",
+        check: "files",
+        field: "files",
+        kind: "prune_file_link",
+        path: "src/gone.ts",
+        command: 'pm files pm-b --remove "src/gone.ts"',
+      }),
+    ).toEqual({
+      item_id: "pm-b",
+      check: "files",
+      field: "files",
+      command: 'pm files pm-b --remove "src/gone.ts"',
+    });
+  });
+
+  it("classifies stale linked paths by basename with sorted, capped candidates", () => {
+    const classified = classifyStaleLinkedPaths(
+      ["src/old/app.ts", "docs/gone.md", "root-file.ts"],
+      ["src/z/app.ts", "src/a/app.ts", "src/b/app.ts", "src/c/app.ts", "root-file.ts", ""],
+      3,
+    );
+    expect(classified).toEqual([
+      {
+        path: "src/old/app.ts",
+        classification: "moved",
+        candidates: ["src/a/app.ts", "src/b/app.ts", "src/c/app.ts"],
+        candidates_truncated: true,
+      },
+      { path: "docs/gone.md", classification: "deleted", candidates: [], candidates_truncated: false },
+      // The identical missing path itself never counts as a relink candidate.
+      { path: "root-file.ts", classification: "deleted", candidates: [], candidates_truncated: false },
+    ]);
+    expect(summarizeStaleLinkedPathClassifications(classified)).toEqual([
+      "src/old/app.ts:moved:src/a/app.ts",
+      "docs/gone.md:deleted",
+      "root-file.ts:deleted",
+    ]);
+  });
+
+  it("classifies stale linked Windows-style paths by basename", () => {
+    expect(classifyStaleLinkedPaths(["src\\old\\app.ts"], ["src/new/app.ts"])).toEqual([
+      {
+        path: "src\\old\\app.ts",
+        classification: "moved",
+        candidates: ["src/new/app.ts"],
+        candidates_truncated: false,
+      },
+    ]);
+  });
+
+  it("falls back to the default candidate limit for invalid limits and floors fractional limits", () => {
+    const moved = classifyStaleLinkedPaths(
+      ["lib/util.ts"],
+      ["a/util.ts", "b/util.ts", "c/util.ts", "d/util.ts", "e/util.ts"],
+      0,
+    );
+    expect(moved[0]?.candidates).toHaveLength(3);
+    expect(moved[0]?.candidates_truncated).toBe(true);
+    const floored = classifyStaleLinkedPaths(["lib/util.ts"], ["a/util.ts", "b/util.ts", "c/util.ts"], 2.7);
+    expect(floored[0]?.candidates).toEqual(["a/util.ts", "b/util.ts"]);
+    expect(floored[0]?.candidates_truncated).toBe(true);
+    const exact = classifyStaleLinkedPaths(["lib/util.ts"], ["a/util.ts"], 5);
+    expect(exact[0]?.candidates).toEqual(["a/util.ts"]);
+    expect(exact[0]?.candidates_truncated).toBe(false);
+  });
+
+  it("aggregates missing-field occurrences into sorted per-type counts", () => {
+    expect(buildMissingByTypeCounts([])).toEqual({});
+    expect(
+      buildMissingByTypeCounts([
+        { item_type: "Task", field: "close_reason" },
+        { item_type: "Task", field: "close_reason" },
+        { item_type: "Task", field: "author" },
+        { item_type: "Bug", field: "close_reason" },
+      ]),
+    ).toEqual({
+      Bug: { close_reason: 1 },
+      Task: { author: 1, close_reason: 2 },
     });
   });
 });

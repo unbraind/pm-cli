@@ -340,6 +340,10 @@ export function registerOperationCommands(program: Command): void {
     .option("--strict-exit", "Return non-zero exit when validation warnings are present")
     .option("--fail-on-warn", "Alias for --strict-exit")
     .option("--fix-hints", "Add a machine-executable fix_hints[] of pm commands to each failing check's details")
+    .option("--auto-fix", "Apply the safe, deterministic subset of fix-hint remediations (field backfills) automatically")
+    .option("--dry-run", "Preview planned --auto-fix/--prune-missing fixes without applying them")
+    .option("--fix-scope <scope>", "Grant --auto-fix scopes (metadata, resolution, lifecycle; comma-separated or repeatable). Default: metadata, resolution; lifecycle must be named explicitly", collect)
+    .option("--prune-missing", "Remove stale linked-file/doc LINKS whose paths classified as deleted (never touches real files)")
     .option("--check-history-drift", "Run item/history hash drift checks")
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
@@ -360,6 +364,10 @@ export function registerOperationCommands(program: Command): void {
         verboseDiagnostics: Boolean(options.verboseDiagnostics),
         checkHistoryDrift: Boolean(options.checkHistoryDrift),
         fixHints: Boolean(options.fixHints),
+        autoFix: Boolean(options.autoFix),
+        dryRun: Boolean(options.dryRun),
+        fixScope: Array.isArray(options.fixScope) ? (options.fixScope as string[]) : undefined,
+        pruneMissing: Boolean(options.pruneMissing),
       }, globalOptions);
       printResult(result, globalOptions);
       const strictExit = Boolean(options.strictExit) || Boolean(options.failOnWarn);

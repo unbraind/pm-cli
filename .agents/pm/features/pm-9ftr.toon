@@ -2,11 +2,17 @@ id: pm-9ftr
 title: "pm history-repair --all: bulk drift repair across streams (GH-171)"
 description: history-repair takes a single id; add --all (and pm health fix_hint) to repair every drifted stream in one audited pass. GitHub issue #171.
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: backlog,cli,history
 created_at: "2026-06-10T09:00:36.506Z"
-updated_at: "2026-06-10T09:00:36.506Z"
+updated_at: "2026-06-11T21:48:18.408Z"
 author: maintainer-agent
 parent: pm-o2kc
+resolution: fixed
+expected_result: history-repair only accepted a single <id>; multi-stream drift required one manual command per stream and pm health could only suggest the per-item template.
+actual_result: "pm history-repair --all scans with the same drift scan pm health uses and runs the audited single-stream repair (ownership, lock, no-drift verify, --message marker, --force) per drifted stream; one compact row per drifted stream (repaired/skipped_clean/failed) plus totals; <id> and --all mutually exclusive with clear usage errors on both CLI and MCP; exit 1 only when a stream failed; history_drift remediation_map rewrites to 'pm history-repair --all' when >1 stream is drifted. Wired through contracts, MCP schema, completions (bash/zsh/fish), docs, and tests."
+comments[1]{created_at,author,text}:
+  "2026-06-11T21:47:52.041Z",history-health-agent,"Implemented pm history-repair --all. Design: (1) target contract enforced by shared assertHistoryRepairTarget (exactly one of <id> | --all; clear usage errors) used by BOTH the commander action and the MCP pm_run history-repair case (schema contract: id+all optional, anyOfRequired [[id],[all]]). (2) Bulk pass reuses scanHistoryDrift (the exact pm health scan) then runs the existing audited single-stream runHistoryRepair per drifted stream, so ownership check, lock acquisition, post-repair no-drift verification, --message audit marker, and per-stream --force all apply unchanged. (3) Failure isolation: each stream repair is try/caught into a per-stream row (repaired | skipped_clean | failed + error string); one bad stream never aborts the pass; the CLI sets exit code 1 only when totals.failed > 0. (4) Output: {all, dry_run, scanned_streams, drifted_streams, streams[] (drifted rows only — clean streams stay row-free for token economy), totals, warnings}. (5) pm health remediation: registry summaries mention --all, and health.ts rewrites the history_drift remediation_map commands to 'pm history-repair --all' when counts.drifted > 1."
+close_reason: "Shipped pm history-repair --all (GH-171): bulk audited drift repair across all streams with per-stream result rows, failure isolation, and exit-nonzero-only-on-failure; health remediation now points multi-stream drift at the bulk pass."
 body: ""

@@ -2,11 +2,17 @@ id: pm-pfnx
 title: "pm files/docs: standalone --note flag alongside --add (GH-170)"
 description: "pm files --add <path> --note <text> (and pm docs) instead of requiring embedded path=...,note=... pair syntax. GitHub issue #170."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: backlog,cli,ux
 created_at: "2026-06-10T09:00:56.434Z"
-updated_at: "2026-06-10T09:00:56.434Z"
+updated_at: "2026-06-11T22:13:57.063Z"
 author: maintainer-agent
 parent: pm-mpbb
+resolution: fixed
+expected_result: "Linking a file/doc with a note requires the embedded pair syntax --add path=...,note=...; a bare --add has no way to attach a note."
+actual_result: pm files/pm docs accept a standalone --note <text> that annotates the whole --add/--add-glob batch (per-entry embedded note= takes precedence); MCP narrow tools expose it as addNote; usage error with recovery hints when --note is given without an add flag.
+comments[1]{created_at,author,text}:
+  "2026-06-11T22:12:41.274Z",cli-fixes-agent,"Design decisions (GH-170): (1) --note applies to EVERY link added by --add/--add-glob in the same invocation - one flag annotates the whole batch predictably for agents. (2) A per-entry embedded note= (pair syntax) wins over the standalone --note. (3) --note without any --add/--add-glob flag is a usage error (exit 2) with the missing flags surfaced in the recovery envelope; a glob that matches zero files is NOT an error (flag presence, not match count, gates the check). (4) Blank --note values are tolerated and leave entries unannotated. (5) MCP spelling is addNote on pm_files/pm_docs because the shared note parameter is the array-typed create/update note seed; server maps addNote->note (explicit options.note from pm_run wins). Implemented in shared linked-artifacts core (applyStandaloneNote) so files and docs behave identically."
+close_reason: "Shipped standalone --note for pm files/pm docs (GH-170): pm files <id> --add <path> --note <text> now attaches the note to every link added by --add/--add-glob in that invocation (embedded note= wins; --note without an add is a usage error). Wired across CLI flags, flag contracts, MCP pm_files/pm_docs (addNote param), bash/zsh completions, help examples, and docs; covered by new files-docs-command.spec.ts tests."
 body: ""

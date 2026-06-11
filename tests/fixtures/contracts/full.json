@@ -2054,6 +2054,12 @@
           "flag": "--migrate"
         },
         {
+          "flag": "--note"
+        },
+        {
+          "flag": "--list"
+        },
+        {
           "flag": "--validate-paths"
         },
         {
@@ -2400,6 +2406,9 @@
           "flag": "--migrate"
         },
         {
+          "flag": "--note"
+        },
+        {
           "flag": "--list"
         },
         {
@@ -2588,6 +2597,9 @@
     {
       "command": "history-repair",
       "flags": [
+        {
+          "flag": "--all"
+        },
         {
           "flag": "--dry-run"
         },
@@ -4241,10 +4253,12 @@
         },
         {
           "aliases": [
-            "--step",
             "--step_title"
           ],
           "flag": "--step-title"
+        },
+        {
+          "flag": "--step"
         },
         {
           "aliases": [
@@ -5430,6 +5444,18 @@
         },
         {
           "flag": "--fix-hints"
+        },
+        {
+          "flag": "--auto-fix"
+        },
+        {
+          "flag": "--dry-run"
+        },
+        {
+          "flag": "--fix-scope"
+        },
+        {
+          "flag": "--prune-missing"
         },
         {
           "flag": "--check-history-drift"
@@ -15260,10 +15286,49 @@
       },
       {
         "additionalProperties": false,
+        "oneOf": [
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "all"
+                  ]
+                }
+              ]
+            },
+            "required": [
+              "id"
+            ]
+          },
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "id"
+                  ]
+                }
+              ]
+            },
+            "properties": {
+              "all": {
+                "const": true
+              }
+            },
+            "required": [
+              "all"
+            ]
+          }
+        ],
         "properties": {
           "action": {
             "const": "history-repair",
             "description": "Tool action to execute."
+          },
+          "all": {
+            "description": "For history-repair action: scan every stream for drift and repair each drifted stream in one audited pass (mutually exclusive with id).",
+            "type": "boolean"
           },
           "author": {
             "description": "Mutation author identity.",
@@ -15332,8 +15397,7 @@
           }
         },
         "required": [
-          "action",
-          "id"
+          "action"
         ],
         "title": "pm action \"history-repair\" parameters",
         "type": "object"
@@ -17905,6 +17969,27 @@
             ],
             "type": "string"
           },
+          "step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Ordered initial step titles for create (string or array, never comma-split; stepTitle, when also set, becomes the first step). For step subcommands a single value aliases stepTitle.",
+            "examples": [
+              [
+                "Read the code",
+                "Write the fix",
+                "Run the tests"
+              ]
+            ]
+          },
           "stepBlockedReason": {
             "description": "Step Blocked Reason.",
             "type": "string"
@@ -18257,6 +18342,29 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "addNote"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "add"
+                  ]
+                },
+                {
+                  "required": [
+                    "addGlob"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "files",
@@ -18275,6 +18383,13 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "addNote": {
+            "description": "Note attached to every link added by add/addGlob in this call (per-entry embedded note= wins; requires add or addGlob). Maps to the CLI --note flag on pm files/pm docs.",
+            "examples": [
+              "command wiring"
+            ],
+            "type": "string"
           },
           "appendStable": {
             "description": "When true for files action, preserve existing linked-file order and append new links without full-array resorting.",
@@ -18388,6 +18503,29 @@
       },
       {
         "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "addNote"
+              ]
+            },
+            "then": {
+              "anyOf": [
+                {
+                  "required": [
+                    "add"
+                  ]
+                },
+                {
+                  "required": [
+                    "addGlob"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
         "properties": {
           "action": {
             "const": "docs",
@@ -18406,6 +18544,13 @@
               "type": "string"
             },
             "type": "array"
+          },
+          "addNote": {
+            "description": "Note attached to every link added by add/addGlob in this call (per-entry embedded note= wins; requires add or addGlob). Maps to the CLI --note flag on pm files/pm docs.",
+            "examples": [
+              "command wiring"
+            ],
+            "type": "string"
           },
           "audit": {
             "description": "Audit.",
@@ -18432,6 +18577,13 @@
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "list": {
+            "description": "When true for files/docs action, list the current linked paths without mutating them.",
+            "examples": [
+              true
+            ],
             "type": "boolean"
           },
           "message": {
@@ -19233,6 +19385,10 @@
             "const": "validate",
             "description": "Tool action to execute."
           },
+          "autoFix": {
+            "description": "For validate action, apply the safe, deterministic subset of fix-hint remediations (field backfills) automatically; combine with dryRun to preview and fixScope to grant gated scopes.",
+            "type": "boolean"
+          },
           "checkCommandReferences": {
             "description": "Run linked-command PM-ID reference checks.",
             "type": "boolean"
@@ -19275,6 +19431,10 @@
             ],
             "type": "string"
           },
+          "dryRun": {
+            "description": "Preview command effects without mutating storage artifacts.",
+            "type": "boolean"
+          },
           "failOnWarn": {
             "description": "Alias for strictExit in health/validate/extension-doctor action payloads.",
             "type": "boolean"
@@ -19282,6 +19442,27 @@
           "fixHints": {
             "description": "For validate action, add a machine-executable fix_hints[] of pm commands to each failing check's details.",
             "type": "boolean"
+          },
+          "fixScope": {
+            "description": "For validate action, grant --auto-fix scopes (metadata, resolution, lifecycle). Defaults to the safe scopes metadata and resolution; lifecycle must be named explicitly.",
+            "examples": [
+              [
+                "lifecycle"
+              ],
+              [
+                "metadata",
+                "resolution"
+              ]
+            ],
+            "items": {
+              "enum": [
+                "metadata",
+                "resolution",
+                "lifecycle"
+              ],
+              "type": "string"
+            },
+            "type": "array"
           },
           "includePmInternals": {
             "description": "Include PM storage internals in tracked-all candidate scans.",
@@ -19327,6 +19508,10 @@
           },
           "profile": {
             "description": "Emit deterministic timing diagnostics to stderr.",
+            "type": "boolean"
+          },
+          "pruneMissing": {
+            "description": "For validate action, remove stale linked-file/doc LINKS whose paths classified as deleted (link removal only — never touches real files); honors dryRun.",
             "type": "boolean"
           },
           "quiet": {
@@ -20172,10 +20357,10 @@
     ],
     "title": "pm-cli tool parameters (action-scoped strict schema)",
     "type": "object",
-    "x-schema-version": "4.0.2"
+    "x-schema-version": "4.0.3"
   },
   "schema_id": "https://schema.unbrained.dev/pm-cli/tool-parameters-v4.schema.json",
-  "schema_version": "4.0.2",
+  "schema_version": "4.0.3",
   "selected": {
     "action": null,
     "availability_only": false,

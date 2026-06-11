@@ -74,6 +74,12 @@ export interface PlanCommandOptions {
   claim?: boolean;
   fromSearch?: string;
   stepTitle?: string;
+  /**
+   * pm-6mit: repeatable --step values. On create each value seeds one ordered
+   * step (argv order; values are never comma-split so titles may contain
+   * commas). On other subcommands a single value aliases stepTitle.
+   */
+  step?: string | string[];
   stepBody?: string;
   stepOwner?: string;
   stepStatus?: string;
@@ -162,6 +168,20 @@ function resolveAuthor(candidate: string | undefined, fallback: string): string 
   const resolved = candidate ?? process.env.PM_AUTHOR ?? fallback;
   const trimmed = resolved.trim();
   return trimmed.length > 0 ? trimmed : "unknown";
+}
+
+/**
+ * pm-6mit: ordered step titles from repeated --step values. Unlike toArray
+ * this NEVER comma-splits — each --step value is one full step title, so
+ * titles containing commas survive intact (also why --step must not be
+ * list:true in contracts: the bootstrap coalescer would comma-join values).
+ */
+function toOrderedStepTitles(value: unknown): string[] {
+  const values = Array.isArray(value) ? value : value === undefined || value === null ? [] : [value];
+  return values
+    .filter((entry) => entry !== undefined && entry !== null)
+    .map((entry) => (typeof entry === "string" ? entry : String(entry)).trim())
+    .filter((entry) => entry.length > 0);
 }
 
 function toArray(value: string | string[] | undefined): string[] {
@@ -665,17 +685,51 @@ async function planCreate(
           expected: initialValidationExpected || undefined,
         } satisfies PlanValidationCheck)
       : undefined;
-  if (options.stepTitle?.trim()) {
+  // pm-6mit: collect ordered initial-step titles. Mixed-usage semantics
+  // (documented on pm-6mit): --step-title (when present) is the FIRST step,
+  // followed by each repeated --step value in argv order.
+  const stepTitleFlag = options.stepTitle?.trim();
+  const repeatedStepTitles = toOrderedStepTitles(options.step);
+  const stepTitles = stepTitleFlag ? [stepTitleFlag, ...repeatedStepTitles] : repeatedStepTitles;
+  const hasPerStepDetailOptions =
+    Boolean(options.stepBody?.trim()) ||
+    Boolean(options.stepOwner?.trim()) ||
+    Boolean(options.stepStatus?.trim()) ||
+    Boolean(options.stepEvidence?.trim()) ||
+    Boolean(options.stepBlockedReason?.trim()) ||
+    Boolean(options.stepReplacement?.trim()) ||
+    toArray(options.dependsOn).length > 0 ||
+    toArray(options.link).length > 0 ||
+    toSpecArray(options.file).length > 0 ||
+    toSpecArray(options.test).length > 0 ||
+    toSpecArray(options.doc).length > 0;
+  if (stepTitles.length > 1 && hasPerStepDetailOptions) {
+    // Per-step detail flags target exactly one step; silently attaching them to
+    // the first (or all) of several seeded steps would be unpredictable.
+    throw new PmCliError(
+      "pm plan create per-step options apply to a single initial step; with multiple --step values create the plan first, then refine steps individually",
+      EXIT_CODE.USAGE,
+      {
+        code: "ambiguous_option_combination",
+        examples: [
+          'pm plan create --title "Execution plan" --step "Read the code" --step "Write the fix"',
+          'pm plan update-step <plan-id> plan-step-001 --step-body "Inspect retry path"',
+        ],
+      },
+    );
+  }
+  let initialSteps: PlanStep[] = [];
+  if (stepTitles.length === 1) {
     const status = asStepStatus(options.stepStatus, "pending");
     const linkedItems = buildLinkInputs(options, "depends_on");
     const files = toSpecArray(options.file).map(parseStepFile);
     const tests = toSpecArray(options.test).map(parseStepTest);
     const docs = toSpecArray(options.doc).map(parseStepDoc);
     const now = nowIso();
-    initialStep = {
+    initialSteps = [{
       id: "plan-step-001",
       order: 1,
-      title: options.stepTitle.trim(),
+      title: stepTitles[0],
       body: options.stepBody?.trim() || undefined,
       status,
       owner: options.stepOwner?.trim() || undefined,
@@ -688,17 +742,33 @@ async function planCreate(
       created_at: now,
       updated_at: now,
       completed_at: status === "completed" ? now : undefined,
-    };
+    }];
+  } else if (stepTitles.length > 1) {
+    const now = nowIso();
+    initialSteps = stepTitles.map((stepTitle, index) => ({
+      id: `${STEP_ID_PREFIX}${String(index + 1).padStart(3, "0")}`,
+      order: index + 1,
+      title: stepTitle,
+      status: "pending" as const,
+      created_at: now,
+      updated_at: now,
+    }));
+  }
+  if (initialSteps.length > 0) {
+    initialStep = initialSteps[0];
     const stepped = await mutateItem({
       pmRoot: ctx.pmRoot,
       settings: ctx.settings,
       id: createResult.item.id,
       op: "plan_create_initial_step",
       author: resolveAuthor(options.author, ctx.settings.author_default),
-      message: `plan create initial step "${initialStep.title}"`,
+      message:
+        initialSteps.length === 1
+          ? `plan create initial step "${initialSteps[0].title}"`
+          : `plan create ${initialSteps.length} initial steps`,
       mutate(doc) {
         ensurePlanItem(doc.metadata);
-        doc.metadata.plan_steps = [initialStep as PlanStep];
+        doc.metadata.plan_steps = initialSteps;
         if (initialValidation) {
           doc.metadata.plan_validation = [...(doc.metadata.plan_validation ?? []), initialValidation];
         }
@@ -721,20 +791,8 @@ async function planCreate(
       },
     });
     finalMetadata = validated.item as unknown as ItemMetadata;
-  } else if (
-    options.stepBody?.trim() ||
-    options.stepOwner?.trim() ||
-    options.stepStatus?.trim() ||
-    options.stepEvidence?.trim() ||
-    options.stepBlockedReason?.trim() ||
-    options.stepReplacement?.trim() ||
-    toArray(options.dependsOn).length > 0 ||
-    toArray(options.link).length > 0 ||
-    toSpecArray(options.file).length > 0 ||
-    toSpecArray(options.test).length > 0 ||
-    toSpecArray(options.doc).length > 0
-  ) {
-    throw new PmCliError("pm plan create step options require --step-title", EXIT_CODE.USAGE, {
+  } else if (hasPerStepDetailOptions) {
+    throw new PmCliError("pm plan create step options require --step-title (or a single --step)", EXIT_CODE.USAGE, {
       code: "missing_required_option",
       examples: ['pm plan create --title "Execution plan" --step-title "Read the code"'],
     });
@@ -1389,6 +1447,22 @@ export interface PlanDispatchInput {
 
 export async function runPlan(input: PlanDispatchInput): Promise<PlanCommandResult> {
   const ctx = await loadContext(input.global);
+  // pm-6mit: --step accumulates ordered step titles on create. For every other
+  // subcommand a single --step value keeps its historical alias-of---step-title
+  // behavior; multiple values would be ambiguous there (one step is targeted),
+  // so they are rejected instead of silently dropping all but the last.
+  if (input.subcommand !== "create") {
+    const stepValues = toOrderedStepTitles(input.options.step);
+    if (stepValues.length > 1) {
+      throw new PmCliError(
+        `pm plan ${input.subcommand} accepts a single --step/--step-title value (repeated --step seeds ordered steps only on pm plan create)`,
+        EXIT_CODE.USAGE,
+      );
+    }
+    if (stepValues.length === 1 && !input.options.stepTitle?.trim()) {
+      input = { ...input, options: { ...input.options, stepTitle: stepValues[0] } };
+    }
+  }
   switch (input.subcommand) {
     case "create":
       return planCreate(input.options, input.global, ctx);

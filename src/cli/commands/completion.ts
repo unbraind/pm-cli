@@ -374,7 +374,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("discover --add --add-glob --remove --migrate --list --apply --note --append-stable --validate-paths --audit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    docs)",
-    `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --validate-paths --audit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--add --add-glob --remove --migrate --note --validate-paths --audit --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    append)",
     `      COMPREPLY=(${compgen(APPEND_FLAGS)})`,
@@ -392,7 +392,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    validate)",
-    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --verbose-diagnostics --strict-exit --fail-on-warn --fix-hints --check-history-drift --check-command-references --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --verbose-diagnostics --strict-exit --fail-on-warn --fix-hints --auto-fix --dry-run --fix-scope --prune-missing --check-history-drift --check-command-references --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    health)",
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
@@ -410,10 +410,10 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--literal --regex --replacement --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    history-repair)",
-    `      COMPREPLY=(${compgen("--dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--all --dry-run --author --message --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    schema)",
-    `      COMPREPLY=(${compgen("list show add-type remove-type add-status remove-status --description --default-status --folder --alias --role --order --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("list show show-status add-type remove-type add-status remove-status --description --default-status --folder --alias --role --order --author --force --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    plan)",
     `      COMPREPLY=(${compgen(`${PLAN_SUBCOMMANDS_LIST} ${PLAN_FLAGS}`)})`,
@@ -1024,6 +1024,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         history-repair)
           _arguments \\
+            '--all[Repair every drifted stream in one audited pass]' \\
             '--dry-run[Preview the re-anchor impact without writing the history file]' \\
             '--author[Mutation author]:author' \\
             '--message[Audit history message]:message' \\
@@ -1033,7 +1034,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
           ;;
         schema)
           _arguments \\
-            '1:subcommand:(list show add-type remove-type add-status remove-status)' \\
+            '1:subcommand:(list show show-status add-type remove-type add-status remove-status)' \\
             '--description[Human description for the custom item type or status]:text' \\
             '--default-status[Default status hint for the custom item type]:status' \\
             '--folder[Storage folder for items of this custom type]:dir' \\
@@ -1054,6 +1055,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--mode[Plan mode]:mode:(draft research review approved executing paused completed superseded)' \\
             '--resume-context[Resume context summary]:text' \\
             '--step-title[Step title]:title' \\
+            '*--step[Step title (repeatable on create)]:title' \\
             '--step-status[Step status]:status:(pending in_progress completed blocked skipped superseded)' \\
             '--step-evidence[Step evidence]:text' \\
             '--depends-on[Pm item id step depends on]:id' \\
@@ -1330,6 +1332,10 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--strict-exit[Return non-zero exit when validation warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit]' \\
             '--fix-hints[Add a machine-executable fix_hints[] of pm commands to each failing check]' \\
+            '--auto-fix[Apply the safe, deterministic subset of fix-hint remediations automatically]' \\
+            '--dry-run[Preview planned --auto-fix/--prune-missing fixes without applying them]' \\
+            '--fix-scope[Grant --auto-fix scopes (lifecycle must be named explicitly)]:(metadata resolution lifecycle)' \\
+            '--prune-missing[Remove stale linked-file/doc links classified as deleted]' \\
             '--check-history-drift[Run item/history hash drift checks]' \\
             '--check-command-references[Run linked-command PM-ID reference checks]' \\
             '--json[Output JSON]' \\
@@ -1896,11 +1902,12 @@ complete -c pm -n '__fish_seen_subcommand_from history-redact' -l dry-run -d 'Pr
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l message -d 'Audit history message' -r
 complete -c pm -n '__fish_seen_subcommand_from history-redact' -l force -d 'Force ownership/lock override'
+complete -c pm -n '__fish_seen_subcommand_from history-repair' -l all -d 'Repair every drifted stream in one audited pass'
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l dry-run -d 'Preview the re-anchor impact without writing the history file'
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l author -d 'Mutation author' -r
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l message -d 'Audit history message' -r
 complete -c pm -n '__fish_seen_subcommand_from history-repair' -l force -d 'Force ownership/lock override'
-complete -c pm -n '__fish_seen_subcommand_from schema' -a 'list show add-type remove-type add-status remove-status' -d 'Schema subcommand'
+complete -c pm -n '__fish_seen_subcommand_from schema' -a 'list show show-status add-type remove-type add-status remove-status' -d 'Schema subcommand'
 complete -c pm -n '__fish_seen_subcommand_from schema' -l description -d 'Human description for the custom item type or status' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l default-status -d 'Default status hint for the custom item type' -r
 complete -c pm -n '__fish_seen_subcommand_from schema' -l folder -d 'Storage folder for items of this custom type' -r
@@ -1916,6 +1923,7 @@ complete -c pm -n '__fish_seen_subcommand_from plan' -l harness -d 'Plan harness
 complete -c pm -n '__fish_seen_subcommand_from plan' -l mode -d 'Plan mode' -r -a 'draft research review approved executing paused completed superseded'
 complete -c pm -n '__fish_seen_subcommand_from plan' -l resume-context -d 'Resume context summary' -r
 complete -c pm -n '__fish_seen_subcommand_from plan' -l step-title -d 'Step title' -r
+complete -c pm -n '__fish_seen_subcommand_from plan' -l step -d 'Step title (repeatable on create)' -r
 complete -c pm -n '__fish_seen_subcommand_from plan' -l step-status -d 'Step status' -r -a 'pending in_progress completed blocked skipped superseded'
 complete -c pm -n '__fish_seen_subcommand_from plan' -l step-evidence -d 'Step evidence' -r
 complete -c pm -n '__fish_seen_subcommand_from plan' -l depends-on -d 'Pm item id step depends on' -r
@@ -2092,6 +2100,10 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l verbose-file-lists -
 complete -c pm -n '__fish_seen_subcommand_from validate' -l strict-exit -d 'Return non-zero exit when validation warnings are present'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l fail-on-warn -d 'Alias for --strict-exit'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l fix-hints -d 'Add a machine-executable fix_hints[] of pm commands to each failing check'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l auto-fix -d 'Apply the safe, deterministic subset of fix-hint remediations automatically'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l dry-run -d 'Preview planned --auto-fix/--prune-missing fixes without applying them'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l fix-scope -d 'Grant --auto-fix scopes (lifecycle must be named explicitly)' -r -a 'metadata resolution lifecycle'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l prune-missing -d 'Remove stale linked-file/doc links classified as deleted'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-references -d 'Run linked-command PM-ID reference checks'
 complete -c pm -n '__fish_seen_subcommand_from init' -l preset -d 'Governance preset for new setups' -r -a 'minimal default strict'

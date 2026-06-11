@@ -2,11 +2,17 @@ id: pm-6mit
 title: "pm plan create: repeated --step silently keeps only the last value instead of accumulating steps"
 description: "Dogfood finding 2026-06-10: pm plan create --step A --step B --step C creates ONE step (C, last-wins) because --step aliases single-value --step-title. Agents naturally express multi-step plans in one command; repeated --step should accumulate into ordered steps (commander collect, NOT list:true per pm-1lws learning). Workaround: pm plan add-step per step."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,cli,dogfood,plan
 created_at: "2026-06-10T08:53:52.597Z"
-updated_at: "2026-06-10T08:53:52.597Z"
+updated_at: "2026-06-11T22:14:14.759Z"
 author: maintainer-agent
 parent: pm-mpbb
+resolution: fixed
+expected_result: pm plan create --step A --step B --step C creates three ordered steps.
+actual_result: "Previously created ONE step (C) because --step aliased single-value --step-title; now creates plan-step-001..003 in argv order, with deterministic mixed/--step-title semantics and a usage error for ambiguous per-step detail flags."
+comments[1]{created_at,author,text}:
+  "2026-06-11T22:12:54.816Z",cli-fixes-agent,"Design decisions: (1) --step is now a Commander collect repeatable; on pm plan create each value seeds one ordered step in argv order (plan-step-001..N, all pending). Values are NEVER comma-split so titles may contain commas - and per the pm-1lws learning --step is NOT list:true in contracts (the bootstrap coalescer would comma-join values). (2) Mixed usage: --step-title (when present) becomes the FIRST step, followed by --step values in argv order. (3) Per-step detail flags (--step-body/--step-owner/--step-status/--step-evidence/--step-blocked-reason/--step-replacement/--depends-on/--link/--file/--test/--doc) still apply when exactly ONE step title is given (full backward compat, including via a single --step); combining them with multiple --step values is a usage error (ambiguous target) directing to add-step/update-step. (4) Non-create subcommands keep the historical alias: a single --step maps to stepTitle; multiple values are rejected with a usage error instead of silently dropping all but the last. (5) MCP pm_plan gains a step param (string or string-array). Normalization lives inside runPlan so CLI and MCP share semantics."
+close_reason: "Fixed repeated --step last-wins on pm plan create: --step is now a Commander collect repeatable that seeds one ordered step per value (argv order, never comma-split, NOT list:true per pm-1lws). --step-title stays single-value and becomes the first step when mixed; per-step detail flags require exactly one step title; non-create subcommands accept a single --step as a stepTitle alias and reject multiple. MCP pm_plan gains a step param (string|array). Covered by 4 new plan-command.spec.ts tests + contracts-command.spec.ts assertion updates."
 body: ""

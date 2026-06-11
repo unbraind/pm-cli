@@ -1,3 +1,5 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { handleRequest, processRpcLine } from "../../src/mcp/server.js";
 import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
@@ -170,6 +172,94 @@ describe("MCP protocol handshake", () => {
       expect(full.structuredContent?.result?.projection?.mode).not.toBe("summary");
       const fullChecks = full.structuredContent?.result?.checks ?? [];
       expect(fullChecks.some((check) => Object.keys(check.details ?? {}).length > 0)).toBe(true);
+    });
+  });
+
+  it("routes pm_files discover/apply options through file discovery (pm-wcaa)", async () => {
+    await withTempPmPath(async (context) => {
+      const projectRoot = path.join(context.tempRoot, "workspace");
+      await mkdir(path.join(projectRoot, "src"), { recursive: true });
+      await writeFile(path.join(projectRoot, "src", "mcp-discovered.ts"), "export const mcpDiscovered = true;\n", "utf8");
+
+      const create = context.runCli(
+        [
+          "create",
+          "--json",
+          "--title",
+          "MCP files discover target",
+          "--description",
+          "MCP files discover target description",
+          "--type",
+          "Task",
+          "--status",
+          "open",
+          "--author",
+          "mcp-test",
+        ],
+        { expectJson: true, cwd: projectRoot },
+      );
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      const update = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--body",
+          "Implementation references src/mcp-discovered.ts.",
+          "--author",
+          "mcp-test",
+          "--message",
+          "Seed MCP discovery body",
+        ],
+        { expectJson: true, cwd: projectRoot },
+      );
+      expect(update.code).toBe(0);
+
+      const cwdSpy = vi.spyOn(process, "cwd").mockReturnValue(projectRoot);
+      try {
+        const result = (await handleRequest({
+          jsonrpc: "2.0",
+          id: 72,
+          method: "tools/call",
+          params: {
+            name: "pm_files",
+            arguments: {
+              path: context.pmPath,
+              id,
+              options: {
+                discover: true,
+                apply: true,
+                discoveryNote: "linked through MCP discovery",
+                message: "Apply MCP discovered files",
+              },
+            },
+          },
+        })) as {
+          isError?: boolean;
+          structuredContent?: {
+            result?: {
+              changed?: boolean;
+              added_count?: number;
+              files?: Array<{ path?: string; scope?: string; note?: string }>;
+            };
+          };
+        };
+
+        expect(result.isError).not.toBe(true);
+        expect(result.structuredContent?.result?.changed).toBe(true);
+        expect(result.structuredContent?.result?.added_count).toBe(1);
+        expect(result.structuredContent?.result?.files).toContainEqual(
+          expect.objectContaining({
+            path: "src/mcp-discovered.ts",
+            scope: "project",
+            note: "linked through MCP discovery",
+          }),
+        );
+      } finally {
+        cwdSpy.mockRestore();
+      }
     });
   });
 
