@@ -194,7 +194,7 @@ function registerLifecycleCommand(
         : "Manage extension lifecycle operations for project or global scope.",
     )
     .action(async (target: string | undefined, _options: Record<string, unknown>, command) => {
-      await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, undefined, vocabulary);
+      await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, undefined, vocabulary);
     });
 
   if (vocabulary === "package") {
@@ -213,7 +213,7 @@ function registerLifecycleCommand(
       ),
     vocabulary,
   ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "init", vocabulary);
+    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "init", vocabulary);
   });
 
   addLifecycleScopeOptions(
@@ -227,19 +227,19 @@ function registerLifecycleCommand(
     vocabulary,
   ).action(async (targets: string[] | undefined, _options: Record<string, unknown>, command) => {
     const target = await normalizeInstallTargets(targets);
-    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "install", vocabulary);
+    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "install", vocabulary);
   });
 
   addLifecycleScopeOptions(
     lifecycleCommand.command("uninstall").argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`).description(`Uninstall an installed ${noun}.`),
     vocabulary,
   ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "uninstall", vocabulary);
+    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "uninstall", vocabulary);
   });
 
   addLifecycleScopeOptions(lifecycleCommand.command("explore").description(`List discovered ${plural} in selected scope.`), vocabulary).action(
     async (_options: Record<string, unknown>, command) => {
-      await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "explore", vocabulary);
+      await executeExtensionCommand(undefined, command.optsWithGlobals() as Record<string, unknown>, command, "explore", vocabulary);
     },
   );
 
@@ -251,7 +251,7 @@ function registerLifecycleCommand(
       .description(`List managed ${plural} with update-check metadata.`),
     vocabulary,
   ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "manage", vocabulary);
+    await executeExtensionCommand(undefined, command.optsWithGlobals() as Record<string, unknown>, command, "manage", vocabulary);
   });
 
   addLifecycleScopeOptions(
@@ -261,7 +261,7 @@ function registerLifecycleCommand(
       .description(`Reload ${plural} with cache-busted module imports.`),
     vocabulary,
   ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "reload", vocabulary);
+    await executeExtensionCommand(undefined, command.optsWithGlobals() as Record<string, unknown>, command, "reload", vocabulary);
   });
 
   addLifecycleScopeOptions(
@@ -275,7 +275,7 @@ function registerLifecycleCommand(
       .description(`Run consolidated ${noun} diagnostics (summary/deep modes).`),
     vocabulary,
   ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "doctor", vocabulary);
+    await executeExtensionCommand(undefined, command.optsWithGlobals() as Record<string, unknown>, command, "doctor", vocabulary);
   });
 
   addLifecycleScopeOptions(
@@ -286,7 +286,7 @@ function registerLifecycleCommand(
       .description(`List bundled first-party ${noun} catalog metadata.`),
     vocabulary,
   ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "catalog", vocabulary);
+    await executeExtensionCommand(undefined, command.optsWithGlobals() as Record<string, unknown>, command, "catalog", vocabulary);
   });
 
   addLifecycleScopeOptions(
@@ -299,28 +299,28 @@ function registerLifecycleCommand(
       .description(`Adopt an existing unmanaged ${noun} into managed metadata.`),
     vocabulary,
   ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "adopt", vocabulary);
+    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "adopt", vocabulary);
   });
 
   addLifecycleScopeOptions(
     lifecycleCommand.command("adopt-all").description(`Adopt all unmanaged ${plural} into managed metadata.`),
     vocabulary,
   ).action(async (_options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(undefined, command.opts() as Record<string, unknown>, command, "adopt-all", vocabulary);
+    await executeExtensionCommand(undefined, command.optsWithGlobals() as Record<string, unknown>, command, "adopt-all", vocabulary);
   });
 
   addLifecycleScopeOptions(
     lifecycleCommand.command("activate").argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`).description(`Activate a ${noun} in selected scope settings.`),
     vocabulary,
   ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "activate", vocabulary);
+    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "activate", vocabulary);
   });
 
   addLifecycleScopeOptions(
     lifecycleCommand.command("deactivate").argument("<target>", `${noun[0]!.toUpperCase()}${noun.slice(1)} name`).description(`Deactivate a ${noun} in selected scope settings.`),
     vocabulary,
   ).action(async (target: string, _options: Record<string, unknown>, command) => {
-    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "deactivate", vocabulary);
+    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "deactivate", vocabulary);
   });
 }
 
@@ -461,7 +461,7 @@ export function registerSetupCommands(program: Command): void {
       .description("Install a pm package into the project package scope by default."),
   ).action(async (targets: string[] | undefined, _options: Record<string, unknown>, command) => {
     const target = await normalizeInstallTargets(targets);
-    await executeExtensionCommand(target, command.opts() as Record<string, unknown>, command, "install", "package");
+    await executeExtensionCommand(target, command.optsWithGlobals() as Record<string, unknown>, command, "install", "package");
   });
 
   addPackageScopeOptions(

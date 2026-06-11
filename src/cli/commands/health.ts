@@ -14,6 +14,7 @@ import {
 } from "../../core/extensions/loader.js";
 import { enforceHistoryStreamPolicyForItems } from "../../core/history/history-stream-policy.js";
 import { scanHistoryDrift } from "../../core/history/drift-scan.js";
+import { scanLockHealth } from "../../core/lock/lock-gc.js";
 import {
   readVectorizationStatusLedger,
   refreshSemanticEmbeddingsForMutatedItems,
@@ -59,6 +60,7 @@ export interface HealthCheck {
     | "telemetry"
     | "extensions"
     | "storage"
+    | "locks"
     | "integrity"
     | "history_drift"
     | "vectorization";
@@ -891,6 +893,15 @@ function summarizeHealthCheckDetails(check: HealthCheck, limit: number): Record<
   if (check.name === "storage") {
     return details;
   }
+  if (check.name === "locks") {
+    // Counts only: drops remediation_map, which is full-output-only by contract.
+    return {
+      active_lock_count: details.active_lock_count,
+      stale_lock_count: details.stale_lock_count,
+      unreadable_lock_count: details.unreadable_lock_count,
+      unparseable_lock_count: details.unparseable_lock_count,
+    };
+  }
   if (check.name === "integrity") {
     return {
       checked_item_files: details.checked_item_files,
@@ -1270,6 +1281,56 @@ async function buildTelemetryCheck(
   };
 }
 
+/**
+ * Read-only locks check (pm-xo1n): surfaces active/stale/unreadable/unparseable
+ * lock counts using the exact classification `pm gc --scope locks` acts on, so
+ * agents can gate on stale item-claim locks before running gc speculatively.
+ */
+async function buildLocksCheck(pmRoot: string): Promise<{ check: HealthCheck; warnings: string[] }> {
+  let scan: Awaited<ReturnType<typeof scanLockHealth>>;
+  try {
+    scan = await scanLockHealth(pmRoot);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    return {
+      check: {
+        name: "locks",
+        status: "warn",
+        details: {
+          active_lock_count: 0,
+          stale_lock_count: 0,
+          unreadable_lock_count: 0,
+          unparseable_lock_count: 0,
+          scan_failed: true,
+          error: message,
+          pm_root: pmRoot,
+        },
+      },
+      warnings: [`locks_scan_failed:${message}`],
+    };
+  }
+  const warnings: string[] = [];
+  if (scan.stale_lock_count > 0) {
+    warnings.push(`locks_stale_count:${scan.stale_lock_count}`);
+  }
+  if (scan.unreadable_lock_count > 0) {
+    warnings.push(`locks_unreadable:${scan.unreadable_lock_count}`);
+  }
+  return {
+    check: {
+      name: "locks",
+      status: warnings.length === 0 ? "ok" : "warn",
+      details: {
+        active_lock_count: scan.active_lock_count,
+        stale_lock_count: scan.stale_lock_count,
+        unreadable_lock_count: scan.unreadable_lock_count,
+        unparseable_lock_count: scan.unparseable_lock_count,
+      },
+    },
+    warnings,
+  };
+}
+
 async function buildHistoryDriftCheck(
   pmRoot: string,
   items: ItemWithBody[],
@@ -1524,6 +1585,7 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
         commandLabel: "health",
       });
   const historySummary = await countHistoryStreams(pmRoot);
+  const locksCheck = await buildLocksCheck(pmRoot);
   const integrityCheck = skipIntegrity
     ? { check: { name: "integrity" as const, status: "ok" as const, details: { skipped: true } }, warnings: [] }
     : await buildIntegrityCheck(pmRoot, typeRegistry.type_to_folder, settings.schema);
@@ -1575,6 +1637,7 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
         history_streams: historySummary.count,
       },
     },
+    locksCheck.check,
     integrityCheck.check,
     historyDriftCheck.check,
     vectorizationCheck.check,
@@ -1589,6 +1652,7 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     ...extensionCheck.warnings,
     ...historyPolicy.warnings,
     ...historySummary.warnings,
+    ...locksCheck.warnings,
     ...integrityCheck.warnings,
     ...historyDriftCheck.warnings,
     ...vectorizationCheck.warnings,
@@ -1605,16 +1669,29 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
     directories: missingDirs.map((dir) => `missing_directory:${dir}`),
     settings_values: settingWarnings,
     telemetry: telemetryCheck.warnings,
+    locks: locksCheck.warnings,
     integrity: integrityCheck.warnings,
     history_drift: historyDriftCheck.warnings,
     vectorization: vectorizationCheck.warnings,
   };
+  const historyDriftedCount =
+    typeof (historyDriftCheck.check.details.counts as { drifted?: unknown } | undefined)?.drifted === "number"
+      ? ((historyDriftCheck.check.details.counts as { drifted: number }).drifted)
+      : 0;
   for (const check of checks) {
     const sources = checkRemediationSources[check.name];
     if (sources === undefined) {
       continue;
     }
     const remediationMap = buildRemediationMap(sources);
+    // With multiple drifted streams the per-item `pm history-repair <id>`
+    // template would have to be run once per stream; suggest the bulk audited
+    // pass instead so agents repair everything in one command.
+    if (check.name === "history_drift" && historyDriftedCount > 1) {
+      for (const code of Object.keys(remediationMap)) {
+        remediationMap[code] = "pm history-repair --all";
+      }
+    }
     if (Object.keys(remediationMap).length > 0) {
       check.details = { ...check.details, remediation_map: remediationMap };
     }

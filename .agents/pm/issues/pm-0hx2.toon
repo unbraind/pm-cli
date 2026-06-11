@@ -2,10 +2,16 @@ id: pm-0hx2
 title: "Telemetry first-run prompt CI guard is inverted: CI=true does not skip, only CI=false/0/no/off does"
 description: "shouldSkipTelemetryPrompt (src/core/telemetry/consent.ts) reuses TELEMETRY_PROMPT_DISABLE_VALUES ('0','false','no','off') via parseBooleanLike for the CI env check. parseBooleanLike(process.env.CI) is therefore true only when CI is explicitly falsy — i.e. the prompt is skipped when CI=false and NOT skipped when CI=true. Masked in practice because real CI shells are non-TTY (the TTY guard fires first), but an interactive shell with CI=true would still prompt. Fix: use a truthy-value check (e.g. CI is set and not in the disable set) for the CI guard. Found while extending tests/unit/telemetry-consent.spec.ts (test asserts current behavior with a comment)."
 type: Issue
-status: open
+status: closed
 priority: 3
 tags[2]: "area:telemetry",bug
 created_at: "2026-06-10T20:20:07.984Z"
-updated_at: "2026-06-10T20:20:07.984Z"
+updated_at: "2026-06-11T22:14:15.082Z"
 author: coverage-ratchet-agent
+resolution: fixed
+expected_result: CI=true (or CI=1) skips the telemetry first-run prompt; CI=false or empty behaves as unset.
+actual_result: "Previously the guard reused the disable-value set, so only CI=false/0/no/off skipped and CI=true did not (masked by the non-TTY guard in real CI); now truthy CI values skip and falsy/empty values fall through to the interactive prompt."
+comments[1]{created_at,author,text}:
+  "2026-06-11T22:13:05.322Z",cli-fixes-agent,"Truthiness rules for the CI guard (new isTruthyEnvValue, separate from parseBooleanLike which only matches the disable set): the prompt is skipped iff CI is SET to a value that is non-empty after trim and not in {0,false,no,off} (case-insensitive) - so CI=true, CI=1, CI=yes, and any other CI=<token> skip. CI unset, CI=\"\" (empty/whitespace, treated as unset per common CI conventions), and the explicit falsy spellings do NOT skip. PM_TELEMETRY_PROMPT keeps its existing opt-out semantics (disable values suppress the prompt) - only the CI check changed. tests/unit/telemetry-consent.spec.ts updated: the inverted assertion (CI=false skips) replaced with CI=true/CI=1 skip assertions plus a new test that CI=false and CI=\"\" still prompt interactively."
+close_reason: "Fixed the inverted CI guard in shouldSkipTelemetryPrompt: a new isTruthyEnvValue check skips the first-run prompt when CI is set to any non-empty value outside {0,false,no,off}; CI unset/empty/falsy behaves as not-CI. PM_TELEMETRY_PROMPT opt-out semantics unchanged. telemetry-consent.spec.ts assertions flipped to the fixed behavior plus a new test that CI=false and CI=\"\" still prompt."
 body: ""

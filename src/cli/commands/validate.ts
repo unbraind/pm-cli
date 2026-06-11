@@ -24,6 +24,25 @@ import { nowIso } from "../../core/shared/time.js";
 import { listAllFrontMatterWithBody } from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
+import {
+  partitionFixesByGrant,
+  planCloseReasonBackfillFixes,
+  planResolutionBackfillFixes,
+  planStaleLinkPruneFixes,
+  planTerminalParentFixes,
+  resolveGrantedFixScopes,
+  toFixOutputRow,
+  type CloseReasonBackfillRow,
+  type ResolutionBackfillRow,
+  type StaleLinkPruneRow,
+  type TerminalParentFixRow,
+  type ValidateFixRecord,
+} from "../../core/validate/fix-planning.js";
+import { buildMissingByTypeCounts, type MissingFieldOccurrence } from "../../core/validate/missing-by-type.js";
+import {
+  classifyStaleLinkedPaths,
+  summarizeStaleLinkedPathClassifications,
+} from "../../core/validate/stale-file-classification.js";
 import type { ValidateMetadataProfile, ValidateMetadataRequiredField } from "../../types/index.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
 
@@ -144,6 +163,10 @@ export interface ValidateCommandOptions {
   scanMode?: string;
   metadataProfile?: string;
   fixHints?: boolean;
+  autoFix?: boolean;
+  dryRun?: boolean;
+  fixScope?: string[];
+  pruneMissing?: boolean;
 }
 
 export interface ValidateCheck {
@@ -152,11 +175,28 @@ export interface ValidateCheck {
   details: Record<string, unknown>;
 }
 
+export interface ValidateFixesSummary {
+  mode: "apply" | "dry_run";
+  auto_fix: boolean;
+  prune_missing: boolean;
+  granted_fix_scopes: string[];
+  planned_count: number;
+  applied_count: number;
+  gated_count: number;
+  failed_count: number;
+  planned_fixes: Array<Record<string, unknown>>;
+  applied_fixes: Array<Record<string, unknown>>;
+  gated_fixes: Array<Record<string, unknown>>;
+  failed_fixes: Array<Record<string, unknown>>;
+}
+
 export interface ValidateResult {
   ok: boolean;
   has_warnings: boolean;
   checks: ValidateCheck[];
   warnings: string[];
+  /** Present when --auto-fix or --prune-missing was requested; checks always reflect the PRE-fix state. */
+  fixes?: ValidateFixesSummary;
   generated_at: string;
 }
 
@@ -686,12 +726,32 @@ function resolveRequestedChecks(options: ValidateCommandOptions): Set<ValidateCh
     requested.add("command_references");
   }
   if (requested.size === 0) {
-    requested.add("metadata");
-    requested.add("resolution");
-    requested.add("lifecycle");
+    // Remediation flags without explicit --check-* flags scope the run to the
+    // checks that can produce fixes: --auto-fix plans metadata/resolution
+    // backfills and gated lifecycle fixes; --prune-missing needs the files
+    // scan. With neither, the historical run-everything default applies.
+    if (options.autoFix) {
+      requested.add("metadata");
+      requested.add("resolution");
+      requested.add("lifecycle");
+    }
+    if (options.pruneMissing) {
+      requested.add("files");
+    }
+    if (requested.size === 0) {
+      requested.add("metadata");
+      requested.add("resolution");
+      requested.add("lifecycle");
+      requested.add("files");
+      requested.add("command_references");
+      requested.add("history_drift");
+    }
+    return requested;
+  }
+  // Explicit check flags are respected as-is, except --prune-missing always
+  // needs the files scan it acts on.
+  if (options.pruneMissing) {
     requested.add("files");
-    requested.add("command_references");
-    requested.add("history_drift");
   }
   return requested;
 }
@@ -701,10 +761,11 @@ function buildMetadataCheck(
   metadataPolicy: ValidateMetadataPolicy,
   statusRegistry: RuntimeStatusRegistry,
   verboseDiagnostics: boolean,
-): { check: ValidateCheck; warnings: string[] } {
+): { check: ValidateCheck; warnings: string[]; closeReasonBackfillRows: CloseReasonBackfillRow[] } {
   const missingByField = Object.fromEntries(
     SUPPORTED_METADATA_REQUIRED_FIELDS.map((field) => [field, [] as string[]]),
   ) as Record<ValidateMetadataRequiredField, string[]>;
+  const itemsById = new Map(items.map((item) => [item.id, item]));
 
   for (const item of items) {
     for (const field of SUPPORTED_METADATA_REQUIRED_FIELDS) {
@@ -739,6 +800,18 @@ function buildMetadataCheck(
       counts[countKey] = value;
     }
   }
+  // Per-item-type grouping of missing required-field counts (pm-pmyq /
+  // GH-172): counts only — never row dumps — and only for the ACTIVE required
+  // fields, so the grouping mirrors `counts` at type granularity (e.g.
+  // `{ Task: { close_reason: 3 } }`). Zero-suppressed at both levels.
+  const missingFieldOccurrences: MissingFieldOccurrence[] = [];
+  for (const field of metadataPolicy.required_fields) {
+    for (const itemId of missingByField[field] ?? []) {
+      const itemType = itemsById.get(itemId)?.type;
+      missingFieldOccurrences.push({ item_type: typeof itemType === "string" && itemType.length > 0 ? itemType : "Unknown", field });
+    }
+  }
+  const missingByType = buildMissingByTypeCounts(missingFieldOccurrences);
   const details: Record<string, unknown> = {
     checked_items: items.length,
     metadata_profile: metadataPolicy.profile,
@@ -747,6 +820,7 @@ function buildMetadataCheck(
     required_fields: [...metadataPolicy.required_fields],
     supported_required_fields: [...SUPPORTED_METADATA_REQUIRED_FIELDS],
     counts,
+    missing_by_type: missingByType,
   };
   if (metadataPolicy.configured_custom_fields.length > 0) {
     details.configured_custom_required_fields = [...metadataPolicy.configured_custom_fields];
@@ -775,6 +849,17 @@ function buildMetadataCheck(
     details[truncatedKey] = summarized.truncated;
   }
 
+  // Auto-fix planning input (pm-c3sz): closed items flagged for a missing
+  // close_reason whose resolution can serve as the derivable source value.
+  // Only collected when close_reason is an active required field, so fixes
+  // always trace back to an actual finding of this run.
+  const closeReasonBackfillRows: CloseReasonBackfillRow[] = metadataPolicy.required_fields.includes("close_reason")
+    ? (missingByField.close_reason ?? []).map((itemId) => ({
+        id: itemId,
+        resolution: toNonEmptyStringOrUndefined(itemsById.get(itemId)?.resolution),
+      }))
+    : [];
+
   return {
     check: {
       name: "metadata",
@@ -782,6 +867,7 @@ function buildMetadataCheck(
       details,
     },
     warnings: warningTokens,
+    closeReasonBackfillRows,
   };
 }
 
@@ -789,11 +875,12 @@ function buildResolutionCheck(
   items: ItemWithBody[],
   statusRegistry: RuntimeStatusRegistry,
   verboseDiagnostics: boolean,
-): { check: ValidateCheck; warnings: string[] } {
+): { check: ValidateCheck; warnings: string[]; resolutionBackfillRows: ResolutionBackfillRow[] } {
   const terminalDoneStatuses = new Set<string>(statusRegistry.terminal_done_statuses);
   terminalDoneStatuses.add(statusRegistry.close_status);
   const closedItems = items.filter((item) => terminalDoneStatuses.has(normalizeStatusForRegistry(item.status, statusRegistry)));
   const missingResolutionRows: Array<{ id: string; missing_fields: ResolutionFieldKey[] }> = [];
+  const resolutionBackfillRows: ResolutionBackfillRow[] = [];
 
   for (const item of closedItems) {
     const missingFields = RESOLUTION_FIELD_KEYS.filter((field) => !toNonEmptyStringOrUndefined(item[field]));
@@ -803,6 +890,13 @@ function buildResolutionCheck(
     missingResolutionRows.push({
       id: item.id,
       missing_fields: missingFields,
+    });
+    // Auto-fix planning input (pm-c3sz): the planner backfills only the
+    // `resolution` field, deriving from the item's close_reason when present.
+    resolutionBackfillRows.push({
+      id: item.id,
+      missing_fields: missingFields,
+      close_reason: toNonEmptyStringOrUndefined(item.close_reason),
     });
   }
 
@@ -829,6 +923,7 @@ function buildResolutionCheck(
       },
     },
     warnings,
+    resolutionBackfillRows,
   };
 }
 
@@ -973,13 +1068,14 @@ function buildLifecycleCheck(
   statusRegistry: RuntimeStatusRegistry,
   lifecyclePatternPolicy: LifecyclePatternPolicy,
   verboseDiagnostics: boolean,
-): { check: ValidateCheck; warnings: string[] } {
+): { check: ValidateCheck; warnings: string[]; terminalParentFixRows: TerminalParentFixRow[] } {
   const itemsById = new Map(items.map((item) => [item.id, item]));
   const blockedStatuses =
     statusRegistry.blocked_statuses.size > 0 ? statusRegistry.blocked_statuses : new Set<string>(["blocked"]);
   const activeItems = items.filter((item) => !isTerminalStatus(item.status, statusRegistry));
   const closureLikeRows: Array<{ id: string; fields: string[] }> = [];
   const terminalParentRows: Array<{ id: string; parent_id: string; parent_status: string }> = [];
+  const terminalParentFixRows: TerminalParentFixRow[] = [];
   const staleBlockerRows: Array<{ id: string; status: string; reasons: string[] }> = [];
 
   for (const item of activeItems) {
@@ -1010,6 +1106,17 @@ function buildLifecycleCheck(
           id: item.id,
           parent_id: parent.id,
           parent_status: parent.status,
+        });
+        // Gated lifecycle auto-fix input (pm-8jss): when the terminal parent
+        // has its own ACTIVE parent, the child can be reparented one level up;
+        // otherwise the suggested fix clears the parent link.
+        const grandparentId = toMeaningfulString(parent.parent);
+        const grandparent = grandparentId ? itemsById.get(grandparentId) : undefined;
+        terminalParentFixRows.push({
+          id: item.id,
+          parent_id: parent.id,
+          grandparent_id: grandparent?.id,
+          grandparent_active: grandparent !== undefined && !isTerminalStatus(grandparent.status, statusRegistry),
         });
       }
     }
@@ -1055,6 +1162,9 @@ function buildLifecycleCheck(
 
   closureLikeRows.sort((left, right) => left.id.localeCompare(right.id));
   terminalParentRows.sort(
+    (left, right) => left.id.localeCompare(right.id) || left.parent_id.localeCompare(right.parent_id),
+  );
+  terminalParentFixRows.sort(
     (left, right) => left.id.localeCompare(right.id) || left.parent_id.localeCompare(right.parent_id),
   );
   staleBlockerRows.sort((left, right) => left.id.localeCompare(right.id));
@@ -1139,6 +1249,7 @@ function buildLifecycleCheck(
       },
     },
     warnings,
+    terminalParentFixRows,
   };
 }
 
@@ -1149,29 +1260,40 @@ async function buildFilesCheck(
   fileScanMode: ValidateFileScanMode,
   includePmInternals: boolean,
   verboseFileLists: boolean,
-): Promise<{ check: ValidateCheck; warnings: string[] }> {
+): Promise<{ check: ValidateCheck; warnings: string[]; staleLinkPruneRows: StaleLinkPruneRow[] }> {
   const linkedProjectPaths = new Set<string>();
   const missingLinkedPaths: string[] = [];
+  const staleLinkRows: Array<{ item_id: string; path: string; link_kind: "files" | "docs" }> = [];
 
   for (const item of items) {
-    const linkedArtifacts = [...(item.files ?? []), ...(item.docs ?? [])];
-    for (const artifact of linkedArtifacts) {
-      if (artifact.scope !== "project") {
-        continue;
-      }
-      const normalizedPath = normalizeRelativePath(artifact.path);
-      if (normalizedPath.length === 0) {
-        continue;
-      }
-      linkedProjectPaths.add(normalizedPath);
-      const absolutePath = path.isAbsolute(artifact.path) ? artifact.path : path.resolve(workspaceRoot, artifact.path);
-      try {
-        const stats = await fs.stat(absolutePath);
-        if (!stats.isFile()) {
-          missingLinkedPaths.push(normalizedPath);
+    const linkedArtifactGroups = [
+      { link_kind: "files" as const, artifacts: item.files ?? [] },
+      { link_kind: "docs" as const, artifacts: item.docs ?? [] },
+    ];
+    for (const group of linkedArtifactGroups) {
+      for (const artifact of group.artifacts) {
+        if (artifact.scope !== "project") {
+          continue;
         }
-      } catch {
-        missingLinkedPaths.push(normalizedPath);
+        const normalizedPath = normalizeRelativePath(artifact.path);
+        if (normalizedPath.length === 0) {
+          continue;
+        }
+        linkedProjectPaths.add(normalizedPath);
+        const absolutePath = path.isAbsolute(artifact.path) ? artifact.path : path.resolve(workspaceRoot, artifact.path);
+        let missing = false;
+        try {
+          const stats = await fs.stat(absolutePath);
+          if (!stats.isFile()) {
+            missing = true;
+          }
+        } catch {
+          missing = true;
+        }
+        if (missing) {
+          missingLinkedPaths.push(normalizedPath);
+          staleLinkRows.push({ item_id: item.id, path: normalizedPath, link_kind: group.link_kind });
+        }
       }
     }
   }
@@ -1202,6 +1324,23 @@ async function buildFilesCheck(
     };
   }
   const orphanedFiles = candidateFiles.filter((candidate) => !linkedProjectPaths.has(candidate));
+  // Stale-path classification (pm-0v2m / GH-184): a missing linked path whose
+  // basename still exists in the candidate scan is reported as `moved` (with
+  // relink candidates); otherwise it is `deleted` and safe to prune.
+  const classifiedStalePaths = classifyStaleLinkedPaths(uniqueMissingLinkedPaths, candidateFiles);
+  const classificationByPath = new Map(classifiedStalePaths.map((entry) => [entry.path, entry.classification]));
+  const movedStalePathCount = classifiedStalePaths.filter((entry) => entry.classification === "moved").length;
+  const staleLinkPruneRows: StaleLinkPruneRow[] = staleLinkRows
+    .map((row) => ({
+      ...row,
+      classification: classificationByPath.get(row.path) ?? ("deleted" as const),
+    }))
+    .sort(
+      (left, right) =>
+        left.item_id.localeCompare(right.item_id) ||
+        left.path.localeCompare(right.path) ||
+        left.link_kind.localeCompare(right.link_kind),
+    );
   const warnings: string[] = [];
   if (strictModeForcesPmInternals) {
     warnings.push("validate_files_tracked_all_strict_forces_pm_internals");
@@ -1214,6 +1353,10 @@ async function buildFilesCheck(
   }
   const summarizedMissing = summarizeFileList(uniqueMissingLinkedPaths, verboseFileLists);
   const summarizedOrphaned = summarizeFileList(orphanedFiles, verboseFileLists);
+  const summarizedClassifications = summarizeFileList(
+    summarizeStaleLinkedPathClassifications(classifiedStalePaths),
+    verboseFileLists,
+  );
 
   return {
     check: {
@@ -1247,6 +1390,10 @@ async function buildFilesCheck(
         missing_linked_paths_total: summarizedMissing.total,
         missing_linked_paths: summarizedMissing.values,
         missing_linked_paths_truncated: summarizedMissing.truncated,
+        missing_linked_paths_moved_count: movedStalePathCount,
+        missing_linked_paths_deleted_count: uniqueMissingLinkedPaths.length - movedStalePathCount,
+        missing_linked_path_classifications: summarizedClassifications.values,
+        missing_linked_path_classifications_truncated: summarizedClassifications.truncated,
         orphaned_paths_count: orphanedFiles.length,
         orphaned_paths_total: summarizedOrphaned.total,
         orphaned_paths: summarizedOrphaned.values,
@@ -1254,6 +1401,7 @@ async function buildFilesCheck(
       },
     },
     warnings,
+    staleLinkPruneRows,
   };
 }
 
@@ -1376,7 +1524,116 @@ function buildCommandReferencesCheck(
   };
 }
 
+const VALIDATE_AUTO_FIX_MESSAGE = "pm validate auto-fix";
+
+/**
+ * Apply one planned fix through the SAME audited command paths an operator
+ * would use by hand (`pm update` / `pm files --remove` / `pm docs --remove`),
+ * so every applied fix carries normal history, locking, and hook behavior.
+ * Command modules are imported lazily: plain validate runs stay read-only and
+ * never pay the mutation-stack import cost.
+ */
+async function applyValidateFix(fix: ValidateFixRecord, global: GlobalOptions): Promise<void> {
+  switch (fix.kind) {
+    case "set_resolution":
+    case "set_close_reason":
+    case "reparent":
+    case "unset_parent": {
+      const { runUpdate } = await import("./update.js");
+      const updateOptions: Record<string, unknown> = { message: VALIDATE_AUTO_FIX_MESSAGE };
+      if (fix.kind === "set_resolution") {
+        updateOptions.resolution = fix.value;
+      } else if (fix.kind === "set_close_reason") {
+        updateOptions.closeReason = fix.value;
+      } else if (fix.kind === "reparent") {
+        updateOptions.parent = fix.parent_id;
+      } else {
+        updateOptions.unset = ["parent"];
+      }
+      await runUpdate(fix.item_id, updateOptions, global);
+      return;
+    }
+    case "prune_file_link": {
+      throw new Error(`Unsupported non-batched fix kind: ${fix.kind}`);
+    }
+    case "prune_doc_link": {
+      throw new Error(`Unsupported non-batched fix kind: ${fix.kind}`);
+    }
+  }
+}
+
+function pruneBatchKey(fix: ValidateFixRecord): string | null {
+  if (fix.kind !== "prune_file_link" && fix.kind !== "prune_doc_link") {
+    return null;
+  }
+  return `${fix.kind}:${fix.item_id}`;
+}
+
+async function applyValidateFixes(applicable: ValidateFixRecord[], global: GlobalOptions): Promise<{
+  applied: ValidateFixRecord[];
+  failed: Array<{ fix: ValidateFixRecord; error: unknown }>;
+}> {
+  const applied: ValidateFixRecord[] = [];
+  const failed: Array<{ fix: ValidateFixRecord; error: unknown }> = [];
+  const pruneBatches = new Map<string, ValidateFixRecord[]>();
+
+  for (const fix of applicable) {
+    const batchKey = pruneBatchKey(fix);
+    if (batchKey === null) {
+      try {
+        await applyValidateFix(fix, global);
+        applied.push(fix);
+      } catch (error) {
+        failed.push({ fix, error });
+      }
+      continue;
+    }
+    const existing = pruneBatches.get(batchKey);
+    if (existing) {
+      existing.push(fix);
+    } else {
+      pruneBatches.set(batchKey, [fix]);
+    }
+  }
+
+  for (const batch of pruneBatches.values()) {
+    const first = batch[0];
+    if (!first) {
+      continue;
+    }
+    const remove = batch
+      .map((fix) => fix.path)
+      .filter((value): value is string => typeof value === "string" && value.length > 0);
+    try {
+      if (first.kind === "prune_file_link") {
+        const { runFiles } = await import("./files.js");
+        await runFiles(first.item_id, { remove, message: VALIDATE_AUTO_FIX_MESSAGE }, global);
+      } else {
+        const { runDocs } = await import("./docs.js");
+        await runDocs(first.item_id, { remove, message: VALIDATE_AUTO_FIX_MESSAGE }, global);
+      }
+      applied.push(...batch);
+    } catch (error) {
+      failed.push(...batch.map((fix) => ({ fix, error })));
+    }
+  }
+
+  return { applied, failed };
+}
+
 export async function runValidate(options: ValidateCommandOptions, global: GlobalOptions): Promise<ValidateResult> {
+  const fixesRequested = options.autoFix === true || options.pruneMissing === true;
+  if (options.dryRun === true && !fixesRequested) {
+    throw new PmCliError(
+      "--dry-run requires --auto-fix or --prune-missing (there is nothing to preview otherwise).",
+      EXIT_CODE.USAGE,
+    );
+  }
+  if (options.fixScope !== undefined && options.fixScope.length > 0 && options.autoFix !== true) {
+    throw new PmCliError("--fix-scope requires --auto-fix.", EXIT_CODE.USAGE);
+  }
+  // Resolved up-front so unknown --fix-scope values fail fast before any scan.
+  const grantedFixScopes = resolveGrantedFixScopes(options.fixScope);
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {
     throw new PmCliError(`Tracker is not initialized at ${pmRoot}. Run pm init first.`, EXIT_CODE.NOT_FOUND);
@@ -1419,41 +1676,99 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
     warnings.push(...built.warnings);
   };
 
+  let closeReasonBackfillRows: CloseReasonBackfillRow[] = [];
+  let resolutionBackfillRows: ResolutionBackfillRow[] = [];
+  let terminalParentFixRows: TerminalParentFixRow[] = [];
+  let staleLinkPruneRows: StaleLinkPruneRow[] = [];
+
   if (requestedChecks.has("metadata")) {
-    record(buildMetadataCheck(items, metadataPolicy, statusRegistry, Boolean(options.verboseDiagnostics)));
+    const built = buildMetadataCheck(items, metadataPolicy, statusRegistry, Boolean(options.verboseDiagnostics));
+    closeReasonBackfillRows = built.closeReasonBackfillRows;
+    record(built);
   }
   if (requestedChecks.has("resolution")) {
-    record(buildResolutionCheck(items, statusRegistry, Boolean(options.verboseDiagnostics)));
+    const built = buildResolutionCheck(items, statusRegistry, Boolean(options.verboseDiagnostics));
+    resolutionBackfillRows = built.resolutionBackfillRows;
+    record(built);
   }
   if (requestedChecks.has("lifecycle")) {
-    record(
-      buildLifecycleCheck(
-        items,
-        Boolean(options.checkStaleBlockers),
-        dependencyCycleSeverity,
-        statusRegistry,
-        lifecyclePatternPolicy,
-        Boolean(options.verboseDiagnostics),
-      ),
+    const built = buildLifecycleCheck(
+      items,
+      Boolean(options.checkStaleBlockers),
+      dependencyCycleSeverity,
+      statusRegistry,
+      lifecyclePatternPolicy,
+      Boolean(options.verboseDiagnostics),
     );
+    terminalParentFixRows = built.terminalParentFixRows;
+    record(built);
   }
   if (requestedChecks.has("files")) {
-    record(
-      await buildFilesCheck(
-        items,
-        workspaceRoot,
-        pmRoot,
-        fileScanMode,
-        Boolean(options.includePmInternals),
-        Boolean(options.verboseFileLists),
-      ),
+    const built = await buildFilesCheck(
+      items,
+      workspaceRoot,
+      pmRoot,
+      fileScanMode,
+      Boolean(options.includePmInternals),
+      Boolean(options.verboseFileLists),
     );
+    staleLinkPruneRows = built.staleLinkPruneRows;
+    record(built);
   }
   if (requestedChecks.has("command_references")) {
     record(buildCommandReferencesCheck(items, settings.id_prefix, Boolean(options.verboseDiagnostics)));
   }
   if (requestedChecks.has("history_drift")) {
     record(await buildHistoryDriftCheck(pmRoot, items, Boolean(options.verboseDiagnostics)));
+  }
+
+  // Remediation phase (pm-c3sz / pm-8jss / pm-0v2m). Plans are derived from
+  // the findings of THIS run; checks above always report the pre-fix state.
+  // Safe field backfills apply by default under --auto-fix; gated lifecycle
+  // fixes are planned but withheld unless --fix-scope lifecycle grants them;
+  // --dry-run previews without mutating; failures never abort the run.
+  let fixes: ValidateFixesSummary | undefined;
+  if (fixesRequested) {
+    const planned: ValidateFixRecord[] = [];
+    if (options.autoFix === true) {
+      planned.push(...planCloseReasonBackfillFixes(closeReasonBackfillRows));
+      planned.push(...planResolutionBackfillFixes(resolutionBackfillRows));
+      planned.push(...planTerminalParentFixes(terminalParentFixRows));
+    }
+    if (options.pruneMissing === true) {
+      planned.push(...planStaleLinkPruneFixes(staleLinkPruneRows));
+    }
+    const { applicable, gated } = partitionFixesByGrant(planned, grantedFixScopes);
+    const dryRun = options.dryRun === true;
+    const appliedFixRows: Array<Record<string, unknown>> = [];
+    const failedFixRows: Array<Record<string, unknown>> = [];
+    if (!dryRun) {
+      const applied = await applyValidateFixes(applicable, global);
+      appliedFixRows.push(...applied.applied.map(toFixOutputRow));
+      failedFixRows.push(
+        ...applied.failed.map(({ fix, error }) => ({
+          ...toFixOutputRow(fix),
+          error: error instanceof Error ? error.message : String(error),
+        })),
+      );
+    }
+    fixes = {
+      mode: dryRun ? "dry_run" : "apply",
+      auto_fix: options.autoFix === true,
+      prune_missing: options.pruneMissing === true,
+      granted_fix_scopes: [...grantedFixScopes].sort((left, right) => left.localeCompare(right)),
+      planned_count: planned.length,
+      applied_count: appliedFixRows.length,
+      gated_count: gated.length,
+      failed_count: failedFixRows.length,
+      planned_fixes: planned.map(toFixOutputRow),
+      applied_fixes: appliedFixRows,
+      gated_fixes: gated.map((fix) => ({
+        ...toFixOutputRow(fix),
+        gate_hint: `Withheld: re-run with --fix-scope ${fix.gate} to apply.`,
+      })),
+      failed_fixes: failedFixRows,
+    };
   }
 
   const normalizedWarnings = [...new Set(warnings)].sort((left, right) => left.localeCompare(right));
@@ -1463,6 +1778,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
     has_warnings: normalizedWarnings.length > 0,
     checks,
     warnings: normalizedWarnings,
+    ...(fixes !== undefined ? { fixes } : {}),
     generated_at: nowIso(),
   };
 }

@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { runLockGc } from "../../../../src/core/lock/lock-gc.js";
+import { classifyLockContent, runLockGc, scanLockHealth } from "../../../../src/core/lock/lock-gc.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -572,6 +572,179 @@ describe("runLockGc — readdir non-ENOENT error", () => {
     });
     try {
       await expect(runLockGc(tempDir, { dryRun: false })).rejects.toMatchObject({ code: "EACCES" });
+    } finally {
+      readdirSpy.mockRestore();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// classifyLockContent — pure classification shared by gc and pm health
+// ---------------------------------------------------------------------------
+
+describe("classifyLockContent", () => {
+  const createdAt = "2020-01-01T00:00:00.000Z";
+  const createdMs = Date.parse(createdAt);
+
+  it("classifies a fresh lock as active", () => {
+    const raw = makeLockPayload({ id: "pm-a", created_at: createdAt, ttl_seconds: 60 });
+    const { detail, entry } = classifyLockContent("pm-a.lock", raw, createdMs + 1000);
+    expect(detail).toBe("active");
+    expect(entry).toMatchObject({
+      file: "pm-a.lock",
+      id: "pm-a",
+      owner: "test-owner",
+      created_at: createdAt,
+      ttl_seconds: 60,
+      age_seconds: 1,
+      stale: false,
+      reason: "active",
+    });
+  });
+
+  it("treats age exactly at ttl as still active (staleness requires strictly elapsed ttl)", () => {
+    const raw = makeLockPayload({ id: "pm-b", created_at: createdAt, ttl_seconds: 60 });
+    const { detail } = classifyLockContent("pm-b.lock", raw, createdMs + 60_000);
+    expect(detail).toBe("active");
+  });
+
+  it("classifies an elapsed-ttl lock as expired/stale", () => {
+    const raw = makeLockPayload({ id: "pm-c", created_at: createdAt, ttl_seconds: 60 });
+    const { detail, entry } = classifyLockContent("pm-c.lock", raw, createdMs + 61_000);
+    expect(detail).toBe("expired");
+    expect(entry).toMatchObject({ stale: true, reason: "expired", age_seconds: 61 });
+  });
+
+  it("classifies invalid JSON as unparseable_json with a null-field entry", () => {
+    const { detail, entry } = classifyLockContent("pm-d.lock", "{nope", Date.now());
+    expect(detail).toBe("unparseable_json");
+    expect(entry).toEqual({
+      file: "pm-d.lock",
+      id: null,
+      owner: null,
+      created_at: null,
+      ttl_seconds: null,
+      age_seconds: null,
+      stale: false,
+      reason: "unparseable",
+    });
+  });
+
+  it("classifies an unparseable created_at as invalid_timestamp but preserves lock fields", () => {
+    const raw = makeLockPayload({ id: "pm-e", created_at: "not-a-date", ttl_seconds: 60 });
+    const { detail, entry } = classifyLockContent("pm-e.lock", raw, Date.now());
+    expect(detail).toBe("invalid_timestamp");
+    expect(entry).toMatchObject({
+      id: "pm-e",
+      owner: "test-owner",
+      created_at: "not-a-date",
+      ttl_seconds: 60,
+      age_seconds: null,
+      stale: false,
+      reason: "unparseable",
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// scanLockHealth — read-only scan for the pm health locks check
+// ---------------------------------------------------------------------------
+
+describe("scanLockHealth", () => {
+  it("returns an all-zero scan when the locks directory does not exist", async () => {
+    const scan = await scanLockHealth(tempDir);
+    expect(scan).toEqual({
+      scanned: 0,
+      active_lock_count: 0,
+      stale_lock_count: 0,
+      unreadable_lock_count: 0,
+      unparseable_lock_count: 0,
+    });
+  });
+
+  it("counts active/stale/unparseable locks with injected now and ignores non-.lock files", async () => {
+    await fs.mkdir(locksDir, { recursive: true });
+    const createdAt = "2020-01-01T00:00:00.000Z";
+    const nowMs = Date.parse(createdAt) + 120_000;
+    await fs.writeFile(
+      path.join(locksDir, "pm-active.lock"),
+      makeLockPayload({ id: "pm-active", created_at: createdAt, ttl_seconds: 3600 }),
+    );
+    await fs.writeFile(
+      path.join(locksDir, "pm-stale.lock"),
+      makeLockPayload({ id: "pm-stale", created_at: createdAt, ttl_seconds: 60 }),
+    );
+    await fs.writeFile(path.join(locksDir, "pm-badjson.lock"), "{not json");
+    await fs.writeFile(
+      path.join(locksDir, "pm-badts.lock"),
+      makeLockPayload({ id: "pm-badts", created_at: "not-a-date", ttl_seconds: 60 }),
+    );
+    await fs.writeFile(path.join(locksDir, "README.txt"), "ignored");
+
+    const scan = await scanLockHealth(tempDir, nowMs);
+    expect(scan).toEqual({
+      scanned: 4,
+      active_lock_count: 1,
+      stale_lock_count: 1,
+      unreadable_lock_count: 0,
+      // invalid JSON and invalid timestamp both roll up into unparseable
+      unparseable_lock_count: 2,
+    });
+
+    // Read-only contract: every lock file is still present after the scan.
+    const remaining = await fs.readdir(locksDir);
+    expect(remaining.sort()).toEqual(["README.txt", "pm-active.lock", "pm-badjson.lock", "pm-badts.lock", "pm-stale.lock"]);
+  });
+
+  it("counts a lock whose content cannot be read as unreadable", async () => {
+    await fs.mkdir(locksDir, { recursive: true });
+    // A directory with a .lock name makes readFile fail deterministically (EISDIR).
+    await fs.mkdir(path.join(locksDir, "pm-dir.lock"), { recursive: true });
+    await fs.writeFile(
+      path.join(locksDir, "pm-active.lock"),
+      makeLockPayload({ id: "pm-active", created_at: new Date().toISOString(), ttl_seconds: 3600 }),
+    );
+
+    const scan = await scanLockHealth(tempDir);
+    expect(scan).toEqual({
+      scanned: 2,
+      active_lock_count: 1,
+      stale_lock_count: 0,
+      unreadable_lock_count: 1,
+      unparseable_lock_count: 0,
+    });
+  });
+
+  it("skips a lock that disappears between readdir and readFile (ghost ENOENT)", async () => {
+    await fs.mkdir(locksDir, { recursive: true });
+    const lockFile = path.join(locksDir, "pm-ghost.lock");
+    await fs.writeFile(lockFile, makeLockPayload({ id: "pm-ghost", created_at: new Date().toISOString() }));
+
+    const readFileSpy = vi.spyOn(fs, "readFile").mockImplementationOnce(async () => {
+      throw Object.assign(new Error("no such file"), { code: "ENOENT" });
+    });
+    let scan;
+    try {
+      scan = await scanLockHealth(tempDir);
+    } finally {
+      readFileSpy.mockRestore();
+    }
+    expect(scan).toEqual({
+      scanned: 0,
+      active_lock_count: 0,
+      stale_lock_count: 0,
+      unreadable_lock_count: 0,
+      unparseable_lock_count: 0,
+    });
+  });
+
+  it("re-throws when readdir fails with a non-ENOENT error", async () => {
+    await fs.mkdir(locksDir, { recursive: true });
+    const readdirSpy = vi.spyOn(fs, "readdir").mockImplementationOnce(async () => {
+      throw Object.assign(new Error("permission denied"), { code: "EACCES" });
+    });
+    try {
+      await expect(scanLockHealth(tempDir)).rejects.toMatchObject({ code: "EACCES" });
     } finally {
       readdirSpy.mockRestore();
     }

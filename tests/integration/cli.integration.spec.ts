@@ -3117,6 +3117,7 @@ describe("CLI integration (sandboxed PM_PATH)", () => {
         "telemetry",
         "extensions",
         "storage",
+        "locks",
         "integrity",
         "history_drift",
         "vectorization",

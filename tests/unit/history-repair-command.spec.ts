@@ -1,7 +1,12 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { runHistoryRepair } from "../../src/cli/commands/history-repair.js";
+import {
+  assertHistoryRepairTarget,
+  runHistoryRepair,
+  runHistoryRepairAll,
+  type HistoryRepairAllResult,
+} from "../../src/cli/commands/history-repair.js";
 import * as lockModule from "../../src/core/lock/lock.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -176,6 +181,155 @@ describe("history-repair command", () => {
       } finally {
         lockSpy.mockRestore();
       }
+    });
+  });
+});
+
+describe("history-repair --all (bulk drift repair)", () => {
+  it("requires exactly one of <id> or --all", () => {
+    expect(() => assertHistoryRepairTarget(undefined, false)).toThrowError(
+      /provide an item <id> or pass --all/,
+    );
+    expect(() => assertHistoryRepairTarget("pm-abcd", true)).toThrowError(/mutually exclusive/);
+    expect(() => assertHistoryRepairTarget("pm-abcd", false)).not.toThrow();
+    expect(() => assertHistoryRepairTarget(undefined, true)).not.toThrow();
+  });
+
+  it("rejects ambiguous and missing targets at the CLI with a usage error", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Target contract");
+      const both = context.runCli(["history-repair", id, "--all", "--json"]);
+      expect(both.code).not.toBe(0);
+      expect(both.stdout + both.stderr).toContain("mutually exclusive");
+
+      const neither = context.runCli(["history-repair", "--json"]);
+      expect(neither.code).not.toBe(0);
+      expect(neither.stdout + neither.stderr).toContain("provide an item <id> or pass --all");
+    });
+  });
+
+  it("repairs every drifted stream in one audited pass and leaves clean streams alone", async () => {
+    await withTempPmPath(async (context) => {
+      const driftedA = createItem(context, "Drifted A");
+      const driftedB = createItem(context, "Drifted B");
+      const clean = createItem(context, "Clean stream");
+      expect(context.runCli(["update", driftedA, "--status", "in_progress"]).code).toBe(0);
+      expect(context.runCli(["update", driftedB, "--priority", "1"]).code).toBe(0);
+      await tamperChain(historyPath(context, driftedA));
+      await tamperChain(historyPath(context, driftedB));
+
+      // Dry-run previews the bulk pass without writing.
+      const dry = context.runCli(["history-repair", "--all", "--dry-run", "--json"], { expectJson: true });
+      expect(dry.code).toBe(0);
+      const dryResult = dry.json as HistoryRepairAllResult;
+      expect(dryResult.dry_run).toBe(true);
+      expect(dryResult.drifted_streams).toBe(2);
+      const dryVerify = context.runCli(["history", driftedA, "--verify", "--json"], { expectJson: true });
+      expect((dryVerify.json as { verification: { ok: boolean } }).verification.ok).toBe(false);
+
+      const repaired = context.runCli(
+        ["history-repair", "--all", "--message", "bulk re-anchor", "--json"],
+        { expectJson: true },
+      );
+      expect(repaired.code).toBe(0);
+      const result = repaired.json as HistoryRepairAllResult;
+      expect(result.all).toBe(true);
+      expect(result.dry_run).toBe(false);
+      expect(result.scanned_streams).toBe(3);
+      expect(result.drifted_streams).toBe(2);
+      expect(result.totals).toEqual({ repaired: 2, skipped_clean: 0, failed: 0 });
+      expect(result.streams.map((stream) => stream.id).sort()).toEqual([driftedA, driftedB].sort());
+      for (const stream of result.streams) {
+        expect(stream.outcome).toBe("repaired");
+        expect(stream.error).toBeUndefined();
+      }
+      // The clean stream gets no row — only drifted streams are listed.
+      expect(result.streams.some((stream) => stream.id === clean)).toBe(false);
+
+      // Each repaired stream carries the audit marker and verifies clean.
+      for (const id of [driftedA, driftedB]) {
+        const verify = context.runCli(["history", id, "--verify", "--json"], { expectJson: true });
+        expect((verify.json as { verification: { ok: boolean } }).verification.ok).toBe(true);
+      }
+      const driftAfter = context.runCli(["validate", "--check-history-drift", "--json"], { expectJson: true });
+      const driftCheck = (
+        driftAfter.json as { checks: { name: string; details: { drifted_items_count: number } }[] }
+      ).checks.find((c) => c.name === "history_drift");
+      expect(driftCheck?.details.drifted_items_count).toBe(0);
+
+      // Re-running --all on a fully clean tree is a no-op pass.
+      const again = context.runCli(["history-repair", "--all", "--json"], { expectJson: true });
+      expect(again.code).toBe(0);
+      const againResult = again.json as HistoryRepairAllResult;
+      expect(againResult.drifted_streams).toBe(0);
+      expect(againResult.streams).toEqual([]);
+      expect(againResult.totals).toEqual({ repaired: 0, skipped_clean: 0, failed: 0 });
+    });
+  });
+
+  it("isolates per-stream failures and exits non-zero only when a stream failed", async () => {
+    await withTempPmPath(async (context) => {
+      const repairable = createItem(context, "Repairable drift");
+      const broken = createItem(context, "Unrepairable drift");
+      expect(context.runCli(["update", repairable, "--status", "in_progress"]).code).toBe(0);
+      await tamperChain(historyPath(context, repairable));
+      // Replace the second stream with a directory: the drift scan classifies it
+      // as an unreadable (drifted) stream and the per-stream repair fails on read.
+      await rm(historyPath(context, broken), { force: true });
+      await mkdir(historyPath(context, broken), { recursive: true });
+
+      const run = context.runCli(["history-repair", "--all", "--json"], { expectJson: true });
+      expect(run.code).toBe(EXIT_CODE.GENERIC_FAILURE);
+      const result = run.json as HistoryRepairAllResult;
+      expect(result.drifted_streams).toBe(2);
+      expect(result.totals).toEqual({ repaired: 1, skipped_clean: 0, failed: 1 });
+
+      const repairedRow = result.streams.find((stream) => stream.id === repairable);
+      expect(repairedRow?.outcome).toBe("repaired");
+      const failedRow = result.streams.find((stream) => stream.id === broken);
+      expect(failedRow?.outcome).toBe("failed");
+      expect(typeof failedRow?.error).toBe("string");
+      expect((failedRow?.error ?? "").length).toBeGreaterThan(0);
+
+      // The failing stream never aborts the rest: the repairable one is clean now.
+      const verify = context.runCli(["history", repairable, "--verify", "--json"], { expectJson: true });
+      expect((verify.json as { verification: { ok: boolean } }).verification.ok).toBe(true);
+    });
+  });
+
+  it("honors per-stream lock safety in bulk mode and forwards --force to each stream", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Locked by another agent");
+      expect(context.runCli(["update", id, "--status", "in_progress"]).code).toBe(0);
+      await tamperChain(historyPath(context, id));
+      // A stale lock left by another agent: with force_required_for_stale_lock
+      // governance enabled (init defaults to the minimal preset, which waives it),
+      // the un-forced bulk pass must fail this stream instead of silently
+      // overriding the lock.
+      expect(
+        context.runCli(["config", "set", "governance_force_required_for_stale_lock", "true", "--json"]).code,
+      ).toBe(0);
+      const locksDir = path.join(context.pmPath, "locks");
+      await mkdir(locksDir, { recursive: true });
+      const staleLockPath = path.join(locksDir, `${id}.lock`);
+      const staleLockPayload = JSON.stringify({
+        id,
+        pid: 99999,
+        owner: "another-agent",
+        created_at: new Date(Date.now() - 7200 * 1000).toISOString(),
+        ttl_seconds: 60,
+      });
+      await writeFile(staleLockPath, staleLockPayload, "utf8");
+
+      const result = await runHistoryRepairAll({}, { path: context.pmPath });
+      expect(result.totals).toMatchObject({ repaired: 0, failed: 1 });
+      expect(result.streams[0]).toMatchObject({ id, outcome: "failed" });
+      expect(result.streams[0].error).toContain("--force");
+
+      // --force is honored per stream, mirroring single-stream semantics.
+      await writeFile(staleLockPath, staleLockPayload, "utf8");
+      const forced = await runHistoryRepairAll({ force: true }, { path: context.pmPath });
+      expect(forced.totals).toEqual({ repaired: 1, skipped_clean: 0, failed: 0 });
     });
   });
 });

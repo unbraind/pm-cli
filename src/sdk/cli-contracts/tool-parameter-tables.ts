@@ -207,6 +207,9 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   strictExit: { type: "boolean" },
   failOnWarn: { type: "boolean" },
   fixHints: { type: "boolean" },
+  autoFix: { type: "boolean" },
+  fixScope: { type: "array", items: { type: "string", enum: ["metadata", "resolution", "lifecycle"] } },
+  pruneMissing: { type: "boolean" },
   checkHistoryDrift: { type: "boolean" },
   checkCommandReferences: { type: "boolean" },
   allowAuditNote: { type: "boolean" },
@@ -216,6 +219,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   allowAuditDepUpdate: { type: "boolean" },
   allowAuditRelease: { type: "boolean" },
   dryRun: { type: "boolean" },
+  all: { type: "boolean" },
   cliOnly: { type: "boolean" },
   packagesOnly: { type: "boolean" },
   repair: { type: "boolean" },
@@ -255,6 +259,10 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   discover: { type: "boolean" },
   apply: { type: "boolean" },
   discoveryNote: { type: "string" },
+  // GH-170 (pm-pfnx): single-string note for files/docs add batches (the shared
+  // `note` key below is the array-typed create/update note seed).
+  addNote: { type: "string" },
+  list: { type: "boolean" },
   appendStable: { type: "boolean" },
   validatePaths: { type: "boolean" },
   audit: { type: "boolean" },
@@ -328,6 +336,9 @@ export const PLAN_ACTION_PARAMETER_PROPERTIES: Record<string, unknown> = {
   claim: { type: "boolean" },
   fromSearch: { type: "string" },
   stepTitle: { type: "string" },
+  // pm-6mit: ordered step titles for create (string or array; values are never
+  // comma-split). On step subcommands a single value aliases stepTitle.
+  step: { anyOf: [{ type: "string" }, { type: "array", items: { type: "string" } }] },
   stepBody: { type: "string" },
   stepOwner: { type: "string" },
   stepStatus: { type: "string", enum: [...PLAN_STEP_STATUS_VALUES] },
@@ -379,6 +390,11 @@ export const PLAN_ACTION_PARAMETER_METADATA: Record<string, { description: strin
   mode: {
     description: "Plan lifecycle mode.",
     examples: ["draft", "research", "approved"],
+  },
+  step: {
+    description:
+      "Ordered initial step titles for create (string or array, never comma-split; stepTitle, when also set, becomes the first step). For step subcommands a single value aliases stepTitle.",
+    examples: [["Read the code", "Write the fix", "Run the tests"]],
   },
   file: {
     description: "File link to attach while creating or materializing a Plan.",
@@ -723,6 +739,10 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   dryRun: {
     description: "Preview command effects without mutating storage artifacts.",
   },
+  all: {
+    description:
+      "For history-repair action: scan every stream for drift and repair each drifted stream in one audited pass (mutually exclusive with id).",
+  },
   gcScope: {
     description: "Repeatable gc scope selector values (index, embeddings, runtime, locks).",
     examples: [["index", "embeddings"], ["runtime"], ["locks"]],
@@ -840,6 +860,19 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   fixHints: {
     description: "For validate action, add a machine-executable fix_hints[] of pm commands to each failing check's details.",
   },
+  autoFix: {
+    description:
+      "For validate action, apply the safe, deterministic subset of fix-hint remediations (field backfills) automatically; combine with dryRun to preview and fixScope to grant gated scopes.",
+  },
+  fixScope: {
+    description:
+      "For validate action, grant --auto-fix scopes (metadata, resolution, lifecycle). Defaults to the safe scopes metadata and resolution; lifecycle must be named explicitly.",
+    examples: [["lifecycle"], ["metadata", "resolution"]],
+  },
+  pruneMissing: {
+    description:
+      "For validate action, remove stale linked-file/doc LINKS whose paths classified as deleted (link removal only — never touches real files); honors dryRun.",
+  },
   checkHistoryDrift: {
     description: "Run item/history hash drift checks.",
   },
@@ -887,6 +920,15 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   discoveryNote: {
     description: "Note attached to file links added by files discovery.",
     examples: ["discovered from item text"],
+  },
+  addNote: {
+    description:
+      "Note attached to every link added by add/addGlob in this call (per-entry embedded note= wins; requires add or addGlob). Maps to the CLI --note flag on pm files/pm docs.",
+    examples: ["command wiring"],
+  },
+  list: {
+    description: "When true for files/docs action, list the current linked paths without mutating them.",
+    examples: [true],
   },
   stream: {
     description:

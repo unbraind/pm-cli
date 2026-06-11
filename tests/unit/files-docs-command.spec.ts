@@ -280,6 +280,54 @@ describe("runFiles", () => {
     });
   });
 
+  it("applies a standalone --note to every added link, letting embedded notes win (GH-170)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "files-standalone-note");
+
+      // --note without --add/--add-glob is a usage error: nothing to annotate.
+      await expect(runFiles(id, { note: "orphan note" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--note requires --add or --add-glob"),
+      });
+      await expect(
+        runFiles(id, { note: "orphan note", remove: ["README.md"] }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+
+      const added = await runFiles(
+        id,
+        {
+          add: ["README.md", "docs/COMMANDS.md", "path=docs/AGENT_GUIDE.md,note=embedded wins"],
+          note: "shared, batch note",
+          message: "add linked files with standalone note",
+        },
+        { path: context.pmPath },
+      );
+      expect(added.changed).toBe(true);
+      expect(added.count).toBe(3);
+      expect(added.files).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: "README.md", note: "shared, batch note" }),
+          expect.objectContaining({ path: "docs/AGENT_GUIDE.md", note: "embedded wins" }),
+          expect.objectContaining({ path: "docs/COMMANDS.md", note: "shared, batch note" }),
+        ]),
+      );
+
+      // A blank --note value is tolerated and leaves the added entries unannotated.
+      const blankNote = await runFiles(
+        id,
+        { add: ["docs/SDK.md"], note: "   ", message: "blank note" },
+        { path: context.pmPath },
+      );
+      expect(blankNote.files).toEqual(
+        expect.arrayContaining([expect.objectContaining({ path: "docs/SDK.md" })]),
+      );
+      const sdkEntry = blankNote.files.find((entry) => entry.path === "docs/SDK.md");
+      expect(sdkEntry?.note).toBeUndefined();
+    });
+  });
+
   it("resolves mutation author from explicit/env/settings/unknown fallbacks", async () => {
     await withTempPmPath(async (context) => {
       await assertAuthorResolution(context, runFiles, "path=README.md,scope=project", "files");
@@ -745,6 +793,31 @@ describe("runDocs", () => {
           scope: "project",
         }),
       ]);
+    });
+  });
+
+  it("applies a standalone --note to added doc links and rejects --note without an add (GH-170)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "docs-standalone-note");
+
+      await expect(runDocs(id, { note: "orphan note" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--note requires --add or --add-glob"),
+      });
+
+      const added = await runDocs(
+        id,
+        { add: ["README.md", "docs/COMMANDS.md"], note: "public docs", message: "add docs with note" },
+        { path: context.pmPath },
+      );
+      expect(added.changed).toBe(true);
+      expect(added.count).toBe(2);
+      expect(added.docs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ path: "README.md", note: "public docs" }),
+          expect.objectContaining({ path: "docs/COMMANDS.md", note: "public docs" }),
+        ]),
+      );
     });
   });
 

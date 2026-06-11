@@ -26,6 +26,13 @@ export interface LinkedArtifactCommandOptions {
   addGlob?: string[];
   remove?: string[];
   migrate?: string[];
+  /**
+   * GH-170 (pm-pfnx): standalone note applied to every link added by --add /
+   * --add-glob in the same invocation. A per-entry embedded note (the
+   * `path=...,note=...` pair syntax) takes precedence over this flag.
+   * Requires at least one --add/--add-glob; rejected otherwise.
+   */
+  note?: string;
   list?: boolean;
   appendStable?: boolean;
   validatePaths?: boolean;
@@ -219,6 +226,37 @@ export async function expandAddGlobEntries(entries: AddGlobEntry[]): Promise<Lin
   return expanded;
 }
 
+/**
+ * GH-170 (pm-pfnx): apply a standalone --note to the links added in this
+ * invocation. Semantics (documented on pm-pfnx): the note is attached to EVERY
+ * entry added via --add/--add-glob so a single flag annotates the whole batch
+ * predictably; a per-entry embedded `note=` wins over the standalone flag; and
+ * --note without any --add/--add-glob flag is a usage error because there is
+ * nothing to annotate (it never retro-edits existing links). `hasAddFlags`
+ * reflects flag presence, not match count, so a glob that legitimately matches
+ * zero files is not an error.
+ */
+export function applyStandaloneNote(
+  adds: LinkedArtifact[],
+  note: string | undefined,
+  hasAddFlags: boolean,
+): LinkedArtifact[] {
+  if (note === undefined) {
+    return adds;
+  }
+  if (!hasAddFlags) {
+    throw new PmCliError(
+      "--note requires --add or --add-glob in the same invocation (the note annotates the links being added)",
+      EXIT_CODE.USAGE,
+    );
+  }
+  const trimmed = note.trim();
+  if (trimmed.length === 0) {
+    return adds;
+  }
+  return adds.map((entry) => (entry.note === undefined ? { ...entry, note: trimmed } : entry));
+}
+
 export function artifactKey(value: Pick<LinkedArtifact, "path" | "scope">): string {
   return `${value.path}::${value.scope}`;
 }
@@ -318,7 +356,11 @@ export async function runLinkedArtifacts(
   const parsedAdds = parseAddEntries(resolvedAdds, config.bareNoun);
   const addGlobs = parseAddGlobEntries(resolvedAddGlobs);
   const expandedGlobAdds = await expandAddGlobEntries(addGlobs);
-  const adds = [...parsedAdds, ...expandedGlobAdds];
+  const adds = applyStandaloneNote(
+    [...parsedAdds, ...expandedGlobAdds],
+    options.note,
+    parsedAdds.length > 0 || addGlobs.length > 0,
+  );
   const removes = parseRemoveEntries(resolvedRemoves);
   const migrations = parseMigrateEntries(resolvedMigrations);
   const shouldMutate = adds.length > 0 || removes.length > 0 || migrations.length > 0;

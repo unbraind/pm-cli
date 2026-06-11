@@ -285,7 +285,7 @@ describe("generateBashScript", () => {
   it("includes validate scan-mode flag in bash completion", () => {
     const script = generateBashScript();
     expect(script).toContain(
-      "--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --verbose-diagnostics --strict-exit --fail-on-warn --fix-hints --check-history-drift --check-command-references",
+      "--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --verbose-diagnostics --strict-exit --fail-on-warn --fix-hints --auto-fix --dry-run --fix-scope --prune-missing --check-history-drift --check-command-references",
     );
   });
 
@@ -1130,5 +1130,17 @@ describe("pm completion CLI command", () => {
       expect(help.stdout).toContain("shell");
       expect(help.stdout).toContain("bash");
     });
+  });
+});
+
+describe("schema subcommand completion drift", () => {
+  it("lists every SCHEMA_SUBCOMMANDS entry in bash, zsh, and fish scripts", async () => {
+    const { SCHEMA_SUBCOMMANDS } = await import("../../src/cli/commands/schema.js");
+    const scripts = [generateBashScript(), generateZshScript(), generateFishScript()];
+    for (const script of scripts) {
+      for (const subcommand of SCHEMA_SUBCOMMANDS) {
+        expect(script).toContain(subcommand);
+      }
+    }
   });
 });

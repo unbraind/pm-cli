@@ -1,0 +1,35 @@
+id: pm-im0s
+title: "PR #200 review: contract and defensive hardening follow-up"
+description: "Address CodeRabbit and Gemini PR #200 findings after the prune batching fix: health locks scan fail-open warning, docs --list contract exposure, tool schema version bump, exclusive history-repair id/all schema, addNote preconditions, safe prune path filtering, Windows basename handling, and defensive plan step title coercion."
+type: Task
+status: closed
+priority: 2
+tags[4]: agent-ux,"area:contracts","area:health",review
+created_at: "2026-06-11T23:05:29.745Z"
+updated_at: "2026-06-11T23:37:20.777Z"
+author: codex-sdk-cli-continuation
+acceptance_criteria: All actionable bot comments are fixed or explicitly obsolete; contracts snapshot updated; focused tests and final gates pass; review agents are re-triggered after push.
+parent: pm-dhrp
+resolution: implemented
+expected_result: PR #200 bot review findings are fixed with regression coverage and regenerated contracts
+actual_result: "Health locks scan fails open, MCP schemas are stricter/current, defensive input fixes are covered, and gates/temp smoke/Sentry telemetry passed"
+comments[3]{created_at,author,text}:
+  "2026-06-11T23:16:22.048Z",codex-sdk-cli-continuation,"Evidence: Implemented PR #200 review hardening. Fixed health locks scan to fail open with a warn check when lock scanning throws; exposed docs --list in command contracts and strict MCP action schema; added SDK list parameter metadata; bumped strict tool schema version to 4.0.3; added reusable oneOfRequired and dependentAnyOfRequired schema generation; made history-repair require exactly one of id/all and require all=true for bulk; made files/docs addNote require add/addGlob; made validate prune batching use a typed path filter; made stale linked path basename matching handle Windows separators; made plan step normalization tolerate nullish/non-string MCP-style inputs. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/health-command.spec.ts tests/unit/plan-command.spec.ts tests/unit/validate-command.spec.ts (165 tests); pnpm contracts:check; pm validate --check-resolution --check-history-drift (history drift ok, existing resolution warning backlog remains); pnpm changelog:pm:check; pnpm quality:static; node scripts/run-tests.mjs coverage (150 files, 2802 tests, enforced gate passed; aggregate coverage 82.81% lines, not literal full-source 100%); pnpm security:scan; pnpm audit --audit-level low; pnpm smoke:npx; node scripts/release/sentry-telemetry-gate.mjs --json --telemetry-mode required --max-critical 10 --max-high 20 --max-telemetry-error-rate 10 --max-telemetry-missing-error-rows 0 (Sentry checked ok, 0 critical, 0 high, telemetry ok, finish error rate 1.49%, missing error-code rows 0); manual temp smoke with isolated PM_PATH/PM_GLOBAL_PATH covering init/create/docs add/docs list/plan create/health/validate."
+  "2026-06-11T23:25:43.740Z",codex-sdk-cli-continuation,"Follow-up review note: Gemini latest-head comment about missing EXIT_CODE import in src/cli/register-mutation.ts is obsolete on current head 83d1813d: the file already imports EXIT_CODE from ../core/shared/constants.js at the top. Verified with pnpm build and node scripts/run-tests.mjs test -- tests/unit/history-repair-command.spec.ts tests/unit/commands/register-commands.spec.ts tests/integration/cli.integration.spec.ts (3 files, 118 tests)."
+  "2026-06-11T23:37:20.189Z",codex-sdk-cli-continuation,"Follow-up review fix: addressed Gemini dead-code comment by removing individual prune_file_link/prune_doc_link mutation branches from applyValidateFix; prune fixes are always handled by applyValidateFixes batching, and any bypass now throws an explicit unsupported non-batched fix kind error. Verification passed: pnpm build; node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts (64 tests)."
+files[11]{path,scope,note}:
+  src/cli/commands/health.ts,project,Fail open locks health scan with warning details
+  src/cli/commands/plan.ts,project,Defensive plan step normalization for MCP-style inputs
+  src/cli/commands/validate.ts,project,Safe prune path filtering
+  src/core/validate/stale-file-classification.ts,project,Windows separator basename matching
+  src/sdk/cli-contracts.ts,project,Strict action schema primitives and docs list contract
+  src/sdk/cli-contracts/tool-parameter-tables.ts,project,SDK list parameter metadata
+  tests/fixtures/contracts/full.json,project,Regenerated contract snapshot
+  tests/unit/contracts-command.spec.ts,project,Contract regression coverage
+  tests/unit/health-command.spec.ts,project,Locks scan failure regression
+  tests/unit/plan-command.spec.ts,project,Plan step defensive input regression
+  tests/unit/validate-command.spec.ts,project,Windows basename regression
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/contracts-command.spec.ts tests/unit/health-command.spec.ts tests/unit/plan-command.spec.ts tests/unit/validate-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Closed after removing dead non-batched prune branches per Gemini feedback and passing focused validate/build verification.
+body: ""

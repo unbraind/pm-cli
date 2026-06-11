@@ -2,11 +2,17 @@ id: pm-0v2m
 title: "pm validate --check-files: classify stale linked paths (moved vs deleted) and offer --prune-missing (GH-184)"
 description: "Today validate --check-files lists missing paths and --fix-hints emits pm files --remove commands. Remaining: detect moved files (same basename elsewhere) vs deleted, and a --prune-missing bulk remediation. GitHub issue #184."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: backlog,cli,validate
 created_at: "2026-06-10T09:00:35.536Z"
-updated_at: "2026-06-10T09:00:35.536Z"
+updated_at: "2026-06-11T16:15:57.801Z"
 author: maintainer-agent
 parent: pm-mpbb
+resolution: fixed
+expected_result: validate --check-files distinguishes moved files (with candidate new path) from deleted ones and can bulk-remove stale links
+actual_result: "missing_linked_path_classifications rows plus moved/deleted counts in files details; --prune-missing removes deleted-classified file/doc links via audited runFiles/runDocs, honors --dry-run, reports prunes in fixes output; moved links kept with relink candidate"
+comments[1]{created_at,author,text}:
+  "2026-06-11T16:14:46.349Z",validate-autofix-agent,"Implemented stale-path classification in --check-files details: missing_linked_path_classifications rows '<path>:moved:<top-candidate>' (same basename exists elsewhere in the candidate scan; up to 3 sorted candidates kept in the core module) or '<path>:deleted' (no candidate), plus moved/deleted counts. --prune-missing bulk-removes ONLY links classified deleted (decision: moved links are kept so their relink candidate is never destroyed; relinking stays a manual/agent step from the classification row). Link removal only — real files are never touched; spans both item.files and item.docs; applied via audited runFiles/runDocs --remove; honors --dry-run; prunes reported in fixes.applied_fixes[]/planned_fixes[]; --prune-missing implies --check-files. Pure classifier in src/core/validate/stale-file-classification.ts."
+close_reason: Classified stale linked paths as moved vs deleted and added --prune-missing bulk link removal
 body: ""

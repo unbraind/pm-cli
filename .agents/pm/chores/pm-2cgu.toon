@@ -2,11 +2,17 @@ id: pm-2cgu
 title: Milestone calendar_item_without_schedule warning should include actionable hint (GH-174)
 description: "Warning is bare calendar_item_without_schedule:<id>:no_deadline_or_reminder_or_event. Append hint: set --deadline, --reminder or link an event. GitHub issue #174."
 type: Chore
-status: open
+status: closed
 priority: 3
 tags[3]: backlog,cli,ux
 created_at: "2026-06-10T09:00:36.016Z"
-updated_at: "2026-06-10T09:00:36.016Z"
+updated_at: "2026-06-11T16:15:58.087Z"
 author: maintainer-agent
 parent: pm-mpbb
+resolution: fixed
+expected_result: Warning tells the agent how to attach a schedule
+actual_result: "Structured prefix kept stable; hint naming --deadline, --reminder, and --event appended after the token at create.ts; covered by create-command.spec.ts test"
+comments[1]{created_at,author,text}:
+  "2026-06-11T16:14:46.557Z",validate-autofix-agent,"Kept the structured prefix 'calendar_item_without_schedule:<id>:no_deadline_or_reminder_or_event' byte-stable (telemetry/automation match on it) and appended the actionable hint after the token: '(hint: set --deadline <ISO> or --reminder \"<when>\", or link an Event via --event \"start=<ISO>,end=<ISO>\"; otherwise this item never appears on pm calendar)'. The existing post-create stderr recipe line is unchanged; this fixes the machine-readable warnings[] entry agents actually see in --json output. Unit test asserts prefix stability + hint presence."
+close_reason: Appended actionable hint to calendar_item_without_schedule warning
 body: ""

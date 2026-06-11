@@ -713,10 +713,10 @@ describe("setup command actions", () => {
   });
 
   it("routes lifecycle subcommands to forced extension actions", async () => {
-    // NOTE: scope flags shared between the lifecycle parent and its
-    // subcommands (--global/--strict-exit/...) are hoisted onto the parent by
-    // commander, so subcommand opts() never sees them; the top-level flag form
-    // is the one that reaches normalizeExtensionOptions.
+    // Scope flags shared between the lifecycle parent and its subcommands
+    // (--global/--strict-exit/...) are hoisted onto the parent by commander;
+    // executeExtensionCommand reads optsWithGlobals() so both the top-level
+    // flag form and the subcommand form reach normalizeExtensionOptions.
     await runCli("extension", "--explore", "--global");
     let normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
     expect(normalized.explore).toBe(true);
@@ -726,6 +726,17 @@ describe("setup command actions", () => {
     await runCli("extension", "explore");
     normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
     expect(normalized.explore).toBe(true);
+
+    await runCli("extension", "explore", "--global");
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized.explore).toBe(true);
+    expect(normalized.global).toBe(true);
+
+    await runCli("extension", "doctor", "--strict-exit", "--detail", "deep");
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized.doctor).toBe(true);
+    expect(normalized.strictExit).toBe(true);
+    expect(normalized.detail).toBe("deep");
 
     await runCli("package", "install", "npm:pm-brief");
     expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBe("npm:pm-brief");

@@ -65,6 +65,8 @@ import {
   runHistoryCompact,
   runHistoryRedact,
   runHistoryRepair,
+  runHistoryRepairAll,
+  assertHistoryRepairTarget,
   runInit,
   runLearnings,
   runList,
@@ -321,6 +323,32 @@ function optionsWithAuthor(args: Record<string, unknown>, action?: string): Reco
   const options = normalizeMcpOptionsArrays({ ...hoistedTopLevel, ...baseOptions }, action);
   const author = readString(args, "author");
   return author && options.author === undefined ? { ...options, author } : options;
+}
+
+// GH-170 (pm-pfnx): the narrow pm_files/pm_docs tools spell the CLI --note flag
+// as `addNote` (the shared `note` parameter is the array-typed create/update
+// note seed). Translate it onto the runner's `note` option; an explicit
+// options.note (pm_run callers) wins.
+function withAddNoteOption(options: Record<string, unknown>): Record<string, unknown> {
+  if (options.addNote === undefined) {
+    return options;
+  }
+  const next: Record<string, unknown> = { ...options };
+  if (next.note === undefined && typeof next.addNote === "string") {
+    next.note = next.addNote;
+  }
+  delete next.addNote;
+  return next;
+}
+
+function withFilesDiscoveryOptions(options: Record<string, unknown>): Record<string, unknown> {
+  const next: Record<string, unknown> = { ...options };
+  if (next.discoveryNote !== undefined && next.note === undefined && typeof next.discoveryNote === "string") {
+    next.note = next.discoveryNote;
+  }
+  delete next.discover;
+  delete next.discoveryNote;
+  return next;
 }
 
 function normalizeActionName(value: string): string {
@@ -732,10 +760,15 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runNotes(id ?? readRequiredString(options, "id"), options, global);
     case "learnings":
       return runLearnings(id ?? readRequiredString(options, "id"), options, global);
-    case "files":
-      return runFiles(id ?? readRequiredString(options, "id"), options, global);
+    case "files": {
+      const fileId = id ?? readRequiredString(options, "id");
+      if (options.discover === true) {
+        return runFilesDiscover(fileId, withFilesDiscoveryOptions(options), global);
+      }
+      return runFiles(fileId, withAddNoteOption(options), global);
+    }
     case "docs":
-      return runDocs(id ?? readRequiredString(options, "id"), options, global);
+      return runDocs(id ?? readRequiredString(options, "id"), withAddNoteOption(options), global);
     case "test":
       return runTest(id ?? readRequiredString(options, "id"), options, global);
     case "test-all":
@@ -822,8 +855,12 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       return runHistory(id ?? readRequiredString(options, "id"), options, global);
     case "history-redact":
       return runHistoryRedact(id ?? readRequiredString(options, "id"), options, global);
-    case "history-repair":
-      return runHistoryRepair(id ?? readRequiredString(options, "id"), options, global);
+    case "history-repair": {
+      const repairAll = options.all === true;
+      const repairId = id ?? readString(options, "id");
+      assertHistoryRepairTarget(repairId, repairAll);
+      return repairAll ? runHistoryRepairAll(options, global) : runHistoryRepair(repairId as string, options, global);
+    }
     case "history-compact":
       return runHistoryCompact(id ?? readRequiredString(options, "id"), options, global);
     case "plan": {

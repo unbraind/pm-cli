@@ -71,6 +71,11 @@ describe("shared remediation registry", () => {
       );
     });
 
+    it("resolves pm health locks warnings to gc lock-sweep guidance", () => {
+      expect(resolveRemediation("locks_stale_count:3")?.command).toBe("pm gc --scope locks");
+      expect(resolveRemediation("locks_unreadable:1")?.command).toBe("pm gc --scope locks --dry-run");
+    });
+
     it("returns undefined for an unknown warning code", () => {
       expect(resolveRemediation("totally_unknown_warning:1")).toBeUndefined();
     });

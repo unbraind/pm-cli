@@ -306,6 +306,9 @@ export const FILES_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--add-glob" },
   { flag: "--remove" },
   { flag: "--migrate" },
+  // GH-170 (pm-pfnx): single-value note applied to every --add/--add-glob link
+  // in the invocation (embedded note= wins; usage error without an add).
+  { flag: "--note" },
   { flag: "--list" },
   { flag: "--append-stable" },
   { flag: "--validate-paths" },
@@ -320,6 +323,9 @@ export const DOCS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--add-glob" },
   { flag: "--remove" },
   { flag: "--migrate" },
+  // GH-170 (pm-pfnx): see FILES_FLAG_CONTRACTS --note.
+  { flag: "--note" },
+  { flag: "--list" },
   { flag: "--validate-paths" },
   { flag: "--audit" },
   { flag: "--author" },
@@ -347,6 +353,7 @@ export const HISTORY_REDACT_FLAG_CONTRACTS: CliFlagContract[] = [
 ];
 
 export const HISTORY_REPAIR_FLAG_CONTRACTS: CliFlagContract[] = [
+  { flag: "--all" },
   { flag: "--dry-run" },
   { flag: "--author" },
   { flag: "--message" },
@@ -391,7 +398,12 @@ export const PLAN_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--body" },
   { flag: "--claim" },
   { flag: "--from-search", aliases: ["--from_search"] },
-  { flag: "--step-title", aliases: ["--step", "--step_title"] },
+  { flag: "--step-title", aliases: ["--step_title"] },
+  // pm-6mit: --step is a Commander collect repeatable (ordered step titles on
+  // create; single-value stepTitle alias elsewhere). It must NOT be list:true —
+  // the bootstrap coalescer comma-joins list flags and would corrupt titles
+  // containing commas.
+  { flag: "--step" },
   { flag: "--step-body", aliases: ["--step_body"] },
   { flag: "--step-owner", aliases: ["--step_owner"] },
   { flag: "--step-status", aliases: ["--step_status"] },
@@ -769,6 +781,13 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--strict-exit" },
   { flag: "--fail-on-warn" },
   { flag: "--fix-hints" },
+  { flag: "--auto-fix" },
+  { flag: "--dry-run" },
+  // NOT list:true — repeatable via Commander's collector; the bootstrap
+  // coalescer must not comma-join occurrences (values may also be
+  // comma-separated lists which the resolver splits itself).
+  { flag: "--fix-scope" },
+  { flag: "--prune-missing" },
   { flag: "--check-history-drift" },
   { flag: "--check-command-references" },
 ];
@@ -1469,6 +1488,11 @@ export interface PmActionSchemaContract {
   required?: string[];
   optional?: string[];
   anyOfRequired?: Array<string[]>;
+  oneOfRequired?: Array<string[]>;
+  dependentAnyOfRequired?: Array<{
+    property: string;
+    anyOfRequired: Array<string[]>;
+  }>;
   conditionalRequired?: Array<{
     property: string;
     value: string;
@@ -1694,8 +1718,9 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     anyOfRequired: [["literal"], ["regex"]],
   },
   "history-repair": {
-    required: ["id"],
-    optional: ["dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+    // Exactly one of `id` (single stream) or `all` (bulk drift repair) is required.
+    optional: ["id", "all", "dryRun", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+    oneOfRequired: [["id"], ["all"]],
   },
   "history-compact": {
     required: ["id"],
@@ -1737,6 +1762,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "claim",
       "fromSearch",
       "stepTitle",
+      "step",
       "stepBody",
       "stepOwner",
       "stepStatus",
@@ -1816,6 +1842,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "addGlob",
       "remove",
       "migrate",
+      // GH-170 (pm-pfnx): `addNote` is the MCP spelling of the CLI --note flag
+      // (the shared `note` parameter is the array-typed create/update note
+      // seed, so files/docs use a distinct single-string key).
+      "addNote",
       "discover",
       "apply",
       "discoveryNote",
@@ -1824,10 +1854,22 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "audit",
       ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
     ],
+    dependentAnyOfRequired: [{ property: "addNote", anyOfRequired: [["add"], ["addGlob"]] }],
   },
   docs: {
     required: ["id"],
-    optional: ["add", "addGlob", "remove", "migrate", "validatePaths", "audit", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+    optional: [
+      "add",
+      "addGlob",
+      "remove",
+      "migrate",
+      "addNote",
+      "list",
+      "validatePaths",
+      "audit",
+      ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS,
+    ],
+    dependentAnyOfRequired: [{ property: "addNote", anyOfRequired: [["add"], ["addGlob"]] }],
   },
   deps: { required: ["id"], optional: ["format", "maxDepth", "collapse", "summary"] },
   test: {
@@ -1933,6 +1975,10 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "strictExit",
       "failOnWarn",
       "fixHints",
+      "autoFix",
+      "dryRun",
+      "fixScope",
+      "pruneMissing",
       "checkHistoryDrift",
       "checkCommandReferences",
     ],
@@ -2035,6 +2081,18 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
       required: [...requiredFields],
     }));
   }
+  if (contract.oneOfRequired && contract.oneOfRequired.length > 0) {
+    schema.oneOf = contract.oneOfRequired.map((requiredFields) => {
+      const otherFields = contract.oneOfRequired
+        ?.flat()
+        .filter((field) => !requiredFields.includes(field)) ?? [];
+      return {
+        required: [...requiredFields],
+        ...(otherFields.length > 0 ? { not: { anyOf: otherFields.map((field) => ({ required: [field] })) } } : {}),
+        ...(action === "history-repair" && requiredFields.includes("all") ? { properties: { all: { const: true } } } : {}),
+      };
+    });
+  }
   if (contract.conditionalRequired && contract.conditionalRequired.length > 0) {
     schema.allOf = contract.conditionalRequired.map((entry) => ({
       if: {
@@ -2047,6 +2105,20 @@ function buildActionScopedToolSchema(action: PmToolAction): Record<string, unkno
         required: entry.required,
       },
     }));
+  }
+  if (contract.dependentAnyOfRequired && contract.dependentAnyOfRequired.length > 0) {
+    const allOf = Array.isArray(schema.allOf) ? [...(schema.allOf as Array<Record<string, unknown>>)] : [];
+    for (const entry of contract.dependentAnyOfRequired) {
+      allOf.push({
+        if: { required: [entry.property] },
+        then: {
+          anyOf: entry.anyOfRequired.map((requiredFields) => ({
+            required: [...requiredFields],
+          })),
+        },
+      });
+    }
+    schema.allOf = allOf;
   }
   return schema;
 }
@@ -2084,7 +2156,7 @@ function createLazyContractSchema(
  * the MAJOR for breaking changes — the major also drives the `$id`
  * `tool-parameters-v{major}` slug, so the two never drift.
  */
-export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.0.2" as const;
+export const PM_TOOL_PARAMETERS_SCHEMA_VERSION = "4.0.3" as const;
 
 /**
  * Major component of {@link PM_TOOL_PARAMETERS_SCHEMA_VERSION}, used to build the

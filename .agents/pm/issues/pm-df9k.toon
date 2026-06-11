@@ -2,10 +2,16 @@ id: pm-df9k
 title: Lifecycle subcommand flags duplicated on the parent extension/package command are silently dropped (commander hoists them)
 description: "executeExtensionCommand reads command.opts() on the leaf lifecycle subcommand, but commander hoists options that are also defined on the parent command (e.g. --global/--project/--strict-exit/--fail-on-warn/--detail/--gh/--ref) onto the parent during parse. Result: 'pm extension doctor --strict-exit' or 'pm package explore --global' silently ignore the flag; only the top-level flag form ('pm extension --doctor --strict-exit') honors them. Repro: minimal commander program with duplicate parent/child options shows child opts() === {}. Found while writing tests/unit/commands/register-commands.spec.ts (see NOTE comment there). Fix options: read optsWithGlobals() in executeExtensionCommand, or stop duplicating the scope options on the parent."
 type: Issue
-status: open
+status: closed
 priority: 2
 tags[3]: "area:cli",bug,extension
 created_at: "2026-06-10T20:20:04.107Z"
-updated_at: "2026-06-10T20:20:04.107Z"
+updated_at: "2026-06-11T22:23:23.301Z"
 author: coverage-ratchet-agent
+resolution: fixed
+expected_result: pm extension doctor --strict-exit and pm package explore --global honor the subcommand-level flags
+actual_result: "register-setup.ts: 14 call sites switched opts()->optsWithGlobals(); register-mutation.ts files discover action merges ancestor opts; register-commands.spec.ts NOTE replaced with assertions proving subcommand --global/--strict-exit/--detail reach normalizeExtensionOptions"
+comments[1]{created_at,author,text}:
+  "2026-06-11T22:23:22.991Z",maintainer-agent,"Root cause confirmed via minimal commander repro: when parent and subcommand declare the same option, commander assigns the value to the parent during parse and the subcommand opts() never sees it. Fix: all 14 executeExtensionCommand call sites in register-setup.ts now read command.optsWithGlobals() (own opts win, ancestor opts merged back). Same pattern applied to the new files discover action in register-mutation.ts which hit the identical trap with the new --note flag (caught by register-commands.spec.ts during PR integration). normalizeExtensionOptions only reads known keys so merged program globals are inert."
+close_reason: Lifecycle subcommand flags now honored via optsWithGlobals at all executeExtensionCommand call sites
 body: ""

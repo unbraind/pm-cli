@@ -2,11 +2,17 @@ id: pm-pmyq
 title: pm validate metadata report grouped by item type (GH-172)
 description: Metadata-required-field counts are global; group missing-field report per item type for targeted remediation. GitHub issue #172.
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: backlog,cli,validate
 created_at: "2026-06-10T09:00:36.272Z"
-updated_at: "2026-06-10T09:00:36.272Z"
+updated_at: "2026-06-11T16:15:04.680Z"
 author: maintainer-agent
 parent: pm-mpbb
+resolution: fixed
+expected_result: Metadata check details expose missing-field counts grouped by item type for targeted remediation
+actual_result: "details.missing_by_type emits zero-suppressed, sorted { type: { field: count } } for active required fields via new src/core/validate/missing-by-type.ts; unit-tested in validate-command.spec.ts"
+comments[1]{created_at,author,text}:
+  "2026-06-11T16:13:53.661Z",validate-autofix-agent,"Implemented details.missing_by_type on the metadata check: { <ItemType>: { <field>: count } }, zero-suppressed at both levels, sorted lexicographically, and restricted to the ACTIVE metadata profile's required fields so it mirrors details.counts at type granularity. Counts only (never row dumps) for token efficiency; per-field item-id lists remain the existing verbose-diagnostics surface. Pure aggregation lives in src/core/validate/missing-by-type.ts (fully unit-tested)."
+close_reason: Added per-item-type missing-required-field grouping to pm validate --check-metadata
 body: ""

@@ -2,11 +2,17 @@ id: pm-8jss
 title: "pm validate lifecycle: auto-fix for active items with closed/terminal parents (GH-168)"
 description: lifecycle check lists active_terminal_parent_rows with fix_hint; add guided/bulk reparent or close remediation. GitHub issue #168.
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: backlog,cli,validate
 created_at: "2026-06-10T09:00:56.706Z"
-updated_at: "2026-06-10T09:00:56.706Z"
+updated_at: "2026-06-11T16:15:57.488Z"
 author: maintainer-agent
 parent: pm-mpbb
+resolution: fixed
+expected_result: "Terminal-parent findings get a safe, opt-in bulk remediation instead of silent mutation"
+actual_result: Under --auto-fix the fixes are planned (reparent to active grandparent else unset parent) and only applied with --fix-scope lifecycle; gated_fixes rows carry the gate hint; semantics documented in pm comment and docs
+comments[1]{created_at,author,text}:
+  "2026-06-11T16:14:23.650Z",validate-autofix-agent,"DESIGN (gating semantics): lifecycle terminal-parent fixes are STRUCTURAL, so under --auto-fix they are always PLANNED (planned_fixes[] + gated_fixes[] with gate_hint) but only APPLIED when the explicit opt-in '--fix-scope lifecycle' grant is passed. Chose --fix-scope <scope> (repeatable/comma-separated exact allowlist over a one-off --fix-lifecycle flag) because it scales to future gated scopes and doubles as a restrictor (e.g. --fix-scope lifecycle applies ONLY lifecycle fixes). Remediation shape: if the terminal parent has an ACTIVE grandparent the child is reparented one level up (pm update <id> --parent <grandparent>), otherwise the parent link is cleared (pm update <id> --unset parent). The active child itself is never closed; items are never silently mutated without the grant."
+close_reason: Gated lifecycle auto-fix for active items under terminal parents via explicit --fix-scope lifecycle
 body: ""

@@ -1671,7 +1671,12 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const hasReminders = reminders.values !== undefined && reminders.values.length > 0;
   const hasEvents = events.values !== undefined && events.values.length > 0;
   if (calendarRelevantTypes.has(type.toLowerCase()) && !hasDeadline && !hasReminders && !hasEvents) {
-    validationWarnings.push(`calendar_item_without_schedule:${id}:no_deadline_or_reminder_or_event`);
+    // Keep the structured `calendar_item_without_schedule:<id>:<code>` prefix
+    // stable (automation/telemetry match on it) and append the actionable hint
+    // after the token (pm-2cgu / GH-174).
+    validationWarnings.push(
+      `calendar_item_without_schedule:${id}:no_deadline_or_reminder_or_event (hint: set --deadline <ISO> or --reminder "<when>", or link an Event via --event "start=<ISO>,end=<ISO>"; otherwise this item never appears on pm calendar)`,
+    );
   }
   if (parent !== undefined) {
     parent = normalizeParentReferenceValue(parent);

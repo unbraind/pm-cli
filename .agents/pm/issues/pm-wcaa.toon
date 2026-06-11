@@ -1,0 +1,25 @@
+id: pm-wcaa
+title: MCP pm_files discover/apply/discoveryNote params are declared but ignored by the files action handler
+description: "The pm_files tool schema (PM_TOOL_ACTION_SCHEMA_CONTRACTS.files in src/sdk/cli-contracts.ts) declares optional discover, apply, and discoveryNote parameters, but runAction's 'files' case in src/mcp/server.ts passes options straight to runFiles, which reads none of them - pm_files {discover:true} silently returns the plain link listing instead of running discovery. Discovery is only reachable via pm_run action 'files-discover' (note param there). Fix options: route case 'files' to runFilesDiscover when options.discover===true (mapping discoveryNote->note, honoring apply/appendStable), or drop the three params from the files schema contract and document pm_run files-discover as the only path. Found 2026-06-12 while wiring pm-pfnx (--note/addNote)."
+type: Issue
+status: closed
+priority: 3
+tags[3]: agent-ux,dogfood,mcp
+created_at: "2026-06-11T22:13:41.473Z"
+updated_at: "2026-06-11T22:42:05.186Z"
+author: cli-fixes-agent
+parent: pm-mpbb
+resolution: implemented
+expected_result: MCP pm_files discover/apply/discoveryNote parameters perform file discovery and apply discovered links through the narrow MCP tool.
+actual_result: "pm_files discover=true now routes to runFilesDiscover, maps discoveryNote to note, preserves normal runFiles behavior, and passes MCP integration plus temp-project smoke."
+comments[2]{created_at,author,text}:
+  "2026-06-11T22:34:40.599Z",codex-sdk-cli-continuation,"Evidence: fixed narrow MCP pm_files discover/apply dispatch; focused MCP handshake regression passed (19 tests)."
+  "2026-06-11T22:39:15.765Z",codex-sdk-cli-continuation,"Manual temp smoke: fresh temp project with isolated PM_GLOBAL_PATH passed init --type-preset agile, create, files --note, MCP pm_files discover/apply with discoveryNote, validate --check-files, and health --check-only --summary (health ok, warning_count 0)."
+files[2]{path,scope,note}:
+  src/mcp/server.ts,project,route narrow pm_files discover=true to runFilesDiscover and map discoveryNote to note
+  tests/integration/mcp-handshake.spec.ts,project,MCP tools/call regression for pm_files discovery apply path
+tests[2]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  "manual temp smoke: init/create/files --note/MCP pm_files discover apply/validate/health",null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Fixed MCP pm_files discover/apply dispatch by routing discover=true to runFilesDiscover, mapping discoveryNote to note, preserving normal file link behavior, and verifying with MCP integration test plus fresh temp-project smoke."
+body: ""

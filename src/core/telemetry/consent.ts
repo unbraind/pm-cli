@@ -15,6 +15,22 @@ function parseBooleanLike(value: string | undefined): boolean {
   return TELEMETRY_PROMPT_DISABLE_VALUES.has(value.trim().toLowerCase());
 }
 
+// pm-0hx2: the CI guard must fire when CI is SET to a truthy value (CI=true,
+// CI=1, ...). An unset or empty CI behaves as "not CI", and the conventional
+// falsy spellings ("0", "false", "no", "off") explicitly opt back out of the
+// guard. This is intentionally NOT parseBooleanLike, which matches only the
+// disable set and would invert the check.
+function isTruthyEnvValue(value: string | undefined): boolean {
+  if (typeof value !== "string") {
+    return false;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (normalized.length === 0) {
+    return false;
+  }
+  return !TELEMETRY_PROMPT_DISABLE_VALUES.has(normalized);
+}
+
 function shouldSkipTelemetryPrompt(commandPath: string, globalOptions: GlobalOptions): boolean {
   if (globalOptions.json === true || globalOptions.quiet === true) {
     return true;
@@ -25,7 +41,7 @@ function shouldSkipTelemetryPrompt(commandPath: string, globalOptions: GlobalOpt
   if (parseBooleanLike(process.env[TELEMETRY_PROMPT_DISABLE_ENV])) {
     return true;
   }
-  if (parseBooleanLike(process.env.CI)) {
+  if (isTruthyEnvValue(process.env.CI)) {
     return true;
   }
   const normalizedCommandPath = commandPath.trim().toLowerCase();

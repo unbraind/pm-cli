@@ -605,6 +605,137 @@ describe("runPlan command family", () => {
     });
   });
 
+  it("create accumulates repeated --step values into ordered steps (pm-6mit)", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runPlan({
+        subcommand: "create",
+        options: {
+          title: "Multi-step Plan",
+          step: ["Read the code", "Write the fix, then re-read it", "Run the tests"],
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(result.plan.steps_summary.total).toBe(3);
+      expect(result.step?.id).toBe("plan-step-001");
+      expect(result.step?.title).toBe("Read the code");
+
+      const show = await runPlan({
+        subcommand: "show",
+        id: result.plan.id,
+        options: { depth: "deep" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      // Steps keep argv order; comma-containing titles survive intact.
+      expect(show.plan.steps?.map((step) => [step.order, step.title, step.status])).toEqual([
+        [1, "Read the code", "pending"],
+        [2, "Write the fix, then re-read it", "pending"],
+        [3, "Run the tests", "pending"],
+      ]);
+    });
+  });
+
+  it("create ignores null --step entries and stringifies non-string step values defensively", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runPlan({
+        subcommand: "create",
+        options: {
+          title: "Defensive step plan",
+          step: [null, "  First step  ", 42, ""],
+          author: "test-author",
+        } as unknown as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      const show = await runPlan({
+        subcommand: "show",
+        id: result.plan.id,
+        options: { depth: "deep" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(show.plan.steps?.map((step) => step.title)).toEqual(["First step", "42"]);
+    });
+  });
+
+  it("create treats --step-title as the first step when mixed with --step and keeps single-step details (pm-6mit)", async () => {
+    await withTempPmPath(async (context) => {
+      const mixed = await runPlan({
+        subcommand: "create",
+        options: {
+          title: "Mixed Plan",
+          stepTitle: "First via step-title",
+          step: ["Second via step", "Third via step"],
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(mixed.plan.steps_summary.total).toBe(3);
+      expect(mixed.step?.title).toBe("First via step-title");
+
+      // A single --step keeps the historical alias behavior including
+      // per-step detail flags on create.
+      const single = await runPlan({
+        subcommand: "create",
+        options: {
+          title: "Single-step Plan",
+          step: ["Only step"],
+          stepBody: "step body",
+          stepOwner: "test-author",
+          author: "test-author",
+        } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(single.plan.steps_summary.total).toBe(1);
+      expect(single.step?.title).toBe("Only step");
+      expect(single.step?.body).toBe("step body");
+      expect(single.step?.owner).toBe("test-author");
+    });
+  });
+
+  it("create rejects per-step detail flags with multiple --step values (pm-6mit)", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runPlan({
+          subcommand: "create",
+          options: {
+            title: "Ambiguous Plan",
+            step: ["Step A", "Step B"],
+            stepBody: "whose body?",
+            author: "test-author",
+          } as Parameters<typeof runPlan>[0]["options"],
+          global: { ...GLOBAL, path: context.pmPath },
+        }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("single initial step"),
+      });
+    });
+  });
+
+  it("step subcommands accept a single --step as a stepTitle alias and reject multiple values (pm-6mit)", async () => {
+    await withTempPmPath(async (context) => {
+      const { planId } = await bootstrapPlan(context);
+      const added = await runPlan({
+        subcommand: "add-step",
+        id: planId,
+        options: { step: ["Aliased step title"], author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+        global: { ...GLOBAL, path: context.pmPath },
+      });
+      expect(added.step?.title).toBe("Aliased step title");
+
+      await expect(
+        runPlan({
+          subcommand: "add-step",
+          id: planId,
+          options: { step: ["One", "Two"], author: "test-author" } as Parameters<typeof runPlan>[0]["options"],
+          global: { ...GLOBAL, path: context.pmPath },
+        }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("only on pm plan create"),
+      });
+    });
+  });
+
   it("add-step accepts file/test/doc bag inputs and step body/owner", async () => {
     await withTempPmPath(async (context) => {
       const { planId } = await bootstrapPlan(context);

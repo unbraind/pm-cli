@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- pm files/docs: standalone --note flag alongside --add \(GH-170\) ([pm-pfnx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-pfnx.toon))
+- Add pm health 'locks' check: surface stale item-claim counts before gc is needed ([pm-xo1n](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-xo1n.toon))
+- pm history-repair --all: bulk drift repair across streams \(GH-171\) ([pm-9ftr](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-9ftr.toon))
+- pm validate --check-files: classify stale linked paths \(moved vs deleted\) and offer --prune-missing \(GH-184\) ([pm-0v2m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0v2m.toon))
+- pm validate --auto-fix: apply safe remediations automatically \(GH-179, GH-153 interactive part, GH-167 backfill part\) ([pm-c3sz](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-c3sz.toon))
+- pm validate metadata report grouped by item type \(GH-172\) ([pm-pmyq](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-pmyq.toon))
+
+### Fixed
+
+- PR \#200 review: batch validate prune-missing auto-fix removals ([pm-60p0](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-60p0.toon))
+- Session 2026-06-11: validation auto-fix & self-repair PR \(validate --auto-fix/--prune-missing/grouped metadata, history-repair --all, health locks, files/docs --note, plan --step accumulate, consent CI guard, completion drift\) ([pm-dhrp](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/plans/pm-dhrp.toon))
+- MCP pm\_files discover/apply/discoveryNote params are declared but ignored by the files action handler ([pm-wcaa](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-wcaa.toon))
+- Lifecycle subcommand flags duplicated on the parent extension/package command are silently dropped \(commander hoists them\) ([pm-df9k](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-df9k.toon))
+- Telemetry first-run prompt CI guard is inverted: CI=true does not skip, only CI=false/0/no/off does ([pm-0hx2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-0hx2.toon))
+- pm plan create: repeated --step silently keeps only the last value instead of accumulating steps ([pm-6mit](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-6mit.toon))
+- pm validate lifecycle: auto-fix for active items with closed/terminal parents \(GH-168\) ([pm-8jss](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-8jss.toon))
+
+### Other
+
+- PR \#200 review: contract and defensive hardening follow-up ([pm-im0s](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-im0s.toon))
+- Refresh Sentry expected handled CLI classifier for 2026-06-11 dogfood CommandErrors ([pm-lg9i](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-lg9i.toon))
+- Milestone calendar\_item\_without\_schedule warning should include actionable hint \(GH-174\) ([pm-2cgu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-2cgu.toon))
+- Shell completion drift: show-status missing from bash/zsh/fish schema subcommand lists ([pm-6qi8](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-6qi8.toon))
+
 ## 2026.6.11 - 2026-06-11
 
 ### Added
