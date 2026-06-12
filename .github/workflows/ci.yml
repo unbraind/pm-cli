@@ -4,12 +4,15 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
-      - "CHANGELOG.md"
-      - "CONTRIBUTING.md"
-      - ".github/ISSUE_TEMPLATE/**"
+    # paths uses last-match-wins so plugin markdown (slash commands, skills,
+    # subagents — functional assets smoke-tested in CI) re-includes after the
+    # blanket markdown exclusion. paths-ignore cannot express re-includes.
+    paths:
+      - "**"
+      - "!docs/**"
+      - "!**/*.md"
+      - "!.github/ISSUE_TEMPLATE/**"
+      - "plugins/**"
   pull_request:
 
 permissions:

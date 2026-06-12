@@ -1,0 +1,11 @@
+id: pm-i1z6
+title: "pm search keyword mode: --match-mode (and/or/exact) + default result limit (GH-181 remainder)"
+description: "GH-181 reported keyword search returning 479 unranked results. Weighted relevance scoring + sorted output + matched_fields + --phrase-exact + score_threshold are already shipped, so the core complaint is fixed. Remaining asks: (1) --match-mode and|or|exact flag with AND-preference ranking for multi-word queries (boost items matching ALL terms), (2) sensible default result limit for keyword mode (currently unlimited when --limit omitted, see search.ts resolvedLimit), (3) optional --count mode (also requested in GH-157). Related: pm-cstl (min-score threshold)."
+type: Feature
+status: open
+priority: 2
+tags[2]: "area:search",gh-triage-2026-06-12
+created_at: "2026-06-12T16:09:06.591Z"
+updated_at: "2026-06-12T16:09:06.591Z"
+author: maintainer-agent
+body: ""

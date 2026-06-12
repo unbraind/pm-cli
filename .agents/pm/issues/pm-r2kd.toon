@@ -1,0 +1,11 @@
+id: pm-r2kd
+title: "pm templates: unknown subcommand + flags silently fall back to 'list' (exit 0) instead of erroring"
+description: "Repro (sandbox with @unbrained/pm-templates installed): 'pm templates apply bug --title \"Crash on logout\"' and 'pm templates frobnicate --whatever' both print the template list and exit 0. An agent that guesses 'templates apply' believes the template was applied when nothing happened — the opposite of the explicit-contract behavior pm plan has ('Unknown pm plan subcommand X. Allowed: create, show, add-step...'). Expected: unknown templates subcommand should error with the allowed list (list/save/show) and ideally hint that templates are applied via 'pm create <type> <title> --template <name>'. Likely cause: the templates command group treats unknown positionals as no-op and runs the default list action, also swallowing unknown flags like --title."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,dogfood-2026-06-12,packages,templates
+created_at: "2026-06-12T16:19:03.068Z"
+updated_at: "2026-06-12T16:19:03.068Z"
+author: maintainer-agent
+body: ""

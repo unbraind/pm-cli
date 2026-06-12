@@ -1,0 +1,12 @@
+id: pm-cxi9
+title: "CLAUDE_CODE_PLUGIN.md drift: architecture tree shows 9/14 commands + 1/4 agents; compat table says plugin 1.0.0 (actual 1.4.0)"
+description: "docs/CLAUDE_CODE_PLUGIN.md:21-30 architecture tree lists only 9 slash-command files (missing pm-developer.md, pm-init.md, pm-planner.md, pm-release.md, pm-workflow.md) and :34-35 lists only agents/pm-coordinator.md (missing pm-delivery-chain.md, pm-triage-agent.md, pm-verification-agent.md) while plugins/pm-claude/commands has 14 files and agents has 4. The page even says capability counts live in plugins/pm-claude/README.md so they do not drift (:47) — the tree itself drifted. Also :187-189 compatibility table pins 'Plugin version 1.0.0' while plugins/pm-claude/.claude-plugin/plugin.json:4 is 1.4.0. Fix: collapse the tree's commands/agents listings to 'commands/ (14 slash commands)' / 'agents/ (4 subagents)' pointers so they can never drift, and make the compat row version-agnostic (e.g. 1.x)."
+type: Chore
+status: open
+priority: 3
+tags[4]: audit-2026-06-12,docs,drift,plugin
+created_at: "2026-06-12T16:11:36.499Z"
+updated_at: "2026-06-12T16:11:36.499Z"
+author: maintainer-agent
+parent: pm-gpea
+body: ""

@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
@@ -811,5 +812,85 @@ describe("MCP protocol handshake", () => {
       expect(notes.structuredContent?.result?.count).toBe(1);
       expect(learnings.structuredContent?.result?.count).toBe(1);
     });
+  });
+});
+
+describe("pm-mcp bin main-module detection (pm-qtbc)", () => {
+  it("treats a symlinked argv[1] (npm .bin shim) as the main module", async () => {
+    const { isInvokedAsMcpMainModule } = await import("../../src/mcp/server.js");
+    const { mkdtemp, symlink: makeSymlink, realpath } = await import("node:fs/promises");
+    const { tmpdir } = await import("node:os");
+    const { fileURLToPath, pathToFileURL } = await import("node:url");
+    const selfPath = await realpath(fileURLToPath(new URL("../../src/mcp/server.ts", import.meta.url)));
+    const moduleUrl = pathToFileURL(selfPath).href;
+    const binDir = await mkdtemp(path.join(tmpdir(), "pm-mcp-bin-"));
+    const shimPath = path.join(binDir, "pm-mcp");
+    await makeSymlink(selfPath, shimPath);
+    expect(isInvokedAsMcpMainModule(shimPath, moduleUrl)).toBe(true);
+    expect(isInvokedAsMcpMainModule(selfPath, moduleUrl)).toBe(true);
+    expect(isInvokedAsMcpMainModule(undefined, moduleUrl)).toBe(false);
+    expect(isInvokedAsMcpMainModule(path.join(binDir, "missing"), moduleUrl)).toBe(false);
+    expect(isInvokedAsMcpMainModule(path.join(binDir, "pm-mcp-other"), moduleUrl)).toBe(false);
+  });
+
+  it("serves an initialize response when launched through a symlinked npm-style bin", async () => {
+    const { mkdtemp, symlink: makeSymlink } = await import("node:fs/promises");
+    const { tmpdir } = await import("node:os");
+    const distServerPath = path.join(process.cwd(), "dist", "mcp", "server.js");
+    const binDir = await mkdtemp(path.join(tmpdir(), "pm-mcp-bin-e2e-"));
+    const shimPath = path.join(binDir, "pm-mcp");
+    await makeSymlink(distServerPath, shimPath);
+
+    const child = spawn(process.execPath, [shimPath], {
+      cwd: process.cwd(),
+      stdio: ["pipe", "pipe", "pipe"],
+      env: {
+        ...process.env,
+        PM_NO_TELEMETRY: "1",
+        PM_ANALYTICS_OPTOUT: "1",
+      },
+    });
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
+    child.stdout.on("data", (chunk: Buffer) => stdoutChunks.push(chunk));
+    child.stderr.on("data", (chunk: Buffer) => stderrChunks.push(chunk));
+
+    const initializeRequest = {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "bin-smoke", version: "1.0.0" },
+      },
+    };
+    child.stdin.end(`${JSON.stringify(initializeRequest)}\n`);
+
+    const exitCode = await new Promise<number | null>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        child.kill("SIGTERM");
+        reject(new Error("timed out waiting for symlinked pm-mcp bin response"));
+      }, 5_000);
+      child.once("error", (error) => {
+        clearTimeout(timeout);
+        reject(error);
+      });
+      child.once("exit", (code) => {
+        clearTimeout(timeout);
+        resolve(code);
+      });
+    });
+
+    const stdout = Buffer.concat(stdoutChunks).toString("utf8").trim();
+    const stderr = Buffer.concat(stderrChunks).toString("utf8");
+    expect(exitCode).toBe(0);
+    expect(stderr).toBe("");
+    expect(stdout.length).toBeGreaterThan(0);
+    const response = JSON.parse(stdout.split(/\n/)[0] ?? "{}") as {
+      result?: { serverInfo?: { name?: string }; protocolVersion?: string };
+    };
+    expect(response.result?.serverInfo?.name).toBe("pm-mcp");
+    expect(response.result?.protocolVersion).toBe("2025-06-18");
   });
 });

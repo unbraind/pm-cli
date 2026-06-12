@@ -1,0 +1,14 @@
+id: pm-krgd
+title: "Dogfood audit 2026-06-12: ecosystem verification (CLI+SDK+packages)"
+description: ""
+type: Task
+status: open
+priority: 2
+tags[1]: dogfood-2026-06-12
+created_at: "2026-06-12T16:04:17.196Z"
+updated_at: "2026-06-12T16:20:08.659Z"
+author: maintainer-agent
+comments[2]{created_at,author,text}:
+  "2026-06-12T16:20:08.407Z",maintainer-agent,"Sandbox /tmp/pm-ecosystem-audit-2026-06-12 exercised: core lifecycle (create all types incl custom Experiment via schema add-type, update, close w/ structured fields, comments/files/docs/notes/learnings, claim/release, deps via update --dep, list/search/context, validate --fix-hints, health --json, stats --storage, history --diff, gc, plan create/complete-step/materialize, aggregate, activity) all WORKING. Error UX verified strong: command did-you-mean (lsit->list), flag nearest-option + suggested_retry (create --desc -> --description), cross-command option hints (--depends-on -> plan), allowed-value lists w/ schema add-type hint, calendar unknown-command install hint. All 10 first-party packages installed from local paths and exercised OK (templates save/show + create --template, calendar agenda/day, todos export+import, beads import --file, guide, dedupe-audit/comments-audit/normalize, search-advanced, command-kit echo/parser-alias/injected flag, test-runs, lifecycle-hooks inert-by-design). pm-changelog installed locally, generated sane CHANGELOG from closed sandbox items."
+  "2026-06-12T16:20:08.659Z",maintainer-agent,"SDK: pm extension scaffold -> extended with registerCommand + registerItemFields + registerImporter; capability-gating error payload (health --json activation.failed error+trace+hint) is excellent; --field set/reject works; importer surfaces as 'pm auditcsv import'. MCP: node dist/mcp/server.js serves 25 tools, pm_list call OK against sandbox. FINDINGS FILED: pm-qtbc (P1: pm-mcp bin silent-exits via symlinked argv[1] main-module guard — npm-installed binary dead), pm-r2kd (P2: templates unknown subcommand silently lists), pm-yffj (P2: extension activation failure invisible outside health --json), pm-i35t (P3: alias typos shwo/veiw get no did-you-mean), pm-90hp (P3: todos import positional ignored + error omits --folder), pm-7x8d (P3: close could accept --resolution as reason under require_close_reason). No secret/private-info leaks observed in any output; telemetry defaults to capture_level redacted in fresh init."
+body: ""

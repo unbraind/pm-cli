@@ -11,6 +11,7 @@ import {
 import { collectRegisteredItemFieldNames } from "../extensions/item-fields.js";
 import { EMPTY_CANONICAL_DOCUMENT, EXIT_CODE, TYPE_TO_FOLDER } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
+import { levenshteinDistanceWithinLimit } from "../shared/levenshtein.js";
 import { appendHistoryEntry, createHistoryEntry } from "../history/history.js";
 import { enforceHistoryStreamPolicyForItem } from "../history/history-stream-policy.js";
 import { canonicalDocument, parseItemDocument, serializeItemDocument } from "../item/item-format.js";
@@ -190,22 +191,6 @@ async function listKnownItemIds(
   return allIds;
 }
 
-function levenshtein(a: string, b: string): number {
-  if (a === b) return 0;
-  if (a.length === 0) return b.length;
-  if (b.length === 0) return a.length;
-  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    const curr = [i];
-    for (let j = 1; j <= b.length; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      curr.push(Math.min(curr[j - 1] + 1, prev[j] + 1, prev[j - 1] + cost));
-    }
-    prev = curr;
-  }
-  return prev[b.length];
-}
-
 async function buildDidYouMeanSuggestions(
   pmRoot: string,
   badId: string,
@@ -215,9 +200,10 @@ async function buildDidYouMeanSuggestions(
   const normalized = normalizeItemId(badId, idPrefix);
   const ids = await listKnownItemIds(pmRoot, typeToFolder);
   if (ids.length === 0) return [];
+  const limit = Math.max(3, Math.floor(normalized.length / 2));
   const scored = ids
-    .map((id) => ({ id, distance: levenshtein(id, normalized) }))
-    .filter((entry) => entry.distance <= Math.max(3, Math.floor(normalized.length / 2)))
+    .map((id) => ({ id, distance: levenshteinDistanceWithinLimit(id, normalized, limit) }))
+    .filter((entry): entry is { id: string; distance: number } => entry.distance !== null)
     .sort((left, right) => left.distance - right.distance)
     .slice(0, 3)
     .map((entry) => entry.id);

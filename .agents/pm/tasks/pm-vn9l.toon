@@ -1,0 +1,11 @@
+id: pm-vn9l
+title: "Export hygiene: 1 dead export + ~57 exported-but-internal-only symbols"
+description: "Audit scan (export declarations in src/ checked for references across src/tests/packages/scripts): KNOWN_EXTENSION_MANIFEST_FIELDS in src/core/extensions/extension-types.ts:180 is fully dead (declaration only, zero references anywhere incl docs). Additionally ~57 exported symbols are only referenced inside their own file (export keyword is unnecessary public surface), e.g. quoteCommandArg (cli/argv-utils.ts), collectRuntimeCommandPaths/scoreCommandPathMatch/resolveChildCommandByToken (cli/commander-usage.ts), CALENDAR_VIEW_VALUES/CALENDAR_OUTPUT_VALUES (commands/calendar.ts), six linked-artifacts.ts helpers, writeStderr (core/output/output.ts), normalizeItemTypeDefinitions/serializeSettings (core/store/settings.ts), 8 *_VALUES constants in src/types.ts, SUPPORTED_FIX_SCOPES/DEFAULT_RESOLUTION_BACKFILL_VALUE (core/validate/fix-planning.ts). Low priority hygiene: delete the dead constant; consider demoting internal-only exports to module-private where they are not intentional SDK surface (src/sdk/** and barrels were excluded from the scan). A further 86 exports are used only by tests/scripts (acceptable, listed in audit notes)."
+type: Task
+status: open
+priority: 3
+tags[3]: audit-2026-06-12,dead-code,hygiene
+created_at: "2026-06-12T16:11:22.616Z"
+updated_at: "2026-06-12T16:11:22.616Z"
+author: maintainer-agent
+body: ""

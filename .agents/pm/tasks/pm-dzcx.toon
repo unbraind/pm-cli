@@ -1,0 +1,23 @@
+id: pm-dzcx
+title: Dedup private Levenshtein implementations onto shared OSA helper
+description: "Two files reimplement plain Levenshtein instead of importing the shared OSA Damerau-Levenshtein helper (src/core/shared/levenshtein.ts, levenshteinDistanceWithinLimit): (1) src/core/store/item-store.ts:193 'levenshtein' used by buildDidYouMeanSuggestions for item-ID did-you-mean; (2) src/core/extensions/extension-capability-aliases.ts:61 'levenshteinDistance' used by suggestKnownExtensionCapability. Besides duplication, both copies miss the transposition-cost-1 upgrade shipped in PR #78, so ID/capability typo suggestions are weaker than flag/command suggestions. Fix: replace both with the shared limited helper (item-store uses a dynamic limit max(3, len/2) so call with that limit; capability suggester is unbounded best-match, can iterate limits or add a non-limited export). Evidence: grep -rln levenshtein src/ shows 7 importers of the shared module + these 2 private copies."
+type: Task
+status: closed
+priority: 3
+tags[3]: audit-2026-06-12,dedup,refactor
+created_at: "2026-06-12T16:11:16.056Z"
+updated_at: "2026-06-12T16:56:19.341Z"
+author: maintainer-agent
+resolution: Deduplicated private Levenshtein implementations onto the shared bounded OSA helper.
+expected_result: Item-id and extension-capability suggestions share the same typo-distance primitive.
+actual_result: Private copies were removed and focused helper/extension tests plus coverage passed.
+comments[1]{created_at,author,text}:
+  "2026-06-12T16:40:31.690Z",codex-sdk-cli-agent,"Evidence: shared helper focused coverage passed in expanded run: tests/unit/levenshtein.spec.ts plus extension-loader usage coverage; 224 tests passed overall."
+files[3]{path,scope,note}:
+  src/core/extensions/extension-capability-aliases.ts,project,replace private capability Levenshtein copy with shared bounded OSA helper
+  src/core/store/item-store.ts,project,replace private item-id suggestion Levenshtein copy with shared bounded OSA helper
+  tests/unit/levenshtein.spec.ts,project,shared helper coverage used by deduped suggestion paths
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/levenshtein.spec.ts tests/unit/extension-loader.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: Replaced duplicate private Levenshtein implementations with shared bounded OSA helper; focused and coverage gates passed.
+body: ""

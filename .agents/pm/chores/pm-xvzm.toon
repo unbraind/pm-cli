@@ -1,0 +1,12 @@
+id: pm-xvzm
+title: COMMANDS.md omits pm get and pm copy; command-families table missing get/copy/update-many/close-many
+description: "docs/COMMANDS.md is the command reference but never documents 'pm get' (the single-item read primitive used throughout AGENT_GUIDE.md:110) or 'pm copy' (core command since PR#146, has MCP tool pm_copy). Both are in PM_CORE_COMMAND_NAMES. The Command Families table (docs/COMMANDS.md:23-36) also omits update-many/close-many (they have a Bulk Operations section at :117 but no family row). Fix: add get/copy to Triage or a Read family with examples, and add a Bulk family row."
+type: Chore
+status: open
+priority: 3
+tags[3]: audit-2026-06-12,docs,drift
+created_at: "2026-06-12T16:11:21.527Z"
+updated_at: "2026-06-12T16:11:21.527Z"
+author: maintainer-agent
+parent: pm-gpea
+body: ""

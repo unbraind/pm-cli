@@ -1,4 +1,4 @@
-import { mkdir, symlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -25,6 +25,7 @@ import {
 } from "../../src/core/extensions/loader.js";
 import {
   createDefaultExtensionGovernancePolicy,
+  KNOWN_EXTENSION_MANIFEST_FIELDS,
   type ExtensionGovernancePolicy,
   type ExtensionSelfIdentity,
 } from "../../src/core/extensions/extension-types.js";
@@ -4519,5 +4520,14 @@ describe("flag value type resolution (pm-ltbr/pm-l0jd)", () => {
     expect(isFlagDefaultValueCoercible("0", "boolean")).toBe(true);
     expect(isFlagDefaultValueCoercible("maybe", "boolean")).toBe(false);
     expect(isFlagDefaultValueCoercible(1, "boolean")).toBe(false);
+  });
+});
+
+describe("extension manifest schema governance", () => {
+  it("keeps docs/schemas/extension-manifest.schema.json properties in sync with KNOWN_EXTENSION_MANIFEST_FIELDS", async () => {
+    const schemaPath = path.join(process.cwd(), "docs", "schemas", "extension-manifest.schema.json");
+    const schema = JSON.parse(await readFile(schemaPath, "utf8")) as { properties?: Record<string, unknown> };
+    const schemaFields = Object.keys(schema.properties ?? {}).sort();
+    expect(schemaFields).toEqual([...KNOWN_EXTENSION_MANIFEST_FIELDS].sort());
   });
 });

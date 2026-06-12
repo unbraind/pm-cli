@@ -1,0 +1,24 @@
+id: pm-1byt
+title: "GH-209: successful pm mutations can exit 13 from unsettled top-level await"
+description: "GitHub issue #209 reports successful pm subcommands emitting Node's unsettled top-level await warning from dist/cli.js and exiting 13 after the mutation. Duplicate check: pm search 'unsettled top-level await exit 13 background refresh' found related pm-5rge, but that item is claimed by another agent and tracks broader background-refresh performance integration coverage rather than the exact exit-13 reliability bug. This item covers the narrow awaited unref timer fix and regression coverage."
+type: Issue
+status: closed
+priority: 1
+tags[3]: bug,gh-209,reliability
+created_at: "2026-06-12T16:35:34.508Z"
+updated_at: "2026-06-12T16:56:01.142Z"
+author: codex-sdk-cli-agent
+parent: pm-mpbb
+resolution: Fixed awaited queue-gate backoff timers so successful CLI mutations do not exit 13 from unsettled top-level await.
+expected_result: Successful pm commands settle cleanly after awaited background-refresh queue retries.
+actual_result: Regression test verified queue-gate timers stay referenced; coverage and manual strict-create workflow passed.
+comments[2]{created_at,author,text}:
+  "2026-06-12T16:37:26.131Z",codex-sdk-cli-agent,"Evidence: focused regression run passed: node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts tests/unit/validate-command.spec.ts tests/integration/mcp-handshake.spec.ts tests/unit/extension-loader.spec.ts tests/unit/levenshtein.spec.ts (220 tests)."
+  "2026-06-12T16:47:12.797Z",codex-sdk-cli-agent,"Evidence: full coverage gate passed after GH-209 timer fix: node scripts/run-tests.mjs coverage (150 files, 2809 tests; current enforced all-source ratchet, not literal 100%)."
+files[2]{path,scope,note}:
+  src/core/search/background-refresh.ts,project,keep awaited queue-gate backoff timers referenced to avoid CLI top-level-await exit 13
+  tests/unit/search-cache.spec.ts,project,regression coverage that awaited queue-gate backoff does not unref timers
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/search-cache.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Fixed GH-209 top-level-await exit-13 risk by keeping awaited queue-gate timers referenced; regression test, coverage, and manual temp-dir validation passed."
+body: ""

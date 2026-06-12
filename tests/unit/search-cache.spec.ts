@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   invalidateSearchCacheArtifacts,
   readVectorizationStatusLedger,
@@ -760,6 +760,30 @@ describe("search background refresh", () => {
         expect(await drainPendingRefreshIds(pmPath)).toEqual([]);
         await enqueuePendingRefreshIds(pmPath, ["pm-x"]);
         expect(await drainPendingRefreshIds(pmPath)).toEqual(["pm-x"]);
+      });
+    });
+
+    it("keeps awaited queue-gate backoff timers referenced so CLI top-level await can settle", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const gatePath = path.join(pmPath, "search", "pending-refresh.gate.lock");
+        await fs.mkdir(gatePath, { recursive: true });
+        const realSetTimeout = globalThis.setTimeout;
+        const unrefCalls: number[] = [];
+        const timeoutSpy = vi.spyOn(globalThis, "setTimeout").mockImplementation(((handler: TimerHandler, timeout?: number, ...args: unknown[]) => {
+          const timer = realSetTimeout(handler, timeout, ...args);
+          const originalUnref = timer.unref?.bind(timer);
+          timer.unref = (() => {
+            unrefCalls.push(timeout ?? 0);
+            return originalUnref ? originalUnref() : timer;
+          }) as typeof timer.unref;
+          return timer;
+        }) as typeof setTimeout);
+        try {
+          await drainPendingRefreshIds(pmPath);
+          expect(unrefCalls).toEqual([]);
+        } finally {
+          timeoutSpy.mockRestore();
+        }
       });
     });
   });

@@ -1,0 +1,25 @@
+id: pm-5909
+title: "CI gap: plugin/package markdown pushed to main runs no functional workflow"
+description: "ci.yml:7-12 push paths-ignore includes '**/*.md' (plus redundant CHANGELOG.md/CONTRIBUTING.md entries already covered by the glob), while docs.yml:4-23 push/PR paths cover only docs/**, .agents/skills/**, root *.md, CHANGELOG/CONTRIBUTING, ISSUE_TEMPLATE. plugins/**/*.md (slash commands, skills, subagent prompts — functional plugin assets validated by scripts/smoke-claude-plugin.mjs) and packages/**/README.md are ignored by CI on push AND not matched by Docs, so a direct push to main touching only plugin markdown runs no gate except CodeQL. PRs are unaffected (ci.yml pull_request has no paths filter). Fix options: add 'plugins/**' (or '!plugins/**/*.md' style carve-out) to ci.yml paths-ignore exceptions, or extend docs.yml paths with plugins/** and packages/**/*.md so the docs-skills gate + smoke runs. Severity low (workflow discipline is PR-based) but it is the one push-path hole; everything else in .github/workflows is healthy: all actions SHA-pinned, least-privilege permissions blocks, concurrency groups, pnpm+tsbuildinfo+lancedb caches, release.yml Sentry reliability gate intact (:113-121) with auto-release pre-flight token guard (auto-release.yml:114-118), last 15 runs green incl today's Auto Release -> Release chain."
+type: Chore
+status: closed
+priority: 3
+tags[3]: audit-2026-06-12,ci,workflows
+created_at: "2026-06-12T16:11:59.237Z"
+updated_at: "2026-06-12T16:56:19.433Z"
+author: maintainer-agent
+parent: pm-gpea
+resolution: Changed workflow path filters so plugin markdown changes on main run functional CI while docs markdown still routes through docs workflow.
+expected_result: Plugin markdown edits are not skipped by all functional validation on push.
+actual_result: "CI workflow now uses paths with plugins/** re-inclusion; workflow contract, docs gates, and coverage passed."
+comments[2]{created_at,author,text}:
+  "2026-06-12T16:44:28.305Z",codex-sdk-cli-agent,"Evidence: focused workflow contract run passed: node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts (5 tests)."
+  "2026-06-12T16:54:04.834Z",codex-sdk-cli-agent,"Evidence: workflow/docs gates passed after path-filter update: pnpm quality:docs-skills, pnpm quality:docs-links, node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts, and full coverage."
+files[3]{path,scope,note}:
+  .github/workflows/ci.yml,project,re-include plugin markdown in functional CI push path
+  .github/workflows/docs.yml,project,cover markdown docs paths consistently in docs workflow
+  tests/integration/ci-workflow-contract.spec.ts,project,lock CI path-filter contract for plugin markdown re-inclusion
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/ci-workflow-contract.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Updated workflow path filters so plugin markdown re-enters functional CI and locked the contract test; docs gates, workflow test, and coverage passed."
+body: ""

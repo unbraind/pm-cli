@@ -825,7 +825,9 @@ describe("runValidate", () => {
           "--add",
           `path=${absoluteLinkedPath},scope=project,note=absolute`,
           "--add",
-          "path=src,note=directory-not-file,scope=project",
+          "path=src,note=existing-directory-link,scope=project",
+          "--add",
+          "path=src/really-gone.ts,scope=project,note=missing-file-link",
           "--add",
           "path=global/skip-me.ts,scope=global,note=global-link",
           "--add",
@@ -849,7 +851,8 @@ describe("runValidate", () => {
       };
       expect(details.missing_linked_paths_count).toBe(1);
       expect(details.orphaned_paths_count).toBeGreaterThan(0);
-      expect(details.missing_linked_paths).toContain("src");
+      expect(details.missing_linked_paths).toContain("src/really-gone.ts");
+      expect(details.missing_linked_paths).not.toContain("src");
     });
   });
 
