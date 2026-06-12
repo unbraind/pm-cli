@@ -1,0 +1,39 @@
+id: pm-tjvl
+title: Compact strict create recovery for agents
+description: Reduce token-heavy strict pm create schema validation recovery output for agents while preserving detailed --explain diagnostics. Tracks GitHub issue #201.
+type: Task
+status: closed
+priority: 1
+tags: []
+created_at: "2026-06-12T15:18:13.660Z"
+updated_at: "2026-06-12T15:34:31.478Z"
+author: codex-sdk-cli-continuation
+parent: pm-mpbb
+resolution: Compact strict-create recovery now emits low-token structured recovery metadata by default and expands invocation context only when --explain is requested.
+expected_result: Agents receive exact missing fields and suggested flags without full attempted command echo in default --json strict-create failures; humans can request full diagnostics with --explain.
+actual_result: Strict create --json returns recovery_mode=compact with missing_required_fields/suggested_flags and omits attempted_command/normalized_args; strict create --json --explain restores attempted_command and normalized_args. Focused tests and manual temp smoke passed.
+comments[6]{created_at,author,text}:
+  "2026-06-12T15:18:13.660Z",codex-sdk-cli-continuation,"Duplicate check: pm search strict pm create schema failures recovery output token returned only closed historical items and broad open epics; GitHub issue #201 is the concrete current report."
+  "2026-06-12T15:18:32.701Z",codex-sdk-cli-continuation,"GitHub/release sidecar evidence: no open PRs; GitHub issue #201 is open and directly matches this work; Auto Release run 27400423759 and Release run 27400708149 both succeeded on main on 2026-06-12; Dependabot open alerts=0; CodeQL open alerts=0; pnpm audit reported no known vulnerabilities. npm outdated reported non-blocking updates: @types/node 25.9.2->25.9.3, esbuild 0.28.0->0.28.1, commander 14.0.3 with latest 15.0.0 outside wanted range."
+  "2026-06-12T15:20:08.831Z",codex-sdk-cli-continuation,"Manual temp smoke passed: isolated tmpdir /tmp/tmp.xsmOMPVIrZ with PM_PATH/PM_GLOBAL_PATH sandboxed; node dist/cli.js init; set governance-preset strict; create --json exited 2 with recovery_mode=compact, no attempted_command/normalized_args, missing_required_fields including --message, suggested_flags including --create-mode progressive; create --json --explain exited 2 and restored attempted_command plus normalized_args."
+  "2026-06-12T15:24:11.179Z",codex-sdk-cli-continuation,"Verification evidence: pnpm build passed; pnpm exec tsc -p tsconfig.json --noEmit passed; node scripts/run-tests.mjs test -- tests/unit/cli-main-errors.spec.ts tests/integration/governance-presets.integration.spec.ts passed (19 tests); pm test pm-tjvl --run --progress passed all 3 linked tests; node scripts/run-tests.mjs coverage passed current enforced gate (150 files, 2804 tests; coverage summary 82.72% statements / 75.27% branches / 86.66% functions / 82.81% lines, not literal all-src 100%); pnpm security:scan passed; pnpm quality:static passed; pnpm quality:docs-links passed; pnpm contracts:check passed; pnpm changelog:pm:check passed with pm-changelog 2026.6.10 and unchanged CHANGELOG.md; pm validate --check-resolution --check-history-drift had history_drift ok and only known older closed-item resolution warnings; Sentry gate passed with SENTRY_PERSONAL_ADMIN_TOKEN, critical=0 high=0 after expected CLI-error filtering; telemetry explicit flush succeeded at 2026-06-12T15:23:49.892Z with queue_drained=true and no last_failed_flush_error."
+  "2026-06-12T15:24:11.410Z",codex-sdk-cli-continuation,"Sub-agent findings integrated: GitHub/release sidecar confirmed no open PRs, #201 as current report, healthy Auto Release/Release on main, no Dependabot/CodeQL alerts. Implementation explorer confirmed the create.ts missing-required branch, main.ts recovery wrapper, error-guidance normalization, shared recovery type, and unit/integration test seams; no sub-agent edited files."
+  "2026-06-12T15:33:45.653Z",codex-sdk-cli-continuation,"Review follow-up: Gemini flagged non-string recovery array entries as a possible runtime crash. Added defensive string filtering for compact recovery arrays and unit coverage in tests/unit/error-guidance.spec.ts."
+files[7]{path,scope,note}:
+  src/cli/commands/create.ts,project,Strict create missing-field errors emit compact recovery payload
+  src/cli/error-guidance.ts,project,JSON/display recovery normalization renders compact missing-field keys
+  src/cli/main.ts,project,PmCliError recovery wrapper preserves compact mode unless --explain is requested
+  src/core/shared/errors.ts,project,Recovery payload type adds compact missing-field metadata
+  tests/integration/governance-presets.integration.spec.ts,project,Regression coverage for compact strict-create JSON and verbose --explain recovery
+  tests/unit/cli-main-errors.spec.ts,project,Unit coverage for compact recovery wrapper and --explain expansion
+  tests/unit/error-guidance.spec.ts,project,Regression coverage for defensive compact recovery array normalization
+tests[4]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/governance-presets.integration.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/cli-main-errors.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/error-guidance.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm exec tsc -p tsconfig.json --noEmit,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+test_runs[2]{run_id,kind,status,started_at,finished_at,recorded_at,attempt,resumed_from,passed,failed,skipped,items,linked_tests,fail_on_skipped_triggered}:
+  test-local-mqb2texa-7zqnjx,test,passed,"2026-06-12T15:23:13.171Z","2026-06-12T15:23:30.382Z","2026-06-12T15:23:30.382Z",null,null,3,0,0,null,null,null
+  test-local-mqb37l0w-hiwoqp,test,passed,"2026-06-12T15:34:12.653Z","2026-06-12T15:34:31.472Z","2026-06-12T15:34:31.472Z",null,null,4,0,0,null,null,null
+close_reason: "Implemented compact strict-create recovery for GitHub issue #201 with focused unit/integration coverage, manual isolated smoke, linked-test execution, coverage gate, static/security/docs/contracts/changelog gates, Sentry gate, and telemetry flush evidence."
+body: ""

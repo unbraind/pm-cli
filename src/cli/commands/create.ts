@@ -1538,6 +1538,14 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       required: `Provide all required create options and type options for type "${type}" in one invocation.`,
       examples: [nextValidExample],
       nextSteps,
+      recovery: createMode === "strict"
+        ? {
+            recovery_mode: "compact",
+            missing: combinedMissingFlags,
+            missing_required_fields: combinedMissingFlags,
+            suggested_flags: ["--create-mode progressive", ...combinedMissingFlags],
+          }
+        : undefined,
     });
   }
   const nonMissingTypeOptionErrors = filterNonMissingTypeOptionErrors(validatedTypeOptions.errors, type);

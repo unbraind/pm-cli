@@ -37,6 +37,23 @@ describe("pm cli error guidance context plumbing", () => {
     expect(envelope.next_steps).toEqual(["Resolve markers and rerun command."]);
   });
 
+  it("normalizes compact recovery arrays defensively", () => {
+    const envelope = formatPmCliErrorForJson("Missing required option --message for type \"Task\"", 2, {
+      code: "missing_required_option",
+      recovery: {
+        recovery_mode: "compact",
+        missing_required_fields: [" --message ", 123, null, ""] as unknown as string[],
+        suggested_flags: [" --create-mode progressive ", false, "--message"] as unknown as string[],
+      },
+    });
+
+    expect(envelope.recovery).toMatchObject({
+      recovery_mode: "compact",
+      missing_required_fields: ["--message"],
+      suggested_flags: ["--create-mode progressive", "--message"],
+    });
+  });
+
   it("applies PmCliError context fields to text guidance output", () => {
     const text = formatPmCliErrorForDisplay("History replay failed due to merge conflict markers.", {
       code: "history_merge_conflict_markers_detected",

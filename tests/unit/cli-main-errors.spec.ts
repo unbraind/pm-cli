@@ -75,6 +75,55 @@ describe("CLI main error helpers", () => {
     });
   });
 
+  it("keeps compact recovery payloads compact unless explain is requested", () => {
+    const context = _testOnly.buildPmCliRecoveryContext(
+      {
+        code: "missing_required_option",
+        recovery: {
+          recovery_mode: "compact",
+          missing: ["--message"],
+          missing_required_fields: ["--message"],
+          suggested_flags: ["--create-mode progressive", "--message"],
+        },
+      },
+      ["create", "--json", "--title", "Strict task", "--description", "Needs message", "--type", "Task"],
+      'Missing required option --message for type "Task"',
+    );
+
+    expect(context.recovery).toEqual({
+      recovery_mode: "compact",
+      missing: ["--message"],
+      missing_required_fields: ["--message"],
+      suggested_flags: ["--create-mode progressive", "--message"],
+    });
+  });
+
+  it("expands compact recovery payloads when explain is requested", () => {
+    const context = _testOnly.buildPmCliRecoveryContext(
+      {
+        code: "missing_required_option",
+        recovery: {
+          recovery_mode: "compact",
+          missing: ["--message"],
+          missing_required_fields: ["--message"],
+          suggested_flags: ["--create-mode progressive", "--message"],
+        },
+      },
+      ["create", "--json", "--explain", "--title", "Strict task", "--description", "Needs message", "--type", "Task"],
+      'Missing required option --message for type "Task"',
+    );
+
+    expect(context.recovery).toMatchObject({
+      recovery_mode: "compact",
+      attempted_command: 'pm create --json --explain --title "Strict task" --description "Needs message" --type Task',
+      normalized_args: ["create", "--json", "--explain", "--title", "Strict task", "--description", "Needs message", "--type", "Task"],
+      provided_fields: ["--json", "--explain", "--title", "--description", "--type"],
+      missing: ["--message"],
+      missing_required_fields: ["--message"],
+      suggested_flags: ["--create-mode progressive", "--message"],
+    });
+  });
+
   it("keeps expected retry errors off the synchronous Sentry path by default", () => {
     const previous = process.env.PM_SENTRY_CAPTURE_EXPECTED_ERRORS;
     try {

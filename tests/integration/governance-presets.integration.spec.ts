@@ -126,6 +126,43 @@ describe("governance presets", () => {
       expect(strictDefaultCreate.code).toBe(2);
       expect(strictDefaultCreate.stderr).toContain("Missing required options");
       expect(strictDefaultCreate.stderr).toContain("--create-mode progressive");
+      const envelope = JSON.parse(strictDefaultCreate.stderr) as {
+        recovery?: {
+          recovery_mode?: string;
+          attempted_command?: string;
+          normalized_args?: string[];
+          missing_required_fields?: string[];
+          suggested_flags?: string[];
+        };
+      };
+      expect(envelope.recovery?.recovery_mode).toBe("compact");
+      expect(envelope.recovery?.attempted_command).toBeUndefined();
+      expect(envelope.recovery?.normalized_args).toBeUndefined();
+      expect(envelope.recovery?.missing_required_fields).toEqual(expect.arrayContaining(["--message"]));
+      expect(envelope.recovery?.suggested_flags).toEqual(expect.arrayContaining(["--create-mode progressive", "--message"]));
+
+      const strictDefaultCreateExplain = context.runCli([
+        "create",
+        "--json",
+        "--explain",
+        "--title",
+        "governance-create-default-strict",
+        "--description",
+        "Strict preset should require strict create fields",
+        "--type",
+        "Task",
+      ]);
+      expect(strictDefaultCreateExplain.code).toBe(2);
+      const explainEnvelope = JSON.parse(strictDefaultCreateExplain.stderr) as {
+        recovery?: {
+          attempted_command?: string;
+          normalized_args?: string[];
+          missing_required_fields?: string[];
+        };
+      };
+      expect(explainEnvelope.recovery?.attempted_command).toContain("pm create");
+      expect(explainEnvelope.recovery?.normalized_args).toEqual(expect.arrayContaining(["--explain"]));
+      expect(explainEnvelope.recovery?.missing_required_fields).toEqual(expect.arrayContaining(["--message"]));
     });
   });
 
