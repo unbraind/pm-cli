@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Other
+
+- Compact strict create recovery for agents ([pm-tjvl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tjvl.toon))
+
 ## 2026.6.12 - 2026-06-12
 
 ### Added

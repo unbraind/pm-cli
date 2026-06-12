@@ -98,7 +98,20 @@ function normalizeRecoveryPayload(payload: PmCliErrorRecoveryPayload | undefined
   if (!payload || typeof payload !== "object") {
     return undefined;
   }
+  const normalizeStringArray = (values: unknown): string[] | undefined => {
+    if (!Array.isArray(values)) {
+      return undefined;
+    }
+    const normalized = values
+      .filter((entry): entry is string => typeof entry === "string")
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+    return normalized.length > 0 ? normalized : undefined;
+  };
   const normalized: PmCliErrorRecoveryPayload = {};
+  if (payload.recovery_mode === "compact") {
+    normalized.recovery_mode = "compact";
+  }
   if (typeof payload.attempted_command === "string" && payload.attempted_command.trim().length > 0) {
     normalized.attempted_command = payload.attempted_command.trim();
   }
@@ -119,6 +132,14 @@ function normalizeRecoveryPayload(payload: PmCliErrorRecoveryPayload | undefined
     if (missing.length > 0) {
       normalized.missing = missing;
     }
+  }
+  const missingRequiredFields = normalizeStringArray(payload.missing_required_fields);
+  if (missingRequiredFields) {
+    normalized.missing_required_fields = missingRequiredFields;
+  }
+  const suggestedFlags = normalizeStringArray(payload.suggested_flags);
+  if (suggestedFlags) {
+    normalized.suggested_flags = suggestedFlags;
   }
   if (typeof payload.suggested_retry === "string" && payload.suggested_retry.trim().length > 0) {
     normalized.suggested_retry = payload.suggested_retry.trim();
@@ -158,6 +179,12 @@ function renderRecoveryBundle(recovery: PmCliErrorRecoveryPayload | undefined): 
   }
   if (normalized.missing && normalized.missing.length > 0) {
     lines.push(`  missing: ${normalized.missing.join(", ")}`);
+  }
+  if (normalized.missing_required_fields && normalized.missing_required_fields.length > 0) {
+    lines.push(`  missing_required_fields: ${normalized.missing_required_fields.join(", ")}`);
+  }
+  if (normalized.suggested_flags && normalized.suggested_flags.length > 0) {
+    lines.push(`  suggested_flags: ${normalized.suggested_flags.join(", ")}`);
   }
   if (normalized.suggested_retry) {
     lines.push(`  suggested_retry: ${normalized.suggested_retry}`);

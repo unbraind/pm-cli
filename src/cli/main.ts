@@ -315,10 +315,17 @@ function buildPmCliRecoveryContext(
   invocationArgv: string[],
   rawMessage: string,
 ): PmCliErrorContext {
+  const explainRequested = invocationArgv.includes("--explain");
+  const existingRecovery = context?.recovery;
+  if (existingRecovery?.recovery_mode === "compact" && !explainRequested) {
+    return {
+      ...(context ?? {}),
+      recovery: existingRecovery,
+    };
+  }
   const attemptedCommand = renderAttemptedCommand(invocationArgv);
   const providedFields = extractProvidedOptionFlags(invocationArgv);
   const providedSet = new Set(providedFields.map((flag) => normalizeLongOptionFlag(flag) ?? flag));
-  const existingRecovery = context?.recovery;
   const rawInferred = existingRecovery?.suggested_retry ? undefined : inferMissingFieldsFromErrorMessage(rawMessage);
   const trulyMissing = rawInferred?.filter((flag) => !providedSet.has(normalizeLongOptionFlag(flag) ?? flag));
   const inferredMissing = trulyMissing && trulyMissing.length > 0 ? trulyMissing : undefined;
@@ -341,6 +348,9 @@ function buildPmCliRecoveryContext(
     normalized_args: existingRecovery?.normalized_args ?? [...invocationArgv],
     provided_fields: existingRecovery?.provided_fields ?? (providedFields.length > 0 ? providedFields : undefined),
     missing: existingRecovery?.missing ?? inferredMissing,
+    ...(existingRecovery?.recovery_mode ? { recovery_mode: existingRecovery.recovery_mode } : {}),
+    ...(existingRecovery?.missing_required_fields ? { missing_required_fields: existingRecovery.missing_required_fields } : {}),
+    ...(existingRecovery?.suggested_flags ? { suggested_flags: existingRecovery.suggested_flags } : {}),
     ...(suggestedRetry ? { suggested_retry: suggestedRetry } : {}),
     ...(existingRecovery?.fallback_candidates ? { fallback_candidates: existingRecovery.fallback_candidates } : {}),
     ...(existingRecovery?.next_best_command ? { next_best_command: existingRecovery.next_best_command } : {}),
