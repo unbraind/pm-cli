@@ -112,7 +112,7 @@ async function withQueueGate<T>(pmRoot: string, fn: () => Promise<T>, fallback: 
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
-    setTimeout(resolve, ms).unref?.();
+    setTimeout(resolve, ms);
   });
 }
 

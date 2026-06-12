@@ -1,0 +1,24 @@
+id: pm-b1ni
+title: "pm validate --check-files misclassifies existing directories as deleted (GH-203, prune/auto-fix data-loss path)"
+description: "GH-203: src/cli/commands/validate.ts:1287 marks a linked path missing when stats.isFile() is false, so existing DIRECTORY links (accepted by pm files --add) classify as deleted. Because --prune-missing and --auto-fix act on deleted classifications, they would remove valid directory links (data loss). Regression scope: GH-184 feature shipped v2026.6.12 (pm-0v2m). Fix: treat stats.isDirectory() as present (or distinct directory classification excluded from prune), plus repro test with linked dir. Repro in GH-203 confirmed against 2026.6.12."
+type: Issue
+status: closed
+priority: 1
+tags[3]: "area:validate",gh-triage-2026-06-12,regression
+created_at: "2026-06-12T16:11:23.630Z"
+updated_at: "2026-06-12T16:56:01.070Z"
+author: maintainer-agent
+resolution: Fixed validate --check-files to treat existing directory links as present.
+expected_result: Existing project directory links remain linked and are not pruned as missing.
+actual_result: Existing directory link src passed isolated validate --check-files and focused/unit/coverage gates.
+comments[3]{created_at,author,text}:
+  "2026-06-12T16:33:31.286Z",codex-sdk-cli-agent,"Evidence: focused regression run passed: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/integration/mcp-handshake.spec.ts (84 tests, includes validate directory-link regression)."
+  "2026-06-12T16:47:12.778Z",codex-sdk-cli-agent,"Evidence: full coverage gate passed after fixes: node scripts/run-tests.mjs coverage (150 files, 2809 tests; statements 82.79%, branches 75.34%, functions 86.79%, lines 82.87%)."
+  "2026-06-12T16:53:19.448Z",codex-sdk-cli-agent,"Manual temp-dir evidence: isolated PM_PATH/PM_GLOBAL_PATH workflow passed; linked existing directory src was not reported as missing by validate --check-files."
+files[2]{path,scope,note}:
+  src/cli/commands/validate.ts,project,treat existing directory links as present during validate --check-files
+  tests/unit/validate-command.spec.ts,project,regression coverage for directory links plus missing file links
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts,null,project,240,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Fixed GH-203 directory-link validation regression; focused tests, coverage, manual temp-dir validation, and audit gates passed."
+body: ""

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs";
 import readline from "node:readline";
 import { fileURLToPath } from "node:url";
 import {
@@ -1170,6 +1171,25 @@ export function startMcpServer(): void {
   });
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+// npm bin entries are symlinks (node_modules/.bin/pm-mcp -> dist/mcp/server.js),
+// so argv[1] must be realpath-resolved before comparing against this module's
+// path — a plain equality check made the published `pm-mcp` bin exit 0 without
+// ever starting the server (pm-qtbc).
+export function isInvokedAsMcpMainModule(argvPath: string | undefined, moduleUrl: string): boolean {
+  if (!argvPath) {
+    return false;
+  }
+  const selfPath = fileURLToPath(moduleUrl);
+  if (argvPath === selfPath) {
+    return true;
+  }
+  try {
+    return realpathSync(argvPath) === realpathSync(selfPath);
+  } catch {
+    return false;
+  }
+}
+
+if (isInvokedAsMcpMainModule(process.argv[1], import.meta.url)) {
   startMcpServer();
 }

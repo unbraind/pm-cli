@@ -2,8 +2,21 @@
 
 ## Unreleased
 
+### Changed
+
+- Dedup private Levenshtein implementations onto shared OSA helper ([pm-dzcx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-dzcx.toon))
+
+### Fixed
+
+- Claude Code plugin install spec drift: README says pm-cli@pm but plugin name is pm-claude ([pm-m4bx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-m4bx.toon))
+- Compact strict-create recovery duplicates missing fields under two keys ([pm-3rjo](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-3rjo.toon))
+- GH-209: successful pm mutations can exit 13 from unsettled top-level await ([pm-1byt](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-1byt.toon))
+- pm-mcp bin is dead on npm installs: main-module guard fails under symlinked argv\[1\] \(silent exit 0, no JSON-RPC output\) ([pm-qtbc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-qtbc.toon))
+- pm validate --check-files misclassifies existing directories as deleted \(GH-203, prune/auto-fix data-loss path\) ([pm-b1ni](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-b1ni.toon))
+
 ### Other
 
+- CI gap: plugin/package markdown pushed to main runs no functional workflow ([pm-5909](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5909.toon))
 - Compact strict create recovery for agents ([pm-tjvl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tjvl.toon))
 
 ## 2026.6.12 - 2026-06-12

@@ -1,0 +1,12 @@
+id: pm-u8y9
+title: "SDK.md PM_PACKAGE_RESOURCE_KINDS drift: assets/prompts kinds missing"
+description: "src/core/packages/manifest.ts:8-14 exports PM_PACKAGE_RESOURCE_KINDS = [extensions, docs, examples, assets, prompts] (assets/prompts shipped in PR#150, pm-z9ho). Drift: docs/SDK.md:53 documents only (extensions, docs, examples), and docs/SDK.md:159 says 'Additional package resource kinds (docs, examples)' omitting assets/prompts. docs/EXTENSIONS.md:87 already documents pm.assets/pm.prompts correctly — align SDK.md with it."
+type: Chore
+status: open
+priority: 3
+tags[4]: audit-2026-06-12,docs,drift,sdk
+created_at: "2026-06-12T16:11:36.263Z"
+updated_at: "2026-06-12T16:11:36.263Z"
+author: maintainer-agent
+parent: pm-gpea
+body: ""

@@ -1,0 +1,13 @@
+id: pm-nimu
+title: Code quality & perf audit 2026-06-12
+description: "Read-only deep audit of src/ + packages/: dead code, duplication, type safety, perf timings (sandbox + real repo), dependency review, architecture invariant verification. Findings filed as linked items tagged audit-2026-06-12."
+type: Task
+status: open
+priority: 2
+tags[2]: audit,audit-2026-06-12
+created_at: "2026-06-12T16:11:06.071Z"
+updated_at: "2026-06-12T16:11:48.250Z"
+author: maintainer-agent
+comments[1]{created_at,author,text}:
+  "2026-06-12T16:11:48.250Z",maintainer-agent,"Audit complete. TIMINGS (hyperfine, sandbox /tmp/pm-perf-audit unless noted): pm --version 36ms; pm show 125ms; pm list --compact 139ms (real repo: 303ms, extension overhead as expected); pm create 140ms; pm update 142ms; pm search 185ms; create+close roundtrip 275-310ms total; pm health (real repo) 1.69s. NO REGRESSION vs May instant-mutations work (mutations ~140ms each, well under 250ms). Hot-path I/O instrumented via fs hook: only 24 distinct file reads per command, settings.json read ONCE (pm-2bn5 concern not currently biting); minor: package.json parsed 4x and managed-extensions.json 2x per command (sub-ms, not filed). INVARIANTS: all HELD - settings-validator dependency-free (no zod); front-matter cache + skip-unchanged-writes + hasActiveOnReadHooks fast path present; per-command code-splitting intact (register-mutation dynamically imports each command module; registration-helpers barrel imports are type-only; mcp/server.ts eager barrel import is fine for the long-lived server). TYPE SAFETY: 0 ': any', 0 'as any', 0 ts-ignore in src; 49 'as unknown as' concentrated in item-format.ts/plan.ts record-bridge casts (known accepted pattern). LOC: max file 2504 (loader.ts), all under 3400 cap; static gate green. DEPS: 5 runtime deps all justified; only commander has a new major (15.0.0, not urgent); registry was ENETUNREACH-flaky so pnpm outdated partial. Recent commits 8b8e6d6b/9379cefa/PR#199 audited: new core/validate + lock-gc + query-summary modules are clean, pure, well-documented. FINDINGS FILED: pm-dzcx (P3 levenshtein dedup, safe quick-win), pm-vn9l (P3 export hygiene incl 1 truly dead constant, safe quick-win for the dead constant), pm-3rjo (P3 compact recovery duplicate keys, safe quick-win)."
+body: ""

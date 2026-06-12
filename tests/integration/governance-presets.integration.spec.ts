@@ -131,6 +131,7 @@ describe("governance presets", () => {
           recovery_mode?: string;
           attempted_command?: string;
           normalized_args?: string[];
+          missing?: string[];
           missing_required_fields?: string[];
           suggested_flags?: string[];
         };
@@ -138,6 +139,7 @@ describe("governance presets", () => {
       expect(envelope.recovery?.recovery_mode).toBe("compact");
       expect(envelope.recovery?.attempted_command).toBeUndefined();
       expect(envelope.recovery?.normalized_args).toBeUndefined();
+      expect(envelope.recovery?.missing).toBeUndefined();
       expect(envelope.recovery?.missing_required_fields).toEqual(expect.arrayContaining(["--message"]));
       expect(envelope.recovery?.suggested_flags).toEqual(expect.arrayContaining(["--create-mode progressive", "--message"]));
 

@@ -1,0 +1,14 @@
+id: pm-tk1z
+title: GitHub issue triage 2026-06-12
+description: Reconcile all OPEN GitHub issues with the pm tracker (system of record). Progress logged as comments here.
+type: Task
+status: open
+priority: 2
+tags[1]: gh-triage-2026-06-12
+created_at: "2026-06-12T16:05:05.652Z"
+updated_at: "2026-06-12T16:11:30.311Z"
+author: maintainer-agent
+comments[2]{created_at,author,text}:
+  "2026-06-12T16:10:43.395Z",maintainer-agent,"Triage complete: 18 open GH issues reconciled. CLOSED AS SHIPPED (verified in /tmp/pm-triage-sandbox on v2026.6.12): GH-153/167/168/170/171/172/174/179/184 (all v2026.6.12) + GH-185 (v2026.6.10). ALREADY TRACKED by open pm items (each references its GH number): GH-154=pm-1lll, GH-155=pm-gcm3, GH-156=pm-j0vc, GH-157=pm-cstl (added Tracks GH-157 comment), GH-158=pm-aer3, GH-161=pm-72xf, GH-163=pm-jmld. NEW: pm-i1z6 for GH-181 remainder (--match-mode and/or/exact + keyword default limit + --count; core no-ranking complaint already fixed by weighted scoring). Quick wins for today: pm-i1z6 default-limit part, pm-cstl --min-score, pm-1lll csv/table, pm-gcm3 child rollup. Leaving this task open for the PR session to close (changelog regen is the last step)."
+  "2026-06-12T16:11:30.311Z",maintainer-agent,"Addendum: GH-203 filed mid-triage (validate --check-files classifies existing DIRECTORY links as deleted; prune/auto-fix would remove valid links). Root cause confirmed at src/cli/commands/validate.ts:1287 (!stats.isFile() => missing). Created pm-b1ni (P1, regression of GH-184/pm-0v2m). This is the #1 quick win for today's PR."
+body: ""

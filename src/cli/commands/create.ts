@@ -1541,7 +1541,6 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
       recovery: createMode === "strict"
         ? {
             recovery_mode: "compact",
-            missing: combinedMissingFlags,
             missing_required_fields: combinedMissingFlags,
             suggested_flags: ["--create-mode progressive", ...combinedMissingFlags],
           }

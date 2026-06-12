@@ -1284,7 +1284,7 @@ async function buildFilesCheck(
         let missing = false;
         try {
           const stats = await fs.stat(absolutePath);
-          if (!stats.isFile()) {
+          if (!stats.isFile() && !stats.isDirectory()) {
             missing = true;
           }
         } catch {

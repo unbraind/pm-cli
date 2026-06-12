@@ -1,0 +1,21 @@
+id: pm-m4bx
+title: "Claude Code plugin install spec drift: README says pm-cli@pm but plugin name is pm-claude"
+description: "Marketplace name is 'pm' and the only plugin entry is 'pm-claude' (marketplace.json + .claude-plugin/marketplace.json, identical copies; plugins/pm-claude/.claude-plugin/plugin.json name=pm-claude). Install spec format is <plugin>@<marketplace>, so the canonical spec is '/plugin install pm-claude@pm' as documented in docs/CLAUDE_CODE_PLUGIN.md:57. But README.md:51 and plugins/pm-claude/README.md:21 say '/plugin install pm-cli@pm' (plugin 'pm-cli' does not exist in the marketplace), and plugins/pm-claude/README.md:37 says '/plugin install pm-cli@pm-cli' claiming 'Both pm and pm-cli marketplace IDs resolve to the same plugin' — no 'pm-cli' marketplace name exists in tracked metadata. Users following README install instructions may get plugin-not-found. Fix: align all three to pm-claude@pm (or add a real alias and document it)."
+type: Issue
+status: closed
+priority: 2
+tags[4]: audit-2026-06-12,claude-code,docs,plugin
+created_at: "2026-06-12T16:11:07.299Z"
+updated_at: "2026-06-12T16:56:19.417Z"
+author: maintainer-agent
+parent: pm-gpea
+resolution: Corrected Claude plugin install documentation to use pm-claude@pm.
+expected_result: Users can copy the documented plugin install spec and match the actual marketplace/plugin metadata.
+actual_result: README and plugin README now document pm-claude@pm; docs gates and Claude plugin smoke passed.
+comments[1]{created_at,author,text}:
+  "2026-06-12T16:54:04.878Z",codex-sdk-cli-agent,"Evidence: docs gates and plugin smoke passed after install-spec correction: pnpm quality:docs-skills, pnpm quality:docs-links, node scripts/smoke-claude-plugin.mjs."
+docs[2]{path,scope,note}:
+  plugins/pm-claude/README.md,project,remove nonexistent pm-cli plugin alias and document canonical plugin/marketplace names
+  README.md,project,align Claude plugin install spec with pm-claude@pm
+close_reason: Aligned Claude plugin install docs to the real pm-claude@pm plugin/marketplace spec; docs gates and plugin smoke passed.
+body: ""

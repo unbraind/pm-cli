@@ -1,0 +1,11 @@
+id: pm-yffj
+title: "Extension activation failure is invisible outside pm health --json: extension list shows ok, no stderr hint, commands partially registered"
+description: "Repro: scaffold an extension whose activate() calls registerItemFields without 'schema' in manifest capabilities, install it, then: (1) 'pm extension --install ./my-extension' -> ok:true with no warning; (2) 'pm extension list' -> warnings: [] and the extension looks healthy (installed:true, status ok in discovery); (3) normal commands print nothing on stderr; (4) registrations made BEFORE the throw still work (my-extension ping ran), so the extension is silently half-active. Only 'pm health' (status warn, opaque string extension_activate_failed:project:my-extension) and 'pm health --json' checks[name=extensions].details.activation.failed expose the excellent error+trace+hint payload (loader.ts:2458 area builds it). Suggestions: surface activation.failed (error + hint) in 'pm extension list' output and in the install command result when the just-installed extension fails to activate; optionally a one-line stderr warning on command runs. The diagnostic payload already exists — this is purely a surfacing/discoverability gap for SDK developers."
+type: Issue
+status: open
+priority: 2
+tags[4]: agent-ux,dogfood-2026-06-12,extensions,sdk
+created_at: "2026-06-12T16:19:03.304Z"
+updated_at: "2026-06-12T16:19:03.304Z"
+author: maintainer-agent
+body: ""

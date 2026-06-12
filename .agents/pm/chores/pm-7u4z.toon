@@ -1,0 +1,12 @@
+id: pm-7u4z
+title: "Built-in type lists and storage layout drift: Plan missing; ARCHITECTURE.md still lists removed index/ dir"
+description: "Runtime built-ins are 11 types incl Plan (pm schema list: Chore, Decision, Epic, Event, Feature, Issue, Meeting, Milestone, Plan, Reminder, Task; COMMANDS.md:461 is correct). Drift: (1) docs/ARCHITECTURE.md:130-141 built-in type list omits Plan; (2) README.md:122 'Built-in types include ...' omits Plan; (3) docs/QUICKSTART.md:79-88 type table omits Plan (minor, labeled 'useful'); (4) docs/ARCHITECTURE.md:81-99 storage layout still lists 'index/' (legacy required dir removed 2026-05-31, pm-yf31) and omits real dirs plans/, checkpoints/, runtime/, schema/ (and stories/ from custom types); (5) docs/ARCHITECTURE.md:143 says type resolution merges built-ins + settings.item_types.definitions + extensions but omits .agents/pm/schema/types.json (pm schema add-type), which CONFIGURATION.md:74 documents."
+type: Chore
+status: open
+priority: 3
+tags[3]: audit-2026-06-12,docs,drift
+created_at: "2026-06-12T16:11:21.762Z"
+updated_at: "2026-06-12T16:11:21.762Z"
+author: maintainer-agent
+parent: pm-gpea
+body: ""

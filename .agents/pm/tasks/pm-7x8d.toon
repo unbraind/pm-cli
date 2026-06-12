@@ -1,0 +1,11 @@
+id: pm-7x8d
+title: "pm close: when require_close_reason is on, accept --resolution text as the close reason instead of hard-blocking"
+description: "Repro: with governance.require_close_reason enabled (sandbox default), 'pm close <id> --resolution \"Fixed empty-password guard\" --expected ... --actual ...' fails with 'Close reason text is required'. The agent already supplied a complete closure narrative; per the never-block philosophy the resolution text is a perfectly good one-line closing summary. Suggestion: when --reason/positional text is absent but --resolution is provided, derive the close reason from the resolution (and note the derivation in output), keeping the hard error only when neither is present. The current error message is actionable (examples included) so this is polish, not a dead-end."
+type: Task
+status: open
+priority: 3
+tags[4]: agent-ux,cli,dogfood-2026-06-12,never-block
+created_at: "2026-06-12T16:19:39.149Z"
+updated_at: "2026-06-12T16:19:39.149Z"
+author: maintainer-agent
+body: ""

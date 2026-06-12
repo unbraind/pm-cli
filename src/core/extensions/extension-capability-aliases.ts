@@ -7,6 +7,7 @@ import {
   type LegacyExtensionCapabilityAliasMapping,
   type UnknownExtensionCapabilityWarningDetails,
 } from "./extension-types.js";
+import { levenshteinDistanceWithinLimit } from "../shared/levenshtein.js";
 
 export function normalizeNames(values: string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].sort((a, b) =>
@@ -58,38 +59,6 @@ export function normalizeManifestCapabilities(rawCapabilities: readonly string[]
   };
 }
 
-function levenshteinDistance(left: string, right: string): number {
-  if (left === right) {
-    return 0;
-  }
-  if (left.length === 0) {
-    return right.length;
-  }
-  if (right.length === 0) {
-    return left.length;
-  }
-  const previous = new Array<number>(right.length + 1);
-  const current = new Array<number>(right.length + 1);
-  for (let j = 0; j <= right.length; j += 1) {
-    previous[j] = j;
-  }
-  for (let i = 1; i <= left.length; i += 1) {
-    current[0] = i;
-    for (let j = 1; j <= right.length; j += 1) {
-      const substitutionCost = left[i - 1] === right[j - 1] ? 0 : 1;
-      current[j] = Math.min(
-        previous[j] + 1,
-        current[j - 1] + 1,
-        previous[j - 1] + substitutionCost,
-      );
-    }
-    for (let j = 0; j <= right.length; j += 1) {
-      previous[j] = current[j];
-    }
-  }
-  return previous[right.length] ?? left.length;
-}
-
 export function suggestKnownExtensionCapability(capability: string): string | null {
   const normalized = capability.trim().toLowerCase();
   if (normalized.length === 0) {
@@ -99,17 +68,17 @@ export function suggestKnownExtensionCapability(capability: string): string | nu
   if (legacyAlias) {
     return legacyAlias;
   }
+  const maxDistance = Math.max(1, Math.floor(normalized.length * 0.34));
   let bestMatch: string | null = null;
   let bestDistance = Number.POSITIVE_INFINITY;
   for (const candidate of KNOWN_EXTENSION_CAPABILITIES) {
-    const distance = levenshteinDistance(normalized, candidate);
-    if (distance < bestDistance) {
+    const distance = levenshteinDistanceWithinLimit(normalized, candidate, maxDistance);
+    if (distance !== null && distance < bestDistance) {
       bestDistance = distance;
       bestMatch = candidate;
     }
   }
-  const maxDistance = Math.max(1, Math.floor(normalized.length * 0.34));
-  return bestMatch !== null && bestDistance <= maxDistance ? bestMatch : null;
+  return bestMatch;
 }
 
 export function formatUnknownExtensionCapabilityWarning(layer: ExtensionLayer, name: string, capability: string): string {

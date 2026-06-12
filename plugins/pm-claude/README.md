@@ -18,7 +18,7 @@ Native pm CLI integration for Claude Code. Use pm project management tools direc
 ### Option A: Plugin marketplace — canonical install (recommended)
 
 ```
-/plugin install pm-cli@pm
+/plugin install pm-claude@pm
 ```
 
 First time: add the marketplace if it's not configured yet:
@@ -29,17 +29,9 @@ claude plugin marketplace add /path/to/pm-cli
 # claude plugin marketplace add unbraind/pm-cli
 ```
 
-This installs all 25 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and the session hook in one step.
+This installs all 25 MCP tools, 5 skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and the session hook in one step. (`pm-claude` is the plugin name; `pm` is the marketplace name from `marketplace.json`.)
 
-### Option B: Legacy marketplace alias (also works)
-
-```
-/plugin install pm-cli@pm-cli
-```
-
-Both `pm` and `pm-cli` marketplace IDs resolve to the same plugin.
-
-### Option C: Global MCP server via Claude Code CLI (MCP tools only)
+### Option B: Global MCP server via Claude Code CLI (MCP tools only)
 
 ```bash
 claude mcp add --transport stdio pm-mcp -- npx -y --package=@unbrained/pm-cli@latest pm-mcp
@@ -47,7 +39,7 @@ claude mcp add --transport stdio pm-mcp -- npx -y --package=@unbrained/pm-cli@la
 
 This gives you the 25 MCP tools but not the skills, slash commands, or session hook.
 
-### Option D: Direct `.mcp.json` (project-scoped MCP only)
+### Option C: Direct `.mcp.json` (project-scoped MCP only)
 
 Add to your project's `.mcp.json`:
 

@@ -1,0 +1,25 @@
+id: pm-qtbc
+title: "pm-mcp bin is dead on npm installs: main-module guard fails under symlinked argv[1] (silent exit 0, no JSON-RPC output)"
+description: "Repro: printf '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2025-06-18\",\"capabilities\":{},\"clientInfo\":{\"name\":\"x\",\"version\":\"1\"}}}\\n' | pm-mcp -> exit 0, EMPTY stdout/stderr. Same request piped to 'node dist/mcp/server.js' responds correctly (serverInfo 2026.6.12, 25 tools). Cause: src/mcp/server.ts:1173 'if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1])' — npm bin entries are SYMLINKS (e.g. ~/.local/share/mise/installs/node/25.9.0/bin/pm-mcp -> ../lib/node_modules/@unbrained/pm-cli/dist/mcp/server.js); Node resolves import.meta.url to the realpath while argv[1] keeps the symlink path, so the guard never matches and the process exits 0 without serving. Minimal repro: ln -s dist/mcp/server.js /tmp/x && node /tmp/x -> no output. Fix: compare via fs.realpathSync(process.argv[1]) (wrapped in try/catch), e.g. realpath both sides before comparing. Affects every npm global/local install of the pm-mcp binary on Linux/macOS; silent exit 0 is the worst failure mode for MCP clients (looks like instant clean shutdown)."
+type: Issue
+status: closed
+priority: 1
+tags[3]: bug,dogfood-2026-06-12,mcp
+created_at: "2026-06-12T16:18:28.696Z"
+updated_at: "2026-06-12T16:56:01.081Z"
+author: maintainer-agent
+resolution: Fixed pm-mcp main-module detection by realpath-resolving symlinked npm bin argv paths.
+expected_result: npm-style symlinked pm-mcp starts the MCP stdio server and responds to initialize.
+actual_result: Integration and manual symlink smoke both returned serverInfo.name=pm-mcp.
+comments[4]{created_at,author,text}:
+  "2026-06-12T16:33:22.602Z",codex-sdk-cli-agent,"Evidence: focused regression run passed: node scripts/run-tests.mjs test -- tests/unit/validate-command.spec.ts tests/integration/mcp-handshake.spec.ts (84 tests, includes symlinked pm-mcp main-module detection)."
+  "2026-06-12T16:37:26.187Z",codex-sdk-cli-agent,"Evidence: added end-to-end symlinked npm-style pm-mcp bin smoke in tests/integration/mcp-handshake.spec.ts; expanded focused run passed 220 tests."
+  "2026-06-12T16:47:12.780Z",codex-sdk-cli-agent,"Evidence: full coverage gate passed after fixes: node scripts/run-tests.mjs coverage (150 files, 2809 tests; includes symlinked pm-mcp bin smoke)."
+  "2026-06-12T16:53:19.521Z",codex-sdk-cli-agent,"Manual temp-dir evidence: symlinked pm-mcp binary launched via node <symlink> and returned a valid MCP initialize response with serverInfo.name=pm-mcp."
+files[2]{path,scope,note}:
+  src/mcp/server.ts,project,realpath npm-bin argv main-module detection
+  tests/integration/mcp-handshake.spec.ts,project,symlinked pm-mcp bin main-module regression coverage
+tests[1]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/integration/mcp-handshake.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+close_reason: "Fixed pm-mcp npm-bin symlink main-module detection; helper, e2e bin smoke, coverage, and manual temp-dir validation passed."
+body: ""

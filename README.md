@@ -48,7 +48,7 @@ npx --yes @unbrained/pm-cli@latest --help
 For Claude Code, install the native plugin (no `pm` CLI required):
 
 ```
-/plugin install pm-cli@pm
+/plugin install pm-claude@pm
 ```
 
 This registers 25 MCP tools, 5 workflow skills, 14 slash commands, 4 subagents, hybrid TUI tracking, and a session-start context hook — all without shelling out to the `pm` CLI.
