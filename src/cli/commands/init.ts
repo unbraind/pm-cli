@@ -296,6 +296,10 @@ function applyGovernancePreset(settings: PmSettings, preset: BuiltinGovernancePr
   settings.validation.metadata_profile = knobs.metadata_profile;
 }
 
+function isInstalledPackageEntry(value: unknown): value is { alias?: unknown; ok?: unknown } {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function summarizeInstalledPackages(result: ExtensionCommandResult): InitInstalledPackagesSummary {
   const details = result.details as {
     installed_all?: unknown;
@@ -309,7 +313,7 @@ function summarizeInstalledPackages(result: ExtensionCommandResult): InitInstall
     installed_all: details.installed_all === true,
     installed_count: typeof details.installed_count === "number" ? details.installed_count : 0,
     packages: Array.isArray(details.packages)
-      ? details.packages.filter((entry) => typeof entry === "object" && entry !== null && !Array.isArray(entry)).map((entry) => ({
+      ? details.packages.filter(isInstalledPackageEntry).map((entry) => ({
           alias: typeof entry.alias === "string" ? entry.alias : "",
           ok: entry.ok === true,
         }))

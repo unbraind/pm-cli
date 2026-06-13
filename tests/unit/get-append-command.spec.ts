@@ -330,7 +330,11 @@ describe("runGet and runAppend", () => {
       expect(close.code).toBe(0);
       const openChildPath = path.join(context.pmPath, "tasks", `${openChildId}.toon`);
       const openChildSource = await readFile(openChildPath, "utf8");
-      await writeFile(openChildPath, openChildSource.replace("status: open", 'status: " open "'), "utf8");
+      await writeFile(
+        openChildPath,
+        openChildSource.replace(`parent: ${epicId}`, `parent: "${epicId.toUpperCase()}"`).replace("status: open", 'status: " open "'),
+        "utf8",
+      );
 
       const standard = await runGet(epicId, { path: context.pmPath });
       expect(standard.children).toEqual({
