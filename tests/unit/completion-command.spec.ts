@@ -108,11 +108,13 @@ describe("generateBashScript", () => {
     expect(script).toContain("--comment");
     expect(script).toContain("--note");
     expect(script).toContain("--learning");
+    expect(script).toContain("--body-file");
   });
 
   it("includes update flags", () => {
     const script = generateBashScript();
     expect(script).toContain("--body");
+    expect(script).toContain("--body-file");
     expect(script).toContain("--close-reason");
     expect(script).toContain("--force");
     expect(script).toContain("--message");

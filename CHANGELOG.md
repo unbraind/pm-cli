@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- pm close: short aliases -m/-r/-d for --message/--reason/--duplicate-of \(GH-226\) ([pm-i1mu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-i1mu.toon))
+- pm create/update --body-file: load body markdown from a file \(GH-214\) ([pm-7c48](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7c48.toon))
+
+### Other
+
+- pm close: when require\_close\_reason is on, accept --resolution text as the close reason instead of hard-blocking ([pm-7x8d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7x8d.toon))
+
 ## 2026.6.13 - 2026-06-13
 
 ### Changed

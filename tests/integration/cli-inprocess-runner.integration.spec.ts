@@ -1,7 +1,110 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
+
+describe("create/update --body-file (GH-214)", () => {
+  it("loads the item body from a file on create and update", async () => {
+    await withTempPmPath(async (context) => {
+      const bodyPath = path.join(context.tempRoot, "spec.md");
+      // Trailing newlines are normalized away on store, so keep the fixture
+      // body free of a trailing newline to assert exact round-trip equality.
+      const bodyContent = "# Spec\n\n## Acceptance\n- one\n- two";
+      await writeFile(bodyPath, bodyContent, "utf8");
+
+      const created = await context.runCliInProcess(
+        ["create", "--json", "--type", "Feature", "--title", "body-file feature", "--body-file", bodyPath],
+        { expectJson: true },
+      );
+      expect(created.code).toBe(0);
+      const createdId = (created.json as { item: { id: string; body?: string } }).item.id;
+
+      const fetched = await context.runCliInProcess(["get", createdId, "--json"], { expectJson: true });
+      expect((fetched.json as { body?: string }).body).toBe(bodyContent);
+
+      const updatedPath = path.join(context.tempRoot, "updated.md");
+      await writeFile(updatedPath, "updated from file", "utf8");
+      const updated = await context.runCliInProcess(
+        ["update", createdId, "--json", "--body-file", updatedPath],
+        { expectJson: true },
+      );
+      expect(updated.code).toBe(0);
+      const refetched = await context.runCliInProcess(["get", createdId, "--json"], { expectJson: true });
+      expect((refetched.json as { body?: string }).body).toBe("updated from file");
+    });
+  });
+
+  it("rejects combining --body and --body-file", async () => {
+    await withTempPmPath(async (context) => {
+      const bodyPath = path.join(context.tempRoot, "conflict.md");
+      await writeFile(bodyPath, "file body", "utf8");
+      const result = await context.runCliInProcess([
+        "create",
+        "--type",
+        "Task",
+        "--title",
+        "conflict",
+        "--body",
+        "inline body",
+        "--body-file",
+        bodyPath,
+      ]);
+      expect(result.code).not.toBe(0);
+      expect(result.stderr).toContain("mutually exclusive");
+    });
+  });
+
+  it("errors with an actionable message when the file is missing", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await context.runCliInProcess([
+        "create",
+        "--type",
+        "Task",
+        "--title",
+        "missing body file",
+        "--body-file",
+        path.join(context.tempRoot, "nope.md"),
+      ]);
+      expect(result.code).not.toBe(0);
+      expect(result.stderr).toContain("could not read");
+    });
+  });
+});
+
+describe("pm close short aliases (GH-226)", () => {
+  it("accepts -r/--reason, -m/--message, and -d/--duplicate-of", async () => {
+    await withTempPmPath(async (context) => {
+      const reasonItem = (context.runCli(
+        ["create", "--json", "--type", "Task", "--title", "close -r alias"],
+        { expectJson: true },
+      ).json as { item: { id: string } }).item.id;
+      const closedByReason = await context.runCliInProcess(
+        ["close", reasonItem, "-r", "done via -r", "-m", "history note", "--json"],
+        { expectJson: true },
+      );
+      expect(closedByReason.code).toBe(0);
+      expect((closedByReason.json as { item: { status: string; close_reason: string } }).item).toMatchObject({
+        status: "closed",
+        close_reason: "done via -r",
+      });
+
+      const canonicalId = (context.runCli(
+        ["create", "--json", "--type", "Task", "--title", "canonical"],
+        { expectJson: true },
+      ).json as { item: { id: string } }).item.id;
+      const duplicateId = (context.runCli(
+        ["create", "--json", "--type", "Task", "--title", "duplicate"],
+        { expectJson: true },
+      ).json as { item: { id: string } }).item.id;
+      const closedByDuplicate = await context.runCliInProcess(
+        ["close", duplicateId, "-d", canonicalId, "--json"],
+        { expectJson: true },
+      );
+      expect(closedByDuplicate.code).toBe(0);
+      expect((closedByDuplicate.json as { item: { duplicate_of: string } }).item.duplicate_of).toBe(canonicalId);
+    });
+  });
+});
 
 describe("CLI in-process runner integration", () => {
   it("keeps subprocess and in-process runner behavior aligned for core flows", async () => {

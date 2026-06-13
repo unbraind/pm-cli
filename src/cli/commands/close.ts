@@ -227,10 +227,21 @@ export async function runClose(
   // "Duplicate of <id>" (mirroring the auto-filled closure metadata).
   // Explicit reason text still wins.
   const duplicateOf = await assertDuplicateTargetExists(pmRoot, settings, options.duplicateOf, id);
-  const effectiveCloseReasonText =
-    (closeReasonText ?? "").trim().length === 0 && duplicateOf !== undefined
+  // pm-7x8d / GH-204: when no explicit positional/--reason text is given, derive
+  // the close reason from the next-best closure signal instead of hard-blocking
+  // under governance.require_close_reason. Precedence: explicit reason text >
+  // --duplicate-of ("Duplicate of <id>") > --resolution summary. The resolution
+  // is still written to metadata.resolution below; reusing it as the close
+  // reason just lets a single `pm close <id> --resolution "..."` succeed.
+  const hasExplicitReason = (closeReasonText ?? "").trim().length > 0;
+  const trimmedResolution = typeof options.resolution === "string" ? options.resolution.trim() : "";
+  const effectiveCloseReasonText = hasExplicitReason
+    ? closeReasonText
+    : duplicateOf !== undefined
       ? `Duplicate of ${duplicateOf}`
-      : closeReasonText;
+      : trimmedResolution.length > 0
+        ? trimmedResolution
+        : closeReasonText;
   const closeReason = normalizeCloseReason(effectiveCloseReasonText, settings.governance.require_close_reason);
   const validateCloseMode = parseValidateCloseMode(options.validateClose) ?? settings.governance.close_validation_default;
   // C3 (pm-fu5d): scan for active children even under minimal governance so

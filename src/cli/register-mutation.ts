@@ -1,4 +1,5 @@
 import { Option, type Command } from "commander";
+import { resolveBodyFileContent } from "../core/io/body-file.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
 import { isPureSnakeCaseAlias } from "../core/shared/option-alias-visibility.js";
@@ -105,6 +106,7 @@ export function registerMutationCommands(program: Command): void {
     .description("Create a new project management item.");
   registerCommanderOptionContracts(createCommand, CREATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS);
   createCommand
+    .option("--body-file <path>", "Load the item markdown body from a file (mutually exclusive with --body)")
     .option("--clear-deps", "Clear dependency entries")
     .option("--clear-comments", "Clear comments")
     .option("--clear-notes", "Clear notes")
@@ -171,6 +173,15 @@ export function registerMutationCommands(program: Command): void {
       if (typeof positionalTitle === "string" && positionalTitle.length > 0 && options.title === undefined) {
         options.title = positionalTitle;
       }
+      // GH-214: resolve --body-file into the existing body field before
+      // normalization so the rest of create is unchanged. CLI-only input alias.
+      if (typeof options.bodyFile === "string") {
+        options.body = await resolveBodyFileContent(
+          options.bodyFile,
+          options.body !== undefined ? String(options.body) : undefined,
+        );
+        delete options.bodyFile;
+      }
       const normalized = normalizeCreateOptions(options, { requireType: false });
       const { runCreate } = await import("./commands/create.js");
       const result = await runCreate(normalized, globalOptions);
@@ -214,6 +225,7 @@ export function registerMutationCommands(program: Command): void {
     .description("Update item fields and metadata.");
   registerCommanderOptionContracts(updateCommand, UPDATE_COMMANDER_OPTION_REGISTRATION_CONTRACTS);
   updateCommand
+    .option("--body-file <path>", "Load the item markdown body from a file (mutually exclusive with --body)")
     .option("--replace-deps", "Atomically replace dependency entries with the provided --dep values")
     .option("--replace-tests", "Atomically replace linked test entries with the provided --test values")
     .option("--clear-deps", "Clear dependency entries")
@@ -235,6 +247,15 @@ export function registerMutationCommands(program: Command): void {
     .action(async (id: string, options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
+      // GH-214: resolve --body-file into the existing body field before
+      // normalization so the rest of update is unchanged. CLI-only input alias.
+      if (typeof options.bodyFile === "string") {
+        options.body = await resolveBodyFileContent(
+          options.bodyFile,
+          options.body !== undefined ? String(options.body) : undefined,
+        );
+        delete options.bodyFile;
+      }
       const { runUpdate } = await import("./commands/update.js");
       const result = await runUpdate(id, normalizeUpdateOptions(options), globalOptions);
       await invalidateSearchCachesForMutation(globalOptions, result);
@@ -424,11 +445,11 @@ export function registerMutationCommands(program: Command): void {
     .command("close")
     .argument("<id>", "Item id")
     .argument("[text]", "Close reason text (alias: --reason)")
-    .option("--reason <value>", "Close reason text (alias for positional <text>)")
+    .option("-r, --reason <value>", "Close reason text (alias for positional <text>)")
     .option("--close-reason <value>", "Close reason text (alias for positional <text>)")
-    .option("--duplicate-of <id>", "Close as a duplicate of the canonical item id and auto-fill duplicate closure metadata")
+    .option("-d, --duplicate-of <id>", "Close as a duplicate of the canonical item id and auto-fill duplicate closure metadata")
     .option("--author <value>", "Mutation author")
-    .option("--message <value>", "History message")
+    .option("-m, --message <value>", "History message")
     .option("--validate-close [mode]", 'Validate closure metadata before close: "off", "warn", or "strict" (default: settings governance preset)')
     .option("--resolution <value>", "Set the closure resolution summary inline (same field --validate-close strict checks; previously required a prior pm update)")
     .option("--expected-result <value>", "Set the expected-result note inline (closure validation field)")

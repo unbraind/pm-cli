@@ -1,0 +1,16 @@
+id: pm-i1mu
+title: "pm close: short aliases -m/-r/-d for --message/--reason/--duplicate-of (GH-226)"
+description: ""
+type: Feature
+status: closed
+priority: 3
+tags[3]: "area:cli",ergonomics,gh-226
+created_at: "2026-06-13T20:54:33.503Z"
+updated_at: "2026-06-13T21:20:48.933Z"
+author: claude-code-agent
+parent: pm-mpbb
+resolution: "Added Commander short aliases on pm close: -m (--message), -r (--reason), -d (--duplicate-of). No semantic change; verified no conflicts. In-process integration test asserts all three parse and apply."
+comments[1]{created_at,author,text}:
+  "2026-06-13T20:59:26.514Z",claude-code-agent,"Plan: add Commander short aliases on close command — -m/--message, -r/--reason, -d/--duplicate-of. No semantic change; -m/-r/-d are unused on close. Verified -d free (close has no --description). Add tests asserting parse."
+close_reason: "Added Commander short aliases on pm close: -m (--message), -r (--reason), -d (--duplicate-of). No semantic change; verified no conflicts. In-process integration test asserts all three parse and apply."
+body: "Agents typing many commands naturally try -m (message), -r (reason), -d (duplicate-of) on pm close; all currently error. Add Commander short aliases consistent with -h/--help. No semantic change."

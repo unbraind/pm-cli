@@ -810,6 +810,7 @@ export const CREATE_FLAG_CONTRACTS: CliFlagContract[] = [
   // corrupting the JSON-array value form before parseTags sees it.
   { flag: "--add-tags", aliases: ["--add_tags"] },
   { short: "-b", flag: "--body" },
+  { flag: "--body-file" },
   { flag: "--deadline" },
   { flag: "--estimate" },
   { flag: "--estimated-minutes" },
@@ -899,6 +900,7 @@ export const UPDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { short: "-t", flag: "--title" },
   { short: "-d", flag: "--description" },
   { short: "-b", flag: "--body" },
+  { flag: "--body-file" },
   { short: "-s", flag: "--status" },
   { flag: "--close-reason" },
   { flag: "--close_reason" },

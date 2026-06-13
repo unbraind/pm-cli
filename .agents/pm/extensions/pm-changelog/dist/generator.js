@@ -234,7 +234,16 @@ export function mergeChangelog(existingMarkdown, generatedMarkdown, options = {}
     }
     let next = ensureTitle(existing, options.title);
     let action = "unchanged";
-    for (const releaseSection of releaseSections) {
+    // Keep a Changelog semantics (issue #47): when a release is generated — i.e.
+    // the generated output carries a concrete version section and no `Unreleased`
+    // section of its own — any leading `## Unreleased` section already in the
+    // changelog is the pending-release section and must be PROMOTED into the
+    // version it ships in, not left behind as a duplicate alongside the new
+    // `## <version>` heading. Only the newest generated section may consume it,
+    // and never when the generator itself emits an Unreleased section.
+    const generatedHasUnreleased = releaseSections.some((section) => normalizeReleaseHeadingKey(section.heading) === UNRELEASED_HEADING_KEY);
+    const canPromoteUnreleased = !generatedHasUnreleased;
+    for (const [index, releaseSection] of releaseSections.entries()) {
         const replacement = releaseSection.markdown.trimEnd();
         const replaced = replaceReleaseSection(next, releaseSection.heading, replacement);
         if (replaced.replaced) {
@@ -242,7 +251,19 @@ export function mergeChangelog(existingMarkdown, generatedMarkdown, options = {}
             action = "replaced";
             continue;
         }
-        next = insertAfterTitle(next, replacement);
+        // Restrict promotion to the newest generated section (index 0). Otherwise,
+        // when the newest version already exists (replaced above) an older section
+        // that is missing could steal the pending `## Unreleased` and overwrite it,
+        // losing the pending changes (GH #48 review).
+        if (canPromoteUnreleased && index === 0) {
+            const promoted = replaceReleaseSection(next, "Unreleased", replacement);
+            if (promoted.replaced) {
+                next = promoted.markdown;
+                action = "replaced";
+                continue;
+            }
+        }
+        next = insertReleaseSection(next, releaseSection.heading, replacement);
         if (action !== "replaced")
             action = "inserted";
     }
@@ -503,6 +524,8 @@ function replaceReleaseSection(markdown, heading, replacement) {
     const merged = after ? `${before}\n\n${replacement}\n\n${after}` : `${before}\n\n${replacement}`;
     return { markdown: merged, replaced: true };
 }
+/** Normalized heading key for the pending `Unreleased` section. */
+const UNRELEASED_HEADING_KEY = "unreleased";
 function normalizeReleaseHeadingKey(heading) {
     const trimmed = heading.trim();
     const bracketed = trimmed.match(/^\[([^\]]+)\](?:\([^)]+\))?(?:\s+-\s+.+)?$/);
@@ -513,6 +536,36 @@ function ensureTitle(markdown, title) {
     if (/^#\s+.+$/m.test(markdown))
         return markdown;
     return `# ${title ?? DEFAULT_TITLE}\n\n${markdown.trimStart()}`;
+}
+/**
+ * Insert a release section in chronological position (Unreleased first, then
+ * newest-to-oldest by version) rather than always at the top. Used by the
+ * prepend merge when a generated section has no existing heading to replace,
+ * so a backfilled older release cannot land above newer ones or the pending
+ * `## Unreleased` section (GH #48 review).
+ */
+function insertReleaseSection(markdown, heading, replacement) {
+    const matches = Array.from(markdown.matchAll(/^##\s+(.+)$/gm));
+    if (matches.length === 0)
+        return insertAfterTitle(markdown, replacement);
+    const newKey = normalizeReleaseHeadingKey(heading);
+    const insertBefore = matches.find((match) => {
+        const key = normalizeReleaseHeadingKey(match[1].trim());
+        if (key === UNRELEASED_HEADING_KEY)
+            return false; // never displace the pending section
+        if (newKey === UNRELEASED_HEADING_KEY)
+            return true; // a new Unreleased sorts ahead of any version
+        return compareVersionStrings(newKey, key) > 0; // place before the first strictly-older release
+    });
+    if (!insertBefore) {
+        return `${markdown.trimEnd()}\n\n${replacement}`;
+    }
+    const start = insertBefore.index ?? 0;
+    const before = markdown.slice(0, start).trimEnd();
+    const after = markdown.slice(start).trimStart();
+    // `before` is normally the `# Changelog` title (ensureTitle runs first), but
+    // guard the empty case so we never emit leading blank lines.
+    return before ? `${before}\n\n${replacement}\n\n${after}` : `${replacement}\n\n${after}`;
 }
 function insertAfterTitle(markdown, releaseSection) {
     const titleMatch = markdown.match(/^#\s+.+$/m);

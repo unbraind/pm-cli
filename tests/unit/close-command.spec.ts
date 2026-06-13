@@ -226,6 +226,62 @@ describe("runClose", () => {
     });
   });
 
+  it("derives the close reason from --resolution when no explicit reason is given (pm-7x8d)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "resolution-as-close-reason candidate");
+      const result = await runClose(
+        id,
+        undefined,
+        {
+          resolution: "  Fixed by patch xyz  ",
+          message: "Close with resolution only",
+        },
+        { path: context.pmPath },
+      );
+      expect(result.changed_fields).toEqual(expect.arrayContaining(["status", "close_reason", "resolution"]));
+      expect(result.item).toMatchObject({
+        id,
+        status: "closed",
+        close_reason: "Fixed by patch xyz",
+        resolution: "Fixed by patch xyz",
+      });
+    });
+  });
+
+  it("prefers explicit reason text over --resolution and --duplicate-of for the close reason", async () => {
+    await withTempPmPath(async (context) => {
+      const canonicalId = createTask(context, "resolution-precedence canonical");
+      const id = createTask(context, "resolution-precedence candidate");
+      const result = await runClose(
+        id,
+        "Explicit closing summary",
+        {
+          duplicateOf: canonicalId,
+          resolution: "Resolution summary",
+          message: "Close with explicit reason",
+        },
+        { path: context.pmPath },
+      );
+      expect(result.item).toMatchObject({
+        id,
+        status: "closed",
+        close_reason: "Explicit closing summary",
+        duplicate_of: canonicalId,
+        resolution: "Resolution summary",
+      });
+    });
+  });
+
+  it("still requires a reason when neither --reason, --duplicate-of, nor --resolution is provided", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "no-reason-source candidate");
+      await expect(runClose(id, undefined, { message: "no reason" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "close_reason_required" }),
+      });
+    });
+  });
+
   it("does not report duplicate fallback fields when explicit close metadata already exists", async () => {
     await withTempPmPath(async (context) => {
       const canonicalId = createTask(context, "canonical duplicate existing metadata target");
