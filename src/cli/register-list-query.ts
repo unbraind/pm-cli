@@ -74,6 +74,10 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--parent <value>", "Filter by parent item ID")
       .option("--sprint <value>", "Filter by sprint")
       .option("--release <value>", "Filter by release")
+      .option("--filter-ac-missing", "Show only items missing acceptance_criteria")
+      .option("--filter-estimates-missing", "Show only items missing estimated_minutes")
+      .option("--filter-resolution-missing", "Show only terminal items missing resolution")
+      .option("--filter-metadata-missing", "Show only items missing any tracked metadata (AC, estimate, or resolution)")
       .option("--limit <n>", "Limit returned item count")
       .option("--offset <n>", "Skip the first n matching rows before limit is applied")
       .option("--include-body", "Include item body in each returned list row")
@@ -123,6 +127,8 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
     addHiddenOption(command, "--tags <value>", "Alias for --tag");
     addHiddenOption(command, "--assignee_filter <value>", "Alias for --assignee-filter");
     addHiddenOption(command, "--tree_depth <n>", "Alias for --tree-depth");
+    // Singular alias so `--filter-estimate-missing` works (matches update-many spelling).
+    addHiddenOption(command, "--filter-estimate-missing", "Alias for --filter-estimates-missing");
   }
 
   if (shouldRegister("list")) {

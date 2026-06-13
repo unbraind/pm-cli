@@ -1,0 +1,13 @@
+id: pm-o0d2
+title: "pm validate: --all-affected-ids flag + never truncate ID lists in JSON mode (GH-224)"
+description: "Add --all-affected-ids so validate prints complete missing_* ID lists (grep-friendly), and ensure --json never truncates the *_item_ids arrays (drop the 5-item summary cap for JSON consumers). Keep human default truncation for readability."
+type: Task
+status: closed
+priority: 3
+tags[3]: "area:cli",gh-224,governance
+created_at: "2026-06-13T21:54:46.930Z"
+updated_at: "2026-06-13T22:32:00.957Z"
+author: claude-code-agent
+parent: pm-yq7m
+close_reason: "pm validate --all-affected-ids shipped + JSON mode never truncates *_item_ids (fullDiagnostics = verbose||allAffectedIds||json). Verified human=5/truncated, --all-affected-ids/--json=full. Closes GH-224."
+body: ""

@@ -7,6 +7,12 @@ import { resolveItemTypeRegistry, type ItemTypeRegistry } from "../../core/item/
 import { parseIntegerLimit, parsePriority, parseType } from "../shared-parsers.js";
 import { collectRuntimeFilterValues, matchesRuntimeFilters } from "../../core/schema/runtime-field-filters.js";
 import {
+  hasMissingMetadataFilter,
+  itemMatchesMissingMetadata,
+  lifecycleClassifierFromStatusRegistry,
+  type MissingMetadataFilters,
+} from "../../core/governance/metadata-coverage.js";
+import {
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
   type RuntimeStatusRegistry,
@@ -50,7 +56,26 @@ export interface ListOptions {
   tree?: boolean;
   treeDepth?: string;
   excludeTerminal?: boolean;
+  filterAcMissing?: boolean;
+  filterEstimatesMissing?: boolean;
+  filterResolutionMissing?: boolean;
+  filterMetadataMissing?: boolean;
   [key: string]: unknown;
+}
+
+/** Extract the missing-metadata selection filters from list/update-many options. */
+export function resolveMissingMetadataFilters(options: {
+  filterAcMissing?: boolean;
+  filterEstimatesMissing?: boolean;
+  filterResolutionMissing?: boolean;
+  filterMetadataMissing?: boolean;
+}): MissingMetadataFilters {
+  return {
+    acMissing: options.filterAcMissing === true,
+    estimatesMissing: options.filterEstimatesMissing === true,
+    resolutionMissing: options.filterResolutionMissing === true,
+    metadataMissing: options.filterMetadataMissing === true,
+  };
 }
 
 export type ListedItem = ItemFrontMatter | (ItemFrontMatter & { body: string });
@@ -176,6 +201,18 @@ function buildCompactListFilterSummary(params: {
   }
   if (options.release !== undefined) {
     filters.release = options.release;
+  }
+  if (options.filterAcMissing === true) {
+    filters.filter_ac_missing = true;
+  }
+  if (options.filterEstimatesMissing === true) {
+    filters.filter_estimates_missing = true;
+  }
+  if (options.filterResolutionMissing === true) {
+    filters.filter_resolution_missing = true;
+  }
+  if (options.filterMetadataMissing === true) {
+    filters.filter_metadata_missing = true;
   }
   if (options.limit !== undefined) {
     filters.limit = options.limit;
@@ -440,6 +477,9 @@ function applyFilters(
   const parentFilter = options.parent?.trim();
   const sprintFilter = options.sprint?.trim();
   const releaseFilter = options.release?.trim();
+  const missingMetadataFilters = resolveMissingMetadataFilters(options);
+  const missingMetadataActive = hasMissingMetadataFilter(missingMetadataFilters);
+  const lifecycleClassifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
 
   if (assigneeFilter && (assigneeFilter.toLowerCase() === "none" || assigneeFilter.toLowerCase() === "null")) {
     throw new PmCliError(
@@ -472,6 +512,9 @@ function applyFilters(
     if (parentFilter !== undefined && options.tree !== true && item.parent !== parentFilter) return false;
     if (sprintFilter !== undefined && item.sprint !== sprintFilter) return false;
     if (releaseFilter !== undefined && item.release !== releaseFilter) return false;
+    if (missingMetadataActive && !itemMatchesMissingMetadata(item, missingMetadataFilters, lifecycleClassifier)) {
+      return false;
+    }
     if (!matchesRuntimeFilters(item as Record<string, unknown>, runtimeFieldFilters)) {
       return false;
     }
@@ -741,6 +784,10 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       parent: options.parent ?? null,
       sprint: options.sprint ?? null,
       release: options.release ?? null,
+      ...(options.filterAcMissing === true ? { filter_ac_missing: true } : {}),
+      ...(options.filterEstimatesMissing === true ? { filter_estimates_missing: true } : {}),
+      ...(options.filterResolutionMissing === true ? { filter_resolution_missing: true } : {}),
+      ...(options.filterMetadataMissing === true ? { filter_metadata_missing: true } : {}),
       limit: options.limit ?? null,
       offset: options.offset ?? null,
       include_body: options.includeBody ?? null,

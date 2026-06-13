@@ -1,6 +1,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getActiveExtensionRegistrations, runActiveOnReadHooks } from "../../core/extensions/index.js";
+import {
+  computeMetadataCoverage,
+  groupItemsByDimension,
+  lifecycleClassifierFromStatusRegistry,
+  type GroupedBreakdown,
+  type MetadataCoverageReport,
+} from "../../core/governance/metadata-coverage.js";
 import { pathExists } from "../../core/fs/fs-utils.js";
 import { enforceHistoryStreamPolicyForItems } from "../../core/history/history-stream-policy.js";
 import { computeHistoryStorageStats, type HistoryStorageStats } from "../../core/history/history-storage-stats.js";
@@ -18,6 +25,16 @@ import type { ItemStatus, ItemType } from "../../types/index.js";
 export interface StatsCommandOptions {
   /** Include aggregate per-stream history storage metrics (sizes, depth, oldest/newest). */
   storage?: boolean;
+  /** Include metadata coverage percentages (AC, estimates, resolution, tags, parent) overall and by type. */
+  metadataCoverage?: boolean;
+  /** Include a lifecycle-bucketed breakdown grouped by assignee. */
+  byAssignee?: boolean;
+  /** Include a lifecycle-bucketed breakdown grouped by tag (optionally filtered by --tag-prefix). */
+  byTag?: boolean;
+  /** Include a lifecycle-bucketed breakdown grouped by priority. */
+  byPriority?: boolean;
+  /** With --by-tag: only consider tags starting with this prefix (e.g. "domain:"). */
+  tagPrefix?: string;
 }
 
 export interface StatsResult {
@@ -28,6 +45,14 @@ export interface StatsResult {
   };
   by_type: Record<ItemType, number>;
   by_status: Record<ItemStatus, number>;
+  /** Present only with --metadata-coverage: per-field coverage overall and by type. */
+  metadata_coverage?: MetadataCoverageReport;
+  /** Present only with --by-assignee/--by-tag/--by-priority: lifecycle-bucketed group breakdowns. */
+  breakdowns?: {
+    assignee?: GroupedBreakdown;
+    tag?: GroupedBreakdown;
+    priority?: GroupedBreakdown;
+  };
   /** Present only with --storage: aggregate history-stream metrics for compaction/planning. */
   storage?: HistoryStorageStats;
   generated_at: string;
@@ -135,6 +160,20 @@ export async function runStats(global: GlobalOptions, options: StatsCommandOptio
   }
   const storage = options.storage ? computeHistoryStorageStats(streams) : undefined;
 
+  const classifier = lifecycleClassifierFromStatusRegistry(statusRegistry);
+  const metadataCoverage = options.metadataCoverage ? computeMetadataCoverage(items, classifier) : undefined;
+  const breakdowns: NonNullable<StatsResult["breakdowns"]> = {};
+  if (options.byAssignee) {
+    breakdowns.assignee = groupItemsByDimension(items, "assignee", classifier);
+  }
+  if (options.byTag) {
+    breakdowns.tag = groupItemsByDimension(items, "tag", classifier, { tagPrefix: options.tagPrefix });
+  }
+  if (options.byPriority) {
+    breakdowns.priority = groupItemsByDimension(items, "priority", classifier);
+  }
+  const hasBreakdowns = Object.keys(breakdowns).length > 0;
+
   return {
     totals: {
       items: items.length,
@@ -143,6 +182,8 @@ export async function runStats(global: GlobalOptions, options: StatsCommandOptio
     },
     by_type: byType,
     by_status: byStatus,
+    ...(metadataCoverage ? { metadata_coverage: metadataCoverage } : {}),
+    ...(hasBreakdowns ? { breakdowns } : {}),
     ...(storage ? { storage } : {}),
     generated_at: nowIso(),
   };

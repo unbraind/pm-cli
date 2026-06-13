@@ -86,6 +86,7 @@ pm dedupe-audit --mode parent_scope --limit 20
 Use `context` first for a compact active-work snapshot. Use `search` when the request names a concept, component, or prior issue.
 `context` standard/deep views include high-level child completion counters plus `recently_created` and `unparented` sections, so agents can spot new orphan work before creating duplicates.
 Use `pm aggregate --completion` when you need per-group `open`, `in_progress`, `closed`, `other`, and `completion_pct` progress context.
+Each aggregate row carries an explicit `group_label`: a blank/null group value (e.g. unassigned items under `--group-by assignee`) renders as `(unassigned)`/`(untagged)`/`(unparented)` rather than an ambiguous empty key, while the structured `group` value keeps the raw `null` for machine consumers. Multi-field grouping joins each `field=value` pair into the label.
 
 `--sort` accepts `priority|deadline|updated_at|created_at|title|parent`, plus the convenience aliases `updated` (→ `updated_at`) and `created` (→ `created_at`):
 
@@ -114,14 +115,29 @@ pm search "reminder validation" --status open --limit 10
 
 `list`/`search` full and fields projections echo full filter metadata. Compact mode emits only active filters (plus runtime schema filters when present) and omits the default projection/sorting/now trailer keys for lower token cost.
 
+### Missing-metadata filters
+
+Every `list*` command also accepts metadata-presence filters for governance backfill: `--filter-ac-missing` (no `acceptance_criteria`), `--filter-estimates-missing` (no `estimated_minutes`; singular `--filter-estimate-missing` is an alias), `--filter-resolution-missing` (terminal items with no `resolution`), and `--filter-metadata-missing` (the union — missing *any* of those). Specific flags AND together; combine them with any other filter. They surface in the result's `filters` echo (`filter_ac_missing` etc.).
+
+```bash
+# Find open Tasks that still need acceptance criteria
+pm list-open --type Task --filter-ac-missing --brief
+
+# Closed items that were never given a resolution
+pm list-closed --filter-resolution-missing --json
+```
+
 ## Bulk Operations
 
-`update-many` and `close-many` apply one change across a matched set with a dry-run preview and a rollback checkpoint. Both share the `--filter-*` scoping family (`--filter-status/-type/-tag/-priority/-sprint/-release/-parent/-assignee/-deadline-before|after/-updated-after|before/-created-after|before`) plus `--ids` for an explicit comma-separated allowlist intersected with the other filters.
+`update-many` and `close-many` apply one change across a matched set with a dry-run preview and a rollback checkpoint. Both share the `--filter-*` scoping family (`--filter-status/-type/-tag/-priority/-sprint/-release/-parent/-assignee/-deadline-before|after/-updated-after|before/-created-after|before`) plus `--ids` for an explicit comma-separated allowlist intersected with the other filters. `update-many` additionally accepts the missing-metadata selectors `--filter-ac-missing`/`--filter-estimates-missing`/`--filter-resolution-missing`/`--filter-metadata-missing` for bulk metadata backfill.
 
 ```bash
 # Bulk metadata update by explicit id allowlist (compose with search --json | jq)
 pm update-many --ids pm-a,pm-b,pm-c --priority 1 --dry-run
 pm update-many --filter-tag wave:7 --reviewer maintainer-review
+
+# Bulk-backfill a placeholder estimate onto open Tasks that have none
+pm update-many --filter-status open --filter-type Task --filter-estimates-missing --estimate 60 --dry-run
 
 # Audited bulk close: routes EACH match through full `pm close` semantics
 # (close validation, active-child orphan checks, blocked-edge cleanup) — unlike
@@ -366,6 +382,13 @@ Use dry-run modes before broad lifecycle or cleanup changes.
 
 `pm validate --check-metadata` also groups missing-required-field counts per item type in `details.missing_by_type` (for example `{ "Task": { "close_reason": 3 } }`) — counts only, zero-suppressed, and limited to the active metadata profile's required fields, so remediation can be targeted by type without verbose row dumps.
 
+By default the human view caps each diagnostic `*_item_ids` list at 5 entries and sets the matching `*_truncated` flag. `--json` **never** truncates those lists (machine consumers always receive the complete arrays), and `--all-affected-ids` (equivalent to `--verbose-diagnostics`) emits the full lists in human mode too — so bulk remediation can pipe every affected id straight into `pm update-many`:
+
+```bash
+pm validate --check-metadata --all-affected-ids
+pm validate --check-metadata --json | jq -r '.checks[] | select(.name=="metadata") | .details.missing_acceptance_criteria_item_ids[]'
+```
+
 `--auto-fix` applies the safe, deterministic subset of those remediations automatically and reports the result under a top-level `fixes` object (`planned_fixes[]`, `applied_fixes[]`, `gated_fixes[]`, `failed_fixes[]` — each row lists the item id, check, field, and the equivalent standalone `pm` command). Safe means derivable and non-destructive: a closed item missing `resolution` is backfilled from its own `close_reason` (or the `"completed"` default), and a closed item missing `close_reason` is backfilled from its existing `resolution`. Auto-fix NEVER closes, cancels, or deletes items, and every applied fix runs through the normal audited `pm update` path. Structural lifecycle fixes — an active item whose parent is terminal gets reparented to its active grandparent or has its parent link cleared — are always *planned* but only *applied* when the explicit `--fix-scope lifecycle` grant is passed. `--fix-scope` is an exact allowlist of what `--auto-fix` may mutate (`metadata`, `resolution`, `lifecycle`; comma-separated or repeatable) — `--fix-scope lifecycle` alone applies *only* lifecycle fixes; omitting the flag grants the safe field-backfill scopes (`metadata`, `resolution`) and never lifecycle. `--dry-run` previews the full plan without mutating anything. With `--auto-fix` and no explicit `--check-*` flags, only the fix-capable checks (metadata, resolution, lifecycle) run. The `checks` in the output always describe the pre-fix state; re-run `pm validate` to confirm convergence.
 
 `pm validate --check-files` classifies every stale linked path in `details.missing_linked_path_classifications` as either `moved` (a file with the same basename still exists in the scan — the row carries the top relink candidate, e.g. `old/path.md:moved:new/path.md`) or `deleted` (no candidate anywhere, e.g. `old/path.md:deleted`). `--prune-missing` bulk-removes the stale links classified `deleted` from their items (link removal only — real files are never touched; `moved` links are kept so their relink candidates are not lost) and reports each removal in `fixes.applied_fixes[]` as the equivalent `pm files <id> --remove <path>` / `pm docs <id> --remove <path>` command. It honors `--dry-run` and implies `--check-files`.
@@ -438,7 +461,11 @@ History is append-only. Restore appends a new restore event instead of rewriting
 ```bash
 pm stats
 pm stats --storage --json
+pm stats --metadata-coverage --json
+pm stats --by-assignee --by-priority
+pm stats --by-tag --tag-prefix domain: --json
 ```
+For governance dashboards, `--metadata-coverage` adds a `metadata_coverage` block reporting per-field `present`/`applicable`/`percent` for `acceptance_criteria`, `estimated_minutes`, `resolution`, `tags`, and `parent` — overall and `by_type` (resolution coverage is scoped to terminal items, its only applicable population). `--by-assignee`, `--by-tag`, and `--by-priority` add a `breakdowns` block with lifecycle-bucketed rows (`open`/`in_progress`/`blocked`/`draft`/`closed`/`canceled`/`other` + `total`) per group; blank keys render an explicit `(unassigned)`/`(untagged)` label. `--by-tag` accepts `--tag-prefix` to restrict counting to a tag namespace (for example `domain:`). All of these sections are gated behind their flags so the default `pm stats` stays token-light; the per-status/per-type distributions (already in `by_status`/`by_type`) zero-fill every configured state so underutilized lifecycle states and item types are visible at a glance.
 `history-redact` rewrites matching history payloads deterministically, recomputes hash chains, and appends an auditable `history_redact` marker entry when changes are applied.
 `history-compact` rewrites long streams into a synthetic checkpoint baseline plus a retained tail (`--before` accepts a 1-based version or ISO timestamp), re-anchors hashes, verifies integrity, and appends an auditable `history_compact` marker when applied.
 `history-repair` re-anchors a drifted history chain when `pm health`/`pm validate --check-history-drift` report stale hashes: it replays the stream, recomputes every before/after hash, repairs legacy patch ops that no longer strictly apply, reconciles the latest hash with the on-disk item, and appends an auditable `history_repair` marker. It never modifies item content and is a safe no-op on a clean stream.

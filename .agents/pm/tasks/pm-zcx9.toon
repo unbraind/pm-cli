@@ -1,0 +1,13 @@
+id: pm-zcx9
+title: "pm aggregate: explicit (unassigned)/(none) labels for blank group keys in all output modes (GH-225)"
+description: "When --group-by assignee (or any nullable dimension) yields a null/blank key, render an explicit (unassigned)/(none) label in terminal and any CSV/JSON-friendly output so it is grep-friendly and unambiguous. JSON keeps null in the structured group value; the display label is explicit."
+type: Task
+status: closed
+priority: 3
+tags[3]: "area:cli",gh-225,governance
+created_at: "2026-06-13T21:54:43.981Z"
+updated_at: "2026-06-13T22:31:59.557Z"
+author: claude-code-agent
+parent: pm-yq7m
+close_reason: pm aggregate rows now carry explicit group_label ((unassigned)/(untagged)/(unparented); multi-field joins field=value) while structured group keeps raw null. Verified. Closes GH-225.
+body: ""

@@ -2766,6 +2766,21 @@
           "flag": "--release"
         },
         {
+          "flag": "--filter-ac-missing"
+        },
+        {
+          "aliases": [
+            "--filter-estimate-missing"
+          ],
+          "flag": "--filter-estimates-missing"
+        },
+        {
+          "flag": "--filter-resolution-missing"
+        },
+        {
+          "flag": "--filter-metadata-missing"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -2866,6 +2881,21 @@
         },
         {
           "flag": "--release"
+        },
+        {
+          "flag": "--filter-ac-missing"
+        },
+        {
+          "aliases": [
+            "--filter-estimate-missing"
+          ],
+          "flag": "--filter-estimates-missing"
+        },
+        {
+          "flag": "--filter-resolution-missing"
+        },
+        {
+          "flag": "--filter-metadata-missing"
         },
         {
           "flag": "--limit"
@@ -2970,6 +3000,21 @@
           "flag": "--release"
         },
         {
+          "flag": "--filter-ac-missing"
+        },
+        {
+          "aliases": [
+            "--filter-estimate-missing"
+          ],
+          "flag": "--filter-estimates-missing"
+        },
+        {
+          "flag": "--filter-resolution-missing"
+        },
+        {
+          "flag": "--filter-metadata-missing"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -3070,6 +3115,21 @@
         },
         {
           "flag": "--release"
+        },
+        {
+          "flag": "--filter-ac-missing"
+        },
+        {
+          "aliases": [
+            "--filter-estimate-missing"
+          ],
+          "flag": "--filter-estimates-missing"
+        },
+        {
+          "flag": "--filter-resolution-missing"
+        },
+        {
+          "flag": "--filter-metadata-missing"
         },
         {
           "flag": "--limit"
@@ -3174,6 +3234,21 @@
           "flag": "--release"
         },
         {
+          "flag": "--filter-ac-missing"
+        },
+        {
+          "aliases": [
+            "--filter-estimate-missing"
+          ],
+          "flag": "--filter-estimates-missing"
+        },
+        {
+          "flag": "--filter-resolution-missing"
+        },
+        {
+          "flag": "--filter-metadata-missing"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -3274,6 +3349,21 @@
         },
         {
           "flag": "--release"
+        },
+        {
+          "flag": "--filter-ac-missing"
+        },
+        {
+          "aliases": [
+            "--filter-estimate-missing"
+          ],
+          "flag": "--filter-estimates-missing"
+        },
+        {
+          "flag": "--filter-resolution-missing"
+        },
+        {
+          "flag": "--filter-metadata-missing"
         },
         {
           "flag": "--limit"
@@ -3378,6 +3468,21 @@
           "flag": "--release"
         },
         {
+          "flag": "--filter-ac-missing"
+        },
+        {
+          "aliases": [
+            "--filter-estimate-missing"
+          ],
+          "flag": "--filter-estimates-missing"
+        },
+        {
+          "flag": "--filter-resolution-missing"
+        },
+        {
+          "flag": "--filter-metadata-missing"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -3478,6 +3583,21 @@
         },
         {
           "flag": "--release"
+        },
+        {
+          "flag": "--filter-ac-missing"
+        },
+        {
+          "aliases": [
+            "--filter-estimate-missing"
+          ],
+          "flag": "--filter-estimates-missing"
+        },
+        {
+          "flag": "--filter-resolution-missing"
+        },
+        {
+          "flag": "--filter-metadata-missing"
         },
         {
           "flag": "--limit"
@@ -4574,6 +4694,21 @@
       "flags": [
         {
           "flag": "--storage"
+        },
+        {
+          "flag": "--metadata-coverage"
+        },
+        {
+          "flag": "--by-assignee"
+        },
+        {
+          "flag": "--by-tag"
+        },
+        {
+          "flag": "--by-priority"
+        },
+        {
+          "flag": "--tag-prefix"
         }
       ],
       "provider": "core"
@@ -5086,6 +5221,21 @@
           "flag": "--filter-release"
         },
         {
+          "flag": "--filter-ac-missing"
+        },
+        {
+          "aliases": [
+            "--filter-estimate-missing"
+          ],
+          "flag": "--filter-estimates-missing"
+        },
+        {
+          "flag": "--filter-resolution-missing"
+        },
+        {
+          "flag": "--filter-metadata-missing"
+        },
+        {
           "flag": "--ids",
           "list": true
         },
@@ -5441,6 +5591,9 @@
         },
         {
           "flag": "--verbose-diagnostics"
+        },
+        {
+          "flag": "--all-affected-ids"
         },
         {
           "flag": "--strict-exit"
@@ -12115,6 +12268,22 @@
             ],
             "type": "string"
           },
+          "filterAcMissing": {
+            "description": "Filter Ac Missing.",
+            "type": "boolean"
+          },
+          "filterEstimatesMissing": {
+            "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterMetadataMissing": {
+            "description": "Filter Metadata Missing.",
+            "type": "boolean"
+          },
+          "filterResolutionMissing": {
+            "description": "Filter Resolution Missing.",
+            "type": "boolean"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
@@ -12379,6 +12548,22 @@
               "id,title,score,matched_fields"
             ],
             "type": "string"
+          },
+          "filterAcMissing": {
+            "description": "Filter Ac Missing.",
+            "type": "boolean"
+          },
+          "filterEstimatesMissing": {
+            "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterMetadataMissing": {
+            "description": "Filter Metadata Missing.",
+            "type": "boolean"
+          },
+          "filterResolutionMissing": {
+            "description": "Filter Resolution Missing.",
+            "type": "boolean"
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
@@ -12645,6 +12830,22 @@
             ],
             "type": "string"
           },
+          "filterAcMissing": {
+            "description": "Filter Ac Missing.",
+            "type": "boolean"
+          },
+          "filterEstimatesMissing": {
+            "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterMetadataMissing": {
+            "description": "Filter Metadata Missing.",
+            "type": "boolean"
+          },
+          "filterResolutionMissing": {
+            "description": "Filter Resolution Missing.",
+            "type": "boolean"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
@@ -12909,6 +13110,22 @@
               "id,title,score,matched_fields"
             ],
             "type": "string"
+          },
+          "filterAcMissing": {
+            "description": "Filter Ac Missing.",
+            "type": "boolean"
+          },
+          "filterEstimatesMissing": {
+            "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterMetadataMissing": {
+            "description": "Filter Metadata Missing.",
+            "type": "boolean"
+          },
+          "filterResolutionMissing": {
+            "description": "Filter Resolution Missing.",
+            "type": "boolean"
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
@@ -13175,6 +13392,22 @@
             ],
             "type": "string"
           },
+          "filterAcMissing": {
+            "description": "Filter Ac Missing.",
+            "type": "boolean"
+          },
+          "filterEstimatesMissing": {
+            "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterMetadataMissing": {
+            "description": "Filter Metadata Missing.",
+            "type": "boolean"
+          },
+          "filterResolutionMissing": {
+            "description": "Filter Resolution Missing.",
+            "type": "boolean"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
@@ -13439,6 +13672,22 @@
               "id,title,score,matched_fields"
             ],
             "type": "string"
+          },
+          "filterAcMissing": {
+            "description": "Filter Ac Missing.",
+            "type": "boolean"
+          },
+          "filterEstimatesMissing": {
+            "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterMetadataMissing": {
+            "description": "Filter Metadata Missing.",
+            "type": "boolean"
+          },
+          "filterResolutionMissing": {
+            "description": "Filter Resolution Missing.",
+            "type": "boolean"
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
@@ -13705,6 +13954,22 @@
             ],
             "type": "string"
           },
+          "filterAcMissing": {
+            "description": "Filter Ac Missing.",
+            "type": "boolean"
+          },
+          "filterEstimatesMissing": {
+            "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterMetadataMissing": {
+            "description": "Filter Metadata Missing.",
+            "type": "boolean"
+          },
+          "filterResolutionMissing": {
+            "description": "Filter Resolution Missing.",
+            "type": "boolean"
+          },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
             "type": "boolean"
@@ -13969,6 +14234,22 @@
               "id,title,score,matched_fields"
             ],
             "type": "string"
+          },
+          "filterAcMissing": {
+            "description": "Filter Ac Missing.",
+            "type": "boolean"
+          },
+          "filterEstimatesMissing": {
+            "description": "Filter Estimates Missing.",
+            "type": "boolean"
+          },
+          "filterMetadataMissing": {
+            "description": "Filter Metadata Missing.",
+            "type": "boolean"
+          },
+          "filterResolutionMissing": {
+            "description": "Filter Resolution Missing.",
+            "type": "boolean"
           },
           "full": {
             "description": "Enable command-specific full/detail output mode when supported, such as deep item reads for get or full payload mode for search/history.",
@@ -19229,9 +19510,25 @@
             "const": "stats",
             "description": "Tool action to execute."
           },
+          "byAssignee": {
+            "description": "By Assignee.",
+            "type": "boolean"
+          },
+          "byPriority": {
+            "description": "By Priority.",
+            "type": "boolean"
+          },
+          "byTag": {
+            "description": "By Tag.",
+            "type": "boolean"
+          },
           "json": {
             "default": true,
             "description": "Emit machine-readable JSON output.",
+            "type": "boolean"
+          },
+          "metadataCoverage": {
+            "description": "Metadata Coverage.",
             "type": "boolean"
           },
           "noExtensions": {
@@ -19264,6 +19561,10 @@
           "storage": {
             "description": "For stats action: include aggregate history-stream storage metrics (total streams/lines/bytes, largest + deepest streams, oldest/newest entries) for compaction and storage planning.",
             "type": "boolean"
+          },
+          "tagPrefix": {
+            "description": "Tag Prefix.",
+            "type": "string"
           },
           "timeoutMs": {
             "description": "Tool execution timeout in milliseconds.",
@@ -19390,6 +19691,10 @@
           "action": {
             "const": "validate",
             "description": "Tool action to execute."
+          },
+          "allAffectedIds": {
+            "description": "All Affected Ids.",
+            "type": "boolean"
           },
           "autoFix": {
             "description": "For validate action, apply the safe, deterministic subset of fix-hint remediations (field backfills) automatically; combine with dryRun to preview and fixScope to grant gated scopes.",

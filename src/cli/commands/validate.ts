@@ -158,6 +158,8 @@ export interface ValidateCommandOptions {
   includePmInternals?: boolean;
   verboseFileLists?: boolean;
   verboseDiagnostics?: boolean;
+  /** Emit complete *_item_ids diagnostic lists (no 5-item cap); implied by --json. */
+  allAffectedIds?: boolean;
   checkHistoryDrift?: boolean;
   checkCommandReferences?: boolean;
   scanMode?: string;
@@ -1668,6 +1670,11 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   const checks: ValidateCheck[] = [];
   const warnings = [...new Set(itemReadWarnings)];
   const fixHintsEnabled = options.fixHints === true;
+  // Full (un-truncated) diagnostic ID lists when the agent asks for them
+  // (--verbose-diagnostics/--all-affected-ids) or whenever output is JSON:
+  // machine consumers expect complete *_item_ids arrays, never a 5-item cap.
+  const fullDiagnostics =
+    options.verboseDiagnostics === true || options.allAffectedIds === true || global.json === true;
   const record = (built: { check: ValidateCheck; warnings: string[] }): void => {
     if (fixHintsEnabled) {
       attachValidateFixHints(built.check, built.warnings);
@@ -1682,12 +1689,12 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   let staleLinkPruneRows: StaleLinkPruneRow[] = [];
 
   if (requestedChecks.has("metadata")) {
-    const built = buildMetadataCheck(items, metadataPolicy, statusRegistry, Boolean(options.verboseDiagnostics));
+    const built = buildMetadataCheck(items, metadataPolicy, statusRegistry, fullDiagnostics);
     closeReasonBackfillRows = built.closeReasonBackfillRows;
     record(built);
   }
   if (requestedChecks.has("resolution")) {
-    const built = buildResolutionCheck(items, statusRegistry, Boolean(options.verboseDiagnostics));
+    const built = buildResolutionCheck(items, statusRegistry, fullDiagnostics);
     resolutionBackfillRows = built.resolutionBackfillRows;
     record(built);
   }
@@ -1698,7 +1705,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
       dependencyCycleSeverity,
       statusRegistry,
       lifecyclePatternPolicy,
-      Boolean(options.verboseDiagnostics),
+      fullDiagnostics,
     );
     terminalParentFixRows = built.terminalParentFixRows;
     record(built);
@@ -1716,10 +1723,10 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
     record(built);
   }
   if (requestedChecks.has("command_references")) {
-    record(buildCommandReferencesCheck(items, settings.id_prefix, Boolean(options.verboseDiagnostics)));
+    record(buildCommandReferencesCheck(items, settings.id_prefix, fullDiagnostics));
   }
   if (requestedChecks.has("history_drift")) {
-    record(await buildHistoryDriftCheck(pmRoot, items, Boolean(options.verboseDiagnostics)));
+    record(await buildHistoryDriftCheck(pmRoot, items, fullDiagnostics));
   }
 
   // Remediation phase (pm-c3sz / pm-8jss / pm-0v2m). Plans are derived from

@@ -505,6 +505,11 @@ export function normalizeListOptions(options: Record<string, unknown>): ListOpti
     order: readListOptionString(options, "order"),
     tree: options.tree === true ? true : undefined,
     treeDepth: readListOptionString(options, "treeDepth"),
+    filterAcMissing: options.filterAcMissing === true ? true : undefined,
+    filterEstimatesMissing:
+      options.filterEstimatesMissing === true || options.filterEstimateMissing === true ? true : undefined,
+    filterResolutionMissing: options.filterResolutionMissing === true ? true : undefined,
+    filterMetadataMissing: options.filterMetadataMissing === true ? true : undefined,
   };
   for (const [key, value] of Object.entries(options)) {
     if (Object.hasOwn(normalized, key)) {

@@ -57,6 +57,13 @@ export interface AggregateOptions {
 
 export interface AggregateRow {
   group: AggregateGroupRecord;
+  /**
+   * Human-readable display label for this group. Blank/null group values render
+   * with an explicit "(unassigned)"-style label (per dimension) so terminal and
+   * grep-based consumers are never faced with an ambiguous empty key. The
+   * structured `group` record keeps the raw null for machine consumers.
+   */
+  group_label: string;
   count: number;
   open?: number;
   in_progress?: number;
@@ -213,6 +220,38 @@ function buildGroupKey(groupBy: AggregateGroupField[], group: AggregateGroupReco
   return groupBy.map((field) => `${field}:${JSON.stringify(group[field] ?? null)}`).join("|");
 }
 
+/** Explicit display label for an empty/blank group value, keyed by dimension. */
+const EMPTY_AGGREGATE_GROUP_LABELS: Record<AggregateGroupField, string> = {
+  parent: "(unparented)",
+  type: "(untyped)",
+  priority: "(no priority)",
+  status: "(no status)",
+  assignee: "(unassigned)",
+  tags: "(untagged)",
+  sprint: "(no sprint)",
+  release: "(no release)",
+};
+
+/** Render a single group field's value, substituting an explicit label for null. */
+function formatGroupFieldLabel(field: AggregateGroupField, value: AggregateGroupValue | undefined): string {
+  if (value === null || value === undefined || value === "") {
+    return EMPTY_AGGREGATE_GROUP_LABELS[field];
+  }
+  return String(value);
+}
+
+/**
+ * Build the human-readable label for an aggregate row. Single-field grouping
+ * yields the bare (possibly substituted) value; multi-field grouping joins each
+ * "field=value" pair so composite groups stay unambiguous.
+ */
+function buildGroupLabel(groupBy: AggregateGroupField[], group: AggregateGroupRecord): string {
+  if (groupBy.length === 1) {
+    return formatGroupFieldLabel(groupBy[0], group[groupBy[0]]);
+  }
+  return groupBy.map((field) => `${field}=${formatGroupFieldLabel(field, group[field])}`).join(" | ");
+}
+
 function compareAggregateRows(
   left: AggregateRow,
   right: AggregateRow,
@@ -247,7 +286,8 @@ function readNumericAggregateValue(item: AggregateListedItem, field: string): nu
 }
 
 interface AggregateAccumulator {
-  row: AggregateRow;
+  /** group_label is derived once at finalization, so the accumulator omits it. */
+  row: Omit<AggregateRow, "group_label">;
   numeric_count: number;
   numeric_sum: number;
   null_count: number;
@@ -371,6 +411,7 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
     .map((entry) => {
       const withNumeric: AggregateRow = {
         ...entry.row,
+        group_label: buildGroupLabel(groupBy, entry.row.group),
       };
       if (includeCompletion) {
         withNumeric.open = entry.open_count;

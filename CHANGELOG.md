@@ -4,11 +4,21 @@
 
 ### Added
 
+- Metadata governance & coverage observability \(missing-field filters, stats breakdowns, validate full-id lists, aggregate explicit labels\) ([pm-yq7m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yq7m.toon))
 - pm close: short aliases -m/-r/-d for --message/--reason/--duplicate-of \(GH-226\) ([pm-i1mu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-i1mu.toon))
 - pm create/update --body-file: load body markdown from a file \(GH-214\) ([pm-7c48](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7c48.toon))
 
+### Changed
+
+- pm update-many: --filter-ac-missing/--filter-estimates-missing/--filter-resolution-missing selection filters for bulk backfill \(GH-220\) ([pm-wbak](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wbak.toon))
+
 ### Other
 
+- pm validate: --all-affected-ids flag + never truncate ID lists in JSON mode \(GH-224\) ([pm-o0d2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-o0d2.toon))
+- pm aggregate: explicit \(unassigned\)/\(none\) labels for blank group keys in all output modes \(GH-225\) ([pm-zcx9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zcx9.toon))
+- pm stats: --by-assignee/--by-tag/--by-priority breakdowns + --metadata-coverage + lifecycle/type adoption \(GH-213/218/219\) ([pm-gq27](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-gq27.toon))
+- pm list: --filter-ac-missing/--filter-estimates-missing/--filter-resolution-missing/--filter-metadata-missing \(GH-228\) ([pm-fryg](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-fryg.toon))
+- Shared core/governance/metadata-coverage primitive: missing-field predicates + coverage % + grouped lifecycle counts ([pm-hm1q](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-hm1q.toon))
 - pm close: when require\_close\_reason is on, accept --resolution text as the close reason instead of hard-blocking ([pm-7x8d](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-7x8d.toon))
 
 ## 2026.6.13 - 2026-06-13

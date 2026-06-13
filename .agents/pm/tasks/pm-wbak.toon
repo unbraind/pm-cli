@@ -1,0 +1,13 @@
+id: pm-wbak
+title: "pm update-many: --filter-ac-missing/--filter-estimates-missing/--filter-resolution-missing selection filters for bulk backfill (GH-220)"
+description: Add the same missing-metadata selection filters to pm update-many so agents can bulk-backfill (e.g. pm update-many --filter-status open --filter-ac-missing --ac 'TBD'). Reuse the shared predicate. Wire commander+contracts+cli-contracts+docs+completions.
+type: Task
+status: closed
+priority: 2
+tags[3]: "area:cli",gh-220,governance
+created_at: "2026-06-13T21:54:36.937Z"
+updated_at: "2026-06-13T22:31:53.166Z"
+author: claude-code-agent
+parent: pm-yq7m
+close_reason: pm update-many missing-metadata selectors shipped (reuse runList filtering via options.list; rollback rejects them). Verified bulk-backfill selection. Closes GH-220.
+body: ""

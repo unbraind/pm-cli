@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
+// Strip the derived display label so these structural assertions stay focused on
+// group/count fields (group_label is asserted in the aggregate unit spec).
+function stripGroupLabel<T extends { group_label?: string }>(row: T): Omit<T, "group_label"> {
+  const { group_label: _label, ...rest } = row;
+  return rest;
+}
+
 function createItem(
   context: TempPmContext,
   params: {
@@ -80,7 +87,7 @@ describe("aggregate and dedupe-audit CLI integration", () => {
       expect(payload.filters.group_by).toEqual(["parent", "type"]);
       expect(payload.filters.count).toBe(true);
       expect(payload.count).toBe(2);
-      expect(payload.groups).toEqual([
+      expect(payload.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             parent: parentId,
@@ -109,7 +116,7 @@ describe("aggregate and dedupe-audit CLI integration", () => {
       expect(typeStatusPayload.filters.group_by).toEqual(["type", "status"]);
       expect(typeStatusPayload.filters.count).toBe(true);
       expect(typeStatusPayload.count).toBe(4);
-      expect(typeStatusPayload.groups).toEqual([
+      expect(typeStatusPayload.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             type: "Feature",
@@ -152,7 +159,7 @@ describe("aggregate and dedupe-audit CLI integration", () => {
       expect(typeOnlyPayload.filters.group_by).toEqual(["type"]);
       expect(typeOnlyPayload.filters.count).toBe(true);
       expect(typeOnlyPayload.count).toBe(1);
-      expect(typeOnlyPayload.groups).toEqual([
+      expect(typeOnlyPayload.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             type: "Task",

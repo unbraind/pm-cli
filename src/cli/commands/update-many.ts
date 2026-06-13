@@ -538,6 +538,10 @@ function hasListFilters(list: ListOptions | undefined, status: string | undefine
     isActive(list?.parent) ||
     isActive(list?.sprint) ||
     isActive(list?.release) ||
+    list?.filterAcMissing === true ||
+    list?.filterEstimatesMissing === true ||
+    list?.filterResolutionMissing === true ||
+    list?.filterMetadataMissing === true ||
     isActive(list?.limit) ||
     isActive(list?.offset)
   );
