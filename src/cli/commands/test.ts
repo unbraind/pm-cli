@@ -1023,6 +1023,9 @@ async function runLinkedTestCommand(
       resolve(value);
     };
     child.on("exit", (exitCode, exitSignal) => {
+      if (settled) {
+        return;
+      }
       pipeCloseGraceTimer = setTimeout(() => {
         settle({
           code: exitCode,
