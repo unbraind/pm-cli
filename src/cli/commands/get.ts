@@ -278,9 +278,10 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
     let count = 0;
     for (const candidate of corpus) {
       if (candidate.parent !== located.id) continue;
+      const candidateStatus = typeof candidate.status === "string" && candidate.status.length > 0 ? candidate.status : "unknown";
       count += 1;
-      byStatus[candidate.status] = (byStatus[candidate.status] ?? 0) + 1;
-      if (!isTerminalStatus(candidate.status, statusRegistry)) {
+      byStatus[candidateStatus] = (byStatus[candidateStatus] ?? 0) + 1;
+      if (!isTerminalStatus(candidateStatus, statusRegistry)) {
         active += 1;
       }
     }

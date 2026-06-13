@@ -2205,6 +2205,10 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
       const context = error instanceof PmCliError ? error.context : undefined;
       const enrichedContext = buildPmCliRecoveryContext(context, invocationArgv, errorMessage);
       const classification = classifyPmCliError(errorMessage, enrichedContext);
+      const renderedError = jsonErrors
+        ? JSON.stringify(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext), null, 2)
+        : formatPmCliErrorForDisplay(errorMessage, enrichedContext);
+      printError(renderedError);
       const { errorCategory, commandResolution } = await emitTelemetryCommandError({
         command: attemptedCommand,
         errorCode: classification.code,
@@ -2243,11 +2247,6 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
       });
       if (loggedHandledErrorToSentry) {
         sentryCaptureCliError(wrapThrownErrorForSentry(error, errorMessage));
-      }
-      if (jsonErrors) {
-        printError(JSON.stringify(formatPmCliErrorForJson(errorMessage, exitCode, enrichedContext), null, 2));
-      } else {
-        printError(formatPmCliErrorForDisplay(errorMessage, enrichedContext));
       }
       if (loggedHandledErrorToSentry) {
         await sentryFlush(HANDLED_ERROR_SENTRY_FLUSH_TIMEOUT_MS);
