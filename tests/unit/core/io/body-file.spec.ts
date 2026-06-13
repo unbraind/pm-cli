@@ -7,10 +7,7 @@ import { PmCliError } from "../../../../src/core/shared/errors.js";
 
 async function expectRejectionCode(promise: Promise<unknown>, code: string): Promise<void> {
   await expect(promise).rejects.toBeInstanceOf(PmCliError);
-  await promise.catch((error: unknown) => {
-    expect(error).toBeInstanceOf(PmCliError);
-    expect((error as PmCliError).context.code).toBe(code);
-  });
+  await expect(promise).rejects.toMatchObject({ context: expect.objectContaining({ code }) });
 }
 
 describe("resolveBodyFileContent (GH-214 --body-file)", () => {
@@ -53,13 +50,37 @@ describe("resolveBodyFileContent (GH-214 --body-file)", () => {
     );
   });
 
-  it("wraps read failures in an actionable PmCliError", async () => {
+  it("wraps read failures with no errno in an actionable PmCliError", async () => {
     await expectRejectionCode(
       resolveBodyFileContent("missing.md", undefined, async () => {
-        throw new Error("ENOENT");
+        throw new Error("boom without code");
       }),
       "body_file_unreadable",
     );
+  });
+
+  it("surfaces the underlying errno code in the read-failure message", async () => {
+    const failure = Object.assign(new Error("denied"), { code: "EACCES" });
+    await expect(
+      resolveBodyFileContent("locked.md", undefined, async () => {
+        throw failure;
+      }),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining("(EACCES)"),
+      context: expect.objectContaining({ code: "body_file_unreadable" }),
+    });
+  });
+
+  it("gives a directory-specific message when the path is a directory (EISDIR)", async () => {
+    const failure = Object.assign(new Error("is dir"), { code: "EISDIR" });
+    await expect(
+      resolveBodyFileContent("some-dir", undefined, async () => {
+        throw failure;
+      }),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining("is a directory"),
+      context: expect.objectContaining({ code: "body_file_unreadable" }),
+    });
   });
 
   describe("default filesystem reader", () => {

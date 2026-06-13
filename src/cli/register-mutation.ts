@@ -178,7 +178,7 @@ export function registerMutationCommands(program: Command): void {
       if (typeof options.bodyFile === "string") {
         options.body = await resolveBodyFileContent(
           options.bodyFile,
-          typeof options.body === "string" ? options.body : undefined,
+          options.body !== undefined ? String(options.body) : undefined,
         );
         delete options.bodyFile;
       }
@@ -252,7 +252,7 @@ export function registerMutationCommands(program: Command): void {
       if (typeof options.bodyFile === "string") {
         options.body = await resolveBodyFileContent(
           options.bodyFile,
-          typeof options.body === "string" ? options.body : undefined,
+          options.body !== undefined ? String(options.body) : undefined,
         );
         delete options.bodyFile;
       }

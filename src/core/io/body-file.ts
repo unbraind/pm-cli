@@ -48,14 +48,22 @@ export async function resolveBodyFileContent(
   }
   try {
     return await readFileImpl(path);
-  } catch {
+  } catch (error: unknown) {
+    // Preserve the underlying errno (ENOENT/EACCES/EISDIR/...) so the failure
+    // is debuggable, and tailor the directory case (a real footgun: pointing
+    // --body-file at a folder) to an exact message instead of a generic one.
+    const errno = (error as NodeJS.ErrnoException | undefined)?.code;
+    const isDirectory = errno === "EISDIR";
+    const detail = errno ? ` (${errno})` : "";
     throw new PmCliError(
-      `--body-file could not read "${path}". Check that the file exists and is readable.`,
+      isDirectory
+        ? `--body-file "${path}" is a directory, not a file. Point it at a readable file.`
+        : `--body-file could not read "${path}"${detail}. Check that the file exists and is readable.`,
       EXIT_CODE.NOT_FOUND,
       {
         code: "body_file_unreadable",
         required: "Point --body-file at an existing, readable file.",
-        why: "The body content is loaded from the file at the supplied path, so an unreadable path cannot produce a body.",
+        why: `The body content is loaded from the file at the supplied path, so an unreadable path cannot produce a body${errno ? ` (underlying error: ${errno})` : ""}.`,
         nextSteps: [`Verify the path: ls -l "${path}"`, "Or pass the body inline with --body <text>."],
       },
     );
