@@ -332,7 +332,7 @@ describe("runGet and runAppend", () => {
       const openChildSource = await readFile(openChildPath, "utf8");
       await writeFile(
         openChildPath,
-        openChildSource.replace(`parent: ${epicId}`, `parent: "${epicId.toUpperCase()}"`).replace("status: open", 'status: " open "'),
+        openChildSource.replace(`parent: ${epicId}`, `parent: "${epicId.toUpperCase()}"`).replace("status: open", 'status: " Open "'),
         "utf8",
       );
 
