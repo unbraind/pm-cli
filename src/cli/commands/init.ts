@@ -309,7 +309,7 @@ function summarizeInstalledPackages(result: ExtensionCommandResult): InitInstall
     installed_all: details.installed_all === true,
     installed_count: typeof details.installed_count === "number" ? details.installed_count : 0,
     packages: Array.isArray(details.packages)
-      ? details.packages.filter((entry) => typeof entry === "object" && entry !== null).map((entry) => ({
+      ? details.packages.filter((entry) => typeof entry === "object" && entry !== null && !Array.isArray(entry)).map((entry) => ({
           alias: typeof entry.alias === "string" ? entry.alias : "",
           ok: entry.ok === true,
         }))

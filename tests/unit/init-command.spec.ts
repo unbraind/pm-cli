@@ -97,6 +97,7 @@ describe("runInit", () => {
             { alias: "calendar", ok: true },
             { alias: "guide", ok: false },
             null,
+            [{ alias: "array-package", ok: true }],
           ],
         },
       }),
