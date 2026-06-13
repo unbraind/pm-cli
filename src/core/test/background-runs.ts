@@ -954,3 +954,15 @@ export async function readBackgroundTestRunLogs(
     stderr: stream === "stderr" || stream === "both" ? tailLines(stderrRaw, resolvedTail) : [],
   };
 }
+
+export const _testOnly = {
+  buildResourceSnapshot,
+  evaluateWorkerResult,
+  isPidRunning,
+  parseProgressLine,
+  readLinuxCpuSeconds,
+  readLinuxRssBytes,
+  refreshRunIfStale,
+  splitLines,
+  tailLines,
+};

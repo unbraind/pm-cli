@@ -506,3 +506,14 @@ export async function runRestore(
     await releaseLock();
   }
 }
+
+export const _testOnlyRestoreCommand = {
+  applyHistoryPatch,
+  changedFields,
+  ensureMaterializedRestoreTarget,
+  ensureReplayTarget,
+  extractPatchFailureContext,
+  replayCurrentDocument,
+  replayToTarget,
+  resolveRestoreSubject,
+};

@@ -657,6 +657,38 @@ function collectDescendants(
   return result;
 }
 
+export const _testOnly = {
+  buildBlockers,
+  buildChildrenByParent,
+  buildHotFiles,
+  buildProgress,
+  buildRecentlyCreated,
+  buildStaleness,
+  buildTestHealth,
+  buildUnparented,
+  collectDescendants,
+  compareCriticalItems,
+  compareOptionalDeadline,
+  compareOptionalOrder,
+  completionPct,
+  dateTokenForTimestamp,
+  filterTerminalCalendarEvents,
+  isBlockedStatus,
+  isClosedStatus,
+  isInProgressStatus,
+  isOpenStatus,
+  normalizedParentId,
+  parseActivityLimit,
+  parseContextLimit,
+  parseContextTimestampMs,
+  parseStaleThresholdDays,
+  sortableTimestamp,
+  statusRank,
+  stripListProjectionFlags,
+  summarizeAgenda,
+  toContextFocusItem,
+};
+
 async function buildActivity(
   activityLimit: number,
   global: GlobalOptions,

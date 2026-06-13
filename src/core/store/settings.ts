@@ -1162,3 +1162,18 @@ export async function writeSettings(pmRoot: string, settings: PmSettings, op = S
     clearSettingsReadCache(pmRoot);
   }
 }
+
+export const settingsStoreTestOnly = {
+  hasExplicitItemFormat,
+  buildSettingsPersistSourceSnapshot,
+  normalizeExtensionPolicyOverride,
+  normalizeExtensionPolicyOverrides,
+  normalizeExtensionPolicyMode,
+  normalizeExtensionSandboxProfile,
+  normalizeExtensionTrustMode,
+  normalizeLowerStringList,
+  normalizeStringList,
+  normalizeValidationMetadataRequiredFields,
+  resolvePersistedFileBackedSchemaSections,
+  selectedSettingsReadCacheSignaturesEqual,
+};

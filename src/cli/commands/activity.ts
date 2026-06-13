@@ -122,6 +122,17 @@ async function listHistoryFiles(historyDir: string): Promise<string[]> {
   }
 }
 
+export const _testOnly = {
+  parseNonEmptyFilter,
+  parseRangeBound,
+  includeByTimeWindow,
+  limitEntries,
+  readActivityString,
+  normalizeActivityEntry,
+  sortActivity,
+  listHistoryFiles,
+};
+
 export async function runActivity(options: ActivityCommandOptions, global: GlobalOptions): Promise<ActivityResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

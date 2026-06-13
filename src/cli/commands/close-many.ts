@@ -419,3 +419,13 @@ export async function runCloseMany(options: CloseManyCommandOptions, global: Glo
     ids: closedIds,
   };
 }
+
+export const _testOnly = {
+  activeListOptions,
+  buildActiveChildrenByParent,
+  hasCloseManyFilters,
+  hasCloseManyRollbackConflicts,
+  hierarchyDepth,
+  rejectBlankIdsFilter,
+  resolveReason,
+};

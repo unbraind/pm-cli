@@ -4,14 +4,23 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  _testOnlyTestCommand as testInternals,
   classifyLinkedTestFailure,
   countFailureCategories,
   extractReferencedPmItemIdsFromCommand,
   resolveLinkedTestFailureExitCode,
   runTest,
+  summarizeContextPreflight,
 } from "../../src/cli/commands/test.js";
+import { appendTrackedTestRunSummary } from "../../src/core/test/item-test-run-tracking.js";
+import {
+  describeLinkedTestEntries,
+  parseOnlyIndexValue,
+  resolveLinkedTestRunSelection,
+} from "../../src/core/test/run-selectors.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
+import { readSettings } from "../../src/core/store/settings.js";
 import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
@@ -100,6 +109,27 @@ async function overwriteTaskTests(
   await writeFile(taskPath, serializeItemDocument(parsed, { format }), "utf8");
 }
 
+async function overwriteTaskTestRuns(
+  context: TempPmContext,
+  id: string,
+  testRuns: Array<Record<string, unknown>>,
+): Promise<void> {
+  const toonPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+  const markdownPath = path.join(context.pmPath, "tasks", `${id}.md`);
+  let taskPath = toonPath;
+  let source: string;
+  try {
+    source = await readFile(taskPath, "utf8");
+  } catch {
+    taskPath = markdownPath;
+    source = await readFile(taskPath, "utf8");
+  }
+  const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
+  const parsed = parseItemDocument(source, { format });
+  parsed.metadata.test_runs = testRuns as unknown as never;
+  await writeFile(taskPath, serializeItemDocument(parsed, { format }), "utf8");
+}
+
 async function writeSchemaTypeExtension(pmRoot: string, extensionDirName: string, typeName: string): Promise<void> {
   const extensionDir = path.join(pmRoot, "extensions", extensionDirName);
   await mkdir(extensionDir, { recursive: true });
@@ -132,6 +162,37 @@ async function writeSchemaTypeExtension(pmRoot: string, extensionDirName: string
 }
 
 describe("runTest", () => {
+  it("summarizes linked-test statuses and pm context preflight counters", () => {
+    expect(
+      summarizeContextPreflight([
+        { status: "passed", execution_context: { is_pm_command: false } },
+        {
+          status: "failed",
+          execution_context: {
+            is_pm_command: true,
+            is_pm_tracker_read_command: true,
+            mismatch_detected: true,
+            auto_pm_context_applied: true,
+          },
+        },
+        {
+          status: "skipped",
+          execution_context: {
+            is_pm_command: true,
+            is_pm_tracker_read_command: false,
+            mismatch_detected: false,
+            auto_remediated: false,
+          },
+        },
+      ] as never),
+    ).toEqual({
+      checked_pm_commands: 2,
+      tracker_read_commands: 1,
+      mismatches: 1,
+      auto_remediated: 1,
+    });
+  });
+
   it("normalizes failure exit codes for timeout/maxBuffer edge cases", () => {
     expect(
       resolveLinkedTestFailureExitCode({
@@ -687,6 +748,100 @@ describe("runTest", () => {
     expect(counts.empty_run).toBe(1);
     expect(counts.timeout).toBe(1);
     expect(counts.infra_collision).toBe(0);
+  });
+
+  it("covers pure linked-test helpers for context modes, parsing, sandbox copy, and json paths", async () => {
+    const previousAuthor = process.env.PM_AUTHOR;
+    const previousRunId = process.env.PM_BACKGROUND_TEST_RUN_ID;
+    try {
+      delete process.env.PM_AUTHOR;
+      delete process.env.PM_BACKGROUND_TEST_RUN_ID;
+      expect(testInternals.resolveAuthor(undefined, "fallback-author")).toBe("fallback-author");
+      process.env.PM_AUTHOR = " env-author ";
+      expect(testInternals.resolveAuthor(undefined, "fallback-author")).toBe("env-author");
+      expect(testInternals.resolveAuthor("   ", "fallback-author")).toBe("unknown");
+      process.env.PM_BACKGROUND_TEST_RUN_ID = " run-from-env ";
+      expect(testInternals.resolveTrackedRunId("test")).toBe("run-from-env");
+    } finally {
+      if (previousAuthor === undefined) {
+        delete process.env.PM_AUTHOR;
+      } else {
+        process.env.PM_AUTHOR = previousAuthor;
+      }
+      if (previousRunId === undefined) {
+        delete process.env.PM_BACKGROUND_TEST_RUN_ID;
+      } else {
+        process.env.PM_BACKGROUND_TEST_RUN_ID = previousRunId;
+      }
+    }
+
+    expect(testInternals.summarizeRunResultStatuses([
+      { status: "passed" },
+      { status: "failed" },
+      { status: "skipped" },
+      { status: "unknown" },
+    ] as never)).toEqual({ passed: 1, failed: 1, skipped: 2 });
+    expect(testInternals.ensureScope(undefined)).toBe("project");
+    expect(() => testInternals.ensureScope("workspace")).toThrow('Invalid scope "workspace"');
+    expect(testInternals.parsePmContextMode(undefined)).toBe("schema");
+    expect(testInternals.parsePmContextMode(" AUTO ")).toBe("auto");
+    expect(() => testInternals.parsePmContextMode("bad")).toThrow("Invalid --pm-context value");
+    expect(testInternals.resolveLinkedTestRequestedContextMode({ pm_context_mode: "tracker" } as never, "schema", false)).toBe(
+      "tracker",
+    );
+    expect(testInternals.resolveLinkedTestRequestedContextMode({ pm_context_mode: "tracker" } as never, "schema", true)).toBe(
+      "schema",
+    );
+    expect(testInternals.resolveLinkedTestEffectiveContextMode("auto", true)).toBe("tracker");
+    expect(testInternals.resolveLinkedTestEffectiveContextMode("auto", false)).toBe("schema");
+    expect(testInternals.hasLinkedTestAssertions({ assert_stdout_contains: ["ok"] } as never)).toBe(true);
+    expect(testInternals.hasLinkedTestAssertions({ assert_json_field_equals: { ok: true } } as never)).toBe(true);
+    expect(testInternals.hasLinkedTestAssertions({} as never)).toBe(false);
+    expect(testInternals.commandInvokesPmCli("A=1 pm get pm-123 --json && echo done")).toBe(true);
+    expect(testInternals.commandInvokesPmCli("echo pm get pm-123")).toBe(false);
+    expect(testInternals.commandInvokesPmTrackerReadCommand("pm get pm-123 --json")).toBe(true);
+    expect(testInternals.commandInvokesPmTrackerReadCommand("pm create --title x")).toBe(false);
+    expect(testInternals.resolveDirectRunnerSubcommand({ subcommand: "vitest", args: [] })).toBe("vitest");
+    expect(testInternals.resolveDirectRunnerSubcommand(null)).toBeUndefined();
+    expect(testInternals.splitJsonPathSegments("items[0].status")).toEqual(["items", 0, "status"]);
+    expect(testInternals.splitJsonPathSegments("items[-1]")).toEqual(["items", "-1"]);
+    expect(testInternals.splitJsonPathSegments("items[]")).toEqual(["items"]);
+    expect(testInternals.readJsonPathValue({ items: [{ status: "ok" }] }, "items[0].status")).toEqual({
+      found: true,
+      value: "ok",
+    });
+    expect(testInternals.readJsonPathValue({ ok: true }, "   ")).toEqual({
+      found: false,
+      value: undefined,
+    });
+    expect(testInternals.readJsonPathValue({ items: [{ status: "ok" }] }, "items.status")).toEqual({
+      found: false,
+      value: undefined,
+    });
+    expect(testInternals.readJsonPathValue({ items: [] }, "items[1].status")).toEqual({
+      found: false,
+      value: undefined,
+    });
+
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-test-command-helpers-"));
+    try {
+      const source = path.join(tempRoot, "source");
+      const target = path.join(tempRoot, "target", "copied.txt");
+      await mkdir(source, { recursive: true });
+      await writeFile(path.join(source, "copied.txt"), "copy me", "utf8");
+      await testInternals.copyIntoSandboxIfPresent(path.join(source, "missing.txt"), path.join(tempRoot, "missing.txt"));
+      await testInternals.copyIntoSandboxIfPresent(path.join(source, "copied.txt"), target);
+      expect(await readFile(target, "utf8")).toBe("copy me");
+      await mkdir(path.join(source, "pm", "tasks"), { recursive: true });
+      await writeFile(path.join(source, "pm", "tasks", "pm-a.toon"), "item", "utf8");
+      await mkdir(path.join(source, "pm", "history"), { recursive: true });
+      await writeFile(path.join(source, "pm", "history", "pm-a.jsonl"), "history", "utf8");
+      expect(await testInternals.countLinkedTestItemFiles(path.join(source, "pm"))).toBe(1);
+      await testInternals.seedLinkedTestTrackerData(path.join(source, "pm"), path.join(tempRoot, "sandbox-pm"));
+      expect(await readFile(path.join(tempRoot, "sandbox-pm", "tasks", "pm-a.toon"), "utf8")).toBe("item");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
   });
 
   it("rejects sandbox-unsafe test-runner commands and allows sandbox-safe variants", async () => {
@@ -1817,6 +1972,99 @@ describe("runTest", () => {
     });
   });
 
+  it("settles on normal close before the pipe grace fallback even with invalid grace env", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-normal-close-invalid-pipe-grace");
+      await runTest(
+        id,
+        {
+          add: ['command=node -e "process.stdout.write(\'normal-close\')",scope=project'],
+          message: "seed normal close command",
+        },
+        { path: context.pmPath },
+      );
+
+      const previousPipeCloseGrace = process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
+      process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS = "not-a-number";
+      try {
+        const startedAt = Date.now();
+        const run = await runTest(
+          id,
+          {
+            run: true,
+            timeout: "5",
+          },
+          { path: context.pmPath },
+        );
+        const elapsedMs = Date.now() - startedAt;
+
+        expect(elapsedMs).toBeLessThan(1000);
+        expect(run.run_results).toHaveLength(1);
+        expect(run.run_results[0]?.status).toBe("passed");
+        expect(run.run_results[0]?.stdout).toBe("normal-close");
+        expect(run.run_results[0]?.exit_code).toBe(0);
+      } finally {
+        if (previousPipeCloseGrace === undefined) {
+          delete process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
+        } else {
+          process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS = previousPipeCloseGrace;
+        }
+      }
+    });
+  });
+
+  it("finishes when a linked command exits but a descendant keeps inherited pipes open", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-inherited-pipe-descendant");
+      const scriptPath = path.join(context.tempRoot, "inherited-pipe-descendant.cjs");
+      await writeFile(
+        scriptPath,
+        [
+          "const { spawn } = require('node:child_process');",
+          "const child = spawn(process.execPath, ['-e', 'setTimeout(() => process.exit(0), 2000)'], { detached: true, stdio: 'inherit' });",
+          "child.unref();",
+          "process.exit(0);",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await runTest(
+        id,
+        {
+          add: [`command=${process.execPath} ${scriptPath},scope=project`],
+          message: "seed inherited pipe descendant command",
+        },
+        { path: context.pmPath },
+      );
+
+      const previousPipeCloseGrace = process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
+      process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS = "20";
+      try {
+        const startedAt = Date.now();
+        const run = await runTest(
+          id,
+          {
+            run: true,
+            timeout: "5",
+          },
+          { path: context.pmPath },
+        );
+        const elapsedMs = Date.now() - startedAt;
+
+        expect(elapsedMs).toBeLessThan(3000);
+        expect(run.run_results).toHaveLength(1);
+        expect(run.run_results[0]?.status).toBe("passed");
+        expect(run.run_results[0]?.exit_code).toBe(0);
+      } finally {
+        if (previousPipeCloseGrace === undefined) {
+          delete process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
+        } else {
+          process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS = previousPipeCloseGrace;
+        }
+      }
+    });
+  });
+
   it("emits heartbeat progress to stderr for interactive terminal runs", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "linked-test-heartbeat-progress");
@@ -2128,6 +2376,231 @@ describe("runTest", () => {
     });
   });
 
+  it("does not record item test_runs summaries when tracking is disabled", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "skip-test-run-summary-when-disabled");
+      await runTest(
+        id,
+        {
+          add: ["command=node --version,scope=project"],
+        },
+        { path: context.pmPath },
+      );
+      await setTestResultTracking(context.pmPath, false);
+
+      const result = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.run_results[0]?.status).toBe("passed");
+      const frontMatter = await loadTaskFrontMatter(context, id);
+      expect(frontMatter.test_runs).toBeUndefined();
+    });
+  });
+
+  it("normalizes invalid background metadata while tracking test_runs summaries", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "track-test-run-invalid-background-metadata");
+      await runTest(
+        id,
+        {
+          add: ["command=node --version,scope=project"],
+        },
+        { path: context.pmPath },
+      );
+      await setTestResultTracking(context.pmPath, true);
+
+      const previousRunId = process.env.PM_BACKGROUND_TEST_RUN_ID;
+      const previousAttempt = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT;
+      const previousResumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM;
+      process.env.PM_BACKGROUND_TEST_RUN_ID = "  ";
+      process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT = "not-a-number";
+      process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM = "   ";
+      try {
+        const result = await runTest(
+          id,
+          {
+            run: true,
+            timeout: "20",
+          },
+          { path: context.pmPath },
+        );
+        expect(result.warnings).toBeUndefined();
+        const frontMatter = await loadTaskFrontMatter(context, id);
+        const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+        expect(testRuns).toHaveLength(1);
+        expect(testRuns[0]?.run_id).toMatch(/^test-local-/);
+        expect(testRuns[0]).toMatchObject({
+          kind: "test",
+          status: "passed",
+        });
+        expect(testRuns[0]?.attempt).toBeUndefined();
+        expect(testRuns[0]?.resumed_from).toBeUndefined();
+      } finally {
+        if (previousRunId === undefined) {
+          delete process.env.PM_BACKGROUND_TEST_RUN_ID;
+        } else {
+          process.env.PM_BACKGROUND_TEST_RUN_ID = previousRunId;
+        }
+        if (previousAttempt === undefined) {
+          delete process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT;
+        } else {
+          process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT = previousAttempt;
+        }
+        if (previousResumedFrom === undefined) {
+          delete process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM;
+        } else {
+          process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM = previousResumedFrom;
+        }
+      }
+    });
+  });
+
+  it("bounds and normalizes tracked test_run history when appending directly", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "append-tracked-test-run-normalization");
+      await overwriteTaskTestRuns(context, id, [
+        {
+          run_id: "   ",
+          kind: "test",
+          status: "passed",
+          started_at: "2026-01-01T00:00:00.000Z",
+          finished_at: "2026-01-01T00:00:01.000Z",
+          recorded_at: "2026-01-01T00:00:02.000Z",
+          passed: 1,
+          failed: 0,
+          skipped: 0,
+        },
+        {
+          run_id: "tr-newer",
+          kind: "test",
+          status: "passed",
+          started_at: "2026-01-01T00:00:00.000Z",
+          finished_at: "2026-01-01T00:00:01.000Z",
+          recorded_at: "2026-01-01T00:00:05.000Z",
+          passed: 1,
+          failed: 0,
+          skipped: 0,
+        },
+        {
+          run_id: "tr-same",
+          kind: "test-all",
+          status: "failed",
+          started_at: "2026-01-01T00:00:00.000Z",
+          finished_at: "2026-01-01T00:00:01.000Z",
+          recorded_at: "2026-01-01T00:00:04.000Z",
+          passed: 0,
+          failed: 1,
+          skipped: 0,
+        },
+      ]);
+
+      const previousLimit = process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT;
+      process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT = "2";
+      try {
+        await appendTrackedTestRunSummary({
+          pmRoot: context.pmPath,
+          settings: await readSettings(context.pmPath),
+          itemId: id,
+          author: "tracking-unit",
+          message: "append bounded tracking summary",
+          entry: {
+            run_id: "tr-same",
+            kind: "test",
+            status: "passed",
+            started_at: "2026-01-01T00:00:00.000Z",
+            finished_at: "2026-01-01T00:00:01.000Z",
+            recorded_at: "2026-01-01T00:00:04.000Z",
+            passed: 1,
+            failed: 0,
+            skipped: 0,
+          },
+        });
+      } finally {
+        if (previousLimit === undefined) {
+          delete process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT;
+        } else {
+          process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT = previousLimit;
+        }
+      }
+
+      const frontMatter = await loadTaskFrontMatter(context, id);
+      const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+      expect(testRuns.map((entry) => `${entry.run_id}:${entry.kind}`)).toEqual(["tr-same:test-all", "tr-newer:test"]);
+
+      process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT = "invalid";
+      try {
+        await appendTrackedTestRunSummary({
+          pmRoot: context.pmPath,
+          settings: await readSettings(context.pmPath),
+          itemId: id,
+          author: "tracking-unit",
+          entry: {
+            run_id: "tr-after-invalid-limit",
+            kind: "test",
+            status: "passed",
+            started_at: "2026-01-01T00:00:00.000Z",
+            finished_at: "2026-01-01T00:00:01.000Z",
+            recorded_at: "2026-01-01T00:00:06.000Z",
+            passed: 1,
+            failed: 0,
+            skipped: 0,
+          },
+        });
+      } finally {
+        if (previousLimit === undefined) {
+          delete process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT;
+        } else {
+          process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT = previousLimit;
+        }
+      }
+
+      const afterInvalidLimit = await loadTaskFrontMatter(context, id);
+      const afterRuns = (afterInvalidLimit.test_runs ?? []) as Array<Record<string, unknown>>;
+      expect(afterRuns.map((entry) => entry.run_id)).toContain("tr-after-invalid-limit");
+
+      const sortId = createTask(context, "append-tracked-test-run-run-id-sort");
+      await overwriteTaskTestRuns(context, sortId, [
+        {
+          run_id: "tr-b",
+          kind: "test",
+          status: "passed",
+          started_at: "2026-01-01T00:00:00.000Z",
+          finished_at: "2026-01-01T00:00:01.000Z",
+          recorded_at: "2026-01-01T00:00:07.000Z",
+          passed: 1,
+          failed: 0,
+          skipped: 0,
+        },
+      ]);
+      await appendTrackedTestRunSummary({
+        pmRoot: context.pmPath,
+        settings: await readSettings(context.pmPath),
+        itemId: sortId,
+        author: "tracking-unit",
+        entry: {
+          run_id: "tr-a",
+          kind: "test",
+          status: "passed",
+          started_at: "2026-01-01T00:00:00.000Z",
+          finished_at: "2026-01-01T00:00:01.000Z",
+          recorded_at: "2026-01-01T00:00:07.000Z",
+          passed: 1,
+          failed: 0,
+          skipped: 0,
+        },
+      });
+      const sortedFrontMatter = await loadTaskFrontMatter(context, sortId);
+      const sortedRuns = (sortedFrontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+      expect(sortedRuns.map((entry) => entry.run_id)).toEqual(["tr-a", "tr-b"]);
+    });
+  });
+
   it("returns tracking warnings when summary persistence cannot mutate item", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "track-test-run-warning");
@@ -2155,6 +2628,65 @@ describe("runTest", () => {
       );
       expect(result.run_results[0]?.status).toBe("passed");
       expect(result.warnings?.[0] ?? "").toContain("test_result_tracking_failed");
+    });
+  });
+});
+
+describe("linked test run selectors", () => {
+  it("formats long linked-test entries and validates selector errors", () => {
+    const longCommand = `pnpm test -- ${"very-long-segment ".repeat(8)}`.trim();
+    const tests = [
+      { command: longCommand, scope: "project" as const },
+      { path: "tests/unit/output.spec.ts", scope: "project" as const },
+      { scope: "project" as const },
+    ];
+
+    const description = describeLinkedTestEntries(tests);
+    expect(description).toContain("...");
+    expect(description).toContain("2. tests/unit/output.spec.ts");
+    expect(description).toContain("3. <no command>");
+
+    expect(parseOnlyIndexValue(" 2 ")).toBe(2);
+    expect(() => parseOnlyIndexValue("0", "--only-index")).toThrow(/1-based integer index/);
+    expect(() => resolveLinkedTestRunSelection(tests, { match: "output", onlyLast: true })).toThrow(/Combine at most one/);
+    expect(() => resolveLinkedTestRunSelection([], { onlyLast: true })).toThrow(/this item has none/);
+    expect(() => resolveLinkedTestRunSelection(tests, { match: "   " })).toThrow(/non-empty substring/);
+    expect(() => resolveLinkedTestRunSelection(tests, { match: "missing" })).toThrow(/Available entries/);
+    expect(() => resolveLinkedTestRunSelection(tests, { onlyIndex: 9 })).toThrow(/out of range/);
+  });
+
+  it("selects all, matching, indexed, and last linked tests", () => {
+    const tests = [
+      { command: "pnpm test -- tests/unit/output.spec.ts", scope: "project" as const },
+      { path: "tests/unit/settings-store.spec.ts", scope: "project" as const },
+      { command: "pnpm typecheck", scope: "project" as const },
+    ];
+
+    expect(resolveLinkedTestRunSelection(tests, {})).toMatchObject({
+      selector: null,
+      selected_indexes: [1, 2, 3],
+      selected_count: 3,
+      skipped_count: 0,
+    });
+    expect(resolveLinkedTestRunSelection(tests, { match: "SETTINGS" })).toMatchObject({
+      selector: "match",
+      requested: "SETTINGS",
+      selected_indexes: [2],
+      selected_count: 1,
+      skipped_count: 2,
+    });
+    expect(resolveLinkedTestRunSelection(tests, { onlyIndex: 1 })).toMatchObject({
+      selector: "only-index",
+      requested: "1",
+      selected: [tests[0]],
+      selected_indexes: [1],
+    });
+    expect(resolveLinkedTestRunSelection(tests, { onlyLast: true })).toMatchObject({
+      selector: "only-last",
+      requested: "last",
+      selected: [tests[2]],
+      selected_indexes: [3],
+      skipped_count: 2,
     });
   });
 });

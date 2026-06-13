@@ -16,6 +16,7 @@
 
 ### Other
 
+- Ecosystem audit + GH-204..208/210 remediation session 2026-06-13 ([pm-y7sc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-y7sc.toon))
 - CI gap: plugin/package markdown pushed to main runs no functional workflow ([pm-5909](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-5909.toon))
 - Compact strict create recovery for agents ([pm-tjvl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-tjvl.toon))
 

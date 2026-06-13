@@ -2229,3 +2229,8 @@ function buildProviderCompatibleToolSchema(): Record<string, unknown> {
 export const PM_PROVIDER_TOOL_PARAMETERS_SCHEMA: Record<string, unknown> = createLazyContractSchema(
   buildProviderCompatibleToolSchema,
 );
+
+export const _testOnlyCliContracts = {
+  buildActionScopedToolSchema,
+  toProviderCompatibleParameterDefinition,
+};

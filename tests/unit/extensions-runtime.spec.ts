@@ -23,6 +23,14 @@ import {
   setActiveExtensionServices,
   type ExtensionHookRegistry,
 } from "../../src/core/extensions/index.js";
+import {
+  runCommandHandler,
+  runParserOverride,
+  runPreflightOverride,
+  runServiceOverride,
+  runServiceOverrideSync,
+  runRendererOverride,
+} from "../../src/core/extensions/extension-hook-runtime.js";
 
 describe("core/extensions runtime wrappers", () => {
   afterEach(() => {
@@ -535,5 +543,433 @@ describe("core/extensions runtime wrappers", () => {
       rendered: null,
       warnings: [],
     });
+  });
+
+  it("contains active override failures and falls back to original runtime context", async () => {
+    setActiveExtensionCommands({
+      handlers: [],
+      overrides: [
+        {
+          layer: "project",
+          name: "async-command-override",
+          command: "list-open",
+          run: async () => ({ unreachable: true }),
+        },
+      ],
+    });
+    setActiveCommandContext({
+      command: " list-open ",
+      args: ["--limit", "1"],
+      options: { limit: "1" },
+      global: {
+        json: false,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+    });
+    expect(runActiveCommandOverride({ count: 1 })).toEqual({
+      overridden: false,
+      result: { count: 1 },
+      warnings: ["extension_command_override_async_unsupported:project:async-command-override:list-open"],
+    });
+
+    setActiveExtensionParsers({
+      overrides: [
+        {
+          layer: "project",
+          name: "parser-boom",
+          command: "create",
+          run: () => {
+            throw new Error("parser boom");
+          },
+        },
+      ],
+    });
+    const parserResult = await runActiveParserOverride({
+      command: " create ",
+      args: ["--title", "One"],
+      options: { title: "One" },
+      global: {
+        json: false,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+    });
+    expect(parserResult).toEqual({
+      overridden: false,
+      context: {
+        command: "create",
+        args: ["--title", "One"],
+        options: { title: "One" },
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project",
+      },
+      warnings: ["extension_parser_override_failed:project:parser-boom:create"],
+    });
+
+    setActiveExtensionPreflight({
+      overrides: [
+        {
+          layer: "project",
+          name: "preflight-boom",
+          run: () => {
+            throw new Error("preflight boom");
+          },
+        },
+      ],
+    });
+    const decision = {
+      enforce_item_format_gate: true,
+      run_preflight_item_format_sync: true,
+      run_extension_migrations: true,
+      enforce_mandatory_migration_gate: true,
+    };
+    const preflightResult = await runActivePreflightOverride({
+      command: "update",
+      args: [],
+      options: {},
+      global: {
+        json: false,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+      decision,
+    });
+    expect(preflightResult).toEqual({
+      overridden: false,
+      context: {
+        command: "update",
+        args: [],
+        options: {},
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project",
+      },
+      decision,
+      warnings: ["extension_preflight_override_failed:project:preflight-boom"],
+    });
+  });
+
+  it("falls through service and renderer override failures in active registries", async () => {
+    setActiveExtensionServices({
+      overrides: [
+        {
+          layer: "project",
+          name: "async-sync-service",
+          service: "output_format",
+          run: async () => "async output",
+        },
+        {
+          layer: "project",
+          name: "throwing-service",
+          service: "output_format",
+          run: () => {
+            throw new Error("service boom");
+          },
+        },
+      ],
+    });
+    expect(runActiveServiceOverrideSync("output_format", { ok: true })).toEqual({
+      handled: false,
+      result: { ok: true },
+      warnings: [
+        "extension_service_override_failed:project:throwing-service:output_format",
+        "extension_service_override_async_unsupported:project:async-sync-service:output_format",
+      ],
+    });
+    expect(await runActiveServiceOverride("missing_service", { ok: true })).toEqual({
+      handled: false,
+      result: { ok: true },
+      warnings: [],
+    });
+
+    setActiveExtensionRenderers({
+      overrides: [
+        {
+          layer: "project",
+          name: "invalid-renderer",
+          format: "json",
+          run: () => ({ not: "a string" }),
+        },
+        {
+          layer: "project",
+          name: "throwing-renderer",
+          format: "toon",
+          run: () => {
+            throw new Error("renderer boom");
+          },
+        },
+      ],
+    });
+    expect(runActiveRendererOverride("json", { ok: true })).toEqual({
+      overridden: false,
+      rendered: null,
+      warnings: ["extension_renderer_invalid_result:project:invalid-renderer:json"],
+    });
+    expect(runActiveRendererOverride("toon", { ok: true })).toEqual({
+      overridden: false,
+      rendered: null,
+      warnings: ["extension_renderer_failed:project:throwing-renderer:toon"],
+    });
+  });
+
+  it("covers direct command, parser, preflight, service, and renderer runtime fallbacks", async () => {
+    const global = {
+      json: false,
+      quiet: false,
+      noExtensions: false,
+      profile: false,
+    };
+
+    expect(
+      await runCommandHandler(
+        { overrides: [], handlers: [] },
+        { command: "  ", args: [], options: {}, global, pm_root: "/tmp/project" },
+      ),
+    ).toEqual({ handled: false, result: null, warnings: [] });
+    await expect(
+      runCommandHandler(
+        {
+          overrides: [],
+          handlers: [
+            {
+              layer: "project",
+              name: "exit-code-handler",
+              command: "sync",
+              run: () => {
+                throw { exitCode: 7 };
+              },
+            },
+          ],
+        },
+        { command: "sync", args: [], options: {}, global, pm_root: "/tmp/project" },
+      ),
+    ).rejects.toMatchObject({ exitCode: 7 });
+    expect(
+      await runCommandHandler(
+        {
+          overrides: [],
+          handlers: [
+            {
+              layer: "project",
+              name: "plain-object-handler",
+              command: "sync",
+              run: () => {
+                throw { message: "first\nsecond" };
+              },
+            },
+          ],
+        },
+        { command: "sync", args: [], options: {}, global, pm_root: "/tmp/project" },
+      ),
+    ).toEqual({
+      handled: false,
+      result: null,
+      warnings: ["extension_command_handler_failed:project:plain-object-handler:sync"],
+      errorMessage: "first second",
+    });
+    expect(
+      await runCommandHandler(
+        {
+          overrides: [],
+          handlers: [
+            {
+              layer: "project",
+              name: "empty-error-handler",
+              command: "sync",
+              run: () => {
+                throw {};
+              },
+            },
+          ],
+        },
+        { command: "sync", args: [], options: {}, global, pm_root: "/tmp/project" },
+      ),
+    ).toMatchObject({ errorMessage: "" });
+    expect(
+      await runCommandHandler(
+        {
+          overrides: [],
+          handlers: [
+            {
+              layer: "project",
+              name: "string-error-handler",
+              command: "sync",
+              run: () => {
+                throw "string failure";
+              },
+            },
+          ],
+        },
+        { command: "sync", args: [], options: {}, global, pm_root: "/tmp/project" },
+      ),
+    ).toMatchObject({ errorMessage: "string failure" });
+
+    expect(
+      await runParserOverride(
+        { overrides: [] },
+        { command: " ", args: ["raw"], options: { raw: true }, global, pm_root: "/tmp/project" },
+      ),
+    ).toEqual({
+      overridden: false,
+      context: { command: "", args: ["raw"], options: { raw: true }, global, pm_root: "/tmp/project" },
+      warnings: [],
+    });
+    expect(
+      await runParserOverride(
+        { overrides: [] },
+        { command: "create", args: ["--title", "One"], options: { title: "One" }, global, pm_root: "/tmp/project" },
+      ),
+    ).toEqual({
+      overridden: false,
+      context: {
+        command: "create",
+        args: ["--title", "One"],
+        options: { title: "One" },
+        global,
+        pm_root: "/tmp/project",
+      },
+      warnings: [],
+    });
+    expect(
+      await runParserOverride(
+        {
+          overrides: [
+            {
+              layer: "project",
+              name: "parser-empty-delta",
+              command: "create",
+              run: () => ({}),
+            },
+          ],
+        },
+        { command: "create", args: ["--title", "One"], options: { title: "One" }, global, pm_root: "/tmp/project" },
+      ),
+    ).toMatchObject({
+      overridden: true,
+      context: { command: "create", args: ["--title", "One"], options: { title: "One" } },
+    });
+
+    expect(
+      await runPreflightOverride(
+        { overrides: [] },
+        {
+          command: "update",
+          args: [],
+          options: {},
+          global,
+          pm_root: "/tmp/project",
+          decision: {
+            enforce_item_format_gate: true,
+            run_preflight_item_format_sync: true,
+            run_extension_migrations: true,
+            enforce_mandatory_migration_gate: true,
+          },
+        },
+      ),
+    ).toMatchObject({ overridden: false, warnings: [] });
+
+    expect(runServiceOverrideSync({ overrides: [] }, { service: "output_format", pm_root: "/tmp/project", payload: "base" })).toEqual({
+      handled: false,
+      result: "base",
+      warnings: [],
+    });
+    expect(
+      runServiceOverrideSync(
+        {
+          overrides: [
+            {
+              layer: "project",
+              name: "noop-output",
+              service: "output_format",
+              run: (context) => context.payload,
+            },
+          ],
+        },
+        { service: "output_format", command: "list-open", args: [], options: {}, global, pm_root: "/tmp/project", payload: "base" },
+      ),
+    ).toEqual({ handled: false, result: "base", warnings: [] });
+    expect(
+      runServiceOverrideSync(
+        {
+          overrides: [
+            {
+              layer: "project",
+              name: "sync-service",
+              service: "output_format",
+              run: () => "rendered",
+            },
+          ],
+        },
+        { service: "output_format", command: "list-open", args: [], options: {}, global, pm_root: "/tmp/project", payload: "base" },
+      ),
+    ).toEqual({ handled: true, result: "rendered", warnings: [] });
+    expect(
+      await runServiceOverride(
+        {
+          overrides: [
+            {
+              layer: "project",
+              name: "null-output",
+              service: "output_format",
+              run: () => null,
+            },
+          ],
+        },
+        { service: "output_format", pm_root: "/tmp/project", payload: "base" },
+      ),
+    ).toEqual({ handled: false, result: "base", warnings: [] });
+    expect(
+      await runServiceOverride(
+        {
+          overrides: [
+            {
+              layer: "project",
+              name: "throwing-async-service",
+              service: "item_store_read",
+              run: () => {
+                throw new Error("service");
+              },
+            },
+          ],
+        },
+        { service: "item_store_read", pm_root: "/tmp/project", payload: { ok: true } },
+      ),
+    ).toEqual({
+      handled: false,
+      result: { ok: true },
+      warnings: ["extension_service_override_failed:project:throwing-async-service:item_store_read"],
+    });
+
+    expect(
+      runRendererOverride(
+        {
+          overrides: [
+            {
+              layer: "project",
+              name: "null-renderer",
+              format: "json",
+              run: () => null,
+            },
+          ],
+        },
+        { format: "json", result: { ok: true } },
+      ),
+    ).toEqual({ overridden: false, rendered: null, warnings: [] });
   });
 });

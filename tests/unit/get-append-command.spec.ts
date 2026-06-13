@@ -20,6 +20,7 @@ function createTask(
     title: string;
     body: string;
     includeLinks?: boolean;
+    type?: string;
   },
 ): string {
   const linkArgs = params.includeLinks
@@ -41,7 +42,7 @@ function createTask(
     "--description",
     `${params.title} description`,
     "--type",
-    "Task",
+    params.type ?? "Task",
     "--status",
     "open",
     "--priority",
@@ -230,6 +231,10 @@ describe("runGet and runAppend", () => {
       expect(withDottedClaimState.item).toEqual({ id });
       expect(withDottedClaimState.claim_state?.claimed).toBe(false);
 
+      const withChildren = await runGet(id, { path: context.pmPath }, { fields: "id,children" });
+      expect(withChildren.item).toEqual({ id });
+      expect(withChildren.children).toEqual({ count: 0, active: 0, by_status: {} });
+
       await expect(runGet(id, { path: context.pmPath }, { fields: " , " })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
       });
@@ -293,6 +298,63 @@ describe("runGet and runAppend", () => {
       const unboundedTree = await runGet(rootId, { path: context.pmPath }, { tree: true });
       expect(unboundedTree.tree?.depth_limit).toBeNull();
       expect(unboundedTree.tree?.count).toBe(2);
+    });
+  });
+
+  it("adds a child status rollup for container item reads", async () => {
+    await withTempPmPath(async (context) => {
+      const epicId = createTask(context, {
+        title: "get-children-rollup-epic",
+        body: "epic body",
+        type: "Epic",
+      });
+      const openChildId = createTask(context, {
+        title: "get-children-rollup-open",
+        body: "open child",
+      });
+      const closedChildId = createTask(context, {
+        title: "get-children-rollup-closed",
+        body: "closed child",
+      });
+
+      for (const childId of [openChildId, closedChildId]) {
+        const link = context.runCli(
+          ["update", childId, "--parent", epicId, "--json", "--author", "test-author", "--message", "Link child to epic"],
+          { expectJson: true },
+        );
+        expect(link.code).toBe(0);
+      }
+      const close = context.runCli(["close", closedChildId, "Child complete", "--json", "--author", "test-author"], {
+        expectJson: true,
+      });
+      expect(close.code).toBe(0);
+      const openChildPath = path.join(context.pmPath, "tasks", `${openChildId}.toon`);
+      const openChildSource = await readFile(openChildPath, "utf8");
+      await writeFile(
+        openChildPath,
+        openChildSource.replace(`parent: ${epicId}`, `parent: "${epicId.toUpperCase()}"`).replace("status: open", 'status: " Open "'),
+        "utf8",
+      );
+
+      const standard = await runGet(epicId, { path: context.pmPath });
+      expect(standard.children).toEqual({
+        count: 2,
+        active: 1,
+        by_status: {
+          open: 1,
+          closed: 1,
+        },
+      });
+
+      const brief = await runGet(epicId, { path: context.pmPath }, { depth: "brief" });
+      expect(brief.children).toBeUndefined();
+
+      const leaf = await runGet(openChildId, { path: context.pmPath });
+      expect(leaf.children).toBeUndefined();
+
+      const projectedLeaf = await runGet(openChildId, { path: context.pmPath }, { fields: "id,children" });
+      expect(projectedLeaf.item).toEqual({ id: openChildId });
+      expect(projectedLeaf.children).toEqual({ count: 0, active: 0, by_status: {} });
     });
   });
 

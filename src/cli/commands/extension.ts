@@ -1878,3 +1878,18 @@ export async function runExtension(
 
   throw new PmCliError(`Unsupported extension action "${action}".`, EXIT_CODE.USAGE);
 }
+
+export const _testOnly = {
+  buildExtensionPolicyDetails,
+  buildInstallCommandDiscovery,
+  collectGlobalOutputOverrideDoctorWarnings,
+  isErrnoCode,
+  isRetriableExtensionInstallCopyError,
+  requireTarget,
+  resolveAction,
+  resolveCommandDiscoveryPackageName,
+  resolveGithubOption,
+  resolveScope,
+  resolveUpdateCheckResolution,
+  withExtensionInstallLock,
+};

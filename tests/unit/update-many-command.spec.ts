@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runUpdate } from "../../src/cli/commands/update.js";
-import { runUpdateMany } from "../../src/cli/commands/update-many.js";
+import { _testOnlyUpdateManyCommand, runUpdateMany } from "../../src/cli/commands/update-many.js";
 import {
   checkpointFilePath,
   createCheckpointId,
@@ -88,7 +88,119 @@ function getItemMetadataValue(context: TempPmContext, id: string, key: string): 
   return (result.json as { item: Record<string, unknown> }).item[key];
 }
 
+describe("update-many command helper coverage", () => {
+  it("normalizes summary, comparable values, collections, and tag planning", () => {
+    expect(
+      _testOnlyUpdateManyCommand.sanitizeUpdateOptionsForSummary({
+        author: "agent",
+        force: true,
+        allowAuditUpdate: true,
+        message: "msg",
+        priority: "2",
+        title: "Title",
+        body: undefined,
+      }),
+    ).toEqual({ priority: "2", title: "Title" });
+    expect(_testOnlyUpdateManyCommand.hasAnyUpdateMutationInput({ author: "agent", force: true })).toBe(false);
+    expect(_testOnlyUpdateManyCommand.hasAnyUpdateMutationInput({ status: "closed" })).toBe(true);
+    expect(_testOnlyUpdateManyCommand.hasListFilters(undefined, undefined)).toBe(false);
+    expect(_testOnlyUpdateManyCommand.hasListFilters({ ids: " , " }, undefined)).toBe(false);
+    expect(_testOnlyUpdateManyCommand.hasListFilters({ ids: "pm-a" }, undefined)).toBe(true);
+
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("priority", " 3 ")).toBe(3);
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("priority", "high")).toBe("high");
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("estimatedMinutes", " 4.5 ")).toBe(4.5);
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("regression", "1")).toBe(true);
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("regression", "false")).toBe(false);
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("regression", "maybe")).toBe("maybe");
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("field" as never, { raw: true })).toEqual({ raw: true });
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("title", "  trimmed  ")).toBe("trimmed");
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("title", undefined)).toBeUndefined();
+
+    expect(_testOnlyUpdateManyCommand.normalizeUnsetField("acceptance-criteria")).toBe("acceptance_criteria");
+    expect(_testOnlyUpdateManyCommand.normalizeUnsetField("custom-field")).toBe("custom_field");
+    expect(_testOnlyUpdateManyCommand.normalizeCollectionBeforeValue("type_options", undefined)).toEqual({});
+    expect(_testOnlyUpdateManyCommand.normalizeCollectionBeforeValue("comments", undefined)).toEqual([]);
+    expect(_testOnlyUpdateManyCommand.collectionValueCount("type_options", { a: 1, b: 2 })).toBe(2);
+    expect(_testOnlyUpdateManyCommand.collectionValueCount("comments", ["a", "b"])).toBe(2);
+    expect(_testOnlyUpdateManyCommand.collectionValueCount("comments", "none")).toBe(0);
+    expect(_testOnlyUpdateManyCommand.normalizeExistingTags(["alpha", 1, "beta"])).toEqual(["alpha", "beta"]);
+    expect(_testOnlyUpdateManyCommand.normalizeExistingTags("alpha")).toEqual([]);
+    const statusRegistry = {
+      definitions: [{ id: "open", role: "active" }],
+      alias_to_id: new Map([["open", "open"]]),
+    };
+    expect(_testOnlyUpdateManyCommand.normalizeStatusFilter(undefined, statusRegistry)).toBeUndefined();
+    expect(_testOnlyUpdateManyCommand.normalizeStatusFilter("open", statusRegistry)).toBe("open");
+    expect(() =>
+      _testOnlyUpdateManyCommand.normalizeStatusFilter("missing", statusRegistry),
+    ).toThrow(/Invalid --filter-status/);
+    expect(() => _testOnlyUpdateManyCommand.rejectBlankIdsFilter({ ids: "   " })).toThrow(/--ids requires/);
+
+    expect(_testOnlyUpdateManyCommand.buildTagMutationPlan({ tags: ["alpha"] }, {})).toBeUndefined();
+    expect(_testOnlyUpdateManyCommand.buildTagMutationPlan({ tags: ["alpha"] }, { addTags: ["alpha"] })).toBeUndefined();
+    expect(_testOnlyUpdateManyCommand.buildTagMutationPlan({ tags: ["beta"] }, { tags: "alpha", addTags: ["gamma"], removeTags: ["beta"] })).toEqual({
+      field: "tags",
+      before: ["beta"],
+      after: ["alpha", "gamma"],
+    });
+
+    expect(
+      _testOnlyUpdateManyCommand.buildCollectionMutationPlans(
+        { comments: ["old"], type_options: { risk: "low" } },
+        {
+          comment: ["author=a,text=b"],
+          depRemove: ["pm-old"],
+          clearTypeOptions: true,
+          replaceTests: true,
+          test: ["command=pnpm test"],
+        },
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "comments",
+          after: expect.objectContaining({ operation: "append", add_count: 1, before_count: 1 }),
+        }),
+        expect.objectContaining({
+          field: "dependencies",
+          after: expect.objectContaining({ operation: "merge_remove", remove_count: 1 }),
+        }),
+        expect.objectContaining({
+          field: "type_options",
+          before: { risk: "low" },
+          after: expect.objectContaining({ operation: "clear_or_reset", clear: true, before_count: 1 }),
+        }),
+        expect.objectContaining({
+          field: "tests",
+          after: expect.objectContaining({ operation: "replace", replace: true, add_count: 1 }),
+        }),
+      ]),
+    );
+  });
+});
+
 describe("runUpdateMany", () => {
+  it("rejects update-many before tracker initialization", async () => {
+    const root = await mkdtemp(path.join(tmpdir(), "pm-update-many-uninitialized-"));
+    try {
+      await expect(
+        runUpdateMany(
+          {
+            list: {},
+            update: { description: "not initialized" },
+          },
+          { path: root },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        message: expect.stringContaining("Tracker is not initialized"),
+      });
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
   it("matches object-valued runtime filters without depending on key insertion order", () => {
     expect(
       matchesRuntimeFilters(
@@ -97,6 +209,57 @@ describe("runUpdateMany", () => {
       ),
     ).toBe(true);
     expect(matchesRuntimeFilters({}, { payload: "undefined" })).toBe(false);
+  });
+
+  it("plans runtime field diffs only when preview values change", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.schema.fields = [
+        {
+          key: "reviewUrl",
+          metadata_key: "review_url",
+          type: "string",
+          cli_flag: "review-url",
+          commands: ["update", "update_many"],
+        },
+      ];
+      await writeSettings(context.pmPath, settings);
+
+      const id = createTask(context, "update-many-runtime-preview", { tags: "runtime-preview" });
+      await runUpdate(id, { reviewUrl: "https://example.test/old", message: "seed runtime field" }, { path: context.pmPath });
+
+      const noChange = await runUpdateMany(
+        {
+          list: { ids: id },
+          update: {
+            reviewUrl: "https://example.test/old",
+            message: "preview unchanged runtime field",
+          },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(noChange.item_plans?.[0]?.changes).toEqual([]);
+
+      const changed = await runUpdateMany(
+        {
+          list: { ids: id },
+          update: {
+            reviewUrl: "https://example.test/new",
+            message: "preview changed runtime field",
+          },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(changed.item_plans?.[0]?.changes).toEqual([
+        {
+          field: "review_url",
+          before: "https://example.test/old",
+          after: "https://example.test/new",
+        },
+      ]);
+    });
   });
 
   it("produces dry-run plans without mutating matched items", async () => {
@@ -126,6 +289,51 @@ describe("runUpdateMany", () => {
       expect(result.ids).toEqual([]);
       expect(result.item_plans?.every((row) => row.changes.length > 0)).toBe(true);
       expect(getItemDescription(context, firstId)).toBe(beforeDescription);
+    });
+  });
+
+  it("normalizes scalar preview values and rejects invalid status filters", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "bulk-scalar-preview", { tags: "bulk-scalar-preview" });
+
+      await expect(
+        runUpdateMany(
+          {
+            status: "not-a-status",
+            list: { tag: "bulk-scalar-preview" },
+            update: { description: "should not matter" },
+            dryRun: true,
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Invalid --filter-status value"),
+      });
+
+      const dryRun = await runUpdateMany(
+        {
+          list: { tag: "bulk-scalar-preview", includeBody: true },
+          update: {
+            priority: "not-numeric",
+            estimatedMinutes: "45",
+            order: "2.5",
+            regression: "true",
+            message: "scalar preview",
+          },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+
+      expect(dryRun.item_plans?.[0]?.changes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: "priority", after: "not-numeric" }),
+          expect.objectContaining({ field: "estimated_minutes", after: 45 }),
+          expect.objectContaining({ field: "order", after: 2.5 }),
+          expect.objectContaining({ field: "regression", after: true }),
+        ]),
+      );
     });
   });
 
@@ -201,6 +409,25 @@ describe("runUpdateMany", () => {
         ),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
+      });
+    });
+  });
+
+  it("rejects dry-run rollback mode before loading a checkpoint", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runUpdateMany(
+          {
+            list: {},
+            update: {},
+            rollback: "missing-checkpoint",
+            dryRun: true,
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "--dry-run cannot be combined with --rollback",
       });
     });
   });
@@ -526,6 +753,71 @@ describe("runUpdateMany", () => {
     });
   });
 
+  it("applies mixed actionable and no-op rows without writing a checkpoint when disabled", async () => {
+    await withTempPmPath(async (context) => {
+      const unchangedId = createTask(context, "bulk-mixed-noop-a", {
+        tags: "bulk-mixed-noop",
+        description: "target description",
+      });
+      const changedId = createTask(context, "bulk-mixed-noop-b", {
+        tags: "bulk-mixed-noop",
+        description: "old description",
+      });
+
+      const result = await runUpdateMany(
+        {
+          list: { tag: "bulk-mixed-noop" },
+          update: {
+            description: "target description",
+            message: "mixed no-op update",
+          },
+          checkpoint: false,
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.checkpoint).toBeUndefined();
+      expect(result.updated_count).toBe(1);
+      expect(result.skipped_count).toBe(1);
+      expect(result.rows).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: unchangedId, status: "skipped" }),
+          expect.objectContaining({ id: changedId, status: "updated" }),
+        ]),
+      );
+      expect(getItemDescription(context, changedId)).toBe("target description");
+    });
+  });
+
+  it("records failed rows when an item update is rejected during apply", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "bulk-invalid-status", { tags: "bulk-invalid-status" });
+
+      const result = await runUpdateMany(
+        {
+          list: { tag: "bulk-invalid-status" },
+          update: {
+            status: "not-a-real-status",
+            message: "invalid status update",
+          },
+          checkpoint: false,
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.updated_count).toBe(0);
+      expect(result.failed_count).toBe(1);
+      expect(result.ids).toEqual([]);
+      expect(result.rows).toEqual([
+        expect.objectContaining({
+          id,
+          status: "failed",
+          error: expect.stringContaining("Invalid --status"),
+        }),
+      ]);
+    });
+  });
+
   it("treats --add-tags alone as actionable and previews the tag plan (pm-1lws)", async () => {
     await withTempPmPath(async (context) => {
       const firstId = createTask(context, "addonly-a", { tags: "addonly" });
@@ -756,6 +1048,61 @@ describe("runUpdateMany", () => {
       expect(getItemTests(context, secondId).map((entry) => entry.command)).toEqual([
         "node scripts/run-tests.mjs test -- tests/replaced.spec.ts",
       ]);
+    });
+  });
+
+  it("previews unset aliases and collection mutation operations", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "bulk-unset-collections", { tags: "bulk-unset-collections,legacy" });
+      const seed = context.runCli(
+        [
+          "update",
+          id,
+          "--json",
+          "--comment",
+          "author=seed-author,text=old comment",
+          "--doc",
+          "path=README.md,scope=project,note=old doc",
+          "--message",
+          "seed collections",
+        ],
+        { expectJson: true },
+      );
+      expect(seed.code).toBe(0);
+
+      const dryRun = await runUpdateMany(
+        {
+          list: { tag: "bulk-unset-collections", includeBody: true },
+          update: {
+            unset: ["deadline", "estimate", "acceptance-criteria", "missing-field"],
+            removeTags: ["legacy"],
+            comment: ["author=seed-author,text=new comment"],
+            clearDocs: true,
+            message: "preview unset and collections",
+          },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+
+      const changes = dryRun.item_plans?.[0]?.changes ?? [];
+      expect(changes).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: "deadline", after: null }),
+          expect.objectContaining({ field: "estimated_minutes", after: null }),
+          expect.objectContaining({ field: "acceptance_criteria", after: null }),
+          expect.objectContaining({ field: "tags", after: ["bulk-unset-collections"] }),
+          expect.objectContaining({
+            field: "comments",
+            after: expect.objectContaining({ operation: "append", add_count: 1, before_count: 1 }),
+          }),
+          expect.objectContaining({
+            field: "docs",
+            after: expect.objectContaining({ operation: "clear_or_reset", clear: true, before_count: 1 }),
+          }),
+        ]),
+      );
+      expect(changes.some((change) => change.field === "missing-field")).toBe(false);
     });
   });
 

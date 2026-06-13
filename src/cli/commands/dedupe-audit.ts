@@ -450,3 +450,15 @@ export async function runDedupeAudit(options: DedupeAuditOptions, global: Global
     ...(warnings ? { warnings } : {}),
   };
 }
+
+export const _testOnly = {
+  parseMode,
+  parseStatus,
+  parseThreshold,
+  compareCandidates,
+  collectExactTitleClusters,
+  collectParentScopedClusters,
+  collectFuzzyTitleClusters,
+  clusterFromMembers,
+  toMergeSuggestion,
+};

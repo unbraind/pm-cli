@@ -429,3 +429,17 @@ export async function runAggregate(options: AggregateOptions, global: GlobalOpti
     ...(warnings ? { warnings } : {}),
   };
 }
+
+export const _testOnlyAggregateCommand = {
+  buildGroupKey,
+  compareAggregateRows,
+  compareNullableGroupValue,
+  completionPct,
+  normalizeTagGroupValue,
+  parseGroupBy,
+  parseNumericAggregation,
+  parseStatus,
+  readNumericAggregateValue,
+  resolveGroupValue,
+  updateCompletionCounts,
+};

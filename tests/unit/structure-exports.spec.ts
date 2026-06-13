@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import * as cliCommands from "../../src/cli/commands/index.js";
 import * as coreFs from "../../src/core/fs/fs-utils.js";
 import * as coreFsIndex from "../../src/core/fs/index.js";
@@ -22,6 +25,12 @@ import * as coreStorePaths from "../../src/core/store/paths.js";
 import * as coreStoreSettings from "../../src/core/store/settings.js";
 import * as coreStoreIndex from "../../src/core/store/index.js";
 import * as sharedTypes from "../../src/types/index.js";
+import {
+  findPmPackageRootFromPath,
+  resolveConfiguredPmPackageRoot,
+  resolvePmCliVersion,
+  resolvePmPackageRootFromModule,
+} from "../../src/core/packages/root.js";
 
 describe("module boundaries export surface", () => {
   it("re-exports CLI command handlers", () => {
@@ -60,5 +69,38 @@ describe("module boundaries export surface", () => {
     expect(typeof coreSharedTime.resolveIsoOrRelative).toBe("function");
     expect(coreSharedIndex.EXIT_CODE.NOT_FOUND).toBe(3);
     expect(Array.isArray(sharedTypes.ITEM_TYPE_VALUES)).toBe(true);
+  });
+
+  it("resolves pm package roots and version fallbacks without throwing", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-package-root-"));
+    try {
+      const packageRoot = path.join(tempRoot, "pkg");
+      const nestedFile = path.join(packageRoot, "dist", "cli.js");
+      await mkdir(path.dirname(nestedFile), { recursive: true });
+      await writeFile(path.join(packageRoot, "package.json"), JSON.stringify({ name: "@unbrained/pm-cli", version: "1.2.3" }), "utf8");
+      await writeFile(nestedFile, "", "utf8");
+
+      expect(findPmPackageRootFromPath(nestedFile)).toBe(packageRoot);
+      expect(findPmPackageRootFromPath(path.join(tempRoot, "missing.js"))).toBeUndefined();
+      expect(resolvePmPackageRootFromModule(new URL(nestedFile, "file://").href)).toBe(packageRoot);
+      expect(resolvePmCliVersion(new URL(nestedFile, "file://").href)).toBe("1.2.3");
+      expect(resolveConfiguredPmPackageRoot({ PM_CLI_PACKAGE_ROOT: ` ${packageRoot} ` })).toBe(packageRoot);
+      expect(resolveConfiguredPmPackageRoot({}, "PM_CLI_PACKAGE_ROOT", new URL(nestedFile, "file://").href)).toBe(packageRoot);
+
+      const malformedRoot = path.join(tempRoot, "bad");
+      const malformedFile = path.join(malformedRoot, "dist", "cli.js");
+      await mkdir(path.dirname(malformedFile), { recursive: true });
+      await writeFile(path.join(malformedRoot, "package.json"), "{bad", "utf8");
+      await writeFile(malformedFile, "", "utf8");
+      expect(findPmPackageRootFromPath(malformedFile)).toBeUndefined();
+      expect(resolvePmPackageRootFromModule(new URL(malformedFile, "file://").href, ["fallback"])).toBe(
+        path.join(malformedRoot, "dist", "fallback"),
+      );
+      expect(resolvePmCliVersion(new URL(malformedFile, "file://").href, ["fallback"])).toBeUndefined();
+      expect(resolvePmCliVersion("not-a-file-url")).toBeUndefined();
+      expect(resolveConfiguredPmPackageRoot({}, "PM_CLI_PACKAGE_ROOT")).toBe(process.cwd());
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
   });
 });

@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runReindex } from "../../src/cli/commands/reindex.js";
+import { _testOnly as reindexInternals, runReindex } from "../../src/cli/commands/reindex.js";
 import { readVectorizationStatusLedger, writeVectorizationStatusLedger } from "../../src/core/search/cache.js";
 import { SEARCH_EMBEDDING_CORPUS_MAX_CHARACTERS_INVALID_WARNING } from "../../src/core/search/corpus.js";
 import { executeVectorUpsert } from "../../src/core/search/vector-stores.js";
@@ -93,6 +93,193 @@ describe("runReindex", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
     setActiveExtensionRegistrations(null);
+    vi.restoreAllMocks();
+  });
+
+  it("covers reindex helper edge cases for progress, parsing, adapters, and vectors", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      const originalIsTty = process.stderr.isTTY;
+      Object.defineProperty(process.stderr, "isTTY", { configurable: true, value: true });
+      try {
+        expect(reindexInternals.shouldEmitReindexProgress({})).toBe(true);
+      } finally {
+        Object.defineProperty(process.stderr, "isTTY", { configurable: true, value: originalIsTty });
+      }
+
+      const stderrWrite = vi.spyOn(process.stderr, "write").mockImplementation(() => {
+        throw new Error("closed");
+      });
+      expect(() => reindexInternals.emitReindexProgress(true, "hello")).not.toThrow();
+      expect(stderrWrite).toHaveBeenCalled();
+      reindexInternals.emitReindexProgress(false, "ignored");
+
+      expect(reindexInternals.parseMode(undefined)).toBe("keyword");
+      expect(reindexInternals.parseMode(" HYBRID ")).toBe("hybrid");
+      expect(() => reindexInternals.parseMode("bad")).toThrow("Reindex mode must be one of");
+      const hydrateWarnings: string[] = [];
+      const hydratedBody = await reindexInternals.hydrateDocuments(
+        context.pmPath,
+        [
+          {
+            metadata: {
+              id: "pm-cached",
+              type: "Task",
+              status: "open",
+              priority: 1,
+              title: "Cached",
+              description: "Cached body",
+              created_at: "2026-01-01T00:00:00.000Z",
+              updated_at: "2026-01-01T00:00:00.000Z",
+            },
+            body: "cached body",
+            item_path: path.join(context.pmPath, "tasks", "pm-cached.toon"),
+            item_format: "toon",
+          },
+          {
+            metadata: {
+              id: "pm-unreadable",
+              type: "Task",
+              status: "open",
+              priority: 1,
+              title: "Unreadable",
+              description: "Unreadable body",
+              created_at: "2026-01-01T00:00:00.000Z",
+              updated_at: "2026-01-01T00:00:00.000Z",
+            },
+            item_path: path.join(context.pmPath, "tasks", "pm-missing.toon"),
+            item_format: "toon",
+          },
+        ] as never,
+        settings.schema,
+        hydrateWarnings,
+      );
+      expect(hydratedBody).toEqual([
+        expect.objectContaining({ metadata: expect.objectContaining({ id: "pm-cached" }), body: "cached body" }),
+        expect.objectContaining({ metadata: expect.objectContaining({ id: "pm-unreadable" }), body: "" }),
+      ]);
+      expect(hydrateWarnings[0]).toContain("item_list_item_read_failed:tasks/pm-missing.toon");
+      expect(
+        reindexInternals.buildKeywordRecord(
+          {
+            metadata: {
+              id: "pm-abc",
+              type: "Task",
+              status: "open",
+              priority: 1,
+              title: "Keyword Helper",
+              description: "desc",
+              body: "",
+              tags: [],
+              created_at: "2026-01-01T00:00:00.000Z",
+              updated_at: "2026-01-01T00:00:00.000Z",
+            },
+            body: "body",
+          },
+          "hybrid",
+        ),
+      ).toMatchObject({ id: "pm-abc", mode: "hybrid" });
+
+      expect(reindexInternals.assertVector([1, 2], "unit")).toEqual([1, 2]);
+      expect(() => reindexInternals.assertVector([1, Number.NaN], "unit")).toThrow("Invalid vector returned by unit");
+      await expect(
+        reindexInternals.executeExtensionEmbedding({ name: "missing" }, settings, ["a"]),
+      ).rejects.toThrow("does not implement embed/embedBatch");
+      await expect(
+        reindexInternals.executeExtensionEmbedding(
+          { name: "bad-batch", embedBatch: () => "nope" as unknown as number[][] },
+          settings,
+          ["a"],
+        ),
+      ).rejects.toThrow("embedBatch must return an array of vectors");
+      await expect(
+        reindexInternals.executeExtensionEmbedding(
+          { name: "bad-vector", embed: () => [Infinity] },
+          settings,
+          ["a"],
+        ),
+      ).rejects.toThrow("Invalid vector returned");
+      await expect(
+        reindexInternals.executeExtensionEmbedding(
+          { name: "single", embed: ({ input }: { input: string }) => [input.length] },
+          settings,
+          ["a", "abcd"],
+        ),
+      ).resolves.toEqual([[1], [4]]);
+
+      expect(reindexInternals.resolveExtensionEmbeddingModel({ ...settings, search: { ...settings.search, embedding_model: "  " } })).toBe(
+        "text-embedding-3-small",
+      );
+      expect(reindexInternals.collectLedgerOrphanIds({ "pm-b": "1", "pm-a": "1" }, new Set(["pm-a"]))).toEqual(["pm-b"]);
+      expect(() => reindexInternals.resolveReindexEmbeddingIdentity(settings, null, null)).toThrow(
+        "No embedding identity available",
+      );
+      expect(reindexInternals.resolveReindexEmbeddingIdentity(settings, null, { name: "ext-provider" })).toEqual({
+        provider: "ext-provider",
+        model: "text-embedding-3-small",
+      });
+
+      const warnings: string[] = [];
+      await reindexInternals.resetVectorStoreForReindex(
+        null,
+        { name: "ext-vector", upsert: () => undefined },
+        { "pm-known": "2026-01-01T00:00:00.000Z" },
+        settings,
+        warnings,
+      );
+      await reindexInternals.pruneReindexOrphanVectors(null, { name: "ext-vector", upsert: () => undefined }, ["pm-orphan"], settings, warnings);
+      expect(warnings).toEqual([
+        "search_semantic_reindex_reset_skipped:adapter=ext-vector:known_ids=1",
+        "search_semantic_reindex_orphan_prune_skipped:adapter=ext-vector:count=1",
+      ]);
+
+      await expect(
+        reindexInternals.resetVectorStoreForReindex(
+          null,
+          {
+            name: "ext-vector",
+            upsert: () => undefined,
+            delete: () => {
+              throw new Error("delete failed");
+            },
+          },
+          { "pm-known": "2026-01-01T00:00:00.000Z" },
+          settings,
+          [],
+        ),
+      ).rejects.toThrow("failed to delete vectors during reindex reset");
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.search_providers.push({
+        layer: "project",
+        name: "empty-provider",
+        definition: {},
+        runtime_definition: { embedBatch: ({ inputs }: { inputs: string[] }) => inputs.map(() => [1]) },
+      });
+      registrations.search_providers.push({
+        layer: "project",
+        name: "named-provider",
+        definition: { name: "named-provider" },
+        runtime_definition: { name: "runtime-name", embed: () => [1] },
+      });
+      registrations.vector_store_adapters.push({
+        layer: "project",
+        name: "bad-adapter",
+        definition: { name: "bad-adapter" },
+        runtime_definition: { name: "bad-adapter" },
+      });
+      setActiveExtensionRegistrations(registrations);
+      expect(reindexInternals.resolveExtensionSearchEmbedding({ ...settings, search: { ...settings.search, provider: "missing" } })).toBeNull();
+      expect(
+        reindexInternals.resolveExtensionSearchEmbedding({ ...settings, search: { ...settings.search, provider: "empty-provider" } }),
+      ).toBeNull();
+      expect(
+        reindexInternals.resolveExtensionSearchEmbedding({ ...settings, search: { ...settings.search, provider: "runtime-name" } }),
+      ).toMatchObject({ name: "runtime-name" });
+      expect(
+        reindexInternals.resolveExtensionVectorAdapter({ ...settings, vector_store: { ...settings.vector_store, adapter: "bad-adapter" } }),
+      ).toBeNull();
+    });
   });
 
   it("fails when tracker is not initialized", async () => {

@@ -1712,3 +1712,16 @@ export async function runHealth(global: GlobalOptions, options: RunHealthOptions
   }
   return options.brief === true ? applyBriefHealthProjection(result) : result;
 }
+
+export const _testOnlyHealthCommand = {
+  buildCapabilityContractMetadata,
+  isAdvisoryHealthWarning,
+  isExpectedUnmanagedExtension,
+  normalizeEndpointForDisplay,
+  normalizeExtensionNameForMatch,
+  summarizeExtensionList,
+  summarizeRecordList,
+  summarizeStringList,
+  telemetryEnvFlagEnabled,
+  warningCode,
+};

@@ -252,6 +252,18 @@ async function discoverReferencedFiles(document: ItemDocument, projectRoot: stri
     });
 }
 
+export const _testOnly = {
+  normalizeCandidatePathForOutput,
+  realpathForContainment,
+  linkedFileResolvedKey,
+  collectTextReferences,
+  collectItemTextReferences,
+  cleanupPathToken,
+  extractRawPathReferences,
+  resolveDiscoveredFile,
+  discoverReferencedFiles,
+};
+
 export async function runFiles(id: string, options: FilesCommandOptions, global: GlobalOptions): Promise<FilesResult> {
   const result: LinkedArtifactResult = await runLinkedArtifacts(id, options, global, {
     metadataKey: "files",

@@ -2,7 +2,7 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { runStats } from "../../src/cli/commands/stats.js";
+import { _testOnly as statsInternals, runStats } from "../../src/cli/commands/stats.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
@@ -79,6 +79,21 @@ function createItem(
 describe("runStats", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
+  });
+
+  it("covers stats pure helper branches", async () => {
+    expect(statsInternals.zeroByType(["Task", "Custom"])).toEqual({ Task: 0, Custom: 0 });
+    expect(statsInternals.zeroByStatus(["open", "qa"])).toEqual({ open: 0, qa: 0 });
+    expect(statsInternals.countNonEmptyLines("")).toBe(0);
+    expect(statsInternals.countNonEmptyLines("  \n\t\n")).toBe(0);
+    expect(statsInternals.countNonEmptyLines("one\n\n two \n")).toBe(2);
+
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-stats-helper-"));
+    try {
+      expect(await statsInternals.readHistoryStreamContents(tempDir)).toEqual([]);
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
   });
 
   it("fails when tracker is not initialized", async () => {

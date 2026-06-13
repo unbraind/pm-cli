@@ -426,3 +426,8 @@ export function attachCreateUpdatePolicyHelpText(
   }
   command.addHelpText("after", buildCreateUpdatePolicyHelpText(bootstrapCommand, typeRegistry, argv));
 }
+
+export const _testOnly = {
+  attachCreateUpdatePolicyHelpText,
+  buildCreateUpdatePolicyHelpText,
+};

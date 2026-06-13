@@ -2,8 +2,9 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runList } from "../../src/cli/commands/list.js";
-import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { _testOnly as listInternals, runList } from "../../src/cli/commands/list.js";
+import { resolveRuntimeStatusRegistry } from "../../src/core/schema/runtime-schema.js";
+import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
@@ -78,6 +79,187 @@ function createItem(context: TempPmContext, params: {
 }
 
 describe("runList", () => {
+  it("covers list helper branches for projection, filters, sorting, and tree metadata", () => {
+    const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const openItem = {
+      id: "pm-open",
+      title: "Open",
+      status: "open",
+      type: "Task",
+      priority: 1,
+      tags: [],
+      parent: "",
+      created_at: "2026-01-01T00:00:00.000Z",
+      updated_at: "2026-01-02T00:00:00.000Z",
+      deadline: null,
+    };
+    const closedItem = {
+      ...openItem,
+      id: "pm-closed",
+      title: "Closed",
+      status: "closed",
+      priority: 0,
+      updated_at: "2026-01-03T00:00:00.000Z",
+    };
+
+    expect(listInternals.parseIdsFilter(" pm-a, ,pm-b ")).toEqual(new Set(["pm-a", "pm-b"]));
+    expect(() => listInternals.parseIdsFilter(" , ")).toThrow(PmCliError);
+    expect(listInternals.parseOffset("2")).toBe(2);
+    expect(() => listInternals.parseOffset("-1")).toThrow(PmCliError);
+    expect(listInternals.parseFieldSelectors("id,item.title,id")).toEqual(["id", "item.title"]);
+    expect(() => listInternals.parseFieldSelectors(" , ")).toThrow(PmCliError);
+    expect(listInternals.parseProjectionConfig({ brief: true })).toEqual({ mode: "compact", fields: ["id", "status", "type", "title"] });
+    expect(() => listInternals.parseProjectionConfig({ brief: true, full: true })).toThrow(PmCliError);
+    expect(listInternals.normalizeProjectionField("item.title")).toBe("title");
+    expect(listInternals.parseSortField("updated")).toBe("updated_at");
+    expect(() => listInternals.parseSortField("bad")).toThrow(PmCliError);
+    expect(listInternals.parseSortOrder("DESC")).toBe("desc");
+    expect(() => listInternals.parseSortOrder("sideways")).toThrow(PmCliError);
+    expect(listInternals.parseAssigneeFilter("assigned")).toBe("assigned");
+    expect(() => listInternals.parseAssigneeFilter("   ")).toThrow(PmCliError);
+    expect(() => listInternals.parseAssigneeFilter("nobody")).toThrow(PmCliError);
+
+    expect(listInternals.compareNullableString(null, "a")).toBe(1);
+    expect(listInternals.compareNullableString("a", null)).toBe(-1);
+    expect(listInternals.compareNullableString("same", "same")).toBe(0);
+    expect(listInternals.compareNullableString("b", "a")).toBeGreaterThan(0);
+    expect(listInternals.compareNullableTimestamp(null, "2026-01-01T00:00:00.000Z")).toBe(1);
+    expect(listInternals.compareNullableTimestamp("2026-01-01T00:00:00.000Z", null)).toBe(-1);
+    expect(listInternals.compareNullableTimestamp("2026-01-01T00:00:00.000Z", "2026-01-01T00:00:00.000Z")).toBe(0);
+    expect(listInternals.trimNonEmpty(undefined)).toBeUndefined();
+    expect(
+      listInternals.compareBySortField(
+        { ...openItem, deadline: null } as never,
+        { ...closedItem, deadline: "2026-01-01T00:00:00.000Z" } as never,
+        "deadline",
+      ),
+    ).toBe(1);
+    expect(listInternals.compareBySortField(openItem as never, closedItem as never, "updated_at")).toBeLessThan(0);
+    expect(listInternals.compareBySortField(openItem as never, closedItem as never, "created_at")).toBe(0);
+    expect(listInternals.compareBySortField(openItem as never, closedItem as never, "title")).toBeGreaterThan(0);
+    expect(listInternals.compareBySortField(openItem as never, closedItem as never, "parent")).toBe(0);
+    expect(listInternals.compareBySortField(openItem as never, closedItem as never, "unknown" as never)).toBe(0);
+    expect(listInternals.compareDefaultSort(closedItem as never, openItem as never, statusRegistry)).toBe(1);
+    expect(listInternals.sortItems([closedItem, openItem] as never, undefined, "asc", statusRegistry).map((item) => item.id)).toEqual([
+      "pm-open",
+      "pm-closed",
+    ]);
+    expect(
+      listInternals.sortItems(
+        [
+          { ...openItem, id: "pm-b", title: "Same", priority: 1, deadline: "2026-01-01T00:00:00.000Z" },
+          { ...openItem, id: "pm-a", title: "Same", priority: 1, deadline: "2026-01-01T00:00:00.000Z" },
+        ] as never,
+        "deadline",
+        "desc",
+        statusRegistry,
+      ).map((item) => item.id),
+    ).toEqual(["pm-b", "pm-a"]);
+    expect(listInternals.withTreeMetadata({ ...openItem, parent: "  " } as never, 2, 0)).toMatchObject({
+      tree_depth: 2,
+      tree_parent: null,
+      tree_title: "    Open",
+    });
+    expect(listInternals.readListFieldValue({ ...openItem, tree_title: "Tree" } as never, "item.title", true)).toBe("Tree");
+    expect(listInternals.readListFieldValue(openItem as never, "   ")).toBeNull();
+    expect(listInternals.projectListItems([openItem] as never, { mode: "full", fields: [] })).toEqual([openItem]);
+    expect(listInternals.projectListItems([openItem] as never, { mode: "fields", fields: ["id", "missing"] })).toEqual([
+      { id: "pm-open", missing: null },
+    ]);
+    expect(
+      listInternals.orderItemsAsTree(
+        [
+          { ...openItem, id: "pm-root", title: "Root", parent: "" },
+          { ...openItem, id: "pm-child", title: "Child", parent: "pm-root" },
+          { ...openItem, id: "pm-grandchild", title: "Grandchild", parent: "pm-child" },
+        ] as never,
+        undefined,
+        1,
+      ).map((item) => [item.id, item.tree_depth, item.tree_children]),
+    ).toEqual([
+      ["pm-root", 0, 1],
+      ["pm-child", 1, 1],
+    ]);
+    expect(
+      listInternals.orderItemsAsTree(
+        [
+          { ...openItem, id: "pm-root", title: "Root", parent: "" },
+          { ...openItem, id: "pm-child", title: "Child", parent: "pm-root" },
+        ] as never,
+        "pm-root",
+        undefined,
+      ).map((item) => item.id),
+    ).toEqual(["pm-child"]);
+    expect(
+      listInternals.orderItemsAsTree(
+        [
+          { ...openItem, id: "pm-a", title: "A", parent: "pm-b" },
+          { ...openItem, id: "pm-b", title: "B", parent: "pm-a" },
+          { ...openItem, id: "pm-orphan", title: "Orphan", parent: "pm-missing" },
+        ] as never,
+        "pm-a",
+        undefined,
+      ).map((item) => item.id),
+    ).toEqual(["pm-b", "pm-a"]);
+    expect(
+      listInternals.buildCompactListFilterSummary({
+        filtersStatus: ["open", "blocked"],
+        options: {
+          type: "Task",
+          tag: "unit",
+          priority: "2",
+          deadlineBefore: "2026-02-01T00:00:00.000Z",
+          deadlineAfter: "2026-01-01T00:00:00.000Z",
+          updatedAfter: "2026-01-02T00:00:00.000Z",
+          updatedBefore: "2026-01-03T00:00:00.000Z",
+          createdAfter: "2026-01-04T00:00:00.000Z",
+          createdBefore: "2026-01-05T00:00:00.000Z",
+          ids: "pm-a,pm-b",
+          assignee: "alice",
+          assigneeFilter: "assigned",
+          parent: "pm-parent",
+          sprint: "sprint-1",
+          release: "v1",
+          limit: "5",
+          offset: "10",
+          includeBody: true,
+          fields: "id,title",
+        },
+        treeEnabled: true,
+        treeDepth: 2,
+        sortField: "updated_at",
+        sortOrder: "desc",
+        runtimeFieldFilters: { severity: "high" },
+      }),
+    ).toMatchObject({
+      status: ["open", "blocked"],
+      type: "Task",
+      tag: "unit",
+      priority: "2",
+      deadline_before: "2026-02-01T00:00:00.000Z",
+      deadline_after: "2026-01-01T00:00:00.000Z",
+      updated_after: "2026-01-02T00:00:00.000Z",
+      updated_before: "2026-01-03T00:00:00.000Z",
+      created_after: "2026-01-04T00:00:00.000Z",
+      created_before: "2026-01-05T00:00:00.000Z",
+      ids: "pm-a,pm-b",
+      assignee: "alice",
+      assignee_filter: "assigned",
+      parent: "pm-parent",
+      sprint: "sprint-1",
+      release: "v1",
+      limit: "5",
+      offset: "10",
+      include_body: true,
+      fields: "id,title",
+      tree: true,
+      tree_depth: 2,
+      sort: "updated_at",
+      order: "desc",
+      runtime_filters: { severity: "high" },
+    });
+  });
+
   it("treats null programmatic date and id filters as omitted", async () => {
     await withTempPmPath(async (context) => {
       createItem(context, {
@@ -199,7 +381,7 @@ describe("runList", () => {
     });
   });
 
-  it("accumulates repeated --ids filters before list execution", async () => {
+  it("filters list-open status by explicit ids before projection", async () => {
     await withTempPmPath(async (context) => {
       const firstId = createItem(context, {
         title: "Repeated IDs Alpha",
@@ -223,13 +405,14 @@ describe("runList", () => {
         deadline: "+1d",
       });
 
-      const result = context.runCli(["list-open", "--ids", firstId, "--ids", secondId, "--json"], { expectJson: true });
+      const ids = `${firstId},${secondId}`;
+      const result = await runList("open", { ids, brief: true }, { path: context.pmPath });
 
-      expect(result.code).toBe(0);
-      const payload = result.json as { count: number; filters: Record<string, unknown>; items: Array<{ id: string }> };
-      expect(payload.count).toBe(2);
-      expect(payload.items.map((item) => item.id).sort()).toEqual([firstId, secondId].sort());
-      expect(payload.filters.ids).toBe(`${firstId},${secondId}`);
+      expect(result.count).toBe(2);
+      expect(result.items.map((item) => item.id).sort()).toEqual([firstId, secondId].sort());
+      expect(result.filters.ids).toBe(ids);
+      expect(result.filters.status).toBe("open");
+      expect(result.projection).toEqual({ mode: "compact", fields: ["id", "status", "type", "title"] });
     });
   });
 
@@ -863,6 +1046,15 @@ describe("runList", () => {
       });
       await expect(runList(undefined, { order: "asc" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runList(undefined, { treeDepth: "1" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(
+        runList(undefined, { assignee: "seed-assignee", assigneeFilter: "unassigned" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "Cannot combine --assignee with --assignee-filter unassigned",
       });
       await expect(runList(undefined, { sort: "unknown" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,

@@ -650,3 +650,15 @@ export async function runHistoryRedact(
     generated_at: nowIso(),
   };
 }
+
+export const _testOnly = {
+  applyLiteralRule,
+  applyRegexRule,
+  buildRedactionRules,
+  hasItemMetadata,
+  normalizeRegexFlags,
+  normalizeStringArrayInput,
+  parseRegexRule,
+  redactStringValue,
+  redactUnknownValue,
+};

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { runConfig } from "../../src/cli/commands/config.js";
+import { _testOnlyConfigCommand, runConfig } from "../../src/cli/commands/config.js";
 import { DEFAULT_STATUS_DEFINITIONS, EXIT_CODE, SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { canonicalDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
@@ -16,6 +16,95 @@ const DEFAULT_GLOBAL_OPTIONS: GlobalOptions = {
   quiet: false,
   profile: false,
 };
+
+describe("config command helper coverage", () => {
+  it("normalizes policy values and rejects unsupported variants", () => {
+    expect(_testOnlyConfigCommand.normalizeAction("get")).toBe("get");
+    expect(() => _testOnlyConfigCommand.normalizeAction("delete")).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+    expect(_testOnlyConfigCommand.normalizeScope("global")).toBe("global");
+    expect(_testOnlyConfigCommand.normalizeScope("project")).toBe("project");
+    expect(() => _testOnlyConfigCommand.normalizeScope("workspace")).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+
+    expect(_testOnlyConfigCommand.normalizeKey("governance-close-validation-default")).toBe(
+      "governance_close_validation_default",
+    );
+    expect(_testOnlyConfigCommand.normalizeItemFormat("TOON")).toBe("toon");
+    expect(() => _testOnlyConfigCommand.normalizeItemFormat("json_markdown")).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+    expect(() => _testOnlyConfigCommand.normalizeItemFormat(undefined)).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+
+    expect(_testOnlyConfigCommand.normalizeHistoryMissingStreamPolicy("strict-error")).toBe("strict_error");
+    expect(_testOnlyConfigCommand.normalizeTestResultTrackingPolicy("ENABLED")).toBe("enabled");
+    expect(_testOnlyConfigCommand.normalizeTelemetryTrackingPolicy("disabled")).toBe("disabled");
+    expect(_testOnlyConfigCommand.normalizeValidateMetadataProfile("custom")).toBe("custom");
+    expect(_testOnlyConfigCommand.normalizeGovernancePreset("minimal")).toBe("minimal");
+    expect(_testOnlyConfigCommand.normalizeGovernanceOwnershipEnforcement("WARN")).toBe("warn");
+    expect(_testOnlyConfigCommand.normalizeGovernanceCreateModeDefault("progressive")).toBe("progressive");
+    expect(_testOnlyConfigCommand.normalizeGovernanceCloseValidationDefault("strict")).toBe("strict");
+    expect(_testOnlyConfigCommand.normalizeGovernanceWorkflowEnforcement("disabled")).toBe("off");
+    expect(_testOnlyConfigCommand.normalizeGovernanceForceRequiredForStaleLockPolicy("enabled")).toBe("enabled");
+    expect(_testOnlyConfigCommand.normalizeGovernanceRequireCloseReasonPolicy("disabled")).toBe("disabled");
+
+    expect(_testOnlyConfigCommand.normalizeKey("lifecycle-closure-like-resolution-patterns")).toBe(
+      "lifecycle_closure_like_resolution_patterns",
+    );
+    expect(_testOnlyConfigCommand.normalizeKey("governance-create-default-type")).toBe("governance_create_default_type");
+    expect(_testOnlyConfigCommand.normalizeGovernanceCloseValidationDefault("none")).toBe("off");
+    expect(_testOnlyConfigCommand.normalizeGovernanceWorkflowEnforcement("none")).toBe("off");
+    expect(() => _testOnlyConfigCommand.normalizeHistoryMissingStreamPolicy("repair")).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+    expect(() => _testOnlyConfigCommand.normalizeGovernancePreset("full")).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+    expect(() => _testOnlyConfigCommand.normalizeGovernanceRequireCloseReasonPolicy("maybe")).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+    expect(_testOnlyConfigCommand.normalizePolicyForConflict("history_missing_stream_policy", "strict-error")).toBe("strict_error");
+    expect(_testOnlyConfigCommand.normalizePolicyForConflict("parent_reference_policy", "strict-error")).toBe("strict_error");
+    expect(_testOnlyConfigCommand.normalizePolicyForConflict("governance_preset", "default")).toBe("default");
+    expect(_testOnlyConfigCommand.normalizePolicyForConflict("governance_workflow_enforcement", "warn")).toBe("warn");
+    expect(_testOnlyConfigCommand.normalizePolicyForConflict("governance_ownership_enforcement", "strict")).toBe("strict");
+    expect(_testOnlyConfigCommand.normalizePolicyForConflict("governance_create_mode_default", "strict")).toBe("strict");
+    expect(_testOnlyConfigCommand.normalizePolicyForConflict("governance_close_validation_default", "disabled")).toBe("off");
+    expect(_testOnlyConfigCommand.normalizePolicyForConflict("governance_require_close_reason", "enabled")).toBe("enabled");
+    expect(_testOnlyConfigCommand.normalizePolicyForConflict("governance_force_required_for_stale_lock", "disabled")).toBe("disabled");
+    expect(_testOnlyConfigCommand.normalizePolicyForConflict("test_result_tracking", "enabled")).toBe("enabled");
+    expect(_testOnlyConfigCommand.normalizePolicyForConflict("telemetry_tracking", "DISABLED")).toBe("disabled");
+    expect(_testOnlyConfigCommand.normalizePolicyForConflict(undefined, "Mixed-Value")).toBe("mixed_value");
+  });
+
+  it("normalizes criteria and metadata field lists", () => {
+    expect(_testOnlyConfigCommand.normalizeCriteria([" b ", "a", "a", ""], false)).toEqual(["a", "b"]);
+    expect(_testOnlyConfigCommand.normalizeCriteria(undefined, true)).toEqual([]);
+    expect(() => _testOnlyConfigCommand.normalizeCriteria(["a"], true)).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+    expect(() => _testOnlyConfigCommand.normalizeCriteria([""], false)).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+
+    expect(_testOnlyConfigCommand.normalizeWarnings([" b ", "a", "a", ""])).toEqual(["", " b ", "a"]);
+    expect(_testOnlyConfigCommand.normalizeMetadataRequiredFields(["acceptance-criteria", "close_reason", "acceptance_criteria"], false)).toEqual([
+      "acceptance_criteria",
+      "close_reason",
+    ]);
+    expect(_testOnlyConfigCommand.normalizeMetadataRequiredFields(undefined, true)).toEqual([]);
+    expect(() => _testOnlyConfigCommand.normalizeMetadataRequiredFields(["unknown"], false)).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+    expect(() => _testOnlyConfigCommand.normalizeMetadataRequiredFields(["close_reason"], true)).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+  });
+});
 
 describe("runConfig", () => {
   const originalGlobalPath = process.env.PM_GLOBAL_PATH;
@@ -233,6 +322,36 @@ describe("runConfig", () => {
     });
   });
 
+  it("gets and sets remaining policy config keys through command paths", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      const cases: Array<{ key: string; policy: string; expected?: string }> = [
+        { key: "history-missing-stream-policy", policy: "strict-error", expected: "strict_error" },
+        { key: "sprint-release-format-policy", policy: "strict-error", expected: "strict_error" },
+        { key: "metadata-validation-profile", policy: "strict" },
+        { key: "governance-create-mode-default", policy: "strict" },
+        { key: "governance-close-validation-default", policy: "warn" },
+        { key: "governance-require-close-reason", policy: "disabled" },
+        { key: "governance-parent-reference-policy", policy: "strict" , expected: "strict_error" },
+        { key: "governance-metadata-validation-profile", policy: "custom" },
+        { key: "governance-force-required-for-stale-lock", policy: "enabled" },
+        { key: "test-result-tracking", policy: "enabled" },
+        { key: "telemetry-tracking", policy: "disabled" },
+      ];
+
+      for (const entry of cases) {
+        const setResult = await runConfig("project", "set", entry.key, { policy: entry.policy }, globalOptions);
+        expect(typeof setResult.changed).toBe("boolean");
+        expect(setResult.policy).toBe(entry.expected ?? entry.policy);
+        const getResult = await runConfig("project", "get", entry.key, {}, globalOptions);
+        expect(getResult.policy).toBe(entry.expected ?? entry.policy);
+      }
+    });
+  });
+
   it("round-trips governance-create-default-type and survives a non-custom preset write (pm-jpwo)", async () => {
     await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
@@ -282,6 +401,48 @@ describe("runConfig", () => {
     });
   });
 
+  it("exposes lifecycle resolution patterns and rejects clear criteria for enum keys", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      const getDefault = await runConfig(
+        "project",
+        "get",
+        "lifecycle-closure-like-resolution-patterns",
+        {},
+        globalOptions,
+      );
+      expect(getDefault.key).toBe("lifecycle_closure_like_resolution_patterns");
+      expect(getDefault.criteria).toContain("work is closed");
+
+      const setResult = await runConfig(
+        "project",
+        "set",
+        "lifecycle_closure_like_resolution_patterns",
+        { criterion: ["done", "verified", "done"] },
+        globalOptions,
+      );
+      expect(setResult.criteria).toEqual(["done", "verified"]);
+      expect(setResult.changed).toBe(true);
+
+      const clearResult = await runConfig(
+        "project",
+        "set",
+        "lifecycle-closure-like-resolution-patterns",
+        { clearCriteria: true },
+        globalOptions,
+      );
+      expect(clearResult.criteria).toEqual([]);
+      expect(clearResult.changed).toBe(true);
+
+      await expect(
+        runConfig("project", "set", "telemetry-tracking", { clearCriteria: true }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
   it("rejects an unknown governance-create-default-type with a hint (pm-jpwo)", async () => {
     await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
       const pmRoot = path.join(tempRoot, ".agents", "pm");
@@ -290,6 +451,9 @@ describe("runConfig", () => {
 
       await expect(
         runConfig("project", "set", "governance-create-default-type", { policy: "Nonsense" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runConfig("project", "set", "governance-create-default-type", {}, globalOptions),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
     });
   });
@@ -1133,6 +1297,265 @@ describe("runConfig", () => {
     });
   });
 
+  it("gets and sets context settings and section toggles", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      const getDefault = await runConfig("project", "get", "context", {}, globalOptions);
+      expect(getDefault.key).toBe("context");
+      expect(getDefault.context_settings).toMatchObject({
+        default_depth: "brief",
+        activity_limit: 10,
+        stale_threshold_days: 7,
+      });
+
+      const setDeep = await runConfig(
+        "project",
+        "set",
+        "context",
+        {
+          defaultDepth: "deep",
+          activityLimit: "25",
+          staleThresholdDays: "14",
+          sectionHierarchy: "off",
+          sectionActivity: "0",
+          sectionProgress: "disabled",
+          sectionBlockers: "false",
+          sectionFiles: "on",
+          sectionWorkload: "1",
+          sectionStaleness: "enabled",
+          sectionTests: "true",
+        },
+        globalOptions,
+      );
+      expect(setDeep.changed).toBe(true);
+      expect(setDeep.context_settings).toMatchObject({
+        default_depth: "deep",
+        activity_limit: 25,
+        stale_threshold_days: 14,
+        sections: {
+          hierarchy: false,
+          activity: false,
+          progress: false,
+          blockers: false,
+          files: true,
+          workload: true,
+          staleness: true,
+          tests: true,
+        },
+      });
+
+      const setSame = await runConfig(
+        "project",
+        "set",
+        "context",
+        {
+          defaultDepth: "deep",
+          activityLimit: "25",
+          staleThresholdDays: "14",
+          sectionHierarchy: "false",
+        },
+        globalOptions,
+      );
+      expect(setSame.changed).toBe(false);
+
+      await expect(
+        runConfig("project", "set", "context", { defaultDepth: "verbose" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runConfig("project", "set", "context", { activityLimit: "0" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runConfig("project", "set", "context", { staleThresholdDays: "NaN" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runConfig("project", "set", "context", { sectionTests: "maybe" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("gets and sets nested config leaves including positional and validation paths", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      const getDefault = await runConfig("project", "get", "search-provider", {}, globalOptions);
+      expect(getDefault.nested_setting).toMatchObject({
+        key: "search_provider",
+        path: "search.provider",
+        kind: "string",
+      });
+
+      const setProvider = await runConfig("project", "set", "search-provider", {}, globalOptions, "local-provider");
+      expect(setProvider.changed).toBe(true);
+      expect(setProvider.nested_setting?.value).toBe("local-provider");
+
+      const setProviderAgain = await runConfig(
+        "project",
+        "set",
+        "search_provider",
+        { value: "local-provider" },
+        globalOptions,
+      );
+      expect(setProviderAgain.changed).toBe(false);
+
+      const setTopK = await runConfig(
+        "project",
+        "set",
+        "search-rerank-top-k",
+        { value: "8" },
+        globalOptions,
+      );
+      expect(setTopK.nested_setting).toMatchObject({
+        key: "search_rerank_top_k",
+        value: 8,
+      });
+
+      await expect(
+        runConfig("project", "set", "search-provider", {}, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runConfig("project", "set", "search-provider", { value: "explicit" }, globalOptions, "positional"),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runConfig("project", "set", "search-rerank-top-k", { value: "0" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("gets and sets remaining policy and lifecycle list branches", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      const getBlocked = await runConfig(
+        "project",
+        "get",
+        "lifecycle-closure-like-blocked-reason-patterns",
+        {},
+        globalOptions,
+      );
+      expect(getBlocked.criteria).toEqual(["no active blocker because work is closed", "work is closed"]);
+
+      const setBlocked = await runConfig(
+        "project",
+        "set",
+        "lifecycle-closure-like-blocked-reason-patterns",
+        { criterion: [" Closed ", "blocked"] },
+        globalOptions,
+      );
+      expect(setBlocked.criteria).toEqual(["blocked", "closed"]);
+
+      const getResolution = await runConfig(
+        "project",
+        "get",
+        "lifecycle-closure-like-resolution-patterns",
+        {},
+        globalOptions,
+      );
+      expect(getResolution.criteria).toEqual([
+        "closed with implementation evidence",
+        "closed with verification evidence",
+        "work completed and recorded",
+        "work is closed",
+      ]);
+
+      const setResolution = await runConfig(
+        "project",
+        "set",
+        "lifecycle-closure-like-resolution-patterns",
+        { criterion: [" Done ", "resolved"] },
+        globalOptions,
+      );
+      expect(setResolution.criteria).toEqual(["done", "resolved"]);
+
+      const getActual = await runConfig(
+        "project",
+        "get",
+        "lifecycle-closure-like-actual-result-patterns",
+        {},
+        globalOptions,
+      );
+      expect(getActual.criteria).toEqual(["closed and recorded", "work completed", "work completed and recorded"]);
+
+      const setActual = await runConfig(
+        "project",
+        "set",
+        "lifecycle-closure-like-actual-result-patterns",
+        { criterion: ["shipped"] },
+        globalOptions,
+      );
+      expect(setActual.criteria).toEqual(["shipped"]);
+
+      const setCreateMode = await runConfig(
+        "project",
+        "set",
+        "governance-create-mode-default",
+        { policy: "strict" },
+        globalOptions,
+      );
+      expect(setCreateMode.policy).toBe("strict");
+
+      const setCloseValidation = await runConfig(
+        "project",
+        "set",
+        "governance-close-validation-default",
+        { policy: "disabled" },
+        globalOptions,
+      );
+      expect(setCloseValidation.policy).toBe("off");
+
+      const setRequireReason = await runConfig(
+        "project",
+        "set",
+        "governance-require-close-reason",
+        { policy: "disabled" },
+        globalOptions,
+      );
+      expect(setRequireReason.policy).toBe("disabled");
+
+      const setParentPolicy = await runConfig(
+        "project",
+        "set",
+        "governance-parent-reference-policy",
+        { policy: "warn" },
+        globalOptions,
+      );
+      expect(setParentPolicy.policy).toBe("warn");
+
+      const setMetadataPolicy = await runConfig(
+        "project",
+        "set",
+        "governance-metadata-validation-profile",
+        { policy: "custom" },
+        globalOptions,
+      );
+      expect(setMetadataPolicy.policy).toBe("custom");
+
+      const setForceLock = await runConfig(
+        "project",
+        "set",
+        "governance-force-required-for-stale-lock",
+        { policy: "enabled" },
+        globalOptions,
+      );
+      expect(setForceLock.policy).toBe("enabled");
+
+      const setTestTracking = await runConfig(
+        "project",
+        "set",
+        "test-result-tracking",
+        { policy: "enabled" },
+        globalOptions,
+      );
+      expect(setTestTracking.policy).toBe("enabled");
+    });
+  });
+
   describe("positional value routing for config set", () => {
     it("routes a positional value to --policy with enabled/disabled synonyms", async () => {
       await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
@@ -1299,6 +1722,32 @@ describe("runConfig", () => {
         await expect(
           runConfig("project", "set", "context", {}, { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot }, "deep"),
         ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      });
+    });
+
+    it("reports unchanged lifecycle pattern criteria for all lifecycle keys", async () => {
+      await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+        const pmRoot = path.join(tempRoot, ".agents", "pm");
+        await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+
+        for (const [key, criteria] of [
+          ["lifecycle-stale-blocker-reason-patterns", SETTINGS_DEFAULTS.validation.lifecycle_stale_blocker_reason_patterns],
+          [
+            "lifecycle-closure-like-blocked-reason-patterns",
+            SETTINGS_DEFAULTS.validation.lifecycle_closure_like_blocked_reason_patterns,
+          ],
+          ["lifecycle-closure-like-resolution-patterns", SETTINGS_DEFAULTS.validation.lifecycle_closure_like_resolution_patterns],
+          ["lifecycle-closure-like-actual-result-patterns", SETTINGS_DEFAULTS.validation.lifecycle_closure_like_actual_result_patterns],
+        ] as const) {
+          const result = await runConfig(
+            "project",
+            "set",
+            key,
+            { criterion: [...criteria] },
+            { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot },
+          );
+          expect(result).toMatchObject({ key: key.replaceAll("-", "_"), changed: false });
+        }
       });
     });
 

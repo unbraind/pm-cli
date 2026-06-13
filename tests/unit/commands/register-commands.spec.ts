@@ -49,6 +49,34 @@ vi.mock("../../../src/cli/commands/close-many.js", () => ({ runCloseMany: vi.fn(
 vi.mock("../../../src/cli/commands/delete.js", () => ({ runDelete: vi.fn() }));
 vi.mock("../../../src/cli/commands/append.js", () => ({ runAppend: vi.fn() }));
 vi.mock("../../../src/cli/commands/restore.js", () => ({ runRestore: vi.fn() }));
+vi.mock("../../../src/cli/commands/plan.js", () => ({
+  PLAN_SUBCOMMANDS: ["create", "show", "reorder-step", "decision"],
+  runPlan: vi.fn(),
+}));
+vi.mock("../../../src/cli/commands/history-redact.js", () => ({ runHistoryRedact: vi.fn() }));
+vi.mock("../../../src/cli/commands/history-repair.js", () => ({
+  assertHistoryRepairTarget: vi.fn(),
+  runHistoryRepair: vi.fn(),
+  runHistoryRepairAll: vi.fn(),
+}));
+vi.mock("../../../src/cli/commands/history-compact.js", () => ({ runHistoryCompact: vi.fn() }));
+vi.mock("../../../src/cli/commands/schema.js", () => ({
+  SCHEMA_SUBCOMMANDS: ["list", "show", "show-status", "add-type", "remove-type", "add-status", "remove-status"],
+  runSchemaAddType: vi.fn(),
+  runSchemaRemoveType: vi.fn(),
+  runSchemaAddStatus: vi.fn(),
+  runSchemaRemoveStatus: vi.fn(),
+  runSchemaList: vi.fn(),
+  runSchemaShow: vi.fn(),
+  runSchemaShowStatus: vi.fn(),
+  formatSchemaAddTypeHuman: vi.fn(() => "added type"),
+  formatSchemaRemoveTypeHuman: vi.fn(() => "removed type"),
+  formatSchemaAddStatusHuman: vi.fn(() => "added status"),
+  formatSchemaRemoveStatusHuman: vi.fn(() => "removed status"),
+  formatSchemaListHuman: vi.fn(() => "schema list"),
+  formatSchemaShowHuman: vi.fn(() => "schema show"),
+  formatSchemaShowStatusHuman: vi.fn(() => "schema status"),
+}));
 vi.mock("../../../src/cli/commands/comments.js", () => ({ runComments: vi.fn() }));
 vi.mock("../../../src/cli/commands/notes.js", () => ({ runNotes: vi.fn() }));
 vi.mock("../../../src/cli/commands/learnings.js", () => ({ runLearnings: vi.fn() }));
@@ -94,6 +122,26 @@ import { runCloseMany } from "../../../src/cli/commands/close-many.js";
 import { runDelete } from "../../../src/cli/commands/delete.js";
 import { runAppend } from "../../../src/cli/commands/append.js";
 import { runRestore } from "../../../src/cli/commands/restore.js";
+import { runPlan } from "../../../src/cli/commands/plan.js";
+import { runHistoryRedact } from "../../../src/cli/commands/history-redact.js";
+import { assertHistoryRepairTarget, runHistoryRepair, runHistoryRepairAll } from "../../../src/cli/commands/history-repair.js";
+import { runHistoryCompact } from "../../../src/cli/commands/history-compact.js";
+import {
+  formatSchemaAddStatusHuman,
+  formatSchemaAddTypeHuman,
+  formatSchemaListHuman,
+  formatSchemaRemoveStatusHuman,
+  formatSchemaRemoveTypeHuman,
+  formatSchemaShowHuman,
+  formatSchemaShowStatusHuman,
+  runSchemaAddStatus,
+  runSchemaAddType,
+  runSchemaList,
+  runSchemaRemoveStatus,
+  runSchemaRemoveType,
+  runSchemaShow,
+  runSchemaShowStatus,
+} from "../../../src/cli/commands/schema.js";
 import { runComments } from "../../../src/cli/commands/comments.js";
 import { runNotes } from "../../../src/cli/commands/notes.js";
 import { runLearnings } from "../../../src/cli/commands/learnings.js";
@@ -192,6 +240,19 @@ beforeEach(() => {
   vi.mocked(runDelete).mockResolvedValue({ id: "pm-1", dry_run: false } as never);
   vi.mocked(runAppend).mockResolvedValue({ id: "pm-1" } as never);
   vi.mocked(runRestore).mockResolvedValue({ id: "pm-1" } as never);
+  vi.mocked(runPlan).mockResolvedValue({ id: "pm-plan" } as never);
+  vi.mocked(runHistoryRedact).mockResolvedValue({ id: "pm-1", changed: true, dry_run: false } as never);
+  vi.mocked(assertHistoryRepairTarget).mockReturnValue(undefined as never);
+  vi.mocked(runHistoryRepair).mockResolvedValue({ id: "pm-1", repaired: true } as never);
+  vi.mocked(runHistoryRepairAll).mockResolvedValue({ totals: { failed: 0 } } as never);
+  vi.mocked(runHistoryCompact).mockResolvedValue({ id: "pm-1", compacted: true } as never);
+  vi.mocked(runSchemaAddType).mockResolvedValue({ action: "add-type", warnings: [] } as never);
+  vi.mocked(runSchemaRemoveType).mockResolvedValue({ action: "remove-type", warnings: [] } as never);
+  vi.mocked(runSchemaAddStatus).mockResolvedValue({ action: "add-status", warnings: [] } as never);
+  vi.mocked(runSchemaRemoveStatus).mockResolvedValue({ action: "remove-status", warnings: [] } as never);
+  vi.mocked(runSchemaList).mockResolvedValue({ action: "list" } as never);
+  vi.mocked(runSchemaShow).mockResolvedValue({ action: "show" } as never);
+  vi.mocked(runSchemaShowStatus).mockResolvedValue({ action: "show-status" } as never);
   vi.mocked(runComments).mockResolvedValue({ id: "pm-1", comments: [] } as never);
   vi.mocked(runNotes).mockResolvedValue({ id: "pm-1", notes: [] } as never);
   vi.mocked(runLearnings).mockResolvedValue({ id: "pm-1", learnings: [] } as never);
@@ -617,6 +678,143 @@ describe("mutation command actions", () => {
     expect(depsOptions.format).toBe("graph");
     expect(depsOptions.summary).toBe(true);
     expect(depsOptions.maxDepth).toBe("2");
+  });
+
+  it("routes plan subcommands, aliases, positional titles, and reorder validation", async () => {
+    await expect(runCli("plan")).rejects.toThrow("pm plan requires a subcommand");
+    await expect(runCli("plan", "list")).rejects.toThrow("Unknown pm plan subcommand");
+
+    await runCli("plan", "create", "Refactor retries", "--step", "read", "--blocked_by", "pm-a", "--from_search", "locks");
+    let request = lastCallArg<{
+      subcommand: string;
+      id?: string;
+      options: Record<string, unknown>;
+    }>(vi.mocked(runPlan) as never, 0);
+    expect(request.subcommand).toBe("create");
+    expect(request.id).toBeUndefined();
+    expect(request.options.title).toBe("Refactor retries");
+    expect(request.options.step).toEqual(["read"]);
+    expect(request.options.blockedBy).toEqual(["pm-a"]);
+    expect(request.options.fromSearch).toBe("locks");
+
+    await expect(runCli("plan", "reorder-step", "pm-plan", "step-1", "not-int")).rejects.toThrow(
+      "requires an integer new order",
+    );
+    await runCli("plan", "reorder-step", "pm-plan", "step-1", "7", "--allow_multiple_active");
+    request = lastCallArg(vi.mocked(runPlan) as never, 0);
+    expect(request).toMatchObject({
+      subcommand: "reorder-step",
+      id: "pm-plan",
+      stepRef: "step-1",
+      reorderTo: 7,
+    });
+    expect(request.options.allowMultipleActive).toBe(true);
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalled();
+  });
+
+  it("routes history redaction, repair, repair-all, and compaction actions", async () => {
+    await runCli("history-redact", "pm-1", "--literal", "secret", "--regex", "/token/gi", "--replacement", "[x]");
+    expect(vi.mocked(runHistoryRedact)).toHaveBeenCalledWith(
+      "pm-1",
+      expect.objectContaining({
+        literal: ["secret"],
+        regex: ["/token/gi"],
+        replacement: "[x]",
+        dryRun: false,
+      }),
+      expect.anything(),
+    );
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(1);
+
+    vi.mocked(runHistoryRedact).mockResolvedValueOnce({ id: "pm-1", changed: true, dry_run: true } as never);
+    await runCli("history-redact", "pm-1", "--literal", "secret", "--dry-run");
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(1);
+
+    await runCli("history-repair", "pm-1", "--dry-run", "--message", "repair");
+    expect(vi.mocked(assertHistoryRepairTarget)).toHaveBeenCalledWith("pm-1", false);
+    expect(vi.mocked(runHistoryRepair)).toHaveBeenCalledWith(
+      "pm-1",
+      expect.objectContaining({ dryRun: true, message: "repair" }),
+      expect.anything(),
+    );
+
+    vi.mocked(runHistoryRepairAll).mockResolvedValueOnce({ totals: { failed: 2 } } as never);
+    await runCli("history-repair", "--all", "--force");
+    expect(vi.mocked(assertHistoryRepairTarget)).toHaveBeenCalledWith(undefined, true);
+    expect(vi.mocked(runHistoryRepairAll)).toHaveBeenCalledWith(
+      expect.objectContaining({ force: true }),
+      expect.anything(),
+    );
+    expect(process.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
+    process.exitCode = undefined;
+
+    await runCli("history-compact", "pm-1", "--before", "12", "--dry-run");
+    expect(vi.mocked(runHistoryCompact)).toHaveBeenCalledWith(
+      "pm-1",
+      expect.objectContaining({ before: "12", dryRun: true }),
+      expect.anything(),
+    );
+  });
+
+  it("routes schema subcommands, shorthand add-type, aliases, warnings, and JSON output", async () => {
+    await expect(runCli("schema")).rejects.toThrow("pm schema requires a subcommand");
+    await expect(runCli("schema", "bogus", "Name")).rejects.toThrow("Unknown pm schema subcommand");
+
+    await runCliRaw("schema", "list");
+    expect(vi.mocked(runSchemaList)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(formatSchemaListHuman)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw("schema", "show", "Task");
+    expect(vi.mocked(runSchemaShow)).toHaveBeenCalledWith("Task", expect.anything());
+    expect(vi.mocked(formatSchemaShowHuman)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw("schema", "show-status", "open");
+    expect(vi.mocked(runSchemaShowStatus)).toHaveBeenCalledWith("open", expect.anything());
+    expect(vi.mocked(formatSchemaShowStatusHuman)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw("schema", "remove-type", "Spike", "--force");
+    expect(vi.mocked(runSchemaRemoveType)).toHaveBeenCalledWith(
+      "Spike",
+      { author: undefined, force: true },
+      expect.anything(),
+    );
+    expect(vi.mocked(formatSchemaRemoveTypeHuman)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw("schema", "Spike", "--description", "Investigation", "--default_status", "open", "--folder", "spikes", "--alias", "spike");
+    expect(vi.mocked(runSchemaAddType)).toHaveBeenCalledWith(
+      "Spike",
+      expect.objectContaining({
+        description: "Investigation",
+        defaultStatus: "open",
+        folder: "spikes",
+        alias: ["spike"],
+      }),
+      expect.anything(),
+    );
+    expect(vi.mocked(formatSchemaAddTypeHuman)).toHaveBeenCalledTimes(1);
+
+    vi.mocked(runSchemaAddStatus).mockResolvedValueOnce({ action: "add-status", warnings: ["hook:warn"] } as never);
+    await runCliRaw("schema", "add-status", "review", "--role", "active", "--alias", "in_review", "--order", "5");
+    expect(vi.mocked(runSchemaAddStatus)).toHaveBeenCalledWith(
+      "review",
+      expect.objectContaining({ role: ["active"], alias: ["in_review"], order: 5 }),
+      expect.anything(),
+    );
+    expect(vi.mocked(formatSchemaAddStatusHuman)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw("schema", "remove-status", "review");
+    expect(vi.mocked(runSchemaRemoveStatus)).toHaveBeenCalledWith(
+      "review",
+      { author: undefined, force: false },
+      expect.anything(),
+    );
+    expect(vi.mocked(formatSchemaRemoveStatusHuman)).toHaveBeenCalledTimes(1);
+
+    await runCliRaw("--json", "schema", "list");
+    expect(vi.mocked(formatSchemaListHuman)).toHaveBeenCalledTimes(1);
+    await expect(runCli("schema", "add-status", "bad", "--order", "not-a-number")).rejects.toThrow(
+      "--order must be a finite integer",
+    );
   });
 
   it("guards annotation text sources and skips refresh for read-only listings", async () => {

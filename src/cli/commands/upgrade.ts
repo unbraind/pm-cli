@@ -33,6 +33,20 @@ export interface UpgradeCommandOptions {
   commandRunner?: UpgradeCommandRunner;
 }
 
+export const _testOnly = {
+  defaultCommandRunner,
+  isLocalNpmSpec,
+  normalizeTarget,
+  packageRecordMatchesTarget,
+  resolveCliPackage,
+  resolvePackageInstallSource,
+  resolveRunnablePackageSource,
+  resolveScope,
+  resolveTag,
+  packageCommandFor,
+  summarize,
+};
+
 export interface UpgradeCommandRunnerResult {
   stdout: string;
   stderr: string;

@@ -6,7 +6,7 @@ import {
   setActiveExtensionRenderers,
   setActiveExtensionServices,
 } from "../../src/core/extensions/index.js";
-import { formatOutput, printError, printResult } from "../../src/core/output/output.js";
+import { formatOutput, outputTestOnly, printError, printResult, writeStderr, writeStdout } from "../../src/core/output/output.js";
 import { resolveQueryProjectionLabel, withQuerySummary } from "../../src/core/output/query-summary.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 
@@ -88,12 +88,21 @@ describe("core/output/output", () => {
     expect(rendered).not.toContain('\n      title: "Compact output"');
   });
 
+  it("covers raw TOON renderer empty collection branches", () => {
+    expect(outputTestOnly.compactToonValue({ keep: "value", drop: [null, undefined] })).toEqual({ keep: "value" });
+    expect(outputTestOnly.renderToonValue({ empty_arr: [], empty_obj: {} }, 0)).toBe("empty_arr: []\nempty_obj: {}");
+    expect(outputTestOnly.renderToonValue(null, 0)).toBe("null");
+    expect(outputTestOnly.renderToonValue(Symbol.for("pm-output"), 0)).toBe("undefined");
+  });
+
   it("renders scalar fallback output for non-structured values", () => {
     expect(formatOutput([], {})).toBe("{}\n");
     expect(formatOutput({}, {})).toBe("{}\n");
     expect(formatOutput(null, {})).toBe("{}\n");
     expect(formatOutput(undefined, {})).toBe("{}\n");
     expect(formatOutput("value", {})).toBe("\"value\"\n");
+    expect(formatOutput(42, {})).toBe("42\n");
+    expect(formatOutput(false, {})).toBe("false\n");
   });
 
   it("keeps JSON output backward-compatible with empty/null fields", () => {
@@ -206,6 +215,80 @@ describe("core/output/output", () => {
     process.exitCode = previousExitCode;
   });
 
+  it("handles direct stream writes and async EPIPE stream events", () => {
+    const previousExitCode = process.exitCode;
+    process.exitCode = undefined;
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+
+    expect(writeStdout("plain stdout\n")).toBe(true);
+    expect(writeStderr("plain stderr\n")).toBe(true);
+    expect(stdoutSpy).toHaveBeenCalledWith("plain stdout\n");
+    expect(stderrSpy).toHaveBeenCalledWith("plain stderr\n");
+
+    const stdoutPipe = new Error("stdout pipe closed") as Error & { code?: string };
+    stdoutPipe.code = "EPIPE";
+    process.stdout.emit("error", stdoutPipe);
+    expect(process.exitCode).toBe(EXIT_CODE.SUCCESS);
+
+    process.exitCode = undefined;
+    const stderrPipe = new Error("stderr pipe closed") as Error & { code?: string };
+    stderrPipe.code = "EPIPE";
+    process.stderr.emit("error", stderrPipe);
+    expect(process.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
+
+    process.exitCode = previousExitCode;
+  });
+
+  it("forwards non-EPIPE async stream errors to uncaught exception handling", async () => {
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockReturnValue(true);
+    try {
+      writeStdout("install stream handlers\n");
+      const uncaught = new Promise<Error>((resolve) => {
+        process.once("uncaughtException", (error) => {
+          resolve(error);
+        });
+      });
+
+      process.stdout.emit("error", "async stream failure");
+
+      await expect(uncaught).resolves.toMatchObject({ message: "async stream failure" });
+    } finally {
+      stdoutSpy.mockRestore();
+    }
+  });
+
+  it("reports direct stream write return values and preserves explicit newlines from services", () => {
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockReturnValue(false);
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(false);
+
+    expect(writeStdout("buffered stdout\n")).toBe(true);
+    expect(writeStderr("buffered stderr\n")).toBe(true);
+    expect(stdoutSpy).toHaveBeenCalledWith("buffered stdout\n");
+    expect(stderrSpy).toHaveBeenCalledWith("buffered stderr\n");
+
+    setActiveExtensionServices({
+      overrides: [
+        {
+          layer: "project",
+          name: "newline-output-service-ext",
+          service: "output_format",
+          run: () => "already newline\n",
+        },
+        {
+          layer: "project",
+          name: "newline-error-service-ext",
+          service: "error_format",
+          run: () => "ERR already newline\n",
+        },
+      ],
+    });
+
+    expect(formatOutput({ ok: true }, {})).toBe("already newline\n");
+    printError("ignored");
+    expect(stderrSpy).toHaveBeenLastCalledWith("ERR already newline\n");
+  });
+
   it("rethrows non-EPIPE stdout stream errors", () => {
     const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => {
       throw new Error("write failed");
@@ -291,6 +374,71 @@ describe("core/output/output", () => {
     });
   });
 
+  it("renders calendar markdown defaults for empty and populated event payloads", () => {
+    expect(
+      formatOutput(
+        {
+          output_default: "markdown",
+          view: "week",
+          summary: { events: 0 },
+          events: [],
+          days: [],
+        },
+        {},
+      ),
+    ).toContain("No calendar events matched the selected filters.");
+
+    const rendered = formatOutput(
+      {
+        output_default: "markdown",
+        view: "agenda",
+        summary: { events: 2 },
+        days: [{}],
+        events: [
+          { kind: "reminder", item_id: "pm-a1", item_title: "Review", reminder_text: "soon" },
+          { item_id: "pm-b2", item_title: "Ship" },
+          "ignored",
+        ],
+      },
+      {},
+    );
+    expect(rendered).toContain("# pm calendar (agenda)");
+    expect(rendered).toContain("- events: 2");
+    expect(rendered).toContain("[reminder] pm-a1 Review soon");
+    expect(rendered).toContain("[event] pm-b2 Ship");
+
+    expect(formatOutput({ output_default: "markdown", view: "bad", events: [], days: "bad" }, {})).toContain(
+      'output_default: "markdown"',
+    );
+  });
+
+  it("bypasses service and renderer overrides for native output markers", () => {
+    setActiveExtensionServices({
+      overrides: [
+        {
+          layer: "project",
+          name: "output-service-ext",
+          service: "output_format",
+          run: () => "service-output",
+        },
+      ],
+    });
+    setActiveExtensionRenderers({
+      overrides: [
+        {
+          layer: "project",
+          name: "renderer-ext",
+          format: "json",
+          run: () => "renderer-output",
+        },
+      ],
+    });
+
+    expect(formatOutput({ __pm_native_output: true, ok: true }, { json: true })).toBe(
+      `${JSON.stringify({ ok: true }, null, 2)}\n`,
+    );
+  });
+
   it("applies active renderer overrides and falls back when they fail", () => {
     setActiveExtensionRenderers({
       overrides: [
@@ -356,6 +504,32 @@ describe("core/output/output", () => {
     printError("boom");
     expect(stderrSpy).toHaveBeenCalledWith("ERR:boom\n");
   });
+
+  it("uses non-string output service results as the rendered payload and falls back for non-string errors", () => {
+    setActiveExtensionServices({
+      overrides: [
+        {
+          layer: "project",
+          name: "object-output-service-ext",
+          service: "output_format",
+          run: () => ({ from_service: true }),
+        },
+        {
+          layer: "project",
+          name: "object-error-service-ext",
+          service: "error_format",
+          run: () => ({ ignored: true }),
+        },
+      ],
+    });
+
+    expect(formatOutput({ ok: true }, {})).toBe("from_service: true\n");
+
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    printError("plain");
+    expect(stderrSpy).toHaveBeenCalledWith("plain\n");
+  });
+
 });
 
 describe("core/output/query-summary", () => {

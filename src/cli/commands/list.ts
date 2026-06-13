@@ -763,3 +763,25 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
     ...(warnings.length > 0 ? { warnings } : {}),
   };
 }
+
+export const _testOnly = {
+  buildCompactListFilterSummary,
+  compareBySortField,
+  compareDefaultSort,
+  compareNullableString,
+  compareNullableTimestamp,
+  normalizeProjectionField,
+  parseAssigneeFilter,
+  parseFieldSelectors,
+  parseIdsFilter,
+  parseOffset,
+  parseProjectionConfig,
+  parseSortField,
+  parseSortOrder,
+  orderItemsAsTree,
+  projectListItems,
+  readListFieldValue,
+  sortItems,
+  trimNonEmpty,
+  withTreeMetadata,
+};

@@ -532,3 +532,7 @@ export function parseLinkedTestJsonEntries(raw: string, optionName: string): Lin
     parseLinkedTestJsonEntry(entry, entries.length > 1 ? `entry ${index + 1}` : "entry", optionName),
   );
 }
+
+export const _testOnlyLinkedTestParsers = {
+  parseLinkedTestJsonEntry,
+};

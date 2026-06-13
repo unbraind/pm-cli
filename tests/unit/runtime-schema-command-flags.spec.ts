@@ -1,8 +1,17 @@
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  ensureRuntimeSchemaFileScaffold,
+  filePathForSchemaSection,
+  loadRuntimeSchemaFromOptionalFiles,
   normalizeRuntimeSchemaSettings,
+  normalizeStatusInputWithRegistry,
+  runtimeFieldOptionTarget,
   resolveRuntimeFieldRegistry,
   resolveRuntimeStatusRegistry,
+  statusIsTerminal,
   type RuntimeFieldRegistry,
 } from "../../src/core/schema/runtime-schema.js";
 import {
@@ -86,6 +95,356 @@ describe("runtime schema command flag registration", () => {
 
     const registry = resolveRuntimeStatusRegistry(normalized);
     expect(registry.alias_to_id.get("todo")).toBe("open");
+  });
+
+  it("normalizes type workflows, status roles, and runtime field defaults", () => {
+    const normalized = normalizeRuntimeSchemaSettings({
+      version: 2.8,
+      statuses: [
+        { id: "triage", aliases: ["To Do", "to-do"], roles: ["default_open", "active"], order: 20 },
+        { id: "done", roles: ["terminal", "terminal_done", "default_close"], order: Number.NaN },
+        { id: "blocked", roles: ["blocked"], description: " blocked work " },
+        { id: "drafting", roles: ["draft"] },
+      ],
+      fields: [
+        {
+          key: "Customer Segment",
+          front_matter_key: "customerSegment",
+          cli_flag: "--segment",
+          cli_aliases: ["--cust_seg", "segment"],
+          description: " segment field ",
+          type: "unknown" as "string",
+          commands: [],
+          allow_unset: false,
+        },
+        {
+          key: "labels",
+          type: "string_array",
+        },
+        {
+          key: "labels",
+          metadata_key: "label_values",
+          type: "string_array",
+          commands: ["list"],
+        },
+      ],
+      workflow: {
+        open_status: "To Do",
+        close_status: undefined,
+      },
+      type_workflows: [
+        { type: " Task ", allowed_transitions: [] },
+        {
+          type: "Issue",
+          allowed_transitions: [["triage", "done"], ["triage", "done"], ["triage", ""], ["bad"] as [string, string]],
+        },
+        { type: "", allowed_transitions: [] },
+        { type: "NoTransitions" } as unknown as { type: string; allowed_transitions: [string, string][] },
+        { type: "Bug", allowed_transitions: [["x", "y", "z"] as unknown as [string, string]] },
+      ],
+      unknown_field_policy: "REJECT",
+    });
+
+    expect(normalized.version).toBe(2);
+    expect(normalized.unknown_field_policy).toBe("reject");
+    expect(normalizeRuntimeSchemaSettings({ unknown_field_policy: "STRICT" }).unknown_field_policy).toBe("allow");
+    expect(normalized.type_workflows).toEqual([
+      { type: "Issue", allowed_transitions: [["triage", "done"]] },
+      { type: "Task", allowed_transitions: [] },
+    ]);
+    expect(normalized.fields).toContainEqual(
+      expect.objectContaining({
+        key: "customer_segment",
+        metadata_key: "customersegment",
+        cli_flag: "segment",
+        cli_aliases: ["cust-seg"],
+        type: "string",
+        commands: ["create", "update"],
+        allow_unset: false,
+      }),
+    );
+    expect(normalized.fields).toContainEqual(
+      expect.objectContaining({
+        key: "labels",
+        metadata_key: "label_values",
+        repeatable: true,
+        commands: ["list"],
+      }),
+    );
+
+    const statusRegistry = resolveRuntimeStatusRegistry(normalized);
+    expect(statusRegistry.open_status).toBe("to_do");
+    expect(statusRegistry.close_status).toBe("done");
+    expect(statusRegistry.active_statuses.has("triage")).toBe(true);
+    expect(statusRegistry.blocked_statuses.has("blocked")).toBe(true);
+    expect(statusRegistry.draft_statuses.has("drafting")).toBe(true);
+    expect(normalizeStatusInputWithRegistry("to do", statusRegistry)).toBe("triage");
+    expect(statusIsTerminal("done", statusRegistry)).toBe(true);
+    expect(statusIsTerminal("missing", statusRegistry)).toBe(false);
+
+    const fieldRegistry = resolveRuntimeFieldRegistry(normalized);
+    const segment = fieldRegistry.by_key.get("customer_segment");
+    expect(segment).toBeDefined();
+    expect(runtimeFieldOptionTarget(segment!)).toBe("customerSegment");
+    expect(fieldRegistry.by_cli_token.get("cust-seg")).toBe(segment);
+    expect(fieldRegistry.command_to_fields.get("list")?.map((field) => field.key)).toEqual(["labels"]);
+  });
+
+  it("falls back cleanly when runtime schema definitions are empty or malformed", () => {
+    const normalizedDefaults = normalizeRuntimeSchemaSettings(undefined);
+    expect(normalizedDefaults.version).toBe(1);
+    expect(normalizedDefaults.files).toMatchObject({
+      types: "schema/types.json",
+      statuses: "schema/statuses.json",
+      fields: "schema/fields.json",
+      workflows: "schema/workflows.json",
+    });
+
+    const normalized = normalizeRuntimeSchemaSettings({
+      version: Number.POSITIVE_INFINITY,
+      files: {
+        types: "",
+      },
+      statuses: [
+        { id: "" },
+        { id: "   " },
+      ],
+      fields: [
+        { key: "" },
+        {
+          key: "  ",
+          cli_flag: "   ",
+        },
+        {
+          key: "release train",
+          metadata_key: "",
+          cli_flag: undefined,
+          cli_aliases: ["--release-train", "", "--release_train"],
+          commands: ["bad", "create"] as unknown as ["create"],
+          required: true,
+          required_on_create: true,
+          required_types: ["Task", "", "Task"],
+        },
+      ],
+      workflow: {
+        open_status: " ",
+        close_status: " ",
+        canceled_status: " ",
+      },
+    });
+
+    expect(normalized.version).toBe(1);
+    expect(normalized.statuses.map((status) => status.id)).toEqual(normalizedDefaults.statuses.map((status) => status.id));
+    expect(normalized.fields).toEqual([
+      expect.objectContaining({
+        key: "release_train",
+        metadata_key: "",
+        cli_flag: undefined,
+        cli_aliases: undefined,
+        commands: ["create"],
+        required: true,
+        required_on_create: true,
+        required_types: ["Task"],
+      }),
+    ]);
+
+    const statusRegistry = resolveRuntimeStatusRegistry(normalized);
+    expect(statusRegistry.open_status).toBe("open");
+    expect(statusRegistry.close_status).toBe("closed");
+    expect(statusRegistry.canceled_status).toBe("canceled");
+
+    const fieldRegistry = resolveRuntimeFieldRegistry(normalized);
+    expect(fieldRegistry.by_cli_token.get("release-train")).toBe(fieldRegistry.by_key.get("release_train"));
+    expect(fieldRegistry.command_to_fields.get("create")?.map((field) => field.key)).toEqual(["release_train"]);
+    expect(runtimeFieldOptionTarget({ key: "!!!" } as never)).toBe("!!!");
+
+    expect(
+      normalizeRuntimeSchemaSettings({
+        fields: [
+          {
+            key: "valid_key_with_blank_flag",
+            cli_flag: " ",
+          },
+        ],
+      }).fields,
+    ).toEqual([]);
+  });
+
+  it("uses role and first-definition fallbacks for status registry defaults", () => {
+    const roleFallback = resolveRuntimeStatusRegistry(
+      normalizeRuntimeSchemaSettings({
+        statuses: [
+          { id: "ready", roles: ["active"], order: 2 },
+          { id: "canceled", roles: ["terminal_canceled"], order: 3 },
+          { id: "done", roles: ["terminal_done"], order: 4 },
+        ],
+        workflow: {
+          open_status: "",
+          close_status: "",
+          canceled_status: "",
+        },
+      }),
+    );
+    expect(roleFallback.open_status).toBe("ready");
+    expect(roleFallback.close_status).toBe("done");
+    expect(roleFallback.canceled_status).toBe("canceled");
+    expect(roleFallback.terminal_statuses.has("canceled")).toBe(true);
+    expect(roleFallback.terminal_statuses.has("done")).toBe(true);
+
+    const firstDefinitionFallback = resolveRuntimeStatusRegistry(
+      normalizeRuntimeSchemaSettings({
+        statuses: [{ id: "custom-only" }],
+        workflow: {},
+      }),
+    );
+    expect(firstDefinitionFallback.open_status).toBe("custom_only");
+    expect(firstDefinitionFallback.close_status).toBe("custom_only");
+    expect(firstDefinitionFallback.canceled_status).toBe("custom_only");
+    expect(normalizeStatusInputWithRegistry("custom only", firstDefinitionFallback)).toBe("custom_only");
+    expect(normalizeStatusInputWithRegistry(undefined, firstDefinitionFallback)).toBeUndefined();
+  });
+
+  it("scaffolds and loads runtime schema sections from multiple supported file shapes", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-runtime-schema-files-"));
+    try {
+      const absoluteFieldsPath = path.join(tempRoot, "absolute-fields.json");
+      const schema = normalizeRuntimeSchemaSettings({
+        files: {
+          types: "custom/types.json",
+          statuses: "custom/statuses.json",
+          fields: absoluteFieldsPath,
+          workflows: "custom/workflows.json",
+        },
+      });
+
+      const scaffold = await ensureRuntimeSchemaFileScaffold(tempRoot, schema);
+      expect(scaffold.created_paths.sort()).toEqual([
+        absoluteFieldsPath,
+        path.join(tempRoot, "custom", "statuses.json"),
+        path.join(tempRoot, "custom", "types.json"),
+        path.join(tempRoot, "custom", "workflows.json"),
+      ].sort());
+      expect(await ensureRuntimeSchemaFileScaffold(tempRoot, schema)).toEqual({ created_paths: [] });
+      expect(filePathForSchemaSection(tempRoot, absoluteFieldsPath, "fallback.json")).toBe(absoluteFieldsPath);
+      expect(filePathForSchemaSection(tempRoot, " relative.json ", "fallback.json")).toBe(path.join(tempRoot, "relative.json"));
+
+      await writeFile(
+        path.join(tempRoot, "custom", "types.json"),
+        `${JSON.stringify({ item_types: { definitions: [{ name: "Spike", folder: "spikes" }] } })}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(tempRoot, "custom", "statuses.json"),
+        `${JSON.stringify({ definitions: [{ id: "review", aliases: ["in-review"], roles: ["active"] }] })}\n`,
+        "utf8",
+      );
+      await writeFile(
+        absoluteFieldsPath,
+        `${JSON.stringify([{ key: "risk", type: "number", commands: ["create"] }])}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(tempRoot, "custom", "workflows.json"),
+        `${JSON.stringify({
+          workflows: { open_status: "review" },
+          type_workflows: [{ type: "Spike", allowed_transitions: [["review", "closed"]] }],
+        })}\n`,
+        "utf8",
+      );
+
+      const loaded = await loadRuntimeSchemaFromOptionalFiles(tempRoot, schema);
+      expect(loaded.warnings).toEqual([]);
+      expect(loaded.type_definitions_from_file).toEqual([{ name: "Spike", folder: "spikes" }]);
+      expect(loaded.schema.statuses).toContainEqual(expect.objectContaining({ id: "review", aliases: ["in_review"] }));
+      expect(loaded.schema.fields).toContainEqual(expect.objectContaining({ key: "risk", type: "number", commands: ["create"] }));
+      expect(loaded.schema.workflow.open_status).toBe("review");
+      expect(loaded.schema.type_workflows).toEqual([{ type: "Spike", allowed_transitions: [["review", "closed"]] }]);
+
+      await writeFile(path.join(tempRoot, "custom", "types.json"), "{}", "utf8");
+      await writeFile(path.join(tempRoot, "custom", "statuses.json"), "\"bad\"", "utf8");
+      await writeFile(absoluteFieldsPath, "\"bad\"", "utf8");
+      await writeFile(path.join(tempRoot, "custom", "workflows.json"), "[]", "utf8");
+      const malformed = await loadRuntimeSchemaFromOptionalFiles(tempRoot, schema);
+      expect(malformed.warnings.sort()).toEqual([
+        "runtime_schema_fields_invalid_shape",
+        "runtime_schema_statuses_invalid_shape",
+        "runtime_schema_types_invalid_shape",
+        "runtime_schema_workflows_invalid_shape",
+      ]);
+
+      await writeFile(path.join(tempRoot, "custom", "types.json"), "null", "utf8");
+      await writeFile(path.join(tempRoot, "custom", "statuses.json"), "{}", "utf8");
+      await writeFile(absoluteFieldsPath, "{}", "utf8");
+      await writeFile(path.join(tempRoot, "custom", "workflows.json"), "{", "utf8");
+      const secondMalformed = await loadRuntimeSchemaFromOptionalFiles(tempRoot, schema);
+      expect(secondMalformed.warnings.sort()).toEqual([
+        "runtime_schema_fields_invalid_shape",
+        "runtime_schema_statuses_invalid_shape",
+        "runtime_schema_types_invalid_shape",
+        "runtime_schema_workflows_invalid_json",
+      ]);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("loads alternate runtime schema file shapes and ignores absent optional files", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-runtime-schema-alt-files-"));
+    try {
+      const schema = normalizeRuntimeSchemaSettings({
+        files: {
+          types: "types-array.json",
+          statuses: "statuses-array.json",
+          fields: "fields-definitions.json",
+          workflows: "workflow-top-level.json",
+        },
+      });
+      await writeFile(
+        path.join(tempRoot, "types-array.json"),
+        `${JSON.stringify([{ name: "Bug", folder: "bugs" }])}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(tempRoot, "statuses-array.json"),
+        `${JSON.stringify([{ id: "qa", aliases: ["Quality Assurance"], roles: ["active"] }])}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(tempRoot, "fields-definitions.json"),
+        `${JSON.stringify({ definitions: [{ key: "severity", type: "string", commands: ["create", "update"] }] })}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(tempRoot, "workflow-top-level.json"),
+        `${JSON.stringify({ open_status: "qa", close_status: "closed" })}\n`,
+        "utf8",
+      );
+
+      const loaded = await loadRuntimeSchemaFromOptionalFiles(tempRoot, schema);
+      expect(loaded.warnings).toEqual([]);
+      expect(loaded.type_definitions_from_file).toEqual([{ name: "Bug", folder: "bugs" }]);
+      expect(loaded.schema.statuses).toContainEqual(expect.objectContaining({ id: "qa", aliases: ["quality_assurance"] }));
+      expect(loaded.schema.fields).toContainEqual(expect.objectContaining({ key: "severity", commands: ["create", "update"] }));
+      expect(loaded.schema.workflow.open_status).toBe("qa");
+      expect(loaded.schema.workflow.close_status).toBe("closed");
+
+      const absentLoaded = await loadRuntimeSchemaFromOptionalFiles(
+        tempRoot,
+        normalizeRuntimeSchemaSettings({
+          files: {
+            types: "missing-types.json",
+            statuses: "missing-statuses.json",
+            fields: "missing-fields.json",
+            workflows: "missing-workflows.json",
+          },
+        }),
+      );
+      expect(absentLoaded.warnings).toEqual([]);
+      expect(absentLoaded.type_definitions_from_file).toBeUndefined();
+      expect(absentLoaded.schema.statuses.map((status) => status.id)).toEqual(normalizeRuntimeSchemaSettings(undefined).statuses.map((status) => status.id));
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
   });
 
   it("supports runtime list flags on list command aliases", async () => {

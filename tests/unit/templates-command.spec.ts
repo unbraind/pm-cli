@@ -1,10 +1,56 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runTemplatesList, runTemplatesSave, runTemplatesShow } from "../../src/cli/commands/templates.js";
+import {
+  _testOnly as templatesInternals,
+  loadCreateTemplateOptions,
+  runTemplatesList,
+  runTemplatesSave,
+  runTemplatesShow,
+} from "../../src/cli/commands/templates.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("templates command flows", () => {
+  it("normalizes template helper edge cases without writing files", () => {
+    expect(templatesInternals.normalizeTemplateName(" release.v1 ")).toBe("release.v1");
+    expect(() => templatesInternals.normalizeTemplateName("-bad")).toThrow("Invalid template name");
+
+    expect(
+      templatesInternals.extractTemplateOptions({
+        type: "Task",
+        tags: ["one", "two"],
+        dep: "id=pm-a,kind=related",
+        file: ["path=a.ts", 42],
+        ignored: 42,
+        missing: undefined,
+      }),
+    ).toEqual({
+      dep: ["id=pm-a,kind=related"],
+      file: ["path=a.ts"],
+      tags: ["one", "two"],
+      type: "Task",
+    });
+
+    expect(templatesInternals.builtinTemplateDocument("not-built-in")).toBeNull();
+    expect(
+      templatesInternals.parseStoredTemplateDocument(
+        JSON.stringify({
+          name: "  stored-name  ",
+          created_at: 42,
+          updated_at: null,
+          options: { " priority ": "2" },
+        }),
+        "fallback",
+      ),
+    ).toMatchObject({
+      name: "stored-name",
+      options: { priority: "2" },
+    });
+  });
+
   it("runs templates through the installed first-party package command handlers", async () => {
     await withTempPmPath(async (context) => {
       const install = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
@@ -68,6 +114,110 @@ describe("templates command flows", () => {
       expect(shown.name).toBe("release-defaults");
       expect(shown.options).toEqual(saved.options);
     });
+  });
+
+  it("rejects invalid save inputs before writing a user template", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(runTemplatesSave(" bad name ", { type: "Task" }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Invalid template name"),
+      });
+
+      await expect(runTemplatesSave("empty-options", { type: undefined }, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+        message: "templates save requires at least one create option flag",
+      });
+    });
+  });
+
+  it("preserves the original created_at when overwriting a saved template", async () => {
+    await withTempPmPath(async (context) => {
+      const first = await runTemplatesSave("overwrite-me", { type: "Task", tags: "first" }, { path: context.pmPath });
+      const second = await runTemplatesSave("overwrite-me", { type: "Issue", tags: "second" }, { path: context.pmPath });
+
+      expect(second.created_at).toBe(first.created_at);
+      expect(second.updated_at >= first.updated_at).toBe(true);
+      expect(second.options).toMatchObject({ type: "Issue", tags: "second" });
+    });
+  });
+
+  it("surfaces malformed stored template documents with precise errors", async () => {
+    await withTempPmPath(async (context) => {
+      const templatesDir = path.join(context.pmPath, "templates");
+      await mkdir(templatesDir, { recursive: true });
+
+      await writeFile(path.join(templatesDir, "bad-json.json"), "{not-json", "utf8");
+      await expect(runTemplatesShow("bad-json", { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+        message: 'Template "bad-json" contains invalid JSON.',
+      });
+
+      await writeFile(path.join(templatesDir, "bad-shape.json"), "null\n", "utf8");
+      await expect(runTemplatesShow("bad-shape", { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+        message: 'Template "bad-shape" has invalid document shape.',
+      });
+
+      await writeFile(path.join(templatesDir, "bad-options.json"), JSON.stringify({ options: [] }), "utf8");
+      await expect(loadCreateTemplateOptions(context.pmPath, "bad-options")).rejects.toMatchObject({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+        message: 'Template "bad-options" has invalid options payload.',
+      });
+
+      await writeFile(path.join(templatesDir, "empty-key.json"), JSON.stringify({ options: { " ": "x" } }), "utf8");
+      await expect(runTemplatesShow("empty-key", { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+        message: 'Template "empty-key" contains an empty option key.',
+      });
+
+      await writeFile(path.join(templatesDir, "bad-value.json"), JSON.stringify({ options: { type: 42 } }), "utf8");
+      await expect(runTemplatesShow("bad-value", { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.GENERIC_FAILURE,
+        message: 'Template "bad-value" contains invalid value for option "type".',
+      });
+    });
+  });
+
+  it("lists only builtin templates when no user template directory exists", async () => {
+    await withTempPmPath(async (context) => {
+      const listed = await runTemplatesList({ path: context.pmPath });
+
+      expect(listed.user_templates).toEqual([]);
+      expect(listed.builtin_templates).toEqual(["bug", "chore", "feature", "spike"]);
+      expect(listed.templates).toEqual(["bug", "chore", "feature", "spike"]);
+      expect(listed.count).toBe(4);
+    });
+  });
+
+  it("loads and shows builtin templates through the direct helpers", async () => {
+    await withTempPmPath(async (context) => {
+      const shown = await runTemplatesShow("feature", { path: context.pmPath });
+      const loaded = await loadCreateTemplateOptions(context.pmPath, "spike");
+
+      expect(shown).toMatchObject({
+        name: "feature",
+        source: "builtin",
+        created_at: "1970-01-01T00:00:00.000Z",
+      });
+      expect(shown.options.type).toBe("Feature");
+      expect(loaded).toMatchObject({
+        type: "Task",
+        tags: "spike",
+        estimatedMinutes: "120",
+      });
+    });
+  });
+
+  it("rejects templates commands before tracker initialization", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-templates-uninitialized-"));
+    try {
+      await expect(runTemplatesList({ path: tempRoot })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        message: expect.stringContaining("Tracker is not initialized"),
+      });
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
   });
 
   it("accepts runtime create field flags when saving templates via CLI", async () => {

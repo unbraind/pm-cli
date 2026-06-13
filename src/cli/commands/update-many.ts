@@ -742,3 +742,19 @@ export async function runUpdateMany(options: UpdateManyCommandOptions, global: G
     ids: updatedIds,
   };
 }
+
+export const _testOnlyUpdateManyCommand = {
+  buildCollectionMutationPlans,
+  buildPlannedItemDiff,
+  buildTagMutationPlan,
+  collectionValueCount,
+  hasAnyUpdateMutationInput,
+  hasListFilters,
+  normalizeStatusFilter,
+  normalizeCollectionBeforeValue,
+  normalizeExistingTags,
+  normalizeUnsetField,
+  rejectBlankIdsFilter,
+  sanitizeUpdateOptionsForSummary,
+  toComparablePreviewValue,
+};

@@ -831,3 +831,7 @@ export async function invalidateSearchCachesForMutation(globalOptions: GlobalOpt
     printError(`profile:search_refresh_warnings=${formatHookWarnings(refreshResult.warnings)}`);
   }
 }
+
+export const _testOnly = {
+  collectMutationItemIds,
+};

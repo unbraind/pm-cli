@@ -859,6 +859,191 @@ describe("core/telemetry/runtime", () => {
     });
   });
 
+  it("skips telemetry clear commands and disabled flush workers", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "telemetry",
+        pm_version: "9.9.9-test",
+        args: ["clear"],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+
+      expect(active).toBeNull();
+
+      process.env.PM_TELEMETRY_DISABLED = "true";
+      await flushTelemetryQueueNow(globalRoot);
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      await expect(fs.access(telemetryQueuePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("treats null finish handles and disabled error collection as no-ops", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      await finishTelemetryCommand(null, {
+        ok: false,
+        error: "ignored",
+      });
+
+      process.env.PM_NO_TELEMETRY = "yes";
+      await emitTelemetryErrorEvent({
+        command: "bad",
+        args: ["bad"],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_version: "9.9.9-test",
+        pm_root: "/tmp/project/.agents/pm",
+        error_code: "unknown_command",
+        error_message: "unknown command",
+        exit_code: 2,
+      });
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      await expect(fs.access(telemetryQueuePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("skips command collection when telemetry is disabled in settings", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.enabled = false;
+      await writeSettings(globalRoot, settings, "test:disable_telemetry");
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+
+      expect(active).toBeNull();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  it("skips error collection when telemetry is disabled in settings", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.enabled = false;
+      await writeSettings(globalRoot, settings, "test:disable_error_telemetry");
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      await emitTelemetryErrorEvent({
+        command: "bad",
+        args: ["bad"],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_version: "9.9.9-test",
+        pm_root: "/tmp/project/.agents/pm",
+        error_code: "unknown_command",
+        error_message: "unknown command",
+        exit_code: 2,
+      });
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      await expect(fs.access(telemetryQueuePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("normalizes invalid and disabled local OTEL endpoint settings", async () => {
+    await withTempGlobalRoot(async () => {
+      globalThis.fetch = vi.fn(async () => {
+        throw new Error("network_down");
+      }) as unknown as typeof fetch;
+
+      process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = "not a url";
+      const invalidDirect = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(invalidDirect?.otel_traces_endpoint).toBeUndefined();
+
+      delete process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
+      process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "not a url";
+      const invalidBase = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(invalidBase?.otel_traces_endpoint).toBeUndefined();
+
+      process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:4318/v1/traces";
+      process.env.PM_TELEMETRY_OTEL_DISABLED = "on";
+      const disabled = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(disabled?.otel_traces_endpoint).toBeUndefined();
+      await waitForPendingFlush();
+    });
+  });
+
   it("persists installation id and flushes queue on successful exporter response", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
@@ -1232,6 +1417,660 @@ describe("core/telemetry/runtime", () => {
       expect(attrMap.get("pm.error")?.stringValue).toBe("synthetic_failure");
       expect(body.resourceSpans[0]?.resource.attributes[0]?.key).toBe("service.name");
       expect(body.resourceSpans[0]?.resource.attributes[0]?.value.stringValue).toBe("pm-cli-test");
+    });
+  });
+
+  it("covers telemetry runtime state parsing, inline flush detection, and queue rewrite helpers", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const statePath = _testOnly.runtimeStatePath(globalRoot);
+      await fs.mkdir(path.dirname(statePath), { recursive: true });
+
+      await fs.writeFile(statePath, "", "utf8");
+      await expect(_testOnly.readRuntimeState(globalRoot)).resolves.toEqual({});
+      await fs.writeFile(statePath, "[]\n", "utf8");
+      await expect(_testOnly.readRuntimeState(globalRoot)).resolves.toEqual({});
+      await fs.writeFile(statePath, "{ invalid-json", "utf8");
+      await expect(_testOnly.readRuntimeState(globalRoot)).resolves.toEqual({});
+
+      await _testOnly.writeRuntimeState(globalRoot, {
+        endpoint: "https://telemetry.example.test/events",
+        queue_entries: undefined,
+        last_failed_flush_error: "network_down",
+      });
+      expect(JSON.parse(await fs.readFile(statePath, "utf8"))).toEqual({
+        endpoint: "https://telemetry.example.test/events",
+        last_failed_flush_error: "network_down",
+      });
+
+      delete process.env.PM_TELEMETRY_INLINE_FLUSH;
+      delete process.env.PM_TELEMETRY_FLUSH_CHILD;
+      expect(_testOnly.shouldFlushInline()).toBe(true);
+      process.env.PM_TELEMETRY_FLUSH_CHILD = "yes";
+      expect(_testOnly.shouldFlushInline()).toBe(true);
+
+      expect(_testOnly.telemetryFlushRunnerPath()).toMatch(/dist\/cli\/telemetry-flush\.js$/);
+      expect(_testOnly.isRetryableQueueRewriteError({ code: "EACCES" })).toBe(true);
+      expect(_testOnly.isRetryableQueueRewriteError({ code: "EBUSY" })).toBe(true);
+      expect(_testOnly.isRetryableQueueRewriteError({ code: "EPERM" })).toBe(true);
+      expect(_testOnly.isRetryableQueueRewriteError({ code: "ENOENT" })).toBe(false);
+      expect(_testOnly.isRetryableQueueRewriteError(null)).toBe(false);
+      expect(_testOnly.parseQueueLines("\nnot-json\n{}\n")).toEqual([]);
+      expect(_testOnly.errorCode({ code: "EEXIST" })).toBe("EEXIST");
+      expect(_testOnly.errorCode({ code: 1 })).toBeUndefined();
+      expect(_testOnly.errorCode(null)).toBeUndefined();
+      const directLockPath = path.join(globalRoot, "locks", "direct");
+      expect(_testOnly.isFreshDirectoryLock(directLockPath, 1000)).toBe(false);
+      expect(_testOnly.createDirectoryLock(directLockPath)).toBe(true);
+      expect(_testOnly.isFreshDirectoryLock(directLockPath, 1000)).toBe(true);
+      expect(_testOnly.createDirectoryLock(directLockPath)).toBe(false);
+      const staleLockPath = path.join(globalRoot, "locks", "stale");
+      expect(_testOnly.createDirectoryLock(staleLockPath)).toBe(true);
+      expect(_testOnly.createDirectoryLock(staleLockPath)).toBe(false);
+      const staleSpawnRoot = path.join(globalRoot, "stale-spawn-root");
+      expect(_testOnly.createDirectoryLock(_testOnly.flushSpawnLockPath(staleSpawnRoot))).toBe(true);
+      const staleLockTime = new Date(Date.now() - 60_000);
+      await fs.utimes(_testOnly.flushSpawnLockPath(staleSpawnRoot), staleLockTime, staleLockTime);
+      expect(_testOnly.acquireTelemetryFlushSpawnGate(staleSpawnRoot)).toBe(true);
+      expect(await _testOnly.acquireTelemetryFlushLock(globalRoot)).toBe(true);
+      expect(await _testOnly.acquireTelemetryFlushLock(globalRoot)).toBe(false);
+      _testOnly.removeDirectoryLockBestEffort(directLockPath);
+      await expect(fs.access(directLockPath)).rejects.toMatchObject({ code: "ENOENT" });
+
+      const blockedParent = path.join(globalRoot, "blocked-parent");
+      await fs.writeFile(blockedParent, "not a dir", "utf8");
+      expect(_testOnly.createDirectoryLock(path.join(blockedParent, "child"))).toBe(false);
+      expect(_testOnly.normalizeTelemetryExitCode(undefined, true)).toBe(0);
+      expect(_testOnly.normalizeTelemetryExitCode(undefined, false)).toBe(1);
+      expect(_testOnly.normalizeTelemetryExitCode(2.9, true)).toBe(2);
+      expect(_testOnly.normalizeTelemetryErrorCode("  ")).toBeUndefined();
+      expect(_testOnly.normalizeTelemetryErrorCategory({ ok: true })).toBeUndefined();
+      expect(_testOnly.normalizeTelemetryErrorCategory({ ok: false, errorCategory: "usage" })).toBe("usage");
+      expect(_testOnly.normalizeTelemetryErrorCategory({ ok: false, errorCode: "enoent" })).toBe("unknown");
+      expect(_testOnly.normalizeTelemetryErrorCategory({ ok: false })).toBe("unknown");
+
+      expect(_testOnly.sanitizeValue(Symbol("secret"))).toBe("Symbol(secret)");
+      expect(_testOnly.sanitizeValue({ token: "abc", nested: [{ email: "user@example.com" }] })).toEqual({
+        token: "[redacted]",
+        nested: [{ email: "[redacted_email]" }],
+      });
+      expect(_testOnly.sanitizeValue("not-an-email@localhost and bearer abc123")).toBe(
+        "not-an-email@localhost and bearer [redacted_token]",
+      );
+      expect(_testOnly.sanitizeValue("x".repeat(600))).toMatch(/^x{509}\.\.\.$/);
+      expect(_testOnly.sanitizeValue("x".repeat(2100), undefined, "max")).toMatch(/^x{2045}\.\.\.$/);
+      expect(_testOnly.sanitizeValue("/tmp/private/file.txt")).toBe("[redacted_path]");
+      expect(_testOnly.sanitizeValue(Array.from({ length: 25 }, (_value, index) => index))).toHaveLength(20);
+      expect(
+        _testOnly.sanitizeValue({
+          a: { b: { c: { d: { e: { f: { g: "too deep" } } } } } },
+        }),
+      ).toEqual({ a: { b: { c: { d: { e: { f: "[depth_truncated]" } } } } } });
+      expect(_testOnly.summarizeResult(null)).toEqual({ type: "nullish" });
+      expect(_testOnly.summarizeResult("hello")).toEqual({ type: "string", value: "hello" });
+      expect(_testOnly.summarizeResult(5)).toEqual({ type: "number", value: 5 });
+      expect(_testOnly.summarizeResult([1, { token: "secret" }])).toEqual({
+        type: "array",
+        length: 2,
+        sample: [1, { token: "[redacted]" }],
+      });
+      expect(_testOnly.summarizeResult(Symbol("done"))).toEqual({ type: "symbol", value: "Symbol(done)" });
+      const largeSummary = _testOnly.summarizeResult({ big: "x".repeat(70_000), later: "kept" });
+      expect(largeSummary).toMatchObject({
+        type: "object",
+        preview: {
+          big: expect.stringMatching(/^x+\.\.\.$/),
+        },
+      });
+      expect(_testOnly.hashTelemetryValue("install", { b: 2, a: 1 })).toBe(_testOnly.hashTelemetryValue("install", { a: 1, b: 2 }));
+
+      const sourceContext = { source_context: "test" as const, source_context_source: "inferred" as const };
+      expect(
+        _testOnly.buildCommandStartPayload({
+          captureLevel: "minimal",
+          context: { command: "list-open", args: ["--secret", "value"], options: {}, global: {} },
+          pmVersion: "1.0.0",
+          sourceContext,
+          pmRootHash: "pm-root",
+          cwdHash: "cwd",
+          installationId: "install",
+        }),
+      ).toMatchObject({
+        capture_level: "minimal",
+        command_taxonomy: {
+          command_family: "query",
+          command_path: "list-open",
+        },
+      });
+      expect(
+        _testOnly.buildCommandFinishPayload({
+          captureLevel: "redacted",
+          pmVersion: "1.0.0",
+          sourceContext,
+          outcome: { ok: false, error: "failed", result: { token: "secret" } },
+          durationMs: 12,
+          startedAt: "2026-01-01T00:00:00.000Z",
+          command: "list-open",
+          installationId: "install",
+          commandTaxonomy: "list",
+          exitCode: 1,
+          errorCode: "command_failed",
+          errorCategory: "runtime",
+          commandResolution: "native",
+          resolutionStage: "execute",
+        }),
+      ).toMatchObject({ capture_level: "redacted", ok: false, result_summary: { type: "object" } });
+      expect(
+        _testOnly.buildCommandErrorPayload({
+          captureLevel: "minimal",
+          pmVersion: "1.0.0",
+          sourceContext,
+          command: "list-open",
+          commandTaxonomy: "list",
+          commandResolution: "native",
+          resolutionStage: "parse",
+          args: ["--token", "secret"],
+          options: { token: "secret" },
+          pmRootHash: "pm-root",
+          cwdHash: "cwd",
+          installationId: "install",
+          errorCode: "usage",
+          errorMessage: "bad input",
+          errorCategory: "usage",
+          exitCode: 64,
+        }),
+      ).toMatchObject({ capture_level: "minimal", error_code: "usage", exit_code: 64 });
+
+      const now = new Date().toISOString();
+      const old = new Date(Date.now() - 3 * DAY_MS).toISOString();
+      const oversizedPayload = "x".repeat(70_000);
+      const freshEntry = {
+        attempts: 0,
+        event: {
+          schema_version: 1,
+          event_id: "11111111-1111-4111-8111-111111111111",
+          event_type: "command_start" as const,
+          occurred_at: now,
+          installation_id: "22222222-2222-4222-8222-222222222222",
+          session_id: "33333333-3333-4333-8333-333333333333",
+          command: "fresh",
+          payload: {},
+        },
+      };
+      expect(_testOnly.parseQueueLines(`${JSON.stringify(freshEntry)}\n`)).toEqual([freshEntry]);
+      expect(_testOnly.parseQueueLines(`${JSON.stringify({ ...freshEntry, client_schema_version: "1" })}\n`)).toEqual([]);
+      expect(_testOnly.isDueForRetry(freshEntry)).toBe(true);
+      expect(_testOnly.isDueForRetry({ ...freshEntry, next_attempt_after: "not-a-date" })).toBe(true);
+      expect(_testOnly.isDueForRetry({ ...freshEntry, next_attempt_after: new Date(Date.now() - 1000).toISOString() })).toBe(true);
+      expect(_testOnly.isDueForRetry({ ...freshEntry, next_attempt_after: new Date(Date.now() + DAY_MS).toISOString() })).toBe(false);
+      const pruned = _testOnly.pruneExpiredQueueEntries(
+        [
+          freshEntry,
+          {
+            ...freshEntry,
+            attempts: 0,
+            event: { ...freshEntry.event, event_id: "44444444-4444-4444-8444-444444444444", occurred_at: old },
+          },
+          {
+            ...freshEntry,
+            attempts: 99,
+            event: { ...freshEntry.event, event_id: "55555555-5555-4555-8555-555555555555" },
+          },
+          {
+            ...freshEntry,
+            event: {
+              ...freshEntry.event,
+              event_id: "66666666-6666-4666-8666-666666666666",
+              payload: { oversizedPayload },
+            },
+          },
+        ],
+        1,
+      );
+      expect(pruned.prunedCount).toBe(3);
+      expect(pruned.entries).toEqual([freshEntry]);
+
+      await _testOnly.rewriteQueue(globalRoot, [freshEntry]);
+      expect(await fs.readFile(telemetryQueuePath(globalRoot), "utf8")).toContain(freshEntry.event.event_id);
+      await _testOnly.rewriteQueue(globalRoot, []);
+      expect(await fs.readFile(telemetryQueuePath(globalRoot), "utf8")).toBe("");
+    });
+  });
+
+  it("covers telemetry flush disabled settings and empty queue state branches", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.enabled = false;
+      await writeSettings(globalRoot, settings);
+      await flushTelemetryQueueNow(globalRoot);
+      await expect(_testOnly.readRuntimeState(globalRoot)).resolves.toEqual({});
+
+      settings.telemetry.enabled = true;
+      settings.telemetry.endpoint = "https://telemetry.example.test/events";
+      await writeSettings(globalRoot, settings);
+      await flushTelemetryQueueNow(globalRoot);
+      await expect(_testOnly.readRuntimeState(globalRoot)).resolves.toMatchObject({
+        endpoint: "https://telemetry.example.test/events",
+        queue_entries: 0,
+      });
+    });
+  });
+
+  it("covers non-inline scheduler gate and start failure fallback", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const originalVitest = process.env.VITEST;
+      const originalVitestWorker = process.env.VITEST_WORKER_ID;
+      const originalNodeEnv = process.env.NODE_ENV;
+      try {
+        delete process.env.PM_TELEMETRY_INLINE_FLUSH;
+        delete process.env.PM_TELEMETRY_FLUSH_CHILD;
+        delete process.env.VITEST;
+        delete process.env.VITEST_WORKER_ID;
+        process.env.NODE_ENV = "development";
+
+        const invalidGateRoot = path.join(globalRoot, "blocked-gate-root");
+        await fs.mkdir(path.dirname(invalidGateRoot), { recursive: true });
+        await fs.writeFile(invalidGateRoot, "file blocks runtime path", "utf8");
+        expect(_testOnly.acquireTelemetryFlushSpawnGate(invalidGateRoot)).toBe(false);
+
+        const spawnRoot = path.join(globalRoot, "spawn-root");
+        await fs.mkdir(spawnRoot, { recursive: true });
+        _testOnly.scheduleTelemetryFlush(spawnRoot, "https://telemetry.example.test/events", 1);
+        await sleep(25);
+
+        await fs.mkdir(_testOnly.flushLockPath(globalRoot), { recursive: true });
+        _testOnly.scheduleTelemetryFlush(globalRoot, "https://telemetry.example.test/events", 1);
+        await expect(fs.access(_testOnly.flushLockPath(globalRoot))).resolves.toBeUndefined();
+
+        const invalidGlobalRoot = path.join(globalRoot, "not-a-directory");
+        await fs.writeFile(invalidGlobalRoot, "file blocks settings path", "utf8");
+        process.env.PM_GLOBAL_PATH = invalidGlobalRoot;
+        await expect(
+          startTelemetryCommand({
+            command: "list-open",
+            pm_version: "1.0.0",
+            args: [],
+            options: {},
+            global: {},
+            pm_root: globalRoot,
+          }),
+        ).resolves.toBeNull();
+      } finally {
+        if (originalVitest === undefined) {
+          delete process.env.VITEST;
+        } else {
+          process.env.VITEST = originalVitest;
+        }
+        if (originalVitestWorker === undefined) {
+          delete process.env.VITEST_WORKER_ID;
+        } else {
+          process.env.VITEST_WORKER_ID = originalVitestWorker;
+        }
+        if (originalNodeEnv === undefined) {
+          delete process.env.NODE_ENV;
+        } else {
+          process.env.NODE_ENV = originalNodeEnv;
+        }
+      }
+    });
+  });
+
+  it("releases the telemetry spawn gate when detached spawn throws", async () => {
+    await vi.resetModules();
+    vi.doMock("node:child_process", () => ({
+      spawn: vi.fn(() => {
+        throw new Error("spawn unavailable");
+      }),
+    }));
+    try {
+      const runtime = await import("../../src/core/telemetry/runtime.js");
+      await withTempGlobalRoot(async (globalRoot) => {
+        const originalVitest = process.env.VITEST;
+        const originalVitestWorker = process.env.VITEST_WORKER_ID;
+        const originalNodeEnv = process.env.NODE_ENV;
+        try {
+          delete process.env.PM_TELEMETRY_INLINE_FLUSH;
+          delete process.env.PM_TELEMETRY_FLUSH_CHILD;
+          delete process.env.VITEST;
+          delete process.env.VITEST_WORKER_ID;
+          process.env.NODE_ENV = "development";
+
+          runtime._testOnly.scheduleTelemetryFlush(globalRoot, "https://telemetry.example.test/events", 1);
+          await expect(fs.access(runtime._testOnly.flushSpawnLockPath(globalRoot))).rejects.toMatchObject({
+            code: "ENOENT",
+          });
+        } finally {
+          if (originalVitest === undefined) {
+            delete process.env.VITEST;
+          } else {
+            process.env.VITEST = originalVitest;
+          }
+          if (originalVitestWorker === undefined) {
+            delete process.env.VITEST_WORKER_ID;
+          } else {
+            process.env.VITEST_WORKER_ID = originalVitestWorker;
+          }
+          if (originalNodeEnv === undefined) {
+            delete process.env.NODE_ENV;
+          } else {
+            process.env.NODE_ENV = originalNodeEnv;
+          }
+        }
+      });
+    } finally {
+      vi.doUnmock("node:child_process");
+      await vi.resetModules();
+    }
+  });
+
+  it("covers telemetry sanitizer and queue edge cases directly", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      expect(_testOnly.sanitizeValue(null)).toBeNull();
+      expect(_testOnly.sanitizeValue(undefined)).toBeUndefined();
+      expect(_testOnly.sanitizeValue(Symbol.for("telemetry-symbol"))).toBe("Symbol(telemetry-symbol)");
+      expect(_testOnly.sanitizeValue("x".repeat(600))).toMatch(/\.\.\.$/);
+      expect(_testOnly.sanitizeValue("not-an-email@")).toBe("not-an-email@");
+      expect(_testOnly.sanitizeValue("bad@domain.c")).toBe("bad@domain.c");
+      expect(_testOnly.sanitizeValue("bad@domain!.com")).toBe("bad@domain!.com");
+      expect(_testOnly.sanitizeValue("@example.com")).toBe("@example.com");
+      expect(_testOnly.sanitizeValue("user@")).toBe("user@");
+      expect(_testOnly.sanitizeValue("bad!local@example.com")).toBe("bad![redacted_email]");
+      expect(_testOnly.sanitizeValue("bad@domain!.example")).toBe("bad@domain!.example");
+      expect(_testOnly.sanitizeValue(`/tmp/${"x".repeat(2100)}`, undefined, "max")).toBe("[redacted_path]");
+      expect(_testOnly.sanitizeValue(`${TEST_LOCAL_PATH}/file.txt`, undefined, "max")).toBe("[redacted_path]");
+      expect(_testOnly.sanitizeValue("--secret value")).toBe("--secret [redacted]");
+      expect(_testOnly.sanitizeValue({ token: "secret", nested: { email: "bad@domain.c" } })).toEqual({
+        nested: { email: "bad@domain.c" },
+        token: "[redacted]",
+      });
+      expect(
+        _testOnly.sanitizeValue({
+          a: { b: { c: { d: { e: { f: { g: "truncated" } } } } } },
+        }),
+      ).toMatchObject({
+        a: { b: { c: { d: { e: { f: "[depth_truncated]" } } } } },
+      });
+      expect(_testOnly.sanitizeValue([`${PRIVATE_TEST_IP}`, "user@example.com"])).toEqual(["[redacted_ip]", "[redacted_email]"]);
+      const previewLimited = _testOnly.summarizeResult(
+        Object.fromEntries(Array.from({ length: 25 }, (_entry, index) => [`k${String(index).padStart(2, "0")}`, "x".repeat(600)])),
+      ) as { preview: Record<string, unknown> };
+      expect(Object.values(previewLimited.preview)).toContain("[preview_truncated]");
+      expect(_testOnly.summarizeResult({ huge: "x".repeat(70_000), later: "value" })).toMatchObject({
+        type: "object",
+        preview: { huge: expect.stringMatching(/\.\.\.$/) },
+      });
+      expect(_testOnly.hashTelemetryValue("install", { b: 2, a: 1 })).toMatch(/^[a-f0-9]{64}$/);
+      expect(_testOnly.normalizeTelemetryErrorCode("  ")).toBeUndefined();
+      expect(_testOnly.normalizeTelemetryExitCode(Number.NaN, false)).toBe(1);
+      expect(_testOnly.normalizeTelemetryErrorCategory({ ok: false })).toBe("unknown");
+
+      const queueFile = telemetryQueuePath(globalRoot);
+      await fs.mkdir(path.dirname(queueFile), { recursive: true });
+      await fs.writeFile(
+        queueFile,
+        `${JSON.stringify({
+          event: { event_id: "77777777-7777-4777-8777-777777777777", occurred_at: "not-a-date" },
+          attempts: 0,
+        })}\n`,
+        "utf8",
+      );
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.endpoint = "https://telemetry.example.test/events";
+      await writeSettings(globalRoot, settings, "test:set_endpoint");
+      globalThis.fetch = vi.fn(async () => ({ ok: false, status: 503 })) as unknown as typeof fetch;
+      await flushTelemetryQueueNow(globalRoot);
+      await expect(_testOnly.readRuntimeState(globalRoot)).resolves.toMatchObject({
+        endpoint: "https://telemetry.example.test/events",
+        queue_entries: 1,
+        last_failed_flush_error: "telemetry_flush_http_503",
+      });
+    });
+  });
+
+  it("covers telemetry pure helper residue for source, capture, hashing, and OTLP errors", async () => {
+    await withTempGlobalRoot(async () => {
+      expect(_testOnly.normalizeCaptureLevel(" MINIMAL ")).toBe("minimal");
+      expect(_testOnly.normalizeCaptureLevel("max")).toBe("max");
+      expect(_testOnly.normalizeCaptureLevel("unknown")).toBe("redacted");
+      expect(_testOnly.normalizeCaptureLevel(undefined)).toBe("redacted");
+      expect(_testOnly.normalizePmVersion(" 2.0.0 ")).toBe("2.0.0");
+      expect(_testOnly.normalizePmVersion("  ")).toBe("0.0.0");
+
+      expect(
+        _testOnly.sanitizeCommandArgs(
+          ["--token", "secret", "--path=/tmp/private", "--title=visible", "admin@example.com"],
+          "redacted",
+        ),
+      ).toEqual(["--token", "[redacted]", "--path=[redacted_path]", "--title=visible", "[redacted_email]"]);
+      expect(_testOnly.hashTelemetryValue("install", null)).toMatch(/^[a-f0-9]{64}$/);
+      expect(_testOnly.hashTelemetryValue("install", [1, { b: 2, a: 1 }])).toMatch(/^[a-f0-9]{64}$/);
+      expect(_testOnly.normalizeForHash(Symbol.for("pm-test"))).toBe("Symbol(pm-test)");
+      expect(
+        _testOnly.hashTelemetryValue("install", {
+          a: { b: { c: { d: { e: { f: { g: "deep" } } } } } },
+        }),
+      ).toMatch(/^[a-f0-9]{64}$/);
+
+      const originalVitest = process.env.VITEST;
+      const originalVitestWorker = process.env.VITEST_WORKER_ID;
+      const originalNodeEnv = process.env.NODE_ENV;
+      const originalCi = process.env.CI;
+      const stdinDescriptor = Object.getOwnPropertyDescriptor(process.stdin, "isTTY");
+      const stdoutDescriptor = Object.getOwnPropertyDescriptor(process.stdout, "isTTY");
+      try {
+        process.env.PM_TELEMETRY_SOURCE_CONTEXT = "dogfood";
+        expect(_testOnly.resolveTelemetrySourceContext({})).toEqual({
+          source_context: "dogfood",
+          source_context_source: "env_override",
+        });
+
+        delete process.env.PM_TELEMETRY_SOURCE_CONTEXT;
+        delete process.env.VITEST;
+        delete process.env.VITEST_WORKER_ID;
+        delete process.env.NODE_ENV;
+        process.env.CI = "true";
+        expect(_testOnly.resolveTelemetrySourceContext({})).toEqual({
+          source_context: "automation",
+          source_context_source: "inferred",
+        });
+
+        delete process.env.CI;
+        Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: true });
+        Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: true });
+        expect(_testOnly.resolveTelemetrySourceContext({ json: false, quiet: false })).toEqual({
+          source_context: "user",
+          source_context_source: "inferred",
+        });
+      } finally {
+        if (originalVitest === undefined) {
+          delete process.env.VITEST;
+        } else {
+          process.env.VITEST = originalVitest;
+        }
+        if (originalVitestWorker === undefined) {
+          delete process.env.VITEST_WORKER_ID;
+        } else {
+          process.env.VITEST_WORKER_ID = originalVitestWorker;
+        }
+        if (originalNodeEnv === undefined) {
+          delete process.env.NODE_ENV;
+        } else {
+          process.env.NODE_ENV = originalNodeEnv;
+        }
+        if (originalCi === undefined) {
+          delete process.env.CI;
+        } else {
+          process.env.CI = originalCi;
+        }
+        if (originalTelemetrySourceContext === undefined) {
+          delete process.env.PM_TELEMETRY_SOURCE_CONTEXT;
+        } else {
+          process.env.PM_TELEMETRY_SOURCE_CONTEXT = originalTelemetrySourceContext;
+        }
+        if (stdinDescriptor) {
+          Object.defineProperty(process.stdin, "isTTY", stdinDescriptor);
+        }
+        if (stdoutDescriptor) {
+          Object.defineProperty(process.stdout, "isTTY", stdoutDescriptor);
+        }
+      }
+
+      globalThis.fetch = vi.fn(async () => ({ ok: false, status: 503 })) as unknown as typeof fetch;
+      await expect(
+        _testOnly.exportLocalOtelSpan(
+          {
+            started_at: "not-a-date",
+            started_at_ms: Date.now(),
+            command: "/tmp/pm secret",
+            command_taxonomy: "unknown",
+            pm_version: "1.0.0",
+            source_context: "test",
+            source_context_source: "inferred",
+            installation_id: "install",
+            pm_root_hash: "pm-root",
+            cwd_hash: "cwd",
+            endpoint: "https://telemetry.example.test/events",
+            retention_days: 1,
+            global_pm_root: "/tmp/global",
+            capture_level: "redacted",
+            otel_traces_endpoint: "https://otel.example.test/v1/traces",
+            otel_trace_id: "a".repeat(32),
+            otel_span_id: "b".repeat(16),
+          },
+          { ok: true, exit_code: 2.7 },
+          "not-a-date",
+          7.9,
+        ),
+      ).rejects.toThrow("local_otel_export_http_503");
+      const body = JSON.parse(String((globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0]?.[1]?.body));
+      const span = body.resourceSpans[0].scopeSpans[0].spans[0];
+      expect(span.status).toEqual({ code: 1, message: "" });
+      expect(span.name).toBe("pm.command.[redacted_path] secret");
+    });
+  });
+
+  it("covers telemetry queue prune, defer, success, and lock branches", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      expect(_testOnly.isRetryableQueueRewriteError({ code: "EACCES" })).toBe(true);
+      expect(_testOnly.isRetryableQueueRewriteError(null)).toBe(false);
+      expect(_testOnly.isRetryableQueueRewriteError({ code: "ENOENT" })).toBe(false);
+      expect(_testOnly.errorCode({ code: "EEXIST" })).toBe("EEXIST");
+      expect(_testOnly.errorCode({ code: 1 })).toBeUndefined();
+
+      const lockPath = path.join(globalRoot, "runtime", "telemetry", "manual.lock");
+      expect(_testOnly.createDirectoryLock(lockPath)).toBe(true);
+      expect(_testOnly.createDirectoryLock(lockPath)).toBe(false);
+      expect(_testOnly.isFreshDirectoryLock(lockPath, DAY_MS)).toBe(true);
+      _testOnly.removeDirectoryLockBestEffort(lockPath);
+      expect(_testOnly.isFreshDirectoryLock(lockPath, DAY_MS)).toBe(false);
+
+      const heldFlushLock = _testOnly.flushLockPath(globalRoot);
+      expect(await _testOnly.acquireTelemetryFlushLock(globalRoot)).toBe(true);
+      expect(await _testOnly.acquireTelemetryFlushLock(globalRoot)).toBe(false);
+      await fs.rm(heldFlushLock, { recursive: true, force: true });
+      expect(await _testOnly.acquireTelemetryFlushLock(globalRoot)).toBe(true);
+      const stale = new Date(Date.now() - 2 * DAY_MS);
+      await fs.utimes(heldFlushLock, stale, stale);
+      expect(await _testOnly.acquireTelemetryFlushLock(globalRoot)).toBe(true);
+      await fs.rm(heldFlushLock, { recursive: true, force: true });
+
+      const parentFile = path.join(globalRoot, "runtime", "telemetry", "parent-file");
+      await fs.writeFile(parentFile, "not a directory", "utf8");
+      expect(_testOnly.createDirectoryLock(path.join(parentFile, "child.lock"))).toBe(false);
+
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.endpoint = "https://telemetry.example.test/events";
+      settings.telemetry.retention_days = 1;
+      await writeSettings(globalRoot, settings, "test:queue_states");
+
+      const oldEntry = {
+        client_schema_version: 1,
+        attempts: 0,
+        event: {
+          schema_version: 1,
+          event_id: "88888888-8888-4888-8888-888888888888",
+          event_type: "command_start" as const,
+          occurred_at: new Date(Date.now() - 3 * DAY_MS).toISOString(),
+          installation_id: "22222222-2222-4222-8222-222222222222",
+          session_id: "33333333-3333-4333-8333-333333333333",
+          command: "old",
+          payload: {},
+        },
+      };
+      await _testOnly.rewriteQueue(globalRoot, [oldEntry]);
+      await flushTelemetryQueueNow(globalRoot);
+      await expect(fs.readFile(telemetryQueuePath(globalRoot), "utf8")).resolves.toBe("");
+      await expect(_testOnly.readRuntimeState(globalRoot)).resolves.toMatchObject({ queue_entries: 0 });
+
+      const futureEntry = {
+        ...oldEntry,
+        event: {
+          ...oldEntry.event,
+          event_id: "99999999-9999-4999-8999-999999999999",
+          occurred_at: new Date().toISOString(),
+          command: "future",
+        },
+        next_attempt_after: new Date(Date.now() + DAY_MS).toISOString(),
+      };
+      await _testOnly.rewriteQueue(globalRoot, [futureEntry]);
+      await expect(_testOnly.readCurrentQueueEntries(globalRoot)).resolves.toHaveLength(1);
+      await flushTelemetryQueueNow(globalRoot);
+      await expect(_testOnly.readRuntimeState(globalRoot)).resolves.toMatchObject({ queue_entries: 1 });
+
+      const dueEntry = {
+        ...futureEntry,
+        event: {
+          ...futureEntry.event,
+          event_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          command: "due",
+        },
+        next_attempt_after: new Date(Date.now() - 1000).toISOString(),
+      };
+      await _testOnly.rewriteQueue(globalRoot, [dueEntry]);
+      globalThis.fetch = vi.fn(async () => ({ ok: true, status: 202 })) as unknown as typeof fetch;
+      await flushTelemetryQueueNow(globalRoot);
+      await expect(fs.readFile(telemetryQueuePath(globalRoot), "utf8")).resolves.toBe("");
+      const successState = await _testOnly.readRuntimeState(globalRoot);
+      expect(successState).toMatchObject({ queue_entries: 0 });
+      expect(successState).not.toHaveProperty("last_failed_flush_error");
+
+      await fs.writeFile(telemetryQueuePath(globalRoot), "not-json\n{}\n", "utf8");
+      await flushTelemetryQueueNow(globalRoot);
+      await expect(_testOnly.readRuntimeState(globalRoot)).resolves.toMatchObject({ queue_entries: 0 });
+
+      const futureWithOldPruned = {
+        ...futureEntry,
+        event: {
+          ...futureEntry.event,
+          event_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          command: "future-with-pruned",
+        },
+        next_attempt_after: new Date(Date.now() + DAY_MS).toISOString(),
+      };
+      await _testOnly.rewriteQueue(globalRoot, [oldEntry, futureWithOldPruned]);
+      await flushTelemetryQueueNow(globalRoot);
+      const retainedRaw = await fs.readFile(telemetryQueuePath(globalRoot), "utf8");
+      expect(retainedRaw).toContain(futureWithOldPruned.event.event_id);
+      expect(retainedRaw).not.toContain(oldEntry.event.event_id);
+
+      const hugeEntry = {
+        ...futureEntry,
+        event: {
+          ...futureEntry.event,
+          event_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          command: "huge",
+          payload: { result_summary: "x".repeat(70_000) },
+        },
+      };
+      await _testOnly.enqueueTelemetryEvent(globalRoot, hugeEntry.event);
+      const queuedHuge = JSON.parse((await fs.readFile(telemetryQueuePath(globalRoot), "utf8")).trim().split("\n").at(-1) ?? "{}");
+      expect(queuedHuge.event.payload.result_summary).toMatchObject({
+        truncated: true,
+        reason: "payload_size_exceeded",
+      });
+
+      await _testOnly.rewriteQueue(globalRoot, [futureWithOldPruned]);
+      await _testOnly.removeFlushedEntriesFromCurrentQueue(globalRoot, new Set([futureWithOldPruned.event.event_id]), 1);
+      await expect(fs.readFile(telemetryQueuePath(globalRoot), "utf8")).resolves.toBe("");
     });
   });
 });

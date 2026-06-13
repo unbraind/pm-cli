@@ -205,6 +205,23 @@ interface ReindexEmbeddingExecutionResult {
 
 const toOptionalNonEmptyString = toNonEmptyStringOrUndefined;
 
+export const _testOnly = {
+  shouldEmitReindexProgress,
+  emitReindexProgress,
+  parseMode,
+  hydrateDocuments,
+  buildKeywordRecord,
+  resolveExtensionSearchEmbedding,
+  resolveExtensionVectorAdapter,
+  assertVector,
+  executeExtensionEmbedding,
+  resolveExtensionEmbeddingModel,
+  resolveReindexEmbeddingIdentity,
+  collectLedgerOrphanIds,
+  resetVectorStoreForReindex,
+  pruneReindexOrphanVectors,
+};
+
 function resolveExtensionSearchEmbedding(
   settings: PmSettings,
 ): { name: string; embedBatch?: ExtensionEmbedBatch; embed?: ExtensionEmbedOne } | null {

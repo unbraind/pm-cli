@@ -1903,3 +1903,25 @@ export async function runConfig(
     changed,
   }, warnings);
 }
+
+export const _testOnlyConfigCommand = {
+  normalizeAction,
+  normalizeCriteria,
+  normalizeGovernanceCloseValidationDefault,
+  normalizeGovernanceCreateModeDefault,
+  normalizeGovernanceForceRequiredForStaleLockPolicy,
+  normalizeGovernanceOwnershipEnforcement,
+  normalizeGovernancePreset,
+  normalizeGovernanceRequireCloseReasonPolicy,
+  normalizeGovernanceWorkflowEnforcement,
+  normalizeHistoryMissingStreamPolicy,
+  normalizeItemFormat,
+  normalizeKey,
+  normalizeMetadataRequiredFields,
+  normalizePolicyForConflict,
+  normalizeScope,
+  normalizeTelemetryTrackingPolicy,
+  normalizeTestResultTrackingPolicy,
+  normalizeValidateMetadataProfile,
+  normalizeWarnings,
+};

@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { runClose } from "../../src/cli/commands/close.js";
 import * as docsCommand from "../../src/cli/commands/docs.js";
 import * as filesCommand from "../../src/cli/commands/files.js";
+import * as updateCommand from "../../src/cli/commands/update.js";
 import { runHistoryRedact } from "../../src/cli/commands/history-redact.js";
 import { runInit } from "../../src/cli/commands/init.js";
 import { runValidate } from "../../src/cli/commands/validate.js";
@@ -1707,6 +1708,82 @@ describe("runValidate", () => {
       ).toEqual(["src/old/moved-file.ts"]);
       const docsAfter = context.runCli(["docs", id, "--json", "--list"], { expectJson: true });
       expect((docsAfter.json as { docs: Array<{ path: string }> }).docs ?? []).toEqual([]);
+    });
+  });
+
+  it("reports failed batched prune fixes without aborting validation", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "prune-missing-link-failure");
+      const linkedFiles = context.runCli(
+        [
+          "files",
+          id,
+          "--json",
+          "--add",
+          "path=src/gone/failure-a.ts,scope=project",
+          "--add",
+          "path=src/gone/failure-b.ts,scope=project",
+        ],
+        { expectJson: true },
+      );
+      expect(linkedFiles.code).toBe(0);
+
+      const filesSpy = vi.spyOn(filesCommand, "runFiles").mockRejectedValueOnce(new Error("files prune failed"));
+      try {
+        const result = await runValidate({ pruneMissing: true }, { path: context.pmPath });
+
+        expect(result.fixes?.mode).toBe("apply");
+        expect(result.fixes?.planned_count).toBe(2);
+        expect(result.fixes?.applied_count).toBe(0);
+        expect(result.fixes?.failed_count).toBe(2);
+        expect(result.fixes?.failed_fixes).toEqual([
+          {
+            item_id: id,
+            check: "files",
+            field: "files",
+            command: `pm files ${id} --remove "src/gone/failure-a.ts"`,
+            error: "files prune failed",
+          },
+          {
+            item_id: id,
+            check: "files",
+            field: "files",
+            command: `pm files ${id} --remove "src/gone/failure-b.ts"`,
+            error: "files prune failed",
+          },
+        ]);
+      } finally {
+        filesSpy.mockRestore();
+      }
+    });
+  });
+
+  it("reports failed scalar auto-fixes without aborting validation", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "resolution-failure");
+      await runClose(id, "closed without resolution", {}, { path: context.pmPath });
+
+      const updateSpy = vi.spyOn(updateCommand, "runUpdate").mockRejectedValueOnce(new Error("update failed"));
+      try {
+        const result = await runValidate({ autoFix: true }, { path: context.pmPath });
+
+        expect(result.fixes?.mode).toBe("apply");
+        expect(result.fixes?.planned_count).toBeGreaterThanOrEqual(1);
+        expect(result.fixes?.applied_count).toBe(0);
+        expect(result.fixes?.failed_fixes).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              item_id: id,
+              check: "resolution",
+              field: "resolution",
+              command: `pm update ${id} --resolution "closed without resolution"`,
+              error: "update failed",
+            }),
+          ]),
+        );
+      } finally {
+        updateSpy.mockRestore();
+      }
     });
   });
 });

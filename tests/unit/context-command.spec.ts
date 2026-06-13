@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  _testOnly as contextInternals,
   parseContextDepth,
   parseContextSections,
   renderContextMarkdown,
@@ -10,6 +11,7 @@ import {
   runContext,
   type ContextOptions,
 } from "../../src/cli/commands/context.js";
+import { resolveRuntimeStatusRegistry } from "../../src/core/schema/runtime-schema.js";
 import { SETTINGS_DEFAULTS, EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -88,6 +90,207 @@ function createContextItem(
 }
 
 describe("context command module", () => {
+  it("covers context parsing, date, status, and projection helper branches", () => {
+    const settings = SETTINGS_DEFAULTS.context;
+    const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+
+    expect(contextInternals.parseContextLimit(undefined)).toBe(10);
+    expect(contextInternals.parseActivityLimit(undefined, settings)).toBe(settings.activity_limit);
+    expect(contextInternals.parseActivityLimit("3", settings)).toBe(3);
+    expect(contextInternals.parseStaleThresholdDays(undefined, settings)).toBe(settings.stale_threshold_days);
+    expect(contextInternals.parseStaleThresholdDays("7d", settings)).toBe(7);
+    expect(() => contextInternals.parseStaleThresholdDays("0", settings)).toThrow(PmCliError);
+    expect(() => contextInternals.parseStaleThresholdDays("soon", settings)).toThrow(PmCliError);
+
+    expect(contextInternals.compareOptionalOrder(null, null)).toBe(0);
+    expect(contextInternals.compareOptionalOrder(null, 1)).toBe(1);
+    expect(contextInternals.compareOptionalOrder(1, null)).toBe(-1);
+    expect(contextInternals.compareOptionalDeadline(null, null)).toBe(0);
+    expect(contextInternals.compareOptionalDeadline(null, "2026-01-01T00:00:00.000Z")).toBe(1);
+    expect(contextInternals.sortableTimestamp("20260610")).toBe("2026-06-10T00:00:00.000Z");
+    expect(contextInternals.dateTokenForTimestamp("not-a-date")).toBe("unknown");
+    expect(Number.isNaN(contextInternals.parseContextTimestampMs("2026-02-30"))).toBe(true);
+
+    expect(contextInternals.statusRank("in_progress", statusRegistry)).toBe(0);
+    expect(contextInternals.statusRank("draft", statusRegistry)).toBe(3);
+    const customStatusRegistry = {
+      ...statusRegistry,
+      active_statuses: new Set([...statusRegistry.active_statuses, "qa_ready"]),
+      blocked_statuses: new Set([...statusRegistry.blocked_statuses, "waiting"]),
+      terminal_statuses: new Set([...statusRegistry.terminal_statuses, "archived"]),
+    };
+    expect(contextInternals.statusRank("qa_ready" as never, customStatusRegistry)).toBe(4);
+    expect(contextInternals.statusRank("waiting" as never, customStatusRegistry)).toBe(5);
+    expect(contextInternals.statusRank("archived" as never, customStatusRegistry)).toBe(7);
+    expect(contextInternals.statusRank("custom" as never, customStatusRegistry)).toBe(6);
+    expect(contextInternals.isClosedStatus("closed", statusRegistry)).toBe(true);
+    expect(contextInternals.isInProgressStatus("in_progress", statusRegistry)).toBe(true);
+    expect(contextInternals.isOpenStatus("open", statusRegistry)).toBe(true);
+    expect(contextInternals.isBlockedStatus("blocked", statusRegistry)).toBe(true);
+    expect(
+      contextInternals.filterTerminalCalendarEvents(
+        [
+          { item_status: "open" },
+          { item_status: "closed" },
+        ] as never,
+        statusRegistry,
+      ),
+    ).toEqual([{ item_status: "open" }]);
+    expect(
+      contextInternals.stripListProjectionFlags({
+        compact: true,
+        fields: "id",
+        includeBody: true,
+        tag: "keep",
+      } as never),
+    ).toEqual({ tag: "keep" });
+  });
+
+  it("covers context hierarchy, progress, blockers, staleness, and test-health helper branches", () => {
+    const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const now = "2026-06-13T12:00:00.000Z";
+    const epic = {
+      id: "pm-epic",
+      title: "Epic",
+      type: "Epic",
+      status: "open",
+      priority: 2,
+      order: null,
+      deadline: null,
+      created_at: "2026-06-01T00:00:00.000Z",
+      updated_at: "2026-06-01T00:00:00.000Z",
+    };
+    const feature = {
+      ...epic,
+      id: "pm-feature",
+      title: "Feature",
+      type: "Feature",
+      status: "in_progress",
+      priority: 1,
+      parent: "pm-epic",
+      order: 1,
+      updated_at: "2026-06-02T00:00:00.000Z",
+    };
+    const openTask = {
+      ...epic,
+      id: "pm-open",
+      title: "Open task",
+      type: "Task",
+      status: "open",
+      parent: "pm-feature",
+      files: [{ path: "src/a.ts" }, { path: "src/a.ts" }],
+      tests: [{ command: "pnpm test" }],
+      test_runs: [{ passed: 2, failed: 0, skipped: 1 }],
+    };
+    const blockedTask = {
+      ...epic,
+      id: "pm-blocked",
+      title: "Blocked task",
+      type: "Task",
+      status: "blocked",
+      parent: "pm-feature",
+      blocked_by: "pm-open",
+      blocked_reason: "waiting",
+      unblock_note: "ship dependency",
+      files: [{ path: "src/b.ts" }],
+      tests: [{ command: "pnpm test" }],
+      test_runs: [{ passed: 0, failed: 1, skipped: 0 }],
+    };
+    const closedTask = {
+      ...epic,
+      id: "pm-closed",
+      title: "Closed task",
+      type: "Task",
+      status: "closed",
+      parent: "pm-feature",
+      updated_at: "2026-06-12T00:00:00.000Z",
+    };
+    const allItems = [epic, feature, openTask, blockedTask, closedTask] as never;
+    const activeItems = [epic, feature, openTask, blockedTask] as never;
+    const childrenByParent = contextInternals.buildChildrenByParent(allItems);
+
+    expect(contextInternals.normalizedParentId("  pm-parent  ")).toBe("pm-parent");
+    expect(contextInternals.dateTokenForTimestamp("20260613T091530+0200")).toBe("2026-06-13");
+    expect(contextInternals.normalizedParentId("   ")).toBeNull();
+    expect(contextInternals.completionPct(1, 4)).toBe(25);
+    expect(contextInternals.compareCriticalItems(
+      {
+        ...openTask,
+        id: "pm-newer",
+        updated_at: "2026-06-10T00:00:00.000Z",
+      },
+      {
+        ...openTask,
+        id: "pm-older",
+        updated_at: "2026-06-09T00:00:00.000Z",
+      },
+      statusRegistry,
+    )).toBeLessThan(0);
+    expect(contextInternals.compareCriticalItems(
+      {
+        ...openTask,
+        id: "pm-a",
+      },
+      {
+        ...openTask,
+        id: "pm-b",
+      },
+      statusRegistry,
+    )).toBeLessThan(0);
+    expect(contextInternals.collectDescendants("pm-epic", childrenByParent).map((item: { id: string }) => item.id)).toEqual([
+      "pm-feature",
+      "pm-open",
+      "pm-blocked",
+      "pm-closed",
+    ]);
+
+    const progress = contextInternals.buildProgress(allItems, activeItems, statusRegistry, 5);
+    expect(progress[0]).toMatchObject({
+      id: "pm-epic",
+      total: 4,
+      closed: 1,
+      open: 1,
+      in_progress: 1,
+      blocked: 1,
+      completion_pct: 25,
+    });
+    expect(contextInternals.buildBlockers([blockedTask] as never, new Map([["pm-open", openTask]]), 5)).toEqual([
+      {
+        id: "pm-blocked",
+        title: "Blocked task",
+        blocked_by: "pm-open",
+        blocked_by_title: "Open task",
+        blocked_by_status: "open",
+        blocked_reason: "waiting",
+        unblock_note: "ship dependency",
+      },
+    ]);
+    expect(contextInternals.buildHotFiles(activeItems, 5)).toEqual([
+      { path: "src/a.ts", references: 1, items: ["pm-open"] },
+      { path: "src/b.ts", references: 1, items: ["pm-blocked"] },
+    ]);
+    expect(contextInternals.buildStaleness(activeItems, 7, now, 5).map((entry: { id: string }) => entry.id)).toEqual([
+      "pm-epic",
+      "pm-open",
+      "pm-blocked",
+      "pm-feature",
+    ]);
+    expect(contextInternals.buildRecentlyCreated(activeItems, statusRegistry, childrenByParent, 2)).toHaveLength(2);
+    expect(contextInternals.buildUnparented(activeItems, statusRegistry, childrenByParent, 5)).toEqual([]);
+    expect(contextInternals.buildTestHealth(activeItems)).toMatchObject({
+      items_with_tests: 2,
+      items_with_recent_runs: 2,
+      recent_runs: { passed: 2, failed: 1, skipped: 1 },
+    });
+    expect(contextInternals.summarizeAgenda([{ item_id: "pm-open" }, { item_id: "pm-open" }, { item_id: "pm-blocked" }] as never)).toEqual({
+      deadlines: 0,
+      events: 3,
+      items: 2,
+      reminders: 0,
+      scheduled: 3,
+    });
+  });
+
   it("resolves output format precedence and conflicts", () => {
     expect(resolveContextOutputFormat({}, { json: false })).toBe("toon");
     expect(resolveContextOutputFormat({ format: "markdown" }, { json: false })).toBe("markdown");
@@ -107,6 +310,27 @@ describe("context command module", () => {
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
+  });
+
+  it("returns suggestions for an empty project context", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runContext({ date: "2026-05-01T00:00:00.000Z" }, { path: context.pmPath });
+
+      expect(result.summary.active_items).toBe(0);
+      expect(result.summary.blocked).toBe(0);
+      expect(result.agenda.summary.events).toBe(0);
+      expect(result.suggestions).toEqual([
+        'pm create --type Task --title "..." to add a new work item',
+        "pm list --status closed --limit 5 to review recent completions",
+        "pm search <keywords> to find related past work",
+        "pm aggregate for a full project status overview",
+      ]);
+
+      const markdown = renderContextMarkdown(result);
+      expect(markdown).toContain("## Suggestions");
+      expect(markdown).toContain("No active work items or upcoming events.");
+      expect(markdown).toContain("pm aggregate");
+    });
   });
 
   it("builds deterministic high-level and low-level focus with agenda context", async () => {
@@ -660,6 +884,59 @@ describe("context command module", () => {
       expect(markdown).toContain("- depth: deep");
       expect(markdown).toContain("## Test health");
     });
+  });
+
+  it("renders stale item and failing test health markdown details", () => {
+    const markdown = renderContextMarkdown({
+      now: "2026-05-01T00:00:00.000Z",
+      depth: "deep",
+      filters: {},
+      sections_included: ["staleness", "tests"],
+      summary: {
+        active_items: 1,
+        in_progress: 0,
+        open: 1,
+        blocked: 0,
+        blocked_fallback_used: false,
+        agenda_events: 0,
+      },
+      high_level: [],
+      low_level: [],
+      blocked_fallback: [],
+      agenda: { summary: { events: 0, deadlines: 0, reminders: 0, scheduled: 0 }, events: [] },
+      blockers: [
+        {
+          id: "pm-blocked",
+          title: "Blocked task",
+          blocked_by: "pm-dependency",
+          blocked_by_status: undefined,
+          blocked_reason: "waiting",
+          unblock_note: "retry",
+        },
+      ],
+      staleness: [
+        {
+          id: "pm-stale",
+          title: "Stale task",
+          status: "open",
+          stale_days: 9,
+          updated_at: "2026-04-20T00:00:00.000Z",
+        },
+      ],
+      tests: {
+        items_with_tests: 1,
+        items_with_recent_runs: 1,
+        recent_runs: { passed: 0, failed: 1, skipped: 0 },
+        items_failing: ["pm-stale"],
+      },
+    } as never);
+
+    expect(markdown).toContain("## Stale items");
+    expect(markdown).toContain('- pm-stale open stale:9d last:2026-04-20 "Stale task"');
+    expect(markdown).toContain("## Blockers");
+    expect(markdown).toContain('- pm-blocked "Blocked task" blocked_by:pm-dependency(?) reason:"waiting" unblock:"retry"');
+    expect(markdown).toContain("## Test health");
+    expect(markdown).toContain("- items_failing: [pm-stale]");
   });
 
   it("renders malformed recently created timestamps defensively", () => {

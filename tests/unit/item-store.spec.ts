@@ -1,8 +1,22 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
-import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
-import { deleteItem, listAllFrontMatter, locateItem, mutateItem, readLocatedItem } from "../../src/core/store/item-store.js";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  clearActiveExtensionHooks,
+  setActiveExtensionHooks,
+  setActiveExtensionServices,
+} from "../../src/core/extensions/index.js";
+import {
+  itemStoreTestOnly,
+  buildItemNotFoundError,
+  deleteItem,
+  listAllFrontMatter,
+  listAllFrontMatterLight,
+  listAllFrontMatterWithBody,
+  locateItem,
+  mutateItem,
+  readLocatedItem,
+} from "../../src/core/store/item-store.js";
 import { listAllDocumentsCached } from "../../src/core/store/front-matter-cache.js";
 import { getItemPath } from "../../src/core/store/paths.js";
 import { readSettings } from "../../src/core/store/settings.js";
@@ -43,6 +57,11 @@ async function writeTaskItem(
 }
 
 describe("core/store/item-store", () => {
+  afterEach(() => {
+    clearActiveExtensionHooks();
+    setActiveExtensionServices(null);
+  });
+
   it("continues listing when one item-type directory is missing", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-item-store-list";
@@ -69,6 +88,21 @@ describe("core/store/item-store", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
+    });
+  });
+
+  it("covers item-store helper branches for warnings and assignee bypasses", async () => {
+    const warnings: string[] = [];
+    itemStoreTestOnly.appendWarning(warnings, "first");
+    itemStoreTestOnly.appendWarning(undefined, "ignored");
+    expect(warnings).toEqual(["first"]);
+    expect(itemStoreTestOnly.isErrno(Object.assign(new Error("busy"), { code: "EBUSY" }), "EBUSY")).toBe(true);
+    expect(itemStoreTestOnly.isErrno(new Error("plain"), "EBUSY")).toBe(false);
+    expect(itemStoreTestOnly.bypassesAssigneeConflict("claim")).toBe(true);
+    expect(itemStoreTestOnly.bypassesAssigneeConflict("update", true)).toBe(true);
+    expect(itemStoreTestOnly.bypassesAssigneeConflict("delete", true)).toBe(false);
+    await withTempPmPath(async ({ pmPath }) => {
+      await expect(itemStoreTestOnly.buildDidYouMeanSuggestions(pmPath, "pm-nothing", "pm-", {})).resolves.toEqual([]);
     });
   });
 
@@ -116,6 +150,42 @@ describe("core/store/item-store", () => {
       const preferredMarkdown = await listAllFrontMatter(pmPath, "json_markdown");
       expect(preferredMarkdown.filter((entry) => entry.id === id)).toHaveLength(1);
       expect(preferredMarkdown.find((entry) => entry.id === id)?.description).toBe("markdown-only");
+    });
+  });
+
+  it("lists light front matter and body-bearing front matter variants", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-list-variants";
+      await writeTaskItem(pmPath, id, { description: "variant target" }, "toon");
+
+      const light = await listAllFrontMatterLight(pmPath, "toon");
+      const lightEntry = light.find((entry) => entry.id === id);
+      expect(lightEntry).toMatchObject({ id, description: "variant target" });
+      expect(lightEntry).not.toHaveProperty("comments");
+
+      const withBody = await listAllFrontMatterWithBody(pmPath, "toon");
+      expect(withBody.find((entry) => entry.id === id)).toMatchObject({
+        id,
+        description: "variant target",
+        body: "seed body",
+      });
+    });
+  });
+
+  it("builds item-not-found errors with close id suggestions and ignores missing type folders", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      await writeTaskItem(pmPath, "pm-suggested-target");
+      await fs.rm(path.join(pmPath, "issues"), { recursive: true, force: true });
+
+      const error = await buildItemNotFoundError(pmPath, "pm-suggested-targot", "pm-", {
+        Task: "tasks",
+        Issue: "issues",
+      });
+
+      expect(error).toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
+      expect(error.context.nextSteps?.[0]).toContain("pm-suggested-target");
     });
   });
 
@@ -191,6 +261,78 @@ describe("core/store/item-store", () => {
 
       const rawAfterFailure = await fs.readFile(itemPath, "utf8");
       expect(rawAfterFailure).toBe(originalRaw);
+    });
+  });
+
+  it("warns on assignee conflicts when ownership enforcement is warn", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-item-store-assignee-warning";
+      await writeTaskItem(pmPath, id, { assignee: "other-agent" });
+      const settings = await readSettings(pmPath);
+      settings.governance.preset = "custom";
+      settings.governance.ownership_enforcement = "warn";
+
+      const result = await mutateItem({
+        pmRoot: pmPath,
+        settings,
+        id,
+        op: "update",
+        author: "unit-author",
+        mutate: (document) => {
+          document.metadata.description = "updated despite warning";
+          return { changedFields: ["description"] };
+        },
+      });
+
+      expect(result.item.description).toBe("updated despite warning");
+      expect(result.warnings).toEqual(
+        expect.arrayContaining([`ownership_warning:assignee_conflict:${id}:other-agent`]),
+      );
+    });
+  });
+
+  it("blocks strict assignee conflicts but allows explicit bypass operations", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-item-store-strict-assignee";
+      await writeTaskItem(pmPath, id, { assignee: "other-agent" });
+      const settings = await readSettings(pmPath);
+      settings.governance.preset = "custom";
+      settings.governance.ownership_enforcement = "strict";
+
+      await expect(
+        mutateItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          op: "update",
+          author: "unit-author",
+          mutate: (document) => {
+            document.metadata.description = "blocked";
+            return { changedFields: ["description"] };
+          },
+        }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.CONFLICT,
+      });
+
+      const bypassed = await mutateItem({
+        pmRoot: pmPath,
+        settings,
+        id,
+        op: "comment_add",
+        author: "unit-author",
+        bypassAssigneeConflict: true,
+        mutate: (document) => {
+          document.metadata.description = "bypassed";
+          return {
+            changedFields: ["description"],
+            warnings: ["mutation_warning:kept_for_coverage"],
+          };
+        },
+      });
+
+      expect(bypassed.item.description).toBe("bypassed");
+      expect(bypassed.warnings).toContain("mutation_warning:kept_for_coverage");
     });
   });
 
@@ -383,6 +525,291 @@ describe("core/store/item-store", () => {
           }),
         ]),
       );
+    });
+  });
+
+  it("applies item write service overrides for target path and contents", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-write-override";
+      const { itemPath } = await writeTaskItem(pmPath, id, { description: "before" }, "toon");
+      const alternatePath = path.join(pmPath, "tasks", "pm-write-override-shadow.toon");
+      const settings = await readSettings(pmPath);
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "write-path-override",
+            service: "item_store_write",
+            run: (context) => ({
+              target_item_path: alternatePath,
+              contents: String((context.payload as { contents?: unknown }).contents).replace(
+                "after override",
+                "after service override",
+              ),
+              skip_write: false,
+            }),
+          },
+        ],
+      });
+
+      const result = await mutateItem({
+        pmRoot: pmPath,
+        settings,
+        id,
+        op: "update",
+        author: "unit-author",
+        mutate: (document) => {
+          document.metadata.description = "after override";
+          return { changedFields: ["description"] };
+        },
+      });
+
+      expect(result.item.description).toBe("after override");
+      await expect(fs.access(itemPath)).rejects.toMatchObject({ code: "ENOENT" });
+      const relocatedRaw = await fs.readFile(alternatePath, "utf8");
+      expect(relocatedRaw).toContain("after service override");
+    });
+  });
+
+  it("restores original item when overridden item writes fail history append", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-write-override-rollback";
+      const { itemPath } = await writeTaskItem(pmPath, id, { description: "before rollback" }, "toon");
+      const originalRaw = await fs.readFile(itemPath, "utf8");
+      const alternatePath = path.join(pmPath, "tasks", "pm-write-override-rollback-shadow.toon");
+      const settings = await readSettings(pmPath);
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "write-path-rollback",
+            service: "item_store_write",
+            run: () => ({ target_item_path: alternatePath }),
+          },
+        ],
+      });
+      const historyDir = path.join(pmPath, "history");
+      await fs.rm(historyDir, { recursive: true, force: true });
+      await fs.writeFile(historyDir, "not-a-directory", "utf8");
+
+      await expect(
+        mutateItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          op: "update",
+          author: "unit-author",
+          mutate: (document) => {
+            document.metadata.description = "should rollback";
+            return { changedFields: ["description"] };
+          },
+        }),
+      ).rejects.toBeInstanceOf(Error);
+
+      await expect(fs.readFile(itemPath, "utf8")).resolves.toBe(originalRaw);
+      await expect(fs.access(alternatePath)).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("restores the original item when same-path history append fails", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-write-rollback-same-path";
+      const { itemPath } = await writeTaskItem(pmPath, id, { description: "before same-path rollback" }, "toon");
+      const originalRaw = await fs.readFile(itemPath, "utf8");
+      const settings = await readSettings(pmPath);
+      const historyDir = path.join(pmPath, "history");
+      await fs.rm(historyDir, { recursive: true, force: true });
+      await fs.writeFile(historyDir, "not-a-directory", "utf8");
+
+      await expect(
+        mutateItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          op: "update",
+          author: "unit-author",
+          mutate: (document) => {
+            document.metadata.description = "should rollback same path";
+            return { changedFields: ["description"] };
+          },
+        }),
+      ).rejects.toBeInstanceOf(Error);
+
+      await expect(fs.readFile(itemPath, "utf8")).resolves.toBe(originalRaw);
+    });
+  });
+
+  it("honors skip write and skip delete service overrides", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-skip-overrides";
+      const { itemPath } = await writeTaskItem(pmPath, id, { description: "before skip" }, "toon");
+      const originalRaw = await fs.readFile(itemPath, "utf8");
+      const settings = await readSettings(pmPath);
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "skip-write-delete",
+            service: "item_store_write",
+            run: () => ({ skip_write: true }),
+          },
+          {
+            layer: "project",
+            name: "skip-delete",
+            service: "item_store_delete",
+            run: () => ({ skip_delete: true }),
+          },
+        ],
+      });
+
+      await mutateItem({
+        pmRoot: pmPath,
+        settings,
+        id,
+        op: "update",
+        author: "unit-author",
+        mutate: (document) => {
+          document.metadata.description = "not written";
+          return { changedFields: ["description"] };
+        },
+      });
+      await expect(fs.readFile(itemPath, "utf8")).resolves.toBe(originalRaw);
+
+      const deleted = await deleteItem({
+        pmRoot: pmPath,
+        settings,
+        id,
+        author: "unit-author",
+      });
+      expect(deleted.changedFields).toEqual(["deleted"]);
+      await expect(fs.readFile(itemPath, "utf8")).resolves.toBe(originalRaw);
+    });
+  });
+
+  it("returns delete dry-run target and applies delete service overrides", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-delete-override";
+      const { itemPath } = await writeTaskItem(pmPath, id, { description: "delete target" }, "toon");
+      const settings = await readSettings(pmPath);
+      const alternatePath = path.join(pmPath, "tasks", "pm-delete-override-shadow.toon");
+      await fs.copyFile(itemPath, alternatePath);
+
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "delete-path-override",
+            service: "item_store_delete",
+            run: () => ({
+              item_path: alternatePath,
+              skip_delete: false,
+            }),
+          },
+        ],
+      });
+
+      const dryRun = await deleteItem({
+        pmRoot: pmPath,
+        settings,
+        id,
+        author: "unit-author",
+        dryRun: true,
+      });
+      expect(dryRun).toMatchObject({
+        changedFields: ["deleted"],
+        targetPath: alternatePath,
+      });
+      await expect(fs.access(itemPath)).resolves.toBeUndefined();
+      await expect(fs.access(alternatePath)).resolves.toBeUndefined();
+
+      const deleted = await deleteItem({
+        pmRoot: pmPath,
+        settings,
+        id,
+        author: "unit-author",
+      });
+      expect(deleted.changedFields).toEqual(["deleted"]);
+      await expect(fs.access(itemPath)).resolves.toBeUndefined();
+      await expect(fs.access(alternatePath)).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("restores overridden delete targets when history append fails", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-delete-rollback";
+      const { itemPath } = await writeTaskItem(pmPath, id, { description: "rollback target" }, "toon");
+      const originalRaw = await fs.readFile(itemPath, "utf8");
+      const alternatePath = path.join(pmPath, "tasks", "pm-delete-rollback-shadow.toon");
+      await fs.copyFile(itemPath, alternatePath);
+      const settings = await readSettings(pmPath);
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "delete-path-rollback",
+            service: "item_store_delete",
+            run: () => ({ item_path: alternatePath }),
+          },
+        ],
+      });
+      const historyDir = path.join(pmPath, "history");
+      await fs.rm(historyDir, { recursive: true, force: true });
+      await fs.writeFile(historyDir, "not-a-directory", "utf8");
+
+      await expect(
+        deleteItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          author: "unit-author",
+        }),
+      ).rejects.toBeInstanceOf(Error);
+
+      await expect(fs.readFile(alternatePath, "utf8")).resolves.toBe(originalRaw);
+    });
+  });
+
+  it("restores same-path delete targets when history append fails", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-delete-rollback-same-path";
+      const { itemPath } = await writeTaskItem(pmPath, id, { description: "rollback same path" }, "toon");
+      const originalRaw = await fs.readFile(itemPath, "utf8");
+      const settings = await readSettings(pmPath);
+      const historyDir = path.join(pmPath, "history");
+      await fs.rm(historyDir, { recursive: true, force: true });
+      await fs.writeFile(historyDir, "not-a-directory", "utf8");
+
+      await expect(
+        deleteItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          author: "unit-author",
+        }),
+      ).rejects.toBeInstanceOf(Error);
+
+      await expect(fs.readFile(itemPath, "utf8")).resolves.toBe(originalRaw);
+    });
+  });
+
+  it("covers item-store warning and suggestion helper edges", async () => {
+    expect(itemStoreTestOnly.isErrno({ code: "ENOENT" }, "ENOENT")).toBe(true);
+    expect(itemStoreTestOnly.isErrno(null, "ENOENT")).toBe(false);
+
+    const warnings = ["existing"];
+    itemStoreTestOnly.appendWarning(warnings, "existing");
+    itemStoreTestOnly.appendWarning(warnings, "new");
+    expect(warnings).toEqual(["existing", "new"]);
+    itemStoreTestOnly.appendWarning(undefined, "ignored");
+
+    await withTempPmPath(async ({ pmPath }) => {
+      await writeTaskItem(pmPath, "pm-close-alpha");
+      await writeTaskItem(pmPath, "pm-close-beta");
+      const suggestions = await itemStoreTestOnly.buildDidYouMeanSuggestions(pmPath, "pm-close-alphx", "pm-", {
+        Task: "tasks",
+        Issue: "issues",
+      });
+      expect(suggestions).toContain("pm-close-alpha");
     });
   });
 });

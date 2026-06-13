@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runDedupeAudit } from "../../src/cli/commands/dedupe-audit.js";
+import { _testOnly as dedupeInternals, runDedupeAudit } from "../../src/cli/commands/dedupe-audit.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -67,6 +67,94 @@ function createItem(
   expect(created.code).toBe(0);
   return (created.json as { item: { id: string } }).item.id;
 }
+
+function preparedCandidate(
+  overrides: Partial<Parameters<typeof dedupeInternals.compareCandidates>[0]> = {},
+): Parameters<typeof dedupeInternals.compareCandidates>[0] {
+  const title = overrides.title ?? "Duplicate Candidate";
+  return {
+    id: "pm-a",
+    title,
+    type: "Task",
+    status: "open",
+    parent: null,
+    priority: 1,
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-02T00:00:00.000Z",
+    normalized_title: title.toLowerCase(),
+    title_tokens: title.toLowerCase().split(/\s+/),
+    ...overrides,
+  };
+}
+
+describe("dedupe-audit helpers", () => {
+  it("parses option helpers and rejects invalid raw values", () => {
+    expect(dedupeInternals.parseMode(undefined)).toBe("title_exact");
+    expect(dedupeInternals.parseMode(" PARENT_SCOPE ")).toBe("parent_scope");
+    expect(dedupeInternals.parseStatus(undefined)).toBeUndefined();
+    expect(dedupeInternals.parseStatus("in-progress")).toBe("in_progress");
+    expect(dedupeInternals.parseThreshold(undefined)).toBeUndefined();
+    expect(dedupeInternals.parseThreshold("0")).toBe(0);
+    expect(dedupeInternals.parseThreshold("1")).toBe(1);
+    expect(() => dedupeInternals.parseMode("nearest")).toThrow(/mode must be one of/);
+    expect(() => dedupeInternals.parseStatus("waiting")).toThrow(/Status filter must be one of/);
+    expect(() => dedupeInternals.parseThreshold("nan")).toThrow(/between 0 and 1/);
+    expect(() => dedupeInternals.parseThreshold("-0.1")).toThrow(/between 0 and 1/);
+  });
+
+  it("orders canonical candidates by terminal state, priority, update time, and id", () => {
+    const open = preparedCandidate({ id: "pm-open", status: "open" });
+    const closed = preparedCandidate({ id: "pm-closed", status: "closed" });
+    expect(dedupeInternals.compareCandidates(open, closed)).toBeLessThan(0);
+
+    const highPriority = preparedCandidate({ id: "pm-high", priority: 0 });
+    const lowPriority = preparedCandidate({ id: "pm-low", priority: 2 });
+    expect(dedupeInternals.compareCandidates(highPriority, lowPriority)).toBeLessThan(0);
+
+    const newer = preparedCandidate({ id: "pm-new", updated_at: "2026-01-03T00:00:00.000Z" });
+    const older = preparedCandidate({ id: "pm-old", updated_at: "2026-01-01T00:00:00.000Z" });
+    expect(dedupeInternals.compareCandidates(newer, older)).toBeLessThan(0);
+    expect(dedupeInternals.compareCandidates(preparedCandidate({ id: "pm-a" }), preparedCandidate({ id: "pm-b" }))).toBeLessThan(0);
+  });
+
+  it("builds and skips clusters for exact, parent, and fuzzy modes", () => {
+    const first = preparedCandidate({ id: "pm-first", title: "Same Title", normalized_title: "same title", parent: "pm-parent" });
+    const second = preparedCandidate({
+      id: "pm-second",
+      title: " same   title ",
+      normalized_title: "same title",
+      parent: "pm-parent",
+      priority: 2,
+    });
+    const blank = preparedCandidate({ id: "pm-blank", title: "", normalized_title: "", title_tokens: [] });
+    const otherParent = preparedCandidate({ id: "pm-other", title: "Same Title", normalized_title: "same title", parent: "pm-other" });
+
+    expect(dedupeInternals.collectExactTitleClusters([first, second, blank])).toHaveLength(1);
+    expect(dedupeInternals.collectParentScopedClusters([first, second, otherParent])).toHaveLength(1);
+    expect(dedupeInternals.collectFuzzyTitleClusters([first], 0.5)).toEqual([]);
+    const fuzzy = dedupeInternals.collectFuzzyTitleClusters(
+      [
+        preparedCandidate({ id: "pm-a", title_tokens: ["alpha", "beta"], normalized_title: "alpha beta" }),
+        preparedCandidate({ id: "pm-b", title_tokens: ["beta", "alpha"], normalized_title: "beta alpha" }),
+        preparedCandidate({ id: "pm-c", title_tokens: ["gamma"], normalized_title: "gamma" }),
+      ],
+      0.9,
+    );
+    expect(fuzzy).toHaveLength(1);
+    expect(fuzzy[0]?.similarity).toMatchObject({ min: 1, max: 1 });
+  });
+
+  it("escapes merge suggestion commands", () => {
+    const canonical = preparedCandidate({ id: "pm-main" });
+    const duplicate = preparedCandidate({ id: 'pm-quote"' });
+
+    const suggestion = dedupeInternals.toMergeSuggestion(duplicate, canonical, "title_exact");
+
+    expect(suggestion.suggested_close_reason).toBe("Duplicate of pm-main");
+    expect(suggestion.suggested_command).toContain('pm close pm-quote" "Duplicate of pm-main"');
+    expect(suggestion.suggested_command).toContain('\\"');
+  });
+});
 
 describe("runDedupeAudit", () => {
   it("fails when tracker is not initialized", async () => {

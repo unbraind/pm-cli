@@ -1,0 +1,44 @@
+id: pm-y7sc
+title: Ecosystem audit + GH-204..208/210 remediation session 2026-06-13
+description: "Full manual audit of pm CLI + SDK + all packages in sandbox; fix open GitHub issues 204,205,206,207,208,210 plus triage quick-wins (pm-i1z6 default-limit, pm-cstl --min-score, pm-1lll csv/table, pm-gcm3 child rollup) where feasible. Sub-agents track findings as pm items tagged audit-2026-06-13 (CREATE-ONLY on tracker; never touch closed items)."
+type: Task
+status: closed
+priority: 1
+tags[2]: audit-2026-06-13,session
+created_at: "2026-06-12T22:38:35.775Z"
+updated_at: "2026-06-13T04:42:05.281Z"
+author: maintainer-agent
+resolution: "Fixed the feasible combined branch scope: duplicate close reason autofill, container child rollups, linked-test pipe/sandbox ergonomics, audit-update retry guidance, esbuild security override, coverage expansion and threshold ratchet, plus tracker evidence/backlog items."
+expected_result: "Branch is verified, package-owned changelog remains current, security alerts are resolved locally, and unresolved future items remain tracked instead of being over-claimed."
+actual_result: All local gates passed; pm-w13j remains open for future literal 100% coverage ratchets and unrelated GitHub issues such as validate owner diagnostics remain open.
+comments[6]{created_at,author,text}:
+  "2026-06-12T22:52:34.282Z",codex-sdk-sidecar,"Sidecar diff review: close.ts targets GH-204 by letting --duplicate-of auto-fill close reason under require_close_reason; get.ts targets GH-155/pm-gcm3 with children rollup for milestone/epic plus --fields children; update.ts targets GH-207 by returning exact replacement commands for restricted audit-update flags. Main risks: test.ts only adds unused DEFAULT_LINKED_TEST_PIPE_CLOSE_GRACE_MS with no behavior wired yet; no tracked tests/docs updated for the new close/get/update behavior; get --fields children currently projects children as an item field as well as root children, so JSON shape should be asserted. Next best step: add focused unit/integration tests for duplicate close without reason, get child rollup/field projection, audit-update replacement metadata, then wire or remove the linked-test pipe-close grace constant."
+  "2026-06-12T22:53:07.266Z",codex-github-sidecar,"GitHub/dependency/security sidecar 2026-06-13: no open PRs and current branch has no associated PR; GH issues #203-#220 remain open except #211 absent from open issue list, with #204-#208/#210 matching active remediation scope and #212-#220 fresh backlog. Latest main CI/CodeQL/Docs, Nightly Validation, Auto Release, Release, and Dependabot Updates runs checked green; latest release is v2026.6.12. GitHub Dependabot and CodeQL alert APIs show only fixed alerts; secret-scanning alerts empty. Local pnpm security:scan passed. pnpm audit fails: esbuild vulnerabilities GHSA-gv7w-rqvm-qjhr and GHSA-g7r4-m6w7-qqqr affect esbuild >=0.17.0/<0.28.1 and >=0.27.3/<0.28.1 via direct esbuild@0.28.0 and vite/vitest path esbuild@0.27.7. pnpm outdated shows @types/node 25.9.2->25.9.3, esbuild 0.28.0->0.28.1, commander 14.0.3->15.0.0; commander@15 requires Node >=22.12.0, so do not bump while repo supports Node >=20. Recommended fix: update/override esbuild to patched 0.28.1 across direct and transitive lockfile paths, then rerun pnpm audit --audit-level low, pnpm security:scan, and normal gates."
+  "2026-06-12T23:06:28.204Z",codex-coverage-update-test,"Evidence: added update-command coverage for --doc audit replacement guidance and dep-audit restricted-option metadata; added test-command coverage for invalid PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS fallback with normal close plus linked-test pipe lifecycle. Verified: node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/test-command.spec.ts (2 files, 126 tests passed)."
+  "2026-06-12T23:08:20.824Z",codex-coverage-get-close,"Coverage test update: added focused tests in tests/unit/get-append-command.spec.ts for get child rollup includeChildren true/false paths, including projected children reads; added focused tests in tests/unit/close-command.spec.ts for duplicate close without explicit reason, non-duplicate missing reason rejection, stale close_reason clearing when optional, strict active-child rejection, and mixed dependency cleanup."
+  "2026-06-12T23:08:20.848Z",codex-coverage-get-close,"Verification: node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/unit/close-command.spec.ts passed (2 files, 59 tests). Scoped coverage command node scripts/run-tests.mjs coverage -- tests/unit/get-append-command.spec.ts tests/unit/close-command.spec.ts ran the same 59 tests and reported get.ts 100% lines / 99.18% branches and close.ts 97.5% lines / 95% branches, then exited 1 because global all-source thresholds are enforced against the narrow run."
+  "2026-06-13T04:41:00.417Z",codex-sdk-continuation,"Evidence: final verification block passed for combined agent-UX/test lifecycle/security/coverage PR. Passed: pnpm build; PM_RUN_TESTS_SKIP_BUILD=1 pnpm typecheck; focused linked tests (close/get/update/test/release-readiness, 5 files/206 tests); focused coverage-heavy specs (4 files/137 tests); release-readiness coverage contract (2 tests); node scripts/run-tests.mjs coverage (150 files/3000 tests, 92.17/84.99/94.44/92.34); pnpm audit --audit-level low; pnpm security:scan; pnpm changelog:pm:check with pm-changelog 2026.6.10; pm validate --check-resolution --check-history-drift (0 drift, known 122 legacy resolution warnings); pnpm version:check; pnpm contracts:check; pnpm quality:static; npm pack --dry-run; manual isolated temp-project init/create/list/health/close smoke."
+files[11]{path,scope,note}:
+  package.json,project,esbuild audit override
+  pnpm-lock.yaml,project,esbuild audit lockfile refresh
+  src/cli/commands/close.ts,project,GH-204 duplicate close reason autofill
+  src/cli/commands/get.ts,project,GH-155 container child rollup for agent reads
+  src/cli/commands/test.ts,project,GH-206 linked-test pipe close grace
+  src/cli/commands/update.ts,project,GH-207 audit update retry guidance
+  src/cli/help-content.ts,project,get output shape help copy
+  tests/unit/close-command.spec.ts,project,GH-204 duplicate close regression
+  tests/unit/get-append-command.spec.ts,project,GH-155 get child rollup regression
+  tests/unit/test-command.spec.ts,project,GH-206 linked-test inherited pipe regression
+  tests/unit/update-command.spec.ts,project,GH-207 audit guidance regression
+tests[6]{command,path,scope,timeout_seconds,pm_context_mode,env_set,env_clear,shared_host_safe,assert_stdout_contains,assert_stdout_regex,assert_stderr_contains,assert_stderr_regex,assert_stdout_min_lines,assert_json_field_equals,assert_json_field_gte,note}:
+  node scripts/run-tests.mjs test -- tests/unit/close-command.spec.ts tests/unit/get-append-command.spec.ts tests/unit/update-command.spec.ts tests/unit/test-command.spec.ts tests/integration/release-automation-contract.spec.ts,null,project,300,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/get-append-command.spec.ts tests/unit/close-command.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,focused get/close coverage specs
+  node scripts/run-tests.mjs test -- tests/unit/test-command.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  node scripts/run-tests.mjs test -- tests/unit/update-command.spec.ts tests/unit/test-command.spec.ts,null,project,180,null,null,null,null,null,null,null,null,null,null,null,null
+  pnpm audit --audit-level low,null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+  "pnpm security:scan",null,project,120,null,null,null,null,null,null,null,null,null,null,null,null
+docs[2]{path,scope,note}:
+  docs/AGENT_GUIDE.md,project,agent duplicate-close quick reference
+  docs/COMMANDS.md,project,duplicate close no-reason command docs
+close_reason: "Completed combined agent UX, linked-test lifecycle, security, and coverage-ratchet PR scope; remaining unimplemented GitHub backlog stays open"
+body: ""

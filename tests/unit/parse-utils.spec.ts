@@ -1,6 +1,7 @@
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  _testOnly as parseTestOnly,
   applyTagRemovals,
   collectTagFlagValues,
   createStdinTokenResolver,
@@ -9,6 +10,7 @@ import {
   parseOptionalNumber,
   parseTags,
 } from "../../src/core/item/parse.js";
+import { resolveEventEndAt } from "../../src/cli/commands/event-validation-messages.js";
 import { parseIntegerLimit, parseLimit, parsePriority, parseType } from "../../src/cli/shared-parsers.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 
@@ -28,6 +30,7 @@ describe("core/item/parse", () => {
     expect(parseTags(' [ "BETA" , "alpha" , "alpha" ] ')).toEqual(["alpha", "beta"]);
     expect(parseTags('["alpha", 7, true]')).toEqual(["7", "alpha", "true"]);
     expect(parseTags("[]")).toEqual([]);
+    expect(parseTestOnly.coerceJsonTagArray('{"not":"array"}')).toBeNull();
     // Malformed JSON falls back to CSV semantics so we never regress legacy paths.
     expect(parseTags("[alpha,beta]")).toEqual(["[alpha", "beta]"]);
   });
@@ -56,6 +59,7 @@ describe("core/item/parse", () => {
     // must not throw — it is treated as an empty base.
     expect(mergeAdditiveTags(undefined as unknown as string[], ["alpha"])).toEqual(["alpha"]);
     expect(applyTagRemovals(undefined as unknown as string[], ["alpha"])).toEqual([]);
+    expect(applyTagRemovals(["alpha"], [7 as unknown as string])).toEqual(["alpha"]);
   });
 
   it("applyTagRemovals filters tags by additive subtraction without touching others", () => {
@@ -81,17 +85,59 @@ describe("core/item/parse", () => {
     });
   });
 
+  it("covers parse helper rejection edges", () => {
+    expect(parseTestOnly.stripCodeFenceEnvelope("```unterminated")).toBe("```unterminated");
+    expect(parseTestOnly.stripCodeFenceEnvelope("```toon\nid: pm-test\n``")).toBe("```toon\nid: pm-test\n``");
+    expect(() => parseCsvKv("=value", "--file")).toThrow(PmCliError);
+    expect(() => parseCsvKv("", "--file")).toThrow(PmCliError);
+  });
+
   it("throws usage errors for empty and malformed csv key-value input", () => {
     expect(() => parseCsvKv("   ", "--file")).toThrow("--file cannot be empty");
     expect(() => parseCsvKv("path=README.md,malformed", "--file")).toThrow(
       'Invalid --file value "path=README.md,malformed". Expected key=value entries separated by commas.',
     );
+    expect(() => parseCsvKv(",", "--file")).toThrow('Invalid --file value ","');
+    expect(() => parseCsvKv(" =value", "--file")).toThrow('Invalid --file value "=value"');
+    expect(() => parseCsvKv("path=README.md, =value", "--file")).toThrow('Invalid --file value "path=README.md, =value"');
+    expect(() => parseCsvKv("```", "--file")).toThrow('Invalid --file value "```"');
+    expect(parseCsvKv(["scope: project", "unexpected continuation"].join("\n"), "--file")).toEqual({
+      scope: "project\nunexpected continuation",
+    });
+    expect(parseTestOnly.coerceJsonTagArray('{"not":"array"}')).toBeNull();
+    expect(parseTestOnly.stripCodeFenceEnvelope("```json")).toBe("```json");
+    expect(parseTestOnly.stripCodeFenceEnvelope("```json\n{\"ok\":true}\nnot-closed")).toBe(
+      "```json\n{\"ok\":true}\nnot-closed",
+    );
+    expect(parseTestOnly.parseMarkdownKeyValueLines("malformed")).toBeNull();
+    expect(() => parseCsvKv(":value", "--file")).toThrow('Invalid --file value ":value"');
+    expect(() => parseCsvKv("alpha", "--file")).toThrow('Invalid --file value "alpha"');
   });
 
   it("adds recurrence delimiter guidance for malformed --event csv entries", () => {
     expect(() =>
       parseCsvKv("start=2026-04-01T09:00:00.000Z,recur_freq=weekly,recur_by_weekday=mon,tue", "--event"),
     ).toThrow('Recurrence list values must stay in one field and use "|" delimiters');
+    expect(() => parseCsvKv("recur_byweekday=mon,tue", "--event")).toThrow(
+      "Use recur_by_weekday (with underscores)",
+    );
+  });
+
+  it("rejects negative event durations using shared event end validation", () => {
+    expect(() =>
+      resolveEventEndAt(
+        "2026-04-01T09:00:00.000Z",
+        undefined,
+        "-1h",
+        new Date("2026-04-01T08:00:00.000Z"),
+      ),
+    ).toThrow("--event end must be strictly after start");
+  });
+
+  it("adds path and preview guidance for malformed key-value input", () => {
+    expect(() => parseCsvKv("README.md", "--add")).toThrow("For file/doc paths use: path=<file-path>");
+    const longValue = "x".repeat(200);
+    expect(() => parseCsvKv(longValue, "--add")).toThrow(`${"x".repeat(157)}...`);
   });
 
   it("accepts trailing commas without creating empty key-value entries", () => {
@@ -125,10 +171,25 @@ describe("core/item/parse", () => {
       scope: "project",
       note: "hello\nworld",
     });
+    expect(parseCsvKv("```kv\npath: README.md\n```", "--file")).toEqual({
+      path: "README.md",
+    });
+    expect(parseCsvKv("```\npath: README.md", "--file")).toEqual({
+      "```\npath": "README.md",
+    });
     expect(parseCsvKv("path=README.md,note=alpha,beta", "--file")).toEqual({
       path: "README.md",
       note: "alpha,beta",
     });
+  });
+
+  it("exposes pure parser helpers for defensive branch coverage", () => {
+    expect(parseTestOnly.coerceJsonTagArray("{\"not\":\"array\"}")).toBeNull();
+    expect(parseTestOnly.coerceJsonTagArray("[{}]")).toBe("");
+    expect(parseTestOnly.stripCodeFenceEnvelope("```")).toBe("```");
+    expect(parseTestOnly.stripCodeFenceEnvelope("```kv\npath: README.md")).toBe("```kv\npath: README.md");
+    expect(parseTestOnly.parseMarkdownKeyValueLines("")).toBeNull();
+    expect(parseTestOnly.parseMarkdownKeyValueLines(["scope: project", "unexpected continuation"].join("\n"))).toBeNull();
   });
 
   it("includes stdin token guidance in malformed key-value errors", () => {
@@ -152,9 +213,37 @@ describe("core/item/parse", () => {
     vi.spyOn(process, "stdin", "get").mockReturnValue(stdinStream as unknown as NodeJS.ReadStream & { fd: 0 });
 
     const resolver = createStdinTokenResolver();
+    await expect(resolver.resolveValue(undefined, "--body")).resolves.toBeUndefined();
     await expect(resolver.resolveValue("-", "--body")).resolves.toBe("alpha\nbeta");
     await expect(resolver.resolveValue("-", "--body")).resolves.toBe("alpha\nbeta");
     await expect(resolver.resolveValue("plain", "--body")).resolves.toBe("plain");
+    await expect(resolver.resolveList(undefined, "--add")).resolves.toBeUndefined();
+    await expect(resolver.resolveList(["plain"], "--add")).resolves.toEqual(["plain"]);
+  });
+
+  it("replaces a single stdin token inside list values", async () => {
+    const stdinStream = new PassThrough();
+    stdinStream.end("from stdin");
+    Object.defineProperty(stdinStream, "isTTY", { value: false, configurable: true });
+    vi.spyOn(process, "stdin", "get").mockReturnValue(stdinStream as unknown as NodeJS.ReadStream & { fd: 0 });
+
+    const resolver = createStdinTokenResolver();
+    await expect(resolver.resolveList(["alpha", "-", "omega"], "--add")).resolves.toEqual([
+      "alpha",
+      "from stdin",
+      "omega",
+    ]);
+  });
+
+  it("propagates stdin stream errors", async () => {
+    const stdinStream = new PassThrough();
+    Object.defineProperty(stdinStream, "isTTY", { value: false, configurable: true });
+    vi.spyOn(process, "stdin", "get").mockReturnValue(stdinStream as unknown as NodeJS.ReadStream & { fd: 0 });
+
+    const resolver = createStdinTokenResolver();
+    const resolved = expect(resolver.resolveValue("-", "--body")).rejects.toThrow("stdin broke");
+    stdinStream.emit("error", new Error("stdin broke"));
+    await resolved;
   });
 
   it("rejects duplicate stdin tokens and multiple option consumers", async () => {

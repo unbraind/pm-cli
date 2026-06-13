@@ -347,4 +347,8 @@ export const _testOnly = {
   isKnownNoisyConsoleBreadcrumb,
   scrubString,
   scrubEventData,
+  resetSentryStateForTests() {
+    _sentry = undefined;
+    _initDone = false;
+  },
 };

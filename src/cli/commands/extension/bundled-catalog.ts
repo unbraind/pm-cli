@@ -299,3 +299,8 @@ function projectPackageCatalogEntry(entry: Record<string, unknown>, fields: stri
   }
   return projected;
 }
+
+export const _testOnlyBundledCatalog = {
+  parsePackageCatalogFields,
+  projectPackageCatalogEntry,
+};

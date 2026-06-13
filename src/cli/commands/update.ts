@@ -482,7 +482,46 @@ function parseUpdateUnsetTargets(
   return { frontMatterKeys, optionKeys };
 }
 
-function enforceAllowAuditUpdateScope(options: UpdateCommandOptions, clearFrontMatterKeys: Set<string>): void {
+// GH-207: restricted append-style flags have dedicated commands with their own
+// audit/override semantics; map each one to its exact replacement invocation so
+// the audit-scope error tells the agent how to retry instead of dead-ending.
+// Flag names verified against register-mutation.ts (comments has
+// --allow-audit-comment; files/docs only offer --force for ownership override).
+const AUDIT_RESTRICTED_FLAG_REPLACEMENTS: ReadonlyMap<string, (id: string) => string> = new Map([
+  ["--comment", (id: string) => `pm comments ${id} --add "<text>" --allow-audit-comment`],
+  ["--file", (id: string) => `pm files ${id} --add "path=<path>,scope=<scope>,note=<note>" --force`],
+  ["--doc", (id: string) => `pm docs ${id} --add "path=<path>,scope=<scope>,note=<note>" --force`],
+]);
+
+function buildAuditScopeRestrictedOptionsError(params: {
+  id: string;
+  code: string;
+  message: string;
+  required: string;
+  why: string;
+  disallowedFlags: string[];
+}): PmCliError {
+  // GH-207: only surface replacement commands for restricted flags the caller
+  // actually passed, so the guidance is an exact retry path.
+  const replacementCommands = params.disallowedFlags
+    .filter((flag) => AUDIT_RESTRICTED_FLAG_REPLACEMENTS.has(flag))
+    .map((flag) => AUDIT_RESTRICTED_FLAG_REPLACEMENTS.get(flag)!(params.id));
+  const replacementSteps = params.disallowedFlags
+    .filter((flag) => AUDIT_RESTRICTED_FLAG_REPLACEMENTS.has(flag))
+    .map((flag) => `Replace ${flag} with: ${AUDIT_RESTRICTED_FLAG_REPLACEMENTS.get(flag)!(params.id)}`);
+  return new PmCliError(params.message, EXIT_CODE.USAGE, {
+    code: params.code,
+    required: params.required,
+    why: params.why,
+    ...(replacementCommands.length > 0 ? { examples: replacementCommands } : {}),
+    nextSteps: [
+      `Re-run without: ${params.disallowedFlags.join(", ")}`,
+      ...replacementSteps,
+    ],
+  });
+}
+
+function enforceAllowAuditUpdateScope(id: string, options: UpdateCommandOptions, clearFrontMatterKeys: Set<string>): void {
   const allowAuditUpdate = options.allowAuditUpdate === true;
   const allowAuditDepUpdate = options.allowAuditDepUpdate === true;
   if (!allowAuditUpdate && !allowAuditDepUpdate) {
@@ -572,10 +611,14 @@ function enforceAllowAuditUpdateScope(options: UpdateCommandOptions, clearFrontM
       throw new PmCliError("--allow-audit-dep-update requires at least one --dep value", EXIT_CODE.USAGE);
     }
     if (disallowedFlags.length > 0) {
-      throw new PmCliError(
-        `--allow-audit-dep-update supports append-only dependency additions via --dep. Remove restricted options: ${disallowedFlags.join(", ")}`,
-        EXIT_CODE.USAGE,
-      );
+      throw buildAuditScopeRestrictedOptionsError({
+        id,
+        code: "audit_dep_update_restricted_options",
+        message: `--allow-audit-dep-update supports append-only dependency additions via --dep. Remove restricted options: ${disallowedFlags.join(", ")}`,
+        required: "Pass only --dep additions (plus --message/--author) when using --allow-audit-dep-update.",
+        why: "--allow-audit-dep-update is a narrow non-owner override scoped to append-only dependency additions; every other mutation keeps its normal ownership rules.",
+        disallowedFlags,
+      });
     }
     return;
   }
@@ -673,10 +716,14 @@ function enforceAllowAuditUpdateScope(options: UpdateCommandOptions, clearFrontM
   disallowedFlags.push(...disallowedUnset);
 
   if (disallowedFlags.length > 0) {
-    throw new PmCliError(
-      `--allow-audit-update only supports non-lifecycle metadata fields. Remove restricted options: ${disallowedFlags.join(", ")}`,
-      EXIT_CODE.USAGE,
-    );
+    throw buildAuditScopeRestrictedOptionsError({
+      id,
+      code: "audit_update_restricted_options",
+      message: `--allow-audit-update only supports non-lifecycle metadata fields. Remove restricted options: ${disallowedFlags.join(", ")}`,
+      required: "Limit --allow-audit-update to non-lifecycle metadata fields; route appends and lifecycle changes through their dedicated commands.",
+      why: "--allow-audit-update is a non-owner override scoped to metadata-only audits; lifecycle, ownership, and append/clear operations keep their normal ownership rules.",
+      disallowedFlags,
+    });
   }
 }
 
@@ -1260,7 +1307,7 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     clearOptionKeys.add(definition.optionKey);
     clearFrontMatterKeys.add(definition.frontMatterKey);
   }
-  enforceAllowAuditUpdateScope(options, clearFrontMatterKeys);
+  enforceAllowAuditUpdateScope(id, options, clearFrontMatterKeys);
 
   const scalarOptionPresence: Record<string, boolean> = {
     tags: options.tags !== undefined,
@@ -2058,3 +2105,18 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     ...(options.allowAuditUpdate === true || options.allowAuditDepUpdate === true ? { audit_update: true } : {}),
   };
 }
+
+export const _testOnlyUpdateCommand = {
+  collectProvidedUpdatePolicyOptions,
+  buildAuditScopeRestrictedOptionsError,
+  enforceAllowAuditUpdateScope,
+  enforceTypeWorkflowTransition,
+  matchesDependencySelector,
+  normalizeLegacyNoneUpdateOptions,
+  normalizeUpdatePolicyOptionKey,
+  parseDependencyAdditions,
+  parseDependencyRemovals,
+  parseUpdateUnsetTargets,
+  reconcileBlockedByDependency,
+  resolveRuntimeUnsetDefinition,
+};

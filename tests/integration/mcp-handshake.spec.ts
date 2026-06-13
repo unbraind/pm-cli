@@ -1,8 +1,10 @@
 import { spawn } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import readline from "node:readline";
 import { describe, expect, it, vi } from "vitest";
-import { handleRequest, processRpcLine } from "../../src/mcp/server.js";
+import { _testOnly as mcpServerTestOnly, handleRequest, processRpcLine, startMcpServer } from "../../src/mcp/server.js";
+import { buildMcpToolContracts } from "../../src/mcp/tool-definitions.js";
 import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
 import { PM_TOOL_ACTIONS } from "../../src/sdk/cli-contracts/enum-contracts.js";
 import { assertPmContextDepthProjection } from "../helpers/mcp-context-depth.js";
@@ -112,6 +114,236 @@ describe("MCP protocol handshake", () => {
       expect((tool.description ?? "").length).toBeGreaterThan(0);
       expect(tool.inputSchema).toMatchObject({ type: "object" });
     }
+  });
+
+  it("builds stable sorted MCP tool contracts with required fields", () => {
+    const contracts = buildMcpToolContracts();
+    expect(contracts.map((contract) => contract.name)).toEqual([...EXPECTED_TOOL_NAMES].sort());
+    expect(contracts.every((contract) => contract.input_schema.type === "object")).toBe(true);
+    expect(contracts.find((contract) => contract.name === "pm_run")).toMatchObject({
+      required: ["action"],
+      input_schema: {
+        properties: expect.objectContaining({
+          action: expect.objectContaining({
+            type: "string",
+            description: expect.stringContaining(PM_TOOL_ACTIONS[0]),
+          }),
+        }),
+      },
+    });
+    expect(contracts.find((contract) => contract.name === "pm_create")?.required).toEqual(["options"]);
+    expect(contracts.find((contract) => contract.name === "pm_health")?.required).toEqual([]);
+  });
+
+  it("covers MCP option normalization and typo warning helpers", () => {
+    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_create", [] as never)).toEqual([]);
+    expect(mcpServerTestOnly.normalizeMcpOptionsArrays({ tags: ["a", "b"], fields: ["id", "title"] })).toEqual({
+      tags: "a,b",
+      fields: "id,title",
+    });
+    expect(mcpServerTestOnly.normalizeMcpOptionsArrays({ tag: ["a", "b"], role: "active", add: "file" }, "files")).toEqual({
+      tag: ["a", "b"],
+      role: "active",
+      add: ["file"],
+    });
+    expect(mcpServerTestOnly.normalizeMcpOptionsArrays({ remove: "src/old.ts" }, "docs")).toEqual({ remove: ["src/old.ts"] });
+    expect(mcpServerTestOnly.normalizeMcpOptionsArrays({ add: "plain" })).toEqual({ add: "plain" });
+    expect(mcpServerTestOnly.normalizeMcpOptionsArrays({ add: "comment" }, "comments")).toEqual({ add: "comment" });
+    expect(mcpServerTestOnly.withAddNoteOption({ note: "already-set" })).toEqual({ note: "already-set" });
+    expect(mcpServerTestOnly.withAddNoteOption({ addNote: 123, other: true })).toEqual({ other: true });
+    expect(mcpServerTestOnly.withAddNoteOption({ addNote: "linked note" })).toEqual({ note: "linked note" });
+    expect(mcpServerTestOnly.withAddNoteOption({ addNote: "ignored", note: "explicit" })).toEqual({ note: "explicit" });
+    expect(
+      mcpServerTestOnly.withFilesDiscoveryOptions({ discover: true, discoveryNote: "found", other: "kept" }),
+    ).toEqual({ note: "found", other: "kept" });
+    expect(mcpServerTestOnly.withFilesDiscoveryOptions({ discoveryNote: "ignored", note: "explicit" })).toEqual({ note: "explicit" });
+    expect(mcpServerTestOnly.nearestDeclaredKey("optons", ["options", "author"])).toBe("options");
+    expect(mcpServerTestOnly.nearestDeclaredKey("zzzzzz", ["options", "author"])).toBeUndefined();
+    expect(mcpServerTestOnly.readScalarString({ value: 42 }, "value")).toBe("42");
+    expect(mcpServerTestOnly.readScalarString({ value: Number.POSITIVE_INFINITY }, "value")).toBeUndefined();
+    expect(mcpServerTestOnly.readScalarString({ value: false }, "value")).toBeUndefined();
+    expect(mcpServerTestOnly.readScalarString({ value: "" }, "value")).toBeUndefined();
+    expect(mcpServerTestOnly.readScalarStringAllowBlank({ value: 7 }, "value")).toBe("7");
+    expect(mcpServerTestOnly.readScalarStringAllowBlank({ value: Number.NaN }, "value")).toBeUndefined();
+    expect(mcpServerTestOnly.readScalarStringAllowBlank({ value: "" }, "value")).toBe("");
+    expect(() => mcpServerTestOnly.readRequiredString({}, "action")).toThrow(/Missing required argument: action/);
+    expect(mcpServerTestOnly.readRequiredString({ action: "run" }, "action")).toBe("run");
+    expect(mcpServerTestOnly.readStringArray("not-array")).toEqual([]);
+    expect(mcpServerTestOnly.readStringArray(["one", 2, ""])).toEqual(["one", "2"]);
+    expect(mcpServerTestOnly.normalizeActionName("  History Repair! ")).toBe("history-repair");
+    expect(mcpServerTestOnly.normalizeCommandPath("  Foo   Bar ")).toBe("foo bar");
+    expect(mcpServerTestOnly.normalizeCommandPath(" /Foo.Bar_baz/ ")).toBe("/foo.bar_baz/");
+    expect(mcpServerTestOnly.globalOptions({ path: "/tmp/pm-mcp", noExtensions: true })).toMatchObject({
+      json: true,
+      quiet: true,
+      noPager: true,
+      path: "/tmp/pm-mcp",
+    });
+    expect(mcpServerTestOnly.extensionOptionsFromArgs({ action: "x", custom: "arg", args: ["kept"] }, { custom: "option" })).toEqual({
+      custom: "option",
+    });
+    expect(mcpServerTestOnly.optionsWithAuthor({ action: "files", options: { add: "src/a.ts" }, author: "agent" }, "files")).toEqual({
+      add: ["src/a.ts"],
+      author: "agent",
+    });
+    expect(mcpServerTestOnly.optionsWithAuthor({ status: "open", limit: 5, options: { status: "closed" } }, "list")).toEqual({
+      status: "closed",
+      limit: 5,
+    });
+    expect(mcpServerTestOnly.optionsWithAuthor({ query: "sdk", mode: "hybrid", options: {} }, "search")).toEqual({
+      mode: "hybrid",
+    });
+    expect(mcpServerTestOnly.optionsWithAuthor({ allowMissingParent: true, options: {} }, "create")).toEqual({
+      allowMissingParent: true,
+    });
+    expect(mcpServerTestOnly.optionsWithAuthor({ duplicateOf: "pm-old", options: {} }, "close")).toEqual({
+      duplicateOf: "pm-old",
+    });
+    expect(mcpServerTestOnly.optionsWithAuthor({ body: "append body", options: {} }, "append")).toEqual({ body: "append body" });
+    expect(mcpServerTestOnly.optionsWithAuthor({ author: "agent", options: { author: "explicit" } }, "create")).toEqual({
+      author: "explicit",
+    });
+    expect(mcpServerTestOnly.optionsWithAuthor({ options: { add: "src/a.ts" } }, "docs")).toEqual({ add: ["src/a.ts"] });
+    expect(mcpServerTestOnly.optionsWithAuthor({ options: { add: "keep-scalar" } }, "notes")).toEqual({ add: "keep-scalar" });
+    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_run", { typo: true })).toEqual([]);
+    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("unknown_tool", { typo: true })).toEqual([]);
+    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_create", { options: {} })).toEqual([]);
+    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_create", { optons: {} })[0]).toContain('did you mean "options"');
+    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_create", { totallyDifferent: true })[0]).toContain(
+      "Unexpected top-level argument",
+    );
+    expect(mcpServerTestOnly.detectUnexpectedTopLevelKeys("pm_update", { authar: "agent", author: "kept" })[0]).toContain(
+      'did you mean "author"',
+    );
+  });
+
+  it("covers MCP mutation option builders for flat package actions", () => {
+    expect(
+      mcpServerTestOnly.mutationListOptions({
+        filterType: "Task",
+        filterTag: "sdk",
+        filterPriority: 2,
+        filterDeadlineBefore: "2026-12-31",
+        filterDeadlineAfter: "2026-01-01",
+        filterUpdatedAfter: "2026-02-01",
+        filterUpdatedBefore: "2026-03-01",
+        filterCreatedAfter: "2026-04-01",
+        filterCreatedBefore: "2026-05-01",
+        ids: "",
+        filterAssignee: "agent",
+        filterAssignee_filter: "unassigned",
+        filterParent: "pm-parent",
+        filterSprint: "S1",
+        filterRelease: "R1",
+        limit: 5,
+        offset: 1,
+      }),
+    ).toMatchObject({
+      type: "Task",
+      tag: "sdk",
+      priority: "2",
+      deadlineBefore: "2026-12-31",
+      ids: "",
+      assignee: "agent",
+      assigneeFilter: "unassigned",
+      parent: "pm-parent",
+      sprint: "S1",
+      release: "R1",
+      limit: "5",
+      offset: "1",
+    });
+    expect(
+      mcpServerTestOnly.closeManyOptionsFromFlat({
+        filterStatus: "open",
+        reason: "done",
+        expected_result: "expected",
+        actual_result: "actual",
+        validate_close: "warn",
+        author: "agent",
+        message: "close many",
+        force: true,
+        dry_run: true,
+        rollback: "checkpoint",
+        no_checkpoint: true,
+      }),
+    ).toMatchObject({
+      status: "open",
+      reason: "done",
+      expectedResult: "expected",
+      actualResult: "actual",
+      validateClose: "warn",
+      author: "agent",
+      message: "close many",
+      force: true,
+      dryRun: true,
+      rollback: "checkpoint",
+      checkpoint: false,
+    });
+    expect(
+      mcpServerTestOnly.closeManyOptionsFromFlat({
+        list: { status: "open", type: "Issue" },
+        expected: "fallback expected",
+        actualResult: "actual camel",
+        validateClose: "strict",
+      }),
+    ).toMatchObject({
+      expectedResult: "fallback expected",
+      actualResult: "actual camel",
+      validateClose: "strict",
+      list: expect.objectContaining({ status: "open", type: "Issue" }),
+    });
+    expect(
+      mcpServerTestOnly.normalizeMcpUpdateOptions({
+        priority: 1,
+        deadline: 20260613,
+        tags: ["coverage", "mcp"],
+        unset: "assignee",
+      }),
+    ).toMatchObject({
+      priority: "1",
+      deadline: "20260613",
+      tags: "coverage,mcp",
+      unset: ["assignee"],
+    });
+    expect(
+      mcpServerTestOnly.updateManyOptionsFromFlat({
+        filterStatus: "open",
+        filterAssigneeFilter: "assigned",
+        priority: 3,
+        title: "bulk",
+        dryRun: true,
+        noCheckpoint: true,
+      }),
+    ).toMatchObject({
+      status: "open",
+      list: expect.objectContaining({ assigneeFilter: "assigned" }),
+      update: expect.objectContaining({ priority: "3", title: "bulk" }),
+      dryRun: true,
+      checkpoint: false,
+    });
+    expect(
+      mcpServerTestOnly.updateManyOptionsFromFlat({
+        list: { status: "open", type: "Task" },
+        update: { priority: 4 },
+        dry_run: true,
+        checkpoint: false,
+      }),
+    ).toMatchObject({
+      list: expect.objectContaining({ status: "open", type: "Task" }),
+      update: expect.objectContaining({ priority: "4" }),
+      dryRun: true,
+      checkpoint: false,
+    });
+    expect(mcpServerTestOnly.withMutationCompaction({ fullChangedFields: true, idOnly: true }, { title: "x" })).toEqual({
+      changedFields: "full",
+      idOnly: true,
+      runnerOptions: { title: "x" },
+    });
+    expect(mcpServerTestOnly.withMutationCompaction({}, null)).toEqual({
+      changedFields: "compact",
+      idOnly: false,
+      runnerOptions: {},
+    });
   });
 
   it("pm_run action description is derived from PM_TOOL_ACTIONS (pm-fd8n)", async () => {
@@ -597,6 +829,138 @@ describe("MCP protocol handshake", () => {
       expect(addType?.structuredContent?.result?.registered).toBe(true);
       expect(addType?.structuredContent?.result?.type?.name).toBe("Story");
 
+      const addStatus = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 511,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: {
+            path: context.pmPath,
+            subcommand: "add-status",
+            name: "ready",
+            role: "active",
+            alias: "rdy",
+            order: "7",
+            description: "Ready for MCP work",
+            author: "mcp-test",
+          },
+        },
+      })) as { isError?: boolean; structuredContent?: { warnings?: unknown; result?: { registered?: boolean } } };
+      expect(addStatus?.isError).not.toBe(true);
+      expect(addStatus?.structuredContent?.warnings).toBeUndefined();
+      expect(addStatus?.structuredContent?.result?.registered).toBe(true);
+
+      const addStatusFromOptions = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 514,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: {
+            path: context.pmPath,
+            options: {
+              subcommand: "add-status",
+              name: "qa_ready",
+              role: ["active"],
+              alias: ["qa"],
+              order: 8,
+              description: "Ready for QA",
+              author: "mcp-test",
+            },
+          },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { registered?: boolean } } };
+      expect(addStatusFromOptions?.isError).not.toBe(true);
+      expect(addStatusFromOptions?.structuredContent?.result?.registered).toBe(true);
+
+      const showStatusFromOptions = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 515,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: {
+            path: context.pmPath,
+            options: {
+              subcommand: "show-status",
+              name: "qa_ready",
+            },
+          },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { status?: { id?: string } } } };
+      expect(showStatusFromOptions?.isError).not.toBe(true);
+      expect(showStatusFromOptions?.structuredContent?.result?.status?.id).toBe("qa_ready");
+
+      const removeStatus = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 516,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: {
+            path: context.pmPath,
+            subcommand: "remove-status",
+            name: "qa_ready",
+            author: "mcp-test",
+          },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { removed?: boolean } } };
+      expect(removeStatus?.isError).not.toBe(true);
+      expect(removeStatus?.structuredContent?.result?.removed).toBe(true);
+
+      const removeType = (await handleRequest({
+        jsonrpc: "2.0",
+        id: 517,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: {
+            path: context.pmPath,
+            subcommand: "remove-type",
+            name: "Story",
+            author: "mcp-test",
+          },
+        },
+      })) as { isError?: boolean; structuredContent?: { result?: { removed?: boolean } } };
+      expect(removeType?.isError).not.toBe(true);
+      expect(removeType?.structuredContent?.result?.removed).toBe(true);
+
+      await expect(
+        handleRequest({
+          jsonrpc: "2.0",
+          id: 512,
+          method: "tools/call",
+          params: {
+            name: "pm_schema",
+            arguments: {
+              path: context.pmPath,
+              subcommand: "add-status",
+              name: "blocked",
+              order: "1.5",
+              author: "mcp-test",
+            },
+          },
+        }),
+      ).rejects.toThrow("schema add-status order must be a finite integer");
+
+      await expect(
+        handleRequest({
+          jsonrpc: "2.0",
+          id: 513,
+          method: "tools/call",
+          params: {
+            name: "pm_schema",
+            arguments: {
+              path: context.pmPath,
+              subcommand: "missing-subcommand",
+              name: "Story",
+              author: "mcp-test",
+            },
+          },
+        }),
+      ).rejects.toThrow('Unknown pm schema subcommand "missing-subcommand"');
+
       const configSet = (await handleRequest({
         jsonrpc: "2.0",
         id: 52,
@@ -749,11 +1113,111 @@ describe("MCP protocol handshake", () => {
   it("does not respond to JSON-RPC notifications that omit id", async () => {
     const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     try {
+      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }));
       await processRpcLine(JSON.stringify({ jsonrpc: "2.0", method: "tools/list" }));
       await processRpcLine(JSON.stringify({ jsonrpc: "2.0", method: "not/supported" }));
       expect(write).not.toHaveBeenCalled();
     } finally {
       write.mockRestore();
+    }
+  });
+
+  it("writes success and non-tool error JSON-RPC envelopes", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    let responses: string[] = [];
+    try {
+      await processRpcLine("");
+      expect(write).not.toHaveBeenCalled();
+
+      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", id: 90, method: "ping" }));
+      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", id: 91, method: "not/supported" }));
+      responses = write.mock.calls.map((call) => String(call[0]).trim()).filter(Boolean);
+    } finally {
+      write.mockRestore();
+    }
+
+    expect(responses).toHaveLength(2);
+    expect(JSON.parse(responses[0] ?? "{}")).toMatchObject({
+      jsonrpc: "2.0",
+      id: 90,
+      result: {},
+    });
+    expect(JSON.parse(responses[1] ?? "{}")).toMatchObject({
+      jsonrpc: "2.0",
+      id: 91,
+      error: {
+        code: 64,
+        message: "Unsupported MCP method: not/supported",
+      },
+    });
+  });
+
+  it("returns tool-call error envelopes for missing required request fields", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    let responseText = "";
+    try {
+      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", id: 92, method: "tools/call", params: {} }));
+      responseText = write.mock.calls.map((call) => String(call[0])).join("");
+    } finally {
+      write.mockRestore();
+    }
+
+    const response = JSON.parse(responseText) as {
+      result?: { isError?: boolean; structuredContent?: { result?: unknown; error?: string; code?: number } };
+    };
+    expect(response.result?.isError).toBe(true);
+    expect(response.result?.structuredContent).toMatchObject({
+      result: null,
+      error: "Missing required argument: name",
+      code: 64,
+    });
+  });
+
+  it("surfaces warnings for unexpected narrow-tool top-level arguments", async () => {
+    await withTempPmPath(async (context) => {
+      const stderr = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        const result = await handleRequest({
+          jsonrpc: "2.0",
+          id: 94,
+          method: "tools/call",
+          params: {
+            name: "pm_list",
+            arguments: { path: context.pmPath, limt: 3 },
+          },
+        });
+
+        const structured = result?.structuredContent as { warnings?: string[] } | undefined;
+        expect(structured?.warnings?.[0]).toContain('Unexpected top-level argument "limt"');
+        expect(structured?.warnings?.[0]).toContain('did you mean "limit"');
+        expect(stderr).toHaveBeenCalledWith(expect.stringContaining("[pm-mcp] Unexpected top-level argument"));
+      } finally {
+        stderr.mockRestore();
+      }
+    });
+  });
+
+  it("starts the stdio server with serialized line processing", async () => {
+    let lineHandler: ((line: string) => void) | undefined;
+    const fakeInterface = {
+      on: vi.fn((event: string, handler: (line: string) => void) => {
+        if (event === "line") {
+          lineHandler = handler;
+        }
+        return fakeInterface;
+      }),
+    };
+    const createInterface = vi.spyOn(readline, "createInterface").mockReturnValue(fakeInterface as never);
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    try {
+      startMcpServer();
+      expect(createInterface).toHaveBeenCalledWith({ input: process.stdin, crlfDelay: Infinity });
+      expect(fakeInterface.on).toHaveBeenCalledWith("line", expect.any(Function));
+      lineHandler?.(JSON.stringify({ jsonrpc: "2.0", id: 93, method: "ping" }));
+      await vi.waitFor(() => expect(write).toHaveBeenCalled());
+    } finally {
+      write.mockRestore();
+      createInterface.mockRestore();
     }
   });
 

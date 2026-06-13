@@ -631,3 +631,10 @@ export async function refreshSearchArtifactsForMutation(
     warnings: [...invalidation.warnings, ...semanticRefresh.warnings],
   };
 }
+
+export const _testOnly = {
+  buildSkippedSemanticRefreshResult,
+  buildVectorizationIdentityForProvider,
+  normalizeVectorizationLedgerEntries,
+  resetSemanticVectorStore,
+};
