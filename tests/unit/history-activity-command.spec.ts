@@ -4,8 +4,10 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runActivity } from "../../src/cli/commands/activity.js";
 import { readHistoryEntries, runHistory } from "../../src/cli/commands/history.js";
-import { runHistoryRedact } from "../../src/cli/commands/history-redact.js";
+import { _testOnly as historyRedactInternals, runHistoryRedact } from "../../src/cli/commands/history-redact.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks, type ExtensionHookRegistry } from "../../src/core/extensions/index.js";
+import * as fsUtilsModule from "../../src/core/fs/fs-utils.js";
+import * as historyRewriteModule from "../../src/core/history/history-rewrite.js";
 import * as lockModule from "../../src/core/lock/lock.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
@@ -66,6 +68,36 @@ function createItem(context: TempPmContext, title: string): string {
 describe("runHistory and runActivity", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
+  });
+
+  it("covers history-redact pure helper branches", () => {
+    expect(historyRedactInternals.normalizeStringArrayInput(" one ")).toEqual([" one "]);
+    expect(historyRedactInternals.normalizeStringArrayInput(["a", "b"])).toEqual(["a", "b"]);
+    expect(historyRedactInternals.normalizeStringArrayInput(undefined)).toEqual([]);
+    expect(historyRedactInternals.normalizeRegexFlags("igi")).toBe("ig");
+    expect(historyRedactInternals.parseRegexRule("plain").label).toBe("/plain/g");
+    expect(historyRedactInternals.parseRegexRule("/plain/i").label).toBe("/plain/ig");
+    expect(() => historyRedactInternals.parseRegexRule(" ")).toThrow(PmCliError);
+    expect(() => historyRedactInternals.parseRegexRule("//")).toThrow(PmCliError);
+
+    const rules = historyRedactInternals.buildRedactionRules([" secret ", "secret"], "/token-[0-9]+/");
+    expect(rules.map((rule) => rule.label)).toEqual(["secret", "/token-[0-9]+/g"]);
+    expect(() => historyRedactInternals.buildRedactionRules(" ", [])).toThrow(PmCliError);
+    expect(historyRedactInternals.applyLiteralRule("aaaa", "aa", "b")).toEqual({ value: "bb", replacements: 2 });
+    expect(historyRedactInternals.applyLiteralRule("aaaa", "", "b")).toEqual({ value: "aaaa", replacements: 0 });
+    expect(historyRedactInternals.applyRegexRule("token-1 token-x", historyRedactInternals.parseRegexRule("/token-[0-9]+/"), "x")).toEqual({
+      value: "x token-x",
+      replacements: 1,
+    });
+    expect(historyRedactInternals.redactStringValue("secret token-1", rules, "x")).toEqual({ value: "x x", replacements: 2 });
+    expect(
+      historyRedactInternals.redactUnknownValue({ nested: ["secret", 3, { token: "token-2" }] }, rules, "x"),
+    ).toEqual({
+      value: { nested: ["x", 3, { token: "x" }] },
+      replacements: 2,
+    });
+    expect(historyRedactInternals.hasItemMetadata({ metadata: { id: "pm-a" }, body: "", events: [] } as never)).toBe(true);
+    expect(historyRedactInternals.hasItemMetadata({ metadata: {}, body: "", events: [] } as never)).toBe(false);
   });
 
   it("fails when tracker is not initialized", async () => {
@@ -322,6 +354,116 @@ describe("runHistory and runActivity", () => {
       const historyRaw = await readFile(historyPath, "utf8");
       expect(historyRaw).toContain(leakedToken);
       expect(historyRaw).not.toContain("[redacted_token]");
+    });
+  });
+
+  it("supports regex redaction syntax and reports no-match rewrites without mutating", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Redact Regex");
+      context.runCli(
+        ["append", id, "--json", "--body", "ticket secret-123 and secret-456", "--author", "test-author", "--message", "append regex tokens"],
+        { expectJson: true },
+      );
+
+      const redacted = await runHistoryRedact(
+        id,
+        {
+          regex: ["/secret-[0-9]+/i", "secret-456"],
+          replacement: "[secret]",
+          author: "test-author",
+        },
+        { path: context.pmPath },
+      );
+      expect(redacted.changed).toBe(true);
+      expect(redacted.patterns.regex).toEqual(["/secret-[0-9]+/ig", "/secret-456/g"]);
+      expect(redacted.history.replacements).toBeGreaterThanOrEqual(2);
+
+      const noMatchHistoryBefore = await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8");
+      const noMatch = await runHistoryRedact(
+        id,
+        {
+          literal: "definitely-not-present",
+          replacement: "[none]",
+          author: "test-author",
+        },
+        { path: context.pmPath },
+      );
+      expect(noMatch.changed).toBe(false);
+      expect(noMatch.history.audit_entry_added).toBe(false);
+      expect(noMatch.warnings).toContain("history_redact_no_matches");
+      expect(await readFile(path.join(context.pmPath, "history", `${id}.jsonl`), "utf8")).toBe(noMatchHistoryBefore);
+    });
+  });
+
+  it("rejects invalid redaction patterns and item-id rewrites", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Redact Invalid Pattern");
+      await expect(runHistoryRedact(id, { regex: "/[/" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Invalid --regex value"),
+      });
+
+      await expect(
+        runHistoryRedact(
+          id,
+          {
+            literal: id,
+            replacement: "pm-different",
+            author: "test-author",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("would change item id"),
+      });
+    });
+  });
+
+  it("rolls back item and history writes when history redaction persistence fails", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Redact Rollback");
+      const leakedToken = "rollback-token-123";
+      context.runCli(
+        ["append", id, "--json", "--body", `secret ${leakedToken}`, "--author", "test-author", "--message", "append rollback token"],
+        { expectJson: true },
+      );
+
+      const historyFile = path.join(context.pmPath, "history", `${id}.jsonl`);
+      const itemFile = path.join(context.pmPath, "tasks", `${id}.toon`);
+      const historyBefore = await readFile(historyFile, "utf8");
+      const itemBefore = await readFile(itemFile, "utf8");
+      const originalWriteFileAtomic = fsUtilsModule.writeFileAtomic;
+      let failedHistoryWrite = false;
+      const driftSpy = vi.spyOn(historyRewriteModule, "verifyHistoryRewriteNoDrift").mockResolvedValue({
+        historyRawUnderLock: historyBefore,
+      } as Awaited<ReturnType<typeof historyRewriteModule.verifyHistoryRewriteNoDrift>>);
+      const writeSpy = vi.spyOn(fsUtilsModule, "writeFileAtomic").mockImplementation(async (target, content) => {
+        if (target === historyFile && !failedHistoryWrite) {
+          failedHistoryWrite = true;
+          throw new Error("synthetic history write failure");
+        }
+        return originalWriteFileAtomic(target, content);
+      });
+
+      try {
+        await expect(
+          runHistoryRedact(
+            id,
+            {
+              literal: leakedToken,
+              replacement: "[redacted_token]",
+              author: "test-author",
+            },
+            { path: context.pmPath },
+          ),
+        ).rejects.toThrow("synthetic history write failure");
+        expect(await readFile(historyFile, "utf8")).toBe(historyBefore);
+        expect(await readFile(itemFile, "utf8")).toBe(itemBefore);
+      } finally {
+        driftSpy.mockRestore();
+        writeSpy.mockRestore();
+      }
     });
   });
 

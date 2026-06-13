@@ -1,10 +1,18 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const sentryNodeMock = vi.hoisted(() => ({
+  init: vi.fn(),
+  extraErrorDataIntegration: vi.fn((options: unknown) => ({ name: "extraErrorDataIntegration", options })),
+  captureConsoleIntegration: vi.fn((options: unknown) => ({ name: "captureConsoleIntegration", options })),
+}));
+
+vi.mock("@sentry/node", () => sentryNodeMock);
 
 // Partially mock instrument.js so the runtime span/capture helpers can be
 // driven against a fake Sentry client; _testOnly and everything else stay real.
 vi.mock("../../src/core/sentry/instrument.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../src/core/sentry/instrument.js")>();
-  return { ...actual, getSentry: vi.fn(() => undefined) };
+  return { ...actual, getSentry: vi.fn(actual.getSentry) };
 });
 
 import {
@@ -16,7 +24,7 @@ import {
   sentryStartCommandSpan,
   shouldCaptureCliError,
 } from "../../src/core/sentry/helpers.js";
-import { _testOnly, getSentry } from "../../src/core/sentry/instrument.js";
+import { _testOnly, ensureSentryInit, getSentry } from "../../src/core/sentry/instrument.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 
@@ -27,6 +35,7 @@ const {
   isKnownNoisyConsoleBreadcrumb,
   scrubString,
   scrubEventData,
+  resetSentryStateForTests,
 } = _testOnly;
 const PRIVATE_TEST_IP = ["192", "168", "42", "17"].join(".");
 const TEST_LOCAL_PATH = ["/home", "example", "project"].join("/");
@@ -160,6 +169,25 @@ describe("noisy console starter filtering", () => {
     ).toBe(false);
   });
 
+  it("filters known starter extension console noise from exception values", () => {
+    expect(
+      isKnownNoisyConsoleEvent({
+        logger: "console",
+        exception: { values: [{ value: "[starter-extension] all 8 capabilities registered." }] },
+      }),
+    ).toBe(true);
+  });
+
+  it("keeps empty console messages and non-string exception values", () => {
+    expect(isKnownNoisyConsoleEvent({ logger: "console", message: "   " })).toBe(false);
+    expect(
+      isKnownNoisyConsoleEvent({
+        logger: "console",
+        exception: { values: [{ value: undefined }] },
+      }),
+    ).toBe(false);
+  });
+
   it("filters known noisy console breadcrumbs", () => {
     expect(
       isKnownNoisyConsoleBreadcrumb({
@@ -185,6 +213,17 @@ describe("scrubString", () => {
     expect(scrubbed).not.toContain("user@example.com");
     expect(scrubbed).not.toContain(PRIVATE_TEST_IP);
     expect(scrubbed).not.toContain(TEST_LOCAL_PATH);
+  });
+
+  it("scrubs file URLs, Windows paths, and path-hinted fields", () => {
+    expect(scrubString(`open file://${TEST_LOCAL_PATH}/item.json`)).toBe("open [scrubbed_path]");
+    expect(scrubString(String.raw`failed at C:\Users\steve\secret.txt`)).toBe("failed at [scrubbed_path]");
+    expect(scrubString(String.raw`\\server\share\secret.txt`, "filename")).toBe("[scrubbed_path]");
+    expect(scrubString(`${TEST_LOCAL_PATH}/item.json`, "filename")).toBe("[scrubbed_path]");
+    expect(scrubString(`${TEST_LOCAL_PATH}/token=secret`)).toBe("[scrubbed_path]");
+    expect(scrubString(`prefix${TEST_LOCAL_PATH}`)).toBe("[scrubbed_path]");
+    expect(scrubString("   ", "filename")).toBe("   ");
+    expect(scrubString("relative/path.txt")).toBe("relative/path.txt");
   });
 });
 
@@ -224,23 +263,203 @@ describe("scrubEventData", () => {
     const scrubbed = scrubEventData({
       outer: {
         details: [
+          42,
           {
             api_key: "abc123",
             token_value: "secret-token",
           },
         ],
       },
+      count: 1,
+      enabled: true,
     });
     expect(scrubbed).toEqual({
       outer: {
         details: [
+          42,
           {
             api_key: "[scrubbed]",
             token_value: "[scrubbed]",
           },
         ],
       },
+      count: 1,
+      enabled: true,
     });
+  });
+});
+
+describe("ensureSentryInit", () => {
+  const originalEnv = { ...process.env };
+
+  beforeEach(() => {
+    process.env = { ...originalEnv };
+    delete process.env.PM_SENTRY_DISABLED;
+    delete process.env.PM_TELEMETRY_DISABLED;
+    delete process.env.SENTRY_DSN;
+    delete process.env.SENTRY_ENVIRONMENT;
+    delete process.env.CI;
+    delete process.env.VITEST;
+    delete process.env.VITEST_WORKER_ID;
+    delete process.env.NODE_ENV;
+    resetSentryStateForTests();
+    sentryNodeMock.init.mockClear();
+    sentryNodeMock.extraErrorDataIntegration.mockClear();
+    sentryNodeMock.captureConsoleIntegration.mockClear();
+  });
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
+    resetSentryStateForTests();
+  });
+
+  it("returns undefined and does not import Sentry when disabled", async () => {
+    process.env.PM_SENTRY_DISABLED = " yes ";
+
+    await expect(ensureSentryInit()).resolves.toBeUndefined();
+    await expect(ensureSentryInit()).resolves.toBeUndefined();
+
+    expect(sentryNodeMock.init).not.toHaveBeenCalled();
+  });
+
+  it("initializes Sentry once with sanitized beforeSend and beforeBreadcrumb hooks", async () => {
+    process.env.SENTRY_DSN = " https://example.invalid/custom ";
+    process.env.SENTRY_ENVIRONMENT = " staging ";
+
+    await expect(ensureSentryInit()).resolves.toMatchObject({
+      init: sentryNodeMock.init,
+    });
+    await ensureSentryInit();
+    expect(getSentry()).toMatchObject({ init: sentryNodeMock.init });
+
+    expect(sentryNodeMock.init).toHaveBeenCalledTimes(1);
+    expect(sentryNodeMock.extraErrorDataIntegration).toHaveBeenCalledWith({ depth: 4 });
+    expect(sentryNodeMock.captureConsoleIntegration).toHaveBeenCalledWith({ levels: ["warn", "error"] });
+
+    const options = sentryNodeMock.init.mock.calls[0]?.[0] as {
+      dsn: string;
+      release: string;
+      environment: string;
+      serverName: unknown;
+      sendDefaultPii: boolean;
+      initialScope: { tags: Record<string, string> };
+      beforeSend: (event: Record<string, any>) => Record<string, any> | null;
+      beforeSendTransaction: (event: Record<string, any>) => Record<string, any>;
+      beforeBreadcrumb: (breadcrumb: Record<string, any>) => Record<string, any> | null;
+    };
+    expect(options.dsn).toBe("https://example.invalid/custom");
+    expect(options.release).toMatch(/^pm-cli@/);
+    expect(options.environment).toBe("staging");
+    expect(options.serverName).toBeUndefined();
+    expect(options.sendDefaultPii).toBe(false);
+    expect(options.initialScope.tags).toMatchObject({
+      "cli.name": "pm-cli",
+      "runtime.node": process.version,
+      "runtime.platform": process.platform,
+      "runtime.arch": process.arch,
+    });
+
+    expect(
+      options.beforeSend({
+        exception: { values: [{ type: "PmCliError", value: "PmCliError: missing item" }] },
+      }),
+    ).toBeNull();
+    expect(
+      options.beforeSend({
+        logger: "console",
+        message: "[starter-extension] activating",
+      }),
+    ).toBeNull();
+
+    const event = options.beforeSend({
+      message: `token=secret ${TEST_LOCAL_PATH}/src/index.ts`,
+      transaction: `file://${TEST_LOCAL_PATH}/src/index.ts`,
+      exception: {
+        values: [
+          {
+            value: `bearer abc.def at ${TEST_LOCAL_PATH}/src/index.ts`,
+            stacktrace: {
+              frames: [
+                {
+                  filename: `${TEST_LOCAL_PATH}/src/index.ts`,
+                  context_line: `token=secret at ${TEST_LOCAL_PATH}/src/index.ts`,
+                  pre_context: [`${TEST_LOCAL_PATH}/src/a.ts`],
+                  post_context: "not-an-array",
+                  vars: { api_key: "abc123" },
+                  data: { cwd: TEST_LOCAL_PATH },
+                },
+              ],
+            },
+          },
+        ],
+      },
+      breadcrumbs: [
+        {
+          message: `visited ${TEST_LOCAL_PATH}`,
+          data: { cwd: TEST_LOCAL_PATH },
+        },
+      ],
+      extra: { token: "abc123" },
+      contexts: { app: { source_path: `${TEST_LOCAL_PATH}/src/index.ts` } },
+      request: { url: `file://${TEST_LOCAL_PATH}/src/index.ts`, cookies: "session=abc" },
+      user: { email: "user@example.com" },
+      tags: { dsn: "private" },
+    });
+    const serialized = JSON.stringify(event);
+    expect(serialized).toContain("[scrubbed]");
+    expect(serialized).toContain("[scrubbed_path]");
+    expect(serialized).toContain("[scrubbed_email]");
+    expect(serialized).not.toContain(TEST_LOCAL_PATH);
+    expect(serialized).not.toContain("user@example.com");
+    expect(serialized).not.toContain("secret");
+
+    expect(options.beforeBreadcrumb({ category: "console", message: "PmCliError: bad flag" })).toBeNull();
+    expect(options.beforeBreadcrumb({ category: "console", message: "[starter] preflight check for workspace" })).toBeNull();
+    const breadcrumb = options.beforeBreadcrumb({
+      category: "http",
+      message: `loaded ${TEST_LOCAL_PATH}/src/index.ts`,
+      data: { authorization: "bearer abc.def" },
+    });
+    expect(JSON.stringify(breadcrumb)).not.toContain(TEST_LOCAL_PATH);
+    expect(JSON.stringify(breadcrumb)).not.toContain("abc.def");
+  });
+
+  it("sanitizes transactions and falls back to ci, test, and production environments", async () => {
+    process.env.CI = "true";
+    await ensureSentryInit();
+    let options = sentryNodeMock.init.mock.calls[0]?.[0] as {
+      environment: string;
+      beforeSendTransaction: (event: Record<string, any>) => Record<string, any>;
+    };
+    expect(options.environment).toBe("ci");
+
+    const transaction = options.beforeSendTransaction({
+      breadcrumbs: [
+        { category: "console", message: "PmCliError: bad flag" },
+        { category: "console", message: "[starter-extension] activating" },
+        { category: "http", message: `loaded ${TEST_LOCAL_PATH}`, data: { cwd: TEST_LOCAL_PATH } },
+      ],
+      contexts: {
+        trace: { source_path: `${TEST_LOCAL_PATH}/src/index.ts` },
+      },
+    });
+    expect(transaction.breadcrumbs).toHaveLength(1);
+    expect(JSON.stringify(transaction)).not.toContain(TEST_LOCAL_PATH);
+
+    resetSentryStateForTests();
+    sentryNodeMock.init.mockClear();
+    delete process.env.CI;
+    process.env.NODE_ENV = "test";
+    await ensureSentryInit();
+    options = sentryNodeMock.init.mock.calls[0]?.[0] as { environment: string };
+    expect(options.environment).toBe("test");
+
+    resetSentryStateForTests();
+    sentryNodeMock.init.mockClear();
+    delete process.env.NODE_ENV;
+    await ensureSentryInit();
+    options = sentryNodeMock.init.mock.calls[0]?.[0] as { environment: string };
+    expect(options.environment).toBe("production");
   });
 });
 

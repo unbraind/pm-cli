@@ -215,7 +215,7 @@ pm --id-only create "Probe item"             # output is only id + status
 
 Use `pm create --allow-missing-parent --parent <id>` only for deliberate imports or staged backlog reconstruction. Normal `pm create --parent <id>` fails fast when the parent id cannot be resolved.
 
-Use `pm close <duplicate-id> "Duplicate of <canonical-id>" --duplicate-of <canonical-id>` to close duplicates. The command validates the canonical target exists, records `duplicate_of`, and fills the resolution/expected/actual closure fields when they were not provided explicitly.
+Use `pm close <duplicate-id> --duplicate-of <canonical-id>` to close duplicates. The command validates the canonical target exists, records `duplicate_of`, auto-fills the close reason as `Duplicate of <canonical-id>` when no reason text was supplied, and fills the resolution/expected/actual closure fields when they were not provided explicitly.
 
 Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_close`/`pm_run` append/update-many) are compact by default; pass `fullChangedFields=true` to restore the full `changed_fields` delta, or `idOnly=true` for single-item id/status output.
 

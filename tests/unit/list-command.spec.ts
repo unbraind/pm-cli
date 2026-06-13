@@ -2,8 +2,9 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runList } from "../../src/cli/commands/list.js";
-import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { _testOnly as listInternals, runList } from "../../src/cli/commands/list.js";
+import { resolveRuntimeStatusRegistry } from "../../src/core/schema/runtime-schema.js";
+import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
@@ -78,6 +79,86 @@ function createItem(context: TempPmContext, params: {
 }
 
 describe("runList", () => {
+  it("covers list helper branches for projection, filters, sorting, and tree metadata", () => {
+    const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    const openItem = {
+      id: "pm-open",
+      title: "Open",
+      status: "open",
+      type: "Task",
+      priority: 1,
+      tags: [],
+      parent: "",
+      created_at: "2026-01-01T00:00:00.000Z",
+      updated_at: "2026-01-02T00:00:00.000Z",
+      deadline: null,
+    };
+    const closedItem = {
+      ...openItem,
+      id: "pm-closed",
+      title: "Closed",
+      status: "closed",
+      priority: 0,
+      updated_at: "2026-01-03T00:00:00.000Z",
+    };
+
+    expect(listInternals.parseIdsFilter(" pm-a, ,pm-b ")).toEqual(new Set(["pm-a", "pm-b"]));
+    expect(() => listInternals.parseIdsFilter(" , ")).toThrow(PmCliError);
+    expect(listInternals.parseOffset("2")).toBe(2);
+    expect(() => listInternals.parseOffset("-1")).toThrow(PmCliError);
+    expect(listInternals.parseFieldSelectors("id,item.title,id")).toEqual(["id", "item.title"]);
+    expect(() => listInternals.parseFieldSelectors(" , ")).toThrow(PmCliError);
+    expect(listInternals.parseProjectionConfig({ brief: true })).toEqual({ mode: "compact", fields: ["id", "status", "type", "title"] });
+    expect(() => listInternals.parseProjectionConfig({ brief: true, full: true })).toThrow(PmCliError);
+    expect(listInternals.normalizeProjectionField("item.title")).toBe("title");
+    expect(listInternals.parseSortField("updated")).toBe("updated_at");
+    expect(() => listInternals.parseSortField("bad")).toThrow(PmCliError);
+    expect(listInternals.parseSortOrder("DESC")).toBe("desc");
+    expect(() => listInternals.parseSortOrder("sideways")).toThrow(PmCliError);
+    expect(listInternals.parseAssigneeFilter("assigned")).toBe("assigned");
+    expect(() => listInternals.parseAssigneeFilter("nobody")).toThrow(PmCliError);
+
+    expect(listInternals.compareNullableString(null, "a")).toBe(1);
+    expect(listInternals.compareNullableString("a", null)).toBe(-1);
+    expect(listInternals.compareNullableTimestamp(null, "2026-01-01T00:00:00.000Z")).toBe(1);
+    expect(listInternals.compareBySortField(openItem as never, closedItem as never, "parent")).toBe(0);
+    expect(listInternals.compareDefaultSort(closedItem as never, openItem as never, statusRegistry)).toBe(1);
+    expect(listInternals.sortItems([closedItem, openItem] as never, undefined, "asc", statusRegistry).map((item) => item.id)).toEqual([
+      "pm-open",
+      "pm-closed",
+    ]);
+    expect(listInternals.withTreeMetadata({ ...openItem, parent: "  " } as never, 2, 0)).toMatchObject({
+      tree_depth: 2,
+      tree_parent: null,
+      tree_title: "    Open",
+    });
+    expect(listInternals.readListFieldValue({ ...openItem, tree_title: "Tree" } as never, "item.title", true)).toBe("Tree");
+    expect(
+      listInternals.buildCompactListFilterSummary({
+        filtersStatus: ["open", "blocked"],
+        options: {
+          type: "Task",
+          tag: "unit",
+          limit: "5",
+          includeBody: true,
+          fields: "id,title",
+        },
+        treeEnabled: true,
+        treeDepth: 2,
+        sortField: "updated_at",
+        sortOrder: "desc",
+        runtimeFieldFilters: { severity: "high" },
+      }),
+    ).toMatchObject({
+      status: ["open", "blocked"],
+      tree: true,
+      tree_depth: 2,
+      sort: "updated_at",
+      order: "desc",
+      runtime_filters: { severity: "high" },
+    });
+  });
+
   it("treats null programmatic date and id filters as omitted", async () => {
     await withTempPmPath(async (context) => {
       createItem(context, {

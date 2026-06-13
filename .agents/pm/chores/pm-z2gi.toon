@@ -1,0 +1,12 @@
+id: pm-z2gi
+title: Small verified cross-file duplications (4 pairs) + static-gate duplicate scan does not cover src/cli
+description: "Verified by reading both sites in each pair: (1) toSlugToken + default-folder derivation duplicated verbatim between src/core/item/type-registry.ts:369-398 and src/core/store/paths.ts:82-111 (toDefaultFolder vs deriveDefaultTypeFolder, identical bodies); (2) type-workflow normalization loop (deny-all empty-array handling, pair validation, dedupe, sort) duplicated between src/core/schema/runtime-schema.ts:195-236 and src/core/schema/type-workflows.ts:85-117; (3) hasListFilters isActive-chain duplicated between src/cli/commands/update-many.ts:520-543 and src/cli/commands/close-many.ts:99-121 (close-many copy already drifted: missing limit/offset); (4) the 11-field runList filter-forwarding object literal duplicated between src/cli/commands/dedupe-audit.ts:377-393 and src/cli/commands/aggregate.ts:297-313. Also: scripts/release/static-quality-gate.mjs:346-349 restricts duplicate-chunk scanning to src/core/ + src/sdk/, which is exactly where it finds nothing -- all real dups this audit found live in src/cli; consider widening the scope (possibly with a higher chunk allowance) so pairs 3-4 and the pm-aabt finding get caught automatically."
+type: Chore
+status: open
+priority: 3
+tags[3]: audit-2026-06-13,dedup,refactor
+created_at: "2026-06-12T22:47:49.912Z"
+updated_at: "2026-06-12T22:47:49.912Z"
+author: audit-quality-agent
+parent: pm-y7sc
+body: ""

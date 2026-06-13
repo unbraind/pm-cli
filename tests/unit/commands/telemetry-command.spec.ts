@@ -5,6 +5,7 @@ import { runTelemetry } from "../../../src/cli/commands/telemetry.js";
 import { EXIT_CODE } from "../../../src/core/shared/constants.js";
 import { PmCliError } from "../../../src/core/shared/errors.js";
 import { readSettings, writeSettings } from "../../../src/core/store/settings.js";
+import * as telemetryRuntime from "../../../src/core/telemetry/runtime.js";
 import { withTempGlobalRoot } from "../../helpers/temp.js";
 
 const originalGlobalPath = process.env.PM_GLOBAL_PATH;
@@ -221,5 +222,21 @@ describe("runTelemetry", () => {
         exitCode: EXIT_CODE.USAGE,
       });
     });
+  });
+
+  it("runs the telemetry-flush entrypoint against the runtime flush helper", async () => {
+    const flushSpy = vi.spyOn(telemetryRuntime, "flushTelemetryQueueNow").mockResolvedValue({
+      attempted: false,
+      disabled: true,
+      queued_before: 0,
+      queued_after: 0,
+      sent: 0,
+      failed: 0,
+      warnings: [],
+    });
+
+    await import("../../../src/cli/telemetry-flush.js?telemetry-flush-entrypoint");
+
+    expect(flushSpy).toHaveBeenCalledTimes(1);
   });
 });

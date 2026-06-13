@@ -657,6 +657,35 @@ describe("extension loader", () => {
     });
   });
 
+  it("rejects invalid manifest engines metadata during discovery", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "invalid-engines",
+        {
+          name: "invalid-engines-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          engines: {
+            pm: ">=0.0.0",
+            node: "",
+          },
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.effective).toEqual([]);
+      expect(discovery.warnings).toEqual(["extension_manifest_invalid:project:invalid-engines"]);
+    });
+  });
+
   it("blocks extensions with unmet pm_min_version before loading", async () => {
     await withTempPmPath(async (context) => {
       const roots = resolveExtensionRoots(context.pmPath);

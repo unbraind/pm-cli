@@ -54,9 +54,11 @@ function normalizeCloseReason(reasonText: string | undefined, required: boolean)
         examples: [
           'pm close <id> "Done: <what changed and why>"',
           'pm close <id> --reason "<closing summary>"',
+          "pm close <id> --duplicate-of <canonical-id>",
         ],
         nextSteps: [
           "Re-run the close with a closing summary.",
+          'When closing as a duplicate, --duplicate-of <id> auto-fills the close reason as "Duplicate of <id>".',
           "To stop requiring reasons, run: pm config set governance-require-close-reason --policy disabled",
         ],
       },
@@ -218,8 +220,18 @@ export async function runClose(
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const author = toAuthor(options.author, settings.author_default);
-  const closeReason = normalizeCloseReason(closeReasonText, settings.governance.require_close_reason);
+  // GH-204: resolve the duplicate target BEFORE reason validation so
+  // `pm close <id> --duplicate-of <canonical>` succeeds under
+  // governance.require_close_reason without a manual reason — when no
+  // positional/--reason text is provided the reason defaults to
+  // "Duplicate of <id>" (mirroring the auto-filled closure metadata).
+  // Explicit reason text still wins.
   const duplicateOf = await assertDuplicateTargetExists(pmRoot, settings, options.duplicateOf, id);
+  const effectiveCloseReasonText =
+    (closeReasonText ?? "").trim().length === 0 && duplicateOf !== undefined
+      ? `Duplicate of ${duplicateOf}`
+      : closeReasonText;
+  const closeReason = normalizeCloseReason(effectiveCloseReasonText, settings.governance.require_close_reason);
   const validateCloseMode = parseValidateCloseMode(options.validateClose) ?? settings.governance.close_validation_default;
   // C3 (pm-fu5d): scan for active children even under minimal governance so
   // closing a parent is never silently orphaning — off mode emits an

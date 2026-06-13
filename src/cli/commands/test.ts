@@ -45,6 +45,7 @@ import type { LinkedTest, LinkScope } from "../../types/index.js";
 const TEST_OUTPUT_MAX_BUFFER_BYTES = 20 * 1024 * 1024;
 const DEFAULT_LINKED_TEST_TIMEOUT_FORCE_KILL_DELAY_MS = 3000;
 const DEFAULT_LINKED_TEST_HEARTBEAT_INTERVAL_MS = 10000;
+const DEFAULT_LINKED_TEST_PIPE_CLOSE_GRACE_MS = 5000;
 const MAX_LINKED_TEST_COMMAND_LABEL_LENGTH = 120;
 type ResolvedLinkedTestPmContextMode = Exclude<LinkedTestPmContextMode, "auto">;
 const LINKED_TEST_TRACKER_DIRS_TO_SKIP = new Set(["locks", "extensions", "runtime"]);
@@ -115,6 +116,10 @@ function linkedTestTimeoutForceKillDelayMs(): number {
 
 function linkedTestHeartbeatIntervalMs(): number {
   return readPositiveIntegerEnv("PM_LINKED_TEST_HEARTBEAT_INTERVAL_MS", DEFAULT_LINKED_TEST_HEARTBEAT_INTERVAL_MS);
+}
+
+function linkedTestPipeCloseGraceMs(): number {
+  return readPositiveIntegerEnv("PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS", DEFAULT_LINKED_TEST_PIPE_CLOSE_GRACE_MS);
 }
 
 interface LinkedTestExecutionResult {
@@ -999,8 +1004,35 @@ async function runLinkedTestCommand(
   timedOutTimer.unref?.();
 
   const { code, signal } = await new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => {
+    let settled = false;
+    let pipeCloseGraceTimer: NodeJS.Timeout | null = null;
+    const settle = (value: { code: number | null; signal: NodeJS.Signals | null }, destroyPipes = false): void => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      if (pipeCloseGraceTimer) {
+        clearTimeout(pipeCloseGraceTimer);
+        pipeCloseGraceTimer = null;
+      }
+      if (destroyPipes) {
+        child.stdin?.destroy();
+        child.stdout?.destroy();
+        child.stderr?.destroy();
+      }
+      resolve(value);
+    };
+    child.on("exit", (exitCode, exitSignal) => {
+      pipeCloseGraceTimer = setTimeout(() => {
+        settle({
+          code: exitCode,
+          signal: exitSignal,
+        }, true);
+      }, linkedTestPipeCloseGraceMs());
+      pipeCloseGraceTimer.unref?.();
+    });
     child.on("close", (closeCode, closeSignal) => {
-      resolve({
+      settle({
         code: closeCode,
         signal: closeSignal,
       });

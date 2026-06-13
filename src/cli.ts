@@ -62,6 +62,12 @@ function printFastVersionIfRequested(): boolean {
   }
 }
 
+export const _testOnly = {
+  enableNodeCompileCache,
+  findPackageJson,
+  printFastVersionIfRequested,
+};
+
 if (!printFastVersionIfRequested()) {
   enableNodeCompileCache();
   const { runPmCli } = await import("./cli/main.js");

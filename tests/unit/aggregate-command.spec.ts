@@ -447,6 +447,121 @@ describe("runAggregate", () => {
     });
   });
 
+  it("computes numeric aggregates and preserves forwarded list filters", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createItem(context, {
+        title: "Numeric Aggregate Parent",
+        type: "Feature",
+        status: "open",
+        release: "release-numeric",
+      });
+      createItem(context, {
+        title: "Numeric Aggregate Task A",
+        type: "Task",
+        status: "open",
+        parent: parentId,
+        priority: 2,
+        tags: "numeric,alpha",
+        assignee: "alice",
+        sprint: "sprint-numeric",
+        release: "release-numeric",
+      });
+      createItem(context, {
+        title: "Numeric Aggregate Task B",
+        type: "Task",
+        status: "closed",
+        parent: parentId,
+        priority: 4,
+        tags: "numeric,beta",
+        assignee: "alice",
+        sprint: "sprint-numeric",
+        release: "release-numeric",
+      });
+      createItem(context, {
+        title: "Numeric Aggregate Task C",
+        type: "Task",
+        status: "open",
+        parent: parentId,
+        priority: 1,
+        tags: "other",
+        assignee: "bob",
+        sprint: "sprint-other",
+        release: "release-other",
+      });
+
+      const result = await runAggregate(
+        {
+          groupBy: "type",
+          sum: "priority",
+          avg: "priority",
+          type: "Task",
+          tag: "numeric",
+          parent: parentId,
+          assignee: "alice",
+          assigneeFilter: "assigned",
+          sprint: "sprint-numeric",
+          release: "release-numeric",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.filters).toMatchObject({
+        group_by: ["type"],
+        numeric_field: "priority",
+        sum: "priority",
+        avg: "priority",
+        type: "Task",
+        tag: "numeric",
+        parent: parentId,
+        assignee: "alice",
+        assignee_filter: "assigned",
+        sprint: "sprint-numeric",
+        release: "release-numeric",
+      });
+      expect(result.groups).toEqual([
+        {
+          group: {
+            type: "Task",
+          },
+          count: 2,
+          null_count: 0,
+          sum: 6,
+          avg: 3,
+        },
+      ]);
+      expect(result.totals.items_considered).toBe(2);
+    });
+  });
+
+  it("reports null numeric aggregates for fields not present on listed items", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Missing Numeric Task",
+        type: "Task",
+        status: "open",
+      });
+
+      const result = await runAggregate(
+        {
+          groupBy: "type",
+          avg: "missing_numeric_field",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.groups).toEqual([
+        {
+          group: {
+            type: "Task",
+          },
+          count: 1,
+          null_count: 1,
+          avg: null,
+        },
+      ]);
+    });
+  });
+
   it("validates required and supported options", async () => {
     await withTempPmPath(async (context) => {
       const defaultCountResult = await runAggregate({ groupBy: "parent,type" }, { path: context.pmPath });
@@ -477,6 +592,14 @@ describe("runAggregate", () => {
         ),
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runAggregate({ groupBy: "   ", count: true }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "--group-by requires at least one field name",
+      });
+      await expect(runAggregate({ sum: "priority", avg: "estimate" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "Aggregate --sum and --avg must target the same numeric field",
       });
     });
   });

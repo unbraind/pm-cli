@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { _testOnly as closeManyInternals } from "../../src/cli/commands/close-many.js";
 import { runClose } from "../../src/cli/commands/close.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
@@ -44,6 +45,37 @@ async function patchTaskToon(context: TempPmContext, id: string, patch: (content
 }
 
 describe("runClose", () => {
+  it("covers close-many pure helper branches", () => {
+    expect(closeManyInternals.activeListOptions(undefined)).toEqual({});
+    expect(
+      closeManyInternals.activeListOptions({
+        ids: " pm-a, ",
+        tag: "  ",
+        limit: "0",
+        offset: null as never,
+      }),
+    ).toEqual({ ids: " pm-a, ", limit: "0" });
+    expect(closeManyInternals.hasCloseManyFilters(undefined, undefined)).toBe(false);
+    expect(closeManyInternals.hasCloseManyFilters({ ids: " , " }, undefined)).toBe(false);
+    expect(closeManyInternals.hasCloseManyFilters({ ids: "pm-a" }, undefined)).toBe(true);
+    expect(closeManyInternals.hasCloseManyRollbackConflicts({ limit: "10" }, undefined)).toBe(true);
+    expect(closeManyInternals.resolveReason("  done  ", true)).toBe("done");
+    expect(closeManyInternals.resolveReason(undefined, false)).toBeUndefined();
+    expect(() => closeManyInternals.resolveReason(" ", true)).toThrow(PmCliError);
+    expect(() => closeManyInternals.rejectBlankIdsFilter({ ids: "   " })).toThrow(PmCliError);
+
+    const parents = new Map([
+      ["child", "parent"],
+      ["parent", "root"],
+      ["cycle-a", "cycle-b"],
+      ["cycle-b", "cycle-a"],
+    ]);
+    const cache = new Map<string, number>([["root", 0]]);
+    expect(closeManyInternals.hierarchyDepth("child", parents, cache)).toBe(2);
+    expect(closeManyInternals.hierarchyDepth("child", parents, cache)).toBe(2);
+    expect(closeManyInternals.hierarchyDepth("cycle-a", parents, new Map())).toBe(2);
+  });
+
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-close-not-init-"));
     try {
@@ -128,6 +160,51 @@ describe("runClose", () => {
         status: "closed",
         duplicate_of: canonicalId,
         resolution: `Duplicate of ${canonicalId}`,
+      });
+    });
+  });
+
+  it("auto-fills the close reason for duplicate closures under close-reason governance", async () => {
+    await withTempPmPath(async (context) => {
+      const canonicalId = createTask(context, "canonical duplicate auto reason target");
+      const duplicateId = createTask(context, "duplicate auto reason candidate");
+      const nonDuplicateId = createTask(context, "non duplicate missing reason candidate");
+
+      const result = await runClose(
+        duplicateId,
+        undefined,
+        {
+          duplicateOf: canonicalId,
+          validateClose: "strict",
+          message: "Close duplicate with auto reason",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.warnings).toEqual([]);
+      expect(result.changed_fields).toEqual(
+        expect.arrayContaining(["status", "close_reason", "duplicate_of", "resolution", "expected_result", "actual_result"]),
+      );
+      expect(result.item).toMatchObject({
+        id: duplicateId,
+        status: "closed",
+        close_reason: `Duplicate of ${canonicalId}`,
+        duplicate_of: canonicalId,
+      });
+
+      await expect(
+        runClose(
+          nonDuplicateId,
+          undefined,
+          {
+            validateClose: "warn",
+            message: "Close without required reason",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: expect.objectContaining({ code: "close_reason_required" }),
       });
     });
   });
@@ -398,6 +475,30 @@ describe("runClose", () => {
     });
   });
 
+  it("fails when --validate-close strict is enabled and active child items remain", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createTask(context, "close-strict-active-child-parent");
+      const childId = createTask(context, "close-strict-active-child", { parent: parentId });
+
+      await expect(
+        runClose(
+          parentId,
+          "close with strict child validation",
+          {
+            validateClose: "strict",
+            resolution: "Parent appears done",
+            expectedResult: "No child work remains",
+            actualResult: "Child work is still open",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining(childId),
+      });
+    });
+  });
+
   it("pm close accepts --expected and --actual short aliases as commander flags (pm-1lws)", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-short-alias-flags");
@@ -547,6 +648,37 @@ describe("runClose", () => {
     });
   });
 
+  it("clears stale close_reason when close reasons are optional and no reason is provided", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "close-clear-stale-reason");
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        governance?: { require_close_reason?: boolean };
+      };
+      settings.governance = {
+        ...(settings.governance ?? {}),
+        require_close_reason: false,
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+      await patchTaskToon(context, id, (content) =>
+        content.replace("author: seed-author\n", 'author: seed-author\nclose_reason: "stale previous reason"\n'),
+      );
+
+      const result = await runClose(
+        id,
+        undefined,
+        {
+          validateClose: "off",
+          message: "Close without reason after disabling reason governance",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.item.close_reason).toBeUndefined();
+      expect(result.changed_fields).toContain("close_reason");
+    });
+  });
+
   it("clears an orphan blocked_by dependency edge on close even without the scalar (C4)", async () => {
     await withTempPmPath(async (context) => {
       const blockerId = createTask(context, "close-c4-orphan-blocker");
@@ -561,6 +693,33 @@ describe("runClose", () => {
       const result = await runClose(blockedId, "done, drop orphan edge", {}, { path: context.pmPath });
       const item = result.item as Record<string, unknown>;
       expect(item.dependencies).toBeUndefined();
+      expect(result.changed_fields).toContain("dependencies");
+      expect(result.warnings).toContain(`closed_cleared_blocked_by:${blockedId}:${blockerId}`);
+    });
+  });
+
+  it("keeps non-blocking dependency edges when clearing stale blocked_by edge on close (C4)", async () => {
+    await withTempPmPath(async (context) => {
+      const blockerId = createTask(context, "close-c4-mixed-blocker");
+      const relatedId = createTask(context, "close-c4-mixed-related");
+      const blockedId = createTask(context, "close-c4-mixed-blocked");
+      const updated = context.runCli(
+        [
+          "update",
+          blockedId,
+          "--dep",
+          `id=${blockerId},kind=blocked_by`,
+          "--dep",
+          `id=${relatedId},kind=related`,
+          "--json",
+        ],
+        { expectJson: true },
+      );
+      expect(updated.code).toBe(0);
+
+      const result = await runClose(blockedId, "done, keep related edge", {}, { path: context.pmPath });
+      const item = result.item as { dependencies?: Array<{ id: string; kind: string }> };
+      expect(item.dependencies).toEqual([expect.objectContaining({ id: relatedId, kind: "related" })]);
       expect(result.changed_fields).toContain("dependencies");
       expect(result.warnings).toContain(`closed_cleared_blocked_by:${blockedId}:${blockerId}`);
     });
@@ -917,6 +1076,126 @@ describe("runCloseMany via CLI", () => {
         exitCode: EXIT_CODE.USAGE,
         message: expect.stringContaining("Rollback mode does not accept filter options"),
       });
+    });
+  });
+
+  it("rejects dry-run rollback mode before reading a checkpoint", async () => {
+    await withTempPmPath(async (context) => {
+      const { runCloseMany } = await import("../../src/cli/commands/close-many.js");
+
+      await expect(
+        runCloseMany(
+          {
+            rollback: "missing-checkpoint",
+            list: {},
+            dryRun: true,
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "--dry-run cannot be combined with --rollback",
+      });
+    });
+  });
+
+  it("can apply without creating a rollback checkpoint", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "close-many-no-checkpoint", tags: "no-checkpoint", status: "open" });
+      const { runCloseMany } = await import("../../src/cli/commands/close-many.js");
+
+      const result = await runCloseMany(
+        {
+          list: { tag: "no-checkpoint" },
+          reason: "close without checkpoint",
+          checkpoint: false,
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.mode).toBe("apply");
+      expect(result.checkpoint).toBeUndefined();
+      expect(result.closed_count).toBe(1);
+      expect(result.ids).toEqual([id]);
+      expect(itemStatus(context, id)).toBe("closed");
+    });
+  });
+
+  it("directly applies, skips terminal rows, and rolls back from the generated checkpoint", async () => {
+    await withTempPmPath(async (context) => {
+      const openId = createTestItemId(context, { title: "close-many-direct-open", tags: "direct-apply", status: "open" });
+      const closedId = createTestItemId(context, {
+        title: "close-many-direct-closed",
+        tags: "direct-apply",
+        status: "closed",
+      });
+      const { runCloseMany } = await import("../../src/cli/commands/close-many.js");
+
+      const apply = await runCloseMany(
+        {
+          list: { tag: "direct-apply" },
+          reason: "direct apply close",
+          author: "direct-author",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(apply.mode).toBe("apply");
+      expect(apply.closed_count).toBe(1);
+      expect(apply.skipped_count).toBe(1);
+      expect(apply.failed_count).toBe(0);
+      expect(apply.rows).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: openId, status: "closed" }),
+          expect.objectContaining({ id: closedId, status: "skipped", skip_reason: "already_terminal" }),
+        ]),
+      );
+      expect(itemStatus(context, openId)).toBe("closed");
+
+      const rollback = await runCloseMany(
+        {
+          rollback: String(apply.checkpoint?.id),
+          list: {},
+          author: "rollback-author",
+          message: "direct rollback",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(rollback.mode).toBe("rollback");
+      expect(rollback.restored_count).toBe(1);
+      expect(rollback.failed_count).toBe(0);
+      expect(rollback.ids).toEqual([openId]);
+      expect(itemStatus(context, openId)).toBe("open");
+    });
+  });
+
+  it("directly returns failed rows when strict validation rejects a close", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, { title: "close-many-direct-strict", tags: "direct-strict", status: "open" });
+      const { runCloseMany } = await import("../../src/cli/commands/close-many.js");
+
+      const result = await runCloseMany(
+        {
+          list: { tag: "direct-strict" },
+          reason: "direct strict close",
+          validateClose: "strict",
+          checkpoint: false,
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.mode).toBe("apply");
+      expect(result.closed_count).toBe(0);
+      expect(result.failed_count).toBe(1);
+      expect(result.rows).toEqual([
+        expect.objectContaining({
+          id,
+          status: "failed",
+          error: expect.stringContaining("missing resolution"),
+        }),
+      ]);
+      expect(itemStatus(context, id)).toBe("open");
     });
   });
 

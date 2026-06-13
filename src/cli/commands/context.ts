@@ -657,6 +657,24 @@ function collectDescendants(
   return result;
 }
 
+export const _testOnly = {
+  compareOptionalDeadline,
+  compareOptionalOrder,
+  dateTokenForTimestamp,
+  filterTerminalCalendarEvents,
+  isBlockedStatus,
+  isClosedStatus,
+  isInProgressStatus,
+  isOpenStatus,
+  parseActivityLimit,
+  parseContextLimit,
+  parseContextTimestampMs,
+  parseStaleThresholdDays,
+  sortableTimestamp,
+  statusRank,
+  stripListProjectionFlags,
+};
+
 async function buildActivity(
   activityLimit: number,
   global: GlobalOptions,

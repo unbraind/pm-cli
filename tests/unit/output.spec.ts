@@ -291,6 +291,71 @@ describe("core/output/output", () => {
     });
   });
 
+  it("renders calendar markdown defaults for empty and populated event payloads", () => {
+    expect(
+      formatOutput(
+        {
+          output_default: "markdown",
+          view: "week",
+          summary: { events: 0 },
+          events: [],
+          days: [],
+        },
+        {},
+      ),
+    ).toContain("No calendar events matched the selected filters.");
+
+    const rendered = formatOutput(
+      {
+        output_default: "markdown",
+        view: "agenda",
+        summary: { events: 2 },
+        days: [{}],
+        events: [
+          { kind: "reminder", item_id: "pm-a1", item_title: "Review", reminder_text: "soon" },
+          { item_id: "pm-b2", item_title: "Ship" },
+          "ignored",
+        ],
+      },
+      {},
+    );
+    expect(rendered).toContain("# pm calendar (agenda)");
+    expect(rendered).toContain("- events: 2");
+    expect(rendered).toContain("[reminder] pm-a1 Review soon");
+    expect(rendered).toContain("[event] pm-b2 Ship");
+
+    expect(formatOutput({ output_default: "markdown", view: "bad", events: [], days: "bad" }, {})).toContain(
+      'output_default: "markdown"',
+    );
+  });
+
+  it("bypasses service and renderer overrides for native output markers", () => {
+    setActiveExtensionServices({
+      overrides: [
+        {
+          layer: "project",
+          name: "output-service-ext",
+          service: "output_format",
+          run: () => "service-output",
+        },
+      ],
+    });
+    setActiveExtensionRenderers({
+      overrides: [
+        {
+          layer: "project",
+          name: "renderer-ext",
+          format: "json",
+          run: () => "renderer-output",
+        },
+      ],
+    });
+
+    expect(formatOutput({ __pm_native_output: true, ok: true }, { json: true })).toBe(
+      `${JSON.stringify({ ok: true }, null, 2)}\n`,
+    );
+  });
+
   it("applies active renderer overrides and falls back when they fail", () => {
     setActiveExtensionRenderers({
       overrides: [
@@ -355,6 +420,31 @@ describe("core/output/output", () => {
     const stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
     printError("boom");
     expect(stderrSpy).toHaveBeenCalledWith("ERR:boom\n");
+  });
+
+  it("uses non-string output service results as the rendered payload and falls back for non-string errors", () => {
+    setActiveExtensionServices({
+      overrides: [
+        {
+          layer: "project",
+          name: "object-output-service-ext",
+          service: "output_format",
+          run: () => ({ from_service: true }),
+        },
+        {
+          layer: "project",
+          name: "object-error-service-ext",
+          service: "error_format",
+          run: () => ({ ignored: true }),
+        },
+      ],
+    });
+
+    expect(formatOutput({ ok: true }, {})).toBe("from_service: true\n");
+
+    const stderrSpy = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    printError("plain");
+    expect(stderrSpy).toHaveBeenCalledWith("plain\n");
   });
 });
 

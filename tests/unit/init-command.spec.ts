@@ -1,15 +1,24 @@
-import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runInit, summarizeInitResult } from "../../src/cli/commands/init.js";
 import { PM_REQUIRED_SUBDIRS } from "../../src/core/shared/constants.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks, type ExtensionHookRegistry } from "../../src/core/extensions/index.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { readSettings } from "../../src/core/store/settings.js";
 
 describe("runInit", () => {
+  beforeEach(() => {
+    Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: false });
+    Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: false });
+  });
+
   afterEach(() => {
     clearActiveExtensionHooks();
+    vi.restoreAllMocks();
+    Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: false });
+    Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: false });
   });
 
   it("initializes a new tracker path with normalized prefix", async () => {
@@ -190,6 +199,128 @@ describe("runInit", () => {
         present: true,
       });
       expect(status.warnings).not.toContain("agent_guidance:missing");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("reports guidance status, prior decline skip, and existing CLAUDE guidance", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-agent-guidance-status-"));
+    try {
+      const statusMissing = await runInit("pm", { path: tempRoot }, { defaults: true, agentGuidance: "status" });
+      expect(statusMissing.agent_guidance).toMatchObject({
+        mode: "status",
+        present: false,
+      });
+      expect(statusMissing.warnings).toContain("agent_guidance:missing");
+      expect(statusMissing.next_steps).toContain("Add workflow guidance later: pm init --agent-guidance add");
+
+      const skipped = await runInit("pm", { path: tempRoot }, { defaults: true, agentGuidance: "skip" });
+      const declinedAt = skipped.settings.agent_guidance.declined_at;
+      expect(declinedAt).not.toBe("");
+
+      const skippedAgain = await runInit("pm", { path: tempRoot }, { defaults: true });
+      expect(skippedAgain.agent_guidance).toMatchObject({
+        mode: "ask",
+        skipped: true,
+        declined: true,
+        prompt_completed: true,
+      });
+      expect(skippedAgain.settings.agent_guidance.declined_at).toBe(declinedAt);
+      expect(skippedAgain.warnings).toContain("agent_guidance:skipped_declined");
+
+      await writeFile(
+        path.join(tempRoot, "CLAUDE.md"),
+        [
+          "pm init",
+          "pm context",
+          "pm search",
+          "pm create",
+          "pm claim",
+          "pm files",
+          "pm docs",
+          "pm test --run",
+          "pm close",
+          "pm release",
+          "pm_author",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      const detected = await runInit("pm", { path: tempRoot }, { defaults: true });
+      expect(detected.agent_guidance).toMatchObject({
+        present: true,
+        declined: false,
+        prompt_completed: true,
+      });
+      expect(detected.agent_guidance.files_with_guidance).toEqual(["CLAUDE.md"]);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("appends guidance to existing AGENTS files and preserves CRLF endings", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-agent-guidance-replace-"));
+    try {
+      const guidancePath = path.join(tempRoot, "AGENTS.md");
+      await writeFile(
+        guidancePath,
+        ["# Existing", "Project notes", ""].join("\r\n"),
+        "utf8",
+      );
+      const hooks: ExtensionHookRegistry = {
+        beforeCommand: [],
+        afterCommand: [],
+        onWrite: [
+          {
+            layer: "project",
+            name: "guidance-write-trace",
+            run: () => "guidance hook warning",
+          },
+        ],
+        onRead: [],
+        onIndex: [],
+      };
+      setActiveExtensionHooks(hooks);
+
+      const result = await runInit("pm", { path: path.join(tempRoot, ".agents", "pm") }, { defaults: true, agentGuidance: "add" });
+      const guidance = await readFile(guidancePath, "utf8");
+      expect(result.agent_guidance).toMatchObject({
+        present: true,
+        applied: true,
+      });
+      expect(guidance).toContain("<!-- pm-cli:agent-guidance:start:v1 -->\r\n");
+      expect(guidance).toContain("Set `PM_AUTHOR=<stable-agent-id>` before mutation commands.");
+      expect(guidance).toContain("# Existing\r\n");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("validates init option values before writing tracker settings", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-invalid-options-"));
+    try {
+      await expect(runInit("pm", { path: path.join(tempRoot, "preset") }, { preset: "   " })).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("--preset must not be empty"),
+      });
+      await expect(runInit("pm", { path: path.join(tempRoot, "preset-bad") }, { preset: "heavy" })).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("Invalid --preset value"),
+      });
+      await expect(runInit("pm", { path: path.join(tempRoot, "type") }, { typePreset: "   " })).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("--type-preset must not be empty"),
+      });
+      await expect(runInit("pm", { path: path.join(tempRoot, "type-bad") }, { typePreset: "sales" })).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("Invalid --type-preset value"),
+      });
+      await expect(runInit("pm", { path: path.join(tempRoot, "author") }, { author: "   " })).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("--author must not be empty"),
+      });
+      await expect(runInit("pm", { path: path.join(tempRoot, "guidance") }, { agentGuidance: "   " })).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("--agent-guidance must not be empty"),
+      });
+      await expect(runInit("pm", { path: path.join(tempRoot, "guidance-bad") }, { agentGuidance: "maybe" })).rejects.toMatchObject<PmCliError>({
+        message: expect.stringContaining("Invalid --agent-guidance value"),
+      });
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

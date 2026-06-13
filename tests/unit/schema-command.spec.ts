@@ -1,6 +1,16 @@
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  clearActiveExtensionHooks,
+  setActiveExtensionHooks,
+  setActiveExtensionRegistrations,
+  setActiveExtensionServices,
+  type ExtensionHookRegistry,
+} from "../../src/core/extensions/index.js";
+import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 function typesPath(context: TempPmContext): string {
@@ -11,6 +21,10 @@ function statusesPath(context: TempPmContext): string {
   return path.join(context.pmPath, "schema", "statuses.json");
 }
 
+function workflowsPath(context: TempPmContext): string {
+  return path.join(context.pmPath, "schema", "workflows.json");
+}
+
 async function readTypes(context: TempPmContext): Promise<{ definitions: Array<Record<string, unknown>> }> {
   return JSON.parse(await readFile(typesPath(context), "utf8"));
 }
@@ -18,6 +32,11 @@ async function readTypes(context: TempPmContext): Promise<{ definitions: Array<R
 async function readStatuses(context: TempPmContext): Promise<{ statuses: Array<Record<string, unknown>> }> {
   return JSON.parse(await readFile(statusesPath(context), "utf8"));
 }
+
+afterEach(() => {
+  clearActiveExtensionHooks();
+  setActiveExtensionServices(null);
+});
 
 describe("schema add-type command", () => {
   it("lists built-in and custom types in compact groups", async () => {
@@ -38,6 +57,184 @@ describe("schema add-type command", () => {
       expect(result.custom).toContainEqual(expect.objectContaining({ name: "Spike", aliases: ["spike"] }));
       expect(result.counts.custom).toBe(1);
       expect(result.counts.total).toBe(result.counts.builtin + result.counts.custom);
+    });
+  });
+
+  it("lists extension item types separately and shows provenance", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../src/cli/commands/schema.js");
+      setActiveExtensionRegistrations({
+        commands: [],
+        flags: [],
+        hooks: [],
+        importers: [],
+        exporters: [],
+        item_fields: [],
+        item_types: [
+          {
+            layer: "project",
+            name: "schema-ext",
+            types: [
+              null,
+              "bad",
+              {
+                name: "Incident",
+                folder: "incidents",
+                aliases: ["incident"],
+                default_status: "open",
+                description: "escalated production event",
+              },
+            ],
+          },
+          {
+            layer: "global",
+            name: "ignored-ext",
+          },
+        ],
+        migrations: [],
+        search_providers: [],
+        vector_store_adapters: [],
+      } as Parameters<typeof setActiveExtensionRegistrations>[0]);
+
+      const listed = await schema.runSchemaList({ path: context.pmPath });
+      expect(listed.extension).toContainEqual(
+        expect.objectContaining({
+          name: "Incident",
+          folder: "incidents",
+          aliases: ["incident"],
+          default_status: "open",
+          description: "escalated production event",
+        }),
+      );
+      expect(listed.counts.extension).toBe(1);
+      expect(listed.counts.total).toBe(listed.counts.builtin + listed.counts.custom + listed.counts.extension);
+
+      const shown = await schema.runSchemaShow("incident", { path: context.pmPath });
+      expect(shown.type).toMatchObject({
+        name: "Incident",
+        source: "extension",
+        extension: {
+          layer: "project",
+          name: "schema-ext",
+        },
+      });
+    });
+  });
+
+  it("returns direct custom type summaries and hook warnings", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../src/cli/commands/schema.js");
+      const events: string[] = [];
+      const hooks: ExtensionHookRegistry = {
+        beforeCommand: [],
+        afterCommand: [],
+        onRead: [],
+        onWrite: [
+          {
+            layer: "project",
+            name: "schema-type-write-hook",
+            run: (hookContext) => {
+              events.push(`${hookContext.op}:${path.basename(hookContext.path)}`);
+              throw new Error("schema type hook failure");
+            },
+          },
+        ],
+        onIndex: [],
+      };
+      setActiveExtensionHooks(hooks);
+
+      const added = await schema.runSchemaAddType(
+        "Spike",
+        { alias: ["spike"], description: "time-boxed investigation", author: "schema-test" },
+        { path: context.pmPath },
+      );
+      expect(added.warnings).toEqual(["extension_hook_failed:project:schema-type-write-hook:onWrite"]);
+      expect(events).toEqual([
+        "lock:create:schema-types.lock",
+        "schema:add-type:types.json",
+        "lock:release:schema-types.lock",
+      ]);
+      expect(schema.formatSchemaAddTypeHuman(added)).toContain('Registered custom item type "Spike" (aliases: spike)');
+
+      clearActiveExtensionHooks();
+      const listed = await schema.runSchemaList({ path: context.pmPath });
+      expect(listed.custom).toContainEqual(
+        expect.objectContaining({
+          name: "Spike",
+          aliases: ["spike"],
+          description: "time-boxed investigation",
+        }),
+      );
+      expect(listed.counts.custom).toBe(1);
+
+      const shown = await schema.runSchemaShow("Spike", { path: context.pmPath });
+      expect(shown.type.source).toBe("custom");
+    });
+  });
+
+  it("uses the default author when add-type omits author input", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../src/cli/commands/schema.js");
+      const settings = await readSettings(context.pmPath);
+      await writeSettings(context.pmPath, { ...settings, author_default: "schema-default-author" });
+      const lockOwners: string[] = [];
+      const previousAuthor = process.env.PM_AUTHOR;
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "schema-lock-capture",
+            service: "lock_acquire",
+            run: (context) => {
+              lockOwners.push(String((context.payload as { owner?: unknown }).owner));
+              return async () => undefined;
+            },
+          },
+        ],
+      });
+
+      try {
+        delete process.env.PM_AUTHOR;
+        const added = await schema.runSchemaAddType("DefaultAuthorType", {}, { path: context.pmPath });
+
+        expect(added.registered).toBe(true);
+        expect(added.type.name).toBe("DefaultAuthorType");
+        expect(lockOwners).toEqual(["schema-default-author"]);
+      } finally {
+        if (previousAuthor === undefined) {
+          delete process.env.PM_AUTHOR;
+        } else {
+          process.env.PM_AUTHOR = previousAuthor;
+        }
+      }
+    });
+  });
+
+  it("falls back to unknown when add-type receives blank author input", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../src/cli/commands/schema.js");
+      const settings = await readSettings(context.pmPath);
+      await writeSettings(context.pmPath, { ...settings, author_default: "schema-default-author" });
+      const lockOwners: string[] = [];
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "schema-lock-capture",
+            service: "lock_acquire",
+            run: (context) => {
+              lockOwners.push(String((context.payload as { owner?: unknown }).owner));
+              return async () => undefined;
+            },
+          },
+        ],
+      });
+
+      const added = await schema.runSchemaAddType("BlankAuthorType", { author: "   " }, { path: context.pmPath });
+
+      expect(added.registered).toBe(true);
+      expect(added.type.name).toBe("BlankAuthorType");
+      expect(lockOwners).toEqual(["unknown"]);
     });
   });
 
@@ -238,6 +435,49 @@ describe("schema add-type command", () => {
       expect(missing.stderr).toContain("Type name must not be empty");
     });
   });
+
+  it("errors for show when the type name is missing or unknown", async () => {
+    await withTempPmPath(async (context) => {
+      const missing = context.runCli(["schema", "show"]);
+      expect(missing.code).not.toBe(0);
+      expect(missing.stderr).toContain("Type name must not be empty");
+
+      const unknown = context.runCli(["schema", "show", "Ghost"]);
+      expect(unknown.code).not.toBe(0);
+      expect(unknown.stderr).toContain('Unknown item type "Ghost"');
+      expect(unknown.stderr).toContain('pm schema add-type "Ghost"');
+    });
+  });
+
+  it("fails schema commands when the tracker is not initialized", async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-schema-not-init-"));
+    try {
+      const missing = await import("../../src/cli/commands/schema.js");
+
+      await expect(missing.runSchemaList({ path: tempDir })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
+      await expect(missing.runSchemaAddType("Spike", {}, { path: tempDir })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("reports malformed custom type files as generic schema read failures", async () => {
+    await withTempPmPath(async (context) => {
+      await writeFile(typesPath(context), '{"definitions": [', "utf8");
+
+      const add = context.runCli(["schema", "add-type", "Spike"]);
+      expect(add.code).not.toBe(0);
+      expect(add.stderr).toContain("schema/types.json contains invalid JSON");
+
+      const remove = context.runCli(["schema", "remove-type", "Spike"]);
+      expect(remove.code).not.toBe(0);
+      expect(remove.stderr).toContain("schema/types.json contains invalid JSON");
+    });
+  });
 });
 
 describe("schema remove-type command", () => {
@@ -288,6 +528,127 @@ describe("schema remove-type command", () => {
       expect(result.removed).toBe(true);
       expect(result.warnings).toContain("items_using_type:1");
     });
+  });
+
+  it("renders removal human output fallbacks for removed and missing type payloads", async () => {
+    const schema = await import("../../src/cli/commands/schema.js");
+
+    expect(
+      schema.formatSchemaRemoveTypeHuman({
+        action: "remove-type",
+        removed: true,
+        file: { path: "/tmp/schema/types.json", definitions: 0 },
+        warnings: [],
+        generated_at: "2026-06-13T00:00:00.000Z",
+      }),
+    ).toBe('Removed custom item type "(unknown)" from /tmp/schema/types.json.');
+
+    expect(
+      schema.formatSchemaRemoveTypeHuman({
+        action: "remove-type",
+        removed: false,
+        file: { path: "/tmp/schema/types.json", definitions: 0 },
+        warnings: [],
+        generated_at: "2026-06-13T00:00:00.000Z",
+      }),
+    ).toBe("No custom item type matched; nothing removed from /tmp/schema/types.json.");
+  });
+
+  it("renders rich type and list human output branches", async () => {
+    const schema = await import("../../src/cli/commands/schema.js");
+
+    expect(
+      schema.formatSchemaShowHuman({
+        action: "show",
+        type: {
+          name: "Spike",
+          source: "custom",
+          folder: "spikes",
+          default_status: "review",
+          aliases: ["spike"],
+          description: "time-boxed investigation",
+          required_create_fields: ["owner"],
+          required_create_repeatables: [],
+          options: [{ key: "risk", type: "string" }],
+          command_option_policies: [],
+        },
+        file: { path: "/tmp/schema/types.json" },
+        generated_at: "2026-06-13T00:00:00.000Z",
+      }),
+    ).toBe(
+      [
+        "type: Spike",
+        "source: custom",
+        "folder: spikes",
+        "default_status: review",
+        "aliases: spike",
+        "description: time-boxed investigation",
+        "options: risk",
+      ].join("\n"),
+    );
+
+    expect(
+      schema.formatSchemaListHuman({
+        action: "list",
+        builtin: [{ name: "Task", folder: "tasks", aliases: [] }],
+        custom: [{ name: "Spike", folder: "spikes", aliases: [] }],
+        extension: [{ name: "Incident", folder: "incidents", aliases: [] }],
+        counts: { builtin: 1, custom: 1, extension: 1, total: 3 },
+        statuses: {
+          builtin: [{ id: "open", source: "builtin", roles: ["open"], aliases: [] }],
+          custom: [{ id: "review", source: "custom", roles: ["active"], aliases: [] }],
+          counts: { builtin: 1, custom: 1, total: 2 },
+        },
+        file: { path: "/tmp/schema/types.json" },
+        generated_at: "2026-06-13T00:00:00.000Z",
+      }),
+    ).toContain("extension: Incident");
+  });
+
+  it("renders empty schema list and minimal show output branches", async () => {
+    const schema = await import("../../src/cli/commands/schema.js");
+
+    expect(
+      schema.formatSchemaListHuman({
+        action: "list",
+        builtin: [],
+        custom: [],
+        extension: [],
+        counts: { builtin: 0, custom: 0, extension: 0, total: 0 },
+        statuses: {
+          builtin: [],
+          custom: [],
+          counts: { builtin: 0, custom: 0, total: 0 },
+        },
+        file: { path: "/tmp/schema/types.json" },
+        generated_at: "2026-06-13T00:00:00.000Z",
+      }),
+    ).toBe(
+      [
+        "Schema types: 0 total (0 builtin, 0 custom, 0 extension)",
+        "statuses: 0 total (0 builtin, 0 custom)",
+        "Inspect one: pm schema show <Type>",
+        "Inspect one status: pm schema show-status <status>",
+      ].join("\n"),
+    );
+
+    expect(
+      schema.formatSchemaShowHuman({
+        action: "show",
+        type: {
+          name: "Task",
+          source: "builtin",
+          folder: "tasks",
+          aliases: [],
+          required_create_fields: [],
+          required_create_repeatables: [],
+          options: [],
+          command_option_policies: [],
+        },
+        file: { path: "/tmp/schema/types.json" },
+        generated_at: "2026-06-13T00:00:00.000Z",
+      }),
+    ).toBe(["type: Task", "source: builtin", "folder: tasks"].join("\n"));
   });
 });
 
@@ -370,6 +731,131 @@ describe("schema add-status / remove-status commands", () => {
     });
   });
 
+  it("returns direct custom status summaries, alias lookups, and hook warnings", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../src/cli/commands/schema.js");
+      const events: string[] = [];
+      const hooks: ExtensionHookRegistry = {
+        beforeCommand: [],
+        afterCommand: [],
+        onRead: [],
+        onWrite: [
+          {
+            layer: "project",
+            name: "schema-status-write-hook",
+            run: (hookContext) => {
+              events.push(`${hookContext.op}:${path.basename(hookContext.path)}`);
+              throw new Error("schema status hook failure");
+            },
+          },
+        ],
+        onIndex: [],
+      };
+      setActiveExtensionHooks(hooks);
+
+      const added = await schema.runSchemaAddStatus(
+        "review",
+        {
+          role: ["active"],
+          alias: ["in_review"],
+          description: "needs eyes",
+          order: 25,
+          author: "schema-test",
+        },
+        { path: context.pmPath },
+      );
+      expect(added.warnings).toEqual(["extension_hook_failed:project:schema-status-write-hook:onWrite"]);
+      expect(events).toEqual([
+        "lock:create:schema-statuses.lock",
+        "schema:add-status:statuses.json",
+        "lock:release:schema-statuses.lock",
+      ]);
+      expect(schema.formatSchemaAddStatusHuman(added)).toContain(
+        'Registered status "review" (roles: active) (aliases: in_review)',
+      );
+
+      clearActiveExtensionHooks();
+      const listed = await schema.runSchemaList({ path: context.pmPath });
+      expect(listed.statuses.custom).toContainEqual(
+        expect.objectContaining({
+          id: "review",
+          source: "custom",
+          roles: ["active"],
+          aliases: ["in_review"],
+          description: "needs eyes",
+          order: 25,
+        }),
+      );
+
+      const shown = await schema.runSchemaShowStatus("in_review", { path: context.pmPath });
+      expect(shown.status).toMatchObject({ id: "review", source: "custom" });
+    });
+  });
+
+  it("preserves status metadata defined in settings when re-adding a status id", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../src/cli/commands/schema.js");
+      const settings = await readSettings(context.pmPath);
+      await writeSettings(context.pmPath, {
+        ...settings,
+        schema: {
+          ...settings.schema,
+          statuses: [
+            ...settings.schema.statuses,
+            {
+              id: "review",
+              roles: ["active"],
+              aliases: ["in_review"],
+              description: "settings-backed review",
+              order: 30,
+            },
+          ],
+        },
+      });
+
+      const added = await schema.runSchemaAddStatus("review", {}, { path: context.pmPath });
+
+      expect(added.replaced).toBe(true);
+      expect(added.status).toMatchObject({
+        id: "review",
+        roles: ["active"],
+        aliases: ["in_review"],
+        description: "settings-backed review",
+        order: 30,
+      });
+      expect((await readStatuses(context)).statuses).toContainEqual(
+        expect.objectContaining({ id: "review", description: "settings-backed review" }),
+      );
+    });
+  });
+
+  it("falls back to unknown author when add-status receives blank author settings", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../src/cli/commands/schema.js");
+      const settings = await readSettings(context.pmPath);
+      await writeSettings(context.pmPath, { ...settings, author_default: "   " });
+      const lockOwners: string[] = [];
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "schema-lock-capture",
+            service: "lock_acquire",
+            run: (context) => {
+              lockOwners.push(String((context.payload as { owner?: unknown }).owner));
+              return async () => undefined;
+            },
+          },
+        ],
+      });
+
+      const added = await schema.runSchemaAddStatus("blank_author_status", { author: "  " }, { path: context.pmPath });
+
+      expect(added.registered).toBe(true);
+      expect(lockOwners).toEqual(["unknown"]);
+    });
+  });
+
   it("errors for show-status when status id is missing or unknown", async () => {
     await withTempPmPath(async (context) => {
       const missing = context.runCli(["schema", "show-status"]);
@@ -380,6 +866,19 @@ describe("schema add-status / remove-status commands", () => {
       expect(unknown.code).not.toBe(0);
       expect(unknown.stderr).toContain('Unknown status "review"');
       expect(unknown.stderr).toContain("pm schema add-status \"review\"");
+    });
+  });
+
+  it("throws direct show-status usage and not-found errors", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../src/cli/commands/schema.js");
+
+      await expect(schema.runSchemaShowStatus(undefined, { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(schema.runSchemaShowStatus("review", { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
     });
   });
 
@@ -435,6 +934,85 @@ describe("schema add-status / remove-status commands", () => {
     });
   });
 
+  it("renders status show and remove no-op human output", async () => {
+    await withTempPmPath(async (context) => {
+      expect(context.runCli(["schema", "add-status", "review", "--role", "active", "--alias", "in_review"]).code).toBe(0);
+
+      const shown = context.runCli(["schema", "show-status", "review"]);
+      expect(shown.code).toBe(0);
+      expect(shown.stdout).toContain("status: review");
+      expect(shown.stdout).toContain("source: custom");
+      expect(shown.stdout).toContain("roles: active");
+      expect(shown.stdout).toContain("aliases: in_review");
+
+      const missing = context.runCli(["schema", "remove-status", "missing"]);
+      expect(missing.code).toBe(0);
+      expect(missing.stdout).toContain("No custom status matched");
+    });
+  });
+
+  it("renders status removal fallback and full status human output", async () => {
+    const schema = await import("../../src/cli/commands/schema.js");
+
+    expect(
+      schema.formatSchemaRemoveStatusHuman({
+        action: "remove-status",
+        removed: true,
+        file: { path: "/tmp/schema/statuses.json", statuses: 0 },
+        warnings: [],
+        generated_at: "2026-06-13T00:00:00.000Z",
+      }),
+    ).toBe('Removed custom status "(unknown)" from /tmp/schema/statuses.json.');
+
+    expect(
+      schema.formatSchemaShowStatusHuman({
+        action: "show-status",
+        status: {
+          id: "review",
+          source: "custom",
+          roles: ["active"],
+          aliases: ["in_review"],
+          description: "needs eyes",
+          order: 25,
+        },
+        file: { path: "/tmp/schema/statuses.json" },
+        generated_at: "2026-06-13T00:00:00.000Z",
+      }),
+    ).toBe(
+      ["status: review", "source: custom", "roles: active", "aliases: in_review", "description: needs eyes", "order: 25"].join(
+        "\n",
+      ),
+    );
+  });
+
+  it("renders minimal status human output and no-op status removal fallback", async () => {
+    const schema = await import("../../src/cli/commands/schema.js");
+
+    expect(
+      schema.formatSchemaRemoveStatusHuman({
+        action: "remove-status",
+        removed: false,
+        file: { path: "/tmp/schema/statuses.json", statuses: 0 },
+        warnings: [],
+        generated_at: "2026-06-13T00:00:00.000Z",
+      }),
+    ).toBe("No custom status matched; nothing removed from /tmp/schema/statuses.json.");
+
+    expect(
+      schema.formatSchemaShowStatusHuman({
+        action: "show-status",
+        status: {
+          id: "open",
+          source: "builtin",
+          roles: [],
+          aliases: [],
+        },
+        file: { path: "/tmp/schema/statuses.json" },
+        generated_at: "2026-06-13T00:00:00.000Z",
+      }),
+    ).toBe(["status: open", "source: builtin"].join("\n"));
+  });
+
   it("warns (without blocking) when items currently use the removed status", async () => {
     await withTempPmPath(async (context) => {
       expect(context.runCli(["schema", "add-status", "review", "--role", "active"]).code).toBe(0);
@@ -448,6 +1026,101 @@ describe("schema add-status / remove-status commands", () => {
       const result = removed.json as { removed: boolean; warnings: string[] };
       expect(result.removed).toBe(true);
       expect(result.warnings).toContain("items_using_status:1");
+    });
+  });
+
+  it("warns when removing a status still referenced by workflow defaults", async () => {
+    await withTempPmPath(async (context) => {
+      expect(context.runCli(["schema", "add-status", "review", "--json"], { expectJson: true }).code).toBe(0);
+      await writeFile(
+        workflowsPath(context),
+        `${JSON.stringify({ workflow: { in_progress_status: "review" } }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const removed = context.runCli(["schema", "remove-status", "review", "--json"], { expectJson: true });
+      expect(removed.code).toBe(0);
+      expect((removed.json as { warnings: string[] }).warnings).toContain("status_referenced_by_workflow:in_progress_status");
+    });
+  });
+
+  it("directly removes a status with lock ownership, item, workflow, and hook warnings", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../src/cli/commands/schema.js");
+      const settings = await readSettings(context.pmPath);
+      await writeSettings(context.pmPath, { ...settings, author_default: "schema-remove-default" });
+      const lockOwners: string[] = [];
+      const hookOps: string[] = [];
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "schema-status-lock-capture",
+            service: "lock_acquire",
+            run: (context) => {
+              lockOwners.push(String((context.payload as { owner?: unknown }).owner));
+              return async () => undefined;
+            },
+          },
+        ],
+      });
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onRead: [],
+        onWrite: [
+          {
+            layer: "project",
+            name: "schema-remove-status-hook",
+            run: (hookContext) => {
+              hookOps.push(`${hookContext.op}:${path.basename(hookContext.path)}`);
+              throw new Error("remove status hook failure");
+            },
+          },
+        ],
+        onIndex: [],
+      });
+
+      await schema.runSchemaAddStatus("review", { role: ["active"] }, { path: context.pmPath });
+      const created = context.runCli(["create", "Task", "needs review", "--json"], { expectJson: true });
+      expect(created.code).toBe(0);
+      const id = (created.json as { item: { id: string } }).item.id;
+      expect(context.runCli(["update", id, "--status", "review"]).code).toBe(0);
+      await writeFile(
+        workflowsPath(context),
+        `${JSON.stringify({ workflow: { in_progress_status: "review", blocked_status: "review" } }, null, 2)}\n`,
+        "utf8",
+      );
+
+      const removed = await schema.runSchemaRemoveStatus(
+        "review",
+        { author: "schema-remove-agent" },
+        { path: context.pmPath },
+      );
+
+      expect(removed.removed).toBe(true);
+      expect(removed.status?.id).toBe("review");
+      expect(removed.warnings).toEqual([
+        "extension_hook_failed:project:schema-remove-status-hook:onWrite",
+        "items_using_status:1",
+        "status_referenced_by_workflow:in_progress_status,blocked_status",
+      ]);
+      expect(lockOwners).toEqual(["test-author", "schema-remove-agent"]);
+      expect(hookOps).toContain("schema:remove-status:statuses.json");
+    });
+  });
+
+  it("reports malformed custom status files as generic schema read failures", async () => {
+    await withTempPmPath(async (context) => {
+      await writeFile(statusesPath(context), '{"statuses": [', "utf8");
+
+      const add = context.runCli(["schema", "add-status", "review"]);
+      expect(add.code).not.toBe(0);
+      expect(add.stderr).toContain("schema/statuses.json contains invalid JSON");
+
+      const remove = context.runCli(["schema", "remove-status", "review"]);
+      expect(remove.code).not.toBe(0);
+      expect(remove.stderr).toContain("schema/statuses.json contains invalid JSON");
     });
   });
 

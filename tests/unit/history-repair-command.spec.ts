@@ -7,8 +7,12 @@ import {
   runHistoryRepairAll,
   type HistoryRepairAllResult,
 } from "../../src/cli/commands/history-repair.js";
+import * as fsUtilsModule from "../../src/core/fs/fs-utils.js";
+import * as historyRewriteModule from "../../src/core/history/history-rewrite.js";
+import * as replayModule from "../../src/core/history/replay.js";
 import * as lockModule from "../../src/core/lock/lock.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
 function createItem(context: TempPmContext, title: string): string {
@@ -100,6 +104,104 @@ describe("history-repair command", () => {
       const missing = context.runCli(["history-repair", "pm-zzzz", "--json"]);
       expect(missing.code).not.toBe(0);
       expect(missing.stdout + missing.stderr).toContain("not found");
+    });
+  });
+
+  it("fails direct repair calls for uninitialized, missing, and empty history streams", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Repair Missing Streams");
+      const uninitialized = path.join(context.pmPath, "not-initialized");
+      await mkdir(uninitialized, { recursive: true });
+      await expect(runHistoryRepair(id, {}, { path: uninitialized })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        message: expect.stringContaining("Run pm init first"),
+      });
+      await expect(runHistoryRepairAll({}, { path: uninitialized })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        message: expect.stringContaining("Run pm init first"),
+      });
+
+      await rm(historyPath(context, id), { force: true });
+      await expect(runHistoryRepair(id, {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        message: expect.stringContaining("No history stream exists"),
+      });
+
+      await writeFile(historyPath(context, id), "", "utf8");
+      await expect(runHistoryRepair(id, {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("nothing to repair"),
+      });
+    });
+  });
+
+  it("repairs history-only subjects and reports null item match state", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Repair History Only");
+      expect(context.runCli(["update", id, "--status", "in_progress"]).code).toBe(0);
+      await tamperChain(historyPath(context, id));
+      await rm(itemPath(context, id), { force: true });
+
+      const repaired = await runHistoryRepair(id, { author: "test-author" }, { path: context.pmPath });
+      expect(repaired.changed).toBe(true);
+      expect(repaired.item).toMatchObject({
+        exists: false,
+        path: null,
+        matched_chain_before: null,
+      });
+      expect(repaired.history.reconciled_with_item).toBe(false);
+      expect(repaired.history.verify_ok).toBe(true);
+    });
+  });
+
+  it("surfaces rewritten-chain verification failures", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Repair Verify Failure");
+      const verifySpy = vi
+        .spyOn(replayModule, "verifyHistoryChain")
+        .mockReturnValueOnce({ ok: true, errors: [] })
+        .mockReturnValueOnce({ ok: false, errors: ["synthetic_repair_verify_failure"] });
+
+      try {
+        await expect(runHistoryRepair(id, { author: "test-author" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+          exitCode: EXIT_CODE.GENERIC_FAILURE,
+          message: expect.stringContaining("synthetic_repair_verify_failure"),
+        });
+      } finally {
+        verifySpy.mockRestore();
+      }
+    });
+  });
+
+  it("rolls back history when repair persistence fails", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Repair Rollback");
+      expect(context.runCli(["update", id, "--status", "in_progress"]).code).toBe(0);
+      await tamperChain(historyPath(context, id));
+      const historyFile = historyPath(context, id);
+      const historyBefore = await readFile(historyFile, "utf8");
+      const originalWriteFileAtomic = fsUtilsModule.writeFileAtomic;
+      let failedHistoryWrite = false;
+      const driftSpy = vi.spyOn(historyRewriteModule, "verifyHistoryRewriteNoDrift").mockResolvedValue({
+        historyRawUnderLock: historyBefore,
+      } as Awaited<ReturnType<typeof historyRewriteModule.verifyHistoryRewriteNoDrift>>);
+      const writeSpy = vi.spyOn(fsUtilsModule, "writeFileAtomic").mockImplementation(async (target, content) => {
+        if (target === historyFile && !failedHistoryWrite) {
+          failedHistoryWrite = true;
+          throw new Error("synthetic repair write failure");
+        }
+        return originalWriteFileAtomic(target, content);
+      });
+
+      try {
+        await expect(runHistoryRepair(id, { author: "test-author" }, { path: context.pmPath })).rejects.toThrow(
+          "synthetic repair write failure",
+        );
+        expect(await readFile(historyFile, "utf8")).toBe(historyBefore);
+      } finally {
+        driftSpy.mockRestore();
+        writeSpy.mockRestore();
+      }
     });
   });
 

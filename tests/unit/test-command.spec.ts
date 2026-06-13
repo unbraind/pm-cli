@@ -10,8 +10,10 @@ import {
   resolveLinkedTestFailureExitCode,
   runTest,
 } from "../../src/cli/commands/test.js";
+import { appendTrackedTestRunSummary } from "../../src/core/test/item-test-run-tracking.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
+import { readSettings } from "../../src/core/store/settings.js";
 import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
@@ -97,6 +99,27 @@ async function overwriteTaskTests(
   const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
   const parsed = parseItemDocument(source, { format });
   parsed.metadata.tests = tests as unknown as never;
+  await writeFile(taskPath, serializeItemDocument(parsed, { format }), "utf8");
+}
+
+async function overwriteTaskTestRuns(
+  context: TempPmContext,
+  id: string,
+  testRuns: Array<Record<string, unknown>>,
+): Promise<void> {
+  const toonPath = path.join(context.pmPath, "tasks", `${id}.toon`);
+  const markdownPath = path.join(context.pmPath, "tasks", `${id}.md`);
+  let taskPath = toonPath;
+  let source: string;
+  try {
+    source = await readFile(taskPath, "utf8");
+  } catch {
+    taskPath = markdownPath;
+    source = await readFile(taskPath, "utf8");
+  }
+  const format = taskPath.endsWith(".toon") ? "toon" : "json_markdown";
+  const parsed = parseItemDocument(source, { format });
+  parsed.metadata.test_runs = testRuns as unknown as never;
   await writeFile(taskPath, serializeItemDocument(parsed, { format }), "utf8");
 }
 
@@ -1817,6 +1840,99 @@ describe("runTest", () => {
     });
   });
 
+  it("settles on normal close before the pipe grace fallback even with invalid grace env", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-normal-close-invalid-pipe-grace");
+      await runTest(
+        id,
+        {
+          add: ['command=node -e "process.stdout.write(\'normal-close\')",scope=project'],
+          message: "seed normal close command",
+        },
+        { path: context.pmPath },
+      );
+
+      const previousPipeCloseGrace = process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
+      process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS = "not-a-number";
+      try {
+        const startedAt = Date.now();
+        const run = await runTest(
+          id,
+          {
+            run: true,
+            timeout: "5",
+          },
+          { path: context.pmPath },
+        );
+        const elapsedMs = Date.now() - startedAt;
+
+        expect(elapsedMs).toBeLessThan(1000);
+        expect(run.run_results).toHaveLength(1);
+        expect(run.run_results[0]?.status).toBe("passed");
+        expect(run.run_results[0]?.stdout).toBe("normal-close");
+        expect(run.run_results[0]?.exit_code).toBe(0);
+      } finally {
+        if (previousPipeCloseGrace === undefined) {
+          delete process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
+        } else {
+          process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS = previousPipeCloseGrace;
+        }
+      }
+    });
+  });
+
+  it("finishes when a linked command exits but a descendant keeps inherited pipes open", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "linked-test-inherited-pipe-descendant");
+      const scriptPath = path.join(context.tempRoot, "inherited-pipe-descendant.cjs");
+      await writeFile(
+        scriptPath,
+        [
+          "const { spawn } = require('node:child_process');",
+          "const child = spawn(process.execPath, ['-e', 'setTimeout(() => process.exit(0), 2000)'], { detached: true, stdio: 'inherit' });",
+          "child.unref();",
+          "process.exit(0);",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+      await runTest(
+        id,
+        {
+          add: [`command=${process.execPath} ${scriptPath},scope=project`],
+          message: "seed inherited pipe descendant command",
+        },
+        { path: context.pmPath },
+      );
+
+      const previousPipeCloseGrace = process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
+      process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS = "20";
+      try {
+        const startedAt = Date.now();
+        const run = await runTest(
+          id,
+          {
+            run: true,
+            timeout: "5",
+          },
+          { path: context.pmPath },
+        );
+        const elapsedMs = Date.now() - startedAt;
+
+        expect(elapsedMs).toBeLessThan(3000);
+        expect(run.run_results).toHaveLength(1);
+        expect(run.run_results[0]?.status).toBe("passed");
+        expect(run.run_results[0]?.exit_code).toBe(0);
+      } finally {
+        if (previousPipeCloseGrace === undefined) {
+          delete process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS;
+        } else {
+          process.env.PM_LINKED_TEST_PIPE_CLOSE_GRACE_MS = previousPipeCloseGrace;
+        }
+      }
+    });
+  });
+
   it("emits heartbeat progress to stderr for interactive terminal runs", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "linked-test-heartbeat-progress");
@@ -2125,6 +2241,231 @@ describe("runTest", () => {
           process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM = previousResumedFrom;
         }
       }
+    });
+  });
+
+  it("does not record item test_runs summaries when tracking is disabled", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "skip-test-run-summary-when-disabled");
+      await runTest(
+        id,
+        {
+          add: ["command=node --version,scope=project"],
+        },
+        { path: context.pmPath },
+      );
+      await setTestResultTracking(context.pmPath, false);
+
+      const result = await runTest(
+        id,
+        {
+          run: true,
+          timeout: "20",
+        },
+        { path: context.pmPath },
+      );
+
+      expect(result.run_results[0]?.status).toBe("passed");
+      const frontMatter = await loadTaskFrontMatter(context, id);
+      expect(frontMatter.test_runs).toBeUndefined();
+    });
+  });
+
+  it("normalizes invalid background metadata while tracking test_runs summaries", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "track-test-run-invalid-background-metadata");
+      await runTest(
+        id,
+        {
+          add: ["command=node --version,scope=project"],
+        },
+        { path: context.pmPath },
+      );
+      await setTestResultTracking(context.pmPath, true);
+
+      const previousRunId = process.env.PM_BACKGROUND_TEST_RUN_ID;
+      const previousAttempt = process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT;
+      const previousResumedFrom = process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM;
+      process.env.PM_BACKGROUND_TEST_RUN_ID = "  ";
+      process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT = "not-a-number";
+      process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM = "   ";
+      try {
+        const result = await runTest(
+          id,
+          {
+            run: true,
+            timeout: "20",
+          },
+          { path: context.pmPath },
+        );
+        expect(result.warnings).toBeUndefined();
+        const frontMatter = await loadTaskFrontMatter(context, id);
+        const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+        expect(testRuns).toHaveLength(1);
+        expect(testRuns[0]?.run_id).toMatch(/^test-local-/);
+        expect(testRuns[0]).toMatchObject({
+          kind: "test",
+          status: "passed",
+        });
+        expect(testRuns[0]?.attempt).toBeUndefined();
+        expect(testRuns[0]?.resumed_from).toBeUndefined();
+      } finally {
+        if (previousRunId === undefined) {
+          delete process.env.PM_BACKGROUND_TEST_RUN_ID;
+        } else {
+          process.env.PM_BACKGROUND_TEST_RUN_ID = previousRunId;
+        }
+        if (previousAttempt === undefined) {
+          delete process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT;
+        } else {
+          process.env.PM_BACKGROUND_TEST_RUN_ATTEMPT = previousAttempt;
+        }
+        if (previousResumedFrom === undefined) {
+          delete process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM;
+        } else {
+          process.env.PM_BACKGROUND_TEST_RUN_RESUMED_FROM = previousResumedFrom;
+        }
+      }
+    });
+  });
+
+  it("bounds and normalizes tracked test_run history when appending directly", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "append-tracked-test-run-normalization");
+      await overwriteTaskTestRuns(context, id, [
+        {
+          run_id: "   ",
+          kind: "test",
+          status: "passed",
+          started_at: "2026-01-01T00:00:00.000Z",
+          finished_at: "2026-01-01T00:00:01.000Z",
+          recorded_at: "2026-01-01T00:00:02.000Z",
+          passed: 1,
+          failed: 0,
+          skipped: 0,
+        },
+        {
+          run_id: "tr-newer",
+          kind: "test",
+          status: "passed",
+          started_at: "2026-01-01T00:00:00.000Z",
+          finished_at: "2026-01-01T00:00:01.000Z",
+          recorded_at: "2026-01-01T00:00:05.000Z",
+          passed: 1,
+          failed: 0,
+          skipped: 0,
+        },
+        {
+          run_id: "tr-same",
+          kind: "test-all",
+          status: "failed",
+          started_at: "2026-01-01T00:00:00.000Z",
+          finished_at: "2026-01-01T00:00:01.000Z",
+          recorded_at: "2026-01-01T00:00:04.000Z",
+          passed: 0,
+          failed: 1,
+          skipped: 0,
+        },
+      ]);
+
+      const previousLimit = process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT;
+      process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT = "2";
+      try {
+        await appendTrackedTestRunSummary({
+          pmRoot: context.pmPath,
+          settings: await readSettings(context.pmPath),
+          itemId: id,
+          author: "tracking-unit",
+          message: "append bounded tracking summary",
+          entry: {
+            run_id: "tr-same",
+            kind: "test",
+            status: "passed",
+            started_at: "2026-01-01T00:00:00.000Z",
+            finished_at: "2026-01-01T00:00:01.000Z",
+            recorded_at: "2026-01-01T00:00:04.000Z",
+            passed: 1,
+            failed: 0,
+            skipped: 0,
+          },
+        });
+      } finally {
+        if (previousLimit === undefined) {
+          delete process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT;
+        } else {
+          process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT = previousLimit;
+        }
+      }
+
+      const frontMatter = await loadTaskFrontMatter(context, id);
+      const testRuns = (frontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+      expect(testRuns.map((entry) => `${entry.run_id}:${entry.kind}`)).toEqual(["tr-same:test-all", "tr-newer:test"]);
+
+      process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT = "invalid";
+      try {
+        await appendTrackedTestRunSummary({
+          pmRoot: context.pmPath,
+          settings: await readSettings(context.pmPath),
+          itemId: id,
+          author: "tracking-unit",
+          entry: {
+            run_id: "tr-after-invalid-limit",
+            kind: "test",
+            status: "passed",
+            started_at: "2026-01-01T00:00:00.000Z",
+            finished_at: "2026-01-01T00:00:01.000Z",
+            recorded_at: "2026-01-01T00:00:06.000Z",
+            passed: 1,
+            failed: 0,
+            skipped: 0,
+          },
+        });
+      } finally {
+        if (previousLimit === undefined) {
+          delete process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT;
+        } else {
+          process.env.PM_TRACKED_TEST_RUN_HISTORY_LIMIT = previousLimit;
+        }
+      }
+
+      const afterInvalidLimit = await loadTaskFrontMatter(context, id);
+      const afterRuns = (afterInvalidLimit.test_runs ?? []) as Array<Record<string, unknown>>;
+      expect(afterRuns.map((entry) => entry.run_id)).toContain("tr-after-invalid-limit");
+
+      const sortId = createTask(context, "append-tracked-test-run-run-id-sort");
+      await overwriteTaskTestRuns(context, sortId, [
+        {
+          run_id: "tr-b",
+          kind: "test",
+          status: "passed",
+          started_at: "2026-01-01T00:00:00.000Z",
+          finished_at: "2026-01-01T00:00:01.000Z",
+          recorded_at: "2026-01-01T00:00:07.000Z",
+          passed: 1,
+          failed: 0,
+          skipped: 0,
+        },
+      ]);
+      await appendTrackedTestRunSummary({
+        pmRoot: context.pmPath,
+        settings: await readSettings(context.pmPath),
+        itemId: sortId,
+        author: "tracking-unit",
+        entry: {
+          run_id: "tr-a",
+          kind: "test",
+          status: "passed",
+          started_at: "2026-01-01T00:00:00.000Z",
+          finished_at: "2026-01-01T00:00:01.000Z",
+          recorded_at: "2026-01-01T00:00:07.000Z",
+          passed: 1,
+          failed: 0,
+          skipped: 0,
+        },
+      });
+      const sortedFrontMatter = await loadTaskFrontMatter(context, sortId);
+      const sortedRuns = (sortedFrontMatter.test_runs ?? []) as Array<Record<string, unknown>>;
+      expect(sortedRuns.map((entry) => entry.run_id)).toEqual(["tr-a", "tr-b"]);
     });
   });
 

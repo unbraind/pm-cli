@@ -9,6 +9,7 @@ import {
   SEARCH_CACHE_ARTIFACT_PATHS,
   writeVectorizationStatusLedger,
 } from "../../src/core/search/cache.js";
+import * as searchCache from "../../src/core/search/cache.js";
 import { SEARCH_EMBEDDING_CORPUS_MAX_CHARACTERS_INVALID_WARNING } from "../../src/core/search/corpus.js";
 import {
   buildVectorizationEmbeddingIdentity,
@@ -832,6 +833,25 @@ describe("search background refresh", () => {
       });
     });
 
+    it("returns deterministic warning when worker settings cannot be read", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        await enqueuePendingRefreshIds(pmPath, ["pm-settings-fail"]);
+        await fs.rm(path.join(pmPath, "settings.json"), { recursive: true, force: true });
+        await fs.mkdir(path.join(pmPath, "settings.json"), { recursive: true });
+
+        const result = await runSemanticRefreshWorker(pmPath, async () => {
+          throw new Error("refresh should not run when settings fail");
+        });
+
+        expect(result).toMatchObject({
+          processed: [],
+          rounds: 0,
+        });
+        expect(result.warnings[0]).toMatch(/^search_background_refresh_settings_read_failed:/);
+        expect(await drainPendingRefreshIds(pmPath)).toEqual(["pm-settings-fail"]);
+      });
+    });
+
     it("re-enqueues ids and records a warning when refresh throws", async () => {
       await withTempPmPath(async ({ pmPath }) => {
         await enqueuePendingRefreshIds(pmPath, ["pm-err"]);
@@ -849,6 +869,33 @@ describe("search background refresh", () => {
         throw new Error("should not run");
       });
       expect(result).toEqual({ processed: [], rounds: 0, warnings: [] });
+    });
+  });
+
+  it("runs the search-refresh entrypoint with PM_PATH and runtime defaults", async () => {
+    await withTempPmPath(async (context) => {
+      await enqueuePendingRefreshIds(context.pmPath, ["pm-entrypoint"]);
+      const previousPmPath = process.env.PM_PATH;
+      const refreshSpy = vi.spyOn(searchCache, "refreshSemanticEmbeddingsForMutatedItems").mockResolvedValue({
+        refreshed: ["pm-entrypoint"],
+        skipped: [],
+        warnings: [],
+      });
+      try {
+        process.env.PM_PATH = context.pmPath;
+        await import("../../src/cli/search-refresh.js?search-refresh-entrypoint");
+        expect(refreshSpy).toHaveBeenCalledWith(context.pmPath, ["pm-entrypoint"], {
+          apply_runtime_defaults: true,
+        });
+        expect(await drainPendingRefreshIds(context.pmPath)).toEqual([]);
+      } finally {
+        refreshSpy.mockRestore();
+        if (previousPmPath === undefined) {
+          delete process.env.PM_PATH;
+        } else {
+          process.env.PM_PATH = previousPmPath;
+        }
+      }
     });
   });
 });

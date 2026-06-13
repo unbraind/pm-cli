@@ -1,0 +1,12 @@
+id: pm-oxq2
+title: Project-scope extension install writes ~69MB node_modules per workspace (peer pm-cli + transitive Sentry/OTel)
+description: ".agents/pm/extensions/pm-changelog/node_modules is 69MB: @unbrained/pm-cli 25MB (installed because runtimeDependencyInstallSpecs in src/cli/commands/extension/install-sources.ts:454-456 deliberately includes peerDependencies so SDK imports resolve inside the extension dir) plus its transitive @sentry 22MB + @opentelemetry 21MB. Gitignored, so no repo bloat, but every workspace that runs pm install npm:pm-changelog (including the changelog:pm CI/release path on every changelog check) pays the download+disk cost, and the nested pm-cli copy can version-skew against the host. Ideas: symlink/inject the running CLI's own install root to satisfy the peer instead of reinstalling it; or publish a slim SDK-only package for extensions to peer on; or npm install --omit=peer plus an explicit resolution shim for @unbrained/pm-cli. Needs care: PR#74 learning says package extensions rely on the resolvable peer for defineExtension imports."
+type: Issue
+status: open
+priority: 3
+tags[4]: audit-2026-06-13,disk,extensions,performance
+created_at: "2026-06-12T22:48:14.706Z"
+updated_at: "2026-06-12T22:48:14.706Z"
+author: audit-quality-agent
+parent: pm-y7sc
+body: ""

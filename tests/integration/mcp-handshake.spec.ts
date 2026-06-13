@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import readline from "node:readline";
 import { describe, expect, it, vi } from "vitest";
-import { handleRequest, processRpcLine } from "../../src/mcp/server.js";
+import { handleRequest, processRpcLine, startMcpServer } from "../../src/mcp/server.js";
 import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
 import { PM_TOOL_ACTIONS } from "../../src/sdk/cli-contracts/enum-contracts.js";
 import { assertPmContextDepthProjection } from "../helpers/mcp-context-depth.js";
@@ -749,11 +750,111 @@ describe("MCP protocol handshake", () => {
   it("does not respond to JSON-RPC notifications that omit id", async () => {
     const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     try {
+      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }));
       await processRpcLine(JSON.stringify({ jsonrpc: "2.0", method: "tools/list" }));
       await processRpcLine(JSON.stringify({ jsonrpc: "2.0", method: "not/supported" }));
       expect(write).not.toHaveBeenCalled();
     } finally {
       write.mockRestore();
+    }
+  });
+
+  it("writes success and non-tool error JSON-RPC envelopes", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    let responses: string[] = [];
+    try {
+      await processRpcLine("");
+      expect(write).not.toHaveBeenCalled();
+
+      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", id: 90, method: "ping" }));
+      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", id: 91, method: "not/supported" }));
+      responses = write.mock.calls.map((call) => String(call[0]).trim()).filter(Boolean);
+    } finally {
+      write.mockRestore();
+    }
+
+    expect(responses).toHaveLength(2);
+    expect(JSON.parse(responses[0] ?? "{}")).toMatchObject({
+      jsonrpc: "2.0",
+      id: 90,
+      result: {},
+    });
+    expect(JSON.parse(responses[1] ?? "{}")).toMatchObject({
+      jsonrpc: "2.0",
+      id: 91,
+      error: {
+        code: 64,
+        message: "Unsupported MCP method: not/supported",
+      },
+    });
+  });
+
+  it("returns tool-call error envelopes for missing required request fields", async () => {
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    let responseText = "";
+    try {
+      await processRpcLine(JSON.stringify({ jsonrpc: "2.0", id: 92, method: "tools/call", params: {} }));
+      responseText = write.mock.calls.map((call) => String(call[0])).join("");
+    } finally {
+      write.mockRestore();
+    }
+
+    const response = JSON.parse(responseText) as {
+      result?: { isError?: boolean; structuredContent?: { result?: unknown; error?: string; code?: number } };
+    };
+    expect(response.result?.isError).toBe(true);
+    expect(response.result?.structuredContent).toMatchObject({
+      result: null,
+      error: "Missing required argument: name",
+      code: 64,
+    });
+  });
+
+  it("surfaces warnings for unexpected narrow-tool top-level arguments", async () => {
+    await withTempPmPath(async (context) => {
+      const stderr = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        const result = await handleRequest({
+          jsonrpc: "2.0",
+          id: 94,
+          method: "tools/call",
+          params: {
+            name: "pm_list",
+            arguments: { path: context.pmPath, limt: 3 },
+          },
+        });
+
+        const structured = result?.structuredContent as { warnings?: string[] } | undefined;
+        expect(structured?.warnings?.[0]).toContain('Unexpected top-level argument "limt"');
+        expect(structured?.warnings?.[0]).toContain('did you mean "limit"');
+        expect(stderr).toHaveBeenCalledWith(expect.stringContaining("[pm-mcp] Unexpected top-level argument"));
+      } finally {
+        stderr.mockRestore();
+      }
+    });
+  });
+
+  it("starts the stdio server with serialized line processing", async () => {
+    let lineHandler: ((line: string) => void) | undefined;
+    const fakeInterface = {
+      on: vi.fn((event: string, handler: (line: string) => void) => {
+        if (event === "line") {
+          lineHandler = handler;
+        }
+        return fakeInterface;
+      }),
+    };
+    const createInterface = vi.spyOn(readline, "createInterface").mockReturnValue(fakeInterface as never);
+    const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    try {
+      startMcpServer();
+      expect(createInterface).toHaveBeenCalledWith({ input: process.stdin, crlfDelay: Infinity });
+      expect(fakeInterface.on).toHaveBeenCalledWith("line", expect.any(Function));
+      lineHandler?.(JSON.stringify({ jsonrpc: "2.0", id: 93, method: "ping" }));
+      await vi.waitFor(() => expect(write).toHaveBeenCalled());
+    } finally {
+      write.mockRestore();
+      createInterface.mockRestore();
     }
   });
 

@@ -33,6 +33,7 @@ import {
   createHistoryEntry,
   createPmCliExpectedError,
   clearWorkspaceContractsCache,
+  compactFlagAliasContracts,
   defineExtension,
   type ExtensionApi,
   type ExtensionHookRegistry,
@@ -48,7 +49,15 @@ import {
   readPmPackageManifest,
   readSettings,
   resolvePmRoot,
+  resolveSubcommandFlagContractsForCommand,
+  isPmExtensionCapabilityContract,
+  isPmExtensionPolicyModeContract,
+  isPmExtensionPolicySurfaceContract,
+  isPmExtensionServiceNameContract,
+  isPmToolAction,
   isPmCliExpectedError,
+  toCompletionFlagString,
+  withFlagAliasMetadata,
   writeFileAtomic,
 } from "../../src/sdk/index.js";
 import {
@@ -239,6 +248,19 @@ describe("public sdk entrypoint", () => {
     ]);
   });
 
+  it("exposes runtime enum contract guards for package-author validation", () => {
+    expect(isPmToolAction("create")).toBe(true);
+    expect(isPmToolAction("not-a-tool-action")).toBe(false);
+    expect(isPmExtensionCapabilityContract("commands")).toBe(true);
+    expect(isPmExtensionCapabilityContract("unknown-capability")).toBe(false);
+    expect(isPmExtensionServiceNameContract("output_format")).toBe(true);
+    expect(isPmExtensionServiceNameContract("unknown-service")).toBe(false);
+    expect(isPmExtensionPolicyModeContract("enforce")).toBe(true);
+    expect(isPmExtensionPolicyModeContract("unknown-mode")).toBe(false);
+    expect(isPmExtensionPolicySurfaceContract("commands.handler")).toBe(true);
+    expect(isPmExtensionPolicySurfaceContract("unknown-surface")).toBe(false);
+  });
+
   it("asserts package manifest resources for package-author tests", async () => {
     await withTempPmPath(async ({ tempRoot }) => {
       const packageRoot = path.join(tempRoot, "package-author-helper");
@@ -388,6 +410,94 @@ describe("public sdk entrypoint", () => {
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.schema.required).toEqual(["subcommand"]);
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.schema.optional).toEqual(expect.arrayContaining(["name"]));
     expect(PM_TOOL_ACTION_PARAMETER_CONTRACTS.upgrade.optional).toEqual(expect.arrayContaining(["dryRun"]));
+  });
+
+  it("materializes strict and provider-compatible tool schemas through the sdk barrel", () => {
+    expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+    expect("$id" in PM_TOOL_PARAMETERS_SCHEMA).toBe(true);
+    expect(Object.keys(PM_TOOL_PARAMETERS_SCHEMA)).toEqual(
+      expect.arrayContaining(["$schema", "$id", "title", "x-schema-version", "type", "oneOf"]),
+    );
+    expect(Object.getOwnPropertyDescriptor(PM_TOOL_PARAMETERS_SCHEMA, "oneOf")?.configurable).toBe(true);
+
+    const strictSchema = JSON.parse(JSON.stringify(PM_TOOL_PARAMETERS_SCHEMA)) as {
+      oneOf: Array<{ properties?: Record<string, unknown>; anyOf?: unknown; oneOf?: unknown; allOf?: unknown }>;
+    };
+    expect(strictSchema.oneOf.length).toBe(PM_TOOL_ACTIONS.length);
+    const schemaForAction = (action: string) =>
+      strictSchema.oneOf.find((entry) => (entry.properties?.action as { const?: string } | undefined)?.const === action);
+    expect(schemaForAction("plan")).toMatchObject({
+      properties: expect.objectContaining({ action: { const: "plan", description: expect.any(String) } }),
+      required: expect.arrayContaining(["action", "subcommand"]),
+    });
+    expect(schemaForAction("extension-install")).toMatchObject({
+      properties: expect.objectContaining({ action: { const: "extension-install", description: expect.any(String) } }),
+      anyOf: expect.arrayContaining([
+        expect.objectContaining({ required: ["target"] }),
+        expect.objectContaining({ required: ["github"] }),
+      ]),
+    });
+    expect(schemaForAction("history-repair")).toMatchObject({
+      properties: expect.objectContaining({ action: { const: "history-repair", description: expect.any(String) } }),
+      oneOf: expect.arrayContaining([expect.objectContaining({ properties: { all: { const: true } } })]),
+    });
+    expect(schemaForAction("schema")).toMatchObject({
+      properties: expect.objectContaining({ action: { const: "schema", description: expect.any(String) } }),
+      allOf: expect.any(Array),
+    });
+
+    const providerProperties = PM_PROVIDER_TOOL_PARAMETERS_SCHEMA.properties as Record<string, Record<string, unknown>>;
+    expect(providerProperties.action).toMatchObject({ type: "string", description: expect.any(String) });
+    expect(providerProperties.options).toMatchObject({ type: "object", additionalProperties: true });
+    expect(providerProperties.id).toMatchObject({ type: "string", description: expect.any(String) });
+    expect(providerProperties.all).toMatchObject({ type: "boolean", description: expect.any(String) });
+  });
+
+  it("exposes command flag contract helpers with alias metadata and routing", () => {
+    expect(
+      withFlagAliasMetadata([
+        { flag: "--filter_status" },
+        { flag: "--filter-status", aliases: ["--status-filter", "--filter_status"] },
+        { flag: "--plain" },
+      ]),
+    ).toEqual([
+      { flag: "--filter_status" },
+      { flag: "--filter-status", aliases: ["--status-filter", "--filter_status"] },
+      { flag: "--plain" },
+    ]);
+    expect(
+      compactFlagAliasContracts([
+        { flag: "--filter_status" },
+        { flag: "--filter-status", aliases: ["--status-filter"] },
+        { flag: "--other" },
+      ]),
+    ).toEqual([
+      { flag: "--filter-status", aliases: ["--status-filter", "--filter_status"] },
+      { flag: "--other" },
+    ]);
+    expect(toCompletionFlagString([{ short: "-x", flag: "--example", aliases: ["--example_alias"] }], false)).toBe(
+      "-x --example --example_alias",
+    );
+    expect(toCompletionFlagString([{ flag: "--json" }])).toContain("--pm-path");
+
+    const flagsFor = (command: string | undefined) =>
+      resolveSubcommandFlagContractsForCommand(command).map((contract) => contract.flag);
+    expect(flagsFor(undefined)).toEqual(expect.arrayContaining(["--json", "--pm-path"]));
+    expect(flagsFor(" LIST-OPEN ")).toEqual(expect.arrayContaining(["--status", "--ids"]));
+    expect(flagsFor("reindex")).not.toContain("--mode");
+    expect(flagsFor("templates")).toEqual(expect.arrayContaining(["--title", "--description"]));
+    expect(flagsFor("cal")).toEqual(expect.arrayContaining(["--from", "--to"]));
+    expect(flagsFor("ctx")).toEqual(expect.arrayContaining(["--depth"]));
+    expect(flagsFor("test-runs-worker")).toEqual(expect.arrayContaining(["--status", "--tail"]));
+    expect(flagsFor("extension install")).toEqual(expect.arrayContaining(["--github", "--ref"]));
+    expect(flagsFor("packages doctor")).toEqual(expect.arrayContaining(["--strict-exit", "--trace"]));
+    expect(flagsFor("package unknown")).toEqual(expect.arrayContaining(["--json"]));
+    expect(flagsFor("extension install extra")).toEqual(expect.arrayContaining(["--json"]));
+    expect(flagsFor("package")).toEqual(expect.arrayContaining(["--install", "--catalog"]));
+    expect(flagsFor("history-repair")).toEqual(expect.arrayContaining(["--all", "--dry-run"]));
+    expect(flagsFor("close-many")).toEqual(expect.arrayContaining(["--filter-status", "--reason"]));
+    expect(flagsFor("validate")).toEqual(expect.arrayContaining(["--check-resolution", "--fix-scope"]));
+    expect(flagsFor("unknown-command")).toEqual(expect.arrayContaining(["--json", "--pm-path"]));
   });
 
   it("exposes runtime primitives used by TypeScript pm packages through the sdk barrel", () => {

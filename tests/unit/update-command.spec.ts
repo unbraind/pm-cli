@@ -1900,6 +1900,45 @@ describe("runUpdate", () => {
     });
   });
 
+  it("guides audit-update append attempts to dedicated append commands", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-audit-append-guidance", { assignee: "foreign-assignee" });
+      const error = await runUpdate(
+        id,
+        {
+          allowAuditUpdate: true,
+          comment: ["author=audit-bot,created_at=2026-03-01T00:00:00.000Z,text=audit note"],
+          file: ["path=src/cli/commands/update.ts,scope=project,note=audit file"],
+          doc: ["path=docs/COMMANDS.md,scope=project,note=audit doc"],
+          message: "attempt append mutation via audit mode",
+        },
+        { path: context.pmPath },
+      ).then(
+        () => {
+          throw new Error("expected runUpdate to reject");
+        },
+        (caught: unknown) => caught as PmCliError,
+      );
+
+      expect(error.exitCode).toBe(EXIT_CODE.USAGE);
+      expect(error.context.code).toBe("audit_update_restricted_options");
+      expect(error.context.examples).toEqual(
+        expect.arrayContaining([
+          `pm comments ${id} --add "<text>" --allow-audit-comment`,
+          `pm files ${id} --add "path=<path>,scope=<scope>,note=<note>" --force`,
+          `pm docs ${id} --add "path=<path>,scope=<scope>,note=<note>" --force`,
+        ]),
+      );
+      expect(error.context.nextSteps).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("Replace --comment with:"),
+          expect.stringContaining("Replace --file with:"),
+          expect.stringContaining("Replace --doc with:"),
+        ]),
+      );
+    });
+  });
+
   it("allows non-owner dependency additions with --allow-audit-dep-update", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "update-audit-dep-override", { assignee: "foreign-assignee" });
@@ -1957,6 +1996,34 @@ describe("runUpdate", () => {
         exitCode: EXIT_CODE.USAGE,
         message: expect.stringContaining("requires at least one --dep"),
       });
+
+      const docError = await runUpdate(
+        id,
+        {
+          allowAuditDepUpdate: true,
+          dep: ["id=dep-audit,kind=related"],
+          doc: ["path=docs/COMMANDS.md,scope=project,note=audit doc"],
+          message: "attempt doc append in dep-audit mode",
+        },
+        { path: context.pmPath },
+      ).then(
+        () => {
+          throw new Error("expected runUpdate to reject");
+        },
+        (caught: unknown) => caught as PmCliError,
+      );
+
+      expect(docError.exitCode).toBe(EXIT_CODE.USAGE);
+      expect(docError.context.code).toBe("audit_dep_update_restricted_options");
+      expect(docError.context.examples).toEqual([
+        `pm docs ${id} --add "path=<path>,scope=<scope>,note=<note>" --force`,
+      ]);
+      expect(docError.context.nextSteps).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining("Re-run without: --doc"),
+          expect.stringContaining("Replace --doc with:"),
+        ]),
+      );
     });
   });
 

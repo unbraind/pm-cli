@@ -1,13 +1,18 @@
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { appendHistoryEntry, createHistoryEntry, hashDocument, hashEmptyDocument } from "../../src/core/history/history.js";
+import { setActiveExtensionServices } from "../../src/core/extensions/index.js";
 import { canonicalDocument, parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
 import { normalizeItemId, normalizePrefix } from "../../src/core/item/id.js";
 import { parseCsvKv, parseOptionalNumber, parseTags } from "../../src/core/item/parse.js";
 import { orderObject, stableStringify } from "../../src/core/shared/serialization.js";
 import { resolveIsoOrRelative } from "../../src/core/shared/time.js";
+
+afterEach(() => {
+  setActiveExtensionServices(null);
+});
 
 describe("deterministic primitives", () => {
   it("normalizes tags and ids deterministically", () => {
@@ -332,6 +337,91 @@ describe("deterministic primitives", () => {
       expect(lines[0]).toBe(JSON.stringify(firstEntry));
       expect(lines[1]).toBe(JSON.stringify(secondEntry));
     } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("honors history append service override skip, raw line, alternate path, and entry replacement results", async () => {
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-history-service-"));
+    const historyPath = path.join(tempDir, "pm-a1.jsonl");
+    const alternatePath = path.join(tempDir, "alternate.jsonl");
+    const entry = createHistoryEntry({
+      nowIso: "2026-02-18T00:05:00.000Z",
+      author: "tester",
+      op: "update",
+      before: { metadata: {}, body: "" },
+      after: { metadata: {}, body: "next" },
+      message: "service override",
+    });
+
+    try {
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            extension: "history-test",
+            service: "history_append",
+            run: () => false,
+          },
+        ],
+      });
+      await appendHistoryEntry(historyPath, entry);
+      await expect(readFile(historyPath, "utf8")).rejects.toThrow();
+
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            extension: "history-test",
+            service: "history_append",
+            run: () => "raw-line",
+          },
+        ],
+      });
+      await appendHistoryEntry(historyPath, entry);
+      expect(await readFile(historyPath, "utf8")).toBe("raw-line\n");
+
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            extension: "history-test",
+            service: "history_append",
+            run: () => ({ history_path: alternatePath, line: "alternate-line" }),
+          },
+        ],
+      });
+      await appendHistoryEntry(historyPath, entry);
+      expect(await readFile(alternatePath, "utf8")).toBe("alternate-line\n");
+
+      const replacementEntry = { ...entry, op: "replacement" };
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            extension: "history-test",
+            service: "history_append",
+            run: () => ({ entry: replacementEntry }),
+          },
+        ],
+      });
+      await appendHistoryEntry(historyPath, entry);
+      expect((await readFile(historyPath, "utf8")).trim().split("\n").at(-1)).toBe(JSON.stringify(replacementEntry));
+
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            extension: "history-test",
+            service: "history_append",
+            run: () => ({ skip: true }),
+          },
+        ],
+      });
+      await appendHistoryEntry(historyPath, entry);
+      expect((await readFile(historyPath, "utf8")).trim().split("\n")).toHaveLength(2);
+    } finally {
+      setActiveExtensionServices(null);
       await rm(tempDir, { recursive: true, force: true });
     }
   });

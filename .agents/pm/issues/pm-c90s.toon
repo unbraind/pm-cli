@@ -1,0 +1,12 @@
+id: pm-c90s
+title: "pm health 2.3-3.1s in dev repo (~2x the 1.3s baseline): drift-scan cache hit still reads + content-hashes every history stream"
+description: "Measured 2026-06-13 (warm, 3 runs): 2326/3076/2590ms vs 1.3s baseline from 2026-05-27 (PR#77). Sandbox health is 180ms, so this is corpus scaling: .agents/pm/history has 1222 streams / 22MB. CPU profile of pm health: ~200ms TOON decode (parseDelimitedValues 87ms + unescapeString 41ms + findClosingQuote 32ms + parseStringLiteral 24ms), hash update 96ms, buildIntegrityCheck self 93ms, 373ms async-IO idle. Root cause: src/core/history/drift-scan.ts (lines 113-115, 171-187) deliberately re-reads the FULL stream and recomputes a content hash even on a metadata cache hit (guard against metadata-stable replacement), so health is O(total history bytes) per run forever; the cache only skips chain replay, not read+hash. Options: trust mtime+ctime+size stat tuple without content re-hash; hash size+first/last 64KB; or make the full-content guard opt-in (pm health --deep). Relates: open auto-compact items reduce corpus size but do not fix the scaling shape."
+type: Issue
+status: open
+priority: 2
+tags[4]: audit-2026-06-13,health,history,performance
+created_at: "2026-06-12T22:47:21.538Z"
+updated_at: "2026-06-12T22:47:21.538Z"
+author: audit-quality-agent
+parent: pm-y7sc
+body: ""

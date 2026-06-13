@@ -399,6 +399,38 @@ describe("core/store/settings", () => {
     });
   });
 
+  it("clears cached settings reads even when a settings write hook fails", async () => {
+    await withTempPmRoot(async (pmRoot) => {
+      const before = structuredClone(SETTINGS_DEFAULTS);
+      before.author_default = "before-failing-hook";
+      await writeSettings(pmRoot, before);
+      expect((await readSettingsWithMetadata(pmRoot)).settings.author_default).toBe("before-failing-hook");
+
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onRead: [],
+        onWrite: [
+          {
+            layer: "project",
+            name: "failing-settings-write-hook",
+            run: () => {
+              throw new Error("settings hook failed");
+            },
+          },
+        ],
+        onIndex: [],
+      });
+
+      const after = structuredClone(SETTINGS_DEFAULTS);
+      after.author_default = "after-failing-hook";
+      await writeSettings(pmRoot, after);
+      clearActiveExtensionHooks();
+
+      expect((await readSettingsWithMetadata(pmRoot)).settings.author_default).toBe("after-failing-hook");
+    });
+  });
+
   it("caches settings reads while still honoring onRead hooks and schema file invalidation", async () => {
     await withTempPmRoot(async (pmRoot) => {
       const events: string[] = [];
@@ -577,6 +609,100 @@ describe("core/store/settings", () => {
 
     expect(collectionName).toMatch(/^[a-zA-Z0-9_-]+$/);
     expect(collectionName.length).toBe(128);
+  });
+
+  it("falls back from invalid runtime customization leaves during serialization", () => {
+    const settings = structuredClone(SETTINGS_DEFAULTS) as unknown as Record<string, unknown>;
+    settings.search = {
+      mutation_refresh_policy: "always",
+      query_expansion: { enabled: "yes", provider: 42 },
+      rerank: { enabled: "no", model: 99, top_k: 0 },
+    };
+    settings.vector_store = {
+      adapter: undefined,
+      collection_name: "   ",
+      qdrant: undefined,
+      lancedb: undefined,
+    };
+
+    const parsed = JSON.parse(serializeSettings(settings as never)) as {
+      search: {
+        mutation_refresh_policy: string;
+        query_expansion: { enabled: boolean; provider: string };
+        rerank: { enabled: boolean; model: string; top_k: number };
+      };
+      vector_store: {
+        adapter: string;
+        collection_name: string;
+        qdrant: Record<string, unknown>;
+        lancedb: Record<string, unknown>;
+      };
+    };
+
+    expect(parsed.search.mutation_refresh_policy).toBe(SETTINGS_DEFAULTS.search.mutation_refresh_policy);
+    expect(parsed.search.query_expansion).toEqual(SETTINGS_DEFAULTS.search.query_expansion);
+    expect(parsed.search.rerank).toEqual(SETTINGS_DEFAULTS.search.rerank);
+    expect(parsed.vector_store.adapter).toBe(SETTINGS_DEFAULTS.vector_store.adapter);
+    expect(parsed.vector_store.collection_name).toBe(SETTINGS_DEFAULTS.vector_store.collection_name);
+    expect(parsed.vector_store.qdrant).toEqual({});
+    expect(parsed.vector_store.lancedb).toEqual({});
+  });
+
+  it("normalizes extension policy overrides and pm max-version modes during serialization", () => {
+    const settings = structuredClone(SETTINGS_DEFAULTS);
+    settings.extensions.enabled = [" beta ", "alpha", "alpha"];
+    settings.extensions.disabled = [" off ", "beta"];
+    settings.extensions.policy = {
+      ...settings.extensions.policy,
+      mode: "enforce",
+      trust_mode: "warn",
+      pm_max_version_exceeded_mode: { global: "warn", project: "bogus" as never },
+      default_sandbox_profile: "strict",
+      extension_overrides: [
+        { name: " ", disabled: true },
+        {
+          name: " Alpha ",
+          disabled: true,
+          require_trusted: true,
+          require_provenance: true,
+          sandbox_profile: "bad" as never,
+          allowed_capabilities: [" hooks ", "hooks", ""],
+          blocked_surfaces: ["schema.flags"],
+          allowed_commands: ["Create"],
+          blocked_actions: [" Drop "],
+          allowed_services: ["item_store_write"],
+        },
+      ],
+    };
+
+    const parsed = JSON.parse(serializeSettings(settings)) as {
+      extensions: {
+        enabled: string[];
+        disabled: string[];
+        policy: {
+          pm_max_version_exceeded_mode?: unknown;
+          extension_overrides: Array<Record<string, unknown>>;
+        };
+      };
+    };
+
+    expect(parsed.extensions.enabled).toEqual(["alpha", "beta"]);
+    expect(parsed.extensions.disabled).toEqual(["beta", "off"]);
+    expect(parsed.extensions.policy.pm_max_version_exceeded_mode).toEqual({ global: "warn" });
+    expect(parsed.extensions.policy.extension_overrides).toEqual([
+      {
+        name: "alpha",
+        disabled: true,
+        require_trusted: true,
+        require_provenance: true,
+        sandbox_profile: "none",
+        allowed_capabilities: ["hooks"],
+        blocked_surfaces: ["schema.flags"],
+        allowed_commands: ["create"],
+        blocked_actions: ["drop"],
+        allowed_services: ["item_store_write"],
+      },
+    ]);
   });
 
   it("resolves governance knobs for built-in presets and custom overrides", () => {

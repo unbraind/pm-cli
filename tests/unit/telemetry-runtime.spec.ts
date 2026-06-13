@@ -859,6 +859,191 @@ describe("core/telemetry/runtime", () => {
     });
   });
 
+  it("skips telemetry clear commands and disabled flush workers", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "telemetry",
+        pm_version: "9.9.9-test",
+        args: ["clear"],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+
+      expect(active).toBeNull();
+
+      process.env.PM_TELEMETRY_DISABLED = "true";
+      await flushTelemetryQueueNow(globalRoot);
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      await expect(fs.access(telemetryQueuePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("treats null finish handles and disabled error collection as no-ops", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      await finishTelemetryCommand(null, {
+        ok: false,
+        error: "ignored",
+      });
+
+      process.env.PM_NO_TELEMETRY = "yes";
+      await emitTelemetryErrorEvent({
+        command: "bad",
+        args: ["bad"],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_version: "9.9.9-test",
+        pm_root: "/tmp/project/.agents/pm",
+        error_code: "unknown_command",
+        error_message: "unknown command",
+        exit_code: 2,
+      });
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      await expect(fs.access(telemetryQueuePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("skips command collection when telemetry is disabled in settings", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.enabled = false;
+      await writeSettings(globalRoot, settings, "test:disable_telemetry");
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      const active = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+
+      expect(active).toBeNull();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  it("skips error collection when telemetry is disabled in settings", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const settings = await readSettings(globalRoot);
+      settings.telemetry.enabled = false;
+      await writeSettings(globalRoot, settings, "test:disable_error_telemetry");
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      await emitTelemetryErrorEvent({
+        command: "bad",
+        args: ["bad"],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_version: "9.9.9-test",
+        pm_root: "/tmp/project/.agents/pm",
+        error_code: "unknown_command",
+        error_message: "unknown command",
+        exit_code: 2,
+      });
+
+      expect(fetchMock).not.toHaveBeenCalled();
+      await expect(fs.access(telemetryQueuePath(globalRoot))).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("normalizes invalid and disabled local OTEL endpoint settings", async () => {
+    await withTempGlobalRoot(async () => {
+      globalThis.fetch = vi.fn(async () => {
+        throw new Error("network_down");
+      }) as unknown as typeof fetch;
+
+      process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT = "not a url";
+      const invalidDirect = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(invalidDirect?.otel_traces_endpoint).toBeUndefined();
+
+      delete process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT;
+      process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "not a url";
+      const invalidBase = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(invalidBase?.otel_traces_endpoint).toBeUndefined();
+
+      process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:4318/v1/traces";
+      process.env.PM_TELEMETRY_OTEL_DISABLED = "on";
+      const disabled = await startTelemetryCommand({
+        command: "list-open",
+        pm_version: "9.9.9-test",
+        args: [],
+        options: {},
+        global: {
+          json: true,
+          quiet: false,
+          noExtensions: false,
+          noPager: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project/.agents/pm",
+      });
+      expect(disabled?.otel_traces_endpoint).toBeUndefined();
+      await waitForPendingFlush();
+    });
+  });
+
   it("persists installation id and flushes queue on successful exporter response", async () => {
     await withTempGlobalRoot(async (globalRoot) => {
       const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));

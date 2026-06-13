@@ -1142,4 +1142,325 @@ describe("MCP dynamic package actions", () => {
       expect(fullResult?.compact).toBe(false);
     });
   });
+
+  it("routes additional built-in pm_run actions and cwd-scoped calls", async () => {
+    await withTempPmPath(async (context) => {
+      const stats = await handleRequest({
+        jsonrpc: "2.0",
+        id: 100,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: {
+            path: context.pmPath,
+            cwd: context.tempRoot,
+            action: "stats",
+            options: { storage: true },
+          },
+        },
+      });
+      expect(stats?.isError).not.toBe(true);
+      const statsResult = (stats?.structuredContent as { result?: { totals?: { items?: number }; storage?: unknown } } | undefined)?.result;
+      expect(statsResult?.totals?.items).toBeGreaterThanOrEqual(0);
+      expect(statsResult).toHaveProperty("storage");
+      expect(process.cwd()).not.toBe(context.tempRoot);
+
+      const aggregate = await handleRequest({
+        jsonrpc: "2.0",
+        id: 101,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: { path: context.pmPath, action: "aggregate", options: { groupBy: "status" } },
+        },
+      });
+      expect(aggregate?.isError).not.toBe(true);
+
+      const gc = await handleRequest({
+        jsonrpc: "2.0",
+        id: 102,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: { path: context.pmPath, action: "gc", options: { dryRun: true } },
+        },
+      });
+      expect(gc?.isError).not.toBe(true);
+
+      const telemetryStatus = await handleRequest({
+        jsonrpc: "2.0",
+        id: 103,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: { path: context.pmPath, action: "telemetry", subcommand: "status", limit: 1 },
+        },
+      });
+      expect(telemetryStatus?.isError).not.toBe(true);
+
+      const packageCatalog = await handleRequest({
+        jsonrpc: "2.0",
+        id: 104,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: { path: context.pmPath, action: "package-catalog", options: { json: true } },
+        },
+      });
+      expect(packageCatalog?.isError).not.toBe(true);
+    });
+  });
+
+  it("normalizes linked-resource add/remove fields for files and docs", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli([
+        "create",
+        "--json",
+        "--title",
+        "MCP linked resource target",
+        "--description",
+        "MCP linked resource target description",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--author",
+        "mcp-test",
+      ], { expectJson: true });
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      const files = await handleRequest({
+        jsonrpc: "2.0",
+        id: 110,
+        method: "tools/call",
+        params: {
+          name: "pm_files",
+          arguments: {
+            path: context.pmPath,
+            id,
+            options: {
+              add: "path=src/mcp/server.ts,scope=project",
+              addNote: "server coverage target",
+            },
+          },
+        },
+      });
+      expect(files?.isError).not.toBe(true);
+      const filesResult = (files?.structuredContent as {
+        result?: { files?: Array<{ path?: string; note?: string }>; changed?: boolean };
+      } | undefined)?.result;
+      expect(filesResult?.changed).toBe(true);
+      expect(filesResult?.files).toContainEqual(expect.objectContaining({ path: "src/mcp/server.ts", note: "server coverage target" }));
+
+      const docs = await handleRequest({
+        jsonrpc: "2.0",
+        id: 111,
+        method: "tools/call",
+        params: {
+          name: "pm_docs",
+          arguments: {
+            path: context.pmPath,
+            id,
+            options: {
+              add: "path=docs/AGENT_GUIDE.md,scope=project",
+              addNote: "agent guide reference",
+            },
+          },
+        },
+      });
+      expect(docs?.isError).not.toBe(true);
+      const docsResult = (docs?.structuredContent as {
+        result?: { docs?: Array<{ path?: string; note?: string }>; changed?: boolean };
+      } | undefined)?.result;
+      expect(docsResult?.changed).toBe(true);
+      expect(docsResult?.docs).toContainEqual(expect.objectContaining({ path: "docs/AGENT_GUIDE.md", note: "agent guide reference" }));
+    });
+  });
+
+  it("routes copy, claim, release, close, deps, history, test, and validate actions", async () => {
+    await withTempPmPath(async (context) => {
+      const create = context.runCli([
+        "create",
+        "--json",
+        "--title",
+        "MCP lifecycle target",
+        "--description",
+        "MCP lifecycle target description",
+        "--type",
+        "Task",
+        "--status",
+        "open",
+        "--author",
+        "mcp-test",
+      ], { expectJson: true });
+      expect(create.code).toBe(0);
+      const id = (create.json as { item: { id: string } }).item.id;
+
+      const copy = await handleRequest({
+        jsonrpc: "2.0",
+        id: 120,
+        method: "tools/call",
+        params: {
+          name: "pm_copy",
+          arguments: {
+            path: context.pmPath,
+            id,
+            title: "MCP copied lifecycle target",
+            author: "mcp-agent",
+            message: "copy through MCP",
+            idOnly: true,
+          },
+        },
+      });
+      expect(copy?.isError).not.toBe(true);
+      const copyResult = (copy?.structuredContent as { result?: { id?: string; item?: unknown } } | undefined)?.result;
+      expect(copyResult?.id).toMatch(/^pm-/);
+      expect(copyResult?.item).toBeUndefined();
+
+      const claim = await handleRequest({
+        jsonrpc: "2.0",
+        id: 121,
+        method: "tools/call",
+        params: { name: "pm_claim", arguments: { path: context.pmPath, id, author: "mcp-agent" } },
+      });
+      expect(claim?.isError).not.toBe(true);
+
+      const release = await handleRequest({
+        jsonrpc: "2.0",
+        id: 122,
+        method: "tools/call",
+        params: { name: "pm_release", arguments: { path: context.pmPath, id, author: "mcp-agent" } },
+      });
+      expect(release?.isError).not.toBe(true);
+
+      const deps = await handleRequest({
+        jsonrpc: "2.0",
+        id: 123,
+        method: "tools/call",
+        params: {
+          name: "pm_deps",
+          arguments: {
+            path: context.pmPath,
+            id,
+            options: { dep: `id=${copyResult?.id},kind=related` },
+          },
+        },
+      });
+      expect(deps?.isError).not.toBe(true);
+
+      const history = await handleRequest({
+        jsonrpc: "2.0",
+        id: 124,
+        method: "tools/call",
+        params: { name: "pm_run", arguments: { path: context.pmPath, action: "history", id, options: { limit: "2" } } },
+      });
+      expect(history?.isError).not.toBe(true);
+
+      const validate = await handleRequest({
+        jsonrpc: "2.0",
+        id: 125,
+        method: "tools/call",
+        params: { name: "pm_validate", arguments: { path: context.pmPath, options: { checkResolution: false } } },
+      });
+      expect(validate?.isError).not.toBe(true);
+
+      const testAll = await handleRequest({
+        jsonrpc: "2.0",
+        id: 126,
+        method: "tools/call",
+        params: { name: "pm_run", arguments: { path: context.pmPath, action: "test-all", options: { dryRun: true } } },
+      });
+      expect(testAll?.isError).not.toBe(true);
+
+      const test = await handleRequest({
+        jsonrpc: "2.0",
+        id: 127,
+        method: "tools/call",
+        params: {
+          name: "pm_test",
+          arguments: {
+            path: context.pmPath,
+            id,
+            options: { add: "command=node --version,scope=project,timeout_seconds=30" },
+          },
+        },
+      });
+      expect(test?.isError).not.toBe(true);
+
+      const close = await handleRequest({
+        jsonrpc: "2.0",
+        id: 128,
+        method: "tools/call",
+        params: {
+          name: "pm_close",
+          arguments: { path: context.pmPath, id, text: "MCP close reason", author: "mcp-agent", options: { validateClose: "warn" } },
+        },
+      });
+      expect(close?.isError).not.toBe(true);
+    });
+  });
+
+  it("surfaces MCP error paths for required args, config, schema, and extension actions", async () => {
+    await withTempPmPath(async (context) => {
+      const missingAction = await handleRequest({
+        jsonrpc: "2.0",
+        id: 130,
+        method: "tools/call",
+        params: { name: "pm_run", arguments: { path: context.pmPath } },
+      }).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      expect(missingAction).toBeInstanceOf(Error);
+      expect((missingAction as Error).message).toBe("Missing required argument: action");
+
+      const missingConfigAction = await handleRequest({
+        jsonrpc: "2.0",
+        id: 131,
+        method: "tools/call",
+        params: { name: "pm_config", arguments: { path: context.pmPath } },
+      }).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      expect((missingConfigAction as Error).message).toBe("Missing required argument: configAction");
+
+      const badSchemaOrder = await handleRequest({
+        jsonrpc: "2.0",
+        id: 132,
+        method: "tools/call",
+        params: {
+          name: "pm_schema",
+          arguments: { path: context.pmPath, subcommand: "add-status", name: "blocked", order: 1.5 },
+        },
+      }).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      expect((badSchemaOrder as Error).message).toBe("schema add-status order must be a finite integer.");
+
+      const unknownSchema = await handleRequest({
+        jsonrpc: "2.0",
+        id: 133,
+        method: "tools/call",
+        params: { name: "pm_schema", arguments: { path: context.pmPath, subcommand: "rename-type" } },
+      }).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      expect((unknownSchema as Error).message).toContain("Unknown pm schema subcommand");
+
+      const unsupportedExtension = await handleRequest({
+        jsonrpc: "2.0",
+        id: 134,
+        method: "tools/call",
+        params: { name: "pm_run", arguments: { path: context.pmPath, action: "not-a-native-action" } },
+      }).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      expect((unsupportedExtension as Error).message).toBe("Unsupported native pm action: not-a-native-action");
+    });
+  });
 });

@@ -536,4 +536,187 @@ describe("core/extensions runtime wrappers", () => {
       warnings: [],
     });
   });
+
+  it("contains active override failures and falls back to original runtime context", async () => {
+    setActiveExtensionCommands({
+      handlers: [],
+      overrides: [
+        {
+          layer: "project",
+          name: "async-command-override",
+          command: "list-open",
+          run: async () => ({ unreachable: true }),
+        },
+      ],
+    });
+    setActiveCommandContext({
+      command: " list-open ",
+      args: ["--limit", "1"],
+      options: { limit: "1" },
+      global: {
+        json: false,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+    });
+    expect(runActiveCommandOverride({ count: 1 })).toEqual({
+      overridden: false,
+      result: { count: 1 },
+      warnings: ["extension_command_override_async_unsupported:project:async-command-override:list-open"],
+    });
+
+    setActiveExtensionParsers({
+      overrides: [
+        {
+          layer: "project",
+          name: "parser-boom",
+          command: "create",
+          run: () => {
+            throw new Error("parser boom");
+          },
+        },
+      ],
+    });
+    const parserResult = await runActiveParserOverride({
+      command: " create ",
+      args: ["--title", "One"],
+      options: { title: "One" },
+      global: {
+        json: false,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+    });
+    expect(parserResult).toEqual({
+      overridden: false,
+      context: {
+        command: "create",
+        args: ["--title", "One"],
+        options: { title: "One" },
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project",
+      },
+      warnings: ["extension_parser_override_failed:project:parser-boom:create"],
+    });
+
+    setActiveExtensionPreflight({
+      overrides: [
+        {
+          layer: "project",
+          name: "preflight-boom",
+          run: () => {
+            throw new Error("preflight boom");
+          },
+        },
+      ],
+    });
+    const decision = {
+      enforce_item_format_gate: true,
+      run_preflight_item_format_sync: true,
+      run_extension_migrations: true,
+      enforce_mandatory_migration_gate: true,
+    };
+    const preflightResult = await runActivePreflightOverride({
+      command: "update",
+      args: [],
+      options: {},
+      global: {
+        json: false,
+        quiet: false,
+        noExtensions: false,
+        profile: false,
+      },
+      pm_root: "/tmp/project",
+      decision,
+    });
+    expect(preflightResult).toEqual({
+      overridden: false,
+      context: {
+        command: "update",
+        args: [],
+        options: {},
+        global: {
+          json: false,
+          quiet: false,
+          noExtensions: false,
+          profile: false,
+        },
+        pm_root: "/tmp/project",
+      },
+      decision,
+      warnings: ["extension_preflight_override_failed:project:preflight-boom"],
+    });
+  });
+
+  it("falls through service and renderer override failures in active registries", async () => {
+    setActiveExtensionServices({
+      overrides: [
+        {
+          layer: "project",
+          name: "async-sync-service",
+          service: "output_format",
+          run: async () => "async output",
+        },
+        {
+          layer: "project",
+          name: "throwing-service",
+          service: "output_format",
+          run: () => {
+            throw new Error("service boom");
+          },
+        },
+      ],
+    });
+    expect(runActiveServiceOverrideSync("output_format", { ok: true })).toEqual({
+      handled: false,
+      result: { ok: true },
+      warnings: [
+        "extension_service_override_failed:project:throwing-service:output_format",
+        "extension_service_override_async_unsupported:project:async-sync-service:output_format",
+      ],
+    });
+    expect(await runActiveServiceOverride("missing_service", { ok: true })).toEqual({
+      handled: false,
+      result: { ok: true },
+      warnings: [],
+    });
+
+    setActiveExtensionRenderers({
+      overrides: [
+        {
+          layer: "project",
+          name: "invalid-renderer",
+          format: "json",
+          run: () => ({ not: "a string" }),
+        },
+        {
+          layer: "project",
+          name: "throwing-renderer",
+          format: "toon",
+          run: () => {
+            throw new Error("renderer boom");
+          },
+        },
+      ],
+    });
+    expect(runActiveRendererOverride("json", { ok: true })).toEqual({
+      overridden: false,
+      rendered: null,
+      warnings: ["extension_renderer_invalid_result:project:invalid-renderer:json"],
+    });
+    expect(runActiveRendererOverride("toon", { ok: true })).toEqual({
+      overridden: false,
+      rendered: null,
+      warnings: ["extension_renderer_failed:project:throwing-renderer:toon"],
+    });
+  });
 });

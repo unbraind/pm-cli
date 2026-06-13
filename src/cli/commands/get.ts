@@ -2,11 +2,12 @@ import { pathExists } from "../../core/fs/fs-utils.js";
 import { getActiveExtensionRegistrations } from "../../core/extensions/index.js";
 import { toItemRecord } from "../../core/item/item-record.js";
 import { resolveItemTypeRegistry } from "../../core/item/type-registry.js";
-import { resolveRuntimeFieldRegistry } from "../../core/schema/runtime-schema.js";
+import { resolveRuntimeFieldRegistry, resolveRuntimeStatusRegistry } from "../../core/schema/runtime-schema.js";
+import { isTerminalStatus } from "../../core/item/status.js";
 import { EXIT_CODE, FRONT_MATTER_KEY_ORDER } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { buildItemNotFoundError, locateItem, readLocatedItem } from "../../core/store/item-store.js";
+import { buildItemNotFoundError, listAllFrontMatterLight, locateItem, readLocatedItem } from "../../core/store/item-store.js";
 import { getHistoryPath, getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import { parseIntegerLimit } from "../shared-parsers.js";
@@ -33,6 +34,16 @@ interface ClaimStateContext {
   last_release: ClaimHistoryContext | null;
 }
 
+interface ChildRollupContext {
+  count: number;
+  active: number;
+  by_status: Record<string, number>;
+}
+
+// GH-155 (pm-gcm3): only container types get the inline child rollup so leaf
+// item reads keep avoiding the corpus scan that the rollup requires.
+const CHILD_ROLLUP_TYPES = new Set(["milestone", "epic"]);
+
 export interface GetResult {
   item: Partial<ItemFrontMatter>;
   body?: string;
@@ -42,6 +53,7 @@ export interface GetResult {
     docs: LinkedDoc[];
   };
   claim_state?: ClaimStateContext;
+  children?: ChildRollupContext;
   tree?: {
     root_id: string;
     root_title: string | null;
@@ -144,7 +156,7 @@ function validateGetFields(fields: string[] | null, runtimeMetadataKeys: Iterabl
     return;
   }
   const itemFields = new Set([...FRONT_MATTER_KEY_ORDER, ...runtimeMetadataKeys]);
-  const allowedRootFields = new Set(["body", "linked", "claim_state"]);
+  const allowedRootFields = new Set(["body", "linked", "claim_state", "children"]);
   const allowedLinkedFields = new Set(["linked.files", "linked.tests", "linked.docs"]);
   const allowedClaimStateFields = new Set(["claim_state.claimed", "claim_state.assignee", "claim_state.last_claim", "claim_state.last_release"]);
   const unknown = fields.filter((field) => {
@@ -253,6 +265,26 @@ export async function runGet(id: string, global: GlobalOptions, options: GetOpti
   }
   if (claimState) {
     result.claim_state = claimState;
+  }
+  const itemType = loaded.document.metadata.type?.trim().toLowerCase() ?? "";
+  const includeChildren = fieldProjection
+    ? fieldsIncludeRoot(fields, "children")
+    : depth !== "brief" && CHILD_ROLLUP_TYPES.has(itemType);
+  if (includeChildren) {
+    const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
+    const corpus = await listAllFrontMatterLight(pmRoot, settings.item_format, typeRegistry.type_to_folder, undefined, settings.schema);
+    const byStatus: Record<string, number> = {};
+    let active = 0;
+    let count = 0;
+    for (const candidate of corpus) {
+      if (candidate.parent !== located.id) continue;
+      count += 1;
+      byStatus[candidate.status] = (byStatus[candidate.status] ?? 0) + 1;
+      if (!isTerminalStatus(candidate.status, statusRegistry)) {
+        active += 1;
+      }
+    }
+    result.children = { count, active, by_status: byStatus };
   }
   if (options.tree === true) {
     const { runList } = await import("./list.js");

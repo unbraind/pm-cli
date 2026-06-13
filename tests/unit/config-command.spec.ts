@@ -1133,6 +1133,242 @@ describe("runConfig", () => {
     });
   });
 
+  it("gets and sets context settings and section toggles", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      const getDefault = await runConfig("project", "get", "context", {}, globalOptions);
+      expect(getDefault.key).toBe("context");
+      expect(getDefault.context_settings).toMatchObject({
+        default_depth: "brief",
+        activity_limit: 10,
+        stale_threshold_days: 7,
+      });
+
+      const setDeep = await runConfig(
+        "project",
+        "set",
+        "context",
+        {
+          defaultDepth: "deep",
+          activityLimit: "25",
+          staleThresholdDays: "14",
+          sectionHierarchy: "off",
+          sectionActivity: "0",
+          sectionProgress: "disabled",
+          sectionBlockers: "false",
+          sectionFiles: "on",
+          sectionWorkload: "1",
+          sectionStaleness: "enabled",
+          sectionTests: "true",
+        },
+        globalOptions,
+      );
+      expect(setDeep.changed).toBe(true);
+      expect(setDeep.context_settings).toMatchObject({
+        default_depth: "deep",
+        activity_limit: 25,
+        stale_threshold_days: 14,
+        sections: {
+          hierarchy: false,
+          activity: false,
+          progress: false,
+          blockers: false,
+          files: true,
+          workload: true,
+          staleness: true,
+          tests: true,
+        },
+      });
+
+      const setSame = await runConfig(
+        "project",
+        "set",
+        "context",
+        {
+          defaultDepth: "deep",
+          activityLimit: "25",
+          staleThresholdDays: "14",
+          sectionHierarchy: "false",
+        },
+        globalOptions,
+      );
+      expect(setSame.changed).toBe(false);
+
+      await expect(
+        runConfig("project", "set", "context", { defaultDepth: "verbose" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runConfig("project", "set", "context", { activityLimit: "0" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runConfig("project", "set", "context", { staleThresholdDays: "NaN" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runConfig("project", "set", "context", { sectionTests: "maybe" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("gets and sets nested config leaves including positional and validation paths", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      const getDefault = await runConfig("project", "get", "search-provider", {}, globalOptions);
+      expect(getDefault.nested_setting).toMatchObject({
+        key: "search_provider",
+        path: "search.provider",
+        kind: "string",
+      });
+
+      const setProvider = await runConfig("project", "set", "search-provider", {}, globalOptions, "local-provider");
+      expect(setProvider.changed).toBe(true);
+      expect(setProvider.nested_setting?.value).toBe("local-provider");
+
+      const setProviderAgain = await runConfig(
+        "project",
+        "set",
+        "search_provider",
+        { value: "local-provider" },
+        globalOptions,
+      );
+      expect(setProviderAgain.changed).toBe(false);
+
+      const setTopK = await runConfig(
+        "project",
+        "set",
+        "search-rerank-top-k",
+        { value: "8" },
+        globalOptions,
+      );
+      expect(setTopK.nested_setting).toMatchObject({
+        key: "search_rerank_top_k",
+        value: 8,
+      });
+
+      await expect(
+        runConfig("project", "set", "search-provider", {}, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runConfig("project", "set", "search-provider", { value: "explicit" }, globalOptions, "positional"),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+      await expect(
+        runConfig("project", "set", "search-rerank-top-k", { value: "0" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("gets and sets remaining policy and lifecycle list branches", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      const getBlocked = await runConfig(
+        "project",
+        "get",
+        "lifecycle-closure-like-blocked-reason-patterns",
+        {},
+        globalOptions,
+      );
+      expect(getBlocked.criteria).toEqual(["no active blocker because work is closed", "work is closed"]);
+
+      const setBlocked = await runConfig(
+        "project",
+        "set",
+        "lifecycle-closure-like-blocked-reason-patterns",
+        { criterion: [" Closed ", "blocked"] },
+        globalOptions,
+      );
+      expect(setBlocked.criteria).toEqual(["blocked", "closed"]);
+
+      const getActual = await runConfig(
+        "project",
+        "get",
+        "lifecycle-closure-like-actual-result-patterns",
+        {},
+        globalOptions,
+      );
+      expect(getActual.criteria).toEqual(["closed and recorded", "work completed", "work completed and recorded"]);
+
+      const setActual = await runConfig(
+        "project",
+        "set",
+        "lifecycle-closure-like-actual-result-patterns",
+        { criterion: ["shipped"] },
+        globalOptions,
+      );
+      expect(setActual.criteria).toEqual(["shipped"]);
+
+      const setCreateMode = await runConfig(
+        "project",
+        "set",
+        "governance-create-mode-default",
+        { policy: "strict" },
+        globalOptions,
+      );
+      expect(setCreateMode.policy).toBe("strict");
+
+      const setCloseValidation = await runConfig(
+        "project",
+        "set",
+        "governance-close-validation-default",
+        { policy: "disabled" },
+        globalOptions,
+      );
+      expect(setCloseValidation.policy).toBe("off");
+
+      const setRequireReason = await runConfig(
+        "project",
+        "set",
+        "governance-require-close-reason",
+        { policy: "disabled" },
+        globalOptions,
+      );
+      expect(setRequireReason.policy).toBe("disabled");
+
+      const setParentPolicy = await runConfig(
+        "project",
+        "set",
+        "governance-parent-reference-policy",
+        { policy: "warn" },
+        globalOptions,
+      );
+      expect(setParentPolicy.policy).toBe("warn");
+
+      const setMetadataPolicy = await runConfig(
+        "project",
+        "set",
+        "governance-metadata-validation-profile",
+        { policy: "custom" },
+        globalOptions,
+      );
+      expect(setMetadataPolicy.policy).toBe("custom");
+
+      const setForceLock = await runConfig(
+        "project",
+        "set",
+        "governance-force-required-for-stale-lock",
+        { policy: "enabled" },
+        globalOptions,
+      );
+      expect(setForceLock.policy).toBe("enabled");
+
+      const setTestTracking = await runConfig(
+        "project",
+        "set",
+        "test-result-tracking",
+        { policy: "enabled" },
+        globalOptions,
+      );
+      expect(setTestTracking.policy).toBe("enabled");
+    });
+  });
+
   describe("positional value routing for config set", () => {
     it("routes a positional value to --policy with enabled/disabled synonyms", async () => {
       await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {

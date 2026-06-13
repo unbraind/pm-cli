@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  _testOnly as contextInternals,
   parseContextDepth,
   parseContextSections,
   renderContextMarkdown,
@@ -10,6 +11,7 @@ import {
   runContext,
   type ContextOptions,
 } from "../../src/cli/commands/context.js";
+import { resolveRuntimeStatusRegistry } from "../../src/core/schema/runtime-schema.js";
 import { SETTINGS_DEFAULTS, EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
@@ -88,6 +90,51 @@ function createContextItem(
 }
 
 describe("context command module", () => {
+  it("covers context parsing, date, status, and projection helper branches", () => {
+    const settings = SETTINGS_DEFAULTS.context;
+    const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+
+    expect(contextInternals.parseContextLimit(undefined)).toBe(10);
+    expect(contextInternals.parseActivityLimit(undefined, settings)).toBe(settings.activity_limit);
+    expect(contextInternals.parseStaleThresholdDays(undefined, settings)).toBe(settings.stale_threshold_days);
+    expect(contextInternals.parseStaleThresholdDays("7d", settings)).toBe(7);
+    expect(() => contextInternals.parseStaleThresholdDays("0", settings)).toThrow(PmCliError);
+    expect(() => contextInternals.parseStaleThresholdDays("soon", settings)).toThrow(PmCliError);
+
+    expect(contextInternals.compareOptionalOrder(null, null)).toBe(0);
+    expect(contextInternals.compareOptionalOrder(null, 1)).toBe(1);
+    expect(contextInternals.compareOptionalOrder(1, null)).toBe(-1);
+    expect(contextInternals.compareOptionalDeadline(null, null)).toBe(0);
+    expect(contextInternals.compareOptionalDeadline(null, "2026-01-01T00:00:00.000Z")).toBe(1);
+    expect(contextInternals.sortableTimestamp("20260610")).toBe("2026-06-10T00:00:00.000Z");
+    expect(contextInternals.dateTokenForTimestamp("not-a-date")).toBe("unknown");
+    expect(Number.isNaN(contextInternals.parseContextTimestampMs("2026-02-30"))).toBe(true);
+
+    expect(contextInternals.statusRank("in_progress", statusRegistry)).toBe(0);
+    expect(contextInternals.statusRank("draft", statusRegistry)).toBe(3);
+    expect(contextInternals.isClosedStatus("closed", statusRegistry)).toBe(true);
+    expect(contextInternals.isInProgressStatus("in_progress", statusRegistry)).toBe(true);
+    expect(contextInternals.isOpenStatus("open", statusRegistry)).toBe(true);
+    expect(contextInternals.isBlockedStatus("blocked", statusRegistry)).toBe(true);
+    expect(
+      contextInternals.filterTerminalCalendarEvents(
+        [
+          { item_status: "open" },
+          { item_status: "closed" },
+        ] as never,
+        statusRegistry,
+      ),
+    ).toEqual([{ item_status: "open" }]);
+    expect(
+      contextInternals.stripListProjectionFlags({
+        compact: true,
+        fields: "id",
+        includeBody: true,
+        tag: "keep",
+      } as never),
+    ).toEqual({ tag: "keep" });
+  });
+
   it("resolves output format precedence and conflicts", () => {
     expect(resolveContextOutputFormat({}, { json: false })).toBe("toon");
     expect(resolveContextOutputFormat({ format: "markdown" }, { json: false })).toBe("markdown");
