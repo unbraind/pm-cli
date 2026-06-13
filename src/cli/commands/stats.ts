@@ -91,6 +91,13 @@ async function readHistoryStreamContents(pmRoot: string): Promise<Array<{ id: st
   return streams;
 }
 
+export const _testOnly = {
+  zeroByType,
+  zeroByStatus,
+  countNonEmptyLines,
+  readHistoryStreamContents,
+};
+
 export async function runStats(global: GlobalOptions, options: StatsCommandOptions = {}): Promise<StatsResult> {
   const pmRoot = resolvePmRoot(process.cwd(), global.path);
   if (!(await pathExists(getSettingsPath(pmRoot)))) {

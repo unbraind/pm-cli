@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  _testOnly as searchCacheTestOnly,
   invalidateSearchCacheArtifacts,
   readVectorizationStatusLedger,
   refreshSearchArtifactsForMutation,
@@ -26,6 +27,22 @@ import {
   runSemanticRefreshWorker,
   shouldRunSearchRefreshInForeground,
 } from "../../src/core/search/background-refresh.js";
+import { acquireLock } from "../../src/core/lock/lock.js";
+import { resolveRuntimeStatusRegistry } from "../../src/core/schema/runtime-schema.js";
+import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
+import {
+  _testOnlySearchCommand as searchInternals,
+  classifyImplicitSemanticFallbackReason,
+  collectErrorCauseCodes,
+  resolveHybridSemanticWeight,
+  resolveSearchMaxResults,
+  resolveSearchScoreThreshold,
+  resolveSearchTuning,
+  runSearch,
+  type SearchOptions,
+} from "../../src/cli/commands/search.js";
+import { setActiveExtensionHooks, setActiveExtensionRegistrations } from "../../src/core/extensions/index.js";
+import { createEmptyExtensionRegistrationRegistry } from "../../src/core/extensions/loader.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { createTestItemId } from "../helpers/itemFactory.js";
 import { withTempDir } from "../helpers/temp.js";
@@ -101,6 +118,22 @@ describe("core/search/cache", () => {
     await withTempPmPath(async (context) => {
       const result = await refreshSemanticEmbeddingsForMutatedItems(context.pmPath, []);
       expect(result).toEqual({
+        refreshed: [],
+        skipped: [],
+        warnings: [],
+      });
+    });
+  });
+
+  it("returns deterministic empty mutation refresh when no item ids are provided", async () => {
+    await withTempPmPath(async (context) => {
+      await fs.mkdir(path.join(context.pmPath, "index"), { recursive: true });
+      await fs.writeFile(path.join(context.pmPath, "index", "manifest.json"), "{}\n", "utf8");
+
+      const result = await refreshSearchArtifactsForMutation(context.pmPath, []);
+
+      expect(result).toEqual({
+        invalidated: ["index/manifest.json"],
         refreshed: [],
         skipped: [],
         warnings: [],
@@ -595,6 +628,822 @@ describe("core/search/cache", () => {
       }
     });
   });
+
+  it("returns mutation refresh warnings when settings are missing or unreadable", async () => {
+    await withTempDir("pm-cli-search-cache-mutation-", async (pmRoot) => {
+      const uninitialized = await refreshSearchArtifactsForMutation(pmRoot, ["pm-missing"]);
+      expect(uninitialized).toEqual({
+        invalidated: [],
+        refreshed: [],
+        skipped: ["pm-missing"],
+        warnings: ["search_semantic_refresh_skipped:settings_not_initialized"],
+      });
+    });
+
+    await withTempDir("pm-cli-search-cache-mutation-", async (pmRoot) => {
+      await fs.mkdir(path.join(pmRoot, "settings.json"), { recursive: true });
+      const unreadable = await refreshSearchArtifactsForMutation(pmRoot, ["pm-settings-dir"]);
+      expect(unreadable.refreshed).toEqual([]);
+      expect(unreadable.skipped).toEqual(["pm-settings-dir"]);
+      expect(unreadable.warnings[0]).toContain("search_semantic_refresh_skipped:settings_read_failed:");
+    });
+  });
+
+  it("schedules configured semantic mutation refreshes in the background", async () => {
+    await withTempPmPath(async (context) => {
+      const itemId = createSeedItem(context, "Background scheduled refresh item");
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.qdrant.url = "https://qdrant.example.test:6333";
+      await writeSettings(context.pmPath, settings);
+
+      const result = await refreshSearchArtifactsForMutation(context.pmPath, [itemId], { background: true });
+      expect(result).toMatchObject({
+        invalidated: [],
+        refreshed: [],
+        skipped: [],
+        warnings: ["search_semantic_refresh_scheduled_background"],
+        scheduled: true,
+      });
+      expect(await drainPendingRefreshIds(context.pmPath)).toEqual([itemId]);
+    });
+  });
+});
+
+describe("cli/commands/search", () => {
+  afterEach(() => {
+    setActiveExtensionHooks(null);
+    setActiveExtensionRegistrations(null);
+  });
+
+  async function searchInContext(
+    context: TempPmContext,
+    query: string,
+    options: SearchOptions = {},
+  ): Promise<Awaited<ReturnType<typeof runSearch>>> {
+    return await runSearch(query, options, { path: context.pmPath });
+  }
+
+  it("covers search helper branches for projection, scoring, projection reads, and semantic merging", async () => {
+    const item = {
+      id: "pm-search-helper",
+      title: "Alpha Alpha helper",
+      description: "Description beta",
+      type: "Task",
+      status: "open",
+      priority: 1,
+      tags: ["alpha", "beta"],
+      created_at: "2026-01-01T00:00:00.000Z",
+      updated_at: "2026-01-02T00:00:00.000Z",
+      deadline: null,
+      comments: [{ text: "comment alpha" }],
+      notes: [{ text: "note beta" }],
+      learnings: [{ text: "learning gamma" }],
+      dependencies: [{ id: "pm-dep", kind: "blocks" }],
+      reminders: [{ at: "2026-01-03T00:00:00.000Z", text: "reminder alpha" }],
+      events: [{ at: "2026-01-04T00:00:00.000Z", title: "event beta", kind: "due" }],
+      files: [
+        { scope: "project", path: "linked.txt" },
+        { scope: "project", path: "linked.txt" },
+        { scope: "global", path: "global.txt" },
+        { scope: "project", path: "   " },
+      ],
+      docs: [{ scope: "project", path: "docs/readme.md" }],
+      tests: [
+        { scope: "project", path: "tests/helper.spec.ts" },
+        { scope: "project", command: "pnpm test" },
+      ],
+    };
+    const document = { metadata: item, body: "body alpha alpha" };
+    const tuning = resolveSearchTuning({});
+
+    expect(searchInternals.countOccurrences("aaaa", "aa")).toBe(2);
+    expect(searchInternals.countOccurrences("abc", "z")).toBe(0);
+    expect(searchInternals.stringArray(["a", 1, "b"])).toEqual(["a", "b"]);
+    expect(searchInternals.stringArray("not-array")).toEqual([]);
+    expect(searchInternals.textEntries([{ text: "ok" }, { value: "no" }, null])).toEqual([{ text: "ok" }]);
+    expect(searchInternals.textEntries({ text: "nope" })).toEqual([]);
+    expect(searchInternals.dependencyEntries([{ id: "pm-a", kind: "blocks" }, { id: 1, kind: "bad" }])).toEqual([
+      { id: "pm-a", kind: "blocks" },
+    ]);
+    expect(searchInternals.dependencyEntries("not-array")).toEqual([]);
+    expect(searchInternals.collectLinkedPaths(item as never)).toEqual([
+      { scope: "global", path: "global.txt" },
+      { scope: "project", path: "docs/readme.md" },
+      { scope: "project", path: "linked.txt" },
+      { scope: "project", path: "tests/helper.spec.ts" },
+    ]);
+    expect(searchInternals.collectExactPhraseFields(document as never).join(" ")).toContain("comment alpha");
+    expect(searchInternals.documentContainsExactPhrase(document as never, "note beta")).toBe(true);
+    expect(searchInternals.applyExactQueryFilters([document] as never, "alpha alpha helper", {
+      titleExact: true,
+      phraseExact: true,
+    })).toHaveLength(1);
+    expect(searchInternals.applyExactQueryFilters([document] as never, "missing", {
+      titleExact: false,
+      phraseExact: true,
+    })).toHaveLength(0);
+    expect(searchInternals.applyExactQueryFilters([document] as never, "wrong title", {
+      titleExact: true,
+      phraseExact: false,
+    })).toHaveLength(0);
+    expect(
+      searchInternals.buildCompactSearchFilterSummary(
+        {
+          mode: "hybrid",
+          options: {
+            status: "open",
+            type: "Task",
+            tag: "alpha",
+            priority: "1",
+            deadlineBefore: "+7d",
+            deadlineAfter: "-1d",
+            semanticWeight: "0.25",
+            limit: "3",
+          },
+          includeLinked: true,
+          titleExact: true,
+          phraseExact: true,
+          scoreThreshold: 0.4,
+          hybridSemanticWeight: 0.25,
+          runtimeFieldFilters: { assignee: "unit-test" },
+        },
+      ),
+    ).toEqual({
+      status: "open",
+      type: "Task",
+      tag: "alpha",
+      priority: "1",
+      deadline_before: "+7d",
+      deadline_after: "-1d",
+      include_linked: true,
+      title_exact: true,
+      phrase_exact: true,
+      score_threshold: 0.4,
+      hybrid_semantic_weight: 0.25,
+      limit: "3",
+      runtime_filters: { assignee: "unit-test" },
+    });
+    expect(searchInternals.buildImplicitSemanticFallbackWarning(new Error("timed out"))).toBe(
+      "search_implicit_semantic_fallback:timeout:using_keyword_mode",
+    );
+    expect(searchInternals.buildImplicitSemanticFallbackWarning(new Error("fetch failed"))).toBe(
+      "search_implicit_semantic_fallback:connection:using_keyword_mode",
+    );
+    expect(searchInternals.buildImplicitSemanticFallbackWarning(new Error("boom"))).toBe(
+      "search_implicit_semantic_fallback:error:using_keyword_mode",
+    );
+    expect(searchInternals.buildExplicitSemanticFallbackWarning("hybrid", new Error("boom"))).toBe(
+      "search_hybrid_fallback:error:using_keyword_mode",
+    );
+
+    const hit = searchInternals.scoreDocument(document as never, ["alpha", "beta"], "alpha beta", "linked alpha", tuning);
+    expect(hit).toMatchObject({ item: expect.objectContaining({ id: "pm-search-helper" }) });
+    expect(hit?.matched_fields).toEqual(expect.arrayContaining(["body", "comments", "linked_content", "title"]));
+    expect(searchInternals.scoreDocument(document as never, ["zzz"], "zzz", "", tuning)).toBeNull();
+    const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
+    expect(
+      searchInternals.sortHits(
+        [
+          { item: { ...item, id: "pm-b", priority: 5, updated_at: "2026-01-01T00:00:00.000Z" }, score: 1, matched_fields: [] },
+          { item: { ...item, id: "pm-a", priority: 1, updated_at: "2026-01-03T00:00:00.000Z" }, score: 1, matched_fields: [] },
+          { item: { ...item, id: "pm-closed", status: "closed", priority: 0, updated_at: "2026-01-04T00:00:00.000Z" }, score: 1, matched_fields: [] },
+        ] as never,
+        statusRegistry,
+      ).map((result) => result.item.id),
+    ).toEqual(["pm-a", "pm-b", "pm-closed"]);
+    expect(
+      searchInternals.sortHits(
+        [
+          { item: { ...item, id: "pm-old", priority: 1, updated_at: "2026-01-01T00:00:00.000Z" }, score: 1, matched_fields: [] },
+          { item: { ...item, id: "pm-new", priority: 1, updated_at: "2026-01-02T00:00:00.000Z" }, score: 1, matched_fields: [] },
+          { item: { ...item, id: "pm-alpha", priority: 1, updated_at: "2026-01-02T00:00:00.000Z" }, score: 1, matched_fields: [] },
+        ] as never,
+        statusRegistry,
+      ).map((result) => result.item.id),
+    ).toEqual(["pm-alpha", "pm-new", "pm-old"]);
+
+    const projection = searchInternals.parseProjectionConfig({ fields: "id,item.description,score,matched_fields" });
+    searchInternals.validateSearchProjectionFields(projection, { definitions: [] } as never);
+    expect(() => searchInternals.validateSearchProjectionFields({ mode: "fields", fields: ["bogus"] } as never, {
+      definitions: [],
+    } as never)).toThrow("Unknown search --fields value");
+    expect(() => searchInternals.parseTokens("   ")).toThrow("Search query must not be empty");
+    expect(searchInternals.readSearchFieldValue(hit!, "item.description")).toBe("Description beta");
+    expect(searchInternals.readSearchFieldValue(hit!, "score")).toBe(hit?.score);
+    expect(searchInternals.readSearchFieldValue(hit!, " matched_fields ")).toEqual(hit?.matched_fields);
+    expect(searchInternals.readSearchFieldValue(hit!, "   ")).toBeNull();
+    expect(searchInternals.readSearchFieldValue(hit!, "item.")).toBeNull();
+    expect(searchInternals.readSearchFieldValue({ ...hit!, custom: "value" } as never, "custom")).toBe("value");
+    expect(searchInternals.readSearchFieldValue(hit!, "missing")).toBeNull();
+
+    const filteredById = new Map([[item.id, document]]);
+    expect(searchInternals.normalizeScoreMap(new Map())).toEqual(new Map());
+    expect(searchInternals.normalizeScoreMap(new Map([["a", 7], ["b", 7]]))).toEqual(new Map([["a", 1], ["b", 1]]));
+    expect(searchInternals.normalizeScoreMap(new Map([["a", 1], ["b", 3]])).get("b")).toBe(1);
+    expect(searchInternals.mergeVectorHitsById([[{ id: item.id, score: 0.1 }, { id: item.id, score: 0.8 }]])).toEqual([
+      { id: item.id, score: 0.8 },
+    ]);
+    expect(searchInternals.buildSemanticHits([{ id: item.id, score: 0.7 }, { id: "pm-missing", score: 1 }], filteredById as never)).toMatchObject({
+      semanticHits: [{ item: expect.objectContaining({ id: item.id }), score: 0.7, matched_fields: ["semantic"] }],
+    });
+    expect(searchInternals.buildSemanticHits([{ id: item.id, score: 0.2 }, { id: item.id, score: 0.9 }], filteredById as never)).toMatchObject({
+      semanticHits: [{ score: 0.2 }],
+    });
+    expect(
+      searchInternals.combineHybridHits(
+        filteredById as never,
+        new Map([[item.id, 0.7]]),
+        [{ item, score: 2, matched_fields: ["title"] }] as never,
+        0.5,
+      )[0]?.matched_fields,
+    ).toEqual(["semantic", "title"]);
+    expect(searchInternals.combineHybridHits(filteredById as never, new Map([[item.id, 0]]), [] as never, 0.5)).toHaveLength(1);
+    expect(searchInternals.buildRerankCorpus(document as never)).toContain("Alpha Alpha helper");
+
+    expect(() =>
+      searchInternals.normalizeExtensionProviderHits("bad-provider", { hits: "nope" }, filteredById as never),
+    ).toThrow("must return an array");
+    expect(searchInternals.normalizeExtensionProviderHits("provider", [{ id: item.id, score: 0.2 }], filteredById as never)).toEqual([
+      { item, score: 0.2, matched_fields: ["provider:provider"] },
+    ]);
+    expect(() =>
+      searchInternals.requireSemanticDependencies("semantic", { active: null } as never, { active: null } as never, false),
+    ).toThrow("requires a configured embedding provider");
+
+    await withTempDir("pm-search-linked-corpus-", async (tempRoot) => {
+      const projectRoot = path.join(tempRoot, "project");
+      const globalRoot = path.join(tempRoot, "global");
+      await fs.mkdir(projectRoot, { recursive: true });
+      await fs.mkdir(globalRoot, { recursive: true });
+      await fs.writeFile(path.join(projectRoot, "linked.txt"), "project linked alpha", "utf8");
+      await fs.writeFile(path.join(globalRoot, "global.txt"), "global linked beta", "utf8");
+      const roots = await searchInternals.resolveLinkedCorpusRoots(projectRoot, globalRoot);
+      const linked = await searchInternals.loadLinkedCorpus(document as never, roots);
+      expect(linked).toContain("project linked alpha");
+      expect(linked).toContain("global linked beta");
+    });
+  });
+
+  it("covers direct semantic and hybrid helper edge branches", async () => {
+    const itemA = {
+      id: "pm-sem-a",
+      title: "Semantic alpha",
+      description: "",
+      type: "Task",
+      status: "open",
+      priority: 1,
+      tags: [],
+      created_at: "2026-01-01T00:00:00.000Z",
+      updated_at: "2026-01-02T00:00:00.000Z",
+    };
+    const itemB = { ...itemA, id: "pm-sem-b", title: "Semantic beta", priority: 2 };
+    const filteredDocuments = [
+      { metadata: itemA, body: "alpha body" },
+      { metadata: itemB, body: "beta body" },
+    ];
+    const settings = structuredClone(SETTINGS_DEFAULTS);
+    settings.providers.openai.base_url = "https://api.example.test/v1";
+    settings.providers.openai.model = "text-embedding-3-small";
+
+    const semanticMock = installSemanticFetchMock();
+    try {
+      const unavailableWarnings: string[] = [];
+      const semanticResult = await searchInternals.computeSemanticOrHybridHits({
+        requestedMode: "semantic",
+        query: "semantic alpha",
+        filteredDocuments,
+        keywordHits: [],
+        hybridSemanticWeight: 0.7,
+        limit: 2,
+        maxResults: 5,
+        provider: {
+          name: "openai",
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+        vectorStore: null,
+        extensionVectorAdapter: {
+          query: () => [
+            { id: "pm-sem-b", score: 0.6 },
+            { id: "pm-sem-a", score: 0.6 },
+            { id: "pm-sem-a", score: 0.4 },
+          ],
+        },
+        queryExpansion: { enabled: true, provider: "missing-extension", max_queries: 2 },
+        queryExpansionExtension: null,
+        rerank: { enabled: false, model: "rerank-model", top_k: 2 },
+        rerankExtension: null,
+        warnings: unavailableWarnings,
+        settings,
+      } as never);
+
+      expect(semanticResult.vectorMatchCount).toBe(2);
+      expect(semanticResult.hits.map((hit: { item: { id: string } }) => hit.item.id)).toEqual(["pm-sem-a", "pm-sem-b"]);
+      expect(unavailableWarnings).toContain("search_query_expansion_provider_unavailable:missing-extension:using_builtin");
+
+      const failedWarnings: string[] = [];
+      const hybridError = await searchInternals.computeSemanticOrHybridHits({
+        requestedMode: "hybrid",
+        query: "semantic alpha",
+        filteredDocuments,
+        keywordHits: [
+          { item: itemA, score: 2, matched_fields: ["title"] },
+          { item: itemB, score: 1, matched_fields: ["body"] },
+        ],
+        hybridSemanticWeight: 0.5,
+        limit: 2,
+        maxResults: 5,
+        provider: {
+          name: "openai",
+          base_url: "https://api.example.test/v1",
+          model: "text-embedding-3-small",
+          api_key: "",
+        },
+        vectorStore: null,
+        extensionVectorAdapter: {
+          query: () => {
+            throw new Error("extension vector down");
+          },
+        },
+        queryExpansion: { enabled: true, provider: "ext-provider", max_queries: 2 },
+        queryExpansionExtension: {
+          providerName: "ext-provider",
+          expand: () => {
+            throw new Error("expansion down");
+          },
+        },
+        rerank: { enabled: true, model: "rerank-model", top_k: 2 },
+        rerankExtension: null,
+        warnings: failedWarnings,
+        settings,
+      } as never).catch((error: unknown) => error);
+
+      expect(hybridError).toBeInstanceOf(Error);
+      expect(String((hybridError as Error).message)).toContain("Extension vector adapter query failed");
+      expect(failedWarnings).toContain("search_query_expansion_provider_failed:ext-provider:using_builtin");
+    } finally {
+      semanticMock.restore();
+    }
+  });
+
+  it("covers keyword scoring, filters, projection modes, and linked content", async () => {
+    await withTempPmPath(async (context) => {
+      const alphaId = createTestItemId(context, {
+        title: "Alpha launch target",
+        description: "Release work mentions beta once",
+        tags: "search,alpha",
+        priority: "1",
+        body: "alpha launch body with dependency marker",
+        deadline: "+2d",
+        comment: "author=unit-test,created_at=now,text=alpha comment text",
+        note: "author=unit-test,created_at=now,text=alpha note text",
+        learning: "author=unit-test,created_at=now,text=alpha learning text",
+        dep: "id=pm-related,kind=blocks,author=unit-test,created_at=now",
+        file: "path=README.md,scope=project,note=linked project readme",
+        test: "command=node dist/cli.js --version,path=package.json,scope=project,note=linked test path",
+        doc: "path=AGENTS.md,scope=project,note=linked agent guide",
+      });
+      createTestItemId(context, {
+        title: "Beta closed target",
+        description: "Closed beta item",
+        status: "closed",
+        tags: "search,beta",
+        priority: "3",
+        body: "beta body",
+      });
+
+      const compact = await searchInContext(context, "alpha launch", {
+        compact: true,
+        includeLinked: true,
+        status: "open",
+        type: "Task",
+        tag: "alpha",
+        priority: "1",
+        deadlineBefore: "+10d",
+        deadlineAfter: "-1d",
+        limit: "5",
+      });
+      expect(compact.mode).toBe("keyword");
+      expect(compact.count).toBe(1);
+      expect(compact.filters).toMatchObject({
+        status: "open",
+        type: "Task",
+        tag: "alpha",
+        priority: "1",
+        include_linked: true,
+        limit: "5",
+      });
+      expect(compact.items[0]).toMatchObject({
+        id: alphaId,
+        title: "Alpha launch target",
+        status: "open",
+      });
+
+      const fields = await searchInContext(context, "alpha", {
+        fields: "id,item.description,score,matched_fields,resolution",
+      });
+      expect(fields.projection).toEqual({
+        mode: "fields",
+        fields: ["id", "item.description", "score", "matched_fields", "resolution"],
+      });
+      expect(fields.items[0]).toMatchObject({
+        id: alphaId,
+        "item.description": "Release work mentions beta once",
+      });
+      expect(fields.items[0]).toHaveProperty("score");
+      expect(fields.items[0]).toHaveProperty("matched_fields");
+      expect(fields.items[0]).toHaveProperty("resolution", null);
+
+      const exactMiss = await searchInContext(context, "alpha", { titleExact: true });
+      expect(exactMiss.count).toBe(0);
+
+      const phraseHit = await searchInContext(context, "alpha comment", { phraseExact: true, full: true });
+      expect(phraseHit.count).toBe(1);
+      expect(phraseHit.projection).toEqual({ mode: "full", fields: null });
+    });
+  });
+
+  it("returns empty keyword results before scoring when filters or limits remove the corpus", async () => {
+    await withTempPmPath(async (context) => {
+      createTestItemId(context, {
+        title: "Filtered search target",
+        tags: "search,filtered",
+        body: "filtered body",
+      });
+
+      const noMatches = await searchInContext(context, "filtered", { status: "closed", compact: true });
+      expect(noMatches).toMatchObject({
+        mode: "keyword",
+        count: 0,
+        items: [],
+        filters: { status: "closed" },
+      });
+
+      const limitedOut = await searchInContext(context, "filtered", { limit: "0" });
+      expect(limitedOut.count).toBe(0);
+      expect(limitedOut.projection).toEqual({ mode: "full", fields: null });
+    });
+  });
+
+  it("validates query, projection, mode, fields, status, and initialization errors", async () => {
+    await expect(runSearch(" ", {}, { path: "/tmp/pm-cli-missing-search-root" })).rejects.toThrow(
+      "Search query must not be empty",
+    );
+    await withTempDir("pm-cli-search-command-uninit-", async (pmRoot) => {
+      await expect(runSearch("alpha", {}, { path: pmRoot })).rejects.toThrow("Tracker is not initialized");
+    });
+    await withTempPmPath(async (context) => {
+      await expect(searchInContext(context, "alpha", { compact: true, full: true })).rejects.toThrow(
+        "Search projection options are mutually exclusive",
+      );
+      await expect(searchInContext(context, "alpha", { fields: "  , " })).rejects.toThrow(
+        "Search --fields requires",
+      );
+      await expect(searchInContext(context, "alpha", { fields: "id,unknown_field" })).rejects.toThrow(
+        "Unknown search --fields value",
+      );
+      await expect(searchInContext(context, "alpha", { mode: "vector" })).rejects.toThrow(
+        "Search mode must be one of",
+      );
+      await expect(searchInContext(context, "alpha", { status: "does-not-exist" })).rejects.toThrow(
+        "Invalid --status value",
+      );
+    });
+  });
+
+  it("falls semantic and hybrid modes back to keyword with classified warnings", async () => {
+    await withTempPmPath(async (context) => {
+      createTestItemId(context, {
+        title: "Semantic fallback target",
+        tags: "search,semantic",
+        body: "semantic fallback lexical body",
+      });
+
+      const semantic = await searchInContext(context, "semantic", { mode: "semantic" });
+      expect(semantic.mode).toBe("keyword");
+      expect(semantic.warnings).toContain("search_semantic_fallback:error:using_keyword_mode");
+      expect(semantic.count).toBe(1);
+
+      const hybrid = await searchInContext(context, "semantic", {
+        mode: "hybrid",
+        semanticWeight: "not-a-number",
+      });
+      expect(hybrid.mode).toBe("keyword");
+      expect(hybrid.warnings).toEqual(
+        expect.arrayContaining([
+          "search_hybrid_semantic_weight_override_invalid:using_settings_default",
+          "search_hybrid_fallback:error:using_keyword_mode",
+        ]),
+      );
+      expect(hybrid.filters.hybrid_semantic_weight).toBeNull();
+    });
+  });
+
+  it("covers search tuning defaults and fallback classifiers", () => {
+    const nested = new Error("fetch failed", {
+      cause: Object.assign(new Error("connect failed"), {
+        code: "ECONNREFUSED",
+        cause: { code: "ETIMEDOUT" },
+      }),
+    });
+    expect(collectErrorCauseCodes(nested)).toBe("econnrefused etimedout");
+    expect(classifyImplicitSemanticFallbackReason(nested)).toBe("timeout");
+    expect(classifyImplicitSemanticFallbackReason(new Error("fetch failed"))).toBe("connection");
+    expect(classifyImplicitSemanticFallbackReason("plain failure")).toBe("error");
+
+    expect(resolveSearchMaxResults({ search: { max_results: 2.8 } })).toBe(2);
+    expect(resolveSearchMaxResults({ search: { max_results: 0 } })).toBe(50);
+    expect(resolveSearchScoreThreshold({ search: { score_threshold: 4.5 } })).toBe(4.5);
+    expect(resolveSearchScoreThreshold({ search: { score_threshold: "bad" } })).toBe(0);
+    expect(resolveHybridSemanticWeight({ search: { hybrid_semantic_weight: 0.25 } })).toBe(0.25);
+    expect(resolveHybridSemanticWeight({ search: { hybrid_semantic_weight: 2 } })).toBe(0.7);
+    expect(resolveSearchTuning({ search: { tuning: { title_weight: 12, body_weight: -1 } } })).toMatchObject({
+      title_weight: 12,
+      body_weight: 1,
+    });
+  });
+
+  it("uses extension search providers and normalizes returned hits", async () => {
+    await withTempPmPath(async (context) => {
+      const firstId = createTestItemId(context, {
+        title: "Extension provider first",
+        body: "extension provider first body",
+      });
+      const secondId = createTestItemId(context, {
+        title: "Extension provider second",
+        body: "extension provider second body",
+      });
+      const settings = await readSettings(context.pmPath);
+      settings.search.provider = "ext-provider";
+      await writeSettings(context.pmPath, settings);
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      const queryCalls: Array<{ query: string; mode: string; documents: number }> = [];
+      registrations.search_providers.push({
+        layer: "project",
+        name: "search-provider-registration",
+        definition: { name: "ext-provider" },
+        runtime_definition: {
+          name: "ext-provider",
+          query: (providerContext: { query: string; mode: string; documents: unknown[] }) => {
+            queryCalls.push({
+              query: providerContext.query,
+              mode: providerContext.mode,
+              documents: providerContext.documents.length,
+            });
+            return {
+              hits: [
+                null,
+                { id: firstId, score: 0.42, matched_fields: [" title ", "", "body", "title"] },
+                { id: secondId, score: Number.NaN },
+                { id: "pm-missing", score: 0.99 },
+                { id: firstId, score: 0.99 },
+                { id: secondId, score: 0.33 },
+              ],
+            };
+          },
+        },
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const result = await searchInContext(context, "extension", { mode: "semantic", full: true });
+
+      expect(queryCalls).toEqual([{ query: "extension", mode: "semantic", documents: 2 }]);
+      expect(result.mode).toBe("semantic");
+      expect(result.count).toBe(2);
+      expect(result.items[0]).toMatchObject({
+        item: expect.objectContaining({ id: firstId }),
+        score: 0.42,
+        matched_fields: ["body", "title"],
+      });
+      expect(result.items[1]).toMatchObject({
+        item: expect.objectContaining({ id: secondId }),
+        score: 0.33,
+        matched_fields: ["provider:ext-provider"],
+      });
+    });
+  });
+
+  it("falls through from failing extension providers to built-in semantic, expansion, vector, and rerank hooks", async () => {
+    await withTempPmPath(async (context) => {
+      const lowerId = createTestItemId(context, {
+        title: "Hybrid extension lower",
+        body: "hybrid semantic lower body",
+      });
+      const higherId = createTestItemId(context, {
+        title: "Hybrid extension higher",
+        body: "hybrid semantic higher body",
+      });
+      const settings = await readSettings(context.pmPath);
+      settings.search.provider = "ext-provider";
+      settings.search.query_expansion = { enabled: true, provider: "ext-provider" };
+      settings.search.rerank = { enabled: true, model: "rerank-model", top_k: 2 };
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.adapter = "ext-vector";
+      await writeSettings(context.pmPath, settings);
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      const expandedQueries: string[] = [];
+      const vectorLimits: number[] = [];
+      const rerankCandidateIds: string[][] = [];
+      registrations.search_providers.push({
+        layer: "project",
+        name: "search-provider-registration",
+        definition: { name: "ext-provider" },
+        runtime_definition: {
+          name: "ext-provider",
+          query: () => {
+            throw new Error("provider query failed");
+          },
+          queryExpansion: () => ({ queries: ["hybrid extension expansion", "hybrid extension expansion"] }),
+          rerank: (context: { candidates: Array<{ id: string }>; top_k: number }) => {
+            rerankCandidateIds.push(context.candidates.map((candidate) => candidate.id));
+            return {
+              hits: [
+                { id: higherId, score: 0.99 },
+                { id: lowerId, score: 0.1 },
+              ],
+            };
+          },
+        },
+      });
+      registrations.vector_store_adapters.push({
+        layer: "project",
+        name: "vector-adapter-registration",
+        definition: { name: "ext-vector" },
+        runtime_definition: {
+          name: "ext-vector",
+          query: (context: { limit: number }) => {
+            vectorLimits.push(context.limit);
+            return [
+              { id: lowerId, score: 0.25 },
+              { id: higherId, score: 0.9 },
+              { id: lowerId, score: 0.1 },
+            ];
+          },
+        },
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const semanticMock = installSemanticFetchMock({
+        embeddings: (request) => {
+          expandedQueries.push(...request.inputs);
+          return embeddingsResponse(request.inputCount);
+        },
+      });
+      try {
+        const result = await searchInContext(context, "hybrid extension", {
+          mode: "hybrid",
+          semanticWeight: "0.5",
+          limit: "3",
+          full: true,
+        });
+
+        expect(result.mode).toBe("hybrid");
+        expect(result.warnings ?? []).not.toContain("search_hybrid_fallback:error:using_keyword_mode");
+        expect(expandedQueries).toContain("hybrid extension expansion");
+        expect(vectorLimits).toEqual([3, 3, 3]);
+        expect(rerankCandidateIds[0]).toEqual([higherId, lowerId]);
+        expect(result.items.map((item) => ("item" in item ? item.item.id : undefined))).toEqual([higherId, lowerId]);
+        expect(result.items[0]).toMatchObject({
+          score: 0.99,
+          matched_fields: expect.arrayContaining(["rerank", "semantic"]),
+        });
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
+
+  it("loads only contained readable linked content when include-linked is enabled", async () => {
+    await withTempPmPath(async (context) => {
+      await fs.writeFile(path.join(process.cwd(), "linked-search-owned.tmp"), "ultrararelinkedneedle", "utf8");
+      try {
+        createTestItemId(context, {
+          title: "Linked content target",
+          body: "ordinary body",
+          file: "path=linked-search-owned.tmp,scope=project,note=readable",
+        });
+
+        const withoutLinked = await searchInContext(context, "ultrararelinkedneedle", {});
+        expect(withoutLinked.count).toBe(0);
+
+        const withLinked = await searchInContext(context, "ultrararelinkedneedle", { includeLinked: true, compact: true });
+        expect(withLinked.count).toBe(1);
+        expect(withLinked.filters).toMatchObject({ include_linked: true });
+        expect(withLinked.items[0]).toMatchObject({
+          title: "Linked content target",
+          matched_fields: ["linked_content"],
+        });
+      } finally {
+        await fs.rm(path.join(process.cwd(), "linked-search-owned.tmp"), { force: true });
+      }
+    });
+  });
+
+  it("covers semantic empty, provider-failure, and no-vector-match fallback paths", async () => {
+    await withTempPmPath(async (context) => {
+      createTestItemId(context, {
+        title: "Semantic limit zero target",
+        body: "semantic limit zero body",
+      });
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.adapter = "ext-vector";
+      await writeSettings(context.pmPath, settings);
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.vector_store_adapters.push({
+        layer: "project",
+        name: "vector-adapter-registration",
+        definition: { name: "ext-vector" },
+        runtime_definition: {
+          name: "ext-vector",
+          query: () => {
+            throw new Error("limit zero should not query vectors");
+          },
+        },
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const result = await searchInContext(context, "semantic", { mode: "semantic", limit: "0" });
+      expect(result).toMatchObject({
+        mode: "semantic",
+        count: 0,
+        items: [],
+        filters: expect.objectContaining({ limit: "0" }),
+      });
+    });
+
+    await withTempPmPath(async (context) => {
+      createTestItemId(context, {
+        title: "Extension provider failure",
+        body: "extension provider failure body",
+      });
+      const settings = await readSettings(context.pmPath);
+      settings.search.provider = "ext-provider";
+      await writeSettings(context.pmPath, settings);
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.search_providers.push({
+        layer: "project",
+        name: "search-provider-registration",
+        definition: { name: "ext-provider" },
+        runtime_definition: {
+          name: "ext-provider",
+          query: () => {
+            throw new Error("provider failed");
+          },
+        },
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const result = await searchInContext(context, "extension provider failure", { mode: "semantic" });
+      expect(result.mode).toBe("keyword");
+      expect(result.count).toBe(1);
+      expect(result.warnings).toContain("search_semantic_fallback:error:using_keyword_mode");
+    });
+
+    await withTempPmPath(async (context) => {
+      const id = createTestItemId(context, {
+        title: "Semantic no vector target",
+        body: "semantic no vector body",
+      });
+      const settings = await readSettings(context.pmPath);
+      settings.providers.openai.base_url = "https://api.example.test/v1";
+      settings.providers.openai.model = "text-embedding-3-small";
+      settings.vector_store.adapter = "ext-vector";
+      await writeSettings(context.pmPath, settings);
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.vector_store_adapters.push({
+        layer: "project",
+        name: "vector-adapter-registration",
+        definition: { name: "ext-vector" },
+        runtime_definition: {
+          name: "ext-vector",
+          query: () => [],
+        },
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const semanticMock = installSemanticFetchMock();
+      try {
+        const result = await searchInContext(context, "semantic no vector", { mode: "semantic", full: true });
+        expect(result.mode).toBe("semantic");
+        expect(result.warnings).toContain("search_semantic_degraded:no_vector_matches:results_are_lexical");
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0]).toMatchObject({ item: expect.objectContaining({ id }) });
+      } finally {
+        semanticMock.restore();
+      }
+    });
+  });
 });
 
 describe("core/search/vectorization-metadata", () => {
@@ -764,6 +1613,38 @@ describe("search background refresh", () => {
       });
     });
 
+    it("treats malformed queue shapes as empty", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        await fs.writeFile(path.join(pmPath, "search", "pending-refresh.json"), '{"ids":"pm-not-array"}\n', "utf8");
+        expect(await drainPendingRefreshIds(pmPath)).toEqual([]);
+      });
+    });
+
+    it("falls back to an unguarded queue merge when the pending queue gate stays contended", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const gatePath = path.join(pmPath, "search", "pending-refresh.gate.lock");
+        await fs.mkdir(gatePath, { recursive: true });
+
+        await enqueuePendingRefreshIds(pmPath, ["pm-contended", "pm-contended"]);
+        await fs.rm(gatePath, { recursive: true, force: true });
+
+        expect(await drainPendingRefreshIds(pmPath)).toEqual(["pm-contended"]);
+      });
+    });
+
+    it("removes stale queue gates before merging pending ids", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const gatePath = path.join(pmPath, "search", "pending-refresh.gate.lock");
+        await fs.mkdir(gatePath, { recursive: true });
+        const stale = new Date(Date.now() - 60_000);
+        await fs.utimes(gatePath, stale, stale);
+
+        await enqueuePendingRefreshIds(pmPath, ["pm-stale-gate"]);
+
+        expect(await drainPendingRefreshIds(pmPath)).toEqual(["pm-stale-gate"]);
+      });
+    });
+
     it("keeps awaited queue-gate backoff timers referenced so CLI top-level await can settle", async () => {
       await withTempPmPath(async ({ pmPath }) => {
         const gatePath = path.join(pmPath, "search", "pending-refresh.gate.lock");
@@ -833,6 +1714,23 @@ describe("search background refresh", () => {
       });
     });
 
+    it("returns without draining when the shared reindex lock is held", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        await enqueuePendingRefreshIds(pmPath, ["pm-locked"]);
+        const release = await acquireLock(pmPath, REINDEX_LOCK_ID, 60, "unit-lock-owner", false);
+        try {
+          const result = await runSemanticRefreshWorker(pmPath, async () => {
+            throw new Error("refresh should not run when the lock is held");
+          });
+
+          expect(result).toEqual({ processed: [], rounds: 0, warnings: [] });
+          expect(await drainPendingRefreshIds(pmPath)).toEqual(["pm-locked"]);
+        } finally {
+          await release();
+        }
+      });
+    });
+
     it("returns deterministic warning when worker settings cannot be read", async () => {
       await withTempPmPath(async ({ pmPath }) => {
         await enqueuePendingRefreshIds(pmPath, ["pm-settings-fail"]);
@@ -870,6 +1768,7 @@ describe("search background refresh", () => {
       });
       expect(result).toEqual({ processed: [], rounds: 0, warnings: [] });
     });
+
   });
 
   it("runs the search-refresh entrypoint with PM_PATH and runtime defaults", async () => {
@@ -897,5 +1796,77 @@ describe("search background refresh", () => {
         }
       }
     });
+  });
+
+  it("covers search cache normalization and reset helper edge cases", async () => {
+    await withTempPmPath(async (context) => {
+      const ledgerPath = path.join(context.pmPath, "search", "vectorization-status.json");
+      await fs.mkdir(path.dirname(ledgerPath), { recursive: true });
+
+      await fs.writeFile(ledgerPath, "{not-json", "utf8");
+      await expect(readVectorizationStatusLedger(context.pmPath)).resolves.toMatchObject({
+        entries: {},
+        embedding: null,
+        warnings: ["search_vectorization_status_ledger_invalid"],
+      });
+
+      for (const invalidLedger of [
+        { version: 2, items: [] },
+        { version: 1, items: [null] },
+        { version: 1, items: [{ id: "", updated_at: "2026-01-01T00:00:00.000Z" }] },
+        {
+          version: 1,
+          items: [{ id: "pm-a", updated_at: "2026-01-01T00:00:00.000Z" }],
+          embedding: { provider: "", model: "" },
+        },
+      ]) {
+        await fs.writeFile(ledgerPath, `${JSON.stringify(invalidLedger)}\n`, "utf8");
+        await expect(readVectorizationStatusLedger(context.pmPath)).resolves.toMatchObject({
+          entries: {},
+          embedding: null,
+          warnings: ["search_vectorization_status_ledger_invalid"],
+        });
+      }
+    });
+
+    expect(
+      searchCacheTestOnly.normalizeVectorizationLedgerEntries({
+        " pm-b ": "2026-01-02T00:00:00.000Z",
+        "": "2026-01-01T00:00:00.000Z",
+        "pm-a": "not-a-date",
+        "pm-c": "2026-01-03T00:00:00.000Z",
+      }),
+    ).toEqual({
+      "pm-b": "2026-01-02T00:00:00.000Z",
+      "pm-c": "2026-01-03T00:00:00.000Z",
+    });
+    expect(searchCacheTestOnly.buildSkippedSemanticRefreshResult(["pm-b", "pm-a"], "because")).toEqual({
+      refreshed: [],
+      skipped: ["pm-b", "pm-a"],
+      warnings: ["because"],
+    });
+    expect(() => searchCacheTestOnly.buildVectorizationIdentityForProvider({ name: "", model: "" })).toThrow(
+      "Embedding provider must include a provider name and model",
+    );
+
+    const resetMock = installFailingFetchMock("reset failed");
+    try {
+      const result = await searchCacheTestOnly.resetSemanticVectorStore(
+        {
+          adapter: "qdrant",
+          collection_name: "pm_items",
+          qdrant: { url: "https://qdrant.example.test:6333", api_key: "" },
+          lancedb: { path: "" },
+        },
+        { "pm-a": "2026-01-01T00:00:00.000Z" },
+      );
+      expect(result).toMatchObject({
+        refreshed: [],
+        skipped: [],
+      });
+      expect(result.warnings[0]).toContain("search_semantic_refresh_reset_failed:");
+    } finally {
+      resetMock.restore();
+    }
   });
 });

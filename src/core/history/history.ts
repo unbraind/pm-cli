@@ -185,3 +185,8 @@ export async function appendHistoryEntry(historyPath: string, entry: HistoryEntr
   }
   await appendLineAtomic(historyPath, JSON.stringify(entry));
 }
+
+export const _testOnly = {
+  decodeJsonPointer,
+  isDefinedPointerPath,
+};

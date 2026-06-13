@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  _testOnlyLinkedTestParsers,
   LINKED_TEST_ENV_NAME_PATTERN,
   LINKED_TEST_PM_CONTEXT_MODE_VALUES,
   LINKED_TEST_PROTECTED_ENV_KEYS,
@@ -273,5 +274,172 @@ describe("parseLinkedTestJsonEntries", () => {
     expect(() =>
       parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", timeout_seconds: 1.5 }), "--add-json"),
     ).toThrow(/positive integer/);
+  });
+
+  it("validates JSON entry shapes and normalized key collisions", () => {
+    expect(() => parseLinkedTestJsonEntries("[]", "--add-json")).toThrow(/array must include at least one/);
+    expect(() => parseLinkedTestJsonEntries(JSON.stringify(["node --version"]), "--add-json")).toThrow(
+      /must be a JSON object/,
+    );
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", COMMAND: "node --version" }), "--add-json"),
+    ).toThrow(/more than once after case normalization/);
+    expect(() => parseLinkedTestJsonEntries(JSON.stringify({ command: "" }), "--add-json")).toThrow(
+      /requires a non-empty "command"/,
+    );
+    expect(() => parseLinkedTestJsonEntries(JSON.stringify({ command: 42 }), "--add-json")).toThrow(
+      /field "command" must be a JSON string/,
+    );
+  });
+
+  it("validates JSON scalar aliases and assertion fields", () => {
+    expect(
+      parseLinkedTestJsonEntries(
+        JSON.stringify({
+          command: "node --version",
+          cmd: "node --version",
+          path: "",
+          timeout: "120",
+          timeout_seconds: 120,
+          note: "  ",
+        }),
+        "--add-json",
+      ),
+    ).toEqual([{ command: "node --version", scope: "project", timeout_seconds: 120 }]);
+
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", timeout: 120, timeout_seconds: 121 }), "--add-json"),
+    ).toThrow(/timeout and timeout_seconds must match/);
+    expect(() => parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", scope: "team" }), "--add-json")).toThrow(
+      /field "scope" must be one of/,
+    );
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", pm_context_mode: "manual" }), "--add-json"),
+    ).toThrow(/field "pm_context_mode" must be one of/);
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", shared_host_safe: "yes" }), "--add-json"),
+    ).toThrow(/field "shared_host_safe" must be a JSON boolean/);
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", assert_stdout_contains: [1] }), "--add-json"),
+    ).toThrow(/field "assert_stdout_contains" must be a string or an array of strings/);
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", assert_stdout_regex: "(" }), "--add-json"),
+    ).toThrow(/includes invalid regex/);
+  });
+
+  it("validates JSON env maps and numeric assertion maps", () => {
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", env_set: "PORT=0" }), "--add-json"),
+    ).toThrow(/field "env_set" must be a JSON object/);
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", env_set: { PORT: 0 } }), "--add-json"),
+    ).toThrow(/value for "PORT" must be a string/);
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", env_set: { "1BAD": "0" } }), "--add-json"),
+    ).toThrow(/key "1BAD" is invalid/);
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", env_clear: "PM_GLOBAL_PATH" }), "--add-json"),
+    ).toThrow(/reserved for sandbox safety/);
+    expect(() =>
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", assert_json_field_equals: { " ": "bad" } }),
+        "--add-json",
+      ),
+    ).toThrow(/keys must be non-empty/);
+    expect(() =>
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", assert_json_field_equals: { ok: { nested: true } } }),
+        "--add-json",
+      ),
+    ).toThrow(/value for "ok" must be a string, number, or boolean/);
+    expect(() =>
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", assert_json_field_gte: { count: false } }),
+        "--add-json",
+      ),
+    ).toThrow(/must be a finite number/);
+    expect(() =>
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", assert_json_field_gte: { " ": 1 } }),
+        "--add-json",
+      ),
+    ).toThrow(/keys must be non-empty/);
+    expect(() =>
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", assert_json_field_equals: [] }),
+        "--add-json",
+      ),
+    ).toThrow(/field "assert_json_field_equals" must be a JSON object/);
+    expect(() =>
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", assert_json_field_gte: [] }),
+        "--add-json",
+      ),
+    ).toThrow(/field "assert_json_field_gte" must be a JSON object/);
+  });
+
+  it("rejects blank JSON text and accepts JSON min-line assertions", () => {
+    expect(() => parseLinkedTestJsonEntries("   ", "--add-json")).toThrow(/requires a JSON object or array/);
+    expect(
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", assert_stdout_min_lines: 2, assert_stdout_regex: "^v" }),
+        "--add-json",
+      )[0]?.assert_stdout_min_lines,
+    ).toBe(2);
+    expect(() =>
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", env_clear: "1BAD" }),
+        "--add-json",
+      ),
+    ).toThrow(/field "env_clear" key "1BAD" is invalid/);
+    expect(() =>
+      parseLinkedTestJsonEntries(
+        JSON.stringify({ command: "node --version", assert_stdout_min_lines: -1 }),
+        "--add-json",
+      ),
+    ).toThrow(/integer >= 0/);
+  });
+
+  it("covers defensive undefined values in pre-normalized JSON entries", () => {
+    const parsed = _testOnlyLinkedTestParsers.parseLinkedTestJsonEntry(
+      {
+        command: "node --version",
+        path: undefined,
+        scope: undefined,
+        timeout: undefined,
+        timeout_seconds: undefined,
+        env_set: undefined,
+        env_clear: undefined,
+        shared_host_safe: undefined,
+        assert_stdout_contains: undefined,
+        assert_stdout_regex: undefined,
+        assert_stderr_contains: undefined,
+        assert_stderr_regex: undefined,
+        assert_stdout_min_lines: undefined,
+        assert_json_field_equals: undefined,
+        assert_json_field_gte: undefined,
+        note: undefined,
+      },
+      "entry",
+      "--add-json",
+    );
+
+    expect(parsed).toEqual({ command: "node --version", scope: "project" });
+  });
+
+  it("returns undefined for empty JSON env and assertion maps", () => {
+    const parsed = _testOnlyLinkedTestParsers.parseLinkedTestJsonEntry(
+      {
+        command: "node --version",
+        env_set: {},
+        assert_json_field_equals: {},
+        assert_json_field_gte: {},
+        assert_stdout_contains: [],
+      },
+      "entry",
+      "--add-json",
+    );
+
+    expect(parsed).toEqual({ command: "node --version", scope: "project" });
   });
 });

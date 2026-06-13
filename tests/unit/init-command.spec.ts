@@ -1,8 +1,13 @@
 import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import * as readline from "node:readline/promises";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { runInit, summarizeInitResult } from "../../src/cli/commands/init.js";
+import { _testOnly as initInternals, runInit, summarizeInitResult } from "../../src/cli/commands/init.js";
+import {
+  _testOnly as initGuidanceInternals,
+  runInitAgentGuidance,
+} from "../../src/cli/commands/init-agent-guidance.js";
 import { PM_REQUIRED_SUBDIRS } from "../../src/core/shared/constants.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks, type ExtensionHookRegistry } from "../../src/core/extensions/index.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
@@ -16,9 +21,182 @@ describe("runInit", () => {
 
   afterEach(() => {
     clearActiveExtensionHooks();
+    initInternals.setInitReadlineFactoryForTests(undefined);
+    initGuidanceInternals.setAgentGuidanceReadlineFactoryForTests(undefined);
     vi.restoreAllMocks();
     Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: false });
     Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: false });
+  });
+
+  it("covers init option normalizers and governance application", async () => {
+    expect(initInternals.normalizeInitGovernancePreset(undefined)).toBeUndefined();
+    expect(initInternals.normalizeInitGovernancePreset("lite")).toBe("minimal");
+    expect(initInternals.normalizeInitGovernancePreset("minimum")).toBe("minimal");
+    expect(initInternals.normalizeInitGovernancePreset("strict")).toBe("strict");
+    expect(() => initInternals.normalizeInitGovernancePreset(" ")).toThrow(/--preset must not be empty/);
+    expect(() => initInternals.normalizeInitGovernancePreset("heavy")).toThrow(/Invalid --preset/);
+
+    expect(initInternals.normalizeInitTypePreset(undefined)).toBeUndefined();
+    expect(initInternals.normalizeInitTypePreset("research")).toBe("research");
+    expect(() => initInternals.normalizeInitTypePreset(" ")).toThrow(/--type-preset must not be empty/);
+    expect(() => initInternals.normalizeInitTypePreset("sales")).toThrow(/Invalid --type-preset/);
+
+    expect(initInternals.normalizeOptionalInitAuthor(undefined)).toBeUndefined();
+    expect(initInternals.normalizeOptionalInitAuthor(" agent ")).toBe("agent");
+    expect(() => initInternals.normalizeOptionalInitAuthor(" ")).toThrow(/--author must not be empty/);
+
+    expect(initInternals.normalizeInitAgentGuidanceMode(undefined)).toBe("ask");
+    expect(initInternals.normalizeInitAgentGuidanceMode("status")).toBe("status");
+    expect(() => initInternals.normalizeInitAgentGuidanceMode(" ")).toThrow(/--agent-guidance must not be empty/);
+    expect(() => initInternals.normalizeInitAgentGuidanceMode("later")).toThrow(/Invalid --agent-guidance/);
+
+    expect(initInternals.parseYesNoChoice("", true)).toBe(true);
+    expect(initInternals.parseYesNoChoice("Y", false)).toBe(true);
+    expect(initInternals.parseYesNoChoice("no", true)).toBe(false);
+    expect(initInternals.parseYesNoChoice("maybe", false)).toBe(false);
+
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-governance-helper-"));
+    try {
+      await runInit("pm", { path: tempRoot }, { defaults: true });
+      const settings = await readSettings(tempRoot);
+      initInternals.applyGovernancePreset(settings, "strict");
+      expect(settings.governance.preset).toBe("strict");
+      expect(settings.validation.parent_reference).toBe(settings.governance.parent_reference);
+      expect(settings.validation.metadata_profile).toBe(settings.governance.metadata_profile);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("updates author on an existing tracker when init is forced", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-existing-author-"));
+    try {
+      await runInit("pm", { path: tempRoot }, { defaults: true, author: "first-agent" });
+
+      const result = await runInit("pm", { path: tempRoot }, { defaults: true, force: true, author: "second-agent" });
+      const settings = await readSettings(tempRoot);
+
+      expect(settings.author_default).toBe("second-agent");
+      expect(result.warnings).toContain("updated:author_default:second-agent");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("summarizes package install details and guards workspace-root tracker paths", async () => {
+    expect(
+      initInternals.summarizeInstalledPackages({
+        ok: true,
+        warnings: ["warn"],
+        details: {
+          installed_all: true,
+          installed_count: 2,
+          skipped_count: 1,
+          failed_count: 0,
+          packages: [
+            { alias: "calendar", ok: true },
+            { alias: "guide", ok: false },
+            null,
+          ],
+        },
+      }),
+    ).toEqual({
+      installed_all: true,
+      installed_count: 2,
+      packages: [
+        { alias: "calendar", ok: true },
+        { alias: "guide", ok: false },
+      ],
+    });
+
+    expect(
+      initInternals.summarizeInstalledPackages({
+        ok: true,
+        warnings: [],
+        details: {},
+      }),
+    ).toMatchObject({ installed_all: false, installed_count: 0, packages: [] });
+
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-workspace-guard-"));
+    try {
+      expect(await initInternals.isLikelyWorkspaceRoot(tempRoot)).toBe(false);
+      await writeFile(path.join(tempRoot, "package.json"), "{}\n", "utf8");
+      expect(await initInternals.isLikelyWorkspaceRoot(tempRoot)).toBe(true);
+      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, { path: tempRoot }, false)).rejects.toHaveProperty(
+        "context.code",
+        "workspace_root_pm_path",
+      );
+      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, { path: tempRoot }, true)).resolves.toBeUndefined();
+      await runInit("pm", { path: tempRoot }, { defaults: true, force: true });
+      await expect(initInternals.assertExplicitTrackerPathIsNotWorkspaceRoot(tempRoot, { path: tempRoot }, false)).resolves.toBeUndefined();
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("covers agent guidance helper branches without prompting", () => {
+    const projectRoot = path.join("tmp", "project");
+    const agentsPath = path.join(projectRoot, "AGENTS.md");
+    const claudePath = path.join(projectRoot, "CLAUDE.md");
+    const block = initGuidanceInternals.buildAgentGuidanceBlock("\r\n");
+
+    expect(initGuidanceInternals.toPortableRelativePath(projectRoot, projectRoot)).toBe("project");
+    expect(initGuidanceInternals.toPortableRelativePath(projectRoot, path.join(projectRoot, "nested", "AGENTS.md"))).toBe(
+      "nested/AGENTS.md",
+    );
+    expect(initGuidanceInternals.ensureTrailingNewline("already\n")).toBe("already\n");
+    expect(initGuidanceInternals.detectLineEnding(block)).toBe("\r\n");
+    expect(initGuidanceInternals.findGuidanceBlockRange("plain text")).toBeNull();
+    expect(initGuidanceInternals.findGuidanceBlockRange(block)?.start_index).toBe(0);
+
+    const inserted = initGuidanceInternals.upsertAgentGuidanceBlock("# Existing");
+    expect(inserted.changed).toBe(true);
+    expect(inserted.next_content).toContain("<!-- pm-cli:agent-guidance:start:v1 -->");
+    const unchanged = initGuidanceInternals.upsertAgentGuidanceBlock(initGuidanceInternals.buildAgentGuidanceBlock("\n"));
+    expect(unchanged.next_content).toContain("Set `PM_AUTHOR=<stable-agent-id>` before mutation commands.");
+
+    expect(initGuidanceInternals.resolveProjectRoot(path.join(projectRoot, ".agents", "pm"), process.cwd())).toBe(projectRoot);
+    expect(initGuidanceInternals.resolveProjectRoot("custom-pm", "/repo")).toBe(path.resolve("/repo", "custom-pm"));
+    expect(
+      initGuidanceInternals.resolveTargetGuidancePath(
+        [
+          { file_path: agentsPath, exists: false, has_guidance: false, has_marker: false },
+          { file_path: claudePath, exists: true, has_guidance: false, has_marker: false },
+        ],
+        projectRoot,
+      ),
+    ).toBe(claudePath);
+
+    expect(initGuidanceInternals.parsePromptChoice("", true)).toBe(true);
+    expect(initGuidanceInternals.parsePromptChoice("yes", false)).toBe(true);
+    expect(initGuidanceInternals.parsePromptChoice("n", true)).toBe(false);
+    expect(initGuidanceInternals.parsePromptChoice("later", false)).toBe(false);
+
+    const settings = {
+      agent_guidance: {
+        prompt_completed: true,
+        declined: true,
+        declined_at: "2026-01-01T00:00:00.000Z",
+        template_version: 0,
+        last_checked_files: [" CLAUDE.md ", "", "AGENTS.md", "AGENTS.md"],
+      },
+    } as Parameters<typeof initGuidanceInternals.normalizeAgentGuidanceState>[0];
+    expect(initGuidanceInternals.normalizeAgentGuidanceState(settings)).toEqual({
+      prompt_completed: true,
+      declined: true,
+      declined_at: "2026-01-01T00:00:00.000Z",
+      template_version: 1,
+      last_checked_files: ["AGENTS.md", "CLAUDE.md"],
+    });
+    const stateUpdate = initGuidanceInternals.applyAgentGuidanceState(settings, {
+      prompt_completed: false,
+      declined: false,
+      declined_at: "",
+      template_version: 1,
+      last_checked_files: ["AGENTS.md"],
+    });
+    expect(stateUpdate.changed).toBe(true);
+    expect(settings.agent_guidance?.last_checked_files).toEqual(["AGENTS.md"]);
   });
 
   it("initializes a new tracker path with normalized prefix", async () => {
@@ -421,6 +599,134 @@ describe("runInit", () => {
       expect(
         result.warnings.filter((warning) => warning === "extension_hook_failed:project:init-write-boom:onWrite"),
       ).toHaveLength(PM_REQUIRED_SUBDIRS.length + 4);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("covers the init wizard choices through a mocked readline prompt", async () => {
+    const writes: string[] = [];
+    const close = vi.fn();
+    const question = vi.fn()
+      .mockResolvedValueOnce(" Ticket ")
+      .mockResolvedValueOnce("strict")
+      .mockResolvedValueOnce("n");
+    initInternals.setInitReadlineFactoryForTests(() => ({
+      question,
+      close,
+    } as unknown as ReturnType<typeof readline.createInterface>));
+    const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation((chunk: string | Uint8Array) => {
+      writes.push(String(chunk));
+      return true;
+    });
+
+    try {
+      const choices = await initInternals.runInitWizard("pm-", true);
+
+      expect(choices).toEqual({
+        prefix: "ticket-",
+        preset: "strict",
+        telemetry_enabled: false,
+      });
+      expect(question).toHaveBeenCalledWith("Item ID prefix [pm-]: ");
+      expect(question).toHaveBeenCalledWith("Governance preset [minimal/default/strict] (default: minimal): ");
+      expect(question).toHaveBeenCalledWith("Enable telemetry for this project? [Y/n] ");
+      expect(writes.join("")).toContain("pm init setup wizard");
+      expect(close).toHaveBeenCalledTimes(1);
+    } finally {
+      writeSpy.mockRestore();
+    }
+  });
+
+  it("uses the init wizard when running interactively without defaults", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-interactive-wizard-"));
+    const close = vi.fn();
+    const question = vi.fn()
+      .mockResolvedValueOnce(" Ticket ")
+      .mockResolvedValueOnce("strict")
+      .mockResolvedValueOnce("n");
+    initInternals.setInitReadlineFactoryForTests(() => ({
+      question,
+      close,
+    } as unknown as ReturnType<typeof readline.createInterface>));
+    Object.defineProperty(process.stdin, "isTTY", { configurable: true, value: true });
+    Object.defineProperty(process.stdout, "isTTY", { configurable: true, value: true });
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    try {
+      const result = await runInit("pm", { path: tempRoot }, { agentGuidance: "skip" });
+
+      expect(result.wizard_used).toBe(true);
+      expect(result.settings.id_prefix).toBe("ticket-");
+      expect(result.governance_preset).toBe("strict");
+      expect(result.settings.telemetry.enabled).toBe(false);
+      expect(result.settings.telemetry.first_run_prompt_completed).toBe(true);
+      expect(close).toHaveBeenCalledTimes(1);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("prompts for missing agent guidance interactively and records accept/decline state", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-guidance-interactive-"));
+    try {
+      await runInit("pm", { path: tempRoot }, { defaults: true, agentGuidance: "status" });
+      const acceptedSettings = await readSettings(tempRoot);
+      const acceptClose = vi.fn();
+      const acceptQuestion = vi.fn().mockResolvedValue("yes");
+      initGuidanceInternals.setAgentGuidanceReadlineFactoryForTests(() => ({
+        question: acceptQuestion,
+        close: acceptClose,
+      } as unknown as ReturnType<typeof readline.createInterface>));
+      const writeSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+      const accepted = await runInitAgentGuidance({
+        pm_root: tempRoot,
+        cwd: path.dirname(tempRoot),
+        mode: "ask",
+        interactive: true,
+        settings: acceptedSettings,
+      });
+
+      expect(accepted.summary).toMatchObject({
+        prompted: true,
+        applied: true,
+        present: true,
+        declined: false,
+        prompt_completed: true,
+      });
+      expect(accepted.warnings).toContain("agent_guidance:added:AGENTS.md");
+      expect(acceptQuestion).toHaveBeenCalledWith("Add a compact pm workflow section to AGENTS.md? [Y/n] ");
+      expect(acceptClose).toHaveBeenCalledTimes(1);
+
+      const declinedRoot = await mkdtemp(path.join(os.tmpdir(), "pm-init-guidance-decline-"));
+      await runInit("pm", { path: declinedRoot }, { defaults: true, agentGuidance: "status" });
+      const declinedSettings = await readSettings(declinedRoot);
+      const declineQuestion = vi.fn().mockResolvedValue("no");
+      initGuidanceInternals.setAgentGuidanceReadlineFactoryForTests(() => ({
+        question: declineQuestion,
+        close: vi.fn(),
+      } as unknown as ReturnType<typeof readline.createInterface>));
+
+      const declined = await runInitAgentGuidance({
+        pm_root: declinedRoot,
+        cwd: path.dirname(declinedRoot),
+        mode: "ask",
+        interactive: true,
+        settings: declinedSettings,
+      });
+
+      expect(declined.summary).toMatchObject({
+        prompted: true,
+        applied: false,
+        skipped: true,
+        declined: true,
+        prompt_completed: true,
+      });
+      expect(declined.warnings).toContain("agent_guidance:declined");
+      expect(declined.next_steps).toContain("Add workflow guidance later: pm init --agent-guidance add");
+      await rm(declinedRoot, { recursive: true, force: true });
+      writeSpy.mockRestore();
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

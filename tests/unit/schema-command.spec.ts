@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { _testOnlySchemaCommand, runSchemaShow } from "../../src/cli/commands/schema.js";
 import {
   clearActiveExtensionHooks,
   setActiveExtensionHooks,
@@ -10,6 +11,7 @@ import {
   type ExtensionHookRegistry,
 } from "../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
+import { PmCliError } from "../../src/core/shared/errors.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
@@ -36,6 +38,43 @@ async function readStatuses(context: TempPmContext): Promise<{ statuses: Array<R
 afterEach(() => {
   clearActiveExtensionHooks();
   setActiveExtensionServices(null);
+});
+
+describe("schema command helper coverage", () => {
+  it("normalizes schema mutation authors from option env settings and fallback", () => {
+    const previous = process.env.PM_AUTHOR;
+    try {
+      delete process.env.PM_AUTHOR;
+      expect(_testOnlySchemaCommand.toAuthor(" explicit ", "settings-author")).toBe("explicit");
+      expect(_testOnlySchemaCommand.toAuthor(undefined, "settings-author")).toBe("settings-author");
+      process.env.PM_AUTHOR = " env-author ";
+      expect(_testOnlySchemaCommand.toAuthor(undefined, "settings-author")).toBe("env-author");
+      expect(_testOnlySchemaCommand.toAuthor("   ", "settings-author")).toBe("unknown");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.PM_AUTHOR;
+      } else {
+        process.env.PM_AUTHOR = previous;
+      }
+    }
+  });
+
+  it("finds workflow role slots referencing a normalized status id", () => {
+    expect(
+      _testOnlySchemaCommand.workflowSlotsReferencing(
+        {
+          draft_status: "draft",
+          open_status: "To Do",
+          in_progress_status: "in-progress",
+          blocked_status: "blocked",
+          close_status: "done",
+          canceled_status: undefined,
+        },
+        "in_progress",
+      ),
+    ).toEqual(["in_progress_status"]);
+    expect(_testOnlySchemaCommand.workflowSlotsReferencing({ open_status: "open" }, "closed")).toEqual([]);
+  });
 });
 
 describe("schema add-type command", () => {
@@ -480,6 +519,21 @@ describe("schema add-type command", () => {
   });
 });
 
+describe("schema show command", () => {
+  it("rejects blank and unknown type names", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(runSchemaShow("   ", { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "Type name must not be empty.",
+      });
+      await expect(runSchemaShow("NoSuchType", { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        message: expect.stringContaining('Unknown item type "NoSuchType"'),
+      });
+    });
+  });
+});
+
 describe("schema remove-type command", () => {
   it("removes a custom type definition case-insensitively", async () => {
     await withTempPmPath(async (context) => {
@@ -527,6 +581,63 @@ describe("schema remove-type command", () => {
       const result = removed.json as { removed: boolean; warnings: string[] };
       expect(result.removed).toBe(true);
       expect(result.warnings).toContain("items_using_type:1");
+    });
+  });
+
+  it("directly removes a custom type with lock ownership, item warnings, and hook warnings", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../src/cli/commands/schema.js");
+      const settings = await readSettings(context.pmPath);
+      await writeSettings(context.pmPath, { ...settings, author_default: "schema-remove-type-default" });
+      const lockOwners: string[] = [];
+      const hookOps: string[] = [];
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            name: "schema-type-lock-capture",
+            service: "lock_acquire",
+            run: (context) => {
+              lockOwners.push(String((context.payload as { owner?: unknown }).owner));
+              return async () => undefined;
+            },
+          },
+        ],
+      });
+      setActiveExtensionHooks({
+        beforeCommand: [],
+        afterCommand: [],
+        onRead: [],
+        onWrite: [
+          {
+            layer: "project",
+            name: "schema-remove-type-hook",
+            run: (hookContext) => {
+              hookOps.push(`${hookContext.op}:${path.basename(hookContext.path)}`);
+              throw new Error("remove type hook failure");
+            },
+          },
+        ],
+        onIndex: [],
+      });
+
+      await schema.runSchemaAddType("Spike", { author: "schema-add-agent" }, { path: context.pmPath });
+      expect(context.runCli(["create", "Spike", "investigate"]).code).toBe(0);
+
+      const removed = await schema.runSchemaRemoveType(
+        "spike",
+        { author: "schema-remove-agent" },
+        { path: context.pmPath },
+      );
+
+      expect(removed.removed).toBe(true);
+      expect(removed.type?.name).toBe("Spike");
+      expect(removed.warnings).toEqual([
+        "extension_hook_failed:project:schema-remove-type-hook:onWrite",
+        "items_using_type:1",
+      ]);
+      expect(lockOwners).toEqual(["schema-add-agent", "schema-remove-agent"]);
+      expect(hookOps).toContain("schema:remove-type:types.json");
     });
   });
 
@@ -896,6 +1007,17 @@ describe("schema add-status / remove-status commands", () => {
 
       const statuses = await readStatuses(context);
       expect(statuses.statuses.filter((s) => s.id === "review")).toHaveLength(1);
+    });
+  });
+
+  it("rejects status aliases that collide with the current status file under lock", async () => {
+    await withTempPmPath(async (context) => {
+      expect(context.runCli(["schema", "add-status", "review", "--alias", "in_review"]).code).toBe(0);
+
+      const clash = context.runCli(["schema", "add-status", "triage", "--alias", "in_review"]);
+
+      expect(clash.code).not.toBe(0);
+      expect(clash.stderr).toContain("in_review");
     });
   });
 

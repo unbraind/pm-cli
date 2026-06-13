@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { runUpdate } from "../../src/cli/commands/update.js";
-import { runUpdateMany } from "../../src/cli/commands/update-many.js";
+import { _testOnlyUpdateManyCommand, runUpdateMany } from "../../src/cli/commands/update-many.js";
 import {
   checkpointFilePath,
   createCheckpointId,
@@ -88,6 +88,98 @@ function getItemMetadataValue(context: TempPmContext, id: string, key: string): 
   return (result.json as { item: Record<string, unknown> }).item[key];
 }
 
+describe("update-many command helper coverage", () => {
+  it("normalizes summary, comparable values, collections, and tag planning", () => {
+    expect(
+      _testOnlyUpdateManyCommand.sanitizeUpdateOptionsForSummary({
+        author: "agent",
+        force: true,
+        allowAuditUpdate: true,
+        message: "msg",
+        priority: "2",
+        title: "Title",
+        body: undefined,
+      }),
+    ).toEqual({ priority: "2", title: "Title" });
+    expect(_testOnlyUpdateManyCommand.hasAnyUpdateMutationInput({ author: "agent", force: true })).toBe(false);
+    expect(_testOnlyUpdateManyCommand.hasAnyUpdateMutationInput({ status: "closed" })).toBe(true);
+    expect(_testOnlyUpdateManyCommand.hasListFilters(undefined, undefined)).toBe(false);
+    expect(_testOnlyUpdateManyCommand.hasListFilters({ ids: " , " }, undefined)).toBe(false);
+    expect(_testOnlyUpdateManyCommand.hasListFilters({ ids: "pm-a" }, undefined)).toBe(true);
+
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("priority", " 3 ")).toBe(3);
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("priority", "high")).toBe("high");
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("estimatedMinutes", " 4.5 ")).toBe(4.5);
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("regression", "1")).toBe(true);
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("regression", "false")).toBe(false);
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("regression", "maybe")).toBe("maybe");
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("field" as never, { raw: true })).toEqual({ raw: true });
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("title", "  trimmed  ")).toBe("trimmed");
+    expect(_testOnlyUpdateManyCommand.toComparablePreviewValue("title", undefined)).toBeUndefined();
+
+    expect(_testOnlyUpdateManyCommand.normalizeUnsetField("acceptance-criteria")).toBe("acceptance_criteria");
+    expect(_testOnlyUpdateManyCommand.normalizeUnsetField("custom-field")).toBe("custom_field");
+    expect(_testOnlyUpdateManyCommand.normalizeCollectionBeforeValue("type_options", undefined)).toEqual({});
+    expect(_testOnlyUpdateManyCommand.normalizeCollectionBeforeValue("comments", undefined)).toEqual([]);
+    expect(_testOnlyUpdateManyCommand.collectionValueCount("type_options", { a: 1, b: 2 })).toBe(2);
+    expect(_testOnlyUpdateManyCommand.collectionValueCount("comments", ["a", "b"])).toBe(2);
+    expect(_testOnlyUpdateManyCommand.collectionValueCount("comments", "none")).toBe(0);
+    expect(_testOnlyUpdateManyCommand.normalizeExistingTags(["alpha", 1, "beta"])).toEqual(["alpha", "beta"]);
+    expect(_testOnlyUpdateManyCommand.normalizeExistingTags("alpha")).toEqual([]);
+    const statusRegistry = {
+      definitions: [{ id: "open", role: "active" }],
+      alias_to_id: new Map([["open", "open"]]),
+    };
+    expect(_testOnlyUpdateManyCommand.normalizeStatusFilter(undefined, statusRegistry)).toBeUndefined();
+    expect(_testOnlyUpdateManyCommand.normalizeStatusFilter("open", statusRegistry)).toBe("open");
+    expect(() =>
+      _testOnlyUpdateManyCommand.normalizeStatusFilter("missing", statusRegistry),
+    ).toThrow(/Invalid --filter-status/);
+    expect(() => _testOnlyUpdateManyCommand.rejectBlankIdsFilter({ ids: "   " })).toThrow(/--ids requires/);
+
+    expect(_testOnlyUpdateManyCommand.buildTagMutationPlan({ tags: ["alpha"] }, {})).toBeUndefined();
+    expect(_testOnlyUpdateManyCommand.buildTagMutationPlan({ tags: ["alpha"] }, { addTags: ["alpha"] })).toBeUndefined();
+    expect(_testOnlyUpdateManyCommand.buildTagMutationPlan({ tags: ["beta"] }, { tags: "alpha", addTags: ["gamma"], removeTags: ["beta"] })).toEqual({
+      field: "tags",
+      before: ["beta"],
+      after: ["alpha", "gamma"],
+    });
+
+    expect(
+      _testOnlyUpdateManyCommand.buildCollectionMutationPlans(
+        { comments: ["old"], type_options: { risk: "low" } },
+        {
+          comment: ["author=a,text=b"],
+          depRemove: ["pm-old"],
+          clearTypeOptions: true,
+          replaceTests: true,
+          test: ["command=pnpm test"],
+        },
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: "comments",
+          after: expect.objectContaining({ operation: "append", add_count: 1, before_count: 1 }),
+        }),
+        expect.objectContaining({
+          field: "dependencies",
+          after: expect.objectContaining({ operation: "merge_remove", remove_count: 1 }),
+        }),
+        expect.objectContaining({
+          field: "type_options",
+          before: { risk: "low" },
+          after: expect.objectContaining({ operation: "clear_or_reset", clear: true, before_count: 1 }),
+        }),
+        expect.objectContaining({
+          field: "tests",
+          after: expect.objectContaining({ operation: "replace", replace: true, add_count: 1 }),
+        }),
+      ]),
+    );
+  });
+});
+
 describe("runUpdateMany", () => {
   it("rejects update-many before tracker initialization", async () => {
     const root = await mkdtemp(path.join(tmpdir(), "pm-update-many-uninitialized-"));
@@ -117,6 +209,57 @@ describe("runUpdateMany", () => {
       ),
     ).toBe(true);
     expect(matchesRuntimeFilters({}, { payload: "undefined" })).toBe(false);
+  });
+
+  it("plans runtime field diffs only when preview values change", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.schema.fields = [
+        {
+          key: "reviewUrl",
+          metadata_key: "review_url",
+          type: "string",
+          cli_flag: "review-url",
+          commands: ["update", "update_many"],
+        },
+      ];
+      await writeSettings(context.pmPath, settings);
+
+      const id = createTask(context, "update-many-runtime-preview", { tags: "runtime-preview" });
+      await runUpdate(id, { reviewUrl: "https://example.test/old", message: "seed runtime field" }, { path: context.pmPath });
+
+      const noChange = await runUpdateMany(
+        {
+          list: { ids: id },
+          update: {
+            reviewUrl: "https://example.test/old",
+            message: "preview unchanged runtime field",
+          },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(noChange.item_plans?.[0]?.changes).toEqual([]);
+
+      const changed = await runUpdateMany(
+        {
+          list: { ids: id },
+          update: {
+            reviewUrl: "https://example.test/new",
+            message: "preview changed runtime field",
+          },
+          dryRun: true,
+        },
+        { path: context.pmPath },
+      );
+      expect(changed.item_plans?.[0]?.changes).toEqual([
+        {
+          field: "review_url",
+          before: "https://example.test/old",
+          after: "https://example.test/new",
+        },
+      ]);
+    });
   });
 
   it("produces dry-run plans without mutating matched items", async () => {

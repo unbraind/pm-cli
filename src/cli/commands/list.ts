@@ -778,6 +778,8 @@ export const _testOnly = {
   parseProjectionConfig,
   parseSortField,
   parseSortOrder,
+  orderItemsAsTree,
+  projectListItems,
   readListFieldValue,
   sortItems,
   trimNonEmpty,

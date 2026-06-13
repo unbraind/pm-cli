@@ -1976,3 +1976,24 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     warnings: [...validationWarnings, ...hookWarnings],
   };
 }
+
+export const _testOnlyCreateCommand = {
+  buildHistoryMessage,
+  buildInvalidLogSeedKeysMessage,
+  buildTypeSpecificCreateExample,
+  collectMissingRequiredTypeOptionKeys,
+  createExampleTokensForFlag,
+  filterNonMissingTypeOptionErrors,
+  hasTemplatesShowHandler,
+  loadCreateTemplateOptionsFromRuntime,
+  looksLikeStructuredEntry,
+  mergeCreateOptionsWithTemplate,
+  normalizeCreatePolicyOptionKey,
+  normalizeDependencyKindInput,
+  normalizeExtensionCommandPath,
+  parseCreateUnsetTargets,
+  requireStringOption,
+  readTemplateOptionsFromRuntimeResult,
+  resolveRuntimeCreateUnsetDefinition,
+  typeOptionExampleValue,
+};

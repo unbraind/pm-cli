@@ -526,6 +526,40 @@ function parseProjectionConfig(options: SearchOptions): SearchProjectionConfig {
   };
 }
 
+export const _testOnlySearchCommand = {
+  applyExactQueryFilters,
+  buildExplicitSemanticFallbackWarning,
+  buildCompactSearchFilterSummary,
+  buildHybridLexicalScore,
+  buildImplicitSemanticFallbackWarning,
+  buildRerankCorpus,
+  buildSemanticHits,
+  classifyImplicitSemanticFallbackReason,
+  collectErrorCauseCodes,
+  collectExactPhraseFields,
+  collectLinkedPaths,
+  combineHybridHits,
+  computeSemanticOrHybridHits,
+  countOccurrences,
+  dependencyEntries,
+  documentContainsExactPhrase,
+  emptySearchResult,
+  loadLinkedCorpus,
+  mergeVectorHitsById,
+  normalizeExtensionProviderHits,
+  normalizeScoreMap,
+  parseProjectionConfig,
+  parseTokens,
+  readSearchFieldValue,
+  requireSemanticDependencies,
+  resolveLinkedCorpusRoots,
+  scoreDocument,
+  sortHits,
+  stringArray,
+  textEntries,
+  validateSearchProjectionFields,
+};
+
 function validateSearchProjectionFields(projection: SearchProjectionConfig, runtimeFieldRegistry: RuntimeFieldRegistry): void {
   if (projection.mode !== "fields") {
     return;

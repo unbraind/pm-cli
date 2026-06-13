@@ -2,10 +2,13 @@ import { appendFile, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runActivity } from "../../src/cli/commands/activity.js";
+import { _testOnly as activityInternals, runActivity } from "../../src/cli/commands/activity.js";
 import { readHistoryEntries, runHistory } from "../../src/cli/commands/history.js";
 import { _testOnly as historyRedactInternals, runHistoryRedact } from "../../src/cli/commands/history-redact.js";
+import { _testOnlyRestoreCommand, runRestore } from "../../src/cli/commands/restore.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks, type ExtensionHookRegistry } from "../../src/core/extensions/index.js";
+import { createHistoryEntry } from "../../src/core/history/history.js";
+import { EMPTY_REPLAY_DOCUMENT, replayHash } from "../../src/core/history/replay.js";
 import * as fsUtilsModule from "../../src/core/fs/fs-utils.js";
 import * as historyRewriteModule from "../../src/core/history/history-rewrite.js";
 import * as lockModule from "../../src/core/lock/lock.js";
@@ -98,6 +101,93 @@ describe("runHistory and runActivity", () => {
     });
     expect(historyRedactInternals.hasItemMetadata({ metadata: { id: "pm-a" }, body: "", events: [] } as never)).toBe(true);
     expect(historyRedactInternals.hasItemMetadata({ metadata: {}, body: "", events: [] } as never)).toBe(false);
+  });
+
+  it("covers restore target and replay helper branches", () => {
+    const initialDocument = {
+      metadata: { id: "pm-a", title: "A", type: "Task", status: "open", priority: 1, tags: [] },
+      body: "body",
+    };
+    const created = {
+      ts: "2026-01-01T00:00:00.000Z",
+      author: "tester",
+      op: "create",
+      before_hash: replayHash(EMPTY_REPLAY_DOCUMENT),
+      after_hash: replayHash(initialDocument),
+      patch: [
+        { op: "replace", path: "/metadata", value: initialDocument.metadata },
+        { op: "replace", path: "/body", value: initialDocument.body },
+      ],
+      message: "create",
+    };
+    const updated = createHistoryEntry({
+      nowIso: "2026-01-02T00:00:00.000Z",
+      author: "tester",
+      op: "update",
+      before: initialDocument,
+      after: {
+        metadata: { id: "pm-a", title: "A2", type: "Task", status: "open", priority: 2, tags: [] },
+        body: "body 2",
+      },
+      message: "update",
+    });
+    const history = [created, updated];
+
+    expect(_testOnlyRestoreCommand.ensureReplayTarget("1", history)).toMatchObject({ kind: "version", historyIndex: 0 });
+    expect(_testOnlyRestoreCommand.ensureReplayTarget("2026-01-01T12:00:00.000Z", history)).toMatchObject({
+      kind: "timestamp",
+      historyIndex: 0,
+    });
+    expect(() => _testOnlyRestoreCommand.ensureReplayTarget(" ", history)).toThrow(PmCliError);
+    expect(() => _testOnlyRestoreCommand.ensureReplayTarget("3", history)).toThrow(PmCliError);
+    expect(() => _testOnlyRestoreCommand.ensureReplayTarget("not-a-date", history)).toThrow(PmCliError);
+    expect(() => _testOnlyRestoreCommand.ensureReplayTarget("2025-12-31T00:00:00.000Z", history)).toThrow(PmCliError);
+
+    expect(_testOnlyRestoreCommand.replayToTarget(history, 1).metadata).toMatchObject({ title: "A2", priority: 2 });
+    expect(_testOnlyRestoreCommand.replayCurrentDocument(history).metadata).toMatchObject({ title: "A2" });
+    expect(
+      _testOnlyRestoreCommand.changedFields(
+        { metadata: { id: "pm-a", title: "A", type: "Task", status: "open", priority: 1, tags: [] }, body: "body" },
+        { metadata: { id: "pm-a", title: "A2", type: "Task", status: "open", priority: 1, tags: [] }, body: "body 2" },
+      ),
+    ).toEqual(["body", "title"]);
+    expect(
+      _testOnlyRestoreCommand.extractPatchFailureContext(
+        [{ op: "replace", path: "/metadata/title", value: "A2" }],
+        { index: 0, operation: { op: "replace", path: "/metadata/title", from: "/old" } },
+      ),
+    ).toEqual({ patchIndex: 0, op: "replace", path: "/metadata/title", from: "/old" });
+    expect(() =>
+      _testOnlyRestoreCommand.ensureMaterializedRestoreTarget(EMPTY_REPLAY_DOCUMENT, {
+        kind: "version",
+        raw: "1",
+        historyIndex: 0,
+      }),
+    ).toThrow(PmCliError);
+    expect(() =>
+      _testOnlyRestoreCommand.applyHistoryPatch(
+        { metadata: {}, body: "" },
+        [{ op: "remove", path: "/metadata/missing" }],
+        1,
+        "broken",
+      ),
+    ).toThrow(PmCliError);
+  });
+
+  it("restores an item to an earlier history version", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Restore Version");
+      context.runCli(["update", id, "--json", "--priority", "5", "--author", "test-author", "--message", "Raise priority"], {
+        expectJson: true,
+      });
+
+      const result = await runRestore(id, "1", { author: "test-author", message: "restore initial" }, { path: context.pmPath });
+
+      expect(result.restored_from).toMatchObject({ kind: "version", target: "1", history_index: 1, entry_op: "create" });
+      expect(result.item.priority).toBe(1);
+      const restored = context.runCli(["get", id, "--json"], { expectJson: true });
+      expect((restored.json as { item: { priority: number } }).item.priority).toBe(1);
+    });
   });
 
   it("fails when tracker is not initialized", async () => {
@@ -683,6 +773,44 @@ describe("runHistory and runActivity", () => {
         limit: null,
       });
     });
+  });
+
+  it("covers activity pure helper edge cases", async () => {
+    const now = "2026-01-02T12:00:00.000Z";
+    expect(activityInternals.parseNonEmptyFilter("  update  ", "--op")).toBe("update");
+    expect(activityInternals.parseNonEmptyFilter(undefined, "--op")).toBeUndefined();
+    expect(() => activityInternals.parseNonEmptyFilter("  ", "--op")).toThrow("--op must not be empty");
+    expect(() => activityInternals.parseRangeBound("  ", now, "--from")).toThrow("Activity time bounds must not be empty");
+    expect(activityInternals.parseRangeBound("2026-01-01T00:00:00.000Z", now, "--from")).toBe("2026-01-01T00:00:00.000Z");
+    expect(activityInternals.parseRangeBound(undefined, now, "--from")).toBeUndefined();
+
+    const baseEntry = { id: "pm-1", op: "x", author: "a", patch: [], before_hash: "", after_hash: "" };
+    expect(activityInternals.includeByTimeWindow({ ...baseEntry, ts: "" }, "2026-01-01T00:00:00.000Z", undefined)).toBe(false);
+    expect(activityInternals.includeByTimeWindow({ ...baseEntry, ts: "2026-01-01T00:00:00.000Z" }, "2026-01-02T00:00:00.000Z", undefined)).toBe(false);
+    expect(activityInternals.includeByTimeWindow({ ...baseEntry, ts: "2026-01-03T00:00:00.000Z" }, undefined, "2026-01-03T00:00:00.000Z")).toBe(false);
+    expect(activityInternals.limitEntries([1, 2, 3], undefined)).toEqual([1, 2, 3]);
+    expect(activityInternals.limitEntries([1, 2, 3], 2)).toEqual([1, 2]);
+    expect(activityInternals.readActivityString(42, "fallback")).toBe("fallback");
+    expect(activityInternals.normalizeActivityEntry("pm-x", { op: 1, ts: 2, author: 3, patch: "bad" } as never)).toMatchObject({
+      id: "pm-x",
+      op: "unknown",
+      ts: "",
+      author: "unknown",
+      patch: [],
+      before_hash: "",
+      after_hash: "",
+    });
+
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-activity-files-"));
+    try {
+      expect(await activityInternals.listHistoryFiles(path.join(tempDir, "missing"))).toEqual([]);
+      await writeFile(path.join(tempDir, "not-a-directory"), "not a directory", "utf8");
+      await expect(activityInternals.listHistoryFiles(path.join(tempDir, "not-a-directory"))).rejects.toMatchObject({
+        code: "ENOTDIR",
+      });
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
   });
 
   it("propagates non-missing history directory shape errors", async () => {

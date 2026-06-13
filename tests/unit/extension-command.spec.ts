@@ -1,10 +1,11 @@
 import { spawnSync } from "node:child_process";
-import { cp as fsPromisesCp, mkdtemp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
+import { cp as fsPromisesCp, mkdtemp, mkdir, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
+  _testOnly as extensionCommandTestOnly,
   copyExtensionDirectoryForInstall,
   parseExtensionManifest,
   runExtension,
@@ -20,6 +21,7 @@ import {
   writeManagedExtensionState,
 } from "../../src/cli/commands/extension/managed-state.js";
 import {
+  _testOnlyInstallSources,
   isNpmNotFoundError,
   isNpmPackNotFoundError,
   normalizeNpmLocalFileAliasSpec,
@@ -28,7 +30,29 @@ import {
   shouldRunNpmCommandInShell,
   wrapNpmPackResolutionError,
 } from "../../src/cli/commands/extension/install-sources.js";
-import { buildDoctorConsistencySummary, buildExtensionTriageSummary } from "../../src/cli/commands/extension/doctor.js";
+import {
+  applyDoctorRuntimeActivationState,
+  buildCapabilityContractMetadata,
+  buildDoctorConsistencySummary,
+  buildExtensionTriageSummary,
+  classifyDoctorLoadFailureWarnings,
+  classifyDoctorActivationFailureWarnings,
+  collectUnknownCapabilityGuidance,
+} from "../../src/cli/commands/extension/doctor.js";
+import {
+  _testOnlyBundledCatalog,
+  buildBundledPackageCatalog,
+  resolveBundledAliasManifestName,
+  resolveBundledExtensionAliasSource,
+} from "../../src/cli/commands/extension/bundled-catalog.js";
+import { normalizeManagedDirectoryName } from "../../src/cli/commands/extension/shared.js";
+import {
+  coerceLooseCommandOptionsWithFlagDefinitions,
+  collectLooseCommandOptionKeysForDefinitions,
+  parseLooseCommandOptions,
+  stripLooseCommandOptionTokens,
+  validateLooseCommandOptionsWithFlagDefinitions,
+} from "../../src/cli/extension-command-options.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { writeTestExtension } from "../helpers/extensions.js";
@@ -52,6 +76,356 @@ function runGit(args: string[]): { status: number | null; stdout: string; stderr
 }
 
 describe("extension command runtime", () => {
+  it("covers pure extension command helper decisions", () => {
+    expect(extensionCommandTestOnly.resolveAction("doctor", {})).toBe("doctor");
+    expect(extensionCommandTestOnly.resolveAction("reload", {})).toBe("reload");
+    expect(extensionCommandTestOnly.resolveAction("catalog", {})).toBe("catalog");
+    expect(extensionCommandTestOnly.resolveAction("scaffold", {})).toBe("init");
+    expect(extensionCommandTestOnly.resolveAction("manage", {})).toBe("manage");
+    expect(extensionCommandTestOnly.resolveAction("list", {})).toBe("explore");
+    expect(extensionCommandTestOnly.resolveAction("", {})).toBe("explore");
+    expect(extensionCommandTestOnly.resolveAction(undefined, {})).toBe("explore");
+    expect(() => extensionCommandTestOnly.resolveAction("target", { install: true, manage: true })).toThrow(/mutually exclusive/);
+    expect(() => extensionCommandTestOnly.resolveAction("target", {})).toThrow(/One action flag is required/);
+    expect(extensionCommandTestOnly.resolveScope({ project: true })).toBe("project");
+    expect(extensionCommandTestOnly.resolveScope({ local: true })).toBe("project");
+    expect(extensionCommandTestOnly.resolveScope({ global: true })).toBe("global");
+    expect(() => extensionCommandTestOnly.resolveScope({ project: true, global: true })).toThrow(/mutually exclusive/);
+
+    expect(() => extensionCommandTestOnly.requireTarget(undefined, "init")).toThrow(/requires a scaffold target path/);
+    expect(() => extensionCommandTestOnly.requireTarget(" ", "install")).toThrow(/requires an extension name/);
+    expect(extensionCommandTestOnly.requireTarget(" package ", "install")).toBe("package");
+
+    expect(extensionCommandTestOnly.resolveGithubOption({ gh: " owner/repo ", github: "owner/repo" })).toBe("owner/repo");
+    expect(extensionCommandTestOnly.resolveGithubOption({ github: " owner/repo " })).toBe("owner/repo");
+    expect(extensionCommandTestOnly.resolveGithubOption({ gh: " " })).toBeUndefined();
+    expect(() => extensionCommandTestOnly.resolveGithubOption({ gh: "one", github: "two" })).toThrow(/must match/);
+
+    expect(
+      extensionCommandTestOnly.resolveUpdateCheckResolution({
+        source: { kind: "local", input: "./local", location: "/tmp/local" },
+      }),
+    ).toEqual({ status: "skipped_non_github", reason: "managed_source_kind_local" });
+    expect(
+      extensionCommandTestOnly.resolveUpdateCheckResolution({
+        source: { kind: "github", input: "owner/repo", location: ".", repository: "repo" },
+        update_error: "network_down",
+      }),
+    ).toEqual({ status: "failed", reason: "network_down" });
+    expect(
+      extensionCommandTestOnly.resolveUpdateCheckResolution({
+        source: { kind: "github", input: "owner/repo", location: ".", repository: "repo" },
+        last_update_check_at: "2026-01-01T00:00:00.000Z",
+        update_available: true,
+      }),
+    ).toEqual({ status: "checked", reason: "update_available" });
+    expect(
+      extensionCommandTestOnly.resolveUpdateCheckResolution({
+        source: { kind: "github", input: "owner/repo", location: ".", repository: "repo" },
+        last_update_check_at: "2026-01-01T00:00:00.000Z",
+        update_available: false,
+      }),
+    ).toEqual({ status: "checked", reason: "up_to_date" });
+    expect(
+      extensionCommandTestOnly.resolveUpdateCheckResolution({
+        source: { kind: "github", input: "owner/repo", location: ".", repository: "repo" },
+        last_update_check_at: "2026-01-01T00:00:00.000Z",
+      }),
+    ).toEqual({ status: "checked", reason: "checked_without_commit_baseline" });
+
+    expect(
+      extensionCommandTestOnly.resolveCommandDiscoveryPackageName("fallback", {
+        kind: "npm",
+        input: "pkg",
+        location: ".",
+        package: " @scope/pkg ",
+      }),
+    ).toBe("@scope/pkg");
+    expect(
+      extensionCommandTestOnly.resolveCommandDiscoveryPackageName("fallback", {
+        kind: "builtin",
+        input: "guide",
+        location: "builtin",
+        name: " guide-shell ",
+      }),
+    ).toBe("guide-shell");
+    expect(
+      extensionCommandTestOnly.buildInstallCommandDiscovery(
+        "fallback",
+        { kind: "local", input: "./ext", location: "/tmp/ext" },
+        { command_paths: ["z", "a"], action_paths: ["b"] },
+      ),
+    ).toMatchObject({
+      package_name: "fallback",
+      extension_name: "fallback",
+      command_paths: ["z", "a"],
+      action_paths: ["b"],
+      help_commands: ["pm z --help", "pm a --help"],
+    });
+    expect(
+      extensionCommandTestOnly.collectGlobalOutputOverrideDoctorWarnings({
+        services: { overrides: [{ service: "output_format", layer: "project", name: "svc" }, { service: "other" }] },
+        renderers: { overrides: [{ format: "json", layer: "global", name: "renderer" }] },
+      }),
+    ).toEqual([
+      "extension_output_renderer_override_global:json:global:renderer",
+      "extension_output_service_override_global:output_format:project:svc",
+    ]);
+
+    expect(extensionCommandTestOnly.isRetriableExtensionInstallCopyError("plain")).toBe(false);
+    expect(extensionCommandTestOnly.isRetriableExtensionInstallCopyError({ code: "ENOENT" })).toBe(true);
+    expect(extensionCommandTestOnly.isRetriableExtensionInstallCopyError({ code: "EACCES" })).toBe(false);
+    expect(extensionCommandTestOnly.isErrnoCode({ code: "EEXIST" }, "EEXIST")).toBe(true);
+    expect(extensionCommandTestOnly.isErrnoCode(null, "EEXIST")).toBe(false);
+
+    expect(
+      extensionCommandTestOnly.buildExtensionPolicyDetails({
+        mode: "warn",
+        trust_mode: "enforce",
+        require_provenance: true,
+        trusted_extensions: [" trusted ", ""],
+        default_sandbox_profile: "strict",
+        allowed_extensions: ["alpha"],
+        blocked_extensions: ["beta"],
+        allowed_capabilities: [" commands "],
+        blocked_capabilities: [" services "],
+        allowed_surfaces: ["cli"],
+        blocked_surfaces: ["mcp"],
+        allowed_commands: ["one"],
+        blocked_commands: ["two"],
+        allowed_actions: ["act"],
+        blocked_actions: ["block"],
+        allowed_services: ["svc"],
+        blocked_services: ["bad"],
+        extension_overrides: [
+          {
+            name: " zed ",
+            disabled: true,
+            require_trusted: true,
+            require_provenance: true,
+            sandbox_profile: "restricted",
+            allowed_capabilities: ["cap"],
+            blocked_capabilities: [""],
+            allowed_surfaces: ["surface"],
+            blocked_surfaces: ["hidden"],
+            allowed_commands: ["cmd"],
+            blocked_commands: ["cmd-blocked"],
+            allowed_actions: ["action"],
+            blocked_actions: ["action-blocked"],
+            allowed_services: ["service"],
+            blocked_services: ["service-blocked"],
+          },
+          { name: " " },
+        ],
+      } as never),
+    ).toMatchObject({
+      mode: "warn",
+      trust_mode: "enforce",
+      require_provenance: true,
+      trusted_extensions: ["trusted"],
+      extension_overrides: [
+        {
+          name: "zed",
+          disabled: true,
+          require_trusted: true,
+          require_provenance: true,
+          sandbox_profile: "restricted",
+          allowed_capabilities: ["cap"],
+          blocked_services: ["service-blocked"],
+        },
+      ],
+    });
+
+    expect(_testOnlyBundledCatalog.parsePackageCatalogFields(undefined)).toBeUndefined();
+    expect(_testOnlyBundledCatalog.parsePackageCatalogFields("alias, category,display_name")).toEqual([
+      "alias",
+      "category",
+      "display_name",
+    ]);
+    expect(() => _testOnlyBundledCatalog.parsePackageCatalogFields(" ")).toThrow(/requires a comma-separated/);
+    expect(() => _testOnlyBundledCatalog.parsePackageCatalogFields("alias,nope")).toThrow(/Unknown package catalog/);
+    expect(
+      _testOnlyBundledCatalog.projectPackageCatalogEntry(
+        { alias: "guide", catalog: { category: "ops", display_name: "Guide" }, package_name: "@unbrained/pm-guide" },
+        ["alias", "category", "display_name", "package_name", "missing"],
+      ),
+    ).toEqual({
+      alias: "guide",
+      category: "ops",
+      display_name: "Guide",
+      package_name: "@unbrained/pm-guide",
+      missing: null,
+    });
+  });
+
+  it("parses, validates, coerces, and strips loose extension command options", () => {
+    const definitions = [
+      { long: "--count", short: "-c", value_type: "number", required: true },
+      { long: "--enabled", value_type: "boolean", default: "true" },
+      { long: "--label", type: "string", default: 42 },
+      { long: "--tag", short: "-t", value_type: "string", list: true, default: "triage, coverage" },
+      { long: "--disabled", enabled: false },
+      { long: "--constructor" },
+      { short: "-x", value_type: "number" },
+    ];
+
+    expect(collectLooseCommandOptionKeysForDefinitions(definitions)).toEqual(
+      new Set(["count", "c", "enabled", "label", "tag", "t", "disabled", "x"]),
+    );
+
+    const parsed = parseLooseCommandOptions([
+      "--count",
+      "2",
+      "-t=alpha,beta",
+      "--tag",
+      "gamma",
+      "--no-enabled",
+      "-x",
+      "5",
+      "--constructor",
+      "ignored",
+      "--",
+      "--label",
+      "positional",
+    ]);
+    expect(parsed).toMatchObject({
+      count: "2",
+      tag: "gamma",
+      t: "alpha,beta",
+      enabled: false,
+      x: "5",
+      label: "positional",
+    });
+    expect(Object.hasOwn(parsed, "constructor")).toBe(false);
+
+    const coerced = coerceLooseCommandOptionsWithFlagDefinitions(parsed, definitions);
+    expect(coerced).toMatchObject({
+      count: 2,
+      enabled: false,
+      label: "positional",
+      tag: ["gamma"],
+      x: 5,
+    });
+
+    const defaulted = coerceLooseCommandOptionsWithFlagDefinitions({ count: "3", t: ["one,two", "three"] }, definitions);
+    expect(defaulted).toMatchObject({
+      count: 3,
+      enabled: true,
+      label: "42",
+      tag: ["one", "two", "three"],
+    });
+    expect(Object.hasOwn(defaulted, "t")).toBe(false);
+
+    expect(
+      stripLooseCommandOptionTokens(
+        ["run", "--count", "9", "--enabled", "positional", "--tag=one,two", "-x", "7", "--", "--count", "kept"],
+        definitions,
+      ),
+    ).toEqual(["run", "positional", "--count", "kept"]);
+    expect(stripLooseCommandOptionTokens(["--count", "1"], [])).toEqual(["--count", "1"]);
+    expect(stripLooseCommandOptionTokens(["--other", "value"], [{ long: "--constructor" }])).toEqual(["--other", "value"]);
+
+    expect(() => validateLooseCommandOptionsWithFlagDefinitions({ missing: true }, definitions, "demo run")).toThrow(
+      /Unknown option '--missing'/,
+    );
+    expect(() => validateLooseCommandOptionsWithFlagDefinitions({ disabled: true, count: 1 }, definitions, "demo run")).toThrow(
+      /Option '--disabled' is disabled/,
+    );
+    expect(() => validateLooseCommandOptionsWithFlagDefinitions({}, definitions, "demo run")).toThrow(
+      /Missing required option '--count'/,
+    );
+    expect(() => validateLooseCommandOptionsWithFlagDefinitions({ count: 1 }, definitions, "demo run")).not.toThrow();
+  });
+
+  it("covers loose extension option helper fallbacks and repeated short flags", () => {
+    const parsed = parseLooseCommandOptions(["-n=value", "-n", "next", "-v", "--empty=", "--no-active"]);
+    expect(parsed).toMatchObject({
+      n: ["value", "next"],
+      v: true,
+      empty: "",
+      active: false,
+    });
+
+    const noDefinitionsOptions = { raw: "value" };
+    expect(coerceLooseCommandOptionsWithFlagDefinitions(noDefinitionsOptions, [])).toBe(noDefinitionsOptions);
+    expect(
+      coerceLooseCommandOptionsWithFlagDefinitions(
+        { plain: "value", count: Number.POSITIVE_INFINITY, active: "0", maybe: "false", emptyNumber: "" },
+        [
+          { long: "--plain" },
+          { long: "--count", value_type: "number" },
+          { long: "--active", value_type: "boolean" },
+          { long: "--maybe", value_type: "boolean" },
+          { long: "--empty-number", value_type: "number" },
+          { long: "--tags", list: true, default: ["one,two", "three"] },
+        ],
+      ),
+    ).toMatchObject({
+      plain: "value",
+      count: Number.POSITIVE_INFINITY,
+      active: false,
+      maybe: false,
+      emptyNumber: "",
+      tags: ["one", "two", "three"],
+    });
+
+    expect(
+      stripLooseCommandOptionTokens(["--enabled", "kept", "--name", "removed"], [
+        { long: "--enabled", value_type: "boolean" },
+        { long: "--name", value_type: "string" },
+      ]),
+    ).toEqual(["kept"]);
+  });
+
+  it("normalizes managed extension state helpers across tie-breakers and source variants", () => {
+    const baseEntry = {
+      name: "Alpha",
+      directory: "b-dir",
+      scope: "project" as const,
+      manifest_version: "1.0.0",
+      manifest_entry: "index.js",
+      capabilities: ["schema", "commands", "commands"],
+      installed_at: "2026-01-01T00:00:00.000Z",
+      updated_at: "2026-01-01T00:00:00.000Z",
+      source: { kind: "local" as const, input: "./alpha", location: "/tmp/alpha" },
+    };
+
+    const normalized = normalizeManagedState({
+      version: 1,
+      entries: [
+        "bad",
+        { ...baseEntry, source: { kind: "bad", input: "./bad", location: "/tmp/bad" } },
+        { ...baseEntry, name: "Alpha", directory: "a-dir" },
+      ],
+    });
+    expect(normalized?.entries).toEqual([
+      expect.objectContaining({
+        name: "Alpha",
+        directory: "a-dir",
+        capabilities: ["commands", "schema"],
+      }),
+    ]);
+
+    expect(
+      managedExtensionSourcesEquivalent(
+        { kind: "local", input: "one", location: "/tmp/one" },
+        { kind: "local", input: "two", location: "/tmp/one" },
+      ),
+    ).toBe(false);
+    expect(
+      managedExtensionSourcesEquivalent(
+        { kind: "builtin", input: "guide", location: "builtin", name: "guide-shell" },
+        { kind: "builtin", input: "guide", location: "builtin", name: "other" },
+      ),
+    ).toBe(false);
+    expect(
+      managedExtensionSourcesEquivalent(
+        { kind: "local", input: "same", location: "/tmp/same" },
+        { kind: "local", input: "same", location: "/tmp/same" },
+      ),
+    ).toBe(true);
+  });
+
   it("parses local and GitHub install sources deterministically", () => {
     const local = parseExtensionInstallSource("./extensions/sample");
     expect(local.kind).toBe("local");
@@ -83,6 +457,12 @@ describe("extension command runtime", () => {
       repo: "pm-cli",
       ref: "main",
       subpath: "sample",
+    });
+
+    expect(parseExtensionInstallSource("https://github.com/unbraind/pm-cli.git")).toMatchObject({
+      kind: "github",
+      owner: "unbraind",
+      repo: "pm-cli",
     });
   });
 
@@ -116,13 +496,21 @@ describe("extension command runtime", () => {
     });
 
     expect(parseExtensionManifest(null)).toBeNull();
+    expect(parseExtensionManifest({ name: "", version: "1.0.0", entry: "index.js" })).toBeNull();
+    expect(parseExtensionManifest({ name: "demo", version: "", entry: "index.js" })).toBeNull();
+    expect(parseExtensionManifest({ name: "demo", version: "1.0.0", entry: "" })).toBeNull();
     expect(parseExtensionManifest({ name: "demo", version: "1.0.0", entry: "index.js", priority: 1.5 })).toBeNull();
+    expect(parseExtensionManifest({ name: "demo", version: "1.0.0", entry: "index.js", capabilities: "commands" })).toBeNull();
+    expect(parseExtensionManifest({ name: "demo", version: "1.0.0", entry: "index.js", capabilities: ["commands", 1] })).toBeNull();
     expect(parseExtensionManifest({ name: "demo", version: "1.0.0", entry: "index.js", capabilities: ["Commands", "commands", ""] }))
       .toMatchObject({
         name: "demo",
         priority: 100,
         capabilities: ["commands"],
       });
+    expect(normalizeManagedDirectoryName(" Demo Extension! ")).toBe("demo-extension");
+    expect(() => normalizeManagedDirectoryName("!!!")).toThrow(/non-empty directory name/);
+    expect(() => normalizeManagedDirectoryName(".")).toThrow(/must not resolve/);
 
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-validate-"));
     try {
@@ -157,9 +545,403 @@ describe("extension command runtime", () => {
         "utf8",
       );
       await expect(validateExtensionDirectory(outsideEntryDir)).rejects.toThrow(/resolves outside extension directory/);
+
+      const validDir = path.join(tempRoot, "valid");
+      await writeTestExtension({ root: validDir, name: "valid-ext" });
+      await expect(validateExtensionDirectory(validDir)).resolves.toMatchObject({
+        directory: validDir,
+        manifest: { name: "valid-ext", version: "1.0.0", entry: "index.js" },
+      });
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
+  });
+
+  it("covers npm install-source helper branches without registry access", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-install-source-helpers-"));
+    try {
+      const packageRoot = path.join(tempRoot, "package-root");
+      await mkdir(packageRoot, { recursive: true });
+      await writeFile(
+        path.join(packageRoot, "package.json"),
+        JSON.stringify({
+          name: "pm-helper-package",
+          version: "1.2.3",
+          dependencies: {
+            leftpad: " 1.0.0 ",
+            skipped: "",
+          },
+          optionalDependencies: {
+            leftpad: "2.0.0",
+            optional: "^3.0.0",
+          },
+          peerDependencies: {
+            peer: "~4.0.0",
+          },
+        }),
+        "utf8",
+      );
+
+      expect(_testOnlyInstallSources.runtimeDependencyInstallSpecs({ dependencies: "bad" })).toEqual([]);
+      expect(
+      _testOnlyInstallSources.runtimeDependencyInstallSpecs({
+          dependencies: { leftpad: " 1.0.0 ", skipped: "", bad: 1 },
+          optionalDependencies: { leftpad: "2.0.0", optional: "^3.0.0" },
+          peerDependencies: { peer: "~4.0.0" },
+        }),
+      ).toEqual(["leftpad@1.0.0", "optional@^3.0.0", "peer@~4.0.0"]);
+      expect(wrapNpmPackResolutionError("pm-helper-package", new Error("permission denied"))).toBeNull();
+    expect(_testOnlyInstallSources.npmPackageNameFromSpec("@scope/pkg@1.2.3")).toBe("@scope/pkg");
+    expect(_testOnlyInstallSources.npmPackageNameFromSpec("alias@file:../pkg")).toBe("alias");
+      expect(_testOnlyInstallSources.npmPackageNameFromSpec("@broken")).toBe("@broken");
+      expect(_testOnlyInstallSources.npmPackageNameFromSpec("   ")).toBe("");
+
+      const runtimeDepRoot = path.join(tempRoot, "runtime-dep");
+      await mkdir(runtimeDepRoot, { recursive: true });
+      await writeFile(
+        path.join(runtimeDepRoot, "package.json"),
+        JSON.stringify({ name: "runtime-dep", version: "1.0.0", main: "index.js" }),
+        "utf8",
+      );
+      await writeFile(path.join(runtimeDepRoot, "index.js"), "module.exports = { ok: true };\n", "utf8");
+      await writeFile(
+        path.join(packageRoot, "package.json"),
+        JSON.stringify({
+          name: "pm-helper-package",
+          version: "1.2.3",
+          dependencies: { "runtime-dep": `file:${runtimeDepRoot}` },
+          devDependencies: { "dev-only": "1.0.0" },
+        }),
+        "utf8",
+      );
+      await writeFile(path.join(packageRoot, "package-lock.json"), "{}\n", "utf8");
+      await writeFile(path.join(packageRoot, "npm-shrinkwrap.json"), "{}\n", "utf8");
+      await _testOnlyInstallSources.installNpmPackageRuntimeDependencies(packageRoot);
+      const rewrittenPackageJson = JSON.parse(await readFile(path.join(packageRoot, "package.json"), "utf8")) as Record<string, unknown>;
+      expect(rewrittenPackageJson.devDependencies).toBeUndefined();
+      await expect(readdir(path.join(packageRoot, "node_modules", "runtime-dep"))).resolves.toEqual(
+        expect.arrayContaining(["index.js", "package.json"]),
+      );
+      await expect(readFile(path.join(packageRoot, "package-lock.json"), "utf8")).rejects.toThrow();
+      await expect(readFile(path.join(packageRoot, "npm-shrinkwrap.json"), "utf8")).rejects.toThrow();
+
+      const missingManifestRoot = path.join(tempRoot, "missing-package-json");
+      await mkdir(missingManifestRoot, { recursive: true });
+      await expect(_testOnlyInstallSources.installNpmPackageRuntimeDependencies(missingManifestRoot)).resolves.toBeUndefined();
+
+      const invalidManifestRoot = path.join(tempRoot, "invalid-package-json");
+      await mkdir(invalidManifestRoot, { recursive: true });
+      await writeFile(path.join(invalidManifestRoot, "package.json"), "{ nope", "utf8");
+      await expect(_testOnlyInstallSources.installNpmPackageRuntimeDependencies(invalidManifestRoot)).resolves.toBeUndefined();
+
+      const primitiveManifestRoot = path.join(tempRoot, "primitive-package-json");
+      await mkdir(primitiveManifestRoot, { recursive: true });
+      await writeFile(path.join(primitiveManifestRoot, "package.json"), '"not-object"\n', "utf8");
+      await expect(_testOnlyInstallSources.installNpmPackageRuntimeDependencies(primitiveManifestRoot)).resolves.toBeUndefined();
+
+      expect(_testOnlyInstallSources.npmPackageNameFromSpec("@scope/pkg@file:../pkg")).toBe("@scope/pkg");
+      expect(_testOnlyInstallSources.npmPackageNameFromSpec("plain@1.0.0")).toBe("plain");
+      expect(
+        _testOnlyInstallSources.parsePackedNpmPackage(
+          JSON.stringify([{ filename: "pkg-1.0.0.tgz", name: "pkg", version: "1.0.0" }]),
+          tempRoot,
+        ),
+      ).toEqual({
+        tarball: path.join(tempRoot, "pkg-1.0.0.tgz"),
+        package: "pkg",
+        version: "1.0.0",
+      });
+      expect(_testOnlyInstallSources.parsePackedNpmPackage("npm notice\nlegacy.tgz\n", tempRoot)).toEqual({
+        tarball: path.join(tempRoot, "legacy.tgz"),
+      });
+      expect(() => _testOnlyInstallSources.parsePackedNpmPackage("\n", tempRoot)).toThrow(/did not report/);
+      await expect(_testOnlyInstallSources.runNpmCommand(["--version"], path.join(tempRoot, "missing-cwd"))).rejects.toThrow(
+        /npm command failed:/,
+      );
+
+      await writeTestExtension({
+        root: packageRoot,
+        directory: "extensions/only",
+        manifestOverrides: { name: "only-ext" },
+      });
+      await expect(_testOnlyInstallSources.resolvePackageExtensionDirectory(packageRoot, "pkg")).resolves.toBe(
+        path.join(packageRoot, "extensions/only"),
+      );
+      const localResolved = await _testOnlyInstallSources.resolveNpmSourceDirectory({
+        kind: "npm",
+        input: `npm:${packageRoot}`,
+        spec: packageRoot,
+      });
+      await expect(localResolved.cleanup()).resolves.toBeUndefined();
+
+      const emptyPackageRoot = path.join(tempRoot, "empty-package");
+      await mkdir(emptyPackageRoot, { recursive: true });
+      await expect(_testOnlyInstallSources.resolvePackageExtensionDirectory(emptyPackageRoot, "empty")).rejects.toThrow(
+        /Unable to locate a pm extension manifest/,
+      );
+
+      const multiPackageRoot = path.join(tempRoot, "multi-package");
+      await writeTestExtension({
+        root: multiPackageRoot,
+        directory: "extensions/b",
+        manifestOverrides: { name: "b-ext" },
+      });
+      await writeTestExtension({
+        root: multiPackageRoot,
+        directory: "extensions/a",
+        manifestOverrides: { name: "a-ext" },
+      });
+      await expect(_testOnlyInstallSources.resolvePackageExtensionDirectory(multiPackageRoot, "multi")).rejects.toThrow(
+        /Candidates: extensions\/a, extensions\/b/,
+      );
+
+      const cwd = process.cwd();
+      process.chdir(tempRoot);
+      try {
+        await expect(_testOnlyInstallSources.resolveNpmPackSpec("./package-root")).resolves.toBe(
+          pathToFileURL(packageRoot).href,
+        );
+        await expect(_testOnlyInstallSources.resolveNpmPackSpec("./missing-package-root")).resolves.toBe(
+          "./missing-package-root",
+        );
+        await expect(_testOnlyInstallSources.resolveNpmPackSpec("alias@file:")).resolves.toBe("alias@file:");
+        await expect(_testOnlyInstallSources.resolveNpmPackSpec("alias@file://server/share")).resolves.toBe(
+          "alias@file://server/share",
+        );
+        await expect(_testOnlyInstallSources.resolveNpmPackSpec(pathToFileURL(packageRoot).href)).resolves.toBe(
+          pathToFileURL(packageRoot).href,
+        );
+        await expect(_testOnlyInstallSources.resolveNpmPackSpec("alias@file:./package-root")).resolves.toBe(
+          `alias@${pathToFileURL(packageRoot).href}`,
+        );
+        await expect(_testOnlyInstallSources.resolveNpmPackSpec("https://registry.example/pkg.tgz")).resolves.toBe(
+          "https://registry.example/pkg.tgz",
+        );
+        await expect(_testOnlyInstallSources.resolveNpmPackSpec("pm-package")).resolves.toBe("pm-package");
+      } finally {
+        process.chdir(cwd);
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("builds bundled package catalog entries from a temporary package root", async () => {
+    await withTempPmPath(async (context) => {
+      const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
+      const packageRoot = path.join(context.tempRoot, "package-root");
+      const bundledPackageRoot = path.join(packageRoot, "packages", "pm-wave");
+      const extensionRoot = path.join(bundledPackageRoot, "extensions", "wave");
+      process.env[PM_PACKAGE_ROOT_ENV] = packageRoot;
+      try {
+        await mkdir(extensionRoot, { recursive: true });
+        await writeFile(
+          path.join(bundledPackageRoot, "package.json"),
+          JSON.stringify({
+            name: "@example/pm-wave",
+            version: "1.2.3",
+            description: "Wave package",
+            private: false,
+            keywords: ["wave", "coverage"],
+            homepage: "https://example.test/wave",
+            repository: { url: "https://example.test/repo.git" },
+            bugs: { url: "https://example.test/issues" },
+            pm: {
+              aliases: ["wave", "Wave"],
+              extensions: ["extensions/wave"],
+              docs: ["README.md"],
+              examples: ["examples/demo.md"],
+              catalog: {
+                display_name: "Wave",
+                category: "testing",
+                summary: "Catalog summary",
+                links: {
+                  docs: "https://example.test/docs",
+                },
+                media: {
+                  image: "https://example.test/image.png",
+                },
+                tags: ["catalog"],
+              },
+            },
+          }),
+          "utf8",
+        );
+        await writeFile(
+          path.join(extensionRoot, "manifest.json"),
+          JSON.stringify({ name: "wave-extension", version: "1.0.0", entry: "./index.js" }),
+          "utf8",
+        );
+        await writeFile(path.join(extensionRoot, "index.js"), "export function activate() {}\n", "utf8");
+
+        await expect(resolveBundledExtensionAliasSource("wave")).resolves.toBe(bundledPackageRoot);
+        await expect(resolveBundledAliasManifestName("wave")).resolves.toBe("wave-extension");
+
+        const legacyPackageRoot = path.join(packageRoot, "packages", "pm-beads");
+        await mkdir(legacyPackageRoot, { recursive: true });
+        await writeFile(
+          path.join(legacyPackageRoot, "package.json"),
+          JSON.stringify({
+            name: "@example/pm-beads",
+            version: "1.0.0",
+            pm: {
+              extensions: [],
+            },
+          }),
+          "utf8",
+        );
+        await expect(resolveBundledExtensionAliasSource("beads")).resolves.toBe(legacyPackageRoot);
+
+        await mkdir(path.join(packageRoot, "packages", "not-a-bundle"), { recursive: true });
+        await writeFile(path.join(packageRoot, "packages", "pm-no-manifest"), "not a directory", "utf8");
+        await mkdir(path.join(packageRoot, "packages", "pm-empty-package"), { recursive: true });
+        const legacyExtensionRoot = path.join(packageRoot, ".agents", "pm", "extensions", "todos");
+        await mkdir(legacyExtensionRoot, { recursive: true });
+        await writeFile(
+          path.join(legacyExtensionRoot, "manifest.json"),
+          JSON.stringify({ name: "todos-extension", version: "1.0.0", entry: "index.js" }),
+          "utf8",
+        );
+        await expect(resolveBundledExtensionAliasSource("unknown-alias")).resolves.toBeNull();
+
+        const beforeInstall = await buildBundledPackageCatalog("project", { path: context.pmPath });
+        expect(beforeInstall.packages).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              alias: "wave",
+              available: true,
+              installed: false,
+              package_name: "@example/pm-wave",
+              package_version: "1.2.3",
+              description: "Catalog summary",
+              catalog: expect.objectContaining({
+                links: expect.objectContaining({
+                  docs: "https://example.test/docs",
+                  npm: "https://www.npmjs.com/package/%40example%2Fpm-wave",
+                }),
+              }),
+              install_command: "pm install wave --project",
+            }),
+          ]),
+        );
+
+        await writeManagedExtensionState(path.join(context.pmPath, "extensions"), {
+          version: 1,
+          entries: [
+            {
+              name: "wave-extension",
+              directory: "wave-extension",
+              scope: "project",
+              manifest_version: "1.0.0",
+              manifest_entry: "./index.js",
+              capabilities: [],
+              installed_at: "2026-01-01T00:00:00.000Z",
+              updated_at: "2026-01-01T00:00:00.000Z",
+              source: { kind: "builtin", input: "wave", location: "wave", name: "wave" },
+            },
+          ],
+        });
+        const afterInstall = await buildBundledPackageCatalog("project", { path: context.pmPath });
+        expect(afterInstall.packages).toEqual(
+          expect.arrayContaining([expect.objectContaining({ alias: "wave", installed: true })]),
+        );
+      } finally {
+        if (previousPackageRoot === undefined) {
+          delete process.env[PM_PACKAGE_ROOT_ENV];
+        } else {
+          process.env[PM_PACKAGE_ROOT_ENV] = previousPackageRoot;
+        }
+      }
+    });
+  });
+
+  it("summarizes doctor runtime status and remediation branches", () => {
+    const extensions = applyDoctorRuntimeActivationState(
+      [
+        {
+          name: "blank-command-ext",
+          directory: "blank-command-ext",
+          version: "1.0.0",
+          entry: "index.js",
+          scope: "project",
+          active: true,
+          enabled: true,
+          runtime_active: null,
+          activation_status: "unknown",
+          managed: true,
+          update_check_status: "failed",
+          update_check_reason: "network",
+        },
+        {
+          name: "disabled-ext",
+          directory: "disabled-ext",
+          version: "1.0.0",
+          entry: "index.js",
+          scope: "project",
+          active: false,
+          enabled: false,
+          runtime_active: null,
+          activation_status: "unknown",
+          managed: false,
+          update_check_status: "skipped_unmanaged",
+          update_check_reason: "unmanaged",
+        },
+      ],
+      {
+        loaded: [{ layer: "project", name: "blank-command-ext" }],
+        failed: [],
+      } as never,
+      {
+        failed: [],
+        registrations: { commands: [{ name: " ", command: " ", action: " " }] },
+        commands: {
+          handlers: [{ name: "blank-command-ext", command: " " }],
+          overrides: [{ name: "blank-command-ext", command: " " }],
+        },
+      } as never,
+    );
+
+    expect(extensions).toEqual([
+      expect.objectContaining({ name: "blank-command-ext", runtime_active: true, activation_status: "ok" }),
+      expect.objectContaining({ name: "disabled-ext", runtime_active: false, activation_status: "not_loaded" }),
+    ]);
+
+    const contract = buildCapabilityContractMetadata();
+    expect(contract.capabilities).toEqual(expect.arrayContaining(["commands", "schema"]));
+    expect(contract.legacy_aliases).toMatchObject({ migration: "schema", validation: "schema" });
+
+    const triage = buildExtensionTriageSummary(
+      "project",
+      [
+        "extension_capability_legacy_alias:project:legacy:migration->schema",
+        "extension_capability_missing:blank-command-ext:schema",
+        "extension_command_definition_legacy_handler_alias:project:blank-command-ext:sync",
+        "extension_load_failed_module_mode_mismatch:project:esm-ext",
+        "extension_manager_state_invalid_json:project",
+        "extension_pm_min_version_unsatisfied:project:old-ext:required=>=9.0.0:current=1.0.0",
+        "extension_policy_violation_registration:project:policy-ext:reason=surface_blocked",
+        "extension_update_check_failed:blank-command-ext",
+      ],
+      extensions,
+      { doctor: true },
+    );
+
+    expect(triage.warning_codes).toEqual(expect.arrayContaining([
+      "extension_capability_legacy_alias",
+      "extension_command_definition_legacy_handler_alias",
+      "extension_manager_state_invalid_json",
+      "extension_pm_min_version_unsatisfied",
+      "extension_update_check_failed",
+    ]));
+    expect(triage.remediation).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("Legacy extension capability aliases"),
+        expect.stringContaining("Extension command definitions using legacy handler"),
+        expect.stringContaining("Extension pm version-bound warnings"),
+        expect.stringContaining("Review and repair project managed extension state file"),
+        expect.stringContaining("Run pm extension --manage --project after validating network"),
+      ]),
+    );
   });
 
   it("rejects strict doctor flags when --doctor is not selected", async () => {
@@ -768,6 +1550,90 @@ describe("extension command runtime", () => {
         missing_active_project_names: ["alpha"],
       },
     });
+    expect(
+      buildDoctorConsistencySummary(
+        "project",
+        [
+          { name: "Gamma", directory: "gamma", active: true } as never,
+          { name: "Alpha", directory: "alpha", active: true } as never,
+        ],
+        [
+          { layer: "global", name: "ignored" },
+          { layer: "project", name: "gamma" },
+          { layer: "project", name: "alpha" },
+        ],
+        [],
+        false,
+      ),
+    ).toMatchObject({
+      warnings: [],
+      summary: {
+        active_project_names: ["alpha", "gamma"],
+        loaded_project_names: ["alpha", "gamma"],
+        missing_active_project_names: [],
+      },
+    });
+    expect(
+      classifyDoctorActivationFailureWarnings([
+        { name: "NeedsCapability", trace: { missing_capability: " Schema " } },
+        { name: "NeedsCapability", trace: { capability: "schema" } },
+        { name: "NoTrace", trace: {} },
+        null as never,
+      ]),
+    ).toEqual(["extension_capability_missing:NeedsCapability:schema"]);
+    expect(
+      classifyDoctorLoadFailureWarnings([
+        { name: "sdk", error: "Cannot find package '@unbrained/pm-cli' imported from extension" },
+        { name: "esm", error: "Cannot use import statement outside a module" },
+        { name: "esm", error: "Must use import to load ES Module" },
+        { name: "other", error: "runtime failed" },
+      ]),
+    ).toEqual([
+      "extension_load_failed_module_mode_mismatch:esm",
+      "extension_load_failed_sdk_dependency_missing:sdk",
+    ]);
+    expect(
+      collectUnknownCapabilityGuidance([
+        "extension_capability_unknown:project:demo:widgets:allowed=commands,schema:suggested=none",
+        "extension_capability_unknown:project:demo:widgets:allowed=commands,schema:suggested=none",
+        "extension_capability_legacy_alias:global:legacy:aliases=migration>schema,broken>missing",
+        "not_a_capability_warning",
+      ]).map((entry) => `${entry.layer}:${entry.name}:${entry.capability}`),
+    ).toEqual(["project:demo:widgets", "global:legacy:migration"]);
+    expect(buildExtensionTriageSummary("project", [], [])).toMatchObject({
+      status: "ok",
+      warning_count: 0,
+      remediation: ["No immediate action required. Re-run pm extension --manage --project after extension changes."],
+    });
+    expect(buildExtensionTriageSummary("project", ["plain_warning"], [])).toMatchObject({
+      status: "warn",
+      warning_codes: ["plain_warning"],
+    });
+    expect(
+      classifyDoctorActivationFailureWarnings([
+        { name: "OtherTrace", trace: { capability: " Hooks " } },
+        { name: "BlankCapability", trace: { missing_capability: " " } },
+        { name: "NoTrace" },
+      ]),
+    ).toEqual(["extension_capability_missing:OtherTrace:hooks"]);
+    expect(
+      buildDoctorConsistencySummary(
+        "project",
+        [
+          { name: "Zulu", directory: "zulu", active: true } as never,
+          { name: "Alpha", directory: "alpha", active: true } as never,
+          { name: "Loaded", directory: "loaded", active: true } as never,
+        ],
+        [{ layer: "project", name: "loaded" }],
+        [],
+        false,
+      ),
+    ).toMatchObject({
+      warnings: ["extension_doctor_consistency_active_not_loaded:alpha,zulu"],
+      summary: {
+        missing_active_project_names: ["alpha", "zulu"],
+      },
+    });
   });
 
   it("installs all bundled first-party packages via wildcard and all aliases", async () => {
@@ -1004,6 +1870,108 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("resolves bundled catalog aliases and installed local-source catalog entries", async () => {
+    await withTempPmPath(async (context) => {
+      const tempPackageRoot = await mkdtemp(path.join(context.tempRoot, "pm-bundled-root-"));
+      const bundledPackage = path.join(tempPackageRoot, "packages", "pm-local-catalog");
+      const bundledExtension = path.join(bundledPackage, "extensions", "local-catalog");
+      const multiPackage = path.join(tempPackageRoot, "packages", "pm-multi-catalog");
+      const invalidPackage = path.join(tempPackageRoot, "packages", "pm-invalid-catalog");
+      await mkdir(bundledPackage, { recursive: true });
+      await writeFile(
+        path.join(bundledPackage, "package.json"),
+        JSON.stringify(
+          {
+            name: "@example/pm-local-catalog",
+            version: "2.0.0",
+            description: "Local-source catalog fixture.",
+            keywords: ["catalog"],
+            pm: {
+              aliases: ["local-catalog", "  "],
+              extensions: ["extensions/local-catalog"],
+              docs: ["README.md"],
+              catalog: {
+                display_name: "Local Catalog",
+                category: "fixture",
+                links: {
+                  repository: "https://example.test/repo",
+                },
+              },
+            },
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      await writeTestExtension({ root: bundledExtension, name: "local-catalog-ext" });
+      await mkdir(multiPackage, { recursive: true });
+      await writeFile(
+        path.join(multiPackage, "package.json"),
+        JSON.stringify({ name: "@example/pm-multi-catalog", version: "1.0.0", pm: { aliases: ["multi-catalog"] } }),
+        "utf8",
+      );
+      await writeTestExtension({ root: path.join(multiPackage, "extensions", "one"), name: "multi-one" });
+      await writeTestExtension({ root: path.join(multiPackage, "extensions", "two"), name: "multi-two" });
+      await mkdir(path.join(invalidPackage, "extensions", "invalid"), { recursive: true });
+      await writeFile(
+        path.join(invalidPackage, "package.json"),
+        JSON.stringify({ name: "@example/pm-invalid-catalog", version: "1.0.0", pm: { aliases: ["invalid-catalog"] } }),
+        "utf8",
+      );
+      await writeFile(path.join(invalidPackage, "extensions", "invalid", "manifest.json"), '{"name":""}\n', "utf8");
+
+      const extensionsRoot = path.join(context.pmPath, "extensions");
+      const installedState = upsertManagedEntry(createEmptyManagedExtensionState(), {
+        name: "local-catalog-ext",
+        directory: "local-catalog-ext",
+        scope: "project",
+        manifest_version: "2.0.0",
+        manifest_entry: "index.js",
+        capabilities: ["commands"],
+        installed_at: "2026-01-01T00:00:00.000Z",
+        updated_at: "2026-01-01T00:00:00.000Z",
+        source: { kind: "local", input: bundledPackage, location: bundledPackage },
+      });
+      await writeManagedExtensionState(extensionsRoot, installedState);
+
+      const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
+      process.env[PM_PACKAGE_ROOT_ENV] = tempPackageRoot;
+      try {
+        await expect(resolveBundledExtensionAliasSource(" LOCAL-CATALOG ")).resolves.toBe(bundledPackage);
+        await expect(resolveBundledAliasManifestName("local-catalog")).resolves.toBe("local-catalog-ext");
+        await expect(resolveBundledAliasManifestName("multi-catalog")).resolves.toBeNull();
+        await expect(resolveBundledAliasManifestName("invalid-catalog")).resolves.toBeNull();
+        await expect(resolveBundledAliasManifestName("missing-catalog")).resolves.toBeNull();
+
+        const catalog = await buildBundledPackageCatalog("project", { path: context.pmPath });
+        expect(catalog.packages).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              alias: "local-catalog",
+              installed: true,
+              package_name: "@example/pm-local-catalog",
+              metadata_only_resources: { docs: ["README.md"] },
+              catalog: expect.objectContaining({
+                display_name: "Local Catalog",
+                links: expect.objectContaining({
+                  repository: "https://example.test/repo",
+                  npm: "https://www.npmjs.com/package/%40example%2Fpm-local-catalog",
+                }),
+              }),
+            }),
+          ]),
+        );
+      } finally {
+        if (previousPackageRoot === undefined) {
+          delete process.env[PM_PACKAGE_ROOT_ENV];
+        } else {
+          process.env[PM_PACKAGE_ROOT_ENV] = previousPackageRoot;
+        }
+      }
+    });
+  });
+
   it("falls back from missing PM_CLI_PACKAGE_ROOT alias path to module-root bundle", async () => {
     await withTempPmPath(async (context) => {
       const missingRoot = path.join(context.tempRoot, "missing-bundle-root");
@@ -1179,6 +2147,13 @@ describe("extension command runtime", () => {
         /contains multiple extension manifests/,
       );
 
+      const directExtension = path.join(tempRoot, "direct-extension");
+      await writeTestExtension({ root: directExtension, name: "direct-extension" });
+      await expect(resolveInstallSource(parseExtensionInstallSource(directExtension))).resolves.toMatchObject({
+        directory: directExtension,
+        source: { kind: "local", input: directExtension, absolute_path: directExtension },
+      });
+
       const fileUrlPackage = path.join(tempRoot, "file-url-package");
       const fileUrlExtension = path.join(fileUrlPackage, "extensions", "file-url");
       await mkdir(fileUrlPackage, { recursive: true });
@@ -1198,6 +2173,97 @@ describe("extension command runtime", () => {
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }
+  });
+
+  it("resolves Git-backed extension sources from local repositories without network access", async () => {
+    const tempRoot = await realpath(await mkdtemp(path.join(os.tmpdir(), "pm-extension-git-source-")));
+    try {
+      const repoRoot = path.join(tempRoot, "repo");
+      const repoExtension = path.join(repoRoot, ".agents", "pm", "extensions", "fixture");
+      await mkdir(repoExtension, { recursive: true });
+      await writeTestExtension({ root: repoExtension, name: "git-fixture" });
+      expect(runGit(["init", repoRoot]).status).toBe(0);
+      expect(runGit(["-C", repoRoot, "config", "user.email", "pm-test@example.com"]).status).toBe(0);
+      expect(runGit(["-C", repoRoot, "config", "user.name", "pm test"]).status).toBe(0);
+      expect(runGit(["-C", repoRoot, "add", "."]).status).toBe(0);
+      expect(runGit(["-C", repoRoot, "commit", "-m", "fixture"]).status).toBe(0);
+      expect(runGit(["-C", repoRoot, "branch", "fixture-ref"]).status).toBe(0);
+
+      const resolved = await resolveInstallSource({
+        kind: "github",
+        input: "local/repo/fixture",
+        owner: "local",
+        repo: "repo",
+        repository: repoRoot,
+        subpath: "fixture",
+      });
+      expect(resolved).toMatchObject({
+        directory: expect.stringContaining(path.join(".agents", "pm", "extensions", "fixture")),
+        resolved_subpath: ".agents/pm/extensions/fixture",
+        commit: expect.stringMatching(/^[0-9a-f]{40}$/),
+      });
+      await resolved.cleanup?.();
+
+      const fallbackResolved = await resolveInstallSource({
+        kind: "github",
+        input: "local/repo/missing",
+        owner: "local",
+        repo: "repo",
+        repository: repoRoot,
+        subpath: "missing",
+      });
+      expect(fallbackResolved.resolved_subpath).toBe(".agents/pm/extensions/fixture");
+      await fallbackResolved.cleanup?.();
+
+      const refResolved = await resolveInstallSource({
+        kind: "github",
+        input: "local/repo/fixture",
+        owner: "local",
+        repo: "repo",
+        repository: repoRoot,
+        ref: "fixture-ref",
+        subpath: "fixture",
+      });
+      expect(refResolved.commit).toMatch(/^[0-9a-f]{40}$/);
+      expect(refResolved.resolved_subpath).toBe(".agents/pm/extensions/fixture");
+      await refResolved.cleanup?.();
+
+      const rootRepo = path.join(tempRoot, "root-repo");
+      await mkdir(rootRepo, { recursive: true });
+      await writeTestExtension({ root: rootRepo, name: "root-git-fixture" });
+      expect(runGit(["init", rootRepo]).status).toBe(0);
+      expect(runGit(["-C", rootRepo, "config", "user.email", "pm-test@example.com"]).status).toBe(0);
+      expect(runGit(["-C", rootRepo, "config", "user.name", "pm test"]).status).toBe(0);
+      expect(runGit(["-C", rootRepo, "add", "."]).status).toBe(0);
+      expect(runGit(["-C", rootRepo, "commit", "-m", "root-fixture"]).status).toBe(0);
+      const traversalResolved = await resolveInstallSource({
+        kind: "github",
+        input: "local/root-repo/../outside",
+        owner: "local",
+        repo: "root-repo",
+        repository: rootRepo,
+        subpath: "../outside",
+      });
+      expect(traversalResolved.resolved_subpath).toBe(".");
+      await traversalResolved.cleanup?.();
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("cleans up failed GitHub source clones", async () => {
+    const beforeTmpEntries = new Set((await readdir(os.tmpdir())).filter((entry) => entry.startsWith("pm-extension-source-")));
+    await expect(
+      resolveInstallSource({
+        kind: "github",
+        input: "local/missing",
+        owner: "local",
+        repo: "missing",
+        repository: path.join(os.tmpdir(), "pm-definitely-missing-repo"),
+      }),
+    ).rejects.toThrow(/Git command failed/);
+    const afterTmpEntries = (await readdir(os.tmpdir())).filter((entry) => entry.startsWith("pm-extension-source-"));
+    expect(afterTmpEntries.filter((entry) => !beforeTmpEntries.has(entry))).toEqual([]);
   });
 
   it("resolves existing cwd-relative npm package specs as local package sources", async () => {
@@ -1564,6 +2630,17 @@ describe("extension command runtime", () => {
     }
   });
 
+  it("covers extension install lock acquisition and cleanup helpers", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-lock-helper-"));
+    try {
+      const result = await extensionCommandTestOnly.withExtensionInstallLock(tempRoot, "lock-ext", async () => "locked");
+      expect(result).toBe("locked");
+      await expect(readdir(path.join(tempRoot, "runtime", "extension-install-locks"))).resolves.toEqual([]);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
   it("stages extension copies when the destination is nested inside the source", async () => {
     const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-extension-self-nesting-"));
     try {
@@ -1896,6 +2973,79 @@ describe("extension command runtime", () => {
     });
   });
 
+  it("elides activation failure traces in deep doctor output unless trace is requested", async () => {
+    await withTempPmPath(async (context) => {
+      const sourceDir = path.join(context.tempRoot, "doctor-failing-ext");
+      await writeTestExtension({
+        root: sourceDir,
+        name: "doctor-failing-ext",
+        manifestOverrides: {
+          capabilities: ["commands"],
+        },
+        entrySource: "export function activate() { throw new Error('doctor activation failed'); }\n",
+      });
+      await runExtension(sourceDir, { install: true, project: true }, { path: context.pmPath });
+
+      const deepDoctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep" }, { path: context.pmPath });
+      const activationWithoutTrace = (deepDoctor.details.deep as { activation?: { failed?: Array<Record<string, unknown>> } }).activation
+        ?.failed ?? [];
+      expect(activationWithoutTrace).toEqual([
+        expect.objectContaining({
+          name: "doctor-failing-ext",
+        }),
+      ]);
+      expect(activationWithoutTrace[0]).not.toHaveProperty("trace");
+      expect(deepDoctor.details.summary).toMatchObject({
+        activation_failure_count: 1,
+        has_blocking_failures: true,
+      });
+
+      const tracedDoctor = await runExtension(undefined, { doctor: true, project: true, detail: "deep", trace: true }, { path: context.pmPath });
+      const activationWithTrace = (tracedDoctor.details.deep as { activation?: { failed?: Array<Record<string, unknown>> } }).activation
+        ?.failed ?? [];
+      expect(activationWithTrace[0]).toHaveProperty("trace");
+      expect(tracedDoctor.details.trace_enabled).toBe(true);
+    });
+  });
+
+  it("surfaces failed managed GitHub update checks in doctor diagnostics", async () => {
+    await withTempPmPath(async (context) => {
+      const extensionsRoot = path.join(context.pmPath, "extensions");
+      const extensionDir = path.join(extensionsRoot, "github-update-failed");
+      await writeTestExtension({ root: extensionDir, name: "github-update-failed" });
+      const state = upsertManagedEntry(createEmptyManagedExtensionState(), {
+        name: "github-update-failed",
+        directory: "github-update-failed",
+        scope: "project",
+        manifest_version: "1.0.0",
+        manifest_entry: "index.js",
+        capabilities: ["commands"],
+        installed_at: "2026-01-01T00:00:00.000Z",
+        updated_at: "2026-01-01T00:00:00.000Z",
+        source: {
+          kind: "github",
+          input: "owner/repo",
+          location: ".",
+          repository: "https://github.com/owner/repo.git",
+          owner: "owner",
+          repo: "repo",
+        },
+        update_error: "network_down",
+      });
+      await writeManagedExtensionState(extensionsRoot, state);
+
+      const doctor = await runExtension(undefined, { doctor: true, project: true }, { path: context.pmPath });
+      expect(doctor.warnings).toEqual(expect.arrayContaining(["extension_update_check_failed:github-update-failed"]));
+      expect(doctor.details.summary).toMatchObject({
+        update_check_failed_total: 1,
+      });
+      expect(doctor.details.triage).toMatchObject({
+        update_check_failed_total: 1,
+        remediation: expect.arrayContaining(["Run pm extension --manage --project after validating network and repository access."]),
+      });
+    });
+  });
+
   it("rejects doctor action when an explicit extension target is provided", async () => {
     await withTempPmPath(async (context) => {
       await expect(
@@ -2075,6 +3225,38 @@ describe("extension command runtime", () => {
     expect(summary.collision_plan?.collisions.map((entry) => entry.surface)).toEqual(
       expect.arrayContaining(["acme:sync", "json", "global"]),
     );
+
+    const ranked = buildExtensionTriageSummary(
+      "project",
+      [
+        "extension_command_handler_collision:alpha:project:many:project:light",
+        "extension_command_handler_collision:beta:project:many:project:heavy",
+        "extension_command_handler_collision:gamma:project:heavy:project:light",
+      ],
+      [
+        {
+          ...baseExtension,
+          name: "many",
+          command_paths: ["many command"],
+        },
+        {
+          ...baseExtension,
+          name: "heavy",
+          command_paths: ["heavy one", "heavy two"],
+          action_paths: ["heavy:action"],
+        },
+        {
+          ...baseExtension,
+          name: "light",
+        },
+      ],
+      { vocabulary: "extension" },
+    );
+    expect(ranked.collision_plan?.remediation_candidates.map((entry) => entry.extension)).toEqual([
+      "light",
+      "many",
+      "heavy",
+    ]);
   });
 
   it("reports extension governance policy diagnostics in doctor output", async () => {
@@ -2482,6 +3664,21 @@ describe("extension command runtime", () => {
     await expect(
       runExtension(undefined, { install: true, project: true, gh: "owner/repo/ext", github: "owner/repo/other" }, { path: ".agents/pm" }),
     ).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(runExtension("init", { init: true, gh: "owner/repo/ext" }, { path: ".agents/pm" })).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(runExtension("init", { init: true, ref: "main" }, { path: ".agents/pm" })).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(runExtension("target", { reload: true }, { path: ".agents/pm" })).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(runExtension("target", { catalog: true }, { path: ".agents/pm" })).rejects.toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+    });
+    await expect(runExtension("*", { install: true, ref: "main" }, { path: ".agents/pm" })).rejects.toMatchObject({
       exitCode: EXIT_CODE.USAGE,
     });
   });

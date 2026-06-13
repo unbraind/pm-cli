@@ -391,9 +391,25 @@ function assignItemsToReleaseWindows(items, windows) {
 function normalizeReleaseKey(value) {
     return value.trim().replace(/^v/i, "").toLowerCase();
 }
+// Truncate an epoch-millisecond value to whole-second granularity. Release-tag
+// boundaries come from git committer dates at second precision, while pm item
+// timestamps carry milliseconds (see filterItemsByTime).
+const toSecond = (ms) => Math.floor(ms / 1000);
 function filterItemsByTime(items, window) {
     const since = window.since ? Date.parse(window.since) : undefined;
     const until = window.until ? Date.parse(window.until) : undefined;
+    // Compare window boundaries at second granularity. Comparing the raw values
+    // pushes an item closed at 12:34:56.789 outside a window ending at
+    // 12:34:56(.000), so it resurfaces under Unreleased (issue #41). An inclusive
+    // `until` covers the whole boundary second, and an exclusive `since` excludes
+    // the entire boundary second.
+    //
+    // Consequence for sub-second `since` inputs (non-exclusive `--since` flag): a
+    // boundary like `--since 13:00:00.500Z` now also admits items closed earlier
+    // in that same second (e.g. 13:00:00.000Z), where the previous millisecond
+    // comparison would have excluded them. This is intentional: release-tag
+    // boundaries are always second-precision, so the millisecond tail carried no
+    // reliable signal.
     return items.filter((item) => {
         const timestamp = itemTimestamp(item);
         if (!timestamp)
@@ -401,9 +417,13 @@ function filterItemsByTime(items, window) {
         const value = Date.parse(timestamp);
         if (Number.isNaN(value))
             return false;
-        if (since !== undefined && (window.sinceExclusive ? value <= since : value < since))
-            return false;
-        if (until !== undefined && value > until)
+        if (since !== undefined) {
+            const sinceSecond = toSecond(since);
+            const valueSecond = toSecond(value);
+            if (window.sinceExclusive ? valueSecond <= sinceSecond : valueSecond < sinceSecond)
+                return false;
+        }
+        if (until !== undefined && toSecond(value) > toSecond(until))
             return false;
         return true;
     });

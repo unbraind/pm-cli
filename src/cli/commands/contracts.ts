@@ -1834,3 +1834,30 @@ export async function runContracts(
 
   return result;
 }
+
+export const _testOnlyContractsCommand = {
+  actionDescriptorMatchesSelectedCommand,
+  attachCreateRequiredOptionContracts,
+  buildExtensionActionSchemaBranch,
+  buildRuntimeFieldFlagContracts,
+  collectActionContractDescriptors,
+  collectExtensionCommandContracts,
+  collectExtensionFlagContractsByCommand,
+  extractActionBranches,
+  extensionSchemaPropertyNameFromFlag,
+  filterSchemaByAction,
+  filterSchemaByActions,
+  isCoreCommandPath,
+  mergeExtensionContractsByAction,
+  normalizeActionNameFromCommand,
+  normalizeCommandForRuntimeFieldFlags,
+  normalizeCommandPath,
+  packageOwnedActionForCommand,
+  resolveActionCommandPath,
+  resolveActionAvailability,
+  resolveCoreCommandFlags,
+  resolveScopedCommandsFromActionDescriptors,
+  splitCommandPathAliases,
+  toRuntimeLongFlagToken,
+  toRuntimeShortFlagToken,
+};

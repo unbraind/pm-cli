@@ -107,6 +107,12 @@ describe("core/telemetry/observability", () => {
     expect(
       inferTelemetryErrorCode({
         ok: false,
+        errorMessage: "strict create mode requires concrete values for --description.",
+      }),
+    ).toBe("invalid_argument_value");
+    expect(
+      inferTelemetryErrorCode({
+        ok: false,
         exitCode: EXIT_CODE.USAGE,
       }),
     ).toBe("invalid_command_usage");

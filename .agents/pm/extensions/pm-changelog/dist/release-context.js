@@ -156,7 +156,20 @@ function runGit(cwd, args) {
     }
 }
 function formatTagVersion(tag) {
-    return tag.replace(/^v/i, "");
+    // Strip the leading `v` and normalize away zero-padding on calendar
+    // (`YYYY.M.D[-N]`) versions so a padded git tag like `v2026.06.13` renders
+    // the same unpadded `2026.6.13` heading that `canonicalPendingTagName`
+    // emits pre-tag and that the pm-cli release pipeline keys off. Without this
+    // the release heading flips from `2026.6.13` to `2026.06.13` the moment the
+    // padded tag is pushed, so the committed CHANGELOG mismatches every later
+    // regeneration and `changelog:check` fails fleet-wide (issue #41).
+    // Non-calendar tags (semver `1.2.3`, etc.) are left untouched.
+    const trimmed = tag.replace(/^v/i, "");
+    const calendar = trimmed.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})(-.+)?$/);
+    if (!calendar)
+        return trimmed;
+    const [, year, month, day, suffix = ""] = calendar;
+    return `${year}.${Number(month)}.${Number(day)}${suffix}`;
 }
 function formatDate(timestamp) {
     const date = new Date(timestamp);

@@ -520,6 +520,13 @@ export async function mutateItem(params: {
   }
 }
 
+export const itemStoreTestOnly = {
+  appendWarning,
+  bypassesAssigneeConflict,
+  buildDidYouMeanSuggestions,
+  isErrno,
+};
+
 export async function deleteItem(params: {
   pmRoot: string;
   settings: PmSettings;

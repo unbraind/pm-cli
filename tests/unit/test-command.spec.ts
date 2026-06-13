@@ -4,13 +4,20 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  _testOnlyTestCommand as testInternals,
   classifyLinkedTestFailure,
   countFailureCategories,
   extractReferencedPmItemIdsFromCommand,
   resolveLinkedTestFailureExitCode,
   runTest,
+  summarizeContextPreflight,
 } from "../../src/cli/commands/test.js";
 import { appendTrackedTestRunSummary } from "../../src/core/test/item-test-run-tracking.js";
+import {
+  describeLinkedTestEntries,
+  parseOnlyIndexValue,
+  resolveLinkedTestRunSelection,
+} from "../../src/core/test/run-selectors.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
 import { readSettings } from "../../src/core/store/settings.js";
@@ -155,6 +162,37 @@ async function writeSchemaTypeExtension(pmRoot: string, extensionDirName: string
 }
 
 describe("runTest", () => {
+  it("summarizes linked-test statuses and pm context preflight counters", () => {
+    expect(
+      summarizeContextPreflight([
+        { status: "passed", execution_context: { is_pm_command: false } },
+        {
+          status: "failed",
+          execution_context: {
+            is_pm_command: true,
+            is_pm_tracker_read_command: true,
+            mismatch_detected: true,
+            auto_pm_context_applied: true,
+          },
+        },
+        {
+          status: "skipped",
+          execution_context: {
+            is_pm_command: true,
+            is_pm_tracker_read_command: false,
+            mismatch_detected: false,
+            auto_remediated: false,
+          },
+        },
+      ] as never),
+    ).toEqual({
+      checked_pm_commands: 2,
+      tracker_read_commands: 1,
+      mismatches: 1,
+      auto_remediated: 1,
+    });
+  });
+
   it("normalizes failure exit codes for timeout/maxBuffer edge cases", () => {
     expect(
       resolveLinkedTestFailureExitCode({
@@ -710,6 +748,100 @@ describe("runTest", () => {
     expect(counts.empty_run).toBe(1);
     expect(counts.timeout).toBe(1);
     expect(counts.infra_collision).toBe(0);
+  });
+
+  it("covers pure linked-test helpers for context modes, parsing, sandbox copy, and json paths", async () => {
+    const previousAuthor = process.env.PM_AUTHOR;
+    const previousRunId = process.env.PM_BACKGROUND_TEST_RUN_ID;
+    try {
+      delete process.env.PM_AUTHOR;
+      delete process.env.PM_BACKGROUND_TEST_RUN_ID;
+      expect(testInternals.resolveAuthor(undefined, "fallback-author")).toBe("fallback-author");
+      process.env.PM_AUTHOR = " env-author ";
+      expect(testInternals.resolveAuthor(undefined, "fallback-author")).toBe("env-author");
+      expect(testInternals.resolveAuthor("   ", "fallback-author")).toBe("unknown");
+      process.env.PM_BACKGROUND_TEST_RUN_ID = " run-from-env ";
+      expect(testInternals.resolveTrackedRunId("test")).toBe("run-from-env");
+    } finally {
+      if (previousAuthor === undefined) {
+        delete process.env.PM_AUTHOR;
+      } else {
+        process.env.PM_AUTHOR = previousAuthor;
+      }
+      if (previousRunId === undefined) {
+        delete process.env.PM_BACKGROUND_TEST_RUN_ID;
+      } else {
+        process.env.PM_BACKGROUND_TEST_RUN_ID = previousRunId;
+      }
+    }
+
+    expect(testInternals.summarizeRunResultStatuses([
+      { status: "passed" },
+      { status: "failed" },
+      { status: "skipped" },
+      { status: "unknown" },
+    ] as never)).toEqual({ passed: 1, failed: 1, skipped: 2 });
+    expect(testInternals.ensureScope(undefined)).toBe("project");
+    expect(() => testInternals.ensureScope("workspace")).toThrow('Invalid scope "workspace"');
+    expect(testInternals.parsePmContextMode(undefined)).toBe("schema");
+    expect(testInternals.parsePmContextMode(" AUTO ")).toBe("auto");
+    expect(() => testInternals.parsePmContextMode("bad")).toThrow("Invalid --pm-context value");
+    expect(testInternals.resolveLinkedTestRequestedContextMode({ pm_context_mode: "tracker" } as never, "schema", false)).toBe(
+      "tracker",
+    );
+    expect(testInternals.resolveLinkedTestRequestedContextMode({ pm_context_mode: "tracker" } as never, "schema", true)).toBe(
+      "schema",
+    );
+    expect(testInternals.resolveLinkedTestEffectiveContextMode("auto", true)).toBe("tracker");
+    expect(testInternals.resolveLinkedTestEffectiveContextMode("auto", false)).toBe("schema");
+    expect(testInternals.hasLinkedTestAssertions({ assert_stdout_contains: ["ok"] } as never)).toBe(true);
+    expect(testInternals.hasLinkedTestAssertions({ assert_json_field_equals: { ok: true } } as never)).toBe(true);
+    expect(testInternals.hasLinkedTestAssertions({} as never)).toBe(false);
+    expect(testInternals.commandInvokesPmCli("A=1 pm get pm-123 --json && echo done")).toBe(true);
+    expect(testInternals.commandInvokesPmCli("echo pm get pm-123")).toBe(false);
+    expect(testInternals.commandInvokesPmTrackerReadCommand("pm get pm-123 --json")).toBe(true);
+    expect(testInternals.commandInvokesPmTrackerReadCommand("pm create --title x")).toBe(false);
+    expect(testInternals.resolveDirectRunnerSubcommand({ subcommand: "vitest", args: [] })).toBe("vitest");
+    expect(testInternals.resolveDirectRunnerSubcommand(null)).toBeUndefined();
+    expect(testInternals.splitJsonPathSegments("items[0].status")).toEqual(["items", 0, "status"]);
+    expect(testInternals.splitJsonPathSegments("items[-1]")).toEqual(["items", "-1"]);
+    expect(testInternals.splitJsonPathSegments("items[]")).toEqual(["items"]);
+    expect(testInternals.readJsonPathValue({ items: [{ status: "ok" }] }, "items[0].status")).toEqual({
+      found: true,
+      value: "ok",
+    });
+    expect(testInternals.readJsonPathValue({ ok: true }, "   ")).toEqual({
+      found: false,
+      value: undefined,
+    });
+    expect(testInternals.readJsonPathValue({ items: [{ status: "ok" }] }, "items.status")).toEqual({
+      found: false,
+      value: undefined,
+    });
+    expect(testInternals.readJsonPathValue({ items: [] }, "items[1].status")).toEqual({
+      found: false,
+      value: undefined,
+    });
+
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-test-command-helpers-"));
+    try {
+      const source = path.join(tempRoot, "source");
+      const target = path.join(tempRoot, "target", "copied.txt");
+      await mkdir(source, { recursive: true });
+      await writeFile(path.join(source, "copied.txt"), "copy me", "utf8");
+      await testInternals.copyIntoSandboxIfPresent(path.join(source, "missing.txt"), path.join(tempRoot, "missing.txt"));
+      await testInternals.copyIntoSandboxIfPresent(path.join(source, "copied.txt"), target);
+      expect(await readFile(target, "utf8")).toBe("copy me");
+      await mkdir(path.join(source, "pm", "tasks"), { recursive: true });
+      await writeFile(path.join(source, "pm", "tasks", "pm-a.toon"), "item", "utf8");
+      await mkdir(path.join(source, "pm", "history"), { recursive: true });
+      await writeFile(path.join(source, "pm", "history", "pm-a.jsonl"), "history", "utf8");
+      expect(await testInternals.countLinkedTestItemFiles(path.join(source, "pm"))).toBe(1);
+      await testInternals.seedLinkedTestTrackerData(path.join(source, "pm"), path.join(tempRoot, "sandbox-pm"));
+      expect(await readFile(path.join(tempRoot, "sandbox-pm", "tasks", "pm-a.toon"), "utf8")).toBe("item");
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
   });
 
   it("rejects sandbox-unsafe test-runner commands and allows sandbox-safe variants", async () => {
@@ -2496,6 +2628,65 @@ describe("runTest", () => {
       );
       expect(result.run_results[0]?.status).toBe("passed");
       expect(result.warnings?.[0] ?? "").toContain("test_result_tracking_failed");
+    });
+  });
+});
+
+describe("linked test run selectors", () => {
+  it("formats long linked-test entries and validates selector errors", () => {
+    const longCommand = `pnpm test -- ${"very-long-segment ".repeat(8)}`.trim();
+    const tests = [
+      { command: longCommand, scope: "project" as const },
+      { path: "tests/unit/output.spec.ts", scope: "project" as const },
+      { scope: "project" as const },
+    ];
+
+    const description = describeLinkedTestEntries(tests);
+    expect(description).toContain("...");
+    expect(description).toContain("2. tests/unit/output.spec.ts");
+    expect(description).toContain("3. <no command>");
+
+    expect(parseOnlyIndexValue(" 2 ")).toBe(2);
+    expect(() => parseOnlyIndexValue("0", "--only-index")).toThrow(/1-based integer index/);
+    expect(() => resolveLinkedTestRunSelection(tests, { match: "output", onlyLast: true })).toThrow(/Combine at most one/);
+    expect(() => resolveLinkedTestRunSelection([], { onlyLast: true })).toThrow(/this item has none/);
+    expect(() => resolveLinkedTestRunSelection(tests, { match: "   " })).toThrow(/non-empty substring/);
+    expect(() => resolveLinkedTestRunSelection(tests, { match: "missing" })).toThrow(/Available entries/);
+    expect(() => resolveLinkedTestRunSelection(tests, { onlyIndex: 9 })).toThrow(/out of range/);
+  });
+
+  it("selects all, matching, indexed, and last linked tests", () => {
+    const tests = [
+      { command: "pnpm test -- tests/unit/output.spec.ts", scope: "project" as const },
+      { path: "tests/unit/settings-store.spec.ts", scope: "project" as const },
+      { command: "pnpm typecheck", scope: "project" as const },
+    ];
+
+    expect(resolveLinkedTestRunSelection(tests, {})).toMatchObject({
+      selector: null,
+      selected_indexes: [1, 2, 3],
+      selected_count: 3,
+      skipped_count: 0,
+    });
+    expect(resolveLinkedTestRunSelection(tests, { match: "SETTINGS" })).toMatchObject({
+      selector: "match",
+      requested: "SETTINGS",
+      selected_indexes: [2],
+      selected_count: 1,
+      skipped_count: 2,
+    });
+    expect(resolveLinkedTestRunSelection(tests, { onlyIndex: 1 })).toMatchObject({
+      selector: "only-index",
+      requested: "1",
+      selected: [tests[0]],
+      selected_indexes: [1],
+    });
+    expect(resolveLinkedTestRunSelection(tests, { onlyLast: true })).toMatchObject({
+      selector: "only-last",
+      requested: "last",
+      selected: [tests[2]],
+      selected_indexes: [3],
+      skipped_count: 2,
     });
   });
 });

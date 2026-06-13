@@ -1005,3 +1005,8 @@ export function formatSchemaShowStatusHuman(result: SchemaShowStatusResult): str
  * without importing the core module directly.
  */
 export { buildInvalidTypeHint };
+
+export const _testOnlySchemaCommand = {
+  toAuthor,
+  workflowSlotsReferencing,
+};

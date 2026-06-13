@@ -30,6 +30,28 @@ const AGENT_GUIDANCE_START_MARKER_PREFIX = "<!-- pm-cli:agent-guidance:start:";
 const AGENT_GUIDANCE_START_MARKER = `<!-- pm-cli:agent-guidance:start:v${AGENT_GUIDANCE_TEMPLATE_VERSION} -->`;
 const AGENT_GUIDANCE_END_MARKER = "<!-- pm-cli:agent-guidance:end -->";
 
+export const _testOnly = {
+  toPortableRelativePath,
+  ensureTrailingNewline,
+  detectLineEnding,
+  findGuidanceBlockRange,
+  buildAgentGuidanceBlock,
+  upsertAgentGuidanceBlock,
+  resolveProjectRoot,
+  resolveTargetGuidancePath,
+  parsePromptChoice,
+  normalizeAgentGuidanceState,
+  applyAgentGuidanceState,
+  setAgentGuidanceReadlineFactoryForTests,
+};
+
+type AgentGuidanceReadlineInterface = ReturnType<typeof readline.createInterface>;
+let createAgentGuidanceReadlineInterface = (): AgentGuidanceReadlineInterface => readline.createInterface({ input, output });
+
+function setAgentGuidanceReadlineFactoryForTests(factory: (() => AgentGuidanceReadlineInterface) | undefined): void {
+  createAgentGuidanceReadlineInterface = factory ?? (() => readline.createInterface({ input, output }));
+}
+
 interface AgentGuidanceFileScan {
   file_path: string;
   exists: boolean;
@@ -180,7 +202,7 @@ function parsePromptChoice(answer: string, currentDefault: boolean): boolean {
 }
 
 async function promptForGuidanceWrite(targetRelativePath: string): Promise<boolean> {
-  const rl = readline.createInterface({ input, output });
+  const rl = createAgentGuidanceReadlineInterface();
   try {
     output.write("\nAgent guidance check\n");
     output.write("No AGENTS.md/CLAUDE.md file currently contains compact pm workflow guidance.\n");

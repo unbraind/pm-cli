@@ -7,6 +7,7 @@ import {
   setActiveExtensionServices,
 } from "../../src/core/extensions/index.js";
 import {
+  itemStoreTestOnly,
   buildItemNotFoundError,
   deleteItem,
   listAllFrontMatter,
@@ -87,6 +88,21 @@ describe("core/store/item-store", () => {
       ).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
       });
+    });
+  });
+
+  it("covers item-store helper branches for warnings and assignee bypasses", async () => {
+    const warnings: string[] = [];
+    itemStoreTestOnly.appendWarning(warnings, "first");
+    itemStoreTestOnly.appendWarning(undefined, "ignored");
+    expect(warnings).toEqual(["first"]);
+    expect(itemStoreTestOnly.isErrno(Object.assign(new Error("busy"), { code: "EBUSY" }), "EBUSY")).toBe(true);
+    expect(itemStoreTestOnly.isErrno(new Error("plain"), "EBUSY")).toBe(false);
+    expect(itemStoreTestOnly.bypassesAssigneeConflict("claim")).toBe(true);
+    expect(itemStoreTestOnly.bypassesAssigneeConflict("update", true)).toBe(true);
+    expect(itemStoreTestOnly.bypassesAssigneeConflict("delete", true)).toBe(false);
+    await withTempPmPath(async ({ pmPath }) => {
+      await expect(itemStoreTestOnly.buildDidYouMeanSuggestions(pmPath, "pm-nothing", "pm-", {})).resolves.toEqual([]);
     });
   });
 
@@ -272,6 +288,51 @@ describe("core/store/item-store", () => {
       expect(result.warnings).toEqual(
         expect.arrayContaining([`ownership_warning:assignee_conflict:${id}:other-agent`]),
       );
+    });
+  });
+
+  it("blocks strict assignee conflicts but allows explicit bypass operations", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-item-store-strict-assignee";
+      await writeTaskItem(pmPath, id, { assignee: "other-agent" });
+      const settings = await readSettings(pmPath);
+      settings.governance.preset = "custom";
+      settings.governance.ownership_enforcement = "strict";
+
+      await expect(
+        mutateItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          op: "update",
+          author: "unit-author",
+          mutate: (document) => {
+            document.metadata.description = "blocked";
+            return { changedFields: ["description"] };
+          },
+        }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.CONFLICT,
+      });
+
+      const bypassed = await mutateItem({
+        pmRoot: pmPath,
+        settings,
+        id,
+        op: "comment_add",
+        author: "unit-author",
+        bypassAssigneeConflict: true,
+        mutate: (document) => {
+          document.metadata.description = "bypassed";
+          return {
+            changedFields: ["description"],
+            warnings: ["mutation_warning:kept_for_coverage"],
+          };
+        },
+      });
+
+      expect(bypassed.item.description).toBe("bypassed");
+      expect(bypassed.warnings).toContain("mutation_warning:kept_for_coverage");
     });
   });
 
@@ -550,6 +611,34 @@ describe("core/store/item-store", () => {
     });
   });
 
+  it("restores the original item when same-path history append fails", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-write-rollback-same-path";
+      const { itemPath } = await writeTaskItem(pmPath, id, { description: "before same-path rollback" }, "toon");
+      const originalRaw = await fs.readFile(itemPath, "utf8");
+      const settings = await readSettings(pmPath);
+      const historyDir = path.join(pmPath, "history");
+      await fs.rm(historyDir, { recursive: true, force: true });
+      await fs.writeFile(historyDir, "not-a-directory", "utf8");
+
+      await expect(
+        mutateItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          op: "update",
+          author: "unit-author",
+          mutate: (document) => {
+            document.metadata.description = "should rollback same path";
+            return { changedFields: ["description"] };
+          },
+        }),
+      ).rejects.toBeInstanceOf(Error);
+
+      await expect(fs.readFile(itemPath, "utf8")).resolves.toBe(originalRaw);
+    });
+  });
+
   it("honors skip write and skip delete service overrides", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-skip-overrides";
@@ -677,6 +766,50 @@ describe("core/store/item-store", () => {
       ).rejects.toBeInstanceOf(Error);
 
       await expect(fs.readFile(alternatePath, "utf8")).resolves.toBe(originalRaw);
+    });
+  });
+
+  it("restores same-path delete targets when history append fails", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-delete-rollback-same-path";
+      const { itemPath } = await writeTaskItem(pmPath, id, { description: "rollback same path" }, "toon");
+      const originalRaw = await fs.readFile(itemPath, "utf8");
+      const settings = await readSettings(pmPath);
+      const historyDir = path.join(pmPath, "history");
+      await fs.rm(historyDir, { recursive: true, force: true });
+      await fs.writeFile(historyDir, "not-a-directory", "utf8");
+
+      await expect(
+        deleteItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          author: "unit-author",
+        }),
+      ).rejects.toBeInstanceOf(Error);
+
+      await expect(fs.readFile(itemPath, "utf8")).resolves.toBe(originalRaw);
+    });
+  });
+
+  it("covers item-store warning and suggestion helper edges", async () => {
+    expect(itemStoreTestOnly.isErrno({ code: "ENOENT" }, "ENOENT")).toBe(true);
+    expect(itemStoreTestOnly.isErrno(null, "ENOENT")).toBe(false);
+
+    const warnings = ["existing"];
+    itemStoreTestOnly.appendWarning(warnings, "existing");
+    itemStoreTestOnly.appendWarning(warnings, "new");
+    expect(warnings).toEqual(["existing", "new"]);
+    itemStoreTestOnly.appendWarning(undefined, "ignored");
+
+    await withTempPmPath(async ({ pmPath }) => {
+      await writeTaskItem(pmPath, "pm-close-alpha");
+      await writeTaskItem(pmPath, "pm-close-beta");
+      const suggestions = await itemStoreTestOnly.buildDidYouMeanSuggestions(pmPath, "pm-close-alphx", "pm-", {
+        Task: "tasks",
+        Issue: "issues",
+      });
+      expect(suggestions).toContain("pm-close-alpha");
     });
   });
 });

@@ -295,3 +295,8 @@ export function printError(message: string): void {
   const rendered = override.handled && typeof override.result === "string" ? override.result : message;
   writeStderr(rendered.endsWith("\n") ? rendered : `${rendered}\n`);
 }
+
+export const outputTestOnly = {
+  compactToonValue,
+  renderToonValue,
+};

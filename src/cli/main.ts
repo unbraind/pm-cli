@@ -171,6 +171,10 @@ interface ActiveExtensionHookContext {
 let activeExtensionHookContext: ActiveExtensionHookContext | null = null;
 let activeTelemetryCommandContext: ActiveTelemetryCommand | null = null;
 
+function setActiveExtensionHookContextForTest(context: ActiveExtensionHookContext | null): void {
+  activeExtensionHookContext = context;
+}
+
 const TELEMETRY_COMMAND_RESOLUTION_SET = new Set<TelemetryCommandResolution>([
   "success",
   "nonexistent_command",
@@ -611,6 +615,61 @@ async function maybeLogHandledCliErrorToSentry(params: {
   await ensureSentryForErrorReporting();
   sentryLogCliUsageError(params);
   return true;
+}
+
+async function handleGenericRunPmCliError(params: {
+  error: unknown;
+  attemptedCommand: string;
+  bootstrapGlobal: GlobalOptions;
+  emitTelemetryCommandError: (event: {
+    command: string;
+    errorCode: string;
+    errorMessage: string;
+    exitCode: number;
+    options: Record<string, unknown>;
+    resolutionStage: TelemetryResolutionStage;
+  }) => Promise<{
+    errorCategory: TelemetryErrorCategory;
+    commandResolution: TelemetryCommandResolution;
+  }>;
+}): Promise<void> {
+  await ensureSentryForErrorReporting();
+  sentryCaptureCliError(params.error);
+  const message = describeUnknownError(params.error);
+  const classification = classifyUnknownError(message);
+  const { errorCategory, commandResolution } = await params.emitTelemetryCommandError({
+    command: params.attemptedCommand,
+    errorCode: classification.code,
+    errorMessage: classification.detail,
+    exitCode: EXIT_CODE.GENERIC_FAILURE,
+    options: {
+      bootstrap_global_options: params.bootstrapGlobal,
+    },
+    resolutionStage: "execute",
+  });
+  sentryFinishCommandSpan(false, message, {
+    error_code: classification.code,
+    error_category: errorCategory,
+    exit_code: EXIT_CODE.GENERIC_FAILURE,
+    command_resolution: commandResolution,
+    resolution_stage: "execute",
+  });
+  await runAndClearAfterCommandHooks({
+    ok: false,
+    error: message,
+    exit_code: EXIT_CODE.GENERIC_FAILURE,
+    error_code: classification.code,
+    error_category: errorCategory,
+    command_resolution: commandResolution,
+    resolution_stage: "execute",
+  });
+  if (params.bootstrapGlobal.json) {
+    printError(JSON.stringify(formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE), null, 2));
+  } else {
+    printError(message);
+  }
+  await sentryFlush();
+  process.exitCode = EXIT_CODE.GENERIC_FAILURE;
 }
 
 function extractCommandScopedOptions(
@@ -2378,43 +2437,12 @@ export async function runPmCli(rawArgv: string[] = process.argv.slice(2)): Promi
       }
     }
 
-    await ensureSentryForErrorReporting();
-    sentryCaptureCliError(error);
-    const message = describeUnknownError(error);
-    const classification = classifyUnknownError(message);
-    const { errorCategory, commandResolution } = await emitTelemetryCommandError({
-      command: attemptedCommand,
-      errorCode: classification.code,
-      errorMessage: classification.detail,
-      exitCode: EXIT_CODE.GENERIC_FAILURE,
-      options: {
-        bootstrap_global_options: bootstrapGlobal,
-      },
-      resolutionStage: "execute",
+    await handleGenericRunPmCliError({
+      error,
+      attemptedCommand,
+      bootstrapGlobal,
+      emitTelemetryCommandError,
     });
-    sentryFinishCommandSpan(false, message, {
-      error_code: classification.code,
-      error_category: errorCategory,
-      exit_code: EXIT_CODE.GENERIC_FAILURE,
-      command_resolution: commandResolution,
-      resolution_stage: "execute",
-    });
-    await runAndClearAfterCommandHooks({
-      ok: false,
-      error: message,
-      exit_code: EXIT_CODE.GENERIC_FAILURE,
-      error_code: classification.code,
-      error_category: errorCategory,
-      command_resolution: commandResolution,
-      resolution_stage: "execute",
-    });
-    if (jsonErrors) {
-      printError(JSON.stringify(formatUnknownErrorForJson(message, EXIT_CODE.GENERIC_FAILURE), null, 2));
-    } else {
-      printError(message);
-    }
-    await sentryFlush();
-    process.exitCode = EXIT_CODE.GENERIC_FAILURE;
   }
 }
 
@@ -2442,6 +2470,7 @@ export const _testOnly = {
   discoveryNeedsActivationForProbe,
   emitExtensionProfile,
   emitExtensionSkippedProfile,
+  emitSettingsReadWarnings,
   enforceExplicitRetryForFlagTypos,
   envFlagEnabled,
   executeRegisteredRuntimeMigrations,
@@ -2451,10 +2480,18 @@ export const _testOnly = {
   extensionNeedsActivationForProbe,
   extensionProvidesTemplatesRuntime,
   hasAnyCapability,
+  handleGenericRunPmCliError,
   inferMissingFieldsFromErrorMessage,
   inferPostActionErrorCode,
   inferPostActionFailureMessage,
+  invocationRequestsVersion,
   isCommanderError,
+  loadRuntimeExtensionCommandDescriptorsForRecovery,
+  loadRuntimeExtensionDiscoverySnapshot,
+  loadRuntimeExtensionSnapshot,
+  maybeLoadRuntimeExtensions,
+  maybeAttachCreateUpdatePolicyHelpText,
+  maybeLogHandledCliErrorToSentry,
   normalizeTelemetryCommandResolution,
   normalizeTelemetryErrorCategory,
   normalizeTelemetryResolutionStage,
@@ -2463,13 +2500,18 @@ export const _testOnly = {
   readRecordBoolean,
   readRecordNumber,
   readRecordString,
+  registerDynamicExtensionCommandPaths,
   registerRuntimeSchemaFieldFlags,
   resolveCoreCommandRegistrationSelection,
   readThrownExitCode,
+  runAndClearAfterCommandHooks,
+  runRequiredExtensionCommand,
   shouldAttachRichHelpTextForInvocation,
   shouldLogHandledErrorToSentry,
   shouldRegisterDynamicExtensionPaths,
   shouldRegisterRuntimeSchemaFlags,
+  setActiveExtensionHookContextForTest,
   toLooseFieldDefinitionType,
+  wrapProgramActionsForExtensionHandlers,
   wrapThrownErrorForSentry,
 };

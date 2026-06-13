@@ -167,6 +167,15 @@ async function handleExistingLock(
   await unlinkLockWithHook(lockPath, "lock:stale_remove");
 }
 
+export const _testOnly = {
+  parseLockInfo,
+  readLockInfo,
+  isErrno,
+  buildLockPayload,
+  isStaleLock,
+  lockOwnerSuffix,
+};
+
 
 export async function acquireLock(
   pmRoot: string,

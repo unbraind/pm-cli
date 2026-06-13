@@ -1,5 +1,5 @@
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { resolveAuthor } from "../../src/core/shared/author.js";
 import { findFirstMergeConflictMarker, findMergeConflictMarkers } from "../../src/core/shared/conflict-markers.js";
 import { isPathWithinDirectory } from "../../src/core/fs/path-utils.js";
@@ -10,7 +10,13 @@ import {
   normalizeLowercaseWhitespace,
   tokenizeAlphaNumeric,
 } from "../../src/core/shared/text-normalization.js";
-import { compareTimestampStrings, isTimestampLiteral, nowIso, resolveIsoOrRelative } from "../../src/core/shared/time.js";
+import {
+  _testOnly as timeTestOnly,
+  compareTimestampStrings,
+  isTimestampLiteral,
+  nowIso,
+  resolveIsoOrRelative,
+} from "../../src/core/shared/time.js";
 
 describe("core/shared/author: resolveAuthor", () => {
   it("returns the candidate when provided", () => {
@@ -210,9 +216,34 @@ describe("core/shared/time", () => {
     expect(resolveIsoOrRelative("2026-02-03 04-05-06,7+0100", base)).toBe("2026-02-03T03:05:06.700Z");
     expect(resolveIsoOrRelative("2026-02-03 040506.78-0130", base)).toBe("2026-02-03T05:35:06.780Z");
     expect(resolveIsoOrRelative("2026-02-03 \t 04:05:06Z", base)).toBe("2026-02-03T04:05:06.000Z");
+    expect(resolveIsoOrRelative("20260203T040506Z", base)).toBe("2026-02-03T04:05:06.000Z");
+    expect(resolveIsoOrRelative("20260203T040506+01:00", base)).toBe("2026-02-03T03:05:06.000Z");
+    expect(resolveIsoOrRelative("2026-02-03 04-05+0100", base)).toBe("2026-02-03T03:05:00.000Z");
+    expect(resolveIsoOrRelative("2026-02-03 0405Z", base)).toBe("2026-02-03T04:05:00.000Z");
+    expect(resolveIsoOrRelative("2026-02-03\f04:05:06Z", base)).toBe("2026-02-03T04:05:06.000Z");
+    expect(resolveIsoOrRelative("2026-02-03\v04:05:06Z", base)).toBe("2026-02-03T04:05:06.000Z");
+  });
+
+  it("exposes pure timestamp fallback helpers for defensive branch coverage", () => {
+    expect(timeTestOnly.normalizeOffset(undefined)).toBe("");
+    const candidates = ["already"];
+    timeTestOnly.pushTimestampCandidate(candidates, "input", undefined);
+    timeTestOnly.pushTimestampCandidate(candidates, "input", "input");
+    timeTestOnly.pushTimestampCandidate(candidates, "input", "already");
+    timeTestOnly.pushTimestampCandidate(candidates, "input", "next");
+    expect(candidates).toEqual(["already", "next"]);
+    expect(timeTestOnly.normalizeTimestampCandidates("20260203T040506+01:00")).toEqual([
+      "2026-02-03T04:05:06+01:00",
+    ]);
+    expect(timeTestOnly.normalizeTimestampCandidates("2026-02-03T04:05:06Z")).toEqual(["2026-02-03TT04:05:06Z"]);
+    expect(timeTestOnly.normalizeTimestampCandidates("2026-02-03")).toEqual([]);
+    expect(Number.isNaN(timeTestOnly.parseTimestampWithFallbacks("2026-02-03 bad"))).toBe(true);
+    expect(Number.isNaN(timeTestOnly.parseTimestampWithFallbacks("not-a-date"))).toBe(true);
+    expect(timeTestOnly.isWhitespaceCharacter(undefined)).toBe(false);
   });
 
   it("rejects impossible calendar dates and unsupported relative compounds with clear labels", () => {
+    expect(resolveIsoOrRelative("2026-02-03T04:05:06Z", base, "")).toBe("2026-02-03T04:05:06.000Z");
     expect(() => resolveIsoOrRelative("2026-13-01", base, "due date")).toThrow(
       'Invalid due date value "2026-13-01". Month "13" is out of range',
     );
@@ -267,5 +298,30 @@ describe("core/shared/conflict-markers", () => {
   it("returns no markers for empty content or marker-like inline text", () => {
     expect(findMergeConflictMarkers("")).toEqual([]);
     expect(findFirstMergeConflictMarker("prefix <<<<<<< HEAD")).toBeUndefined();
+  });
+
+  it("tolerates sparse split results defensively", () => {
+    const originalSplit = String.prototype.split;
+    const splitSpy = vi.spyOn(String.prototype, "split").mockImplementation(function (
+      this: string,
+      separator: string | RegExp,
+      limit?: number,
+    ): string[] {
+      if (this === "sparse-conflict-input") {
+        const sparse = [] as string[];
+        sparse.length = 2;
+        sparse[1] = ">>>>>>> branch";
+        return sparse;
+      }
+      return originalSplit.call(this, separator, limit);
+    });
+
+    try {
+      expect(findMergeConflictMarkers("sparse-conflict-input")).toEqual([
+        { line: 2, marker: ">>>>>>>", text: ">>>>>>> branch" },
+      ]);
+    } finally {
+      splitSpy.mockRestore();
+    }
   });
 });

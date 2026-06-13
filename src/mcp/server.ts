@@ -1190,6 +1190,29 @@ export function isInvokedAsMcpMainModule(argvPath: string | undefined, moduleUrl
   }
 }
 
+export const _testOnly = {
+  closeManyOptionsFromFlat,
+  detectUnexpectedTopLevelKeys,
+  extensionOptionsFromArgs,
+  globalOptions,
+  mutationListOptions,
+  nearestDeclaredKey,
+  normalizeActionName,
+  normalizeCommandPath,
+  normalizeMcpUpdateOptions,
+  normalizeMcpOptionsArrays,
+  optionsWithAuthor,
+  readRequiredString,
+  readScalarString,
+  readScalarStringAllowBlank,
+  readStringArray,
+  runAction,
+  updateManyOptionsFromFlat,
+  withAddNoteOption,
+  withFilesDiscoveryOptions,
+  withMutationCompaction,
+};
+
 if (isInvokedAsMcpMainModule(process.argv[1], import.meta.url)) {
   startMcpServer();
 }

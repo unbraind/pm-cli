@@ -424,3 +424,9 @@ export function parseOptionalNumber(raw: string, optionName: string): number {
   }
   return value;
 }
+
+export const _testOnly = {
+  coerceJsonTagArray,
+  stripCodeFenceEnvelope,
+  parseMarkdownKeyValueLines,
+};

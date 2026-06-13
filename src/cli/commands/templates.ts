@@ -64,6 +64,13 @@ interface StoredCreateTemplateDocument {
   options: CreateTemplateOptions;
 }
 
+export const _testOnly = {
+  normalizeTemplateName,
+  extractTemplateOptions,
+  parseStoredTemplateDocument,
+  builtinTemplateDocument,
+};
+
 export interface TemplatesSaveResult {
   name: string;
   created_at: string;

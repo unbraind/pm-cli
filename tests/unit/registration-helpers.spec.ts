@@ -1,8 +1,22 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { Command } from "commander";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
+  collectMandatoryMigrationBlockers,
+  decideWriteGate,
+  enforceItemFormatWriteGateAndPreflightMigration,
+  enforceMandatoryMigrationWriteGate,
+  resolveMigrationId,
+  resolveNormalizedMigrationStatus,
+} from "../../src/cli/migration-gates.js";
+import {
+  _testOnly,
+  applyDefaultOutputFormat,
   buildBackgroundTestAllCommandArgs,
   buildBackgroundTestCommandArgs,
+  collect,
   extractUpdateManyMutationOptionSource,
   getGlobalOptions,
   normalizeActivityOptions,
@@ -13,12 +27,16 @@ import {
   normalizeSearchOptions,
   normalizeSearchKeywordsInput,
   normalizeUpdateOptions,
+  printActivityJsonStream,
+  printListJsonStream,
   resolveActivityStreamMode,
   clearResolvedGlobalOptions,
   setResolvedGlobalOptions,
 } from "../../src/cli/registration-helpers.js";
+import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
+import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("registration helpers", () => {
   it("falls back to opts() for command-like objects without optsWithGlobals", () => {
@@ -176,6 +194,13 @@ describe("registration helpers", () => {
     ]);
   });
 
+  it("collects repeatable option values in-place for Commander callbacks", () => {
+    const existing = ["first"];
+    expect(collect("second", existing)).toBe(existing);
+    expect(existing).toEqual(["first", "second"]);
+    expect(collect("only", undefined)).toEqual(["only"]);
+  });
+
   it("normalizes create and update options from camel and underscore aliases", () => {
     expect(() => normalizeCreateOptions({ title: "Missing type" })).toThrow(PmCliError);
     try {
@@ -289,6 +314,80 @@ describe("registration helpers", () => {
     });
   });
 
+  it("prints list and activity JSON streams with warnings and quiet/write-stop paths", () => {
+    const stdoutSpy = vi.spyOn(process.stdout, "write");
+    stdoutSpy.mockImplementation(() => true);
+    try {
+      printListJsonStream(
+        "list",
+        {
+          count: 2,
+          now: "2026-06-13T00:00:00.000Z",
+          filters: { status: "open" },
+          warnings: ["stale"],
+          items: [{ id: "pm-a" }, { id: "pm-b" }],
+        } as never,
+        { quiet: false },
+      );
+      const listLines = stdoutSpy.mock.calls.map((call) => String(call[0]).trim()).filter(Boolean).map((line) => JSON.parse(line));
+      expect(listLines).toEqual([
+        {
+          type: "meta",
+          command: "list",
+          count: 2,
+          now: "2026-06-13T00:00:00.000Z",
+          filters: { status: "open" },
+          warnings: ["stale"],
+        },
+        { type: "item", command: "list", item: { id: "pm-a" } },
+        { type: "item", command: "list", item: { id: "pm-b" } },
+        { type: "end", command: "list", count: 2 },
+      ]);
+
+      stdoutSpy.mockClear();
+      printActivityJsonStream(
+        {
+          count: 1,
+          compact: true,
+          compact_activity: [{ op: "comment" }],
+          activity: [{ op: "raw" }],
+        } as never,
+        { id: "pm-a", op: "comment", author: "agent", from: "a", to: "b", limit: "1" },
+        { quiet: false },
+      );
+      const activityLines = stdoutSpy.mock.calls.map((call) => String(call[0]).trim()).filter(Boolean).map((line) => JSON.parse(line));
+      expect(activityLines).toEqual([
+        {
+          type: "meta",
+          command: "activity",
+          count: 1,
+          filters: { id: "pm-a", op: "comment", author: "agent", from: "a", to: "b", limit: "1" },
+        },
+        { type: "entry", command: "activity", entry: { op: "comment" } },
+        { type: "end", command: "activity", count: 1 },
+      ]);
+
+      stdoutSpy.mockClear();
+      printListJsonStream("list", { count: 0, now: "now", filters: {}, items: [] } as never, { quiet: true });
+      printActivityJsonStream({ count: 0, activity: [] } as never, {}, { quiet: true });
+      expect(stdoutSpy).not.toHaveBeenCalled();
+
+      stdoutSpy.mockClear();
+      stdoutSpy.mockImplementationOnce(() => false);
+      printListJsonStream("list", { count: 1, now: "now", filters: {}, items: [{ id: "pm-a" }] } as never, {
+        quiet: false,
+      });
+      const writeStopLines = stdoutSpy.mock.calls.map((call) => String(call[0]).trim()).filter(Boolean).map((line) => JSON.parse(line));
+      expect(writeStopLines).toEqual([
+        { type: "meta", command: "list", count: 1, now: "now", filters: {} },
+        { type: "item", command: "list", item: { id: "pm-a" } },
+        { type: "end", command: "list", count: 1 },
+      ]);
+    } finally {
+      stdoutSpy.mockRestore();
+    }
+  });
+
   it("preserves numeric semanticWeight values while normalizing search options", () => {
     const normalized = normalizeSearchOptions({
       hybrid: true,
@@ -316,8 +415,11 @@ describe("registration helpers", () => {
 
   it("normalizes activity stream and context option variants", () => {
     expect(resolveActivityStreamMode(true)).toBe(true);
+    expect(resolveActivityStreamMode("")).toBe(true);
+    expect(resolveActivityStreamMode("yes")).toBe(true);
     expect(resolveActivityStreamMode("jsonl")).toBe(true);
     expect(resolveActivityStreamMode("0")).toBe(false);
+    expect(resolveActivityStreamMode("off")).toBe(false);
     expect(resolveActivityStreamMode(null)).toBe(false);
     expect(() => resolveActivityStreamMode("maybe")).toThrow("Activity --stream accepts rows|ndjson|jsonl");
 
@@ -342,7 +444,7 @@ describe("registration helpers", () => {
       normalizeContextOptions({
         date: "2026-06-13",
         past: true,
-        section: [" agenda ", "", "items"],
+        section: "summary",
         activityLimit: "3",
         staleThreshold: 14,
         extra: "kept",
@@ -350,10 +452,107 @@ describe("registration helpers", () => {
     ).toMatchObject({
       date: "2026-06-13",
       past: true,
-      section: [" agenda ", "items"],
+      section: ["summary"],
       activityLimit: "3",
       staleThreshold: undefined,
       extra: "kept",
     });
+
+    expect(normalizeContextOptions({ section: [" agenda ", "", "items"] })).toMatchObject({
+      section: [" agenda ", "items"],
+    });
+  });
+
+  it("applies default output format only when settings are available and JSON was not requested", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.output.default_format = "json";
+      await writeSettings(context.pmPath, settings, "test:output-default");
+
+      await expect(applyDefaultOutputFormat({ json: true, quiet: false, path: context.pmPath })).resolves.toEqual({
+        json: true,
+        quiet: false,
+        path: context.pmPath,
+      });
+      await expect(applyDefaultOutputFormat({ quiet: false, path: context.pmPath })).resolves.toMatchObject({
+        defaultOutputFormat: "json",
+      });
+    });
+
+    const emptyRoot = await mkdtemp(path.join(tmpdir(), "pm-empty-settings-"));
+    try {
+      await expect(applyDefaultOutputFormat({ quiet: false, path: emptyRoot })).resolves.toEqual({
+        quiet: false,
+        path: emptyRoot,
+      });
+    } finally {
+      await rm(emptyRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("collects affected mutation item ids from result variants for search refresh", () => {
+    expect(_testOnly.collectMutationItemIds(null)).toEqual([]);
+    expect(
+      _testOnly.collectMutationItemIds({
+        id: " pm-b ",
+        item: { id: "pm-a" },
+        ids: ["pm-c", "", 42, "pm-a"],
+        items: [{ id: "pm-d" }, null, { id: " " }],
+      }),
+    ).toEqual(["pm-a", "pm-b", "pm-c", "pm-d"]);
+  });
+
+  it("sorts mandatory migration blockers and enforces write gates with force semantics", async () => {
+    expect(resolveMigrationId({}, 4)).toBe("migration-005");
+    expect(resolveNormalizedMigrationStatus({ status: " PENDING " })).toBe("pending");
+    expect(
+      collectMandatoryMigrationBlockers([
+        { layer: "project", name: "zeta", definition: { mandatory: true, id: "z", status: "pending" } },
+        { layer: "global", name: "alpha", definition: { mandatory: true } },
+        { layer: "project", name: "done", definition: { mandatory: true, status: "applied" } },
+        { layer: "project", name: "optional", definition: { mandatory: false } },
+      ]),
+    ).toEqual([
+      { layer: "global", name: "alpha", id: "migration-002", status: "pending" },
+      { layer: "project", name: "zeta", id: "z", status: "pending" },
+    ]);
+
+    expect(decideWriteGate("list", {})).toEqual({ isMutation: false, forceCapable: false, forceRequested: false });
+    expect(decideWriteGate("comments", { add: "note", force: true })).toEqual({
+      isMutation: true,
+      forceCapable: true,
+      forceRequested: true,
+    });
+    expect(decideWriteGate("files", { add: [], remove: ["path=src/a.ts"] })).toMatchObject({ isMutation: true });
+    expect(() =>
+      enforceMandatoryMigrationWriteGate("create", {}, [{ layer: "project", name: "pkg", id: "m1", status: "pending" }]),
+    ).toThrow(/does not support --force bypass/);
+    expect(() =>
+      enforceMandatoryMigrationWriteGate("update", { force: true }, [
+        { layer: "project", name: "pkg", id: "m1", status: "pending" },
+      ]),
+    ).not.toThrow();
+
+    const emptyRoot = await mkdtemp(path.join(tmpdir(), "pm-migration-gate-"));
+    try {
+      await expect(
+        enforceItemFormatWriteGateAndPreflightMigration("list", {}, emptyRoot, {
+          enforce_item_format_gate: true,
+          run_preflight_item_format_sync: true,
+          enforce_mandatory_migration_gate: true,
+          run_extension_migrations: true,
+        }),
+      ).resolves.toBeUndefined();
+      await expect(
+        enforceItemFormatWriteGateAndPreflightMigration("update", {}, emptyRoot, {
+          enforce_item_format_gate: false,
+          run_preflight_item_format_sync: false,
+          enforce_mandatory_migration_gate: true,
+          run_extension_migrations: true,
+        }),
+      ).resolves.toBeUndefined();
+    } finally {
+      await rm(emptyRoot, { recursive: true, force: true });
+    }
   });
 });

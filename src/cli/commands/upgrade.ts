@@ -35,10 +35,14 @@ export interface UpgradeCommandOptions {
 
 export const _testOnly = {
   defaultCommandRunner,
+  isLocalNpmSpec,
   normalizeTarget,
   packageRecordMatchesTarget,
+  resolveCliPackage,
   resolvePackageInstallSource,
   resolveRunnablePackageSource,
+  resolveScope,
+  resolveTag,
   packageCommandFor,
   summarize,
 };

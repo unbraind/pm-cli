@@ -1208,6 +1208,39 @@ describe("MCP dynamic package actions", () => {
         },
       });
       expect(packageCatalog?.isError).not.toBe(true);
+
+      const extensionReload = await handleRequest({
+        jsonrpc: "2.0",
+        id: 105,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: { path: context.pmPath, action: "extension-reload", options: { project: true } },
+        },
+      });
+      expect(extensionReload?.isError).not.toBe(true);
+
+      const packageExplore = await handleRequest({
+        jsonrpc: "2.0",
+        id: 106,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: { path: context.pmPath, action: "package", options: { project: true } },
+        },
+      });
+      expect(packageExplore?.isError).not.toBe(true);
+
+      const extensionExplore = await handleRequest({
+        jsonrpc: "2.0",
+        id: 107,
+        method: "tools/call",
+        params: {
+          name: "pm_run",
+          arguments: { path: context.pmPath, action: "extension", options: { project: true } },
+        },
+      });
+      expect(extensionExplore?.isError).not.toBe(true);
     });
   });
 
@@ -1357,6 +1390,30 @@ describe("MCP dynamic package actions", () => {
       });
       expect(history?.isError).not.toBe(true);
 
+      const filesDiscover = await handleRequest({
+        jsonrpc: "2.0",
+        id: 1241,
+        method: "tools/call",
+        params: { name: "pm_run", arguments: { path: context.pmPath, action: "files-discover", id } },
+      });
+      expect(filesDiscover?.isError).not.toBe(true);
+
+      const historyRepair = await handleRequest({
+        jsonrpc: "2.0",
+        id: 1242,
+        method: "tools/call",
+        params: { name: "pm_run", arguments: { path: context.pmPath, action: "history-repair", options: { all: true, dryRun: true } } },
+      });
+      expect(historyRepair?.isError).not.toBe(true);
+
+      const historyCompact = await handleRequest({
+        jsonrpc: "2.0",
+        id: 1243,
+        method: "tools/call",
+        params: { name: "pm_run", arguments: { path: context.pmPath, action: "history-compact", id, options: { dryRun: true } } },
+      });
+      expect(historyCompact?.isError).not.toBe(true);
+
       const validate = await handleRequest({
         jsonrpc: "2.0",
         id: 125,
@@ -1461,6 +1518,36 @@ describe("MCP dynamic package actions", () => {
         (error: unknown) => error,
       );
       expect((unsupportedExtension as Error).message).toBe("Unsupported native pm action: not-a-native-action");
+
+      const missingPackageInstallTarget = await handleRequest({
+        jsonrpc: "2.0",
+        id: 135,
+        method: "tools/call",
+        params: { name: "pm_run", arguments: { path: context.pmPath, action: "package-install" } },
+      }).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      expect((missingPackageInstallTarget as Error).message).toContain("requires an extension name");
+
+      const upgrade = await handleRequest({
+        jsonrpc: "2.0",
+        id: 136,
+        method: "tools/call",
+        params: { name: "pm_run", arguments: { path: context.pmPath, action: "upgrade" } },
+      });
+      expect(upgrade?.isError).not.toBe(true);
+
+      const missingDeleteId = await handleRequest({
+        jsonrpc: "2.0",
+        id: 137,
+        method: "tools/call",
+        params: { name: "pm_run", arguments: { path: context.pmPath, action: "delete" } },
+      }).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+      expect((missingDeleteId as Error).message).toBe("Missing required argument: id");
     });
   });
 });

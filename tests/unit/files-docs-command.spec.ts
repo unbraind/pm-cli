@@ -4,7 +4,7 @@ import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { runDocs } from "../../src/cli/commands/docs.js";
-import { runFiles, runFilesDiscover } from "../../src/cli/commands/files.js";
+import { _testOnly as filesInternals, runFiles, runFilesDiscover } from "../../src/cli/commands/files.js";
 import { buildLinkedPathAudit, parseAddGlobEntries, validateLinkedPaths } from "../../src/cli/commands/linked-artifacts.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
@@ -160,6 +160,47 @@ async function assertAuthorResolution(
 }
 
 describe("runFiles", () => {
+  it("covers file discovery pure helper edges", async () => {
+    expect(filesInternals.cleanupPathToken("`./src/file.ts:12`;")).toBe("./src/file.ts");
+    expect(filesInternals.normalizeCandidatePathForOutput(path.join("src", "nested", "..", "file.ts"))).toBe("src/file.ts");
+    expect(filesInternals.linkedFileResolvedKey({ path: "README.md", scope: "project" }, "/repo")).toBe("/repo/README.md::project");
+
+    const references: Array<{ field: string; value: string }> = [];
+    filesInternals.collectTextReferences(
+      {
+        one: " see ./README.md ",
+        nested: ["", "docs/guide.md", { deeper: "`src/index.ts:7`" }],
+      },
+      "metadata",
+      references,
+    );
+    expect(references.map((entry) => entry.field)).toEqual(["metadata.one", "metadata.nested[1]", "metadata.nested[2].deeper"]);
+    expect(filesInternals.extractRawPathReferences(references).map((entry) => entry.value)).toEqual(
+      expect.arrayContaining(["./README.md", "docs/guide.md", "src/index.ts"]),
+    );
+
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-files-helper-"));
+    try {
+      await mkdir(path.join(tempDir, "src"), { recursive: true });
+      await writeFile(path.join(tempDir, "src", "found.ts"), "export {};\n", "utf8");
+      await mkdir(path.join(tempDir, "dir-only"), { recursive: true });
+      await expect(filesInternals.resolveDiscoveredFile("missing.ts", tempDir)).resolves.toBeUndefined();
+      await expect(filesInternals.resolveDiscoveredFile("dir-only", tempDir)).resolves.toBeUndefined();
+      await expect(filesInternals.resolveDiscoveredFile("src/found.ts", tempDir)).resolves.toEqual({
+        path: "src/found.ts",
+        scope: "project",
+      });
+      const document = {
+        metadata: { files: [{ path: "src/found.ts", scope: "project" }], note: "Use src/found.ts and ./other.md." },
+        body: `Also see ${path.join(tempDir, "src", "found.ts")}`,
+      } as never;
+      const discovered = await filesInternals.discoverReferencedFiles(document, tempDir);
+      expect(discovered.find((entry) => entry.path === "src/found.ts")?.status).toBe("already_linked");
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
   it("fails when tracker is not initialized", async () => {
     const tempDir = await mkdtemp(path.join(os.tmpdir(), "pm-files-not-init-"));
     try {

@@ -14,7 +14,14 @@ import {
   setSettingsReadCacheEntry,
   settingsReadCacheSignaturesEqual,
 } from "../../src/core/store/settings-read-cache.js";
-import { readSettings, readSettingsWithMetadata, resolveGovernanceKnobs, serializeSettings, writeSettings } from "../../src/core/store/settings.js";
+import {
+  readSettings,
+  readSettingsWithMetadata,
+  resolveGovernanceKnobs,
+  serializeSettings,
+  settingsStoreTestOnly,
+  writeSettings,
+} from "../../src/core/store/settings.js";
 import { withTempRoot } from "../helpers/temp.js";
 
 async function withTempPmRoot(run: (pmRoot: string) => Promise<void>): Promise<void> {
@@ -703,6 +710,18 @@ describe("core/store/settings", () => {
         allowed_services: ["item_store_write"],
       },
     ]);
+
+    settings.extensions.policy.pm_max_version_exceeded_mode = "block";
+    const stringMode = JSON.parse(serializeSettings(settings)) as {
+      extensions: { policy: { pm_max_version_exceeded_mode?: unknown } };
+    };
+    expect(stringMode.extensions.policy.pm_max_version_exceeded_mode).toBe("block");
+
+    settings.extensions.policy.pm_max_version_exceeded_mode = { global: "bad" as never, project: "also-bad" as never };
+    const invalidMode = JSON.parse(serializeSettings(settings)) as {
+      extensions: { policy: { pm_max_version_exceeded_mode?: unknown } };
+    };
+    expect(invalidMode.extensions.policy.pm_max_version_exceeded_mode).toBeUndefined();
   });
 
   it("resolves governance knobs for built-in presets and custom overrides", () => {
@@ -758,10 +777,55 @@ describe("core/store/settings", () => {
       resolveGovernanceKnobs({
         governance: {
           preset: "strict",
+          create_default_type: " Feature ",
+          workflow_enforcement: "strict",
           require_close_reason: false,
         },
-      }).require_close_reason,
-    ).toBe(false);
+      }),
+    ).toMatchObject({
+      preset: "strict",
+      create_default_type: "Feature",
+      workflow_enforcement: "strict",
+      require_close_reason: false,
+    });
+  });
+
+  it("persists custom governance extras and falls back from invalid governance presets", () => {
+    expect(resolveGovernanceKnobs({ governance: { preset: "unknown" as never } }).preset).toBe(
+      SETTINGS_DEFAULTS.governance.preset,
+    );
+
+    const settings = structuredClone(SETTINGS_DEFAULTS);
+    settings.governance = {
+      ...settings.governance,
+      preset: "custom",
+      ownership_enforcement: "strict",
+      create_mode_default: "strict",
+      close_validation_default: "strict",
+      parent_reference: "warn",
+      metadata_profile: "strict",
+      force_required_for_stale_lock: false,
+      create_default_type: "Issue",
+      workflow_enforcement: "warn",
+      require_close_reason: false,
+    };
+
+    const parsed = JSON.parse(serializeSettings(settings)) as {
+      governance: Record<string, unknown>;
+    };
+
+    expect(parsed.governance).toMatchObject({
+      preset: "custom",
+      ownership_enforcement: "strict",
+      create_mode_default: "strict",
+      close_validation_default: "strict",
+      parent_reference: "warn",
+      metadata_profile: "strict",
+      force_required_for_stale_lock: false,
+      create_default_type: "Issue",
+      workflow_enforcement: "warn",
+      require_close_reason: false,
+    });
   });
 
   it("collects deterministic settings-cache signatures and marks missing files with null stats", async () => {
@@ -791,6 +855,7 @@ describe("core/store/settings", () => {
       { path: "/tmp/b", mtime_ms: null, size: null },
     ];
     expect(settingsReadCacheSignaturesEqual(base, [...base])).toBe(true);
+    expect(settingsReadCacheSignaturesEqual(base, base.slice(0, 1))).toBe(false);
     expect(
       settingsReadCacheSignaturesEqual(base, [
         { path: "/tmp/a", mtime_ms: 2, size: 10 },
@@ -835,5 +900,122 @@ describe("core/store/settings", () => {
 
     clearSettingsReadCache();
     expect(getSettingsReadCacheEntry("/tmp/root-b")).toBeUndefined();
+  });
+
+  it("covers private settings normalization edge cases", () => {
+    expect(settingsStoreTestOnly.hasExplicitItemFormat(null)).toBe(false);
+    expect(settingsStoreTestOnly.hasExplicitItemFormat([])).toBe(false);
+    expect(settingsStoreTestOnly.hasExplicitItemFormat({ item_format: "json_markdown" })).toBe(true);
+    expect(settingsStoreTestOnly.hasExplicitItemFormat({ item_format: "bad" })).toBe(false);
+    expect(settingsStoreTestOnly.normalizeStringList([" b ", "", "a", "b"])).toEqual(["a", "b"]);
+    expect(settingsStoreTestOnly.normalizeLowerStringList([" B ", "", "a", "b"])).toEqual(["a", "b"]);
+    expect(settingsStoreTestOnly.normalizeValidationMetadataRequiredFields(["author", "bad", "close-reason", "AUTHOR"])).toEqual([
+      "author",
+      "close_reason",
+    ]);
+    expect(settingsStoreTestOnly.normalizeExtensionPolicyOverride({ name: "  " })).toBeNull();
+    expect(settingsStoreTestOnly.normalizeExtensionPolicyMode("bad" as never)).toBe(SETTINGS_DEFAULTS.extensions.policy.mode);
+    expect(settingsStoreTestOnly.normalizeExtensionTrustMode("bad" as never)).toBe(
+      SETTINGS_DEFAULTS.extensions.policy.trust_mode,
+    );
+    expect(settingsStoreTestOnly.normalizeExtensionSandboxProfile("bad" as never)).toBe(
+      SETTINGS_DEFAULTS.extensions.policy.default_sandbox_profile,
+    );
+    expect(
+      settingsStoreTestOnly.normalizeExtensionPolicyOverrides([
+        {
+          name: "Beta",
+          blocked_capabilities: [" Filesystem ", "filesystem"],
+          allowed_surfaces: [" Cli "],
+          blocked_commands: [" Delete "],
+          allowed_actions: [" Read "],
+        },
+        {
+          name: "alpha",
+          allowed_capabilities: [" Network "],
+          blocked_surfaces: [" Mcp "],
+          allowed_commands: [" Create ", "create"],
+          blocked_actions: [" Write "],
+          allowed_services: [" Settings_Read "],
+          blocked_services: [" Item_Store_Write "],
+        },
+        { name: "" },
+      ]),
+    ).toEqual([
+      {
+        name: "alpha",
+        allowed_capabilities: ["network"],
+        allowed_commands: ["create"],
+        allowed_services: ["settings_read"],
+        blocked_actions: ["write"],
+        blocked_services: ["item_store_write"],
+        blocked_surfaces: ["mcp"],
+      },
+      {
+        name: "beta",
+        allowed_actions: ["read"],
+        allowed_surfaces: ["cli"],
+        blocked_capabilities: ["filesystem"],
+        blocked_commands: ["delete"],
+      },
+    ]);
+    expect(
+      settingsStoreTestOnly.selectedSettingsReadCacheSignaturesEqual(
+        [{ path: "/tmp/a", mtime_ms: 1, size: 1 }],
+        [{ path: "/tmp/a", mtime_ms: 1, size: 1 }],
+        ["/tmp/a"],
+      ),
+    ).toBe(true);
+    expect(
+      settingsStoreTestOnly.selectedSettingsReadCacheSignaturesEqual(
+        [{ path: "/tmp/a", mtime_ms: 1, size: 1 }],
+        [{ path: "/tmp/a", mtime_ms: 2, size: 1 }],
+        ["/tmp/a"],
+      ),
+    ).toBe(false);
+  });
+
+  it("preserves or drops file-backed schema sections based on source snapshots", () => {
+    const settings = structuredClone(SETTINGS_DEFAULTS);
+    settings.item_types.definitions = [{ name: "Risk", folder: "risks" }];
+    settings.schema.statuses = [{ name: "triaged", role: "active" }];
+    settings.schema.fields = [{ name: "severity", type: "string" }];
+    settings.schema.type_workflows = [{ type: "Risk", statuses: ["triaged"] }];
+    const source = settingsStoreTestOnly.buildSettingsPersistSourceSnapshot(
+      {
+        item_types: { definitions: [{ name: "Risk", folder: "source-risks" }] },
+        schema: {
+          statuses: [{ name: "source", role: "active" }],
+          fields: [{ name: "source_field", type: "string" }],
+          type_workflows: [{ type: "Source", statuses: ["source"] }],
+        },
+      } as never,
+      settings,
+    );
+
+    const persisted = settingsStoreTestOnly.resolvePersistedFileBackedSchemaSections(settings, source);
+    expect(persisted.item_type_definitions).toEqual([expect.objectContaining({ name: "Risk", folder: "source-risks" })]);
+    expect(persisted.schema_statuses.length).toBeGreaterThan(0);
+    expect(persisted.schema_fields).toEqual([]);
+    expect(persisted.schema_type_workflows).toBeUndefined();
+
+    const changed = structuredClone(settings);
+    changed.item_types.definitions = [{ name: "Changed", folder: "changed-items" }];
+    expect(settingsStoreTestOnly.resolvePersistedFileBackedSchemaSections(changed, source).item_type_definitions).toEqual([
+      expect.objectContaining({ name: "Changed", folder: "changed-items" }),
+    ]);
+    const withoutSource = settingsStoreTestOnly.resolvePersistedFileBackedSchemaSections(settings, undefined);
+    expect(withoutSource.item_type_definitions).toEqual(settings.item_types.definitions);
+    expect(withoutSource.schema_statuses.length).toBeGreaterThan(0);
+  });
+
+  it("detects selected settings cache signature path mismatches", () => {
+    expect(
+      settingsStoreTestOnly.selectedSettingsReadCacheSignaturesEqual(
+        [{ path: "/tmp/a", mtime_ms: 1, size: 1 }],
+        [{ path: "/tmp/b", mtime_ms: 1, size: 1 }],
+        ["/tmp/a"],
+      ),
+    ).toBe(false);
   });
 });

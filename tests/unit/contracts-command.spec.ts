@@ -1,7 +1,7 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { runContracts } from "../../src/cli/commands/contracts.js";
+import { _testOnlyContractsCommand, runContracts } from "../../src/cli/commands/contracts.js";
 import { buildMcpToolContracts, TOOLS } from "../../src/mcp/tool-definitions.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
@@ -34,6 +34,413 @@ const GLOBAL_OPTIONS: GlobalOptions = {
   noExtensions: false,
   profile: false,
 };
+
+describe("contracts command helper coverage", () => {
+  it("maps package-owned and prefixed actions back to command paths", () => {
+    expect(_testOnlyContractsCommand.packageOwnedActionForCommand("templates show")).toBe("templates-show");
+    expect(_testOnlyContractsCommand.packageOwnedActionForCommand("templates list")).toBe("templates-list");
+    expect(_testOnlyContractsCommand.packageOwnedActionForCommand("test-runs status")).toBe("test-runs-status");
+    expect(_testOnlyContractsCommand.packageOwnedActionForCommand("test-runs tail")).toBe("test-runs-tail");
+    expect(_testOnlyContractsCommand.packageOwnedActionForCommand("create")).toBe("create");
+    expect(_testOnlyContractsCommand.resolveActionCommandPath("extension-reload")).toBe("extension reload");
+    expect(_testOnlyContractsCommand.resolveActionCommandPath("package-install")).toBe("package install");
+    expect(_testOnlyContractsCommand.resolveActionCommandPath("test-runs-status")).toBe("test-runs status");
+    expect(_testOnlyContractsCommand.resolveActionCommandPath("templates-show")).toBe("templates show");
+    expect(_testOnlyContractsCommand.resolveActionCommandPath("not-real-action")).toBeNull();
+  });
+
+  it("normalizes command aliases and resolves scoped commands", () => {
+    expect(_testOnlyContractsCommand.normalizeCommandPath("  Extension   Reload ")).toBe("extension reload");
+    expect(_testOnlyContractsCommand.normalizeActionNameFromCommand("extension reload")).toBe("extension-reload");
+    expect(_testOnlyContractsCommand.splitCommandPathAliases(" create | extension  reload | ")).toEqual([
+      "create",
+      "extension reload",
+    ]);
+    expect(_testOnlyContractsCommand.splitCommandPathAliases(" | ")).toEqual([]);
+    expect(
+      _testOnlyContractsCommand.actionDescriptorMatchesSelectedCommand(
+        { action: "extension-reload", provider: "core", requires_extension: false, command_path: "extension reload" },
+        "extension",
+      ),
+    ).toBe(true);
+    expect(
+      _testOnlyContractsCommand.actionDescriptorMatchesSelectedCommand(
+        { action: "hidden", provider: "core", requires_extension: false, command_path: null },
+        "extension",
+      ),
+    ).toBe(false);
+    expect(
+      _testOnlyContractsCommand.resolveScopedCommandsFromActionDescriptors(
+        [
+          { action: "a", provider: "core", requires_extension: false, command_path: "extension reload" },
+          { action: "b", provider: "core", requires_extension: false, command_path: "package install" },
+          { action: "c", provider: "core", requires_extension: false, command_path: "" },
+          { action: "d", provider: "core", requires_extension: false, command_path: "   | " },
+        ],
+        ["extension", "extension reload", "package"],
+      ),
+    ).toEqual(["extension reload", "package"]);
+  });
+
+  it("filters schema branches by action names", () => {
+    const schema = {
+      type: "object",
+      oneOf: [
+        { properties: { action: { const: "create" } } },
+        { properties: { action: { const: "update" } } },
+        { properties: { action: {} } },
+        { properties: null },
+        null,
+      ],
+    } as Record<string, unknown>;
+
+    expect(_testOnlyContractsCommand.extractActionBranches({ type: "object" })).toEqual([]);
+    expect(_testOnlyContractsCommand.extractActionBranches(schema)).toHaveLength(4);
+    expect((_testOnlyContractsCommand.filterSchemaByAction(schema, undefined).oneOf as unknown[])).toHaveLength(5);
+    expect((_testOnlyContractsCommand.filterSchemaByAction(schema, "create").oneOf as unknown[])).toHaveLength(1);
+    expect(
+      (_testOnlyContractsCommand.filterSchemaByActions(schema, new Set(["create", "missing"])).oneOf as unknown[]),
+    ).toHaveLength(1);
+  });
+
+  it("builds runtime field flag contracts with alias normalization and deduplication", () => {
+    const contracts = _testOnlyContractsCommand.buildRuntimeFieldFlagContracts({
+      definitions: [
+        {
+          key: "reviewUrl",
+          metadata_key: "review_url",
+          cli_flag: "review-url",
+          cli_aliases: ["-r", "--review", "--review-url", " "],
+          commands: ["create", "update"],
+        },
+        {
+          key: "hidden",
+          metadata_key: "hidden",
+          cli_flag: " ",
+          cli_aliases: [],
+          commands: ["create"],
+        },
+      ],
+    });
+
+    expect(_testOnlyContractsCommand.toRuntimeLongFlagToken("review-url")).toBe("--review-url");
+    expect(_testOnlyContractsCommand.toRuntimeLongFlagToken(" ")).toBeNull();
+    expect(_testOnlyContractsCommand.toRuntimeShortFlagToken("-r")).toBe("-r");
+    expect(_testOnlyContractsCommand.toRuntimeShortFlagToken("r")).toBeNull();
+    expect(_testOnlyContractsCommand.toRuntimeShortFlagToken("--review")).toBeNull();
+    expect(contracts.get("create")).toEqual([
+      { flag: "--review-url", short: "-r" },
+      { flag: "--review" },
+    ]);
+    expect(contracts.get("update")).toEqual([
+      { flag: "--review-url", short: "-r" },
+      { flag: "--review" },
+    ]);
+  });
+
+  it("attaches create required-option metadata only to create schema branches", () => {
+    const noBranches = { type: "object" } as Record<string, unknown>;
+    expect(_testOnlyContractsCommand.attachCreateRequiredOptionContracts(noBranches, { Task: ["title"] })).toBe(noBranches);
+
+    const malformedPropertiesBranch = { type: "object", oneOf: [{ properties: null }] } as Record<string, unknown>;
+    expect(
+      _testOnlyContractsCommand.attachCreateRequiredOptionContracts(malformedPropertiesBranch, { Task: ["title"] }),
+    ).toBe(malformedPropertiesBranch);
+
+    const untouched = { type: "object", oneOf: [{ properties: { action: {} } }] } as Record<string, unknown>;
+    expect(_testOnlyContractsCommand.attachCreateRequiredOptionContracts(untouched, { Task: ["title"] })).toBe(untouched);
+    const malformedActionBranch = { type: "object", oneOf: [{ properties: { action: null } }] } as Record<string, unknown>;
+    expect(
+      _testOnlyContractsCommand.attachCreateRequiredOptionContracts(malformedActionBranch, { Task: ["title"] }),
+    ).toBe(malformedActionBranch);
+
+    const enriched = _testOnlyContractsCommand.attachCreateRequiredOptionContracts(
+      {
+        type: "object",
+        oneOf: [
+          { properties: { action: { const: "create" } } },
+          { properties: { action: { const: "update" } } },
+        ],
+      } as Record<string, unknown>,
+      { Task: ["title"] },
+    );
+
+    expect(enriched).not.toBe(untouched);
+    expect((enriched.oneOf as Array<Record<string, unknown>>)[0]["x-create-required-options"]).toEqual({
+      Task: ["title"],
+    });
+    expect((enriched.oneOf as Array<Record<string, unknown>>)[1]["x-create-required-options"]).toBeUndefined();
+  });
+
+  it("builds extension command contracts, schema branches, availability, and runtime field flags", () => {
+    expect(_testOnlyContractsCommand.toRuntimeLongFlagToken(" field-name ")).toBe("--field-name");
+    expect(_testOnlyContractsCommand.toRuntimeLongFlagToken("--already")).toBe("--already");
+    expect(_testOnlyContractsCommand.toRuntimeLongFlagToken("-x")).toBeNull();
+    expect(_testOnlyContractsCommand.toRuntimeLongFlagToken(" ")).toBeNull();
+    expect(_testOnlyContractsCommand.toRuntimeShortFlagToken("-x")).toBe("-x");
+    expect(_testOnlyContractsCommand.toRuntimeShortFlagToken("--long")).toBeNull();
+    expect(_testOnlyContractsCommand.toRuntimeShortFlagToken("field")).toBeNull();
+    expect(_testOnlyContractsCommand.normalizeCommandForRuntimeFieldFlags("list-open")).toBe("list");
+    expect(_testOnlyContractsCommand.normalizeCommandForRuntimeFieldFlags("cal")).toBe("calendar");
+    expect(_testOnlyContractsCommand.normalizeCommandForRuntimeFieldFlags("ctx")).toBe("context");
+    expect(_testOnlyContractsCommand.normalizeCommandForRuntimeFieldFlags("update-many")).toBe("update_many");
+
+    const runtimeFieldFlags = _testOnlyContractsCommand.buildRuntimeFieldFlagContracts({
+      definitions: [
+        {
+          key: "reviewer",
+          metadata_key: "reviewer",
+          cli_flag: "reviewer",
+          cli_aliases: ["-r", "review-by", "--reviewer"],
+          description: "Reviewer",
+          type: "string",
+          commands: ["create", "update_many"],
+          repeatable: false,
+          required: true,
+          required_on_create: false,
+          required_types: [],
+          allow_unset: true,
+        },
+        {
+          key: "bad",
+          metadata_key: "bad",
+          cli_flag: "-x",
+          cli_aliases: [],
+          type: "boolean",
+          commands: ["create"],
+          repeatable: false,
+          required: false,
+          required_on_create: false,
+          required_types: [],
+          allow_unset: true,
+        },
+      ],
+      by_key: new Map(),
+      by_cli_token: new Map(),
+      command_to_fields: new Map(),
+    });
+    expect(runtimeFieldFlags.get("create")).toEqual([
+      { flag: "--reviewer", short: "-r" },
+      { flag: "--review-by" },
+    ]);
+    expect(runtimeFieldFlags.get("update_many")).toEqual([
+      { flag: "--reviewer", short: "-r" },
+      { flag: "--review-by" },
+    ]);
+
+    const flagsByCommand = _testOnlyContractsCommand.collectExtensionFlagContractsByCommand([
+      {
+        layer: "project",
+        name: "pkg-b",
+        target_command: "  pkg run ",
+        flags: [
+          { long: "--count", short: "-c", description: "Count", required: true, value_type: "number" },
+          { long: "--count", short: "-c", repeatable: true },
+          { long: "", short: "--bad" },
+        ],
+      },
+      {
+        layer: "global",
+        name: "pkg-a",
+        target_command: "pkg run",
+        flags: [{ short: "-v", description: "Verbose", type: "boolean" }],
+      },
+      {
+        layer: "project",
+        name: "empty",
+        target_command: " ",
+        flags: [{ long: "--ignored" }],
+      },
+    ] as never);
+    expect(flagsByCommand.get("pkg run")).toEqual({
+      flags: [
+        { flag: "--count", short: "-c", description: "Count", required: true, value_type: "number" },
+        { flag: "-v", description: "Verbose", value_type: "boolean" },
+      ],
+      sources: [
+        { layer: "global", name: "pkg-a" },
+        { layer: "project", name: "pkg-b" },
+      ],
+    });
+
+    const extensionContracts = _testOnlyContractsCommand.collectExtensionCommandContracts({
+      handlers: new Set(["pkg run"]),
+      disabledReason: null,
+      policyState: { mode: "warn", trust_mode: "warn", default_sandbox_profile: "restricted" },
+      commandDefinitions: [
+        {
+          command: "pkg run",
+          action: "pkg-run",
+          description: "Run package",
+          intent: null,
+          arguments: [
+            { name: "target", required: true, variadic: false, description: null },
+            { name: "", required: true, variadic: false },
+          ],
+          flags: [],
+          examples: ["pm pkg run"],
+          failure_hints: ["Install pkg"],
+          source: { layer: "project", name: "pkg-b" },
+        },
+        {
+          command: " ",
+          action: "ignored",
+          arguments: [],
+          flags: [],
+          examples: [],
+          failure_hints: [],
+          source: null,
+        },
+      ],
+      flagRegistrations: [
+        {
+          layer: "project",
+          name: "pkg-b",
+          target_command: "pkg run",
+          flags: [{ long: "--level", repeatable: true, value_name: "level" }],
+        },
+        {
+          layer: "global",
+          name: "standalone",
+          target_command: "standalone command",
+          flags: [{ long: "--flag" }],
+        },
+      ],
+    } as never);
+    expect(extensionContracts).toEqual([
+      expect.objectContaining({
+        command: "pkg run",
+        action: "pkg-run",
+        arguments: [{ name: "target", required: true, variadic: false, description: null }],
+        flags: [expect.objectContaining({ flag: "--level", repeatable: true, value_name: "level" })],
+      }),
+      expect.objectContaining({
+        command: "standalone command",
+        action: "standalone-command",
+        flags: [expect.objectContaining({ flag: "--flag" })],
+      }),
+    ]);
+
+    expect(_testOnlyContractsCommand.extensionSchemaPropertyNameFromFlag({ flag: "----" })).toBeNull();
+    const branch = _testOnlyContractsCommand.buildExtensionActionSchemaBranch({
+      command: "pkg run|pkg execute",
+      action: "pkg-run",
+      source: { layer: "project", name: "pkg-b" },
+      description: null,
+      intent: null,
+      arguments: [
+        { name: "target", required: true, variadic: false, description: null },
+        { name: "rest", required: false, variadic: true, description: "Rest args" },
+      ],
+      flags: [
+        { flag: "--level", value_type: "number", required: true },
+        { flag: "--items", repeatable: true, value_type: "string" },
+        { flag: "----" },
+      ],
+      examples: [],
+      failure_hints: [],
+    });
+    expect(branch).toMatchObject({
+      required: ["action", "target", "level"],
+      "x-extension-command": "pkg run",
+      "x-extension-commands": ["pkg run", "pkg execute"],
+    });
+    expect((branch.properties as Record<string, unknown>).rest).toMatchObject({ type: "array" });
+    expect((branch.properties as Record<string, unknown>).level).toMatchObject({ type: ["number", "string"] });
+    expect((branch.properties as Record<string, unknown>).items).toMatchObject({ type: "array" });
+
+    const merged = _testOnlyContractsCommand.mergeExtensionContractsByAction([
+      {
+        command: "b command",
+        action: "same",
+        source: null,
+        description: null,
+        intent: null,
+        arguments: [],
+        flags: [{ flag: "--count" }],
+        examples: ["b"],
+        failure_hints: ["hint"],
+      },
+      {
+        command: "a command",
+        action: "same",
+        source: null,
+        description: null,
+        intent: null,
+        arguments: [{ name: "id", required: true, variadic: false, description: null }],
+        flags: [{ flag: "--count", required: true }, { flag: "--new", repeatable: true }],
+        examples: ["a", "b"],
+        failure_hints: ["hint", "next"],
+      },
+    ]);
+    expect(merged).toEqual([
+      expect.objectContaining({
+        action: "same",
+        command: "a command|b command",
+        arguments: [{ name: "id", required: true, variadic: false, description: null }],
+        flags: [
+          { flag: "--count", required: true },
+          { flag: "--new", repeatable: true },
+        ],
+        examples: ["b", "a"],
+        failure_hints: ["hint", "next"],
+      }),
+    ]);
+
+    expect(_testOnlyContractsCommand.isCoreCommandPath("create")).toBe(true);
+    expect(_testOnlyContractsCommand.isCoreCommandPath("calendar")).toBe(false);
+    expect(_testOnlyContractsCommand.resolveCoreCommandFlags("missing")).toEqual(
+      expect.arrayContaining([expect.objectContaining({ flag: "--json" })]),
+    );
+    expect(
+      _testOnlyContractsCommand.resolveActionAvailability(
+        { action: "create", provider: "core", requires_extension: false, command_path: "create" },
+        {
+          handlers: new Set(),
+          disabledReason: null,
+          policyState: { mode: "warn", trust_mode: "warn", default_sandbox_profile: "restricted" },
+          commandDefinitions: [],
+          flagRegistrations: [],
+        } as never,
+      ),
+    ).toMatchObject({ action: "create", invocable: true, provider: "core" });
+    expect(
+      _testOnlyContractsCommand.resolveActionAvailability(
+        { action: "calendar", provider: "extension", requires_extension: true, command_path: "calendar" },
+        {
+          handlers: new Set(),
+          disabledReason: null,
+          policyState: { mode: "warn", trust_mode: "warn", default_sandbox_profile: "restricted" },
+          commandDefinitions: [],
+          flagRegistrations: [],
+        } as never,
+      ),
+    ).toMatchObject({
+      action: "calendar",
+      invocable: false,
+      disabled_reason: "optional_package_not_installed:calendar",
+      cli_exposed: false,
+    });
+    expect(
+      _testOnlyContractsCommand.collectActionContractDescriptors(
+        [
+          {
+            command: "custom command",
+            action: "custom-action",
+            source: null,
+            description: null,
+            intent: null,
+            arguments: [],
+            flags: [],
+            examples: [],
+            failure_hints: [],
+          },
+        ],
+        { includePackageOwnedActions: true },
+      ).some((descriptor) => descriptor.action === "custom-action" && descriptor.provider === "extension"),
+    ).toBe(true);
+  });
+});
 
 describe("contracts command runtime", () => {
   it("returns schema, actions, command flags, and alias surfaces", async () => {
@@ -1404,6 +1811,15 @@ describe("contracts command runtime", () => {
           suggested_retry: "pm install calendar --project",
         }),
       }),
+    });
+  });
+
+  it("rejects action and command filters that do not map to each other", async () => {
+    await expect(
+      runContracts({ command: "create", action: "update" }, GLOBAL_OPTIONS),
+    ).rejects.toMatchObject<PmCliError>({
+      message: 'Action "update" is not mapped to command "create" in contracts output.',
+      exitCode: EXIT_CODE.USAGE,
     });
   });
 

@@ -2,10 +2,12 @@ import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  _testOnlyLoader,
   activateExtensions,
   deactivateExtensions,
   discoverExtensions,
   loadExtensions,
+  nextExtensionReloadToken,
   runCommandHandler,
   runCommandOverride,
   runParserOverride,
@@ -39,6 +41,15 @@ import {
   isFlagDefaultValueCoercible,
   resolveFlagValueKind,
 } from "../../src/core/extensions/flag-value-types.js";
+import {
+  evaluateExtensionPolicyForExtension,
+  evaluateExtensionPolicyForRegistration,
+  hydrateExtensionPolicy,
+  normalizeExtensionPolicy,
+  normalizePmMaxVersionExceededMode,
+  normalizePolicySandboxProfile,
+  serializeExtensionPolicy,
+} from "../../src/core/extensions/extension-policy.js";
 import { readSettings } from "../../src/core/store/settings.js";
 import { collectExtensionCommandHelpDescriptors } from "../../src/cli/extension-command-help.js";
 import { writeTestExtension } from "../helpers/extensions.js";
@@ -80,6 +91,269 @@ describe("extension loader", () => {
 
     expect(second.allowed_extensions).toEqual([]);
     expect(second.extension_overrides).toEqual([]);
+  });
+
+  it("generates monotonic extension reload tokens with explicit seeds", () => {
+    const first = nextExtensionReloadToken(100);
+    const second = nextExtensionReloadToken(100);
+
+    expect(first).toMatch(/^\d+-100$/);
+    expect(second).toMatch(/^\d+-100$/);
+    expect(Number(second.split("-", 1)[0])).toBeGreaterThan(Number(first.split("-", 1)[0]));
+  });
+
+  it("covers loader pure helper fallback branches", () => {
+    expect(_testOnlyLoader.parseComparableVersion(" v1.2.3-beta ")).toEqual([1, 2, 3]);
+    expect(_testOnlyLoader.parseComparableVersion(">= 2026.6.13")).toEqual([2026, 6, 13]);
+    expect(_testOnlyLoader.parseComparableVersion("latest")).toBeNull();
+    expect(_testOnlyLoader.compareComparableVersions("1.2", "1.2.0")).toBe(0);
+    expect(_testOnlyLoader.compareComparableVersions("1.2.1", "1.2.0")).toBe(1);
+    expect(_testOnlyLoader.compareComparableVersions("1.1.9", "1.2.0")).toBe(-1);
+    expect(_testOnlyLoader.compareComparableVersions("nightly", "1.0.0")).toBeNull();
+    expect(
+      _testOnlyLoader.sanitizeRegistrationValue({
+        zed: 1n,
+        alpha: Symbol.for("pm"),
+        nested: [() => true, { beta: "value" }],
+      }),
+    ).toEqual({
+      alpha: "Symbol(pm)",
+      nested: ["[Function]", { beta: "value" }],
+      zed: "1",
+    });
+
+    expect(_testOnlyLoader.resolveCommandDefinitionAction("team sync", undefined)).toBe("team-sync");
+    expect(() => _testOnlyLoader.resolveCommandDefinitionAction("team sync", 42)).toThrow(/non-empty string/);
+    expect(() => _testOnlyLoader.resolveCommandDefinitionAction("team sync", "!!!")).toThrow(/alphanumeric/);
+    expect(() =>
+      _testOnlyLoader.normalizeCommandDefinitionArguments([
+        { name: "files", variadic: true },
+        { name: "extra" },
+      ]),
+    ).toThrow(/final argument/);
+  });
+
+  it("covers managed package metadata and version compatibility helper branches", async () => {
+    await withTempPmPath(async (context) => {
+      const extensionsRoot = path.join(context.tempRoot, "managed-source-packages");
+      await mkdir(extensionsRoot, { recursive: true });
+      await writeFile(path.join(extensionsRoot, ".managed-extensions.json"), '"not-an-object"\n', "utf8");
+      await expect(_testOnlyLoader.readManagedExtensionSourcePackages(extensionsRoot)).resolves.toEqual(new Map());
+
+      await writeFile(
+        path.join(extensionsRoot, ".managed-extensions.json"),
+        JSON.stringify({
+          entries: [
+            null,
+            { directory: "dir-ext", name: "name-ext", source: { package: " @scope/pkg " } },
+            { directory: "missing-source", source: { package: "" } },
+          ],
+        }),
+        "utf8",
+      );
+      await expect(_testOnlyLoader.readManagedExtensionSourcePackages(extensionsRoot)).resolves.toEqual(
+        new Map([
+          ["directory:dir-ext", "@scope/pkg"],
+          ["name:name-ext", "@scope/pkg"],
+        ]),
+      );
+    });
+
+    const manifest = {
+      name: "versioned-ext",
+      version: "1.0.0",
+      entry: "index.mjs",
+      capabilities: [],
+      priority: 100,
+    } as ExtensionManifest;
+    await expect(
+      _testOnlyLoader.evaluatePmMinVersionCompatibility("project", { ...manifest, pm_min_version: "not-a-version" }),
+    ).resolves.toEqual({
+      allowed: false,
+      warning: "extension_pm_min_version_invalid:project:versioned-ext:required=not-a-version",
+    });
+    await expect(
+      _testOnlyLoader.evaluatePmMinVersionCompatibility("project", { ...manifest, pm_min_version: "9999.0.0" }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        allowed: false,
+        warning: expect.stringContaining("extension_pm_min_version_unmet:project:versioned-ext:required=9999.0.0"),
+      }),
+    );
+    await expect(
+      _testOnlyLoader.evaluatePmMaxVersionCompatibility("project", { ...manifest, pm_max_version: "not-a-version" }, "warn"),
+    ).resolves.toEqual({
+      allowed: false,
+      warning: "extension_pm_max_version_invalid:project:versioned-ext:allowed=not-a-version",
+    });
+  });
+
+  it("normalizes and evaluates extension policy edge branches", () => {
+    expect(normalizePolicySandboxProfile(" Strict ")).toBe("strict");
+    expect(normalizePolicySandboxProfile("unknown")).toBe("none");
+    expect(normalizePmMaxVersionExceededMode("warn")).toEqual({ global: "warn", project: "warn" });
+    expect(normalizePmMaxVersionExceededMode({ global: "warn", project: "bad" })).toEqual({
+      global: "warn",
+      project: "block",
+    });
+    expect(normalizePmMaxVersionExceededMode(["warn"] as never)).toEqual({ global: "block", project: "block" });
+    expect(
+      normalizeExtensionPolicy({
+        extensions: {
+          policy: createTestExtensionPolicy({
+            mode: "mystery" as never,
+            trust_mode: "also-mystery" as never,
+          }),
+        },
+      } as never),
+    ).toMatchObject({ mode: "off", trustMode: "off" });
+
+    const settings = {
+      extensions: {
+        policy: createTestExtensionPolicy({
+          mode: "warn",
+          trust_mode: "warn",
+          require_provenance: true,
+          default_sandbox_profile: "strict",
+          allowed_extensions: ["alpha"],
+          blocked_capabilities: ["hooks"],
+          blocked_surfaces: ["commands:handler"],
+          blocked_commands: ["blocked command"],
+          blocked_actions: ["blocked-action"],
+          blocked_services: ["output_format"],
+          extension_overrides: [
+            {
+              name: "alpha",
+              require_trusted: true,
+              require_provenance: true,
+              sandbox_profile: "restricted",
+              allowed_commands: ["allowed command"],
+              blocked_actions: ["override-action"],
+            },
+            { name: "  " },
+          ],
+        }),
+      },
+    };
+    const policy = normalizeExtensionPolicy(settings as never);
+    const permissivePolicy = normalizeExtensionPolicy({
+      extensions: {
+        policy: createTestExtensionPolicy({
+          mode: "warn",
+          trust_mode: "off",
+          default_sandbox_profile: "none",
+        }),
+      },
+    } as never);
+    expect(evaluateExtensionPolicyForExtension(permissivePolicy, { layer: "project", name: "alpha" })).toEqual({
+      allowed: true,
+      warning: null,
+    });
+    expect(policy.blockedSurfaces).toEqual(new Set(["commands.handler"]));
+    expect(
+      normalizeExtensionPolicy({
+        extensions: {
+          policy: createTestExtensionPolicy({
+            blocked_surfaces: [" :: "],
+          }),
+        },
+      } as never).blockedSurfaces,
+    ).toEqual(new Set());
+
+    const serialized = serializeExtensionPolicy(policy);
+    expect(serialized.pm_max_version_exceeded_mode).toBe("block");
+    expect(serialized.extension_overrides).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: "alpha",
+          require_trusted: true,
+          require_provenance: true,
+          sandbox_profile: "restricted",
+          allowed_commands: ["allowed command"],
+          blocked_actions: ["override-action"],
+        }),
+      ]),
+    );
+    expect(hydrateExtensionPolicy(serialized).blockedSurfaces).toEqual(new Set(["commands.handler"]));
+    expect(
+      serializeExtensionPolicy(
+        normalizeExtensionPolicy({
+          extensions: {
+            policy: createTestExtensionPolicy({
+              extension_overrides: [{ name: "zulu" }, { name: "alpha" }],
+            }),
+          },
+        } as never),
+      ).extension_overrides?.map((override) => override.name),
+    ).toEqual(["alpha", "zulu"]);
+
+    const alpha = {
+      layer: "project" as const,
+      name: "alpha",
+      trusted: false,
+      provenanceVerified: false,
+      permissions: { process_spawn: true },
+    };
+    expect(evaluateExtensionPolicyForExtension(policy, alpha)).toEqual({
+      allowed: true,
+      warning: "extension_policy_violation_trust:project:alpha:reason=extension_untrusted",
+    });
+    expect(evaluateExtensionPolicyForExtension(policy, { ...alpha, trusted: true })).toEqual({
+      allowed: true,
+      warning: "extension_policy_violation_trust:project:alpha:reason=provenance_missing_or_unverified",
+    });
+    expect(
+      evaluateExtensionPolicyForExtension(policy, {
+        ...alpha,
+        trusted: true,
+        provenanceVerified: true,
+        permissions: { process_spawn: true },
+      }),
+    ).toEqual({
+      allowed: true,
+      warning: "extension_policy_violation_extension:project:alpha:reason=sandbox_restricted_disallows_process_spawn",
+    });
+    expect(evaluateExtensionPolicyForExtension(policy, { ...alpha, name: "beta", trusted: true, provenanceVerified: true })).toEqual({
+      allowed: true,
+      warning: "extension_policy_violation_extension:project:beta:reason=extension_not_allowlisted",
+    });
+    expect(
+      evaluateExtensionPolicyForExtension(
+        normalizeExtensionPolicy({
+          extensions: {
+            policy: createTestExtensionPolicy({
+              mode: "warn",
+              trust_mode: "warn",
+            }),
+          },
+        } as never),
+        { layer: "project", name: "open-ext", trusted: true, provenanceVerified: true },
+      ),
+    ).toEqual({ allowed: true, warning: null });
+
+    expect(evaluateExtensionPolicyForRegistration(policy, alpha, "commands.handler", " register handler ", "commands")).toEqual({
+      allowed: true,
+      warning:
+        "extension_policy_violation_registration:project:alpha:reason=surface_blocked:capability=commands:method=register_handler:surface=commands.handler",
+    });
+    expect(
+      evaluateExtensionPolicyForRegistration(policy, alpha, "commands.handler", "Register Handler", "commands", {
+        command: "Blocked   Command",
+      }),
+    ).toEqual({
+      allowed: true,
+      warning:
+        "extension_policy_violation_registration:project:alpha:reason=surface_blocked:capability=commands:command=blocked command:method=register_handler:surface=commands.handler",
+    });
+    expect(
+      evaluateExtensionPolicyForRegistration(policy, alpha, "services.register", "Register Service", undefined, {
+        service: "output_format",
+      }),
+    ).toEqual({
+      allowed: true,
+      warning:
+        "extension_policy_violation_registration:project:alpha:reason=service_blocked:method=register_service:service=output_format:surface=services.register",
+    });
   });
 
   it("resolves project and global extension roots from PM paths", async () => {
@@ -363,6 +637,51 @@ describe("extension loader", () => {
 
       expect(discovery.effective).toEqual([]);
       expect(discovery.warnings).toContain("extension_manifest_invalid:project:invalid-activation-metadata");
+    });
+  });
+
+  it("rejects invalid optional manifest object metadata during discovery", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      const variants: Array<[string, Record<string, unknown>]> = [
+        ["invalid-engines", { engines: "pm>=1" }],
+        ["invalid-sandbox-profile-type", { sandbox_profile: 1 }],
+        ["invalid-sandbox-profile", { sandbox_profile: "wat" }],
+        ["invalid-provenance", { provenance: "signed" }],
+        ["invalid-permissions", { permissions: "all" }],
+        ["invalid-permission-boolean", { permissions: { fs_read: "yes" } }],
+      ];
+
+      for (const [directory, extraManifest] of variants) {
+        const extensionRoot = path.join(roots.project, directory);
+        await mkdir(extensionRoot, { recursive: true });
+        await writeFile(
+          path.join(extensionRoot, "manifest.json"),
+          `${JSON.stringify({
+            name: `${directory}-ext`,
+            version: "1.0.0",
+            entry: "./index.mjs",
+            ...extraManifest,
+          })}\n`,
+          "utf8",
+        );
+        await writeFile(path.join(extensionRoot, "index.mjs"), "export default { activate() {} };\n", "utf8");
+      }
+
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings: await loadSettings(context),
+      });
+
+      expect(discovery.effective).toEqual([]);
+      expect(discovery.warnings).toEqual([
+        "extension_manifest_invalid:project:invalid-engines",
+        "extension_manifest_invalid:project:invalid-permission-boolean",
+        "extension_manifest_invalid:project:invalid-permissions",
+        "extension_manifest_invalid:project:invalid-provenance",
+        "extension_manifest_invalid:project:invalid-sandbox-profile",
+        "extension_manifest_invalid:project:invalid-sandbox-profile-type",
+      ]);
     });
   });
 
@@ -683,6 +1002,175 @@ describe("extension loader", () => {
 
       expect(discovery.effective).toEqual([]);
       expect(discovery.warnings).toEqual(["extension_manifest_invalid:project:invalid-engines"]);
+    });
+  });
+
+  it("rejects malformed optional manifest security and compatibility metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      const cases: Array<[string, Partial<ExtensionManifest>]> = [
+        [
+          "blank-engine-key",
+          {
+            name: "blank-engine-key-ext",
+            version: "1.0.0",
+            entry: "./index.mjs",
+            engines: { " ": ">=20" },
+          } as Partial<ExtensionManifest>,
+        ],
+        [
+          "invalid-manifest-version",
+          {
+            name: "invalid-manifest-version-ext",
+            version: "1.0.0",
+            entry: "./index.mjs",
+            manifest_version: 1.5,
+          } as Partial<ExtensionManifest>,
+        ],
+        [
+          "invalid-permissions",
+          {
+            name: "invalid-permissions-ext",
+            version: "1.0.0",
+            entry: "./index.mjs",
+            permissions: { fs_read: "yes" } as never,
+          } as Partial<ExtensionManifest>,
+        ],
+        [
+          "invalid-provenance",
+          {
+            name: "invalid-provenance-ext",
+            version: "1.0.0",
+            entry: "./index.mjs",
+            provenance: { verified: "yes" } as never,
+          } as Partial<ExtensionManifest>,
+        ],
+        [
+          "invalid-sandbox",
+          {
+            name: "invalid-sandbox-ext",
+            version: "1.0.0",
+            entry: "./index.mjs",
+            sandbox_profile: "permissive" as never,
+          } as Partial<ExtensionManifest>,
+        ],
+        [
+          "invalid-trusted",
+          {
+            name: "invalid-trusted-ext",
+            version: "1.0.0",
+            entry: "./index.mjs",
+            trusted: "true" as never,
+          } as Partial<ExtensionManifest>,
+        ],
+        [
+          "blank-min",
+          {
+            name: "blank-min-ext",
+            version: "1.0.0",
+            entry: "./index.mjs",
+            pm_min_version: " ",
+          } as Partial<ExtensionManifest>,
+        ],
+        [
+          "non-object-activation",
+          {
+            name: "non-object-activation-ext",
+            version: "1.0.0",
+            entry: "./index.mjs",
+            activation: "always" as never,
+          } as Partial<ExtensionManifest>,
+        ],
+      ];
+
+      for (const [directory, manifest] of cases) {
+        await createExtension(roots.project, directory, manifest, "export default { ok: true };\n");
+      }
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.effective).toEqual([]);
+      expect(discovery.warnings).toEqual([
+        "extension_manifest_invalid:project:blank-engine-key",
+        "extension_manifest_invalid:project:blank-min",
+        "extension_manifest_invalid:project:invalid-manifest-version",
+        "extension_manifest_invalid:project:invalid-permissions",
+        "extension_manifest_invalid:project:invalid-provenance",
+        "extension_manifest_invalid:project:invalid-sandbox",
+        "extension_manifest_invalid:project:invalid-trusted",
+        "extension_manifest_invalid:project:non-object-activation",
+      ]);
+    });
+  });
+
+  it("preserves full manifest provenance, permission, and activation metadata", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "full-security-metadata",
+        {
+          name: "full-security-metadata-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          manifest_version: 3,
+          trusted: true,
+          provenance: {
+            source: " example://source ",
+            signature: " sig ",
+            attestation: " att ",
+            verified: false,
+          },
+          sandbox_profile: "restricted",
+          permissions: {
+            fs_read: true,
+            fs_write: false,
+            network: true,
+            env_read: false,
+            env_write: true,
+            process_spawn: false,
+          },
+          activation: {
+            commands: ["   "],
+          },
+        },
+        "export default { ok: true };\n",
+      );
+
+      const settings = await loadSettings(context);
+      const discovery = await discoverExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(discovery.warnings).toEqual([]);
+      expect(discovery.effective).toEqual([
+        expect.objectContaining({
+          name: "full-security-metadata-ext",
+          manifest_version: 3,
+          trusted: true,
+          provenance: {
+            source: "example://source",
+            signature: "sig",
+            attestation: "att",
+            verified: false,
+          },
+          sandbox_profile: "restricted",
+          permissions: {
+            fs_read: true,
+            fs_write: false,
+            network: true,
+            env_read: false,
+            env_write: true,
+            process_spawn: false,
+          },
+          activation: undefined,
+        }),
+      ]);
     });
   });
 
@@ -1203,6 +1691,62 @@ describe("extension loader", () => {
         }),
       ]);
       expect(loaded.warnings).toContain("extension_load_failed:global:boom-ext");
+    });
+  });
+
+  it("cache-busts extension imports with reload tokens and source package name fallback", async () => {
+    await withTempPmPath(async (context) => {
+      const roots = resolveExtensionRoots(context.pmPath);
+      await createExtension(
+        roots.project,
+        "name-backed",
+        {
+          name: "name-backed-ext",
+          version: "1.0.0",
+          entry: "./index.mjs",
+        },
+        "export const loadedValue = 'first';\n",
+      );
+      await writeFile(
+        path.join(roots.project, ".managed-extensions.json"),
+        `${JSON.stringify(
+          {
+            version: 1,
+            entries: [
+              { directory: "ignored", source: { package: "   " } },
+              { name: "name-backed-ext", source: { package: "pm-name-backed" } },
+              "not-an-entry",
+            ],
+          },
+          null,
+          2,
+        )}\n`,
+        "utf8",
+      );
+
+      const settings = await loadSettings(context);
+      const loaded = await loadExtensions({
+        pmRoot: context.pmPath,
+        settings,
+      });
+
+      expect(loaded.loaded).toEqual([
+        expect.objectContaining({
+          name: "name-backed-ext",
+          source_package: "pm-name-backed",
+        }),
+      ]);
+      expect((loaded.loaded[0]?.module as { loadedValue?: string }).loadedValue).toBe("first");
+
+      await writeFile(path.join(roots.project, "name-backed", "index.mjs"), "export const loadedValue = 'second';\n", "utf8");
+      const reloaded = await loadExtensions({
+        pmRoot: context.pmPath,
+        settings,
+        cache_bust: true,
+        reload_token: "reload-token-1",
+      });
+
+      expect((reloaded.loaded[0]?.module as { loadedValue?: string }).loadedValue).toBe("second");
     });
   });
 
@@ -2074,6 +2618,74 @@ describe("extension loader", () => {
       },
       warnings: [],
     });
+  });
+
+  it("reports command handler, override, and overlap collisions", async () => {
+    const loaded = [
+      {
+        layer: "global" as const,
+        directory: "global-collisions",
+        manifest_path: "/tmp/global/global-collisions/manifest.json",
+        name: "global-collisions",
+        version: "1.0.0",
+        entry: "./index.mjs",
+        priority: 10,
+        entry_path: "/tmp/global/global-collisions/index.mjs",
+        module: {
+          activate(api: {
+            registerCommand: (
+              commandOrDefinition: string | { name: string; run: (context: unknown) => unknown },
+              run?: (context: unknown) => unknown,
+            ) => void;
+          }) {
+            api.registerCommand("sync", (context) => context);
+            api.registerCommand({ name: "sync", run: (context) => context });
+          },
+        },
+      },
+      {
+        layer: "project" as const,
+        directory: "project-collisions",
+        manifest_path: "/tmp/project/project-collisions/manifest.json",
+        name: "project-collisions",
+        version: "1.0.0",
+        entry: "./index.mjs",
+        priority: 20,
+        entry_path: "/tmp/project/project-collisions/index.mjs",
+        module: {
+          activate(api: {
+            registerCommand: (
+              commandOrDefinition: string | { name: string; run: (context: unknown) => unknown },
+              run?: (context: unknown) => unknown,
+            ) => void;
+          }) {
+            api.registerCommand("sync", (context) => context);
+            api.registerCommand({ name: "sync", run: (context) => context });
+          },
+        },
+      },
+    ];
+
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: { global: "/tmp/global", project: "/tmp/project" },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      loaded,
+      failed: [],
+    });
+
+    expect(activation.warnings).toEqual(
+      expect.arrayContaining([
+        "extension_command_override_collision:sync:project:project-collisions:global:global-collisions",
+        "extension_command_handler_collision:sync:project:project-collisions:global:global-collisions",
+        "extension_command_override_handler_overlap:sync:global:global-collisions:global:global-collisions",
+        "extension_command_override_handler_overlap:sync:project:project-collisions:project:project-collisions",
+      ]),
+    );
   });
 
   it("canonicalizes repeated whitespace for extension command names", async () => {
@@ -4028,6 +4640,122 @@ describe("extension loader", () => {
       ]),
     );
   });
+
+  it("reports preflight override collisions with the last registration as winner", async () => {
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: {
+        global: "/tmp/global",
+        project: "/tmp/project",
+      },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      loaded: [
+        {
+          layer: "global",
+          directory: "preflight-one",
+          manifest_path: "/tmp/global/preflight-one/manifest.json",
+          name: "preflight-one",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 10,
+          entry_path: "/tmp/global/preflight-one/index.mjs",
+          capabilities: ["preflight"],
+          module: {
+            activate(api: ExtensionApi) {
+              api.registerPreflight((context) => context);
+            },
+          },
+        },
+        {
+          layer: "project",
+          directory: "preflight-two",
+          manifest_path: "/tmp/project/preflight-two/manifest.json",
+          name: "preflight-two",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 20,
+          entry_path: "/tmp/project/preflight-two/index.mjs",
+          capabilities: ["preflight"],
+          module: {
+            activate(api: ExtensionApi) {
+              api.registerPreflight((context) => context);
+            },
+          },
+        },
+      ],
+      failed: [],
+    });
+
+    expect(activation.preflight_override_count).toBe(2);
+    expect(activation.warnings).toEqual([
+      "extension_preflight_override_collision:project:preflight-two:global:preflight-one",
+    ]);
+  });
+
+  it("reports parser and renderer collisions while ignoring singleton service registrations", async () => {
+    const activation = await activateExtensions({
+      disabled_by_flag: false,
+      roots: {
+        global: "/tmp/global",
+        project: "/tmp/project",
+      },
+      configured_enabled: [],
+      configured_disabled: [],
+      discovered: [],
+      effective: [],
+      warnings: [],
+      loaded: [
+        {
+          layer: "global",
+          directory: "runtime-one",
+          manifest_path: "/tmp/global/runtime-one/manifest.json",
+          name: "runtime-one",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 10,
+          entry_path: "/tmp/global/runtime-one/index.mjs",
+          capabilities: ["parser", "renderers", "services"],
+          module: {
+            activate(api: ExtensionApi) {
+              api.registerParser("create", (context) => context);
+              api.registerRenderer("json", () => "{}");
+              api.registerService("history_append", (context) => context);
+            },
+          },
+        },
+        {
+          layer: "project",
+          directory: "runtime-two",
+          manifest_path: "/tmp/project/runtime-two/manifest.json",
+          name: "runtime-two",
+          version: "1.0.0",
+          entry: "./index.mjs",
+          priority: 20,
+          entry_path: "/tmp/project/runtime-two/index.mjs",
+          capabilities: ["parser", "renderers"],
+          module: {
+            activate(api: ExtensionApi) {
+              api.registerParser("create", (context) => context);
+              api.registerRenderer("json", () => "{}");
+            },
+          },
+        },
+      ],
+      failed: [],
+    });
+
+    expect(activation.parser_override_count).toBe(2);
+    expect(activation.renderer_override_count).toBe(2);
+    expect(activation.service_override_count).toBe(1);
+    expect(activation.warnings).toEqual([
+      "extension_parser_override_collision:create:project:runtime-two:global:runtime-one",
+      "extension_renderer_collision:json:project:runtime-two:global:runtime-one",
+    ]);
+  });
 });
 
 function inMemoryLoadResult(
@@ -4397,6 +5125,365 @@ describe("extension teardown lifecycle (pm-k1e4)", () => {
     const result = await deactivateExtensions(loadResult);
     expect(result.deactivated).toBe(1);
     expect(deactivatedWithState).toBe(true);
+  });
+
+  it("warns and skips hook registrations denied by extension policy", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.hooks.beforeCommand(() => undefined);
+          api.hooks.afterCommand(() => undefined);
+          api.hooks.onWrite(() => undefined);
+          api.hooks.onRead(() => undefined);
+          api.hooks.onIndex(() => undefined);
+        },
+      },
+      { name: "blocked-hooks", capabilities: ["hooks"] },
+    );
+    loadResult.policy = createTestExtensionPolicy({
+      mode: "enforce",
+      blocked_surfaces: ["hooks.beforecommand", "hooks.aftercommand", "hooks.onwrite", "hooks.onread", "hooks.onindex"],
+    });
+
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(0);
+    expect(result.hook_counts.before_command).toBe(0);
+    expect(result.hook_counts.after_command).toBe(0);
+    expect(result.hook_counts.on_write).toBe(0);
+    expect(result.hook_counts.on_read).toBe(0);
+    expect(result.hook_counts.on_index).toBe(0);
+    expect(result.warnings).toEqual([
+      "extension_policy_blocked_registration:project:blocked-hooks:reason=surface_blocked:capability=hooks:method=api.hooks.beforecommand:surface=hooks.beforecommand",
+      "extension_policy_blocked_registration:project:blocked-hooks:reason=surface_blocked:capability=hooks:method=api.hooks.aftercommand:surface=hooks.aftercommand",
+      "extension_policy_blocked_registration:project:blocked-hooks:reason=surface_blocked:capability=hooks:method=api.hooks.onwrite:surface=hooks.onwrite",
+      "extension_policy_blocked_registration:project:blocked-hooks:reason=surface_blocked:capability=hooks:method=api.hooks.onread:surface=hooks.onread",
+      "extension_policy_blocked_registration:project:blocked-hooks:reason=surface_blocked:capability=hooks:method=api.hooks.onindex:surface=hooks.onindex",
+    ]);
+  });
+
+  it("warns and skips vector store registrations denied by extension policy", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerVectorStoreAdapter({ name: "blocked-vector", query: () => [] });
+        },
+      },
+      { name: "blocked-vector-store", capabilities: ["search"] },
+    );
+    loadResult.policy = createTestExtensionPolicy({
+      mode: "enforce",
+      blocked_surfaces: ["search.vectorstore"],
+    });
+
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toHaveLength(0);
+    expect(result.registration_counts.vector_store_adapters).toBe(0);
+    expect(result.warnings).toEqual([
+      "extension_policy_blocked_registration:project:blocked-vector-store:reason=surface_blocked:capability=search:method=registervectorstoreadapter:surface=search.vectorstore",
+    ]);
+  });
+
+  it("warns and skips non-command registrations denied by extension policy", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerParser("sync", (context) => context);
+          api.registerPreflight(() => ({ continue: true }));
+          api.registerService("history_append", (context) => context);
+          api.registerRenderer("toon", (payload) => String(payload));
+          api.registerFlags("sync", [{ long: "--flag" }]);
+          api.registerItemFields([{ name: "severity", type: "string" }]);
+          api.registerItemTypes([{ name: "bug" }]);
+          api.registerMigration({ id: "migrate-severity", run: () => undefined });
+          api.registerImporter("jsonl", () => ({ ok: true }));
+          api.registerExporter("jsonl", () => ({ ok: true }));
+          api.registerSearchProvider({ name: "semantic", query: () => [] });
+        },
+      },
+      {
+        name: "blocked-non-command-apis",
+        capabilities: ["parser", "preflight", "services", "renderers", "schema", "importers", "search"],
+      },
+    );
+    loadResult.policy = createTestExtensionPolicy({
+      mode: "enforce",
+      blocked_surfaces: [
+        "parser.override",
+        "preflight.override",
+        "services.override",
+        "renderers.override",
+        "schema.flags",
+        "schema.itemfields",
+        "schema.itemtypes",
+        "schema.migrations",
+        "importers.importer",
+        "importers.exporter",
+        "search.provider",
+      ],
+    });
+
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toEqual([]);
+    expect(result.parser_override_count).toBe(0);
+    expect(result.preflight_override_count).toBe(0);
+    expect(result.service_override_count).toBe(0);
+    expect(result.renderer_override_count).toBe(0);
+    expect(result.registration_counts).toEqual({
+      commands: 0,
+      flags: 0,
+      item_fields: 0,
+      item_types: 0,
+      migrations: 0,
+      importers: 0,
+      exporters: 0,
+      search_providers: 0,
+      vector_store_adapters: 0,
+    });
+    expect(result.warnings).toEqual([
+      "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=parser:method=registerparser:surface=parser.override",
+      "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=preflight:method=registerpreflight:surface=preflight.override",
+      "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=services:method=registerservice:service=history_append:surface=services.override",
+      "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=renderers:method=registerrenderer:surface=renderers.override",
+      "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=schema:method=registerflags:surface=schema.flags",
+      "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=schema:method=registeritemfields:surface=schema.itemfields",
+      "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=schema:method=registeritemtypes:surface=schema.itemtypes",
+      "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=schema:method=registermigration:surface=schema.migrations",
+      "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=importers:method=registerimporter:surface=importers.importer",
+      "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=importers:method=registerexporter:surface=importers.exporter",
+      "extension_policy_blocked_registration:project:blocked-non-command-apis:reason=surface_blocked:capability=search:method=registersearchprovider:surface=search.provider",
+    ]);
+  });
+
+  it("warns and skips command override registrations denied by extension policy", async () => {
+    const loadResult = inMemoryLoadResult(
+      {
+        activate(api: ExtensionApi) {
+          api.registerCommand("sync", () => ({ ok: true }));
+        },
+      },
+      { name: "blocked-command-override", capabilities: ["commands"] },
+    );
+    loadResult.policy = createTestExtensionPolicy({
+      mode: "enforce",
+      blocked_surfaces: ["commands.override"],
+    });
+
+    const result = await activateExtensions(loadResult);
+    expect(result.failed).toEqual([]);
+    expect(result.command_override_count).toBe(0);
+    expect(result.warnings).toEqual([
+      "extension_policy_blocked_registration:project:blocked-command-override:reason=surface_blocked:capability=commands:command=sync:method=registercommand:surface=commands.override",
+    ]);
+  });
+
+  it("fails activation for command and schema registration metadata edge cases", async () => {
+    const makeLoaded = (name: string, activate: (api: ExtensionApi) => void) => ({
+      ...inMemoryLoadResult({ activate }, { name, capabilities: ["commands", "schema", "services"] }).loaded[0],
+      name,
+    });
+    const activation = await activateExtensions({
+      ...inMemoryLoadResult({}, { name: "unused" }),
+      loaded: [
+        makeLoaded("invalid-command-action", (api) => {
+          api.registerCommand({ name: "sync now", action: "!!!", run: () => undefined });
+        }),
+        makeLoaded("invalid-command-arguments", (api) => {
+          api.registerCommand({
+            name: "sync args",
+            arguments: { name: "target" } as never,
+            run: () => undefined,
+          });
+        }),
+        makeLoaded("invalid-command-argument-name", (api) => {
+          api.registerCommand({
+            name: "sync argname",
+            arguments: [{ name: "bad name" }],
+            run: () => undefined,
+          });
+        }),
+        makeLoaded("invalid-command-variadic", (api) => {
+          api.registerCommand({
+            name: "sync variadic",
+            arguments: [
+              { name: "items", variadic: true },
+              { name: "after" },
+            ],
+            run: () => undefined,
+          });
+        }),
+        makeLoaded("invalid-command-flags", (api) => {
+          api.registerCommand({
+            name: "sync flags",
+            flags: [{}],
+            run: () => undefined,
+          });
+        }),
+        makeLoaded("invalid-register-flags-default", (api) => {
+          api.registerFlags("sync flags", [{ long: "--count", default: { bad: true } as never }]);
+        }),
+        makeLoaded("invalid-item-fields-list", (api) => {
+          api.registerItemFields({ name: "field", type: "string" } as never);
+        }),
+        makeLoaded("invalid-item-fields-empty", (api) => {
+          api.registerItemFields([]);
+        }),
+        makeLoaded("invalid-item-types-list", (api) => {
+          api.registerItemTypes({ name: "task" } as never);
+        }),
+        makeLoaded("invalid-item-types-empty", (api) => {
+          api.registerItemTypes([]);
+        }),
+        makeLoaded("invalid-item-type-policies", (api) => {
+          api.registerItemTypes([{ name: "task", command_option_policies: { command: "create" } as never }]);
+        }),
+        makeLoaded("invalid-item-type-policy-entry", (api) => {
+          api.registerItemTypes([{ name: "task", command_option_policies: [null] as never }]);
+        }),
+        makeLoaded("invalid-item-type-policy-command", (api) => {
+          api.registerItemTypes([{ name: "task", command_option_policies: [{ command: " ", option: "status" }] }]);
+        }),
+        makeLoaded("invalid-item-type-policy-option", (api) => {
+          api.registerItemTypes([{ name: "task", command_option_policies: [{ command: "create", option: "" }] }]);
+        }),
+        makeLoaded("invalid-item-type-policy-enabled", (api) => {
+          api.registerItemTypes([{ name: "task", command_option_policies: [{ command: "create", option: "status", enabled: "yes" as never }] }]);
+        }),
+        makeLoaded("invalid-item-type-policy-required", (api) => {
+          api.registerItemTypes([{ name: "task", command_option_policies: [{ command: "create", option: "status", required: "yes" as never }] }]);
+        }),
+        makeLoaded("invalid-item-type-policy-visible", (api) => {
+          api.registerItemTypes([{ name: "task", command_option_policies: [{ command: "create", option: "status", visible: "yes" as never }] }]);
+        }),
+        makeLoaded("invalid-item-type-options", (api) => {
+          api.registerItemTypes([{ name: "task", options: { key: "status" } as never }]);
+        }),
+        makeLoaded("invalid-item-type-option-entry", (api) => {
+          api.registerItemTypes([{ name: "task", options: [null] as never }]);
+        }),
+        makeLoaded("invalid-item-type-option-key", (api) => {
+          api.registerItemTypes([{ name: "task", options: [{ key: "" }] }]);
+        }),
+        makeLoaded("invalid-item-type-option-values", (api) => {
+          api.registerItemTypes([{ name: "task", options: [{ key: "status", values: "open" as never }] }]);
+        }),
+        makeLoaded("invalid-item-type-option-required", (api) => {
+          api.registerItemTypes([{ name: "task", options: [{ key: "status", required: "yes" as never }] }]);
+        }),
+        makeLoaded("invalid-item-type-option-aliases", (api) => {
+          api.registerItemTypes([{ name: "task", options: [{ key: "status", aliases: ["ok", ""] }] }]);
+        }),
+        makeLoaded("invalid-migration-description", (api) => {
+          api.registerMigration({ description: 123 as never });
+        }),
+        makeLoaded("invalid-migration-status", (api) => {
+          api.registerMigration({ status: 123 as never });
+        }),
+        makeLoaded("invalid-migration-run", (api) => {
+          api.registerMigration({ run: "now" as never });
+        }),
+        makeLoaded("invalid-service-name", (api) => {
+          api.registerService("unknown" as never, () => undefined);
+        }),
+        makeLoaded("invalid-migration", (api) => {
+          api.registerMigration({ id: 123 as never });
+        }),
+      ],
+      failed: [],
+    });
+
+    expect(activation.failed.map((failure) => failure.name)).toEqual([
+      "invalid-command-action",
+      "invalid-command-arguments",
+      "invalid-command-argument-name",
+      "invalid-command-variadic",
+      "invalid-command-flags",
+      "invalid-register-flags-default",
+      "invalid-item-fields-list",
+      "invalid-item-fields-empty",
+      "invalid-item-types-list",
+      "invalid-item-types-empty",
+      "invalid-item-type-policies",
+      "invalid-item-type-policy-entry",
+      "invalid-item-type-policy-command",
+      "invalid-item-type-policy-option",
+      "invalid-item-type-policy-enabled",
+      "invalid-item-type-policy-required",
+      "invalid-item-type-policy-visible",
+      "invalid-item-type-options",
+      "invalid-item-type-option-entry",
+      "invalid-item-type-option-key",
+      "invalid-item-type-option-values",
+      "invalid-item-type-option-required",
+      "invalid-item-type-option-aliases",
+      "invalid-migration-description",
+      "invalid-migration-status",
+      "invalid-migration-run",
+      "invalid-service-name",
+      "invalid-migration",
+    ]);
+    expect(activation.failed.map((failure) => failure.error)).toEqual([
+      expect.stringContaining("definition.action must contain alphanumeric characters"),
+      expect.stringContaining("definition.arguments must be an array"),
+      expect.stringContaining("definition.arguments[0].name must not contain spaces"),
+      expect.stringContaining("variadic argument must be the final argument"),
+      expect.stringContaining("requires at least one of long or short"),
+      expect.stringContaining("default must be a string, number, or boolean"),
+      expect.stringContaining("fields requires an array"),
+      expect.stringContaining("requires at least one field definition"),
+      expect.stringContaining("types requires an array"),
+      expect.stringContaining("requires at least one type definition"),
+      expect.stringContaining("command_option_policies must be an array"),
+      expect.stringContaining("command_option_policies[0] requires an object definition"),
+      expect.stringContaining("command_option_policies[0].command requires a non-empty string"),
+      expect.stringContaining("command_option_policies[0].option requires a non-empty string"),
+      expect.stringContaining("command_option_policies[0].enabled must be a boolean"),
+      expect.stringContaining("command_option_policies[0].required must be a boolean"),
+      expect.stringContaining("command_option_policies[0].visible must be a boolean"),
+      expect.stringContaining("options must be an array"),
+      expect.stringContaining("options[0] requires an object definition"),
+      expect.stringContaining("options[0].key requires a non-empty string"),
+      expect.stringContaining("options[0].values must be an array"),
+      expect.stringContaining("options[0].required must be a boolean"),
+      expect.stringContaining("options[0].aliases[1] must be a non-empty string"),
+      expect.stringContaining("definition.description must be a string"),
+      expect.stringContaining("definition.status must be a string"),
+      expect.stringContaining("definition.run must be a function"),
+      expect.stringContaining("registerService service must be one of"),
+      expect.stringContaining("definition.id must be a string"),
+    ]);
+  });
+
+  it("reports command override and handler overlap collisions", async () => {
+    const loadResult: ExtensionLoadResult = {
+      ...inMemoryLoadResult({}, { name: "unused" }),
+      loaded: [
+        {
+          ...inMemoryLoadResult({}, { name: "handler-ext", capabilities: ["commands"] }).loaded[0],
+          name: "handler-ext",
+          module: {
+            activate(api: ExtensionApi) {
+              api.registerCommand({ name: "sync", run: () => ({ ok: true }) });
+            },
+          },
+        },
+        {
+          ...inMemoryLoadResult({}, { name: "override-ext", capabilities: ["commands"] }).loaded[0],
+          name: "override-ext",
+          module: {
+            activate(api: ExtensionApi) {
+              api.registerCommand("sync", () => ({ override: true }));
+            },
+          },
+        },
+      ],
+    };
+
+    const result = await activateExtensions(loadResult);
+    expect(result.command_handler_count).toBe(1);
+    expect(result.command_override_count).toBe(1);
+    expect(result.warnings).toEqual([
+      "extension_command_override_handler_overlap:sync:project:override-ext:project:handler-ext",
+    ]);
   });
 });
 

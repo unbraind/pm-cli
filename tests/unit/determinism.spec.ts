@@ -2,7 +2,13 @@ import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { appendHistoryEntry, createHistoryEntry, hashDocument, hashEmptyDocument } from "../../src/core/history/history.js";
+import {
+  _testOnly as historyTestOnly,
+  appendHistoryEntry,
+  createHistoryEntry,
+  hashDocument,
+  hashEmptyDocument,
+} from "../../src/core/history/history.js";
 import { setActiveExtensionServices } from "../../src/core/extensions/index.js";
 import { canonicalDocument, parseItemDocument, serializeItemDocument } from "../../src/core/item/item-format.js";
 import { normalizeItemId, normalizePrefix } from "../../src/core/item/id.js";
@@ -251,6 +257,36 @@ describe("deterministic primitives", () => {
         (operation) => operation.op === "replace" && operation.path === "/metadata/tests/0/pm_context_mode",
       ),
     ).toBe(false);
+  });
+
+  it("covers JSON pointer defensive path checks", () => {
+    const document = {
+      metadata: {
+        tags: ["alpha"],
+        nested: [{ "slash/key": { "~tilde": "value" } }],
+      },
+      body: "body",
+    };
+
+    expect(historyTestOnly.decodeJsonPointer("metadata/tags")).toEqual([]);
+    expect(historyTestOnly.decodeJsonPointer("")).toEqual([]);
+    expect(historyTestOnly.decodeJsonPointer("/")).toEqual([]);
+    expect(historyTestOnly.decodeJsonPointer("/metadata/nested/0/slash~1key/~0tilde")).toEqual([
+      "metadata",
+      "nested",
+      "0",
+      "slash/key",
+      "~tilde",
+    ]);
+    expect(historyTestOnly.isDefinedPointerPath(document, "")).toBe(true);
+    expect(historyTestOnly.isDefinedPointerPath(document, "/")).toBe(true);
+    expect(historyTestOnly.isDefinedPointerPath(document, "/metadata/tags/0")).toBe(true);
+    expect(historyTestOnly.isDefinedPointerPath(document, "/metadata/tags/-")).toBe(false);
+    expect(historyTestOnly.isDefinedPointerPath(document, "/metadata/tags/01")).toBe(false);
+    expect(historyTestOnly.isDefinedPointerPath(document, "/metadata/tags/2")).toBe(false);
+    expect(historyTestOnly.isDefinedPointerPath({ values: [undefined] }, "/values/0")).toBe(false);
+    expect(historyTestOnly.isDefinedPointerPath(document, "/metadata/missing")).toBe(false);
+    expect(historyTestOnly.isDefinedPointerPath(document, "/body/value")).toBe(false);
   });
 
   it("returns a deterministic empty canonical document hash", () => {

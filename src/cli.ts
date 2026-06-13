@@ -46,19 +46,27 @@ function printFastVersionIfRequested(): boolean {
   if (versionArgs.length !== 1 || (versionArgs[0] !== "--version" && versionArgs[0] !== "-V")) {
     return false;
   }
-  const packageJsonPath = findPackageJson(fileURLToPath(import.meta.url));
-  if (!packageJsonPath) {
+  const version = readPackageVersionForPath(fileURLToPath(import.meta.url));
+  if (version === undefined) {
     return false;
+  }
+  console.log(version);
+  return true;
+}
+
+function readPackageVersionForPath(startPath: string): string | undefined {
+  const packageJsonPath = findPackageJson(startPath);
+  if (!packageJsonPath) {
+    return undefined;
   }
   try {
     const parsed = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as { version?: unknown };
     if (typeof parsed.version !== "string") {
-      return false;
+      return undefined;
     }
-    console.log(parsed.version);
-    return true;
+    return parsed.version;
   } catch {
-    return false;
+    return undefined;
   }
 }
 
@@ -66,6 +74,7 @@ export const _testOnly = {
   enableNodeCompileCache,
   findPackageJson,
   printFastVersionIfRequested,
+  readPackageVersionForPath,
 };
 
 if (!printFastVersionIfRequested()) {

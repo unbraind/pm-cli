@@ -126,6 +126,28 @@ export function summarizeInitResult(result: InitResult): InitConciseResult {
   };
 }
 
+export const _testOnly = {
+  normalizeInitGovernancePreset,
+  normalizeInitTypePreset,
+  normalizeOptionalInitAuthor,
+  normalizeInitAgentGuidanceMode,
+  parseYesNoChoice,
+  applyGovernancePreset,
+  runInitWizard,
+  setInitReadlineFactoryForTests,
+  summarizeInstalledPackages,
+  registerInitTypePreset,
+  assertExplicitTrackerPathIsNotWorkspaceRoot,
+  isLikelyWorkspaceRoot,
+};
+
+type InitReadlineInterface = ReturnType<typeof readline.createInterface>;
+let createInitReadlineInterface = (): InitReadlineInterface => readline.createInterface({ input, output });
+
+function setInitReadlineFactoryForTests(factory: (() => InitReadlineInterface) | undefined): void {
+  createInitReadlineInterface = factory ?? (() => readline.createInterface({ input, output }));
+}
+
 function cloneDefaults(): PmSettings {
   return structuredClone(SETTINGS_DEFAULTS);
 }
@@ -287,7 +309,7 @@ function summarizeInstalledPackages(result: ExtensionCommandResult): InitInstall
     installed_all: details.installed_all === true,
     installed_count: typeof details.installed_count === "number" ? details.installed_count : 0,
     packages: Array.isArray(details.packages)
-      ? details.packages.map((entry) => ({
+      ? details.packages.filter((entry) => typeof entry === "object" && entry !== null).map((entry) => ({
           alias: typeof entry.alias === "string" ? entry.alias : "",
           ok: entry.ok === true,
         }))
@@ -377,7 +399,7 @@ async function runInitWizard(initialPrefix: string, telemetryDefault: boolean): 
   preset: BuiltinGovernancePreset;
   telemetry_enabled: boolean;
 }> {
-  const rl = readline.createInterface({ input, output });
+  const rl = createInitReadlineInterface();
   try {
     output.write("pm init setup wizard (agent-optimized)\n");
     output.write("This walkthrough is non-destructive and each choice can be changed later with pm config.\n\n");

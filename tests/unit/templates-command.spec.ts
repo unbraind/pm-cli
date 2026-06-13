@@ -2,12 +2,55 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { loadCreateTemplateOptions, runTemplatesList, runTemplatesSave, runTemplatesShow } from "../../src/cli/commands/templates.js";
+import {
+  _testOnly as templatesInternals,
+  loadCreateTemplateOptions,
+  runTemplatesList,
+  runTemplatesSave,
+  runTemplatesShow,
+} from "../../src/cli/commands/templates.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 describe("templates command flows", () => {
+  it("normalizes template helper edge cases without writing files", () => {
+    expect(templatesInternals.normalizeTemplateName(" release.v1 ")).toBe("release.v1");
+    expect(() => templatesInternals.normalizeTemplateName("-bad")).toThrow("Invalid template name");
+
+    expect(
+      templatesInternals.extractTemplateOptions({
+        type: "Task",
+        tags: ["one", "two"],
+        dep: "id=pm-a,kind=related",
+        file: ["path=a.ts", 42],
+        ignored: 42,
+        missing: undefined,
+      }),
+    ).toEqual({
+      dep: ["id=pm-a,kind=related"],
+      file: ["path=a.ts"],
+      tags: ["one", "two"],
+      type: "Task",
+    });
+
+    expect(templatesInternals.builtinTemplateDocument("not-built-in")).toBeNull();
+    expect(
+      templatesInternals.parseStoredTemplateDocument(
+        JSON.stringify({
+          name: "  stored-name  ",
+          created_at: 42,
+          updated_at: null,
+          options: { " priority ": "2" },
+        }),
+        "fallback",
+      ),
+    ).toMatchObject({
+      name: "stored-name",
+      options: { priority: "2" },
+    });
+  });
+
   it("runs templates through the installed first-party package command handlers", async () => {
     await withTempPmPath(async (context) => {
       const install = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });

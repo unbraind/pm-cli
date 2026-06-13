@@ -97,6 +97,7 @@ describe("module boundaries export surface", () => {
         path.join(malformedRoot, "dist", "fallback"),
       );
       expect(resolvePmCliVersion(new URL(malformedFile, "file://").href, ["fallback"])).toBeUndefined();
+      expect(resolvePmCliVersion("not-a-file-url")).toBeUndefined();
       expect(resolveConfiguredPmPackageRoot({}, "PM_CLI_PACKAGE_ROOT")).toBe(process.cwd());
     } finally {
       await rm(tempRoot, { recursive: true, force: true });

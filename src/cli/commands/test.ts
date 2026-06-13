@@ -1926,3 +1926,24 @@ export async function runTest(id: string, options: TestCommandOptions, global: G
     count: tests.length,
   };
 }
+
+export const _testOnlyTestCommand = {
+  commandInvokesPmCli,
+  commandInvokesPmTrackerReadCommand,
+  copyIntoSandboxIfPresent,
+  countLinkedTestItemFiles,
+  ensureScope,
+  hasLinkedTestAssertions,
+  parsePmContextMode,
+  readJsonPathValue,
+  resolveAuthor,
+  resolveDirectRunnerSubcommand,
+  resolveLinkedTestEffectiveContextMode,
+  resolveLinkedTestFailureExitCode,
+  resolveLinkedTestRequestedContextMode,
+  resolveTrackedRunId,
+  seedLinkedTestSandbox,
+  seedLinkedTestTrackerData,
+  splitJsonPathSegments,
+  summarizeRunResultStatuses,
+};

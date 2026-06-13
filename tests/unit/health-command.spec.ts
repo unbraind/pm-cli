@@ -2,7 +2,7 @@ import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promise
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { runHealth } from "../../src/cli/commands/health.js";
+import { _testOnlyHealthCommand as healthInternals, runHealth } from "../../src/cli/commands/health.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import { writeVectorizationStatusLedger } from "../../src/core/search/cache.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
@@ -76,6 +76,63 @@ describe("runHealth", () => {
     } else {
       process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS = initialDisableAutoDefaults;
     }
+  });
+
+  it("covers pure health helper normalization and summarization branches", () => {
+    const previousDisabled = process.env.PM_TELEMETRY_DISABLED;
+    try {
+      process.env.PM_TELEMETRY_DISABLED = " YES ";
+      expect(healthInternals.telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED")).toBe(true);
+      process.env.PM_TELEMETRY_DISABLED = "0";
+      expect(healthInternals.telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED")).toBe(false);
+    } finally {
+      if (previousDisabled === undefined) {
+        delete process.env.PM_TELEMETRY_DISABLED;
+      } else {
+        process.env.PM_TELEMETRY_DISABLED = previousDisabled;
+      }
+    }
+
+    expect(healthInternals.warningCode("missing_directory:history")).toBe("missing_directory");
+    expect(healthInternals.warningCode(" telemetry_state_invalid_json ")).toBe("telemetry_state_invalid_json");
+    expect(healthInternals.isAdvisoryHealthWarning("telemetry_endpoint_probe_failed")).toBe(true);
+    expect(healthInternals.normalizeEndpointForDisplay(" https://user:pass@example.test/path?token=secret#hash ")).toBe(
+      "https://example.test/path",
+    );
+    expect(healthInternals.normalizeEndpointForDisplay("not a url")).toBe("not a url");
+    expect(healthInternals.normalizeExtensionNameForMatch(" Builtin-Guide ")).toBe("builtin-guide");
+    expect(healthInternals.isExpectedUnmanagedExtension("builtin-guide", "anything")).toBe(true);
+    expect(healthInternals.isExpectedUnmanagedExtension("todos", "TODOS")).toBe(true);
+    expect(healthInternals.isExpectedUnmanagedExtension("custom", "custom")).toBe(false);
+    expect(healthInternals.summarizeRecordList("bad", 2)).toEqual({ count: 0, sample: [], truncated: false });
+    expect(healthInternals.summarizeRecordList([{ a: 1 }, { a: 2 }, { a: 3 }], 2)).toEqual({
+      count: 3,
+      sample: [{ a: 1 }, { a: 2 }],
+      truncated: true,
+    });
+    expect(healthInternals.summarizeExtensionList([null, { name: "ext", module: "hidden", enabled: true }], 5)).toEqual({
+      count: 2,
+      sample: [
+        {},
+        {
+          layer: undefined,
+          directory: undefined,
+          name: "ext",
+          version: undefined,
+          enabled: true,
+          status: undefined,
+          has_activate: undefined,
+          capabilities: undefined,
+        },
+      ],
+      truncated: false,
+    });
+    expect(healthInternals.summarizeStringList(["a", 1, "b", "c"], 2)).toEqual({
+      count: 3,
+      sample: ["a", "b"],
+      truncated: true,
+    });
+    expect(healthInternals.buildCapabilityContractMetadata().capabilities.length).toBeGreaterThan(0);
   });
 
   it("fails when tracker is not initialized", async () => {
@@ -383,6 +440,33 @@ describe("runHealth", () => {
     });
   });
 
+  it("warns on malformed telemetry queue rows and runtime state JSON", async () => {
+    await withTempPmPath(async (context) => {
+      const globalRoot = context.env.PM_GLOBAL_PATH as string;
+      const telemetryRuntimeDir = path.join(globalRoot, "runtime", "telemetry");
+      await mkdir(telemetryRuntimeDir, { recursive: true });
+      await writeFile(
+        path.join(telemetryRuntimeDir, "events.jsonl"),
+        `${JSON.stringify({ attempts: 1, event: { event_id: "evt-valid" } })}\nnot-json\n`,
+        "utf8",
+      );
+      await writeFile(path.join(telemetryRuntimeDir, "state.json"), "{bad-json\n", "utf8");
+
+      const health = await runHealth({ path: context.pmPath });
+
+      expect(health.ok).toBe(true);
+      expect(health.warnings).toEqual(
+        expect.arrayContaining(["telemetry_state_invalid_json", "telemetry_queue_invalid_rows:1"]),
+      );
+      const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+      expect(telemetryCheck?.status).toBe("warn");
+      expect(telemetryCheck?.details).toMatchObject({
+        queue_entries: 1,
+        queue_invalid_rows: 1,
+      });
+    });
+  });
+
   it("probes telemetry endpoint health when --check-telemetry is enabled", async () => {
     await withTempPmPath(async (context) => {
       const settings = await readSettings(context.pmPath);
@@ -496,6 +580,35 @@ describe("runHealth", () => {
         expect(health.warnings).not.toEqual(
           expect.arrayContaining([expect.stringMatching(/^telemetry_schema_version_behind:/)]),
         );
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    });
+  });
+
+  it("warns when telemetry endpoint probing throws before an HTTP response", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      settings.telemetry.endpoint = "https://pm-cli.unbrained.dev/v1/events";
+      await writeSettings(context.pmPath, settings);
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn(async () => {
+        throw new Error("network unavailable");
+      }) as unknown as typeof fetch;
+      try {
+        const health = await runHealth({ path: context.pmPath }, { checkTelemetry: true });
+        expect(health.ok).toBe(true);
+        expect(health.warnings).toEqual(expect.arrayContaining(["telemetry_endpoint_probe_failed"]));
+        const telemetryCheck = health.checks.find((check) => check.name === "telemetry");
+        expect(telemetryCheck?.status).toBe("warn");
+        expect(telemetryCheck?.details).toMatchObject({
+          endpoint_probe: {
+            attempted: true,
+            ok: false,
+            error: "network unavailable",
+          },
+        });
       } finally {
         globalThis.fetch = originalFetch;
       }

@@ -2502,3 +2502,14 @@ export async function activateExtensions(loadResult: ExtensionLoadResult): Promi
     registration_counts: getRegistrationCounts(registrations),
   };
 }
+
+export const _testOnlyLoader = {
+  compareComparableVersions,
+  evaluatePmMaxVersionCompatibility,
+  evaluatePmMinVersionCompatibility,
+  normalizeCommandDefinitionArguments,
+  parseComparableVersion,
+  readManagedExtensionSourcePackages,
+  resolveCommandDefinitionAction,
+  sanitizeRegistrationValue,
+};

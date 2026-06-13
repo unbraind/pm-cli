@@ -11,11 +11,27 @@ import {
   serializeExtensionPolicy,
 } from "../../src/core/extensions/extension-policy.js";
 import {
+  collectUnknownExtensionCapabilities,
+  formatLegacyExtensionCapabilityAliasWarning,
+  formatUnknownExtensionCapabilityWarning,
+  normalizeManifestCapabilities,
+  normalizeNames,
+  parseLegacyExtensionCapabilityAliasWarning,
+  parseUnknownExtensionCapabilityWarning,
+  resolveLegacyExtensionCapabilityAlias,
+  suggestKnownExtensionCapability,
+} from "../../src/core/extensions/extension-capability-aliases.js";
+import {
   collectRegisteredItemFields,
   getMigrationRuntimeDefinition,
   resolveRegisteredSearchProvider,
   resolveRegisteredVectorStoreAdapter,
 } from "../../src/core/extensions/runtime-registrations.js";
+import {
+  applyRegisteredItemFieldDefaultsAndValidation,
+  collectRegisteredItemFieldNames,
+  parseRegisteredItemFieldAssignments,
+} from "../../src/core/extensions/item-fields.js";
 import {
   canonicalizeCommandOptionKey,
   commandOptionFlagLabel,
@@ -28,6 +44,58 @@ import {
 import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 
 describe("extensions runtime registration resolution", () => {
+  it("normalizes capability names and parses capability warning payloads", () => {
+    expect(normalizeNames([" services ", "", "hooks", "services"])).toEqual(["hooks", "services"]);
+    expect(collectUnknownExtensionCapabilities(["hooks", "not-real"])).toEqual(["not-real"]);
+    expect(resolveLegacyExtensionCapabilityAlias(" migration ")).toBe("schema");
+    expect(resolveLegacyExtensionCapabilityAlias(" ")).toBeNull();
+    expect(suggestKnownExtensionCapability("comands")).toBe("commands");
+    expect(suggestKnownExtensionCapability(" ")).toBeNull();
+
+    expect(normalizeManifestCapabilities(["Migration", "hooks", "validation"])).toEqual({
+      capabilities: ["hooks", "schema"],
+      legacy_aliases: [
+        { alias: "migration", target: "schema" },
+        { alias: "validation", target: "schema" },
+      ],
+    });
+
+    const unknownWarning = formatUnknownExtensionCapabilityWarning("project", "demo", "comands");
+    expect(parseUnknownExtensionCapabilityWarning(unknownWarning)).toMatchObject({
+      layer: "project",
+      name: "demo",
+      capability: "comands",
+      suggested_capability: "commands",
+      suggestion_source: "nearest_match",
+    });
+    expect(parseUnknownExtensionCapabilityWarning("not a warning")).toBeNull();
+
+    const legacyUnknownWarning = formatUnknownExtensionCapabilityWarning("global", "demo", "migration");
+    expect(parseUnknownExtensionCapabilityWarning(legacyUnknownWarning)).toMatchObject({
+      layer: "global",
+      capability: "migration",
+      suggested_capability: "schema",
+      suggestion_source: "legacy_alias",
+      legacy_alias_target: "schema",
+    });
+
+    const legacyWarning = formatLegacyExtensionCapabilityAliasWarning("project", "demo", [
+      { alias: "migration", target: "schema" },
+      { alias: "broken", target: "missing" as never },
+      { alias: "", target: "commands" },
+    ]);
+    expect(parseLegacyExtensionCapabilityAliasWarning(legacyWarning)).toEqual([
+      expect.objectContaining({
+        layer: "project",
+        name: "demo",
+        capability: "migration",
+        suggested_capability: "schema",
+        suggestion_source: "legacy_alias",
+      }),
+    ]);
+    expect(parseLegacyExtensionCapabilityAliasWarning("not a legacy warning")).toEqual([]);
+  });
+
   it("collects registered item fields across registrations", () => {
     const registrations = createEmptyExtensionRegistrationRegistry();
     registrations.item_fields.push(
@@ -109,6 +177,138 @@ describe("extensions runtime registration resolution", () => {
       runtime_definition: undefined as unknown as Record<string, unknown>,
     });
     expect(fallback).toEqual({ id: "m2", status: "pending" });
+  });
+
+  it("parses registered item-field assignments and reports unknown or invalid values", () => {
+    const registrations = createEmptyExtensionRegistrationRegistry();
+    registrations.item_fields.push(
+      {
+        layer: "global",
+        name: "invalid-fields",
+        fields: [
+          { name: " ", type: "string" },
+          { name: "ignored", type: "unknown" as never },
+        ],
+      },
+      {
+        layer: "project",
+        name: "typed-fields",
+        fields: [
+          { name: "x_severity", type: "string" },
+          { name: "x_impact", type: "number" },
+          { name: "x_flagged", type: "boolean" },
+          { name: "x_labels", type: "array" },
+          { name: "x_meta", type: "object" },
+        ],
+      },
+    );
+
+    expect(collectRegisteredItemFieldNames(registrations)).toEqual(["x_flagged", "x_impact", "x_labels", "x_meta", "x_severity"]);
+    expect(parseRegisteredItemFieldAssignments(undefined, registrations)).toEqual({});
+    expect(
+      parseRegisteredItemFieldAssignments(
+        ["x_severity=high", "x_impact=2.5", "x_flagged=yes", 'x_labels=["coverage","sdk"]', 'x_meta={"owner":"extensions"}'],
+        registrations,
+      ),
+    ).toEqual({
+      x_severity: "high",
+      x_impact: 2.5,
+      x_flagged: true,
+      x_labels: ["coverage", "sdk"],
+      x_meta: { owner: "extensions" },
+    });
+
+    expect(() => parseRegisteredItemFieldAssignments(["broken"], registrations)).toThrow(/name=value syntax/);
+    expect(() => parseRegisteredItemFieldAssignments([" =value"], registrations)).toThrow(/name=value syntax/);
+    expect(() => parseRegisteredItemFieldAssignments(["missing=value"], registrations)).toThrow(/is not declared/);
+    expect(() => parseRegisteredItemFieldAssignments(["x_impact= "], registrations)).toThrow(/must be a number/);
+    expect(() => parseRegisteredItemFieldAssignments(["x_impact=NaN"], registrations)).toThrow(/must be a number/);
+    expect(() => parseRegisteredItemFieldAssignments(["x_flagged=maybe"], registrations)).toThrow(/true\|false/);
+    expect(() => parseRegisteredItemFieldAssignments(["x_labels={}", "x_meta=[]"], registrations)).toThrow(/valid JSON array/);
+    expect(
+      parseRegisteredItemFieldAssignments(["x_flagged=no", "x_meta={\"ok\":true}"], registrations),
+    ).toMatchObject({
+      x_flagged: false,
+      x_meta: { ok: true },
+    });
+  });
+
+  it("applies registered item-field defaults, skip lists, type checks, and conflicts", () => {
+    const registrations = createEmptyExtensionRegistrationRegistry();
+    const defaultObject = { nested: true };
+    registrations.item_fields.push(
+      {
+        layer: "global",
+        name: "defaults",
+        fields: [
+          { name: "x_severity", type: "string", default: "medium", values: ["low", "medium", "high"] },
+          { name: "x_impact", type: "number", default: 1 },
+          { name: "x_flagged", type: "boolean", default: false },
+          { name: "x_labels", type: "array", default: ["coverage"] },
+          { name: "x_meta", type: "object", default: defaultObject },
+        ],
+      },
+      {
+        layer: "project",
+        name: "invalid",
+        fields: [{ name: " ", type: "string" }],
+      },
+    );
+
+    const frontMatter: Record<string, unknown> = { x_impact: 2 };
+    applyRegisteredItemFieldDefaultsAndValidation(frontMatter, registrations, { skipDefaultFields: new Set(["x_flagged"]) });
+    expect(frontMatter).toEqual({
+      x_severity: "medium",
+      x_impact: 2,
+      x_labels: ["coverage"],
+      x_meta: { nested: true },
+    });
+    expect(frontMatter.x_meta).not.toBe(defaultObject);
+
+    expect(() => applyRegisteredItemFieldDefaultsAndValidation({ x_severity: "urgent" }, registrations)).toThrow(
+      /configured allowed values/,
+    );
+    expect(() => applyRegisteredItemFieldDefaultsAndValidation({ x_labels: "coverage" }, registrations)).toThrow(
+      /must be of type array/,
+    );
+    const functionDefault: Record<string, unknown> = {};
+    applyRegisteredItemFieldDefaultsAndValidation(functionDefault, {
+      ...createEmptyExtensionRegistrationRegistry(),
+      item_fields: [
+        {
+          layer: "project",
+          name: "function-default",
+          fields: [{ name: "x_function", type: "object", default: { fn: () => "not cloneable" } }],
+        },
+      ],
+    });
+    expect(typeof (functionDefault.x_function as { fn?: unknown }).fn).toBe("function");
+    expect(() =>
+      applyRegisteredItemFieldDefaultsAndValidation(
+        {},
+        {
+          ...createEmptyExtensionRegistrationRegistry(),
+          item_fields: [{ layer: "project", name: "reserved", fields: [{ name: "title", type: "string" }] }],
+        },
+      ),
+    ).toThrow(/collides with reserved item metadata/);
+    expect(() =>
+      collectRegisteredItemFieldNames({
+        ...createEmptyExtensionRegistrationRegistry(),
+        item_fields: [
+          { layer: "global", name: "global", fields: [{ name: "score", type: "number" }] },
+          { layer: "project", name: "project", fields: [{ name: "score", type: "string" }] },
+        ],
+      }),
+    ).toThrow(/conflicting types/);
+    expect(() => applyRegisteredItemFieldDefaultsAndValidation({}, null)).not.toThrow();
+    expect(collectRegisteredItemFieldNames(null)).toEqual([]);
+    expect(
+      collectRegisteredItemFieldNames({
+        ...createEmptyExtensionRegistrationRegistry(),
+        item_fields: [{ layer: "project", name: "non-string", fields: [{ name: 1 as never, type: 2 as never }] }],
+      }),
+    ).toEqual([]);
   });
 });
 
@@ -286,6 +486,168 @@ describe("extension policy runtime resolution", () => {
         "extension_policy_blocked_registration:project:alpha:reason=service_blocked:action=export-data:capability=commands:command=create:method=register_handler:service=history_append:surface=commands.handler",
     });
   });
+
+  it("evaluates policy sandbox and permissive fallback branches", () => {
+    const settings = structuredClone(SETTINGS_DEFAULTS);
+    settings.extensions.policy = {
+      ...settings.extensions.policy,
+      mode: "warn",
+      trust_mode: "off",
+      default_sandbox_profile: "restricted",
+    };
+    const policy = normalizeExtensionPolicy(settings);
+    const extension = { layer: "project" as const, name: "sandboxed" };
+
+    expect(evaluateExtensionPolicyForExtension(policy, extension)).toEqual({
+      allowed: true,
+      warning: "extension_policy_violation_extension:project:sandboxed:reason=sandbox_permissions_missing",
+    });
+    expect(
+      evaluateExtensionPolicyForExtension(policy, {
+        ...extension,
+        permissions: { env_write: true },
+      }),
+    ).toEqual({
+      allowed: true,
+      warning: "extension_policy_violation_extension:project:sandboxed:reason=sandbox_restricted_disallows_env_write",
+    });
+
+    const strictSettings = structuredClone(SETTINGS_DEFAULTS);
+    strictSettings.extensions.policy = {
+      ...strictSettings.extensions.policy,
+      mode: "warn",
+      trust_mode: "off",
+      default_sandbox_profile: "strict",
+    };
+    const strictPolicy = normalizeExtensionPolicy(strictSettings);
+    expect(
+      evaluateExtensionPolicyForExtension(strictPolicy, {
+        ...extension,
+        permissions: { fs_write: true },
+      }),
+    ).toEqual({
+      allowed: true,
+      warning: "extension_policy_violation_extension:project:sandboxed:reason=sandbox_strict_disallows_fs_write",
+    });
+    expect(
+      evaluateExtensionPolicyForExtension(strictPolicy, {
+        ...extension,
+        permissions: { env_write: true },
+      }),
+    ).toEqual({
+      allowed: true,
+      warning: "extension_policy_violation_extension:project:sandboxed:reason=sandbox_strict_disallows_env_write",
+    });
+
+    const permissiveSettings = structuredClone(SETTINGS_DEFAULTS);
+    permissiveSettings.extensions.policy = {
+      ...permissiveSettings.extensions.policy,
+      mode: "off",
+      trust_mode: "warn",
+      trusted_extensions: ["other"],
+    };
+    expect(evaluateExtensionPolicyForExtension(normalizeExtensionPolicy(permissiveSettings), extension)).toEqual({
+      allowed: true,
+      warning: "extension_policy_violation_trust:project:sandboxed:reason=extension_not_trusted",
+    });
+  });
+
+  it("evaluates disabled overrides and empty policy registration names", () => {
+    const settings = structuredClone(SETTINGS_DEFAULTS);
+    settings.extensions.policy = {
+      ...settings.extensions.policy,
+      mode: "enforce",
+      trust_mode: "off",
+      allowed_actions: ["deploy"],
+      allowed_services: ["output_format"],
+      extension_overrides: [
+        {
+          name: "sandboxed",
+          disabled: true,
+          allowed_actions: ["sync-data"],
+          blocked_services: ["item_store_read"],
+        },
+      ],
+    };
+    const policy = normalizeExtensionPolicy(settings);
+    const extension = { layer: "project" as const, name: "sandboxed" };
+
+    expect(evaluateExtensionPolicyForExtension(policy, extension)).toEqual({
+      allowed: false,
+      warning: "extension_policy_blocked_extension:project:sandboxed:reason=extension_override_disabled",
+    });
+    expect(evaluateExtensionPolicyForRegistration(policy, extension, "actions.register", " ", "commands", { action: " " })).toEqual({
+      allowed: true,
+      warning: null,
+    });
+    expect(
+      evaluateExtensionPolicyForRegistration(policy, extension, "actions.register", "registerAction", "commands", {
+        action: "sync data",
+      }),
+    ).toEqual({
+      allowed: true,
+      warning: null,
+    });
+    expect(
+      evaluateExtensionPolicyForRegistration(policy, extension, "services.register", "registerService", undefined, {
+        service: "item_store_read",
+      }),
+    ).toEqual({
+      allowed: false,
+      warning:
+        "extension_policy_blocked_registration:project:sandboxed:reason=service_blocked:method=registerservice:service=item_store_read:surface=services.register",
+    });
+    expect(
+      evaluateExtensionPolicyForRegistration(policy, extension, "services.register", "registerService", undefined, {
+        service: " ",
+      }),
+    ).toEqual({
+      allowed: true,
+      warning: null,
+    });
+  });
+
+  it("serializes minimal policy overrides and ignores blank command names", () => {
+    const settings = structuredClone(SETTINGS_DEFAULTS);
+    settings.extensions.policy = {
+      ...settings.extensions.policy,
+      mode: "warn",
+      trust_mode: "off",
+      extension_overrides: [
+        {
+          name: "alpha",
+          allowed_commands: ["deploy"],
+          blocked_commands: ["sync"],
+        },
+        {
+          name: " ",
+          allowed_commands: ["ignored"],
+        },
+      ],
+    };
+    const policy = normalizeExtensionPolicy(settings);
+    expect(serializeExtensionPolicy(policy).extension_overrides).toEqual([
+      {
+        name: "alpha",
+        allowed_commands: ["deploy"],
+        blocked_commands: ["sync"],
+      },
+    ]);
+    expect(
+      evaluateExtensionPolicyForRegistration(policy, { layer: "project", name: "alpha" }, "commands.handler", "registerCommand", "commands", {
+        command: " ",
+      }),
+    ).toEqual({ allowed: true, warning: null });
+    expect(
+      evaluateExtensionPolicyForRegistration(policy, { layer: "project", name: "alpha" }, "commands.handler", "registerCommand", "commands", {
+        command: "sync",
+      }),
+    ).toEqual({
+      allowed: true,
+      warning:
+        "extension_policy_violation_registration:project:alpha:reason=command_blocked:capability=commands:command=sync:method=registercommand:surface=commands.handler",
+    });
+  });
 });
 
 describe("item type registry runtime resolution", () => {
@@ -293,6 +655,8 @@ describe("item type registry runtime resolution", () => {
     expect(canonicalizeCommandOptionKey("create", "--acceptance-criteria")).toBe("acceptanceCriteria");
     expect(canonicalizeCommandOptionKey("update", "allow_audit_update")).toBe("allowAuditUpdate");
     expect(canonicalizeCommandOptionKey("update", "  ")).toBeUndefined();
+    expect(canonicalizeCommandOptionKey("create", "--type-option")).toBe("typeOption");
+    expect(canonicalizeCommandOptionKey("update", "--add-type-option")).toBeUndefined();
     expect(commandOptionFlagLabel("create", "unknownCamelCase")).toBe("--unknown-camel-case");
   });
 
@@ -323,10 +687,16 @@ describe("item type registry runtime resolution", () => {
         { name: "Asset", aliases: ["Hardware"], options: [{ key: "region", values: [], required: false }] },
         {
           name: "Review Board",
+          folder: " ",
+          aliases: ["Review-Board", 7] as never,
+          required_create_fields: ["title", 1] as never,
+          required_create_repeatables: ["file", false] as never,
           options: [{ key: "cadence", values: ["weekly"], aliases: ["freq"], required: true }],
           command_option_policies: [
             { command: "create", option: "estimate", required: true },
             { command: "delete" as never, option: "ignored", required: true },
+            "bad-policy" as never,
+            { command: "update", option: 1 } as never,
           ],
         },
       ],
@@ -338,8 +708,8 @@ describe("item type registry runtime resolution", () => {
     expect(resolveTypeDefinition("review board", registry)).toMatchObject({
       name: "Review Board",
       folder: "review-boards",
-      required_create_fields: [],
-      required_create_repeatables: [],
+      required_create_fields: ["title"],
+      required_create_repeatables: ["file"],
     });
     expect(registry.by_type.Asset.aliases).toEqual(["asset", "Hardware", "Thing"]);
     expect(registry.by_type.Asset.options).toEqual([
@@ -364,6 +734,42 @@ describe("item type registry runtime resolution", () => {
         [],
       ).errors,
     ).toEqual(['Option "title" cannot be both required and disabled for command "create" on type "Asset"']);
+    expect(
+      resolveCommandOptionPolicyState(
+        {
+          ...registry.by_type.Asset,
+          command_option_policies: [
+            { command: "create", option: "title", required: true, visible: false, enabled: false },
+            { command: "create", option: "title", required: false, visible: true, enabled: true },
+          ],
+        },
+        "create",
+        ["description"],
+      ),
+    ).toEqual({
+      required: ["description"],
+      hidden: [],
+      disabled: [],
+      errors: [],
+    });
+    expect(
+      resolveCommandOptionPolicyState(
+        {
+          ...registry.by_type.Asset,
+          command_option_policies: [
+            { command: "create", option: "acceptance-criteria", visible: false, enabled: false },
+            { command: "create", option: "acceptance-criteria", visible: true, enabled: true },
+          ],
+        },
+        "create",
+        [],
+      ),
+    ).toEqual({
+      required: [],
+      hidden: [],
+      disabled: [],
+      errors: [],
+    });
   });
 
   it("validates type options, aliases, required values, and sorted normalized output", () => {

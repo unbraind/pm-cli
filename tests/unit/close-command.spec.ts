@@ -6,6 +6,7 @@ import { _testOnly as closeManyInternals } from "../../src/cli/commands/close-ma
 import { runClose } from "../../src/cli/commands/close.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
+import { readSettings } from "../../src/core/store/settings.js";
 import { createTestItemId, type TestItemStatus } from "../helpers/itemFactory.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
@@ -74,6 +75,22 @@ describe("runClose", () => {
     expect(closeManyInternals.hierarchyDepth("child", parents, cache)).toBe(2);
     expect(closeManyInternals.hierarchyDepth("child", parents, cache)).toBe(2);
     expect(closeManyInternals.hierarchyDepth("cycle-a", parents, new Map())).toBe(2);
+  });
+
+  it("builds active child indexes from tracker front matter", async () => {
+    await withTempPmPath(async (context) => {
+      const parentId = createTask(context, "close-many-index-parent");
+      const childB = createTask(context, "close-many-index-child-b", { parent: parentId });
+      const childA = createTask(context, "close-many-index-child-a", { parent: parentId });
+      const closedChild = createTask(context, "close-many-index-child-closed", { parent: parentId, status: "closed" });
+
+      const settings = await readSettings(context.pmPath);
+      const index = await closeManyInternals.buildActiveChildrenByParent(context.pmPath, settings);
+
+      expect(index.parentByChild.get(childA)).toBe(parentId);
+      expect(index.parentByChild.get(closedChild)).toBe(parentId);
+      expect(index.childrenByParent.get(parentId)).toEqual([childA, childB].sort());
+    });
   });
 
   it("fails when tracker is not initialized", async () => {

@@ -2105,3 +2105,18 @@ export async function runUpdate(id: string, options: UpdateCommandOptions, globa
     ...(options.allowAuditUpdate === true || options.allowAuditDepUpdate === true ? { audit_update: true } : {}),
   };
 }
+
+export const _testOnlyUpdateCommand = {
+  collectProvidedUpdatePolicyOptions,
+  buildAuditScopeRestrictedOptionsError,
+  enforceAllowAuditUpdateScope,
+  enforceTypeWorkflowTransition,
+  matchesDependencySelector,
+  normalizeLegacyNoneUpdateOptions,
+  normalizeUpdatePolicyOptionKey,
+  parseDependencyAdditions,
+  parseDependencyRemovals,
+  parseUpdateUnsetTargets,
+  reconcileBlockedByDependency,
+  resolveRuntimeUnsetDefinition,
+};

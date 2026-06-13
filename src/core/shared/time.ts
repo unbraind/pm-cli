@@ -39,12 +39,16 @@ function normalizeOffset(raw: string | undefined): string {
   return raw;
 }
 
+function pushTimestampCandidate(candidates: string[], input: string, value: string | undefined): void {
+  if (!value) return;
+  if (value === input) return;
+  if (candidates.includes(value)) return;
+  candidates.push(value);
+}
+
 function normalizeTimestampCandidates(input: string): string[] {
   const candidates: string[] = [];
-  const push = (value: string | undefined): void => {
-    if (!value || value === input || candidates.includes(value)) return;
-    candidates.push(value);
-  };
+  const push = (value: string | undefined): void => pushTimestampCandidate(candidates, input, value);
 
   const compactDate = COMPACT_DATE.exec(input);
   if (compactDate) {
@@ -243,3 +247,11 @@ export function resolveIsoOrRelative(
   }
   return new Date(timestamp).toISOString();
 }
+
+export const _testOnly = {
+  normalizeOffset,
+  pushTimestampCandidate,
+  normalizeTimestampCandidates,
+  parseTimestampWithFallbacks,
+  isWhitespaceCharacter,
+};

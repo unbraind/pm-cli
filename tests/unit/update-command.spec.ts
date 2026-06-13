@@ -3,7 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runUpdate } from "../../src/cli/commands/update.js";
+import { _testOnlyUpdateCommand, runUpdate, type UpdateCommandOptions } from "../../src/cli/commands/update.js";
+import { runCreate } from "../../src/cli/commands/create.js";
 import { runGet } from "../../src/cli/commands/get.js";
 import { runDeps } from "../../src/cli/commands/deps.js";
 import { setActiveExtensionRegistrations } from "../../src/core/extensions/index.js";
@@ -15,6 +16,363 @@ import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js
 afterEach(() => {
   setActiveExtensionRegistrations(null);
   vi.restoreAllMocks();
+});
+
+describe("update command helper coverage", () => {
+  it("normalizes legacy none tokens into explicit clears", () => {
+    const normalized = _testOnlyUpdateCommand.normalizeLegacyNoneUpdateOptions({
+      rank: "none",
+      dep: ["null"],
+      test: ["none"],
+      replaceDeps: true,
+      replaceTests: true,
+    } as UpdateCommandOptions);
+
+    expect(normalized.unset).toContain("order");
+    expect(normalized.dep).toBeUndefined();
+    expect(normalized.test).toBeUndefined();
+    expect(normalized.clearDeps).toBe(true);
+    expect(normalized.clearTests).toBe(true);
+    expect(normalized.replaceDeps).toBe(false);
+    expect(normalized.replaceTests).toBe(false);
+
+    expect(() =>
+      _testOnlyUpdateCommand.normalizeLegacyNoneUpdateOptions({ dep: ["none", "id=pm-1,kind=related"] } as UpdateCommandOptions),
+    ).toThrow(expect.objectContaining({ exitCode: EXIT_CODE.USAGE }));
+
+    const duplicateUnset = _testOnlyUpdateCommand.normalizeLegacyNoneUpdateOptions({
+      unset: ["order"],
+      rank: "none",
+      template: "ignored",
+    } as UpdateCommandOptions);
+    expect(duplicateUnset.unset).toEqual(["order"]);
+  });
+
+  it("parses built-in runtime and extension unset targets", () => {
+    const registry = {
+      definitions: [
+        {
+          key: "githubUrl",
+          metadata_key: "github_url",
+          cli_flag: "github-url",
+          cli_aliases: ["gh-url"],
+        },
+        {
+          key: "hidden",
+          metadata_key: "hidden",
+          cli_flag: "hidden",
+          cli_aliases: [],
+          allow_unset: false,
+        },
+      ],
+    };
+
+    expect(_testOnlyUpdateCommand.resolveRuntimeUnsetDefinition("github_url", registry)).toEqual({
+      optionKey: "githubUrl",
+      frontMatterKey: "github_url",
+    });
+    expect(_testOnlyUpdateCommand.resolveRuntimeUnsetDefinition("hidden", registry)).toBeUndefined();
+
+    const parsed = _testOnlyUpdateCommand.parseUpdateUnsetTargets(
+      ["deadline", "gh-url", "external-field"],
+      registry,
+      ["external_field"],
+    );
+    expect([...parsed.frontMatterKeys].sort()).toEqual(["deadline", "external_field", "github_url"]);
+    expect([...parsed.optionKeys].sort()).toEqual(["deadline", "field", "githubUrl"]);
+
+    expect(() => _testOnlyUpdateCommand.parseUpdateUnsetTargets([""], registry)).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+    expect(() => _testOnlyUpdateCommand.parseUpdateUnsetTargets(["null"], registry)).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+    expect(() => _testOnlyUpdateCommand.parseUpdateUnsetTargets(["missing"], registry)).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+  });
+
+  it("builds audit-scope errors with replacement examples only for matching flags", () => {
+    const error = _testOnlyUpdateCommand.buildAuditScopeRestrictedOptionsError({
+      id: "pm-1234",
+      code: "audit_update_restricted_options",
+      message: "restricted",
+      required: "required text",
+      why: "why text",
+      disallowedFlags: ["--comment", "--status", "--unknown"],
+    });
+
+    expect(error).toMatchObject({
+      exitCode: EXIT_CODE.USAGE,
+      context: expect.objectContaining({
+        code: "audit_update_restricted_options",
+        examples: expect.arrayContaining(['pm comments pm-1234 --add "<text>" --allow-audit-comment']),
+        nextSteps: expect.arrayContaining([
+          "Re-run without: --comment, --status, --unknown",
+          'Replace --comment with: pm comments pm-1234 --add "<text>" --allow-audit-comment',
+        ]),
+      }),
+    });
+  });
+
+  it("enforces audit update override scopes for restricted lifecycle and append fields", () => {
+    expect(() =>
+      _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
+        "pm-1234",
+        {
+          allowAuditUpdate: true,
+          allowAuditDepUpdate: true,
+        } as UpdateCommandOptions,
+        new Set(),
+      ),
+    ).toThrow(expect.objectContaining({ exitCode: EXIT_CODE.USAGE }));
+
+    expect(() =>
+      _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
+        "pm-1234",
+        {
+          allowAuditDepUpdate: true,
+        } as UpdateCommandOptions,
+        new Set(),
+      ),
+    ).toThrow("--allow-audit-dep-update requires at least one --dep value");
+
+    expect(() =>
+      _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
+        "pm-1234",
+        {
+          allowAuditDepUpdate: true,
+          dep: ["id=pm-2,kind=related"],
+          title: "Title",
+          replaceTests: true,
+          clearEvents: true,
+          typeOption: ["severity=high"],
+          force: true,
+        } as UpdateCommandOptions,
+        new Set(["status"]),
+      ),
+    ).toThrow(expect.objectContaining({
+      context: expect.objectContaining({
+        code: "audit_dep_update_restricted_options",
+        nextSteps: expect.arrayContaining([
+          expect.stringContaining("--title"),
+          expect.stringContaining("--unset"),
+        ]),
+      }),
+    }));
+
+    expect(() =>
+      _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
+        "pm-1234",
+        {
+          allowAuditUpdate: true,
+          status: "closed",
+          closeReason: "done",
+          assignee: "agent",
+          parent: "pm-parent",
+          blockedBy: "pm-blocker",
+          blockedReason: "blocked",
+          unblockNote: "unblocked",
+          dep: ["id=pm-2,kind=related"],
+          depRemove: ["pm-3"],
+          replaceDeps: true,
+          replaceTests: true,
+          comment: ["note"],
+          note: ["note"],
+          learning: ["lesson"],
+          file: ["path=src/a.ts"],
+          test: ["command=pnpm test"],
+          doc: ["path=docs/a.md"],
+          reminder: ["2026-01-01T00:00:00Z"],
+          event: ["start=2026-01-01T00:00:00Z,end=2026-01-01T01:00:00Z"],
+          clearDeps: true,
+          clearComments: true,
+          clearNotes: true,
+          clearLearnings: true,
+          clearFiles: true,
+          clearTests: true,
+          clearDocs: true,
+          clearReminders: true,
+          clearEvents: true,
+        } as UpdateCommandOptions,
+        new Set(["status", "assignee"]),
+      ),
+    ).toThrow(expect.objectContaining({
+      context: expect.objectContaining({
+        code: "audit_update_restricted_options",
+        examples: expect.arrayContaining(['pm comments pm-1234 --add "<text>" --allow-audit-comment']),
+      }),
+    }));
+
+    expect(() =>
+      _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
+        "pm-1234",
+        {
+          allowAuditDepUpdate: true,
+          dep: ["id=pm-2,kind=related"],
+        } as UpdateCommandOptions,
+        new Set(),
+      ),
+    ).not.toThrow();
+    expect(() =>
+      _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
+        "pm-1234",
+        {
+          allowAuditUpdate: true,
+          title: "Allowed metadata",
+        } as UpdateCommandOptions,
+        new Set(),
+      ),
+    ).not.toThrow();
+  });
+
+  it("rejects audit-scope unsets for lifecycle metadata", () => {
+    expect(() =>
+      _testOnlyUpdateCommand.enforceAllowAuditUpdateScope(
+        "pm-1234",
+        { unset: ["close-reason"], allowAuditUpdate: true } as UpdateCommandOptions,
+        new Set(["close_reason"]),
+      ),
+    ).toThrow(expect.objectContaining({ exitCode: EXIT_CODE.USAGE }));
+  });
+
+  it("covers update policy, workflow, dependency, and reconciliation helper branches", () => {
+    expect(() => _testOnlyUpdateCommand.normalizeUpdatePolicyOptionKey("not-real", "Task")).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.CONFLICT }),
+    );
+
+    const provided = _testOnlyUpdateCommand.collectProvidedUpdatePolicyOptions(
+      {
+        addTags: ["alpha"],
+        replaceDeps: true,
+        replaceTests: true,
+        allowAuditUpdate: true,
+        unset: ["external-field"],
+      } as UpdateCommandOptions,
+      ["external_field"],
+    );
+    expect([...provided].sort()).toEqual(expect.arrayContaining(["allowAuditUpdate", "dep", "field", "tags", "test"]));
+
+    const statusRegistry = {
+      definitions: [
+        { id: "open" },
+        { id: "blocked" },
+        { id: "in_progress", aliases: ["doing"] },
+      ],
+      alias_to_id: new Map([["doing", "in_progress"]]),
+    };
+    expect(
+      _testOnlyUpdateCommand.enforceTypeWorkflowTransition({
+        enforcement: "off",
+        typeWorkflows: [{ type: "task", allowed_transitions: [] }],
+        statusRegistry,
+        typeName: "Task",
+        fromStatus: "open",
+        toStatus: "blocked",
+      } as never),
+    ).toBeUndefined();
+    expect(
+      _testOnlyUpdateCommand.enforceTypeWorkflowTransition({
+        enforcement: "warn",
+        typeWorkflows: [],
+        statusRegistry,
+        typeName: "Task",
+        fromStatus: "open",
+        toStatus: "blocked",
+      } as never),
+    ).toBeUndefined();
+    expect(
+      _testOnlyUpdateCommand.enforceTypeWorkflowTransition({
+        enforcement: "warn",
+        typeWorkflows: [{ type: "task", allowed_transitions: [["open", "in_progress"]] }],
+        statusRegistry,
+        typeName: "Task",
+        fromStatus: "open",
+        toStatus: "blocked",
+      } as never),
+    ).toContain("workflow_transition_not_allowed");
+    expect(() =>
+      _testOnlyUpdateCommand.enforceTypeWorkflowTransition({
+        enforcement: "strict",
+        typeWorkflows: [{ type: "task", allowed_transitions: [["open", "in_progress"]] }],
+        statusRegistry,
+        typeName: "Task",
+        fromStatus: "open",
+        toStatus: "blocked",
+      } as never),
+    ).toThrow(expect.objectContaining({ exitCode: EXIT_CODE.USAGE }));
+
+    expect(_testOnlyUpdateCommand.parseDependencyAdditions(undefined, "pm", "2026-01-01T00:00:00.000Z")).toEqual({
+      additions: [],
+    });
+    expect(() =>
+      _testOnlyUpdateCommand.parseDependencyAdditions(["id=pm-missing-kind"], "pm", "2026-01-01T00:00:00.000Z"),
+    ).toThrow(expect.objectContaining({ exitCode: EXIT_CODE.USAGE }));
+    expect(() =>
+      _testOnlyUpdateCommand.parseDependencyAdditions(
+        ["id=pm-a,kind=related,created_at=not-a-date"],
+        "pm",
+        "2026-01-01T00:00:00.000Z",
+      ),
+    ).toThrow(expect.objectContaining({ exitCode: EXIT_CODE.USAGE }));
+    expect(_testOnlyUpdateCommand.parseDependencyAdditions(["id=pm-a,kind=related,author=  "], "pm", "2026-01-01T00:00:00.000Z").additions[0]?.author).toBeUndefined();
+
+    expect(_testOnlyUpdateCommand.parseDependencyRemovals(undefined, "pm")).toEqual([]);
+    expect(() => _testOnlyUpdateCommand.parseDependencyRemovals(["   "], "pm")).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+    expect(() => _testOnlyUpdateCommand.parseDependencyRemovals(["id=undefined"], "pm")).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+    expect(_testOnlyUpdateCommand.parseDependencyRemovals(["id=pm-a,type=blocked-by,source_kind=import"], "pm")).toEqual([
+      { id: "pm-a", kind: "blocked_by", source_kind: "import" },
+    ]);
+
+    expect(
+      _testOnlyUpdateCommand.matchesDependencySelector(
+        { id: "pm-a", kind: "related", created_at: "now", source_kind: "import" },
+        { id: "pm-b" },
+      ),
+    ).toBe(false);
+    expect(
+      _testOnlyUpdateCommand.matchesDependencySelector(
+        { id: "pm-a", kind: "related", created_at: "now", source_kind: "import" },
+        { id: "pm-a", kind: "blocked_by" },
+      ),
+    ).toBe(false);
+    expect(
+      _testOnlyUpdateCommand.matchesDependencySelector(
+        { id: "pm-a", kind: "related", created_at: "now", source_kind: "import" },
+        { id: "pm-a", source_kind: "manual" },
+      ),
+    ).toBe(false);
+    expect(
+      _testOnlyUpdateCommand.matchesDependencySelector(
+        { id: "pm-a", kind: "related", created_at: "now", source_kind: "import" },
+        { id: "pm-a", kind: "related", source_kind: "import" },
+      ),
+    ).toBe(true);
+
+    expect(
+      _testOnlyUpdateCommand.reconcileBlockedByDependency(
+        [{ id: "pm-a", kind: "blocked_by", created_at: "old" }],
+        "pm-a",
+        "2026-01-01T00:00:00.000Z",
+        "agent",
+      ),
+    ).toEqual({
+      changed: false,
+      dependencies: [{ id: "pm-a", kind: "blocked_by", created_at: "old" }],
+    });
+    expect(
+      _testOnlyUpdateCommand.reconcileBlockedByDependency(
+        [{ id: "pm-a", kind: "blocked_by", created_at: "old" }],
+        undefined,
+        "2026-01-01T00:00:00.000Z",
+        "agent",
+      ),
+    ).toEqual({ changed: true, dependencies: undefined });
+  });
 });
 
 interface CreateTaskOptions {
@@ -2158,6 +2516,103 @@ describe("runUpdate", () => {
     });
   });
 
+  it("rejects existing type options that are incompatible with a new type", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            options: [{ key: "category", values: ["feature"] }],
+          },
+          {
+            name: "Service",
+            folder: "services",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            options: [{ key: "category", values: ["platform"] }],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const created = await runCreate(
+        {
+          title: "update-incompatible-type-options",
+          description: "seed incompatible type options",
+          type: "Asset",
+          createMode: "progressive",
+          typeOption: ["category=feature"],
+        },
+        { path: context.pmPath },
+      );
+
+      await expect(
+        runUpdate(created.item.id, { type: "Service", message: "switch type" }, { path: context.pmPath }),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Use --clear-type-options to clear them"),
+      });
+    });
+  });
+
+  it("deduplicates linked files, tests, and docs during update mutations", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-dedupe-linked-artifacts");
+      const first = await runUpdate(
+        id,
+        {
+          file: ["path=src/cli.ts,scope=project,note=entry"],
+          test: ["command=node --version,path=tests/unit/update-command.spec.ts,scope=project"],
+          doc: ["path=README.md,scope=project,note=readme"],
+          message: "seed linked artifacts",
+        },
+        { path: context.pmPath },
+      );
+      const second = await runUpdate(
+        id,
+        {
+          file: ["path=src/cli.ts,scope=project,note=entry"],
+          test: ["command=node --version,path=tests/unit/update-command.spec.ts,scope=project"],
+          doc: ["path=README.md,scope=project,note=readme"],
+          message: "dedupe linked artifacts",
+        },
+        { path: context.pmPath },
+      );
+
+      expect((second.item as { files?: unknown[] }).files).toHaveLength((first.item as { files?: unknown[] }).files?.length ?? 0);
+      expect((second.item as { tests?: unknown[] }).tests).toHaveLength((first.item as { tests?: unknown[] }).tests?.length ?? 0);
+      expect((second.item as { docs?: unknown[] }).docs).toHaveLength((first.item as { docs?: unknown[] }).docs?.length ?? 0);
+    });
+  });
+
+  it("rejects replace-tests combined with clear-tests before mutation", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "update-replace-tests-branches");
+      await expect(
+        runUpdate(
+          id,
+          {
+            clearTests: true,
+            replaceTests: true,
+            test: ["command=node --version", "command=node --version"],
+            message: "replace tests with dedupe",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--replace-tests cannot be combined with --clear-tests"),
+      });
+    });
+  });
+
   it("updates declared extension item fields through repeatable --field values", async () => {
     await withTempPmPath(async (context) => {
       const registrations = createEmptyExtensionRegistrationRegistry();
@@ -2184,6 +2639,87 @@ describe("runUpdate", () => {
       expect((result.item as { github_url?: string }).github_url).toBe("https://example.test/2");
       expect((result.item as { github_number?: number }).github_number).toBe(7);
       expect(result.changed_fields).toEqual(expect.arrayContaining(["github_url", "github_number"]));
+    });
+  });
+
+  it("skips unchanged runtime and extension item-field update values", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { fields?: Array<Record<string, unknown>> };
+      };
+      settings.schema = {
+        ...(settings.schema ?? {}),
+        fields: [
+          {
+            key: "reviewUrl",
+            metadata_key: "review_url",
+            type: "string",
+            cli_flag: "review-url",
+            commands: ["update"],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "update-runtime-extension-noops");
+      const setValues = await runUpdate(
+        id,
+        {
+          reviewUrl: "https://example.test/review",
+          field: ["github_url=https://example.test/field"],
+          message: "set runtime and extension fields",
+        },
+        { path: context.pmPath },
+      );
+      expect(setValues.changed_fields).toEqual(expect.arrayContaining(["review_url", "github_url"]));
+
+      const sameValues = await runUpdate(
+        id,
+        {
+          reviewUrl: "https://example.test/review",
+          field: ["github_url=https://example.test/field"],
+          message: "same runtime and extension fields",
+        },
+        { path: context.pmPath },
+      );
+      expect(sameValues.changed_fields).not.toContain("review_url");
+      expect(sameValues.changed_fields).not.toContain("github_url");
+    });
+  });
+
+  it("surfaces extension item-field validation failures as usage errors on update", async () => {
+    await withTempPmPath(async (context) => {
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string", values: ["https://example.test/allowed"] }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      const id = createTask(context, "update-extension-field-invalid-value");
+      await expect(
+        runUpdate(
+          id,
+          {
+            field: ["github_url=https://example.test/denied"],
+            message: "invalid extension field value",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("github_url"),
+      });
     });
   });
 

@@ -138,6 +138,8 @@ describe("runtime schema command flag registration", () => {
           type: "Issue",
           allowed_transitions: [["triage", "done"], ["triage", "done"], ["triage", ""], ["bad"] as [string, string]],
         },
+        { type: "", allowed_transitions: [] },
+        { type: "NoTransitions" } as unknown as { type: string; allowed_transitions: [string, string][] },
         { type: "Bug", allowed_transitions: [["x", "y", "z"] as unknown as [string, string]] },
       ],
       unknown_field_policy: "REJECT",
@@ -186,6 +188,120 @@ describe("runtime schema command flag registration", () => {
     expect(runtimeFieldOptionTarget(segment!)).toBe("customerSegment");
     expect(fieldRegistry.by_cli_token.get("cust-seg")).toBe(segment);
     expect(fieldRegistry.command_to_fields.get("list")?.map((field) => field.key)).toEqual(["labels"]);
+  });
+
+  it("falls back cleanly when runtime schema definitions are empty or malformed", () => {
+    const normalizedDefaults = normalizeRuntimeSchemaSettings(undefined);
+    expect(normalizedDefaults.version).toBe(1);
+    expect(normalizedDefaults.files).toMatchObject({
+      types: "schema/types.json",
+      statuses: "schema/statuses.json",
+      fields: "schema/fields.json",
+      workflows: "schema/workflows.json",
+    });
+
+    const normalized = normalizeRuntimeSchemaSettings({
+      version: Number.POSITIVE_INFINITY,
+      files: {
+        types: "",
+      },
+      statuses: [
+        { id: "" },
+        { id: "   " },
+      ],
+      fields: [
+        { key: "" },
+        {
+          key: "  ",
+          cli_flag: "   ",
+        },
+        {
+          key: "release train",
+          metadata_key: "",
+          cli_flag: undefined,
+          cli_aliases: ["--release-train", "", "--release_train"],
+          commands: ["bad", "create"] as unknown as ["create"],
+          required: true,
+          required_on_create: true,
+          required_types: ["Task", "", "Task"],
+        },
+      ],
+      workflow: {
+        open_status: " ",
+        close_status: " ",
+        canceled_status: " ",
+      },
+    });
+
+    expect(normalized.version).toBe(1);
+    expect(normalized.statuses.map((status) => status.id)).toEqual(normalizedDefaults.statuses.map((status) => status.id));
+    expect(normalized.fields).toEqual([
+      expect.objectContaining({
+        key: "release_train",
+        metadata_key: "",
+        cli_flag: undefined,
+        cli_aliases: undefined,
+        commands: ["create"],
+        required: true,
+        required_on_create: true,
+        required_types: ["Task"],
+      }),
+    ]);
+
+    const statusRegistry = resolveRuntimeStatusRegistry(normalized);
+    expect(statusRegistry.open_status).toBe("open");
+    expect(statusRegistry.close_status).toBe("closed");
+    expect(statusRegistry.canceled_status).toBe("canceled");
+
+    const fieldRegistry = resolveRuntimeFieldRegistry(normalized);
+    expect(fieldRegistry.by_cli_token.get("release-train")).toBe(fieldRegistry.by_key.get("release_train"));
+    expect(fieldRegistry.command_to_fields.get("create")?.map((field) => field.key)).toEqual(["release_train"]);
+    expect(runtimeFieldOptionTarget({ key: "!!!" } as never)).toBe("!!!");
+
+    expect(
+      normalizeRuntimeSchemaSettings({
+        fields: [
+          {
+            key: "valid_key_with_blank_flag",
+            cli_flag: " ",
+          },
+        ],
+      }).fields,
+    ).toEqual([]);
+  });
+
+  it("uses role and first-definition fallbacks for status registry defaults", () => {
+    const roleFallback = resolveRuntimeStatusRegistry(
+      normalizeRuntimeSchemaSettings({
+        statuses: [
+          { id: "ready", roles: ["active"], order: 2 },
+          { id: "canceled", roles: ["terminal_canceled"], order: 3 },
+          { id: "done", roles: ["terminal_done"], order: 4 },
+        ],
+        workflow: {
+          open_status: "",
+          close_status: "",
+          canceled_status: "",
+        },
+      }),
+    );
+    expect(roleFallback.open_status).toBe("ready");
+    expect(roleFallback.close_status).toBe("done");
+    expect(roleFallback.canceled_status).toBe("canceled");
+    expect(roleFallback.terminal_statuses.has("canceled")).toBe(true);
+    expect(roleFallback.terminal_statuses.has("done")).toBe(true);
+
+    const firstDefinitionFallback = resolveRuntimeStatusRegistry(
+      normalizeRuntimeSchemaSettings({
+        statuses: [{ id: "custom-only" }],
+        workflow: {},
+      }),
+    );
+    expect(firstDefinitionFallback.open_status).toBe("custom_only");
+    expect(firstDefinitionFallback.close_status).toBe("custom_only");
+    expect(firstDefinitionFallback.canceled_status).toBe("custom_only");
+    expect(normalizeStatusInputWithRegistry("custom only", firstDefinitionFallback)).toBe("custom_only");
+    expect(normalizeStatusInputWithRegistry(undefined, firstDefinitionFallback)).toBeUndefined();
   });
 
   it("scaffolds and loads runtime schema sections from multiple supported file shapes", async () => {
@@ -246,15 +362,86 @@ describe("runtime schema command flag registration", () => {
 
       await writeFile(path.join(tempRoot, "custom", "types.json"), "{}", "utf8");
       await writeFile(path.join(tempRoot, "custom", "statuses.json"), "\"bad\"", "utf8");
-      await writeFile(absoluteFieldsPath, "{", "utf8");
+      await writeFile(absoluteFieldsPath, "\"bad\"", "utf8");
       await writeFile(path.join(tempRoot, "custom", "workflows.json"), "[]", "utf8");
       const malformed = await loadRuntimeSchemaFromOptionalFiles(tempRoot, schema);
       expect(malformed.warnings.sort()).toEqual([
-        "runtime_schema_fields_invalid_json",
+        "runtime_schema_fields_invalid_shape",
         "runtime_schema_statuses_invalid_shape",
         "runtime_schema_types_invalid_shape",
         "runtime_schema_workflows_invalid_shape",
       ]);
+
+      await writeFile(path.join(tempRoot, "custom", "types.json"), "null", "utf8");
+      await writeFile(path.join(tempRoot, "custom", "statuses.json"), "{}", "utf8");
+      await writeFile(absoluteFieldsPath, "{}", "utf8");
+      await writeFile(path.join(tempRoot, "custom", "workflows.json"), "{", "utf8");
+      const secondMalformed = await loadRuntimeSchemaFromOptionalFiles(tempRoot, schema);
+      expect(secondMalformed.warnings.sort()).toEqual([
+        "runtime_schema_fields_invalid_shape",
+        "runtime_schema_statuses_invalid_shape",
+        "runtime_schema_types_invalid_shape",
+        "runtime_schema_workflows_invalid_json",
+      ]);
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("loads alternate runtime schema file shapes and ignores absent optional files", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-runtime-schema-alt-files-"));
+    try {
+      const schema = normalizeRuntimeSchemaSettings({
+        files: {
+          types: "types-array.json",
+          statuses: "statuses-array.json",
+          fields: "fields-definitions.json",
+          workflows: "workflow-top-level.json",
+        },
+      });
+      await writeFile(
+        path.join(tempRoot, "types-array.json"),
+        `${JSON.stringify([{ name: "Bug", folder: "bugs" }])}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(tempRoot, "statuses-array.json"),
+        `${JSON.stringify([{ id: "qa", aliases: ["Quality Assurance"], roles: ["active"] }])}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(tempRoot, "fields-definitions.json"),
+        `${JSON.stringify({ definitions: [{ key: "severity", type: "string", commands: ["create", "update"] }] })}\n`,
+        "utf8",
+      );
+      await writeFile(
+        path.join(tempRoot, "workflow-top-level.json"),
+        `${JSON.stringify({ open_status: "qa", close_status: "closed" })}\n`,
+        "utf8",
+      );
+
+      const loaded = await loadRuntimeSchemaFromOptionalFiles(tempRoot, schema);
+      expect(loaded.warnings).toEqual([]);
+      expect(loaded.type_definitions_from_file).toEqual([{ name: "Bug", folder: "bugs" }]);
+      expect(loaded.schema.statuses).toContainEqual(expect.objectContaining({ id: "qa", aliases: ["quality_assurance"] }));
+      expect(loaded.schema.fields).toContainEqual(expect.objectContaining({ key: "severity", commands: ["create", "update"] }));
+      expect(loaded.schema.workflow.open_status).toBe("qa");
+      expect(loaded.schema.workflow.close_status).toBe("closed");
+
+      const absentLoaded = await loadRuntimeSchemaFromOptionalFiles(
+        tempRoot,
+        normalizeRuntimeSchemaSettings({
+          files: {
+            types: "missing-types.json",
+            statuses: "missing-statuses.json",
+            fields: "missing-fields.json",
+            workflows: "missing-workflows.json",
+          },
+        }),
+      );
+      expect(absentLoaded.warnings).toEqual([]);
+      expect(absentLoaded.type_definitions_from_file).toBeUndefined();
+      expect(absentLoaded.schema.statuses.map((status) => status.id)).toEqual(normalizeRuntimeSchemaSettings(undefined).statuses.map((status) => status.id));
     } finally {
       await rm(tempRoot, { recursive: true, force: true });
     }

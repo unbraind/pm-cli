@@ -24,7 +24,7 @@ export function resolveEventEndAt(
   }
   if (durationRaw) {
     // Reuse the relative-offset parser with startAt as the reference so duration=2h means startAt + 2h.
-    const normalizedDuration = durationRaw.startsWith("+") ? durationRaw : `+${durationRaw}`;
+    const normalizedDuration = durationRaw.startsWith("+") || durationRaw.startsWith("-") ? durationRaw : `+${durationRaw}`;
     const endAt = resolveIsoOrRelative(normalizedDuration, new Date(startAt), "event.duration");
     if (endAt < startAt) {
       throw new PmCliError(EVENT_END_AFTER_START_MESSAGE, EXIT_CODE.USAGE);

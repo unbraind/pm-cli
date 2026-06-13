@@ -3,9 +3,14 @@ import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runCreate, type CreateCommandOptions } from "../../src/cli/commands/create.js";
+import { _testOnlyCreateCommand, runCreate, type CreateCommandOptions } from "../../src/cli/commands/create.js";
 import { parseTypeOptionEntries } from "../../src/cli/commands/repeatable-metadata-parsers.js";
-import { clearActiveExtensionHooks, setActiveExtensionHooks, setActiveExtensionRegistrations } from "../../src/core/extensions/index.js";
+import {
+  clearActiveExtensionHooks,
+  setActiveExtensionCommands,
+  setActiveExtensionHooks,
+  setActiveExtensionRegistrations,
+} from "../../src/core/extensions/index.js";
 import { createEmptyExtensionRegistrationRegistry, type ExtensionHookRegistry } from "../../src/core/extensions/loader.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
@@ -49,8 +54,34 @@ function readCreateHistory(context: TempPmContext, id: string): Array<{ op: stri
 describe("runCreate", () => {
   afterEach(() => {
     clearActiveExtensionHooks();
+    setActiveExtensionCommands(null);
     setActiveExtensionRegistrations(null);
     vi.restoreAllMocks();
+  });
+
+  it("covers create command pure normalization tails", () => {
+    expect(_testOnlyCreateCommand.normalizeDependencyKindInput(undefined)).toBeUndefined();
+    expect(_testOnlyCreateCommand.normalizeDependencyKindInput("depends-on")).toBe("blocked_by");
+    expect(_testOnlyCreateCommand.normalizeDependencyKindInput("related")).toBe("related");
+    expect(_testOnlyCreateCommand.looksLikeStructuredEntry("```yaml\ntext: hi\n```", ["text"])).toBe(true);
+    expect(_testOnlyCreateCommand.looksLikeStructuredEntry("- text: hi", ["text"])).toBe(true);
+    expect(_testOnlyCreateCommand.looksLikeStructuredEntry("plain text", ["text"])).toBe(false);
+    expect(_testOnlyCreateCommand.buildHistoryMessage(undefined, [])).toBe("");
+    expect(_testOnlyCreateCommand.buildHistoryMessage("base", ["deadline", "tags"])).toBe(
+      "base | explicit_unset=deadline,tags",
+    );
+    expect(_testOnlyCreateCommand.buildHistoryMessage(undefined, ["deadline"])).toBe("explicit_unset=deadline");
+    expect(_testOnlyCreateCommand.normalizeCreatePolicyOptionKey("acceptance-criteria", "Task", "required_create_fields")).toBe(
+      "acceptanceCriteria",
+    );
+    expect(() =>
+      _testOnlyCreateCommand.normalizeCreatePolicyOptionKey("not-real", "Task", "required_create_fields"),
+    ).toThrow(PmCliError);
+    expect(_testOnlyCreateCommand.createExampleTokensForFlag("--priority", "Task", "open")).toEqual(["--priority", "1"]);
+    expect(_testOnlyCreateCommand.createExampleTokensForFlag("--message", "Task", "open")).toEqual([
+      "--message",
+      '"Create Task item"',
+    ]);
   });
 
   it("fails when tracker is not initialized", async () => {
@@ -226,6 +257,57 @@ describe("runCreate", () => {
     });
   });
 
+  it("rejects empty template names before runtime template lookup", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-empty-template",
+            template: "   ",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--template must not be empty"),
+      });
+    });
+  });
+
+  it("keeps strict missing title and type guidance explicit", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          {
+            description: "strict missing title should mention positional title",
+            type: "Task",
+            createMode: "strict",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          nextSteps: expect.arrayContaining([expect.stringContaining("Title can also be passed as the first positional")]),
+        },
+      });
+
+      await expect(
+        runCreate(
+          {
+            title: "strict-missing-type",
+            description: "strict missing type should not silently default",
+            createMode: "strict",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--type"),
+      });
+    });
+  });
+
   it("accepts type as a structured --dep kind alias", async () => {
     await withTempPmPath(async (context) => {
       const result = await runCreate(
@@ -243,6 +325,23 @@ describe("runCreate", () => {
           created_at: "2026-03-01T00:00:00.000Z",
         },
       ]);
+    });
+  });
+
+  it("rejects incomplete structured dependencies with missing kind", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-structured-dep-missing-kind",
+            dep: ["id=dep-without-kind"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--dep requires id and kind"),
+      });
     });
   });
 
@@ -461,11 +560,52 @@ describe("runCreate", () => {
         exitCode: EXIT_CODE.USAGE,
         message: expect.stringContaining("cannot be combined with --create-mode strict"),
       });
+
+      await expect(
+        runCreate(
+          {
+            title: "empty-schedule-preset",
+            description: "Empty preset should fail fast",
+            type: "Reminder",
+            schedulePreset: " ",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("--schedule-preset must not be empty"),
+      });
+
+      await expect(
+        runCreate(
+          {
+            title: "unknown-schedule-preset",
+            description: "Unknown preset should report allowed values",
+            type: "Reminder",
+            schedulePreset: "heavy",
+          },
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Invalid --schedule-preset value"),
+      });
     });
   });
 
   it("rejects unsupported create mode values", async () => {
     await withTempPmPath(async (context) => {
+      const blankMode = await runCreate(
+        {
+          title: "blank-create-mode",
+          description: "blank explicit create mode falls back to defaults",
+          type: "Task",
+          createMode: " ",
+        },
+        { path: context.pmPath },
+      );
+      expect(blankMode.item.status).toBe("open");
+
       await expect(
         runCreate(
           {
@@ -2280,6 +2420,39 @@ describe("runCreate", () => {
     });
   });
 
+  it("lets a default_status satisfy a required create status policy", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        item_types?: { definitions?: Array<Record<string, unknown>> };
+      };
+      settings.item_types = {
+        definitions: [
+          {
+            name: "Asset",
+            folder: "assets",
+            default_status: "in_progress",
+            required_create_fields: [],
+            required_create_repeatables: [],
+            command_option_policies: [{ command: "create", option: "status", required: true }],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const created = await runCreate(
+        baseCreateOptions({
+          title: "create-default-status-policy",
+          type: "Asset",
+          status: undefined,
+        }),
+        { path: context.pmPath },
+      );
+
+      expect(created.item.status).toBe("in_progress");
+    });
+  });
+
   it("counts --add-tags toward a tags command_option_policy (pm-1lws)", async () => {
     await withTempPmPath(async (context) => {
       const settingsPath = path.join(context.pmPath, "settings.json");
@@ -2423,6 +2596,7 @@ describe("runCreate", () => {
           ]),
         },
       });
+
     });
   });
 
@@ -2486,6 +2660,20 @@ describe("runCreate", () => {
         exitCode: EXIT_CODE.CONFLICT,
         message: expect.stringContaining("command_option_policies"),
       });
+    });
+  });
+
+  it("uses a built-in type synonym when the requested type is absent", async () => {
+    await withTempPmPath(async (context) => {
+      const result = await runCreate(
+        baseCreateOptions({
+          title: "create-bug-synonym",
+          type: "Bug",
+        }),
+        { path: context.pmPath },
+      );
+
+      expect(result.item.type).toBe("Issue");
     });
   });
 
@@ -2553,6 +2741,24 @@ describe("runCreate", () => {
         { path: context.pmPath },
       );
       expect(markdownResult.item.type_options).toEqual({ workflow: "seeded" });
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-type-option-invalid-value",
+            type: "Asset",
+            typeOption: ["category=invalid"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        context: {
+          code: "invalid_argument_value",
+          examples: [expect.stringContaining("pm create")],
+          nextSteps: [expect.stringContaining("pm create --help --type Asset")],
+        },
+      });
     });
   });
 
@@ -2582,6 +2788,110 @@ describe("runCreate", () => {
       expect(result.item.github_number).toBe(42);
       expect(result.item.github_synced).toBe(true);
       expect(result.changed_fields).toEqual(expect.arrayContaining(["github_url", "github_number", "github_synced"]));
+    });
+  });
+
+  it("rejects unset conflicts with declared extension item fields on create", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { fields?: Array<Record<string, unknown>> };
+      };
+      settings.schema = {
+        ...(settings.schema ?? {}),
+        fields: [
+          {
+            key: "githubUrl",
+            metadata_key: "github_url",
+            type: "string",
+            cli_flag: "github-url",
+            commands: ["create"],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_url", type: "string" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-extension-field-unset-conflict",
+            unset: ["github-url"],
+            field: ["github_url=https://example.test/conflict"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot combine --unset github-url with --field github_url=..."),
+      });
+    });
+  });
+
+  it("surfaces extension item-field validation failures as usage errors on create", async () => {
+    await withTempPmPath(async (context) => {
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.item_fields.push({
+        layer: "project",
+        name: "github-importer",
+        fields: [{ name: "github_number", type: "number", default: "not-a-number" }],
+      });
+      setActiveExtensionRegistrations(registrations);
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-extension-field-invalid-default",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("github_number"),
+      });
+    });
+  });
+
+  it("rejects unset conflicts with runtime schema fields", async () => {
+    await withTempPmPath(async (context) => {
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        schema?: { fields?: Array<Record<string, unknown>> };
+      };
+      settings.schema = {
+        ...(settings.schema ?? {}),
+        fields: [
+          {
+            key: "reviewUrl",
+            metadata_key: "review_url",
+            type: "string",
+            cli_flag: "review-url",
+            commands: ["create"],
+          },
+        ],
+      };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-runtime-field-unset-conflict",
+            unset: ["review-url"],
+            reviewUrl: "https://example.test/review",
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot combine --unset review-url with its value flag"),
+      });
     });
   });
 
@@ -2695,6 +3005,262 @@ describe("runCreate", () => {
       );
       expect(result.item.comments?.at(0)?.author).toBe("stdin-author");
       expect(result.item.comments?.at(0)?.text).toBe("stdin seeded comment");
+    });
+  });
+});
+
+describe("create command helper coverage", () => {
+  afterEach(() => {
+    clearActiveExtensionHooks();
+    setActiveExtensionCommands(null);
+    setActiveExtensionRegistrations(null);
+    vi.restoreAllMocks();
+  });
+
+  it("formats invalid log seed key guidance for singular and plural keys", () => {
+    expect(_testOnlyCreateCommand.buildInvalidLogSeedKeysMessage("--comment", ["scope"])).toContain(
+      "Found unsupported key: scope",
+    );
+    expect(_testOnlyCreateCommand.buildInvalidLogSeedKeysMessage("--note", ["zeta", "alpha"])).toContain(
+      "Found unsupported keys: alpha, zeta",
+    );
+  });
+
+  it("resolves runtime unset aliases and rejects unsupported create unset tokens", () => {
+    const registry = {
+      definitions: [
+        {
+          key: "githubUrl",
+          metadata_key: "github_url",
+          cli_flag: "github-url",
+          cli_aliases: ["gh-url"],
+        },
+        {
+          key: "hidden",
+          metadata_key: "hidden",
+          cli_flag: "hidden",
+          cli_aliases: [],
+          allow_unset: false,
+        },
+      ],
+    };
+
+    expect(_testOnlyCreateCommand.resolveRuntimeCreateUnsetDefinition("anything", undefined)).toBeUndefined();
+    expect(_testOnlyCreateCommand.resolveRuntimeCreateUnsetDefinition("gh_url", registry)).toEqual({
+      optionKey: "githubUrl",
+      frontMatterKey: "github_url",
+    });
+    expect(_testOnlyCreateCommand.resolveRuntimeCreateUnsetDefinition("hidden", registry)).toBeUndefined();
+    const parsed = _testOnlyCreateCommand.parseCreateUnsetTargets(["deadline", "gh-url"], registry);
+    expect([...parsed.frontMatterKeys].sort()).toEqual(["deadline", "github_url"]);
+    expect([...parsed.optionKeys].sort()).toEqual(["deadline", "githubUrl"]);
+    expect(() => _testOnlyCreateCommand.parseCreateUnsetTargets(["   "], registry)).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+    expect(() => _testOnlyCreateCommand.parseCreateUnsetTargets(["none"], registry)).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+    expect(() => _testOnlyCreateCommand.parseCreateUnsetTargets(["missing"], registry)).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE }),
+    );
+  });
+
+  it("normalizes legacy none create tokens into explicit clears and rejects mixed collection entries", async () => {
+    await withTempPmPath(async (context) => {
+      const created = await runCreate(
+        baseCreateOptions({
+          title: "create-legacy-none-scalars",
+          tags: "none",
+          deadline: "none",
+          comment: ["none"],
+          test: ["null"],
+          doc: ["none"],
+        }),
+        { path: context.pmPath },
+      );
+      expect(created.item.tags).toEqual([]);
+      expect(created.item.deadline).toBeUndefined();
+      expect(created.item.comments).toBeUndefined();
+      expect(created.item.tests).toBeUndefined();
+      expect(created.item.docs).toBeUndefined();
+      expect(created.changed_fields).toEqual(
+        expect.arrayContaining(["unset:tags", "unset:deadline", "unset:comments", "unset:tests", "unset:docs"]),
+      );
+      const history = readCreateHistory(context, created.item.id);
+      const createEntry = [...history].reverse().find((entry) => entry.op === "create");
+      expect(createEntry?.message).toContain("explicit_unset=");
+
+      await expect(
+        runCreate(
+          baseCreateOptions({
+            title: "create-mixed-legacy-none",
+            comment: ["none", "text=concrete"],
+          }),
+          { path: context.pmPath },
+        ),
+      ).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("Cannot mix legacy clear token"),
+      });
+    });
+  });
+
+  it("reads template options from runtime payloads and rejects invalid payload shapes", () => {
+    expect(
+      _testOnlyCreateCommand.readTemplateOptionsFromRuntimeResult(
+        { options: { title: "From template", tags: ["alpha", "beta"] } },
+        "sample",
+      ),
+    ).toEqual({ title: "From template", tags: ["alpha", "beta"] });
+
+    for (const payload of [null, {}, { options: null }, { options: [] }, { options: { tags: ["ok", 1] } }]) {
+      expect(() => _testOnlyCreateCommand.readTemplateOptionsFromRuntimeResult(payload, "sample")).toThrow(
+        expect.objectContaining({ exitCode: EXIT_CODE.GENERIC_FAILURE }),
+      );
+    }
+  });
+
+  it("rejects template usage when no templates show handler is active", async () => {
+    await expect(
+      _testOnlyCreateCommand.loadCreateTemplateOptionsFromRuntime("sample", { path: "/tmp/pm-root" }, "/tmp/pm-root"),
+    ).rejects.toMatchObject<PmCliError>({
+      exitCode: EXIT_CODE.USAGE,
+      message: expect.stringContaining("--template requires the templates package"),
+    });
+  });
+
+  it("builds type-aware missing-option examples and filters type-option validation errors", () => {
+    const errors = [
+      'Missing required type option "impact" for type "Issue"',
+      'Missing required type option "severity" for type "Issue"',
+      'Missing required type option "impact" for type "Issue"',
+      'Missing required type option "scope" for type "Task"',
+      "Invalid type option priority for type Issue",
+    ];
+    expect(_testOnlyCreateCommand.collectMissingRequiredTypeOptionKeys(errors, "Issue")).toEqual(["impact", "severity"]);
+    expect(_testOnlyCreateCommand.filterNonMissingTypeOptionErrors(errors, "Issue")).toEqual([
+      'Missing required type option "scope" for type "Task"',
+      "Invalid type option priority for type Issue",
+    ]);
+
+    const typeDefinition = {
+      name: "Issue",
+      options: [
+        { key: "impact", values: ["high"] },
+        { key: "severity", values: [] },
+      ],
+    };
+    expect(_testOnlyCreateCommand.typeOptionExampleValue(typeDefinition as never, "impact")).toBe("high");
+    expect(_testOnlyCreateCommand.typeOptionExampleValue(typeDefinition as never, "severity")).toBe("<value>");
+    expect(_testOnlyCreateCommand.createExampleTokensForFlag("--comment", "Issue", "open")).toEqual([
+      "--comment",
+      "\"author=maintainer,created_at=now,text=Implementation context\"",
+    ]);
+    expect(_testOnlyCreateCommand.createExampleTokensForFlag("--title", "Issue", "open")).toEqual([
+      "--title",
+      "\"Issue example title\"",
+    ]);
+    expect(_testOnlyCreateCommand.createExampleTokensForFlag("--description", "Issue", "open")).toEqual([
+      "--description",
+      "\"Issue example description\"",
+    ]);
+    expect(_testOnlyCreateCommand.createExampleTokensForFlag("--type", "Issue", "open")).toEqual(["--type", "Issue"]);
+    expect(_testOnlyCreateCommand.createExampleTokensForFlag("--custom", "Issue", "open")).toEqual(["--custom", "\"<value>\""]);
+    expect(
+      _testOnlyCreateCommand.buildTypeSpecificCreateExample(
+        typeDefinition as never,
+        ["--priority", "--comment", "--status", "--title"],
+        ["impact", "severity"],
+        "triage",
+      ),
+    ).toContain("--type-option impact=high --type-option severity=<value>");
+  });
+
+  it("throws specific create required-option errors", () => {
+    expect(() => _testOnlyCreateCommand.requireStringOption(undefined, "--title")).toThrow(
+      expect.objectContaining({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining("human-readable title"),
+      }),
+    );
+    expect(() => _testOnlyCreateCommand.requireStringOption(undefined, "--description")).toThrow(
+      expect.objectContaining({ exitCode: EXIT_CODE.USAGE, message: "Missing required option --description" }),
+    );
+    expect(_testOnlyCreateCommand.requireStringOption("value", "--description")).toBe("value");
+  });
+
+  it("normalizes template command paths and merges explicit create options over templates", () => {
+    expect(_testOnlyCreateCommand.normalizeExtensionCommandPath("  Templates   SHOW ")).toBe("templates show");
+    const merged = _testOnlyCreateCommand.mergeCreateOptionsWithTemplate(
+      { title: "template title", tags: ["template"], description: "template description" },
+      { title: "explicit title", tags: ["explicit"] },
+    );
+    expect(merged).toMatchObject({
+      title: "explicit title",
+      description: "template description",
+      tags: ["explicit"],
+    });
+    expect(merged.tags).not.toBe(["template"]);
+  });
+
+  it("detects active templates show handlers by action or normalized command path", () => {
+    setActiveExtensionRegistrations(null);
+    expect(_testOnlyCreateCommand.hasTemplatesShowHandler()).toBe(false);
+    setActiveExtensionRegistrations({
+      commands: [{ layer: "project", name: "templates", command: "anything", action: "templates-show" }],
+      flags: [],
+      hooks: [],
+      importers: [],
+      exporters: [],
+      item_fields: [],
+      item_types: [],
+    });
+    expect(_testOnlyCreateCommand.hasTemplatesShowHandler()).toBe(true);
+    setActiveExtensionRegistrations({
+      commands: [{ layer: "project", name: "templates", command: "  Templates   Show ", action: "custom-action" }],
+      flags: [],
+      hooks: [],
+      importers: [],
+      exporters: [],
+      item_fields: [],
+      item_types: [],
+    });
+    expect(_testOnlyCreateCommand.hasTemplatesShowHandler()).toBe(true);
+  });
+
+  it("surfaces templates package handler warnings when template resolution is unhandled", async () => {
+    setActiveExtensionRegistrations({
+      commands: [{ layer: "project", name: "templates", command: "templates show", action: "templates-show" }],
+      flags: [],
+      hooks: [],
+      importers: [],
+      exporters: [],
+      item_fields: [],
+      item_types: [],
+    });
+    setActiveExtensionCommands({
+      overrides: [],
+      handlers: [
+        {
+          layer: "project",
+          name: "templates",
+          command: "templates show",
+          run: () => {
+            throw new Error("template missing");
+          },
+        },
+      ],
+    });
+
+    await expect(
+      _testOnlyCreateCommand.loadCreateTemplateOptionsFromRuntime(
+        "sample",
+        { path: "/tmp/pm-root" },
+        "/tmp/pm-root",
+      ),
+    ).rejects.toMatchObject<PmCliError>({
+      exitCode: EXIT_CODE.USAGE,
+      message: expect.stringContaining("extension_command_handler_failed:project:templates:templates show"),
     });
   });
 });

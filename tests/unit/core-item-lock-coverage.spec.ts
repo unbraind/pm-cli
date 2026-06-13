@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../src/core/item/item-format.js";
-import { acquireLock } from "../../src/core/lock/lock.js";
+import { _testOnly as lockInternals, acquireLock } from "../../src/core/lock/lock.js";
 import { clearActiveExtensionHooks, setActiveExtensionHooks, type ExtensionHookRegistry } from "../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { getLockPath } from "../../src/core/store/paths.js";
@@ -191,6 +191,45 @@ describe("core/item/item-format additional branch coverage", () => {
 });
 
 describe("core/lock/lock additional branch coverage", () => {
+  it("covers lock metadata helper branches directly", async () => {
+    expect(lockInternals.parseLockInfo("null")).toEqual({ info: null, warnings: ["lock_info_invalid_shape"] });
+    expect(lockInternals.parseLockInfo("[]")).toEqual({ info: null, warnings: ["lock_info_invalid_shape"] });
+    expect(
+      lockInternals.parseLockInfo(
+        JSON.stringify({ id: "pm-lock", pid: Number.NaN, owner: "owner", created_at: FIXED_TS, ttl_seconds: 60 }),
+      ),
+    ).toEqual({
+      info: null,
+      warnings: ["lock_info_invalid_shape"],
+    });
+    expect(
+      lockInternals.parseLockInfo(JSON.stringify({ id: "pm-lock", pid: 1, owner: "owner", created_at: FIXED_TS, ttl_seconds: 60 })),
+    ).toMatchObject({
+      info: { id: "pm-lock", owner: "owner", ttl_seconds: 60 },
+      warnings: [],
+    });
+    expect(lockInternals.isErrno({ code: "ENOENT" }, "ENOENT")).toBe(true);
+    expect(lockInternals.isErrno(null, "ENOENT")).toBe(false);
+    expect(lockInternals.lockOwnerSuffix({ id: "pm-lock", pid: 1, owner: "owner", created_at: FIXED_TS, ttl_seconds: 60 })).toBe(
+      " (owner owner)",
+    );
+    expect(lockInternals.lockOwnerSuffix(null)).toBe("");
+    expect(lockInternals.isStaleLock(null, 60)).toBe(true);
+    expect(lockInternals.buildLockPayload("pm-lock", "owner", 60)).toMatchObject({
+      id: "pm-lock",
+      pid: process.pid,
+      owner: "owner",
+      ttl_seconds: 60,
+    });
+
+    const tempDir = await fs.mkdtemp(path.join(process.cwd(), ".tmp-lock-read-"));
+    try {
+      await expect(lockInternals.readLockInfo(path.join(tempDir, "missing.lock"))).resolves.toEqual({ info: null, warnings: [] });
+    } finally {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
   it("dispatches extension lock lifecycle hooks for read create and release", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       const id = "pm-lock-hook-lifecycle";

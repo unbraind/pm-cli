@@ -581,3 +581,14 @@ export async function areDirectoriesEquivalent(left: string, right: string): Pro
   const [leftRealPath, rightRealPath] = await Promise.all([fs.realpath(left), fs.realpath(right)]);
   return leftRealPath === rightRealPath;
 }
+
+export const _testOnlyInstallSources = {
+  installNpmPackageRuntimeDependencies,
+  npmPackageNameFromSpec,
+  parsePackedNpmPackage,
+  resolveNpmSourceDirectory,
+  resolveNpmPackSpec,
+  resolvePackageExtensionDirectory,
+  runtimeDependencyInstallSpecs,
+  runNpmCommand,
+};

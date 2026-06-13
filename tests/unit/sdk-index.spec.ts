@@ -60,6 +60,7 @@ import {
   withFlagAliasMetadata,
   writeFileAtomic,
 } from "../../src/sdk/index.js";
+import { _testOnlyCliContracts } from "../../src/sdk/cli-contracts.js";
 import {
   assertPackageManifest,
   assertRegisteredCommandContract,
@@ -86,6 +87,16 @@ import {
 } from "../../src/core/extensions/loader.js";
 import { writeTestExtension } from "../helpers/extensions.js";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
+
+describe("SDK CLI contract helper tails", () => {
+  it("deduplicates provider-compatible action schema aliases", () => {
+    const schema = _testOnlyCliContracts.buildActionScopedToolSchema("get");
+    const properties = schema.properties as Record<string, unknown>;
+    expect(properties.action).toMatchObject({ const: "get" });
+    expect(properties.id).toBeDefined();
+    expect(Object.keys(properties)).toEqual(Array.from(new Set(Object.keys(properties))));
+  });
+});
 
 function createRegistrationRegistry(): ExtensionRegistrationRegistry {
   return {
@@ -415,10 +426,12 @@ describe("public sdk entrypoint", () => {
   it("materializes strict and provider-compatible tool schemas through the sdk barrel", () => {
     expect(PM_TOOL_PARAMETERS_SCHEMA_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
     expect("$id" in PM_TOOL_PARAMETERS_SCHEMA).toBe(true);
+    expect("missing" in PM_TOOL_PARAMETERS_SCHEMA).toBe(false);
     expect(Object.keys(PM_TOOL_PARAMETERS_SCHEMA)).toEqual(
       expect.arrayContaining(["$schema", "$id", "title", "x-schema-version", "type", "oneOf"]),
     );
     expect(Object.getOwnPropertyDescriptor(PM_TOOL_PARAMETERS_SCHEMA, "oneOf")?.configurable).toBe(true);
+    expect(Object.getOwnPropertyDescriptor(PM_TOOL_PARAMETERS_SCHEMA, "missing")).toBeUndefined();
 
     const strictSchema = JSON.parse(JSON.stringify(PM_TOOL_PARAMETERS_SCHEMA)) as {
       oneOf: Array<{ properties?: Record<string, unknown>; anyOf?: unknown; oneOf?: unknown; allOf?: unknown }>;
@@ -451,29 +464,67 @@ describe("public sdk entrypoint", () => {
     expect(providerProperties.options).toMatchObject({ type: "object", additionalProperties: true });
     expect(providerProperties.id).toMatchObject({ type: "string", description: expect.any(String) });
     expect(providerProperties.all).toMatchObject({ type: "boolean", description: expect.any(String) });
+    expect(providerProperties.priority).toMatchObject({ type: "string", description: expect.any(String) });
+    expect(providerProperties.priority).not.toHaveProperty("anyOf");
+    expect(providerProperties.actualResult).toMatchObject({ type: "string", description: "Actual Result." });
+    expect(providerProperties.confidence).toMatchObject({ type: "string", description: "Confidence." });
+    expect(providerProperties.confidence).not.toHaveProperty("anyOf");
+    expect(providerProperties.unknownFallbackExample).toBeUndefined();
+    expect(Object.keys(PM_PROVIDER_TOOL_PARAMETERS_SCHEMA)).toEqual(
+      expect.arrayContaining(["title", "x-schema-version", "type", "additionalProperties", "required", "properties"]),
+    );
+    expect(Object.getOwnPropertyDescriptor(PM_PROVIDER_TOOL_PARAMETERS_SCHEMA, "properties")?.configurable).toBe(true);
+
+    expect(_testOnlyCliContracts.toProviderCompatibleParameterDefinition("noType", { anyOf: [{ enum: ["x"] }] })).toMatchObject({
+      type: "string",
+      description: "No Type.",
+    });
+    expect(
+      _testOnlyCliContracts.toProviderCompatibleParameterDefinition("typedVariant", {
+        anyOf: [{ enum: ["x"] }, { type: "number" }],
+      }),
+    ).toMatchObject({
+      type: "number",
+      description: "Typed Variant.",
+    });
+    const claimSchema = _testOnlyCliContracts.buildActionScopedToolSchema("claim") as {
+      properties?: Record<string, unknown>;
+      required?: string[];
+    };
+    expect(claimSchema.properties?.action).toMatchObject({ const: "claim" });
+    expect(claimSchema.required).toEqual(expect.arrayContaining(["action", "id"]));
+    const docsSchema = _testOnlyCliContracts.buildActionScopedToolSchema("docs") as {
+      allOf?: Array<{ then?: { anyOf?: Array<{ required?: string[] }> } }>;
+    };
+    expect(docsSchema.allOf?.some((entry) => entry.then?.anyOf?.some((variant) => variant.required?.includes("addGlob")))).toBe(true);
   });
 
   it("exposes command flag contract helpers with alias metadata and routing", () => {
     expect(
       withFlagAliasMetadata([
+        { flag: "-x" },
         { flag: "--filter_status" },
         { flag: "--filter-status", aliases: ["--status-filter", "--filter_status"] },
         { flag: "--plain" },
       ]),
     ).toEqual([
+      { flag: "-x" },
       { flag: "--filter_status" },
       { flag: "--filter-status", aliases: ["--status-filter", "--filter_status"] },
       { flag: "--plain" },
     ]);
     expect(
       compactFlagAliasContracts([
-        { flag: "--filter_status" },
-        { flag: "--filter-status", aliases: ["--status-filter"] },
-        { flag: "--other" },
-      ]),
-    ).toEqual([
+      { flag: "--filter_status" },
+      { flag: "--filter-status", aliases: ["--status-filter"] },
+      { flag: "--other" },
+    ]),
+  ).toEqual([
       { flag: "--filter-status", aliases: ["--status-filter", "--filter_status"] },
       { flag: "--other" },
+    ]);
+    expect(compactFlagAliasContracts([{ flag: "--only_underscore", aliases: ["--legacy"] }])).toEqual([
+      { flag: "--only_underscore", aliases: ["--legacy"] },
     ]);
     expect(toCompletionFlagString([{ short: "-x", flag: "--example", aliases: ["--example_alias"] }], false)).toBe(
       "-x --example --example_alias",
@@ -485,18 +536,70 @@ describe("public sdk entrypoint", () => {
     expect(flagsFor(undefined)).toEqual(expect.arrayContaining(["--json", "--pm-path"]));
     expect(flagsFor(" LIST-OPEN ")).toEqual(expect.arrayContaining(["--status", "--ids"]));
     expect(flagsFor("reindex")).not.toContain("--mode");
+    expect(flagsFor("help")).toEqual(expect.arrayContaining(["--json", "--pm-path"]));
     expect(flagsFor("templates")).toEqual(expect.arrayContaining(["--title", "--description"]));
     expect(flagsFor("cal")).toEqual(expect.arrayContaining(["--from", "--to"]));
     expect(flagsFor("ctx")).toEqual(expect.arrayContaining(["--depth"]));
     expect(flagsFor("test-runs-worker")).toEqual(expect.arrayContaining(["--status", "--tail"]));
+    expect(flagsFor("extension init")).toEqual(expect.arrayContaining(["--project", "--global"]));
     expect(flagsFor("extension install")).toEqual(expect.arrayContaining(["--github", "--ref"]));
+    expect(flagsFor("extension uninstall")).toEqual(expect.arrayContaining(["--project", "--global"]));
+    expect(flagsFor("extension explore")).toEqual(expect.arrayContaining(["--project", "--global"]));
+    expect(flagsFor("extension manage")).toEqual(expect.arrayContaining(["--runtime-probe", "--fix-managed-state"]));
+    expect(flagsFor("extension reload")).toEqual(expect.arrayContaining(["--watch", "--global"]));
     expect(flagsFor("packages doctor")).toEqual(expect.arrayContaining(["--strict-exit", "--trace"]));
+    expect(flagsFor("extension catalog")).toEqual(expect.arrayContaining(["--fields", "--global"]));
+    expect(flagsFor("extension adopt")).toEqual(expect.arrayContaining(["--github", "--ref"]));
+    expect(flagsFor("extension adopt-all")).toEqual(expect.arrayContaining(["--project", "--global"]));
+    expect(flagsFor("extension activate")).toEqual(expect.arrayContaining(["--project", "--global"]));
+    expect(flagsFor("extension deactivate")).toEqual(expect.arrayContaining(["--project", "--global"]));
     expect(flagsFor("package unknown")).toEqual(expect.arrayContaining(["--json"]));
     expect(flagsFor("extension install extra")).toEqual(expect.arrayContaining(["--json"]));
     expect(flagsFor("package")).toEqual(expect.arrayContaining(["--install", "--catalog"]));
     expect(flagsFor("history-repair")).toEqual(expect.arrayContaining(["--all", "--dry-run"]));
     expect(flagsFor("close-many")).toEqual(expect.arrayContaining(["--filter-status", "--reason"]));
     expect(flagsFor("validate")).toEqual(expect.arrayContaining(["--check-resolution", "--fix-scope"]));
+    expect(flagsFor("delete")).toEqual(expect.arrayContaining(["--dry-run"]));
+    expect(flagsFor("init")).toEqual(expect.arrayContaining(["--force", "--agent-guidance"]));
+    expect(flagsFor("config")).toEqual(expect.arrayContaining(["--policy", "--criterion"]));
+    expect(flagsFor("install")).toEqual(expect.arrayContaining(["--github", "--global"]));
+    expect(flagsFor("upgrade")).toEqual(expect.arrayContaining(["--dry-run", "--repair"]));
+    expect(flagsFor("create")).toEqual(expect.arrayContaining(["--title", "--type"]));
+    expect(flagsFor("append")).toEqual(expect.arrayContaining(["--body"]));
+    expect(flagsFor("comments")).toEqual(expect.arrayContaining(["--add"]));
+    expect(flagsFor("notes")).toEqual(expect.arrayContaining(["--add"]));
+    expect(flagsFor("learnings")).toEqual(expect.arrayContaining(["--add"]));
+    expect(flagsFor("files")).toEqual(expect.arrayContaining(["--add", "--add-glob"]));
+    expect(flagsFor("docs")).toEqual(expect.arrayContaining(["--add", "--add-glob"]));
+    expect(flagsFor("deps")).toEqual(expect.arrayContaining(["--max-depth"]));
+    expect(flagsFor("test")).toEqual(expect.arrayContaining(["--run", "--background"]));
+    expect(flagsFor("test-all")).toEqual(expect.arrayContaining(["--progress"]));
+    expect(flagsFor("telemetry")).toEqual(expect.arrayContaining(["--limit"]));
+    expect(flagsFor("health")).toEqual(expect.arrayContaining(["--check-only", "--strict-exit"]));
+    expect(flagsFor("gc")).toEqual(expect.arrayContaining(["--dry-run"]));
+    expect(flagsFor("stats")).toEqual(expect.arrayContaining(["--storage"]));
+    expect(flagsFor("contracts")).toEqual(expect.arrayContaining(["--flags-only"]));
+    expect(flagsFor("claim")).toEqual(expect.arrayContaining(["--message"]));
+    expect(flagsFor("release")).toEqual(expect.arrayContaining(["--message"]));
+    expect(flagsFor("copy")).toEqual(expect.arrayContaining(["--title", "--message"]));
+    expect(flagsFor("aggregate")).toEqual(expect.arrayContaining(["--group-by", "--count"]));
+    expect(flagsFor("calendar")).toEqual(expect.arrayContaining(["--from", "--to"]));
+    expect(flagsFor("context")).toEqual(expect.arrayContaining(["--depth"]));
+    expect(flagsFor("get")).toEqual(expect.arrayContaining(["--full"]));
+    expect(flagsFor("search")).toEqual(expect.arrayContaining(["--mode", "--semantic"]));
+    expect(flagsFor("history")).toEqual(expect.arrayContaining(["--limit", "--verify"]));
+    expect(flagsFor("history-redact")).toEqual(expect.arrayContaining(["--literal", "--replacement"]));
+    expect(flagsFor("history-compact")).toEqual(expect.arrayContaining(["--before", "--dry-run"]));
+    expect(flagsFor("schema")).toEqual(expect.arrayContaining(["--description", "--default-status"]));
+    expect(flagsFor("plan")).toEqual(expect.arrayContaining(["--step", "--materialize-type"]));
+    expect(flagsFor("activity")).toEqual(expect.arrayContaining(["--from", "--limit"]));
+    expect(flagsFor("restore")).toEqual(expect.arrayContaining(["--author", "--message"]));
+    expect(flagsFor("update")).toEqual(expect.arrayContaining(["--title", "--status"]));
+    expect(flagsFor("update-many")).toEqual(expect.arrayContaining(["--title", "--filter-status"]));
+    expect(flagsFor("close")).toEqual(expect.arrayContaining(["--duplicate-of", "--validate-close"]));
+    expect(flagsFor("start-task")).toEqual(expect.arrayContaining(["--message"]));
+    expect(flagsFor("pause-task")).toEqual(expect.arrayContaining(["--message"]));
+    expect(flagsFor("close-task")).toEqual(expect.arrayContaining(["--message"]));
     expect(flagsFor("unknown-command")).toEqual(expect.arrayContaining(["--json", "--pm-path"]));
   });
 

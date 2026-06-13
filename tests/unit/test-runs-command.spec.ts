@@ -12,6 +12,8 @@ import {
   runTestRunsWorker,
 } from "../../src/cli/commands/test-runs.js";
 import {
+  _testOnly as backgroundRunsTestOnly,
+  buildBackgroundTestRunFingerprint,
   getBackgroundTestRunStatus,
   listBackgroundTestRuns,
   readBackgroundTestRunRecord,
@@ -661,6 +663,333 @@ describe("background test run lifecycle", () => {
           stdout_excerpt: ["not json"],
         });
       });
+    });
+  });
+
+  it("stops a running worker on process signals and records resource heartbeats", async () => {
+    await withTempPmPath(async (context) => {
+      const cliEntry = path.join(context.tempRoot, "worker-signal-entry.cjs");
+      await writeFile(
+        cliEntry,
+        [
+          "process.on('SIGTERM', () => {});",
+          "setInterval(() => process.stderr.write('[pm test] linked-test 1/1 running elapsed_ms=15\\n'), 1);",
+          "setTimeout(() => {",
+          "  process.kill(process.ppid, 'SIGTERM');",
+          "  process.kill(process.ppid, 'SIGINT');",
+          "}, 5);",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      await withTemporaryEnv("PM_BACKGROUND_CLI_ENTRY", cliEntry, async () => {
+        await withTemporaryEnv("PM_BACKGROUND_RUN_FORCE_KILL_DELAY_MS", "10", async () => {
+          await withTemporaryEnv("PM_BACKGROUND_RUN_RESOURCE_INTERVAL_MS", "1", async () => {
+            const started = await startBackgroundTestRun({
+              pmRoot: context.pmPath,
+              globalPmRoot: context.globalPmPath,
+              kind: "test",
+              commandArgs: ["signal-stop"],
+              requestedBy: "unit",
+            });
+
+            const stopped = await runBackgroundTestRunWorker(context.pmPath, started.run.id, true);
+            expect(stopped.status).toBe("stopped");
+            expect(stopped.stop_requested_at).toBeDefined();
+            expect(stopped.progress).toMatchObject({
+              phase: "finished",
+              message: "Background run stopped.",
+              linked_test_index: 1,
+              linked_test_total: 1,
+              elapsed_ms: 15,
+            });
+            expect(stopped.resource?.recorded_at).toBeDefined();
+            await expect(readFile(getTestRunStderrPath(context.pmPath, started.run.id), "utf8")).resolves.toContain(
+              "linked-test 1/1 running",
+            );
+          });
+        });
+      });
+    });
+  });
+
+  it("covers background run result evaluation and log parsing helper branches", async () => {
+    const fingerprintA = buildBackgroundTestRunFingerprint("test", [" test ", "", "--", "spec.ts"], "/tmp/pm-a");
+    const fingerprintB = buildBackgroundTestRunFingerprint("test", ["test", "--", "spec.ts"], "/tmp/pm-a");
+    const fingerprintC = buildBackgroundTestRunFingerprint("test-all", ["test", "--", "spec.ts"], "/tmp/pm-a");
+    expect(fingerprintA).toMatch(/^[a-f0-9]{64}$/);
+    expect(fingerprintA).toBe(fingerprintB);
+    expect(fingerprintA).not.toBe(fingerprintC);
+
+    expect(backgroundRunsTestOnly.evaluateWorkerResult("test", null)).toMatchObject({
+      summary: { passed: 0, failed: 1, skipped: 0 },
+      parsedResult: null,
+    });
+    expect(
+      backgroundRunsTestOnly.evaluateWorkerResult("test", {
+        run_results: [null, "bad", { status: "failed" }, { status: "unknown" }],
+        fail_on_skipped_triggered: true,
+      }),
+    ).toMatchObject({
+      summary: { passed: 0, failed: 1, skipped: 1, fail_on_skipped_triggered: true },
+    });
+    expect(backgroundRunsTestOnly.evaluateWorkerResult("test-all", { totals: { passed: "1" } })).toMatchObject({
+      summary: { passed: 0, failed: 0, skipped: 0 },
+    });
+    expect(
+      backgroundRunsTestOnly.evaluateWorkerResult("test-all", {
+        totals: { items: 2, linked_tests: 3, passed: 1, failed: 0, skipped: 2 },
+        fail_on_skipped_triggered: true,
+      }),
+    ).toMatchObject({
+      summary: { items: 2, linked_tests: 3, passed: 1, failed: 0, skipped: 2, fail_on_skipped_triggered: true },
+    });
+
+    expect(backgroundRunsTestOnly.parseProgressLine("")).toBeNull();
+    expect(backgroundRunsTestOnly.parseProgressLine("plain stderr")).toBeNull();
+    expect(backgroundRunsTestOnly.parseProgressLine("[pm test] linked-test 2/5 end")).toMatchObject({
+      linked_test_index: 2,
+      linked_test_total: 5,
+      phase: "finished",
+    });
+    expect(backgroundRunsTestOnly.parseProgressLine("[pm test] linked-test bad/5 end")).toBeNull();
+    expect(backgroundRunsTestOnly.parseProgressLine("[pm test] linked-test 3/5 start elapsed_ms=120")).toMatchObject({
+      linked_test_index: 3,
+      linked_test_total: 5,
+      elapsed_ms: 120,
+      phase: "running",
+    });
+    expect(backgroundRunsTestOnly.splitLines("one\n\ntwo  \n")).toEqual(["one", "two"]);
+    expect(backgroundRunsTestOnly.tailLines("one\ntwo\n", 10)).toEqual(["one", "two"]);
+    expect(backgroundRunsTestOnly.tailLines("one\ntwo\nthree\n", 2)).toEqual(["two", "three"]);
+    expect(backgroundRunsTestOnly.tailLines("one\n", 0)).toEqual([]);
+    expect(backgroundRunsTestOnly.isPidRunning(undefined)).toBe(false);
+    expect(backgroundRunsTestOnly.isPidRunning(-1)).toBe(false);
+
+    await expect(backgroundRunsTestOnly.readLinuxRssBytes(-1)).resolves.toBeUndefined();
+    await expect(backgroundRunsTestOnly.readLinuxCpuSeconds(-1)).resolves.toEqual({});
+    await expect(backgroundRunsTestOnly.buildResourceSnapshot({ worker_pid: -1 } as never)).resolves.toBeUndefined();
+  });
+
+  it("truncates long command labels and reports healthy running records", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const longArgument = "segment".repeat(40);
+      const started = await startBackgroundTestRun({
+        pmRoot: pmPath,
+        globalPmRoot: pmPath,
+        kind: "test",
+        commandArgs: ["test", longArgument, "tail"],
+        requestedBy: "unit-author",
+      });
+      expect(started.run.command_label).toHaveLength(180);
+      expect(started.run.command_label.endsWith("...")).toBe(true);
+
+      await writeJsonFile(getTestRunRecordPath(pmPath, started.run.id), {
+        ...started.run,
+        status: "running",
+        worker_pid: process.pid,
+        child_pid: -1,
+        finished_at: undefined,
+        error: undefined,
+        progress: {
+          phase: "running",
+          message: "fresh heartbeat",
+          heartbeat_at: new Date().toISOString(),
+        },
+      });
+
+      const status = await getBackgroundTestRunStatus(pmPath, started.run.id);
+      expect(status.run.status).toBe("running");
+      expect(status.health.state).toBe("healthy");
+      expect(status.health.worker_alive).toBe(true);
+      expect(status.health.child_alive).toBe(false);
+      expect(status.health.heartbeat_lag_ms).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  it("marks abandoned running records failed and reports stale running health", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const started = await startBackgroundTestRun({
+        pmRoot: pmPath,
+        globalPmRoot: pmPath,
+        kind: "test",
+        commandArgs: ["test", "--", "tests/unit/example.spec.ts"],
+        requestedBy: "unit-author",
+      });
+      const staleHeartbeat = new Date(Date.now() - 60_000).toISOString();
+      await writeJsonFile(getTestRunRecordPath(pmPath, started.run.id), {
+        ...started.run,
+        status: "running",
+        worker_pid: -1,
+        child_pid: -1,
+        progress: {
+          phase: "running",
+          message: "still running",
+          heartbeat_at: staleHeartbeat,
+        },
+      });
+
+      const deadStatus = await getBackgroundTestRunStatus(pmPath, started.run.id);
+      expect(deadStatus.run.status).toBe("failed");
+      expect(deadStatus.run.error).toBe("Background test run worker exited before writing terminal status.");
+      expect(deadStatus.health.state).toBe("inactive");
+
+      const healthyPid = process.pid;
+      const running = {
+        ...deadStatus.run,
+        status: "running",
+        finished_at: undefined,
+        error: undefined,
+        worker_pid: healthyPid,
+        child_pid: healthyPid,
+        progress: {
+          phase: "running",
+          message: "still running",
+          heartbeat_at: staleHeartbeat,
+        },
+      };
+      await writeJsonFile(getTestRunRecordPath(pmPath, started.run.id), running);
+      await withTemporaryEnv("PM_BACKGROUND_RUN_HEARTBEAT_STALE_MS", "1", async () => {
+        const staleStatus = await getBackgroundTestRunStatus(pmPath, started.run.id);
+        expect(staleStatus.run.status).toBe("running");
+        expect(staleStatus.health.state).toBe("stale");
+        expect(staleStatus.health.worker_alive).toBe(true);
+        expect(staleStatus.health.child_alive).toBe(true);
+        expect(staleStatus.run.resource?.rss_bytes).toBeGreaterThan(0);
+      });
+    });
+  });
+
+  it("marks fresh running records failed when both worker processes are gone", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const started = await startBackgroundTestRun({
+        pmRoot: pmPath,
+        globalPmRoot: pmPath,
+        kind: "test",
+        commandArgs: ["test", "--", "tests/unit/example.spec.ts"],
+        requestedBy: "unit-author",
+      });
+      await writeJsonFile(getTestRunRecordPath(pmPath, started.run.id), {
+        ...started.run,
+        status: "running",
+        worker_pid: -1,
+        child_pid: -1,
+        finished_at: undefined,
+        error: undefined,
+        progress: {
+          phase: "running",
+          message: "fresh heartbeat",
+          heartbeat_at: new Date().toISOString(),
+        },
+      });
+
+      const status = await getBackgroundTestRunStatus(pmPath, started.run.id);
+      expect(status.run.status).toBe("failed");
+      expect(status.run.error).toBe("Background test run worker exited before writing terminal status.");
+      expect(status.health.worker_alive).toBe(false);
+      expect(status.health.child_alive).toBe(false);
+    });
+  });
+
+  it("covers pid liveness transitions for stale refresh and active duplicate checks", async () => {
+    await withTempPmPath(async ({ pmPath, globalPmPath }) => {
+      const finished = await startBackgroundTestRun({
+        pmRoot: pmPath,
+        globalPmRoot: globalPmPath,
+        kind: "test",
+        commandArgs: ["test", "already-finished"],
+        requestedBy: "unit-author",
+      });
+      const finishedRunning = {
+        ...finished.run,
+        status: "running",
+        worker_pid: -1,
+        finished_at: "2026-01-01T00:00:00.000Z",
+      } as const;
+      await expect(backgroundRunsTestOnly.refreshRunIfStale(pmPath, finishedRunning)).resolves.toMatchObject({
+        status: "running",
+        finished_at: "2026-01-01T00:00:00.000Z",
+      });
+
+      const active = await startBackgroundTestRun({
+        pmRoot: pmPath,
+        globalPmRoot: globalPmPath,
+        kind: "test",
+        commandArgs: ["test", "pid-transition"],
+        requestedBy: "unit-author",
+      });
+      await writeJsonFile(getTestRunRecordPath(pmPath, active.run.id), {
+        ...active.run,
+        status: "running",
+        worker_pid: 123_123_123,
+        child_pid: -1,
+        finished_at: undefined,
+        progress: {
+          phase: "running",
+          message: "fresh heartbeat",
+          heartbeat_at: new Date().toISOString(),
+        },
+      });
+
+      const killSpy = vi.spyOn(process, "kill");
+      killSpy
+        .mockImplementationOnce(() => true)
+        .mockImplementationOnce(() => {
+          const error = new Error("gone") as Error & { code?: string };
+          error.code = "ESRCH";
+          throw error;
+        });
+      const replacement = await startBackgroundTestRun({
+        pmRoot: pmPath,
+        globalPmRoot: globalPmPath,
+        kind: "test",
+        commandArgs: ["test", "pid-transition"],
+        requestedBy: "unit-author",
+      });
+      expect(replacement.started).toBe(true);
+      expect(replacement.run.id).not.toBe(active.run.id);
+      killSpy.mockRestore();
+
+      const statusRun = await startBackgroundTestRun({
+        pmRoot: pmPath,
+        globalPmRoot: globalPmPath,
+        kind: "test",
+        commandArgs: ["test", "dies-between-refresh-and-status"],
+        requestedBy: "unit-author",
+      });
+      await writeJsonFile(getTestRunRecordPath(pmPath, statusRun.run.id), {
+        ...statusRun.run,
+        status: "running",
+        worker_pid: 456_456_456,
+        child_pid: -1,
+        finished_at: undefined,
+        error: undefined,
+        progress: {
+          phase: "running",
+          message: "fresh heartbeat",
+          heartbeat_at: new Date().toISOString(),
+        },
+      });
+      const transitionSpy = vi.spyOn(process, "kill");
+      transitionSpy
+        .mockImplementationOnce(() => true)
+        .mockImplementationOnce(() => {
+          const error = new Error("worker disappeared") as Error & { code?: string };
+          error.code = "ESRCH";
+          throw error;
+        })
+        .mockImplementationOnce(() => {
+          const error = new Error("child disappeared") as Error & { code?: string };
+          error.code = "ESRCH";
+          throw error;
+        });
+      const status = await getBackgroundTestRunStatus(pmPath, statusRun.run.id);
+      expect(status.run.status).toBe("failed");
+      expect(status.run.error).toBe("Background run process exited unexpectedly.");
+      expect(status.health.worker_alive).toBe(false);
+      expect(status.health.child_alive).toBe(false);
+      transitionSpy.mockRestore();
     });
   });
 });
