@@ -876,6 +876,22 @@ describe("CLI bootstrap entrypoints", () => {
         });
       });
       expect(displayStderr.trim()).toBe("Unknown failure");
+
+      const reportingFailureStderr = await captureStderrAsync(async () => {
+        await _testOnly.handleGenericRunPmCliError({
+          error: new Error("visible before telemetry"),
+          attemptedCommand: "boom",
+          bootstrapGlobal: { json: false } as never,
+          emitTelemetryCommandError: vi.fn(async () => {
+            throw new Error("telemetry stalled");
+          }),
+        });
+      });
+      expect(reportingFailureStderr).toContain("visible before telemetry");
+      expect(reportingFailureStderr).toContain("Failed to report error: telemetry stalled");
+      expect(reportingFailureStderr.indexOf("visible before telemetry")).toBeLessThan(
+        reportingFailureStderr.indexOf("Failed to report error: telemetry stalled"),
+      );
     } finally {
       process.exitCode = previousExitCode;
     }
