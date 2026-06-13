@@ -129,7 +129,10 @@ pm release <item-id>
 | Local docs routing | `pm install guide-shell --project`, then `pm guide <topic>` |
 | Compact mutation echo | `pm --no-changed-fields create "..."` (drops the redundant `changed_fields` array, keeps `changed_field_count`) |
 | Minimal mutation echo | `pm --id-only create "..."` (prints only id and status for single-item mutations) |
-| Duplicate close | `pm close <duplicate> --duplicate-of <canonical>` |
+| Duplicate close | `pm close <duplicate> --duplicate-of <canonical>` (or `-d <canonical>`) |
+| Long body from a file | `pm create <Type> "<title>" --body-file ./spec.md` (also on `pm update`; mutually exclusive with `--body`) |
+| Close with short flags | `pm close <id> -r "<reason>"` / `-m "<history msg>"` / `-d <canonical>` |
+| Close via resolution only | `pm close <id> --resolution "<summary>"` (used as the close reason when one is required) |
 
 Default TOON output is preferred for model-readable loops. Use `--json` only when strict parsing is needed.
 

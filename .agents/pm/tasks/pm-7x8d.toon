@@ -2,10 +2,14 @@ id: pm-7x8d
 title: "pm close: when require_close_reason is on, accept --resolution text as the close reason instead of hard-blocking"
 description: "Repro: with governance.require_close_reason enabled (sandbox default), 'pm close <id> --resolution \"Fixed empty-password guard\" --expected ... --actual ...' fails with 'Close reason text is required'. The agent already supplied a complete closure narrative; per the never-block philosophy the resolution text is a perfectly good one-line closing summary. Suggestion: when --reason/positional text is absent but --resolution is provided, derive the close reason from the resolution (and note the derivation in output), keeping the hard error only when neither is present. The current error message is actionable (examples included) so this is polish, not a dead-end."
 type: Task
-status: open
+status: closed
 priority: 3
 tags[4]: agent-ux,cli,dogfood-2026-06-12,never-block
 created_at: "2026-06-12T16:19:39.149Z"
-updated_at: "2026-06-12T16:19:39.149Z"
+updated_at: "2026-06-13T21:20:49.383Z"
 author: maintainer-agent
+resolution: "pm close now derives the close reason from the next-best signal when require_close_reason is on and no positional/--reason text is given. Precedence: explicit reason > --duplicate-of ('Duplicate of <id>') > --resolution summary. Resolution still persists to metadata.resolution. Unit tests cover all three precedence branches + the still-blocks case."
+comments[1]{created_at,author,text}:
+  "2026-06-13T20:59:26.770Z",claude-code-agent,"Plan: in runClose, extend effectiveCloseReasonText fallback chain under require_close_reason — precedence: explicit positional/--reason > --duplicate-of ('Duplicate of X') > --resolution text. Resolution still also writes metadata.resolution. Fixes hard-block when agent supplies only --resolution."
+close_reason: "pm close now derives the close reason from the next-best signal when require_close_reason is on and no positional/--reason text is given. Precedence: explicit reason > --duplicate-of ('Duplicate of <id>') > --resolution summary. Resolution still persists to metadata.resolution. Unit tests cover all three precedence branches + the still-blocks case."
 body: ""

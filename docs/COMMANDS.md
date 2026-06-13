@@ -178,6 +178,15 @@ pm create \
   --message "Create restore replay issue"
 ```
 
+For long markdown bodies (multi-paragraph specs with code blocks or tables), load the body from a file with `--body-file <path>` on both `pm create` and `pm update` instead of escaping a huge inline `--body` string or issuing a second `pm append`:
+
+```bash
+pm create Feature "Search relevance overhaul" --body-file ./specs/search-relevance.md
+pm update pm-a1b2 --body-file ./specs/updated-spec.md
+```
+
+`--body-file` is mutually exclusive with `--body` (passing both errors). Use `--body -` to read the body from piped stdin.
+
 Repeated singular/plural list flags now accumulate, so `--tag a --tag b` is equivalent to `--tags a,b` (the same holds for `--status`, `--ids`, and `--fields` on read commands). Earlier versions silently kept only the last value. `list`/`search` also accept `--tags` as a never-block alias for the canonical read filter `--tag`.
 
 `--tags` REPLACES the whole tag list. To edit tags without restating the full set, use the additive/subtractive flags on `create`/`update`/`update-many`:
@@ -216,6 +225,8 @@ pm --id-only create "Probe item"             # output is only id + status
 Use `pm create --allow-missing-parent --parent <id>` only for deliberate imports or staged backlog reconstruction. Normal `pm create --parent <id>` fails fast when the parent id cannot be resolved.
 
 Use `pm close <duplicate-id> --duplicate-of <canonical-id>` to close duplicates. The command validates the canonical target exists, records `duplicate_of`, auto-fills the close reason as `Duplicate of <canonical-id>` when no reason text was supplied, and fills the resolution/expected/actual closure fields when they were not provided explicitly.
+
+`pm close` accepts short aliases for the common flags: `-m` (`--message`), `-r` (`--reason`), and `-d` (`--duplicate-of`). When `governance.require_close_reason` is enabled and no positional/`--reason` text is given, the close reason is derived from the next-best signal in priority order — explicit reason text, then `--duplicate-of` (`Duplicate of <id>`), then `--resolution` — so a single `pm close <id> --resolution "<summary>"` no longer hard-blocks. The resolution is still written to the item's `resolution` field.
 
 Over MCP the mutation tools (`pm_create`/`pm_update`/`pm_close`/`pm_run` append/update-many) are compact by default; pass `fullChangedFields=true` to restore the full `changed_fields` delta, or `idOnly=true` for single-item id/status output.
 

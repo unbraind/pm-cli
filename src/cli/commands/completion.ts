@@ -680,6 +680,7 @@ ${zshListRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--tags[Comma-separated tags]:tags' \\
             '--add-tags[Add tags additively without replacing existing]:tags' \\
             '(-b --body)'{-b,--body}'[Item body]:body' \\
+            '--body-file[Load the item body from a file]:body_file:_files' \\
             '--deadline[Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)]:deadline' \\
             '--estimate[Estimated minutes]:minutes' \\
             '--acceptance-criteria[Acceptance criteria]:criteria' \\
@@ -719,6 +720,7 @@ ${zshCreateRuntimeFieldFlags}            '--json[Output JSON]' \\
             '(-t --title)'{-t,--title}'[Item title]:title' \\
             '(-d --description)'{-d,--description}'[Item description]:description' \\
             '(-b --body)'{-b,--body}'[Item body]:body' \\
+            '--body-file[Load the item body from a file]:body_file:_files' \\
             '(-s --status)'{-s,--status}'[Item status]:(${statusChoices})' \\
             '--close-reason[Set close reason]:close_reason' \\
             '(-p --priority)'{-p,--priority}'[Priority (0-4)]:(0 1 2 3 4)' \\
@@ -1637,6 +1639,7 @@ complete -c pm -n '__fish_seen_subcommand_from create' -s p -l priority         
 complete -c pm -n '__fish_seen_subcommand_from create' -l tags                    -d 'Comma-separated tags' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l add-tags                -d 'Add tags additively without replacing existing' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -s b -l body               -d 'Item body' -r
+complete -c pm -n '__fish_seen_subcommand_from create' -l body-file               -d 'Load the item body from a file' -r -F
 complete -c pm -n '__fish_seen_subcommand_from create' -l deadline                -d 'Deadline (ISO/date string or relative +6h/+1d/+2w/+6m)' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l estimate                -d 'Estimated minutes' -r
 complete -c pm -n '__fish_seen_subcommand_from create' -l acceptance-criteria     -d 'Acceptance criteria' -r
@@ -1669,6 +1672,7 @@ complete -c pm -n '__fish_seen_subcommand_from copy' -l force   -d 'Force owners
 complete -c pm -n '__fish_seen_subcommand_from update' -s t -l title              -d 'Item title' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s d -l description        -d 'Item description' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s b -l body               -d 'Item body' -r
+complete -c pm -n '__fish_seen_subcommand_from update' -l body-file               -d 'Load the item body from a file' -r -F
 complete -c pm -n '__fish_seen_subcommand_from update' -s s -l status             -d 'Item status' -r -a '${statusChoices}'
 complete -c pm -n '__fish_seen_subcommand_from update' -l close-reason            -d 'Set close reason' -r
 complete -c pm -n '__fish_seen_subcommand_from update' -s p -l priority           -d 'Priority (0-4)' -r -a '0 1 2 3 4'

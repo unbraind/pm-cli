@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026.6.13-1 - 2026-06-13
+
+### Fixed
+
+- Prepend merge promotes a stale Unreleased section into the released version instead of duplicating it \(GH \#47\) ([pmc-8ssd](https://github.com/unbraind/pm-changelog/blob/main/.agents/pm/issues/pmc-8ssd.toon))
+
 ## 2026.6.8 - 2026-06-08
 
 ### Fixed
