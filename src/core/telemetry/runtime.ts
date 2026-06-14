@@ -1464,8 +1464,19 @@ async function flushPendingOtelSpans(globalPmRoot: string, retentionDays: number
  * foreground command's critical path.
  */
 async function flushTelemetryArtifacts(globalPmRoot: string, endpoint: string, retentionDays: number): Promise<void> {
-  await flushQueue(globalPmRoot, endpoint, retentionDays);
-  await flushPendingOtelSpans(globalPmRoot, retentionDays);
+  // Isolate the two artifacts: a failure flushing the event queue (e.g. a corrupt
+  // queue file) must not strand the OTLP span flush in the same pass, and vice
+  // versa. Both are best effort and retried on the next dispatch.
+  try {
+    await flushQueue(globalPmRoot, endpoint, retentionDays);
+  } catch {
+    // Best effort; event-queue flush is retried on the next dispatch.
+  }
+  try {
+    await flushPendingOtelSpans(globalPmRoot, retentionDays);
+  } catch {
+    // Best effort; span flush is retried on the next dispatch.
+  }
 }
 
 async function cleanupTelemetryQueueTempOrphans(
