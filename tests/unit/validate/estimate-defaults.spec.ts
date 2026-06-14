@@ -59,6 +59,14 @@ describe("resolveEstimateDefaultMinutes", () => {
     expect(resolveEstimateDefaultMinutes("Spike", { Spike: 240 })).toBe(240);
   });
 
+  it("reuses the cached lowercased lookup for a repeated override object", () => {
+    const overrides = { Spike: 240, Bug: 90 };
+    // Second call with the SAME object reference hits the WeakMap cache.
+    expect(resolveEstimateDefaultMinutes("Spike", overrides)).toBe(240);
+    expect(resolveEstimateDefaultMinutes("Bug", overrides)).toBe(90);
+    expect(resolveEstimateDefaultMinutes("spike", overrides)).toBe(240);
+  });
+
   it("ignores a non-positive override and falls through to the built-in", () => {
     expect(resolveEstimateDefaultMinutes("Bug", { Bug: 0 })).toBe(60);
     expect(resolveEstimateDefaultMinutes("Bug", { Bug: -5 })).toBe(60);

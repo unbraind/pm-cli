@@ -55,6 +55,24 @@ function toLowercasedLookup(source: Readonly<Record<string, number>>): Map<strin
 const BUILTIN_LOWERCASED_LOOKUP = toLowercasedLookup(DEFAULT_ESTIMATE_MINUTES_BY_TYPE);
 
 /**
+ * Cache lowercased override lookups keyed on the override object reference so a
+ * backfill that resolves once per item does not rebuild the same Map each call.
+ * A WeakMap keeps this allocation-free for callers that reuse one normalized
+ * settings map across the whole run.
+ */
+const OVERRIDE_LOOKUP_CACHE = new WeakMap<Readonly<Record<string, number>>, Map<string, number>>();
+
+function lowercasedOverrideLookup(overrides: Readonly<Record<string, number>>): Map<string, number> {
+  const cached = OVERRIDE_LOOKUP_CACHE.get(overrides);
+  if (cached) {
+    return cached;
+  }
+  const lookup = toLowercasedLookup(overrides);
+  OVERRIDE_LOOKUP_CACHE.set(overrides, lookup);
+  return lookup;
+}
+
+/**
  * Resolve the default estimated-minutes for an item type.
  * Precedence: overrides (case-insensitive key match) > DEFAULT_ESTIMATE_MINUTES_BY_TYPE
  * (case-insensitive) > FALLBACK_ESTIMATE_MINUTES.
@@ -73,7 +91,7 @@ export function resolveEstimateDefaultMinutes(
   }
 
   if (overrides) {
-    const overrideValue = toLowercasedLookup(overrides).get(key);
+    const overrideValue = lowercasedOverrideLookup(overrides).get(key);
     if (isHonoredMinutes(overrideValue)) {
       return Math.floor(overrideValue);
     }
