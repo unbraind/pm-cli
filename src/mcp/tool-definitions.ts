@@ -114,7 +114,11 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "pm_context",
-    description: "Return the agent-oriented project context snapshot.",
+    description:
+      "Return the agent-oriented project context snapshot. " +
+      "Pass options.depth=brief|standard|deep|full (full = every section with no per-section row cap), " +
+      "options.parent='<id>' to scope the snapshot to one item's subtree (the item plus all descendants), " +
+      "or options.section=['hierarchy','progress',...] to pick sections.",
     inputSchema: objectSchema({ options: { type: "object" } }),
   },
   {

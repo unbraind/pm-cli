@@ -84,6 +84,7 @@ export const CONTEXT_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasCont
   { target: "assigneeFilter", keys: ["assigneeFilter", "assignee_filter"] },
   { target: "sprint", keys: ["sprint"] },
   { target: "release", keys: ["release"] },
+  { target: "parent", keys: ["parent"] },
   { target: "limit", keys: ["limit"] },
   { target: "format", keys: ["format"] },
   { target: "depth", keys: ["depth"] },

@@ -204,6 +204,7 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--filter-metadata-missing" },
   { flag: "--limit" },
   { flag: "--offset" },
+  { flag: "--no-truncate", aliases: ["--all"] },
   { flag: "--compact" },
   { flag: "--brief" },
   { flag: "--full" },
@@ -1199,6 +1200,7 @@ export const CONTEXT_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--assignee_filter" },
   { flag: "--sprint" },
   { flag: "--release" },
+  { flag: "--parent" },
   { flag: "--limit" },
   { flag: "--format" },
   { flag: "--depth" },
@@ -1579,6 +1581,7 @@ const ACTIVITY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_LIST_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
   "includeBody",
+  "noTruncate",
   "compact",
   "brief",
   "full",

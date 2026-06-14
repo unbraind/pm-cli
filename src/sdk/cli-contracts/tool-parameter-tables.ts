@@ -135,6 +135,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   titleExact: { type: "boolean" },
   phraseExact: { type: "boolean" },
   includeBody: { type: "boolean" },
+  noTruncate: { type: "boolean" },
   tag: { type: "string" },
   deadlineBefore: { type: "string" },
   deadlineAfter: { type: "string" },
@@ -307,7 +308,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   completion: { type: "boolean" },
   threshold: { anyOf: [{ type: "string" }, { type: "number" }] },
   format: { type: "string" },
-  depth: { type: "string", enum: ["brief", "standard", "deep"] },
+  depth: { type: "string", enum: ["brief", "standard", "deep", "full"] },
   section: { type: "array", items: { type: "string", enum: ["hierarchy", "activity", "progress", "blockers", "files", "workload", "staleness", "tests"] } },
   activityLimit: { anyOf: [{ type: "string" }, { type: "number" }] },
   staleThreshold: { type: "string" },
@@ -967,6 +968,9 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   includeBody: {
     description: "When true for list-family actions, include item body text in projected rows.",
   },
+  noTruncate: {
+    description: "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
+  },
   compact: {
     description: "Render compact projection output for search and list-family actions.",
   },
@@ -1052,8 +1056,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
     description: "Alias for runtimeOnly in contracts action payloads.",
   },
   depth: {
-    description: "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections).",
-    examples: ["brief", "standard", "deep"],
+    description: "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections, full=every section with no per-section row cap).",
+    examples: ["brief", "standard", "deep", "full"],
   },
   section: {
     description: "Repeatable section selector for context; overrides --depth when provided.",

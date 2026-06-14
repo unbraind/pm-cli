@@ -1599,6 +1599,9 @@
           "flag": "--release"
         },
         {
+          "flag": "--parent"
+        },
+        {
           "flag": "--limit"
         },
         {
@@ -1983,6 +1986,9 @@
         },
         {
           "flag": "--release"
+        },
+        {
+          "flag": "--parent"
         },
         {
           "flag": "--limit"
@@ -2787,6 +2793,12 @@
           "flag": "--offset"
         },
         {
+          "aliases": [
+            "--all"
+          ],
+          "flag": "--no-truncate"
+        },
+        {
           "flag": "--compact"
         },
         {
@@ -2902,6 +2914,12 @@
         },
         {
           "flag": "--offset"
+        },
+        {
+          "aliases": [
+            "--all"
+          ],
+          "flag": "--no-truncate"
         },
         {
           "flag": "--compact"
@@ -3021,6 +3039,12 @@
           "flag": "--offset"
         },
         {
+          "aliases": [
+            "--all"
+          ],
+          "flag": "--no-truncate"
+        },
+        {
           "flag": "--compact"
         },
         {
@@ -3136,6 +3160,12 @@
         },
         {
           "flag": "--offset"
+        },
+        {
+          "aliases": [
+            "--all"
+          ],
+          "flag": "--no-truncate"
         },
         {
           "flag": "--compact"
@@ -3255,6 +3285,12 @@
           "flag": "--offset"
         },
         {
+          "aliases": [
+            "--all"
+          ],
+          "flag": "--no-truncate"
+        },
+        {
           "flag": "--compact"
         },
         {
@@ -3370,6 +3406,12 @@
         },
         {
           "flag": "--offset"
+        },
+        {
+          "aliases": [
+            "--all"
+          ],
+          "flag": "--no-truncate"
         },
         {
           "flag": "--compact"
@@ -3489,6 +3531,12 @@
           "flag": "--offset"
         },
         {
+          "aliases": [
+            "--all"
+          ],
+          "flag": "--no-truncate"
+        },
+        {
           "flag": "--compact"
         },
         {
@@ -3604,6 +3652,12 @@
         },
         {
           "flag": "--offset"
+        },
+        {
+          "aliases": [
+            "--all"
+          ],
+          "flag": "--no-truncate"
         },
         {
           "flag": "--compact"
@@ -5843,6 +5897,12 @@
       },
       {
         "keys": [
+          "parent"
+        ],
+        "target": "parent"
+      },
+      {
+        "keys": [
           "limit"
         ],
         "target": "limit"
@@ -7524,7 +7584,7 @@
       ]
     },
     {
-      "description": "Return the agent-oriented project context snapshot.",
+      "description": "Return the agent-oriented project context snapshot. Pass options.depth=brief|standard|deep|full (full = every section with no per-section row cap), options.parent='<id>' to scope the snapshot to one item's subtree (the item plus all descendants), or options.section=['hierarchy','progress',...] to pick sections.",
       "input_schema": {
         "additionalProperties": true,
         "properties": {
@@ -12320,6 +12380,10 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "noTruncate": {
+            "description": "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
+            "type": "boolean"
+          },
           "offset": {
             "anyOf": [
               {
@@ -12599,6 +12663,10 @@
           },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTruncate": {
+            "description": "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
             "type": "boolean"
           },
           "offset": {
@@ -12882,6 +12950,10 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "noTruncate": {
+            "description": "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
+            "type": "boolean"
+          },
           "offset": {
             "anyOf": [
               {
@@ -13161,6 +13233,10 @@
           },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTruncate": {
+            "description": "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
             "type": "boolean"
           },
           "offset": {
@@ -13444,6 +13520,10 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "noTruncate": {
+            "description": "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
+            "type": "boolean"
+          },
           "offset": {
             "anyOf": [
               {
@@ -13723,6 +13803,10 @@
           },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTruncate": {
+            "description": "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
             "type": "boolean"
           },
           "offset": {
@@ -14006,6 +14090,10 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "noTruncate": {
+            "description": "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
+            "type": "boolean"
+          },
           "offset": {
             "anyOf": [
               {
@@ -14285,6 +14373,10 @@
           },
           "noPager": {
             "description": "Disable pager integration for help and long output.",
+            "type": "boolean"
+          },
+          "noTruncate": {
+            "description": "When true for list-family actions, return every matched row, overriding any limit (surfaces total when rows were dropped).",
             "type": "boolean"
           },
           "offset": {
@@ -14680,16 +14772,18 @@
             "type": "string"
           },
           "depth": {
-            "description": "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections).",
+            "description": "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections, full=every section with no per-section row cap).",
             "enum": [
               "brief",
               "standard",
-              "deep"
+              "deep",
+              "full"
             ],
             "examples": [
               "brief",
               "standard",
-              "deep"
+              "deep",
+              "full"
             ],
             "type": "string"
           },
@@ -14724,6 +14818,13 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "parent": {
+            "description": "Parent item ID filter for hierarchical list queries.",
+            "examples": [
+              "pm-epic01"
+            ],
+            "type": "string"
           },
           "past": {
             "description": "Past.",
@@ -14891,16 +14992,18 @@
             "type": "string"
           },
           "depth": {
-            "description": "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections).",
+            "description": "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections, full=every section with no per-section row cap).",
             "enum": [
               "brief",
               "standard",
-              "deep"
+              "deep",
+              "full"
             ],
             "examples": [
               "brief",
               "standard",
-              "deep"
+              "deep",
+              "full"
             ],
             "type": "string"
           },
@@ -14935,6 +15038,13 @@
           "noPager": {
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
+          },
+          "parent": {
+            "description": "Parent item ID filter for hierarchical list queries.",
+            "examples": [
+              "pm-epic01"
+            ],
+            "type": "string"
           },
           "past": {
             "description": "Past.",
@@ -15063,16 +15173,18 @@
             "description": "Tool action to execute."
           },
           "depth": {
-            "description": "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections).",
+            "description": "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections, full=every section with no per-section row cap).",
             "enum": [
               "brief",
               "standard",
-              "deep"
+              "deep",
+              "full"
             ],
             "examples": [
               "brief",
               "standard",
-              "deep"
+              "deep",
+              "full"
             ],
             "type": "string"
           },
@@ -18017,16 +18129,18 @@
             "type": "string"
           },
           "depth": {
-            "description": "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections).",
+            "description": "Context depth level controlling how many sections are included (brief=focus+agenda, standard=+hierarchy/activity/progress/workload, deep=all sections, full=every section with no per-section row cap).",
             "enum": [
               "brief",
               "standard",
-              "deep"
+              "deep",
+              "full"
             ],
             "examples": [
               "brief",
               "standard",
-              "deep"
+              "deep",
+              "full"
             ],
             "type": "string"
           },

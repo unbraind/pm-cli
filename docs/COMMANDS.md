@@ -115,6 +115,21 @@ pm search "reminder validation" --status open --limit 10
 
 `list`/`search` full and fields projections echo full filter metadata. Compact mode emits only active filters (plus runtime schema filters when present) and omits the default projection/sorting/now trailer keys for lower token cost.
 
+### Full results, totals, and bodies
+
+`pm list*` returns every matched row when neither `--limit` nor `--offset` is set. When a `--limit`/`--offset` *does* drop rows, the result adds a top-level `total` (the pre-pagination match count) so an agent knows how many remain. Pass `--no-truncate` (alias `--all`) to force the entire matched set and override any `--limit` in one call — the canonical "give me everything" flag for large-corpus audits:
+
+```bash
+pm list-all --no-truncate --brief          # every matched row, ignoring any --limit
+pm list-open --limit 20 --json             # result.total reports the full count when truncated
+```
+
+JSON output is compact by default (id/status/type/title) for token efficiency. To pull item bodies in bulk in a single call — instead of one `pm get` per item — add `--include-body`, which expands each row to the full field set plus `body`:
+
+```bash
+pm list-open --json --include-body         # full fields + body for every returned row
+```
+
 ### Missing-metadata filters
 
 Every `list*` command also accepts metadata-presence filters for governance backfill: `--filter-ac-missing` (no `acceptance_criteria`), `--filter-estimates-missing` (no `estimated_minutes`; singular `--filter-estimate-missing` is an alias), `--filter-resolution-missing` (terminal items with no `resolution`), and `--filter-metadata-missing` (the union — missing *any* of those). Specific flags AND together; combine them with any other filter. They surface in the result's `filters` echo (`filter_ac_missing` etc.).
@@ -355,7 +370,15 @@ pm calendar --view week --date today --full-period
 pm calendar --from today --to +7d --include deadlines,reminders,events
 pm context --from today --to +7d --limit 10
 pm context --section recently_created --section unparented --limit 10
+pm context --depth full                  # every section, no per-section row cap
+pm context --parent pm-epic1 --depth deep # scope the snapshot to one item's subtree
 ```
+
+`pm context --depth full` returns the comprehensive snapshot: every known section
+with no per-section row cap (overridable with an explicit `--limit`). `pm context
+--parent <id>` scopes the focus items, hierarchy, agenda, and all derived sections
+to that item plus its transitive descendants — the "what is the status of this
+epic?" view for large trackers.
 
 `calendar` defaults to markdown for human and agent readability. Other commands default to TOON unless configured otherwise.
 For `--include events` without explicit `--to`, `--recurrence-lookahead-days`, or `--occurrence-limit`, recurring expansion is intentionally capped to a bounded default window and emits a warning with retry hints for broader windows.

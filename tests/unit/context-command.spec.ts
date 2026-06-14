@@ -27,6 +27,8 @@ function createContextItem(
     assignee?: string;
     deadline?: string;
     order?: string;
+    parent?: string;
+    blockedBy?: string;
     reminders?: string[];
     events?: string[];
   },
@@ -78,6 +80,12 @@ function createContextItem(
   if (options.order !== undefined) {
     args.push("--order", options.order);
   }
+  if (options.parent !== undefined) {
+    args.push("--parent", options.parent);
+  }
+  if (options.blockedBy !== undefined) {
+    args.push("--blocked-by", options.blockedBy);
+  }
   for (const reminder of options.reminders ?? []) {
     args.push("--reminder", reminder);
   }
@@ -94,7 +102,13 @@ describe("context command module", () => {
     const settings = SETTINGS_DEFAULTS.context;
     const statusRegistry = resolveRuntimeStatusRegistry(SETTINGS_DEFAULTS.schema);
 
-    expect(contextInternals.parseContextLimit(undefined)).toBe(10);
+    expect(contextInternals.parseContextLimit(undefined, "standard")).toBe(10);
+    // --depth full removes the default per-section cap when no explicit --limit is set.
+    expect(contextInternals.parseContextLimit(undefined, "full")).toBe(Number.MAX_SAFE_INTEGER);
+    expect(contextInternals.parseContextLimit("5", "full")).toBe(5);
+    expect(contextInternals.parseContextParent(undefined)).toBeUndefined();
+    expect(contextInternals.parseContextParent("  pm-epic  ")).toBe("pm-epic");
+    expect(() => contextInternals.parseContextParent("   ")).toThrow(PmCliError);
     expect(contextInternals.parseActivityLimit(undefined, settings)).toBe(settings.activity_limit);
     expect(contextInternals.parseActivityLimit("3", settings)).toBe(3);
     expect(contextInternals.parseStaleThresholdDays(undefined, settings)).toBe(settings.stale_threshold_days);
@@ -243,6 +257,17 @@ describe("context command module", () => {
       "pm-blocked",
       "pm-closed",
     ]);
+
+    // collectSubtreeIds: anchor + every transitive descendant, case-insensitive anchor match.
+    const subtree = contextInternals.collectSubtreeIds(allItems, "PM-FEATURE");
+    expect(subtree.found).toBe(true);
+    expect([...subtree.ids].sort()).toEqual(["pm-blocked", "pm-closed", "pm-feature", "pm-open"]);
+    const leafSubtree = contextInternals.collectSubtreeIds(allItems, "pm-open");
+    expect(leafSubtree.found).toBe(true);
+    expect([...leafSubtree.ids]).toEqual(["pm-open"]);
+    const missingSubtree = contextInternals.collectSubtreeIds(allItems, "pm-nope");
+    expect(missingSubtree.found).toBe(false);
+    expect(missingSubtree.ids.size).toBe(0);
 
     const progress = contextInternals.buildProgress(allItems, activeItems, statusRegistry, 5);
     expect(progress[0]).toMatchObject({
@@ -529,6 +554,7 @@ describe("context command module", () => {
     expect(parseContextDepth("standard", settings)).toBe("standard");
     expect(parseContextDepth("  Deep  ", settings)).toBe("deep");
     expect(parseContextDepth("brief", settings)).toBe("brief");
+    expect(parseContextDepth("full", settings)).toBe("full");
     expect(() => parseContextDepth("invalid", settings)).toThrow(PmCliError);
 
     const customSettings = { ...settings, default_depth: "deep" as const };
@@ -547,6 +573,13 @@ describe("context command module", () => {
       "unparented",
       "workload",
     ]);
+    // full ignores per-section settings toggles and returns every known section.
+    const fullSections = parseContextSections(undefined, "full", {
+      ...settings,
+      sections: { ...settings.sections, hierarchy: false },
+    });
+    expect(fullSections).toContain("hierarchy");
+    expect(fullSections).toContain("tests");
     const deepSections = parseContextSections(undefined, "deep", settings);
     expect(deepSections).toContain("hierarchy");
     expect(deepSections).toContain("blockers");
@@ -1006,5 +1039,70 @@ describe("context command module", () => {
     expect(markdown).toContain("- 2026-06-10 pm-compact");
     expect(markdown).toContain("- unknown pm-impossible");
     expect(markdown).toContain("- unknown pm-legacy");
+  });
+
+  it("--depth full surfaces every section without the default per-section cap", async () => {
+    await withTempPmPath(async (context) => {
+      for (let index = 0; index < 12; index += 1) {
+        createContextItem(context, { title: `Full task ${index}`, type: "Task", status: "open" });
+      }
+      const result = await runContext({ depth: "full" }, { path: context.pmPath });
+      expect(result.depth).toBe("full");
+      // full = every known section, not the standard/deep subset.
+      expect(result.sections_included).toEqual(expect.arrayContaining(["hierarchy", "blockers", "files", "tests"]));
+      // No per-section cap: all 12 low-level items appear instead of the default 10.
+      expect(result.low_level.length).toBe(12);
+      expect(result.filters.limit).toBeNull();
+    });
+  });
+
+  it("--parent scopes the snapshot to one item's subtree and rejects unknown anchors", async () => {
+    await withTempPmPath(async (context) => {
+      const epicId = createContextItem(context, { title: "Scoped epic", type: "Epic", status: "open" });
+      const childId = createContextItem(context, { title: "Scoped child", type: "Task", status: "open", parent: epicId });
+      createContextItem(context, { title: "Outside task", type: "Task", status: "open" });
+
+      const scoped = await runContext({ parent: epicId, depth: "deep" }, { path: context.pmPath });
+      expect(scoped.filters.parent).toBe(epicId);
+      const scopedIds = [...scoped.high_level, ...scoped.low_level].map((item) => item.id).sort();
+      expect(scopedIds).toEqual([childId, epicId].sort());
+      expect(scoped.summary.total_items).toBe(2);
+
+      const markdown = renderContextMarkdown(scoped);
+      expect(markdown).toContain(`- scope: subtree of ${epicId}`);
+
+      // The structural corpus read is unpaginated, so a tight --limit does NOT
+      // shrink the corpus used to resolve the anchor → no false NOT_FOUND.
+      const tightlyLimited = await runContext({ parent: epicId, limit: "1" }, { path: context.pmPath });
+      expect(tightlyLimited.filters.parent).toBe(epicId);
+
+      await expect(runContext({ parent: "pm-missing" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+      });
+    });
+  });
+
+  it("--parent resolves blocker metadata for references outside the subtree", async () => {
+    await withTempPmPath(async (context) => {
+      const epicId = createContextItem(context, { title: "Blocker epic", type: "Epic", status: "open" });
+      const outsideId = createContextItem(context, { title: "Outside blocker", type: "Task", status: "open" });
+      const blockedId = createContextItem(context, {
+        title: "Blocked subtree task",
+        type: "Task",
+        status: "blocked",
+        parent: epicId,
+        blockedBy: outsideId,
+      });
+
+      const scoped = await runContext({ parent: epicId, depth: "deep" }, { path: context.pmPath });
+      const blockerRow = (scoped.blockers ?? []).find((entry) => entry.id === blockedId);
+      // itemMap is built from the full corpus, so the cross-subtree blocker keeps
+      // its title/status instead of degrading to a bare id.
+      expect(blockerRow).toMatchObject({
+        blocked_by: outsideId,
+        blocked_by_title: "Outside blocker",
+        blocked_by_status: "open",
+      });
+    });
   });
 });
