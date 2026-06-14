@@ -23,7 +23,12 @@ import {
 const TELEMETRY_QUEUE_RELATIVE_PATH = path.join("runtime", "telemetry", "events.jsonl");
 const TELEMETRY_STATE_RELATIVE_PATH = path.join("runtime", "telemetry", "state.json");
 const TELEMETRY_OTEL_SPANS_RELATIVE_PATH = path.join("runtime", "telemetry", "otel-spans.jsonl");
-const TELEMETRY_OTEL_SPANS_FLUSH_BATCH_SIZE = 50;
+// Kept small so a worst-case batch against a blackholed collector
+// (TELEMETRY_OTEL_SPANS_FLUSH_BATCH_SIZE * TELEMETRY_HTTP_TIMEOUT_MS plus the
+// preceding event flush) stays well under TELEMETRY_FLUSH_LOCK_STALE_MS (60s).
+// Otherwise a later command could treat the still-held flush lock as stale and
+// start a second concurrent worker.
+const TELEMETRY_OTEL_SPANS_FLUSH_BATCH_SIZE = 8;
 const TELEMETRY_OTEL_SPANS_MAX_PENDING = 500;
 export const TELEMETRY_SCHEMA_VERSION = 1;
 const TELEMETRY_CLIENT_SCHEMA_VERSION = 1;
@@ -136,6 +141,13 @@ interface TelemetryRuntimeState {
  * OTLP resourceSpans body; `endpoint` is the per-span traces endpoint.
  */
 interface PendingOtelSpan {
+  /**
+   * Stable id used to reconcile the queue after the network flush: the worker
+   * re-reads the file and removes/updates only the spans it processed, by id, so
+   * spans appended by a concurrent foreground process during the flush are never
+   * overwritten. Mirrors the event-queue's event_id-based reconciliation.
+   */
+  id: string;
   endpoint: string;
   payload: unknown;
   enqueued_at: string;
@@ -1226,6 +1238,7 @@ function sleep(milliseconds: number): Promise<void> {
  */
 async function enqueuePendingOtelSpan(globalPmRoot: string, request: { endpoint: string; payload: unknown }): Promise<void> {
   const pending: PendingOtelSpan = {
+    id: crypto.randomUUID(),
     endpoint: request.endpoint,
     payload: request.payload,
     enqueued_at: nowIso(),
@@ -1239,6 +1252,16 @@ async function enqueuePendingOtelSpan(globalPmRoot: string, request: { endpoint:
   await withQueueMutation(async () => {
     await appendLineAtomic(otelSpansQueuePath(globalPmRoot), serialized);
   });
+}
+
+/**
+ * Derive a stable id for a legacy id-less pending span from its identity fields.
+ * Deterministic so the same on-disk line yields the same id across reads, which
+ * is what lets reconciliation remove/update it after a flush.
+ */
+function backfillPendingOtelSpanId(entry: { endpoint: string; enqueued_at: string; payload: unknown }): string {
+  const material = JSON.stringify([entry.endpoint, entry.enqueued_at, entry.payload]);
+  return crypto.createHash("sha256").update(material).digest("hex").slice(0, 32);
 }
 
 function parsePendingOtelSpanLines(raw: string): PendingOtelSpan[] {
@@ -1259,6 +1282,13 @@ function parsePendingOtelSpanLines(raw: string): PendingOtelSpan[] {
         typeof parsed.attempts === "number" &&
         Number.isFinite(parsed.attempts)
       ) {
+        // Backfill an id for legacy entries written before id tracking existed.
+        // It MUST be deterministic from the entry's content so the post-flush
+        // re-read derives the same id and reconciliation can address the entry;
+        // a random id would differ between reads and strand the span.
+        if (typeof parsed.id !== "string" || parsed.id.length === 0) {
+          parsed.id = backfillPendingOtelSpanId(parsed);
+        }
         entries.push(parsed);
       }
     } catch {
@@ -1327,6 +1357,37 @@ async function rewritePendingOtelSpans(globalPmRoot: string, entries: PendingOte
  * per-span attempts with backoff and are retried by a later flush; runtime state
  * records OTLP export diagnostics for `pm health` (GH-205).
  */
+/**
+ * Re-read the spans queue under the mutation serializer and rewrite it with the
+ * processed spans removed/updated by id, preserving any spans a concurrent
+ * foreground process appended during the (network) flush window. `succeededIds`
+ * are dropped; `failedUpdates` patch attempts/next_attempt_after by id; all other
+ * (incl. newly-appended) entries are retained, then pruned. Returns the count of
+ * spans left in the queue. Mirrors removeFlushedEntriesFromCurrentQueue.
+ */
+async function reconcilePendingOtelSpansAfterFlush(
+  globalPmRoot: string,
+  retentionDays: number,
+  succeededIds: ReadonlySet<string>,
+  failedUpdates: ReadonlyMap<string, { attempts: number; next_attempt_after: string }>,
+): Promise<number> {
+  return withQueueMutation(async () => {
+    const raw = await readFileIfExists(otelSpansQueuePath(globalPmRoot));
+    const current = raw === null ? [] : parsePendingOtelSpanLines(raw);
+    const reconciled: PendingOtelSpan[] = [];
+    for (const entry of current) {
+      if (succeededIds.has(entry.id)) {
+        continue;
+      }
+      const failure = failedUpdates.get(entry.id);
+      reconciled.push(failure ? { ...entry, attempts: failure.attempts, next_attempt_after: failure.next_attempt_after } : entry);
+    }
+    const { entries: retained } = prunePendingOtelSpans(reconciled, retentionDays);
+    await rewritePendingOtelSpans(globalPmRoot, retained);
+    return retained.length;
+  });
+}
+
 async function flushPendingOtelSpans(globalPmRoot: string, retentionDays: number): Promise<void> {
   const raw = await readFileIfExists(otelSpansQueuePath(globalPmRoot));
   if (raw === null || raw.trim().length === 0) {
@@ -1335,27 +1396,22 @@ async function flushPendingOtelSpans(globalPmRoot: string, retentionDays: number
   }
   const entries = parsePendingOtelSpanLines(raw);
   const { entries: retained, prunedCount } = prunePendingOtelSpans(entries, retentionDays);
-  if (retained.length === 0) {
-    if (prunedCount > 0 || retained.length !== entries.length) {
-      await rewritePendingOtelSpans(globalPmRoot, []);
-    }
-    await writeRuntimeState(globalPmRoot, { pending_otel_spans: 0 });
-    return;
-  }
   const due = retained.filter((entry) => isDueForRetryAt(entry.next_attempt_after)).slice(
     0,
     TELEMETRY_OTEL_SPANS_FLUSH_BATCH_SIZE,
   );
   if (due.length === 0) {
-    if (prunedCount > 0) {
-      await rewritePendingOtelSpans(globalPmRoot, retained);
-    }
-    await writeRuntimeState(globalPmRoot, { pending_otel_spans: retained.length });
+    // Nothing to POST. Still reconcile so pruning persists, but only if pruning
+    // actually changed the on-disk set (avoids a redundant rewrite each command).
+    const remaining = prunedCount > 0 ? await reconcilePendingOtelSpansAfterFlush(globalPmRoot, retentionDays, new Set(), new Map()) : retained.length;
+    await writeRuntimeState(globalPmRoot, { pending_otel_spans: remaining });
     return;
   }
 
   const attemptTime = nowIso();
-  const succeeded = new Set<PendingOtelSpan>();
+  const succeededIds = new Set<string>();
+  const failedUpdates = new Map<string, { attempts: number; next_attempt_after: string }>();
+  let succeededCount = 0;
   let lastError: string | undefined;
   for (const span of due) {
     try {
@@ -1368,21 +1424,21 @@ async function flushPendingOtelSpans(globalPmRoot: string, retentionDays: number
       if (!response.ok) {
         throw new Error(`local_otel_export_http_${response.status}`);
       }
-      succeeded.add(span);
+      succeededIds.add(span.id);
+      succeededCount += 1;
     } catch (error: unknown) {
       lastError = error instanceof Error ? sanitizeString(error.message, "redacted") : "local_otel_export_failed";
-      span.attempts += 1;
-      span.next_attempt_after = nextRetryIso(span.attempts);
+      const nextAttempts = span.attempts + 1;
+      failedUpdates.set(span.id, { attempts: nextAttempts, next_attempt_after: nextRetryIso(nextAttempts) });
     }
   }
 
-  const nextEntries = retained.filter((entry) => !succeeded.has(entry));
-  await rewritePendingOtelSpans(globalPmRoot, nextEntries);
+  const remaining = await reconcilePendingOtelSpansAfterFlush(globalPmRoot, retentionDays, succeededIds, failedUpdates);
   const statePatch: TelemetryRuntimeState = {
-    pending_otel_spans: nextEntries.length,
+    pending_otel_spans: remaining,
     last_otel_attempt_at: attemptTime,
   };
-  if (succeeded.size > 0) {
+  if (succeededCount > 0) {
     statePatch.last_otel_success_at = attemptTime;
   }
   if (lastError !== undefined) {
@@ -1714,6 +1770,7 @@ export const _testOnly = {
   otelSpansQueuePath,
   parsePendingOtelSpanLines,
   prunePendingOtelSpans,
+  reconcilePendingOtelSpansAfterFlush,
   rewritePendingOtelSpans,
   normalizeForHash,
   normalizeCaptureLevel,

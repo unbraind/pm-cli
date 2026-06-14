@@ -35,7 +35,13 @@ import { toNonEmptyStringOrUndefined } from "../../core/shared/primitives.js";
 import { nowIso } from "../../core/shared/time.js";
 import { parseItemDocument } from "../../core/item/item-format.js";
 import { listAllFrontMatter, listAllFrontMatterWithBody } from "../../core/store/item-store.js";
-import { TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS, TELEMETRY_SCHEMA_VERSION } from "../../core/telemetry/runtime.js";
+import {
+  PM_TELEMETRY_SOURCE_CONTEXT_VALUES,
+  TELEMETRY_MAX_QUEUE_ENTRY_ATTEMPTS,
+  TELEMETRY_SCHEMA_VERSION,
+} from "../../core/telemetry/runtime.js";
+
+const PM_TELEMETRY_SOURCE_CONTEXT_SET = new Set<string>(PM_TELEMETRY_SOURCE_CONTEXT_VALUES);
 import {
   getItemFormatFromPath,
   getSettingsPath,
@@ -1046,8 +1052,11 @@ function telemetryEnvFlagEnabled(
 }
 
 function telemetrySourceContextOverride(): string | null {
-  const value = (process.env.PM_TELEMETRY_SOURCE_CONTEXT ?? "").trim();
-  return value.length > 0 ? value : null;
+  // Only report an override the runtime actually honours: runtime.ts ignores any
+  // value outside the enum and falls back to the inferred context, so health must
+  // report null for an unrecognized value rather than implying it took effect.
+  const value = (process.env.PM_TELEMETRY_SOURCE_CONTEXT ?? "").trim().toLowerCase();
+  return PM_TELEMETRY_SOURCE_CONTEXT_SET.has(value) ? value : null;
 }
 
 function normalizeEndpointForDisplay(rawEndpoint: string): string {
