@@ -1413,25 +1413,31 @@ async function flushPendingOtelSpans(globalPmRoot: string, retentionDays: number
   const failedUpdates = new Map<string, { attempts: number; next_attempt_after: string }>();
   let succeededCount = 0;
   let lastError: string | undefined;
-  for (const span of due) {
-    try {
-      const response = await fetch(span.endpoint, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(span.payload),
-        signal: AbortSignal.timeout(TELEMETRY_HTTP_TIMEOUT_MS),
-      });
-      if (!response.ok) {
-        throw new Error(`local_otel_export_http_${response.status}`);
+  // Export the batch concurrently so a slow/blackholed collector caps the worker
+  // at one TELEMETRY_HTTP_TIMEOUT_MS rather than batch-size x timeout — keeping it
+  // well within the flush-lock TTL. The Set/Map/counter mutations are synchronous
+  // and safe under Node's single-threaded event loop.
+  await Promise.all(
+    due.map(async (span) => {
+      try {
+        const response = await fetch(span.endpoint, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(span.payload),
+          signal: AbortSignal.timeout(TELEMETRY_HTTP_TIMEOUT_MS),
+        });
+        if (!response.ok) {
+          throw new Error(`local_otel_export_http_${response.status}`);
+        }
+        succeededIds.add(span.id);
+        succeededCount += 1;
+      } catch (error: unknown) {
+        lastError = error instanceof Error ? sanitizeString(error.message, "redacted") : "local_otel_export_failed";
+        const nextAttempts = span.attempts + 1;
+        failedUpdates.set(span.id, { attempts: nextAttempts, next_attempt_after: nextRetryIso(nextAttempts) });
       }
-      succeededIds.add(span.id);
-      succeededCount += 1;
-    } catch (error: unknown) {
-      lastError = error instanceof Error ? sanitizeString(error.message, "redacted") : "local_otel_export_failed";
-      const nextAttempts = span.attempts + 1;
-      failedUpdates.set(span.id, { attempts: nextAttempts, next_attempt_after: nextRetryIso(nextAttempts) });
-    }
-  }
+    }),
+  );
 
   const remaining = await reconcilePendingOtelSpansAfterFlush(globalPmRoot, retentionDays, succeededIds, failedUpdates);
   const statePatch: TelemetryRuntimeState = {
