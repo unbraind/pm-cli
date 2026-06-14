@@ -1,0 +1,14 @@
+id: pm-hx5a
+title: "GH-205: surface telemetry flush/probe + OTEL export diagnostics in pm health"
+description: ""
+type: Issue
+status: in_progress
+priority: 2
+tags: []
+created_at: "2026-06-14T05:50:50.793Z"
+updated_at: "2026-06-14T06:01:27.968Z"
+author: claude-code-agent
+parent: pm-5oj5
+comments[1]{created_at,author,text}:
+  "2026-06-14T06:01:27.655Z",claude-code-agent,"Implemented in same branch: pm health --check-telemetry --json now surfaces pending_otel_spans + last_otel_attempt/success/failure_at + last_otel_failure_error, plus advisory warning telemetry_otel_export_failing:<n> with a remediation-registry entry. Verified in sandbox against a stuck blackhole span. Also extended env_overrides with telemetry_inline_flush + telemetry_source_context (overlaps pm-r7md health AC)."
+body: "## Context\nGH-205 asks pm health's telemetry warning to expose flush/probe diagnostics for fetch-failed queues so agents can self-diagnose. pm-300m added basic runtime diagnostics (queue_entries, last_*_flush_at); the OTEL trace-export path has NO diagnostics, and the new pending-spans store (see [[pm-25se]]) needs the same observability.\n\n## Acceptance criteria\n- Telemetry runtime state tracks OTEL export diagnostics: last_otel_attempt_at / last_otel_success_at / last_otel_failure_at / last_otel_failure_error / pending_otel_spans.\n- pm health telemetry check + --json surface these alongside the existing flush diagnostics, with actionable remediation when the endpoint looks unreachable (fetch-failed).\n- Advisory only (never flips overall health to error); consistent with existing telemetry_* advisory semantics.\n\nBuilt on top of [[pm-25se]] (introduces the pending-spans store + OTEL diagnostics fields)."

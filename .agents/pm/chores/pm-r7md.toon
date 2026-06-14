@@ -6,7 +6,8 @@ status: open
 priority: 3
 tags[4]: agent-ux,"area:observability","area:telemetry",docs
 created_at: "2026-06-07T10:05:00.380Z"
-updated_at: "2026-06-07T10:16:01.720Z"
+updated_at: "2026-06-14T05:50:51.226Z"
+assignee: claude-code-agent
 author: audit-observability-agent
 acceptance_criteria: "- AGENT_GUIDE.md (or docs/commands/TELEMETRY.md if it exists) lists all env-var knobs with their valid values, interaction rules, and example usage.\n- health check env_overrides section is extended to also surface PM_TELEMETRY_SOURCE_CONTEXT override and PM_TELEMETRY_INLINE_FLUSH states for completeness.\n- A unit test asserts that all PM_TELEMETRY_SOURCE_CONTEXT_VALUES appear in the documentation file (or in a dedicated const exported for docs)."
 parent: pm-5oj5

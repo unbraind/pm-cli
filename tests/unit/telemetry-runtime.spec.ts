@@ -1827,7 +1827,7 @@ describe("core/telemetry/runtime", () => {
   });
 
   it("covers telemetry pure helper residue for source, capture, hashing, and OTLP errors", async () => {
-    await withTempGlobalRoot(async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
       expect(_testOnly.normalizeCaptureLevel(" MINIMAL ")).toBe("minimal");
       expect(_testOnly.normalizeCaptureLevel("max")).toBe("max");
       expect(_testOnly.normalizeCaptureLevel("unknown")).toBe("redacted");
@@ -1914,37 +1914,415 @@ describe("core/telemetry/runtime", () => {
         }
       }
 
-      globalThis.fetch = vi.fn(async () => ({ ok: false, status: 503 })) as unknown as typeof fetch;
-      await expect(
-        _testOnly.exportLocalOtelSpan(
-          {
-            started_at: "not-a-date",
-            started_at_ms: Date.now(),
-            command: "/tmp/pm secret",
-            command_taxonomy: "unknown",
-            pm_version: "1.0.0",
-            source_context: "test",
-            source_context_source: "inferred",
-            installation_id: "install",
-            pm_root_hash: "pm-root",
-            cwd_hash: "cwd",
-            endpoint: "https://telemetry.example.test/events",
-            retention_days: 1,
-            global_pm_root: "/tmp/global",
-            capture_level: "redacted",
-            otel_traces_endpoint: "https://otel.example.test/v1/traces",
-            otel_trace_id: "a".repeat(32),
-            otel_span_id: "b".repeat(16),
-          },
-          { ok: true, exit_code: 2.7 },
-          "not-a-date",
-          7.9,
-        ),
-      ).rejects.toThrow("local_otel_export_http_503");
-      const body = JSON.parse(String((globalThis.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls[0]?.[1]?.body));
+      const otelRequest = _testOnly.buildOtelSpanRequest(
+        {
+          started_at: "not-a-date",
+          started_at_ms: Date.now(),
+          command: "/tmp/pm secret",
+          command_taxonomy: "unknown",
+          pm_version: "1.0.0",
+          source_context: "test",
+          source_context_source: "inferred",
+          installation_id: "install",
+          pm_root_hash: "pm-root",
+          cwd_hash: "cwd",
+          endpoint: "https://telemetry.example.test/events",
+          retention_days: 1,
+          global_pm_root: "/tmp/global",
+          capture_level: "redacted",
+          otel_traces_endpoint: "https://otel.example.test/v1/traces",
+          otel_trace_id: "a".repeat(32),
+          otel_span_id: "b".repeat(16),
+        },
+        { ok: true, exit_code: 2.7 },
+        "not-a-date",
+        7.9,
+      );
+      expect(otelRequest).not.toBeNull();
+      const body = otelRequest?.payload as {
+        resourceSpans: Array<{ scopeSpans: Array<{ spans: Array<{ status: unknown; name: string }> }> }>;
+      };
       const span = body.resourceSpans[0].scopeSpans[0].spans[0];
       expect(span.status).toEqual({ code: 1, message: "" });
       expect(span.name).toBe("pm.command.[redacted_path] secret");
+
+      // The OTLP POST happens off the foreground path: a 503 keeps the span
+      // queued with an incremented attempt and records a failure diagnostic.
+      globalThis.fetch = vi.fn(async () => ({ ok: false, status: 503 })) as unknown as typeof fetch;
+      await _testOnly.enqueuePendingOtelSpan(globalRoot, otelRequest as { endpoint: string; payload: unknown });
+      await _testOnly.flushPendingOtelSpans(globalRoot, 1);
+      const retained = _testOnly.parsePendingOtelSpanLines(
+        await fs.readFile(_testOnly.otelSpansQueuePath(globalRoot), "utf8"),
+      );
+      expect(retained).toHaveLength(1);
+      expect(retained[0].attempts).toBe(1);
+      const failureState = await _testOnly.readRuntimeState(globalRoot);
+      expect(failureState.last_otel_failure_error).toBe("local_otel_export_http_503");
+      expect(failureState.pending_otel_spans).toBe(1);
+    });
+  });
+
+  it("covers buildOtelSpanRequest null guards, payload shape, and attribute branches", async () => {
+    const baseActive = {
+      started_at: "2026-01-01T00:00:00.000Z",
+      started_at_ms: Date.parse("2026-01-01T00:00:00.000Z"),
+      command: "list-open",
+      command_taxonomy: "list" as const,
+      pm_version: "9.9.9-test",
+      source_context: "test" as const,
+      source_context_source: "inferred" as const,
+      installation_id: "install-id",
+      pm_root_hash: "pm-root-hash",
+      cwd_hash: "cwd-hash",
+      endpoint: "https://telemetry.example.test/events",
+      retention_days: 1,
+      global_pm_root: "/tmp/global",
+      capture_level: "redacted" as const,
+      otel_traces_endpoint: "https://otel.example.test/v1/traces",
+      otel_trace_id: "a".repeat(32),
+      otel_span_id: "b".repeat(16),
+    };
+
+    // Each missing/empty OTLP field yields null (no export configured).
+    expect(
+      _testOnly.buildOtelSpanRequest({ ...baseActive, otel_traces_endpoint: undefined }, { ok: true }, baseActive.started_at, 1),
+    ).toBeNull();
+    expect(
+      _testOnly.buildOtelSpanRequest({ ...baseActive, otel_traces_endpoint: "   " }, { ok: true }, baseActive.started_at, 1),
+    ).toBeNull();
+    expect(
+      _testOnly.buildOtelSpanRequest({ ...baseActive, otel_trace_id: undefined }, { ok: true }, baseActive.started_at, 1),
+    ).toBeNull();
+    expect(
+      _testOnly.buildOtelSpanRequest({ ...baseActive, otel_trace_id: "" }, { ok: true }, baseActive.started_at, 1),
+    ).toBeNull();
+    expect(
+      _testOnly.buildOtelSpanRequest({ ...baseActive, otel_span_id: undefined }, { ok: true }, baseActive.started_at, 1),
+    ).toBeNull();
+    expect(
+      _testOnly.buildOtelSpanRequest({ ...baseActive, otel_span_id: "" }, { ok: true }, baseActive.started_at, 1),
+    ).toBeNull();
+
+    const originalServiceName = process.env.OTEL_SERVICE_NAME;
+    try {
+      // Default service name when OTEL_SERVICE_NAME is unset, ok span (code 1).
+      delete process.env.OTEL_SERVICE_NAME;
+      const okRequest = _testOnly.buildOtelSpanRequest(
+        baseActive,
+        { ok: true, exit_code: 0 },
+        "2026-01-01T00:00:01.000Z",
+        1234,
+      );
+      expect(okRequest?.endpoint).toBe("https://otel.example.test/v1/traces");
+      const okBody = okRequest?.payload as {
+        resourceSpans: Array<{
+          resource: { attributes: Array<{ key: string; value: { stringValue?: string } }> };
+          scopeSpans: Array<{
+            scope: { name: string; version: string };
+            spans: Array<{
+              traceId: string;
+              spanId: string;
+              name: string;
+              kind: number;
+              startTimeUnixNano: string;
+              endTimeUnixNano: string;
+              status: { code: number; message: string };
+              attributes: Array<{ key: string; value: { stringValue?: string; boolValue?: boolean; intValue?: string } }>;
+            }>;
+          }>;
+        }>;
+      };
+      const resource = okBody.resourceSpans[0];
+      expect(resource.resource.attributes[0]).toEqual({ key: "service.name", value: { stringValue: "pm-cli" } });
+      const scope = resource.scopeSpans[0];
+      expect(scope.scope).toEqual({ name: "pm-cli.telemetry", version: "1" });
+      const okSpan = scope.spans[0];
+      expect(okSpan.traceId).toBe("a".repeat(32));
+      expect(okSpan.spanId).toBe("b".repeat(16));
+      expect(okSpan.name).toBe("pm.command.list-open");
+      expect(okSpan.kind).toBe(1);
+      expect(okSpan.startTimeUnixNano).toBe(`${BigInt(Date.parse("2026-01-01T00:00:00.000Z")) * 1_000_000n}`);
+      expect(okSpan.endTimeUnixNano).toBe(`${BigInt(Date.parse("2026-01-01T00:00:01.000Z")) * 1_000_000n}`);
+      expect(okSpan.status).toEqual({ code: 1, message: "" });
+      const okAttrs = new Map(okSpan.attributes.map((entry) => [entry.key, entry.value]));
+      expect(okAttrs.get("pm.command")?.stringValue).toBe("list-open");
+      expect(okAttrs.get("pm.version")?.stringValue).toBe("9.9.9-test");
+      expect(okAttrs.get("pm.source_context")?.stringValue).toBe("test");
+      expect(okAttrs.get("pm.ok")?.boolValue).toBe(true);
+      expect(okAttrs.get("pm.exit_code")?.intValue).toBe("0");
+      expect(okAttrs.get("pm.duration_ms")?.intValue).toBe("1234");
+      // ok span carries no error attributes.
+      expect(okAttrs.has("pm.error_code")).toBe(false);
+      expect(okAttrs.has("pm.error_category")).toBe(false);
+      expect(okAttrs.has("pm.error")).toBe(false);
+
+      // OTEL_SERVICE_NAME override + failure span (code 2 + message + error attrs).
+      process.env.OTEL_SERVICE_NAME = "pm-cli-custom";
+      const failRequest = _testOnly.buildOtelSpanRequest(
+        baseActive,
+        { ok: false, exit_code: 2, error_code: "invalid_argument_value", error: "bad input value" },
+        "2026-01-01T00:00:02.000Z",
+        42,
+      );
+      const failBody = failRequest?.payload as {
+        resourceSpans: Array<{
+          resource: { attributes: Array<{ key: string; value: { stringValue?: string } }> };
+          scopeSpans: Array<{ spans: Array<{ status: { code: number; message: string }; attributes: Array<{ key: string; value: { stringValue?: string; intValue?: string } }> }> }>;
+        }>;
+      };
+      expect(failBody.resourceSpans[0].resource.attributes[0].value.stringValue).toBe("pm-cli-custom");
+      const failSpan = failBody.resourceSpans[0].scopeSpans[0].spans[0];
+      expect(failSpan.status.code).toBe(2);
+      expect(failSpan.status.message).toBe("bad input value");
+      const failAttrs = new Map(failSpan.attributes.map((entry) => [entry.key, entry.value]));
+      expect(failAttrs.get("pm.exit_code")?.intValue).toBe("2");
+      expect(failAttrs.get("pm.error_code")?.stringValue).toBe("invalid_argument_value");
+      expect(failAttrs.get("pm.error_category")?.stringValue).toBe("validation");
+      expect(failAttrs.get("pm.error")?.stringValue).toBe("bad input value");
+    } finally {
+      if (originalServiceName === undefined) {
+        delete process.env.OTEL_SERVICE_NAME;
+      } else {
+        process.env.OTEL_SERVICE_NAME = originalServiceName;
+      }
+    }
+  });
+
+  it("covers OTLP span queue helpers: enqueue, parse, prune, retry-due, and flush branches", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const validRequest = {
+        endpoint: "https://otel.example.test/v1/traces",
+        payload: { resourceSpans: [{ scopeSpans: [{ spans: [{ name: "pm.command.get" }] }] }] },
+      };
+
+      // enqueuePendingOtelSpan: normal append writes a single parseable line.
+      await _testOnly.enqueuePendingOtelSpan(globalRoot, validRequest);
+      const spansPath = _testOnly.otelSpansQueuePath(globalRoot);
+      const afterAppend = _testOnly.parsePendingOtelSpanLines(await fs.readFile(spansPath, "utf8"));
+      expect(afterAppend).toHaveLength(1);
+      expect(afterAppend[0].endpoint).toBe(validRequest.endpoint);
+      expect(afterAppend[0].attempts).toBe(0);
+
+      // enqueuePendingOtelSpan: oversized payload is dropped (queue unchanged).
+      await _testOnly.enqueuePendingOtelSpan(globalRoot, {
+        endpoint: validRequest.endpoint,
+        payload: { blob: "x".repeat(70_000) },
+      });
+      expect(_testOnly.parsePendingOtelSpanLines(await fs.readFile(spansPath, "utf8"))).toHaveLength(1);
+
+      // parsePendingOtelSpanLines: blank lines skipped, malformed JSON dropped,
+      // entries missing required fields (endpoint/payload/attempts) dropped.
+      const validLine = JSON.stringify({
+        endpoint: validRequest.endpoint,
+        payload: {},
+        enqueued_at: new Date().toISOString(),
+        attempts: 0,
+      });
+      const mixed = [
+        "",
+        "   ",
+        "not-json",
+        JSON.stringify({ payload: {}, attempts: 0 }), // missing endpoint
+        JSON.stringify({ endpoint: "", payload: {}, attempts: 0 }), // empty endpoint
+        JSON.stringify({ endpoint: validRequest.endpoint, attempts: 0 }), // missing payload
+        JSON.stringify({ endpoint: validRequest.endpoint, payload: {} }), // missing attempts
+        JSON.stringify({ endpoint: validRequest.endpoint, payload: {}, attempts: "0" }), // non-number attempts
+        validLine,
+      ].join("\n");
+      const parsedMixed = _testOnly.parsePendingOtelSpanLines(mixed);
+      expect(parsedMixed).toHaveLength(1);
+      expect(parsedMixed[0].endpoint).toBe(validRequest.endpoint);
+
+      // prunePendingOtelSpans: retains fresh; drops expired, oversized, attempts>=15.
+      const now = new Date().toISOString();
+      const freshSpan = { endpoint: validRequest.endpoint, payload: {}, enqueued_at: now, attempts: 0 };
+      const expiredSpan = {
+        endpoint: validRequest.endpoint,
+        payload: {},
+        enqueued_at: new Date(Date.now() - 3 * DAY_MS).toISOString(),
+        attempts: 0,
+      };
+      const oversizedSpan = { endpoint: validRequest.endpoint, payload: { blob: "x".repeat(70_000) }, enqueued_at: now, attempts: 0 };
+      const exhaustedSpan = { endpoint: validRequest.endpoint, payload: {}, enqueued_at: now, attempts: 15 };
+      const pruned = _testOnly.prunePendingOtelSpans([freshSpan, expiredSpan, oversizedSpan, exhaustedSpan], 1);
+      expect(pruned.prunedCount).toBe(3);
+      expect(pruned.entries).toEqual([freshSpan]);
+
+      // prunePendingOtelSpans: overflow beyond cap keeps newest 500, counts rest pruned.
+      const overflowEntries = Array.from({ length: 503 }, (_value, index) => ({
+        endpoint: validRequest.endpoint,
+        payload: { index },
+        enqueued_at: now,
+        attempts: 0,
+      }));
+      const overflowPruned = _testOnly.prunePendingOtelSpans(overflowEntries, 1);
+      expect(overflowPruned.entries).toHaveLength(500);
+      expect(overflowPruned.prunedCount).toBe(3);
+      // The newest (last) entries are retained; the oldest 3 are dropped.
+      expect((overflowPruned.entries[0].payload as { index: number }).index).toBe(3);
+      expect((overflowPruned.entries[499].payload as { index: number }).index).toBe(502);
+
+      // isDueForRetryAt branches.
+      expect(_testOnly.isDueForRetryAt(undefined)).toBe(true);
+      expect(_testOnly.isDueForRetryAt("   ")).toBe(true);
+      expect(_testOnly.isDueForRetryAt("not-a-date")).toBe(true);
+      expect(_testOnly.isDueForRetryAt(new Date(Date.now() + DAY_MS).toISOString())).toBe(false);
+      expect(_testOnly.isDueForRetryAt(new Date(Date.now() - 1000).toISOString())).toBe(true);
+    });
+  });
+
+  it("covers flushPendingOtelSpans empty/all-pruned/none-due/success/mixed branches", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const spansPath = _testOnly.otelSpansQueuePath(globalRoot);
+      await fs.mkdir(path.dirname(spansPath), { recursive: true });
+      const endpoint = "https://otel.example.test/v1/traces";
+
+      // Empty/missing file -> records pending_otel_spans: 0.
+      await _testOnly.flushPendingOtelSpans(globalRoot, 1);
+      await expect(_testOnly.readRuntimeState(globalRoot)).resolves.toMatchObject({ pending_otel_spans: 0 });
+
+      // All entries pruned (expired) -> rewrites empty + state 0.
+      const expiredLine = JSON.stringify({
+        endpoint,
+        payload: {},
+        enqueued_at: new Date(Date.now() - 3 * DAY_MS).toISOString(),
+        attempts: 0,
+      });
+      await fs.writeFile(spansPath, `${expiredLine}\n`, "utf8");
+      await _testOnly.flushPendingOtelSpans(globalRoot, 1);
+      await expect(fs.readFile(spansPath, "utf8")).resolves.toBe("");
+      await expect(_testOnly.readRuntimeState(globalRoot)).resolves.toMatchObject({ pending_otel_spans: 0 });
+
+      // Entries present but none due -> retains + state count, no fetch.
+      const notDueLine = JSON.stringify({
+        endpoint,
+        payload: {},
+        enqueued_at: new Date().toISOString(),
+        attempts: 1,
+        next_attempt_after: new Date(Date.now() + DAY_MS).toISOString(),
+      });
+      await fs.writeFile(spansPath, `${notDueLine}\n`, "utf8");
+      const noFetch = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = noFetch as unknown as typeof fetch;
+      await _testOnly.flushPendingOtelSpans(globalRoot, 1);
+      expect(noFetch).not.toHaveBeenCalled();
+      await expect(_testOnly.readRuntimeState(globalRoot)).resolves.toMatchObject({ pending_otel_spans: 1 });
+      expect(_testOnly.parsePendingOtelSpanLines(await fs.readFile(spansPath, "utf8"))).toHaveLength(1);
+
+      // Success path -> POSTs, removes succeeded spans, sets last_otel_success_at,
+      // clears failure fields, pending_otel_spans: 0.
+      const dueLine = JSON.stringify({ endpoint, payload: { ok: true }, enqueued_at: new Date().toISOString(), attempts: 0 });
+      await fs.writeFile(spansPath, `${dueLine}\n`, "utf8");
+      // Seed a prior failure to confirm it is cleared on success.
+      await _testOnly.writeRuntimeState(globalRoot, {
+        last_otel_failure_at: "2026-01-01T00:00:00.000Z",
+        last_otel_failure_error: "stale_error",
+      });
+      const okFetch = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = okFetch as unknown as typeof fetch;
+      await _testOnly.flushPendingOtelSpans(globalRoot, 1);
+      expect(okFetch).toHaveBeenCalledTimes(1);
+      const [postUrl] = okFetch.mock.calls[0] as [string, RequestInit];
+      expect(postUrl).toBe(endpoint);
+      await expect(fs.readFile(spansPath, "utf8")).resolves.toBe("");
+      const successState = await _testOnly.readRuntimeState(globalRoot);
+      expect(successState.pending_otel_spans).toBe(0);
+      expect(typeof successState.last_otel_success_at).toBe("string");
+      expect(successState.last_otel_failure_at).toBeUndefined();
+      expect(successState.last_otel_failure_error).toBeUndefined();
+
+      // Failure path (fetch throws) -> increments attempts, sets next_attempt_after,
+      // records last_otel_failure_at/error.
+      await fs.writeFile(spansPath, `${dueLine}\n`, "utf8");
+      const throwFetch = vi.fn(async () => {
+        throw new Error("connect_timeout");
+      });
+      globalThis.fetch = throwFetch as unknown as typeof fetch;
+      await _testOnly.flushPendingOtelSpans(globalRoot, 1);
+      const failedRetained = _testOnly.parsePendingOtelSpanLines(await fs.readFile(spansPath, "utf8"));
+      expect(failedRetained).toHaveLength(1);
+      expect(failedRetained[0].attempts).toBe(1);
+      expect(typeof failedRetained[0].next_attempt_after).toBe("string");
+      const failState = await _testOnly.readRuntimeState(globalRoot);
+      expect(failState.pending_otel_spans).toBe(1);
+      expect(failState.last_otel_failure_error).toBe("connect_timeout");
+      expect(typeof failState.last_otel_failure_at).toBe("string");
+
+      // Mixed success + failure in one batch: one endpoint POSTs ok, the other throws.
+      const goodEndpoint = "https://good.example.test/v1/traces";
+      const badEndpoint = "https://bad.example.test/v1/traces";
+      const goodLine = JSON.stringify({ endpoint: goodEndpoint, payload: {}, enqueued_at: new Date().toISOString(), attempts: 0 });
+      const badLine = JSON.stringify({ endpoint: badEndpoint, payload: {}, enqueued_at: new Date().toISOString(), attempts: 0 });
+      await fs.writeFile(spansPath, `${goodLine}\n${badLine}\n`, "utf8");
+      const mixedFetch = vi.fn(async (url: string) => {
+        if (url === badEndpoint) {
+          throw new Error("mixed_failure");
+        }
+        return new Response("{}", { status: 200 });
+      });
+      globalThis.fetch = mixedFetch as unknown as typeof fetch;
+      await _testOnly.flushPendingOtelSpans(globalRoot, 1);
+      expect(mixedFetch).toHaveBeenCalledTimes(2);
+      const mixedRetained = _testOnly.parsePendingOtelSpanLines(await fs.readFile(spansPath, "utf8"));
+      expect(mixedRetained).toHaveLength(1);
+      expect(mixedRetained[0].endpoint).toBe(badEndpoint);
+      expect(mixedRetained[0].attempts).toBe(1);
+      const mixedState = await _testOnly.readRuntimeState(globalRoot);
+      expect(mixedState.pending_otel_spans).toBe(1);
+      expect(typeof mixedState.last_otel_success_at).toBe("string");
+      expect(mixedState.last_otel_failure_error).toBe("mixed_failure");
+
+      // ok:false (non-throwing) response -> http status error path.
+      await fs.writeFile(spansPath, `${dueLine}\n`, "utf8");
+      globalThis.fetch = vi.fn(async () => ({ ok: false, status: 503 })) as unknown as typeof fetch;
+      await _testOnly.flushPendingOtelSpans(globalRoot, 1);
+      const statusFailState = await _testOnly.readRuntimeState(globalRoot);
+      expect(statusFailState.last_otel_failure_error).toBe("local_otel_export_http_503");
+      expect(statusFailState.pending_otel_spans).toBe(1);
+    });
+  });
+
+  it("covers flushTelemetryArtifacts draining both the event and OTLP span queues", async () => {
+    await withTempGlobalRoot(async (globalRoot) => {
+      const endpoint = "https://telemetry.example.test/events";
+      const otelEndpoint = "https://otel.example.test/v1/traces";
+      await fs.mkdir(path.join(globalRoot, "runtime", "telemetry"), { recursive: true });
+
+      const eventEntry = {
+        client_schema_version: 1,
+        attempts: 0,
+        event: {
+          schema_version: 1,
+          event_id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+          event_type: "command_finish" as const,
+          occurred_at: new Date().toISOString(),
+          installation_id: "22222222-2222-4222-8222-222222222222",
+          session_id: "33333333-3333-4333-8333-333333333333",
+          command: "list-open",
+          payload: {},
+        },
+      };
+      await fs.writeFile(telemetryQueuePath(globalRoot), `${JSON.stringify(eventEntry)}\n`, "utf8");
+      await fs.writeFile(
+        _testOnly.otelSpansQueuePath(globalRoot),
+        `${JSON.stringify({ endpoint: otelEndpoint, payload: {}, enqueued_at: new Date().toISOString(), attempts: 0 })}\n`,
+        "utf8",
+      );
+
+      const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      await _testOnly.flushTelemetryArtifacts(globalRoot, endpoint, 1);
+
+      // Both queues drained.
+      await expect(fs.readFile(telemetryQueuePath(globalRoot), "utf8")).resolves.toBe("");
+      await expect(fs.readFile(_testOnly.otelSpansQueuePath(globalRoot), "utf8")).resolves.toBe("");
+      const fetchedUrls = fetchMock.mock.calls.map((call) => call[0]);
+      expect(fetchedUrls).toContain(endpoint);
+      expect(fetchedUrls).toContain(otelEndpoint);
+      const state = await _testOnly.readRuntimeState(globalRoot);
+      expect(state.queue_entries).toBe(0);
+      expect(state.pending_otel_spans).toBe(0);
     });
   });
 

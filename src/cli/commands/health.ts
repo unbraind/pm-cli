@@ -1031,11 +1031,23 @@ interface TelemetryRuntimeStateRecord {
   last_successful_flush_at?: string;
   last_failed_flush_at?: string;
   last_failed_flush_error?: string;
+  pending_otel_spans?: number;
+  last_otel_attempt_at?: string;
+  last_otel_success_at?: string;
+  last_otel_failure_at?: string;
+  last_otel_failure_error?: string;
 }
 
-function telemetryEnvFlagEnabled(envKey: "PM_TELEMETRY_DISABLED" | "PM_TELEMETRY_OTEL_DISABLED" | "PM_NO_TELEMETRY"): boolean {
+function telemetryEnvFlagEnabled(
+  envKey: "PM_TELEMETRY_DISABLED" | "PM_TELEMETRY_OTEL_DISABLED" | "PM_NO_TELEMETRY" | "PM_TELEMETRY_INLINE_FLUSH",
+): boolean {
   const value = (process.env[envKey] ?? "").trim().toLowerCase();
   return value === "1" || value === "true" || value === "yes" || value === "on";
+}
+
+function telemetrySourceContextOverride(): string | null {
+  const value = (process.env.PM_TELEMETRY_SOURCE_CONTEXT ?? "").trim();
+  return value.length > 0 ? value : null;
 }
 
 function normalizeEndpointForDisplay(rawEndpoint: string): string {
@@ -1237,6 +1249,17 @@ async function buildTelemetryCheck(
   ) {
     warnings.push(`telemetry_schema_version_behind:${parsedMaxSchemaVersion}`);
   }
+  const pendingOtelSpans = typeof runtimeState.pending_otel_spans === "number" ? runtimeState.pending_otel_spans : 0;
+  const lastOtelSuccess = runtimeState.last_otel_success_at;
+  const lastOtelFailure = runtimeState.last_otel_failure_at;
+  const otelExportFailing =
+    settings.telemetry.enabled &&
+    pendingOtelSpans > 0 &&
+    Boolean(lastOtelFailure) &&
+    (!lastOtelSuccess || (lastOtelFailure as string) > lastOtelSuccess);
+  if (otelExportFailing) {
+    warnings.push(`telemetry_otel_export_failing:${pendingOtelSpans}`);
+  }
 
   return {
     check: {
@@ -1267,6 +1290,11 @@ async function buildTelemetryCheck(
         last_successful_flush_at: runtimeState.last_successful_flush_at ?? null,
         last_failed_flush_at: runtimeState.last_failed_flush_at ?? null,
         last_failed_flush_error: runtimeState.last_failed_flush_error ?? null,
+        pending_otel_spans: pendingOtelSpans,
+        last_otel_attempt_at: runtimeState.last_otel_attempt_at ?? null,
+        last_otel_success_at: runtimeState.last_otel_success_at ?? null,
+        last_otel_failure_at: runtimeState.last_otel_failure_at ?? null,
+        last_otel_failure_error: runtimeState.last_otel_failure_error ?? null,
         endpoint_probe: endpointProbe ?? {
           attempted: false,
         },
@@ -1274,6 +1302,8 @@ async function buildTelemetryCheck(
           telemetry_disabled: telemetryEnvFlagEnabled("PM_TELEMETRY_DISABLED") || telemetryEnvFlagEnabled("PM_NO_TELEMETRY"),
           pm_no_telemetry: telemetryEnvFlagEnabled("PM_NO_TELEMETRY"),
           telemetry_otel_disabled: telemetryEnvFlagEnabled("PM_TELEMETRY_OTEL_DISABLED"),
+          telemetry_inline_flush: telemetryEnvFlagEnabled("PM_TELEMETRY_INLINE_FLUSH"),
+          telemetry_source_context: telemetrySourceContextOverride(),
         },
       },
     },
