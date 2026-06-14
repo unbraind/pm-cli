@@ -2740,6 +2740,29 @@ describe("classifyImplicitSemanticFallbackReason", () => {
       expect(compactCounted.items).toEqual([]);
     });
 
+    it("keeps the count-only shape when --count matches nothing (empty-result path)", async () => {
+      listAllFrontMatterMock.mockResolvedValue([makeFrontMatter({ id: "pm-none", title: "alpha" })]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-none.md")) return makeBody(makeFrontMatter({ id: "pm-none", title: "alpha" }), "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      // No token matches "zzznomatch" -> filteredDocuments empty -> emptySearchResult path.
+      const verbose = await runSearch("zzznomatch", { mode: "keyword", count: true, full: true }, { path: "/tmp/pm-search" });
+      expect(verbose.count_only).toBe(true);
+      expect(verbose.count).toBe(0);
+      expect(verbose.total).toBe(0);
+      expect(verbose.items).toEqual([]);
+      const compact = await runSearch(
+        "zzznomatch",
+        { mode: "keyword", count: true, compact: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compact.count_only).toBe(true);
+      expect(compact.total).toBe(0);
+      expect(compact.items).toEqual([]);
+    });
+
     it("applies --min-score as a per-query override of the persistent threshold", async () => {
       const item = makeFrontMatter({ id: "pm-min", title: "alpha" });
       listAllFrontMatterMock.mockResolvedValue([item]);

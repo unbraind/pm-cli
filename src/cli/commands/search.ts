@@ -1210,7 +1210,11 @@ function emptySearchResult(
   projection: SearchProjectionConfig,
   warnings: string[],
   runtimeFieldFilters?: Record<string, unknown>,
+  countOnly = false,
 ): SearchResult {
+  // --count consistency: a count-only query that matches nothing must still
+  // carry the same { count_only: true, total } shape as the non-empty path.
+  const countExtras = countOnly ? { total: 0, count_only: true } : {};
   const compactSummaryMode = projection.mode === "compact" && options.compact === true;
   if (compactSummaryMode) {
     const compactFilters = buildCompactSearchFilterSummary({
@@ -1229,6 +1233,7 @@ function emptySearchResult(
       mode,
       items: [],
       count: 0,
+      ...countExtras,
       filters: compactFilters,
       ...(warnings.length > 0 ? { warnings } : {}),
     };
@@ -1239,6 +1244,7 @@ function emptySearchResult(
     mode,
     items: [],
     count: 0,
+    ...countExtras,
     filters: buildVerboseSearchFilters({
       effectiveMode: mode,
       matchMode,
@@ -1921,6 +1927,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
       projection,
       warnings,
       runtimeFieldFilters,
+      countOnly,
     );
   }
 
@@ -1993,6 +2000,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
           projection,
           warnings,
           runtimeFieldFilters,
+          countOnly,
         );
       }
       const filteredById = new Map(filteredDocuments.map((document) => [document.metadata.id, document]));
