@@ -1,0 +1,12 @@
+id: pm-ldr1
+title: "pm search: structured inline query syntax (tag:/status:) + matched-text highlighting (GH-157 remainder)"
+description: ""
+type: Feature
+status: open
+priority: 3
+tags[3]: "area:search",gh-157,ux
+created_at: "2026-06-14T17:41:14.917Z"
+updated_at: "2026-06-14T17:41:14.917Z"
+author: maintainer-agent
+parent: pm-ydp6
+body: "## Context\n\nPR #238 shipped the bulk of GH-157 (default score threshold via --min-score, exact phrase via --match-mode exact, --count mode, relevance ranking). Two asks remain:\n\n1. **Structured inline query syntax**: parse `tag:domain:game status:open` tokens inside the query string as filters (complement to keyword/semantic). The equivalent --tag/--status flags already exist; this is the inline-token parsing sugar.\n2. **Matched-text highlighting**: highlight the matching substring within each matched field in output. matched_fields is already surfaced; per-field text highlighting is not.\n\n## Acceptance criteria\n\n- [ ] Inline `field:value` tokens (tag:, status:, type:, priority:) parsed out of the query and applied as filters; remaining tokens used for keyword/semantic match\n- [ ] Documented precedence when both inline token and explicit flag are provided\n- [ ] Optional --highlight to emit matched spans per field (off by default for token efficiency)\n- [ ] Contracts/MCP/completions/docs updated\n- [ ] Tests + 100% coverage of new logic\n\n## Evidence\n- GH-157 (open); PR #238 shipped the threshold/exact/count parts"
