@@ -1265,7 +1265,9 @@ async function buildTelemetryCheck(
     settings.telemetry.enabled &&
     pendingOtelSpans > 0 &&
     Boolean(lastOtelFailure) &&
-    (!lastOtelSuccess || (lastOtelFailure as string) > lastOtelSuccess);
+    // >= so a mixed-outcome batch (success + failure share the same attempt
+    // timestamp) still surfaces the warning rather than being masked by the tie.
+    (!lastOtelSuccess || (lastOtelFailure as string) >= lastOtelSuccess);
   if (otelExportFailing) {
     warnings.push(`telemetry_otel_export_failing:${pendingOtelSpans}`);
   }

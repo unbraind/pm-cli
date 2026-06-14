@@ -1450,7 +1450,10 @@ async function flushPendingOtelSpans(globalPmRoot: string, retentionDays: number
   if (lastError !== undefined) {
     statePatch.last_otel_failure_at = attemptTime;
     statePatch.last_otel_failure_error = lastError;
-  } else {
+  } else if (remaining === 0) {
+    // Only clear the failure diagnostic once the queue is fully drained. A
+    // clean batch while other (not-yet-due) spans still wait could be hiding
+    // earlier failures; keep the last known failure until nothing is pending.
     statePatch.last_otel_failure_at = undefined;
     statePatch.last_otel_failure_error = undefined;
   }

@@ -2279,6 +2279,28 @@ describe("core/telemetry/runtime", () => {
       const statusFailState = await _testOnly.readRuntimeState(globalRoot);
       expect(statusFailState.last_otel_failure_error).toBe("local_otel_export_http_503");
       expect(statusFailState.pending_otel_spans).toBe(1);
+
+      // Clean batch while other (not-yet-due) spans remain queued: the prior
+      // failure diagnostic is preserved (only cleared when the queue fully drains).
+      await _testOnly.writeRuntimeState(globalRoot, {
+        last_otel_failure_at: "2026-02-02T00:00:00.000Z",
+        last_otel_failure_error: "earlier_failure",
+      });
+      const dueOkLine = JSON.stringify({ endpoint, payload: { ok: 1 }, enqueued_at: new Date().toISOString(), attempts: 0 });
+      const remainLine = JSON.stringify({
+        endpoint,
+        payload: { later: 1 },
+        enqueued_at: new Date().toISOString(),
+        attempts: 2,
+        next_attempt_after: new Date(Date.now() + DAY_MS).toISOString(),
+      });
+      await fs.writeFile(spansPath, `${dueOkLine}\n${remainLine}\n`, "utf8");
+      globalThis.fetch = vi.fn(async () => new Response("{}", { status: 200 })) as unknown as typeof fetch;
+      await _testOnly.flushPendingOtelSpans(globalRoot, 1);
+      const preservedState = await _testOnly.readRuntimeState(globalRoot);
+      expect(preservedState.pending_otel_spans).toBe(1);
+      expect(typeof preservedState.last_otel_success_at).toBe("string");
+      expect(preservedState.last_otel_failure_error).toBe("earlier_failure");
     });
   });
 
