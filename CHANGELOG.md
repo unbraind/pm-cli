@@ -13,8 +13,14 @@
 
 - pm update-many: --filter-ac-missing/--filter-estimates-missing/--filter-resolution-missing selection filters for bulk backfill \(GH-220\) ([pm-wbak](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-wbak.toon))
 
+### Fixed
+
+- GH-205: surface telemetry flush/probe + OTEL export diagnostics in pm health ([pm-hx5a](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-hx5a.toon))
+- GH-209 follow-up: OTEL span export keeps the CLI alive ~10s \(and can exit 13\) when the traces endpoint is unreachable ([pm-25se](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/issues/pm-25se.toon))
+
 ### Other
 
+- Document and test telemetry env-var surface: PM\_TELEMETRY\_DISABLED, PM\_NO\_TELEMETRY, PM\_TELEMETRY\_SOURCE\_CONTEXT, PM\_TELEMETRY\_OTEL\_DISABLED, PM\_TELEMETRY\_INLINE\_FLUSH ([pm-r7md](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/chores/pm-r7md.toon))
 - pm validate: --all-affected-ids flag + never truncate ID lists in JSON mode \(GH-224\) ([pm-o0d2](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-o0d2.toon))
 - pm aggregate: explicit \(unassigned\)/\(none\) labels for blank group keys in all output modes \(GH-225\) ([pm-zcx9](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-zcx9.toon))
 - pm stats: --by-assignee/--by-tag/--by-priority breakdowns + --metadata-coverage + lifecycle/type adoption \(GH-213/218/219\) ([pm-gq27](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/tasks/pm-gq27.toon))
