@@ -28,6 +28,7 @@ function createContextItem(
     deadline?: string;
     order?: string;
     parent?: string;
+    blockedBy?: string;
     reminders?: string[];
     events?: string[];
   },
@@ -81,6 +82,9 @@ function createContextItem(
   }
   if (options.parent !== undefined) {
     args.push("--parent", options.parent);
+  }
+  if (options.blockedBy !== undefined) {
+    args.push("--blocked-by", options.blockedBy);
   }
   for (const reminder of options.reminders ?? []) {
     args.push("--reminder", reminder);
@@ -1067,8 +1071,37 @@ describe("context command module", () => {
       const markdown = renderContextMarkdown(scoped);
       expect(markdown).toContain(`- scope: subtree of ${epicId}`);
 
+      // The structural corpus read is unpaginated, so a tight --limit does NOT
+      // shrink the corpus used to resolve the anchor → no false NOT_FOUND.
+      const tightlyLimited = await runContext({ parent: epicId, limit: "1" }, { path: context.pmPath });
+      expect(tightlyLimited.filters.parent).toBe(epicId);
+
       await expect(runContext({ parent: "pm-missing" }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
         exitCode: EXIT_CODE.NOT_FOUND,
+      });
+    });
+  });
+
+  it("--parent resolves blocker metadata for references outside the subtree", async () => {
+    await withTempPmPath(async (context) => {
+      const epicId = createContextItem(context, { title: "Blocker epic", type: "Epic", status: "open" });
+      const outsideId = createContextItem(context, { title: "Outside blocker", type: "Task", status: "open" });
+      const blockedId = createContextItem(context, {
+        title: "Blocked subtree task",
+        type: "Task",
+        status: "blocked",
+        parent: epicId,
+        blockedBy: outsideId,
+      });
+
+      const scoped = await runContext({ parent: epicId, depth: "deep" }, { path: context.pmPath });
+      const blockerRow = (scoped.blockers ?? []).find((entry) => entry.id === blockedId);
+      // itemMap is built from the full corpus, so the cross-subtree blocker keeps
+      // its title/status instead of degrading to a bare id.
+      expect(blockerRow).toMatchObject({
+        blocked_by: outsideId,
+        blocked_by_title: "Outside blocker",
+        blocked_by_status: "open",
       });
     });
   });

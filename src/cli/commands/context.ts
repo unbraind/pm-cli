@@ -1192,10 +1192,14 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
     const allListed = await runList(undefined, unpaginatedListOptions({ excludeTerminal: false }), global);
     allItems = allListed.items as ItemFrontMatter[];
   }
+  // The unfiltered corpus stays the reference for cross-item metadata resolution
+  // (e.g. a subtree blocker whose blocked_by points OUTSIDE the subtree must still
+  // resolve its title/status). Only the enumeration sets below get subtree-scoped.
+  const fullCorpus = allItems;
 
   let subtreeIds: Set<string> | undefined;
   if (parentScope !== undefined) {
-    const subtree = collectSubtreeIds(allItems, parentScope);
+    const subtree = collectSubtreeIds(fullCorpus, parentScope);
     if (!subtree.found) {
       throw new PmCliError(`Context --parent item not found: ${parentScope}`, EXIT_CODE.NOT_FOUND);
     }
@@ -1260,8 +1264,10 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
 
   const now = agenda.now;
 
+  // Resolve blocker/dependency metadata against the full corpus so references
+  // that point outside a --parent subtree still render their title/status.
   const itemMap = new Map<string, ItemFrontMatter>();
-  for (const item of allItems) {
+  for (const item of fullCorpus) {
     itemMap.set(item.id, item);
   }
 
