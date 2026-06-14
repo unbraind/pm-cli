@@ -244,6 +244,7 @@ export const SETTINGS_DEFAULTS: PmSettings = {
     lifecycle_closure_like_actual_result_patterns: [
       ...DEFAULT_VALIDATE_CLOSURE_LIKE_METADATA_FIELD_PATTERNS.actual_result,
     ],
+    estimate_defaults_by_type: {},
   },
   governance: {
     preset: "minimal",

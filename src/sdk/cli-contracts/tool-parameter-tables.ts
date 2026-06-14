@@ -218,7 +218,7 @@ export const PM_TOOL_PARAMETER_PROPERTIES: Record<string, unknown> = {
   failOnWarn: { type: "boolean" },
   fixHints: { type: "boolean" },
   autoFix: { type: "boolean" },
-  fixScope: { type: "array", items: { type: "string", enum: ["metadata", "resolution", "lifecycle"] } },
+  fixScope: { type: "array", items: { type: "string", enum: ["metadata", "resolution", "estimates", "lifecycle"] } },
   pruneMissing: { type: "boolean" },
   checkHistoryDrift: { type: "boolean" },
   checkCommandReferences: { type: "boolean" },
@@ -876,8 +876,8 @@ export const PM_TOOL_PARAMETER_METADATA: Record<string, { description: string; e
   },
   fixScope: {
     description:
-      "For validate action, grant --auto-fix scopes (metadata, resolution, lifecycle). Defaults to the safe scopes metadata and resolution; lifecycle must be named explicitly.",
-    examples: [["lifecycle"], ["metadata", "resolution"]],
+      "For validate action, grant --auto-fix scopes (metadata, resolution, estimates, lifecycle). Defaults to the safe scopes metadata and resolution; estimates (per-type default estimated_minutes backfill) and lifecycle must be named explicitly.",
+    examples: [["estimates"], ["lifecycle"], ["metadata", "resolution"]],
   },
   pruneMissing: {
     description:

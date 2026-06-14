@@ -186,6 +186,7 @@ describe("core/store/settings", () => {
         "lifecycle_closure_like_blocked_reason_patterns",
         "lifecycle_closure_like_resolution_patterns",
         "lifecycle_closure_like_actual_result_patterns",
+        "estimate_defaults_by_type",
       ]);
       expectOrderedObjectKeys(parsed.governance, ["preset"]);
       expectOrderedObjectKeys(parsed.workflow, ["definition_of_done"]);

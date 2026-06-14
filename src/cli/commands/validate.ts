@@ -27,12 +27,14 @@ import { readSettings } from "../../core/store/settings.js";
 import {
   partitionFixesByGrant,
   planCloseReasonBackfillFixes,
+  planEstimateBackfillFixes,
   planResolutionBackfillFixes,
   planStaleLinkPruneFixes,
   planTerminalParentFixes,
   resolveGrantedFixScopes,
   toFixOutputRow,
   type CloseReasonBackfillRow,
+  type EstimateBackfillRow,
   type ResolutionBackfillRow,
   type StaleLinkPruneRow,
   type TerminalParentFixRow,
@@ -43,6 +45,11 @@ import {
   classifyStaleLinkedPaths,
   summarizeStaleLinkedPathClassifications,
 } from "../../core/validate/stale-file-classification.js";
+import {
+  buildMissingLinkedPathRows,
+  summarizeMissingLinkedPathRows,
+  type StaleLinkOwnerInput,
+} from "../../core/validate/missing-link-owners.js";
 import type { ValidateMetadataProfile, ValidateMetadataRequiredField } from "../../types/index.js";
 import { extractReferencedPmItemIdsFromCommand } from "./test.js";
 
@@ -763,7 +770,12 @@ function buildMetadataCheck(
   metadataPolicy: ValidateMetadataPolicy,
   statusRegistry: RuntimeStatusRegistry,
   verboseDiagnostics: boolean,
-): { check: ValidateCheck; warnings: string[]; closeReasonBackfillRows: CloseReasonBackfillRow[] } {
+): {
+  check: ValidateCheck;
+  warnings: string[];
+  closeReasonBackfillRows: CloseReasonBackfillRow[];
+  estimateBackfillRows: EstimateBackfillRow[];
+} {
   const missingByField = Object.fromEntries(
     SUPPORTED_METADATA_REQUIRED_FIELDS.map((field) => [field, [] as string[]]),
   ) as Record<ValidateMetadataRequiredField, string[]>;
@@ -862,6 +874,17 @@ function buildMetadataCheck(
       }))
     : [];
 
+  // Estimate auto-fix planning input (GH-212): items flagged for a missing
+  // estimated_minutes whose type drives the config-driven default backfill.
+  // Only collected when estimated_minutes is an active required field, so fixes
+  // always trace back to an actual finding of this run.
+  const estimateBackfillRows: EstimateBackfillRow[] = metadataPolicy.required_fields.includes("estimated_minutes")
+    ? (missingByField.estimated_minutes ?? []).map((itemId) => ({
+        id: itemId,
+        type: toNonEmptyStringOrUndefined(itemsById.get(itemId)?.type),
+      }))
+    : [];
+
   return {
     check: {
       name: "metadata",
@@ -870,6 +893,7 @@ function buildMetadataCheck(
     },
     warnings: warningTokens,
     closeReasonBackfillRows,
+    estimateBackfillRows,
   };
 }
 
@@ -1266,6 +1290,7 @@ async function buildFilesCheck(
   const linkedProjectPaths = new Set<string>();
   const missingLinkedPaths: string[] = [];
   const staleLinkRows: Array<{ item_id: string; path: string; link_kind: "files" | "docs" }> = [];
+  const itemsById = new Map(items.map((item) => [item.id, item]));
 
   for (const item of items) {
     const linkedArtifactGroups = [
@@ -1359,6 +1384,26 @@ async function buildFilesCheck(
     summarizeStaleLinkedPathClassifications(classifiedStalePaths),
     verboseFileLists,
   );
+  // Owner attribution for missing linked paths (GH-210): per-path rows naming
+  // the owning item(s) so cleanup is evidence-based instead of requiring a
+  // reverse lookup. Full structured objects under --verbose-file-lists; compact
+  // `path:classification owner=… field=…` one-liners (capped) otherwise — same
+  // full/summary split as the other file-check lists (file_list_detail_mode).
+  const missingLinkedPathRows: StaleLinkOwnerInput[] = staleLinkPruneRows.map((row) => ({
+    item_id: row.item_id,
+    path: row.path,
+    link_kind: row.link_kind,
+    classification: row.classification,
+  }));
+  const ownerRows = buildMissingLinkedPathRows(missingLinkedPathRows, (id) => {
+    const owner = itemsById.get(id);
+    return owner ? { type: owner.type, title: owner.title, status: owner.status } : undefined;
+  });
+  // Default to token-efficient compact one-liners; expose the full structured
+  // rows (the GH-210 JSON shape) under --verbose-file-lists.
+  const ownerRowDetail = verboseFileLists
+    ? ownerRows
+    : summarizeFileList(summarizeMissingLinkedPathRows(ownerRows), false).values;
 
   return {
     check: {
@@ -1396,6 +1441,8 @@ async function buildFilesCheck(
         missing_linked_paths_deleted_count: uniqueMissingLinkedPaths.length - movedStalePathCount,
         missing_linked_path_classifications: summarizedClassifications.values,
         missing_linked_path_classifications_truncated: summarizedClassifications.truncated,
+        missing_linked_path_rows_count: ownerRows.length,
+        missing_linked_path_rows: ownerRowDetail,
         orphaned_paths_count: orphanedFiles.length,
         orphaned_paths_total: summarizedOrphaned.total,
         orphaned_paths: summarizedOrphaned.values,
@@ -1539,6 +1586,7 @@ async function applyValidateFix(fix: ValidateFixRecord, global: GlobalOptions): 
   switch (fix.kind) {
     case "set_resolution":
     case "set_close_reason":
+    case "set_estimate":
     case "reparent":
     case "unset_parent": {
       const { runUpdate } = await import("./update.js");
@@ -1547,6 +1595,8 @@ async function applyValidateFix(fix: ValidateFixRecord, global: GlobalOptions): 
         updateOptions.resolution = fix.value;
       } else if (fix.kind === "set_close_reason") {
         updateOptions.closeReason = fix.value;
+      } else if (fix.kind === "set_estimate") {
+        updateOptions.estimatedMinutes = fix.value;
       } else if (fix.kind === "reparent") {
         updateOptions.parent = fix.parent_id;
       } else {
@@ -1684,6 +1734,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   };
 
   let closeReasonBackfillRows: CloseReasonBackfillRow[] = [];
+  let estimateBackfillRows: EstimateBackfillRow[] = [];
   let resolutionBackfillRows: ResolutionBackfillRow[] = [];
   let terminalParentFixRows: TerminalParentFixRow[] = [];
   let staleLinkPruneRows: StaleLinkPruneRow[] = [];
@@ -1691,6 +1742,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
   if (requestedChecks.has("metadata")) {
     const built = buildMetadataCheck(items, metadataPolicy, statusRegistry, fullDiagnostics);
     closeReasonBackfillRows = built.closeReasonBackfillRows;
+    estimateBackfillRows = built.estimateBackfillRows;
     record(built);
   }
   if (requestedChecks.has("resolution")) {
@@ -1740,6 +1792,7 @@ export async function runValidate(options: ValidateCommandOptions, global: Globa
     if (options.autoFix === true) {
       planned.push(...planCloseReasonBackfillFixes(closeReasonBackfillRows));
       planned.push(...planResolutionBackfillFixes(resolutionBackfillRows));
+      planned.push(...planEstimateBackfillFixes(estimateBackfillRows, settings.validation.estimate_defaults_by_type));
       planned.push(...planTerminalParentFixes(terminalParentFixRows));
     }
     if (options.pruneMissing === true) {

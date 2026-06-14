@@ -18,24 +18,30 @@
 
 import { EXIT_CODE } from "../shared/constants.js";
 import { PmCliError } from "../shared/errors.js";
+import { resolveEstimateDefaultMinutes } from "./estimate-defaults.js";
 
 export type ValidateFixCheck = "metadata" | "resolution" | "lifecycle" | "files";
 
 export type ValidateFixKind =
   | "set_resolution"
   | "set_close_reason"
+  | "set_estimate"
   | "reparent"
   | "unset_parent"
   | "prune_file_link"
   | "prune_doc_link";
 
-export type ValidateFixScope = "metadata" | "resolution" | "lifecycle";
+export type ValidateFixScope = "metadata" | "resolution" | "estimates" | "lifecycle";
 
 /** Scopes auto-applied without an explicit `--fix-scope` (safe field backfills). */
 export const DEFAULT_GRANTED_FIX_SCOPES: readonly ValidateFixScope[] = ["metadata", "resolution"];
 
-/** Scopes accepted by `--fix-scope` (lifecycle is the opt-in structural scope). */
-export const SUPPORTED_FIX_SCOPES: readonly ValidateFixScope[] = ["metadata", "resolution", "lifecycle"];
+/**
+ * Scopes accepted by `--fix-scope`. `estimates` and `lifecycle` are opt-in:
+ * estimate backfills are heuristic per-type guesses (not derived facts) and
+ * lifecycle changes are structural, so neither is granted by default.
+ */
+export const SUPPORTED_FIX_SCOPES: readonly ValidateFixScope[] = ["metadata", "resolution", "estimates", "lifecycle"];
 
 export interface ValidateFixRecord {
   /** Item the fix targets. */
@@ -140,6 +146,38 @@ export function planCloseReasonBackfillFixes(rows: readonly CloseReasonBackfillR
     });
   }
   return fixes;
+}
+
+export interface EstimateBackfillRow {
+  id: string;
+  /** Item type, used to resolve the per-type default estimate. */
+  type?: string;
+}
+
+/**
+ * Plan estimate backfills for items flagged by the metadata check as missing
+ * `estimated_minutes` (GH-212). The value is a config-driven per-type default
+ * (overrides > built-in map > fallback), never a derived fact — so these fixes
+ * carry `gate: "estimates"`, an opt-in scope that is NOT granted by default.
+ * `overrides` is the already-normalized `validation.estimate_defaults_by_type`
+ * map; pass `undefined`/`{}` to use the built-in defaults.
+ */
+export function planEstimateBackfillFixes(
+  rows: readonly EstimateBackfillRow[],
+  overrides?: Readonly<Record<string, number>>,
+): ValidateFixRecord[] {
+  return rows.map((row) => {
+    const minutes = resolveEstimateDefaultMinutes(row.type, overrides);
+    return {
+      item_id: row.id,
+      check: "metadata" as const,
+      field: "estimated_minutes",
+      kind: "set_estimate" as const,
+      value: String(minutes),
+      command: `pm update ${row.id} --estimate ${minutes}`,
+      gate: "estimates" as const,
+    };
+  });
 }
 
 export interface TerminalParentFixRow {

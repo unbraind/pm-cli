@@ -1560,6 +1560,99 @@ describe("runValidate", () => {
     });
   });
 
+  it("withholds estimate backfills until --fix-scope estimates and uses per-type/override defaults (GH-212)", async () => {
+    await withTempPmPath(async (context) => {
+      const taskId = createTask(context, "auto-fix-estimate-task");
+      const epicId = createTestItemId(context, {
+        title: "auto-fix-estimate-epic",
+        type: "Epic",
+        tags: "validate,unit",
+        estimate: "30",
+      });
+      // Strip estimated_minutes so the metadata check flags both items.
+      for (const [id, folder] of [
+        [taskId, "tasks"],
+        [epicId, "epics"],
+      ] as const) {
+        const itemPath = path.join(context.pmPath, folder, `${id}.toon`);
+        const before = await readFile(itemPath, "utf8");
+        const after = before.replace(/^estimated_minutes:.*\n/m, "");
+        expect(after).not.toBe(before);
+        await writeFile(itemPath, after, "utf8");
+      }
+
+      // Default scopes do NOT grant estimates: both are planned but gated.
+      const preview = await runValidate({ autoFix: true, dryRun: true }, { path: context.pmPath });
+      const estimatePlans = (preview.fixes?.planned_fixes ?? []).filter((fix) => fix.field === "estimated_minutes");
+      expect(estimatePlans).toEqual(
+        expect.arrayContaining([
+          { item_id: taskId, check: "metadata", field: "estimated_minutes", command: `pm update ${taskId} --estimate 120`, gate: "estimates" },
+          { item_id: epicId, check: "metadata", field: "estimated_minutes", command: `pm update ${epicId} --estimate 2880`, gate: "estimates" },
+        ]),
+      );
+      const gatedEstimates = (preview.fixes?.gated_fixes ?? []).filter((fix) => fix.field === "estimated_minutes");
+      expect(gatedEstimates).toHaveLength(2);
+      expect(gatedEstimates[0]).toMatchObject({ gate_hint: "Withheld: re-run with --fix-scope estimates to apply." });
+
+      // A per-type override from settings wins over the built-in default.
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as { validation?: Record<string, unknown> };
+      settings.validation = { ...(settings.validation ?? {}), estimate_defaults_by_type: { Epic: 999 } };
+      await writeFile(settingsPath, JSON.stringify(settings, null, 2), "utf8");
+
+      const granted = await runValidate({ autoFix: true, fixScope: ["estimates"] }, { path: context.pmPath });
+      expect(granted.fixes?.granted_fix_scopes).toEqual(["estimates"]);
+      const appliedEstimates = (granted.fixes?.applied_fixes ?? []).filter((fix) => fix.field === "estimated_minutes");
+      expect(appliedEstimates).toHaveLength(2);
+      expect(granted.fixes?.failed_count).toBe(0);
+
+      const epicAfter = context.runCli(["get", epicId, "--json"], { expectJson: true });
+      expect((epicAfter.json as { item: { estimated_minutes?: number } }).item.estimated_minutes).toBe(999);
+      const taskAfter = context.runCli(["get", taskId, "--json"], { expectJson: true });
+      expect((taskAfter.json as { item: { estimated_minutes?: number } }).item.estimated_minutes).toBe(120);
+    });
+  });
+
+  it("attributes owners to missing linked paths in the files check (GH-210)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "owns-a-stale-link");
+      const workspaceRoot = path.dirname(context.pmPath);
+      const stalePath = path.join(workspaceRoot, "goes-away.txt");
+      await writeFile(stalePath, "temporary", "utf8");
+      const linked = context.runCli(["files", id, "--add", "goes-away.txt", "--json"], { expectJson: true });
+      expect(linked.code).toBe(0);
+      await rm(stalePath, { force: true });
+
+      // Default: token-efficient compact one-liners naming the owner.
+      const compact = await runValidate({ checkFiles: true }, { path: context.pmPath });
+      const compactDetails = checkByName(compact, "files").details as {
+        missing_linked_path_rows_count: number;
+        missing_linked_path_rows: string[];
+      };
+      expect(compactDetails.missing_linked_path_rows_count).toBe(1);
+      expect(compactDetails.missing_linked_path_rows[0]).toBe(
+        `goes-away.txt:deleted owner=${id} status=open field=files title="owns-a-stale-link"`,
+      );
+
+      // Verbose: full structured rows (the GH-210 JSON shape).
+      const verbose = await runValidate({ checkFiles: true, verboseFileLists: true }, { path: context.pmPath });
+      const verboseDetails = checkByName(verbose, "files").details as {
+        missing_linked_path_rows: Array<{
+          path: string;
+          classification: string;
+          items: Array<{ id: string; type: string; status: string; field: string; title: string }>;
+        }>;
+      };
+      expect(verboseDetails.missing_linked_path_rows).toEqual([
+        {
+          path: "goes-away.txt",
+          classification: "deleted",
+          items: [{ id, type: "Task", title: "owns-a-stale-link", status: "open", field: "files" }],
+        },
+      ]);
+    });
+  });
+
   it("clears the parent link when no active grandparent exists and an exact --fix-scope withholds safe fixes", async () => {
     await withTempPmPath(async (context) => {
       const parentId = createTask(context, "auto-fix-rootless-terminal-parent");

@@ -190,6 +190,23 @@ describe("core/store/settings-validator", () => {
     }
   });
 
+  it("accepts validation.estimate_defaults_by_type as a positive-integer map and rejects bad shapes (GH-212)", () => {
+    const accepted = minimalValidSettings();
+    accepted.validation = { sprint_release_format: "warn", estimate_defaults_by_type: { Epic: 2880, Task: 120 } };
+    const result = validateSettings(accepted);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.validation?.estimate_defaults_by_type).toEqual({ Epic: 2880, Task: 120 });
+    }
+
+    // Arrays, non-number values, and non-positive minutes are all rejected.
+    for (const bad of [["Epic", 2880], { Epic: "2880" }, { Epic: 0 }, { Epic: -5 }, { Epic: 1.5 }]) {
+      const raw = minimalValidSettings();
+      raw.validation = { sprint_release_format: "warn", estimate_defaults_by_type: bad as unknown };
+      expect(validateSettings(raw).success).toBe(false);
+    }
+  });
+
   it("rejects when a nested array element fails a literal-union role check", () => {
     const raw = minimalValidSettings();
     raw.schema = { statuses: [{ id: "in_review", roles: ["bogus_role"] }] };

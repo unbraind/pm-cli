@@ -45,6 +45,7 @@ export interface ParsedSettings {
     lifecycle_closure_like_blocked_reason_patterns?: string[];
     lifecycle_closure_like_resolution_patterns?: string[];
     lifecycle_closure_like_actual_result_patterns?: string[];
+    estimate_defaults_by_type?: Record<string, number>;
   };
   governance?: Partial<GovernanceSettings>;
   workflow?: { definition_of_done: string[] };
@@ -168,6 +169,28 @@ function vArray<T>(item: Check<T>): Check<T[]> {
 
 function vOptional<T>(inner: Check<T>): Check<T | undefined> {
   return (input) => (input === undefined ? { ok: true, value: undefined } : inner(input));
+}
+
+/**
+ * A plain object with arbitrary string keys whose values each pass `valueCheck`.
+ * Rejects arrays and null. Used for free-form maps like
+ * `validation.estimate_defaults_by_type` (item-type -> default minutes).
+ */
+function vRecordOf<T>(valueCheck: Check<T>): Check<Record<string, T>> {
+  return (input) => {
+    if (typeof input !== "object" || input === null || Array.isArray(input)) {
+      return FAIL;
+    }
+    const value: Record<string, T> = {};
+    for (const [key, raw] of Object.entries(input as Record<string, unknown>)) {
+      const result = valueCheck(raw);
+      if (!result.ok) {
+        return FAIL;
+      }
+      value[key] = result.value;
+    }
+    return { ok: true, value };
+  };
 }
 
 function vObject(shape: Record<string, Check<unknown>>): Check<Record<string, unknown>> {
@@ -375,6 +398,7 @@ const settingsCheck = vObject({
       lifecycle_closure_like_blocked_reason_patterns: vOptional(vArray(vString)),
       lifecycle_closure_like_resolution_patterns: vOptional(vArray(vString)),
       lifecycle_closure_like_actual_result_patterns: vOptional(vArray(vString)),
+      estimate_defaults_by_type: vOptional(vRecordOf(vNumber({ int: true, positive: true }))),
     }),
   ),
   governance: governanceSettings,
