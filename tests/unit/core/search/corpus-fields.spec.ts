@@ -158,6 +158,19 @@ describe("resolveSearchCorpusFields", () => {
     ]);
   });
 
+  it("drops unknown field names that have no builder", () => {
+    expect(resolveSearchCorpusFields(makeSettings(["title", "not_a_real_field", "priority"]))).toEqual([
+      "title",
+      "priority",
+    ]);
+  });
+
+  it("falls back to the full default set when every configured name is unknown", () => {
+    expect(resolveSearchCorpusFields(makeSettings(["nope", "also_nope"]))).toEqual([
+      ...DEFAULT_SEARCH_CORPUS_FIELDS,
+    ]);
+  });
+
   it("threads through buildSemanticCorpusInput", () => {
     const resolved = resolveSearchCorpusFields(makeSettings(["title", "priority"]));
     const input = buildSemanticCorpusInput(makeDocument(), { fields: resolved });

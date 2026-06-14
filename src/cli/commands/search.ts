@@ -2097,7 +2097,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   // GH-181: keyword mode now also falls back to the configured max_results (50)
   // default when --limit is omitted, so a broad query no longer returns ALL hits.
   const resolvedLimit = limit ?? maxResults;
-  const limited = resolvedLimit === undefined ? sorted : sorted.slice(0, resolvedLimit);
+  const limited = sorted.slice(0, resolvedLimit);
   const projectionFields = projection.mode === "full" ? null : [...projection.fields];
   const compactSummaryMode = projection.mode === "compact" && options.compact === true;
 

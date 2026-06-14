@@ -55,13 +55,15 @@ export function resolveSearchCorpusFields(settings: Pick<PmSettings, "search"> |
   }
   // The type guard is intentional: corpus_fields comes from user-editable
   // settings.json, so entries are not statically guaranteed to be strings.
-  // De-duplicate so a repeated name cannot produce duplicate corpus keys.
+  // De-duplicate and drop unknown names (they have no builder) so an invalid
+  // config cannot produce duplicate or phantom corpus keys.
+  const knownFields = new Set<string>(DEFAULT_SEARCH_CORPUS_FIELDS);
   const selected = Array.from(
     new Set(
       configured
         .filter((entry): entry is string => typeof entry === "string")
         .map((entry) => entry.trim())
-        .filter((entry) => entry.length > 0),
+        .filter((entry) => entry.length > 0 && knownFields.has(entry)),
     ),
   );
   return selected.length > 0 ? selected : [...DEFAULT_SEARCH_CORPUS_FIELDS];
