@@ -113,6 +113,12 @@ export const REMEDIATION_REGISTRY: readonly RemediationEntry[] = Object.freeze([
     command: "pm health --check-telemetry",
     summary: "Client schema is behind server; upgrade pm-cli to emit the latest event shape.",
   },
+  {
+    code: "telemetry_otel_export_failing",
+    command: "pm health --check-telemetry",
+    summary:
+      "OTLP trace spans are queued but the traces endpoint export is failing; spans retry automatically on the next reachable command, or set PM_TELEMETRY_OTEL_DISABLED=1 to skip OTLP export. Advisory only.",
+  },
   // --- pm health: integrity ---
   {
     code: "integrity_item_unreadable",

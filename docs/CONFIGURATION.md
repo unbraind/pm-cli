@@ -90,6 +90,28 @@ that look like workspace roots are rejected unless `--force` is provided.
 
 Tests should set both `PM_PATH` and `PM_GLOBAL_PATH` to temporary directories. The wrapper `node scripts/run-tests.mjs ...` does that automatically.
 
+### Telemetry environment variables
+
+Telemetry is opt-in via `pm config set telemetry-tracking on` (see [Common Settings](#common-settings)). When enabled, these environment variables tune runtime behaviour. All boolean knobs accept `1`, `true`, `yes`, or `on` (case-insensitive); any other value leaves the knob off.
+
+| Variable | Values | Use |
+|----------|--------|-----|
+| `PM_TELEMETRY_DISABLED` | boolean | Hard-disable all telemetry for this process, ignoring settings. |
+| `PM_NO_TELEMETRY` | boolean | Alias for `PM_TELEMETRY_DISABLED` (honoured by the same checks). |
+| `PM_TELEMETRY_OTEL_DISABLED` | boolean | Disable only OTLP trace-span export; the event queue still flushes. |
+| `PM_TELEMETRY_INLINE_FLUSH` | boolean | Flush the queue and OTLP spans inline instead of dispatching the detached worker. Mainly for tests; normal use relies on the background worker. |
+| `PM_TELEMETRY_SOURCE_CONTEXT` | `user` \| `automation` \| `test` \| `dogfood` \| `audit_smoke` | Override the inferred source context recorded on each event. Any other value is ignored and the context is inferred. |
+| `PM_TELEMETRY_INGEST_KEY` | string | Sent as the `x-pm-telemetry-key` header on queue flushes; never logged. |
+| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | URL | OTLP/HTTP traces endpoint for command spans. Takes precedence over the base endpoint. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | URL | Base OTLP endpoint; the traces endpoint is derived by appending `/v1/traces`. |
+| `OTEL_SERVICE_NAME` | string | `service.name` attribute on exported spans (defaults to `pm-cli`). |
+
+Interaction rules:
+
+- `PM_TELEMETRY_DISABLED` / `PM_NO_TELEMETRY` short-circuit everything, including OTLP export, regardless of the other knobs.
+- OTLP span export only happens when telemetry is enabled, `PM_TELEMETRY_OTEL_DISABLED` is off, and a traces endpoint is configured. By default spans are persisted to a bounded queue and exported by the detached, unref'd flush worker so commands exit promptly even when the traces endpoint is unreachable. `PM_TELEMETRY_INLINE_FLUSH=1` is the explicit test-oriented exception that performs the flush inline.
+- `pm health --check-telemetry --json` surfaces flush and OTLP export diagnostics (`pending_otel_spans`, `last_otel_attempt_at`, `last_otel_success_at`, `last_otel_failure_at`, `last_otel_failure_error`) and the active `env_overrides` (including `telemetry_inline_flush` and `telemetry_source_context`) so agents can self-diagnose a stalled endpoint.
+
 ## Item Storage Format
 
 TOON is the default:

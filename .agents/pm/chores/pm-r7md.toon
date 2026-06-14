@@ -2,14 +2,18 @@ id: pm-r7md
 title: "Document and test telemetry env-var surface: PM_TELEMETRY_DISABLED, PM_NO_TELEMETRY, PM_TELEMETRY_SOURCE_CONTEXT, PM_TELEMETRY_OTEL_DISABLED, PM_TELEMETRY_INLINE_FLUSH"
 description: "The telemetry module exposes 9 env-var knobs (runtime.ts lines 41-52, consent.ts line 7) that control disable, source context override, OTel integration, and flush mode. These are not listed in any single user-facing document or help text, and their interaction (e.g. PM_TELEMETRY_DISABLED vs PM_NO_TELEMETRY are aliases; PM_TELEMETRY_SOURCE_CONTEXT is an override-only env) is scattered across the code. Agents relying on PM_TELEMETRY_SOURCE_CONTEXT=dogfood have no spec reference for the valid values or interaction rules."
 type: Chore
-status: open
+status: closed
 priority: 3
-tags[4]: agent-ux,"area:observability","area:telemetry",docs
+tags[6]: agent-ux,"area:observability","area:telemetry",docs,documentation,telemetry
 created_at: "2026-06-07T10:05:00.380Z"
-updated_at: "2026-06-07T10:16:01.720Z"
+updated_at: "2026-06-14T11:02:38.776Z"
 author: audit-observability-agent
 acceptance_criteria: "- AGENT_GUIDE.md (or docs/commands/TELEMETRY.md if it exists) lists all env-var knobs with their valid values, interaction rules, and example usage.\n- health check env_overrides section is extended to also surface PM_TELEMETRY_SOURCE_CONTEXT override and PM_TELEMETRY_INLINE_FLUSH states for completeness.\n- A unit test asserts that all PM_TELEMETRY_SOURCE_CONTEXT_VALUES appear in the documentation file (or in a dedicated const exported for docs)."
 parent: pm-5oj5
 risk: low
 confidence: high
+resolution: Documented all telemetry env vars + PM_TELEMETRY_SOURCE_CONTEXT enum in docs/CONFIGURATION.md with a drift-guard test.
+expected_result: Every telemetry env knob and valid source-context value is documented and guarded against drift from runtime.ts.
+actual_result: docs/CONFIGURATION.md section + tests/integration/telemetry-env-var-docs.spec.ts added; both gates green.
+close_reason: docs/CONFIGURATION.md telemetry env-var section + tests/integration/telemetry-env-var-docs.spec.ts drift guard.
 body: "## Context\n\nFile: src/core/telemetry/runtime.ts:41-52 — 9 env-var constants defined.\nFile: src/core/telemetry/consent.ts:7 — PM_TELEMETRY_PROMPT env.\nFile: src/cli/commands/health.ts:1213-1217 — env_overrides surfaced in health but only 3 of 9 vars.\n\nValid PM_TELEMETRY_SOURCE_CONTEXT values are 'user|automation|test|dogfood|audit_smoke' (runtime.ts:52) — this enum is not documented outside the source.\n\n## Acceptance criteria\n\n- AGENT_GUIDE.md (or docs/commands/TELEMETRY.md if it exists) lists all env-var knobs with their valid values, interaction rules, and example usage.\n- health check env_overrides section is extended to also surface PM_TELEMETRY_SOURCE_CONTEXT override and PM_TELEMETRY_INLINE_FLUSH states for completeness.\n- A unit test asserts that all PM_TELEMETRY_SOURCE_CONTEXT_VALUES appear in the documentation file (or in a dedicated const exported for docs).\n\n## Evidence\n\nsrc/core/telemetry/runtime.ts:41-52 — all env constants.\nNo single .md or help string lists them all together."
