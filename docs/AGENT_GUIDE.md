@@ -103,7 +103,11 @@ pm release <item-id>
 | Need | Command |
 |------|---------|
 | Next work and agenda | `pm context --limit 10` |
+| Comprehensive whole-tracker snapshot | `pm context --depth full` (every section, no per-section row cap) |
+| Status of one epic/subtree | `pm context --parent <id> --depth deep` |
 | Relevant items | `pm search "<keywords>" --limit 10` |
+| Every matched row (no cap) | `pm list-all --no-truncate --brief` (alias `--all`; `result.total` reports the full count when a `--limit` truncates) |
+| Item bodies in bulk (one call) | `pm list-open --json --include-body` (avoids one `pm get` per item) |
 | Open work only | `pm search "<keywords>" --status open` (drops closed-history noise; did-you-mean on typos) |
 | Items changed since last window | `pm list-all --updated-after <prev-run-ISO> --brief` (relative `-2h`/`-7d` also work) |
 | Single item | `pm get <id>` |

@@ -1,0 +1,13 @@
+id: pm-kp1d
+title: "pm context power-user projection: --depth full, --fields, --parent subtree (GH-156, pm-ds0m, GH-154)"
+description: "Umbrella for context-retrieval ergonomics PR: context --depth full + --fields (GH-156/pm-j0vc), context --parent subtree scoping (pm-ds0m), list --no-truncate (GH-154). Verify-close already-shipped GH-155/pm-gcm3 child rollup and GH-223 include-body discoverability."
+type: Story
+status: closed
+priority: 2
+tags[3]: agent-ux,cli,context
+created_at: "2026-06-14T11:49:59.829Z"
+updated_at: "2026-06-14T12:12:50.317Z"
+author: maintainer-agent
+parent: pm-mpbb
+close_reason: "Context retrieval ergonomics PR complete: context --depth full + --parent, list --no-truncate, GH-155/GH-223 verified+documented."
+body: ""

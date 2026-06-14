@@ -1064,4 +1064,37 @@ describe("runList", () => {
       });
     });
   });
+
+  it("--no-truncate overrides --limit and surfaces the pre-pagination total (GH-154)", async () => {
+    await withTempPmPath(async (context) => {
+      for (let index = 0; index < 4; index += 1) {
+        createItem(context, { title: `Bulk ${index}`, status: "open", priority: "1", tags: "bulk", deadline: "+1d" });
+      }
+
+      // A truncating --limit reports how many rows were omitted via total.
+      const limited = await runList(undefined, { limit: "1" }, { path: context.pmPath });
+      expect(limited.count).toBe(1);
+      expect(limited.total).toBe(4);
+
+      // --no-truncate returns everything and omits total (nothing was dropped).
+      const full = await runList(undefined, { noTruncate: true }, { path: context.pmPath });
+      expect(full.count).toBe(4);
+      expect(full.total).toBeUndefined();
+
+      // --no-truncate wins even when --limit is also supplied, and echoes the flag.
+      const override = await runList(undefined, { noTruncate: true, limit: "1" }, { path: context.pmPath });
+      expect(override.count).toBe(4);
+      expect((override.filters as { no_truncate?: boolean }).no_truncate).toBe(true);
+
+      // Offset-only pagination also surfaces the total of matched rows.
+      const offset = await runList(undefined, { offset: "1" }, { path: context.pmPath });
+      expect(offset.count).toBe(3);
+      expect(offset.total).toBe(4);
+
+      // Compact summary path carries the same total when truncated.
+      const compact = await runList(undefined, { limit: "1", compact: true }, { path: context.pmPath });
+      expect(compact.count).toBe(1);
+      expect(compact.total).toBe(4);
+    });
+  });
 });

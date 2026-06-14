@@ -496,6 +496,8 @@ export function normalizeListOptions(options: Record<string, unknown>): ListOpti
     release: readListOptionString(options, "release"),
     limit: readListOptionString(options, "limit"),
     offset: readListOptionString(options, "offset"),
+    // Commander stores --no-truncate as truncate=false; --all is the positive alias.
+    noTruncate: options.truncate === false || options.all === true ? true : undefined,
     includeBody: options.includeBody === true ? true : undefined,
     compact: options.compact === true ? true : undefined,
     brief: options.brief === true ? true : undefined,
@@ -767,6 +769,7 @@ export function normalizeContextOptions(options: Record<string, unknown>): Conte
     assigneeFilter: readContextString("assigneeFilter"),
     sprint: readContextString("sprint"),
     release: readContextString("release"),
+    parent: readContextString("parent"),
     limit: readContextString("limit"),
     format: readContextString("format"),
     depth: readContextString("depth"),

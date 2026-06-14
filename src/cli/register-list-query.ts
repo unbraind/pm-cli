@@ -80,6 +80,7 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--filter-metadata-missing", "Show only items missing any tracked metadata (AC, estimate, or resolution)")
       .option("--limit <n>", "Limit returned item count")
       .option("--offset <n>", "Skip the first n matching rows before limit is applied")
+      .option("--no-truncate", "Return every matched row, overriding any --limit (alias: --all)")
       .option("--include-body", "Include item body in each returned list row")
       .option("--compact", "Render compact list projection fields (mutually exclusive with --brief/--full/--fields)")
       .option("--brief", "Ultra-compact output: id, status, type, title only (agent-optimized, mutually exclusive with --compact/--full/--fields)")
@@ -123,6 +124,8 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
           printError(`profile:command=${name} took_ms=${Date.now() - startedAt}`);
         }
       });
+    // Positive alias for --no-truncate (Commander stores the negation as truncate=false).
+    addHiddenOption(command, "--all", "Alias for --no-truncate");
     // Hidden pure snake_case underscore-duplicate alias (kept parse-functional).
     addHiddenOption(command, "--tags <value>", "Alias for --tag");
     addHiddenOption(command, "--assignee_filter <value>", "Alias for --assignee-filter");
@@ -212,9 +215,10 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--assignee-filter <value>", "Filter assignee presence: assigned|unassigned")
       .option("--sprint <value>", "Filter by sprint")
       .option("--release <value>", "Filter by release")
+      .option("--parent <id>", "Scope the snapshot to one item's subtree (the item plus all descendants)")
       .option("--limit <n>", "Limit focus and agenda rows per section")
       .option("--format <value>", "Context output format override: markdown|toon|json")
-      .option("--depth <value>", "Context depth: brief|standard|deep (default: settings or brief)")
+      .option("--depth <value>", "Context depth: brief|standard|deep|full (full = every section, no per-section cap)")
       .option("--section <value...>", "Include specific sections (repeatable; overrides --depth)")
       .option("--activity-limit <n>", "Limit recent activity entries (default: settings or 10)")
       .option("--stale-threshold <value>", "Staleness cutoff in days (e.g. 7 or 7d; default: settings or 7)");

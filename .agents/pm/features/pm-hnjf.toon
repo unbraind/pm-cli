@@ -1,0 +1,12 @@
+id: pm-hnjf
+title: "pm context --fields: per-row field projection for focus items (GH-156 follow-up to --depth full)"
+description: "Split from pm-j0vc. --depth full ships in the context-projection PR; --fields row-level projection (project high_level/low_level focus rows to a chosen field subset, like pm list --fields) is deferred as a focused follow-up because it requires reshaping ContextResult focus-row types and markdown rendering. --section already covers section-level customization."
+type: Feature
+status: open
+priority: 4
+tags[3]: agent-ux,cli,context
+created_at: "2026-06-14T11:52:21.590Z"
+updated_at: "2026-06-14T11:52:21.590Z"
+author: maintainer-agent
+parent: pm-mpbb
+body: ""

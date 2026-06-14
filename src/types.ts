@@ -517,7 +517,7 @@ export interface HistoryEntry {
   message?: string;
 }
 
-export const CONTEXT_DEPTH_VALUES = ["brief", "standard", "deep"] as const;
+export const CONTEXT_DEPTH_VALUES = ["brief", "standard", "deep", "full"] as const;
 export type ContextDepth = (typeof CONTEXT_DEPTH_VALUES)[number];
 
 export const CONTEXT_SECTION_VALUES = [

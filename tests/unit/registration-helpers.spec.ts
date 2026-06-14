@@ -291,6 +291,11 @@ describe("registration helpers", () => {
       custom: "kept",
     });
 
+    // Commander stores --no-truncate as truncate=false; --all is the positive alias.
+    expect(normalizeListOptions({ truncate: false }).noTruncate).toBe(true);
+    expect(normalizeListOptions({ all: true }).noTruncate).toBe(true);
+    expect(normalizeListOptions({ truncate: true }).noTruncate).toBeUndefined();
+
     expect(
       normalizeAggregateOptions({
         groupBy: "status",
@@ -461,6 +466,10 @@ describe("registration helpers", () => {
     expect(normalizeContextOptions({ section: [" agenda ", "", "items"] })).toMatchObject({
       section: [" agenda ", "items"],
     });
+
+    // --parent subtree scope flows through context normalization (pm-ds0m).
+    expect(normalizeContextOptions({ parent: "pm-epic" })).toMatchObject({ parent: "pm-epic" });
+    expect(normalizeContextOptions({}).parent).toBeUndefined();
   });
 
   it("applies default output format only when settings are available and JSON was not requested", async () => {

@@ -2,14 +2,15 @@ id: pm-ds0m
 title: "pm context --parent <id>: scope snapshot to a single epic/parent subtree"
 description: pm context has no --parent or --epic flag to scope the focus-item and hierarchy sections to one epic or parent's subtree. Agents working inside a large Epic must either read the entire project context (noisy for 1000+ item repos) or manually run pm list-open --parent <id> + pm search to reconstruct what pm context would provide. A --parent <id> scope filter on pm context would make it the natural 'what's the status of this epic?' command.
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: agent-ux,"area:cli","area:context",dx
 created_at: "2026-06-07T10:07:23.497Z"
-updated_at: "2026-06-07T10:15:42.151Z"
+updated_at: "2026-06-14T12:12:48.179Z"
 author: audit-cli-schema-agent
 acceptance_criteria: "- pm context --parent <id> scopes focus items and hierarchy section to descendants of that item\n- Docs updated: AGENT_GUIDE.md and COMMANDS.md context section\n- Shell completions updated for context command --parent flag\n- CONTEXT_FLAG_CONTRACTS / MCP context tool parameters include --parent"
 parent: pm-mpbb
 risk: low
 confidence: high
+close_reason: Shipped pm context --parent <id> subtree scoping. GH-related pm-ds0m.
 body: "## Context\n\nContextOptions (src/cli/commands/context.ts:34-53) has no parent field.\nThe context command registration in register-operations.ts (line 191+) adds no --parent option.\nWith 1000+ items, pm context --limit 10 still surfaces items from all epics mixed together.\nAgents assigned to a specific epic would benefit from pm context --parent pm-mpbb as the 'what's happening in my scope' command.\n\n## Acceptance criteria\n\n- pm context --parent <id> scopes focus items and hierarchy section to descendants of that item\n- Docs updated: AGENT_GUIDE.md and COMMANDS.md context section\n- Shell completions updated for context command --parent flag\n- CONTEXT_FLAG_CONTRACTS / MCP context tool parameters include --parent\n\n## Evidence\n\n- src/cli/commands/context.ts:34-53 (ContextOptions interface — no parent field)\n- src/cli/register-operations.ts:191-234 (context command registration — no --parent option added)\n- Context already computes childrenByParent (src/cli/commands/context.ts:473-487) so hierarchy grouping logic exists; parent scoping is a pre-filter step"

@@ -46,6 +46,7 @@ export interface ListOptions {
   release?: string;
   limit?: string;
   offset?: string;
+  noTruncate?: boolean;
   includeBody?: boolean;
   compact?: boolean;
   brief?: boolean;
@@ -106,6 +107,9 @@ const HEAVY_PROJECTION_FIELDS: ReadonlySet<string> = new Set<string>(HEAVY_METAD
 interface ListResultBase {
   items: ListedItem[];
   count: number;
+  // Total rows matched before pagination; only emitted when --limit/--offset
+  // omitted rows, so agents know how many remain (GH-154).
+  total?: number;
   warnings?: string[];
 }
 
@@ -736,10 +740,16 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
         : resolvedStatus;
   const sorted = sortItems(filtered, sortField, sortOrder, statusRegistry);
   const ordered = treeEnabled ? orderItemsAsTree(sorted, parentRoot, treeDepth) : sorted;
-  const limit = parseIntegerLimit(options.limit);
+  // --no-truncate (alias --all) forces full results, overriding any --limit so an
+  // agent can pull the entire matched set in one call (GH-154).
+  const noTruncate = options.noTruncate === true;
+  const limit = noTruncate ? undefined : parseIntegerLimit(options.limit);
   const offset = parseOffset(options.offset) ?? 0;
   const limited = limit === undefined ? ordered.slice(offset) : ordered.slice(offset, offset + limit);
   const projected = projectListItems(limited, projection, treeEnabled);
+  const totalMatched = ordered.length;
+  // Surface the pre-pagination total only when rows were actually omitted.
+  const truncationExtras = projected.length < totalMatched ? { total: totalMatched } : {};
   const now = nowIso();
   const warnings = [...new Set(listWarnings)].sort((left, right) => left.localeCompare(right));
   const projectionFields = projection.mode === "full" ? null : [...projection.fields];
@@ -760,6 +770,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
     return {
       items: projected,
       count: projected.length,
+      ...truncationExtras,
       filters: compactFilters,
       ...(warnings.length > 0 ? { warnings } : {}),
     };
@@ -767,6 +778,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
   return {
     items: projected,
     count: projected.length,
+    ...truncationExtras,
     filters: {
       status: filtersStatus,
       type: options.type ?? null,
@@ -790,6 +802,7 @@ export async function runList(status: ItemStatus | undefined, options: ListOptio
       ...(options.filterMetadataMissing === true ? { filter_metadata_missing: true } : {}),
       limit: options.limit ?? null,
       offset: options.offset ?? null,
+      ...(noTruncate ? { no_truncate: true } : {}),
       include_body: options.includeBody ?? null,
       compact: options.compact ?? null,
       fields: options.fields ?? null,

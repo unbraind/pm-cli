@@ -49,6 +49,7 @@ export interface ContextOptions {
   section?: string[];
   activityLimit?: string;
   staleThreshold?: string;
+  parent?: string;
   [key: string]: unknown;
 }
 
@@ -209,6 +210,7 @@ export interface ContextResult {
     sprint: string | null;
     release: string | null;
     limit: string | null;
+    parent: string | null;
     runtime_filters?: Record<string, unknown>;
   };
   summary: ContextSummary;
@@ -277,8 +279,10 @@ export function resolveContextOutputFormat(options: ContextOptions, global: Glob
   return commandFormat ?? "toon";
 }
 
-function parseContextLimit(raw: string | undefined): number {
-  return parseIntegerLimit(raw, "--limit") ?? DEFAULT_CONTEXT_LIMIT;
+// --depth full surfaces the entire backlog: when no explicit --limit is given,
+// every section returns all rows instead of the default top-N sample.
+function parseContextLimit(raw: string | undefined, depth: ContextDepth): number {
+  return parseIntegerLimit(raw, "--limit") ?? (depth === "full" ? Number.MAX_SAFE_INTEGER : DEFAULT_CONTEXT_LIMIT);
 }
 
 export function parseContextDepth(raw: string | undefined, settings: ContextSettings): ContextDepth {
@@ -312,6 +316,9 @@ export function parseContextSections(
     return sections;
   }
   if (depth === "brief") return [];
+  // --depth full is the comprehensive snapshot: every known section, regardless
+  // of the per-section settings toggles that brief/standard/deep respect.
+  if (depth === "full") return [...CONTEXT_SECTION_VALUES];
   const pool = depth === "deep" ? DEEP_SECTIONS : STANDARD_SECTIONS;
   return pool.filter((section) => settings.sections[section]);
 }
@@ -376,7 +383,9 @@ function isBlockedStatus(status: ItemStatus, statusRegistry: RuntimeStatusRegist
 
 // Projection flags belong to list/calendar/activity output shaping and must not
 // leak into runContext's downstream calls, which need full ItemFrontMatter rows.
-const LIST_PROJECTION_FLAGS = ["compact", "brief", "fields", "includeBody", "include_body"] as const;
+// --parent is a context-level subtree scope computed here transitively, so it
+// must not reach runList (whose --parent matches direct children only).
+const LIST_PROJECTION_FLAGS = ["compact", "brief", "fields", "includeBody", "include_body", "parent"] as const;
 
 function stripListProjectionFlags(options: ContextOptions): Record<string, unknown> {
   const copy: Record<string, unknown> = { ...(options as Record<string, unknown>) };
@@ -384,6 +393,31 @@ function stripListProjectionFlags(options: ContextOptions): Record<string, unkno
     delete copy[key];
   }
   return copy;
+}
+
+// Resolve the transitive subtree (the anchor item plus every descendant via
+// parent links) so --parent can scope a context snapshot to one epic/milestone.
+// Reuses the same buildChildrenByParent/collectDescendants helpers the hierarchy
+// section relies on, so subtree membership stays consistent across the snapshot.
+function collectSubtreeIds(corpus: ItemFrontMatter[], parentId: string): { ids: Set<string>; found: boolean } {
+  const target = parentId.trim().toLowerCase();
+  const anchor = corpus.find((item) => item.id.trim().toLowerCase() === target);
+  if (!anchor) {
+    return { ids: new Set<string>(), found: false };
+  }
+  const childrenByParent = buildChildrenByParent(corpus);
+  const descendants = collectDescendants(anchor.id, childrenByParent);
+  const ids = new Set<string>([anchor.id, ...descendants.map((item) => item.id)]);
+  return { ids, found: true };
+}
+
+function parseContextParent(raw: string | undefined): string | undefined {
+  if (raw === undefined) return undefined;
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    throw new PmCliError("Context --parent requires an item id", EXIT_CODE.USAGE);
+  }
+  return trimmed;
 }
 
 // ---------------------------------------------------------------------------
@@ -667,6 +701,7 @@ export const _testOnly = {
   buildTestHealth,
   buildUnparented,
   collectDescendants,
+  collectSubtreeIds,
   compareCriticalItems,
   compareOptionalDeadline,
   compareOptionalOrder,
@@ -680,6 +715,7 @@ export const _testOnly = {
   normalizedParentId,
   parseActivityLimit,
   parseContextLimit,
+  parseContextParent,
   parseContextTimestampMs,
   parseStaleThresholdDays,
   sortableTimestamp,
@@ -944,6 +980,9 @@ export function renderContextMarkdown(result: ContextResult): string {
   lines.push("");
   lines.push(`- now: ${result.now}`);
   lines.push(`- depth: ${result.depth}`);
+  if (result.filters.parent) {
+    lines.push(`- scope: subtree of ${result.filters.parent}`);
+  }
   lines.push(`- active_items: ${result.summary.active_items} (in_progress: ${result.summary.in_progress}, open: ${result.summary.open})`);
   if (result.summary.total_items !== undefined) {
     lines.push(`- total_items: ${result.summary.total_items} (closed: ${result.summary.closed ?? 0}, canceled: ${result.summary.canceled ?? 0})`);
@@ -1114,12 +1153,12 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   const settings = await readSettings(pmRoot);
   const contextSettings = settings.context ?? SETTINGS_DEFAULTS.context;
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-  const limit = parseContextLimit(options.limit);
-
   const depth = parseContextDepth(options.depth, contextSettings);
+  const limit = parseContextLimit(options.limit, depth);
   const sectionsIncluded = parseContextSections(options.section, depth, contextSettings);
   const activityLimit = parseActivityLimit(options.activityLimit, contextSettings);
   const staleThresholdDays = parseStaleThresholdDays(options.staleThreshold, contextSettings);
+  const parentScope = parseContextParent(options.parent);
 
   const needsAllItems = sectionsIncluded.some((s) =>
     ["hierarchy", "progress", "blockers", "staleness", "recently_created", "unparented"].includes(s),
@@ -1128,13 +1167,26 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   const baseListOptions = stripListProjectionFlags(options);
   const listOptions: ListOptions = { ...baseListOptions, excludeTerminal: true };
   const listed = await runList(undefined, listOptions, global);
-  const listedFrontMatter = listed.items as ItemFrontMatter[];
+  let listedFrontMatter = listed.items as ItemFrontMatter[];
 
+  // --parent needs the whole corpus to walk descendants; so do hierarchy-style
+  // sections. Fetch it once and reuse for both.
   let allItems: ItemFrontMatter[] = listedFrontMatter;
-  if (needsAllItems) {
+  if (needsAllItems || parentScope !== undefined) {
     const allListOptions: ListOptions = { ...baseListOptions, excludeTerminal: false };
     const allListed = await runList(undefined, allListOptions, global);
     allItems = allListed.items as ItemFrontMatter[];
+  }
+
+  let subtreeIds: Set<string> | undefined;
+  if (parentScope !== undefined) {
+    const subtree = collectSubtreeIds(allItems, parentScope);
+    if (!subtree.found) {
+      throw new PmCliError(`Context --parent item not found: ${parentScope}`, EXIT_CODE.NOT_FOUND);
+    }
+    subtreeIds = subtree.ids;
+    listedFrontMatter = listedFrontMatter.filter((item) => subtreeIds?.has(item.id));
+    allItems = allItems.filter((item) => subtreeIds?.has(item.id));
   }
 
   const ranked = [...listedFrontMatter].sort((left, right) => compareCriticalItems(left, right, statusRegistry));
@@ -1172,7 +1224,11 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
     limit: String(limit),
   };
   const agenda = await runCalendar(calendarOptions, global);
-  const agendaEvents = filterTerminalCalendarEvents(agenda.events, statusRegistry).slice(0, limit);
+  const scopedAgenda =
+    subtreeIds === undefined
+      ? agenda.events
+      : agenda.events.filter((event) => subtreeIds.has(event.item_id));
+  const agendaEvents = filterTerminalCalendarEvents(scopedAgenda, statusRegistry).slice(0, limit);
   const agendaSummary = summarizeAgenda(agendaEvents);
   const warnings = [...new Set([...(listed.warnings ?? []), ...(agenda.warnings ?? [])])].sort((left, right) =>
     left.localeCompare(right),
@@ -1245,6 +1301,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
       sprint: options.sprint ?? null,
       release: options.release ?? null,
       limit: options.limit ?? null,
+      parent: parentScope ?? null,
       runtime_filters: (listed.filters.runtime_filters ?? agenda.filters.runtime_filters ?? {}) as Record<string, unknown>,
     },
     summary: {

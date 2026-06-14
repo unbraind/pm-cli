@@ -614,6 +614,8 @@ _pm() {
             '--release[Filter by release]:release' \\
             '--limit[Limit returned item count]:number' \\
             '--offset[Skip the first n matching rows before limit]:number' \\
+            '--no-truncate[Return every matched row, overriding --limit]' \\
+            '--all[Alias for --no-truncate]' \\
             '--include-body[Include item body in each returned list row]' \\
             '--compact[Render compact list projection fields]' \\
             '--fields[Render custom comma-separated list fields]:fields' \\
@@ -951,7 +953,9 @@ ${zshCalendarRuntimeFieldFlags}            '--include[Include event sources]:(al
             '--assignee-filter[Filter assignee presence]:(assigned unassigned)' \\
             '--sprint[Filter by sprint]:sprint' \\
             '--release[Filter by release]:release' \\
+            '--parent[Scope snapshot to one item subtree]:id' \\
             '--limit[Limit focus and agenda rows per section]:number' \\
+            '--depth[Context depth]:(brief standard deep full)' \\
             '--format[Output override]:(markdown toon json)' \\
 ${zshContextRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
@@ -1587,6 +1591,8 @@ for list_cmd in ${listCmds}
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l release  -d 'Filter by release' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l limit    -d 'Limit returned item count' -r
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l offset   -d 'Skip the first n matching rows before limit' -r
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l no-truncate -d 'Return every matched row, overriding --limit'
+  complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l all -d 'Alias for --no-truncate'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l include-body -d 'Include item body in each returned list row'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l compact -d 'Render compact list projection fields'
   complete -c pm -n "__fish_seen_subcommand_from $list_cmd" -l fields -d 'Render custom comma-separated list fields' -r
@@ -1881,7 +1887,9 @@ complete -c pm -n '__fish_seen_subcommand_from context ctx' -l assignee  -d 'Fil
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l assignee-filter -d 'Filter assignee presence' -r -a 'assigned unassigned'
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l sprint    -d 'Filter by sprint' -r
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l release   -d 'Filter by release' -r
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l parent    -d 'Scope snapshot to one item subtree' -r
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l limit     -d 'Limit focus and agenda rows per section' -r
+complete -c pm -n '__fish_seen_subcommand_from context ctx' -l depth     -d 'Context depth' -r -a 'brief standard deep full'
 complete -c pm -n '__fish_seen_subcommand_from context ctx' -l format    -d 'Output override' -r -a 'markdown toon json'
 ${fishContextRuntimeFieldFlags}
 

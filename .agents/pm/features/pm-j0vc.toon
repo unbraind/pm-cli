@@ -1,12 +1,13 @@
 id: pm-j0vc
-title: pm context --depth full and --fields projection customization (GH-156)
+title: "pm context --depth full: comprehensive snapshot (all sections, no per-section cap) (GH-156)"
 description: "Add depth=full (all items with status) and --fields to customize per-row projection in context output. GitHub issue #156. Related: pm-ds0m (subtree scoping)."
 type: Feature
-status: open
+status: closed
 priority: 3
 tags[3]: backlog,cli,context
 created_at: "2026-06-10T09:00:57.732Z"
-updated_at: "2026-06-10T09:00:57.732Z"
+updated_at: "2026-06-14T12:13:39.534Z"
 author: maintainer-agent
 parent: pm-mpbb
+close_reason: "Shipped pm context --depth full (all sections, no per-section cap). --fields row projection split to pm-hnjf. GH-156."
 body: ""

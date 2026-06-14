@@ -1,0 +1,13 @@
+id: pm-0c0j
+title: "pm list --no-truncate/--all: explicit override of any --limit + surface total vs returned count (GH-154)"
+description: "pm list already returns all rows when no --limit is set, but there is no explicit flag to (a) override a provided --limit and (b) signal intent. Add --no-truncate (alias --all) that forces full results and is documented as the 'give me everything' flag for large-corpus audits."
+type: Feature
+status: closed
+priority: 3
+tags[3]: agent-ux,cli,list
+created_at: "2026-06-14T11:52:21.311Z"
+updated_at: "2026-06-14T12:12:49.456Z"
+author: maintainer-agent
+parent: pm-mpbb
+close_reason: Shipped pm list --no-truncate/--all + result.total + documented --include-body bulk retrieval. GH-154/GH-223.
+body: ""
