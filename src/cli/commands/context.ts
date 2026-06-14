@@ -407,7 +407,8 @@ function collectSubtreeIds(corpus: ItemFrontMatter[], parentId: string): { ids: 
   }
   const childrenByParent = buildChildrenByParent(corpus);
   const descendants = collectDescendants(anchor.id, childrenByParent);
-  const ids = new Set<string>([anchor.id, ...descendants.map((item) => item.id)]);
+  // Store normalized ids so membership checks are case-insensitive end-to-end.
+  const ids = new Set<string>([anchor.id, ...descendants.map((item) => item.id)].map((id) => id.trim().toLowerCase()));
   return { ids, found: true };
 }
 
@@ -1204,8 +1205,8 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
       throw new PmCliError(`Context --parent item not found: ${parentScope}`, EXIT_CODE.NOT_FOUND);
     }
     subtreeIds = subtree.ids;
-    listedFrontMatter = listedFrontMatter.filter((item) => subtreeIds?.has(item.id));
-    allItems = allItems.filter((item) => subtreeIds?.has(item.id));
+    listedFrontMatter = listedFrontMatter.filter((item) => subtreeIds?.has(item.id.trim().toLowerCase()));
+    allItems = allItems.filter((item) => subtreeIds?.has(item.id.trim().toLowerCase()));
   }
 
   const ranked = [...listedFrontMatter].sort((left, right) => compareCriticalItems(left, right, statusRegistry));
@@ -1248,7 +1249,7 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   const scopedAgenda =
     subtreeIds === undefined
       ? agenda.events
-      : agenda.events.filter((event) => subtreeIds.has(event.item_id));
+      : agenda.events.filter((event) => subtreeIds.has(event.item_id.trim().toLowerCase()));
   const agendaEvents = filterTerminalCalendarEvents(scopedAgenda, statusRegistry).slice(0, limit);
   const agendaSummary = summarizeAgenda(agendaEvents);
   const warnings = [...new Set([...(listed.warnings ?? []), ...(agenda.warnings ?? [])])].sort((left, right) =>
