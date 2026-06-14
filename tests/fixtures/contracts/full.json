@@ -4679,6 +4679,15 @@
           "flag": "--hybrid"
         },
         {
+          "flag": "--match-mode"
+        },
+        {
+          "flag": "--min-score"
+        },
+        {
+          "flag": "--count"
+        },
+        {
           "flag": "--semantic-weight"
         },
         {
@@ -4724,6 +4733,30 @@
         },
         {
           "flag": "--deadline-after"
+        },
+        {
+          "flag": "--updated-after"
+        },
+        {
+          "flag": "--updated-before"
+        },
+        {
+          "flag": "--created-after"
+        },
+        {
+          "flag": "--created-before"
+        },
+        {
+          "flag": "--assignee"
+        },
+        {
+          "flag": "--sprint"
+        },
+        {
+          "flag": "--release"
+        },
+        {
+          "flag": "--parent"
         }
       ],
       "provider": "core"
@@ -6466,6 +6499,20 @@
       },
       {
         "keys": [
+          "matchMode",
+          "match_mode"
+        ],
+        "target": "matchMode"
+      },
+      {
+        "keys": [
+          "minScore",
+          "min_score"
+        ],
+        "target": "minScore"
+      },
+      {
+        "keys": [
           "semanticWeight",
           "semantic_weight"
         ],
@@ -6507,6 +6554,54 @@
           "deadlineAfter"
         ],
         "target": "deadlineAfter"
+      },
+      {
+        "keys": [
+          "updatedAfter"
+        ],
+        "target": "updatedAfter"
+      },
+      {
+        "keys": [
+          "updatedBefore"
+        ],
+        "target": "updatedBefore"
+      },
+      {
+        "keys": [
+          "createdAfter"
+        ],
+        "target": "createdAfter"
+      },
+      {
+        "keys": [
+          "createdBefore"
+        ],
+        "target": "createdBefore"
+      },
+      {
+        "keys": [
+          "assignee"
+        ],
+        "target": "assignee"
+      },
+      {
+        "keys": [
+          "sprint"
+        ],
+        "target": "sprint"
+      },
+      {
+        "keys": [
+          "release"
+        ],
+        "target": "release"
+      },
+      {
+        "keys": [
+          "parent"
+        ],
+        "target": "parent"
       },
       {
         "keys": [
@@ -15293,9 +15388,28 @@
             "const": "search",
             "description": "Tool action to execute."
           },
+          "assignee": {
+            "description": "Assignee identity.",
+            "examples": [
+              "codex-agent"
+            ],
+            "type": "string"
+          },
           "compact": {
             "description": "Render compact projection output for search and list-family actions.",
             "type": "boolean"
+          },
+          "count": {
+            "description": "Enable grouped count output for aggregate action.",
+            "type": "boolean"
+          },
+          "createdAfter": {
+            "description": "Created After.",
+            "type": "string"
+          },
+          "createdBefore": {
+            "description": "Created Before.",
+            "type": "string"
           },
           "deadlineAfter": {
             "description": "Deadline After.",
@@ -15370,6 +15484,13 @@
             "description": "Disable pager integration for help and long output.",
             "type": "boolean"
           },
+          "parent": {
+            "description": "Parent item ID filter for hierarchical list queries.",
+            "examples": [
+              "pm-epic01"
+            ],
+            "type": "string"
+          },
           "path": {
             "description": "Optional PM data root override for this invocation.",
             "examples": [
@@ -15413,6 +15534,10 @@
             "description": "Suppress stdout payload output.",
             "type": "boolean"
           },
+          "release": {
+            "description": "Release.",
+            "type": "string"
+          },
           "semantic": {
             "description": "Semantic.",
             "type": "boolean"
@@ -15431,6 +15556,10 @@
               0.2,
               "0.7"
             ]
+          },
+          "sprint": {
+            "description": "Sprint.",
+            "type": "string"
           },
           "status": {
             "description": "Item status value. Statuses are project-configurable via .agents/pm/settings.json (schema block); the built-in defaults are draft, open, in_progress, blocked, closed, canceled. Custom statuses defined for the project are accepted — discover the active set with the pm_contracts tool (workspace.statuses) or `pm contracts`. Unknown statuses are rejected at runtime with a did-you-mean hint rather than blocked by a fixed schema enum.",
@@ -15466,6 +15595,14 @@
               "Task",
               "Feature"
             ],
+            "type": "string"
+          },
+          "updatedAfter": {
+            "description": "Updated After.",
+            "type": "string"
+          },
+          "updatedBefore": {
+            "description": "Updated Before.",
             "type": "string"
           }
         },

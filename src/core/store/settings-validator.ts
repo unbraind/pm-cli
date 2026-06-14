@@ -93,6 +93,7 @@ export interface ParsedSettings {
     embedding_timeout_ms?: number;
     scanner_max_batch_retries: number;
     provider?: string;
+    corpus_fields?: string[];
     mutation_refresh_policy?: "cache_only" | "semantic_configured" | "semantic_auto";
     query_expansion?: {
       enabled?: boolean;
@@ -461,6 +462,7 @@ const settingsCheck = vObject({
     embedding_timeout_ms: vOptional(vNumber({ int: true })),
     scanner_max_batch_retries: vNumber({ int: true }),
     provider: vOptional(vString),
+    corpus_fields: vOptional(vArray(vString)),
     mutation_refresh_policy: vOptional(vLiteral("cache_only", "semantic_configured", "semantic_auto")),
     query_expansion: vOptional(
       vObject({

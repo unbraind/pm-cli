@@ -1,5 +1,73 @@
-import type { ItemDocument, ItemMetadata } from "../../types/index.js";
+import type { ItemDocument, ItemMetadata, PmSettings } from "../../types/index.js";
 import { coercePositiveInteger } from "../shared/primitives.js";
+
+/**
+ * Canonical ordered list of corpus field names emitted by {@link buildSearchCorpus}.
+ *
+ * When `search.corpus_fields` is unset/empty the full set is included (backward
+ * compatible). When configured, only the named fields are emitted — letting
+ * teams opt structured signals in/out for token efficiency. Unknown names in the
+ * configured list are ignored (they simply never match a builder).
+ *
+ * NOTE: `plan` is conditional — it is only emitted when the item has plan
+ * content (see {@link buildPlanCorpus}); it is still part of the default set so
+ * plan-bearing items keep their plan corpus.
+ */
+export const DEFAULT_SEARCH_CORPUS_FIELDS: readonly string[] = [
+  "title",
+  "description",
+  "tags",
+  "status",
+  "type",
+  "priority",
+  "assignee",
+  "parent",
+  "goal",
+  "value",
+  "why_now",
+  "risk",
+  "confidence",
+  "estimated_minutes",
+  "acceptance_criteria",
+  "resolution",
+  "expected_result",
+  "actual_result",
+  "body",
+  "comments",
+  "notes",
+  "learnings",
+  "reminders",
+  "events",
+  "dependencies",
+  "plan",
+] as const;
+
+/**
+ * Resolve the effective corpus field list from settings.
+ *
+ * - unset / not an array / empty array → the full default set (backward compatible).
+ * - non-empty array → exactly those names (string entries only; trimmed; empties dropped).
+ */
+export function resolveSearchCorpusFields(settings: Pick<PmSettings, "search"> | undefined): string[] {
+  const configured = settings?.search?.corpus_fields;
+  if (!Array.isArray(configured)) {
+    return [...DEFAULT_SEARCH_CORPUS_FIELDS];
+  }
+  // The type guard is intentional: corpus_fields comes from user-editable
+  // settings.json, so entries are not statically guaranteed to be strings.
+  // De-duplicate and drop unknown names (they have no builder) so an invalid
+  // config cannot produce duplicate or phantom corpus keys.
+  const knownFields = new Set<string>(DEFAULT_SEARCH_CORPUS_FIELDS);
+  const selected = Array.from(
+    new Set(
+      configured
+        .filter((entry): entry is string => typeof entry === "string")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0 && knownFields.has(entry)),
+    ),
+  );
+  return selected.length > 0 ? selected : [...DEFAULT_SEARCH_CORPUS_FIELDS];
+}
 
 export const DEFAULT_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS = 8_000;
 export const OLLAMA_SEMANTIC_CORPUS_INPUT_MAX_CHARACTERS = 3_200;
@@ -112,27 +180,79 @@ export function buildPlanCorpus(item: ItemMetadata): Record<string, unknown> | u
   };
 }
 
-export function buildSearchCorpus(document: ItemDocument): Record<string, unknown> {
-  const item = document.metadata;
-  const plan = buildPlanCorpus(item);
-  const corpus: Record<string, unknown> = {
-    title: item.title,
-    description: item.description,
-    tags: item.tags,
-    status: item.status,
-    body: document.body,
-    comments: (item.comments ?? []).map((entry) => entry.text),
-    notes: (item.notes ?? []).map((entry) => entry.text),
-    learnings: (item.learnings ?? []).map((entry) => entry.text),
-    reminders: buildReminderCorpus(item),
-    events: buildEventCorpus(item),
-    dependencies: (item.dependencies ?? []).map((entry) => ({
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+export interface SearchCorpusOptions {
+  /**
+   * Field names to include. When omitted, the full default set is used.
+   * See {@link DEFAULT_SEARCH_CORPUS_FIELDS} and {@link resolveSearchCorpusFields}.
+   */
+  fields?: string[];
+}
+
+/**
+ * Builders for each corpus field. Each returns the value to emit, or `undefined`
+ * to omit the field entirely (keeps the corpus compact / token-efficient — we do
+ * not emit empty strings, empty arrays, or nulls for the optional structured
+ * fields). Always-present fields (title/status/etc.) emit their raw value.
+ */
+const CORPUS_FIELD_BUILDERS: Record<string, (document: ItemDocument) => unknown> = {
+  title: (document) => document.metadata.title,
+  description: (document) => document.metadata.description,
+  tags: (document) => document.metadata.tags,
+  status: (document) => document.metadata.status,
+  type: (document) => document.metadata.type,
+  priority: (document) =>
+    typeof document.metadata.priority === "number" ? document.metadata.priority : undefined,
+  assignee: (document) => (isNonEmptyString(document.metadata.assignee) ? document.metadata.assignee : undefined),
+  parent: (document) => (isNonEmptyString(document.metadata.parent) ? document.metadata.parent : undefined),
+  goal: (document) => (isNonEmptyString(document.metadata.goal) ? document.metadata.goal : undefined),
+  value: (document) => (isNonEmptyString(document.metadata.value) ? document.metadata.value : undefined),
+  why_now: (document) => (isNonEmptyString(document.metadata.why_now) ? document.metadata.why_now : undefined),
+  risk: (document) => (isNonEmptyString(document.metadata.risk) ? document.metadata.risk : undefined),
+  confidence: (document) =>
+    document.metadata.confidence !== undefined && document.metadata.confidence !== null
+      ? document.metadata.confidence
+      : undefined,
+  estimated_minutes: (document) =>
+    typeof document.metadata.estimated_minutes === "number" ? document.metadata.estimated_minutes : undefined,
+  acceptance_criteria: (document) =>
+    isNonEmptyString(document.metadata.acceptance_criteria) ? document.metadata.acceptance_criteria : undefined,
+  resolution: (document) =>
+    isNonEmptyString(document.metadata.resolution) ? document.metadata.resolution : undefined,
+  expected_result: (document) =>
+    isNonEmptyString(document.metadata.expected_result) ? document.metadata.expected_result : undefined,
+  actual_result: (document) =>
+    isNonEmptyString(document.metadata.actual_result) ? document.metadata.actual_result : undefined,
+  body: (document) => document.body,
+  comments: (document) => (document.metadata.comments ?? []).map((entry) => entry.text),
+  notes: (document) => (document.metadata.notes ?? []).map((entry) => entry.text),
+  learnings: (document) => (document.metadata.learnings ?? []).map((entry) => entry.text),
+  reminders: (document) => buildReminderCorpus(document.metadata),
+  events: (document) => buildEventCorpus(document.metadata),
+  dependencies: (document) =>
+    (document.metadata.dependencies ?? []).map((entry) => ({
       id: entry.id,
       kind: entry.kind,
     })),
-  };
-  if (plan) {
-    corpus.plan = plan;
+  plan: (document) => buildPlanCorpus(document.metadata),
+};
+
+export function buildSearchCorpus(document: ItemDocument, options: SearchCorpusOptions = {}): Record<string, unknown> {
+  const fields = options.fields ?? DEFAULT_SEARCH_CORPUS_FIELDS;
+  const corpus: Record<string, unknown> = {};
+  for (const field of fields) {
+    const builder = CORPUS_FIELD_BUILDERS[field];
+    if (!builder) {
+      continue;
+    }
+    const value = builder(document);
+    if (value === undefined) {
+      continue;
+    }
+    corpus[field] = value;
   }
   return corpus;
 }
@@ -173,10 +293,17 @@ export function resolveSemanticCorpusCharacterLimit(
 export interface SemanticCorpusInputOptions {
   providerName?: string;
   maxCharacters?: number;
+  /**
+   * Corpus field names to include. When omitted, the full default set is used
+   * (see {@link DEFAULT_SEARCH_CORPUS_FIELDS}). Thread the resolved list from
+   * {@link resolveSearchCorpusFields} so the embedded input honours
+   * `search.corpus_fields`.
+   */
+  fields?: string[];
 }
 
 export function buildSemanticCorpusInput(document: ItemDocument, options: SemanticCorpusInputOptions = {}): string {
-  const serialized = JSON.stringify(buildSearchCorpus(document));
+  const serialized = JSON.stringify(buildSearchCorpus(document, { fields: options.fields }));
   const maxCharacters = resolveSemanticCorpusCharacterLimit(options.providerName, options.maxCharacters)
     .maxCharacters;
   if (serialized.length <= maxCharacters) {

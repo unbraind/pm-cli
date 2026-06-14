@@ -702,6 +702,15 @@ export interface PmSettings {
     embedding_timeout_ms: number;
     scanner_max_batch_retries: number;
     provider?: string;
+    /**
+     * Optional allow-list of corpus field names embedded for semantic search
+     * (see DEFAULT_SEARCH_CORPUS_FIELDS in core/search/corpus.ts). When unset or
+     * empty, the full default field set is used (backward compatible). When set,
+     * only the named fields are embedded — letting teams opt structured signals
+     * (priority, assignee, risk, acceptance_criteria, etc.) in/out for token
+     * efficiency. Changing this re-flags items stale on the next refresh.
+     */
+    corpus_fields?: string[];
     mutation_refresh_policy: SearchMutationRefreshPolicy;
     query_expansion: SearchQueryExpansionSettings;
     rerank: SearchRerankSettings;

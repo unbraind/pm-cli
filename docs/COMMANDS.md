@@ -96,7 +96,7 @@ pm list-all --sort updated --order desc
 
 ### Incremental "what changed since" filters
 
-Every `list*` command accepts `--updated-after`/`--updated-before`/`--created-after`/`--created-before`, and `pm search` accepts `--status` for parity with `list`. These keep a long-running agent's context focused on the slice it cares about instead of re-scanning the whole tracker:
+Every `list*` command accepts `--updated-after`/`--updated-before`/`--created-after`/`--created-before`. `pm search` now supports the SAME filter surface as `pm list` (full parity): `--status`, `--type`, `--tag`, `--priority`, `--deadline-before`/`--deadline-after`, `--updated-after`/`--updated-before`, `--created-after`/`--created-before`, `--assignee`, `--sprint`, `--release`, and `--parent`, all with identical semantics. These keep a long-running agent's context focused on the slice it cares about instead of re-scanning the whole tracker:
 
 ```bash
 # Items touched since my last context window (feed back the previous run's `now`)
@@ -111,9 +111,29 @@ pm list-all --created-after=-7d --status open
 # open/closed/canceled aliases or configured ids, comma-separated, with a
 # did-you-mean hint on typos.
 pm search "reminder validation" --status open --limit 10
+
+# Full filter parity with list — scope retrieval before ranking.
+pm search "calendar" --type Task --assignee alice --updated-after=-7d --parent pm-abcd
 ```
 
 `list`/`search` full and fields projections echo full filter metadata. Compact mode emits only active filters (plus runtime schema filters when present) and omits the default projection/sorting/now trailer keys for lower token cost.
+
+### Keyword relevance control (GH-181)
+
+`pm search` ranks keyword hits by a weighted score and returns them sorted (highest first). Three controls tune matching and result volume:
+
+- `--match-mode <and|or|exact>` — `or` (default) matches an item if ANY query token appears, but multi-token queries get an additive ALL-TERMS ranking bonus so items covering every token outrank partial matches. `and` HARD-FILTERS to items where every distinct token matched some field. `exact` requires the full normalized query to appear as a contiguous phrase (same as `--phrase-exact`).
+- `--min-score <float>` — per-query minimum score threshold (finite, `>= 0`). Overrides the persistent `search.score_threshold` setting for this query only; the effective value is echoed in `filters.score_threshold`.
+- `--count` — return ONLY the match count (post-filter, post-threshold, pre-limit) with no hit rows. Token-efficient for "how many" questions; the response sets `count_only: true` and `count`/`total` to the matched total.
+
+Keyword mode now applies the configured `search.max_results` default (50) when `--limit` is omitted, so a broad query no longer returns every hit. When the limit drops rows the result adds a top-level `total` (pre-limit match count).
+
+```bash
+pm search "reminder validation queue" --match-mode and          # require all three tokens
+pm search "exact title phrase" --match-mode exact               # contiguous-phrase match
+pm search "calendar" --min-score 5                              # this-query threshold override
+pm search "reminder" --count                                    # just the number
+```
 
 ### Full results, totals, and bodies
 

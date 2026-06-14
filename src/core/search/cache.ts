@@ -9,6 +9,7 @@ import { readSettings } from "../store/settings.js";
 import { executeEmbeddingBatchesWithRetry } from "./embedding-batches.js";
 import {
   buildSemanticCorpusInput,
+  resolveSearchCorpusFields,
   resolveSemanticCorpusCharacterLimit,
 } from "./corpus.js";
 import { resolveEmbeddingProviders } from "./providers.js";
@@ -336,10 +337,12 @@ async function embedLocatedSemanticVectors(
     provider.name,
     settings.search.embedding_corpus_max_characters,
   ).maxCharacters;
+  const corpusFields = resolveSearchCorpusFields(settings);
   const corpusInputs = documents.map((entry) =>
     buildSemanticCorpusInput(entry.document, {
       providerName: provider.name,
       maxCharacters: corpusCharacterLimit,
+      fields: corpusFields,
     }),
   );
   const embeddingResult = await executeEmbeddingBatchesWithRetry(provider, settings, corpusInputs);

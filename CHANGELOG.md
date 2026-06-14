@@ -4,6 +4,11 @@
 
 ### Added
 
+- Search: persistent search.hybrid\_semantic\_weight setting as default for pm search --semantic-weight ([pm-2xwh](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-2xwh.toon))
+- Configurable min-score threshold for pm search: --min-score per-query override of search.score\_threshold ([pm-cstl](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-cstl.toon))
+- Search corpus: include type, priority, parent, assignee fields in keyword and semantic corpus ([pm-jyie](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-jyie.toon))
+- pm search filter parity with pm list: add --updated-after/before, --created-after/before, --assignee, --sprint, --release, --parent ([pm-13nx](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-13nx.toon))
+- pm search keyword mode: --match-mode \(and/or/exact\) + default result limit \(GH-181 remainder\) ([pm-i1z6](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-i1z6.toon))
 - pm context --depth full: comprehensive snapshot \(all sections, no per-section cap\) \(GH-156\) ([pm-j0vc](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-j0vc.toon))
 - pm list --no-truncate/--all: explicit override of any --limit + surface total vs returned count \(GH-154\) ([pm-0c0j](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-0c0j.toon))
 - pm context --parent <id\>: scope snapshot to a single epic/parent subtree ([pm-ds0m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-ds0m.toon))

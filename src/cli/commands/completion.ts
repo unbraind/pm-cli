@@ -972,6 +972,9 @@ ${zshContextRuntimeFieldFlags}            '--json[Output JSON]' \\
         search)
           _arguments \\
             '--mode[Search mode]:(keyword semantic hybrid)' \\
+            '--match-mode[Token match mode]:(and or exact)' \\
+            '--min-score[Per-query minimum score threshold]:number' \\
+            '--count[Return only the match count]' \\
             '--include-linked[Include linked content in scoring]' \\
             '--limit[Max results]:number' \\
             '--status[Filter by status (open/closed/canceled, csv)]:(${statusChoices})' \\
@@ -979,6 +982,14 @@ ${zshContextRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--tag[Filter by tag]:(${zshTagChoices})' \\
             '--tags[Alias for --tag]:(${zshTagChoices})' \\
             '--priority[Filter by priority]:(0 1 2 3 4)' \\
+            '--updated-after[Filter by updated_at lower bound]:value' \\
+            '--updated-before[Filter by updated_at upper bound]:value' \\
+            '--created-after[Filter by created_at lower bound]:value' \\
+            '--created-before[Filter by created_at upper bound]:value' \\
+            '--assignee[Filter by assignee]:value' \\
+            '--sprint[Filter by sprint]:value' \\
+            '--release[Filter by release]:value' \\
+            '--parent[Filter by parent item ID]:value' \\
 ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1843,6 +1854,9 @@ complete -c pm -n '__fish_seen_subcommand_from normalize' -l force              
 
 # search flags
 complete -c pm -n '__fish_seen_subcommand_from search' -l mode          -d 'Search mode' -r -a 'keyword semantic hybrid'
+complete -c pm -n '__fish_seen_subcommand_from search' -l match-mode    -d 'Token match mode' -r -a 'and or exact'
+complete -c pm -n '__fish_seen_subcommand_from search' -l min-score     -d 'Per-query minimum score threshold' -r
+complete -c pm -n '__fish_seen_subcommand_from search' -l count          -d 'Return only the match count'
 complete -c pm -n '__fish_seen_subcommand_from search' -l include-linked -d 'Include linked content in scoring'
 complete -c pm -n '__fish_seen_subcommand_from search' -l limit          -d 'Max results' -r
 complete -c pm -n '__fish_seen_subcommand_from search' -l status         -d 'Filter by status (open/closed/canceled, csv)' -r -a '${statusChoices}'
@@ -1850,6 +1864,14 @@ complete -c pm -n '__fish_seen_subcommand_from search' -l type           -d 'Fil
 complete -c pm -n '__fish_seen_subcommand_from search' -l tag            -d 'Filter by tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from search' -l tags           -d 'Alias for --tag' -r -a ${fishTagChoices}
 complete -c pm -n '__fish_seen_subcommand_from search' -l priority       -d 'Filter by priority' -r -a '0 1 2 3 4'
+complete -c pm -n '__fish_seen_subcommand_from search' -l updated-after  -d 'Filter by updated_at lower bound' -r
+complete -c pm -n '__fish_seen_subcommand_from search' -l updated-before -d 'Filter by updated_at upper bound' -r
+complete -c pm -n '__fish_seen_subcommand_from search' -l created-after  -d 'Filter by created_at lower bound' -r
+complete -c pm -n '__fish_seen_subcommand_from search' -l created-before -d 'Filter by created_at upper bound' -r
+complete -c pm -n '__fish_seen_subcommand_from search' -l assignee       -d 'Filter by assignee' -r
+complete -c pm -n '__fish_seen_subcommand_from search' -l sprint         -d 'Filter by sprint' -r
+complete -c pm -n '__fish_seen_subcommand_from search' -l release        -d 'Filter by release' -r
+complete -c pm -n '__fish_seen_subcommand_from search' -l parent         -d 'Filter by parent item ID' -r
 ${fishSearchRuntimeFieldFlags}
 
 # calendar flags

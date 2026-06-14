@@ -65,6 +65,9 @@ export const TOOL_DEDUPE_AUDIT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
 ];
 
 export const TOOL_SEARCH_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
+  { param: "matchMode", flag: "--match-mode" },
+  { param: "minScore", flag: "--min-score" },
+  { param: "count", flag: "--count", booleanish: true },
   { param: "semanticWeight", flag: "--semantic-weight" },
   { param: "status", flag: "--status" },
   { param: "type", flag: "--type" },
@@ -72,6 +75,14 @@ export const TOOL_SEARCH_FILTER_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "priority", flag: "--priority" },
   { param: "deadlineBefore", flag: "--deadline-before" },
   { param: "deadlineAfter", flag: "--deadline-after" },
+  { param: "updatedAfter", flag: "--updated-after" },
+  { param: "updatedBefore", flag: "--updated-before" },
+  { param: "createdAfter", flag: "--created-after" },
+  { param: "createdBefore", flag: "--created-before" },
+  { param: "assignee", flag: "--assignee" },
+  { param: "sprint", flag: "--sprint" },
+  { param: "release", flag: "--release" },
+  { param: "parent", flag: "--parent" },
   { param: "fields", flag: "--fields" },
   { param: "limit", flag: "--limit" },
 ];

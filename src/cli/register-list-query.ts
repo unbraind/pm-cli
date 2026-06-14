@@ -257,6 +257,15 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--semantic", "Shorthand for --mode semantic")
       .option("--hybrid", "Shorthand for --mode hybrid")
       .option(
+        "--match-mode <value>",
+        "Token match mode: and|or|exact (default: or with all-terms ranking bonus; and = hard-require every token; exact = exact phrase)",
+      )
+      .option(
+        "--min-score <value>",
+        "Per-query minimum score threshold (finite number >= 0); overrides settings search.score_threshold for this query only",
+      )
+      .option("--count", "Return only the count of matching items (post-filter/threshold, pre-limit); skips hit rows")
+      .option(
         "--semantic-weight <value>",
         "Override hybrid semantic weight for this query (0..1); invalid values fall back to settings",
       )
@@ -269,6 +278,14 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--priority <value>", "Filter by priority")
       .option("--deadline-before <value>", "Filter by deadline upper bound (ISO/date string or relative)")
       .option("--deadline-after <value>", "Filter by deadline lower bound (ISO/date string or relative)")
+      .option("--updated-after <value>", 'Filter by updated_at lower bound: ISO timestamp or signed relative (e.g. "-2h"/"-7d" for the past)')
+      .option("--updated-before <value>", "Filter by updated_at upper bound: ISO timestamp or signed relative (-2h/+1d)")
+      .option("--created-after <value>", "Filter by created_at lower bound: ISO timestamp or signed relative (-2h/+1d)")
+      .option("--created-before <value>", "Filter by created_at upper bound: ISO timestamp or signed relative (-2h/+1d)")
+      .option("--assignee <value>", "Filter by assignee")
+      .option("--sprint <value>", "Filter by sprint")
+      .option("--release <value>", "Filter by release")
+      .option("--parent <value>", "Filter by parent item ID")
       .option("--compact", "Render compact search hits (default; mutually exclusive with --full/--fields)")
       .option("--full", "Render full search hits with nested item payloads (mutually exclusive with --compact/--fields)")
       .option(
