@@ -659,6 +659,13 @@ export interface PmSettings {
     lifecycle_closure_like_blocked_reason_patterns: string[];
     lifecycle_closure_like_resolution_patterns: string[];
     lifecycle_closure_like_actual_result_patterns: string[];
+    /**
+     * Per-type default estimates (minutes) used by `pm validate --auto-fix
+     * --fix-scope estimates` to backfill missing `estimated_minutes` (GH-212).
+     * Keys are item type names (case-insensitive); values are positive minutes
+     * that override the built-in defaults. Empty by default.
+     */
+    estimate_defaults_by_type: Record<string, number>;
   };
   governance: GovernanceSettings;
   workflow: {

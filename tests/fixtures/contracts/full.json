@@ -19755,8 +19755,11 @@
             "type": "boolean"
           },
           "fixScope": {
-            "description": "For validate action, grant --auto-fix scopes (metadata, resolution, lifecycle). Defaults to the safe scopes metadata and resolution; lifecycle must be named explicitly.",
+            "description": "For validate action, grant --auto-fix scopes (metadata, resolution, estimates, lifecycle). Defaults to the safe scopes metadata and resolution; estimates (per-type default estimated_minutes backfill) and lifecycle must be named explicitly.",
             "examples": [
+              [
+                "estimates"
+              ],
               [
                 "lifecycle"
               ],
@@ -19769,6 +19772,7 @@
               "enum": [
                 "metadata",
                 "resolution",
+                "estimates",
                 "lifecycle"
               ],
               "type": "string"

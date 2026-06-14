@@ -1,0 +1,14 @@
+id: pm-gnnb
+title: "pm validate: missing-link owner attribution (GH-210) + type-default estimate backfill (GH-212)"
+description: ""
+type: Feature
+status: closed
+priority: 1
+tags: []
+created_at: "2026-06-14T04:52:34.623Z"
+updated_at: "2026-06-14T05:18:13.530Z"
+author: claude-code-agent
+parent: pm-mpbb
+resolution: completed
+close_reason: "Shipped both GH-210 (validate --check-files owner attribution: details.missing_linked_path_rows) and GH-212 (validate --auto-fix --fix-scope estimates: config-driven per-type estimated_minutes backfill via validation.estimate_defaults_by_type). Declined AC-from-description backfill (no deterministic source). Closed already-fixed GH-203. Full coverage + all gates green."
+body: "Coherent validate-hardening PR combining two dogfood-reported GitHub issues plus closing one already-fixed bug.\n\n## Scope\n- **GH-210** — `pm validate --check-files` should report OWNER item IDs for missing linked paths (path-only output forces a reverse lookup on 1000+ item trackers). Add `missing_linked_path_rows` to files-check details: per-path rows with classification + owning items [{id,type,title,status,field}]. Token-capped via verboseFileLists summary like other file lists.\n- **GH-212** — `pm validate --auto-fix` should backfill missing `estimated_minutes` from config-driven per-type defaults (Epic 2880, Feature 480, Task 120, Issue 60, Chore 30, Decision 15, fallback 120). New opt-in fix scope `estimates` (NOT default-granted, like lifecycle — estimates are heuristic guesses). New setting `validation.estimate_defaults_by_type`. DECLINED part of GH-212: AC-from-description backfill violates fix-planning safety invariant (only DERIVABLE values; synthesizing AC text = fabrication). Documented in issue.\n- **GH-203** — already fixed on main (commit 1ed3db09: `!isFile() && !isDirectory()`). Verified non-reproducing in sandbox; closing.\n\n## Architecture\nTwo new isolated pure modules (100% cov, parallel sub-agents):\n- core/validate/missing-link-owners.ts — group stale-link rows by path + attach owners\n- core/validate/estimate-defaults.ts — resolve per-type default minutes (config override > default map > fallback)\nIntegration (lead): fix-planning.ts planEstimateBackfillFixes + set_estimate kind + estimates scope; validate.ts wiring; settings + validator config key; docs + changelog."

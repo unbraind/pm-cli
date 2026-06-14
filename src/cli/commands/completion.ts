@@ -1347,7 +1347,7 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--fix-hints[Add a machine-executable fix_hints[] of pm commands to each failing check]' \\
             '--auto-fix[Apply the safe, deterministic subset of fix-hint remediations automatically]' \\
             '--dry-run[Preview planned --auto-fix/--prune-missing fixes without applying them]' \\
-            '--fix-scope[Grant --auto-fix scopes (lifecycle must be named explicitly)]:(metadata resolution lifecycle)' \\
+            '--fix-scope[Grant --auto-fix scopes (estimates/lifecycle must be named explicitly)]:(metadata resolution estimates lifecycle)' \\
             '--prune-missing[Remove stale linked-file/doc links classified as deleted]' \\
             '--check-history-drift[Run item/history hash drift checks]' \\
             '--check-command-references[Run linked-command PM-ID reference checks]' \\
@@ -2128,7 +2128,7 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l fail-on-warn -d 'Ali
 complete -c pm -n '__fish_seen_subcommand_from validate' -l fix-hints -d 'Add a machine-executable fix_hints[] of pm commands to each failing check'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l auto-fix -d 'Apply the safe, deterministic subset of fix-hint remediations automatically'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l dry-run -d 'Preview planned --auto-fix/--prune-missing fixes without applying them'
-complete -c pm -n '__fish_seen_subcommand_from validate' -l fix-scope -d 'Grant --auto-fix scopes (lifecycle must be named explicitly)' -r -a 'metadata resolution lifecycle'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l fix-scope -d 'Grant --auto-fix scopes (estimates/lifecycle must be named explicitly)' -r -a 'metadata resolution estimates lifecycle'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l prune-missing -d 'Remove stale linked-file/doc links classified as deleted'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-history-drift -d 'Run item/history hash drift checks'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l check-command-references -d 'Run linked-command PM-ID reference checks'

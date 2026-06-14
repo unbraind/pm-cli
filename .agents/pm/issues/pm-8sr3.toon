@@ -1,0 +1,14 @@
+id: pm-8sr3
+title: "pm create <type> --title X silently ignores positional type, defaults to Task"
+description: ""
+type: Issue
+status: open
+priority: 1
+tags[3]: cli,create,ergonomics
+created_at: "2026-06-14T05:19:06.111Z"
+updated_at: "2026-06-14T05:19:15.711Z"
+author: claude-code-agent
+estimated_minutes: 60
+acceptance_criteria: pm create feature --title 'x' produces a Feature (not Task); positional type honored whether title is positional or via --title flag
+parent: pm-mpbb
+body: "## Repro (pm 2026.6.13 build)\n```\npm create feature --title 'x' --json   # => item.type == 'Task'  (BUG: positional 'feature' dropped)\npm create Feature 'x' --json           # => item.type == 'Feature' (positional title path OK)\npm create --type Feature --title 'x'   # => item.type == 'Feature' (explicit flag OK)\n```\nWhen a leading positional type name is given together with the `--title` flag, the positional type is ignored and create falls back to the default type (Task). Only the `<type> <title>` all-positional form or the explicit `--type` flag are honored.\n\n## Expected\nA leading positional that matches a known/registered type should set the item type regardless of whether the title arrives positionally or via `--title`. Otherwise emit a usage error rather than silently mistyping (agent footgun — see closed pm-edge for the create-type mistype class).\n\nDiscovered during the GH-210/GH-212 validate work (pm-gnnb) while seeding sandbox fixtures."

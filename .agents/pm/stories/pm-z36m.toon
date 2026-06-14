@@ -1,0 +1,16 @@
+id: pm-z36m
+title: "GH-210: missing_linked_path_rows owner attribution in validate --check-files"
+description: ""
+type: Story
+status: closed
+priority: 2
+tags: []
+created_at: "2026-06-14T04:52:49.049Z"
+updated_at: "2026-06-14T05:17:34.596Z"
+author: claude-code-agent
+parent: pm-gnnb
+comments[2]{created_at,author,text}:
+  "2026-06-14T04:55:47.949Z",claude-code-agent,"Implemented src/core/validate/missing-link-owners.ts + tests/unit/validate/missing-link-owners.spec.ts (GH-210).\n\nExported API (matches contract exactly): types StaleLinkClassification, StaleLinkOwnerInput, MissingLinkedPathOwner, MissingLinkedPathRow, OwnerItemMetadata; functions buildMissingLinkedPathRows(rows, lookup) and summarizeMissingLinkedPathRows(rows).\n\nDesign decisions:\n- Conflicting-classification tie-break: preferClassification() returns moved whenever any row for a path is moved (current||next === moved), else deleted. Rationale per contract: moved => a relink candidate exists => safer/more-actionable than risking a prune. Order-independent; covered both arrival orders + the all-deleted case.\n- Dedup key is `<id> <link_kind>` via a Map so identical (id, field) owners collapse; last-write-wins is irrelevant since the duplicate carries the same data.\n- Sorting: paths ascending localeCompare; owners within a path by id.localeCompare then field.localeCompare. Fully deterministic.\n- Metadata fallback handled with `?? \"Unknown\"` (type) / `?? \"\"` (title, status); partial metadata objects (e.g. only title) fall through per-field.\n- summarize escapes backslash-then-quote in title; empty status renders `status=` and empty title `title=\"\"`.\n\nCoverage (isolated json-summary): 100% lines 22/22, branches 14/14, functions 9/9, statements 22/22.\n\nvitest.config.ts: NO line added. Its coverage.include is a glob [\"src/*.ts\",\"src/**/*.ts\"] with the only exclude being *.d.ts — there is no explicit per-file include allowlist in this config (stale-file-classification.ts is not individually listed either), so the new module is auto-included by the glob. Left vitest.config.ts untouched. Not closing per instructions."
+  "2026-06-14T05:12:26.586Z",claude-code-agent,"Integrated by lead: buildFilesCheck now emits details.missing_linked_path_rows (compact owner one-liners by default via summarizeMissingLinkedPathRows; full structured {path,classification,items:[{id,type,title,status,field}]} under --verbose-file-lists) + missing_linked_path_rows_count. Reuses staleLinkPruneRows (item_id/path/link_kind/classification) as StaleLinkOwnerInput + an itemsById lookup. Integration test added (validate-command.spec 'attributes owners to missing linked paths'). Sandbox-verified: deleted file link -> owner=<id> status=open field=files."
+close_reason: "Shipped: missing_linked_path_rows owner attribution in validate --check-files (GH-210). Pure module core/validate/missing-link-owners.ts + buildFilesCheck wiring."
+body: ""

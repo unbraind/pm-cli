@@ -12,6 +12,7 @@ import {
 import { getSettingsPath } from "./paths.js";
 import { orderObject, stableValueEquals } from "../shared/serialization.js";
 import { normalizeItemTypeDefinition } from "../item/item-type-definition.js";
+import { normalizeEstimateDefaultOverrides } from "../validate/estimate-defaults.js";
 import {
   clearSettingsReadCache,
   collectSettingsReadCacheSignatures,
@@ -699,6 +700,7 @@ function mergeSettings(settings: ParsedSettings): PmSettings {
         settings.validation?.lifecycle_closure_like_actual_result_patterns ??
           defaults.validation.lifecycle_closure_like_actual_result_patterns,
       ),
+      estimate_defaults_by_type: normalizeEstimateDefaultOverrides(settings.validation?.estimate_defaults_by_type),
     },
     governance,
     workflow: {
@@ -794,6 +796,7 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
         settings.validation?.lifecycle_closure_like_actual_result_patterns ??
           SETTINGS_DEFAULTS.validation.lifecycle_closure_like_actual_result_patterns,
       ),
+      estimate_defaults_by_type: normalizeEstimateDefaultOverrides(settings.validation?.estimate_defaults_by_type),
     },
     governance,
     agent_guidance: normalizeAgentGuidanceSettings(settings.agent_guidance),
@@ -887,6 +890,7 @@ export function serializeSettings(settings: PmSettings, options: SerializeSettin
     "lifecycle_closure_like_blocked_reason_patterns",
     "lifecycle_closure_like_resolution_patterns",
     "lifecycle_closure_like_actual_result_patterns",
+    "estimate_defaults_by_type",
   ]);
   ordered.governance = orderObject(ordered.governance as Record<string, unknown>, [
     "preset",

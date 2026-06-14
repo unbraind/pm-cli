@@ -4,6 +4,7 @@
 
 ### Added
 
+- pm validate: missing-link owner attribution \(GH-210\) + type-default estimate backfill \(GH-212\) ([pm-gnnb](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-gnnb.toon))
 - Metadata governance & coverage observability \(missing-field filters, stats breakdowns, validate full-id lists, aggregate explicit labels\) ([pm-yq7m](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-yq7m.toon))
 - pm close: short aliases -m/-r/-d for --message/--reason/--duplicate-of \(GH-226\) ([pm-i1mu](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-i1mu.toon))
 - pm create/update --body-file: load body markdown from a file \(GH-214\) ([pm-7c48](https://github.com/unbraind/pm-cli/blob/main/.agents/pm/features/pm-7c48.toon))
