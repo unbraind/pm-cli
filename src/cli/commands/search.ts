@@ -1956,7 +1956,10 @@ export async function runSearch(query: string, options: SearchOptions, global: G
         document,
         tokens,
         normalizedQuery,
-        effectiveMode !== "semantic",
+        // Linked corpus is only collected into linkedCorpusById when the user
+        // passed --include-linked (and mode is keyword/hybrid), so pass the
+        // parsed flag directly rather than re-deriving it from the mode.
+        includeLinked,
         linkedCorpusById,
         tuning,
         applyCoverageBonus,
