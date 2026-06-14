@@ -1041,7 +1041,9 @@ function scoreDocument(
     }
   }
   const distinctTokens = new Set(tokens);
-  const matchedAllTerms = distinctTokens.size > 0 && matchedTokens.size >= distinctTokens.size;
+  // matchedTokens only ever holds entries drawn from `tokens`, so it is always a
+  // subset of distinctTokens — exact size equality means every distinct term matched.
+  const matchedAllTerms = distinctTokens.size > 0 && matchedTokens.size === distinctTokens.size;
   // GH-181 default-mode all-terms ranking bonus: only meaningful for multi-token
   // queries where every distinct token matched somewhere.
   if (applyCoverageBonus && distinctTokens.size > 1 && matchedAllTerms) {
