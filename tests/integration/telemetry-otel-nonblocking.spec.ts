@@ -22,9 +22,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const distCli = path.join(repoRoot, "dist", "cli.js");
-// RFC 5737 / non-routable private host: connections hang then time out rather
-// than refusing immediately, which is the worst case the GH-209 fix addresses.
-const BLACKHOLE_TRACES_ENDPOINT = "http://10.255.255.1:4318/v1/traces";
+// RFC 5737 TEST-NET-1 documentation address: not routed, so connections hang
+// then time out rather than refusing immediately, which is the worst case the
+// GH-209 fix addresses. The foreground command never touches this endpoint after
+// the fix (the detached worker owns OTLP export), so the measured timing is
+// independent of the address's connect behaviour.
+const BLACKHOLE_TRACES_ENDPOINT = "http://192.0.2.1:4318/v1/traces";
 const FAST_EXIT_BUDGET_MS = 3000;
 
 interface SandboxContext {
