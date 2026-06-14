@@ -1,17 +1,22 @@
 id: pm-cstl
-title: "Configurable min-score threshold for search results: --min-score / search.min_score_threshold"
+title: "Configurable min-score threshold for pm search: --min-score per-query override of search.score_threshold"
 description: pm search returns results sorted by score but there is no minimum-score floor. Low-relevance semantic hits (cosine similarity near 0) are surfaced alongside high-confidence matches. Agents and users cannot filter out noise without post-processing. A configurable threshold would suppress weak matches and improve result quality.
 type: Feature
-status: open
+status: closed
 priority: 2
 tags[4]: "area:search",filtering,relevance,ux
 created_at: "2026-06-07T10:03:58.060Z"
-updated_at: "2026-06-12T16:09:02.261Z"
+updated_at: "2026-06-14T16:25:21.981Z"
 author: audit-data-agent
 acceptance_criteria: "- Add `--min-score <float>` CLI flag to `pm search`\n- Add `search.min_score_threshold` settings key (default: 0.0 = no filter)\n- MCP tool-parameter contract updated\n- Filter applies after hybrid fusion and before limit truncation\n- Contract tests updated; flag documented"
 parent: pm-ydp6
 risk: low
 confidence: high
-comments[1]{created_at,author,text}:
+resolution: Shipped --min-score per-query threshold override
+comments[4]{created_at,author,text}:
   "2026-06-12T16:09:02.261Z",maintainer-agent,"Tracks GH-157 (remaining part: sensible default score threshold / --min-score flag; the other GH-157 asks shipped: --phrase-exact, --tag/--status/--type filters, matched_fields in output)"
+  "2026-06-14T15:44:36.729Z",maintainer-agent,"Scoping (2026-06-14): search.score_threshold key + config alias search_score_threshold + validator already EXIST and apply at search.ts:1870. Remaining gap = only the --min-score CLI flag (per-query override) + MCP param. NOT adding a duplicate search.min_score_threshold key (reuse existing score_threshold). Bundled into PR feat/search-relevance-filter-parity-corpus."
+  "2026-06-14T16:12:53.782Z",claude-code-agent,"DONE. --min-score <float> per-query override of persistent search.score_threshold. parseMinScoreOverride: finite number >= 0 (else PmCliError USAGE; rejects -1 and non-numeric). Wired so effective threshold = options.minScore ?? resolveSearchScoreThreshold(settings) at the scoreThreshold resolution in runSearch. Reflected in filters.score_threshold (verbose) and the compact filter summary (score_threshold echoed when >0). Did NOT add a duplicate min_score_threshold settings key — purely per-query. Sites: SearchOptions.minScore, register-list-query --min-score option, SEARCH_FLAG_CONTRACTS --min-score, SEARCH_COMMANDER_STRING_OPTION_CONTRACTS minScore (+min_score alias), normalizeSearchOptions, TOOL_SEARCH_FILTER_OPTION_CONTRACTS minScore, completion zsh/fish, docs. Tests: override drops all at 1000 (threshold echoed 1000) / keeps at 0; invalid -1 and non-numeric both reject USAGE."
+  "2026-06-14T16:23:38.458Z",maintainer-agent,"Shipped: --min-score <float> per-query override of existing search.score_threshold (no duplicate settings key added); effective threshold reflected in filters.score_threshold; invalid values rejected with USAGE error. Verified: --min-score 100 -> 0 results, invalid -> error."
+close_reason: Shipped --min-score per-query threshold override
 body: "## Context\n\n`src/cli/commands/search.ts` accepts `--score-threshold` conceptually but there is no contract field or settings key. The `relevance.ts` scoring returns cosine similarity mapped to [0,1] but the search command never filters by a floor score.\n\nIn hybrid mode, the linear interpolation can produce a mid-range score for items that are semantically weak but keyword-strong or vice versa, causing noise.\n\n## Acceptance criteria\n\n- [ ] Add `--min-score <float>` CLI flag to `pm search`\n- [ ] Add `search.min_score_threshold` settings key (default: 0.0 = no filter)\n- [ ] MCP tool-parameter contract updated\n- [ ] Filter applies after hybrid fusion and before limit truncation\n- [ ] Contract tests updated; flag documented\n\n## Evidence\n\n- `src/cli/commands/search.ts` — no score_threshold filter in output pipeline\n- `src/core/search/relevance.ts:237-258` — cosine similarity returns full [-1,1] mapped to [0,1]; no floor\n- MCP `pm_search` tool — no `min_score` parameter in current tool-parameter-tables"

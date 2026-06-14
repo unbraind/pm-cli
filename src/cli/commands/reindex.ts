@@ -14,6 +14,7 @@ import { acquireLock } from "../../core/lock/lock.js";
 import {
   buildSearchCorpus,
   buildSemanticCorpusInput,
+  resolveSearchCorpusFields,
   resolveSemanticCorpusCharacterLimit,
 } from "../../core/search/corpus.js";
 import { executeEmbeddingBatchesWithRetry } from "../../core/search/embedding-batches.js";
@@ -156,13 +157,17 @@ async function hydrateDocuments(
   return hydrated;
 }
 
-function buildKeywordRecord(document: ItemDocument, mode: "keyword" | "semantic" | "hybrid"): Record<string, unknown> {
+function buildKeywordRecord(
+  document: ItemDocument,
+  mode: "keyword" | "semantic" | "hybrid",
+  corpusFields?: string[],
+): Record<string, unknown> {
   const item = document.metadata;
   return {
     id: item.id,
     mode,
     updated_at: item.updated_at,
-    corpus: buildSearchCorpus(document),
+    corpus: buildSearchCorpus(document, { fields: corpusFields }),
   };
 }
 
@@ -378,10 +383,12 @@ async function executeReindexEmbedding(
     semanticProviderName,
     settings.search.embedding_corpus_max_characters,
   ).maxCharacters;
+  const corpusFields = resolveSearchCorpusFields(settings);
   const corpusInputs = documents.map((document) =>
     buildSemanticCorpusInput(document, {
       providerName: semanticProviderName,
       maxCharacters: corpusCharacterLimit,
+      fields: corpusFields,
     }),
   );
   let vectors: number[][] = [];
@@ -786,7 +793,10 @@ export async function runReindex(options: ReindexOptions, global: GlobalOptions)
       vectorizationEmbeddingMetadata = ledger.embedding;
     }
   }
-  const embeddingsLines = documentsForKeywordArtifacts.map((document) => JSON.stringify(buildKeywordRecord(document, mode))).join("\n");
+  const keywordCorpusFields = resolveSearchCorpusFields(settings);
+  const embeddingsLines = documentsForKeywordArtifacts
+    .map((document) => JSON.stringify(buildKeywordRecord(document, mode, keywordCorpusFields)))
+    .join("\n");
   emitReindexProgress(progressEnabled, "writing keyword artifacts");
   await writeFileAtomic(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFileAtomic(embeddingsPath, `${embeddingsLines}\n`);

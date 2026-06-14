@@ -105,10 +105,14 @@ pm release <item-id>
 | Next work and agenda | `pm context --limit 10` |
 | Comprehensive whole-tracker snapshot | `pm context --depth full` (every section, no per-section row cap) |
 | Status of one epic/subtree | `pm context --parent <id> --depth deep` |
-| Relevant items | `pm search "<keywords>" --limit 10` |
+| Relevant items | `pm search "<keywords>" --limit 10` (keyword hits are score-ranked; keyword mode defaults to 50 results, `result.total` reports the full pre-limit count) |
+| Require every query token | `pm search "<keywords>" --match-mode and` (hard-filter; `exact` = contiguous phrase; default `or` adds an all-terms ranking bonus) |
+| Just the match count | `pm search "<keywords>" --count` (no hit rows; `count`/`total` carry the matched total) |
+| Per-query score threshold | `pm search "<keywords>" --min-score 5` (overrides settings `search.score_threshold` for this query) |
 | Every matched row (no cap) | `pm list-all --no-truncate --brief` (alias `--all`; `result.total` reports the full count when a `--limit`/`--offset` truncates) |
 | Item bodies in bulk (one call) | `pm list-open --json --include-body` (avoids one `pm get` per item) |
 | Open work only | `pm search "<keywords>" --status open` (drops closed-history noise; did-you-mean on typos) |
+| Scope search like list | `pm search "<keywords>" --type Task --assignee <name> --parent <id>` (full `pm list` filter parity) |
 | Items changed since last window | `pm list-all --updated-after <prev-run-ISO> --brief` (relative `-2h`/`-7d` also work) |
 | Single item | `pm get <id>` |
 | Full machine payload | `pm get <id> --full --json` |

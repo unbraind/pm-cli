@@ -41,6 +41,8 @@ export const LIST_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContrac
 
 export const SEARCH_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContract[] = [
   { target: "mode", keys: ["mode"] },
+  { target: "matchMode", keys: ["matchMode", "match_mode"] },
+  { target: "minScore", keys: ["minScore", "min_score"] },
   { target: "semanticWeight", keys: ["semanticWeight", "semantic_weight"] },
   { target: "status", keys: ["status"] },
   { target: "type", keys: ["type"] },
@@ -48,6 +50,14 @@ export const SEARCH_COMMANDER_STRING_OPTION_CONTRACTS: CommanderOptionAliasContr
   { target: "priority", keys: ["priority"] },
   { target: "deadlineBefore", keys: ["deadlineBefore"] },
   { target: "deadlineAfter", keys: ["deadlineAfter"] },
+  { target: "updatedAfter", keys: ["updatedAfter"] },
+  { target: "updatedBefore", keys: ["updatedBefore"] },
+  { target: "createdAfter", keys: ["createdAfter"] },
+  { target: "createdBefore", keys: ["createdBefore"] },
+  { target: "assignee", keys: ["assignee"] },
+  { target: "sprint", keys: ["sprint"] },
+  { target: "release", keys: ["release"] },
+  { target: "parent", keys: ["parent"] },
   { target: "fields", keys: ["fields"] },
   { target: "limit", keys: ["limit"] },
 ];

@@ -103,6 +103,9 @@ function makeFrontMatter(overrides: Partial<ItemFrontMatter> & Pick<ItemFrontMat
     tests: overrides.tests,
     docs: overrides.docs,
     close_reason: overrides.close_reason,
+    parent: overrides.parent,
+    sprint: overrides.sprint,
+    release: overrides.release,
   };
 }
 
@@ -2624,5 +2627,224 @@ describe("classifyImplicitSemanticFallbackReason", () => {
     expect(classifyImplicitSemanticFallbackReason(deep)).toBe("connection");
     expect(collectErrorCauseCodes(deep)).toContain("enotfound");
     expect(collectErrorCauseCodes("plain string")).toBe("");
+  });
+
+  // GH-181 / pm-cstl / pm-13nx: match-mode, all-terms coverage ranking, default
+  // keyword limit + total, --count, --min-score override, and list filter parity.
+  describe("keyword relevance control and filter parity", () => {
+    function makeBody(frontMatter: ItemFrontMatter, body: string): string {
+      return serializeDocument(frontMatter, body);
+    }
+
+    it("ranks all-terms coverage above partial matches in default (or) mode and surfaces matched_all_terms only internally", async () => {
+      const allTerms = makeFrontMatter({ id: "pm-all", title: "alpha beta gamma" });
+      const partial = makeFrontMatter({ id: "pm-partial", title: "alpha only" });
+      listAllFrontMatterMock.mockResolvedValueOnce([partial, allTerms]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-all.md")) return makeBody(allTerms, "body");
+        if (targetPath.endsWith("pm-partial.md")) return makeBody(partial, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const result = await runSearch("alpha beta gamma", { mode: "keyword", full: true }, { path: "/tmp/pm-search" });
+      expect(result.count).toBe(2);
+      expect(result.items[0].item.id).toBe("pm-all");
+      expect(result.items[1].item.id).toBe("pm-partial");
+      expect(result.filters.match_mode).toBe("or");
+      // matched_all_terms is an internal ranking signal — never projected into rows.
+      expect("matched_all_terms" in result.items[0]).toBe(false);
+    });
+
+    it("hard-filters with --match-mode and (every distinct token must match)", async () => {
+      const allTerms = makeFrontMatter({ id: "pm-all", title: "alpha beta gamma" });
+      const partial = makeFrontMatter({ id: "pm-partial", title: "alpha only" });
+      listAllFrontMatterMock.mockResolvedValue([partial, allTerms]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-all.md")) return makeBody(allTerms, "body");
+        if (targetPath.endsWith("pm-partial.md")) return makeBody(partial, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const andResult = await runSearch("alpha beta gamma", { matchMode: "and" }, { path: "/tmp/pm-search" });
+      expect(andResult.count).toBe(1);
+      expect(andResult.items[0].item.id).toBe("pm-all");
+      expect(andResult.filters.match_mode).toBe("and");
+    });
+
+    it("requires a contiguous phrase with --match-mode exact", async () => {
+      const phrase = makeFrontMatter({ id: "pm-phrase", title: "alpha beta gamma" });
+      const scattered = makeFrontMatter({ id: "pm-scattered", title: "alpha gamma beta" });
+      listAllFrontMatterMock.mockResolvedValue([phrase, scattered]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-phrase.md")) return makeBody(phrase, "body");
+        if (targetPath.endsWith("pm-scattered.md")) return makeBody(scattered, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const exact = await runSearch("alpha beta gamma", { matchMode: "exact" }, { path: "/tmp/pm-search" });
+      expect(exact.count).toBe(1);
+      expect(exact.items[0].item.id).toBe("pm-phrase");
+    });
+
+    it("rejects an invalid --match-mode value", async () => {
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      await expect(runSearch("token", { matchMode: "nope" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+
+    it("applies the default keyword limit (max_results) and reports total when truncating", async () => {
+      const items = Array.from({ length: 5 }, (_, index) =>
+        makeFrontMatter({ id: `pm-k${index}`, title: "alpha" }),
+      );
+      listAllFrontMatterMock.mockResolvedValue(items);
+      readFileMock.mockImplementation(async (targetPath) => {
+        const match = items.find((item) => targetPath.endsWith(`${item.id}.md`));
+        if (match) return makeBody(match, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      readSettingsMock.mockResolvedValue({ id_prefix: "pm-", search: { max_results: 2 } } as unknown as {
+        id_prefix: string;
+      });
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const limited = await runSearch("alpha", { mode: "keyword" }, { path: "/tmp/pm-search" });
+      // No --limit → falls back to max_results=2; total reflects the 5 matches.
+      expect(limited.count).toBe(2);
+      expect(limited.total).toBe(5);
+    });
+
+    it("returns only the count with --count and omits hit rows", async () => {
+      const items = Array.from({ length: 3 }, (_, index) =>
+        makeFrontMatter({ id: `pm-c${index}`, title: "alpha" }),
+      );
+      listAllFrontMatterMock.mockResolvedValue(items);
+      readFileMock.mockImplementation(async (targetPath) => {
+        const match = items.find((item) => targetPath.endsWith(`${item.id}.md`));
+        if (match) return makeBody(match, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const counted = await runSearch("alpha", { mode: "keyword", count: true, full: true }, { path: "/tmp/pm-search" });
+      expect(counted.count_only).toBe(true);
+      expect(counted.count).toBe(3);
+      expect(counted.total).toBe(3);
+      expect(counted.items).toEqual([]);
+      // Compact-summary count-only path.
+      const compactCounted = await runSearch(
+        "alpha",
+        { mode: "keyword", count: true, compact: true },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compactCounted.count_only).toBe(true);
+      expect(compactCounted.count).toBe(3);
+      expect(compactCounted.items).toEqual([]);
+    });
+
+    it("applies --min-score as a per-query override of the persistent threshold", async () => {
+      const item = makeFrontMatter({ id: "pm-min", title: "alpha" });
+      listAllFrontMatterMock.mockResolvedValue([item]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-min.md")) return makeBody(item, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const dropped = await runSearch("alpha", { mode: "keyword", minScore: "1000" }, { path: "/tmp/pm-search" });
+      expect(dropped.count).toBe(0);
+      expect(dropped.filters.score_threshold).toBe(1000);
+      const kept = await runSearch("alpha", { mode: "keyword", minScore: "0" }, { path: "/tmp/pm-search" });
+      expect(kept.count).toBe(1);
+      expect(kept.filters.score_threshold).toBe(0);
+    });
+
+    it("rejects an invalid --min-score value", async () => {
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      await expect(runSearch("token", { minScore: "-1" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+      await expect(runSearch("token", { minScore: "not-a-number" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+
+    it("applies pm list filter parity (updated/created windows, assignee, sprint, release, parent)", async () => {
+      const target = makeFrontMatter({
+        id: "pm-target",
+        title: "alpha",
+        assignee: "alice",
+        sprint: "S1",
+        release: "R1",
+        parent: "pm-epic",
+        created_at: "2026-03-01T00:00:00.000Z",
+        updated_at: "2026-03-10T00:00:00.000Z",
+      });
+      const other = makeFrontMatter({
+        id: "pm-other",
+        title: "alpha",
+        assignee: "bob",
+        sprint: "S2",
+        release: "R2",
+        parent: "pm-other-epic",
+        created_at: "2026-01-01T00:00:00.000Z",
+        updated_at: "2026-01-02T00:00:00.000Z",
+      });
+      listAllFrontMatterMock.mockResolvedValue([target, other]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-target.md")) return makeBody(target, "body");
+        if (targetPath.endsWith("pm-other.md")) return makeBody(other, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const byAssignee = await runSearch("alpha", { mode: "keyword", assignee: "alice" }, { path: "/tmp/pm-search" });
+      expect(byAssignee.count).toBe(1);
+      expect(byAssignee.items[0].item.id).toBe("pm-target");
+      expect(byAssignee.filters.assignee).toBe("alice");
+
+      const bySprintRelease = await runSearch(
+        "alpha",
+        { mode: "keyword", sprint: "S1", release: "R1", parent: "pm-epic" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(bySprintRelease.count).toBe(1);
+      expect(bySprintRelease.items[0].item.id).toBe("pm-target");
+
+      const byUpdatedWindow = await runSearch(
+        "alpha",
+        { mode: "keyword", updatedAfter: "2026-02-01T00:00:00.000Z", createdAfter: "2026-02-01T00:00:00.000Z" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(byUpdatedWindow.count).toBe(1);
+      expect(byUpdatedWindow.items[0].item.id).toBe("pm-target");
+
+      const byUpdatedBefore = await runSearch(
+        "alpha",
+        { mode: "keyword", updatedBefore: "2026-02-01T00:00:00.000Z", createdBefore: "2026-02-01T00:00:00.000Z" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(byUpdatedBefore.count).toBe(1);
+      expect(byUpdatedBefore.items[0].item.id).toBe("pm-other");
+    });
+
+    it("rejects --assignee none/null (matching pm list)", async () => {
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      await expect(runSearch("token", { assignee: "none" }, { path: "/tmp/pm-search" })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.USAGE,
+      });
+    });
+
+    it("echoes new filters and match_mode in the compact filter summary", async () => {
+      const item = makeFrontMatter({ id: "pm-cf", title: "alpha", assignee: "alice", sprint: "S1" });
+      listAllFrontMatterMock.mockResolvedValue([item]);
+      readFileMock.mockImplementation(async (targetPath) => {
+        if (targetPath.endsWith("pm-cf.md")) return makeBody(item, "body");
+        throw new Error(`Unexpected path: ${targetPath}`);
+      });
+      const { runSearch } = await import("../../src/cli/commands/search.js");
+      const compact = await runSearch(
+        "alpha",
+        { mode: "keyword", compact: true, matchMode: "and", assignee: "alice", sprint: "S1" },
+        { path: "/tmp/pm-search" },
+      );
+      expect(compact.filters).toMatchObject({ match_mode: "and", assignee: "alice", sprint: "S1" });
+    });
   });
 });

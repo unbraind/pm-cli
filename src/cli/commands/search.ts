@@ -64,6 +64,9 @@ import type { ItemDocument, ItemFormat, ItemFrontMatter, ItemStatus, ItemType, P
 
 export interface SearchOptions {
   mode?: string;
+  matchMode?: string;
+  minScore?: string | number;
+  count?: boolean;
   semanticWeight?: string | number;
   includeLinked?: boolean;
   titleExact?: boolean;
@@ -74,12 +77,22 @@ export interface SearchOptions {
   priority?: string;
   deadlineBefore?: string;
   deadlineAfter?: string;
+  updatedAfter?: string;
+  updatedBefore?: string;
+  createdAfter?: string;
+  createdBefore?: string;
+  assignee?: string;
+  sprint?: string;
+  release?: string;
+  parent?: string;
   limit?: string;
   compact?: boolean;
   full?: boolean;
   fields?: string;
   [key: string]: unknown;
 }
+
+export type SearchMatchMode = "and" | "or" | "exact";
 
 type SearchMode = "keyword" | "semantic" | "hybrid";
 type SearchProjectionMode = "compact" | "full" | "fields";
@@ -161,6 +174,11 @@ const SEARCH_ITEM_FIELD_KEYS = new Set([
 const LONG_QUERY_TOKEN_THRESHOLD = 2;
 const LONG_QUERY_TITLE_EXACT_BONUS = 120;
 const LONG_QUERY_PHRASE_MULTIPLIER = 6;
+// GH-181: in default (OR) match mode, multi-token queries that match EVERY
+// distinct query token in some searchable field get an additive ranking bonus so
+// items covering all terms outrank items matching only a subset. This is a
+// RANKING preference, not a hard filter (use --match-mode and for that).
+const ALL_TERMS_COVERAGE_BONUS = 40;
 const IMPLICIT_HYBRID_EMBEDDING_TIMEOUT_MS = 8_000;
 const IMPLICIT_HYBRID_VECTOR_TIMEOUT_MS = 8_000;
 
@@ -168,6 +186,10 @@ export interface SearchHit {
   item: ItemFrontMatter;
   score: number;
   matched_fields: string[];
+  // GH-181: whether every distinct query token matched some searchable field.
+  // Used by --match-mode and (hard filter) and the default all-terms ranking
+  // bonus. Not projected into output rows.
+  matched_all_terms?: boolean;
 }
 
 export type SearchResultItem = SearchHit | Record<string, unknown>;
@@ -177,6 +199,13 @@ interface SearchResultBase {
   mode: SearchMode;
   items: SearchResultItem[];
   count: number;
+  // GH-181: total matched hits after filters/threshold but BEFORE the limit
+  // truncation. Lets callers see how many matched before the (now-default)
+  // keyword limit dropped rows. Only emitted when it differs from count.
+  total?: number;
+  // --count mode: count-only response carries the matched total and skips the
+  // hit rows entirely (items is empty). `count` reflects the same total.
+  count_only?: boolean;
   warnings?: string[];
 }
 
@@ -203,6 +232,7 @@ function isNonEmptyRecord(value: unknown): value is Record<string, unknown> {
 
 function buildCompactSearchFilterSummary(params: {
   mode: SearchMode;
+  matchMode: SearchMatchMode;
   options: SearchOptions;
   includeLinked: boolean;
   titleExact: boolean;
@@ -213,6 +243,7 @@ function buildCompactSearchFilterSummary(params: {
 }): Record<string, unknown> {
   const {
     mode,
+    matchMode,
     options,
     includeLinked,
     titleExact,
@@ -240,6 +271,33 @@ function buildCompactSearchFilterSummary(params: {
   if (options.deadlineAfter !== undefined) {
     filters.deadline_after = options.deadlineAfter;
   }
+  if (options.updatedAfter !== undefined) {
+    filters.updated_after = options.updatedAfter;
+  }
+  if (options.updatedBefore !== undefined) {
+    filters.updated_before = options.updatedBefore;
+  }
+  if (options.createdAfter !== undefined) {
+    filters.created_after = options.createdAfter;
+  }
+  if (options.createdBefore !== undefined) {
+    filters.created_before = options.createdBefore;
+  }
+  if (options.assignee !== undefined) {
+    filters.assignee = options.assignee;
+  }
+  if (options.sprint !== undefined) {
+    filters.sprint = options.sprint;
+  }
+  if (options.release !== undefined) {
+    filters.release = options.release;
+  }
+  if (options.parent !== undefined) {
+    filters.parent = options.parent;
+  }
+  if (matchMode !== "or") {
+    filters.match_mode = matchMode;
+  }
   if (includeLinked) {
     filters.include_linked = true;
   }
@@ -262,6 +320,66 @@ function buildCompactSearchFilterSummary(params: {
     filters.runtime_filters = runtimeFieldFilters;
   }
   return filters;
+}
+
+// Shared verbose (non-compact) filters echo. Keeps the count-only, empty-result,
+// and primary return paths emitting an identical filter shape (GH-181/pm-13nx).
+function buildVerboseSearchFilters(params: {
+  effectiveMode: SearchMode;
+  matchMode: SearchMatchMode;
+  options: SearchOptions;
+  includeLinked: boolean;
+  titleExact: boolean;
+  phraseExact: boolean;
+  scoreThreshold: number;
+  hybridSemanticWeight: number;
+  queryExpansion: QueryExpansionConfig;
+  rerank: RerankConfig;
+  runtimeFieldFilters: Record<string, unknown>;
+}): Record<string, unknown> {
+  const {
+    effectiveMode,
+    matchMode,
+    options,
+    includeLinked,
+    titleExact,
+    phraseExact,
+    scoreThreshold,
+    hybridSemanticWeight,
+    queryExpansion,
+    rerank,
+    runtimeFieldFilters,
+  } = params;
+  return {
+    mode: effectiveMode,
+    match_mode: matchMode,
+    status: options.status ?? null,
+    type: options.type ?? null,
+    tag: options.tag ?? null,
+    priority: options.priority ?? null,
+    deadline_before: options.deadlineBefore ?? null,
+    deadline_after: options.deadlineAfter ?? null,
+    updated_after: options.updatedAfter ?? null,
+    updated_before: options.updatedBefore ?? null,
+    created_after: options.createdAfter ?? null,
+    created_before: options.createdBefore ?? null,
+    assignee: options.assignee ?? null,
+    sprint: options.sprint ?? null,
+    release: options.release ?? null,
+    parent: options.parent ?? null,
+    include_linked: includeLinked,
+    title_exact: titleExact,
+    phrase_exact: phraseExact,
+    score_threshold: scoreThreshold,
+    hybrid_semantic_weight: effectiveMode === "hybrid" ? hybridSemanticWeight : null,
+    query_expansion_enabled: queryExpansion.enabled,
+    query_expansion_provider: queryExpansion.provider,
+    rerank_enabled: rerank.enabled,
+    rerank_model: rerank.model,
+    rerank_top_k: rerank.top_k,
+    limit: options.limit ?? null,
+    runtime_filters: runtimeFieldFilters,
+  };
 }
 
 interface ExtensionSearchProviderContext {
@@ -463,6 +581,41 @@ function parsePhraseExact(raw: boolean | undefined): boolean {
 
 function parseSemanticWeightOverride(raw: unknown): number | undefined {
   return coerceNumberInRange(raw, 0, 1) ?? undefined;
+}
+
+function parseMatchMode(raw: string | undefined): SearchMatchMode {
+  if (raw === undefined) {
+    return "or";
+  }
+  const normalized = raw.trim().toLowerCase();
+  if (normalized !== "and" && normalized !== "or" && normalized !== "exact") {
+    throw new PmCliError("Search --match-mode must be one of and|or|exact", EXIT_CODE.USAGE);
+  }
+  return normalized;
+}
+
+// Per-query --min-score overrides the persistent search.score_threshold for this
+// query only. Accepts a finite number >= 0; anything else is a usage error.
+function parseMinScoreOverride(raw: unknown): number | undefined {
+  if (raw === undefined || raw === null || raw === "") {
+    return undefined;
+  }
+  const parsed = typeof raw === "number" ? raw : Number(String(raw).trim());
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new PmCliError("Search --min-score must be a finite number >= 0", EXIT_CODE.USAGE);
+  }
+  return parsed;
+}
+
+// updated/created date-window filters share the deadline ISO+relative resolver
+// so `pm search` matches `pm list` semantics exactly: pass an ISO timestamp or a
+// SIGNED relative offset ("-2h"/"-7d" reach into the past, "+1d" the future;
+// units h/d/w/m, m = months — there is no minutes unit).
+function parseTimestampWindow(raw: unknown, fieldLabel: string): string | undefined {
+  if (raw == null) return undefined;
+  const value = String(raw).trim();
+  if (value.length === 0) return undefined;
+  return resolveIsoOrRelative(value, new Date(), fieldLabel);
 }
 
 function normalizeSearchPhrase(value: string): string {
@@ -667,7 +820,22 @@ function applyFilters(
   const priorityFilter = parsePriority(options.priority);
   const deadlineBefore = parseDeadline(options.deadlineBefore, "deadline-before");
   const deadlineAfter = parseDeadline(options.deadlineAfter, "deadline-after");
+  const updatedAfter = parseTimestampWindow(options.updatedAfter, "updated-after");
+  const updatedBefore = parseTimestampWindow(options.updatedBefore, "updated-before");
+  const createdAfter = parseTimestampWindow(options.createdAfter, "created-after");
+  const createdBefore = parseTimestampWindow(options.createdBefore, "created-before");
+  const assigneeFilter = options.assignee?.trim();
+  const sprintFilter = options.sprint?.trim();
+  const releaseFilter = options.release?.trim();
+  const parentFilter = options.parent?.trim();
   const statusSet = statusFilter && statusFilter.length > 0 ? new Set<ItemStatus>(statusFilter) : undefined;
+
+  // Match pm list: --assignee no longer accepts none/null (unassigned filtering
+  // belongs to a dedicated flag there; pm search has no presence flag so reject
+  // the sentinel values explicitly rather than silently matching a literal).
+  if (assigneeFilter && (assigneeFilter.toLowerCase() === "none" || assigneeFilter.toLowerCase() === "null")) {
+    throw new PmCliError('--assignee no longer accepts "none" or "null".', EXIT_CODE.USAGE);
+  }
 
   return items.filter((document) => {
     const item = document.metadata;
@@ -677,6 +845,14 @@ function applyFilters(
     if (priorityFilter !== undefined && item.priority !== priorityFilter) return false;
     if (deadlineBefore && (!item.deadline || compareTimestampStrings(item.deadline, deadlineBefore) > 0)) return false;
     if (deadlineAfter && (!item.deadline || compareTimestampStrings(item.deadline, deadlineAfter) < 0)) return false;
+    if (updatedAfter && compareTimestampStrings(item.updated_at, updatedAfter) < 0) return false;
+    if (updatedBefore && compareTimestampStrings(item.updated_at, updatedBefore) > 0) return false;
+    if (createdAfter && compareTimestampStrings(item.created_at, createdAfter) < 0) return false;
+    if (createdBefore && compareTimestampStrings(item.created_at, createdBefore) > 0) return false;
+    if (assigneeFilter !== undefined && item.assignee !== assigneeFilter) return false;
+    if (sprintFilter !== undefined && item.sprint !== sprintFilter) return false;
+    if (releaseFilter !== undefined && item.release !== releaseFilter) return false;
+    if (parentFilter !== undefined && item.parent !== parentFilter) return false;
     if (!matchesRuntimeFilters(item as Record<string, unknown>, runtimeFieldFilters)) return false;
     return true;
   });
@@ -817,6 +993,7 @@ function scoreDocument(
   normalizedQuery: string,
   linkedCorpus: string,
   tuning: SearchTuning,
+  applyCoverageBonus = false,
 ): SearchHit | null {
   const item = document.metadata;
   const titleTokenCounts = new Map<string, number>();
@@ -845,11 +1022,13 @@ function scoreDocument(
 
   let score = 0;
   const matched = new Set<string>();
+  const matchedTokens = new Set<string>();
   for (const token of tokens) {
     const exactTitleMatches = titleTokenCounts.get(token) ?? 0;
     if (exactTitleMatches > 0) {
       score += exactTitleMatches * tuning.title_exact_bonus;
       matched.add("title");
+      matchedTokens.add(token);
     }
     for (const field of searchableFields) {
       const fieldValue = field.value.toLowerCase();
@@ -857,8 +1036,16 @@ function scoreDocument(
       if (occurrences > 0) {
         score += occurrences * field.weight;
         matched.add(field.name);
+        matchedTokens.add(token);
       }
     }
+  }
+  const distinctTokens = new Set(tokens);
+  const matchedAllTerms = distinctTokens.size > 0 && matchedTokens.size >= distinctTokens.size;
+  // GH-181 default-mode all-terms ranking bonus: only meaningful for multi-token
+  // queries where every distinct token matched somewhere.
+  if (applyCoverageBonus && distinctTokens.size > 1 && matchedAllTerms) {
+    score += ALL_TERMS_COVERAGE_BONUS;
   }
 
   const isLongPhraseQuery = tokens.length >= LONG_QUERY_TOKEN_THRESHOLD && normalizedQuery.includes(" ");
@@ -886,6 +1073,7 @@ function scoreDocument(
     item,
     score,
     matched_fields: [...matched].sort((a, b) => a.localeCompare(b)),
+    matched_all_terms: matchedAllTerms,
   };
 }
 
@@ -913,6 +1101,7 @@ function buildHybridLexicalScore(
   includeLinked: boolean,
   linkedCorpusById: Map<string, string>,
   tuning: SearchTuning,
+  applyCoverageBonus = false,
 ): SearchHit | null {
   return scoreDocument(
     document,
@@ -920,6 +1109,7 @@ function buildHybridLexicalScore(
     normalizedQuery,
     includeLinked ? linkedCorpusById.get(document.metadata.id) ?? "" : "",
     tuning,
+    applyCoverageBonus,
   );
 }
 
@@ -1010,6 +1200,7 @@ export function resolveSearchTuning(settings: unknown): SearchTuning {
 function emptySearchResult(
   query: string,
   mode: SearchMode,
+  matchMode: SearchMatchMode,
   options: SearchOptions,
   includeLinked: boolean,
   scoreThreshold: number,
@@ -1024,6 +1215,7 @@ function emptySearchResult(
   if (compactSummaryMode) {
     const compactFilters = buildCompactSearchFilterSummary({
       mode,
+      matchMode,
       options,
       includeLinked,
       titleExact: options.titleExact === true,
@@ -1047,26 +1239,19 @@ function emptySearchResult(
     mode,
     items: [],
     count: 0,
-    filters: {
-      mode,
-      status: options.status ?? null,
-      type: options.type ?? null,
-      tag: options.tag ?? null,
-      priority: options.priority ?? null,
-      deadline_before: options.deadlineBefore ?? null,
-      deadline_after: options.deadlineAfter ?? null,
-      include_linked: includeLinked,
-      title_exact: options.titleExact === true,
-      phrase_exact: options.phraseExact === true,
-      score_threshold: scoreThreshold,
-      hybrid_semantic_weight: mode === "hybrid" ? hybridSemanticWeight : null,
-      query_expansion_enabled: queryExpansion.enabled,
-      query_expansion_provider: queryExpansion.provider,
-      rerank_enabled: rerank.enabled,
-      rerank_model: rerank.model,
-      rerank_top_k: rerank.top_k,
-      limit: options.limit ?? null,
-    },
+    filters: buildVerboseSearchFilters({
+      effectiveMode: mode,
+      matchMode,
+      options,
+      includeLinked,
+      titleExact: options.titleExact === true,
+      phraseExact: options.phraseExact === true,
+      scoreThreshold,
+      hybridSemanticWeight,
+      queryExpansion,
+      rerank,
+      runtimeFieldFilters: runtimeFieldFilters ?? {},
+    }),
     projection: {
       mode: projection.mode,
       fields: projectionFields,
@@ -1629,7 +1814,9 @@ function readSearchFieldValue(hit: SearchHit, field: string): unknown {
 
 function projectSearchHits(hits: SearchHit[], projection: SearchProjectionConfig): SearchResultItem[] {
   if (projection.mode === "full") {
-    return hits;
+    // matched_all_terms is an internal ranking signal (GH-181); strip it from
+    // full-mode output rows so the public hit shape stays { item, score, matched_fields }.
+    return hits.map(({ matched_all_terms: _matchedAllTerms, ...hit }) => hit);
   }
   return hits.map((hit) => {
     const projected: Record<string, unknown> = {};
@@ -1644,6 +1831,9 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const includeLinked = parseIncludeLinked(options.includeLinked);
   const titleExact = parseTitleExact(options.titleExact);
   const phraseExact = parsePhraseExact(options.phraseExact);
+  const matchMode = parseMatchMode(typeof options.matchMode === "string" ? options.matchMode : undefined);
+  const minScoreOverride = parseMinScoreOverride(options.minScore);
+  const countOnly = options.count === true;
   const tokens = parseTokens(query);
   const normalizedQuery = normalizeSearchPhrase(query);
   const limit = parseLimit(options.limit);
@@ -1671,7 +1861,9 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   );
   const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
   const maxResults = resolveSearchMaxResults(settings);
-  const scoreThreshold = resolveSearchScoreThreshold(settings);
+  // pm-cstl: --min-score overrides the persistent search.score_threshold for this
+  // query only; the effective threshold is reflected in filters.score_threshold.
+  const scoreThreshold = minScoreOverride ?? resolveSearchScoreThreshold(settings);
   const semanticWeightProvided = options.semanticWeight !== undefined;
   const semanticWeightOverride = parseSemanticWeightOverride(options.semanticWeight);
   const hybridSemanticWeight = semanticWeightOverride ?? resolveHybridSemanticWeight(settings);
@@ -1711,12 +1903,15 @@ export async function runSearch(query: string, options: SearchOptions, global: G
   const metadataFilteredDocuments = applyFilters(allDocuments, options, typeRegistry, runtimeFieldFilters, statusFilter);
   const filteredDocuments = applyExactQueryFilters(metadataFilteredDocuments, normalizedQuery, {
     titleExact,
-    phraseExact,
+    // --match-mode exact reuses the exact-phrase containment logic so the whole
+    // normalized query must appear as a contiguous phrase in some searchable field.
+    phraseExact: phraseExact || matchMode === "exact",
   });
   if (effectiveMode === "keyword" && (filteredDocuments.length === 0 || limit === 0)) {
     return emptySearchResult(
       query,
       effectiveMode,
+      matchMode,
       options,
       includeLinked,
       scoreThreshold,
@@ -1742,9 +1937,26 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     }
   }
 
+  // GH-181: the all-terms coverage RANKING bonus only applies in default OR mode
+  // (no hard term filter) so multi-term queries prefer items covering all tokens.
+  // and/exact modes hard-filter instead, so the additive bonus would be redundant.
+  const applyCoverageBonus = matchMode === "or";
   const keywordHits = filteredDocuments
-    .map((document) => buildHybridLexicalScore(document, tokens, normalizedQuery, effectiveMode !== "semantic", linkedCorpusById, tuning))
-    .filter((entry): entry is SearchHit => entry !== null);
+    .map((document) =>
+      buildHybridLexicalScore(
+        document,
+        tokens,
+        normalizedQuery,
+        effectiveMode !== "semantic",
+        linkedCorpusById,
+        tuning,
+        applyCoverageBonus,
+      ),
+    )
+    .filter((entry): entry is SearchHit => entry !== null)
+    // --match-mode and: hard-filter to items where EVERY distinct query token
+    // matched some searchable field.
+    .filter((entry) => matchMode !== "and" || entry.matched_all_terms === true);
 
   let hits = keywordHits;
   if (effectiveMode !== "keyword") {
@@ -1771,6 +1983,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
         return emptySearchResult(
           query,
           effectiveMode,
+          matchMode,
           options,
           includeLinked,
           scoreThreshold,
@@ -1869,14 +2082,78 @@ export async function runSearch(query: string, options: SearchOptions, global: G
 
   const thresholded = hits.filter((entry) => entry.score >= scoreThreshold);
   const sorted = sortHits(thresholded, statusRegistry);
-  const resolvedLimit = effectiveMode === "keyword" ? limit : (limit ?? maxResults);
+  // total = matched hits after filters + threshold, BEFORE limit truncation.
+  const total = sorted.length;
+  // GH-181: keyword mode now also falls back to the configured max_results (50)
+  // default when --limit is omitted, so a broad query no longer returns ALL hits.
+  const resolvedLimit = limit ?? maxResults;
   const limited = resolvedLimit === undefined ? sorted : sorted.slice(0, resolvedLimit);
-  const projectedItems = projectSearchHits(limited, projection);
   const projectionFields = projection.mode === "full" ? null : [...projection.fields];
   const compactSummaryMode = projection.mode === "compact" && options.compact === true;
+
+  // --count: count-only response. Skips projecting/returning hit rows entirely so
+  // an agent asking "how many" pays minimal tokens. `count` carries the matched
+  // total (post-filter, post-threshold, pre-limit).
+  if (countOnly) {
+    if (compactSummaryMode) {
+      const compactFilters = buildCompactSearchFilterSummary({
+        mode: effectiveMode,
+        matchMode,
+        options,
+        includeLinked,
+        titleExact,
+        phraseExact,
+        scoreThreshold,
+        hybridSemanticWeight,
+        runtimeFieldFilters,
+      });
+      return {
+        query: query.trim(),
+        mode: effectiveMode,
+        items: [],
+        count: total,
+        total,
+        count_only: true,
+        filters: compactFilters,
+        ...(warnings.length > 0 ? { warnings } : {}),
+      };
+    }
+    return {
+      query: query.trim(),
+      mode: effectiveMode,
+      items: [],
+      count: total,
+      total,
+      count_only: true,
+      filters: buildVerboseSearchFilters({
+        effectiveMode,
+        matchMode,
+        options,
+        includeLinked,
+        titleExact,
+        phraseExact,
+        scoreThreshold,
+        hybridSemanticWeight,
+        queryExpansion,
+        rerank,
+        runtimeFieldFilters,
+      }),
+      projection: {
+        mode: projection.mode,
+        fields: projectionFields,
+      },
+      now: nowIso(),
+      ...(warnings.length > 0 ? { warnings } : {}),
+    };
+  }
+
+  const projectedItems = projectSearchHits(limited, projection);
+  // Surface the pre-limit total only when the limit actually dropped rows.
+  const truncationExtras = limited.length < total ? { total } : {};
   if (compactSummaryMode) {
     const compactFilters = buildCompactSearchFilterSummary({
       mode: effectiveMode,
+      matchMode,
       options,
       includeLinked,
       titleExact,
@@ -1890,6 +2167,7 @@ export async function runSearch(query: string, options: SearchOptions, global: G
       mode: effectiveMode,
       items: projectedItems,
       count: projectedItems.length,
+      ...truncationExtras,
       filters: compactFilters,
       ...(warnings.length > 0 ? { warnings } : {}),
     };
@@ -1900,27 +2178,20 @@ export async function runSearch(query: string, options: SearchOptions, global: G
     mode: effectiveMode,
     items: projectedItems,
     count: projectedItems.length,
-    filters: {
-      mode: effectiveMode,
-      status: options.status ?? null,
-      type: options.type ?? null,
-      tag: options.tag ?? null,
-      priority: options.priority ?? null,
-      deadline_before: options.deadlineBefore ?? null,
-      deadline_after: options.deadlineAfter ?? null,
-      include_linked: includeLinked,
-      title_exact: titleExact,
-      phrase_exact: phraseExact,
-      score_threshold: scoreThreshold,
-      hybrid_semantic_weight: effectiveMode === "hybrid" ? hybridSemanticWeight : null,
-      query_expansion_enabled: queryExpansion.enabled,
-      query_expansion_provider: queryExpansion.provider,
-      rerank_enabled: rerank.enabled,
-      rerank_model: rerank.model,
-      rerank_top_k: rerank.top_k,
-      limit: options.limit ?? null,
-      runtime_filters: runtimeFieldFilters,
-    },
+    ...truncationExtras,
+    filters: buildVerboseSearchFilters({
+      effectiveMode,
+      matchMode,
+      options,
+      includeLinked,
+      titleExact,
+      phraseExact,
+      scoreThreshold,
+      hybridSemanticWeight,
+      queryExpansion,
+      rerank,
+      runtimeFieldFilters,
+    }),
     projection: {
       mode: projection.mode,
       fields: projectionFields,

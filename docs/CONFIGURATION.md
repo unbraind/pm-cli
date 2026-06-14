@@ -219,6 +219,28 @@ For local Ollama or slower embedding providers, tune `search.embedding_batch_siz
 
 `search.embedding_corpus_max_characters` optionally overrides provider defaults for corpus truncation (`8000` for OpenAI-compatible providers, `3200` for Ollama). Invalid values fall back to the provider default and emit `search_embedding_corpus_max_characters_invalid:using_provider_default` warnings in semantic indexing workflows.
 
+`search.corpus_fields` is an optional string array that controls which item fields are embedded into the semantic search corpus. When **unset or empty**, the full default field set is embedded (backward compatible). When set, **only** the named fields are embedded — letting teams opt structured signals in/out for token efficiency so queries like "high priority bugs blocking release" can match on those fields. The default (and full set of valid) field names are:
+
+```
+title, description, tags, status, type, priority, assignee, parent,
+goal, value, why_now, risk, confidence, estimated_minutes,
+acceptance_criteria, resolution, expected_result, actual_result,
+body, comments, notes, learnings, reminders, events, dependencies, plan
+```
+
+Unknown names in the list are ignored. Optional structured fields are only embedded when present/non-empty on an item (absent fields add no tokens). Because this key is an array, it is **not** settable via `pm config set` (which handles scalar keys) — hand-edit `.agents/pm/settings.json`:
+
+```jsonc
+{
+  "search": {
+    // embed only the high-signal fields for compact, focused vectors
+    "corpus_fields": ["title", "description", "tags", "type", "priority", "status", "body"]
+  }
+}
+```
+
+**Re-embed note:** changing `corpus_fields` (or upgrading to a build that embeds new fields) changes the embedding input, so existing items are flagged stale and re-embedded on the next semantic refresh / `pm reindex`. This is expected and self-healing.
+
 Advanced relevance tuning is opt-in:
 
 - `search.query_expansion.enabled` enables pre-embedding query expansion for semantic/hybrid runs.

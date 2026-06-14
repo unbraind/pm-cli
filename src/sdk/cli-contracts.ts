@@ -1235,6 +1235,9 @@ export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--mode" },
   { flag: "--semantic" },
   { flag: "--hybrid" },
+  { flag: "--match-mode" },
+  { flag: "--min-score" },
+  { flag: "--count" },
   { flag: "--semantic-weight" },
   { flag: "--include-linked" },
   { flag: "--title-exact" },
@@ -1249,6 +1252,14 @@ export const SEARCH_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--priority" },
   { flag: "--deadline-before" },
   { flag: "--deadline-after" },
+  { flag: "--updated-after" },
+  { flag: "--updated-before" },
+  { flag: "--created-after" },
+  { flag: "--created-before" },
+  { flag: "--assignee" },
+  { flag: "--sprint" },
+  { flag: "--release" },
+  { flag: "--parent" },
 ];
 
 export const CONTRACTS_FLAG_CONTRACTS: CliFlagContract[] = [
