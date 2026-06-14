@@ -53,10 +53,17 @@ export function resolveSearchCorpusFields(settings: Pick<PmSettings, "search"> |
   if (!Array.isArray(configured)) {
     return [...DEFAULT_SEARCH_CORPUS_FIELDS];
   }
-  const selected = configured
-    .filter((entry): entry is string => typeof entry === "string")
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
+  // The type guard is intentional: corpus_fields comes from user-editable
+  // settings.json, so entries are not statically guaranteed to be strings.
+  // De-duplicate so a repeated name cannot produce duplicate corpus keys.
+  const selected = Array.from(
+    new Set(
+      configured
+        .filter((entry): entry is string => typeof entry === "string")
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0),
+    ),
+  );
   return selected.length > 0 ? selected : [...DEFAULT_SEARCH_CORPUS_FIELDS];
 }
 

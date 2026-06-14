@@ -151,6 +151,13 @@ describe("resolveSearchCorpusFields", () => {
     ]);
   });
 
+  it("de-duplicates repeated field names (after trimming)", () => {
+    expect(resolveSearchCorpusFields(makeSettings(["title", " title ", "priority", "priority"]))).toEqual([
+      "title",
+      "priority",
+    ]);
+  });
+
   it("threads through buildSemanticCorpusInput", () => {
     const resolved = resolveSearchCorpusFields(makeSettings(["title", "priority"]));
     const input = buildSemanticCorpusInput(makeDocument(), { fields: resolved });

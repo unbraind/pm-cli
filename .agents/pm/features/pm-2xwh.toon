@@ -1,14 +1,14 @@
 id: pm-2xwh
 title: "Search: persistent search.hybrid_semantic_weight setting as default for pm search --semantic-weight"
-description: "The per-query --semantic-weight override (pm-cy8i, closed) was shipped. However, there is no persistent search.tuning.hybrid_semantic_weight setting that applies as the project default without specifying it on every query. Agents and users who want a consistent hybrid bias must pass --semantic-weight on every invocation or configure it through an extension."
+description: "The per-query --semantic-weight override (pm-cy8i, closed) was shipped. The persistent search.hybrid_semantic_weight setting applies as the project default without specifying it on every query, so agents/users who want a consistent hybrid bias no longer must pass --semantic-weight on every invocation."
 type: Feature
 status: closed
 priority: 2
 tags[4]: "area:search",config,hybrid,relevance
 created_at: "2026-06-07T10:05:24.769Z"
-updated_at: "2026-06-14T16:25:22.329Z"
+updated_at: "2026-06-14T16:43:22.341Z"
 author: audit-data-agent
-acceptance_criteria: "- Add `search.tuning.hybrid_semantic_weight: number (0..1)` to PmSettings\n- Add to settings-validator; config nested-settings alias (search_hybrid_semantic_weight)\n- pm search uses the settings value as default when --semantic-weight is not passed\n- Contract test / MCP contract table updated\n- pm config set search_hybrid_semantic_weight 0.7 works end-to-end"
+acceptance_criteria: "- search.hybrid_semantic_weight: number (0..1) in PmSettings (under search, not search.tuning)\n- settings-validator support; config nested-settings alias search_hybrid_semantic_weight (ratio kind)\n- pm search uses the settings value as default when --semantic-weight is not passed\n- Contract / MCP contract table updated\n- pm config set search_hybrid_semantic_weight 0.7 works end-to-end"
 parent: pm-ydp6
 risk: low
 confidence: high
@@ -16,4 +16,4 @@ resolution: Verified already-implemented persistent search.hybrid_semantic_weigh
 comments[1]{created_at,author,text}:
   "2026-06-14T16:23:39.448Z",maintainer-agent,"Verified already-implemented (resolver resolveHybridSemanticWeight reads search.hybrid_semantic_weight, settings-validator supports it, nested-settings descriptor search_hybrid_semantic_weight + ratio kind, runSearch uses it as --semantic-weight default). Confirmed end-to-end in sandbox: config set search_hybrid_semantic_weight 0.85 persists + applies. Never documented in CHANGELOG (only per-query pm-cy8i was) -> closing here surfaces the persistent setting. No new code needed."
 close_reason: Verified already-implemented persistent search.hybrid_semantic_weight setting works end-to-end
-body: "## Context\n\nSession memory 2026-05-26 notes search.tuning reminders_weight and events_weight contract drift (pm-75du, closed). The `--semantic-weight` flag per-query was shipped as pm-cy8i.\n\nHowever, `src/core/shared/constants.ts` shows hybrid weight defaults but no `search.tuning.hybrid_semantic_weight` persistent settings key. An agent working primarily on code review might want to persist `semantic_weight: 0.8` to always favour semantic retrieval without specifying it each time.\n\n## Acceptance criteria\n\n- [ ] Add `search.tuning.hybrid_semantic_weight: number (0..1)` to PmSettings\n- [ ] Add to settings-validator; config nested-settings alias (search_hybrid_semantic_weight)\n- [ ] pm search uses the settings value as default when --semantic-weight is not passed\n- [ ] Contract test / MCP contract table updated\n- [ ] pm config set search_hybrid_semantic_weight 0.7 works end-to-end\n\n## Evidence\n\n- `src/core/shared/constants.ts` — hybrid weight defaults exist but not as a user-configurable settings key\n- pm-cy8i (closed) — per-query override shipped but no persistent setting\n- `src/types.ts` SearchSettings — check for hybrid_semantic_weight field absence"
+body: "## Context\n\nThe per-query `--semantic-weight` override (pm-cy8i) shipped earlier. The persistent `search.hybrid_semantic_weight` setting (under `search`, not `search.tuning`) lets teams persist a hybrid bias as the project default.\n\n## Acceptance criteria (verified already-implemented)\n\n- [x] `search.hybrid_semantic_weight: number (0..1)` in PmSettings.search\n- [x] settings-validator support + nested-settings alias `search_hybrid_semantic_weight` (ratio kind)\n- [x] pm search uses it as the `--semantic-weight` default when the flag is omitted\n- [x] Contract / MCP contract table cover it\n- [x] `pm config set search_hybrid_semantic_weight 0.7` works end-to-end\n\n## Evidence\n\n- resolveHybridSemanticWeight reads search.hybrid_semantic_weight (default 0.7); used at runSearch semantic-weight resolution."

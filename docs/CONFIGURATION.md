@@ -215,6 +215,14 @@ pm search "release docs" --mode keyword --limit 10
 
 Semantic and hybrid search can use built-in OpenAI-compatible or Ollama providers plus vector stores such as Qdrant or LanceDB. If local Ollama is available and semantic settings are unset, `pm` can resolve local defaults automatically.
 
+`search.hybrid_semantic_weight` (number `0..1`, default `0.7`) is the persistent default blend used in **hybrid** mode: it weights the semantic (vector) score against the lexical score during score fusion — higher favours semantic retrieval, lower favours keyword matching. A per-query `pm search --semantic-weight <value>` overrides it for a single query; when the flag is omitted the persistent setting applies. Set it once with:
+
+```bash
+pm config set search_hybrid_semantic_weight 0.85
+```
+
+`search.score_threshold` (number, default `0`) drops hits scoring below the floor (after hybrid fusion, before limit truncation). A per-query `pm search --min-score <float>` overrides it for a single query. `search.max_results` (default `50`) caps returned hits across all modes when `--limit` is omitted, so broad keyword queries no longer return every match.
+
 For local Ollama or slower embedding providers, tune `search.embedding_batch_size`, `search.embedding_timeout_ms`, and `search.scanner_max_batch_retries` in project config before assuming semantic search is broken. Keyword search remains the fast baseline while semantic indexing catches up.
 
 `search.embedding_corpus_max_characters` optionally overrides provider defaults for corpus truncation (`8000` for OpenAI-compatible providers, `3200` for Ollama). Invalid values fall back to the provider default and emit `search_embedding_corpus_max_characters_invalid:using_provider_default` warnings in semantic indexing workflows.
