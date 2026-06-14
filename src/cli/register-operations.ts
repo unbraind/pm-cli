@@ -255,11 +255,26 @@ export function registerOperationCommands(program: Command): void {
       "--storage",
       "Include aggregate history-stream storage metrics (total streams/lines/bytes, largest + deepest streams, oldest/newest entries)",
     )
+    .option(
+      "--metadata-coverage",
+      "Include metadata coverage % (acceptance_criteria, estimated_minutes, resolution, tags, parent) overall and by type",
+    )
+    .option("--by-assignee", "Include a lifecycle-bucketed item breakdown grouped by assignee")
+    .option("--by-tag", "Include a lifecycle-bucketed item breakdown grouped by tag")
+    .option("--by-priority", "Include a lifecycle-bucketed item breakdown grouped by priority")
+    .option("--tag-prefix <value>", "With --by-tag: only count tags starting with this prefix (e.g. domain:)")
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const { runStats } = await import("./commands/stats.js");
-      const result = await runStats(globalOptions, { storage: options.storage === true });
+      const result = await runStats(globalOptions, {
+        storage: options.storage === true,
+        metadataCoverage: options.metadataCoverage === true,
+        byAssignee: options.byAssignee === true,
+        byTag: options.byTag === true,
+        byPriority: options.byPriority === true,
+        tagPrefix: typeof options.tagPrefix === "string" ? options.tagPrefix : undefined,
+      });
       printResult(result, globalOptions);
       if (globalOptions.profile) {
         printError(`profile:command=stats took_ms=${Date.now() - startedAt}`);
@@ -337,6 +352,7 @@ export function registerOperationCommands(program: Command): void {
     .option("--include-pm-internals", "Include PM storage internals in tracked-all candidate scans")
     .option("--verbose-file-lists", "Include full file-path lists for validate --check-files details")
     .option("--verbose-diagnostics", "Include full validate diagnostic ID lists instead of compact summaries")
+    .option("--all-affected-ids", "Emit complete missing_* affected-ID lists with no truncation (implied by --json)")
     .option("--strict-exit", "Return non-zero exit when validation warnings are present")
     .option("--fail-on-warn", "Alias for --strict-exit")
     .option("--fix-hints", "Add a machine-executable fix_hints[] of pm commands to each failing check's details")
@@ -362,6 +378,7 @@ export function registerOperationCommands(program: Command): void {
         includePmInternals: Boolean(options.includePmInternals),
         verboseFileLists: Boolean(options.verboseFileLists),
         verboseDiagnostics: Boolean(options.verboseDiagnostics),
+        allAffectedIds: Boolean(options.allAffectedIds),
         checkHistoryDrift: Boolean(options.checkHistoryDrift),
         fixHints: Boolean(options.fixHints),
         autoFix: Boolean(options.autoFix),

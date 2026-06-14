@@ -1,0 +1,13 @@
+id: pm-hm1q
+title: "Shared core/governance/metadata-coverage primitive: missing-field predicates + coverage % + grouped lifecycle counts"
+description: "New dependency-light module src/core/governance/metadata-coverage.ts. Exports: isAcMissing/isEstimateMissing/isResolutionMissing predicates (resolution only meaningful for closed/terminal items); filterMissingMetadata(items, flags); computeMetadataCoverage(items, types) -> per-field present/missing counts + percentages overall and by-type (AC, estimates, resolution, tags, parent); groupItemsByDimension(items, dimension, {tagPrefix}) -> rows of {label, open, in_progress, closed, other, total} with explicit (unassigned)/(untagged)/(unparented) labels. 100% covered via tests/unit subdir spec."
+type: Task
+status: closed
+priority: 1
+tags[4]: "area:cli",core,governance,metadata-coverage
+created_at: "2026-06-13T21:54:30.330Z"
+updated_at: "2026-06-13T22:31:47.795Z"
+author: claude-code-agent
+parent: pm-yq7m
+close_reason: "Shipped src/core/governance/metadata-coverage.ts (pure predicates + coverage + grouping), 100% covered by tests/unit/core/metadata-coverage.spec.ts. Consumed by list/update-many/stats/aggregate/validate."
+body: ""

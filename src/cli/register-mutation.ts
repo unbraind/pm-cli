@@ -98,6 +98,41 @@ function registerCommanderOptionContracts(command: Command, contracts: Commander
   }
 }
 
+/**
+ * Map raw `update-many --filter-*` commander options into the ListOptions shape
+ * runList consumes. Extracted from registerMutationCommands so its many
+ * string/boolean coercions do not inflate that function's cyclomatic complexity.
+ */
+function buildUpdateManyListOptions(options: Record<string, unknown>): Record<string, unknown> {
+  const readString = (key: string): string | undefined =>
+    typeof options[key] === "string" ? (options[key] as string) : undefined;
+  return {
+    type: readString("filterType"),
+    tag: readString("filterTag"),
+    priority: readString("filterPriority"),
+    deadlineBefore: readString("filterDeadlineBefore"),
+    deadlineAfter: readString("filterDeadlineAfter"),
+    updatedAfter: readString("filterUpdatedAfter"),
+    updatedBefore: readString("filterUpdatedBefore"),
+    createdAfter: readString("filterCreatedAfter"),
+    createdBefore: readString("filterCreatedBefore"),
+    ids: readString("ids"),
+    assignee: readString("filterAssignee"),
+    assigneeFilter: readString("filterAssigneeFilter") ?? readString("filterAssignee_filter"),
+    parent: readString("filterParent"),
+    sprint: readString("filterSprint"),
+    release: readString("filterRelease"),
+    filterAcMissing: options.filterAcMissing === true ? true : undefined,
+    filterEstimatesMissing:
+      options.filterEstimatesMissing === true || options.filterEstimateMissing === true ? true : undefined,
+    filterResolutionMissing: options.filterResolutionMissing === true ? true : undefined,
+    filterMetadataMissing: options.filterMetadataMissing === true ? true : undefined,
+    limit: readString("limit"),
+    offset: readString("offset"),
+    includeBody: true,
+  };
+}
+
 export function registerMutationCommands(program: Command): void {
   const createCommand = program
     .command("create")
@@ -283,6 +318,10 @@ export function registerMutationCommands(program: Command): void {
     .option("--filter-parent <value>", "Filter by parent item ID before applying updates")
     .option("--filter-sprint <value>", "Filter by sprint before applying updates")
     .option("--filter-release <value>", "Filter by release before applying updates")
+    .option("--filter-ac-missing", "Select only items missing acceptance_criteria (bulk backfill)")
+    .option("--filter-estimates-missing", "Select only items missing estimated_minutes (bulk backfill)")
+    .option("--filter-resolution-missing", "Select only terminal items missing resolution (bulk backfill)")
+    .option("--filter-metadata-missing", "Select only items missing any tracked metadata (AC, estimate, or resolution)")
     .option("--ids <value>", "Restrict to an explicit comma-separated ID allowlist (intersected with other filters)")
     .option("--limit <n>", "Limit matched item count before apply/preview")
     .option("--offset <n>", "Skip first n matched rows before apply/preview")
@@ -383,6 +422,7 @@ export function registerMutationCommands(program: Command): void {
     ["--customer_impact <value>", "Alias for --customer-impact"],
     ["--allow_audit_update", "Alias for --allow-audit-update"],
     ["--allow_audit_dep_update", "Alias for --allow-audit-dep-update"],
+    ["--filter-estimate-missing", "Alias for --filter-estimates-missing"],
   ] as const) {
     addHiddenOption(updateManyCommand, flags, description, false);
   }
@@ -402,31 +442,7 @@ export function registerMutationCommands(program: Command): void {
       const result = await runUpdateMany(
         {
           status: typeof options.filterStatus === "string" ? options.filterStatus : undefined,
-          list: {
-            type: typeof options.filterType === "string" ? options.filterType : undefined,
-            tag: typeof options.filterTag === "string" ? options.filterTag : undefined,
-            priority: typeof options.filterPriority === "string" ? options.filterPriority : undefined,
-            deadlineBefore: typeof options.filterDeadlineBefore === "string" ? options.filterDeadlineBefore : undefined,
-            deadlineAfter: typeof options.filterDeadlineAfter === "string" ? options.filterDeadlineAfter : undefined,
-            updatedAfter: typeof options.filterUpdatedAfter === "string" ? options.filterUpdatedAfter : undefined,
-            updatedBefore: typeof options.filterUpdatedBefore === "string" ? options.filterUpdatedBefore : undefined,
-            createdAfter: typeof options.filterCreatedAfter === "string" ? options.filterCreatedAfter : undefined,
-            createdBefore: typeof options.filterCreatedBefore === "string" ? options.filterCreatedBefore : undefined,
-            ids: typeof options.ids === "string" ? options.ids : undefined,
-            assignee: typeof options.filterAssignee === "string" ? options.filterAssignee : undefined,
-            assigneeFilter:
-              typeof options.filterAssigneeFilter === "string"
-                ? options.filterAssigneeFilter
-                : typeof options.filterAssignee_filter === "string"
-                  ? options.filterAssignee_filter
-                  : undefined,
-            parent: typeof options.filterParent === "string" ? options.filterParent : undefined,
-            sprint: typeof options.filterSprint === "string" ? options.filterSprint : undefined,
-            release: typeof options.filterRelease === "string" ? options.filterRelease : undefined,
-            limit: typeof options.limit === "string" ? options.limit : undefined,
-            offset: typeof options.offset === "string" ? options.offset : undefined,
-            includeBody: true,
-          },
+          list: buildUpdateManyListOptions(options),
           update: normalizeUpdateOptions(extractUpdateManyMutationOptionSource(options)),
           dryRun: options.dryRun === true ? true : undefined,
           rollback: typeof options.rollback === "string" ? options.rollback : undefined,

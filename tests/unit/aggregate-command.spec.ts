@@ -10,6 +10,13 @@ import { SETTINGS_DEFAULTS } from "../../src/core/shared/constants.js";
 import { PmCliError } from "../../src/core/shared/errors.js";
 import { withTempPmPath, type TempPmContext } from "../helpers/withTempPmPath.js";
 
+// Strip the derived display label so the existing structural assertions stay
+// focused on group/count fields; group_label is asserted on its own below.
+function stripGroupLabel<T extends { group_label?: string }>(row: T): Omit<T, "group_label"> {
+  const { group_label: _label, ...rest } = row;
+  return rest;
+}
+
 function createItem(
   context: TempPmContext,
   params: {
@@ -260,7 +267,7 @@ describe("runAggregate", () => {
 
       expect(result.filters.group_by).toEqual(["parent", "type"]);
       expect(result.count).toBe(2);
-      expect(result.groups).toEqual([
+      expect(result.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             parent: parentId,
@@ -312,7 +319,7 @@ describe("runAggregate", () => {
       );
 
       expect(result.count).toBe(2);
-      expect(result.groups).toEqual([
+      expect(result.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             parent: parentId,
@@ -363,7 +370,7 @@ describe("runAggregate", () => {
 
       expect(result.filters.group_by).toEqual(["type"]);
       expect(result.count).toBe(1);
-      expect(result.groups).toEqual([
+      expect(result.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             type: "Task",
@@ -374,6 +381,32 @@ describe("runAggregate", () => {
       expect(Object.keys(result.groups[0]!.group)).toEqual(["type"]);
       expect(result.totals.items_skipped_unparented).toBe(0);
       expect(result.totals.items_grouped).toBe(2);
+    });
+  });
+
+  it("renders explicit display labels, including (unassigned) for blank assignee groups (GH-225)", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, { title: "Assigned Task", type: "Task", status: "open", assignee: "alice" });
+      createItem(context, { title: "Unassigned Task A", type: "Task", status: "open", assignee: null });
+      createItem(context, { title: "Unassigned Task B", type: "Task", status: "closed", assignee: null });
+
+      const byAssignee = await runAggregate(
+        { groupBy: "assignee", count: true },
+        { path: context.pmPath },
+      );
+      const labels = new Map(byAssignee.groups.map((row) => [row.group_label, row.count]));
+      expect(labels.get("(unassigned)")).toBe(2);
+      expect(labels.get("alice")).toBe(1);
+      // The structured group value keeps the raw null for machine consumers.
+      const unassigned = byAssignee.groups.find((row) => row.group_label === "(unassigned)");
+      expect(unassigned?.group.assignee).toBeNull();
+
+      // Multi-field grouping joins per-field labels so composite groups stay unambiguous.
+      const composite = await runAggregate(
+        { groupBy: "assignee,type", count: true },
+        { path: context.pmPath },
+      );
+      expect(composite.groups.map((row) => row.group_label)).toContain("assignee=(unassigned) | type=Task");
     });
   });
 
@@ -418,7 +451,7 @@ describe("runAggregate", () => {
       );
 
       expect(result.filters.completion).toBe(true);
-      expect(result.groups).toEqual([
+      expect(result.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             parent: parentId,
@@ -474,7 +507,7 @@ describe("runAggregate", () => {
         { path: context.pmPath },
       );
       expect(byStatus.filters.group_by).toEqual(["status"]);
-      expect(byStatus.groups).toEqual([
+      expect(byStatus.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             status: "closed",
@@ -496,7 +529,7 @@ describe("runAggregate", () => {
         },
         { path: context.pmPath },
       );
-      expect(byPriorityAssignee.groups).toEqual([
+      expect(byPriorityAssignee.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             priority: 1,
@@ -527,7 +560,7 @@ describe("runAggregate", () => {
         },
         { path: context.pmPath },
       );
-      expect(byTags.groups).toEqual([
+      expect(byTags.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             tags: "alpha",
@@ -555,7 +588,7 @@ describe("runAggregate", () => {
         },
         { path: context.pmPath },
       );
-      expect(bySprintRelease.groups).toEqual([
+      expect(bySprintRelease.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             sprint: "sprint-1",
@@ -645,7 +678,7 @@ describe("runAggregate", () => {
         sprint: "sprint-numeric",
         release: "release-numeric",
       });
-      expect(result.groups).toEqual([
+      expect(result.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             type: "Task",
@@ -676,7 +709,7 @@ describe("runAggregate", () => {
         { path: context.pmPath },
       );
 
-      expect(result.groups).toEqual([
+      expect(result.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             type: "Task",
@@ -715,7 +748,7 @@ describe("runAggregate", () => {
         { path: context.pmPath },
       );
 
-      expect(result.groups).toEqual([
+      expect(result.groups.map(stripGroupLabel)).toEqual([
         {
           group: {
             status: "open",

@@ -198,6 +198,10 @@ export const LIST_FILTER_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--parent" },
   { flag: "--sprint" },
   { flag: "--release" },
+  { flag: "--filter-ac-missing" },
+  { flag: "--filter-estimates-missing", aliases: ["--filter-estimate-missing"] },
+  { flag: "--filter-resolution-missing" },
+  { flag: "--filter-metadata-missing" },
   { flag: "--limit" },
   { flag: "--offset" },
   { flag: "--compact" },
@@ -747,6 +751,11 @@ export const GC_FLAG_CONTRACTS: CliFlagContract[] = [
 
 export const STATS_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--storage" },
+  { flag: "--metadata-coverage" },
+  { flag: "--by-assignee" },
+  { flag: "--by-tag" },
+  { flag: "--by-priority" },
+  { flag: "--tag-prefix" },
 ];
 
 export const HEALTH_FLAG_CONTRACTS: CliFlagContract[] = [
@@ -778,6 +787,7 @@ export const VALIDATE_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--include-pm-internals" },
   { flag: "--verbose-file-lists" },
   { flag: "--verbose-diagnostics" },
+  { flag: "--all-affected-ids" },
   { flag: "--strict-exit" },
   { flag: "--fail-on-warn" },
   { flag: "--fix-hints" },
@@ -1016,6 +1026,10 @@ export const UPDATE_MANY_FLAG_CONTRACTS: CliFlagContract[] = [
   { flag: "--filter-parent" },
   { flag: "--filter-sprint" },
   { flag: "--filter-release" },
+  { flag: "--filter-ac-missing" },
+  { flag: "--filter-estimates-missing", aliases: ["--filter-estimate-missing"] },
+  { flag: "--filter-resolution-missing" },
+  { flag: "--filter-metadata-missing" },
   { flag: "--ids", list: true },
   { flag: "--limit" },
   { flag: "--offset" },
@@ -1943,7 +1957,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
     required: ["runId"],
     optional: ["author"],
   },
-  stats: { optional: ["storage"] },
+  stats: { optional: ["storage", "metadataCoverage", "byAssignee", "byTag", "byPriority", "tagPrefix"] },
   health: {
     optional: [
       "strictDirectories",
@@ -1974,6 +1988,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
       "includePmInternals",
       "verboseFileLists",
       "verboseDiagnostics",
+      "allAffectedIds",
       "strictExit",
       "failOnWarn",
       "fixHints",

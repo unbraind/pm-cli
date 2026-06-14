@@ -392,7 +392,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("list status logs stop resume --status --limit --stream --tail --force --author --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    validate)",
-    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --verbose-diagnostics --strict-exit --fail-on-warn --fix-hints --auto-fix --dry-run --fix-scope --prune-missing --check-history-drift --check-command-references --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--check-metadata --metadata-profile --check-resolution --check-lifecycle --check-stale-blockers --dependency-cycle-severity --check-files --scan-mode --include-pm-internals --verbose-file-lists --verbose-diagnostics --all-affected-ids --strict-exit --fail-on-warn --fix-hints --auto-fix --dry-run --fix-scope --prune-missing --check-history-drift --check-command-references --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    health)",
     `      COMPREPLY=(${compgen(HEALTH_FLAGS)})`,
@@ -428,7 +428,7 @@ export function generateBashScript(
     `      COMPREPLY=(${compgen("--dry-run --scope --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    stats)",
-    `      COMPREPLY=(${compgen("--storage --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
+    `      COMPREPLY=(${compgen("--storage --metadata-coverage --by-assignee --by-tag --by-priority --tag-prefix --json --quiet --no-changed-fields --pm-path --path --no-extensions --no-pager --profile --help")})`,
     "      ;;",
     "    close|close-task)",
     `      COMPREPLY=(${compgen(CLOSE_MUTATION_FLAGS)})`,
@@ -774,6 +774,10 @@ ${zshUpdateRuntimeFieldFlags}            '--allow-audit-update[Allow non-owner m
             '--filter-parent[Filter by parent item ID]:parent' \\
             '--filter-sprint[Filter by sprint]:sprint' \\
             '--filter-release[Filter by release]:release' \\
+            '--filter-ac-missing[Select only items missing acceptance_criteria]' \\
+            '--filter-estimates-missing[Select only items missing estimated_minutes]' \\
+            '--filter-resolution-missing[Select only terminal items missing resolution]' \\
+            '--filter-metadata-missing[Select only items missing any tracked metadata]' \\
             '--ids[Explicit comma-separated ID allowlist]:ids' \\
             '--limit[Limit matched item count]:number' \\
             '--offset[Skip first n matched rows]:number' \\
@@ -1110,6 +1114,11 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
         stats)
           _arguments \\
             '--storage[Include aggregate history-stream storage metrics]' \\
+            '--metadata-coverage[Include metadata coverage percentages overall and by type]' \\
+            '--by-assignee[Lifecycle-bucketed breakdown grouped by assignee]' \\
+            '--by-tag[Lifecycle-bucketed breakdown grouped by tag]' \\
+            '--by-priority[Lifecycle-bucketed breakdown grouped by priority]' \\
+            '--tag-prefix[With --by-tag: only count tags with this prefix]:prefix' \\
             '--json[Output JSON]' \\
             '--quiet[Suppress stdout]'
           ;;
@@ -1331,6 +1340,8 @@ ${zshSearchRuntimeFieldFlags}            '--json[Output JSON]' \\
             '--scan-mode[Select file candidate scan mode for --check-files]:(default tracked-all tracked-all-strict)' \\
             '--include-pm-internals[Include PM storage internals in tracked-all candidate scans]' \\
             '--verbose-file-lists[Include full file-path lists for validate --check-files details]' \\
+            '--verbose-diagnostics[Include full validate diagnostic ID lists instead of compact summaries]' \\
+            '--all-affected-ids[Emit complete missing_* affected-ID lists with no truncation (implied by --json)]' \\
             '--strict-exit[Return non-zero exit when validation warnings are present]' \\
             '--fail-on-warn[Alias for --strict-exit]' \\
             '--fix-hints[Add a machine-executable fix_hints[] of pm commands to each failing check]' \\
@@ -1725,6 +1736,10 @@ complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-assignee-f
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-parent           -d 'Filter by parent item ID' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-sprint           -d 'Filter by sprint before applying updates' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-release          -d 'Filter by release before applying updates' -r
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-ac-missing       -d 'Select only items missing acceptance_criteria'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-estimates-missing -d 'Select only items missing estimated_minutes'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-resolution-missing -d 'Select only terminal items missing resolution'
+complete -c pm -n '__fish_seen_subcommand_from update-many' -l filter-metadata-missing  -d 'Select only items missing any tracked metadata'
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l ids                     -d 'Explicit comma-separated ID allowlist' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l limit                   -d 'Limit matched item count' -r
 complete -c pm -n '__fish_seen_subcommand_from update-many' -l offset                  -d 'Skip first n matched rows' -r
@@ -2035,6 +2050,11 @@ complete -c pm -n '__fish_seen_subcommand_from gc' -l scope -d 'Limit cleanup to
 
 # stats flags
 complete -c pm -n '__fish_seen_subcommand_from stats' -l storage -d 'Include aggregate history-stream storage metrics'
+complete -c pm -n '__fish_seen_subcommand_from stats' -l metadata-coverage -d 'Include metadata coverage percentages overall and by type'
+complete -c pm -n '__fish_seen_subcommand_from stats' -l by-assignee -d 'Lifecycle-bucketed breakdown grouped by assignee'
+complete -c pm -n '__fish_seen_subcommand_from stats' -l by-tag -d 'Lifecycle-bucketed breakdown grouped by tag'
+complete -c pm -n '__fish_seen_subcommand_from stats' -l by-priority -d 'Lifecycle-bucketed breakdown grouped by priority'
+complete -c pm -n '__fish_seen_subcommand_from stats' -l tag-prefix -d 'With --by-tag: only count tags with this prefix' -r
 
 # append flags
 complete -c pm -n '__fish_seen_subcommand_from append' -s b -l body -d 'Item body' -r
@@ -2101,6 +2121,8 @@ complete -c pm -n '__fish_seen_subcommand_from validate' -l check-files -d 'Run 
 complete -c pm -n '__fish_seen_subcommand_from validate' -l scan-mode -d 'Select file candidate scan mode for --check-files' -r -a 'default tracked-all tracked-all-strict'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l include-pm-internals -d 'Include PM storage internals in tracked-all candidate scans'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l verbose-file-lists -d 'Include full file-path lists for validate --check-files details'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l verbose-diagnostics -d 'Include full validate diagnostic ID lists instead of compact summaries'
+complete -c pm -n '__fish_seen_subcommand_from validate' -l all-affected-ids -d 'Emit complete missing_* affected-ID lists with no truncation (implied by --json)'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l strict-exit -d 'Return non-zero exit when validation warnings are present'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l fail-on-warn -d 'Alias for --strict-exit'
 complete -c pm -n '__fish_seen_subcommand_from validate' -l fix-hints -d 'Add a machine-executable fix_hints[] of pm commands to each failing check'

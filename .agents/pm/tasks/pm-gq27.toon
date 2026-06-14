@@ -1,0 +1,13 @@
+id: pm-gq27
+title: "pm stats: --by-assignee/--by-tag/--by-priority breakdowns + --metadata-coverage + lifecycle/type adoption (GH-213/218/219)"
+description: "Extend pm stats: grouped lifecycle breakdowns (--by-assignee/--by-tag [--tag-prefix]/--by-priority) with explicit (unassigned) labels; --metadata-coverage showing AC/estimates/resolution/tags/parent coverage % overall and by type; lifecycle-state distribution + type adoption already partly present (by_status/by_type) — surface underutilized states. Reuse shared core. JSON + human output."
+type: Task
+status: closed
+priority: 2
+tags[5]: "area:cli",gh-213,gh-218,gh-219,governance
+created_at: "2026-06-13T21:54:40.723Z"
+updated_at: "2026-06-13T22:31:54.574Z"
+author: claude-code-agent
+parent: pm-yq7m
+close_reason: "pm stats --metadata-coverage + --by-assignee/--by-tag [--tag-prefix]/--by-priority shipped (gated, token-light default; by_status/by_type already zero-fill lifecycle/type distribution). MCP wired. Closes GH-213/218/219."
+body: ""

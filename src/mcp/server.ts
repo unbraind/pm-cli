@@ -967,7 +967,14 @@ async function runAction(args: Record<string, unknown>): Promise<unknown> {
       );
     }
     case "stats":
-      return runStats(global, { storage: options.storage === true });
+      return runStats(global, {
+        storage: options.storage === true,
+        metadataCoverage: options.metadataCoverage === true,
+        byAssignee: options.byAssignee === true,
+        byTag: options.byTag === true,
+        byPriority: options.byPriority === true,
+        tagPrefix: typeof options.tagPrefix === "string" ? options.tagPrefix : undefined,
+      });
     case "append": {
       const { changedFields, runnerOptions } = withMutationCompaction(args, options);
       return projectMutationResult(
