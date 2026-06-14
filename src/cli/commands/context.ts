@@ -1165,16 +1165,31 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
   );
 
   const baseListOptions = stripListProjectionFlags(options);
-  const listOptions: ListOptions = { ...baseListOptions, excludeTerminal: true };
+  // Structural reads must see the FULL corpus: --limit/--offset are per-section
+  // display caps applied later via .slice(0, limit), not corpus filters. Passing
+  // them to runList would truncate the data the hierarchy/progress rollups and
+  // (critically) --parent subtree resolution depend on — yielding wrong rollups
+  // or a false NOT_FOUND for an anchor that paginated out of view.
+  const unpaginatedListOptions = (extra: Partial<ListOptions>): ListOptions => ({
+    ...baseListOptions,
+    ...extra,
+    noTruncate: true,
+    limit: undefined,
+    offset: undefined,
+  });
+  // Subtree scoping also needs the complete active set before filtering, so the
+  // focus rows aren't pre-truncated by --limit ahead of the parent filter.
+  const listOptions: ListOptions = parentScope === undefined
+    ? { ...baseListOptions, excludeTerminal: true }
+    : unpaginatedListOptions({ excludeTerminal: true });
   const listed = await runList(undefined, listOptions, global);
   let listedFrontMatter = listed.items as ItemFrontMatter[];
 
   // --parent needs the whole corpus to walk descendants; so do hierarchy-style
-  // sections. Fetch it once and reuse for both.
+  // sections. Fetch it once (unpaginated) and reuse for both.
   let allItems: ItemFrontMatter[] = listedFrontMatter;
   if (needsAllItems || parentScope !== undefined) {
-    const allListOptions: ListOptions = { ...baseListOptions, excludeTerminal: false };
-    const allListed = await runList(undefined, allListOptions, global);
+    const allListed = await runList(undefined, unpaginatedListOptions({ excludeTerminal: false }), global);
     allItems = allListed.items as ItemFrontMatter[];
   }
 
@@ -1221,7 +1236,9 @@ export async function runContext(options: ContextOptions, global: GlobalOptions)
     ...baseListOptions,
     view: "agenda",
     include: "all",
-    limit: String(limit),
+    // When scoping to a subtree, pull the full agenda so the subtree filter sees
+    // every candidate event before the final per-section slice.
+    limit: parentScope === undefined ? String(limit) : undefined,
   };
   const agenda = await runCalendar(calendarOptions, global);
   const scopedAgenda =

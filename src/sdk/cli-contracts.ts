@@ -1581,6 +1581,7 @@ const ACTIVITY_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
 const LIST_CONTRACT_PARAMETER_KEYS = toSchemaKeyList([
   ...TOOL_LIST_FILTER_OPTION_CONTRACTS.map((entry) => entry.param),
   "includeBody",
+  "noTruncate",
   "compact",
   "brief",
   "full",

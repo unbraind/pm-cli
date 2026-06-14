@@ -117,7 +117,7 @@ pm search "reminder validation" --status open --limit 10
 
 ### Full results, totals, and bodies
 
-`pm list*` returns every matched row when no `--limit` is set. When a `--limit`/`--offset` *does* drop rows, the result adds a top-level `total` (the pre-pagination match count) so an agent knows how many remain. Pass `--no-truncate` (alias `--all`) to force the entire matched set and override any `--limit` in one call — the canonical "give me everything" flag for large-corpus audits:
+`pm list*` returns every matched row when neither `--limit` nor `--offset` is set. When a `--limit`/`--offset` *does* drop rows, the result adds a top-level `total` (the pre-pagination match count) so an agent knows how many remain. Pass `--no-truncate` (alias `--all`) to force the entire matched set and override any `--limit` in one call — the canonical "give me everything" flag for large-corpus audits:
 
 ```bash
 pm list-all --no-truncate --brief          # every matched row, ignoring any --limit

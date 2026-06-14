@@ -301,6 +301,7 @@ export const TOOL_CONTEXT_OPTION_CONTRACTS: ToolOptionFlagContract[] = [
   { param: "assigneeFilter", flag: "--assignee-filter" },
   { param: "sprint", flag: "--sprint" },
   { param: "release", flag: "--release" },
+  { param: "parent", flag: "--parent" },
   { param: "limit", flag: "--limit" },
   { param: "format", flag: "--format" },
   { param: "depth", flag: "--depth" },
