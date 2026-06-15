@@ -622,18 +622,18 @@ describe("runComments", () => {
   it("sorts the by_type summary across multiple item types", async () => {
     await withTempPmPath(async (context) => {
       const taskId = createTask(context, "comments-audit-type-task");
-      const bugId = createTestItemId(context, {
-        title: "comments-audit-type-bug",
-        type: "Bug",
+      const epicId = createTestItemId(context, {
+        title: "comments-audit-type-epic",
+        type: "Epic",
         tags: "comments,unit",
         estimate: "10",
       });
       await runComments(taskId, { add: "task comment", author: "audit-a" }, { path: context.pmPath });
-      await runComments(bugId, { add: "bug comment", author: "audit-b" }, { path: context.pmPath });
+      await runComments(epicId, { add: "epic comment", author: "audit-b" }, { path: context.pmPath });
 
       const audited = await runCommentsAudit({ status: "open" }, { path: context.pmPath });
       const types = audited.summary.by_type.map((entry) => entry.type);
-      expect(types).toEqual(["Bug", "Task"]);
+      expect(types).toEqual(["Epic", "Task"]);
       expect(audited.summary.by_type.every((entry) => entry.items_with_comments === 1)).toBe(true);
     });
   });
