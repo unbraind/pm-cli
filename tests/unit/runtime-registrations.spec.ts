@@ -158,6 +158,8 @@ describe("extensions runtime registration resolution", () => {
     const resolved = resolveRegisteredVectorStoreAdapter(registrations, "pinecone");
     expect(resolved?.name).toBe("project-vector");
     expect(resolveRegisteredVectorStoreAdapter(registrations, "")).toBeNull();
+    // Registry present but no adapter matches the requested name → coalesces to null.
+    expect(resolveRegisteredVectorStoreAdapter(registrations, "does-not-exist")).toBeNull();
     expect(resolveRegisteredVectorStoreAdapter(null, "pinecone")).toBeNull();
   });
 

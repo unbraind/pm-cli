@@ -485,6 +485,31 @@ describe("runHistory and runActivity", () => {
     });
   });
 
+  it("moves item files when redaction changes the resolved type path", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "History Redact Type Move");
+      expect(context.runCli(["schema", "add-type", "Spike", "--folder", "spikes"]).code).toBe(0);
+
+      const beforePath = path.join(context.pmPath, "tasks", `${id}.toon`);
+      const afterPath = path.join(context.pmPath, "spikes", `${id}.toon`);
+      const result = await runHistoryRedact(
+        id,
+        {
+          literal: "Task",
+          replacement: "Spike",
+          author: "test-author",
+        },
+        { path: context.pmPath },
+      );
+      expect(result.changed).toBe(true);
+      expect(result.item.path_before).toBe(beforePath);
+      expect(result.item.path_after).toBe(afterPath);
+      expect(result.item.changed).toBe(true);
+      expect(await readFile(afterPath, "utf8")).toContain("type: Spike");
+      await expect(readFile(beforePath, "utf8")).rejects.toThrow();
+    });
+  });
+
   it("rejects invalid redaction patterns and item-id rewrites", async () => {
     await withTempPmPath(async (context) => {
       const id = createItem(context, "History Redact Invalid Pattern");
@@ -786,6 +811,8 @@ describe("runHistory and runActivity", () => {
 
     const baseEntry = { id: "pm-1", op: "x", author: "a", patch: [], before_hash: "", after_hash: "" };
     expect(activityInternals.includeByTimeWindow({ ...baseEntry, ts: "" }, "2026-01-01T00:00:00.000Z", undefined)).toBe(false);
+    // Empty ts with only an upper bound (from undefined, to truthy) still excludes via the time window.
+    expect(activityInternals.includeByTimeWindow({ ...baseEntry, ts: "" }, undefined, "2026-01-01T00:00:00.000Z")).toBe(false);
     expect(activityInternals.includeByTimeWindow({ ...baseEntry, ts: "2026-01-01T00:00:00.000Z" }, "2026-01-02T00:00:00.000Z", undefined)).toBe(false);
     expect(activityInternals.includeByTimeWindow({ ...baseEntry, ts: "2026-01-03T00:00:00.000Z" }, undefined, "2026-01-03T00:00:00.000Z")).toBe(false);
     expect(activityInternals.limitEntries([1, 2, 3], undefined)).toEqual([1, 2, 3]);

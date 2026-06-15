@@ -14,7 +14,7 @@ const SEARCH_ADVANCED_INDEX_PATH = path.join(
   "pm-search-advanced",
   "extensions",
   "search-advanced",
-  "index.js",
+  "index.ts",
 );
 
 interface SearchProviderModule {
@@ -23,10 +23,14 @@ interface SearchProviderModule {
   SEARCH_ADVANCED_LOCAL_PROVIDER: string;
 }
 
+function cacheBustToken(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 async function loadSearchAdvancedIndex(): Promise<SearchProviderModule> {
   process.env.PM_CLI_PACKAGE_ROOT = process.cwd();
   return (await import(
-    `${pathToFileURL(SEARCH_ADVANCED_INDEX_PATH).href}?provider-test=${Date.now()}-${Math.random()}`
+    `${pathToFileURL(SEARCH_ADVANCED_INDEX_PATH).href}?provider-test=${cacheBustToken()}`
   )) as SearchProviderModule;
 }
 
@@ -40,7 +44,7 @@ function sampleSearchDocument(id: string, title: string, tags: string[], descrip
   return { metadata: { id, title, tags, description }, body: "" };
 }
 
-async function loadRuntimeModule(): Promise<typeof import("../../packages/pm-search-advanced/extensions/search-advanced/runtime.js")> {
+async function loadRuntimeModule(): Promise<typeof import("../../packages/pm-search-advanced/extensions/search-advanced/runtime.ts")> {
   process.env.PM_CLI_PACKAGE_ROOT = process.cwd();
   const runtimePath = path.join(
     process.cwd(),
@@ -48,9 +52,9 @@ async function loadRuntimeModule(): Promise<typeof import("../../packages/pm-sea
     "pm-search-advanced",
     "extensions",
     "search-advanced",
-    "runtime.js",
+    "runtime.ts",
   );
-  return import(`${pathToFileURL(runtimePath).href}?test=${Date.now()}-${Math.random()}`);
+  return import(`${pathToFileURL(runtimePath).href}?test=${cacheBustToken()}`);
 }
 
 async function importRuntimeWithPackageRoot(packageRoot: string | undefined): Promise<unknown> {
@@ -66,10 +70,10 @@ async function importRuntimeWithPackageRoot(packageRoot: string | undefined): Pr
     "pm-search-advanced",
     "extensions",
     "search-advanced",
-    "runtime.js",
+    "runtime.ts",
   );
   try {
-    return await import(`${pathToFileURL(runtimePath).href}?failureTest=${Date.now()}-${Math.random()}`);
+    return await import(`${pathToFileURL(runtimePath).href}?failureTest=${cacheBustToken()}`);
   } finally {
     if (previous === undefined) {
       delete process.env.PM_CLI_PACKAGE_ROOT;
@@ -689,5 +693,42 @@ describe("search-advanced package runtime", () => {
     });
     // Documents missing metadata, with a missing/non-string id, are skipped (no crash in sort()).
     expect(malformedHits.map((hit) => hit.id)).toEqual(["pm-z"]);
+  });
+
+  it("registers search-advanced/reindex commands whose run closures delegate to the runtime", async () => {
+    await withTempPmPath(async (context) => {
+      process.env.PM_CLI_PACKAGE_ROOT = process.cwd();
+      const mod = await loadSearchAdvancedIndex();
+      const commands: Array<{ name: string; action?: string; run: (ctx: unknown) => Promise<unknown> }> = [];
+      const api = {
+        extension: { name: "test", layer: "project", version: "0.0.0", capabilities: [] },
+        registerFlags() {},
+        registerCommand(def: { name: string; action?: string; run: (ctx: unknown) => Promise<unknown> }) {
+          commands.push(def);
+        },
+        registerSearchProvider() {},
+      };
+      (mod.activate as (api: unknown) => void)(api);
+      expect(commands.map((c) => c.name)).toEqual(["search-advanced", "reindex"]);
+
+      const runtimeGlobal = { json: true, quiet: false, path: context.pmPath };
+      const searchResult = await commands[0]!.run({
+        command: "search-advanced",
+        args: ["calendar"],
+        options: {},
+        global: runtimeGlobal,
+        pm_root: context.pmPath,
+      });
+      expect(searchResult).toBeTypeOf("object");
+
+      const reindexResult = await commands[1]!.run({
+        command: "reindex",
+        args: [],
+        options: {},
+        global: runtimeGlobal,
+        pm_root: context.pmPath,
+      });
+      expect(reindexResult).toBeTypeOf("object");
+    });
   });
 });

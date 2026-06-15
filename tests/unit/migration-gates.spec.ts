@@ -118,6 +118,14 @@ describe("collectMandatoryMigrationBlockers", () => {
     ]);
     expect(result.map((b) => b.id)).toEqual(["m2", "m3", "m1"]);
   });
+
+  it("breaks ties by id when layer and name match", () => {
+    const result = collectMandatoryMigrationBlockers([
+      { layer: "project", name: "ext-a", definition: { mandatory: true, id: "m-z", status: "pending" } },
+      { layer: "project", name: "ext-a", definition: { mandatory: true, id: "m-a", status: "pending" } },
+    ]);
+    expect(result.map((b) => b.id)).toEqual(["m-a", "m-z"]);
+  });
 });
 
 describe("enforceMandatoryMigrationWriteGate", () => {

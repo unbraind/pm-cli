@@ -2,6 +2,7 @@ import { beforeEach, afterEach, describe, expect, it } from "vitest";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import type {
   CommandDefinition,
   CommandOverride,
@@ -15,17 +16,18 @@ import type {
 } from "../../src/core/extensions/loader.js";
 import { activateExtensions } from "../../src/core/extensions/loader.js";
 import { assertRegisteredExporter, assertRegisteredHook, assertRegisteredImporter } from "../../src/sdk/testing.js";
-import beadsBuiltin, { activate as activateBeads, manifest as beadsManifest } from "../../packages/pm-beads/extensions/beads/index.js";
-import calendarBuiltin, { activate as activateCalendar, manifest as calendarManifest } from "../../packages/pm-calendar/extensions/calendar/index.js";
+import beadsBuiltin, { activate as activateBeads, manifest as beadsManifest } from "../../packages/pm-beads/extensions/beads/index.ts";
+import calendarBuiltin, { activate as activateCalendar, manifest as calendarManifest } from "../../packages/pm-calendar/extensions/calendar/index.ts";
 import governanceBuiltin, {
   activate as activateGovernance,
   manifest as governanceManifest,
-} from "../../packages/pm-governance-audit/extensions/governance-audit/index.js";
+} from "../../packages/pm-governance-audit/extensions/governance-audit/index.ts";
 import lifecycleHooksBuiltin, {
   activate as activateLifecycleHooks,
   manifest as lifecycleHooksManifest,
-} from "../../packages/pm-lifecycle-hooks/extensions/lifecycle-hooks/index.js";
-import todosBuiltin, { activate as activateTodos, manifest as todosManifest } from "../../packages/pm-todos/extensions/todos/index.js";
+} from "../../packages/pm-lifecycle-hooks/extensions/lifecycle-hooks/index.ts";
+import todosBuiltin, { activate as activateTodos, manifest as todosManifest } from "../../packages/pm-todos/extensions/todos/index.ts";
+import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 const RUNTIME_CALLS_KEY = "__PM_TEST_RUNTIME_CALLS";
@@ -43,6 +45,15 @@ function readRuntimeCalls(): RuntimeCall[] {
 
 function resetRuntimeCalls(): void {
   (globalThis as Record<string, unknown>)[RUNTIME_CALLS_KEY] = [];
+}
+
+function cacheBustToken(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function importRepoModule<T>(relativePath: string): Promise<T> {
+  const absolutePath = path.join(process.cwd(), relativePath);
+  return (await import(`${pathToFileURL(absolutePath).href}?entrypoints=${cacheBustToken()}`)) as T;
 }
 
 let testPackageRoot = "";
@@ -468,6 +479,20 @@ describe("built-in extension entrypoints", () => {
       },
     });
     expect(rendered).toBe("# package calendar\n");
+
+    // A payload whose result is not a calendar result yields null from the runtime
+    // renderer (isCalendarResult guard), so the service override returns null
+    // (the `?? null` fallback arm).
+    const renderedNull = services[0]!.override({
+      service: "output_format",
+      command: "calendar",
+      args: [],
+      options: {},
+      global: globalFlags,
+      pm_root: "/tmp/pm",
+      payload: { result: { kind: "not-a-calendar-result" } },
+    });
+    expect(renderedNull).toBeNull();
   });
 
   it("registers governance audit commands and opt-in read/write hook sidecar logging", async () => {
@@ -896,6 +921,32 @@ describe("built-in extension entrypoints", () => {
     });
   });
 
+  it("throws when the bundled beads runtime is missing runBeadsImport()", async () => {
+    const emptyRoot = await mkdtemp(path.join(os.tmpdir(), "pm-beads-missing-fn-"));
+    try {
+      const runtimeDir = path.join(emptyRoot, ".agents", "pm", "extensions", "beads");
+      await mkdir(runtimeDir, { recursive: true });
+      // runtime.js without runBeadsImport export.
+      await writeFile(path.join(runtimeDir, "runtime.js"), "export const marker = true;\n", "utf8");
+      process.env[PM_PACKAGE_ROOT_ENV] = emptyRoot;
+      const { api, importers } = createCommandOnlyApi();
+      activateBeads(api);
+      await expect(
+        importers[0]!.importer({
+          registration: "beads",
+          action: "import",
+          command: "beads import",
+          args: [],
+          options: {},
+          global: globalFlags,
+          pm_root: "/tmp/pm",
+        }),
+      ).rejects.toThrow("missing runBeadsImport()");
+    } finally {
+      await rm(emptyRoot, { recursive: true, force: true });
+    }
+  });
+
   it("drops non-boolean preserveSourceIds values when coercing extension options", async () => {
     const { api, importers } = createCommandOnlyApi();
 
@@ -1003,6 +1054,289 @@ describe("built-in extension entrypoints", () => {
       exported: 3,
       ids: ["pm-a", "pm-b", "pm-c"],
       warnings: [],
+    });
+  });
+
+  it("throws when the bundled todos runtime is missing runTodosImport()/runTodosExport()", async () => {
+    const emptyRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-missing-fn-"));
+    try {
+      const runtimeDir = path.join(emptyRoot, ".agents", "pm", "extensions", "todos");
+      await mkdir(runtimeDir, { recursive: true });
+      // runtime.js without runTodosImport / runTodosExport exports.
+      await writeFile(path.join(runtimeDir, "runtime.js"), "export const marker = true;\n", "utf8");
+      process.env[PM_PACKAGE_ROOT_ENV] = emptyRoot;
+      const { api, importers, exporters } = createCommandOnlyApi();
+      activateTodos(api);
+      await expect(
+        importers[0]!.importer({
+          registration: "todos",
+          action: "import",
+          command: "todos import",
+          args: [],
+          options: {},
+          global: globalFlags,
+          pm_root: "/tmp/pm",
+        }),
+      ).rejects.toThrow("missing runTodosImport()");
+      await expect(
+        exporters[0]!.exporter({
+          registration: "todos",
+          action: "export",
+          command: "todos export",
+          args: [],
+          options: {},
+          global: globalFlags,
+          pm_root: "/tmp/pm",
+        }),
+      ).rejects.toThrow("missing runTodosExport()");
+    } finally {
+      await rm(emptyRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("registers guide-shell package commands through runtime wrappers", async () => {
+    await withTempPmPath(async (context) => {
+      const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
+      process.env[PM_PACKAGE_ROOT_ENV] = process.cwd();
+      try {
+        const guideShellModule = await importRepoModule<
+          typeof import("../../packages/pm-guide-shell/extensions/guide-shell/index.ts")
+        >("packages/pm-guide-shell/extensions/guide-shell/index.ts");
+        const { api, commands, services } = createCommandOnlyApi();
+        guideShellModule.activate(api);
+        expect(guideShellModule.manifest.name).toBe("builtin-guide-shell");
+        expect(commands.map((command) => command.name)).toEqual([
+          "guide",
+          "completion",
+          "completion-tags",
+          "completion-statuses",
+          "completion-types",
+        ]);
+
+        const runtimeGlobal = { ...globalFlags, path: context.pmPath };
+        const guideResult = await commands[0]!.run({
+          command: "guide",
+          args: ["workflows"],
+          options: {},
+          global: runtimeGlobal,
+          pm_root: context.pmPath,
+        });
+        expect(guideResult).toBeTypeOf("object");
+
+        const completionResult = await commands[1]!.run({
+          command: "completion",
+          args: ["bash"],
+          options: {},
+          global: runtimeGlobal,
+          pm_root: context.pmPath,
+        });
+        expect(completionResult).toMatchObject({ shell: "bash", script: expect.any(String) });
+
+        const renderedCompletion = services[0]!.override({
+          service: "output_format",
+          command: "completion",
+          args: [],
+          options: {},
+          global: runtimeGlobal,
+          pm_root: context.pmPath,
+          payload: { result: completionResult },
+        });
+        expect(typeof renderedCompletion).toBe("string");
+
+        const completionTags = await commands[2]!.run({
+          command: "completion-tags",
+          args: [],
+          options: {},
+          global: runtimeGlobal,
+          pm_root: context.pmPath,
+        });
+        expect(completionTags).toMatchObject({ tags: expect.any(Array) });
+
+        const completionStatuses = await commands[3]!.run({
+          command: "completion-statuses",
+          args: [],
+          options: {},
+          global: runtimeGlobal,
+          pm_root: context.pmPath,
+        });
+        expect(completionStatuses).toMatchObject({ statuses: expect.any(Array) });
+
+        const completionTypes = await commands[4]!.run({
+          command: "completion-types",
+          args: [],
+          options: {},
+          global: runtimeGlobal,
+          pm_root: context.pmPath,
+        });
+        expect(completionTypes).toMatchObject({ types: expect.any(Array) });
+      } finally {
+        if (previousPackageRoot === undefined) {
+          delete process.env[PM_PACKAGE_ROOT_ENV];
+        } else {
+          process.env[PM_PACKAGE_ROOT_ENV] = previousPackageRoot;
+        }
+      }
+    });
+  });
+
+  it("registers linked-test-adapters package commands and validates required args", async () => {
+    await withTempPmPath(async (context) => {
+      const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
+      process.env[PM_PACKAGE_ROOT_ENV] = process.cwd();
+      try {
+        const linkedModule = await importRepoModule<
+          typeof import("../../packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.ts")
+        >("packages/pm-linked-test-adapters/extensions/linked-test-adapters/index.ts");
+        const { api, commands } = createCommandOnlyApi();
+        linkedModule.activate(api);
+        expect(linkedModule.manifest.name).toBe("builtin-linked-test-adapters");
+        expect(commands.map((command) => command.name)).toEqual([
+          "test-runs",
+          "test-runs list",
+          "test-runs status",
+          "test-runs logs",
+          "test-runs stop",
+          "test-runs resume",
+        ]);
+
+        const runtimeGlobal = { ...globalFlags, path: context.pmPath };
+        const listed = await commands[0]!.run({
+          command: "test-runs",
+          args: [],
+          options: {},
+          global: runtimeGlobal,
+          pm_root: context.pmPath,
+        });
+        expect(listed).toBeTypeOf("object");
+
+        // Exercise the remaining run closures: list/logs/stop/resume delegate to
+        // the runtime wrappers (logs/stop/resume reject without a runId arg).
+        const listedExplicit = await commands[1]!.run({
+          command: "test-runs list",
+          args: [],
+          options: {},
+          global: runtimeGlobal,
+          pm_root: context.pmPath,
+        });
+        expect(listedExplicit).toBeTypeOf("object");
+        await expect(
+          commands[2]!.run({
+            command: "test-runs status",
+            args: [],
+            options: {},
+            global: runtimeGlobal,
+            pm_root: context.pmPath,
+          }),
+        ).rejects.toThrow("requires a runId argument");
+        await expect(
+          commands[3]!.run({
+            command: "test-runs logs",
+            args: [],
+            options: {},
+            global: runtimeGlobal,
+            pm_root: context.pmPath,
+          }),
+        ).rejects.toThrow("requires a runId argument");
+        await expect(
+          commands[4]!.run({
+            command: "test-runs stop",
+            args: [],
+            options: {},
+            global: runtimeGlobal,
+            pm_root: context.pmPath,
+          }),
+        ).rejects.toThrow("requires a runId argument");
+        await expect(
+          commands[5]!.run({
+            command: "test-runs resume",
+            args: [],
+            options: {},
+            global: runtimeGlobal,
+            pm_root: context.pmPath,
+          }),
+        ).rejects.toThrow("requires a runId argument");
+      } finally {
+        if (previousPackageRoot === undefined) {
+          delete process.env[PM_PACKAGE_ROOT_ENV];
+        } else {
+          process.env[PM_PACKAGE_ROOT_ENV] = previousPackageRoot;
+        }
+      }
+    });
+  });
+
+  it("registers templates package commands and executes runtime save/list/show flows", async () => {
+    await withTempPmPath(async (context) => {
+      const previousPackageRoot = process.env[PM_PACKAGE_ROOT_ENV];
+      process.env[PM_PACKAGE_ROOT_ENV] = process.cwd();
+      try {
+        const templatesModule = await importRepoModule<
+          typeof import("../../packages/pm-templates/extensions/templates/index.ts")
+        >("packages/pm-templates/extensions/templates/index.ts");
+        const { api, commands } = createCommandOnlyApi();
+        templatesModule.activate(api);
+        expect(templatesModule.manifest.name).toBe("builtin-templates");
+        expect(commands.map((command) => command.name)).toEqual([
+          "templates",
+          "templates list",
+          "templates save",
+          "templates show",
+        ]);
+
+        const runtimeGlobal = { ...globalFlags, path: context.pmPath };
+        const saved = await commands[2]!.run({
+          command: "templates save",
+          args: ["entrypoint-template"],
+          options: { type: "Task", status: "open" },
+          global: runtimeGlobal,
+          pm_root: context.pmPath,
+        });
+        expect((saved as { name?: string }).name).toBe("entrypoint-template");
+
+        const listed = await commands[0]!.run({
+          command: "templates",
+          args: [],
+          options: {},
+          global: runtimeGlobal,
+          pm_root: context.pmPath,
+        });
+        expect((listed as { templates?: string[] }).templates).toContain("entrypoint-template");
+
+        // `templates list` shares the list runtime wrapper via its own closure.
+        const listedExplicit = await commands[1]!.run({
+          command: "templates list",
+          args: [],
+          options: {},
+          global: runtimeGlobal,
+          pm_root: context.pmPath,
+        });
+        expect((listedExplicit as { templates?: string[] }).templates).toContain("entrypoint-template");
+
+        const shown = await commands[3]!.run({
+          command: "templates show",
+          args: ["entrypoint-template"],
+          options: {},
+          global: runtimeGlobal,
+          pm_root: context.pmPath,
+        });
+        expect((shown as { name?: string }).name).toBe("entrypoint-template");
+
+        await expect(
+          commands[2]!.run({
+            command: "templates save",
+            args: [],
+            options: {},
+            global: runtimeGlobal,
+            pm_root: context.pmPath,
+          }),
+        ).rejects.toThrow("requires a template name argument");
+      } finally {
+        if (previousPackageRoot === undefined) {
+          delete process.env[PM_PACKAGE_ROOT_ENV];
+        } else {
+          process.env[PM_PACKAGE_ROOT_ENV] = previousPackageRoot;
+        }
+      }
     });
   });
 

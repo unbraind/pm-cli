@@ -205,6 +205,75 @@ describe("history-repair command", () => {
     });
   });
 
+  it("falls back to unknown author and synthesized audit message when inputs are blank", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Repair Unknown Author");
+      expect(context.runCli(["update", id, "--status", "in_progress"]).code).toBe(0);
+      await tamperChain(historyPath(context, id));
+
+      const historyFile = historyPath(context, id);
+      const originalAcquireLock = lockModule.acquireLock;
+      const lockSpy = vi.spyOn(lockModule, "acquireLock").mockImplementation(async (...args) =>
+        originalAcquireLock(...(args as Parameters<typeof lockModule.acquireLock>)),
+      );
+      const previousPmAuthor = process.env.PM_AUTHOR;
+      process.env.PM_AUTHOR = "   ";
+
+      try {
+        const repaired = await runHistoryRepair(
+          id,
+          {
+            author: "   ",
+            message: "   ",
+          },
+          { path: context.pmPath },
+        );
+        expect(repaired.changed).toBe(true);
+        expect(lockSpy.mock.calls.at(-1)?.[3]).toBe("unknown");
+        const historyLines = (await readFile(historyFile, "utf8")).trim().split(/\n/);
+        const auditEntry = JSON.parse(historyLines[historyLines.length - 1]!);
+        expect(auditEntry.op).toBe("history_repair");
+        expect(auditEntry.message).toContain("history-repair re-anchored");
+      } finally {
+        lockSpy.mockRestore();
+        if (previousPmAuthor === undefined) {
+          delete process.env.PM_AUTHOR;
+        } else {
+          process.env.PM_AUTHOR = previousPmAuthor;
+        }
+      }
+    });
+  });
+
+  it("removes history output when rollback snapshot is unavailable", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createItem(context, "Repair Missing Snapshot");
+      expect(context.runCli(["update", id, "--status", "in_progress"]).code).toBe(0);
+      await tamperChain(historyPath(context, id));
+      const historyFile = historyPath(context, id);
+      const originalWriteFileAtomic = fsUtilsModule.writeFileAtomic;
+      const driftSpy = vi.spyOn(historyRewriteModule, "verifyHistoryRewriteNoDrift").mockResolvedValue({
+        historyRawUnderLock: null,
+      } as Awaited<ReturnType<typeof historyRewriteModule.verifyHistoryRewriteNoDrift>>);
+      const writeSpy = vi.spyOn(fsUtilsModule, "writeFileAtomic").mockImplementation(async (target, content) => {
+        if (target === historyFile) {
+          throw new Error("synthetic repair write failure without snapshot");
+        }
+        return originalWriteFileAtomic(target, content);
+      });
+
+      try {
+        await expect(runHistoryRepair(id, { author: "test-author" }, { path: context.pmPath })).rejects.toThrow(
+          "synthetic repair write failure without snapshot",
+        );
+        await expect(readFile(historyFile, "utf8")).rejects.toThrow();
+      } finally {
+        driftSpy.mockRestore();
+        writeSpy.mockRestore();
+      }
+    });
+  });
+
   it("rejects history-repair when the item changes before lock acquisition", async () => {
     await withTempPmPath(async (context) => {
       const id = createItem(context, "Repair lock window");

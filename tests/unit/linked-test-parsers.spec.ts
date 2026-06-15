@@ -264,6 +264,14 @@ describe("parseLinkedTestJsonEntries", () => {
     ).toThrow(/command and cmd must match/);
   });
 
+  it("treats an empty path string as undefined and pluralizes multiple unknown keys", () => {
+    const [entry] = parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", path: "" }), "--add-json");
+    expect(entry.path).toBeUndefined();
+    expect(() =>
+      parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", bogus: 1, other: 2 }), "--add-json"),
+    ).toThrow(/does not recognize keys "bogus", "other"/);
+  });
+
   it("rejects empty numeric strings and non-positive or fractional timeouts", () => {
     expect(() =>
       parseLinkedTestJsonEntries(JSON.stringify({ command: "node --version", assert_stdout_min_lines: "" }), "--add-json"),

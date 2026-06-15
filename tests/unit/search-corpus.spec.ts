@@ -79,6 +79,14 @@ describe("core/search/corpus semantic helpers", () => {
     const corpus = buildSemanticCorpusInput(makeDocument("pm-corpus-tiny", "token"), { maxCharacters: 5 });
     expect(corpus).toBe(SEMANTIC_CORPUS_TRUNCATION_SUFFIX.slice(0, 5));
   });
+
+  it("omits the priority field when the metadata priority is not numeric", () => {
+    const document = makeDocument("pm-corpus-no-priority", "body");
+    document.metadata.priority = undefined;
+    const corpus = buildSemanticCorpusInput(document, { maxCharacters: 5_000 });
+    expect(corpus).not.toContain('"priority":');
+    expect(corpus).toContain("pm-corpus-no-priority");
+  });
 });
 
 describe("plan corpus integration", () => {

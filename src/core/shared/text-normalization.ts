@@ -26,6 +26,7 @@ export function jaccardSimilarity(leftTokens: string[], rightTokens: string[]): 
       intersection += 1;
     }
   }
+  // Both token sets are non-empty here (guarded above), so union is always >= 1.
   const union = new Set([...leftSet, ...rightSet]).size;
-  return union === 0 ? 0 : intersection / union;
+  return intersection / union;
 }

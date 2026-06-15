@@ -1,8 +1,9 @@
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { _testOnlySchemaCommand, runSchemaShow } from "../../src/cli/commands/schema.js";
+import * as statusDefsFileModule from "../../src/core/schema/status-defs-file.js";
 import {
   clearActiveExtensionHooks,
   setActiveExtensionHooks,
@@ -393,6 +394,20 @@ describe("schema add-type command", () => {
       expect(add.stdout).toContain('Registered custom item type "Spike"');
       expect(add.stdout).toContain("aliases: spike");
       expect(add.stdout).toContain('pm create "Spike" "<title>"');
+    });
+  });
+
+  it("formats add-type output for alias-free register and update paths", async () => {
+    await withTempPmPath(async (context) => {
+      const add = context.runCli(["schema", "add-type", "Spike"]);
+      expect(add.code).toBe(0);
+      expect(add.stdout).toContain('Registered custom item type "Spike"');
+      expect(add.stdout).not.toContain("aliases:");
+
+      const update = context.runCli(["schema", "add-type", "Spike", "--description", "updated"]);
+      expect(update.code).toBe(0);
+      expect(update.stdout).toContain('Updated custom item type "Spike"');
+      expect(update.stdout).not.toContain("aliases:");
     });
   });
 
@@ -842,6 +857,21 @@ describe("schema add-status / remove-status commands", () => {
     });
   });
 
+  it("resolves type aliases case-insensitively in direct show calls", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../src/cli/commands/schema.js");
+      await schema.runSchemaAddType(
+        "Spike",
+        { alias: ["SpikeAlias"], author: "schema-test" },
+        { path: context.pmPath },
+      );
+
+      const shown = await schema.runSchemaShow("spikealias", { path: context.pmPath });
+      expect(shown.type.name).toBe("Spike");
+      expect(shown.type.aliases.map((alias) => alias.toLowerCase())).toContain("spikealias");
+    });
+  });
+
   it("returns direct custom status summaries, alias lookups, and hook warnings", async () => {
     await withTempPmPath(async (context) => {
       const schema = await import("../../src/cli/commands/schema.js");
@@ -1021,6 +1051,65 @@ describe("schema add-status / remove-status commands", () => {
     });
   });
 
+  it("wraps non-Error status parser/remover failures as CLI errors", async () => {
+    await withTempPmPath(async (context) => {
+      const schema = await import("../../src/cli/commands/schema.js");
+
+      const parseSpy = vi.spyOn(statusDefsFileModule, "parseStatusDefsFile");
+      const removeSpy = vi.spyOn(statusDefsFileModule, "removeStatusDef");
+
+      try {
+        parseSpy.mockImplementationOnce(() => {
+          throw "synthetic-status-parse-failure";
+        });
+        await expect(
+          schema.runSchemaRemoveStatus("review", { author: "schema-test" }, { path: context.pmPath }),
+        ).rejects.toMatchObject({
+          exitCode: EXIT_CODE.GENERIC_FAILURE,
+          message: "synthetic-status-parse-failure",
+        });
+
+        parseSpy.mockRestore();
+        const parseRaceSpy = vi
+          .spyOn(statusDefsFileModule, "parseStatusDefsFile")
+          .mockReturnValueOnce({
+            statuses: [
+              { id: "   ", aliases: [] },
+              { id: "review", aliases: ["in_review"] },
+            ],
+          } as ReturnType<typeof statusDefsFileModule.parseStatusDefsFile>);
+        await expect(
+          schema.runSchemaAddStatus(
+            "triage",
+            { alias: ["in_review"], author: "schema-test" },
+            { path: context.pmPath },
+          ),
+        ).rejects.toMatchObject({
+          exitCode: EXIT_CODE.USAGE,
+          message: expect.stringContaining("in_review"),
+        });
+        parseRaceSpy.mockRestore();
+
+        const parseRemoveSpy = vi.spyOn(statusDefsFileModule, "parseStatusDefsFile").mockReturnValueOnce({
+          statuses: [],
+        } as ReturnType<typeof statusDefsFileModule.parseStatusDefsFile>);
+        removeSpy.mockImplementationOnce(() => {
+          throw "synthetic-remove-failure";
+        });
+        await expect(
+          schema.runSchemaRemoveStatus("review", { author: "schema-test" }, { path: context.pmPath }),
+        ).rejects.toMatchObject({
+          exitCode: EXIT_CODE.USAGE,
+          message: "synthetic-remove-failure",
+        });
+        parseRemoveSpy.mockRestore();
+      } finally {
+        parseSpy.mockRestore();
+        removeSpy.mockRestore();
+      }
+    });
+  });
+
   it("rejects an invalid role", async () => {
     await withTempPmPath(async (context) => {
       const added = context.runCli(["schema", "add-status", "review", "--role", "bogus"]);
@@ -1036,6 +1125,22 @@ describe("schema add-status / remove-status commands", () => {
       expect(added.stdout).toContain('Registered status "review"');
       expect(added.stdout).toContain("roles: active");
       expect(added.stdout).toContain("aliases: in_review");
+    });
+  });
+
+  it("formats add-status output for metadata-free register and metadata update paths", async () => {
+    await withTempPmPath(async (context) => {
+      const add = context.runCli(["schema", "add-status", "review"]);
+      expect(add.code).toBe(0);
+      expect(add.stdout).toContain('Registered status "review"');
+      expect(add.stdout).not.toContain("roles:");
+      expect(add.stdout).not.toContain("aliases:");
+
+      const update = context.runCli(["schema", "add-status", "review", "--role", "active", "--alias", "in_review"]);
+      expect(update.code).toBe(0);
+      expect(update.stdout).toContain('Updated status "review"');
+      expect(update.stdout).toContain("roles: active");
+      expect(update.stdout).toContain("aliases: in_review");
     });
   });
 

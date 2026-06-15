@@ -1,12 +1,13 @@
 import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { acquireLock } from "../../src/core/lock/lock.js";
-import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../dist/core/extensions/index.js";
+import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import { splitFrontMatter } from "../../src/core/item/item-format.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
-import { runTodosExport, runTodosImport } from "../../packages/pm-todos/extensions/todos/runtime.js";
+import { runTodosExport, runTodosImport } from "../../packages/pm-todos/extensions/todos/runtime.ts";
 import { withTempPmPath } from "../helpers/withTempPmPath.js";
 
 async function writeTodoMarkdown(
@@ -18,6 +19,19 @@ async function writeTodoMarkdown(
   const frontMatterText = typeof frontMatter === "string" ? frontMatter : JSON.stringify(frontMatter, null, 2);
   const content = body.length > 0 ? `${frontMatterText}\n\n${body}\n` : `${frontMatterText}\n`;
   await writeFile(path.join(folder, filename), content, "utf8");
+}
+
+function cacheBustToken(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function importTodosRuntimeLoader(): Promise<{
+  loadPackageRuntimeModule: () => Promise<unknown>;
+}> {
+  const runtimeLoaderPath = path.join(process.cwd(), "packages", "pm-todos", "extensions", "todos", "runtime-loader.ts");
+  return (await import(`${pathToFileURL(runtimeLoaderPath).href}?todosLoader=${cacheBustToken()}`)) as {
+    loadPackageRuntimeModule: () => Promise<unknown>;
+  };
 }
 
 describe("built-in todos extension import/export", () => {
@@ -1123,5 +1137,69 @@ describe("built-in todos extension import/export", () => {
       expect(imported.skipped).toBe(1);
       expect(imported.warnings).toContain("todos_import_read_failed:unreadable.md");
     });
+  });
+
+  it("resolves todos runtime-loader candidates and preserves explicit runtime errors", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-loader-root-"));
+    try {
+      const packageRuntimeDir = path.join(tempRoot, "packages", "pm-todos", "extensions", "todos");
+      await mkdir(packageRuntimeDir, { recursive: true });
+      await writeFile(
+        path.join(packageRuntimeDir, "runtime.js"),
+        [
+          "export const marker = 'custom-todos-runtime';",
+          "export async function runTodosImport() {",
+          "  return { ok: true, folder: '.pm/todos', imported: 0, skipped: 0, ids: [], warnings: [] };",
+          "}",
+          "export async function runTodosExport() {",
+          "  return { ok: true, folder: '.pm/todos', exported: 0, ids: [], warnings: [] };",
+          "}",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+      process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
+      try {
+        const loader = await importTodosRuntimeLoader();
+        const runtime = await loader.loadPackageRuntimeModule();
+        expect((runtime as { marker?: string }).marker).toBe("custom-todos-runtime");
+      } finally {
+        if (previousPackageRoot === undefined) {
+          delete process.env.PM_CLI_PACKAGE_ROOT;
+        } else {
+          process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+        }
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+
+    const throwRoot = await mkdtemp(path.join(os.tmpdir(), "pm-todos-loader-throw-"));
+    try {
+      const throwingRuntimeDir = path.join(throwRoot, ".agents", "pm", "extensions", "todos");
+      await mkdir(throwingRuntimeDir, { recursive: true });
+      await writeFile(
+        path.join(throwingRuntimeDir, "runtime.js"),
+        ["throw new Error('todos-loader-boom');", ""].join("\n"),
+        "utf8",
+      );
+
+      const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+      process.env.PM_CLI_PACKAGE_ROOT = throwRoot;
+      try {
+        const loader = await importTodosRuntimeLoader();
+        await expect(loader.loadPackageRuntimeModule()).rejects.toThrow("todos-loader-boom");
+      } finally {
+        if (previousPackageRoot === undefined) {
+          delete process.env.PM_CLI_PACKAGE_ROOT;
+        } else {
+          process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+        }
+      }
+    } finally {
+      await rm(throwRoot, { recursive: true, force: true });
+    }
   });
 });

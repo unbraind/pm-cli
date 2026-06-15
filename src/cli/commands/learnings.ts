@@ -28,7 +28,8 @@ export async function runLearnings(
   const addInput = options.add === undefined ? undefined : await stdinResolver.resolveValue(options.add, "--add");
 
   return runAnnotationCommand<"learnings", LogNote>(id, options, global, {
-    input: options.add === undefined ? { mode: "list" } : { mode: "add", value: addInput ?? "", emptyFlag: "--add" },
+    // addInput is defined whenever options.add is defined (see resolveValue), so the cast is safe.
+    input: options.add === undefined ? { mode: "list" } : { mode: "add", value: addInput as string, emptyFlag: "--add" },
     collectionKey: "learnings",
     op: "learning_add",
     parseText: (raw) => parseAnnotationTextInput(raw),

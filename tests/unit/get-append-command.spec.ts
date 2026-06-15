@@ -312,12 +312,16 @@ describe("runGet and runAppend", () => {
         title: "get-children-rollup-open",
         body: "open child",
       });
+      const secondOpenChildId = createTask(context, {
+        title: "get-children-rollup-open-2",
+        body: "second open child",
+      });
       const closedChildId = createTask(context, {
         title: "get-children-rollup-closed",
         body: "closed child",
       });
 
-      for (const childId of [openChildId, closedChildId]) {
+      for (const childId of [openChildId, secondOpenChildId, closedChildId]) {
         const link = context.runCli(
           ["update", childId, "--parent", epicId, "--json", "--author", "test-author", "--message", "Link child to epic"],
           { expectJson: true },
@@ -338,13 +342,14 @@ describe("runGet and runAppend", () => {
 
       const standard = await runGet(epicId, { path: context.pmPath });
       expect(standard.children).toEqual({
-        count: 2,
-        active: 1,
+        count: 3,
+        active: 2,
         by_status: {
-          open: 1,
+          open: 2,
           closed: 1,
         },
       });
+
 
       const brief = await runGet(epicId, { path: context.pmPath }, { depth: "brief" });
       expect(brief.children).toBeUndefined();
@@ -680,4 +685,5 @@ describe("runGet and runAppend", () => {
       expect(getResult.body).toBe("existing body\n\nmarkdown from stdin");
     });
   });
+
 });

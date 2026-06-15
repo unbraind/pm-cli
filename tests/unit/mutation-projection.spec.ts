@@ -141,4 +141,28 @@ describe("projectMutationResult", () => {
     const arr = ["changed_fields"];
     expect(projectMutationResult(arr, { changedFields: "compact" })).toBe(arr);
   });
+
+  describe("idOnly projection", () => {
+    it("returns id and status when both are strings", () => {
+      expect(
+        projectMutationResult({ item: { id: "pm-a1b2", status: "closed" }, changed_fields: ["status"] }, { idOnly: true }),
+      ).toEqual({ id: "pm-a1b2", status: "closed" });
+    });
+
+    it("returns only the id when status is not a string", () => {
+      expect(projectMutationResult({ item: { id: "pm-a1b2", status: 7 } }, { idOnly: true })).toEqual({ id: "pm-a1b2" });
+      expect(projectMutationResult({ item: { id: "pm-a1b2" } }, { idOnly: true })).toEqual({ id: "pm-a1b2" });
+    });
+
+    it("falls through to normal projection when the id is not a string", () => {
+      const result = { item: { id: 42, status: "closed" }, changed_fields: ["status"] };
+      // No string id → idOnly branch is skipped and the result is returned per the changed-fields mode.
+      expect(projectMutationResult(result, { idOnly: true })).toBe(result);
+    });
+
+    it("ignores idOnly when the result or item is not a plain object", () => {
+      expect(projectMutationResult("text", { idOnly: true })).toBe("text");
+      expect(projectMutationResult({ item: "not-an-object" }, { idOnly: true })).toEqual({ item: "not-an-object" });
+    });
+  });
 });

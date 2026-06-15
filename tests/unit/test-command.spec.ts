@@ -2646,6 +2646,9 @@ describe("linked test run selectors", () => {
     expect(description).toContain("2. tests/unit/output.spec.ts");
     expect(description).toContain("3. <no command>");
 
+    // A label that normalizes to an empty string falls back to the placeholder.
+    expect(describeLinkedTestEntries([{ command: "   ", scope: "project" as const }])).toBe("1. <no command>");
+
     expect(parseOnlyIndexValue(" 2 ")).toBe(2);
     expect(() => parseOnlyIndexValue("0", "--only-index")).toThrow(/1-based integer index/);
     expect(() => resolveLinkedTestRunSelection(tests, { match: "output", onlyLast: true })).toThrow(/Combine at most one/);

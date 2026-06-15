@@ -569,6 +569,38 @@ describe("sentry command runtime helpers", () => {
     expect(span.end).toHaveBeenCalledTimes(1);
   });
 
+  it("omits optional command context and span metadata when absent and defaults the failure message", () => {
+    const span = buildFakeSpan();
+    const sentry = buildFakeSentry(span);
+    vi.mocked(getSentry).mockReturnValue(sentry as never);
+
+    // No source_context provided → the optional source-context tag is skipped.
+    sentrySetCommandContext("list", ["list", "--json"], { json: true });
+    expect(sentry.setTag).not.toHaveBeenCalledWith("pm.source_context", expect.anything());
+
+    sentryStartCommandSpan("list");
+    // ok=false with no error message and no optional metadata fields.
+    sentryFinishCommandSpan(false);
+    expect(sentry.setTag).not.toHaveBeenCalledWith("pm.error_code", expect.anything());
+    expect(sentry.setTag).not.toHaveBeenCalledWith("pm.command_resolution", expect.anything());
+    expect(sentry.setTag).not.toHaveBeenCalledWith("pm.resolution_stage", expect.anything());
+    expect(span.setStatus).toHaveBeenCalledWith({ code: 2, message: "command_failed" });
+    expect(span.end).toHaveBeenCalledTimes(1);
+  });
+
+  it("tolerates spans that do not expose setAttribute", () => {
+    const minimalSpan = { setStatus: vi.fn(), end: vi.fn() };
+    const sentry = buildFakeSentry(buildFakeSpan());
+    sentry.startInactiveSpan = vi.fn(() => minimalSpan) as never;
+    vi.mocked(getSentry).mockReturnValue(sentry as never);
+
+    sentryStartCommandSpan("list");
+    expect(() =>
+      sentryFinishCommandSpan(true, undefined, { exit_code: EXIT_CODE.SUCCESS, error_code: "x" }),
+    ).not.toThrow();
+    expect(minimalSpan.end).toHaveBeenCalledTimes(1);
+  });
+
   it("finishes an ok span even when Sentry becomes unavailable mid-command", () => {
     const span = buildFakeSpan();
     const sentry = buildFakeSentry(span);
@@ -599,8 +631,13 @@ describe("sentry command runtime helpers", () => {
       extra: { exit_code: 70, error_context: { detail: "x" } },
     });
 
+    // A plain Error without exitCode/context properties → empty extras object.
+    const bareError = new Error("bare");
+    sentryCaptureCliError(bareError);
+    expect(sentry.captureException).toHaveBeenLastCalledWith(bareError, { extra: {} });
+
     sentryCaptureCliError("string failure");
-    const wrapped = sentry.captureException.mock.calls[1]?.[0] as Error;
+    const wrapped = sentry.captureException.mock.calls.at(-1)?.[0] as Error;
     expect(wrapped).toBeInstanceOf(Error);
     expect(wrapped.message).toBe("string failure");
   });

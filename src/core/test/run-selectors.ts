@@ -101,7 +101,8 @@ export function resolveLinkedTestRunSelection(tests: LinkedTest[], selector: Lin
     );
   }
   if (kind === "match") {
-    const needle = (selector.match ?? "").trim().toLowerCase();
+    // kind is "match" only when selector.match is defined (see activeSelectorKinds).
+    const needle = (selector.match as string).trim().toLowerCase();
     if (needle.length === 0) {
       throw new PmCliError("--match requires a non-empty substring to match against linked-test command/path values", EXIT_CODE.USAGE);
     }
@@ -121,7 +122,7 @@ export function resolveLinkedTestRunSelection(tests: LinkedTest[], selector: Lin
     }
     return {
       selector: "match",
-      requested: selector.match ?? "",
+      requested: selector.match as string,
       selected,
       selected_indexes: selectedIndexes,
       selected_count: selected.length,

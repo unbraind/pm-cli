@@ -36,6 +36,21 @@ describe("check-secrets rules", () => {
     expect(rulesFor("tests/x.spec.ts", "path /home/steve/secret/file")).not.toContain("absolute-home-path");
   });
 
+  it("honors includeFiles when custom rules are scoped", () => {
+    const scopedRule = {
+      name: "lane-c-include-only",
+      regex: /lane-c-secret/g,
+      includeFiles: /^docs\//,
+    };
+    RULES.push(scopedRule);
+    try {
+      expect(rulesFor("src/x.ts", "lane-c-secret")).not.toContain("lane-c-include-only");
+      expect(rulesFor("docs/x.md", "lane-c-secret")).toContain("lane-c-include-only");
+    } finally {
+      RULES.pop();
+    }
+  });
+
   it("reports one-based line numbers for findings", () => {
     const token = `ghp_${"A1b2C3d4".repeat(5)}`;
     const findings = scanContent("a.txt", ["line1", "line2", `token ${token}`].join("\n"));

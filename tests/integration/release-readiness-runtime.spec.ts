@@ -12,18 +12,18 @@ async function readRepoText(relativePath: string): Promise<string> {
   return readFile(path.resolve(repoRoot, relativePath), "utf8");
 }
 
-async function listTsFilesRelativeToRepo(relativeDir: string): Promise<string[]> {
+async function listFilesRelativeToRepo(relativeDir: string, extensions: string[]): Promise<string[]> {
   const absoluteDir = path.resolve(repoRoot, relativeDir);
   const entries = await readdir(absoluteDir, { withFileTypes: true });
   const results: string[] = [];
   for (const entry of entries) {
     const childRelativePath = path.posix.join(relativeDir, entry.name);
     if (entry.isDirectory()) {
-      const nested = await listTsFilesRelativeToRepo(childRelativePath);
+      const nested = await listFilesRelativeToRepo(childRelativePath, extensions);
       results.push(...nested);
       continue;
     }
-    if (entry.isFile() && entry.name.endsWith(".ts")) {
+    if (entry.isFile() && extensions.some((extension) => entry.name.endsWith(extension))) {
       results.push(childRelativePath);
     }
   }
@@ -1831,7 +1831,7 @@ describe("release readiness runtime coverage", () => {
     };
 
     expect(vitestConfig).toContain("const allSourceCoverageThresholds = {");
-    for (const token of ["lines: 92", "branches: 84", "functions: 94", "statements: 92"]) {
+    for (const token of ["lines: 100", "branches: 100", "functions: 100", "statements: 100"]) {
       expect(vitestConfig).toContain(token);
     }
     expect(vitestConfig).toContain("thresholds: allSourceCoverageThresholds");
@@ -1854,14 +1854,31 @@ describe("release readiness runtime coverage", () => {
     expect(telemetryRuntimeSource).toContain("child.unref()");
   });
 
-  it("keeps vitest coverage include list aligned with src ts modules", async () => {
+  it("keeps vitest coverage include list aligned with all-source modules", async () => {
     const vitestConfig = await readRepoText("vitest.config.ts");
     const includePatterns = extractCoverageIncludePatterns(vitestConfig);
-    const sourceFiles = await listTsFilesRelativeToRepo("src");
+    const sourceFiles = [
+      ...(await listFilesRelativeToRepo("src", [".ts"])),
+      ...(await listFilesRelativeToRepo("packages", [".ts"])),
+      ...(await listFilesRelativeToRepo("scripts", [".mjs"])),
+      ...(await listFilesRelativeToRepo("plugins", [".mjs"])),
+      ...(await listFilesRelativeToRepo("docs/examples", [".ts", ".js", ".mjs"])),
+    ];
     const uncoveredFiles = sourceFiles.filter((filePath) => !matchesAnyPattern(filePath, includePatterns));
     const sorted = uncoveredFiles.sort((left, right) => left.localeCompare(right));
-    // Coverage governance now gates literal all-src TypeScript files.
-    expect(includePatterns).toEqual(expect.arrayContaining(["src/**/*.ts"]));
+    expect(includePatterns).toEqual(
+      expect.arrayContaining([
+        "src/**/*.ts",
+        "packages/**/*.ts",
+        "scripts/*.mjs",
+        "scripts/**/*.mjs",
+        "plugins/*.mjs",
+        "plugins/**/*.mjs",
+        "docs/examples/**/*.ts",
+        "docs/examples/**/*.js",
+        "docs/examples/**/*.mjs",
+      ]),
+    );
     expect(sorted).toEqual([]);
   });
 

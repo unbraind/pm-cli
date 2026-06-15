@@ -82,6 +82,8 @@ describe("module boundaries export surface", () => {
 
       expect(findPmPackageRootFromPath(nestedFile)).toBe(packageRoot);
       expect(findPmPackageRootFromPath(path.join(tempRoot, "missing.js"))).toBeUndefined();
+      // Passing an existing directory resolves it directly rather than via dirname of a file.
+      expect(findPmPackageRootFromPath(path.join(packageRoot, "dist"))).toBe(packageRoot);
       expect(resolvePmPackageRootFromModule(new URL(nestedFile, "file://").href)).toBe(packageRoot);
       expect(resolvePmCliVersion(new URL(nestedFile, "file://").href)).toBe("1.2.3");
       expect(resolveConfiguredPmPackageRoot({ PM_CLI_PACKAGE_ROOT: ` ${packageRoot} ` })).toBe(packageRoot);
@@ -98,6 +100,18 @@ describe("module boundaries export surface", () => {
       );
       expect(resolvePmCliVersion(new URL(malformedFile, "file://").href, ["fallback"])).toBeUndefined();
       expect(resolvePmCliVersion("not-a-file-url")).toBeUndefined();
+
+      // package.json present and named correctly but with a blank/non-string version → undefined.
+      const blankVersionRoot = path.join(tempRoot, "blank-version");
+      const blankVersionFile = path.join(blankVersionRoot, "dist", "cli.js");
+      await mkdir(path.dirname(blankVersionFile), { recursive: true });
+      await writeFile(
+        path.join(blankVersionRoot, "package.json"),
+        JSON.stringify({ name: "@unbrained/pm-cli", version: "   " }),
+        "utf8",
+      );
+      await writeFile(blankVersionFile, "", "utf8");
+      expect(resolvePmCliVersion(new URL(blankVersionFile, "file://").href)).toBeUndefined();
       expect(resolveConfiguredPmPackageRoot({}, "PM_CLI_PACKAGE_ROOT")).toBe(process.cwd());
     } finally {
       await rm(tempRoot, { recursive: true, force: true });

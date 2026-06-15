@@ -306,6 +306,13 @@ describe("deterministic primitives", () => {
       body: "",
     });
     expect(withMissingBody).toBe(withEmptyBody);
+
+    // A null/undefined metadata object is also treated as empty metadata.
+    const withNullMetadata = hashDocument({
+      metadata: null as unknown as never,
+      body: "",
+    });
+    expect(withNullMetadata).toBe(withEmptyBody);
   });
 
   it("appends history entries without rewriting previous lines", async () => {
@@ -456,6 +463,21 @@ describe("deterministic primitives", () => {
       });
       await appendHistoryEntry(historyPath, entry);
       expect((await readFile(historyPath, "utf8")).trim().split("\n")).toHaveLength(2);
+
+      // Object result without line or entry → falls back to the original entry at the alternate path.
+      const fallbackPath = path.join(tempDir, "fallback.jsonl");
+      setActiveExtensionServices({
+        overrides: [
+          {
+            layer: "project",
+            extension: "history-test",
+            service: "history_append",
+            run: () => ({ history_path: fallbackPath }),
+          },
+        ],
+      });
+      await appendHistoryEntry(historyPath, entry);
+      expect((await readFile(fallbackPath, "utf8")).trim()).toBe(JSON.stringify(entry));
     } finally {
       setActiveExtensionServices(null);
       await rm(tempDir, { recursive: true, force: true });

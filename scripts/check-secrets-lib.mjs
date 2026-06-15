@@ -75,6 +75,7 @@ export function scanContent(file, content) {
     rule.regex.lastIndex = 0;
     const matches = content.matchAll(rule.regex);
     for (const match of matches) {
+      /* c8 ignore next -- String.prototype.matchAll always sets match.index; ?? 0 is unreachable defensive default */
       const index = match.index ?? 0;
       findings.push({
         file,

@@ -19,7 +19,7 @@
  */
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -105,7 +105,7 @@ if (explicitServer && (await exists(explicitServer))) {
 `;
 }
 
-async function main() {
+export async function main() {
   const check = process.argv.includes("--check");
   const content = renderWrapper();
   let drift = false;
@@ -135,7 +135,11 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+/* c8 ignore start -- CLI auto-run guard; logic covered via exported main() */
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+/* c8 ignore stop */

@@ -4,7 +4,7 @@ import path from "node:path";
 import readline from "node:readline";
 import { describe, expect, it, vi } from "vitest";
 import { _testOnly as mcpServerTestOnly, handleRequest, processRpcLine, startMcpServer } from "../../src/mcp/server.js";
-import { buildMcpToolContracts } from "../../src/mcp/tool-definitions.js";
+import { TOOLS, buildMcpToolContracts } from "../../src/mcp/tool-definitions.js";
 import { createSerialQueue } from "../../src/core/shared/serial-queue.js";
 import { PM_TOOL_ACTIONS } from "../../src/sdk/cli-contracts/enum-contracts.js";
 import { assertPmContextDepthProjection } from "../helpers/mcp-context-depth.js";
@@ -133,6 +133,20 @@ describe("MCP protocol handshake", () => {
     });
     expect(contracts.find((contract) => contract.name === "pm_create")?.required).toEqual(["options"]);
     expect(contracts.find((contract) => contract.name === "pm_health")?.required).toEqual([]);
+  });
+
+  it("treats malformed required schema fields as optional in MCP contracts", () => {
+    const target = TOOLS.find((tool) => tool.name === "pm_health");
+    expect(target).toBeDefined();
+    const schema = target!.inputSchema as Record<string, unknown>;
+    const originalRequired = schema.required;
+    try {
+      schema.required = "not-an-array";
+      const contracts = buildMcpToolContracts();
+      expect(contracts.find((contract) => contract.name === "pm_health")?.required).toEqual([]);
+    } finally {
+      schema.required = originalRequired;
+    }
   });
 
   it("covers MCP option normalization and typo warning helpers", () => {

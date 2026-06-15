@@ -436,6 +436,24 @@ describe("operation command actions", () => {
     expect(process.exitCode).toBe(EXIT_CODE.DEPENDENCY_FAILED);
   });
 
+  it("marks skipped-linked-test failures as dependency exits", async () => {
+    vi.mocked(runTest).mockResolvedValue({
+      run_results: [{ status: "passed" }],
+      fail_on_skipped_triggered: true,
+    } as never);
+    await runCli("test", "pm-1", "--run");
+    expect(process.exitCode).toBe(EXIT_CODE.DEPENDENCY_FAILED);
+    process.exitCode = undefined;
+
+    vi.mocked(runTestAll).mockResolvedValue({
+      results: [{ id: "pm-1" }],
+      failed: 0,
+      fail_on_skipped_triggered: true,
+    } as never);
+    await runCli("test-all");
+    expect(process.exitCode).toBe(EXIT_CODE.DEPENDENCY_FAILED);
+  });
+
   it("routes pm test --background through the background run starter", async () => {
     await expect(runCli("test", "pm-1", "--background")).rejects.toThrow("--background requires --run");
     await expect(runCli("test", "pm-1", "--background", "--run", "--add", "x")).rejects.toThrow(
@@ -504,6 +522,193 @@ describe("operation command actions", () => {
     expect(contractsOptions.command).toBe("create");
     expect(contractsOptions.flagsOnly).toBe(true);
     expect(contractsOptions.runtimeOnly).toBe(true);
+  });
+
+  it("maps expanded operation option booleans and string payloads", async () => {
+    await runCli(
+      "test",
+      "pm-1",
+      "--run",
+      "--add-json",
+      "{\"command\":\"pnpm test\"}",
+      "--remove",
+      "path=tests/unit/a.spec.ts",
+      "--only-index",
+      "2",
+      "--only-last",
+      "--timeout",
+      "45",
+      "--progress",
+      "--env-set",
+      "A=1",
+      "--env-clear",
+      "B",
+      "--shared-host-safe",
+      "--pm-context",
+      "tracker",
+      "--override-linked-pm-context",
+      "--fail-on-context-mismatch",
+      "--fail-on-skipped",
+      "--fail-on-empty-test-run",
+      "--require-assertions-for-pm",
+      "--check-context",
+      "--auto-pm-context",
+      "--author",
+      "agent",
+      "--message",
+      "run linked tests",
+      "--force",
+    );
+    const testOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runTest) as never, 1);
+    expect(testOptions.addJson).toEqual(["{\"command\":\"pnpm test\"}"]);
+    expect(testOptions.remove).toEqual(["path=tests/unit/a.spec.ts"]);
+    expect(testOptions.onlyIndex).toBe("2");
+    expect(testOptions.onlyLast).toBe(true);
+    expect(testOptions.timeout).toBe("45");
+    expect(testOptions.progress).toBe(true);
+    expect(testOptions.envSet).toEqual(["A=1"]);
+    expect(testOptions.envClear).toEqual(["B"]);
+    expect(testOptions.sharedHostSafe).toBe(true);
+    expect(testOptions.pmContext).toBe("tracker");
+    expect(testOptions.overrideLinkedPmContext).toBe(true);
+    expect(testOptions.failOnContextMismatch).toBe(true);
+    expect(testOptions.failOnSkipped).toBe(true);
+    expect(testOptions.failOnEmptyTestRun).toBe(true);
+    expect(testOptions.requireAssertionsForPm).toBe(true);
+    expect(testOptions.checkContext).toBe(true);
+    expect(testOptions.autoPmContext).toBe(true);
+    expect(testOptions.author).toBe("agent");
+    expect(testOptions.message).toBe("run linked tests");
+    expect(testOptions.force).toBe(true);
+
+    await runCli(
+      "test-all",
+      "--offset",
+      "1",
+      "--timeout",
+      "30",
+      "--progress",
+      "--env-set",
+      "K=V",
+      "--env-clear",
+      "NOPE",
+      "--shared-host-safe",
+      "--pm-context",
+      "schema",
+      "--override-linked-pm-context",
+      "--fail-on-context-mismatch",
+      "--fail-on-skipped",
+      "--fail-on-empty-test-run",
+      "--require-assertions-for-pm",
+      "--check-context",
+      "--auto-pm-context",
+    );
+    const testAllOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runTestAll) as never, 0);
+    expect(testAllOptions.offset).toBe("1");
+    expect(testAllOptions.timeout).toBe("30");
+    expect(testAllOptions.progress).toBe(true);
+    expect(testAllOptions.envSet).toEqual(["K=V"]);
+    expect(testAllOptions.envClear).toEqual(["NOPE"]);
+    expect(testAllOptions.sharedHostSafe).toBe(true);
+    expect(testAllOptions.pmContext).toBe("schema");
+    expect(testAllOptions.overrideLinkedPmContext).toBe(true);
+    expect(testAllOptions.failOnContextMismatch).toBe(true);
+    expect(testAllOptions.failOnSkipped).toBe(true);
+    expect(testAllOptions.failOnEmptyTestRun).toBe(true);
+    expect(testAllOptions.requireAssertionsForPm).toBe(true);
+    expect(testAllOptions.checkContext).toBe(true);
+    expect(testAllOptions.autoPmContext).toBe(true);
+
+    await runCli("stats", "--metadata-coverage", "--by-assignee", "--by-tag", "--by-priority", "--tag-prefix", "area:");
+    const statsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runStats) as never, 1);
+    expect(statsOptions.metadataCoverage).toBe(true);
+    expect(statsOptions.byAssignee).toBe(true);
+    expect(statsOptions.byTag).toBe(true);
+    expect(statsOptions.byPriority).toBe(true);
+    expect(statsOptions.tagPrefix).toBe("area:");
+
+    await runCli(
+      "health",
+      "--strict-directories",
+      "--check-only",
+      "--check-telemetry",
+      "--no-refresh",
+      "--refresh-vectors",
+      "--verbose-stale-items",
+      "--brief",
+      "--summary",
+      "--skip-vectors",
+      "--skip-integrity",
+      "--skip-drift",
+      "--full",
+      "--fail-on-warn",
+    );
+    const healthOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runHealth) as never, 1);
+    expect(healthOptions.strictDirectories).toBe(true);
+    expect(healthOptions.checkOnly).toBe(true);
+    expect(healthOptions.checkTelemetry).toBe(true);
+    expect(healthOptions.noRefresh).toBe(false);
+    expect(healthOptions.refreshVectors).toBe(true);
+    expect(healthOptions.verboseStaleItems).toBe(true);
+    expect(healthOptions.brief).toBe(true);
+    expect(healthOptions.summary).toBe(true);
+    expect(healthOptions.skipVectors).toBe(true);
+    expect(healthOptions.skipIntegrity).toBe(true);
+    expect(healthOptions.skipDrift).toBe(true);
+    expect(healthOptions.full).toBe(true);
+
+    await runCli(
+      "validate",
+      "--check-resolution",
+      "--check-lifecycle",
+      "--check-stale-blockers",
+      "--dependency-cycle-severity",
+      "error",
+      "--check-files",
+      "--check-command-references",
+      "--scan-mode",
+      "tracked-all",
+      "--include-pm-internals",
+      "--verbose-file-lists",
+      "--verbose-diagnostics",
+      "--all-affected-ids",
+      "--strict-exit",
+      "--fix-hints",
+      "--auto-fix",
+      "--dry-run",
+      "--fix-scope",
+      "metadata",
+      "--fix-scope",
+      "lifecycle",
+      "--prune-missing",
+      "--check-history-drift",
+    );
+    const validateOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runValidate) as never, 0);
+    expect(validateOptions.checkResolution).toBe(true);
+    expect(validateOptions.checkLifecycle).toBe(true);
+    expect(validateOptions.checkStaleBlockers).toBe(true);
+    expect(validateOptions.dependencyCycleSeverity).toBe("error");
+    expect(validateOptions.checkFiles).toBe(true);
+    expect(validateOptions.checkCommandReferences).toBe(true);
+    expect(validateOptions.scanMode).toBe("tracked-all");
+    expect(validateOptions.includePmInternals).toBe(true);
+    expect(validateOptions.verboseFileLists).toBe(true);
+    expect(validateOptions.verboseDiagnostics).toBe(true);
+    expect(validateOptions.allAffectedIds).toBe(true);
+    expect(validateOptions.fixHints).toBe(true);
+    expect(validateOptions.autoFix).toBe(true);
+    expect(validateOptions.dryRun).toBe(true);
+    expect(validateOptions.fixScope).toEqual(["metadata", "lifecycle"]);
+    expect(validateOptions.pruneMissing).toBe(true);
+    expect(validateOptions.checkHistoryDrift).toBe(true);
+
+    await runCli("contracts", "--action", "create", "--schema-only", "--availability-only", "--runtime-only", "--full");
+    const contractsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runContracts) as never, 0);
+    expect(contractsOptions.action).toBe("create");
+    expect(contractsOptions.schemaOnly).toBe(true);
+    expect(contractsOptions.availabilityOnly).toBe(true);
+    expect(contractsOptions.runtimeOnly).toBe(true);
+    expect(contractsOptions.full).toBe(true);
   });
 
   it("escalates health and validate findings under strict exit", async () => {
@@ -857,6 +1062,38 @@ describe("mutation command actions", () => {
     expect(lastCallArg<Record<string, unknown>>(vi.mocked(runDocs) as never, 1).list).toBe(true);
     expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(2);
   });
+
+  it("routes docs mutations and close fallback fields", async () => {
+    await runCli("close", "pm-1", "done via positional");
+    const closeOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runClose) as never, 2);
+    expect(closeOptions.expectedResult).toBeUndefined();
+    expect(closeOptions.actualResult).toBeUndefined();
+
+    await runCli(
+      "docs",
+      "pm-1",
+      "--add",
+      "path=docs/a.md",
+      "--add-glob",
+      "pattern=docs/**/*.md",
+      "--remove",
+      "path=docs/old.md",
+      "--migrate",
+      "from=docs,to=guides",
+      "--note",
+      "batch docs migration",
+    );
+    const docsOptions = lastCallArg<Record<string, unknown>>(vi.mocked(runDocs) as never, 1);
+    expect(docsOptions.add).toEqual(["path=docs/a.md"]);
+    expect(docsOptions.addGlob).toEqual(["pattern=docs/**/*.md"]);
+    expect(docsOptions.remove).toEqual(["path=docs/old.md"]);
+    expect(docsOptions.migrate).toEqual(["from=docs,to=guides"]);
+    expect(docsOptions.note).toBe("batch docs migration");
+
+    await runCli("schema", "list");
+    expect(vi.mocked(runSchemaList)).toHaveBeenCalledTimes(1);
+    expect(invalidateSearchCachesForMutation).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("setup command actions", () => {
@@ -951,6 +1188,54 @@ describe("setup command actions", () => {
     expect(normalized.catalog).toBe(true);
   });
 
+  it("routes adopt/adopt-all/activate/deactivate lifecycle subcommands", async () => {
+    await runCli("extension", "adopt", "ext-managed", "--github", "owner/repo", "--ref", "main");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBe("ext-managed");
+    let normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({
+      adopt: true,
+      github: "owner/repo",
+      ref: "main",
+      vocabulary: "extension",
+    });
+
+    await runCli("extension", "adopt-all");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBeUndefined();
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({
+      adoptAll: true,
+      vocabulary: "extension",
+    });
+
+    await runCli("extension", "activate", "ext-managed");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBe("ext-managed");
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({
+      activate: true,
+      vocabulary: "extension",
+    });
+
+    await runCli("package", "deactivate", "pkg-managed", "--global");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBe("pkg-managed");
+    normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({
+      deactivate: true,
+      global: true,
+      vocabulary: "package",
+    });
+  });
+
+  it("supports package install with no explicit target", async () => {
+    await runCli("package", "install", "--project");
+    expect(lastCallArg(vi.mocked(runExtension) as never, 0)).toBeUndefined();
+    const normalized = lastCallArg<Record<string, unknown>>(vi.mocked(runExtension) as never, 1);
+    expect(normalized).toMatchObject({
+      install: true,
+      project: true,
+      vocabulary: "package",
+    });
+  });
+
   it("rejects multiple install targets unless they are a shell-expanded wildcard", async () => {
     await expect(runCli("install", "pkg-a", "pkg-b")).rejects.toThrow(
       "one package source at a time",
@@ -996,6 +1281,14 @@ describe("setup command actions", () => {
     await runCli("extension", "--doctor", "--strict-exit");
     expect(process.exitCode).toBe(EXIT_CODE.GENERIC_FAILURE);
     process.exitCode = undefined;
+
+    vi.mocked(runExtension).mockResolvedValue({
+      action: "doctor",
+      details: { summary: { status: "ok" } },
+      warnings: ["advisory"],
+    } as never);
+    await runCli("extension", "--doctor", "--strict-exit");
+    expect(process.exitCode).toBeUndefined();
 
     vi.mocked(runUpgrade).mockResolvedValue({ ok: false } as never);
     await runCli("upgrade", "--dry-run", "--cli-only");

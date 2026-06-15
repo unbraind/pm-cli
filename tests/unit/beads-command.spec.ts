@@ -2,9 +2,10 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
+import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { runBeadsImport } from "../../packages/pm-beads/extensions/beads/runtime.js";
-import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../dist/core/extensions/index.js";
+import { runBeadsImport } from "../../packages/pm-beads/extensions/beads/runtime.ts";
+import { clearActiveExtensionHooks, setActiveExtensionHooks } from "../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import type { TempPmContext } from "../helpers/withTempPmPath.js";
 import { readJsonlFixture } from "../helpers/fixtures.js";
@@ -65,6 +66,19 @@ function createSeedItem(context: TempPmContext, title: string): string {
   );
   expect(created.code).toBe(0);
   return (created.json as { item: { id: string } }).item.id;
+}
+
+function cacheBustToken(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+async function importBeadsRuntimeLoader(): Promise<{
+  loadPackageRuntimeModule: () => Promise<unknown>;
+}> {
+  const runtimeLoaderPath = path.join(process.cwd(), "packages", "pm-beads", "extensions", "beads", "runtime-loader.ts");
+  return (await import(`${pathToFileURL(runtimeLoaderPath).href}?beadsLoader=${cacheBustToken()}`)) as {
+    loadPackageRuntimeModule: () => Promise<unknown>;
+  };
 }
 
 describe("runBeadsImport", () => {
@@ -785,5 +799,66 @@ describe("runBeadsImport", () => {
       expect(hookEvents).toContain("write:import:pm-hooked-import.toon");
       expect(hookEvents).toContain("write:import:history:pm-hooked-import.jsonl");
     });
+  });
+
+  it("resolves beads runtime-loader candidates and preserves explicit runtime errors", async () => {
+    const tempRoot = await mkdtemp(path.join(os.tmpdir(), "pm-beads-loader-root-"));
+    try {
+      const packageRuntimeDir = path.join(tempRoot, "packages", "pm-beads", "extensions", "beads");
+      await mkdir(packageRuntimeDir, { recursive: true });
+      await writeFile(
+        path.join(packageRuntimeDir, "runtime.js"),
+        [
+          "export const marker = 'custom-beads-runtime';",
+          "export async function runBeadsImport() {",
+          "  return { ok: true, source: 'custom', imported: 0, skipped: 0, ids: [], warnings: [] };",
+          "}",
+          "",
+        ].join("\n"),
+        "utf8",
+      );
+
+      const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+      process.env.PM_CLI_PACKAGE_ROOT = tempRoot;
+      try {
+        const loader = await importBeadsRuntimeLoader();
+        const runtime = await loader.loadPackageRuntimeModule();
+        expect((runtime as { marker?: string }).marker).toBe("custom-beads-runtime");
+      } finally {
+        if (previousPackageRoot === undefined) {
+          delete process.env.PM_CLI_PACKAGE_ROOT;
+        } else {
+          process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+        }
+      }
+    } finally {
+      await rm(tempRoot, { recursive: true, force: true });
+    }
+
+    const throwRoot = await mkdtemp(path.join(os.tmpdir(), "pm-beads-loader-throw-"));
+    try {
+      const throwingRuntimeDir = path.join(throwRoot, ".agents", "pm", "extensions", "beads");
+      await mkdir(throwingRuntimeDir, { recursive: true });
+      await writeFile(
+        path.join(throwingRuntimeDir, "runtime.js"),
+        ["throw new Error('beads-loader-boom');", ""].join("\n"),
+        "utf8",
+      );
+
+      const previousPackageRoot = process.env.PM_CLI_PACKAGE_ROOT;
+      process.env.PM_CLI_PACKAGE_ROOT = throwRoot;
+      try {
+        const loader = await importBeadsRuntimeLoader();
+        await expect(loader.loadPackageRuntimeModule()).rejects.toThrow("beads-loader-boom");
+      } finally {
+        if (previousPackageRoot === undefined) {
+          delete process.env.PM_CLI_PACKAGE_ROOT;
+        } else {
+          process.env.PM_CLI_PACKAGE_ROOT = previousPackageRoot;
+        }
+      }
+    } finally {
+      await rm(throwRoot, { recursive: true, force: true });
+    }
   });
 });

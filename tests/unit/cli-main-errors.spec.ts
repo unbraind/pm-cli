@@ -665,6 +665,17 @@ describe("CLI bootstrap entrypoints", () => {
 
       process.env.PM_CLI_DISABLE_COMPILE_CACHE = "1";
       expect(cliModule._testOnly.enableNodeCompileCache()).toBeUndefined();
+
+      // Exercise the non-getuid cache-key fallback (os.userInfo username) without disabling caching.
+      delete process.env.PM_CLI_DISABLE_COMPILE_CACHE;
+      const originalGetuid = process.getuid;
+      try {
+        Object.defineProperty(process, "getuid", { value: undefined, configurable: true });
+        expect(cliModule._testOnly.enableNodeCompileCache()).toBeUndefined();
+      } finally {
+        Object.defineProperty(process, "getuid", { value: originalGetuid, configurable: true });
+      }
+      process.env.PM_CLI_DISABLE_COMPILE_CACHE = "1";
     } finally {
       logSpy.mockRestore();
       process.argv = previousArgv;

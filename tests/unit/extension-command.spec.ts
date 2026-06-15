@@ -1232,7 +1232,7 @@ describe("extension command runtime", () => {
   });
 
   it("activates the command-kit exemplar package and surfaces its command/flag/parser registrations", async () => {
-    const commandKitModule = await import("../../packages/pm-command-kit/extensions/command-kit/index.js");
+    const commandKitModule = await import("../../packages/pm-command-kit/extensions/command-kit/index.ts");
     const { activate: activateCommandKit, manifest: commandKitManifest, rewriteEchoOptions, runEchoCommand } = commandKitModule;
     expect(commandKitModule.default).toMatchObject({ manifest: commandKitManifest });
     expect(commandKitManifest).toMatchObject({
@@ -1290,6 +1290,77 @@ describe("extension command runtime", () => {
     });
     expect(parserDelta.options).toMatchObject({ upper: true, repeat: 2, decorations: ["star", "spark"] });
     expect(parserDelta.options).not.toHaveProperty("shout");
+
+    // Invalid/out-of-range --repeat falls back to 1 (toPositiveInteger guard),
+    // the string "true" alias toggles --upper, and an omitted --decorations key
+    // leaves the option untouched.
+    const fallbackDelta = rewriteEchoOptions({
+      command: "command-kit echo",
+      args: ["hi"],
+      options: { shout: "true", repeat: "not-a-number" },
+      global: {},
+      pm_root: "/tmp",
+    });
+    expect(fallbackDelta.options).toMatchObject({ upper: true, repeat: 1 });
+    expect(fallbackDelta.options).not.toHaveProperty("decorations");
+
+    // No --shout and a non-"true" string value: neither shout branch fires, so
+    // --upper is left untouched (the if-false arm), and --decorations is set.
+    const noShoutDelta = rewriteEchoOptions({
+      command: "command-kit echo",
+      args: ["hi"],
+      options: { shout: "maybe", repeat: 3, decorations: "a,b" },
+      global: {},
+      pm_root: "/tmp",
+    });
+    expect(noShoutDelta.options).not.toHaveProperty("upper");
+    expect(noShoutDelta.options).not.toHaveProperty("shout");
+    expect(noShoutDelta.options).toMatchObject({ repeat: 3, decorations: ["a", "b"] });
+
+    const negativeRepeatResult = runEchoCommand({
+      command: "command-kit echo",
+      args: ["hi"],
+      options: { repeat: -5, upper: "true", decorations: ["", "  "] },
+      global: {},
+      pm_root: "/tmp",
+    });
+    expect(negativeRepeatResult).toMatchObject({ repeat: 1, upper: true, message: "HI", decorations: [] });
+
+    // No repeat option (nullish -> String(value ?? "") arm), decorations as a
+    // comma-string (split arm), and upper unset (lowercase passthrough arm).
+    const plainResult = runEchoCommand({
+      command: "command-kit echo",
+      args: ["Hello"],
+      options: { decorations: "star, spark ,star" },
+      global: {},
+      pm_root: "/tmp",
+    });
+    expect(plainResult).toMatchObject({
+      repeat: 1,
+      upper: false,
+      message: "Hello",
+      decorations: ["star", "spark"],
+    });
+
+    // decorations as a non-array/non-string value -> [] arm; options provided as
+    // an array is ignored (the `!Array.isArray(context.options)` guard arm).
+    const arrayOptionsResult = runEchoCommand({
+      command: "command-kit echo",
+      args: ["solo"],
+      options: ["ignored"] as never,
+      global: {},
+      pm_root: "/tmp",
+    });
+    expect(arrayOptionsResult).toMatchObject({ message: "solo", repeat: 1, upper: false, decorations: [] });
+
+    const numericDecorations = runEchoCommand({
+      command: "command-kit echo",
+      args: ["solo"],
+      options: { decorations: 42 },
+      global: {},
+      pm_root: "/tmp",
+    });
+    expect(numericDecorations).toMatchObject({ decorations: [] });
 
     const echoResult = runEchoCommand({
       command: "command-kit echo",
