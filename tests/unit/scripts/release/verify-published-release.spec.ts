@@ -207,6 +207,28 @@ describe("scripts/release/verify-published-release: npm metadata retries", () =>
     });
     expect(String(failure ?? "")).toContain("npm_json_parse_failed");
   });
+
+  it("falls back to npm_view_failed when npm exits non-zero with empty stderr", async () => {
+    const { failure } = await runVerify({
+      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      runCommand: (command, args) =>
+        command === "npm" && args[0] === "view"
+          ? { status: 1, stdout: "", stderr: "" }
+          : { status: 0, stdout: "", stderr: "" },
+    });
+    expect(String(failure ?? "")).toContain("npm_view_failed");
+  });
+
+  it("reports a missing version when npm metadata omits the version field", async () => {
+    const { failure } = await runVerify({
+      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      runCommand: (command, args) =>
+        command === "npm" && args[0] === "view"
+          ? { status: 0, stdout: JSON.stringify({ dist: { integrity: "sha512-x" } }), stderr: "" }
+          : { status: 0, stdout: "", stderr: "" },
+    });
+    expect(String(failure ?? "")).toContain("npm_version_mismatch:missing");
+  });
 });
 
 describe("scripts/release/verify-published-release: executor failures", () => {
@@ -242,6 +264,22 @@ describe("scripts/release/verify-published-release: executor failures", () => {
     });
     expect(String(failure ?? "")).toContain("npx-direct_version_mismatch:executor crashed");
   });
+
+  it("reports no_output when an executor exits non-zero with empty stdout and stderr", async () => {
+    const { failure } = await runVerify({
+      argv: ["--version", "2026.6.14", "--skip-github-release", "--npm-attempts", "1", "--executor-attempts", "1"],
+      runCommand: (command, args) => {
+        if (command === "npm" && args[0] === "view") {
+          return npmViewResult("2026.6.14");
+        }
+        if (command === "npx") {
+          return { status: 1, stdout: "", stderr: "" };
+        }
+        return { status: 0, stdout: "", stderr: "" };
+      },
+    });
+    expect(String(failure ?? "")).toContain("npx-direct_version_mismatch:no_output");
+  });
 });
 
 describe("scripts/release/verify-published-release: github release", () => {
@@ -272,6 +310,17 @@ describe("scripts/release/verify-published-release: github release", () => {
           : { status: 0, stdout: "", stderr: "" },
     });
     expect(String(failure ?? "")).toContain("GitHub release tag mismatch");
+  });
+
+  it("reports a missing received tag when gh metadata omits tagName", async () => {
+    const { failure } = await runVerify({
+      argv: ["--version", "2026.6.14", "--skip-package", "--npm-attempts", "1", "--executor-attempts", "1"],
+      runCommand: (command) =>
+        command === "gh"
+          ? { status: 0, stdout: JSON.stringify({ name: "v2026.6.14" }), stderr: "" }
+          : { status: 0, stdout: "", stderr: "" },
+    });
+    expect(String(failure ?? "")).toContain("received missing");
   });
 
   it("fails when the github release is a draft or prerelease", async () => {

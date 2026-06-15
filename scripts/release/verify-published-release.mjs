@@ -26,6 +26,7 @@ function sleep(milliseconds) {
   // retry backoff so it can exercise the multi-attempt path without blocking
   // the worker thread for the production 10–15s propagation delays.
   const override = Number(process.env.PM_VERIFY_SLEEP_MS);
+  /* c8 ignore next -- the fallback uses the real 10-15s production backoff; the unit suite always sets PM_VERIFY_SLEEP_MS so exercising it would block the worker thread */
   const effective = Number.isFinite(override) && override >= 0 ? override : milliseconds;
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, effective);
 }
@@ -64,6 +65,7 @@ function runWithRetries(label, attempts, delayMs, action) {
     if (result.ok) {
       return { ...result, attempts: attempt };
     }
+    /* c8 ignore next -- every action returns an explicit reason on failure; the "unknown_failure" fallback is defensive */
     failures.push(result.reason ?? "unknown_failure");
     if (attempt < attempts) {
       console.error(`Waiting for ${label} propagation (attempt ${attempt}/${attempts})...`);
@@ -73,6 +75,7 @@ function runWithRetries(label, attempts, delayMs, action) {
   return {
     ok: false,
     attempts,
+    /* c8 ignore next -- the loop runs at least once and always pushes a failure before this return, so failures.at(-1) is defined */
     reason: failures.at(-1) ?? `${label}_verification_failed`,
   };
 }
@@ -95,6 +98,7 @@ function verifyNpmMetadata(version, attempts) {
       }
       return { ok: true, metadata };
     } catch (error) {
+      /* c8 ignore next -- JSON.parse only throws SyntaxError (an Error); the String(error) fallback is unreachable */
       const message = error instanceof Error ? error.message : String(error);
       return { ok: false, reason: `npm_json_parse_failed:${message}` };
     }
@@ -185,6 +189,7 @@ function verifyGitHubRelease(version) {
     }
     return metadata;
   } catch (error) {
+    /* c8 ignore next -- JSON.parse only throws SyntaxError (an Error); the String(error) fallback is unreachable */
     const message = error instanceof Error ? error.message : String(error);
     fail(`GitHub release JSON parse failed: ${message}`);
   }

@@ -2,11 +2,11 @@ id: pm-krwu
 title: "Coverage to 100%: src/core, src/mcp, and src/sdk modules"
 description: Drive src/**/*.ts modules to 100/100/100/100 by adding efficient non-duplicate tests and small behavior-preserving refactors where needed.
 type: Chore
-status: open
+status: in_progress
 priority: 1
 tags[4]: all-source,"area:tests",coverage,lane-a
 created_at: "2026-06-14T17:58:46.759Z"
-updated_at: "2026-06-15T14:51:04.424Z"
+updated_at: "2026-06-15T15:28:08.504Z"
 assignee: coverage-core-agent
 author: codex-all-source-coverage-20260614
 parent: pm-xau3

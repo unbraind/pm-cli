@@ -2,11 +2,11 @@ id: pm-ud1x
 title: "Coverage to 100%: src/cli command handlers (group A — mutation, history, storage, schema)"
 description: "Close branch/statement/function gaps to literal 100% for: close, close-many, create, update, update-many, restore, comments, comments-audit, history, history-redact, history-repair, normalize, dedupe-audit, files, get, deps, plan, stats, schema, config, contracts, linked-test-parsers. Add tests to the module's dedicated spec (extend in place) or tests/unit/commands/<module>.spec.ts if none/shared. No duplicated tests; fast; conventional naming."
 type: Task
-status: open
+status: in_progress
 priority: 1
 tags[3]: "area:cli","area:tests",coverage
 created_at: "2026-06-15T05:17:49.303Z"
-updated_at: "2026-06-15T14:59:24.694Z"
+updated_at: "2026-06-15T15:28:07.482Z"
 assignee: coverage-handlers-a2a-agent
 author: maintainer-agent
 parent: pm-xau3

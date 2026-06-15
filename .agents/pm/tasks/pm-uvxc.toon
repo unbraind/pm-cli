@@ -2,11 +2,11 @@ id: pm-uvxc
 title: "Coverage to 100%: src/cli infrastructure (registration, bootstrap, help, main)"
 description: "Close gaps to literal 100% for: argv-utils, bootstrap-args, commander-usage, error-guidance, extension-command-help, extension-command-options, help-content, help-json-payload, main, migration-gates, register-list-query, register-mutation, register-operations, register-setup, registration-helpers. New module specs go under tests/unit/cli/. No duplicates; fast."
 type: Task
-status: open
+status: in_progress
 priority: 1
 tags[3]: "area:cli","area:tests",coverage
 created_at: "2026-06-15T05:17:50.618Z"
-updated_at: "2026-06-15T15:18:32.856Z"
+updated_at: "2026-06-15T15:28:08.054Z"
 assignee: coverage-cli-misc-agent
 author: maintainer-agent
 parent: pm-xau3
