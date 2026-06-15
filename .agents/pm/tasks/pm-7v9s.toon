@@ -1,0 +1,13 @@
+id: pm-7v9s
+title: "Coverage to 100%: src/cli command handlers (group B — query, search, calendar, test, init, extension)"
+description: "Close gaps to literal 100% for: aggregate, calendar, context, list, search, reindex, templates, guide, validate, health, telemetry, test, test-all, test-runs, init, init-agent-guidance, upgrade, extension, extension/{bundled-catalog,doctor,install-sources,managed-state,scaffold,shared}. Extend dedicated specs or create tests/unit/commands/<module>.spec.ts. No duplicates; fast."
+type: Task
+status: open
+priority: 1
+tags[3]: "area:cli","area:tests",coverage
+created_at: "2026-06-15T05:17:50.034Z"
+updated_at: "2026-06-15T14:59:39.134Z"
+assignee: coverage-extension-agent
+author: maintainer-agent
+parent: pm-xau3
+body: ""

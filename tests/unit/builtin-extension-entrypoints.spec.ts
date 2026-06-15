@@ -33,7 +33,14 @@ const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
 const RUNTIME_CALLS_KEY = "__PM_TEST_RUNTIME_CALLS";
 
 interface RuntimeCall {
-  kind: "beads" | "calendar" | "todos-import" | "todos-export";
+  kind:
+    | "beads"
+    | "calendar"
+    | "todos-import"
+    | "todos-export"
+    | "governance-dedupe"
+    | "governance-comments"
+    | "governance-normalize";
   options: Record<string, unknown>;
   global: Record<string, unknown>;
 }
@@ -138,6 +145,44 @@ export function resolveCalendarOutputFormat(options) {
   if (options?.format === "json") return "json";
   if (options?.format === "toon") return "toon";
   return "markdown";
+}
+
+export function readStringOption(options, key, aliases = []) {
+  for (const candidate of [key, ...aliases]) {
+    const value = options?.[candidate];
+    if (typeof value === "string" && value.trim().length > 0) return value.trim();
+  }
+  return undefined;
+}
+
+export function readBooleanOption(options, key, aliases = []) {
+  for (const candidate of [key, ...aliases]) {
+    const value = options?.[candidate];
+    if (value === true) return true;
+    if (value === false) return false;
+  }
+  return undefined;
+}
+
+export async function runDedupeAudit(options, global) {
+  const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
+  calls.push({ kind: "governance-dedupe", options, global });
+  globalThis.${RUNTIME_CALLS_KEY} = calls;
+  return { kind: "governance-dedupe", options };
+}
+
+export async function runCommentsAudit(options, global) {
+  const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
+  calls.push({ kind: "governance-comments", options, global });
+  globalThis.${RUNTIME_CALLS_KEY} = calls;
+  return { kind: "governance-comments", options };
+}
+
+export async function runNormalize(options, global) {
+  const calls = Array.isArray(globalThis.${RUNTIME_CALLS_KEY}) ? globalThis.${RUNTIME_CALLS_KEY} : [];
+  calls.push({ kind: "governance-normalize", options, global });
+  globalThis.${RUNTIME_CALLS_KEY} = calls;
+  return { kind: "governance-normalize", options };
 }
 `,
     "utf8",
@@ -505,6 +550,38 @@ describe("built-in extension entrypoints", () => {
       expect(commands.map((command) => command.name)).toEqual(["dedupe-audit", "comments-audit", "normalize"]);
       expect(hooks.onRead).toHaveLength(1);
       expect(hooks.onWrite).toHaveLength(1);
+
+      resetRuntimeCalls();
+      const dedupeResult = (await commands[0]!.run({
+        command: "dedupe-audit",
+        args: [],
+        options: { mode: "title_exact" },
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+      })) as Record<string, unknown>;
+      const commentsResult = (await commands[1]!.run({
+        command: "comments-audit",
+        args: [],
+        options: { full_history: true },
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+      })) as Record<string, unknown>;
+      const normalizeResult = (await commands[2]!.run({
+        command: "normalize",
+        args: [],
+        options: { apply: true },
+        global: globalFlags,
+        pm_root: "/tmp/pm",
+      })) as Record<string, unknown>;
+      expect(dedupeResult).toMatchObject({ kind: "governance-dedupe" });
+      expect(commentsResult).toMatchObject({ kind: "governance-comments" });
+      expect(normalizeResult).toMatchObject({ kind: "governance-normalize" });
+      expect(readRuntimeCalls().map((entry) => entry.kind)).toEqual([
+        "governance-dedupe",
+        "governance-comments",
+        "governance-normalize",
+      ]);
+      resetRuntimeCalls();
 
       await hooks.onWrite[0]?.run({
         path: "/tmp/project/tasks/pm-demo.md",
@@ -1142,6 +1219,19 @@ describe("built-in extension entrypoints", () => {
           payload: { result: completionResult },
         });
         expect(typeof renderedCompletion).toBe("string");
+
+        // An unhandled command makes the renderer return null, exercising the
+        // service override's `rendered ?? null` right arm.
+        const renderedPassthrough = services[0]!.override({
+          service: "output_format",
+          command: "list",
+          args: [],
+          options: {},
+          global: runtimeGlobal,
+          pm_root: context.pmPath,
+          payload: { result: { ok: true } },
+        });
+        expect(renderedPassthrough).toBeNull();
 
         const completionTags = await commands[2]!.run({
           command: "completion-tags",

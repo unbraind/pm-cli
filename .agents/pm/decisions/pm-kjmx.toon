@@ -1,0 +1,14 @@
+id: pm-kjmx
+title: "ADR: test organization convention — module-mirrored spec files, no lane/wave naming"
+description: "Context: the literal-all-src coverage push (pm-w13j) was executed in temporary parallel 'lanes' (A/B/C) with 'waveN' spec files as a work-tracking device. Decision: that vocabulary must NOT persist in the committed suite. Test files mirror the module under test at tests/unit/<area>/<module>.spec.ts (areas: commands, core/<sub>, scripts/<sub>, packages, plugins, docs-examples), one primary module per file, with conventional describe() titles naming the module/behavior. Consequences: contributors locate a module's tests by path; the 120-files-per-directory static gate is respected via area subdirectories; shared dynamic-import harness lives in tests/helpers/."
+type: Decision
+status: open
+priority: 2
+tags[3]: adr,"area:tests",test-architecture
+created_at: "2026-06-15T05:09:51.982Z"
+updated_at: "2026-06-15T15:18:57.987Z"
+author: maintainer-agent
+parent: pm-m2u1
+learnings[1]{created_at,author,text}:
+  "2026-06-15T15:18:57.987Z",maintainer-agent,"Test resolution helpers against a directly-built RuntimeStatusRegistry (resolveRuntimeStatusRegistry(customSchema)), NOT a writeSettings round-trip: writeSettings re-seeds the built-in default statuses (open/in_progress/blocked/closed/...) into schema.statuses on persist, so any 'custom workflow that omits status X' scenario is impossible to construct through settings I/O — the built-in always comes back. Direct registry construction does not re-seed and is the correct, deterministic way to cover registry-fallback branches."
+body: ""

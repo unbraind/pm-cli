@@ -128,3 +128,15 @@ export function renderCalendarPackageOutput(context: ServiceOverrideContext): st
   }
   return null;
 }
+
+/**
+ * Test-only seam exposing the internal payload readers. Their non-object guard
+ * arms are defensively present but unreachable through `renderCalendarPackageOutput`
+ * (the only caller validates payload via `isCalendarResult` first), so this seam
+ * lets the suite drive those branches directly without weakening the runtime guards.
+ */
+export const _testOnly = {
+  readPayloadFormat,
+  readPayloadCommandOptions,
+  readPayloadGlobalOptions,
+};

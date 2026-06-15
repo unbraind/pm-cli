@@ -2,7 +2,14 @@ import { pathToFileURL } from "node:url";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const ORIGINAL_ARGV = [...process.argv];
+/**
+ * Branch coverage for the starter-extension reference example
+ * (docs/examples/starter-extension/index.ts), driven through its compiled .js
+ * entrypoint and a collecting extension API. The tiny
+ * starter-extension-example.spec.ts only asserts the migration source string;
+ * this file covers the remaining runtime branches (command/parser/renderer/
+ * service/hook/provider/adapter behavior).
+ */
 
 function cacheBustToken(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -120,41 +127,12 @@ function createExtensionApiCollector(): { api: Record<string, unknown>; artifact
 }
 
 afterEach(() => {
-  process.argv = [...ORIGINAL_ARGV];
-  vi.doUnmock("@unbrained/pm-cli/sdk");
-  vi.doUnmock("node:child_process");
   vi.restoreAllMocks();
   vi.resetModules();
 });
 
-describe("lane-b docs examples", () => {
-  it("covers policy and starter extension examples through runtime registration hooks", async () => {
-    const policyModule = await importRepoModule<{ default: { activate: (api: Record<string, unknown>) => void } }>(
-      "docs/examples/policy-restricted-extension/index.js",
-      "policyExample",
-    );
-    const policyCollector = createExtensionApiCollector();
-    policyModule.default.activate(policyCollector.api);
-    expect(policyCollector.artifacts.commands).toHaveLength(1);
-    expect(policyCollector.artifacts.services).toHaveLength(1);
-    expect(policyCollector.artifacts.hooks.beforeCommand).toHaveLength(1);
-    policyCollector.artifacts.hooks.beforeCommand[0]?.({ command: "policy demo" });
-
-    const policyRun = await (policyCollector.artifacts.commands[0]?.run as (context: unknown) => Promise<unknown>)({
-      command: "policy demo",
-      options: {},
-    });
-    expect(policyRun).toEqual({
-      ok: true,
-      command: "policy demo",
-      source: "policy-restricted-extension",
-    });
-    expect(
-      policyCollector.artifacts.services[0]?.handler({
-        ok: true,
-      }),
-    ).toEqual({ ok: true });
-
+describe("starter-extension example", () => {
+  it("registers all artifacts and exercises every runtime branch", async () => {
     const starterModule = await importRepoModule<{ default: { activate: (api: Record<string, unknown>) => void } }>(
       "docs/examples/starter-extension/index.js",
       "starterExample",
@@ -183,9 +161,9 @@ describe("lane-b docs examples", () => {
 
     const starterRun = await (starterCollector.artifacts.commands[0]?.run as (context: unknown) => Promise<Record<string, unknown>>)({
       command: "starter ping",
-      options: { name: "  lane-b  " },
+      options: { name: "  starter  " },
     });
-    expect(starterRun.hello).toBe("lane-b");
+    expect(starterRun.hello).toBe("starter");
     expect(starterRun.hook_counts).toEqual({
       before: 1,
       after: 1,
@@ -193,16 +171,31 @@ describe("lane-b docs examples", () => {
       read: 1,
       index: 1,
     });
+
     const starterFallbackRun = await (starterCollector.artifacts.commands[0]?.run as (context: unknown) => Promise<Record<string, unknown>>)({
       command: "starter ping",
       options: null,
     });
     expect(starterFallbackRun.hello).toBe("agent");
 
+    // Whitespace-only name collapses to empty after trim, hitting the
+    // `rawName.length > 0 ? rawName : "agent"` false arm.
+    const starterBlankNameRun = await (starterCollector.artifacts.commands[0]?.run as (context: unknown) => Promise<Record<string, unknown>>)({
+      command: "starter ping",
+      options: { name: "   " },
+    });
+    expect(starterBlankNameRun.hello).toBe("agent");
+
     const parsed = await (starterCollector.artifacts.parsers[0]?.handler as (context: unknown) => Promise<Record<string, unknown>>)({
       options: { name: "  agent  " },
     });
     expect(parsed.options).toEqual({ name: "agent" });
+
+    // Non-string name skips the trim branch.
+    const parsedNonString = await (starterCollector.artifacts.parsers[0]?.handler as (context: unknown) => Promise<Record<string, unknown>>)({
+      options: { name: 42 },
+    });
+    expect(parsedNonString.options).toEqual({ name: 42 });
 
     const preflightOther = starterCollector.artifacts.preflights[0]?.({ command: "context" }) as Record<string, unknown>;
     const preflightStarter = starterCollector.artifacts.preflights[0]?.({ command: "starter ping" }) as Record<string, unknown>;
@@ -216,7 +209,15 @@ describe("lane-b docs examples", () => {
         payload: { result: starterRun },
         options: { uppercase: true },
       }),
-    ).toBe("starter_service_output hello=LANE-B command=starter ping");
+    ).toBe("starter_service_output hello=STARTER command=starter ping");
+    // uppercase absent/non-true exercises the `uppercase ? ... : helloRaw` else arm.
+    expect(
+      outputService?.handler({
+        command: "starter ping",
+        payload: { result: starterRun },
+        options: { uppercase: false },
+      }),
+    ).toBe("starter_service_output hello=starter command=starter ping");
     expect(
       outputService?.handler({
         command: "context",
@@ -237,6 +238,14 @@ describe("lane-b docs examples", () => {
     );
     expect(jsonRenderer?.handler({ command: "context", result: {} })).toBeNull();
     expect(toonRenderer?.handler({ command: "context", result: {} })).toBeNull();
+
+    // A result whose hook_counts lack before/after exercises the `?? 0` right arms.
+    const renderedToonNoHooks = toonRenderer?.handler({
+      command: "starter ping",
+      result: { hello: "x", command: "starter ping", hook_counts: {} },
+    });
+    expect(String(renderedToonNoHooks)).toContain("hooks.before: 0");
+    expect(String(renderedToonNoHooks)).toContain("hooks.after: 0");
 
     const imported = await starterCollector.artifacts.importers[0]?.handler({
       source: "fixture.json",
@@ -273,205 +282,5 @@ describe("lane-b docs examples", () => {
 
     const migration = starterCollector.artifacts.migrations[0] as { run: () => Promise<unknown> };
     await expect(migration.run()).resolves.toEqual({ applied: true });
-  });
-
-  it("covers sdk-app-embedding script branches with mocked pm subprocess calls", async () => {
-    vi.doUnmock("@unbrained/pm-cli/sdk");
-    const embeddedScript = "docs/examples/sdk-app-embedding/run-embedded-pm.mjs";
-    const outputSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-
-    process.argv = ["node", "run-embedded-pm.mjs", "extension-reload"];
-    const successSpawn = vi.fn((command: string, args: string[]) => {
-      expect(command).toBe("pm");
-      if (args[0] === "contracts") {
-        return {
-          status: 0,
-          stdout: JSON.stringify({
-            action_availability: [{ action: "extension-reload", available: true, policy_state: "enabled" }],
-          }),
-          stderr: "",
-        };
-      }
-      return {
-        status: 0,
-        stdout: JSON.stringify({ ok: true, command: args.join(" ") }),
-        stderr: "",
-      };
-    });
-    vi.doMock("node:child_process", () => ({ spawnSync: successSpawn }));
-    await importRepoModule(embeddedScript, "embeddedSuccess");
-    expect(successSpawn).toHaveBeenCalledTimes(2);
-    expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"action": "extension-reload"');
-    expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"command": "pm extension --reload --project --json"');
-
-    vi.resetModules();
-    process.argv = ["node", "run-embedded-pm.mjs", "extension-reload"];
-    vi.doMock("@unbrained/pm-cli/sdk", () => ({
-      PM_TOOL_ACTION_PARAMETER_CONTRACTS: {
-        "extension-reload": {},
-      },
-      isPmToolAction: () => true,
-    }));
-    vi.doMock("node:child_process", () => ({
-      spawnSync: vi.fn((command: string, args: string[]) => {
-        if (command !== "pm") {
-          throw new Error("unexpected command");
-        }
-        if (args[0] === "contracts") {
-          return {
-            status: 0,
-            stdout: JSON.stringify({ actions: ["extension-reload"] }),
-            stderr: "",
-          };
-        }
-        return {
-          status: 0,
-          stdout: JSON.stringify({ ok: true }),
-          stderr: "",
-        };
-      }),
-    }));
-    await importRepoModule(embeddedScript, "embeddedContractFallbacks");
-    expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"required_parameters": []');
-    expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"optional_parameters": []');
-
-    vi.resetModules();
-    process.argv = ["node", "run-embedded-pm.mjs", "extension-reload"];
-    vi.doMock("@unbrained/pm-cli/sdk", () => ({
-      PM_TOOL_ACTION_PARAMETER_CONTRACTS: {
-        "extension-reload": { required: [], optional: [] },
-      },
-      isPmToolAction: () => true,
-    }));
-    vi.doMock("node:child_process", () => ({
-      spawnSync: vi.fn(() => ({
-        status: 0,
-        stdout: JSON.stringify({
-          action_availability: [{ action: "extension-reload", available: false }],
-        }),
-        stderr: "",
-      })),
-    }));
-    await expect(importRepoModule(embeddedScript, "embeddedUnavailableUnknownReason")).rejects.toThrow(
-      'Action "extension-reload" is not available in this runtime (unknown_reason).',
-    );
-
-    vi.resetModules();
-    vi.doUnmock("@unbrained/pm-cli/sdk");
-    process.argv = ["node", "run-embedded-pm.mjs", "contracts"];
-    vi.doMock("node:child_process", () => ({
-      spawnSync: vi.fn(() => ({
-        status: 0,
-        stdout: JSON.stringify({
-          action_availability: [{ action: "contracts", available: false, disabled_reason: "policy_blocked" }],
-          actions: ["contracts"],
-        }),
-        stderr: "",
-      })),
-    }));
-    await expect(importRepoModule(embeddedScript, "embeddedUnavailable")).rejects.toThrow(
-      'Action "contracts" is not available in this runtime (policy_blocked).',
-    );
-
-    vi.resetModules();
-    process.argv = ["node", "run-embedded-pm.mjs", "not-a-real-action"];
-    vi.doMock("node:child_process", () => ({ spawnSync: vi.fn() }));
-    await expect(importRepoModule(embeddedScript, "embeddedUnsupported")).rejects.toThrow(
-      'Unsupported pm action "not-a-real-action".',
-    );
-
-    vi.resetModules();
-    process.argv = ["node", "run-embedded-pm.mjs", "extension-reload"];
-    vi.doMock("node:child_process", () => ({
-      spawnSync: vi.fn(() => ({
-        status: 1,
-        stdout: "",
-        stderr: "pm contracts failed",
-      })),
-    }));
-    await expect(importRepoModule(embeddedScript, "embeddedContractsFailure")).rejects.toThrow("pm contracts failed");
-  });
-
-  it("covers sdk-contract-consumer script branches with mocked contract responses", async () => {
-    vi.doUnmock("@unbrained/pm-cli/sdk");
-    const contractsScript = "docs/examples/sdk-contract-consumer/inspect-contracts.mjs";
-    const outputSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
-
-    process.argv = ["node", "inspect-contracts.mjs", "create"];
-    vi.doMock("node:child_process", () => ({
-      spawnSync: vi.fn(() => ({
-        status: 0,
-        stdout: JSON.stringify({
-          actions: ["create", "update"],
-          action_availability: [{ action: "create", available: true, policy_state: "enabled" }],
-          extension_contracts: {
-            compatibility: "compatible",
-            manifest_versions: [1, 2],
-          },
-        }),
-        stderr: "",
-      })),
-    }));
-    await importRepoModule(contractsScript, "contractsSuccess");
-    expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"action": "create"');
-    expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"runtime_available": true');
-
-    vi.resetModules();
-    process.argv = ["node", "inspect-contracts.mjs", "create"];
-    vi.doMock("@unbrained/pm-cli/sdk", () => ({
-      PM_TOOL_ACTION_PARAMETER_CONTRACTS: {
-        create: {},
-      },
-      isPmToolAction: () => true,
-    }));
-    vi.doMock("node:child_process", () => ({
-      spawnSync: vi.fn(() => ({
-        status: 0,
-        stdout: JSON.stringify({
-          actions: ["create"],
-          action_availability: null,
-          extension_contracts: null,
-        }),
-        stderr: "",
-      })),
-    }));
-    await importRepoModule(contractsScript, "contractsFallbackPayload");
-    expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"required_parameters": []');
-    expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"optional_parameters": []');
-    expect(String(outputSpy.mock.calls.at(-1)?.[0] ?? "")).toContain('"any_of_required_groups": []');
-
-    vi.resetModules();
-    vi.doUnmock("@unbrained/pm-cli/sdk");
-    process.argv = ["node", "inspect-contracts.mjs", "invalid-action"];
-    vi.doMock("node:child_process", () => ({ spawnSync: vi.fn() }));
-    await expect(importRepoModule(contractsScript, "contractsUnsupported")).rejects.toThrow(
-      'Unsupported pm action "invalid-action".',
-    );
-
-    vi.resetModules();
-    process.argv = ["node", "inspect-contracts.mjs", "create"];
-    vi.doMock("node:child_process", () => ({
-      spawnSync: vi.fn(() => ({
-        status: 0,
-        stdout: JSON.stringify({
-          actions: ["update"],
-        }),
-        stderr: "",
-      })),
-    }));
-    await expect(importRepoModule(contractsScript, "contractsUnavailable")).rejects.toThrow(
-      'Action "create" is not currently invocable in this runtime.',
-    );
-
-    vi.resetModules();
-    process.argv = ["node", "inspect-contracts.mjs", "create"];
-    vi.doMock("node:child_process", () => ({
-      spawnSync: vi.fn(() => ({
-        status: 1,
-        stdout: "",
-        stderr: "pm contracts failed hard",
-      })),
-    }));
-    await expect(importRepoModule(contractsScript, "contractsFailure")).rejects.toThrow("pm contracts failed hard");
   });
 });

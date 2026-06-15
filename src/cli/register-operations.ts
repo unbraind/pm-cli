@@ -1,6 +1,9 @@
 import type { Command } from "commander";
-import { normalizeStatusInput } from "../core/item/status.js";
-import { resolveRuntimeStatusRegistry } from "../core/schema/runtime-schema.js";
+import {
+  normalizeStatusInputWithRegistry,
+  resolveRuntimeStatusRegistry,
+  type RuntimeStatusRegistry,
+} from "../core/schema/runtime-schema.js";
 import { setActiveCommandResult } from "../core/extensions/index.js";
 import { EXIT_CODE } from "../core/shared/constants.js";
 import { PmCliError } from "../core/shared/errors.js";
@@ -15,6 +18,16 @@ import {
   printError,
   printResult,
 } from "./registration-helpers.js";
+
+/**
+ * Resolve the status the `start-task` lifecycle alias should move an item to.
+ * Resolves `in_progress` strictly through the workspace registry so a custom
+ * workflow that omits in_progress falls back to its open status instead of
+ * setting a status the workflow does not define.
+ */
+export function resolveStartTaskInProgressStatus(statusRegistry: RuntimeStatusRegistry): string {
+  return normalizeStatusInputWithRegistry("in_progress", statusRegistry) ?? statusRegistry.open_status;
+}
 
 function resolveTelemetrySubcommand(namespaceOrSubcommand: string | undefined, subcommand: string | undefined): string | undefined {
   const normalizedNamespace = namespaceOrSubcommand?.trim().toLowerCase();
@@ -233,12 +246,9 @@ export function registerOperationCommands(program: Command): void {
       const result = await runTelemetry(
         {
           subcommand: resolveTelemetrySubcommand(namespaceOrSubcommand, subcommand),
-          limit:
-            typeof options.limit === "string"
-              ? options.limit
-              : typeof options.limit === "number" && Number.isFinite(options.limit)
-                ? options.limit
-                : undefined,
+          // Commander always parses `--limit <n>` to a string (or leaves it
+          // undefined), so a string passthrough covers every CLI-reachable input.
+          limit: typeof options.limit === "string" ? options.limit : undefined,
         },
         globalOptions,
       );
@@ -517,7 +527,7 @@ export function registerOperationCommands(program: Command): void {
       const pmRoot = resolvePmRoot(process.cwd(), globalOptions.path);
       const settings = await readSettings(pmRoot);
       const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
-      const inProgressStatus = normalizeStatusInput("in_progress", statusRegistry) ?? statusRegistry.open_status;
+      const inProgressStatus = resolveStartTaskInProgressStatus(statusRegistry);
       const force = Boolean(options.force);
       const mutationOptions = {
         author: typeof options.author === "string" ? options.author : undefined,

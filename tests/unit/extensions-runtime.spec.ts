@@ -383,6 +383,36 @@ describe("core/extensions runtime wrappers", () => {
     });
   });
 
+  it("returns an unoverridden preflight result when no active preflight registry is set", async () => {
+    const decision = {
+      enforce_item_format_gate: true,
+      run_preflight_item_format_sync: true,
+      run_extension_migrations: true,
+      enforce_mandatory_migration_gate: true,
+    };
+    expect(
+      await runActivePreflightOverride({
+        command: "update",
+        args: ["--id", "pm-x"],
+        options: { id: "pm-x" },
+        global: { json: false, quiet: false, noExtensions: false, profile: false },
+        pm_root: "/tmp/project",
+        decision,
+      }),
+    ).toEqual({
+      overridden: false,
+      context: {
+        command: "update",
+        args: ["--id", "pm-x"],
+        options: { id: "pm-x" },
+        global: { json: false, quiet: false, noExtensions: false, profile: false },
+        pm_root: "/tmp/project",
+      },
+      decision,
+      warnings: [],
+    });
+  });
+
   it("runs active parser, preflight, and service overrides", async () => {
     setActiveExtensionParsers({
       overrides: [
@@ -971,5 +1001,135 @@ describe("core/extensions runtime wrappers", () => {
         { format: "json", result: { ok: true } },
       ),
     ).toEqual({ overridden: false, rendered: null, warnings: [] });
+  });
+
+  it("truncates over-length handler error messages", async () => {
+    const longMessage = "x".repeat(500);
+    const result = await runCommandHandler(
+      {
+        overrides: [],
+        handlers: [
+          {
+            layer: "project",
+            name: "long-error-handler",
+            command: "sync",
+            run: () => {
+              throw new Error(longMessage);
+            },
+          },
+        ],
+      },
+      {
+        command: "sync",
+        args: [],
+        options: {},
+        global: { json: false, quiet: false, noExtensions: false, profile: false },
+        pm_root: "/tmp/project",
+      },
+    );
+    expect(result.handled).toBe(false);
+    expect(result.errorMessage).toHaveLength(300);
+    expect(result.errorMessage?.endsWith("…")).toBe(true);
+  });
+
+  it("falls back to the original context when a parser override returns a nullish delta", async () => {
+    const global = { json: false, quiet: false, noExtensions: false, profile: false };
+    const result = await runParserOverride(
+      {
+        overrides: [
+          {
+            layer: "project",
+            name: "parser-null-delta",
+            command: "create",
+            run: () => null as unknown as Record<string, never>,
+          },
+        ],
+      },
+      { command: "create", args: ["--title", "One"], options: { title: "One" }, global, pm_root: "/tmp/project" },
+    );
+    expect(result).toEqual({
+      overridden: true,
+      context: {
+        command: "create",
+        args: ["--title", "One"],
+        options: { title: "One" },
+        global,
+        pm_root: "/tmp/project",
+      },
+      warnings: [],
+    });
+  });
+
+  it("applies a fully-populated preflight delta and tolerates a nullish delta", async () => {
+    const global = { json: false, quiet: false, noExtensions: false, profile: false };
+    const baseDecision = {
+      enforce_item_format_gate: true,
+      run_preflight_item_format_sync: true,
+      run_extension_migrations: true,
+      enforce_mandatory_migration_gate: true,
+    };
+
+    const fullDelta = await runPreflightOverride(
+      {
+        overrides: [
+          {
+            layer: "project",
+            name: "preflight-full-delta",
+            run: () => ({
+              args: ["--id", "pm-x"],
+              options: { id: "pm-x" },
+              global: { ...global, json: true },
+              enforce_item_format_gate: false,
+              run_preflight_item_format_sync: false,
+              run_extension_migrations: false,
+              enforce_mandatory_migration_gate: false,
+            }),
+          },
+        ],
+      },
+      { command: "update", args: [], options: {}, global, pm_root: "/tmp/project", decision: baseDecision },
+    );
+    expect(fullDelta).toEqual({
+      overridden: true,
+      context: {
+        command: "update",
+        args: ["--id", "pm-x"],
+        options: { id: "pm-x" },
+        global: { ...global, json: true },
+        pm_root: "/tmp/project",
+      },
+      decision: {
+        enforce_item_format_gate: false,
+        run_preflight_item_format_sync: false,
+        run_extension_migrations: false,
+        enforce_mandatory_migration_gate: false,
+      },
+      warnings: [],
+    });
+
+    const nullDelta = await runPreflightOverride(
+      {
+        overrides: [
+          {
+            layer: "project",
+            name: "preflight-null-delta",
+            run: () => null as unknown as Record<string, never>,
+          },
+        ],
+      },
+      { command: "update", args: ["--keep"], options: { keep: true }, global, pm_root: "/tmp/project", decision: baseDecision },
+    );
+    expect(nullDelta).toEqual({
+      overridden: true,
+      context: {
+        command: "update",
+        args: ["--keep"],
+        options: { keep: true },
+        global,
+        pm_root: "/tmp/project",
+      },
+      decision: baseDecision,
+      warnings: [],
+    });
   });
 });

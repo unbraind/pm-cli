@@ -106,6 +106,58 @@ describe("core/store/item-store", () => {
     });
   });
 
+  it("surfaces parse warnings through readLocatedItem onWarning callback", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-readlocated-warning";
+      const { document } = await writeTaskItem(pmPath, id, { description: "warned" }, "json_markdown");
+      const itemPath = getItemPath(pmPath, "Task", id, "json_markdown");
+      // Prepend a leading YAML front-matter document so json_markdown parsing
+      // strips it and emits the leading-yaml warning through onWarning -> appendWarning.
+      const serialized = serializeItemDocument(document, { format: "json_markdown" });
+      await fs.writeFile(itemPath, `---\ntitle: legacy\n---\n${serialized}`, "utf8");
+
+      const located = await locateItem(pmPath, id, "pm-", "json_markdown");
+      const warnings: string[] = [];
+      const loaded = await readLocatedItem(located as NonNullable<typeof located>, { warnings });
+      expect(loaded.document.metadata.id).toBe(id);
+      expect(warnings).toContain("json_markdown_leading_yaml_frontmatter_ignored");
+    });
+  });
+
+  it("rolls back an in-place update when history append fails without relocation", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-item-store-inplace-rollback";
+      const { itemPath } = await writeTaskItem(pmPath, id);
+      const originalRaw = await fs.readFile(itemPath, "utf8");
+      const settings = await readSettings(pmPath);
+
+      // The history stream exists but the .jsonl path is a directory, so the
+      // (non-type-change) update's appendHistoryEntry throws AFTER the in-place
+      // item write — exercising the `else if (!skipItemWrite)` rollback branch
+      // where effectiveTargetItemPath === located.itemPath.
+      const historyPath = path.join(pmPath, "history", `${id}.jsonl`);
+      await fs.mkdir(path.dirname(historyPath), { recursive: true });
+      await fs.mkdir(historyPath, { recursive: true });
+
+      await expect(
+        mutateItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          op: "update",
+          author: "unit-author",
+          mutate: (document) => {
+            document.metadata.description = "mutated then rolled back";
+            return { changedFields: ["description"] };
+          },
+        }),
+      ).rejects.toBeInstanceOf(Error);
+
+      const rawAfterFailure = await fs.readFile(itemPath, "utf8");
+      expect(rawAfterFailure).toBe(originalRaw);
+    });
+  });
+
   it("locates preserved source ids when the current tracker prefix differs", async () => {
     await withTempPmPath(async ({ pmPath }) => {
       await writeTaskItem(pmPath, "clawd-01c8");
@@ -232,6 +284,73 @@ describe("core/store/item-store", () => {
       const rawAfterFailure = await fs.readFile(itemPath, "utf8");
       expect(rawAfterFailure).toBe(originalRaw);
       expect(parseItemDocument(rawAfterFailure).metadata.description).toBe("original description");
+    });
+  });
+
+  it("restores the original file and removes the relocated file when a type-change history append fails", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-item-store-rollback-relocate";
+      const { itemPath } = await writeTaskItem(pmPath, id);
+      const originalRaw = await fs.readFile(itemPath, "utf8");
+      const settings = await readSettings(pmPath);
+
+      // The relocated path lives under the features/ folder once the type changes.
+      const relocatedPath = getItemPath(pmPath, "Feature", id, "toon");
+
+      // The history stream EXISTS (so the stream policy passes), but the .jsonl
+      // path is a directory so appendHistoryEntry throws after the item write —
+      // exercising the relocate-and-rollback catch branch.
+      const historyPath = path.join(pmPath, "history", `${id}.jsonl`);
+      await fs.mkdir(path.dirname(historyPath), { recursive: true });
+      await fs.mkdir(historyPath, { recursive: true });
+
+      await expect(
+        mutateItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          op: "update",
+          author: "unit-author",
+          mutate: (document) => {
+            document.metadata.type = "Feature";
+            return { changedFields: ["type"] };
+          },
+        }),
+      ).rejects.toBeInstanceOf(Error);
+
+      // Original file is restored verbatim and the relocated copy is cleaned up.
+      const rawAfterFailure = await fs.readFile(itemPath, "utf8");
+      expect(rawAfterFailure).toBe(originalRaw);
+      await expect(fs.access(relocatedPath)).rejects.toMatchObject({ code: "ENOENT" });
+    });
+  });
+
+  it("rolls back the item file when a delete history append fails", async () => {
+    await withTempPmPath(async ({ pmPath }) => {
+      const id = "pm-item-store-delete-rollback";
+      const { itemPath } = await writeTaskItem(pmPath, id);
+      const originalRaw = await fs.readFile(itemPath, "utf8");
+      const settings = await readSettings(pmPath);
+
+      // History stream exists but the .jsonl path is a directory, so the delete's
+      // appendHistoryEntry throws after the item file is removed — exercising the
+      // delete rollback catch branch that rewrites the captured original content.
+      const historyPath = path.join(pmPath, "history", `${id}.jsonl`);
+      await fs.mkdir(path.dirname(historyPath), { recursive: true });
+      await fs.mkdir(historyPath, { recursive: true });
+
+      await expect(
+        deleteItem({
+          pmRoot: pmPath,
+          settings,
+          id,
+          author: "unit-author",
+        }),
+      ).rejects.toBeInstanceOf(Error);
+
+      // The deleted file is rewritten from the captured original content.
+      const rawAfterFailure = await fs.readFile(itemPath, "utf8");
+      expect(rawAfterFailure).toBe(originalRaw);
     });
   });
 

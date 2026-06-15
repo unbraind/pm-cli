@@ -17,7 +17,7 @@ import {
 } from "./utils.mjs";
 import { isReleaseRelevantPath } from "./release-relevance.mjs";
 
-function usage() {
+export function usage() {
   console.log(`Usage:
   node scripts/release/run-release-pipeline.mjs [--json]
     [--version <YYYY.M.D[-N]>]
@@ -47,7 +47,7 @@ function git(args, options = {}) {
   return runCommand("git", args, { capture: true, ...options });
 }
 
-function getLastTag() {
+export function getLastTag() {
   const result = git(["describe", "--tags", "--abbrev=0"], { allowFailure: true });
   if (result.status !== 0) {
     return null;
@@ -56,7 +56,7 @@ function getLastTag() {
   return tag.length > 0 ? tag : null;
 }
 
-function getCommitCountSince(lastTag) {
+export function getCommitCountSince(lastTag) {
   if (!lastTag) {
     const all = git(["rev-list", "--count", "HEAD"]);
     return Number(all.stdout.trim() || "0");
@@ -65,7 +65,7 @@ function getCommitCountSince(lastTag) {
   return Number(result.stdout.trim() || "0");
 }
 
-function getChangedFilesSince(lastTag) {
+export function getChangedFilesSince(lastTag) {
   if (!lastTag) {
     const result = git(["ls-files"]);
     return result.stdout
@@ -80,7 +80,7 @@ function getChangedFilesSince(lastTag) {
     .filter((line) => line.length > 0);
 }
 
-function listTodayTags(todayKey) {
+export function listTodayTags(todayKey) {
   const result = git(["tag", "--list", `v${todayKey}*`]);
   return result.stdout
     .split(/\r?\n/)
@@ -88,14 +88,14 @@ function listTodayTags(todayKey) {
     .filter((line) => line.length > 0);
 }
 
-function ensureCleanWorkingTree() {
+export function ensureCleanWorkingTree() {
   const status = git(["status", "--porcelain"]);
   if (status.stdout.trim().length > 0) {
     fail("Release pipeline requires a clean working tree.");
   }
 }
 
-function resolveVersion(explicitVersion, allowSameDayRelease, todayKey) {
+export function resolveVersion(explicitVersion, allowSameDayRelease, todayKey) {
   if (explicitVersion) {
     return explicitVersion;
   }
@@ -110,7 +110,7 @@ function resolveVersion(explicitVersion, allowSameDayRelease, todayKey) {
   return version;
 }
 
-function bumpSameDayOrdinal(version, todayKey) {
+export function bumpSameDayOrdinal(version, todayKey) {
   const match = version.match(/^(\d{4}\.\d{1,2}\.\d{1,2})(?:-(\d+))?$/);
   if (!match || match[1] !== todayKey) {
     fail(
@@ -121,7 +121,7 @@ function bumpSameDayOrdinal(version, todayKey) {
   return `${todayKey}-${currentOrdinal + 1}`;
 }
 
-function parseCalendarVersion(version) {
+export function parseCalendarVersion(version) {
   const match = version.match(/^(\d{4}\.\d{1,2}\.\d{1,2})(?:-(\d+))?$/);
   if (!match) {
     return null;
@@ -132,12 +132,12 @@ function parseCalendarVersion(version) {
   };
 }
 
-function readPackageVersion() {
+export function readPackageVersion() {
   const packageJson = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
   return packageJson.version;
 }
 
-function extractGeneratedChangelogSection(changelog, heading) {
+export function extractGeneratedChangelogSection(changelog, heading) {
   const lines = changelog.replaceAll("\r\n", "\n").split("\n");
   const start = lines.findIndex((line) =>
     line.startsWith(`## [${heading}]`) || line.startsWith(`## ${heading}`)
@@ -149,13 +149,13 @@ function extractGeneratedChangelogSection(changelog, heading) {
   return lines.slice(start + 1, end === -1 ? undefined : end).join("\n").trim();
 }
 
-function ensureGeneratedReleaseSectionHasContent(version, changelogPath = path.join(repoRoot, "CHANGELOG.md")) {
+export function ensureGeneratedReleaseSectionHasContent(version, changelogPath = path.join(repoRoot, "CHANGELOG.md")) {
   const changelog = readFileSync(changelogPath, "utf8");
   const section = extractGeneratedChangelogSection(changelog, version);
   return Boolean(section);
 }
 
-function runReleaseGates(options) {
+export function runReleaseGates(options) {
   const args = ["scripts/release/run-gates.mjs", "--telemetry-mode", options.telemetryMode];
   if (options.skipCompatibility) {
     args.push("--skip-compatibility");
@@ -172,7 +172,7 @@ function runReleaseGates(options) {
   };
 }
 
-function runPipeline() {
+export function runPipeline() {
   const { flags } = parseFlags(process.argv.slice(2));
   if (flags.get("help") || flags.get("h")) {
     usage();
@@ -329,9 +329,11 @@ function runPipeline() {
     skipCompatibility,
     skipTelemetrySentry,
   });
+  /* c8 ignore start -- defensive guard: runReleaseGates always returns ok:true or throws via runCommand */
   if (gates.ok !== true) {
     fail("Release gates did not report ok=true.");
   }
+  /* c8 ignore stop */
 
   const releaseNotesAbsolute = path.resolve(releaseNotesOutput);
   mkdirSync(path.dirname(releaseNotesAbsolute), { recursive: true });
@@ -346,6 +348,7 @@ function runPipeline() {
   const tagName = `v${targetVersion}`;
   if (!dryRun) {
     const authorSlug = author.toLowerCase().replaceAll(/[^a-z0-9._-]/g, "-");
+    /* c8 ignore next -- author always defaults to a non-empty slug; `|| "release-bot"` is a defensive fallback (parseFlags maps `--author ""` to the default) */
     const authorEmail = `${authorSlug || "release-bot"}@users.noreply.github.com`;
     const gitIdentityEnv = {
       GIT_AUTHOR_NAME: author,

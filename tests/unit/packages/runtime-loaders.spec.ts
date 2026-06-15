@@ -5,11 +5,11 @@ import { pathToFileURL } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * Lane-B wave3: exhaustive branch coverage for the GENERATED package
- * runtime-loaders (pm-beads / pm-todos). These two files are byte-identical
- * apart from the embedded EXTENSION_NAME/PACKAGE_NAME, so we parametrize over
- * both to drive every candidate-resolution, ERR_MODULE_NOT_FOUND skip, and
- * fallback branch from real imports plus a controlled node:fs.existsSync.
+ * Exhaustive branch coverage for the generated package runtime-loaders
+ * (pm-beads / pm-todos). These two files are byte-identical apart from the
+ * embedded EXTENSION_NAME/PACKAGE_NAME, so we parametrize over both to drive
+ * every candidate-resolution, ERR_MODULE_NOT_FOUND skip, and fallback branch
+ * from real imports plus a controlled node:fs.existsSync.
  */
 
 const PM_PACKAGE_ROOT_ENV = "PM_CLI_PACKAGE_ROOT";
@@ -37,7 +37,7 @@ function loaderAbsPath(pkg: string, ext: string): string {
 
 async function importLoader(pkg: string, ext: string): Promise<RuntimeLoaderModule> {
   const absolutePath = loaderAbsPath(pkg, ext);
-  return (await import(`${pathToFileURL(absolutePath).href}?wave3=${cacheBustToken()}`)) as RuntimeLoaderModule;
+  return (await import(`${pathToFileURL(absolutePath).href}?v=${cacheBustToken()}`)) as RuntimeLoaderModule;
 }
 
 async function createTempRoot(prefix: string): Promise<string> {
@@ -61,18 +61,20 @@ beforeEach(() => {
 afterEach(async () => {
   vi.restoreAllMocks();
   vi.doUnmock("node:fs");
+  vi.doUnmock("node:url");
   if (ORIGINAL_PACKAGE_ROOT === undefined) {
     delete process.env[PM_PACKAGE_ROOT_ENV];
   } else {
     process.env[PM_PACKAGE_ROOT_ENV] = ORIGINAL_PACKAGE_ROOT;
   }
   restoreArgv();
+  vi.resetModules();
   for (const root of tempRoots.splice(0)) {
     await rm(root, { recursive: true, force: true });
   }
 });
 
-describe.each(LOADERS)("$pkg runtime-loader branch coverage", ({ pkg, ext }) => {
+describe.each(LOADERS)("$pkg runtime-loader", ({ pkg, ext }) => {
   it("resolves a packaged runtime via PM_CLI_PACKAGE_ROOT (.agents path)", async () => {
     const root = await createTempRoot(`pm-${ext}-loader-agents-`);
     const runtimeDir = path.join(root, ".agents", "pm", "extensions", ext);
@@ -86,7 +88,6 @@ describe.each(LOADERS)("$pkg runtime-loader branch coverage", ({ pkg, ext }) => 
 
   it("resolves a packaged runtime discovered via process.argv[1]", async () => {
     const root = await createTempRoot(`pm-${ext}-loader-argv-`);
-    // argv[1] dir + ".." lands on root so the packages/<pkg>/... candidate exists.
     const runtimeDir = path.join(root, "packages", pkg, "extensions", ext);
     await mkdir(runtimeDir, { recursive: true });
     await writeFile(path.join(runtimeDir, "runtime.js"), "export const marker = 'argv-runtime';\n", "utf8");
@@ -110,8 +111,6 @@ describe.each(LOADERS)("$pkg runtime-loader branch coverage", ({ pkg, ext }) => 
   });
 
   it("falls back to the sibling runtime.js when no candidate roots resolve", async () => {
-    // No env root and an argv[1] whose ancestors hold no runtime.js, so the
-    // candidate loop exhausts and the local CURRENT_EXTENSION_ROOT fallback wins.
     const emptyRoot = await createTempRoot(`pm-${ext}-loader-empty-`);
     const deepDir = path.join(emptyRoot, "a", "b", "c");
     await mkdir(deepDir, { recursive: true });
@@ -119,22 +118,16 @@ describe.each(LOADERS)("$pkg runtime-loader branch coverage", ({ pkg, ext }) => 
     process.argv[1] = path.join(deepDir, "pm.js");
     const loader = await importLoader(pkg, ext);
     const runtime = await loader.loadPackageRuntimeModule();
-    // The real sibling runtime.js exports the package run* functions.
     expect(typeof runtime).toBe("object");
     expect(Object.keys(runtime).length).toBeGreaterThan(0);
   });
 
   it("skips ERR_MODULE_NOT_FOUND candidates and throws when nothing resolves", async () => {
-    // Force existsSync true for every probed path so the loader attempts a real
-    // dynamic import of each (failing ERR_MODULE_NOT_FOUND because the candidate
-    // files don't actually exist), exercising the in-loop continue branch; the
-    // sibling runtime.js is reported absent so we hit the final throw.
     const root = await createTempRoot(`pm-${ext}-loader-missing-`);
     const phantomLocal = path.join(process.cwd(), "packages", pkg, "extensions", ext, "runtime.js");
 
     vi.doMock("node:fs", () => ({
-      existsSync: (target: string) =>
-        path.resolve(String(target)) !== path.resolve(phantomLocal),
+      existsSync: (target: string) => path.resolve(String(target)) !== path.resolve(phantomLocal),
     }));
 
     process.env[PM_PACKAGE_ROOT_ENV] = root;
@@ -146,16 +139,11 @@ describe.each(LOADERS)("$pkg runtime-loader branch coverage", ({ pkg, ext }) => 
   });
 
   it("swallows ERR_MODULE_NOT_FOUND from the sibling fallback then throws the summary", async () => {
-    // existsSync reports the real sibling runtime.js as present, but we redirect
-    // its file URL to a guaranteed-missing module so the dynamic import raises
-    // ERR_MODULE_NOT_FOUND for that exact path; the loader must swallow it
-    // (isMissingRuntimeModuleError === true) and throw the resolution summary.
     const realLocal = path.resolve(path.join(process.cwd(), "packages", pkg, "extensions", ext, "runtime.js"));
     const phantomDir = await createTempRoot(`pm-${ext}-loader-phantom-`);
-    const phantomLocal = path.join(phantomDir, realLocal.endsWith("runtime.js") ? "runtime.js" : "runtime.js");
+    const phantomLocal = path.join(phantomDir, "runtime.js");
 
     vi.doMock("node:fs", () => ({
-      // Hide all candidate roots, expose only the sibling runtime.js path.
       existsSync: (target: string) => path.resolve(String(target)) === realLocal,
     }));
     vi.doMock("node:url", async (importOriginal) => {
@@ -180,9 +168,6 @@ describe.each(LOADERS)("$pkg runtime-loader branch coverage", ({ pkg, ext }) => 
   });
 
   it("rethrows a non-ERR_MODULE_NOT_FOUND error from the sibling fallback", async () => {
-    // existsSync exposes only the sibling runtime.js; its file URL is redirected
-    // to a temp module that throws a plain Error, so the local-fallback catch
-    // must rethrow (isMissingRuntimeModuleError === false).
     const realLocal = path.resolve(path.join(process.cwd(), "packages", pkg, "extensions", ext, "runtime.js"));
     const phantomDir = await createTempRoot(`pm-${ext}-loader-rethrow-`);
     const phantomLocal = path.join(phantomDir, "runtime.js");
@@ -211,19 +196,10 @@ describe.each(LOADERS)("$pkg runtime-loader branch coverage", ({ pkg, ext }) => 
   });
 
   it("treats an ERR_MODULE_NOT_FOUND error with a non-string message as missing", async () => {
-    // The sibling fallback throws an object whose code is ERR_MODULE_NOT_FOUND
-    // but whose message is not a string, exercising the
-    // `typeof error.message === "string" ? ... : ""` false arm inside
-    // isMissingRuntimeModuleError. With an empty derived message neither the
-    // path nor URL include-check matches, so the error is rethrown.
     const realLocal = path.resolve(path.join(process.cwd(), "packages", pkg, "extensions", ext, "runtime.js"));
     const phantomDir = await createTempRoot(`pm-${ext}-loader-nonstring-`);
     const phantomLocal = path.join(phantomDir, "runtime.js");
-    await writeFile(
-      phantomLocal,
-      "throw { code: 'ERR_MODULE_NOT_FOUND', message: 12345 };\n",
-      "utf8",
-    );
+    await writeFile(phantomLocal, "throw { code: 'ERR_MODULE_NOT_FOUND', message: 12345 };\n", "utf8");
 
     vi.doMock("node:fs", () => ({
       existsSync: (target: string) => path.resolve(String(target)) === realLocal,

@@ -3737,6 +3737,13 @@ describe("CLI extension command help helpers", () => {
     expect(
       collectDynamicExtensionFlagHelpByCommand([{ target_command: "tools hidden", flags: [{ long: "--ignored", visible: false }] }]).size,
     ).toBe(0);
+    // Two distinct command paths exercise the entries sort comparator.
+    expect([
+      ...collectDynamicExtensionFlagHelpByCommand([
+        { target_command: "zebra", flags: [{ long: "--zz" }] },
+        { target_command: "alpha", flags: [{ long: "--aa" }] },
+      ]).keys(),
+    ]).toEqual(["alpha", "zebra"]);
 
     const summaries = buildDynamicExtensionHelpOptionSummaries(descriptor);
     expect(summaries).toEqual(
@@ -4043,6 +4050,59 @@ describe("CLI rich help content", () => {
     } finally {
       stdoutSpy.mockRestore();
       stderrSpy.mockRestore();
+      process.exitCode = originalExitCode;
+    }
+  });
+
+  it("compacts extension JSON help narrative and falls back when descriptor lists are empty", async () => {
+    const program = new Command()
+      .name("pm")
+      .description("pm root")
+      .exitOverride()
+      .configureOutput({ writeOut: () => {}, writeErr: () => {} });
+    program.option("--json", "JSON output");
+    program.option("--quiet", "Suppress output");
+    const tools = program.command("tools").description("Tool commands");
+    tools.command("export [target]").description("Export tools");
+
+    const richDescriptors = new Map([
+      [
+        "tools export",
+        {
+          command: "tools export",
+          intent: "Export extension data",
+          examples: ["pm tools export --format json", "pm tools export backup"],
+          failure_hints: ["Choose a configured format"],
+          flags: [],
+        },
+      ],
+    ]);
+    // Descriptor without intent/examples/hints exercises the fallback-narrative path
+    // for both intent (description-less) and example/tips defaulting.
+    const sparseDescriptors = new Map([
+      ["tools export", { command: "tools export", examples: [], failure_hints: [], flags: [] }],
+    ]);
+
+    const originalExitCode = process.exitCode;
+    const stdoutSpy = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    try {
+      // Compact mode (no --explain): single descriptor example, no tips.
+      await maybeRenderBootstrapJsonHelp(program, ["--json", "tools", "export", "--help"], richDescriptors as never);
+      const compact = JSON.parse(stdoutSpy.mock.calls.map((call) => String(call[0])).join(""));
+      expect(compact.detail_mode).toBe("compact");
+      expect(compact.intent).toBe("Export extension data");
+      expect(compact.examples).toEqual(["pm tools export --format json"]);
+      expect(compact.tips).toEqual([]);
+
+      stdoutSpy.mockClear();
+      // Sparse descriptor falls back to the built-in narrative examples/tips.
+      await maybeRenderBootstrapJsonHelp(program, ["--json", "tools", "export", "--help", "--explain"], sparseDescriptors as never);
+      const sparse = JSON.parse(stdoutSpy.mock.calls.map((call) => String(call[0])).join(""));
+      expect(sparse.detail_mode).toBe("detailed");
+      expect(Array.isArray(sparse.examples)).toBe(true);
+      expect(Array.isArray(sparse.tips)).toBe(true);
+    } finally {
+      stdoutSpy.mockRestore();
       process.exitCode = originalExitCode;
     }
   });

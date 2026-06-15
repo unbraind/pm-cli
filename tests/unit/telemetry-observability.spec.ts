@@ -44,6 +44,14 @@ describe("core/telemetry/observability", () => {
         errorMessage: "No update flags provided",
       }),
     ).toBe("no_update_fields");
+    // "invalid --status value" without "closed" must NOT route to close_through_update;
+    // it falls through to the generic invalid_argument_value classifier.
+    expect(
+      inferTelemetryErrorCode({
+        ok: false,
+        errorMessage: 'Invalid --status value "open".',
+      }),
+    ).toBe("invalid_argument_value");
     expect(
       inferTelemetryErrorCode({
         ok: false,

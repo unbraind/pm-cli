@@ -81,6 +81,33 @@ describe("config command helper coverage", () => {
     expect(_testOnlyConfigCommand.normalizePolicyForConflict(undefined, "Mixed-Value")).toBe("mixed_value");
   });
 
+  it("rejects unsupported enum policy values across every governance normalizer", () => {
+    const invalid = expect.objectContaining({ exitCode: EXIT_CODE.USAGE });
+    expect(() => _testOnlyConfigCommand.normalizeTestResultTrackingPolicy("maybe")).toThrow(invalid);
+    expect(() => _testOnlyConfigCommand.normalizeTelemetryTrackingPolicy("maybe")).toThrow(invalid);
+    expect(() => _testOnlyConfigCommand.normalizeGovernanceOwnershipEnforcement("loose")).toThrow(invalid);
+    expect(() => _testOnlyConfigCommand.normalizeGovernanceCreateModeDefault("relaxed")).toThrow(invalid);
+    expect(() => _testOnlyConfigCommand.normalizeGovernanceCloseValidationDefault("loud")).toThrow(invalid);
+    expect(() => _testOnlyConfigCommand.normalizeGovernanceForceRequiredForStaleLockPolicy("maybe")).toThrow(invalid);
+    expect(() => _testOnlyConfigCommand.normalizeValidateMetadataProfile("loose")).toThrow(invalid);
+    expect(() => _testOnlyConfigCommand.normalizeGovernanceWorkflowEnforcement("loud")).toThrow(invalid);
+    // Non-string input to the workflow-enforcement normalizer takes the typeof guard's
+    // undefined branch before failing validation.
+    expect(() => _testOnlyConfigCommand.normalizeGovernanceWorkflowEnforcement(42)).toThrow(invalid);
+  });
+
+  it("routes sprint-release and metadata-profile keys through normalizePolicyForConflict", () => {
+    expect(
+      _testOnlyConfigCommand.normalizePolicyForConflict("sprint_release_format_policy", "strict"),
+    ).toBe("strict_error");
+    expect(
+      _testOnlyConfigCommand.normalizePolicyForConflict("metadata_validation_profile", "custom"),
+    ).toBe("custom");
+    expect(
+      _testOnlyConfigCommand.normalizePolicyForConflict("governance_metadata_validation_profile", "strict"),
+    ).toBe("strict");
+  });
+
   it("normalizes criteria and metadata field lists", () => {
     expect(_testOnlyConfigCommand.normalizeCriteria([" b ", "a", "a", ""], false)).toEqual(["a", "b"]);
     expect(_testOnlyConfigCommand.normalizeCriteria(undefined, true)).toEqual([]);
@@ -1422,6 +1449,137 @@ describe("runConfig", () => {
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
       await expect(
         runConfig("project", "set", "search-rerank-top-k", { value: "0" }, globalOptions),
+      ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
+    });
+  });
+
+  it("gets governance ownership, require-close-reason, force-lock and test-tracking when enabled", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      const settings = structuredClone(SETTINGS_DEFAULTS);
+      settings.governance.preset = "custom";
+      settings.governance.ownership_enforcement = "warn";
+      settings.governance.require_close_reason = true;
+      settings.governance.force_required_for_stale_lock = true;
+      settings.testing.record_results_to_items = true;
+      settings.telemetry.enabled = true;
+      await writeSettings(pmRoot, settings);
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      const ownership = await runConfig("project", "get", "governance-ownership-enforcement", {}, globalOptions);
+      expect(ownership.key).toBe("governance_ownership_enforcement");
+      expect(ownership.policy).toBe("warn");
+
+      const requireReason = await runConfig("project", "get", "governance-require-close-reason", {}, globalOptions);
+      expect(requireReason.policy).toBe("enabled");
+
+      const forceLock = await runConfig("project", "get", "governance-force-required-for-stale-lock", {}, globalOptions);
+      expect(forceLock.policy).toBe("enabled");
+
+      const testTracking = await runConfig("project", "get", "test-result-tracking", {}, globalOptions);
+      expect(testTracking.policy).toBe("enabled");
+    });
+  });
+
+  it("gets boolean-style governance knobs in their disabled state", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      // Defaults leave force-lock and test-tracking disabled — exercises the
+      // false side of each get ternary.
+      const forceLock = await runConfig("project", "get", "governance-force-required-for-stale-lock", {}, globalOptions);
+      expect(forceLock.policy).toBe("disabled");
+      const testTracking = await runConfig("project", "get", "test-result-tracking", {}, globalOptions);
+      expect(testTracking.policy).toBe("disabled");
+    });
+  });
+
+  it("sets boolean-style governance knobs to both enabled and disabled states", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      // require-close-reason enabled exercises the set-return true ternary branch.
+      const requireOn = await runConfig("project", "set", "governance-require-close-reason", { policy: "enabled" }, globalOptions);
+      expect(requireOn.policy).toBe("enabled");
+
+      // force-lock disabled exercises the set-return false ternary branch (preset already custom now).
+      const forceOff = await runConfig("project", "set", "governance-force-required-for-stale-lock", { policy: "disabled" }, globalOptions);
+      expect(forceOff.policy).toBe("disabled");
+
+      // test-result-tracking disabled exercises its set-return false ternary branch.
+      const testOff = await runConfig("project", "set", "test-result-tracking", { policy: "disabled" }, globalOptions);
+      expect(testOff.policy).toBe("disabled");
+    });
+  });
+
+  it("exports boolean-style governance/telemetry knobs in their disabled state", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      const settings = structuredClone(SETTINGS_DEFAULTS);
+      settings.governance.require_close_reason = false;
+      settings.telemetry.enabled = false;
+      await writeSettings(pmRoot, settings);
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      const result = await runConfig("project", "export", undefined, {}, globalOptions);
+      expect(result.values?.governance_require_close_reason).toBe("disabled");
+      expect(result.values?.telemetry_tracking).toBe("disabled");
+    });
+  });
+
+  it("sets governance ownership to a new value while already on a custom preset", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      const settings = structuredClone(SETTINGS_DEFAULTS);
+      settings.governance.preset = "custom";
+      settings.governance.ownership_enforcement = "none";
+      await writeSettings(pmRoot, settings);
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      // preset is already custom, so only the ownership_enforcement differ drives changed:true.
+      const result = await runConfig("project", "set", "governance-ownership-enforcement", { policy: "warn" }, globalOptions);
+      expect(result.policy).toBe("warn");
+      expect(result.changed).toBe(true);
+    });
+  });
+
+  it("reports changed when metadata-required-fields differ in value at the same length", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      const settings = structuredClone(SETTINGS_DEFAULTS);
+      settings.validation.metadata_required_fields = ["author"];
+      await writeSettings(pmRoot, settings);
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      // Same length (1) but a different field value exercises the per-index some() callback.
+      const result = await runConfig(
+        "project",
+        "set",
+        "metadata-required-fields",
+        { criterion: ["reviewer"] },
+        globalOptions,
+      );
+      expect(result.criteria).toEqual(["reviewer"]);
+      expect(result.changed).toBe(true);
+    });
+  });
+
+  it("accepts a nested-leaf positional value that matches an explicit --value", async () => {
+    await withTempRoot("pm-cli-config-command-test-", async (tempRoot) => {
+      const pmRoot = path.join(tempRoot, ".agents", "pm");
+      await writeSettings(pmRoot, structuredClone(SETTINGS_DEFAULTS));
+      const globalOptions = { ...DEFAULT_GLOBAL_OPTIONS, path: pmRoot };
+
+      const result = await runConfig("project", "set", "search-provider", { value: "dup" }, globalOptions, "dup");
+      expect(result.nested_setting?.value).toBe("dup");
+      expect(result.changed).toBe(true);
+
+      await expect(
+        runConfig("project", "set", "search-provider", { value: "a" }, globalOptions, "b"),
       ).rejects.toMatchObject({ exitCode: EXIT_CODE.USAGE });
     });
   });

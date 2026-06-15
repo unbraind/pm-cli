@@ -80,6 +80,12 @@ describe("extensions item field runtime wiring", () => {
     expect(() => parseRegisteredItemFieldAssignments(["payload=not-json"], registrations)).toThrow("valid JSON object");
   });
 
+  it("rejects assignments missing the name=value separator", () => {
+    expect(() =>
+      parseRegisteredItemFieldAssignments(["=value"], withFields([{ name: "count", type: "number" }])),
+    ).toThrow("--field entries must use name=value syntax");
+  });
+
   it("rejects conflicting extension field types for the same field name", () => {
     expect(() =>
       parseRegisteredItemFieldAssignments(

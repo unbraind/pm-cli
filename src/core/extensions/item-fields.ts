@@ -34,11 +34,10 @@ function parseFieldAssignment(raw: string): { key: string; value: string } {
   if (separatorIndex <= 0) {
     throw new PmCliError(`--field entries must use name=value syntax, received: ${raw}`, EXIT_CODE.USAGE);
   }
+  // `separatorIndex > 0` guarantees a non-`=` first character on the already
+  // trimmed string, so the trimmed key is always non-empty here.
   const key = trimmed.slice(0, separatorIndex).trim();
   const value = trimmed.slice(separatorIndex + 1);
-  if (key.length === 0) {
-    throw new PmCliError("--field entries require a non-empty field name", EXIT_CODE.USAGE);
-  }
   return { key, value };
 }
 

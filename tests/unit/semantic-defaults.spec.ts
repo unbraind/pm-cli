@@ -249,6 +249,60 @@ describe("resolveSettingsWithSemanticRuntimeDefaults", () => {
     expect(spawnSyncMock).not.toHaveBeenCalled();
   });
 
+  it("treats a spawn error from `ollama --version` as not installed", () => {
+    const settings = makeSettings();
+    settings.providers.ollama.base_url = "http://localhost:11434";
+    // base_url present but model missing → model discovery requires an install probe.
+    spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
+      if (args[0] === "--version") {
+        return { error: new Error("spawn ENOENT"), status: null, stdout: "", stderr: "" };
+      }
+      return { status: 1, stdout: "", stderr: "" };
+    });
+
+    const resolved = resolveSettingsWithSemanticRuntimeDefaults(settings);
+    expect(resolved.auto_ollama_defaults_applied).toBe(false);
+    expect(resolved.settings.providers.ollama.model).toBe("");
+    // Only the version probe runs; `ollama list` is never reached.
+    expect(spawnSyncMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back to the default model when `ollama list` yields no models", () => {
+    const settings = makeSettings();
+    spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
+      if (args[0] === "--version") {
+        return { status: 0, stdout: "ollama version is 0.0.0", stderr: "" };
+      }
+      if (args[0] === "list") {
+        // Whitespace-only output → no parseable lines at all.
+        return { status: 0, stdout: "   \n\n", stderr: "" };
+      }
+      return { status: 1, stdout: "", stderr: "" };
+    });
+
+    const resolved = resolveSettingsWithSemanticRuntimeDefaults(settings);
+    expect(resolved.auto_ollama_defaults_applied).toBe(true);
+    expect(resolved.settings.providers.ollama.model).toBe("qwen3-embedding:0.6b");
+  });
+
+  it("falls back to the default model when `ollama list` shows only the header row", () => {
+    const settings = makeSettings();
+    spawnSyncMock.mockImplementation((_command: string, args: string[]) => {
+      if (args[0] === "--version") {
+        return { status: 0, stdout: "ollama version is 0.0.0", stderr: "" };
+      }
+      if (args[0] === "list") {
+        // Header-only listing → the NAME row is filtered out, leaving no models.
+        return { status: 0, stdout: "NAME ID SIZE MODIFIED\n", stderr: "" };
+      }
+      return { status: 1, stdout: "", stderr: "" };
+    });
+
+    const resolved = resolveSettingsWithSemanticRuntimeDefaults(settings);
+    expect(resolved.auto_ollama_defaults_applied).toBe(true);
+    expect(resolved.settings.providers.ollama.model).toBe("qwen3-embedding:0.6b");
+  });
+
   afterEach(() => {
     if (previousDisableEnv === undefined) {
       delete process.env.PM_DISABLE_OLLAMA_AUTO_DEFAULTS;

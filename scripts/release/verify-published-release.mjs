@@ -22,7 +22,12 @@ Verifies the public release surfaces after publish:
 }
 
 function sleep(milliseconds) {
-  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+  // Test seam: PM_VERIFY_SLEEP_MS lets the unit suite cap the synchronous
+  // retry backoff so it can exercise the multi-attempt path without blocking
+  // the worker thread for the production 10–15s propagation delays.
+  const override = Number(process.env.PM_VERIFY_SLEEP_MS);
+  const effective = Number.isFinite(override) && override >= 0 ? override : milliseconds;
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, effective);
 }
 
 function parseVersionFromFlags(flags) {

@@ -118,3 +118,9 @@ export function renderCalendarPackageOutput(context) {
   }
   return null;
 }
+
+export const _testOnly = {
+  readPayloadFormat,
+  readPayloadCommandOptions,
+  readPayloadGlobalOptions,
+};

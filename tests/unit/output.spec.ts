@@ -410,6 +410,21 @@ describe("core/output/output", () => {
     expect(formatOutput({ output_default: "markdown", view: "bad", events: [], days: "bad" }, {})).toContain(
       'output_default: "markdown"',
     );
+
+    // No summary object at all → isPlainObject(...) false branch and `events ?? 0`
+    // nullish fallback. The event omits kind/item_id/reminder_text so each typeof
+    // ternary takes its default/empty branch.
+    const noSummary = formatOutput(
+      {
+        output_default: "markdown",
+        view: "month",
+        days: [],
+        events: [{ item_title: "Untitled-but-present" }],
+      },
+      {},
+    );
+    expect(noSummary).toContain("- events: 0");
+    expect(noSummary).toContain("[event]  Untitled-but-present");
   });
 
   it("bypasses service and renderer overrides for native output markers", () => {

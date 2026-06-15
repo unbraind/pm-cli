@@ -89,7 +89,11 @@ vi.mock("../../../src/cli/commands/extension.js", () => ({ runExtension: vi.fn()
 vi.mock("../../../src/cli/commands/upgrade.js", () => ({ runUpgrade: vi.fn() }));
 
 import { registerListQueryCommands } from "../../../src/cli/register-list-query.js";
-import { registerOperationCommands } from "../../../src/cli/register-operations.js";
+import {
+  registerOperationCommands,
+  resolveStartTaskInProgressStatus,
+} from "../../../src/cli/register-operations.js";
+import { resolveRuntimeStatusRegistry } from "../../../src/core/schema/runtime-schema.js";
 import { registerMutationCommands } from "../../../src/cli/register-mutation.js";
 import { registerSetupCommands } from "../../../src/cli/register-setup.js";
 import { runList } from "../../../src/cli/commands/list.js";
@@ -152,7 +156,8 @@ import { runInit, summarizeInitResult } from "../../../src/cli/commands/init.js"
 import { runConfig } from "../../../src/cli/commands/config.js";
 import { runExtension } from "../../../src/cli/commands/extension.js";
 import { runUpgrade } from "../../../src/cli/commands/upgrade.js";
-import { EXIT_CODE } from "../../../src/core/shared/constants.js";
+import { EXIT_CODE, SETTINGS_DEFAULTS } from "../../../src/core/shared/constants.js";
+import { writeSettings } from "../../../src/core/store/settings.js";
 
 let tmpRoot: string;
 
@@ -505,7 +510,105 @@ describe("operation command actions", () => {
     expect(options.subcommand).toBe("stats");
     expect(options.limit).toBe("10");
 
+    await runCli("telemetry", "local-analytics", "flush");
+    options = lastCallArg<Record<string, unknown>>(vi.mocked(runTelemetry) as never, 0);
+    expect(options.subcommand).toBe("flush");
+
     await expect(runCli("telemetry", "status", "extra")).rejects.toThrow("Unknown pm telemetry path");
+  });
+
+  it("routes test/test-all background variants and omits profile timing when not requested", async () => {
+    // Background test without an explicit author exercises the author-absent
+    // branch of the background-run request builder.
+    await runCliRaw("test", "pm-1", "--background", "--run");
+    const testRequest = lastCallArg<Record<string, unknown>>(vi.mocked(runStartBackgroundRun) as never, 0);
+    expect(testRequest.kind).toBe("test");
+    expect(testRequest.author).toBeUndefined();
+
+    // Background test-all without --status exercises the statusFilter-absent branch.
+    await runCliRaw("test-all", "--background");
+    const testAllRequest = lastCallArg<Record<string, unknown>>(vi.mocked(runStartBackgroundRun) as never, 0);
+    expect(testAllRequest.kind).toBe("test-all");
+    expect(testAllRequest.statusFilter).toBeUndefined();
+
+    // Without --profile the trailing profile-timing branch is skipped across the
+    // operation handlers; running them via runCliRaw covers those else paths.
+    await runCliRaw("test", "pm-1", "--list");
+    await runCliRaw("test-all");
+    await runCliRaw("telemetry");
+    await runCliRaw("stats");
+    await runCliRaw("gc");
+    await runCliRaw("contracts");
+    await runCliRaw("claim", "pm-1");
+    await runCliRaw("release", "pm-1");
+    await runCliRaw("start-task", "pm-1");
+    await runCliRaw("pause-task", "pm-1");
+    await runCliRaw("close-task", "pm-1");
+    await runCliRaw("health");
+    await runCliRaw("validate");
+    expect(vi.mocked(runContracts)).toHaveBeenCalled();
+  });
+
+  it("threads author/message and metadata-profile string options through operation handlers", async () => {
+    await runCli("test", "pm-1", "--background", "--run", "--author", "agent");
+    const backgroundRequest = lastCallArg<Record<string, unknown>>(vi.mocked(runStartBackgroundRun) as never, 0);
+    expect(backgroundRequest.author).toBe("agent");
+
+    await runCli("validate", "--check-metadata", "--metadata-profile", "strict");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runValidate) as never, 0).metadataProfile).toBe("strict");
+
+    await runCli("claim", "pm-1", "--message", "claiming");
+    expect(vi.mocked(runClaim)).toHaveBeenLastCalledWith("pm-1", false, expect.anything(), {
+      author: undefined,
+      message: "claiming",
+      ifAvailable: false,
+    });
+
+    await runCli("release", "pm-1", "--author", "agent", "--message", "handoff");
+    expect(vi.mocked(runRelease)).toHaveBeenLastCalledWith("pm-1", false, expect.anything(), {
+      author: "agent",
+      message: "handoff",
+      allowAuditRelease: false,
+    });
+
+    await runCli("start-task", "pm-1", "--message", "begin");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runUpdate) as never, 1).message).toBe("begin");
+
+    await runCli("pause-task", "pm-1", "--author", "agent", "--message", "pause");
+    expect(lastCallArg<Record<string, unknown>>(vi.mocked(runUpdate) as never, 1).author).toBe("agent");
+
+    await runCli("close-task", "pm-1", "wrapped", "--author", "agent", "--message", "closing");
+    expect(vi.mocked(runClose)).toHaveBeenLastCalledWith(
+      "pm-1",
+      "wrapped",
+      expect.objectContaining({ author: "agent", message: "closing" }),
+      expect.anything(),
+    );
+  });
+
+  it("resolves start-task to the registry's in_progress status when defined", () => {
+    // The default registry defines in_progress, so the strict registry lookup
+    // resolves it directly (the main branch of resolveStartTaskInProgressStatus).
+    const registry = resolveRuntimeStatusRegistry(structuredClone(SETTINGS_DEFAULTS).schema);
+    expect(resolveStartTaskInProgressStatus(registry)).toBe("in_progress");
+  });
+
+  it("falls back to the open status when the registry omits in_progress", () => {
+    // A custom workflow whose statuses do not include in_progress makes the
+    // strict registry lookup return undefined, exercising the
+    // `?? statusRegistry.open_status` fallback. The registry is built directly
+    // (not persisted via writeSettings, which re-seeds the built-in statuses).
+    const registry = resolveRuntimeStatusRegistry({
+      statuses: [
+        { id: "open", roles: ["active", "default_open"] },
+        { id: "review", roles: ["active"] },
+        { id: "done", roles: ["terminal", "terminal_done", "default_close"] },
+        { id: "canceled", roles: ["terminal", "terminal_canceled", "default_cancel"] },
+      ],
+      workflow: { open_status: "open", close_status: "done" },
+    } as never);
+    expect(registry.alias_to_id.has("in_progress")).toBe(false);
+    expect(resolveStartTaskInProgressStatus(registry)).toBe("open");
   });
 
   it("maps stats, gc, and contracts options", async () => {

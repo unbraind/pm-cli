@@ -15,15 +15,23 @@ export interface HelpNarrative {
 
 export type HelpDetailMode = "compact" | "detailed";
 
+// Compact help/narrative surfaces show at most the first example. Centralizing this
+// keeps the empty-examples guard in one place for renderCompactHelpBundle and
+// resolveHelpNarrative (both must degrade to an empty list rather than [undefined]).
+export function firstExampleOrEmpty(examples: string[]): string[] {
+  return examples.length > 0 ? [examples[0]] : [];
+}
+
 function renderCompactHelpBundle(bundle: HelpBundle): string {
   const lines: string[] = [
     "",
     "Intent:",
     `  ${bundle.why}`,
   ];
-  if (bundle.examples.length > 0) {
+  const compactExamples = firstExampleOrEmpty(bundle.examples);
+  if (compactExamples.length > 0) {
     lines.push("", "Example:");
-    lines.push(`  ${bundle.examples[0]}`);
+    lines.push(`  ${compactExamples[0]}`);
   }
   lines.push("", "Need deeper rationale and more examples?");
   lines.push("  Re-run with --explain.");
@@ -752,7 +760,7 @@ export function resolveHelpNarrative(commandPath: string | undefined, detailMode
   const bundle = resolveHelpBundleForPath(commandPath);
   return {
     intent: bundle.why,
-    examples: detailMode === "detailed" ? [...bundle.examples] : bundle.examples.length > 0 ? [bundle.examples[0]] : [],
+    examples: detailMode === "detailed" ? [...bundle.examples] : firstExampleOrEmpty(bundle.examples),
     tips: detailMode === "detailed" ? [...(bundle.tips ?? [])] : [],
     detail_mode: detailMode,
   };

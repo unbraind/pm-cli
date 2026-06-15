@@ -3,7 +3,12 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { canonicalDocument, normalizeFrontMatter, serializeItemDocument } from "../../src/core/item/item-format.js";
 import { _testOnly as lockInternals, acquireLock } from "../../src/core/lock/lock.js";
-import { clearActiveExtensionHooks, setActiveExtensionHooks, type ExtensionHookRegistry } from "../../src/core/extensions/index.js";
+import {
+  clearActiveExtensionHooks,
+  setActiveExtensionHooks,
+  setActiveExtensionServices,
+  type ExtensionHookRegistry,
+} from "../../src/core/extensions/index.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { getLockPath } from "../../src/core/store/paths.js";
 import type { ItemFrontMatter } from "../../src/types/index.js";
@@ -472,6 +477,95 @@ describe("core/lock/lock additional branch coverage", () => {
       } finally {
         unlinkSpy.mockRestore();
       }
+    });
+  });
+
+  describe("lock_acquire service override", () => {
+    it("uses an override that returns a release function and never writes a lock file", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const id = "pm-lock-override-fn";
+        let released = false;
+        const lockReleaseCalls: unknown[] = [];
+        setActiveExtensionServices({
+          overrides: [
+            {
+              layer: "project",
+              name: "lock-acquire-fn",
+              service: "lock_acquire",
+              run: () => () => {
+                released = true;
+              },
+            },
+            {
+              layer: "project",
+              name: "lock-release-observer",
+              service: "lock_release",
+              run: (context) => {
+                lockReleaseCalls.push(context.payload);
+                return { ok: true };
+              },
+            },
+          ],
+        });
+
+        const release = await acquireLock(pmPath, id, 60, "owner-override", false);
+        // The override fully handled acquisition — no lock file should exist.
+        await expect(fs.access(getLockPath(pmPath, id))).rejects.toMatchObject({ code: "ENOENT" });
+
+        await release();
+        expect(released).toBe(true);
+        expect(lockReleaseCalls).toHaveLength(1);
+      });
+    });
+
+    it("uses an override that returns an object exposing a release method", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const id = "pm-lock-override-obj";
+        let released = false;
+        setActiveExtensionServices({
+          overrides: [
+            {
+              layer: "project",
+              name: "lock-acquire-obj",
+              service: "lock_acquire",
+              run: () => ({
+                release: async () => {
+                  released = true;
+                },
+              }),
+            },
+          ],
+        });
+
+        const release = await acquireLock(pmPath, id, 60, "owner-override", false);
+        await expect(fs.access(getLockPath(pmPath, id))).rejects.toMatchObject({ code: "ENOENT" });
+        await release();
+        expect(released).toBe(true);
+      });
+    });
+
+    it("falls back to file-based locking when the override is handled but exposes no release", async () => {
+      await withTempPmPath(async ({ pmPath }) => {
+        const id = "pm-lock-override-no-release";
+        setActiveExtensionServices({
+          overrides: [
+            {
+              layer: "project",
+              name: "lock-acquire-noop",
+              service: "lock_acquire",
+              // Object without a `release` function → neither release shape matches,
+              // so acquireLock proceeds to write a real lock file.
+              run: () => ({ note: "handled but no release" }),
+            },
+          ],
+        });
+
+        const release = await acquireLock(pmPath, id, 60, "owner-override", false);
+        // The real file-based lock path ran, so the lock file exists.
+        await expect(fs.access(getLockPath(pmPath, id))).resolves.toBeUndefined();
+        await release();
+        await expect(fs.access(getLockPath(pmPath, id))).rejects.toMatchObject({ code: "ENOENT" });
+      });
     });
   });
 });

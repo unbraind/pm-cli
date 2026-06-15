@@ -226,9 +226,14 @@ function parseTodoMarkdown(content: string): { frontMatter: Record<string, unkno
     throw new TypeError("Missing JSON front matter");
   }
   const parsed = JSON.parse(split.frontMatter) as unknown;
+  // splitFrontMatter only returns a non-empty block when content starts with "{",
+  // so a successful JSON.parse here always yields an object; the guard below is a
+  // defensive, unreachable branch.
+  /* v8 ignore start */
   if (!isRecord(parsed)) {
     throw new TypeError("Front matter must be a JSON object");
   }
+  /* v8 ignore stop */
   return {
     frontMatter: parsed,
     body: normalizeBody(split.body),

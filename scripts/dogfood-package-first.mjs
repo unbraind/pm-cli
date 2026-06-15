@@ -59,7 +59,8 @@ function runProcess(label, args, options = {}) {
   try {
     return JSON.parse(completed.stdout);
   } catch (error) {
-    throw new Error(`${label} did not emit valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+    // JSON.parse only ever throws a SyntaxError, so `error.message` is always defined here.
+    throw new Error(`${label} did not emit valid JSON: ${(error).message}`);
   }
 }
 

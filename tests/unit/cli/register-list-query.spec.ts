@@ -1,0 +1,114 @@
+import { Command } from "commander";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("../../../src/cli/commands/get.js", () => ({ runGet: vi.fn() }));
+vi.mock("../../../src/cli/commands/history.js", () => ({ runHistory: vi.fn() }));
+vi.mock("../../../src/cli/commands/activity.js", () => ({ runActivity: vi.fn() }));
+vi.mock("../../../src/cli/commands/search.js", () => ({ runSearch: vi.fn() }));
+
+vi.mock("../../../src/cli/registration-helpers.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../src/cli/registration-helpers.js")>();
+  return {
+    ...actual,
+    printResult: vi.fn(),
+    printError: vi.fn(),
+    printActivityJsonStream: vi.fn(),
+    printListJsonStream: vi.fn(),
+    writeStdout: vi.fn(),
+  };
+});
+
+import { registerListQueryCommands } from "../../../src/cli/register-list-query.js";
+import { runGet } from "../../../src/cli/commands/get.js";
+import { runHistory } from "../../../src/cli/commands/history.js";
+import { runActivity } from "../../../src/cli/commands/activity.js";
+import { runSearch } from "../../../src/cli/commands/search.js";
+import { printActivityJsonStream } from "../../../src/cli/registration-helpers.js";
+
+let tmpRoot: string;
+
+function buildProgram(): Command {
+  const program = new Command();
+  program
+    .name("pm")
+    .exitOverride()
+    .configureOutput({ writeOut: () => {}, writeErr: () => {} })
+    .option("--path <value>", "Tracker storage path")
+    .option("--json", "JSON output")
+    .option("--quiet", "Suppress stdout output")
+    .option("--profile", "Emit per-command profile timing");
+  registerListQueryCommands(program);
+  return program;
+}
+
+async function runProfiled(...args: string[]): Promise<void> {
+  await buildProgram().parseAsync(["--quiet", "--profile", "--path", tmpRoot, ...args], { from: "user" });
+}
+
+async function runRaw(...args: string[]): Promise<void> {
+  await buildProgram().parseAsync(["--path", tmpRoot, ...args], { from: "user" });
+}
+
+function lastCall<T>(mock: { mock: { calls: unknown[][] } }, index: number): T {
+  const { calls } = mock.mock;
+  expect(calls.length).toBeGreaterThan(0);
+  return calls[calls.length - 1]![index] as T;
+}
+
+beforeAll(async () => {
+  tmpRoot = await mkdtemp(path.join(tmpdir(), "pm-register-list-query-"));
+});
+
+afterAll(async () => {
+  await rm(tmpRoot, { recursive: true, force: true });
+});
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(runGet).mockResolvedValue({ id: "pm-1" } as never);
+  vi.mocked(runHistory).mockResolvedValue({ entries: [] } as never);
+  vi.mocked(runActivity).mockResolvedValue({ count: 0, activity: [] } as never);
+  vi.mocked(runSearch).mockResolvedValue({ hits: [] } as never);
+});
+
+describe("register-list-query get options", () => {
+  it("passes string depth/fields and snake_case tree_depth through to runGet", async () => {
+    await runProfiled("get", "pm-1", "--depth", "deep", "--fields", "id,title", "--tree", "--tree_depth", "2");
+    const projection = lastCall<Record<string, unknown>>(vi.mocked(runGet) as never, 2);
+    expect(projection).toMatchObject({ depth: "deep", fields: "id,title", tree: true, treeDepth: "2" });
+  });
+
+  it("prefers the hyphenated --tree-depth value when provided", async () => {
+    await runRaw("get", "pm-1", "--tree", "--tree-depth", "5");
+    const projection = lastCall<Record<string, unknown>>(vi.mocked(runGet) as never, 2);
+    expect(projection.treeDepth).toBe("5");
+  });
+});
+
+describe("register-list-query history options", () => {
+  it("treats --field as implying --diff and scopes to that field", async () => {
+    await runProfiled("history", "pm-1", "--field", "status");
+    const options = lastCall<Record<string, unknown>>(vi.mocked(runHistory) as never, 1);
+    expect(options).toMatchObject({ field: "status", diff: true, compact: true });
+  });
+
+  it("disables compact projection when --full is set", async () => {
+    await runRaw("history", "pm-1", "--full", "--limit", "5", "--verify");
+    const options = lastCall<Record<string, unknown>>(vi.mocked(runHistory) as never, 1);
+    expect(options).toMatchObject({ compact: false, limit: "5", verify: true });
+  });
+});
+
+describe("register-list-query activity streaming", () => {
+  it("rejects --stream without --json", async () => {
+    await expect(runRaw("activity", "--stream")).rejects.toThrow(/--stream requires --json/);
+  });
+
+  it("emits a JSON stream when --stream and --json are set", async () => {
+    await runProfiled("activity", "--json", "--stream", "rows");
+    expect(vi.mocked(printActivityJsonStream)).toHaveBeenCalledTimes(1);
+  });
+});

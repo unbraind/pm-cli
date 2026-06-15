@@ -60,6 +60,13 @@ describe("decideWriteGate", () => {
     expect(result.forceRequested).toBe(true);
   });
 
+  it("treats restore and other force-capable lifecycle commands as mutations", () => {
+    const result = decideWriteGate("restore", {});
+    expect(result.isMutation).toBe(true);
+    expect(result.forceCapable).toBe(true);
+    expect(result.forceRequested).toBe(false);
+  });
+
   it("identifies read commands as non-mutation", () => {
     expect(decideWriteGate("list", {}).isMutation).toBe(false);
     expect(decideWriteGate("search", {}).isMutation).toBe(false);

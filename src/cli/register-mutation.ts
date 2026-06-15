@@ -51,7 +51,7 @@ function addHiddenOption(command: Command, flags: string, description: string, r
  * supplied but does not parse to a finite integer (rather than silently dropping
  * it). Returns `undefined` only when the flag was genuinely not provided.
  */
-function parseSchemaOrderOption(raw: unknown): number | undefined {
+export function parseSchemaOrderOption(raw: unknown): number | undefined {
   if (raw === undefined || raw === null) {
     return undefined;
   }
@@ -1464,10 +1464,13 @@ export function registerMutationCommands(program: Command): void {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
       const { runDeps } = await import("./commands/deps.js");
+      // --format and --collapse carry commander defaults ("tree"/"none"), so
+      // they are always strings by the time the action runs; --maxDepth has no
+      // default and may be unset (String(...) preserves the prior string shape).
       const result = await runDeps(id, {
-        format: typeof options.format === "string" ? options.format : undefined,
+        format: String(options.format),
         maxDepth: typeof options.maxDepth === "string" ? options.maxDepth : undefined,
-        collapse: typeof options.collapse === "string" ? options.collapse : undefined,
+        collapse: String(options.collapse),
         summary: options.summary === true,
       }, globalOptions);
       printResult(result, globalOptions);
