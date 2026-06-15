@@ -259,6 +259,44 @@ describe("runStats", () => {
     });
   });
 
+  it("attaches assignee/tag/priority breakdowns and respects the tag-prefix filter", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Breakdown Item",
+        type: "Task",
+        status: "open",
+      });
+
+      const withoutBreakdowns = await runStats({ path: context.pmPath });
+      expect(withoutBreakdowns.breakdowns).toBeUndefined();
+
+      const stats = await runStats(
+        { path: context.pmPath },
+        { byAssignee: true, byTag: true, byPriority: true, tagPrefix: "stats" },
+      );
+      expect(stats.breakdowns).toBeDefined();
+      expect(stats.breakdowns?.assignee).toBeDefined();
+      expect(stats.breakdowns?.tag).toBeDefined();
+      expect(stats.breakdowns?.priority).toBeDefined();
+    });
+  });
+
+  it("attaches metadata coverage only when requested", async () => {
+    await withTempPmPath(async (context) => {
+      createItem(context, {
+        title: "Coverage Item",
+        type: "Task",
+        status: "open",
+      });
+
+      const withoutCoverage = await runStats({ path: context.pmPath });
+      expect(withoutCoverage.metadata_coverage).toBeUndefined();
+
+      const stats = await runStats({ path: context.pmPath }, { metadataCoverage: true });
+      expect(stats.metadata_coverage).toBeDefined();
+    });
+  });
+
   it("dispatches active onRead hooks for history scans without changing output shape", async () => {
     await withTempPmPath(async (context) => {
       const itemId = createItem(context, {

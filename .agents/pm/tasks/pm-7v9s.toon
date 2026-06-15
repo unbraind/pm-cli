@@ -6,8 +6,12 @@ status: in_progress
 priority: 1
 tags[3]: "area:cli","area:tests",coverage
 created_at: "2026-06-15T05:17:50.034Z"
-updated_at: "2026-06-15T15:28:07.768Z"
+updated_at: "2026-06-15T19:44:59.983Z"
 assignee: coverage-extension-agent
 author: maintainer-agent
 parent: pm-xau3
+comments[3]{created_at,author,text}:
+  "2026-06-15T19:44:30.022Z",claude-code-agent,"START (group B query/read files). Baselines (stmt/branch/func/line):\n- stats.ts 91.66/70.37/100/91.52 (worst branch, priority)\n- aggregate.ts 99.33/94.7/100/99.33\n- list.ts 96.18/92.1/97.72/97.64\n- search.ts 96.02/91.26/96.77/96.78\n- context.ts 98.64/89.82/96.87/99.61\n- get.ts 100/98.44/100/100\n- config.ts 99.49/98.2/100/99.48\n- files.ts 93.84/80.28/100/93.33\n- validate.ts 96.3/87.58/94.91/96.55\n- health.ts 97.26/91.47/97.02/97.33\nApproach: extend existing in-process specs (stats-command, aggregate-command, list-command, search-command, context-command, config-command, files-docs-command, validate-command, health-command, get-append-command). Target 100% L/B/F/S each."
+  "2026-06-15T19:44:41.432Z",claude-code-agent,"START (group B coverage sub-agent). Owning extension-family + test + init files. Baselines (stmts/branch/funcs/lines):\n- extension.ts 95.75/87.15/91.5/95.23\n- extension/bundled-catalog.ts 90.16/88.04/100/89.74\n- extension/install-sources.ts 97.54/90.52/100/97.54\n- extension/scaffold.ts 97.5/92.3/100/97.5\n- extension/doctor.ts 97.5/94.25/95.94/97.66\n- extension/shared.ts 98.11/96/100/97.95\n- extension/managed-state.ts 98.33/97.14/100/98.33\n- test.ts 98.17/94.34/97.95/98.26\n- test-all.ts 99.32/99.13/96.42/100\n- test-runs.ts 94.2/85/100/94.2\n- reindex.ts 93.7/81.72/91.66/93.87\n- init.ts 98.55/94.36/90/99.5\n- init-agent-guidance.ts 97.61/87.64/94.28/98.75\nGoal: literal 100% all four metrics per file via in-process spec extension."
+  "2026-06-15T19:44:59.983Z",claude-code-agent,"START (group B coverage). Owning 6 command files; bringing each to literal 100% stmts/branch/funcs/lines. Baselines (S/B/F/L): telemetry.ts 91.81/79.78/83.33/91.81; templates.ts 96.85/91.93/96.42/97.47; guide.ts 98.29/92.42/100/98.21; upgrade.ts 98.16/88.49/96.55/98.07; calendar.ts 98.2/95.41/98.48/98.7; contracts.ts 96.81/91.11/96.58/96.74. Extending existing in-process specs only; no build/full-coverage runs; secret-scanning telemetry.ts."
 body: ""

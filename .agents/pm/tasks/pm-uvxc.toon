@@ -6,10 +6,11 @@ status: in_progress
 priority: 1
 tags[3]: "area:cli","area:tests",coverage
 created_at: "2026-06-15T05:17:50.618Z"
-updated_at: "2026-06-15T15:28:08.054Z"
+updated_at: "2026-06-15T19:47:54.027Z"
 assignee: coverage-cli-misc-agent
 author: maintainer-agent
 parent: pm-xau3
-comments[1]{created_at,author,text}:
+comments[2]{created_at,author,text}:
   "2026-06-15T15:18:32.856Z",maintainer-agent,"start-task lifecycle alias hardening (coverage + latent bug): start-task resolved in_progress via normalizeStatusInput(value, registry), whose built-in STATUS_VALUES fallback returns 'in_progress' even when the workspace registry omits it — so it could set a status the custom workflow does not define, and the '?? open_status' fallback branch was unreachable. Fix: extracted exported resolveStartTaskInProgressStatus(registry) using the registry-strict normalizeStatusInputWithRegistry, used by the action. KEY DISCOVERY: writeSettings re-seeds the built-in default statuses into schema.statuses on persist (round-trip yields open,in_progress,blocked,... regardless of the custom list), so the fallback is only reachable through a directly-built registry. The new spec now unit-tests the helper with resolveRuntimeStatusRegistry(customSchema) directly (both branches) instead of a writeSettings round-trip that always re-seeds in_progress."
+  "2026-06-15T19:47:54.027Z",claude-code-agent,"START coverage push (cli infrastructure). Baselines (stmts/branch/funcs/lines): register-mutation.ts 97.16/71.15/100/97.15; registration-helpers.ts 96.77/80.8/100/96.65; register-setup.ts 96.58/82.83/88.88/96.46; main.ts 98.35/90.04/100/98.31; bootstrap-args.ts 97.93/95.41/100/97.89; commander-usage.ts 97.01/92.17/95.55/97.24; help-json-payload.ts 98.02/84.31/96.29/97.41; error-guidance.ts 98.46/92.26/100/98.53; extension-command-options.ts 96.98/92.09/95/97.43; register-list-query.ts 99.22/96.22/100/99.21; help-content.ts 100/94.28/100/100; extension-command-help.ts 100/99.49/100/100. Goal: literal 100% all four metrics each file. Extending existing in-process specs; no dist-spawn tests."
 body: ""

@@ -6,8 +6,11 @@ status: in_progress
 priority: 1
 tags[3]: "area:cli","area:tests",coverage
 created_at: "2026-06-15T05:17:49.303Z"
-updated_at: "2026-06-15T15:28:07.482Z"
+updated_at: "2026-06-15T19:44:11.616Z"
 assignee: coverage-handlers-a2a-agent
 author: maintainer-agent
 parent: pm-xau3
+comments[2]{created_at,author,text}:
+  "2026-06-15T19:43:54.946Z",claude-code-agent,"START (group A mutation/comments/deps): claiming create.ts (96.98/94.39/97.61/97.33), update.ts (98.18/95.07/97.26/98.25), update-many.ts (100/96.96/100/100), close.ts (96.98/95.13/93.75/97.53), close-many.ts (99.23/90.67/95.65/99.23), comments.ts (93.1/74.19/100/93.1), comments-audit.ts (97.05/91.13/93.33/97.26), deps.ts (96.9/89.04/100/97.14). Extending existing in-process specs to literal 100%."
+  "2026-06-15T19:44:11.615Z",claude-code-agent,"START coverage push (claude-code-agent). Files+baselines (stmts/branch/funcs/lines): history.ts 95.38/83.33/100/95.16; history-repair.ts 94.18/83.82/66.66/94.18; history-redact.ts 94.51/77.14/96.29/94.37; schema.ts 96.14/75.12/95.34/96.07; restore.ts 92.81/80.98/100/92.68; normalize.ts 97.14/85.52/100/96.82; dedupe-audit.ts 94.7/86.23/96/94.3; plan.ts 97.41/84.31/96.29/97.61. Goal: literal 100% across all four metrics per file by extending existing in-process specs."
 body: ""

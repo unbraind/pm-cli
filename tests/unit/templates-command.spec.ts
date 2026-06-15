@@ -51,6 +51,25 @@ describe("templates command flows", () => {
     });
   });
 
+  it("drops repeatable option values that are neither strings nor arrays", () => {
+    expect(
+      templatesInternals.extractTemplateOptions({
+        // `dep` is a repeatable key; a non-string/non-array value is dropped.
+        dep: 42,
+        tags: ["keep"],
+      }),
+    ).toEqual({ tags: ["keep"] });
+  });
+
+  it("falls back to the normalized name when the stored document name is blank", () => {
+    expect(
+      templatesInternals.parseStoredTemplateDocument(
+        JSON.stringify({ name: "   ", options: { type: "Task" } }),
+        "fallback-name",
+      ),
+    ).toMatchObject({ name: "fallback-name", options: { type: "Task" } });
+  });
+
   it("runs templates through the installed first-party package command handlers", async () => {
     await withTempPmPath(async (context) => {
       const install = context.runCli(["install", "templates", "--project", "--json"], { expectJson: true });
@@ -205,6 +224,33 @@ describe("templates command flows", () => {
         tags: "spike",
         estimatedMinutes: "120",
       });
+    });
+  });
+
+  it("throws NOT_FOUND when neither a user nor builtin template exists", async () => {
+    await withTempPmPath(async (context) => {
+      await expect(runTemplatesShow("totally-unknown", { path: context.pmPath })).rejects.toMatchObject({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        message: 'Template "totally-unknown" not found',
+      });
+      await expect(loadCreateTemplateOptions(context.pmPath, "also-unknown")).rejects.toMatchObject({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        message: 'Template "also-unknown" not found',
+      });
+    });
+  });
+
+  it("ignores non-json files and invalid-name entries in the templates directory", async () => {
+    await withTempPmPath(async (context) => {
+      const templatesDir = path.join(context.pmPath, "templates");
+      await mkdir(templatesDir, { recursive: true });
+      await writeFile(path.join(templatesDir, "valid.json"), JSON.stringify({ options: { type: "Task" } }), "utf8");
+      await writeFile(path.join(templatesDir, "README.txt"), "ignore me", "utf8");
+      // ".json" suffix but a name that fails TEMPLATE_NAME_PATTERN (leading dot) is filtered out.
+      await writeFile(path.join(templatesDir, ".hidden.json"), JSON.stringify({ options: { type: "Task" } }), "utf8");
+
+      const listed = await runTemplatesList({ path: context.pmPath });
+      expect(listed.user_templates).toEqual(["valid"]);
     });
   });
 

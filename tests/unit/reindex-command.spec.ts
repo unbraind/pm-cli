@@ -8,9 +8,12 @@ import { SEARCH_EMBEDDING_CORPUS_MAX_CHARACTERS_INVALID_WARNING } from "../../sr
 import { executeVectorUpsert } from "../../src/core/search/vector-stores.js";
 import {
   clearActiveExtensionHooks,
+  getActiveExtensionRegistrations,
   setActiveExtensionHooks,
   setActiveExtensionRegistrations,
 } from "../../src/core/extensions/index.js";
+import { resolveItemTypeRegistry } from "../../src/core/item/type-registry.js";
+import { listAllDocumentCandidatesCached } from "../../src/core/store/front-matter-cache.js";
 import { createEmptyExtensionRegistrationRegistry } from "../../src/core/extensions/loader.js";
 import { EXIT_CODE } from "../../src/core/shared/constants.js";
 import { readSettings, writeSettings } from "../../src/core/store/settings.js";
@@ -279,6 +282,144 @@ describe("runReindex", () => {
       expect(
         reindexInternals.resolveExtensionVectorAdapter({ ...settings, vector_store: { ...settings.vector_store, adapter: "bad-adapter" } }),
       ).toBeNull();
+    });
+  });
+
+  it("covers snake_case embed_batch, multi-orphan sort, and extension adapter delete branches", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+
+      // snake_case embed_batch resolution (no camelCase embedBatch present).
+      const registrations = createEmptyExtensionRegistrationRegistry();
+      registrations.search_providers.push({
+        layer: "project",
+        name: "snake-provider-reg",
+        definition: { name: "snake-provider" },
+        runtime_definition: {
+          name: "snake-provider",
+          embed_batch: ({ inputs }: { inputs: string[] }) => inputs.map(() => [0.5]),
+        },
+      });
+      // Vector adapter whose runtime_definition lacks a name; name falls back to definition.name.
+      registrations.vector_store_adapters.push({
+        layer: "project",
+        name: "fallback-adapter-reg",
+        definition: { name: "fallback-adapter" },
+        runtime_definition: { upsert: () => undefined, delete: () => undefined },
+      });
+      setActiveExtensionRegistrations(registrations);
+      const resolvedSnake = reindexInternals.resolveExtensionSearchEmbedding({
+        ...settings,
+        search: { ...settings.search, provider: "snake-provider" },
+      });
+      expect(resolvedSnake).toMatchObject({ name: "snake-provider" });
+      expect(typeof resolvedSnake?.embedBatch).toBe("function");
+      const resolvedAdapter = reindexInternals.resolveExtensionVectorAdapter({
+        ...settings,
+        vector_store: { ...settings.vector_store, adapter: "fallback-adapter" },
+      });
+      expect(resolvedAdapter).toMatchObject({ name: "fallback-adapter" });
+
+      // Multi-orphan sort comparator (>1 orphan exercises localeCompare branch).
+      expect(
+        reindexInternals.collectLedgerOrphanIds({ "pm-c": "1", "pm-a": "1", "pm-b": "1" }, new Set<string>()),
+      ).toEqual(["pm-a", "pm-b", "pm-c"]);
+
+      // Extension adapter delete success path on reset (sorted known ids) + orphan prune.
+      const deletedDuringReset: string[][] = [];
+      const deletedDuringPrune: string[][] = [];
+      const resetWarnings: string[] = [];
+      await reindexInternals.resetVectorStoreForReindex(
+        null,
+        {
+          name: "ext-vector",
+          upsert: () => undefined,
+          delete: ({ ids }: { ids: string[] }) => {
+            deletedDuringReset.push([...ids]);
+          },
+        },
+        { "pm-z": "1", "pm-a": "1" },
+        settings,
+        resetWarnings,
+      );
+      expect(deletedDuringReset).toEqual([["pm-a", "pm-z"]]);
+      expect(resetWarnings).toEqual([]);
+
+      await reindexInternals.pruneReindexOrphanVectors(
+        null,
+        {
+          name: "ext-vector",
+          upsert: () => undefined,
+          delete: ({ ids }: { ids: string[] }) => {
+            deletedDuringPrune.push([...ids]);
+          },
+        },
+        ["pm-orphan-1", "pm-orphan-2"],
+        settings,
+        [],
+      );
+      expect(deletedDuringPrune).toEqual([["pm-orphan-1", "pm-orphan-2"]]);
+
+      // Prune extension delete error path.
+      await expect(
+        reindexInternals.pruneReindexOrphanVectors(
+          null,
+          {
+            name: "ext-vector",
+            upsert: () => undefined,
+            delete: () => {
+              throw new Error("prune delete failed");
+            },
+          },
+          ["pm-orphan"],
+          settings,
+          [],
+        ),
+      ).rejects.toThrow("failed to delete orphan vectors during reindex");
+
+      // Empty orphan list short-circuits with no delete.
+      await reindexInternals.pruneReindexOrphanVectors(null, null, [], settings, []);
+    });
+  });
+
+  it("hydrates documents by parsing item files when no cached body is present", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createSeedItem(context, "Hydrate Parse", "hydrate parse body", false);
+      const settings = await readSettings(context.pmPath);
+      const typeRegistry = resolveItemTypeRegistry(settings, getActiveExtensionRegistrations());
+      const candidates = await listAllDocumentCandidatesCached(
+        context.pmPath,
+        settings.item_format,
+        typeRegistry.type_to_folder,
+        undefined,
+        settings.schema,
+      );
+      const target = candidates.find((candidate) => candidate.metadata.id === id);
+      expect(target).toBeDefined();
+      const warnings: string[] = [];
+      const hydrated = await reindexInternals.hydrateDocuments(
+        context.pmPath,
+        [{ ...target!, body: undefined } as never],
+        settings.schema,
+        warnings,
+      );
+      expect(hydrated).toHaveLength(1);
+      expect(hydrated[0]?.body).toContain("hydrate parse body");
+      expect(warnings).toEqual([]);
+    });
+  });
+
+  it("rethrows non-conflict lock acquisition errors", async () => {
+    await withTempPmPath(async (context) => {
+      const lockModule = await import("../../src/core/lock/lock.js");
+      const acquireSpy = vi.spyOn(lockModule, "acquireLock").mockRejectedValue(
+        new (await import("../../src/core/shared/errors.js")).PmCliError("disk failure", EXIT_CODE.GENERIC_FAILURE),
+      );
+      try {
+        await expect(runReindex({}, { path: context.pmPath })).rejects.toThrow("disk failure");
+      } finally {
+        acquireSpy.mockRestore();
+      }
     });
   });
 

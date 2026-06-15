@@ -349,6 +349,28 @@ describe("runComments", () => {
     });
   });
 
+  it("rejects a whitespace-only --file path", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-file-blank");
+      await expect(runComments(id, { file: "   " }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: "--file path cannot be empty",
+      });
+    });
+  });
+
+  it("wraps non-ENOENT --file read failures (directory path)", async () => {
+    await withTempPmPath(async (context) => {
+      const id = createTask(context, "comments-file-directory");
+      // Pointing --file at a directory triggers a non-ENOENT errno (EISDIR),
+      // exercising the generic read-failure wrap branch.
+      await expect(runComments(id, { file: context.pmPath }, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.USAGE,
+        message: expect.stringContaining(`Failed to read --file path "${context.pmPath}"`),
+      });
+    });
+  });
+
   it("returns filtered latest comment snapshots across items", async () => {
     await withTempPmPath(async (context) => {
       const openId = createTask(context, "comments-audit-open");
@@ -573,6 +595,46 @@ describe("runComments", () => {
         release: "v1",
         priority: 0,
       });
+    });
+  });
+
+  it("reports zero-coverage summary when no items match the audit scope", async () => {
+    await withTempPmPath(async (context) => {
+      createTask(context, "comments-audit-empty-scope");
+      // A tag that matches nothing yields an empty item set, exercising the
+      // ratioPercent denominator<=0 branch for the overall coverage summary.
+      const empty = await runCommentsAudit({ tag: "no-such-tag-zzz" }, { path: context.pmPath });
+      expect(empty.count).toBe(0);
+      expect(empty.summary.totals).toMatchObject({
+        items_scanned: 0,
+        items_with_comments: 0,
+        comments_total: 0,
+        comments_exported: 0,
+      });
+      expect(empty.summary.coverage).toEqual({
+        items_with_comments_ratio: 0,
+        items_with_comments_percent: 0,
+      });
+      expect(empty.summary.by_type).toEqual([]);
+    });
+  });
+
+  it("sorts the by_type summary across multiple item types", async () => {
+    await withTempPmPath(async (context) => {
+      const taskId = createTask(context, "comments-audit-type-task");
+      const bugId = createTestItemId(context, {
+        title: "comments-audit-type-bug",
+        type: "Bug",
+        tags: "comments,unit",
+        estimate: "10",
+      });
+      await runComments(taskId, { add: "task comment", author: "audit-a" }, { path: context.pmPath });
+      await runComments(bugId, { add: "bug comment", author: "audit-b" }, { path: context.pmPath });
+
+      const audited = await runCommentsAudit({ status: "open" }, { path: context.pmPath });
+      const types = audited.summary.by_type.map((entry) => entry.type);
+      expect(types).toEqual(["Bug", "Task"]);
+      expect(audited.summary.by_type.every((entry) => entry.items_with_comments === 1)).toBe(true);
     });
   });
 
