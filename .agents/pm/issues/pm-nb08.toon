@@ -1,0 +1,12 @@
+id: pm-nb08
+title: "Daily auto-release silently blocked 06-14..16 by a single stale unresolved Sentry error (sentry-telemetry-gate is:unresolved has no time window)"
+description: "auto-release.yml (cron 02:35) failed 2026-06-14/15/16 (last success 06-13) because sentry-telemetry-gate reported high=1 against max_high=0. The gate queries 'is:unresolved level:[fatal,error]' with NO time bound, so any single lingering unresolved error/fatal issue (even an old benign one nobody resolved in Sentry) blocks EVERY daily release until manually resolved, with no alerting — 3 releases were silently skipped. On 06-17 the offending issue had aged out (high=0) and I manually dispatched the catch-up release (v2026.6.16 published). Proposed durable fix (needs maintainer call as it loosens a safety gate): bound the gate query to a recent window (e.g. age:-14d or firstSeen/lastSeen window) and/or add failure alerting so a blocked daily release notifies instead of silently skipping. Related: pm-ehbb (nightly failure alerting)."
+type: Issue
+status: open
+priority: 2
+tags: []
+created_at: "2026-06-16T22:33:08.059Z"
+updated_at: "2026-06-16T22:33:08.059Z"
+author: maintainer-agent
+parent: pm-5oj5
+body: ""
