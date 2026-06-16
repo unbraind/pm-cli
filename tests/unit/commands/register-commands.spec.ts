@@ -1514,6 +1514,16 @@ describe("mutation command actions", () => {
     });
   });
 
+  it("rejects a both-present-and-absent bulk content filter with the --filter-* flag names", async () => {
+    // The conflict is caught in mapBulkContentAndGovernanceFilters so the message
+    // names the bulk flags the user typed (not the downstream --has-/--no- flags),
+    // and runUpdateMany is never reached.
+    await expect(
+      runCli("update-many", "--filter-has-notes", "--filter-no-notes", "--title", "X"),
+    ).rejects.toThrow("Cannot combine --filter-has-notes with --filter-no-notes for the same field.");
+    expect(vi.mocked(runUpdateMany)).not.toHaveBeenCalled();
+  });
+
   it("maps the full close option surface including duplicate-of and validate string mode", async () => {
     await runCli(
       "close", "pm-1", "shipped it",

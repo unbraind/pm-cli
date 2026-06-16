@@ -109,8 +109,29 @@ function registerBulkContentAndGovernanceFilters(command: Command, action: strin
 // Map the bulk content/governance `--filter-*` commander options into the
 // ListOptions content/governance fields runList consumes. Shared by update-many
 // and close-many.
+// [hasCommanderKey, noCommanderKey, --filter-has flag, --filter-no flag]
+const BULK_CONTENT_FILTER_CONFLICTS: ReadonlyArray<readonly [string, string, string, string]> = [
+  ["filterHasNotes", "filterNoNotes", "--filter-has-notes", "--filter-no-notes"],
+  ["filterHasLearnings", "filterNoLearnings", "--filter-has-learnings", "--filter-no-learnings"],
+  ["filterHasFiles", "filterNoFiles", "--filter-has-files", "--filter-no-files"],
+  ["filterHasDocs", "filterNoDocs", "--filter-has-docs", "--filter-no-docs"],
+  ["filterHasTests", "filterNoTests", "--filter-has-tests", "--filter-no-tests"],
+  ["filterHasComments", "filterNoComments", "--filter-has-comments", "--filter-no-comments"],
+  ["filterHasDeps", "filterNoDeps", "--filter-has-deps", "--filter-no-deps"],
+  ["filterHasBody", "filterEmptyBody", "--filter-has-body", "--filter-empty-body"],
+  ["filterHasLinkedCommand", "filterNoLinkedCommand", "--filter-has-linked-command", "--filter-no-linked-command"],
+];
+
 function mapBulkContentAndGovernanceFilters(options: Record<string, unknown>): Record<string, unknown> {
   const presence = (key: string): true | undefined => (options[key] === true ? true : undefined);
+  // Catch a both-present-and-absent bulk request here so the error names the
+  // bulk --filter-* flags the user actually typed, rather than the downstream
+  // list-level --has-/--no- flags resolveContentFieldFilters would report.
+  for (const [hasKey, noKey, hasFlag, noFlag] of BULK_CONTENT_FILTER_CONFLICTS) {
+    if (options[hasKey] === true && options[noKey] === true) {
+      throw new PmCliError(`Cannot combine ${hasFlag} with ${noFlag} for the same field.`, EXIT_CODE.USAGE);
+    }
+  }
   return {
     filterReviewerMissing: presence("filterReviewerMissing"),
     filterRiskMissing: presence("filterRiskMissing"),
