@@ -241,11 +241,15 @@ describe("generateBashScript", () => {
     const zshScript = generateZshScript();
     expect(zshScript).toContain("--stdin[Read comment text from stdin (supports multiline markdown)]");
     expect(zshScript).toContain("--file[Read comment text from file (supports multiline markdown)]:path");
+    expect(zshScript).toContain("--edit[Replace the comment at 1-based index");
+    expect(zshScript).toContain("--delete[Delete the comment at 1-based index]:index");
 
     const fishScript = generateFishScript();
     expect(fishScript).toContain("__fish_seen_subcommand_from comments");
     expect(fishScript).toContain("-l stdin -d 'Read comment text from stdin (supports multiline markdown)'");
     expect(fishScript).toContain("-l file -d 'Read comment text from file (supports multiline markdown)'");
+    expect(fishScript).toContain("-l edit -d 'Replace the comment at 1-based index");
+    expect(fishScript).toContain("-l delete -d 'Delete the comment at 1-based index'");
   });
 
   it("includes notes/learnings audit alias flags in zsh and fish completion", () => {
