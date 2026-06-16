@@ -26,6 +26,12 @@ export interface CoverageItem {
   acceptance_criteria?: string;
   estimated_minutes?: number;
   resolution?: string;
+  reviewer?: string;
+  risk?: string;
+  /** Confidence is a string-like enum or a numeric score depending on workspace. */
+  confidence?: string | number;
+  sprint?: string;
+  release?: string;
   [key: string]: unknown;
 }
 
@@ -138,11 +144,48 @@ export function isResolutionMissing(item: CoverageItem, classifier: LifecycleCla
   return toNonEmptyStringOrUndefined(item.resolution) === undefined;
 }
 
+/** True when an item has no non-empty reviewer. */
+export function isReviewerMissing(item: CoverageItem): boolean {
+  return toNonEmptyStringOrUndefined(item.reviewer) === undefined;
+}
+
+/** True when an item has no non-empty risk level. */
+export function isRiskMissing(item: CoverageItem): boolean {
+  return toNonEmptyStringOrUndefined(item.risk) === undefined;
+}
+
+/**
+ * True when an item has no confidence value. Confidence is a string-like enum
+ * or a numeric score depending on workspace, so a finite number counts as
+ * present and only blank/absent values are treated as missing.
+ */
+export function isConfidenceMissing(item: CoverageItem): boolean {
+  if (typeof item.confidence === "number") {
+    return !Number.isFinite(item.confidence);
+  }
+  return toNonEmptyStringOrUndefined(item.confidence) === undefined;
+}
+
+/** True when an item has no non-empty sprint. */
+export function isSprintMissing(item: CoverageItem): boolean {
+  return toNonEmptyStringOrUndefined(item.sprint) === undefined;
+}
+
+/** True when an item has no non-empty release. */
+export function isReleaseMissing(item: CoverageItem): boolean {
+  return toNonEmptyStringOrUndefined(item.release) === undefined;
+}
+
 /** Selection flags for {@link filterMissingMetadata}. */
 export interface MissingMetadataFilters {
   acMissing?: boolean;
   estimatesMissing?: boolean;
   resolutionMissing?: boolean;
+  reviewerMissing?: boolean;
+  riskMissing?: boolean;
+  confidenceMissing?: boolean;
+  sprintMissing?: boolean;
+  releaseMissing?: boolean;
   /** Match items missing ANY of the tracked metadata fields (union). */
   metadataMissing?: boolean;
 }
@@ -150,17 +193,28 @@ export interface MissingMetadataFilters {
 /** True when any missing-metadata filter is requested. */
 export function hasMissingMetadataFilter(filters: MissingMetadataFilters): boolean {
   return Boolean(
-    filters.acMissing || filters.estimatesMissing || filters.resolutionMissing || filters.metadataMissing,
+    filters.acMissing ||
+      filters.estimatesMissing ||
+      filters.resolutionMissing ||
+      filters.reviewerMissing ||
+      filters.riskMissing ||
+      filters.confidenceMissing ||
+      filters.sprintMissing ||
+      filters.releaseMissing ||
+      filters.metadataMissing,
   );
 }
 
 /**
  * Does a single item satisfy the requested missing-metadata filters?
  *
- * Specific flags (acMissing/estimatesMissing/resolutionMissing) are ANDed
- * together so callers can narrow precisely. `metadataMissing` is ORed in as a
- * union shortcut for "missing any tracked field". When no filter is requested
- * the item passes.
+ * Specific flags (acMissing/estimatesMissing/resolutionMissing plus the
+ * governance flags reviewerMissing/riskMissing/confidenceMissing/sprintMissing/
+ * releaseMissing) are ANDed together so callers can narrow precisely.
+ * `metadataMissing` is ORed in as a union shortcut for "missing any of the
+ * core tracked fields" (acceptance_criteria/estimated_minutes/resolution); it
+ * deliberately excludes the governance fields so the long-standing flag keeps
+ * its original meaning. When no filter is requested the item passes.
  */
 export function itemMatchesMissingMetadata(
   item: CoverageItem,
@@ -177,6 +231,21 @@ export function itemMatchesMissingMetadata(
     return false;
   }
   if (filters.resolutionMissing && !isResolutionMissing(item, classifier)) {
+    return false;
+  }
+  if (filters.reviewerMissing && !isReviewerMissing(item)) {
+    return false;
+  }
+  if (filters.riskMissing && !isRiskMissing(item)) {
+    return false;
+  }
+  if (filters.confidenceMissing && !isConfidenceMissing(item)) {
+    return false;
+  }
+  if (filters.sprintMissing && !isSprintMissing(item)) {
+    return false;
+  }
+  if (filters.releaseMissing && !isReleaseMissing(item)) {
     return false;
   }
   if (filters.metadataMissing) {

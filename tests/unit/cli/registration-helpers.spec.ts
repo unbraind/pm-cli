@@ -474,6 +474,176 @@ describe("registration helpers", () => {
     expect(stringScores).toMatchObject({ minScore: "0.5", semanticWeight: "0.3" });
   });
 
+  it("sets every content-field and governance-missing filter when its flag triggers the true branch (list)", () => {
+    // Presence flags are plain booleans; absence flags use commander negation
+    // (e.g. --no-notes -> notes=false) except --empty-body which is its own dest.
+    const list = normalizeListOptions({
+      filterReviewerMissing: true,
+      filterRiskMissing: true,
+      filterConfidenceMissing: true,
+      filterSprintMissing: true,
+      filterReleaseMissing: true,
+      hasNotes: true,
+      hasLearnings: true,
+      hasFiles: true,
+      hasDocs: true,
+      hasTests: true,
+      hasComments: true,
+      hasDeps: true,
+      hasBody: true,
+      hasLinkedCommand: true,
+      notes: false,
+      learnings: false,
+      files: false,
+      docs: false,
+      tests: false,
+      comments: false,
+      deps: false,
+      emptyBody: true,
+      linkedCommand: false,
+    });
+    expect(list).toMatchObject({
+      filterReviewerMissing: true,
+      filterRiskMissing: true,
+      filterConfidenceMissing: true,
+      filterSprintMissing: true,
+      filterReleaseMissing: true,
+      hasNotes: true,
+      hasLearnings: true,
+      hasFiles: true,
+      hasDocs: true,
+      hasTests: true,
+      hasComments: true,
+      hasDeps: true,
+      hasBody: true,
+      hasLinkedCommand: true,
+      noNotes: true,
+      noLearnings: true,
+      noFiles: true,
+      noDocs: true,
+      noTests: true,
+      noComments: true,
+      noDeps: true,
+      emptyBody: true,
+      noLinkedCommand: true,
+    });
+  });
+
+  it("leaves every content-field and governance-missing filter undefined when no flag is set (list)", () => {
+    const list = normalizeListOptions({});
+    for (const key of [
+      "filterReviewerMissing",
+      "filterRiskMissing",
+      "filterConfidenceMissing",
+      "filterSprintMissing",
+      "filterReleaseMissing",
+      "hasNotes",
+      "hasLearnings",
+      "hasFiles",
+      "hasDocs",
+      "hasTests",
+      "hasComments",
+      "hasDeps",
+      "hasBody",
+      "hasLinkedCommand",
+      "noNotes",
+      "noLearnings",
+      "noFiles",
+      "noDocs",
+      "noTests",
+      "noComments",
+      "noDeps",
+      "emptyBody",
+      "noLinkedCommand",
+    ] as const) {
+      expect((list as Record<string, unknown>)[key], key).toBeUndefined();
+    }
+  });
+
+  it("sets every content-field and governance-missing filter when its flag triggers the true branch (search)", () => {
+    const search = normalizeSearchOptions({
+      filterReviewerMissing: true,
+      filterRiskMissing: true,
+      filterConfidenceMissing: true,
+      filterSprintMissing: true,
+      filterReleaseMissing: true,
+      hasNotes: true,
+      hasLearnings: true,
+      hasFiles: true,
+      hasDocs: true,
+      hasTests: true,
+      hasComments: true,
+      hasDeps: true,
+      hasBody: true,
+      hasLinkedCommand: true,
+      notes: false,
+      learnings: false,
+      files: false,
+      docs: false,
+      tests: false,
+      comments: false,
+      deps: false,
+      emptyBody: true,
+      linkedCommand: false,
+    });
+    expect(search).toMatchObject({
+      filterReviewerMissing: true,
+      filterRiskMissing: true,
+      filterConfidenceMissing: true,
+      filterSprintMissing: true,
+      filterReleaseMissing: true,
+      hasNotes: true,
+      hasLearnings: true,
+      hasFiles: true,
+      hasDocs: true,
+      hasTests: true,
+      hasComments: true,
+      hasDeps: true,
+      hasBody: true,
+      hasLinkedCommand: true,
+      noNotes: true,
+      noLearnings: true,
+      noFiles: true,
+      noDocs: true,
+      noTests: true,
+      noComments: true,
+      noDeps: true,
+      emptyBody: true,
+      noLinkedCommand: true,
+    });
+  });
+
+  it("leaves every content-field and governance-missing filter undefined when no flag is set (search)", () => {
+    const search = normalizeSearchOptions({});
+    for (const key of [
+      "filterReviewerMissing",
+      "filterRiskMissing",
+      "filterConfidenceMissing",
+      "filterSprintMissing",
+      "filterReleaseMissing",
+      "hasNotes",
+      "hasLearnings",
+      "hasFiles",
+      "hasDocs",
+      "hasTests",
+      "hasComments",
+      "hasDeps",
+      "hasBody",
+      "hasLinkedCommand",
+      "noNotes",
+      "noLearnings",
+      "noFiles",
+      "noDocs",
+      "noTests",
+      "noComments",
+      "noDeps",
+      "emptyBody",
+      "noLinkedCommand",
+    ] as const) {
+      expect((search as Record<string, unknown>)[key], key).toBeUndefined();
+    }
+  });
+
   it("resolves activity compact mode across full/compact/default inputs", () => {
     // --full forces compact:false.
     expect(normalizeActivityOptions({ full: true }).compact).toBe(false);

@@ -46,6 +46,39 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
     command.addOption(new Option(flags, description).hideHelp());
   }
 
+  // Register the content-field presence/absence filters (GH-242) and the
+  // governance-missing filters (GH-236) on a list-family or search command.
+  // Presence flags are plain booleans; absence flags use commander negation
+  // (`--no-notes` stores notes=false) except `--empty-body` which is its own
+  // dest so it composes with a future `--has-body`. linked_command tracks
+  // whether a linked test carries a runnable command.
+  function registerContentAndGovernanceFilters(command: Command): void {
+    command
+      .option("--has-notes", "Show only items that have notes")
+      .option("--has-learnings", "Show only items that have learnings")
+      .option("--has-files", "Show only items that have linked files")
+      .option("--has-docs", "Show only items that have linked docs")
+      .option("--has-tests", "Show only items that have linked tests")
+      .option("--has-comments", "Show only items that have comments")
+      .option("--has-deps", "Show only items that have dependencies")
+      .option("--has-body", "Show only items that have a non-empty body")
+      .option("--has-linked-command", "Show only items whose linked tests carry a runnable command")
+      .option("--no-notes", "Show only items that have no notes")
+      .option("--no-learnings", "Show only items that have no learnings")
+      .option("--no-files", "Show only items that have no linked files")
+      .option("--no-docs", "Show only items that have no linked docs")
+      .option("--no-tests", "Show only items that have no linked tests")
+      .option("--no-comments", "Show only items that have no comments")
+      .option("--no-deps", "Show only items that have no dependencies")
+      .option("--empty-body", "Show only items with an empty body")
+      .option("--no-linked-command", "Show only items whose linked tests carry no runnable command")
+      .option("--filter-reviewer-missing", "Show only items missing reviewer")
+      .option("--filter-risk-missing", "Show only items missing risk")
+      .option("--filter-confidence-missing", "Show only items missing confidence")
+      .option("--filter-sprint-missing", "Show only items missing sprint")
+      .option("--filter-release-missing", "Show only items missing release");
+  }
+
   function registerListCommand(
     name: string,
     description: string,
@@ -93,7 +126,9 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
       .option("--order <value>", "Sort order: asc|desc (requires --sort)")
       .option("--tree", "Render rows in parent/child tree order")
       .option("--tree-depth <n>", "Maximum recursion depth with --tree (0 keeps root rows only)")
-      .option("--stream", "Emit line-delimited JSON rows (requires --json)")
+      .option("--stream", "Emit line-delimited JSON rows (requires --json)");
+    registerContentAndGovernanceFilters(command);
+    command
       .action(async (options: Record<string, unknown>, actionCommand) => {
         const globalOptions = getGlobalOptions(actionCommand);
         const startedAt = Date.now();
@@ -292,7 +327,9 @@ export function registerListQueryCommands(program: Command, options?: RegisterLi
         "--fields <value>",
         "Render custom comma-separated search hit fields (mutually exclusive with --compact/--full; valid: --fields id,title,score; invalid: --full --fields id,title)",
       )
-      .option("--limit <n>", "Limit returned item count")
+      .option("--limit <n>", "Limit returned item count");
+    registerContentAndGovernanceFilters(searchCommand);
+    searchCommand
       .action(async (keywords: string[], options: Record<string, unknown>, command) => {
         const globalOptions = getGlobalOptions(command);
         const startedAt = Date.now();

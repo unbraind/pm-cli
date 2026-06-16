@@ -273,6 +273,10 @@ export function registerOperationCommands(program: Command): void {
     .option("--by-tag", "Include a lifecycle-bucketed item breakdown grouped by tag")
     .option("--by-priority", "Include a lifecycle-bucketed item breakdown grouped by priority")
     .option("--tag-prefix <value>", "With --by-tag: only count tags starting with this prefix (e.g. domain:)")
+    .option(
+      "--field-utilization",
+      "Report content-field utilization rates (notes/learnings/files/docs/tests/comments/deps/body) for governance audits",
+    )
     .action(async (options: Record<string, unknown>, command) => {
       const globalOptions = getGlobalOptions(command);
       const startedAt = Date.now();
@@ -284,6 +288,7 @@ export function registerOperationCommands(program: Command): void {
         byTag: options.byTag === true,
         byPriority: options.byPriority === true,
         tagPrefix: typeof options.tagPrefix === "string" ? options.tagPrefix : undefined,
+        fieldUtilization: options.fieldUtilization === true,
       });
       printResult(result, globalOptions);
       if (globalOptions.profile) {

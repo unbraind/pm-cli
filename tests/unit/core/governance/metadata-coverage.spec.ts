@@ -10,8 +10,13 @@ import {
   groupItemsByDimension,
   hasMissingMetadataFilter,
   isAcMissing,
+  isConfidenceMissing,
   isEstimateMissing,
+  isReleaseMissing,
   isResolutionMissing,
+  isReviewerMissing,
+  isRiskMissing,
+  isSprintMissing,
   itemMatchesMissingMetadata,
   lifecycleClassifierFromStatusRegistry,
   type CoverageItem,
@@ -95,6 +100,26 @@ describe("missing-metadata predicates", () => {
     expect(isResolutionMissing(item({ status: "closed" }), classifier)).toBe(true);
     expect(isResolutionMissing(item({ status: "closed", resolution: "fixed" }), classifier)).toBe(false);
   });
+
+  it("governance predicates treat empty/whitespace as missing", () => {
+    expect(isReviewerMissing(item())).toBe(true);
+    expect(isReviewerMissing(item({ reviewer: "  " }))).toBe(true);
+    expect(isReviewerMissing(item({ reviewer: "alice" }))).toBe(false);
+
+    expect(isRiskMissing(item())).toBe(true);
+    expect(isRiskMissing(item({ risk: "high" }))).toBe(false);
+
+    expect(isConfidenceMissing(item())).toBe(true);
+    expect(isConfidenceMissing(item({ confidence: "medium" }))).toBe(false);
+    expect(isConfidenceMissing(item({ confidence: 0.8 }))).toBe(false);
+    expect(isConfidenceMissing(item({ confidence: Number.NaN }))).toBe(true);
+
+    expect(isSprintMissing(item())).toBe(true);
+    expect(isSprintMissing(item({ sprint: "S1" }))).toBe(false);
+
+    expect(isReleaseMissing(item())).toBe(true);
+    expect(isReleaseMissing(item({ release: "v1" }))).toBe(false);
+  });
 });
 
 describe("itemMatchesMissingMetadata / filterMissingMetadata", () => {
@@ -120,9 +145,47 @@ describe("itemMatchesMissingMetadata / filterMissingMetadata", () => {
     ).toBe(false);
   });
 
-  it("treats metadataMissing as a union shortcut", () => {
+  it("ANDs governance flags and treats each field independently", () => {
+    expect(hasMissingMetadataFilter({ reviewerMissing: true })).toBe(true);
+    expect(hasMissingMetadataFilter({ riskMissing: true })).toBe(true);
+    expect(hasMissingMetadataFilter({ confidenceMissing: true })).toBe(true);
+    expect(hasMissingMetadataFilter({ sprintMissing: true })).toBe(true);
+    expect(hasMissingMetadataFilter({ releaseMissing: true })).toBe(true);
+
+    expect(itemMatchesMissingMetadata(item(), { reviewerMissing: true }, classifier)).toBe(true);
+    expect(
+      itemMatchesMissingMetadata(item({ reviewer: "a" }), { reviewerMissing: true }, classifier),
+    ).toBe(false);
+    expect(itemMatchesMissingMetadata(item({ risk: "high" }), { riskMissing: true }, classifier)).toBe(false);
+    expect(
+      itemMatchesMissingMetadata(item({ confidence: "low" }), { confidenceMissing: true }, classifier),
+    ).toBe(false);
+    expect(itemMatchesMissingMetadata(item({ sprint: "S1" }), { sprintMissing: true }, classifier)).toBe(false);
+    expect(itemMatchesMissingMetadata(item({ release: "v1" }), { releaseMissing: true }, classifier)).toBe(false);
+  });
+
+  it("treats metadataMissing as a core-field union that EXCLUDES governance fields", () => {
     expect(itemMatchesMissingMetadata(item(), { metadataMissing: true }, classifier)).toBe(true);
-    const complete = item({ acceptance_criteria: "x", estimated_minutes: 1, status: "open" });
+    // Missing ONLY governance fields does NOT match the union — the long-standing
+    // flag keeps its original meaning (ac/estimate/resolution only).
+    const onlyGovernanceMissing = item({
+      acceptance_criteria: "x",
+      estimated_minutes: 1,
+      status: "open",
+      risk: "high",
+      confidence: "low",
+      sprint: "S1",
+      release: "v1",
+    });
+    expect(
+      itemMatchesMissingMetadata(onlyGovernanceMissing, { metadataMissing: true }, classifier),
+    ).toBe(false);
+    // Core fields present → not in the union (governance presence is irrelevant here).
+    const complete = item({
+      acceptance_criteria: "x",
+      estimated_minutes: 1,
+      status: "open",
+    });
     expect(itemMatchesMissingMetadata(complete, { metadataMissing: true }, classifier)).toBe(false);
   });
 

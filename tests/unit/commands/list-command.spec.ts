@@ -813,6 +813,37 @@ describe("runList", () => {
     });
   });
 
+  it("applies an active content filter in-process, keeping matches and excluding non-matches", async () => {
+    await withTempPmPath(async (context) => {
+      // createItem always seeds notes; differentiate on body so hasBody/emptyBody
+      // split the two items. WithBody matches --has-body (kept); EmptyBody does not (excluded).
+      createItem(context, {
+        title: "WithBody",
+        status: "open",
+        priority: "1",
+        tags: "content",
+        deadline: "+1d",
+        body: "real body content",
+      });
+      createItem(context, {
+        title: "EmptyBody",
+        status: "open",
+        priority: "1",
+        tags: "content",
+        deadline: "+1d",
+        // body omitted -> empty string
+      });
+
+      // Active content filter + item matches (kept) AND item does not match (excluded).
+      const hasBody = await runList(undefined, { hasBody: true }, { path: context.pmPath });
+      expect(hasBody.items.map((item) => item.title).sort()).toEqual(["WithBody"]);
+
+      // Opposite content predicate flips which item is kept vs excluded.
+      const emptyBody = await runList(undefined, { emptyBody: true }, { path: context.pmPath });
+      expect(emptyBody.items.map((item) => item.title).sort()).toEqual(["EmptyBody"]);
+    });
+  });
+
   it("excludes terminal statuses when excludeTerminal is true", async () => {
     await withTempPmPath(async (context) => {
       createItem(context, {

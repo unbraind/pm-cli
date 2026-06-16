@@ -74,6 +74,70 @@ export function parseSchemaOrderOption(raw: unknown): number | undefined {
   throw new PmCliError("--order must be a finite integer.", EXIT_CODE.USAGE);
 }
 
+// Bulk content-field selection filters (GH-242) shared by update-many and
+// close-many. Each pair mirrors the list-family presence/absence flags but uses
+// the `--filter-` prefix so they live in the bulk-selection namespace. The
+// governance-missing filters (GH-236) reuse the same `--filter-<gov>-missing`
+// spelling as the list family.
+function registerBulkContentAndGovernanceFilters(command: Command, action: string): void {
+  command
+    .option("--filter-has-notes", `Select only items that have notes before ${action}`)
+    .option("--filter-no-notes", `Select only items that have no notes before ${action}`)
+    .option("--filter-has-learnings", `Select only items that have learnings before ${action}`)
+    .option("--filter-no-learnings", `Select only items that have no learnings before ${action}`)
+    .option("--filter-has-files", `Select only items that have linked files before ${action}`)
+    .option("--filter-no-files", `Select only items that have no linked files before ${action}`)
+    .option("--filter-has-docs", `Select only items that have linked docs before ${action}`)
+    .option("--filter-no-docs", `Select only items that have no linked docs before ${action}`)
+    .option("--filter-has-tests", `Select only items that have linked tests before ${action}`)
+    .option("--filter-no-tests", `Select only items that have no linked tests before ${action}`)
+    .option("--filter-has-comments", `Select only items that have comments before ${action}`)
+    .option("--filter-no-comments", `Select only items that have no comments before ${action}`)
+    .option("--filter-has-deps", `Select only items that have dependencies before ${action}`)
+    .option("--filter-no-deps", `Select only items that have no dependencies before ${action}`)
+    .option("--filter-has-body", `Select only items that have a non-empty body before ${action}`)
+    .option("--filter-empty-body", `Select only items with an empty body before ${action}`)
+    .option("--filter-has-linked-command", `Select only items whose linked tests carry a runnable command before ${action}`)
+    .option("--filter-no-linked-command", `Select only items whose linked tests carry no runnable command before ${action}`)
+    .option("--filter-reviewer-missing", `Select only items missing reviewer before ${action}`)
+    .option("--filter-risk-missing", `Select only items missing risk before ${action}`)
+    .option("--filter-confidence-missing", `Select only items missing confidence before ${action}`)
+    .option("--filter-sprint-missing", `Select only items missing sprint before ${action}`)
+    .option("--filter-release-missing", `Select only items missing release before ${action}`);
+}
+
+// Map the bulk content/governance `--filter-*` commander options into the
+// ListOptions content/governance fields runList consumes. Shared by update-many
+// and close-many.
+function mapBulkContentAndGovernanceFilters(options: Record<string, unknown>): Record<string, unknown> {
+  const presence = (key: string): true | undefined => (options[key] === true ? true : undefined);
+  return {
+    filterReviewerMissing: presence("filterReviewerMissing"),
+    filterRiskMissing: presence("filterRiskMissing"),
+    filterConfidenceMissing: presence("filterConfidenceMissing"),
+    filterSprintMissing: presence("filterSprintMissing"),
+    filterReleaseMissing: presence("filterReleaseMissing"),
+    hasNotes: presence("filterHasNotes"),
+    hasLearnings: presence("filterHasLearnings"),
+    hasFiles: presence("filterHasFiles"),
+    hasDocs: presence("filterHasDocs"),
+    hasTests: presence("filterHasTests"),
+    hasComments: presence("filterHasComments"),
+    hasDeps: presence("filterHasDeps"),
+    hasBody: presence("filterHasBody"),
+    hasLinkedCommand: presence("filterHasLinkedCommand"),
+    noNotes: presence("filterNoNotes"),
+    noLearnings: presence("filterNoLearnings"),
+    noFiles: presence("filterNoFiles"),
+    noDocs: presence("filterNoDocs"),
+    noTests: presence("filterNoTests"),
+    noComments: presence("filterNoComments"),
+    noDeps: presence("filterNoDeps"),
+    emptyBody: presence("filterEmptyBody"),
+    noLinkedCommand: presence("filterNoLinkedCommand"),
+  };
+}
+
 export function registerCommanderOptionContracts(command: Command, contracts: CommanderOptionRegistrationContract[]): void {
   for (const contract of contracts) {
     if (contract.required) {
@@ -127,6 +191,7 @@ function buildUpdateManyListOptions(options: Record<string, unknown>): Record<st
       options.filterEstimatesMissing === true || options.filterEstimateMissing === true ? true : undefined,
     filterResolutionMissing: options.filterResolutionMissing === true ? true : undefined,
     filterMetadataMissing: options.filterMetadataMissing === true ? true : undefined,
+    ...mapBulkContentAndGovernanceFilters(options),
     limit: readString("limit"),
     offset: readString("offset"),
     includeBody: true,
@@ -328,7 +393,9 @@ export function registerMutationCommands(program: Command): void {
     .option("--filter-ac-missing", "Select only items missing acceptance_criteria (bulk backfill)")
     .option("--filter-estimates-missing", "Select only items missing estimated_minutes (bulk backfill)")
     .option("--filter-resolution-missing", "Select only terminal items missing resolution (bulk backfill)")
-    .option("--filter-metadata-missing", "Select only items missing any tracked metadata (AC, estimate, or resolution)")
+    .option("--filter-metadata-missing", "Select only items missing any tracked metadata (AC, estimate, or resolution)");
+  registerBulkContentAndGovernanceFilters(updateManyCommand, "applying updates");
+  updateManyCommand
     .option("--ids <value>", "Restrict to an explicit comma-separated ID allowlist (intersected with other filters)")
     .option("--limit <n>", "Limit matched item count before apply/preview")
     .option("--offset <n>", "Skip first n matched rows before apply/preview")
@@ -548,7 +615,9 @@ export function registerMutationCommands(program: Command): void {
     .option("--filter-assignee-filter <value>", "Filter assignee presence: assigned|unassigned before closing")
     .option("--filter-parent <value>", "Filter by parent item ID before closing")
     .option("--filter-sprint <value>", "Filter by sprint before closing")
-    .option("--filter-release <value>", "Filter by release before closing")
+    .option("--filter-release <value>", "Filter by release before closing");
+  registerBulkContentAndGovernanceFilters(closeManyCommand, "closing");
+  closeManyCommand
     .option("--ids <value>", "Restrict to an explicit comma-separated ID allowlist (intersected with other filters)")
     .option("--limit <n>", "Limit matched item count before apply/preview")
     .option("--offset <n>", "Skip first n matched rows before apply/preview")
@@ -599,6 +668,7 @@ export function registerMutationCommands(program: Command): void {
           parent: typeof options.filterParent === "string" ? options.filterParent : undefined,
           sprint: typeof options.filterSprint === "string" ? options.filterSprint : undefined,
           release: typeof options.filterRelease === "string" ? options.filterRelease : undefined,
+          ...mapBulkContentAndGovernanceFilters(options),
           limit: typeof options.limit === "string" ? options.limit : undefined,
           offset: typeof options.offset === "string" ? options.offset : undefined,
         },
