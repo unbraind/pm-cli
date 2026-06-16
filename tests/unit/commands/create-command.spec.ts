@@ -3733,4 +3733,85 @@ describe("repeatable metadata parser helpers", () => {
       expect(() => parseTypeOptionEntries([entry])).toThrow(expect.objectContaining({ exitCode: EXIT_CODE.USAGE }));
     }
   });
+
+  describe("GH-249: create --status closed honors governance.require_close_reason", () => {
+    it("defaults the close reason and warns when no message/resolution is supplied", async () => {
+      await withTempPmPath(async (context) => {
+        const result = await runCreate(
+          {
+            title: "direct-closed-default",
+            description: "created directly closed without a reason",
+            type: "Task",
+            status: "closed",
+            createMode: "progressive",
+          },
+          { path: context.pmPath },
+        );
+        expect(result.item.status).toBe("closed");
+        expect(result.item.close_reason).toBe("Closed at creation via pm create");
+        expect(result.warnings).toContain("close_reason_defaulted");
+      });
+    });
+
+    it("uses --message as the close reason without warning", async () => {
+      await withTempPmPath(async (context) => {
+        const result = await runCreate(
+          {
+            title: "direct-closed-message",
+            description: "created directly closed with a message",
+            type: "Task",
+            status: "closed",
+            message: "shipped in the previous sprint",
+            createMode: "progressive",
+          },
+          { path: context.pmPath },
+        );
+        expect(result.item.close_reason).toBe("shipped in the previous sprint");
+        expect(result.warnings).not.toContain("close_reason_defaulted");
+      });
+    });
+
+    it("falls back to --resolution as the close reason when no message is given", async () => {
+      await withTempPmPath(async (context) => {
+        const result = await runCreate(
+          {
+            title: "direct-closed-resolution",
+            description: "created directly closed with a resolution",
+            type: "Task",
+            status: "closed",
+            resolution: "resolved by an upstream fix",
+            createMode: "progressive",
+          },
+          { path: context.pmPath },
+        );
+        expect(result.item.close_reason).toBe("resolved by an upstream fix");
+        expect(result.warnings).not.toContain("close_reason_defaulted");
+      });
+    });
+
+    it("records no close reason when governance.require_close_reason is disabled", async () => {
+      await withTempPmPath(async (context) => {
+        const settingsPath = path.join(context.pmPath, "settings.json");
+        const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+          governance?: Record<string, unknown>;
+        };
+        settings.governance = { ...(settings.governance ?? {}), require_close_reason: false };
+        await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+        const result = await runCreate(
+          {
+            title: "direct-closed-no-governance",
+            description: "closed create with governance disabled records no reason",
+            type: "Task",
+            status: "closed",
+            createMode: "progressive",
+          },
+          { path: context.pmPath },
+        );
+        expect(result.item.status).toBe("closed");
+        expect(result.item.close_reason).toBeUndefined();
+        expect(result.warnings).not.toContain("close_reason_defaulted");
+      });
+    });
+  });
 });

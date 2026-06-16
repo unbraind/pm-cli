@@ -998,19 +998,22 @@ describe("runNormalize", () => {
         {
           field: "actual_result",
           before: "placeholder",
-          after: "Actual closure outcome normalized from closed status because the field was missing or low-signal.",
+          // GH-249: `pm create --status closed` now records a close_reason under
+          // governance.require_close_reason, so the backfill cites the existing
+          // close_reason as the detailed closure evidence.
+          after: "Actual closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.",
           rule: "closed_resolution_backfill",
         },
         {
           field: "expected_result",
           before: "unknown",
-          after: "Expected closure outcome normalized from closed status because the field was missing or low-signal.",
+          after: "Expected closure outcome normalized from closed status; existing close_reason remains the detailed closure evidence.",
           rule: "closed_resolution_backfill",
         },
         {
           field: "resolution",
           before: "todo",
-          after: "Resolution normalized from closed status because the field was missing or low-signal.",
+          after: "Resolution normalized from closed status; existing close_reason remains the detailed closure evidence.",
           rule: "closed_resolution_backfill",
         },
       ]);

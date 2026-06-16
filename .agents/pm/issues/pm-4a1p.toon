@@ -1,0 +1,18 @@
+id: pm-4a1p
+title: "GH-249: create --status closed bypasses governance.require_close_reason"
+description: "pm create <type> <title> --status closed records NO close_reason and emits NO warning under governance.require_close_reason, unlike pm close (errors) and pm update --status closed (defaults + warns). Mirror update: derive close_reason from --message/--resolution else default placeholder, write it, emit close_reason_defaulted warning."
+type: Issue
+status: closed
+priority: 1
+tags[3]: create,governance,validation
+created_at: "2026-06-16T14:46:43.350Z"
+updated_at: "2026-06-16T15:26:29.391Z"
+author: claude-code-agent
+parent: pm-mpbb
+resolution: Derive close_reason from --message/--resolution else placeholder; emit close_reason_defaulted.
+expected_result: Closed-at-create honors require_close_reason like the other closure paths
+actual_result: Implemented in create.ts; covered by 4 new create tests.
+notes[1]{created_at,author,text}:
+  "2026-06-16T15:25:59.891Z",claude-code-agent,"GH-249 fix: pm create --status closed now honors governance.require_close_reason. When status resolves to the close_status and require_close_reason is enabled, create derives close_reason from --message > --resolution else the CREATE_DIRECT_CLOSE_REASON_DEFAULT placeholder, writes it to front-matter, and pushes a close_reason_defaulted warning when defaulted — mirroring pm update --status closed. Files: cli/commands/create.ts, core/shared/constants.ts."
+close_reason: "create --status closed now records a close_reason and warns under governance.require_close_reason, matching pm close and pm update."
+body: ""

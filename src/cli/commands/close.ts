@@ -6,7 +6,13 @@ import { resolveRuntimeStatusRegistry, type RuntimeStatusRegistry } from "../../
 import { EXIT_CODE } from "../../core/shared/constants.js";
 import type { GlobalOptions } from "../../core/shared/command-types.js";
 import { PmCliError } from "../../core/shared/errors.js";
-import { listAllFrontMatterLight, locateItem, mutateItem, readLocatedItem } from "../../core/store/item-store.js";
+import {
+  buildItemNotFoundError,
+  listAllFrontMatterLight,
+  locateItem,
+  mutateItem,
+  readLocatedItem,
+} from "../../core/store/item-store.js";
 import { getSettingsPath, resolvePmRoot } from "../../core/store/paths.js";
 import { readSettings } from "../../core/store/settings.js";
 import type { ItemFrontMatter } from "../../types/index.js";
@@ -220,6 +226,16 @@ export async function runClose(
   const settings = await readSettings(pmRoot);
   const statusRegistry = resolveRuntimeStatusRegistry(settings.schema);
   const author = toAuthor(options.author, settings.author_default);
+  // GH-250: verify the target item EXISTS before the governance close-reason
+  // gate fires. Otherwise closing a typo'd id with no reason reports
+  // "Close reason text is required" and hides the real cause (bad id) until a
+  // reason is supplied. Existence is the more fundamental precondition, so it
+  // is validated first regardless of whether a reason was provided.
+  const typeToFolder = resolveItemTypeRegistry(settings).type_to_folder;
+  const located = await locateItem(pmRoot, id, settings.id_prefix, settings.item_format, typeToFolder);
+  if (!located) {
+    throw await buildItemNotFoundError(pmRoot, id, settings.id_prefix, typeToFolder);
+  }
   // GH-204: resolve the duplicate target BEFORE reason validation so
   // `pm close <id> --duplicate-of <canonical>` succeeds under
   // governance.require_close_reason without a manual reason — when no

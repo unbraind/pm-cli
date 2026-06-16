@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   assertAliasesAvailable,
+  assertTypeFolderAvailable,
   buildInvalidTypeError,
   buildInvalidTypeHint,
   escapeForDoubleQuotes,
@@ -82,6 +83,55 @@ describe("normalizeAddTypeInput", () => {
     expect(() => normalizeAddTypeInput({ name: "Spike", aliases: ["Task"] })).toThrow(
       /Alias "Task" collides with built-in item type "Task"/,
     );
+  });
+
+  it("GH-248: rejects malformed type names (spaces, leading digit, punctuation)", () => {
+    for (const name of ["Spike Type", "1Spike", "-spike", "spike!", "spi ke"]) {
+      expect(() => normalizeAddTypeInput({ name })).toThrow(/is not a valid identifier/);
+    }
+  });
+
+  it("GH-248: accepts letter-led tokens with internal hyphen/underscore", () => {
+    expect(normalizeAddTypeInput({ name: "code-review" }).name).toBe("code-review");
+    expect(normalizeAddTypeInput({ name: "bug_report" }).name).toBe("bug_report");
+  });
+
+  it("GH-248: rejects malformed aliases", () => {
+    expect(() => normalizeAddTypeInput({ name: "Spike", aliases: ["bad alias"] })).toThrow(
+      /Alias "bad alias" is not a valid identifier/,
+    );
+  });
+});
+
+describe("assertTypeFolderAvailable", () => {
+  const existing = {
+    definitions: [
+      { name: "Spike", folder: "spikes" } as Record<string, unknown>,
+      { name: "Review", aliases: ["rv"] } as Record<string, unknown>, // default folder "reviews"
+      { name: "" } as Record<string, unknown>, // empty name skipped
+      { notName: true } as unknown as { name: string }, // non-string name skipped
+    ],
+  } as never;
+
+  it("passes when the resolved folder does not collide", () => {
+    expect(() => assertTypeFolderAvailable({ name: "Bug", aliases: [] }, existing)).not.toThrow();
+  });
+
+  it("throws when a distinct name's default slug collides with an existing folder", () => {
+    // "Spikes" slugs to folder "spikes", already owned by "Spike".
+    expect(() => assertTypeFolderAvailable({ name: "Spikes", aliases: [] }, existing)).toThrow(
+      /would store items in folder "spikes", which already belongs to existing item type "Spike"/,
+    );
+  });
+
+  it("throws when an explicit --folder collides with another definition's default slug", () => {
+    expect(() => assertTypeFolderAvailable({ name: "Audit", folder: "reviews", aliases: [] }, existing)).toThrow(
+      /folder "reviews", which already belongs to existing item type "Review"/,
+    );
+  });
+
+  it("ignores the same-named definition being upserted (recase/idempotent re-run)", () => {
+    expect(() => assertTypeFolderAvailable({ name: "spike", aliases: [] }, existing)).not.toThrow();
   });
 });
 
@@ -197,6 +247,7 @@ describe("upsertItemType", () => {
       aliases: ["a"],
     });
     expect(result.replaced).toBe(false);
+    expect(result.previousName).toBeUndefined();
     expect(result.definition).toEqual({
       name: "Alpha",
       description: "first",
@@ -237,6 +288,9 @@ describe("upsertItemType", () => {
       aliases: ["added", "existing"],
     });
     expect(result.replaced).toBe(true);
+    // GH-248: previousName exposes the replaced canonical name ("Spike") so the
+    // CLI can warn that registering "spike" recased an existing type.
+    expect(result.previousName).toBe("Spike");
     // Name preserved from input; description overridden; aliases merged/deduped/sorted;
     // folder/default_status/required_create_fields preserved (not addressed by flags).
     expect(result.definition).toMatchObject({

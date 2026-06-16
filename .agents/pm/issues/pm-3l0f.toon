@@ -1,0 +1,18 @@
+id: pm-3l0f
+title: "GH-248: schema add-type slug-collision overwrite + malformed name validation"
+description: "pm schema add-type silently overwrites an existing type on case/slug collision and accepts malformed names (spaces, non-identifier chars). Add malformed-name rejection in normalizeAddTypeInput, folder/slug collision detection against different-named existing definitions, and a recase warning when an upsert changes the canonical name's case."
+type: Issue
+status: closed
+priority: 1
+tags[3]: governance,schema,validation
+created_at: "2026-06-16T14:46:32.798Z"
+updated_at: "2026-06-16T15:26:27.663Z"
+author: claude-code-agent
+parent: pm-8jdc
+resolution: "Added name-token validation, assertTypeFolderAvailable folder-collision guard, and type_recased warning; 100% covered."
+expected_result: add-type rejects spaces/punctuation names and folder collisions; warns on recase
+actual_result: Implemented + unit/integration tested; coverage 100%.
+notes[1]{created_at,author,text}:
+  "2026-06-16T15:25:18.700Z",claude-code-agent,"GH-248 fix: (1) normalizeAddTypeInput now rejects malformed names/aliases via TYPE_NAME_TOKEN_PATTERN (letter-led [A-Za-z0-9_-], no spaces/punctuation); (2) new assertTypeFolderAvailable() rejects distinct type names whose resolved folder slug collides (Spike/Spikes, code-review/code_review, explicit --folder), single-sourcing slug derivation from type-registry.toDefaultFolder (now exported); (3) upsertItemType returns previousName so schema.ts emits a non-blocking type_recased:Old->New warning when a case-variant upsert renames the canonical. Files: core/schema/item-types-file.ts, core/item/type-registry.ts, cli/commands/schema.ts."
+close_reason: "Hardened pm schema add-type: reject malformed type names/aliases, detect folder/slug collisions between distinct types, and warn on case-recase upserts."
+body: ""

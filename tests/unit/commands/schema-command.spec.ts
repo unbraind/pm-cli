@@ -387,6 +387,38 @@ describe("schema add-type command", () => {
     });
   });
 
+  it("GH-248: warns when an upsert recases the existing canonical name", async () => {
+    await withTempPmPath(async (context) => {
+      const first = context.runCli(["schema", "add-type", "Spike", "--json"], { expectJson: true });
+      expect(first.code).toBe(0);
+
+      const recased = context.runCli(["schema", "add-type", "spike", "--json"], { expectJson: true });
+      expect(recased.code).toBe(0);
+      const result = recased.json as { replaced: boolean; warnings: string[] };
+      expect(result.replaced).toBe(true);
+      expect(result.warnings).toContain("type_recased:Spike->spike");
+    });
+  });
+
+  it("GH-248: rejects a distinct type whose folder would collide", async () => {
+    await withTempPmPath(async (context) => {
+      const first = context.runCli(["schema", "add-type", "Spike"]);
+      expect(first.code).toBe(0);
+      // "Spikes" slugs to the same "spikes" folder already owned by "Spike".
+      const collision = context.runCli(["schema", "add-type", "Spikes"]);
+      expect(collision.code).toBe(EXIT_CODE.USAGE);
+      expect(collision.stderr).toContain("already belongs to existing item type");
+    });
+  });
+
+  it("GH-248: rejects a malformed type name with spaces", async () => {
+    await withTempPmPath(async (context) => {
+      const malformed = context.runCli(["schema", "add-type", "Spike Type"]);
+      expect(malformed.code).toBe(EXIT_CODE.USAGE);
+      expect(malformed.stderr).toContain("is not a valid identifier");
+    });
+  });
+
   it("emits a concise human line when not using --json", async () => {
     await withTempPmPath(async (context) => {
       const add = context.runCli(["schema", "add-type", "Spike", "--alias", "spike"]);

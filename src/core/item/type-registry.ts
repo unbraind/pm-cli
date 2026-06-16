@@ -366,7 +366,7 @@ export function commandOptionFlagLabel(command: CommandOptionPolicyCommand, opti
   return labels[optionKey] ?? `--${optionKey.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
 }
 
-function toDefaultFolder(name: string): string {
+export function toDefaultFolder(name: string): string {
   const normalized = toSlugToken(name);
   if (normalized.length === 0) {
     return "items";

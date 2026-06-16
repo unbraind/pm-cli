@@ -313,6 +313,13 @@ describe("runHealth", () => {
         semantic_runtime_available: false,
         stale_items_before: [],
         stale_items_after: [],
+        // GH-244: surface the persisted (empty) config value and how the
+        // resolution was sourced so audits can distinguish auto-detect from
+        // genuine misconfiguration.
+        provider_source: "unconfigured",
+        provider_configured: "",
+        vector_store_source: "unconfigured",
+        vector_store_configured: "",
       });
 
       const integrityCheck = health.checks.find((check) => check.name === "integrity");

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveEmbeddingProviders } from "../../../../src/core/search/providers.js";
+import { resolveEmbeddingProviders, resolveProviderConfigSource } from "../../../../src/core/search/providers.js";
 import { resolveVectorStores } from "../../../../src/core/search/vector-stores.js";
 
 // pm-7ilo / Codex follow-up: writing `search.provider` and
@@ -121,5 +121,23 @@ describe("resolveVectorStores honors settings.vector_store.adapter", () => {
       });
       expect(resolution.active?.name).toBe("lancedb");
     }
+  });
+});
+
+describe("resolveProviderConfigSource (GH-244)", () => {
+  it("reports 'unconfigured' when nothing is active", () => {
+    expect(resolveProviderConfigSource(null, "")).toBe("unconfigured");
+    expect(resolveProviderConfigSource("", "ollama")).toBe("unconfigured");
+    expect(resolveProviderConfigSource(undefined, undefined)).toBe("unconfigured");
+  });
+
+  it("reports 'configured' when the persisted setting names the active resolution", () => {
+    expect(resolveProviderConfigSource("ollama", "ollama")).toBe("configured");
+    expect(resolveProviderConfigSource("lancedb", "  lancedb  ")).toBe("configured");
+  });
+
+  it("reports 'auto-detected' when active but the persisted setting is empty", () => {
+    expect(resolveProviderConfigSource("ollama", "")).toBe("auto-detected");
+    expect(resolveProviderConfigSource("lancedb", null)).toBe("auto-detected");
   });
 });

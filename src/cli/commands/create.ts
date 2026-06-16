@@ -10,6 +10,7 @@ import { validateSprintOrReleaseValue } from "../../core/item/sprint-release-for
 import { createStdinTokenResolver, mergeAdditiveTags, parseCsvKv, parseOptionalNumber, parseTags } from "../../core/item/parse.js";
 import { resolvePriority } from "../../core/item/priority.js";
 import { normalizeStatusInput } from "../../core/item/status.js";
+import { CREATE_DIRECT_CLOSE_REASON_DEFAULT } from "../../core/shared/constants.js";
 import {
   canonicalizeCommandOptionKey,
   commandOptionFlagLabel,
@@ -1841,6 +1842,21 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
   const description = resolvedOptions.description ?? "";
   const body = resolvedOptions.body ?? "";
 
+  // GH-249: creating an item directly in the close status must honor
+  // governance.require_close_reason, just like `pm close` (errors when missing)
+  // and `pm update --status closed` (defaults + warns). Record a close_reason
+  // derived from --message > --resolution, else a stable placeholder, and warn
+  // when defaulted so the create path stops silently bypassing governance.
+  let closeReason: string | undefined;
+  if (status === statusRegistry.close_status && settings.governance.require_close_reason) {
+    const messageText = typeof resolvedOptions.message === "string" ? resolvedOptions.message.trim() : "";
+    const resolutionText = typeof resolution === "string" ? resolution.trim() : "";
+    closeReason = messageText || resolutionText || CREATE_DIRECT_CLOSE_REASON_DEFAULT;
+    if (messageText.length === 0 && resolutionText.length === 0) {
+      validationWarnings.push("close_reason_defaulted");
+    }
+  }
+
   const frontMatter: ItemMetadata = normalizeFrontMatter({
     id,
     title,
@@ -1848,6 +1864,7 @@ export async function runCreate(options: CreateCommandOptions, global: GlobalOpt
     type,
     type_options: validatedTypeOptions.normalized,
     status,
+    close_reason: closeReason,
     priority,
     tags,
     created_at: nowValue,

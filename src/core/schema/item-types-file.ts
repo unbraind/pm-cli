@@ -1,5 +1,6 @@
 import { BUILTIN_ITEM_TYPE_VALUES } from "../../types/index.js";
 import type { ItemTypeDefinition } from "../../types/index.js";
+import { toDefaultFolder } from "../item/type-registry.js";
 
 export type { ItemTypeDefinition } from "../../types/index.js";
 
@@ -43,6 +44,30 @@ export interface UpsertItemTypeResult {
   definition: ItemTypeDefinition;
   /** True when an existing definition with the same (case-insensitive) name was replaced. */
   replaced: boolean;
+  /**
+   * The canonical name of the replaced definition (only present when `replaced`).
+   * Lets the caller detect a silent recase (e.g. "Spike" -> "spike") and warn.
+   */
+  previousName?: string;
+}
+
+/**
+ * Custom item type names (and aliases) must be a single letter-led identifier
+ * token: letters, digits, hyphen, or underscore — no whitespace or other
+ * punctuation. This keeps names copy-pasteable as shell arguments and folder
+ * slugs deterministic, matching the single-token PascalCase shape of every
+ * built-in type. Folder/slug overlap between two distinct valid tokens (e.g.
+ * "Spike"/"Spikes", "code-review"/"code_review") is rejected separately by
+ * assertTypeFolderAvailable.
+ */
+const TYPE_NAME_TOKEN_PATTERN = /^[A-Za-z][A-Za-z0-9_-]*$/;
+
+function assertValidTypeToken(value: string, label: string): void {
+  if (!TYPE_NAME_TOKEN_PATTERN.test(value)) {
+    throw new Error(
+      `${label} "${value}" is not a valid identifier. Use a single letter-led token of letters, digits, hyphen, or underscore with no spaces or punctuation (e.g. "Spike" or "code-review").`,
+    );
+  }
 }
 
 export interface RemoveItemTypeResult {
@@ -104,6 +129,7 @@ export function normalizeAddTypeInput(raw: RawAddTypeInput): NormalizedAddTypeIn
   if (name.length === 0) {
     throw new Error("Type name must not be empty.");
   }
+  assertValidTypeToken(name, "Type name");
   const builtinMatch = matchBuiltinTypeName(name);
   if (builtinMatch) {
     throw new Error(
@@ -115,6 +141,7 @@ export function normalizeAddTypeInput(raw: RawAddTypeInput): NormalizedAddTypeIn
   const folder = raw.folder?.trim();
   const aliases = dedupeAliases(raw.aliases ?? []);
   for (const alias of aliases) {
+    assertValidTypeToken(alias, "Alias");
     const aliasBuiltin = matchBuiltinTypeName(alias);
     if (aliasBuiltin) {
       throw new Error(
@@ -165,6 +192,47 @@ export function assertAliasesAvailable(input: NormalizedAddTypeInput, existing: 
     const owner = taken.get(alias.toLowerCase());
     if (owner) {
       throw new Error(`Alias "${alias}" already maps to existing item type "${owner}".`);
+    }
+  }
+}
+
+/**
+ * Resolves the storage folder a definition would use: an explicit non-empty
+ * `folder` wins, otherwise the deterministic slug derived from the name (the
+ * same derivation the runtime registry applies, single-sourced from
+ * type-registry.toDefaultFolder).
+ */
+function resolveDefinitionFolder(name: string, folder: unknown): string {
+  if (typeof folder === "string" && folder.trim().length > 0) {
+    return folder.trim().toLowerCase();
+  }
+  return toDefaultFolder(name).toLowerCase();
+}
+
+/**
+ * Throws when the requested type's storage folder would collide with a
+ * DIFFERENT existing definition's folder. Two distinct type names can slug to
+ * one folder ("Spike"/"Spikes", "code-review"/"code_review"), which would make
+ * their item files share a directory and silently corrupt the taxonomy. The
+ * same-named definition being upserted is ignored (folder reuse on re-run is
+ * expected). Resolving the collision is a matter of passing a distinct
+ * `--folder`, so the error says so.
+ */
+export function assertTypeFolderAvailable(input: NormalizedAddTypeInput, existing: ItemTypesFile): void {
+  const selfLower = input.name.toLowerCase();
+  const inputFolder = resolveDefinitionFolder(input.name, input.folder);
+  for (const definition of existing.definitions) {
+    if (typeof definition.name !== "string") {
+      continue;
+    }
+    const definitionName = definition.name.trim();
+    if (definitionName.length === 0 || definitionName.toLowerCase() === selfLower) {
+      continue;
+    }
+    if (resolveDefinitionFolder(definitionName, definition.folder) === inputFolder) {
+      throw new Error(
+        `Item type "${input.name}" would store items in folder "${inputFolder}", which already belongs to existing item type "${definitionName}". Pass a distinct --folder to keep their storage separate.`,
+      );
     }
   }
 }
@@ -269,6 +337,7 @@ export function upsertItemType(file: ItemTypesFile, input: NormalizedAddTypeInpu
     file: { definitions },
     definition: next,
     replaced: existingIndex >= 0,
+    ...(existing && typeof existing.name === "string" ? { previousName: existing.name } : {}),
   };
 }
 

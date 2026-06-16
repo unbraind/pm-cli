@@ -15,7 +15,7 @@ import {
   readVectorizationStatusLedger,
   refreshSemanticEmbeddingsForMutatedItems,
 } from "../../core/search/cache.js";
-import { resolveEmbeddingProviders } from "../../core/search/providers.js";
+import { resolveEmbeddingProviders, resolveProviderConfigSource } from "../../core/search/providers.js";
 import { resolveSettingsWithSemanticRuntimeDefaults } from "../../core/search/semantic-defaults.js";
 import { collectStaleVectorizationIds } from "../../core/search/staleness.js";
 import {
@@ -1473,7 +1473,21 @@ async function buildVectorizationCheck(
           refresh_vectors: refreshPolicy.refreshVectors,
         },
         provider_active: providerResolution.active?.name ?? null,
+        // GH-244: surface the persisted (possibly empty) configured value and
+        // how the active resolution was sourced, so a config audit can tell
+        // "auto-detected" apart from a genuine misconfiguration when
+        // settings.search.provider / vector_store.adapter are empty strings.
+        provider_configured: typeof settings.search?.provider === "string" ? settings.search.provider : null,
+        provider_source: resolveProviderConfigSource(
+          providerResolution.active?.name ?? null,
+          settings.search?.provider ?? null,
+        ),
         vector_store_active: vectorStoreResolution.active?.name ?? null,
+        vector_store_configured: typeof settings.vector_store?.adapter === "string" ? settings.vector_store.adapter : null,
+        vector_store_source: resolveProviderConfigSource(
+          vectorStoreResolution.active?.name ?? null,
+          settings.vector_store?.adapter ?? null,
+        ),
         embedding_identity_changed: embeddingIdentityChanged,
         embedding_identity_before: ledgerBefore.embedding ?? null,
         embedding_identity_runtime: runtimeEmbeddingIdentity ?? null,

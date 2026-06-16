@@ -2,6 +2,7 @@ import { pathExists, readFileIfExists, writeFileAtomic } from "../../core/fs/fs-
 import { acquireLock } from "../../core/lock/lock.js";
 import {
   assertAliasesAvailable,
+  assertTypeFolderAvailable,
   buildInvalidTypeHint,
   escapeForDoubleQuotes,
   normalizeAddTypeInput,
@@ -263,10 +264,21 @@ export async function runSchemaAddType(
     }
     try {
       assertAliasesAvailable(normalized, parsed);
+      // GH-248: reject distinct type names that would slug to the same storage
+      // folder (e.g. "Spike"/"Spikes") so item files never silently share a
+      // directory. Same-named upserts (recase/idempotent re-runs) are exempt.
+      assertTypeFolderAvailable(normalized, parsed);
     } catch (error) {
       throw new PmCliError(error instanceof Error ? error.message : String(error), EXIT_CODE.USAGE);
     }
     upsert = upsertItemType(parsed, normalized);
+    // GH-248: an upsert that only differs in case from the existing canonical
+    // name silently renames the stored type (e.g. registering "spike" over
+    // "Spike"). Surface it as a non-blocking warning so the operator knows the
+    // existing definition was replaced rather than a new type created.
+    if (upsert.replaced && upsert.previousName !== undefined && upsert.previousName !== upsert.definition.name) {
+      warnings.push(`type_recased:${upsert.previousName}->${upsert.definition.name}`);
+    }
     // writeFileAtomic writes to a temp file then renames, so a failure leaves the
     // existing types.json untouched; no manual rollback is needed.
     await writeFileAtomic(typesPath, serializeItemTypesFile(upsert.file));
