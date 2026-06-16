@@ -25,6 +25,37 @@ export interface EmbeddingProviderResolution {
   available: EmbeddingProviderConfig[];
 }
 
+/**
+ * GH-244: how an active search-provider / vector-store adapter came to be
+ * resolved, so `pm health` can explain why a working runtime can coexist with
+ * empty persisted `search.provider` / `vector_store.adapter` settings:
+ * - "configured": the persisted setting names the active resolution.
+ * - "auto-detected": runtime auto-detection selected it; the setting is empty.
+ * - "unconfigured": nothing is active.
+ */
+export type ProviderConfigSource = "configured" | "auto-detected" | "unconfigured";
+
+/**
+ * Classifies the resolution source for an active provider/adapter given the
+ * persisted (possibly empty) configured value. Pure and adapter-agnostic so it
+ * serves both the embedding provider and the vector-store adapter. "configured"
+ * requires the persisted value to actually MATCH the active resolution
+ * (case-insensitively): a configured-but-unhonored value (typo or unsupported
+ * name that the runtime fell back from) is reported as "auto-detected", not
+ * falsely "configured".
+ */
+export function resolveProviderConfigSource(
+  activeName: string | null | undefined,
+  configured: string | null | undefined,
+): ProviderConfigSource {
+  const active = toNonEmptyString(activeName);
+  if (!active) {
+    return "unconfigured";
+  }
+  const configuredValue = toNonEmptyString(configured);
+  return configuredValue && configuredValue.toLowerCase() === active.toLowerCase() ? "configured" : "auto-detected";
+}
+
 export interface EmbeddingRequestTarget {
   provider: EmbeddingProviderName;
   endpoint: string;

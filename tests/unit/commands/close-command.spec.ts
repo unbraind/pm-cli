@@ -105,6 +105,20 @@ describe("runClose", () => {
     }
   });
 
+  it("GH-250: reports a missing item before the close-reason gate even with no reason", async () => {
+    await withTempPmPath(async (context) => {
+      const settings = await readSettings(context.pmPath);
+      expect(settings.governance.require_close_reason).toBe(true);
+      // No reason supplied for a non-existent id: existence must be validated
+      // first, so the error is "not found" rather than the misleading
+      // "Close reason text is required".
+      await expect(runClose("pm-zzzz", undefined, {}, { path: context.pmPath })).rejects.toMatchObject<PmCliError>({
+        exitCode: EXIT_CODE.NOT_FOUND,
+        message: expect.stringContaining("not found"),
+      });
+    });
+  });
+
   it("rejects unknown --validate-close values", async () => {
     await withTempPmPath(async (context) => {
       const id = createTask(context, "close-invalid-validate-mode");

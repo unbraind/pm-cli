@@ -303,6 +303,16 @@ describe("runNormalize", () => {
 
   it("uses missing-close-reason wording for closed backfill values", async () => {
     await withTempPmPath(async (context) => {
+      // GH-249: `pm create --status closed` records a close_reason under
+      // governance.require_close_reason. Disable it so this fixture genuinely
+      // lacks a close_reason and exercises the missing-close-reason wording.
+      const settingsPath = path.join(context.pmPath, "settings.json");
+      const settings = JSON.parse(await readFile(settingsPath, "utf8")) as {
+        governance?: Record<string, unknown>;
+      };
+      settings.governance = { ...(settings.governance ?? {}), require_close_reason: false };
+      await writeFile(settingsPath, `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
       const closedId = createTask(context, "normalize-closed-no-close-reason", {
         tags: "normalize-no-close-reason",
         status: "closed",

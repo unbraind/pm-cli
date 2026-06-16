@@ -1,0 +1,18 @@
+id: pm-gnu2
+title: "GH-244: surface provider/vector-store resolution source in pm health"
+description: "Auto-detected search provider / vector adapter leave settings.search.provider and vector_store.adapter as empty strings, so config audits falsely report 'not configured' while runtime works. Surface provider_source/vector_store_source (auto-detected vs configured) + the persisted configured value in pm health vectorization details so the two sources of truth are self-explanatory."
+type: Feature
+status: closed
+priority: 2
+tags[3]: config,health,observability
+created_at: "2026-06-16T14:46:44.294Z"
+updated_at: "2026-06-16T15:26:31.743Z"
+author: claude-code-agent
+parent: pm-8jdc
+resolution: Add provider_source/vector_store_source + *_configured via resolveProviderConfigSource helper.
+expected_result: health explains auto-detected vs misconfigured providers
+actual_result: Implemented in health.ts/providers.ts; helper 100% covered.
+notes[1]{created_at,author,text}:
+  "2026-06-16T15:26:02.006Z",claude-code-agent,"GH-244 fix: pm health vectorization details now surface provider_source/vector_store_source (configured|auto-detected|unconfigured) plus the persisted provider_configured/vector_store_configured strings, so a config audit can tell auto-detect apart from genuine misconfiguration when settings.search.provider/vector_store.adapter are empty. New pure helper resolveProviderConfigSource in core/search/providers.ts. Files: cli/commands/health.ts, core/search/providers.ts."
+close_reason: pm health now surfaces provider/vector-store resolution source + persisted configured value so empty-but-auto-detected config is no longer a false audit gap.
+body: ""

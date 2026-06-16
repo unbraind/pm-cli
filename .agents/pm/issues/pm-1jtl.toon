@@ -1,0 +1,18 @@
+id: pm-1jtl
+title: "GH-250: pm close checks item existence before the close-reason gate"
+description: "pm close checks governance.require_close_reason before verifying the target item exists, so a typo'd id with no reason reports 'Close reason text is required' instead of 'Item not found'. Validate existence before the close-reason gate in runClose (and keep close-many consistent)."
+type: Issue
+status: closed
+priority: 2
+tags[3]: close,governance,ux
+created_at: "2026-06-16T14:46:43.757Z"
+updated_at: "2026-06-16T15:57:32.597Z"
+author: claude-code-agent
+parent: pm-mpbb
+resolution: Locate item via buildItemNotFoundError before normalizeCloseReason.
+expected_result: "Missing id with no reason reports not-found, not close-reason-required"
+actual_result: Implemented in close.ts; new GH-250 close test green.
+notes[1]{created_at,author,text}:
+  "2026-06-16T15:26:00.896Z",claude-code-agent,"GH-250 fix: runClose now locates the target item (buildItemNotFoundError) BEFORE normalizeCloseReason, so a typo'd id with no reason reports 'Item not found' instead of the misleading 'Close reason text is required'. close-many needs no change (ids come from a matched list, never user-typed). File: cli/commands/close.ts."
+close_reason: "pm close validates item existence before the close-reason gate, so typo'd ids report 'Item not found' immediately."
+body: ""

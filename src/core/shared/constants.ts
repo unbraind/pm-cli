@@ -57,6 +57,15 @@ export const DEFAULT_WORKFLOW_DEFINITION: RuntimeWorkflowDefinition = Object.fre
 export const PM_DIRNAME = ".agents/pm";
 export const SETTINGS_FILENAME = "settings.json";
 
+/**
+ * GH-249: placeholder close reason recorded when `pm create --status closed`
+ * lands an item directly in the close status under
+ * `governance.require_close_reason` and no --message/--resolution text is
+ * available. Mirrors `pm update --status closed`'s "Closed via pm update"
+ * default so all three closure paths record a reason.
+ */
+export const CREATE_DIRECT_CLOSE_REASON_DEFAULT = "Closed at creation via pm create";
+
 export const PM_CORE_REQUIRED_SUBDIRS = [
   "",
   "epics",
