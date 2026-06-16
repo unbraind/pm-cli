@@ -1,6 +1,7 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 
 const TEMP_DIR_CLEANUP_MAX_RETRIES = 5;
 const TEMP_DIR_CLEANUP_RETRYABLE_CODES = new Set(["EBUSY", "ENOTEMPTY", "EPERM"]);
@@ -22,7 +23,7 @@ async function cleanupTempDirWithRetries(tempDir: string): Promise<void> {
       if (!isRetryableTempDirCleanupError(error) || attempt === TEMP_DIR_CLEANUP_MAX_RETRIES) {
         throw error;
       }
-      await new Promise<void>((resolve) => queueMicrotask(resolve));
+      await delay(25 * (attempt + 1));
     }
   }
 }
