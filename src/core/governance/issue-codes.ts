@@ -36,9 +36,9 @@ export interface DuplicateIssueCode {
  * the very start of the title (after optional leading whitespace).
  *
  * Examples that match: `ISSUE-004`, `BUG-12`, `TASK-7`, `ADR-001`, `RFC-9`,
- * `GH-235`, `PM2-14`. The trailing `\b` ensures the number token is complete
- * (so `ISSUE-004foo` still extracts `ISSUE-004`, but the code itself is the
- * code prefix only).
+ * `GH-235`, `PM2-14`. The trailing `\b` requires the digit run to end at a word
+ * boundary, so `ISSUE-004-extra` extracts `ISSUE-004` while `ISSUE-004foo`
+ * (digit immediately followed by a letter — no boundary) does not match.
  */
 const ISSUE_CODE_PATTERN = /^([A-Z][A-Z0-9]*-\d+)\b/;
 

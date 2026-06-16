@@ -2175,6 +2175,8 @@ complete -c pm -n '__fish_seen_subcommand_from deps' -l summary -d 'Return count
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l add -d 'Add one entry (text=<value> or plain text)' -r
 complete -c pm -n '__fish_seen_subcommand_from comments' -l stdin -d 'Read comment text from stdin (supports multiline markdown)'
 complete -c pm -n '__fish_seen_subcommand_from comments' -l file -d 'Read comment text from file (supports multiline markdown)' -r
+complete -c pm -n '__fish_seen_subcommand_from comments' -l edit -d 'Replace the comment at 1-based index (text from positional/--add/--stdin/--file)' -r
+complete -c pm -n '__fish_seen_subcommand_from comments' -l delete -d 'Delete the comment at 1-based index' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l limit -d 'Return only latest n entries' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l author -d 'Entry author' -r
 complete -c pm -n '__fish_seen_subcommand_from comments notes learnings' -l message -d 'History message' -r

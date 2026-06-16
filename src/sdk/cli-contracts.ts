@@ -1934,7 +1934,7 @@ const PM_TOOL_ACTION_SCHEMA_CONTRACTS: Record<string, PmActionSchemaContract> = 
   append: { required: ["id", "body"], optional: AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS },
   comments: {
     required: ["id"],
-    optional: ["text", "add", "stdin", "file", "limit", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
+    optional: ["text", "add", "stdin", "file", "edit", "delete", "limit", "allowAuditComment", ...AUTHOR_MESSAGE_FORCE_PARAMETER_KEYS],
   },
   "comments-audit": {
     optional: [

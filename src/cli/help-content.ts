@@ -488,7 +488,7 @@ const HELP_BY_COMMAND_PATH: Record<string, HelpBundle> = {
     tips: [
       "Default depth is standard for body plus linked artifacts without append-only logs; use brief for metadata-only checks or --full for complete history-heavy metadata.",
       "Use --fields for the smallest deterministic item metadata payload when an agent only needs specific fields.",
-      "JSON output shape is { item, body, linked, claim_state, children }; body is top-level (not item.body), and children appears for requested/container rollups.",
+      "JSON output shape is { item, linked, claim_state, children }; body is nested at item.body (parity with list --include-body), and children appears for requested/container rollups.",
     ],
   },
   history: {

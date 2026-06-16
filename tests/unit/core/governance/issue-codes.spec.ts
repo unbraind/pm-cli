@@ -21,9 +21,10 @@ describe("extractIssueCode", () => {
     expect(extractIssueCode("Bug-12")).toBe("BUG-12");
   });
 
-  it("returns the code prefix only even when the number runs into more text", () => {
-    expect(extractIssueCode("ISSUE-004foo")).toBe("ISSUE-004foo".toUpperCase().match(/^([A-Z][A-Z0-9]*-\d+)\b/)?.[1] ?? null);
-    // Concretely: the \b boundary stops the code at the end of the digit run.
+  it("respects the trailing word boundary after the digit run", () => {
+    // A letter directly after the digits is NOT a word boundary, so no match.
+    expect(extractIssueCode("ISSUE-004foo")).toBeNull();
+    // A separator after the digits IS a boundary, so the code prefix extracts.
     expect(extractIssueCode("ISSUE-004-extra")).toBe("ISSUE-004");
   });
 
